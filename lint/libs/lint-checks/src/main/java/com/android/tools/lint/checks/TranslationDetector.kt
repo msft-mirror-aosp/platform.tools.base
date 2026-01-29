@@ -83,19 +83,16 @@ import org.w3c.dom.Node
 /**
  * Checks for incomplete translations - e.g. keys that are only present in some locales but not all.
  *
- * TODO <ul> <li> Port to Kotlin before the following changes: <li> Remove all the batch mode
- * handling here; instead of accumulating all strings we can now limit the analysis directly to
- * references from the current strings file being analyzed -- as long as we don't duplicate the
- * work, e.g. we only do the analysis from the base folder config, except for extra-strings. </ul>
+ * TODO <ul> <li> Port to Kotlin before the following changes: <li> Remove all the batch mode handling here; instead of accumulating all
+ * strings we can now limit the analysis directly to references from the current strings file being analyzed -- as long as we don't
+ * duplicate the work, e.g. we only do the analysis from the base folder config, except for extra-strings. </ul>
  */
 class TranslationDetector : Detector(), XmlScanner, ResourceFolderScanner, BinaryResourceScanner {
   /** The names of resources, for each resource type, defined in the base folder. */
-  private val baseNames: MutableMap<ResourceType, MutableSet<String>> =
-    Maps.newEnumMap(ResourceType::class.java)
+  private val baseNames: MutableMap<ResourceType, MutableSet<String>> = Maps.newEnumMap(ResourceType::class.java)
 
   /** The names of resources, for each resource type, defined in a non-base folder. */
-  private val nonBaseNames: MutableMap<ResourceType, MutableSet<String>> =
-    Maps.newEnumMap(ResourceType::class.java)
+  private val nonBaseNames: MutableMap<ResourceType, MutableSet<String>> = Maps.newEnumMap(ResourceType::class.java)
 
   /** For missing strings, a map from the string name to the set of locales where it's missing. */
   private var missingMap: MutableMap<String, Set<String>>? = null
@@ -113,9 +110,7 @@ class TranslationDetector : Detector(), XmlScanner, ResourceFolderScanner, Binar
   private var translations: MutableMap<String, MutableSet<String>>? = null
 
   private fun ignoreFile(context: Context) =
-    context.file.name.startsWith("donottranslate") ||
-      ResourceUsageModel.isAnalyticsFile(context.file) ||
-      !context.project.reportIssues
+      context.file.name.startsWith("donottranslate") || ResourceUsageModel.isAnalyticsFile(context.file) || !context.project.reportIssues
 
   override fun afterCheckRootProject(context: Context) {
     if (context.phase == 2) {
@@ -128,9 +123,7 @@ class TranslationDetector : Detector(), XmlScanner, ResourceFolderScanner, Binar
 
   private fun processMissingTranslations(context: Context) {
     val nameToLocales = translations
-    if (
-      nameToLocales?.isNotEmpty() == true && context.isEnabled(MISSING) && pendingLocales != null
-    ) {
+    if (nameToLocales?.isNotEmpty() == true && context.isEnabled(MISSING) && pendingLocales != null) {
       val allLocales = filterLocalesByResConfigs(context.project, pendingLocales!!)
 
       // TODO: Complain if we have languages that only have region specific folders
@@ -150,12 +143,12 @@ class TranslationDetector : Detector(), XmlScanner, ResourceFolderScanner, Binar
             }
             val missing = Sets.difference(allLocales, locales)
             val map =
-              missingMap
-                ?: run {
-                  val map = HashMap<String, Set<String>>()
-                  missingMap = map
-                  map
-                }
+                missingMap
+                    ?: run {
+                      val map = HashMap<String, Set<String>>()
+                      missingMap = map
+                      map
+                    }
             map[key] = missing
           }
         }
@@ -186,11 +179,11 @@ class TranslationDetector : Detector(), XmlScanner, ResourceFolderScanner, Binar
 
   override fun checkFolder(context: ResourceContext, folderName: String) {
     if (
-      context.driver.scope.contains(Scope.ALL_RESOURCE_FILES) &&
-        context.driver.phase == 1 &&
-        context.resourceFolderType == ResourceFolderType.VALUES &&
-        // Only count locales from non-reporting libraries
-        context.project.reportIssues
+        context.driver.scope.contains(Scope.ALL_RESOURCE_FILES) &&
+            context.driver.phase == 1 &&
+            context.resourceFolderType == ResourceFolderType.VALUES &&
+            // Only count locales from non-reporting libraries
+            context.project.reportIssues
     ) {
       val language = getLanguageTagFromFolder(folderName) ?: return
       if (pendingLocales == null) {
@@ -225,10 +218,10 @@ class TranslationDetector : Detector(), XmlScanner, ResourceFolderScanner, Binar
     val translatable: Attr? = root?.getAttributeNode(ATTR_TRANSLATABLE)
     if (translatable?.value == VALUE_FALSE) {
       if (
-        context.file.parentFile?.name != FD_RES_VALUES &&
-          // Ensure that we're really in a locale folder, not just some non-default
-          // folder (for example, values-en is a locale folder, values-v19 is not)
-          getLocaleAndRegion(context.file.parentFile.name) != null
+          context.file.parentFile?.name != FD_RES_VALUES &&
+              // Ensure that we're really in a locale folder, not just some non-default
+              // folder (for example, values-en is a locale folder, values-v19 is not)
+              getLocaleAndRegion(context.file.parentFile.name) != null
       ) {
         reportTranslatedUntranslatable(context, null, root, translatable, true)
       }
@@ -267,9 +260,9 @@ class TranslationDetector : Detector(), XmlScanner, ResourceFolderScanner, Binar
           val defaultLanguage = defaultLocale.substringBefore("-")
           if (folderLanguage != defaultLanguage) {
             context.report(
-              MISSING,
-              context.getValueLocation(root.getAttributeNodeNS(TOOLS_URI, ATTR_LOCALE)),
-              "Suspicious `tools:locale` declaration of language `$defaultLanguage`; the parent folder `$parentFolderName` implies language $folderLanguage",
+                MISSING,
+                context.getValueLocation(root.getAttributeNodeNS(TOOLS_URI, ATTR_LOCALE)),
+                "Suspicious `tools:locale` declaration of language `$defaultLanguage`; the parent folder `$parentFolderName` implies language $folderLanguage",
             )
           }
         }
@@ -285,11 +278,11 @@ class TranslationDetector : Detector(), XmlScanner, ResourceFolderScanner, Binar
             if (!child.hasAttribute(ATTR_NAME)) {
               val fix = fix().set().todo(null, ATTR_NAME).build()
               context.report(
-                MISSING,
-                child,
-                context.getLocation(child),
-                "Missing `name` attribute in `<${child.tagName}>` declaration",
-                fix,
+                  MISSING,
+                  child,
+                  context.getLocation(child),
+                  "Missing `name` attribute in `<${child.tagName}>` declaration",
+                  fix,
               )
             }
           } else {
@@ -303,12 +296,12 @@ class TranslationDetector : Detector(), XmlScanner, ResourceFolderScanner, Binar
   }
 
   private fun visitResource(
-    context: ResourceContext,
-    type: ResourceType,
-    name: String,
-    originalName: String,
-    element: Element?,
-    defaultLocale: String?,
+      context: ResourceContext,
+      type: ResourceType,
+      name: String,
+      originalName: String,
+      element: Element?,
+      defaultLocale: String?,
   ) {
     when (type) {
       MIPMAP,
@@ -324,13 +317,13 @@ class TranslationDetector : Detector(), XmlScanner, ResourceFolderScanner, Binar
           batchVisitResource(type, folderName, context, name, element, defaultLocale)
         } else {
           incrementalVisitResource(
-            context,
-            type,
-            name,
-            originalName,
-            element,
-            folderName,
-            defaultLocale,
+              context,
+              type,
+              name,
+              originalName,
+              element,
+              folderName,
+              defaultLocale,
           )
         }
       }
@@ -339,13 +332,13 @@ class TranslationDetector : Detector(), XmlScanner, ResourceFolderScanner, Binar
 
   // On-the-fly analysis in the IDE
   private fun incrementalVisitResource(
-    context: ResourceContext,
-    type: ResourceType,
-    name: String,
-    originalName: String,
-    element: Element?,
-    folderName: String,
-    defaultLocale: String?,
+      context: ResourceContext,
+      type: ResourceType,
+      name: String,
+      originalName: String,
+      element: Element?,
+      folderName: String,
+      defaultLocale: String?,
   ) {
     // Incremental mode
     val client = context.client
@@ -369,22 +362,16 @@ class TranslationDetector : Detector(), XmlScanner, ResourceFolderScanner, Binar
 
       // Something is wrong with the resource repository; can't analyze here
       client.log(
-        Severity.ERROR,
-        null,
-        "Resource repository is out-of-date:" +
-          " Could not find resource $originalName of type $type in namespace $namespace",
+          Severity.ERROR,
+          null,
+          "Resource repository is out-of-date:" + " Could not find resource $originalName of type $type in namespace $namespace",
       )
       return
     }
     val hasDefault = items.filter { isDefaultFolder(it.configuration, null) }.any()
     if (!hasDefault) {
       reportExtraResource(type, name, context, element)
-    } else if (
-      (type == STRING || type == PLURALS) &&
-        !folderName.contains('-') &&
-        element != null &&
-        context is XmlContext
-    ) {
+    } else if ((type == STRING || type == PLURALS) && !folderName.contains('-') && element != null && context is XmlContext) {
       // Incrementally check for missing translations
 
       if (handleNonTranslatable(name, element, context, true)) {
@@ -393,19 +380,19 @@ class TranslationDetector : Detector(), XmlScanner, ResourceFolderScanner, Binar
       // In default folder, flag any strings missing translations
       if (locales == null) {
         locales =
-          filterLocalesByResConfigs(
-            context.project,
-            resources
-              .getStringLocales()
-              .mapNotNull {
-                if (it.hasLanguage()) {
-                  it.language
-                } else {
-                  defaultLocale
-                }
-              }
-              .toSet(),
-          )
+            filterLocalesByResConfigs(
+                context.project,
+                resources
+                    .getStringLocales()
+                    .mapNotNull {
+                      if (it.hasLanguage()) {
+                        it.language
+                      } else {
+                        defaultLocale
+                      }
+                    }
+                    .toSet(),
+            )
       }
       val locales = locales!!.toHashSet()
 
@@ -431,12 +418,12 @@ class TranslationDetector : Detector(), XmlScanner, ResourceFolderScanner, Binar
 
   // Batch analysis of resources
   private fun batchVisitResource(
-    type: ResourceType,
-    folderName: String,
-    context: ResourceContext,
-    name: String,
-    element: Element?,
-    defaultLocale: String?,
+      type: ResourceType,
+      folderName: String,
+      context: ResourceContext,
+      name: String,
+      element: Element?,
+      defaultLocale: String?,
   ) {
     // Batch mode
     val isDefault = isDefaultFolder(context.getFolderConfiguration(), folderName)
@@ -445,12 +432,12 @@ class TranslationDetector : Detector(), XmlScanner, ResourceFolderScanner, Binar
       if (context.phase == 1) {
         // Default folder: record the sets of names in the default folder
         val names =
-          baseNames[type]
-            ?: run {
-              val set = mutableSetOf<String>()
-              baseNames[type] = set
-              set
-            }
+            baseNames[type]
+                ?: run {
+                  val set = mutableSetOf<String>()
+                  baseNames[type] = set
+                  set
+                }
         names.add(name)
       } else if (element != null && (type == STRING || type == PLURALS) && context is XmlContext) {
         // Second pass: that means we're reporting already determined
@@ -475,12 +462,12 @@ class TranslationDetector : Detector(), XmlScanner, ResourceFolderScanner, Binar
       // Non-base folder
       if (context.phase == 1) {
         val names =
-          nonBaseNames[type]
-            ?: run {
-              val set = mutableSetOf<String>()
-              nonBaseNames[type] = set
-              set
-            }
+            nonBaseNames[type]
+                ?: run {
+                  val set = mutableSetOf<String>()
+                  nonBaseNames[type] = set
+                  set
+                }
         names.add(name)
 
         if ((type == STRING || type == PLURALS) && element != null && context is XmlContext) {
@@ -488,10 +475,7 @@ class TranslationDetector : Detector(), XmlScanner, ResourceFolderScanner, Binar
             return
           }
 
-          val language =
-            getLanguageTagFromFolder(folderName)
-              ?: getLanguageTagFromQualifiers(defaultLocale)
-              ?: ""
+          val language = getLanguageTagFromFolder(folderName) ?: getLanguageTagFromQualifiers(defaultLocale) ?: ""
 
           recordTranslation(name, language)
         }
@@ -512,98 +496,92 @@ class TranslationDetector : Detector(), XmlScanner, ResourceFolderScanner, Binar
   }
 
   /**
-   * Determines whether for the sake of this check the given folder is a default folder. Normally
-   * this would mean that it has no resource qualifiers, but (a) we allow density qualifiers (since
-   * the resource system will pick among them and (b) we allow version qualifiers since it's a
-   * common practice to create version specific resources only used from themes (and indirectly
-   * theme drawables) dedicates to a specific platform version, e.g. Material-theme only theme
-   * resources, and we don't want false positives in this area.
+   * Determines whether for the sake of this check the given folder is a default folder. Normally this would mean that it has no resource
+   * qualifiers, but (a) we allow density qualifiers (since the resource system will pick among them and (b) we allow version qualifiers
+   * since it's a common practice to create version specific resources only used from themes (and indirectly theme drawables) dedicates to a
+   * specific platform version, e.g. Material-theme only theme resources, and we don't want false positives in this area.
    */
   private fun isDefaultFolder(configuration: FolderConfiguration?, folderName: String?): Boolean {
     val config: FolderConfiguration =
-      when {
-        configuration != null -> configuration
-        folderName != null -> {
-          if (!folderName.contains('-')) {
+        when {
+          configuration != null -> configuration
+          folderName != null -> {
+            if (!folderName.contains('-')) {
+              return true
+            }
+
+            // Cheap underestimate (some false positives, like -vrheadset will look
+            // like a version qualifier, which is why we do a more extensive test below)
+            if (!folderName.contains("dpi") && !folderName.contains("-v")) {
+              return false
+            }
+
+            FolderConfiguration.getConfigForFolder(folderName) ?: return false
+          }
+          else -> {
+            assert(false)
             return true
           }
-
-          // Cheap underestimate (some false positives, like -vrheadset will look
-          // like a version qualifier, which is why we do a more extensive test below)
-          if (!folderName.contains("dpi") && !folderName.contains("-v")) {
-            return false
-          }
-
-          FolderConfiguration.getConfigForFolder(folderName) ?: return false
         }
-        else -> {
-          assert(false)
-          return true
-        }
-      }
 
     return !config.any { it !is DensityQualifier && it !is VersionQualifier }
   }
 
   private fun recordTranslation(name: String, language: String) {
     val translations =
-      translations
-        ?: run {
-          translations = HashMap()
-          translations!!
-        }
+        translations
+            ?: run {
+              translations = HashMap()
+              translations!!
+            }
 
     val languages =
-      translations[name]
-        ?: run {
-          val set = HashSet<String>()
-          translations[name] = set
-          set
-        }
+        translations[name]
+            ?: run {
+              val set = HashSet<String>()
+              translations[name] = set
+              set
+            }
 
     languages.add(language)
   }
 
   private fun handleNonTranslatable(
-    name: String,
-    element: Element,
-    context: XmlContext,
-    isDefaultFolder: Boolean,
+      name: String,
+      element: Element,
+      context: XmlContext,
+      isDefaultFolder: Boolean,
   ): Boolean {
     val translatable: Attr? = element.getAttributeNode(ATTR_TRANSLATABLE)
     if (translatable != null && !translatable.value!!.toBoolean()) {
       if (
-        !isDefaultFolder &&
-          // Ensure that we're really in a locale folder, not just some non-default
-          // folder (for example, values-en is a locale folder, values-v19 is not)
-          getLocaleAndRegion(context.file.parentFile.name) != null
+          !isDefaultFolder &&
+              // Ensure that we're really in a locale folder, not just some non-default
+              // folder (for example, values-en is a locale folder, values-v19 is not)
+              getLocaleAndRegion(context.file.parentFile.name) != null
       ) {
         reportTranslatedUntranslatable(context, name, element, translatable, true)
       }
       recordTranslatable(context, name)
       return true
     } else if (
-      (isServiceKey(name) ||
-        // Older versions of the templates shipped with these not marked as
-        // non-translatable; don't flag them
-        name == "google_maps_key" ||
-        name == "google_maps_key_instructions")
+        (isServiceKey(name) ||
+            // Older versions of the templates shipped with these not marked as
+            // non-translatable; don't flag them
+            name == "google_maps_key" ||
+            name == "google_maps_key_instructions")
     ) {
       // Mark translatable, but don't flag it as an error do have these translatable
       //  in other folders
       recordTranslatable(context, name)
       return true
-    } else if (
-      !isDefaultFolder &&
-        nonTranslatable?.contains(name) == true &&
-        getLocaleAndRegion(context.file.parentFile.name) != null
-    ) {
+    } else if (!isDefaultFolder && nonTranslatable?.contains(name) == true && getLocaleAndRegion(context.file.parentFile.name) != null) {
       reportTranslatedUntranslatable(
-        context,
-        name,
-        element,
-        element.getAttributeNode(ATTR_NAME) ?: element,
-        false,
+          context,
+          name,
+          element,
+          element.getAttributeNode(ATTR_NAME) ?: element,
+          false,
       )
     }
     return false
@@ -620,11 +598,11 @@ class TranslationDetector : Detector(), XmlScanner, ResourceFolderScanner, Binar
   }
 
   private fun reportTranslatedUntranslatable(
-    context: XmlContext,
-    name: String?,
-    element: Element,
-    locationNode: Node,
-    translatableDefinedLocally: Boolean,
+      context: XmlContext,
+      name: String?,
+      element: Element,
+      locationNode: Node,
+      translatableDefinedLocally: Boolean,
   ) {
     val language = getLanguageTagFromFolder(context.file.parentFile.name) ?: return
 
@@ -636,77 +614,68 @@ class TranslationDetector : Detector(), XmlScanner, ResourceFolderScanner, Binar
 
     val languageDescription = getLanguageDescription(language)
     val message =
-      when {
-        name == null ->
-          "This resource folder is marked as non-translatable yet is in a translated resource folder ($languageDescription)"
-        translatableDefinedLocally ->
-          "The resource string \"$name\" is marked as translatable=\"false\", but is translated to $languageDescription here"
-        else ->
-          "The resource string \"$name\" has been marked as translatable=\"false\" elsewhere (usually in the `values` folder), but is translated to $languageDescription here"
-      }
-    val fix =
-      fix()
-        .name("Remove translation")
-        .replace()
-        .range(context.getLocation(element))
-        .with("")
-        .build()
+        when {
+          name == null -> "This resource folder is marked as non-translatable yet is in a translated resource folder ($languageDescription)"
+          translatableDefinedLocally ->
+              "The resource string \"$name\" is marked as translatable=\"false\", but is translated to $languageDescription here"
+          else ->
+              "The resource string \"$name\" has been marked as translatable=\"false\" elsewhere (usually in the `values` folder), but is translated to $languageDescription here"
+        }
+    val fix = fix().name("Remove translation").replace().range(context.getLocation(element)).with("").build()
     context.report(
-      TRANSLATED_UNTRANSLATABLE,
-      locationNode,
-      context.getLocation(locationNode),
-      message,
-      fix,
+        TRANSLATED_UNTRANSLATABLE,
+        locationNode,
+        context.getLocation(locationNode),
+        message,
+        fix,
     )
   }
 
   private fun reportExtraResource(
-    type: ResourceType,
-    name: String,
-    context: ResourceContext,
-    element: Element?,
+      type: ResourceType,
+      name: String,
+      context: ResourceContext,
+      element: Element?,
   ) {
     // Found resource in folder that isn't present in the base folder;
     // this can lead to a crash
     val parentFolder = context.file.parentFile.name
     val message =
-      when (type) {
-        STRING -> "\"$name\" is translated here but not found in default locale"
-        DRAWABLE ->
-          "The drawable \"$name\" in $parentFolder has no declaration in " +
-            "the base `drawable` folder or in a `drawable-`*density*`dpi` " +
-            "folder; this can lead to crashes when the drawable is queried in " +
-            "a configuration that does not match this qualifier"
-        else -> {
-          val typeName = type.getName()
-          val baseFolder = context.resourceFolderType?.getName()
-          "The $typeName \"$name\" in $parentFolder has no declaration in " +
-            "the base `$baseFolder` folder; this can lead to crashes " +
-            "when the resource is queried in a configuration that " +
-            "does not match this qualifier"
+        when (type) {
+          STRING -> "\"$name\" is translated here but not found in default locale"
+          DRAWABLE ->
+              "The drawable \"$name\" in $parentFolder has no declaration in " +
+                  "the base `drawable` folder or in a `drawable-`*density*`dpi` " +
+                  "folder; this can lead to crashes when the drawable is queried in " +
+                  "a configuration that does not match this qualifier"
+          else -> {
+            val typeName = type.getName()
+            val baseFolder = context.resourceFolderType?.getName()
+            "The $typeName \"$name\" in $parentFolder has no declaration in " +
+                "the base `$baseFolder` folder; this can lead to crashes " +
+                "when the resource is queried in a configuration that " +
+                "does not match this qualifier"
+          }
         }
-      }
 
     if (element != null && context is XmlContext) {
       // Offer quickfix only for resource item values for now, not whole files
       // (which would require additional to LintFix infrastructure)
       val fix =
-        if (context.resourceFolderType == VALUES) {
-          val fixLabel =
-            if (type == STRING || type == PLURALS) {
-              "Remove translation"
-            } else {
-              "Remove resource override"
-            }
-          fix().name(fixLabel).replace().range(context.getLocation(element)).with("").build()
-        } else {
-          null
-        }
+          if (context.resourceFolderType == VALUES) {
+            val fixLabel =
+                if (type == STRING || type == PLURALS) {
+                  "Remove translation"
+                } else {
+                  "Remove resource override"
+                }
+            fix().name(fixLabel).replace().range(context.getLocation(element)).with("").build()
+          } else {
+            null
+          }
       // Use the ExtraTranslation id for string related problems (historical) and
       // the new MissingDefaultResource for everything else
-      val issue =
-        if (type == STRING || type == ARRAY && element.tagName == TAG_STRING_ARRAY) EXTRA
-        else MISSING_BASE
+      val issue = if (type == STRING || type == ARRAY && element.tagName == TAG_STRING_ARRAY) EXTRA else MISSING_BASE
       val location = context.getElementLocation(element, attribute = ATTR_NAME)
       context.report(issue, element, location, message, fix)
     } else {
@@ -717,10 +686,10 @@ class TranslationDetector : Detector(), XmlScanner, ResourceFolderScanner, Binar
   }
 
   private fun reportMissingTranslation(
-    name: String,
-    context: XmlContext,
-    element: Element,
-    missingFrom: Set<String>,
+      name: String,
+      context: XmlContext,
+      element: Element,
+      missingFrom: Set<String>,
   ) {
     // Found resource in folder that isn't present in the base folder;
     // this can lead to a crash
@@ -803,36 +772,36 @@ class TranslationDetector : Detector(), XmlScanner, ResourceFolderScanner, Binar
       return null
     }
     return resourceConfigurations
-      .filter { resConfig ->
-        // Look for languages; these are of length 2. (ResConfigs
-        // can also refer to densities, etc.)
-        resConfig.length == 2
-      }
-      .sorted()
-      .toList()
+        .filter { resConfig ->
+          // Look for languages; these are of length 2. (ResConfigs
+          // can also refer to densities, etc.)
+          resConfig.length == 2
+        }
+        .sorted()
+        .toList()
   }
 
   companion object {
     private val IMPLEMENTATION =
-      Implementation(
-        TranslationDetector::class.java,
-        EnumSet.of(
-          Scope.ALL_RESOURCE_FILES,
-          Scope.RESOURCE_FILE,
-          Scope.RESOURCE_FOLDER,
-          Scope.BINARY_RESOURCE_FILE,
-        ),
-        Scope.RESOURCE_FILE_SCOPE,
-      )
+        Implementation(
+            TranslationDetector::class.java,
+            EnumSet.of(
+                Scope.ALL_RESOURCE_FILES,
+                Scope.RESOURCE_FILE,
+                Scope.RESOURCE_FOLDER,
+                Scope.BINARY_RESOURCE_FILE,
+            ),
+            Scope.RESOURCE_FILE_SCOPE,
+        )
 
     /** Are all translations complete? */
     @JvmField
     val MISSING =
-      Issue.create(
-        id = "MissingTranslation",
-        briefDescription = "Incomplete translation",
-        explanation =
-          """
+        Issue.create(
+            id = "MissingTranslation",
+            briefDescription = "Incomplete translation",
+            explanation =
+                """
                 If an application has more than one locale, then all the strings declared \
                 in one language should also be translated in all other languages.
 
@@ -847,20 +816,20 @@ class TranslationDetector : Detector(), XmlScanner, ResourceFolderScanner, Binar
                 for the root `<resources>` element in your resource file. \
                 (The `tools` prefix refers to the namespace declaration \
                 `http://schemas.android.com/tools`.)""",
-        category = Category.MESSAGES,
-        priority = 8,
-        severity = Severity.ERROR,
-        implementation = IMPLEMENTATION,
-      )
+            category = Category.MESSAGES,
+            priority = 8,
+            severity = Severity.ERROR,
+            implementation = IMPLEMENTATION,
+        )
 
     /** Are there extra translations that are "unused" (appear only in specific languages) ? */
     @JvmField
     val EXTRA =
-      Issue.create(
-        id = "ExtraTranslation",
-        briefDescription = "Extra translation",
-        explanation =
-          """
+        Issue.create(
+            id = "ExtraTranslation",
+            briefDescription = "Extra translation",
+            explanation =
+                """
                 If a string appears in a specific language translation file, but there is \
                 no corresponding string in the default locale, then this string is probably \
                 unused. (It's technically possible that your application is only intended \
@@ -868,20 +837,20 @@ class TranslationDetector : Detector(), XmlScanner, ResourceFolderScanner, Binar
 
                 Note that these strings can lead to crashes if the string is looked up on \
                 any locale not providing a translation, so it's important to clean them up.""",
-        category = Category.MESSAGES,
-        priority = 6,
-        severity = Severity.FATAL,
-        implementation = IMPLEMENTATION,
-      )
+            category = Category.MESSAGES,
+            priority = 6,
+            severity = Severity.FATAL,
+            implementation = IMPLEMENTATION,
+        )
 
     /** Are there extra resources that are "unused" (appear only in non-default folders) ? */
     @JvmField
     val MISSING_BASE =
-      Issue.create(
-        id = "MissingDefaultResource",
-        briefDescription = "Missing Default",
-        explanation =
-          """
+        Issue.create(
+            id = "MissingDefaultResource",
+            briefDescription = "Missing Default",
+            explanation =
+                """
                 If a resource is only defined in folders with qualifiers like `-land` or \
                 `-en`, and there is no default declaration in the base folder (`layout` or \
                 `values` etc), then the app will crash if that resource is accessed on a \
@@ -904,20 +873,20 @@ class TranslationDetector : Detector(), XmlScanner, ResourceFolderScanner, Binar
                 delete code and the corresponding resources, but forget to delete a \
                 translation. There is a dedicated issue id for that scenario, with the id \
                 `ExtraTranslation`.)""",
-        category = Category.CORRECTNESS,
-        priority = 6,
-        severity = Severity.FATAL,
-        implementation = IMPLEMENTATION,
-      )
+            category = Category.CORRECTNESS,
+            priority = 6,
+            severity = Severity.FATAL,
+            implementation = IMPLEMENTATION,
+        )
 
     /** Are there extra translations that are "unused" (appear only in specific languages) ? */
     @JvmField
     val TRANSLATED_UNTRANSLATABLE =
-      Issue.create(
-        id = "Untranslatable",
-        briefDescription = "Translated Untranslatable",
-        explanation =
-          """
+        Issue.create(
+            id = "Untranslatable",
+            briefDescription = "Translated Untranslatable",
+            explanation =
+                """
                 Strings can be marked with `translatable=false` to indicate that they are not \
                 intended to be translated, but are present in the resource file for other \
                 purposes (for example for non-display strings that should vary by some other \
@@ -925,11 +894,11 @@ class TranslationDetector : Detector(), XmlScanner, ResourceFolderScanner, Binar
 
                 There are cases where translators accidentally translate these strings anyway, \
                 and lint will flag these occurrences with this lint check.""",
-        category = Category.MESSAGES,
-        priority = 6,
-        severity = Severity.WARNING,
-        implementation = IMPLEMENTATION,
-      )
+            category = Category.MESSAGES,
+            priority = 6,
+            severity = Severity.WARNING,
+            implementation = IMPLEMENTATION,
+        )
 
     @JvmStatic
     fun getLanguageDescription(locale: String): String {
@@ -966,19 +935,19 @@ fun ResourceRepository.getStringLocales(): SortedSet<LocaleQualifier> {
   val locales = TreeSet<LocaleQualifier>()
 
   val visitor =
-    object : ResourceVisitor {
-      override fun visit(item: ResourceItem): ResourceVisitor.VisitResult {
-        val locale = item.configuration.localeQualifier
-        if (locale != null) {
-          locales.add(locale)
+      object : ResourceVisitor {
+        override fun visit(item: ResourceItem): ResourceVisitor.VisitResult {
+          val locale = item.configuration.localeQualifier
+          if (locale != null) {
+            locales.add(locale)
+          }
+          return ResourceVisitor.VisitResult.CONTINUE
         }
-        return ResourceVisitor.VisitResult.CONTINUE
-      }
 
-      override fun shouldVisitResourceType(resourceType: ResourceType): Boolean {
-        return resourceType == STRING || resourceType == PLURALS
+        override fun shouldVisitResourceType(resourceType: ResourceType): Boolean {
+          return resourceType == STRING || resourceType == PLURALS
+        }
       }
-    }
 
   for (repository in leafResourceRepositories) {
     repository.accept { visitor.visit(it) }

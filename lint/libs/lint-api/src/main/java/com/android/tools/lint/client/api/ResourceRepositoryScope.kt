@@ -27,15 +27,14 @@ enum class ResourceRepositoryScope {
   PROJECT_ONLY,
 
   /**
-   * Resources in the current project as well as resources in local projects this project depends on
-   * (e.g. project + projects it depends on)
+   * Resources in the current project as well as resources in local projects this project depends on (e.g. project + projects it depends on)
    */
   LOCAL_DEPENDENCIES,
 
   /**
-   * Like [LOCAL_DEPENDENCIES], but also includes resources from remote libraries, e.g. in AAR files
-   * (e.g. project + projects it depends on + any libraries these projects depend on). (Note that
-   * the Android SDK resources are not included since these are in a different namespace.)
+   * Like [LOCAL_DEPENDENCIES], but also includes resources from remote libraries, e.g. in AAR files (e.g. project + projects it depends
+   * on + any libraries these projects depend on). (Note that the Android SDK resources are not included since these are in a different
+   * namespace.)
    */
   ALL_DEPENDENCIES;
 

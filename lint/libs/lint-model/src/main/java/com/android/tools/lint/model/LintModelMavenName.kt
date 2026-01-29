@@ -48,9 +48,9 @@ interface LintModelMavenName : Comparable<LintModelMavenName> {
       val index2 = string.indexOf(':', index1 + 1)
       return if (index2 != -1) {
         DefaultLintModelMavenName(
-          string.substring(0, index1),
-          string.substring(index1 + 1, index2),
-          string.substring(index2 + 1),
+            string.substring(0, index1),
+            string.substring(index1 + 1, index2),
+            string.substring(index2 + 1),
         )
       } else {
         null
@@ -64,9 +64,9 @@ interface LintModelMavenName : Comparable<LintModelMavenName> {
 }
 
 data class DefaultLintModelMavenName(
-  override val groupId: String,
-  override val artifactId: String,
-  override val version: String = "",
+    override val groupId: String,
+    override val artifactId: String,
+    override val version: String = "",
 ) : LintModelMavenName {
   override fun toString(): String = "$groupId:${artifactId.trimStart(':')}:$version"
 }

@@ -100,14 +100,14 @@ open class ViewTypeDetector : ResourceXmlDetector(), SourceCodeScanner {
   override fun visitAttribute(context: XmlContext, attribute: Attr) {
     val value = attribute.value
     val id =
-      when {
-        value.startsWith(ID_PREFIX) -> value.substring(ID_PREFIX.length)
-        value.startsWith(NEW_ID_PREFIX) -> value.substring(NEW_ID_PREFIX.length)
-        // keep tags in the same map for simplicity but add prefix such that we don't
-        // accidentally mix tags and id names together
-        ATTR_TAG == attribute.localName -> TAG_NAME_PREFIX + value
-        else -> return // usually some @android:id where we don't enforce casts
-      }
+        when {
+          value.startsWith(ID_PREFIX) -> value.substring(ID_PREFIX.length)
+          value.startsWith(NEW_ID_PREFIX) -> value.substring(NEW_ID_PREFIX.length)
+          // keep tags in the same map for simplicity but add prefix such that we don't
+          // accidentally mix tags and id names together
+          ATTR_TAG == attribute.localName -> TAG_NAME_PREFIX + value
+          else -> return // usually some @android:id where we don't enforce casts
+        }
 
     val view = run {
       var cls = attribute.ownerElement.tagName
@@ -158,17 +158,17 @@ open class ViewTypeDetector : ResourceXmlDetector(), SourceCodeScanner {
 
   override fun getApplicableMethodNames(): List<String> {
     return listOf(
-      FIND_VIEW_BY_ID,
-      REQUIRE_VIEW_BY_ID,
-      FIND_FRAGMENT_BY_TAG,
-      // "findFragmentById": Disabled for now. This leads to a lot
-      // of false positives. See the support library demos for example.
-      // What happens is that one layout tag, such as a <FrameLayout>
-      // may specify an id, such as R.id.details.
-      // Then, elsewhere, there is fragment code to lazily add and replace
-      // fragments, and these use the id to look it up (and fragments
-      // can use the id of a layout container as well as the id of a
-      // previously registered fragment, which is why we get these mismatches.)
+        FIND_VIEW_BY_ID,
+        REQUIRE_VIEW_BY_ID,
+        FIND_FRAGMENT_BY_TAG,
+        // "findFragmentById": Disabled for now. This leads to a lot
+        // of false positives. See the support library demos for example.
+        // What happens is that one layout tag, such as a <FrameLayout>
+        // may specify an id, such as R.id.details.
+        // Then, elsewhere, there is fragment code to lazily add and replace
+        // fragments, and these use the id to look it up (and fragments
+        // can use the id of a layout container as well as the id of a
+        // previously registered fragment, which is why we get these mismatches.)
     )
   }
 
@@ -204,9 +204,9 @@ open class ViewTypeDetector : ResourceXmlDetector(), SourceCodeScanner {
         }
 
         if (
-          parent is UBinaryExpressionWithType ||
-            // Implicit cast?
-            (parent is UBinaryExpression && parent.operator == UastBinaryOperator.ASSIGN)
+            parent is UBinaryExpressionWithType ||
+                // Implicit cast?
+                (parent is UBinaryExpression && parent.operator == UastBinaryOperator.ASSIGN)
         ) {
           val type = (parent as UExpression).getExpressionType() as? PsiClassType ?: return
           castType = type
@@ -227,11 +227,11 @@ open class ViewTypeDetector : ResourceXmlDetector(), SourceCodeScanner {
 
     val castTypeClass = castType.canonicalText
     if (
-      castTypeClass == CLASS_VIEW ||
-        castTypeClass == "kotlin.Unit" ||
-        castTypeClass == "android.app.Fragment" ||
-        castTypeClass == "android.support.v4.app.Fragment" ||
-        castTypeClass == "androidx.fragment.app.Fragment"
+        castTypeClass == CLASS_VIEW ||
+            castTypeClass == "kotlin.Unit" ||
+            castTypeClass == "android.app.Fragment" ||
+            castTypeClass == "android.support.v4.app.Fragment" ||
+            castTypeClass == "androidx.fragment.app.Fragment"
     ) {
       return
     }
@@ -250,9 +250,7 @@ open class ViewTypeDetector : ResourceXmlDetector(), SourceCodeScanner {
         tag = TAG_NAME_PREFIX + tag
       } else {
         val resourceUrl = ResourceEvaluator.getResource(context.evaluator, first)
-        if (
-          resourceUrl != null && resourceUrl.type == ResourceType.ID && !resourceUrl.isFramework
-        ) {
+        if (resourceUrl != null && resourceUrl.type == ResourceType.ID && !resourceUrl.isFramework) {
           id = resourceUrl.name
         }
       }
@@ -260,9 +258,8 @@ open class ViewTypeDetector : ResourceXmlDetector(), SourceCodeScanner {
         // We can't search for tags in the resource repository incrementally
         if (id != null) {
           val resources =
-            if (context.isGlobalAnalysis())
-              client.getResources(context.mainProject, LOCAL_DEPENDENCIES)
-            else client.getResources(context.project, PROJECT_ONLY)
+              if (context.isGlobalAnalysis()) client.getResources(context.mainProject, LOCAL_DEPENDENCIES)
+              else client.getResources(context.project, PROJECT_ONLY)
           val items = resources.getResources(ResourceNamespace.TODO(), ResourceType.ID, id)
           if (items.isNotEmpty()) {
             val compatible = HashSet<String>()
@@ -275,15 +272,15 @@ open class ViewTypeDetector : ResourceXmlDetector(), SourceCodeScanner {
             if (compatible.isNotEmpty()) {
               val layoutTypes = ArrayList(compatible)
               checkCompatible(
-                context,
-                castType,
-                castTypeClass,
-                null,
-                layoutTypes,
-                errorNode,
-                first,
-                items,
-                findView,
+                  context,
+                  castType,
+                  castTypeClass,
+                  null,
+                  layoutTypes,
+                  errorNode,
+                  first,
+                  items,
+                  findView,
               )
             }
           }
@@ -291,28 +288,28 @@ open class ViewTypeDetector : ResourceXmlDetector(), SourceCodeScanner {
           val types = idToViewTag[tag]
           if (types is String) {
             checkCompatible(
-              context,
-              castType,
-              castTypeClass,
-              types,
-              null,
-              errorNode,
-              first,
-              null,
-              false,
+                context,
+                castType,
+                castTypeClass,
+                types,
+                null,
+                errorNode,
+                first,
+                null,
+                false,
             )
           } else if (types is List<*>) {
             @Suppress("UNCHECKED_CAST") val layoutTypes = types as List<String>
             checkCompatible(
-              context,
-              castType,
-              castTypeClass,
-              null,
-              layoutTypes,
-              errorNode,
-              first,
-              null,
-              false,
+                context,
+                castType,
+                castTypeClass,
+                null,
+                layoutTypes,
+                errorNode,
+                first,
+                null,
+                false,
             )
           }
         }
@@ -321,9 +318,9 @@ open class ViewTypeDetector : ResourceXmlDetector(), SourceCodeScanner {
   }
 
   private fun checkMissingCast(
-    context: JavaContext,
-    findViewByIdCall: UCallExpression,
-    surroundingCall: UCallExpression,
+      context: JavaContext,
+      findViewByIdCall: UCallExpression,
+      surroundingCall: UCallExpression,
   ) {
     // This issue only applies in Java, not Kotlin etc - and for language level 1.8 and above
     val languageLevel = getLanguageLevel(surroundingCall, JDK_1_7)
@@ -333,13 +330,9 @@ open class ViewTypeDetector : ResourceXmlDetector(), SourceCodeScanner {
 
     var selector: UElement = surroundingCall
     var parent: UQualifiedReferenceExpression =
-      skipParenthesizedExprUp(surroundingCall.uastParent) as? UQualifiedReferenceExpression
-        ?: return
+        skipParenthesizedExprUp(surroundingCall.uastParent) as? UQualifiedReferenceExpression ?: return
     val parentParent: UElement = skipParenthesizedExprUp(parent.uastParent) ?: return
-    if (
-      parentParent is UQualifiedReferenceExpression &&
-        parentParent.receiver.skipParenthesizedExprDown() === parent
-    ) {
+    if (parentParent is UQualifiedReferenceExpression && parentParent.receiver.skipParenthesizedExprDown() === parent) {
       selector = parent
       parent = parentParent
     }
@@ -381,21 +374,21 @@ open class ViewTypeDetector : ResourceXmlDetector(), SourceCodeScanner {
 
     val callName = findViewByIdCall.methodName ?: return
     val fix =
-      LintFix.create()
-        .replace()
-        .name("Add cast")
-        .text(callName)
-        .shortenNames()
-        .reformat(true)
-        .with("(android.view.View)$callName")
-        .build()
+        LintFix.create()
+            .replace()
+            .name("Add cast")
+            .text(callName)
+            .shortenNames()
+            .reformat(true)
+            .with("(android.view.View)$callName")
+            .build()
 
     context.report(
-      ADD_CAST,
-      findViewByIdCall,
-      context.getLocation(findViewByIdCall),
-      "Add explicit cast here; won't compile with Java language level 1.8 without it",
-      fix,
+        ADD_CAST,
+        findViewByIdCall,
+        context.getLocation(findViewByIdCall),
+        "Add explicit cast here; won't compile with Java language level 1.8 without it",
+        fix,
     )
   }
 
@@ -411,12 +404,12 @@ open class ViewTypeDetector : ResourceXmlDetector(), SourceCodeScanner {
       return null
     }
     val fileIdMap =
-      fileIdMap
-        ?: run {
-          val list = HashMap<PathString, Multimap<String, String>>()
-          fileIdMap = list
-          list
-        }
+        fileIdMap
+            ?: run {
+              val list = HashMap<PathString, Multimap<String, String>>()
+              fileIdMap = list
+              list
+            }
     var map: Multimap<String, String>? = fileIdMap[file]
     if (map == null) {
       map = ArrayListMultimap.create()
@@ -464,15 +457,15 @@ open class ViewTypeDetector : ResourceXmlDetector(), SourceCodeScanner {
 
   /** Check if the view and cast type are compatible. */
   private fun checkCompatible(
-    context: JavaContext,
-    castType: PsiClassType,
-    castTypeClass: String,
-    tag: String?,
-    tags: List<String>?,
-    node: UElement,
-    resourceReference: UExpression,
-    items: List<ResourceItem>?,
-    findView: Boolean,
+      context: JavaContext,
+      castType: PsiClassType,
+      castTypeClass: String,
+      tag: String?,
+      tags: List<String>?,
+      node: UElement,
+      resourceReference: UExpression,
+      items: List<ResourceItem>?,
+      findView: Boolean,
   ) {
     assert(tag == null || tags == null) { tag!! + tags!! } // Should only specify one or the other
 
@@ -534,11 +527,11 @@ open class ViewTypeDetector : ResourceXmlDetector(), SourceCodeScanner {
           if (source != null) {
             val parentName = source.parentFileName
             sampleLayout =
-              if (item.configuration.isDefault || parentName == null) {
-                source.fileName
-              } else {
-                parentName + "/" + source.fileName
-              }
+                if (item.configuration.isDefault || parentName == null) {
+                  source.fileName
+                } else {
+                  parentName + "/" + source.fileName
+                }
             break
           }
         }
@@ -571,42 +564,41 @@ open class ViewTypeDetector : ResourceXmlDetector(), SourceCodeScanner {
   }
 
   private fun createCastFix(
-    node: UBinaryExpressionWithType,
-    displayTag: String,
-    context: JavaContext,
+      node: UBinaryExpressionWithType,
+      displayTag: String,
+      context: JavaContext,
   ): LintFix? {
     val typeReference = node.typeReference ?: return null
     val className =
-      if (displayTag.contains('.')) displayTag.replace('$', '.')
-      else findViewForTag(displayTag, context)?.qualifiedName ?: return null
+        if (displayTag.contains('.')) displayTag.replace('$', '.') else findViewForTag(displayTag, context)?.qualifiedName ?: return null
     return fix()
-      .replace()
-      .all()
-      .with(className)
-      .name("Cast to $displayTag")
-      .range(context.getLocation(typeReference))
-      .reformat(true)
-      .shortenNames()
-      .build()
+        .replace()
+        .all()
+        .with(className)
+        .name("Cast to $displayTag")
+        .range(context.getLocation(typeReference))
+        .reformat(true)
+        .shortenNames()
+        .build()
   }
 
   private fun createSecondary(
-    context: JavaContext,
-    tag: String,
-    resourceReference: UExpression,
-    sampleLayout: String?,
+      context: JavaContext,
+      tag: String,
+      resourceReference: UExpression,
+      sampleLayout: String?,
   ): Location {
     val secondary = context.getLocation(resourceReference)
     if (sampleLayout != null) {
       val article =
-        if (
-          tag.indexOf('.') == -1 &&
-            tag.indexOf('|') == -1 &&
-            // We don't have widgets right now which start with a silent consonant
-            StringUtil.isVowel(Character.toLowerCase(tag[0]))
-        )
-          "an"
-        else "a"
+          if (
+              tag.indexOf('.') == -1 &&
+                  tag.indexOf('|') == -1 &&
+                  // We don't have widgets right now which start with a silent consonant
+                  StringUtil.isVowel(Character.toLowerCase(tag[0]))
+          )
+              "an"
+          else "a"
       secondary.message = "Id bound to $article `$tag` in `$sampleLayout`"
     }
     return secondary
@@ -614,8 +606,8 @@ open class ViewTypeDetector : ResourceXmlDetector(), SourceCodeScanner {
 
   private fun isCompatible(context: JavaContext, castClass: PsiClass, tag: String): Boolean {
     return findViewForTag(tag, context)?.isInheritor(castClass, true)
-      // If can't find class, just assume it's compatible since we don't want false positives
-      ?: true
+        // If can't find class, just assume it's compatible since we don't want false positives
+        ?: true
   }
 
   private fun findViewForTag(tag: String, context: JavaContext): PsiClass? {
@@ -647,33 +639,33 @@ open class ViewTypeDetector : ResourceXmlDetector(), SourceCodeScanner {
     /** Mismatched view types. */
     @JvmField
     val WRONG_VIEW_CAST =
-      Issue.create(
-        id = "WrongViewCast",
-        briefDescription = "Mismatched view type",
-        explanation =
-          """
+        Issue.create(
+            id = "WrongViewCast",
+            briefDescription = "Mismatched view type",
+            explanation =
+                """
                 Keeps track of the view types associated with ids and if it finds a usage \
                 of the id in the Java code it ensures that it is treated as the same type.""",
-        category = Category.CORRECTNESS,
-        priority = 9,
-        severity = Severity.ERROR,
-        androidSpecific = true,
-        implementation =
-          Implementation(
-            ViewTypeDetector::class.java,
-            EnumSet.of(Scope.ALL_RESOURCE_FILES, Scope.ALL_JAVA_FILES),
-            Scope.JAVA_FILE_SCOPE,
-          ),
-      )
+            category = Category.CORRECTNESS,
+            priority = 9,
+            severity = Severity.ERROR,
+            androidSpecific = true,
+            implementation =
+                Implementation(
+                    ViewTypeDetector::class.java,
+                    EnumSet.of(Scope.ALL_RESOURCE_FILES, Scope.ALL_JAVA_FILES),
+                    Scope.JAVA_FILE_SCOPE,
+                ),
+        )
 
     /** Mismatched view types. */
     @JvmField
     val ADD_CAST =
-      Issue.create(
-        id = "FindViewByIdCast",
-        briefDescription = "Add Explicit Cast",
-        explanation =
-          """
+        Issue.create(
+            id = "FindViewByIdCast",
+            briefDescription = "Add Explicit Cast",
+            explanation =
+                """
                 In Android O, the `findViewById` signature switched to using generics, which \
                 means that most of the time you can leave out explicit casts and just assign \
                 the result of the `findViewById` call to variables of specific view classes.
@@ -682,12 +674,12 @@ open class ViewTypeDetector : ResourceXmlDetector(), SourceCodeScanner {
                 code to not compile without explicit casts. This lint check looks for these \
                 scenarios and suggests casts to be added now such that the code will \
                 continue to compile if the language level is updated to 1.8.""",
-        category = Category.CORRECTNESS,
-        priority = 9,
-        severity = Severity.WARNING,
-        androidSpecific = true,
-        implementation = Implementation(ViewTypeDetector::class.java, Scope.JAVA_FILE_SCOPE),
-      )
+            category = Category.CORRECTNESS,
+            priority = 9,
+            severity = Severity.WARNING,
+            androidSpecific = true,
+            implementation = Implementation(ViewTypeDetector::class.java, Scope.JAVA_FILE_SCOPE),
+        )
 
     const val FIND_VIEW_BY_ID = "findViewById"
     const val REQUIRE_VIEW_BY_ID = "requireViewById"

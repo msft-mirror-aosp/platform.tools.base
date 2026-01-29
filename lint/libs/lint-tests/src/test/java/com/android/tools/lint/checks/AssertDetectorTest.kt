@@ -26,9 +26,9 @@ class AssertDetectorTest : AbstractCheckTest() {
 
   fun testSetOf_KotlinStdlib() {
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
             class MutableDependencyGraph<T> {
               fun getNodes(): Set<T> = TODO()
             }
@@ -38,20 +38,20 @@ class AssertDetectorTest : AbstractCheckTest() {
               assert(graph.getNodes() == setOf("4", "2")) // OK
             }
           """
-          )
-          .indented()
-      )
-      .issues(AssertDetector.SIDE_EFFECT)
-      .platforms(Platform.JDK_SET)
-      .run()
-      .expectClean()
+                )
+                .indented()
+        )
+        .issues(AssertDetector.SIDE_EFFECT)
+        .platforms(Platform.JDK_SET)
+        .run()
+        .expectClean()
   }
 
   fun testSetOf_JavaSyntheticPropertySetter() {
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
             import test.pkg.Foo
 
             fun test() {
@@ -60,10 +60,10 @@ class AssertDetectorTest : AbstractCheckTest() {
               assert(2024 != (f.of = 2024)) // WARN 2
             }
           """
-          )
-          .indented(),
-        java(
-            """
+                )
+                .indented(),
+            java(
+                    """
             package test.pkg;
             public class Foo {
                 private int OF = 0;
@@ -77,14 +77,14 @@ class AssertDetectorTest : AbstractCheckTest() {
                 }
             }
             """
-          )
-          .indented(),
-      )
-      .issues(AssertDetector.SIDE_EFFECT)
-      .platforms(Platform.JDK_SET)
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+        )
+        .issues(AssertDetector.SIDE_EFFECT)
+        .platforms(Platform.JDK_SET)
+        .run()
+        .expect(
+            """
             src/test.kt:5: Warning: Assertion condition has a side effect: setOf(42) [AssertionSideEffect]
               assert(42 != f.setOf(42)) // WARN 1
                            ~~~~~~~~~~~
@@ -93,14 +93,14 @@ class AssertDetectorTest : AbstractCheckTest() {
                               ~~~~~~~~~~~
             0 errors, 2 warnings
         """
-      )
+        )
   }
 
   fun testNotExpensive() {
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
                 import org.w3c.dom.Node
                 fun test(override: String, offset: Int, textNode: Node) {
                     assert(parentOf[override] == null) // OK 1
@@ -113,22 +113,22 @@ class AssertDetectorTest : AbstractCheckTest() {
 
                 private val parentOf: MutableMap<String, String> = HashMap()
                 """
-          )
-          .indented()
-      )
-      .issues(AssertDetector.EXPENSIVE)
-      .platforms(Platform.JDK_SET)
-      .run()
-      .expectClean()
+                )
+                .indented()
+        )
+        .issues(AssertDetector.EXPENSIVE)
+        .platforms(Platform.JDK_SET)
+        .run()
+        .expectClean()
   }
 
   fun testExpensiveKotlinCalls() {
     // This lint check also applies outside of Android
     lint()
-      .files(
-        kotlinTestFile,
-        kotlin(
-            """
+        .files(
+            kotlinTestFile,
+            kotlin(
+                    """
                 fun testExpensive() {
                     assert(expensive()) // no suggestion to surround with javaClass from toplevel
                     assert(cheap())
@@ -151,10 +151,10 @@ class AssertDetectorTest : AbstractCheckTest() {
                     assert(foo is String) // OK
                 }
                 """
-          )
-          .indented(),
-        java(
-            """
+                )
+                .indented(),
+            java(
+                    """
                 package test.pkg;
                 public class Utils {
                     public static final boolean DIAGNOSE = false;
@@ -163,16 +163,16 @@ class AssertDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-          )
-          .indented(),
-        kotlinAssertionRuntime,
-      )
-      .skipTestModes(TestMode.PARENTHESIZED)
-      .issues(AssertDetector.EXPENSIVE)
-      .platforms(Platform.JDK_SET)
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            kotlinAssertionRuntime,
+        )
+        .skipTestModes(TestMode.PARENTHESIZED)
+        .issues(AssertDetector.EXPENSIVE)
+        .platforms(Platform.JDK_SET)
+        .run()
+        .expect(
+            """
             src/test/pkg/AssertTest.kt:18: Warning: Kotlin assertion arguments are always evaluated, even when assertions are off. Consider surrounding assertion with if (javaClass.desiredAssertionStatus()) { assert(...) } [ExpensiveAssertion]
                     assert(expensive()) // WARN
                            ~~~~~~~~~~~
@@ -181,23 +181,23 @@ class AssertDetectorTest : AbstractCheckTest() {
                        ~~~~~~~~~~~
             0 errors, 2 warnings
             """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
             Fix for src/test/pkg/AssertTest.kt line 18: Surround with desiredAssertionStatus() check:
             @@ -18 +18 @@
             -        assert(expensive()) // WARN
             +        if (javaClass.desiredAssertionStatus()) { assert(expensive()) } // WARN
             """
-      )
+        )
   }
 
   fun testSideEffects() {
     // This lint check also applies outside of Android
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
                 var x: Int = 0
                 fun test(file: java.io.File, list: java.util.List<String>) {
                     var i = 0
@@ -241,10 +241,10 @@ class AssertDetectorTest : AbstractCheckTest() {
                     return true
                 }
                 """
-          )
-          .indented(),
-        java(
-            """
+                )
+                .indented(),
+            java(
+                    """
                 package test.pkg;
                 public class Utils {
                     public void test() {
@@ -253,16 +253,16 @@ class AssertDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-          )
-          .indented(),
-        kotlinAssertionRuntime,
-      )
-      .issues(AssertDetector.SIDE_EFFECT)
-      .platforms(Platform.JDK_SET)
-      .testModes(TestMode.DEFAULT)
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            kotlinAssertionRuntime,
+        )
+        .issues(AssertDetector.SIDE_EFFECT)
+        .platforms(Platform.JDK_SET)
+        .testModes(TestMode.DEFAULT)
+        .run()
+        .expect(
+            """
                 src/test/pkg/Utils.java:5: Warning: Assertion condition has a side effect: i++ [AssertionSideEffect]
                         assert i++ < 5;
                                ~~~
@@ -301,14 +301,14 @@ class AssertDetectorTest : AbstractCheckTest() {
                            ~~~~~~~~~
                 0 errors, 12 warnings
                 """
-      )
+        )
   }
 
   fun testSideEffect() {
     lint()
-      .files(
-        java(
-          """
+        .files(
+            java(
+                """
                 package test.pkg;
 
                 public class SideEffectTest {
@@ -330,18 +330,18 @@ class AssertDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
+            )
         )
-      )
-      .issues(AssertDetector.SIDE_EFFECT)
-      .platforms(Platform.JDK_SET)
-      .testModes(TestMode.DEFAULT)
-      .run()
-      .expectClean()
+        .issues(AssertDetector.SIDE_EFFECT)
+        .platforms(Platform.JDK_SET)
+        .testModes(TestMode.DEFAULT)
+        .run()
+        .expectClean()
   }
 
   private val kotlinTestFile =
-    kotlin(
-        """
+      kotlin(
+              """
                 package test.pkg
 
                 class AssertTest {
@@ -382,12 +382,12 @@ class AssertDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-      )
-      .indented()
+          )
+          .indented()
 
   private val kotlinAssertionRuntime =
-    kotlin(
-        """
+      kotlin(
+              """
         /* HIDE-FROM-DOCUMENTATION */
         @file:kotlin.jvm.JvmName("PreconditionsKt")
         package kotlin
@@ -400,6 +400,6 @@ class AssertDetectorTest : AbstractCheckTest() {
         fun assert(value: Boolean, lazyMessage: () -> Any) {
         }
         """
-      )
-      .indented()
+          )
+          .indented()
 }

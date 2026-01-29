@@ -20,23 +20,22 @@ import org.jetbrains.uast.UElement
 // everything in this file is just for internal debugging
 
 internal fun Int.subscript(): String =
-  when {
-    this < 0 -> "₋${(-this).subscript()}"
-    else -> {
-      val r = "₀₁₂₃₄₅₆₇₈₉"[this % 10].toString()
-      val q = this / 10
-      if (q > 0) "${q.subscript()}$r" else r
+    when {
+      this < 0 -> "₋${(-this).subscript()}"
+      else -> {
+        val r = "₀₁₂₃₄₅₆₇₈₉"[this % 10].toString()
+        val q = this / 10
+        if (q > 0) "${q.subscript()}$r" else r
+      }
     }
-  }
 
 private fun String.abbrev(maxLen: Int = 30): String =
-  when {
-    length <= maxLen -> this
-    else -> "${substring(0, maxLen)}…"
-  }
+    when {
+      length <= maxLen -> this
+      else -> "${substring(0, maxLen)}…"
+    }
 
-internal fun UElement.renderAbbrev(maxLen: Int = 30): String =
-  "⟪${asSourceString().abbrev(maxLen)}⟫"
+internal fun UElement.renderAbbrev(maxLen: Int = 30): String = "⟪${asSourceString().abbrev(maxLen)}⟫"
 
 internal fun String.bold() = map { it.bold() }.joinToString("")
 

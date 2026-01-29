@@ -24,9 +24,9 @@ class GradleApiUsageDetectorTest {
   @Test
   fun testProblems() {
     studioLint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
                     package test.pkg;
 
                     public class Test {
@@ -43,43 +43,43 @@ class GradleApiUsageDetectorTest {
                         }
                     }
                 """
-          )
-          .indented(),
-        java(
-            """
+                )
+                .indented(),
+            java(
+                    """
                     package org.gradle.api;
 
                     interface Project {
                         void exec();
                     }
                 """
-          )
-          .indented(),
-        java(
-            """
+                )
+                .indented(),
+            java(
+                    """
                     package org.gradle.api;
 
                     public class DefaultProject implements Project{
                         @Override void exec() {}
                     }
                 """
-          )
-          .indented(),
-        java(
-            """
+                )
+                .indented(),
+            java(
+                    """
                     package org.gradle.process;
 
                     public interface ExecOperations {
                         void exec();
                     }
                 """
-          )
-          .indented(),
-      )
-      .issues(GradleApiUsageDetector.ISSUE)
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+        )
+        .issues(GradleApiUsageDetector.ISSUE)
+        .run()
+        .expect(
+            """
                     src/test/pkg/Test.java:8: Error: Avoid using org.gradle.api.Project.exec as it is incompatible with Gradle configuration cache. [ProjectExecOperations]
                             project.exec(); // WARN
                                     ~~~~
@@ -94,6 +94,6 @@ class GradleApiUsageDetectorTest {
                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                     4 errors, 0 warnings
                 """
-      )
+        )
   }
 }

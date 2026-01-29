@@ -21,19 +21,19 @@ class WatchFaceForAndroidXDetectorTest : AbstractCheckTest() {
 
   fun testDocumentationExample() {
     lint()
-      .files(
-        gradle(
-            """
+        .files(
+            gradle(
+                    """
                 apply plugin: 'com.android.application'
 
                 dependencies {
                     implementation "androidx.wear.watchface:watchface:1.2.3"
                 }
                 """
-          )
-          .indented(),
-        manifest(
-            """
+                )
+                .indented(),
+            manifest(
+                    """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="androidx.wear.watchface.samples.minimal.complications">
 
@@ -43,45 +43,45 @@ class WatchFaceForAndroidXDetectorTest : AbstractCheckTest() {
                     />
                 </manifest>
                           """
-          )
-          .indented(),
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+        )
+        .run()
+        .expect(
+            """
             src/main/AndroidManifest.xml:6: Warning: Watch face configuration action must be set to WATCH_FACE_EDITOR for an AndroidX watch face [WatchFaceForAndroidX]
                     android:value="androidx.wear.watchface.editor.action.SOME_OTHER_EDITOR"
                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             0 errors, 1 warnings
         """
-      )
-      .verifyFixes()
-      .expectFixDiffs(
-        """
+        )
+        .verifyFixes()
+        .expectFixDiffs(
+            """
                 Fix for src/main/AndroidManifest.xml line 6: Set value="androidx.wear.watchface.editor.action.WATCH_FACE_EDITOR":
                 @@ -7 +7 @@
                 -        android:value="androidx.wear.watchface.editor.action.SOME_OTHER_EDITOR" />
                 +        android:value="androidx.wear.watchface.editor.action.WATCH_FACE_EDITOR" />
                 """
-      )
+        )
   }
 
   fun testNoAndroidXDependency() {
     // Wrong launch mode
     lint()
-      .files(
-        gradle(
-            """
+        .files(
+            gradle(
+                    """
                 apply plugin: 'com.android.application'
 
                 dependencies {
                     implementation "androidx.compose:compose-compiler"
                 }
                 """
-          )
-          .indented(),
-        manifest(
-            """
+                )
+                .indented(),
+            manifest(
+                    """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="androidx.wear.watchface.samples.minimal.complications">
 
@@ -91,28 +91,28 @@ class WatchFaceForAndroidXDetectorTest : AbstractCheckTest() {
                     />
                 </manifest>
                           """
-          )
-          .indented(),
-      )
-      .run()
-      .expectClean()
+                )
+                .indented(),
+        )
+        .run()
+        .expectClean()
   }
 
   fun testMissingAttribute() {
     lint()
-      .files(
-        gradle(
-            """
+        .files(
+            gradle(
+                    """
                 apply plugin: 'com.android.application'
 
                 dependencies {
                     implementation "androidx.wear.watchface:watchface:1.0.0-alpha22"
                 }
                 """
-          )
-          .indented(),
-        manifest(
-            """
+                )
+                .indented(),
+            manifest(
+                    """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="androidx.wear.watchface.samples.minimal.complications">
                   <intent-filter>
@@ -140,21 +140,21 @@ class WatchFaceForAndroidXDetectorTest : AbstractCheckTest() {
                     </service>
                 </manifest>
                           """
-          )
-          .indented(),
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+        )
+        .run()
+        .expect(
+            """
             src/main/AndroidManifest.xml:21: Warning: Watch face configuration action must be set to WATCH_FACE_EDITOR for an AndroidX watch face [WatchFaceForAndroidX]
                   <meta-data
                   ^
             0 errors, 1 warnings
             """
-      )
-      .verifyFixes()
-      .expectFixDiffs(
-        """
+        )
+        .verifyFixes()
+        .expectFixDiffs(
+            """
                 Fix for src/main/AndroidManifest.xml line 21: Set value="androidx.wear.watchface.editor.action.WATCH_FACE_EDITOR":
                 @@ -23 +23,3 @@
                 -        <meta-data android:name="com.google.android.wearable.watchface.wearableConfigurationAction" />
@@ -162,24 +162,24 @@ class WatchFaceForAndroidXDetectorTest : AbstractCheckTest() {
                 +            android:name="com.google.android.wearable.watchface.wearableConfigurationAction"
                 +            android:value="androidx.wear.watchface.editor.action.WATCH_FACE_EDITOR" />
                 """
-      )
+        )
   }
 
   fun testNoIssues() {
     lint()
-      .files(
-        gradle(
-            """
+        .files(
+            gradle(
+                    """
                 apply plugin: 'com.android.application'
 
                 dependencies {
                     implementation "androidx.wear.watchface:watchface:1.0.0-alpha22"
                 }
                 """
-          )
-          .indented(),
-        manifest(
-            """
+                )
+                .indented(),
+            manifest(
+                    """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="androidx.wear.watchface.samples.minimal.complications">
 
@@ -243,10 +243,10 @@ class WatchFaceForAndroidXDetectorTest : AbstractCheckTest() {
 
                 </manifest>
                 """
-          )
-          .indented(),
-      )
-      .run()
-      .expectClean()
+                )
+                .indented(),
+        )
+        .run()
+        .expectClean()
   }
 }

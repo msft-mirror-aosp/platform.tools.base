@@ -27,20 +27,20 @@ import com.android.tools.lint.model.LintModelLintOptions
 import org.junit.Assert
 
 class TestLintOptionsConfiguration(
-  private val task: TestLintTask,
-  private val project: Project,
-  configurations: ConfigurationHierarchy,
-  lintOptions: LintModelLintOptions,
-  fatalOnly: Boolean,
+    private val task: TestLintTask,
+    private val project: Project,
+    configurations: ConfigurationHierarchy,
+    lintOptions: LintModelLintOptions,
+    fatalOnly: Boolean,
 ) : LintOptionsConfiguration(configurations, lintOptions, fatalOnly) {
   init {
     associatedLocation = Location.create(project.dir)
   }
 
   override fun getDefinedSeverity(
-    issue: Issue,
-    source: Configuration,
-    visibleDefault: Severity,
+      issue: Issue,
+      source: Configuration,
+      visibleDefault: Severity,
   ): Severity {
     val override = overrideSeverity(task, issue, visibleDefault)
     if (override != null) {
@@ -63,15 +63,12 @@ class TestLintOptionsConfiguration(
       }
     }
 
-    return if (task.checkedIssues.contains(issue)) getNonIgnoredSeverity(visibleDefault, issue)
-    else Severity.IGNORE
+    return if (task.checkedIssues.contains(issue)) getNonIgnoredSeverity(visibleDefault, issue) else Severity.IGNORE
   }
 
-  override fun ignore(context: Context, issue: Issue, location: Location?, message: String) =
-    Assert.fail("Not supported in tests.")
+  override fun ignore(context: Context, issue: Issue, location: Location?, message: String) = Assert.fail("Not supported in tests.")
 
-  override fun setSeverity(issue: Issue, severity: Severity?) =
-    Assert.fail("Not supported in tests.")
+  override fun setSeverity(issue: Issue, severity: Severity?) = Assert.fail("Not supported in tests.")
 
   override fun toString(): String {
     return this.javaClass.simpleName + " for " + project.dir

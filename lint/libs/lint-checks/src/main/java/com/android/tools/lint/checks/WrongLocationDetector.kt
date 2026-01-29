@@ -32,30 +32,29 @@ class WrongLocationDetector : LayoutDetector() {
     /** Main issue investigated by this detector. */
     @JvmField
     val ISSUE =
-      Issue.create(
-        id = "WrongFolder",
-        briefDescription = "Resource file in the wrong `res` folder",
-        explanation =
-          """
+        Issue.create(
+            id = "WrongFolder",
+            briefDescription = "Resource file in the wrong `res` folder",
+            explanation =
+                """
             Resource files are sometimes placed in the wrong folder, and it can lead to subtle bugs that are \
             hard to understand. This check looks for problems in this area, such as attempting to place a \
             layout "alias" file in a `layout/` folder rather than the `values/` folder where it belongs.""",
-        category = Category.CORRECTNESS,
-        priority = 8,
-        severity = Severity.FATAL,
-        implementation =
-          Implementation(WrongLocationDetector::class.java, Scope.RESOURCE_FILE_SCOPE),
-      )
+            category = Category.CORRECTNESS,
+            priority = 8,
+            severity = Severity.FATAL,
+            implementation = Implementation(WrongLocationDetector::class.java, Scope.RESOURCE_FILE_SCOPE),
+        )
   }
 
   override fun visitDocument(context: XmlContext, document: Document) {
     val root = document.documentElement
     if (root != null && root.tagName == TAG_RESOURCES) {
       context.report(
-        ISSUE,
-        root,
-        context.getElementLocation(root),
-        "This file should be placed in a `values`/ folder, not a `layout`/ folder",
+          ISSUE,
+          root,
+          context.getElementLocation(root),
+          "This file should be placed in a `values`/ folder, not a `layout`/ folder",
       )
     }
   }

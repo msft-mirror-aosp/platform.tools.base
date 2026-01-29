@@ -30,11 +30,11 @@ class PendingIntentMutableImplicitDetectorTest : AbstractCheckTest() {
 
   fun testDocumentationExample() {
     lint()
-      .projects(
-        project(
-          manifest().targetSdk(34),
-          java(
-              """
+        .projects(
+            project(
+                manifest().targetSdk(34),
+                java(
+                        """
               package test.pkg;
 
               import android.app.PendingIntent;
@@ -52,10 +52,10 @@ class PendingIntentMutableImplicitDetectorTest : AbstractCheckTest() {
                 }
               }
               """
-            )
-            .indented(),
-          kotlin(
-              """
+                    )
+                    .indented(),
+                kotlin(
+                        """
               package test.pkg
 
               import android.app.PendingIntent
@@ -73,13 +73,13 @@ class PendingIntentMutableImplicitDetectorTest : AbstractCheckTest() {
                 }
               }
               """
+                    )
+                    .indented(),
             )
-            .indented(),
         )
-      )
-      .run()
-      .expect(
-        """
+        .run()
+        .expect(
+            """
         src/test/pkg/PendingIntentJavaTest.java:10: Error: Mutable implicit PendingIntent will throw an exception, follow either of these recommendations: for an existing PendingIntent use FLAG_NO_CREATE and for a new PendingIntent either make it immutable or make the Intent within explicit [MutableImplicitPendingIntent]
             PendingIntent.getActivity(null, 0, new Intent(), PendingIntent.FLAG_MUTABLE);
             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -106,9 +106,9 @@ class PendingIntentMutableImplicitDetectorTest : AbstractCheckTest() {
             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         8 errors, 0 warnings
         """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
         Fix for src/test/pkg/PendingIntentJavaTest.java line 10: Replace FLAG_MUTABLE with FLAG_IMMUTABLE:
         @@ -10 +10 @@
         -    PendingIntent.getActivity(null, 0, new Intent(), PendingIntent.FLAG_MUTABLE);
@@ -174,16 +174,16 @@ class PendingIntentMutableImplicitDetectorTest : AbstractCheckTest() {
         -    PendingIntent.getActivities(null, 0, listOf(Intent(), mIntent), PendingIntent.FLAG_MUTABLE)
         +    PendingIntent.getActivities(null, 0, listOf(Intent(), mIntent), PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_NO_CREATE)
         """
-      )
+        )
   }
 
   fun testMutableAndImplicit_inline_complains() {
     lint()
-      .projects(
-        project(
-          manifest().targetSdk(34),
-          java(
-              """
+        .projects(
+            project(
+                manifest().targetSdk(34),
+                java(
+                        """
               package test.pkg;
 
               import android.app.PendingIntent;
@@ -201,10 +201,10 @@ class PendingIntentMutableImplicitDetectorTest : AbstractCheckTest() {
                 }
               }
               """
-            )
-            .indented(),
-          kotlin(
-              """
+                    )
+                    .indented(),
+                kotlin(
+                        """
               package test.pkg
 
               import android.app.PendingIntent
@@ -222,13 +222,13 @@ class PendingIntentMutableImplicitDetectorTest : AbstractCheckTest() {
                 }
               }
               """
+                    )
+                    .indented(),
             )
-            .indented(),
         )
-      )
-      .run()
-      .expect(
-        """
+        .run()
+        .expect(
+            """
         src/test/pkg/PendingIntentJavaTest.java:10: Error: Mutable implicit PendingIntent will throw an exception, follow either of these recommendations: for an existing PendingIntent use FLAG_NO_CREATE and for a new PendingIntent either make it immutable or make the Intent within explicit [MutableImplicitPendingIntent]
             PendingIntent.getActivity(null, 0, new Intent(), PendingIntent.FLAG_MUTABLE);
             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -261,9 +261,9 @@ class PendingIntentMutableImplicitDetectorTest : AbstractCheckTest() {
             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         10 errors, 0 warnings
         """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
         Fix for src/test/pkg/PendingIntentJavaTest.java line 10: Replace FLAG_MUTABLE with FLAG_IMMUTABLE:
         @@ -10 +10 @@
         -    PendingIntent.getActivity(null, 0, new Intent(), PendingIntent.FLAG_MUTABLE);
@@ -345,16 +345,16 @@ class PendingIntentMutableImplicitDetectorTest : AbstractCheckTest() {
         -    PendingIntent.getActivities(null, 0, arrayOf(Intent("TEST"), Intent("TEST", mUri)), PendingIntent.FLAG_MUTABLE)
         +    PendingIntent.getActivities(null, 0, arrayOf(Intent("TEST"), Intent("TEST", mUri)), PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_NO_CREATE)
         """
-      )
+        )
   }
 
   fun testMutableAndImplicit_variable_complains() {
     lint()
-      .projects(
-        project(
-          manifest().targetSdk(34),
-          java(
-              """
+        .projects(
+            project(
+                manifest().targetSdk(34),
+                java(
+                        """
               package test.pkg;
 
               import android.app.PendingIntent;
@@ -381,10 +381,10 @@ class PendingIntentMutableImplicitDetectorTest : AbstractCheckTest() {
                 }
               }
               """
-            )
-            .indented(),
-          kotlin(
-              """
+                    )
+                    .indented(),
+                kotlin(
+                        """
               package test.pkg
 
               import android.app.PendingIntent
@@ -411,13 +411,13 @@ class PendingIntentMutableImplicitDetectorTest : AbstractCheckTest() {
                 }
               }
               """
+                    )
+                    .indented(),
             )
-            .indented(),
         )
-      )
-      .run()
-      .expect(
-        """
+        .run()
+        .expect(
+            """
         src/test/pkg/PendingIntentJavaTest.java:13: Error: Mutable implicit PendingIntent will throw an exception, follow either of these recommendations: for an existing PendingIntent use FLAG_NO_CREATE and for a new PendingIntent either make it immutable or make the Intent within explicit [MutableImplicitPendingIntent]
             PendingIntent.getActivity(null, 0, intentOne, PendingIntent.FLAG_MUTABLE);
             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -462,9 +462,9 @@ class PendingIntentMutableImplicitDetectorTest : AbstractCheckTest() {
             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         14 errors, 0 warnings
         """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
         Fix for src/test/pkg/PendingIntentJavaTest.java line 13: Replace FLAG_MUTABLE with FLAG_IMMUTABLE:
         @@ -13 +13 @@
         -    PendingIntent.getActivity(null, 0, intentOne, PendingIntent.FLAG_MUTABLE);
@@ -578,16 +578,16 @@ class PendingIntentMutableImplicitDetectorTest : AbstractCheckTest() {
         -    PendingIntent.getActivities(null, 0, intentArray, PendingIntent.FLAG_MUTABLE)
         +    PendingIntent.getActivities(null, 0, intentArray, PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_NO_CREATE)
         """
-      )
+        )
   }
 
   fun testMutableAndExplicitConstructors_inline_isClean() {
     lint()
-      .projects(
-        project(
-          manifest().targetSdk(34),
-          java(
-              """
+        .projects(
+            project(
+                manifest().targetSdk(34),
+                java(
+                        """
               package test.pkg;
 
               import android.app.PendingIntent;
@@ -615,10 +615,10 @@ class PendingIntentMutableImplicitDetectorTest : AbstractCheckTest() {
                 }
               }
               """
-            )
-            .indented(),
-          kotlin(
-              """
+                    )
+                    .indented(),
+                kotlin(
+                        """
               package test.pkg
 
               import android.app.PendingIntent
@@ -646,21 +646,21 @@ class PendingIntentMutableImplicitDetectorTest : AbstractCheckTest() {
                 }
               }
               """
+                    )
+                    .indented(),
             )
-            .indented(),
         )
-      )
-      .run()
-      .expectClean()
+        .run()
+        .expectClean()
   }
 
   fun testMutableAndExplicitConstructors_variable_isClean() {
     lint()
-      .projects(
-        project(
-          manifest().targetSdk(34),
-          java(
-              """
+        .projects(
+            project(
+                manifest().targetSdk(34),
+                java(
+                        """
               package test.pkg;
 
               import android.app.PendingIntent;
@@ -702,10 +702,10 @@ class PendingIntentMutableImplicitDetectorTest : AbstractCheckTest() {
                 }
               }
               """
-            )
-            .indented(),
-          kotlin(
-              """
+                    )
+                    .indented(),
+                kotlin(
+                        """
               package test.pkg
 
               import android.app.PendingIntent
@@ -747,21 +747,21 @@ class PendingIntentMutableImplicitDetectorTest : AbstractCheckTest() {
                 }
               }
             """
+                    )
+                    .indented(),
             )
-            .indented(),
         )
-      )
-      .run()
-      .expectClean()
+        .run()
+        .expectClean()
   }
 
   fun testMutableAndExplicitChangedToImplicit_complains() {
     lint()
-      .projects(
-        project(
-          manifest().targetSdk(34),
-          java(
-              """
+        .projects(
+            project(
+                manifest().targetSdk(34),
+                java(
+                        """
               package test.pkg;
 
               import android.app.PendingIntent;
@@ -797,10 +797,10 @@ class PendingIntentMutableImplicitDetectorTest : AbstractCheckTest() {
                 }
               }
               """
-            )
-            .indented(),
-          kotlin(
-              """
+                    )
+                    .indented(),
+                kotlin(
+                        """
               package test.pkg
 
               import android.app.PendingIntent
@@ -837,13 +837,13 @@ class PendingIntentMutableImplicitDetectorTest : AbstractCheckTest() {
                 }
               }
             """
+                    )
+                    .indented(),
             )
-            .indented(),
         )
-      )
-      .run()
-      .expect(
-        """
+        .run()
+        .expect(
+            """
         src/test/pkg/PendingIntentJavaTest.java:16: Error: Mutable implicit PendingIntent will throw an exception, follow either of these recommendations: for an existing PendingIntent use FLAG_NO_CREATE and for a new PendingIntent either make it immutable or make the Intent within explicit [MutableImplicitPendingIntent]
             PendingIntent.getBroadcast(null, 0, intentOne, PendingIntent.FLAG_MUTABLE); // complains
             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -879,9 +879,9 @@ class PendingIntentMutableImplicitDetectorTest : AbstractCheckTest() {
             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         11 errors, 0 warnings
         """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
         Fix for src/test/pkg/PendingIntentJavaTest.java line 16: Replace FLAG_MUTABLE with FLAG_IMMUTABLE:
         @@ -16 +16 @@
         -    PendingIntent.getBroadcast(null, 0, intentOne, PendingIntent.FLAG_MUTABLE); // complains
@@ -971,16 +971,16 @@ class PendingIntentMutableImplicitDetectorTest : AbstractCheckTest() {
         -    PendingIntent.getActivity(null, 0, intentTwo, PendingIntent.FLAG_MUTABLE) // complains
         +    PendingIntent.getActivity(null, 0, intentTwo, PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_NO_CREATE) // complains
         """
-      )
+        )
   }
 
   fun testImmutableAndImplicit_isClean() {
     lint()
-      .projects(
-        project(
-          manifest().targetSdk(34),
-          java(
-              """
+        .projects(
+            project(
+                manifest().targetSdk(34),
+                java(
+                        """
               package test.pkg;
 
               import android.app.PendingIntent;
@@ -1007,10 +1007,10 @@ class PendingIntentMutableImplicitDetectorTest : AbstractCheckTest() {
                 }
               }
               """
-            )
-            .indented(),
-          kotlin(
-              """
+                    )
+                    .indented(),
+                kotlin(
+                        """
               package test.pkg
 
               import android.app.PendingIntent
@@ -1037,21 +1037,21 @@ class PendingIntentMutableImplicitDetectorTest : AbstractCheckTest() {
                 }
               }
             """
+                    )
+                    .indented(),
             )
-            .indented(),
         )
-      )
-      .run()
-      .expectClean()
+        .run()
+        .expectClean()
   }
 
   fun testMutableNoCreateAndImplicit_isClean() {
     lint()
-      .projects(
-        project(
-          manifest().targetSdk(34),
-          java(
-              """
+        .projects(
+            project(
+                manifest().targetSdk(34),
+                java(
+                        """
               package test.pkg;
 
               import android.app.PendingIntent;
@@ -1078,10 +1078,10 @@ class PendingIntentMutableImplicitDetectorTest : AbstractCheckTest() {
                 }
               }
               """
-            )
-            .indented(),
-          kotlin(
-              """
+                    )
+                    .indented(),
+                kotlin(
+                        """
               package test.pkg
 
               import android.app.PendingIntent
@@ -1108,21 +1108,21 @@ class PendingIntentMutableImplicitDetectorTest : AbstractCheckTest() {
                 }
               }
             """
+                    )
+                    .indented(),
             )
-            .indented(),
         )
-      )
-      .run()
-      .expectClean()
+        .run()
+        .expectClean()
   }
 
   fun testMutableAllowUnsafeImplicitAndImplicit_isClean() {
     lint()
-      .projects(
-        project(
-          manifest().targetSdk(34),
-          java(
-              """
+        .projects(
+            project(
+                manifest().targetSdk(34),
+                java(
+                        """
               package test.pkg;
 
               import android.app.PendingIntent;
@@ -1149,10 +1149,10 @@ class PendingIntentMutableImplicitDetectorTest : AbstractCheckTest() {
                 }
               }
               """
-            )
-            .indented(),
-          kotlin(
-              """
+                    )
+                    .indented(),
+                kotlin(
+                        """
               package test.pkg
 
               import android.app.PendingIntent
@@ -1179,21 +1179,21 @@ class PendingIntentMutableImplicitDetectorTest : AbstractCheckTest() {
                 }
               }
             """
+                    )
+                    .indented(),
             )
-            .indented(),
         )
-      )
-      .run()
-      .expectClean()
+        .run()
+        .expectClean()
   }
 
   fun testMutableAndExplicitSet_isClean() {
     lint()
-      .projects(
-        project(
-          manifest().targetSdk(34),
-          java(
-              """
+        .projects(
+            project(
+                manifest().targetSdk(34),
+                java(
+                        """
               package test.pkg;
 
               import android.app.PendingIntent;
@@ -1225,10 +1225,10 @@ class PendingIntentMutableImplicitDetectorTest : AbstractCheckTest() {
                 }
               }
               """
-            )
-            .indented(),
-          kotlin(
-              """
+                    )
+                    .indented(),
+                kotlin(
+                        """
               package test.pkg
 
               import android.app.PendingIntent
@@ -1287,21 +1287,21 @@ class PendingIntentMutableImplicitDetectorTest : AbstractCheckTest() {
                 }
               }
               """
+                    )
+                    .indented(),
             )
-            .indented(),
         )
-      )
-      .run()
-      .expectClean()
+        .run()
+        .expectClean()
   }
 
   fun testMutableAndNonExplicitSet_complains() {
     lint()
-      .projects(
-        project(
-          manifest().targetSdk(34),
-          java(
-              """
+        .projects(
+            project(
+                manifest().targetSdk(34),
+                java(
+                        """
               package test.pkg;
 
               import android.app.PendingIntent;
@@ -1336,10 +1336,10 @@ class PendingIntentMutableImplicitDetectorTest : AbstractCheckTest() {
                 }
               }
               """
-            )
-            .indented(),
-          kotlin(
-              """
+                    )
+                    .indented(),
+                kotlin(
+                        """
               package test.pkg
 
               import android.app.PendingIntent
@@ -1395,13 +1395,13 @@ class PendingIntentMutableImplicitDetectorTest : AbstractCheckTest() {
                  }
               }
               """
+                    )
+                    .indented(),
             )
-            .indented(),
         )
-      )
-      .run()
-      .expect(
-        """
+        .run()
+        .expect(
+            """
         src/test/pkg/PendingIntentJavaTest.java:18: Error: Mutable implicit PendingIntent will throw an exception, follow either of these recommendations: for an existing PendingIntent use FLAG_NO_CREATE and for a new PendingIntent either make it immutable or make the Intent within explicit [MutableImplicitPendingIntent]
             PendingIntent.getActivity(null, 0, intentOne, PendingIntent.FLAG_MUTABLE);
             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1482,9 +1482,9 @@ class PendingIntentMutableImplicitDetectorTest : AbstractCheckTest() {
             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         26 errors, 0 warnings
         """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
         Fix for src/test/pkg/PendingIntentJavaTest.java line 18: Replace FLAG_MUTABLE with FLAG_IMMUTABLE:
         @@ -18 +18 @@
         -    PendingIntent.getActivity(null, 0, intentOne, PendingIntent.FLAG_MUTABLE);
@@ -1694,16 +1694,16 @@ class PendingIntentMutableImplicitDetectorTest : AbstractCheckTest() {
         -    PendingIntent.getActivities(null, 0, intentArray, PendingIntent.FLAG_MUTABLE)
         +    PendingIntent.getActivities(null, 0, intentArray, PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_NO_CREATE)
         """
-      )
+        )
   }
 
   fun testMutableImplicitEscaped_isClean() {
     lint()
-      .projects(
-        project(
-          manifest().targetSdk(34),
-          java(
-              """
+        .projects(
+            project(
+                manifest().targetSdk(34),
+                java(
+                        """
               package test.pkg;
 
               import android.app.PendingIntent;
@@ -1741,10 +1741,10 @@ class PendingIntentMutableImplicitDetectorTest : AbstractCheckTest() {
                 }
               }
               """
-            )
-            .indented(),
-          kotlin(
-              """
+                    )
+                    .indented(),
+                kotlin(
+                        """
               package test.pkg
 
               import android.app.PendingIntent
@@ -1828,21 +1828,21 @@ class PendingIntentMutableImplicitDetectorTest : AbstractCheckTest() {
                 fun ghi(intents: Array<Intent?>) { }
               }
               """
+                    )
+                    .indented(),
             )
-            .indented(),
         )
-      )
-      .run()
-      .expectClean()
+        .run()
+        .expectClean()
   }
 
   fun testMutableAndImplicit_argMethodCallClassVar_isClean() {
     lint()
-      .projects(
-        project(
-          manifest().targetSdk(34),
-          java(
-              """
+        .projects(
+            project(
+                manifest().targetSdk(34),
+                java(
+                        """
               package test.pkg;
 
               import android.app.PendingIntent;
@@ -1861,10 +1861,10 @@ class PendingIntentMutableImplicitDetectorTest : AbstractCheckTest() {
                 }
               }
               """
-            )
-            .indented(),
-          kotlin(
-              """
+                    )
+                    .indented(),
+                kotlin(
+                        """
               package test.pkg
 
               import android.app.PendingIntent
@@ -1883,21 +1883,21 @@ class PendingIntentMutableImplicitDetectorTest : AbstractCheckTest() {
                 }
               }
               """
+                    )
+                    .indented(),
             )
-            .indented(),
         )
-      )
-      .run()
-      .expectClean()
+        .run()
+        .expectClean()
   }
 
   fun testReassignmentToVariableAndNewObject() {
     lint()
-      .projects(
-        project(
-          manifest().targetSdk(34),
-          java(
-              """
+        .projects(
+            project(
+                manifest().targetSdk(34),
+                java(
+                        """
               package test.pkg;
 
               import android.app.PendingIntent;
@@ -1928,10 +1928,10 @@ class PendingIntentMutableImplicitDetectorTest : AbstractCheckTest() {
                 }
               }
               """
-            )
-            .indented(),
-          kotlin(
-              """
+                    )
+                    .indented(),
+                kotlin(
+                        """
               package test.pkg
 
               import android.app.PendingIntent
@@ -1962,13 +1962,13 @@ class PendingIntentMutableImplicitDetectorTest : AbstractCheckTest() {
                 }
               }
               """
+                    )
+                    .indented(),
             )
-            .indented(),
         )
-      )
-      .run()
-      .expect(
-        """
+        .run()
+        .expect(
+            """
         src/test/pkg/PendingIntentJavaTest.java:13: Error: Mutable implicit PendingIntent will throw an exception, follow either of these recommendations: for an existing PendingIntent use FLAG_NO_CREATE and for a new PendingIntent either make it immutable or make the Intent within explicit [MutableImplicitPendingIntent]
             PendingIntent.getActivity(null, 0, kIntent, PendingIntent.FLAG_MUTABLE);
             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1995,9 +1995,9 @@ class PendingIntentMutableImplicitDetectorTest : AbstractCheckTest() {
             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         8 errors, 0 warnings
         """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
         Fix for src/test/pkg/PendingIntentJavaTest.java line 13: Replace FLAG_MUTABLE with FLAG_IMMUTABLE:
         @@ -13 +13 @@
         -    PendingIntent.getActivity(null, 0, kIntent, PendingIntent.FLAG_MUTABLE);
@@ -2063,16 +2063,16 @@ class PendingIntentMutableImplicitDetectorTest : AbstractCheckTest() {
         -    PendingIntent.getActivities(null, 0, arrayIntent, PendingIntent.FLAG_MUTABLE)
         +    PendingIntent.getActivities(null, 0, arrayIntent, PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_NO_CREATE)
         """
-      )
+        )
   }
 
   fun testTargetSdkBelowThirtyFourIsWarning() {
     lint()
-      .projects(
-        project(
-          manifest().targetSdk(33),
-          java(
-              """
+        .projects(
+            project(
+                manifest().targetSdk(33),
+                java(
+                        """
               package test.pkg;
 
               import android.app.PendingIntent;
@@ -2089,10 +2089,10 @@ class PendingIntentMutableImplicitDetectorTest : AbstractCheckTest() {
                 }
               }
               """
-            )
-            .indented(),
-          kotlin(
-              """
+                    )
+                    .indented(),
+                kotlin(
+                        """
               package test.pkg
 
               import android.app.PendingIntent
@@ -2109,13 +2109,13 @@ class PendingIntentMutableImplicitDetectorTest : AbstractCheckTest() {
                 }
               }
               """
+                    )
+                    .indented(),
             )
-            .indented(),
         )
-      )
-      .run()
-      .expect(
-        """
+        .run()
+        .expect(
+            """
         src/test/pkg/PendingIntentJavaTest.java:10: Warning: Mutable implicit PendingIntent will throw an exception once this app starts targeting Android 14 or above, follow either of these recommendations: for an existing PendingIntent use FLAG_NO_CREATE and for a new PendingIntent either make it immutable or make the Intent within explicit [MutableImplicitPendingIntent]
             PendingIntent.getActivity(null, 0, new Intent(), PendingIntent.FLAG_MUTABLE);
             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -2142,9 +2142,9 @@ class PendingIntentMutableImplicitDetectorTest : AbstractCheckTest() {
             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         0 errors, 8 warnings
         """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
         Fix for src/test/pkg/PendingIntentJavaTest.java line 10: Replace FLAG_MUTABLE with FLAG_IMMUTABLE:
         @@ -10 +10 @@
         -    PendingIntent.getActivity(null, 0, new Intent(), PendingIntent.FLAG_MUTABLE);
@@ -2210,16 +2210,16 @@ class PendingIntentMutableImplicitDetectorTest : AbstractCheckTest() {
         -    PendingIntent.getActivities(null, 0, listOf(Intent(), Intent("TEST")), PendingIntent.FLAG_MUTABLE)
         +    PendingIntent.getActivities(null, 0, listOf(Intent(), Intent("TEST")), PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_NO_CREATE)
         """
-      )
+        )
   }
 
   fun testTargetSdkBelowTwentyThreeIsClean() {
     lint()
-      .projects(
-        project(
-          manifest().targetSdk(22),
-          java(
-              """
+        .projects(
+            project(
+                manifest().targetSdk(22),
+                java(
+                        """
               package test.pkg;
 
               import android.app.PendingIntent;
@@ -2236,10 +2236,10 @@ class PendingIntentMutableImplicitDetectorTest : AbstractCheckTest() {
                 }
               }
               """
-            )
-            .indented(),
-          kotlin(
-              """
+                    )
+                    .indented(),
+                kotlin(
+                        """
               package test.pkg
 
               import android.app.PendingIntent
@@ -2256,21 +2256,21 @@ class PendingIntentMutableImplicitDetectorTest : AbstractCheckTest() {
                 }
               }
               """
+                    )
+                    .indented(),
             )
-            .indented(),
         )
-      )
-      .run()
-      .expectClean()
+        .run()
+        .expectClean()
   }
 
   fun testMutableAndImplicitWithOtherFlagsAndVariable_complains() {
     lint()
-      .projects(
-        project(
-          manifest().targetSdk(34),
-          java(
-              """
+        .projects(
+            project(
+                manifest().targetSdk(34),
+                java(
+                        """
               package test.pkg;
 
               import android.app.PendingIntent;
@@ -2291,10 +2291,10 @@ class PendingIntentMutableImplicitDetectorTest : AbstractCheckTest() {
                 }
               }
               """
-            )
-            .indented(),
-          kotlin(
-              """
+                    )
+                    .indented(),
+                kotlin(
+                        """
               package test.pkg
 
               import android.app.PendingIntent
@@ -2315,13 +2315,13 @@ class PendingIntentMutableImplicitDetectorTest : AbstractCheckTest() {
                 }
               }
               """
+                    )
+                    .indented(),
             )
-            .indented(),
         )
-      )
-      .run()
-      .expect(
-        """
+        .run()
+        .expect(
+            """
         src/test/pkg/PendingIntentJavaTest.java:12: Error: Mutable implicit PendingIntent will throw an exception, follow either of these recommendations: for an existing PendingIntent use FLAG_NO_CREATE and for a new PendingIntent either make it immutable or make the Intent within explicit [MutableImplicitPendingIntent]
             PendingIntent.getActivity(null, 0, new Intent(), PendingIntent.FLAG_MUTABLE | PendingIntent.FLAG_ONE_SHOT);
             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -2360,9 +2360,9 @@ class PendingIntentMutableImplicitDetectorTest : AbstractCheckTest() {
             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         12 errors, 0 warnings
         """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
         Fix for src/test/pkg/PendingIntentJavaTest.java line 12: Replace FLAG_MUTABLE with FLAG_IMMUTABLE:
         @@ -12 +12 @@
         -    PendingIntent.getActivity(null, 0, new Intent(), PendingIntent.FLAG_MUTABLE | PendingIntent.FLAG_ONE_SHOT);
@@ -2452,6 +2452,6 @@ class PendingIntentMutableImplicitDetectorTest : AbstractCheckTest() {
         -    PendingIntent.getActivities(null, 0, arrayOf(Intent("TEST"), Intent("TEST", mUri)), PendingIntent.FLAG_UPDATE_CURRENT or mMutable)
         +    PendingIntent.getActivities(null, 0, arrayOf(Intent("TEST"), Intent("TEST", mUri)), PendingIntent.FLAG_UPDATE_CURRENT or mMutable or PendingIntent.FLAG_NO_CREATE)
         """
-      )
+        )
   }
 }

@@ -25,9 +25,9 @@ class SyntheticAccessorDetectorTest : AbstractCheckTest() {
 
   fun testBasicJava() {
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
                 package test.pkg;
 
                 @SuppressWarnings({"unused", "WeakerAccess", "FieldCanBeLocal", "ClassNameDiffersFromFileName"})
@@ -118,12 +118,12 @@ class SyntheticAccessorDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-          )
-          .indented()
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .run()
+        .expect(
+            """
             src/test/pkg/AccessTest.java:33: Warning: Access to private constructor of class AccessTest requires synthetic accessor [SyntheticAccessor]
                         new AccessTest(); // ERROR
                         ~~~~~~~~~~~~~~~~
@@ -150,9 +150,9 @@ class SyntheticAccessorDetectorTest : AbstractCheckTest() {
                             ~~~~~~~
             0 errors, 8 warnings
             """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
             Autofix for src/test/pkg/AccessTest.java line 33: Make package protected:
             @@ -13 +13 @@
             -    private AccessTest() {
@@ -186,14 +186,14 @@ class SyntheticAccessorDetectorTest : AbstractCheckTest() {
             -    private void method1() {
             +    void method1() {
             """
-      )
+        )
   }
 
   fun testBasicKotlin() {
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
                 package test.pkg
 
                 @Suppress("UNUSED_PARAMETER", "unused", "UNUSED_VARIABLE")
@@ -270,12 +270,12 @@ class SyntheticAccessorDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-          )
-          .indented()
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .run()
+        .expect(
+            """
             src/test/pkg/AccessTest2.kt:31: Warning: Access to private constructor of class AccessTest2 requires synthetic accessor [SyntheticAccessor]
                         AccessTest2()   // ERROR
                         ~~~~~~~~~~~
@@ -308,9 +308,9 @@ class SyntheticAccessorDetectorTest : AbstractCheckTest() {
                             ~~~~~~~
             0 errors, 10 warnings
             """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
                 Autofix for src/test/pkg/AccessTest2.kt line 31: Make internal:
                 @@ -15 +15 @@
                 -    private constructor()
@@ -352,14 +352,14 @@ class SyntheticAccessorDetectorTest : AbstractCheckTest() {
                 -    private fun method1() {
                 +    internal fun method1() {
                 """
-      )
+        )
   }
 
   fun testScenario() {
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
                 package test.pkg;
 
                 @SuppressWarnings({"unused", "WeakerAccess", "FieldCanBeLocal", "ClassNameDiffersFromFileName", "MethodMayBeStatic"})
@@ -397,12 +397,12 @@ class SyntheticAccessorDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-          )
-          .indented()
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .run()
+        .expect(
+            """
                 src/test/pkg/AccessTest3.java:7: Warning: Access to private member of class Hidden2 requires synthetic accessor [SyntheticAccessor]
                         Hidden2 hidden2 = new Hidden2(); // ERROR
                                           ~~~~~~~~~~~~~
@@ -417,11 +417,11 @@ class SyntheticAccessorDetectorTest : AbstractCheckTest() {
                                            ~~~~~
                 0 errors, 4 warnings
                 """
-      )
-      .expectFixDiffs(
-        // TODO: Here I shouldn't make the private class public, I should add a new package private
-        // constructor!
-        """
+        )
+        .expectFixDiffs(
+            // TODO: Here I shouldn't make the private class public, I should add a new package private
+            // constructor!
+            """
                 Autofix for src/test/pkg/AccessTest3.java line 7: Make package protected:
                 @@ -21 +21 @@
                 -    private static class Hidden2 { // synthetic constructor
@@ -439,14 +439,14 @@ class SyntheticAccessorDetectorTest : AbstractCheckTest() {
                 -        private final int field;
                 +        final int field;
                 """
-      )
+        )
   }
 
   fun testArrays() {
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
                 package test.pkg;
 
                 @SuppressWarnings("ClassNameDiffersFromFileName")
@@ -458,20 +458,20 @@ class SyntheticAccessorDetectorTest : AbstractCheckTest() {
                 }
 
                 """
-          )
-          .indented()
-      )
-      .run()
-      .expectClean()
+                )
+                .indented()
+        )
+        .run()
+        .expectClean()
   }
 
   fun testSealed() {
     // Regression test for
     // 78144888: SyntheticAccessor Kotlin false positive
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
                 package test.pkg
 
                 private sealed class LoaderEvent {
@@ -479,19 +479,19 @@ class SyntheticAccessorDetectorTest : AbstractCheckTest() {
                     data class LoadResult(val listing: String, val success: Boolean) : LoaderEvent()
                 }
                 """
-          )
-          .indented()
-      )
-      .run()
-      .expectClean()
+                )
+                .indented()
+        )
+        .run()
+        .expectClean()
   }
 
   fun testStdlib() {
     // Some inline stdlib methods are marked as "private" in the bytecode; don't flag these
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
                 package test.pkg
 
                 class Foo {
@@ -502,19 +502,19 @@ class SyntheticAccessorDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-          )
-          .indented()
-      )
-      .run()
-      .expectClean()
+                )
+                .indented()
+        )
+        .run()
+        .expectClean()
   }
 
   fun testCompanion() {
     // Regression test for https://issuetracker.google.com/113119778
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
                 package test.pkg
 
                 class Foo private constructor() {
@@ -523,20 +523,20 @@ class SyntheticAccessorDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-          )
-          .indented()
-      )
-      .run()
-      .expectClean()
+                )
+                .indented()
+        )
+        .run()
+        .expectClean()
   }
 
   fun testSyntheticKotlin() {
     // Regression test for
     // 118790640: Invalid synthetic accessor check for sealed classes
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
                 package test.pkg
 
                 private sealed class SettingsConsentAdapterItem(val id: String) {
@@ -544,19 +544,19 @@ class SyntheticAccessorDetectorTest : AbstractCheckTest() {
                     class Item(val groupId: String, id: String, val name: String, val checked: Boolean) : SettingsConsentAdapterItem(id)
                 }
                 """
-          )
-          .indented()
-      )
-      .run()
-      .expectClean()
+                )
+                .indented()
+        )
+        .run()
+        .expectClean()
   }
 
   fun testPrimaryConstructorWithValueClassParameter() {
     // b/396584142
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
             package test.pkg
 
             @JvmInline
@@ -566,19 +566,19 @@ class SyntheticAccessorDetectorTest : AbstractCheckTest() {
 
             fun foo(c: MyColor) = MultiSelectorStateImpl(c)
           """
-          )
-          .indented()
-      )
-      .run()
-      .expectClean()
+                )
+                .indented()
+        )
+        .run()
+        .expectClean()
   }
 
   fun testDataClassSyntheticMemberWithValueClassParameter() {
     // b/405654866
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
             package test.pkg
 
             @JvmInline
@@ -591,10 +591,10 @@ class SyntheticAccessorDetectorTest : AbstractCheckTest() {
               d.hashCode() * state.hashCode()
             }
           """
-          )
-          .indented()
-      )
-      .run()
-      .expectClean()
+                )
+                .indented()
+        )
+        .run()
+        .expectClean()
   }
 }

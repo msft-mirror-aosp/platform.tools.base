@@ -26,25 +26,25 @@ data class Category
  * @param priority a sorting priority, with higher being more important
  */
 constructor(
-  /** The parent category, or null if this is a top level category. */
-  val parent: Category?,
+    /** The parent category, or null if this is a top level category. */
+    val parent: Category?,
 
-  /** The name of this category. */
-  val name: String,
-  val priority: Int,
+    /** The name of this category. */
+    val name: String,
+    val priority: Int,
 ) : Comparable<Category> {
   /**
-   * Returns a full name for this category. For a top level category, this is just the [name] value,
-   * but for nested categories it will include the parent names as well.
+   * Returns a full name for this category. For a top level category, this is just the [name] value, but for nested categories it will
+   * include the parent names as well.
    *
    * @return a full name for this category
    */
   val fullName: String =
-    if (parent != null) {
-      parent.fullName + ':' + name
-    } else {
-      name
-    }
+      if (parent != null) {
+        parent.fullName + ':' + name
+      } else {
+        name
+      }
 
   init {
     categoryMap[name] = this
@@ -98,9 +98,7 @@ constructor(
      * @param priority a sorting priority, with higher being more important
      * @return a new category
      */
-    @JvmStatic
-    fun create(parent: Category?, name: String, priority: Int): Category =
-      Category(parent, name, priority)
+    @JvmStatic fun create(parent: Category?, name: String, priority: Int): Category = Category(parent, name, priority)
 
     /** Issues related to running lint itself. */
     @JvmField val LINT = create("Lint", 110)

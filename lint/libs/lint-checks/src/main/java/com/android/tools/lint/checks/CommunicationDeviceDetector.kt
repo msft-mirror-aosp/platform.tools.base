@@ -37,49 +37,43 @@ import org.jetbrains.uast.UCallExpression
 /**
  * Reports all calls to setCommunicationDevice, unless there is a call to clearCommunicationDevice.
  *
- * CommunicationDeviceDetector is an example of a detector that supports partial analysis by storing
- * data in per module LintMaps. It also demonstrates how such a detector can usually immediately
- * work in global analysis mode by simply overriding [checkMergedProject] and adding a few lines of
- * code. So that this can serve as the "reference example" for such detectors, we include detailed
- * comments explaining how the analysis works.
+ * CommunicationDeviceDetector is an example of a detector that supports partial analysis by storing data in per module LintMaps. It also
+ * demonstrates how such a detector can usually immediately work in global analysis mode by simply overriding [checkMergedProject] and
+ * adding a few lines of code. So that this can serve as the "reference example" for such detectors, we include detailed comments explaining
+ * how the analysis works.
  *
  * Recall from the lint documentation that, in partial analysis mode, lint runs in two phases:
- * - analyze: where lint analyzes the source code of each module in isolation, and stores some
- *   intermediate data for each module.
- * - report: where lint accesses the previously stored data for all modules and uses this to report
- *   incidents. The source code of modules cannot be accessed at this stage.
+ * - analyze: where lint analyzes the source code of each module in isolation, and stores some intermediate data for each module.
+ * - report: where lint accesses the previously stored data for all modules and uses this to report incidents. The source code of modules
+ *   cannot be accessed at this stage.
  *
- * CommunicationDeviceDetector does the following: if there are no calls to clearCommunicationDevice
- * then report all calls to setCommunicationDevice as incidents. In the analysis phase, the detector
- * can only access the source code for the current module being analyzed. Thus, so that the analysis
- * works correctly in partial analysis mode, the detector stores, per module:
+ * CommunicationDeviceDetector does the following: if there are no calls to clearCommunicationDevice then report all calls to
+ * setCommunicationDevice as incidents. In the analysis phase, the detector can only access the source code for the current module being
+ * analyzed. Thus, so that the analysis works correctly in partial analysis mode, the detector stores, per module:
  * - the location of every setCommunicationDevice call
  * - whether the module calls clearCommunicationDevice
  *
  * See [visitMethodCall], below.
  *
- * In the report phase, the detector inspects the intermediate data of every module to check whether
- * _any_ module called clearCommunicationDevice. If not, then the detector gets the location of
- * every setCommunicationDevice call from the intermediate data, and reports each location as an
- * incident. See [checkPartialResults], below.
+ * In the report phase, the detector inspects the intermediate data of every module to check whether _any_ module called
+ * clearCommunicationDevice. If not, then the detector gets the location of every setCommunicationDevice call from the intermediate data,
+ * and reports each location as an incident. See [checkPartialResults], below.
  *
- * Finally, rather than specializing the check for partial and global analysis modes, the detector
- * just overrides [checkMergedProject] such that if we are in global analysis mode, we call
- * [checkPartialResults]. See [checkMergedProject], below.
+ * Finally, rather than specializing the check for partial and global analysis modes, the detector just overrides [checkMergedProject] such
+ * that if we are in global analysis mode, we call [checkPartialResults]. See [checkMergedProject], below.
  */
 class CommunicationDeviceDetector : Detector(), SourceCodeScanner {
   companion object {
-    private val IMPLEMENTATION =
-      Implementation(CommunicationDeviceDetector::class.java, EnumSet.of(Scope.ALL_JAVA_FILES))
+    private val IMPLEMENTATION = Implementation(CommunicationDeviceDetector::class.java, EnumSet.of(Scope.ALL_JAVA_FILES))
 
     /** Calling `setCommunicationDevice()` without `clearCommunicationDevice()` */
     @JvmField
     val ISSUE =
-      Issue.create(
-        id = "SetAndClearCommunicationDevice",
-        briefDescription = "Clearing communication device",
-        explanation =
-          """
+        Issue.create(
+            id = "SetAndClearCommunicationDevice",
+            briefDescription = "Clearing communication device",
+            explanation =
+                """
                 After selecting the audio device for communication use cases using \
                 `setCommunicationDevice(AudioDeviceInfo device)`, the selection is active as long \
                 as the requesting application process lives, until `clearCommunicationDevice()` \
@@ -87,20 +81,19 @@ class CommunicationDeviceDetector : Detector(), SourceCodeScanner {
                 the request when a call ends or the requesting activity or service is stopped or \
                 destroyed.
                 """,
-        category = Category.CORRECTNESS,
-        priority = 5,
-        severity = Severity.WARNING,
-        implementation = IMPLEMENTATION,
-        androidSpecific = true,
-      )
+            category = Category.CORRECTNESS,
+            priority = 5,
+            severity = Severity.WARNING,
+            implementation = IMPLEMENTATION,
+            androidSpecific = true,
+        )
 
     const val FOUND_CLEAR_COMMUNICATION_DEVICE = "foundClearCommunicationDevice"
 
     const val MIN_TARGET_SDK_FOR_SET_COMMUNICATION_DEVICE = 31
   }
 
-  override fun getApplicableMethodNames() =
-    listOf("setCommunicationDevice", "clearCommunicationDevice")
+  override fun getApplicableMethodNames() = listOf("setCommunicationDevice", "clearCommunicationDevice")
 
   override fun visitMethodCall(context: JavaContext, node: UCallExpression, method: PsiMethod) {
     // Called during the analysis phase. Store intermediate data from the
@@ -184,10 +177,10 @@ class CommunicationDeviceDetector : Detector(), SourceCodeScanner {
     for (perModuleLintMap in partialResults.maps()) {
       for (key in perModuleLintMap) {
         context.report(
-          Incident(context)
-            .issue(ISSUE)
-            .location(perModuleLintMap.getLocation(key)!!)
-            .message("Must call `clearCommunicationDevice()` " + "after `setCommunicationDevice()`")
+            Incident(context)
+                .issue(ISSUE)
+                .location(perModuleLintMap.getLocation(key)!!)
+                .message("Must call `clearCommunicationDevice()` " + "after `setCommunicationDevice()`")
         )
       }
     }
@@ -218,13 +211,13 @@ class CommunicationDeviceDetector : Detector(), SourceCodeScanner {
   }
 
   private fun PsiElement.getFqName(): String? =
-    when (val element = namedUnwrappedElement) {
-      is PsiMember ->
-        element.getName()?.let { name ->
-          val prefix = element.containingClass?.qualifiedName
-          (if (prefix != null) "$prefix.$name" else name)
-        }
-      is KtNamedDeclaration -> element.fqName.toString()
-      else -> null
-    }
+      when (val element = namedUnwrappedElement) {
+        is PsiMember ->
+            element.getName()?.let { name ->
+              val prefix = element.containingClass?.qualifiedName
+              (if (prefix != null) "$prefix.$name" else name)
+            }
+        is KtNamedDeclaration -> element.fqName.toString()
+        else -> null
+      }
 }

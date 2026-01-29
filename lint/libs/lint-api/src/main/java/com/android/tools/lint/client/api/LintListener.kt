@@ -48,10 +48,9 @@ fun interface LintListener {
   }
 
   /**
-   * Notifies listeners that the event of the given type has occurred. Additional information, such
-   * as the file being scanned, or the project being scanned, is available in the [Context] object
-   * (except for the [EventType.STARTING] and [EventType.COMPLETED] events which are fired outside
-   * of project contexts.)
+   * Notifies listeners that the event of the given type has occurred. Additional information, such as the file being scanned, or the
+   * project being scanned, is available in the [Context] object (except for the [EventType.STARTING] and [EventType.COMPLETED] events which
+   * are fired outside of project contexts.)
    *
    * @param driver the driver running through the checks
    * @param type the type of event that occurred

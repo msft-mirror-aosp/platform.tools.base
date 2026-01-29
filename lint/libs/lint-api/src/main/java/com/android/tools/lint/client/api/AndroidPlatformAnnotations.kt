@@ -21,29 +21,25 @@ import org.jetbrains.uast.UAnnotation
 import org.jetbrains.uast.toUElement
 
 /**
- * General support for annotations in the Android platform source code (which are in the
- * `android.annotation` package rather than `androidx.annotation`).
+ * General support for annotations in the Android platform source code (which are in the `android.annotation` package rather than
+ * `androidx.annotation`).
  */
-class AndroidPlatformAnnotations(qualifiedName: String, private val delegate: UAnnotation) :
-  UAnnotation by delegate {
+class AndroidPlatformAnnotations(qualifiedName: String, private val delegate: UAnnotation) : UAnnotation by delegate {
   override val qualifiedName = toAndroidxAnnotation(qualifiedName)
 
   companion object {
     const val ANDROIDX_ANNOTATIONS_PREFIX = "androidx.annotation."
     const val PLATFORM_ANNOTATIONS_PREFIX = "android.annotation."
 
-    /**
-     * Returns true if the given [qualifiedName] represents one of the hidden annotations in the
-     * Android platform soure code.
-     */
+    /** Returns true if the given [qualifiedName] represents one of the hidden annotations in the Android platform soure code. */
     @JvmStatic
     fun isPlatformAnnotation(qualifiedName: String): Boolean {
       return qualifiedName.startsWith(PLATFORM_ANNOTATIONS_PREFIX)
     }
 
     /**
-     * Converts the given AndroidX annotation's [qualifiedName] into the qualified name for the
-     * corresponding hidden annotation in the Android platform source code.
+     * Converts the given AndroidX annotation's [qualifiedName] into the qualified name for the corresponding hidden annotation in the
+     * Android platform source code.
      */
     @JvmStatic
     fun toPlatformAnnotation(qualifiedName: String): String {
@@ -53,8 +49,8 @@ class AndroidPlatformAnnotations(qualifiedName: String, private val delegate: UA
     }
 
     /**
-     * Converts the given Android platform source code hidden annotation qualified name into the
-     * corresponding AndroidX annotation qualified name.
+     * Converts the given Android platform source code hidden annotation qualified name into the corresponding AndroidX annotation qualified
+     * name.
      */
     @JvmStatic
     fun toAndroidxAnnotation(qualifiedName: String): String {
@@ -64,8 +60,8 @@ class AndroidPlatformAnnotations(qualifiedName: String, private val delegate: UA
     }
 
     /**
-     * For an annotation that is in the `android.annotation` package, returns a corresponding
-     * annotation which reports itself to be in the `androidx.annotation` package instead.
+     * For an annotation that is in the `android.annotation` package, returns a corresponding annotation which reports itself to be in the
+     * `androidx.annotation` package instead.
      */
     fun UAnnotation.fromPlatformAnnotation(signature: String? = null): UAnnotation {
       val qualifiedName = signature ?: this.qualifiedName!!
@@ -74,8 +70,8 @@ class AndroidPlatformAnnotations(qualifiedName: String, private val delegate: UA
     }
 
     /**
-     * For an annotation that is in the `android.annotation` package, returns a corresponding
-     * annotation which reports itself to be in the `androidx.annotation` package instead.
+     * For an annotation that is in the `android.annotation` package, returns a corresponding annotation which reports itself to be in the
+     * `androidx.annotation` package instead.
      */
     fun PsiAnnotation.fromPlatformAnnotation(signature: String? = null): UAnnotation {
       val qualifiedName = signature ?: this.qualifiedName!!

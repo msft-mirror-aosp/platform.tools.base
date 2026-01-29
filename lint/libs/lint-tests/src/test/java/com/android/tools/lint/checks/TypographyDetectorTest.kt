@@ -24,10 +24,10 @@ class TypographyDetectorTest : AbstractCheckTest() {
 
   fun testDocumentationExample() {
     lint()
-      .files(
-        xml(
-            "res/values/typography.xml",
-            """
+        .files(
+            xml(
+                    "res/values/typography.xml",
+                    """
 
                 <resources>
                     <string name="home_title">Home 'Sample'</string>
@@ -60,12 +60,12 @@ class TypographyDetectorTest : AbstractCheckTest() {
                 </resources>
 
                 """,
-          )
-          .indented()
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .run()
+        .expect(
+            """
             res/values/typography.xml:17: Warning: Replace "-" with an "en dash" character (–, &#8211;) ? [TypographyDashes]
                 <string name="ndash">For ages 3-5</string>
                                      ~~~~~~~~~~~~
@@ -122,9 +122,9 @@ class TypographyDetectorTest : AbstractCheckTest() {
                                          ~~~~~~~~
             0 errors, 18 warnings
             """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
             Fix for res/values/typography.xml line 17: Replace with –:
             @@ -17 +17 @@
             -    <string name="ndash">For ages 3-5</string>
@@ -198,16 +198,16 @@ class TypographyDetectorTest : AbstractCheckTest() {
             -    <string name="copyright">(c) 2011</string>
             +    <string name="copyright">© 2011</string>
         """
-      )
+        )
   }
 
   fun testAnalytics() {
     //noinspection all // Sample code
     lint()
-      .files(
-        xml(
-            "res/values/analytics.xml",
-            """
+        .files(
+            xml(
+                    "res/values/analytics.xml",
+                    """
                 <resources>
                   <!--Replace placeholder ID with your tracking ID-->
                   <string name="ga_trackingId">UA-12345678-1</string>
@@ -224,20 +224,20 @@ class TypographyDetectorTest : AbstractCheckTest() {
                   <string name="test.pkg.OnClickActivity">Clicks</string>
                 </resources>
                 """,
-          )
-          .indented()
-      )
-      .run()
-      .expectClean()
+                )
+                .indented()
+        )
+        .run()
+        .expectClean()
   }
 
   fun testPlurals() {
     // Regression test for https://code.google.com/p/android/issues/detail?id=82588
     lint()
-      .files(
-        xml(
-            "res/values/plurals_typography.xml",
-            """
+        .files(
+            xml(
+                    "res/values/plurals_typography.xml",
+                    """
 
                 <resources>
                     <plurals name="ndash">
@@ -255,12 +255,12 @@ class TypographyDetectorTest : AbstractCheckTest() {
                     </string-array>
                 </resources>
                 """,
-          )
-          .indented()
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .run()
+        .expect(
+            """
             res/values/plurals_typography.xml:5: Warning: Replace "-" with an "en dash" character (–, &#8211;) ? [TypographyDashes]
                     <item quantity="one">For ages 3-5</item>
                                          ~~~~~~~~~~~~
@@ -272,9 +272,9 @@ class TypographyDetectorTest : AbstractCheckTest() {
                           ~~~~~~~~~~
             0 errors, 3 warnings
             """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
             Fix for res/values/plurals_typography.xml line 5: Replace with –:
             @@ -5 +5 @@
             -        <item quantity="one">For ages 3-5</item>
@@ -288,33 +288,33 @@ class TypographyDetectorTest : AbstractCheckTest() {
             -        <item>``second''</item>
             +        <item>“second”</item>
         """
-      )
+        )
   }
 
   fun testRTL() {
     lint()
-      .files(
-        xml(
-            "res/values-he/strings.xml",
-            """
+        .files(
+            xml(
+                    "res/values-he/strings.xml",
+                    """
 
                 <resources>
                     <string name="test">מ– 1-2-3</string>
                 </resources>
                 """,
-          )
-          .indented()
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .run()
+        .expect(
+            """
             res/values-he/strings.xml:3: Warning: Replace "-" with an "en dash" character (–, &#8211;) ? [TypographyDashes]
                 <string name="test">מ– 1-2-3</string>
                                     ~~~~~~~~
             0 errors, 1 warnings
             """
-      )
-      .expectFixDiffs("")
+        )
+        .expectFixDiffs("")
   }
 
   fun testDashesInUntranslatable() {
@@ -322,28 +322,28 @@ class TypographyDetectorTest : AbstractCheckTest() {
     //    https://code.google.com/p/android/issues/detail?id=214088
     // Don't flag service keys and untranslatable keys
     lint()
-      .files(
-        xml(
-            "res/values/strings.xml",
-            """
+        .files(
+            xml(
+                    "res/values/strings.xml",
+                    """
                 <resources>
                     <string name="untranslatable" translatable="false">12345-1abcd.1234abcd.apps.googleusercontent.com</string>
                     <string name="default_web_client_id">12345-1abcd.1234abcd.apps.googleusercontent.com</string>
                 </resources>
                 """,
-          )
-          .indented()
-      )
-      .run()
-      .expectClean()
+                )
+                .indented()
+        )
+        .run()
+        .expectClean()
   }
 
   fun testCdata216979742() {
     lint()
-      .files(
-        xml(
-            "res/values/strings.xml",
-            """
+        .files(
+            xml(
+                    "res/values/strings.xml",
+                    """
                 <resources>
                     <string name="url_text"><![CDATA[<a href="%1＄s">See docs</a>]]></string>
                     <string name="other">
@@ -357,68 +357,68 @@ class TypographyDetectorTest : AbstractCheckTest() {
                     </string>
                 </resources>
                 """,
-          )
-          .indented()
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .run()
+        .expect(
+            """
             res/values/strings.xml:8: Warning: Replace apostrophe (') with typographic apostrophe (’, &#8217;) ? [TypographyQuotes]
                   To open this panel again later, select "What's New in Android Studio"
                                                               ~
             0 errors, 1 warnings
             """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
             Fix for res/values/strings.xml line 8: Replace with ’:
             @@ -8 +8 @@
             -      To open this panel again later, select "What's New in Android Studio"
             +      To open this panel again later, select "What’s New in Android Studio"
             """
-      )
+        )
   }
 
   fun test226120471() {
     lint()
-      .files(
-        xml(
-            "res/values/strings.xml",
-            """
+        .files(
+            xml(
+                    "res/values/strings.xml",
+                    """
                 <resources>
                     <string name="test">The fraction is 3 / 4 !</string>
                 </resources>
                 """,
-          )
-          .indented()
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .run()
+        .expect(
+            """
             res/values/strings.xml:2: Warning: Use fraction character ¾ (&#190;) instead of 3/4? [TypographyFractions]
                 <string name="test">The fraction is 3 / 4 !</string>
                                     ~~~~~~~~~~~~~~~~~~~~~~~
             0 errors, 1 warnings
             """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
             Fix for res/values/strings.xml line 2: Replace with ¾:
             @@ -2 +2 @@
             -    <string name="test">The fraction is 3 / 4 !</string>
             +    <string name="test">The fraction is ¾ !</string>
             """
-      )
+        )
   }
 
   fun testTypographyQuotesEscaped() {
     // Regression test for
     //    https://issuetracker.google.com/269323652
     lint()
-      .files(
-        xml(
-            "res/values/strings.xml",
-            """
+        .files(
+            xml(
+                    "res/values/strings.xml",
+                    """
                 <resources>
                     <string name="test1">Hello John's Cat</string>  <!-- error 1 -->
                     <string name="test2">Hello John\'s Cat</string> <!-- error 1 -->
@@ -428,12 +428,12 @@ class TypographyDetectorTest : AbstractCheckTest() {
                     <string name="test4">.\'a</string> <!-- ok -->
                 </resources>
                 """,
-          )
-          .indented()
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .run()
+        .expect(
+            """
         res/values/strings.xml:2: Warning: Replace apostrophe (') with typographic apostrophe (’, &#8217;) ? [TypographyQuotes]
             <string name="test1">Hello John's Cat</string>  <!-- error 1 -->
                                            ~
@@ -442,17 +442,17 @@ class TypographyDetectorTest : AbstractCheckTest() {
                                             ~
         0 errors, 2 warnings
         """
-      )
+        )
   }
 
   fun testTypographyQuotesMultilineStrings() {
     // Regression test for
     //    https://issuetracker.google.com/293397290
     lint()
-      .files(
-        xml(
-            "res/values/strings.xml",
-            """
+        .files(
+            xml(
+                    "res/values/strings.xml",
+                    """
                 <resources>
                     <string name="test1">Hello John's Cat</string>  <!-- error 1 -->
                     <string name="test2">Hello
@@ -461,12 +461,12 @@ class TypographyDetectorTest : AbstractCheckTest() {
                     </string>  <!-- error 1 -->
                 </resources>
                 """,
-          )
-          .indented()
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .run()
+        .expect(
+            """
         res/values/strings.xml:2: Warning: Replace apostrophe (') with typographic apostrophe (’, &#8217;) ? [TypographyQuotes]
             <string name="test1">Hello John's Cat</string>  <!-- error 1 -->
                                            ~
@@ -475,17 +475,17 @@ class TypographyDetectorTest : AbstractCheckTest() {
                       ~
         0 errors, 2 warnings
         """
-      )
+        )
   }
 
   fun testMultipleApostrophes() {
     // Regression test for
     //   https://issuetracker.google.com/293397291
     lint()
-      .files(
-        xml(
-            "res/values/strings.xml",
-            """
+        .files(
+            xml(
+                    "res/values/strings.xml",
+                    """
             <resources>
                 <string name="app_name">Test</string>
 
@@ -513,12 +513,12 @@ class TypographyDetectorTest : AbstractCheckTest() {
                 </string>
             </resources>
           """,
-          )
-          .indented()
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .run()
+        .expect(
+            """
         res/values/strings.xml:4: Warning: Replace apostrophe (') with typographic apostrophe (’, &#8217;) ? [TypographyQuotes]
             <string name="single_control">This\'s found.</string>
                                                ~
@@ -539,9 +539,9 @@ class TypographyDetectorTest : AbstractCheckTest() {
                 ~~~~~~~~~~~~~~~~~~~~~~~~~~
         0 errors, 6 warnings
         """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
         Fix for res/values/strings.xml line 4: Replace with ’:
         @@ -4 +4 @@
         -    <string name="single_control">This\'s found.</string>
@@ -567,6 +567,6 @@ class TypographyDetectorTest : AbstractCheckTest() {
         -        Problem\'s before 'quotes'
         +        Problem\’s before 'quotes'
         """
-      )
+        )
   }
 }

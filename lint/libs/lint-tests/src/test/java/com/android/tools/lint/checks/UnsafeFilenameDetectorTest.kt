@@ -22,9 +22,9 @@ class UnsafeFilenameDetectorTest : AbstractCheckTest() {
 
   fun testDocumentationExample() {
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
                 import android.database.Cursor;
                 import android.provider.OpenableColumns;
                 import java.io.File;
@@ -38,10 +38,10 @@ class UnsafeFilenameDetectorTest : AbstractCheckTest() {
                   }
                 }
             """
-          )
-          .indented(),
-        kotlin(
-            """
+                )
+                .indented(),
+            kotlin(
+                    """
                 import android.database.Cursor
                 import android.provider.OpenableColumns
                 import java.io.File
@@ -55,12 +55,12 @@ class UnsafeFilenameDetectorTest : AbstractCheckTest() {
                   }
                 }
                 """
-          )
-          .indented(),
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+        )
+        .run()
+        .expect(
+            """
             src/TestClass.java:10: Warning: Using fileName is unsafe as it is a filename obtained directly from a ContentProvider. You should sanitize it before using it for creating a File. [UnsanitizedFilenameFromContentProvider]
                 File fileObject = new File("./", fileName);
                                                  ~~~~~~~~
@@ -69,14 +69,14 @@ class UnsafeFilenameDetectorTest : AbstractCheckTest() {
                                             ~~~~~~~~
             0 errors, 2 warnings
             """
-      )
+        )
   }
 
   fun testUsingUnsanitizedFilenameAsVariable_shouldWarn() {
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
                 import android.content.ContentResolver;
                 import android.content.Context;
                 import android.database.Cursor;
@@ -140,10 +140,10 @@ class UnsafeFilenameDetectorTest : AbstractCheckTest() {
                   }
                 }
             """
-          )
-          .indented(),
-        kotlin(
-            """
+                )
+                .indented(),
+            kotlin(
+                    """
                 import android.database.Cursor
                 import android.content.Context
                 import android.provider.OpenableColumns
@@ -205,12 +205,12 @@ class UnsafeFilenameDetectorTest : AbstractCheckTest() {
                   }
                 }
                 """
-          )
-          .indented(),
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+        )
+        .run()
+        .expect(
+            """
             src/TestClass.java:12: Warning: Using fileName is unsafe as it is a filename obtained directly from a ContentProvider. You should sanitize it before using it for creating a File. [UnsanitizedFilenameFromContentProvider]
                 File fileObject = new File("./", fileName);
                                                  ~~~~~~~~
@@ -261,14 +261,14 @@ class UnsafeFilenameDetectorTest : AbstractCheckTest() {
                                             ~~~~~~~~
             0 errors, 16 warnings
             """
-      )
+        )
   }
 
   fun testUnusedFilename_shouldNotWarn() {
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
                 import android.database.Cursor;
                 import android.provider.OpenableColumns;
 
@@ -279,10 +279,10 @@ class UnsafeFilenameDetectorTest : AbstractCheckTest() {
                   }
                 }
             """
-          )
-          .indented(),
-        kotlin(
-            """
+                )
+                .indented(),
+            kotlin(
+                    """
                 import android.database.Cursor
                 import android.provider.OpenableColumns
 
@@ -293,18 +293,18 @@ class UnsafeFilenameDetectorTest : AbstractCheckTest() {
                   }
                 }
                 """
-          )
-          .indented(),
-      )
-      .run()
-      .expectClean()
+                )
+                .indented(),
+        )
+        .run()
+        .expectClean()
   }
 
   fun testFilenamePotentiallySanitized_shouldNotWarn() {
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
                 import android.database.Cursor;
                 import android.provider.OpenableColumns;
                 import java.io.File;
@@ -350,10 +350,10 @@ class UnsafeFilenameDetectorTest : AbstractCheckTest() {
                   }
                 }
             """
-          )
-          .indented(),
-        kotlin(
-            """
+                )
+                .indented(),
+            kotlin(
+                    """
                 import android.database.Cursor
                 import android.provider.OpenableColumns
                 import java.io.File
@@ -399,18 +399,18 @@ class UnsafeFilenameDetectorTest : AbstractCheckTest() {
                   }
                 }
                 """
-          )
-          .indented(),
-      )
-      .run()
-      .expectClean()
+                )
+                .indented(),
+        )
+        .run()
+        .expectClean()
   }
 
   fun testFilenameEscapesToClassField_shouldWarn() {
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
                 import android.database.Cursor;
                 import android.provider.OpenableColumns;
                 import java.io.File;
@@ -432,10 +432,10 @@ class UnsafeFilenameDetectorTest : AbstractCheckTest() {
                   }
                 }
             """
-          )
-          .indented(),
-        kotlin(
-            """
+                )
+                .indented(),
+            kotlin(
+                    """
                 import android.database.Cursor
                 import android.provider.OpenableColumns
                 import java.io.File
@@ -457,12 +457,12 @@ class UnsafeFilenameDetectorTest : AbstractCheckTest() {
                   }
                 }
                 """
-          )
-          .indented(),
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+        )
+        .run()
+        .expect(
+            """
             src/TestClass.java:18: Warning: Using fileName is unsafe as it is a filename obtained directly from a ContentProvider. You should sanitize it before using it for creating a File. [UnsanitizedFilenameFromContentProvider]
                 new File("./", fileName);
                                ~~~~~~~~
@@ -471,14 +471,14 @@ class UnsafeFilenameDetectorTest : AbstractCheckTest() {
                            ~~~~~~~~
             0 errors, 2 warnings
       """
-      )
+        )
   }
 
   fun testFilenameEscapesToIgnoredCases_shouldWarn() {
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
                 import android.database.Cursor;
                 import android.provider.OpenableColumns;
                 import java.io.File;
@@ -507,10 +507,10 @@ class UnsafeFilenameDetectorTest : AbstractCheckTest() {
                   }
                 }
             """
-          )
-          .indented(),
-        kotlin(
-            """
+                )
+                .indented(),
+            kotlin(
+                    """
                 import android.database.Cursor
                 import android.provider.OpenableColumns
                 import java.io.File
@@ -540,12 +540,12 @@ class UnsafeFilenameDetectorTest : AbstractCheckTest() {
                   }
                 }
                 """
-          )
-          .indented(),
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+        )
+        .run()
+        .expect(
+            """
             src/TestClass.java:15: Warning: Using fileName is unsafe as it is a filename obtained directly from a ContentProvider. You should sanitize it before using it for creating a File. [UnsanitizedFilenameFromContentProvider]
                 File fileObject = new File("./", fileName);
                                                  ~~~~~~~~
@@ -560,14 +560,14 @@ class UnsafeFilenameDetectorTest : AbstractCheckTest() {
                                             ~~~~~~~~
             0 errors, 4 warnings
       """
-      )
+        )
   }
 
   fun testDifferentColumnNames_shouldNotWarn() {
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
                 import android.database.Cursor;
                 import android.provider.OpenableColumns;
                 import java.io.File;
@@ -585,10 +585,10 @@ class UnsafeFilenameDetectorTest : AbstractCheckTest() {
                   }
                 }
             """
-          )
-          .indented(),
-        kotlin(
-            """
+                )
+                .indented(),
+            kotlin(
+                    """
                 import android.database.Cursor
                 import android.provider.OpenableColumns
                 import java.io.File
@@ -606,18 +606,18 @@ class UnsafeFilenameDetectorTest : AbstractCheckTest() {
                   }
                 }
                 """
-          )
-          .indented(),
-      )
-      .run()
-      .expectClean()
+                )
+                .indented(),
+        )
+        .run()
+        .expectClean()
   }
 
   fun testUseReceivedObjects_shouldNotWarn() {
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
                 import android.database.Cursor;
                 import java.io.File;
 
@@ -632,10 +632,10 @@ class UnsafeFilenameDetectorTest : AbstractCheckTest() {
                   }
                 }
             """
-          )
-          .indented(),
-        kotlin(
-            """
+                )
+                .indented(),
+            kotlin(
+                    """
                 import android.database.Cursor
                 import java.io.File
 
@@ -650,18 +650,18 @@ class UnsafeFilenameDetectorTest : AbstractCheckTest() {
                   }
                 }
                 """
-          )
-          .indented(),
-      )
-      .run()
-      .expectClean()
+                )
+                .indented(),
+        )
+        .run()
+        .expectClean()
   }
 
   fun testSuppressWarning_shouldNotWarn() {
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
                 import android.database.Cursor;
                 import android.provider.OpenableColumns;
                 import java.io.File;
@@ -681,10 +681,10 @@ class UnsafeFilenameDetectorTest : AbstractCheckTest() {
                   }
                 }
             """
-          )
-          .indented(),
-        kotlin(
-            """
+                )
+                .indented(),
+            kotlin(
+                    """
                 import android.database.Cursor
                 import android.provider.OpenableColumns
                 import java.io.File
@@ -704,10 +704,10 @@ class UnsafeFilenameDetectorTest : AbstractCheckTest() {
                   }
                 }
                 """
-          )
-          .indented(),
-      )
-      .run()
-      .expectClean()
+                )
+                .indented(),
+        )
+        .run()
+        .expectClean()
   }
 }

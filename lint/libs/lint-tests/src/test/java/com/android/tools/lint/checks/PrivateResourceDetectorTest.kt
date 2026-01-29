@@ -22,16 +22,14 @@ class PrivateResourceDetectorTest {
   @get:Rule var temporaryFolder = TemporaryFolder()
 
   fun lint(): TestLintTask {
-    return TestLintTask.lint()
-      .issues(PrivateResourceDetector.ISSUE)
-      .sdkHome(TestUtils.getSdk().toFile())
+    return TestLintTask.lint().issues(PrivateResourceDetector.ISSUE).sdkHome(TestUtils.getSdk().toFile())
   }
 
   // Sample code
   private val cls =
-    java(
-        "src/main/java/test/pkg/Private.java",
-        """
+      java(
+              "src/main/java/test/pkg/Private.java",
+              """
         package test.pkg;
         public class Private {
             void test() {
@@ -40,13 +38,13 @@ class PrivateResourceDetectorTest {
             }
         }
         """,
-      )
-      .indented()
+          )
+          .indented()
 
   private val strings =
-    xml(
-        "src/main/res/values/strings.xml",
-        """
+      xml(
+              "src/main/res/values/strings.xml",
+              """
         <resources xmlns:tools="http://schemas.android.com/tools">
 
             <string tools:override="true" name="my_private_string">String 1</string>
@@ -54,55 +52,54 @@ class PrivateResourceDetectorTest {
 
         </resources>
         """,
-      )
-      .indented()
+          )
+          .indented()
 
   private val defaultLibraryMocks: Consumer<GradleModelMocker> =
-    createLibraryMocker(
-      createLibrary(
-        artifact = "com.android.tools:test-library:1.0.0",
-        all =
-          listOf(
-            "@string/my_private_string",
-            "@string/my_public_string",
-            "@layout/my_private_layout",
-            "@id/title",
-            "@style/Theme_AppCompat_DayNight",
-          ),
-        public = listOf("@string/my_public_string", "@style/Theme_AppCompat_DayNight"),
+      createLibraryMocker(
+          createLibrary(
+              artifact = "com.android.tools:test-library:1.0.0",
+              all =
+                  listOf(
+                      "@string/my_private_string",
+                      "@string/my_public_string",
+                      "@layout/my_private_layout",
+                      "@id/title",
+                      "@style/Theme_AppCompat_DayNight",
+                  ),
+              public = listOf("@string/my_public_string", "@style/Theme_AppCompat_DayNight"),
+          )
       )
-    )
 
-  private val defaultRClass: TestFile =
-    rClass("test.pkg", "@string/my_private_string", "@string/my_public_string")
+  private val defaultRClass: TestFile = rClass("test.pkg", "@string/my_private_string", "@string/my_public_string")
 
   private val gradle: TestFile =
-    gradle(
-        """
+      gradle(
+              """
         apply plugin: 'com.android.application'
 
         dependencies {
             compile 'com.android.tools:test-library:1.0.0'
         }
         """
-      )
-      .indented()
-      .withMockerConfigurator(defaultLibraryMocks)
+          )
+          .indented()
+          .withMockerConfigurator(defaultLibraryMocks)
 
   @Test
   fun testPrivateInXml() {
     val expected =
-      """
+        """
             src/main/res/layout/private.xml:10: Warning: The resource @string/my_private_string is marked as private in com.android.tools:test-library:1.0.0 [PrivateResource]
                         android:text="@string/my_private_string" />
                                       ~~~~~~~~~~~~~~~~~~~~~~~~~
             0 errors, 1 warnings
             """
     lint()
-      .files(
-        xml(
-            "src/main/res/layout/private.xml",
-            """
+        .files(
+            xml(
+                    "src/main/res/layout/private.xml",
+                    """
                 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
                               android:id="@+id/newlinear"
                               android:orientation="vertical"
@@ -120,28 +117,28 @@ class PrivateResourceDetectorTest {
                             android:text="@string/my_public_string" />
                 </LinearLayout>
                 """,
-          )
-          .indented(),
-        gradle,
-      )
-      .run()
-      .expect(expected)
+                )
+                .indented(),
+            gradle,
+        )
+        .run()
+        .expect(expected)
   }
 
   @Test
   fun testPrivateInJava() {
     val expected =
-      """
+        """
             src/main/java/test/pkg/Private.java:4: Warning: The resource @string/my_private_string is marked as private in com.android.tools:test-library:1.0.0 [PrivateResource]
                     int x = R.string.my_private_string; // ERROR
                                      ~~~~~~~~~~~~~~~~~
             0 errors, 1 warnings
             """
     lint()
-      .files(
-        java(
-            "src/main/java/test/pkg/Private.java",
-            """
+        .files(
+            java(
+                    "src/main/java/test/pkg/Private.java",
+                    """
                 package test.pkg;
                 public class Private {
                     void test() {
@@ -151,24 +148,24 @@ class PrivateResourceDetectorTest {
                     }
                 }
                 """,
-          )
-          .indented(),
-        defaultRClass,
-        gradle,
-      )
-      .allowCompilationErrors()
-      .run()
-      .expect(expected)
+                )
+                .indented(),
+            defaultRClass,
+            gradle,
+        )
+        .allowCompilationErrors()
+        .run()
+        .expect(expected)
   }
 
   @Test
   fun testStyle() {
     // Regression test for https://code.google.com/p/android/issues/detail?id=221560
     lint()
-      .files(
-        xml(
-            "src/main/res/layout/private2.xml",
-            """
+        .files(
+            xml(
+                    "src/main/res/layout/private2.xml",
+                    """
                 <merge xmlns:android="http://schemas.android.com/apk/res/android">
 
                     <View
@@ -183,18 +180,18 @@ class PrivateResourceDetectorTest {
 
                 </merge>
                 """,
-          )
-          .indented(),
-        gradle,
-      )
-      .run()
-      .expectClean()
+                )
+                .indented(),
+            gradle,
+        )
+        .run()
+        .expectClean()
   }
 
   @Test
   fun testOverride() {
     val expected =
-      """
+        """
             src/main/res/layout/my_private_layout.xml: Warning: Overriding @layout/my_private_layout which is marked as private in com.android.tools:test-library:1.0.0. If deliberate, use tools:override="true", otherwise pick a different name. [PrivateResource]
             src/main/res/values/strings.xml:3: Warning: Overriding @string/my_private_string which is marked as private in com.android.tools:test-library:1.0.0. If deliberate, use tools:override="true", otherwise pick a different name. [PrivateResource]
                 <string name="my_private_string">String 1</string>
@@ -208,10 +205,10 @@ class PrivateResourceDetectorTest {
             0 errors, 4 warnings
             """
     lint()
-      .files(
-        xml(
-            "src/main/res/values/strings.xml",
-            """
+        .files(
+            xml(
+                    "src/main/res/values/strings.xml",
+                    """
                 <resources xmlns:tools="http://schemas.android.com/tools">
                     <string name="app_name">LibraryProject</string>
                     <string name="my_private_string">String 1</string>
@@ -225,80 +222,80 @@ class PrivateResourceDetectorTest {
                     <string tools:override="true" name="my_private_string">String 2</string>
                 </resources>
                 """,
-          )
-          .indented(),
-        xml("src/main/res/layout/my_private_layout.xml", "<LinearLayout/>"),
-        xml("src/main/res/layout/my_public_layout.xml", "<LinearLayout/>"),
-        gradle(
-            """
+                )
+                .indented(),
+            xml("src/main/res/layout/my_private_layout.xml", "<LinearLayout/>"),
+            xml("src/main/res/layout/my_public_layout.xml", "<LinearLayout/>"),
+            gradle(
+                    """
                 apply plugin: 'com.android.application'
 
                 dependencies {
                     compile 'com.android.tools:test-library:1.0.0'
                 }
                 """
-          )
-          .indented()
-          .withMockerConfigurator(defaultLibraryMocks),
-      )
-      .run()
-      .expect(expected)
+                )
+                .indented()
+                .withMockerConfigurator(defaultLibraryMocks),
+        )
+        .run()
+        .expect(expected)
   }
 
   @Test
   fun testOverrideFileResource() {
     lint()
-      .files(
-        xml(
-            "src/main/res/values/strings.xml",
-            """
+        .files(
+            xml(
+                    "src/main/res/values/strings.xml",
+                    """
             <resources>
                 <string name="app_name">LibraryProject</string>
             </resources>
             """,
-          )
-          .indented(),
-        xml(
-            "src/main/res/layout/my_private_layout.xml",
-            """
+                )
+                .indented(),
+            xml(
+                    "src/main/res/layout/my_private_layout.xml",
+                    """
             <LinearLayout xmlns:tools="http://schemas.android.com/tools" tools:override="true"/>
             """,
-          )
-          .indented(),
-        gradle(
-            """
+                )
+                .indented(),
+            gradle(
+                    """
             apply plugin: 'com.android.application'
 
             dependencies {
                 compile 'com.android.tools:test-library:1.0.0'
             }
             """
-          )
-          .indented()
-          .withMockerConfigurator(defaultLibraryMocks),
-      )
-      .run()
-      .expectClean()
+                )
+                .indented()
+                .withMockerConfigurator(defaultLibraryMocks),
+        )
+        .run()
+        .expectClean()
   }
 
   @Test
   fun testIds() {
     // Regression test for https://code.google.com/p/android/issues/detail?id=183851
     lint()
-      .files(
-        xml(
-          "src/main/res/layout/private.xml",
-          """
+        .files(
+            xml(
+                "src/main/res/layout/private.xml",
+                """
                 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
                               android:id="@+id/title"
                               android:orientation="vertical"
                               android:layout_width="match_parent"
                               android:layout_height="match_parent"/>
                 """,
-        ),
-        java(
-            "src/main/java/test/pkg/Private.java",
-            """
+            ),
+            java(
+                    "src/main/java/test/pkg/Private.java",
+                    """
                 package test.pkg;
                 public class Private {
                     void test() {
@@ -311,22 +308,22 @@ class PrivateResourceDetectorTest {
                     }
                 }
                 """,
-          )
-          .indented(),
-        gradle(
-            """
+                )
+                .indented(),
+            gradle(
+                    """
                 apply plugin: 'com.android.application'
 
                 dependencies {
                     compile 'com.android.tools:test-library:1.0.0'
                 }
                 """
-          )
-          .indented()
-          .withMockerConfigurator(defaultLibraryMocks),
-      )
-      .run()
-      .expectClean()
+                )
+                .indented()
+                .withMockerConfigurator(defaultLibraryMocks),
+        )
+        .run()
+        .expectClean()
   }
 
   @Test
@@ -339,30 +336,23 @@ class PrivateResourceDetectorTest {
     //       you also need to mark that local resource as a deliberate override,
     //       but if not you'll get a warning in the XML file where the override is
     //       defined.)
-    lint()
-      .files(manifest().pkg("test.pkg"), defaultRClass, cls, strings, gradle)
-      .run()
-      .expectClean()
+    lint().files(manifest().pkg("test.pkg"), defaultRClass, cls, strings, gradle).run().expectClean()
   }
 
   @Test
   fun testAllowLocalOverridesWithResourceRepository() {
     // Regression test for
     //   https://code.google.com/p/android/issues/detail?id=207152
-    lint()
-      .files(manifest().pkg("test.pkg"), defaultRClass, cls, strings, gradle)
-      .supportResourceRepository(true)
-      .run()
-      .expectClean()
+    lint().files(manifest().pkg("test.pkg"), defaultRClass, cls, strings, gradle).supportResourceRepository(true).run().expectClean()
   }
 
   @Test
   fun test195097935() {
     // Regression test for 195097935: Use of private resources doesn't generate any lint warnings
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
                 package com.example.resourcevisibility;
 
                 public class MainActivity extends android.app.Activity {
@@ -377,20 +367,20 @@ class PrivateResourceDetectorTest {
                   }
                 }
                 """
-          )
-          .indented(),
-        rClass(
-          "com.example.resourcevisibility",
-          "@anim/abc_fade_in",
-          "@style/Animation_Design_BottomSheetDialog",
-        ),
-        rClass(
-          "com.google.android.material",
-          "@anim/abc_fade_in",
-          "@style/Animation_Design_BottomSheetDialog",
-        ),
-        gradle(
-            """
+                )
+                .indented(),
+            rClass(
+                "com.example.resourcevisibility",
+                "@anim/abc_fade_in",
+                "@style/Animation_Design_BottomSheetDialog",
+            ),
+            rClass(
+                "com.google.android.material",
+                "@anim/abc_fade_in",
+                "@style/Animation_Design_BottomSheetDialog",
+            ),
+            gradle(
+                    """
                 apply plugin: 'com.android.application'
                 dependencies {
                     implementation 'com.google.android.material:material:1.4.0'
@@ -398,42 +388,42 @@ class PrivateResourceDetectorTest {
                     implementation 'androidx.appcompat:appcompat:1.3.1'
                 }
                 """
-          )
-          .indented()
-          .withMockerConfigurator(
-            createLibraryMocker(
-              createLibrary(
-                artifact = "com.google.android.material:material:1.4.0",
-                all =
-                  listOf(
-                    "@attr/showMotionSpec",
-                    "@anim/abc_fade_in",
-                    "@anim/abc_tooltip_enter",
-                    "@style/Animation_Design_BottomSheetDialog",
-                  ),
-                public = listOf("@attr/showMotionSpec", "@style/Animation_Design_BottomSheetDialog"),
-              ),
-              createLibrary(
-                artifact = "androidx.appcompat:appcompat:1.3.1",
-                all =
-                  listOf(
-                    "@attr/autoCompleteTextViewStyle",
-                    "@anim/abc_fade_in",
-                    "@drawable/abc_edit_text_material",
-                  ),
-                public = listOf("@attr/autoCompleteTextViewStyle"),
-              ),
-              createLibrary(
-                artifact = "androidx.activity:activity:1.3.1",
-                all = listOf("@color/ripple_material_light"),
-                // no public resources
-              ),
-            )
-          ),
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+                .withMockerConfigurator(
+                    createLibraryMocker(
+                        createLibrary(
+                            artifact = "com.google.android.material:material:1.4.0",
+                            all =
+                                listOf(
+                                    "@attr/showMotionSpec",
+                                    "@anim/abc_fade_in",
+                                    "@anim/abc_tooltip_enter",
+                                    "@style/Animation_Design_BottomSheetDialog",
+                                ),
+                            public = listOf("@attr/showMotionSpec", "@style/Animation_Design_BottomSheetDialog"),
+                        ),
+                        createLibrary(
+                            artifact = "androidx.appcompat:appcompat:1.3.1",
+                            all =
+                                listOf(
+                                    "@attr/autoCompleteTextViewStyle",
+                                    "@anim/abc_fade_in",
+                                    "@drawable/abc_edit_text_material",
+                                ),
+                            public = listOf("@attr/autoCompleteTextViewStyle"),
+                        ),
+                        createLibrary(
+                            artifact = "androidx.activity:activity:1.3.1",
+                            all = listOf("@color/ripple_material_light"),
+                            // no public resources
+                        ),
+                    )
+                ),
+        )
+        .run()
+        .expect(
+            """
             src/main/java/com/example/resourcevisibility/MainActivity.java:7: Warning: The resource @anim/abc_fade_in is marked as private in com.google.android.material:material:1.4.0 [PrivateResource]
                 int privateResourceId = com.google.android.material.R.anim.abc_fade_in;
                                                                            ~~~~~~~~~~~
@@ -442,7 +432,7 @@ class PrivateResourceDetectorTest {
                                                 ~~~~~~~~~~~
             0 errors, 2 warnings
             """
-      )
+        )
   }
 
   @Test
@@ -450,56 +440,51 @@ class PrivateResourceDetectorTest {
     // Regression test for 117235985: false positive when a resource is private in one library but
     // implicitly public in another.
     lint()
-      .files(
-        xml(
-          "src/main/res/values/styles.xml",
-          """
+        .files(
+            xml(
+                "src/main/res/values/styles.xml",
+                """
                 <resources>
                     <style name="Test" parent="android:Widget">
                         <item name="cardElevation">@dimen/cardview_default_elevation</item>
                     </style>
                 </resources>
                 """,
-        ),
-        gradle(
-            """
+            ),
+            gradle(
+                    """
                 apply plugin: 'com.android.application'
                 dependencies {
                     implementation 'com.google.android.material:material:1.4.0'
                     implementation 'androidx.cardview:cardview:1.0.0'
                 }
                 """
-          )
-          .indented()
-          .withMockerConfigurator(
-            createLibraryMocker(
-              createLibrary(
-                artifact = "com.google.android.material:material:1.4.0",
-                all = listOf("@dimen/cardview_default_elevation", "@style/some_other_thing"),
-                public = listOf("@style/some_other_thing"),
-              ),
-              createLibrary(
-                artifact = "androidx.cardview:cardview:1.0.0",
-                all = listOf("@dimen/cardview_default_elevation"),
-                public =
-                  emptyList(), // No public.txt file at all, so all resources are implicitly public.
-              ),
-            )
-          ),
-      )
-      .run()
-      .expectClean()
+                )
+                .indented()
+                .withMockerConfigurator(
+                    createLibraryMocker(
+                        createLibrary(
+                            artifact = "com.google.android.material:material:1.4.0",
+                            all = listOf("@dimen/cardview_default_elevation", "@style/some_other_thing"),
+                            public = listOf("@style/some_other_thing"),
+                        ),
+                        createLibrary(
+                            artifact = "androidx.cardview:cardview:1.0.0",
+                            all = listOf("@dimen/cardview_default_elevation"),
+                            public = emptyList(), // No public.txt file at all, so all resources are implicitly public.
+                        ),
+                    )
+                ),
+        )
+        .run()
+        .expectClean()
   }
 
   private fun createAllSymbolsFile(artifact: String, vararg resources: String): File {
     val file = File(temporaryFolder.root, artifact.replace(':', '_') + "/" + FN_RESOURCE_TEXT)
     var id = 0x7f040000
     file.parentFile?.mkdirs()
-    file.writeText(
-      resources
-        .map { it.toUrl() }
-        .joinToString("\n") { "int ${it.type} ${it.name} 0x${Integer.toHexString(id++)}" }
-    )
+    file.writeText(resources.map { it.toUrl() }.joinToString("\n") { "int ${it.type} ${it.name} 0x${Integer.toHexString(id++)}" })
     return file
   }
 
@@ -514,28 +499,25 @@ class PrivateResourceDetectorTest {
     return file
   }
 
-  private fun String.toUrl(): ResourceUrl =
-    ResourceUrl.parse(this) ?: error("Invalid resource reference $this")
+  private fun String.toUrl(): ResourceUrl = ResourceUrl.parse(this) ?: error("Invalid resource reference $this")
 
   private fun createLibrary(
-    artifact: String,
-    all: List<String>,
-    public: List<String> = emptyList(),
+      artifact: String,
+      all: List<String>,
+      public: List<String> = emptyList(),
   ): Triple<String, List<String>, List<String>> = Triple(artifact, all, public)
 
-  private fun createLibraryMocker(
-    vararg libraries: Triple<String, List<String>, List<String>>
-  ): Consumer<GradleModelMocker> {
+  private fun createLibraryMocker(vararg libraries: Triple<String, List<String>, List<String>>): Consumer<GradleModelMocker> {
     return Consumer { mocker: GradleModelMocker ->
       for (library in libraries) {
         val (artifact, all, public) = library
         mocker.withLibraryPublicResourcesFile(
-          artifact,
-          createPublicSymbolsFile(artifact, *public.toTypedArray()).path,
+            artifact,
+            createPublicSymbolsFile(artifact, *public.toTypedArray()).path,
         )
         mocker.withLibrarySymbolFile(
-          artifact,
-          createAllSymbolsFile(artifact, *all.toTypedArray()).path,
+            artifact,
+            createAllSymbolsFile(artifact, *all.toTypedArray()).path,
         )
       }
     }

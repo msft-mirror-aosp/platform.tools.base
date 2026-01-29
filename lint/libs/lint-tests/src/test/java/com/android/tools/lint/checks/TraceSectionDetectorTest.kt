@@ -24,9 +24,9 @@ class TraceSectionDetectorTest : AbstractCheckTest() {
 
   override fun lint(): TestLintTask {
     return super.lint()
-      // By default, test strict mode. The tests testNonStrictKotlin() and testNonStrictJava()
-      // turn this off to check the other behavior
-      .configureOption(TraceSectionDetector.STRICT_MODE, true)
+        // By default, test strict mode. The tests testNonStrictKotlin() and testNonStrictJava()
+        // turn this off to check the other behavior
+        .configureOption(TraceSectionDetector.STRICT_MODE, true)
   }
 
   override fun getDetector(): Detector = TraceSectionDetector()
@@ -35,11 +35,11 @@ class TraceSectionDetectorTest : AbstractCheckTest() {
 
   fun testDocumentationExample() {
     lint()
-      .files(
-        classpath(),
-        manifest().minSdk(18),
-        kotlin(
-            """
+        .files(
+            classpath(),
+            manifest().minSdk(18),
+            kotlin(
+                    """
             package test.pkg
 
             import android.os.Trace
@@ -75,12 +75,12 @@ class TraceSectionDetectorTest : AbstractCheckTest() {
 
             suspend fun suspendingCall() { }
             """
-          )
-          .indented(),
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+        )
+        .run()
+        .expect(
+            """
           src/test/pkg/test.kt:12: Warning: The beginSection() call is not always closed with a matching endSection() because the code in between may suspend [UnclosedTrace]
               Trace.beginSection("Wrong-1")
                     ~~~~~~~~~~~~
@@ -89,16 +89,16 @@ class TraceSectionDetectorTest : AbstractCheckTest() {
                     ~~~~~~~~~~~~
           0 errors, 2 warnings
           """
-      )
+        )
   }
 
   fun testGuardedTrace() {
     lint()
-      .files(
-        classpath(),
-        manifest().minSdk(29),
-        kotlin(
-            """
+        .files(
+            classpath(),
+            manifest().minSdk(29),
+            kotlin(
+                    """
             package test.pkg
 
             import android.os.Trace
@@ -143,21 +143,21 @@ class TraceSectionDetectorTest : AbstractCheckTest() {
             fun safeBlockingCall() { }
             fun unsafeBlockingCall() { error() }
             """
-          )
-          .indented(),
-        traceApiStub,
-      )
-      .run()
-      .expectClean()
+                )
+                .indented(),
+            traceApiStub,
+        )
+        .run()
+        .expectClean()
   }
 
   fun testNonStrictKotlin() {
     lint()
-      .files(
-        classpath(),
-        manifest().minSdk(18),
-        kotlin(
-            """
+        .files(
+            classpath(),
+            manifest().minSdk(18),
+            kotlin(
+                    """
             package test.pkg
 
             import android.os.Trace
@@ -182,13 +182,13 @@ class TraceSectionDetectorTest : AbstractCheckTest() {
             fun safeBlockingCall() { /* looks safe */ }
             fun blockingCallThatMightThrow() { error("can throw") }
             """
-          )
-          .indented(),
-      )
-      .configureOption(TraceSectionDetector.STRICT_MODE, false)
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+        )
+        .configureOption(TraceSectionDetector.STRICT_MODE, false)
+        .run()
+        .expect(
+            """
 src/test/pkg/test.kt:10: Warning: The beginSection() call is not always closed with a matching endSection() because the code in between may throw an exception [UnclosedTrace]
     Trace.beginSection("Wrong-1")
           ~~~~~~~~~~~~
@@ -197,16 +197,16 @@ src/test/pkg/test.kt:16: Warning: The beginSection() call is not always closed w
           ~~~~~~~~~~~~
 0 errors, 2 warnings
 """
-      )
+        )
   }
 
   fun testStrictJava() {
     lint()
-      .files(
-        classpath(),
-        manifest().minSdk(18),
-        java(
-            """
+        .files(
+            classpath(),
+            manifest().minSdk(18),
+            java(
+                    """
             package test.pkg;
 
             import android.os.Trace;
@@ -242,12 +242,12 @@ src/test/pkg/test.kt:16: Warning: The beginSection() call is not always closed w
                 void doSomethingThatLooksSafe() { /* looks safe */ }
             }
             """
-          )
-          .indented(),
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+        )
+        .run()
+        .expect(
+            """
 src/test/pkg/Test.java:7: Warning: The beginSection() call is not always closed with a matching endSection() because the code in between may throw an exception [UnclosedTrace]
         Trace.beginSection("Wrong-1");
               ~~~~~~~~~~~~
@@ -259,16 +259,16 @@ src/test/pkg/Test.java:15: Warning: The beginSection() call is not always closed
               ~~~~~~~~~~~~
 0 errors, 3 warnings
           """
-      )
+        )
   }
 
   fun testNonStrictJava() {
     lint()
-      .files(
-        classpath(),
-        manifest().minSdk(18),
-        java(
-            """
+        .files(
+            classpath(),
+            manifest().minSdk(18),
+            java(
+                    """
             package test.pkg;
 
             import android.os.Trace;
@@ -306,28 +306,28 @@ src/test/pkg/Test.java:15: Warning: The beginSection() call is not always closed
                 void doSomethingThatLooksSafe() { /* looks safe */ }
             }
             """
-          )
-          .indented(),
-      )
-      .configureOption(TraceSectionDetector.STRICT_MODE, false)
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+        )
+        .configureOption(TraceSectionDetector.STRICT_MODE, false)
+        .run()
+        .expect(
+            """
 src/test/pkg/Test.java:7: Warning: The beginSection() call is not always closed with a matching endSection() because the code in between may throw an exception [UnclosedTrace]
         Trace.beginSection("Wrong");
               ~~~~~~~~~~~~
 0 errors, 1 warnings
           """
-      )
+        )
   }
 
   fun testSystemApis() {
     lint()
-      .files(
-        classpath(),
-        manifest().minSdk(18),
-        kotlin(
-            """
+        .files(
+            classpath(),
+            manifest().minSdk(18),
+            kotlin(
+                    """
             package test.pkg
 
             import android.os.Trace
@@ -372,13 +372,13 @@ src/test/pkg/Test.java:7: Warning: The beginSection() call is not always closed 
 
             suspend fun suspendingCall() { }
             """
-          )
-          .indented(),
-        traceApiStub,
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            traceApiStub,
+        )
+        .run()
+        .expect(
+            """
         src/test/pkg/test.kt:18: Warning: The traceBegin() call is not always closed with a matching traceEnd() because the code in between may return early [UnclosedTrace]
             Trace.traceBegin(Trace.TRACE_TAG_APP, "Wrong-1")
                   ~~~~~~~~~~
@@ -387,16 +387,16 @@ src/test/pkg/Test.java:7: Warning: The beginSection() call is not always closed 
                   ~~~~~~~~~~
         0 errors, 2 warnings
         """
-      )
+        )
   }
 
   fun testAndroidXApis() {
     lint()
-      .files(
-        classpath(),
-        manifest().minSdk(18),
-        kotlin(
-            """
+        .files(
+            classpath(),
+            manifest().minSdk(18),
+            kotlin(
+                    """
             package test.pkg
 
             import androidx.tracing.Trace
@@ -441,14 +441,14 @@ src/test/pkg/Test.java:7: Warning: The beginSection() call is not always closed 
 
             suspend fun suspendingCall() { }
             """
-          )
-          .indented(),
-        traceApiStub,
-        androidxTraceStub,
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            traceApiStub,
+            androidxTraceStub,
+        )
+        .run()
+        .expect(
+            """
         src/test/pkg/test.kt:12: Warning: The beginSection() call is not always closed with a matching endSection() because the code in between may return early [UnclosedTrace]
             Trace.beginSection("Wrong-1")
                   ~~~~~~~~~~~~
@@ -460,16 +460,16 @@ src/test/pkg/Test.java:7: Warning: The beginSection() call is not always closed 
                              ~~~~~~~~~~~~
         0 errors, 3 warnings
         """
-      )
+        )
   }
 
   fun testSimpleBlockingCall() {
     lint()
-      .files(
-        classpath(),
-        manifest().minSdk(18),
-        kotlin(
-            """
+        .files(
+            classpath(),
+            manifest().minSdk(18),
+            kotlin(
+                    """
             package test.pkg
 
             import android.os.Trace
@@ -482,27 +482,27 @@ src/test/pkg/Test.java:7: Warning: The beginSection() call is not always closed 
 
             fun blockingCall() { error("can throw") }
             """
-          )
-          .indented(),
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+        )
+        .run()
+        .expect(
+            """
           src/test/pkg/test.kt:6: Warning: The beginSection() call is not always closed with a matching endSection() because the code in between may throw an exception [UnclosedTrace]
               Trace.beginSection("Wrong")
                     ~~~~~~~~~~~~
           0 errors, 1 warnings
           """
-      )
+        )
   }
 
   fun testSimpleSuspendCall() {
     lint()
-      .files(
-        classpath(),
-        manifest().minSdk(18),
-        kotlin(
-            """
+        .files(
+            classpath(),
+            manifest().minSdk(18),
+            kotlin(
+                    """
             package test.pkg
 
             import android.os.Trace
@@ -522,27 +522,27 @@ src/test/pkg/Test.java:7: Warning: The beginSection() call is not always closed 
             suspend fun suspendingCall(a: Int) { }
             suspend fun suspendingCall(a: Int, b: String) { }
             """
-          )
-          .indented(),
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+        )
+        .run()
+        .expect(
+            """
           src/test/pkg/test.kt:7: Warning: The beginSection() call is not always closed with a matching endSection() because the code in between may suspend [UnclosedTrace]
                 Trace.beginSection("Wrong")
                       ~~~~~~~~~~~~
           0 errors, 1 warnings
           """
-      )
+        )
   }
 
   fun testTryCatchVariations() {
     lint()
-      .files(
-        classpath(),
-        manifest().minSdk(18),
-        kotlin(
-            """
+        .files(
+            classpath(),
+            manifest().minSdk(18),
+            kotlin(
+                    """
             package test.pkg
 
             import android.os.Trace
@@ -643,12 +643,12 @@ src/test/pkg/Test.java:7: Warning: The beginSection() call is not always closed 
             fun blockingCall() { error("can throw") }
             suspend fun suspendingCall() { }
             """
-          )
-          .indented(),
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+        )
+        .run()
+        .expect(
+            """
         src/test/pkg/test.kt:50: Warning: The beginSection() call is not always closed with a matching endSection() because the code in between may throw an exception [UnclosedTrace]
             Trace.beginSection("Wrong-1")
                   ~~~~~~~~~~~~
@@ -663,16 +663,16 @@ src/test/pkg/Test.java:7: Warning: The beginSection() call is not always closed 
                     ~~~~~~~~~~~~
         0 errors, 4 warnings
         """
-      )
+        )
   }
 
   fun testDeeplyNestedContrivedLogic() {
     lint()
-      .files(
-        classpath(),
-        manifest().minSdk(18),
-        kotlin(
-            """
+        .files(
+            classpath(),
+            manifest().minSdk(18),
+            kotlin(
+                    """
             package test.pkg
 
             import android.os.Trace
@@ -704,27 +704,27 @@ src/test/pkg/Test.java:7: Warning: The beginSection() call is not always closed 
 
             suspend fun suspendingCall() { }
             """
-          )
-          .indented(),
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+        )
+        .run()
+        .expect(
+            """
           src/test/pkg/FakeClass.kt:14: Warning: The beginSection() call is not always closed with a matching endSection() because the code in between may suspend [UnclosedTrace]
               Trace.beginSection("Wrong")
                     ~~~~~~~~~~~~
           0 errors, 1 warnings
           """
-      )
+        )
   }
 
   fun testTraceIfElseVariations() {
     lint()
-      .files(
-        classpath(),
-        manifest().minSdk(18),
-        kotlin(
-            """
+        .files(
+            classpath(),
+            manifest().minSdk(18),
+            kotlin(
+                    """
             package test.pkg
 
             import android.os.Trace
@@ -773,28 +773,28 @@ src/test/pkg/Test.java:7: Warning: The beginSection() call is not always closed 
 
             fun blockingCall() { error("can throw") }
             """
-          )
-          .indented(),
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+        )
+        .run()
+        .expect(
+            """
         src/test/pkg/test.kt:6: Warning: The beginSection() call is not always closed with a matching endSection() because the code in between may return early [UnclosedTrace]
             Trace.beginSection("Wrong-1")
                   ~~~~~~~~~~~~
         0 errors, 1 warnings
         """
-      )
+        )
   }
 
   /** This test demonstrates behavior that is wrong that the lint check might miss. */
   fun testUndetectedWrongTraceUsage() {
     lint()
-      .files(
-        classpath(),
-        manifest().minSdk(18),
-        kotlin(
-            """
+        .files(
+            classpath(),
+            manifest().minSdk(18),
+            kotlin(
+                    """
             package test.pkg
 
             import android.os.Trace
@@ -817,20 +817,20 @@ src/test/pkg/Test.java:7: Warning: The beginSection() call is not always closed 
 
             fun blockingCall() { error("can throw") }
             """
-          )
-          .indented(),
-      )
-      .run()
-      .expectClean()
+                )
+                .indented(),
+        )
+        .run()
+        .expectClean()
   }
 
   fun testIfToWhen() {
     lint()
-      .files(
-        classpath(),
-        manifest().minSdk(18),
-        kotlin(
-            """
+        .files(
+            classpath(),
+            manifest().minSdk(18),
+            kotlin(
+                    """
             package test.pkg
 
             import android.os.Trace
@@ -843,27 +843,27 @@ src/test/pkg/Test.java:7: Warning: The beginSection() call is not always closed 
                   }
             }
             """
-          )
-          .indented(),
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+        )
+        .run()
+        .expect(
+            """
         src/test/pkg/test.kt:6: Warning: The beginSection() call is not always closed with a matching endSection() because the code in between may return early [UnclosedTrace]
               Trace.beginSection("Wrong")
                     ~~~~~~~~~~~~
         0 errors, 1 warnings
         """
-      )
+        )
   }
 
   fun testNestedBeginSections() {
     lint()
-      .files(
-        classpath(),
-        manifest().minSdk(18),
-        kotlin(
-            """
+        .files(
+            classpath(),
+            manifest().minSdk(18),
+            kotlin(
+                    """
             package test.pkg
 
             import android.os.Trace
@@ -875,24 +875,23 @@ src/test/pkg/Test.java:7: Warning: The beginSection() call is not always closed 
                   Trace.endSection()
             }
             """
-          )
-          .indented(),
-      )
-      .run()
-      .expectClean()
+                )
+                .indented(),
+        )
+        .run()
+        .expectClean()
   }
 
   /**
-   * Demonstrates cases in which there are too many calls to endSection() to show that the
-   * [TraceSectionDetector] does not check for this.
+   * Demonstrates cases in which there are too many calls to endSection() to show that the [TraceSectionDetector] does not check for this.
    */
   fun testTooManyEndSections() {
     lint()
-      .files(
-        classpath(),
-        manifest().minSdk(18),
-        kotlin(
-            """
+        .files(
+            classpath(),
+            manifest().minSdk(18),
+            kotlin(
+                    """
             package test.pkg
 
             import android.os.Trace
@@ -905,20 +904,20 @@ src/test/pkg/Test.java:7: Warning: The beginSection() call is not always closed 
                   Trace.endSection()
             }
             """
-          )
-          .indented(),
-      )
-      .run()
-      .expectClean()
+                )
+                .indented(),
+        )
+        .run()
+        .expectClean()
   }
 
   fun testEndBeforeBegin() {
     lint()
-      .files(
-        classpath(),
-        manifest().minSdk(18),
-        kotlin(
-            """
+        .files(
+            classpath(),
+            manifest().minSdk(18),
+            kotlin(
+                    """
             package test.pkg
 
             import android.os.Trace
@@ -928,27 +927,27 @@ src/test/pkg/Test.java:7: Warning: The beginSection() call is not always closed 
                   Trace.beginSection("Wrong")
             }
             """
-          )
-          .indented(),
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+        )
+        .run()
+        .expect(
+            """
         src/test/pkg/test.kt:7: Warning: The beginSection() call is not always closed with a matching endSection() because the code in between may return early [UnclosedTrace]
               Trace.beginSection("Wrong")
                     ~~~~~~~~~~~~
         0 errors, 1 warnings
         """
-      )
+        )
   }
 
   fun testManyIssues() {
     lint()
-      .files(
-        classpath(),
-        manifest().minSdk(18),
-        kotlin(
-            """
+        .files(
+            classpath(),
+            manifest().minSdk(18),
+            kotlin(
+                    """
             package test.pkg
 
             import android.os.Trace
@@ -987,12 +986,12 @@ src/test/pkg/Test.java:7: Warning: The beginSection() call is not always closed 
             fun blockingCall() { error("can throw") }
             suspend fun suspendingCall() { }
             """
-          )
-          .indented(),
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+        )
+        .run()
+        .expect(
+            """
 src/test/pkg/test.kt:6: Warning: The beginSection() call is not always closed with a matching endSection() because the code in between may suspend [UnclosedTrace]
       Trace.beginSection("Wrong-1")
             ~~~~~~~~~~~~
@@ -1016,16 +1015,16 @@ src/test/pkg/test.kt:30: Warning: The beginSection() call is not always closed w
             ~~~~~~~~~~~~
 0 errors, 7 warnings
         """
-      )
+        )
   }
 
   fun testSuspendAfterTryFinally() {
     lint()
-      .files(
-        classpath(),
-        manifest().minSdk(18),
-        kotlin(
-            """
+        .files(
+            classpath(),
+            manifest().minSdk(18),
+            kotlin(
+                    """
             package test.pkg
 
             import android.os.Trace
@@ -1045,12 +1044,12 @@ src/test/pkg/test.kt:30: Warning: The beginSection() call is not always closed w
             fun blockingCall() { error("can throw") }
             suspend fun suspendingCall() { }
             """
-          )
-          .indented(),
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+        )
+        .run()
+        .expect(
+            """
         src/test/pkg/test.kt:6: Warning: The beginSection() call is not always closed with a matching endSection() because the code in between may suspend [UnclosedTrace]
               Trace.beginSection("Wrong-1")
                     ~~~~~~~~~~~~
@@ -1059,16 +1058,16 @@ src/test/pkg/test.kt:30: Warning: The beginSection() call is not always closed w
                       ~~~~~~~~~~~~
         0 errors, 2 warnings
         """
-      )
+        )
   }
 
   fun testNestedLogic() {
     lint()
-      .files(
-        classpath(),
-        manifest().minSdk(18),
-        kotlin(
-            """
+        .files(
+            classpath(),
+            manifest().minSdk(18),
+            kotlin(
+                    """
             package test.pkg
 
             import android.os.Trace
@@ -1091,12 +1090,12 @@ src/test/pkg/test.kt:30: Warning: The beginSection() call is not always closed w
 
             fun blockingCall() { error("can throw") }
             """
-          )
-          .indented(),
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+        )
+        .run()
+        .expect(
+            """
         src/test/pkg/test.kt:7: Warning: The beginSection() call is not always closed with a matching endSection() because the code in between may throw an exception [UnclosedTrace]
                 Trace.beginSection("Wrong-1")
                       ~~~~~~~~~~~~
@@ -1105,16 +1104,16 @@ src/test/pkg/test.kt:30: Warning: The beginSection() call is not always closed w
                         ~~~~~~~~~~~~
         0 errors, 2 warnings
         """
-      )
+        )
   }
 
   fun testWrongLoop() {
     lint()
-      .files(
-        classpath(),
-        manifest().minSdk(18),
-        kotlin(
-            """
+        .files(
+            classpath(),
+            manifest().minSdk(18),
+            kotlin(
+                    """
             package test.pkg
 
             import android.os.Trace
@@ -1134,27 +1133,27 @@ src/test/pkg/test.kt:30: Warning: The beginSection() call is not always closed w
 
             fun blockingCall() { error("can throw") }
             """
-          )
-          .indented(),
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+        )
+        .run()
+        .expect(
+            """
         src/test/pkg/test.kt:6: Warning: The beginSection() call is not always closed with a matching endSection() because the code in between may throw an exception [UnclosedTrace]
             Trace.beginSection("Wrong")
                   ~~~~~~~~~~~~
         0 errors, 1 warnings
         """
-      )
+        )
   }
 
   fun testOkLoop() {
     lint()
-      .files(
-        classpath(),
-        manifest().minSdk(18),
-        kotlin(
-            """
+        .files(
+            classpath(),
+            manifest().minSdk(18),
+            kotlin(
+                    """
             package test.pkg
 
             import android.os.Trace
@@ -1177,20 +1176,20 @@ src/test/pkg/test.kt:30: Warning: The beginSection() call is not always closed w
 
             fun blockingCall() { error("can throw") }
             """
-          )
-          .indented(),
-      )
-      .run()
-      .expectClean()
+                )
+                .indented(),
+        )
+        .run()
+        .expectClean()
   }
 
   fun testOkNestedTryCatch() {
     lint()
-      .files(
-        classpath(),
-        manifest().minSdk(18),
-        kotlin(
-            """
+        .files(
+            classpath(),
+            manifest().minSdk(18),
+            kotlin(
+                    """
             package test.pkg
 
             import android.os.Trace
@@ -1224,21 +1223,21 @@ src/test/pkg/test.kt:30: Warning: The beginSection() call is not always closed w
 
             fun blockingCall() { error("can throw") }
             """
-          )
-          .indented(),
-      )
-      .run()
-      .expectClean()
+                )
+                .indented(),
+        )
+        .run()
+        .expectClean()
   }
 
   /** Test that possible exceptions from beginSection() and endSection() calls are ignored. */
   fun testOkNestedTraceSections() {
     lint()
-      .files(
-        classpath(),
-        manifest().minSdk(18),
-        kotlin(
-            """
+        .files(
+            classpath(),
+            manifest().minSdk(18),
+            kotlin(
+                    """
             package test.pkg
 
             import android.os.Trace
@@ -1252,20 +1251,20 @@ src/test/pkg/test.kt:30: Warning: The beginSection() call is not always closed w
                 Trace.endSection()
             }
             """
-          )
-          .indented(),
-      )
-      .run()
-      .expectClean()
+                )
+                .indented(),
+        )
+        .run()
+        .expectClean()
   }
 
   fun testBadNestedTraceSections() {
     lint()
-      .files(
-        classpath(),
-        manifest().minSdk(18),
-        kotlin(
-            """
+        .files(
+            classpath(),
+            manifest().minSdk(18),
+            kotlin(
+                    """
             package test.pkg
 
             import android.os.Trace
@@ -1284,12 +1283,12 @@ src/test/pkg/test.kt:30: Warning: The beginSection() call is not always closed w
 
             fun blockingCall() { error("can throw") }
             """
-          )
-          .indented(),
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+        )
+        .run()
+        .expect(
+            """
         src/test/pkg/test.kt:6: Warning: The beginSection() call is not always closed with a matching endSection() because the code in between may throw an exception [UnclosedTrace]
             Trace.beginSection("Wrong-1")
                   ~~~~~~~~~~~~
@@ -1301,20 +1300,17 @@ src/test/pkg/test.kt:30: Warning: The beginSection() call is not always closed w
                   ~~~~~~~~~~~~
         0 errors, 3 warnings
         """
-      )
+        )
   }
 
-  /**
-   * This test ensures that similarly named third party methods don't trigger the lint check or
-   * cause crashes.
-   */
+  /** This test ensures that similarly named third party methods don't trigger the lint check or cause crashes. */
   fun testThirdPartyTraceMethods() {
     lint()
-      .files(
-        classpath(),
-        manifest().minSdk(18),
-        kotlin(
-            """
+        .files(
+            classpath(),
+            manifest().minSdk(18),
+            kotlin(
+                    """
             package test.pkg
 
             import com.thirdparty.Helper
@@ -1336,17 +1332,17 @@ src/test/pkg/test.kt:30: Warning: The beginSection() call is not always closed w
 
             fun blockingCall() { error("can throw") }
             """
-          )
-          .indented(),
-        *thirdPartyTraceStubs,
-      )
-      .run()
-      .expectClean()
+                )
+                .indented(),
+            *thirdPartyTraceStubs,
+        )
+        .run()
+        .expectClean()
   }
 
   private val traceApiStub =
-    java(
-        """
+      java(
+              """
         package android.os;
         public final class Trace {
             public static final long TRACE_TAG_APP = 1L << 12;
@@ -1358,52 +1354,52 @@ src/test/pkg/test.kt:30: Warning: The beginSection() call is not always closed w
             public static void traceEnd(long traceTag) {}
         }
         """
-      )
-      .indented()
+          )
+          .indented()
 
   private val androidxTraceStub =
-    java(
-        """
+      java(
+              """
         package androidx.tracing;
         public final class Trace {
             public static void beginSection(String sectionName) {}
             public static void endSection() {}
         }
         """
-      )
-      .indented()
+          )
+          .indented()
 
   private val thirdPartyTraceStubs =
-    arrayOf(
-      java(
-          """
+      arrayOf(
+          java(
+                  """
           package com.thirdparty;
           public final class Trace {
               public static void beginSection(String sectionName) {}
               public static void endSection() {}
           }
           """
-        )
-        .indented(),
-      java(
-          """
+              )
+              .indented(),
+          java(
+                  """
           package com.thirdparty;
           public final class Util {
               public static void beginSection(String sectionName) {}
               public static void endSection() {}
           }
           """
-        )
-        .indented(),
-      java(
-          """
+              )
+              .indented(),
+          java(
+                  """
           package com.thirdparty;
           public final class Helper {
               public void beginSection(String sectionName) {}
               public void endSection() {}
           }
           """
-        )
-        .indented(),
-    )
+              )
+              .indented(),
+      )
 }

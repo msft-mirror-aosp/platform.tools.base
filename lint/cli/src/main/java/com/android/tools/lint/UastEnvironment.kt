@@ -56,18 +56,17 @@ const val FIR_UAST_KEY = "lint.use.fir.uast"
 @ApiStatus.Internal fun useFirUast(): Boolean = System.getProperty(FIR_UAST_KEY, "true").toBoolean()
 
 /**
- * This interface provides the setup and configuration needed to use VFS/PSI/UAST on the command
- * line.
+ * This interface provides the setup and configuration needed to use VFS/PSI/UAST on the command line.
  *
  * Basic usage:
  * 1. Create a configuration via [UastEnvironment.Configuration.create] and mutate it as needed.
- * 2. Create a project environment via [UastEnvironment.create]. You can create multiple
- *    environments in the same process (one for each "module").
+ * 2. Create a project environment via [UastEnvironment.create]. You can create multiple environments in the same process (one for each
+ *    "module").
  * 3. Call [analyzeFiles] to initialize PSI machinery and frontend-specific pre-computation.
  * 4. Analyze PSI/UAST.
  * 5. When finished, call [dispose].
- * 6. Once *all* [UastEnvironment]s are disposed, call [disposeApplicationEnvironment] to clean up
- *    some global resources, especially if running in a long-living daemon process.
+ * 6. Once *all* [UastEnvironment]s are disposed, call [disposeApplicationEnvironment] to clean up some global resources, especially if
+ *    running in a long-living daemon process.
  */
 interface UastEnvironment {
   val projectDisposable: Disposable
@@ -83,29 +82,24 @@ interface UastEnvironment {
   /** A configuration is just a container for the classpath, compiler flags, etc. */
   interface Configuration {
     companion object {
-      /**
-       * Creates a new [Configuration] that specifies project structure, classpath, compiler flags,
-       * etc.
-       */
+      /** Creates a new [Configuration] that specifies project structure, classpath, compiler flags, etc. */
       @JvmStatic
       @JvmOverloads
       fun create(
-        enableKotlinScripting: Boolean = true,
-        useFirUast: Boolean = useFirUast(),
+          enableKotlinScripting: Boolean = true,
+          useFirUast: Boolean = useFirUast(),
       ): Configuration {
         return if (useFirUast) FirUastEnvironment.Configuration.create(enableKotlinScripting)
         else Fe10UastEnvironment.Configuration.create(enableKotlinScripting)
       }
 
       fun mergeRoots(
-        modules: List<Module>,
-        bootClassPaths: Iterable<File>?,
+          modules: List<Module>,
+          bootClassPaths: Iterable<File>?,
       ): Pair<Set<File>, Set<File>> {
-        fun mergedFiles(prop: (Module) -> Collection<File>): MutableSet<File> =
-          modules.flatMapTo(mutableSetOf(), prop)
+        fun mergedFiles(prop: (Module) -> Collection<File>): MutableSet<File> = modules.flatMapTo(mutableSetOf(), prop)
         val sourceRoots = mergedFiles(Module::sourceRoots)
-        val classPathRoots =
-          mergedFiles(Module::classpathRoots).also { bootClassPaths?.let(it::addAll) }
+        val classPathRoots = mergedFiles(Module::classpathRoots).also { bootClassPaths?.let(it::addAll) }
         return sourceRoots to classPathRoots
       }
 
@@ -116,7 +110,7 @@ interface UastEnvironment {
           // expect/actual (and maybe more).
           return modules.any { module ->
             module.platforms.componentPlatforms.any { it !is JvmPlatform } ||
-              module.directDependencies.any { (_, kind) -> kind == DependencyKind.DependsOn }
+                module.directDependencies.any { (_, kind) -> kind == DependencyKind.DependsOn }
           }
         }
     }
@@ -138,16 +132,14 @@ interface UastEnvironment {
         for (root in sourceRoots) {
           // The equivalent assertion in JavaCoreProjectEnvironment.addSourcesToClasspath
           // happens too late to be useful.
-          assert(root.extension != EXT_JAR) {
-            "Jar files should be added as classpath roots, not as source roots: $root"
-          }
+          assert(root.extension != EXT_JAR) { "Jar files should be added as classpath roots, not as source roots: $root" }
         }
       }
     }
 
     @Deprecated(
-      "Pass real module structure through [addModules] instead of merging them",
-      ReplaceWith("addModules()"),
+        "Pass real module structure through [addModules] instead of merging them",
+        ReplaceWith("addModules()"),
     )
     fun addClasspathRoots(classpathRoots: List<File>) {
       kotlinCompilerConfig.addJvmClasspathRoots(classpathRoots)
@@ -170,9 +162,8 @@ interface UastEnvironment {
 
   companion object {
     /**
-     * Creates a new [UastEnvironment] suitable for analyzing both Java and Kotlin code. You must
-     * still call [UastEnvironment.analyzeFiles] before doing anything with PSI/UAST. When finished
-     * using the environment, call [UastEnvironment.dispose].
+     * Creates a new [UastEnvironment] suitable for analyzing both Java and Kotlin code. You must still call [UastEnvironment.analyzeFiles]
+     * before doing anything with PSI/UAST. When finished using the environment, call [UastEnvironment.dispose].
      */
     @JvmStatic
     fun create(config: Configuration): UastEnvironment {
@@ -184,8 +175,8 @@ interface UastEnvironment {
     }
 
     /**
-     * Disposes the global application environment, which is created implicitly by the first
-     * [UastEnvironment]. Only call this once *all* [UastEnvironment]s have been disposed.
+     * Disposes the global application environment, which is created implicitly by the first [UastEnvironment]. Only call this once *all*
+     * [UastEnvironment]s have been disposed.
      */
     @JvmStatic
     fun disposeApplicationEnvironment() {
@@ -215,25 +206,21 @@ interface UastEnvironment {
 
     @JvmStatic
     fun kotlinLibrary(path: String): KotlinLibrary =
-      CompilerSingleFileKlibResolveAllowingIrProvidersStrategy(
-          listOf(KLIB_INTEROP_IR_PROVIDER_IDENTIFIER)
-        )
-        .resolve(org.jetbrains.kotlin.konan.file.File(path), logger)
+        CompilerSingleFileKlibResolveAllowingIrProvidersStrategy(listOf(KLIB_INTEROP_IR_PROVIDER_IDENTIFIER))
+            .resolve(org.jetbrains.kotlin.konan.file.File(path), logger)
 
-    @JvmStatic
-    fun CompilerConfiguration.getKlibPaths(): List<String> =
-      get(JVMConfigurationKeys.KLIB_PATHS) ?: listOf()
+    @JvmStatic fun CompilerConfiguration.getKlibPaths(): List<String> = get(JVMConfigurationKeys.KLIB_PATHS) ?: listOf()
 
     private val logger =
-      object : Logger {
-        override fun error(message: String) = kotlin.error(message)
+        object : Logger {
+          override fun error(message: String) = kotlin.error(message)
 
-        override fun fatal(message: String) = kotlin.error(message)
+          override fun fatal(message: String) = kotlin.error(message)
 
-        override fun log(message: String) {}
+          override fun log(message: String) {}
 
-        override fun warning(message: String) {}
-      }
+          override fun warning(message: String) {}
+        }
   }
 
   /** Analyzes the given files so that PSI/UAST resolve works correctly. */
@@ -244,83 +231,81 @@ interface UastEnvironment {
   }
 
   class Module(
-    internal val project: Project,
-    internal val jdkHome: File?,
-    includeTests: Boolean,
-    includeTestFixtureSources: Boolean,
-    isUnitTest: Boolean,
+      internal val project: Project,
+      internal val jdkHome: File?,
+      includeTests: Boolean,
+      includeTestFixtureSources: Boolean,
+      isUnitTest: Boolean,
   ) {
 
     // TODO: This is very unreliable because source set names can be anything; the names below
     //  are just conventions.
     private val String.targetPlatformFromSourceSetNameConvention: TargetPlatform
       get() =
-        when {
-          startsWith("common") -> CommonPlatforms.defaultCommonPlatform
-          startsWith("jvm") -> JvmPlatforms.defaultJvmPlatform
-          startsWith("android") -> {
-            // androidNative v.s. everything else
-            if (endsWith("Native")) NativePlatforms.unspecifiedNativePlatform
-            else JvmPlatforms.defaultJvmPlatform
+          when {
+            startsWith("common") -> CommonPlatforms.defaultCommonPlatform
+            startsWith("jvm") -> JvmPlatforms.defaultJvmPlatform
+            startsWith("android") -> {
+              // androidNative v.s. everything else
+              if (endsWith("Native")) NativePlatforms.unspecifiedNativePlatform else JvmPlatforms.defaultJvmPlatform
+            }
+            startsWith("ios") -> NativePlatforms.unspecifiedNativePlatform
+            startsWith("linux") -> NativePlatforms.unspecifiedNativePlatform
+            startsWith("macos") -> NativePlatforms.unspecifiedNativePlatform
+            startsWith("mingw") -> NativePlatforms.unspecifiedNativePlatform
+            startsWith("tvos") -> NativePlatforms.unspecifiedNativePlatform
+            startsWith("js") -> JsPlatforms.defaultJsPlatform
+            startsWith("wasm") -> WasmPlatforms.Default
+            else -> JvmPlatforms.defaultJvmPlatform
           }
-          startsWith("ios") -> NativePlatforms.unspecifiedNativePlatform
-          startsWith("linux") -> NativePlatforms.unspecifiedNativePlatform
-          startsWith("macos") -> NativePlatforms.unspecifiedNativePlatform
-          startsWith("mingw") -> NativePlatforms.unspecifiedNativePlatform
-          startsWith("tvos") -> NativePlatforms.unspecifiedNativePlatform
-          startsWith("js") -> JsPlatforms.defaultJsPlatform
-          startsWith("wasm") -> WasmPlatforms.Default
-          else -> JvmPlatforms.defaultJvmPlatform
-        }
 
     internal val platforms: TargetPlatform =
-      // TODO: Support reading the Kotlin target platforms from Gradle projects.
-      (project as? ManualProject)?.kotlinPlatforms?.deserializeTargetPlatformByComponentPlatforms()
-        ?: project.buildVariant?.name?.targetPlatformFromSourceSetNameConvention
-        ?: project.name.targetPlatformFromSourceSetNameConvention
+        // TODO: Support reading the Kotlin target platforms from Gradle projects.
+        (project as? ManualProject)?.kotlinPlatforms?.deserializeTargetPlatformByComponentPlatforms()
+            ?: project.buildVariant?.name?.targetPlatformFromSourceSetNameConvention
+            ?: project.name.targetPlatformFromSourceSetNameConvention
 
     val sourceRoots: Set<File> =
-      with(project) {
-        // Note that there could be duplicates here since we're including multiple library
-        // dependencies that could have the same dependencies (e.g. lib1 and lib2 both
-        // referencing guava.jar)
-        setFrom(
-          javaSourceFolders.takeIf { it.isNotEmpty() }
-            ?: listOfNotNull(project.dir.takeIf { it.isDirectory }),
-          unitTestSourceFolders.takeIf { includeTests },
-          instrumentationTestSourceFolders.takeIf { includeTests },
-          testSourceFolders.takeIf { includeTests },
-          generatedSourceFolders,
-          testFixturesSourceFolders.takeIf { includeTestFixtureSources },
-        )
-      }
+        with(project) {
+          // Note that there could be duplicates here since we're including multiple library
+          // dependencies that could have the same dependencies (e.g. lib1 and lib2 both
+          // referencing guava.jar)
+          setFrom(
+              javaSourceFolders.takeIf { it.isNotEmpty() } ?: listOfNotNull(project.dir.takeIf { it.isDirectory }),
+              unitTestSourceFolders.takeIf { includeTests },
+              instrumentationTestSourceFolders.takeIf { includeTests },
+              testSourceFolders.takeIf { includeTests },
+              generatedSourceFolders,
+              testFixturesSourceFolders.takeIf { includeTestFixtureSources },
+          )
+        }
 
     val classpathRoots: Set<File> =
-      with(project) {
-        setFrom(
-          javaLibraries,
-          testLibraries.takeIf { includeTests },
-          testFixturesLibraries.takeIf { includeTestFixtureSources },
+        with(project) {
+          setFrom(
+              javaLibraries,
+              testLibraries.takeIf { includeTests },
+              testFixturesLibraries.takeIf { includeTestFixtureSources },
 
-          // Don't include all class folders:
-          //  files.addAll(project.getJavaClassFolders());
-          // These are the outputs from the sources and generated sources, which we will
-          // parse directly with PSI/UAST anyway. Including them here leads lint to do
-          // a lot more work (e.g. when resolving symbols it looks at both .java and .class
-          // matches).
-          // However, we *do* need them for libraries; otherwise, type resolution into
-          // compiled libraries will not work; see
-          // https://issuetracker.google.com/72032121
-          // (We also enable this for unit tests where there is no actual compilation;
-          // here, the presence of class files is simulating binary-only access
-          when {
-            isLibrary || isUnitTest -> javaClassFolders
-            // As of 3.4, R.java is in a special jar file
-            isGradleProject -> javaClassFolders.filter { it.name == SdkConstants.FN_R_CLASS_JAR }
-            else -> null
-          },
-        )
-      }
+              // Don't include all class folders:
+              //  files.addAll(project.getJavaClassFolders());
+              // These are the outputs from the sources and generated sources, which we will
+              // parse directly with PSI/UAST anyway. Including them here leads lint to do
+              // a lot more work (e.g. when resolving symbols it looks at both .java and .class
+              // matches).
+              // However, we *do* need them for libraries; otherwise, type resolution into
+              // compiled libraries will not work; see
+              // https://issuetracker.google.com/72032121
+              // (We also enable this for unit tests where there is no actual compilation;
+              // here, the presence of class files is simulating binary-only access
+              when {
+                isLibrary || isUnitTest -> javaClassFolders
+                // As of 3.4, R.java is in a special jar file
+                isGradleProject -> javaClassFolders.filter { it.name == SdkConstants.FN_R_CLASS_JAR }
+                else -> null
+              },
+          )
+        }
 
     val gradleBuildScripts: Collection<File>
       get() = project.gradleBuildScripts
@@ -343,5 +328,4 @@ interface UastEnvironment {
 }
 
 // Return set of merged elements in the order they appear
-private fun <T> setFrom(vararg cols: Collection<T>?): Set<T> =
-  cols.asSequence().filterNotNull().flatMapTo(mutableSetOf()) { it }
+private fun <T> setFrom(vararg cols: Collection<T>?): Set<T> = cols.asSequence().filterNotNull().flatMapTo(mutableSetOf()) { it }

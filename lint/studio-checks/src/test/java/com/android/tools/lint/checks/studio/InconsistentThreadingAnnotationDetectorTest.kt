@@ -24,8 +24,8 @@ import org.junit.Test
 class InconsistentThreadingAnnotationDetectorTest {
   companion object {
     private val uiThreadFile: TestFile =
-      TestFiles.java(
-          """
+        TestFiles.java(
+                """
                     package com.android.annotations.concurrency;
 
                     import java.lang.annotation.Documented;
@@ -39,12 +39,12 @@ class InconsistentThreadingAnnotationDetectorTest {
                     @Target({ElementType.METHOD, ElementType.CONSTRUCTOR, ElementType.TYPE})
                     public @interface UiThread {}
                 """
-        )
-        .indented()
+            )
+            .indented()
 
     private val anyThreadFile: TestFile =
-      TestFiles.java(
-          """
+        TestFiles.java(
+                """
                     package com.android.annotations.concurrency;
 
                     import java.lang.annotation.Documented;
@@ -58,12 +58,12 @@ class InconsistentThreadingAnnotationDetectorTest {
                     @Target({ElementType.METHOD, ElementType.CONSTRUCTOR, ElementType.TYPE})
                     public @interface AnyThread {}
                 """
-        )
-        .indented()
+            )
+            .indented()
 
     private val slowThreadFile: TestFile =
-      TestFiles.java(
-          """
+        TestFiles.java(
+                """
                     package com.android.annotations.concurrency;
 
                     import java.lang.annotation.Documented;
@@ -77,12 +77,12 @@ class InconsistentThreadingAnnotationDetectorTest {
                     @Target({ElementType.METHOD, ElementType.CONSTRUCTOR, ElementType.TYPE})
                     public @interface Slow {}
                 """
-        )
-        .indented()
+            )
+            .indented()
 
     private val workerThreadFile: TestFile =
-      TestFiles.java(
-          """
+        TestFiles.java(
+                """
                     package com.android.annotations.concurrency;
 
                     import java.lang.annotation.Documented;
@@ -96,20 +96,20 @@ class InconsistentThreadingAnnotationDetectorTest {
                     @Target({ElementType.METHOD, ElementType.CONSTRUCTOR, ElementType.TYPE})
                     public @interface WorkerThread {}
                 """
-        )
-        .indented()
+            )
+            .indented()
   }
 
   @Test
   fun testMethodLevelAnnotationsJava() {
     studioLint()
-      .files(
-        anyThreadFile,
-        slowThreadFile,
-        uiThreadFile,
-        workerThreadFile,
-        TestFiles.java(
-            """
+        .files(
+            anyThreadFile,
+            slowThreadFile,
+            uiThreadFile,
+            workerThreadFile,
+            TestFiles.java(
+                    """
                     package test.pkg;
                     import com.android.annotations.concurrency.WorkerThread;
                     import com.android.annotations.concurrency.UiThread;
@@ -125,10 +125,10 @@ class InconsistentThreadingAnnotationDetectorTest {
                         void workerMethod1();
                     }
                 """
-          )
-          .indented(),
-        TestFiles.java(
-            """
+                )
+                .indented(),
+            TestFiles.java(
+                    """
                     package test.pkg;
                     import com.android.annotations.concurrency.UiThread;
 
@@ -150,13 +150,13 @@ class InconsistentThreadingAnnotationDetectorTest {
                         public void workerMethod1() {}
                     }
                 """
-          )
-          .indented(),
-      )
-      .issues(InconsistentThreadingAnnotationDetector.ISSUE)
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+        )
+        .issues(InconsistentThreadingAnnotationDetector.ISSUE)
+        .run()
+        .expect(
+            """
                 src/test/pkg/TestInterfaceImpl.java:15: Error: Overridden method needs to have a threading annotation matching the super method's annotation com.android.annotations.concurrency.UiThread [InconsistentThreadingAnnotation]
                     public void uiMethod2() {}
                                 ~~~~~~~~~
@@ -165,19 +165,19 @@ class InconsistentThreadingAnnotationDetectorTest {
                                 ~~~~~~~~~~~~~
                 2 errors, 0 warnings
                 """
-      )
+        )
   }
 
   @Test
   fun testMethodLevelAnnotationsKotlin() {
     studioLint()
-      .files(
-        anyThreadFile,
-        slowThreadFile,
-        uiThreadFile,
-        workerThreadFile,
-        TestFiles.java(
-            """
+        .files(
+            anyThreadFile,
+            slowThreadFile,
+            uiThreadFile,
+            workerThreadFile,
+            TestFiles.java(
+                    """
                     package test.pkg;
                     import com.android.annotations.concurrency.WorkerThread;
                     import com.android.annotations.concurrency.UiThread;
@@ -193,10 +193,10 @@ class InconsistentThreadingAnnotationDetectorTest {
                         void workerMethod1();
                     }
                 """
-          )
-          .indented(),
-        TestFiles.kotlin(
-            """
+                )
+                .indented(),
+            TestFiles.kotlin(
+                    """
                     package test.pkg
                     import com.android.annotations.concurrency.UiThread
 
@@ -216,13 +216,13 @@ class InconsistentThreadingAnnotationDetectorTest {
                         override fun workerMethod1() {}
                     }
                 """
-          )
-          .indented(),
-      )
-      .issues(InconsistentThreadingAnnotationDetector.ISSUE)
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+        )
+        .issues(InconsistentThreadingAnnotationDetector.ISSUE)
+        .run()
+        .expect(
+            """
                 src/test/pkg/TestInterfaceImpl.kt:14: Error: Overridden method needs to have a threading annotation matching the super method's annotation com.android.annotations.concurrency.UiThread [InconsistentThreadingAnnotation]
                     override fun uiMethod2() {}
                                  ~~~~~~~~~
@@ -231,19 +231,19 @@ class InconsistentThreadingAnnotationDetectorTest {
                                  ~~~~~~~~~~~~~
                 2 errors, 0 warnings
                 """
-      )
+        )
   }
 
   @Test
   fun testTypeLevelAnnotations() {
     studioLint()
-      .files(
-        anyThreadFile,
-        slowThreadFile,
-        uiThreadFile,
-        workerThreadFile,
-        TestFiles.java(
-            """
+        .files(
+            anyThreadFile,
+            slowThreadFile,
+            uiThreadFile,
+            workerThreadFile,
+            TestFiles.java(
+                    """
                     package test.pkg;
                     import com.android.annotations.concurrency.WorkerThread;
                     import com.android.annotations.concurrency.UiThread;
@@ -255,10 +255,10 @@ class InconsistentThreadingAnnotationDetectorTest {
                         void uiMethod2();
                     }
                 """
-          )
-          .indented(),
-        TestFiles.java(
-            """
+                )
+                .indented(),
+            TestFiles.java(
+                    """
                     package test.pkg;
                     import com.android.annotations.concurrency.UiThread;
 
@@ -271,10 +271,10 @@ class InconsistentThreadingAnnotationDetectorTest {
                         public void uiMethod2() {}
                     }
                 """
-          )
-          .indented(),
-        TestFiles.java(
-            """
+                )
+                .indented(),
+            TestFiles.java(
+                    """
                     package test.pkg;
                     import com.android.annotations.concurrency.UiThread;
                     import com.android.annotations.concurrency.WorkerThread;
@@ -290,13 +290,13 @@ class InconsistentThreadingAnnotationDetectorTest {
                         public void uiMethod2() {}
                     }
                 """
-          )
-          .indented(),
-      )
-      .issues(InconsistentThreadingAnnotationDetector.ISSUE)
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+        )
+        .issues(InconsistentThreadingAnnotationDetector.ISSUE)
+        .run()
+        .expect(
+            """
                 src/test/pkg/TestInterfaceImpl1.java:10: Error: Overridden method needs to have a threading annotation matching the super method's annotation com.android.annotations.concurrency.UiThread [InconsistentThreadingAnnotation]
                     public void uiMethod2() {}
                                 ~~~~~~~~~
@@ -305,19 +305,19 @@ class InconsistentThreadingAnnotationDetectorTest {
                                 ~~~~~~~~~
                 2 errors, 0 warnings
                 """
-      )
+        )
   }
 
   @Test
   fun testNestedTypeDoesNotInheritAnnotations() {
     studioLint()
-      .files(
-        anyThreadFile,
-        slowThreadFile,
-        uiThreadFile,
-        workerThreadFile,
-        TestFiles.java(
-            """
+        .files(
+            anyThreadFile,
+            slowThreadFile,
+            uiThreadFile,
+            workerThreadFile,
+            TestFiles.java(
+                    """
                     package test.pkg;
                     import com.android.annotations.concurrency.WorkerThread;
                     import com.android.annotations.concurrency.UiThread;
@@ -329,10 +329,10 @@ class InconsistentThreadingAnnotationDetectorTest {
                         }
                     }
                 """
-          )
-          .indented(),
-        TestFiles.java(
-            """
+                )
+                .indented(),
+            TestFiles.java(
+                    """
                     package test.pkg;
 
                     public class TestInterfaceImpl1 implements TestInterfaceContainer.TestInterface {
@@ -341,10 +341,10 @@ class InconsistentThreadingAnnotationDetectorTest {
                         public void uiMethod1() {}
                     }
                 """
-          )
-          .indented(),
-        TestFiles.java(
-            """
+                )
+                .indented(),
+            TestFiles.java(
+                    """
                     package test.pkg;
                     import com.android.annotations.concurrency.UiThread;
                     import com.android.annotations.concurrency.WorkerThread;
@@ -358,11 +358,11 @@ class InconsistentThreadingAnnotationDetectorTest {
                         }
                     }
                 """
-          )
-          .indented(),
-      )
-      .issues(InconsistentThreadingAnnotationDetector.ISSUE)
-      .run()
-      .expect("No warnings.")
+                )
+                .indented(),
+        )
+        .issues(InconsistentThreadingAnnotationDetector.ISSUE)
+        .run()
+        .expect("No warnings.")
   }
 }

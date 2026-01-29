@@ -25,7 +25,7 @@ class ServiceCastDetectorTest : AbstractCheckTest() {
 
   fun testServiceCast() {
     val expected =
-      """
+        """
       src/test/pkg/SystemServiceTest.java:13: Error: Suspicious cast to DisplayManager for a DEVICE_POLICY_SERVICE: expected DevicePolicyManager [ServiceCast]
               DisplayManager displayServiceWrong = (DisplayManager) getSystemService(
                                                    ^
@@ -38,9 +38,9 @@ class ServiceCastDetectorTest : AbstractCheckTest() {
       3 errors, 0 warnings
       """
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
             package test.pkg;
             import android.content.ClipboardManager;
             import android.app.Activity;
@@ -73,17 +73,17 @@ class ServiceCastDetectorTest : AbstractCheckTest() {
                 }
             }
             """
-          )
-          .indented()
-      )
-      .run()
-      .expect(expected)
+                )
+                .indented()
+        )
+        .run()
+        .expect(expected)
   }
 
   // sample code with warnings
   fun testWifiManagerLookup() {
     val expected =
-      """
+        """
       src/test/pkg/WifiManagerTest.java:14: Error: The WIFI_SERVICE must be looked up on the Application context or memory will leak on devices < Android N. Try changing someActivity to someActivity.getApplicationContext() [WifiManagerLeak]
               someActivity.getSystemService(Context.WIFI_SERVICE); // ERROR: Activity context
               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -127,9 +127,9 @@ class ServiceCastDetectorTest : AbstractCheckTest() {
       """
 
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
             package test.pkg;
 
             import android.app.Activity;
@@ -210,13 +210,13 @@ class ServiceCastDetectorTest : AbstractCheckTest() {
                 }
             }
             """
-          )
-          .indented()
-      )
-      .run()
-      .expect(expected)
-      .expectFixDiffs(
-        """
+                )
+                .indented()
+        )
+        .run()
+        .expect(expected)
+        .expectFixDiffs(
+            """
         Fix for src/test/pkg/WifiManagerTest.java line 14: Add getApplicationContext():
         @@ -14 +14 @@
         -        someActivity.getSystemService(Context.WIFI_SERVICE); // ERROR: Activity context
@@ -270,14 +270,14 @@ class ServiceCastDetectorTest : AbstractCheckTest() {
         -        ctx.getSystemService(Context.WIFI_SERVICE); // UNKNOWN (though likely)
         +        ctx.getApplicationContext().getSystemService(Context.WIFI_SERVICE); // UNKNOWN (though likely)
         """
-      )
+        )
   }
 
   fun testWifiManagerLookupOnNougat() {
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
             package test.pkg;
 
             import android.app.Activity;
@@ -290,21 +290,21 @@ class ServiceCastDetectorTest : AbstractCheckTest() {
                 }
             }
             """
-          )
-          .indented(),
-        // Android N:
-        manifest().minSdk(24),
-      )
-      .run()
-      .expectClean()
+                )
+                .indented(),
+            // Android N:
+            manifest().minSdk(24),
+        )
+        .run()
+        .expectClean()
   }
 
   fun testCrossProfile() {
     // Regression test for b/245337893
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
             package test.pkg;
 
             import android.app.Activity;
@@ -318,34 +318,34 @@ class ServiceCastDetectorTest : AbstractCheckTest() {
                 }
             }
             """
-          )
-          .indented(),
-        java(
-            """
+                )
+                .indented(),
+            java(
+                    """
             package test.pkg;
             public class CrossProfileApps { }
             """
-          )
-          .indented(),
-        // Android N:
-        manifest().minSdk(24),
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            // Android N:
+            manifest().minSdk(24),
+        )
+        .run()
+        .expect(
+            """
         src/test/pkg/Test.java:10: Error: Suspicious cast to test.pkg.CrossProfileApps for a CROSS_PROFILE_APPS_SERVICE: expected android.content.pm.CrossProfileApps [ServiceCast]
                 (test.pkg.CrossProfileApps)someActivity.getSystemService(Context.CROSS_PROFILE_APPS_SERVICE); // ERROR
                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         1 errors, 0 warnings
         """
-      )
+        )
   }
 
   fun testAndroid14() {
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
             package test.pkg
 
             import android.content.Context
@@ -357,24 +357,24 @@ class ServiceCastDetectorTest : AbstractCheckTest() {
                 context.getSystemService(Context.SYSTEM_HEALTH_SERVICE) as SystemHealthManager // OK
             }
             """
-          )
-          .indented()
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .run()
+        .expect(
+            """
         src/test/pkg/test.kt:8: Error: Suspicious cast to HealthConnectManager for a SYSTEM_HEALTH_SERVICE: expected SystemHealthManager [ServiceCast]
             context.getSystemService(Context.SYSTEM_HEALTH_SERVICE) as HealthConnectManager // ERROR
             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         1 errors, 0 warnings
         """
-      )
+        )
   }
 
   fun testLookup() {
     assertEquals(
-      "android.view.accessibility.AccessibilityManager",
-      getExpectedType("ACCESSIBILITY_SERVICE"),
+        "android.view.accessibility.AccessibilityManager",
+        getExpectedType("ACCESSIBILITY_SERVICE"),
     )
     assertEquals("android.accounts.AccountManager", getExpectedType("ACCOUNT_SERVICE"))
     assertEquals("android.app.ActivityManager", getExpectedType("ACTIVITY_SERVICE"))
@@ -386,17 +386,17 @@ class ServiceCastDetectorTest : AbstractCheckTest() {
     assertEquals("android.bluetooth.BluetoothManager", getExpectedType("BLUETOOTH_SERVICE"))
     assertEquals("android.hardware.camera2.CameraManager", getExpectedType("CAMERA_SERVICE"))
     assertEquals(
-      "android.view.accessibility.CaptioningManager",
-      getExpectedType("CAPTIONING_SERVICE"),
+        "android.view.accessibility.CaptioningManager",
+        getExpectedType("CAPTIONING_SERVICE"),
     )
     assertEquals(
-      "android.telephony.CarrierConfigManager",
-      getExpectedType("CARRIER_CONFIG_SERVICE"),
+        "android.telephony.CarrierConfigManager",
+        getExpectedType("CARRIER_CONFIG_SERVICE"),
     )
     assertEquals("android.text.ClipboardManager", getExpectedType("CLIPBOARD_SERVICE"))
     assertEquals(
-      "android.companion.CompanionDeviceManager",
-      getExpectedType("COMPANION_DEVICE_SERVICE"),
+        "android.companion.CompanionDeviceManager",
+        getExpectedType("COMPANION_DEVICE_SERVICE"),
     )
     assertEquals("android.net.ConnectivityManager", getExpectedType("CONNECTIVITY_SERVICE"))
     assertEquals("android.hardware.ConsumerIrManager", getExpectedType("CONSUMER_IR_SERVICE"))
@@ -406,16 +406,16 @@ class ServiceCastDetectorTest : AbstractCheckTest() {
     assertEquals("android.app.DownloadManager", getExpectedType("DOWNLOAD_SERVICE"))
     assertEquals("android.os.DropBoxManager", getExpectedType("DROPBOX_SERVICE"))
     assertEquals(
-      "android.hardware.fingerprint.FingerprintManager",
-      getExpectedType("FINGERPRINT_SERVICE"),
+        "android.hardware.fingerprint.FingerprintManager",
+        getExpectedType("FINGERPRINT_SERVICE"),
     )
     assertEquals(
-      "android.os.HardwarePropertiesManager",
-      getExpectedType("HARDWARE_PROPERTIES_SERVICE"),
+        "android.os.HardwarePropertiesManager",
+        getExpectedType("HARDWARE_PROPERTIES_SERVICE"),
     )
     assertEquals(
-      "android.view.inputmethod.InputMethodManager",
-      getExpectedType("INPUT_METHOD_SERVICE"),
+        "android.view.inputmethod.InputMethodManager",
+        getExpectedType("INPUT_METHOD_SERVICE"),
     )
     assertEquals("android.hardware.input.InputManager", getExpectedType("INPUT_SERVICE"))
     assertEquals("android.net.IpSecManager", getExpectedType("IPSEC_SERVICE"))
@@ -425,13 +425,13 @@ class ServiceCastDetectorTest : AbstractCheckTest() {
     assertEquals("android.view.LayoutInflater", getExpectedType("LAYOUT_INFLATER_SERVICE"))
     assertEquals("android.location.LocationManager", getExpectedType("LOCATION_SERVICE"))
     assertEquals(
-      "android.media.projection.MediaProjectionManager",
-      getExpectedType("MEDIA_PROJECTION_SERVICE"),
+        "android.media.projection.MediaProjectionManager",
+        getExpectedType("MEDIA_PROJECTION_SERVICE"),
     )
     assertEquals("android.media.MediaRouter", getExpectedType("MEDIA_ROUTER_SERVICE"))
     assertEquals(
-      "android.media.session.MediaSessionManager",
-      getExpectedType("MEDIA_SESSION_SERVICE"),
+        "android.media.session.MediaSessionManager",
+        getExpectedType("MEDIA_SESSION_SERVICE"),
     )
     assertEquals("android.media.midi.MidiManager", getExpectedType("MIDI_SERVICE"))
     assertEquals("android.app.usage.NetworkStatsManager", getExpectedType("NETWORK_STATS_SERVICE"))
@@ -450,16 +450,16 @@ class ServiceCastDetectorTest : AbstractCheckTest() {
     assertEquals("android.telecom.TelecomManager", getExpectedType("TELECOM_SERVICE"))
     assertEquals("android.telephony.TelephonyManager", getExpectedType("TELEPHONY_SERVICE"))
     assertEquals(
-      "android.telephony.SubscriptionManager",
-      getExpectedType("TELEPHONY_SUBSCRIPTION_SERVICE"),
+        "android.telephony.SubscriptionManager",
+        getExpectedType("TELEPHONY_SUBSCRIPTION_SERVICE"),
     )
     assertEquals(
-      "android.view.textclassifier.TextClassificationManager",
-      getExpectedType("TEXT_CLASSIFICATION_SERVICE"),
+        "android.view.textclassifier.TextClassificationManager",
+        getExpectedType("TEXT_CLASSIFICATION_SERVICE"),
     )
     assertEquals(
-      "android.view.textservice.TextServicesManager",
-      getExpectedType("TEXT_SERVICES_MANAGER_SERVICE"),
+        "android.view.textservice.TextServicesManager",
+        getExpectedType("TEXT_SERVICES_MANAGER_SERVICE"),
     )
     assertEquals("android.media.tv.TvInputManager", getExpectedType("TV_INPUT_SERVICE"))
     assertEquals("android.app.UiModeManager", getExpectedType("UI_MODE_SERVICE"))

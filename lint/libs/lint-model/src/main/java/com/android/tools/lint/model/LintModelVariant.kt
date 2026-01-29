@@ -26,18 +26,11 @@ interface LintModelVariant {
   val name: String
   val useSupportLibraryVectorDrawables: Boolean
 
-  /**
-   * The single artifact passed to lint for analysis, or the "main" artifact if multiple artifacts
-   * are passed to lint for analysis.
-   */
+  /** The single artifact passed to lint for analysis, or the "main" artifact if multiple artifacts are passed to lint for analysis. */
   val artifact: LintModelArtifact
 
-  /**
-   * The single artifact passed to lint for analysis, or the "main" artifact if multiple artifacts
-   * are passed to lint for analysis.
-   */
-  @Deprecated("This property is deprecated.", ReplaceWith("artifact"))
-  val mainArtifact: LintModelAndroidArtifact
+  /** The single artifact passed to lint for analysis, or the "main" artifact if multiple artifacts are passed to lint for analysis. */
+  @Deprecated("This property is deprecated.", ReplaceWith("artifact")) val mainArtifact: LintModelAndroidArtifact
   val testArtifact: LintModelJavaArtifact?
   val androidTestArtifact: LintModelAndroidArtifact?
   val testFixturesArtifact: LintModelAndroidArtifact?
@@ -65,9 +58,8 @@ interface LintModelVariant {
   val buildFeatures: LintModelBuildFeatures
 
   /**
-   * Lookup from artifact address in a [LintModelDependencyGraph] to a [LintModelLibrary]. The
-   * libraries are shared across modules and variants, only the dependency graphs pointing to the
-   * libraries by address are per artifact.
+   * Lookup from artifact address in a [LintModelDependencyGraph] to a [LintModelLibrary]. The libraries are shared across modules and
+   * variants, only the dependency graphs pointing to the libraries by address are per artifact.
    */
   val libraryResolver: LintModelLibraryResolver
 
@@ -80,42 +72,41 @@ interface LintModelVariant {
 
 /** mainArtifactOrNull is the "main" artifact if it being analyzed by lint, or null if not. */
 class DefaultLintModelVariant(
-  override val module: LintModelModule,
-  override val name: String,
-  override val useSupportLibraryVectorDrawables: Boolean,
-  mainArtifactOrNull: LintModelAndroidArtifact?,
-  override val testArtifact: LintModelJavaArtifact?,
-  override val androidTestArtifact: LintModelAndroidArtifact?,
-  override val testFixturesArtifact: LintModelAndroidArtifact?,
-  override val mergedManifest: File?,
-  override val manifestMergeReport: File?,
-  override val `package`: String?,
-  override val minSdkVersion: AndroidVersion?,
-  override val targetSdkVersion: AndroidVersion?,
+    override val module: LintModelModule,
+    override val name: String,
+    override val useSupportLibraryVectorDrawables: Boolean,
+    mainArtifactOrNull: LintModelAndroidArtifact?,
+    override val testArtifact: LintModelJavaArtifact?,
+    override val androidTestArtifact: LintModelAndroidArtifact?,
+    override val testFixturesArtifact: LintModelAndroidArtifact?,
+    override val mergedManifest: File?,
+    override val manifestMergeReport: File?,
+    override val `package`: String?,
+    override val minSdkVersion: AndroidVersion?,
+    override val targetSdkVersion: AndroidVersion?,
 
-  /**
-   * Resource fields declared in the DSL. Note that unlike the builder-model, this map merges all
-   * the values from the mergedFlavor (which includes the defaultConfig) as well as the buildType.
-   */
-  override val resValues: Map<String, LintModelResourceField>,
-  /**
-   * Manifest placeholders declared in the DSL. Note that unlike the builder-model, this map merges
-   * all the values from the mergedFlavor (which includes the defaultConfig) as well as the
-   * buildType.
-   */
-  override val manifestPlaceholders: Map<String, String>,
-  override val resourceConfigurations: Collection<String>,
-  override val proguardFiles: Collection<File>,
-  override val consumerProguardFiles: Collection<File>,
-  override val sourceProviders: List<LintModelSourceProvider>,
-  override val testSourceProviders: List<LintModelSourceProvider>,
-  override val testFixturesSourceProviders: List<LintModelSourceProvider>,
-  override val debuggable: Boolean,
-  override val shrinkable: Boolean,
-  override val buildFeatures: LintModelBuildFeatures,
-  override val libraryResolver: LintModelLibraryResolver,
-  override val partialResultsDir: File?,
-  override val desugaredMethodsFiles: Collection<File>,
+    /**
+     * Resource fields declared in the DSL. Note that unlike the builder-model, this map merges all the values from the mergedFlavor (which
+     * includes the defaultConfig) as well as the buildType.
+     */
+    override val resValues: Map<String, LintModelResourceField>,
+    /**
+     * Manifest placeholders declared in the DSL. Note that unlike the builder-model, this map merges all the values from the mergedFlavor
+     * (which includes the defaultConfig) as well as the buildType.
+     */
+    override val manifestPlaceholders: Map<String, String>,
+    override val resourceConfigurations: Collection<String>,
+    override val proguardFiles: Collection<File>,
+    override val consumerProguardFiles: Collection<File>,
+    override val sourceProviders: List<LintModelSourceProvider>,
+    override val testSourceProviders: List<LintModelSourceProvider>,
+    override val testFixturesSourceProviders: List<LintModelSourceProvider>,
+    override val debuggable: Boolean,
+    override val shrinkable: Boolean,
+    override val buildFeatures: LintModelBuildFeatures,
+    override val libraryResolver: LintModelLibraryResolver,
+    override val partialResultsDir: File?,
+    override val desugaredMethodsFiles: Collection<File>,
 ) : LintModelVariant {
   override fun toString(): String = name
 
@@ -123,8 +114,7 @@ class DefaultLintModelVariant(
     return@lazy if (mainArtifactOrNull != null) {
       mainArtifactOrNull
     } else {
-      val nonNullArtifacts: List<LintModelArtifact> =
-        listOfNotNull(testArtifact, androidTestArtifact, testFixturesArtifact)
+      val nonNullArtifacts: List<LintModelArtifact> = listOfNotNull(testArtifact, androidTestArtifact, testFixturesArtifact)
       if (nonNullArtifacts.size != 1) {
         throw RuntimeException("Unexpected number of artifacts")
       }
@@ -135,15 +125,15 @@ class DefaultLintModelVariant(
   @Deprecated("This property is deprecated.", replaceWith = ReplaceWith("artifact"))
   override val mainArtifact: LintModelAndroidArtifact by lazy {
     return@lazy mainArtifactOrNull
-      ?: artifact as? LintModelAndroidArtifact
-      ?: DefaultLintModelAndroidArtifact(
-        applicationId = null,
-        generatedResourceFolders = listOf(),
-        generatedSourceFolders = listOf(),
-        desugaredMethodsFiles = listOf(),
-        dependencies = artifact.dependencies,
-        classOutputs = artifact.classOutputs,
-        type = artifact.type,
-      )
+        ?: artifact as? LintModelAndroidArtifact
+        ?: DefaultLintModelAndroidArtifact(
+            applicationId = null,
+            generatedResourceFolders = listOf(),
+            generatedSourceFolders = listOf(),
+            desugaredMethodsFiles = listOf(),
+            dependencies = artifact.dependencies,
+            classOutputs = artifact.classOutputs,
+            type = artifact.type,
+        )
   }
 }

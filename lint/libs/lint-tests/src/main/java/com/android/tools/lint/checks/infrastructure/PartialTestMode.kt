@@ -33,8 +33,7 @@ import kotlin.math.min
 import kotlin.text.Charsets
 import org.w3c.dom.Element
 
-internal class PartialTestMode :
-  TestMode(description = "Automatic Partial Analysis and Merging", "TestMode.PARTIAL") {
+internal class PartialTestMode : TestMode(description = "Automatic Partial Analysis and Merging", "TestMode.PARTIAL") {
   private class State(val manifestFile: File?, val originalManifest: String?)
 
   override val folderName: String = "partial"
@@ -88,10 +87,7 @@ internal class PartialTestMode :
       deleteCompiledSources(context.projects, context, deleteSourceFiles = true)
     } else if (type == EventType.SCANNING_PROJECT || type == EventType.SCANNING_LIBRARY_PROJECT) {
       // Don't use global configurations when analyzing in merge only
-      if (
-        context.task.overrideConfigFile != null &&
-          context.driver?.mode == LintDriver.DriverMode.ANALYSIS_ONLY
-      ) {
+      if (context.task.overrideConfigFile != null && context.driver?.mode == LintDriver.DriverMode.ANALYSIS_ONLY) {
         context.driver.client.configurations.overrides = null
       }
 
@@ -106,11 +102,11 @@ internal class PartialTestMode :
 
           val task = context.task
           val description =
-            try {
-              task.dirToProjectDescription[dir.canonicalFile]
-            } catch (ignore: IOException) {
-              task.dirToProjectDescription[dir]
-            } ?: continue
+              try {
+                task.dirToProjectDescription[dir.canonicalFile]
+              } catch (ignore: IOException) {
+                task.dirToProjectDescription[dir]
+              } ?: continue
           projects.add(description)
         }
 
@@ -120,26 +116,25 @@ internal class PartialTestMode :
   }
 
   override val diffExplanation: String =
-    """
-        Lint results computed provisionally do
-        not match those computed without provisional support enabled. This
-        means that the detector is not handling provisional support correctly,
-        which means that it will not work correctly as part of incremental
-        Gradle builds, where projects are now analyzed separately and the
-        results merged to generate the report.
+      """
+      Lint results computed provisionally do
+      not match those computed without provisional support enabled. This
+      means that the detector is not handling provisional support correctly,
+      which means that it will not work correctly as part of incremental
+      Gradle builds, where projects are now analyzed separately and the
+      results merged to generate the report.
 
-        Alternatively, if this difference is expected, you can set the
-        `testModes(...)` to include only one of these two, or turn off
-        the equality check altogether via `.expectIdenticalTestModeOutput(false)`.
-        You can then check each output by passing in a `testMode` parameter
-        to `expect`(...).
-        """
-      .trimIndent()
+      Alternatively, if this difference is expected, you can set the
+      `testModes(...)` to include only one of these two, or turn off
+      the equality check altogether via `.expectIdenticalTestModeOutput(false)`.
+      You can then check each output by passing in a `testMode` parameter
+      to `expect`(...).
+      """
+          .trimIndent()
 
   /**
-   * Replaces the minSdkVersion in the given manifest with [minSdk] (unless it's -1) and the
-   * targetSdkVersion with [targetSdk] (unless it's -1). The targetSdkVersion will also be limited
-   * to be at most the current targetSdkVersion, and at least [minSdk].
+   * Replaces the minSdkVersion in the given manifest with [minSdk] (unless it's -1) and the targetSdkVersion with [targetSdk] (unless it's
+   * -1). The targetSdkVersion will also be limited to be at most the current targetSdkVersion, and at least [minSdk].
    */
   @Suppress("SameParameterValue")
   private fun replaceManifestVersions(manifestFile: File, minSdk: Int, targetSdk: Int): String? {
@@ -167,8 +162,7 @@ internal class PartialTestMode :
       try {
         currentMin = minSdkVersion.toIntOrNull() ?: 1
         currentTarget =
-          targetSdkVersion.toIntOrNull()
-            ?: getApiByBuildCode(targetSdkVersion, false).let { if (it == -1) currentMin else it }
+            targetSdkVersion.toIntOrNull() ?: getApiByBuildCode(targetSdkVersion, false).let { if (it == -1) currentMin else it }
         // Coerce min to not be higher than current min,
         // and coerce target to fall between new min and current target
         newMinSdk = min(newMinSdk, currentMin)
@@ -206,12 +200,7 @@ internal class PartialTestMode :
     var targetStart = newManifest.indexOf(targetAttribute)
     targetStart += if (targetStart != -1) targetAttribute.length else 0
     val targetEnd = newManifest.indexOf('"', targetStart)
-    if (
-      newTargetSdk != -1 &&
-        targetStart != -1 &&
-        targetEnd > targetStart &&
-        newTargetSdk < currentTarget
-    ) {
+    if (newTargetSdk != -1 && targetStart != -1 && targetEnd > targetStart && newTargetSdk < currentTarget) {
       // If the old API level >= 10 it's 2 digits whereas our replacement is
       // normally 1 digit; this discrepancy can make unit tests which encode
       // the exact error range be off by one character.

@@ -29,13 +29,13 @@ import java.util.HashMap
 import java.util.Locale
 
 /**
- * "Multiplexing" reporter which allows output to be split up into a separate report for each
- * separate project. It also adds an overview index.
+ * "Multiplexing" reporter which allows output to be split up into a separate report for each separate project. It also adds an overview
+ * index.
  */
 class MultiProjectHtmlReporter(
-  client: LintCliClient,
-  private val dir: File,
-  private val flags: LintCliFlags,
+    client: LintCliClient,
+    private val dir: File,
+    private val flags: LintCliFlags,
 ) : Reporter(client, File(dir, INDEX_NAME)) {
   @Throws(IOException::class)
   override fun write(stats: LintStats, issues: List<Incident>, registry: IssueRegistry) {
@@ -94,15 +94,15 @@ class MultiProjectHtmlReporter(
       val prefix = project.referenceDir.path
       val path = project.dir.path
       val relative =
-        if (path.startsWith(prefix) && path.length > prefix.length) {
-          var i = prefix.length
-          if (path[i] == File.separatorChar) {
-            i++
+          if (path.startsWith(prefix) && path.length > prefix.length) {
+            var i = prefix.length
+            if (path[i] == File.separatorChar) {
+              i++
+            }
+            path.substring(i)
+          } else {
+            projectName
           }
-          path.substring(i)
-        } else {
-          projectName
-        }
       reporter.title = String.format("Lint Report for %1\$s", relative)
       reporter.setStripPrefix(relative)
       reporter.write(stats, projectIssues, registry)
@@ -121,10 +121,10 @@ class MultiProjectHtmlReporter(
   }
 
   class ProjectEntry(
-    val fileName: String,
-    val errorCount: Int,
-    val warningCount: Int,
-    val path: String,
+      val fileName: String,
+      val errorCount: Int,
+      val warningCount: Int,
+      val path: String,
   ) : Comparable<ProjectEntry> {
     override fun compareTo(other: ProjectEntry): Int {
       var delta = other.errorCount - errorCount

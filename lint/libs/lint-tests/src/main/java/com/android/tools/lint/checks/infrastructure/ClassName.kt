@@ -19,16 +19,14 @@ package com.android.tools.lint.checks.infrastructure
 import com.android.SdkConstants.DOT_JAVA
 
 @Deprecated(
-  "Use upstream version",
-  replaceWith = ReplaceWith("com.android.tools.lint.ClassName(source, extension)"),
+    "Use upstream version",
+    replaceWith = ReplaceWith("com.android.tools.lint.ClassName(source, extension)"),
 )
-class ClassName(source: String, extension: String = DOT_JAVA) :
-  com.android.tools.lint.ClassName(source, extension)
+class ClassName(source: String, extension: String = DOT_JAVA) : com.android.tools.lint.ClassName(source, extension)
 
 @Deprecated(
-  "Use upstream version",
-  replaceWith =
-    ReplaceWith("com.android.tools.lint.stripComments(source, extension, stripLineComments)"),
+    "Use upstream version",
+    replaceWith = ReplaceWith("com.android.tools.lint.stripComments(source, extension, stripLineComments)"),
 )
 fun stripComments(source: String, extension: String, stripLineComments: Boolean = true): String =
-  com.android.tools.lint.stripComments(source, extension, stripLineComments)
+    com.android.tools.lint.stripComments(source, extension, stripLineComments)

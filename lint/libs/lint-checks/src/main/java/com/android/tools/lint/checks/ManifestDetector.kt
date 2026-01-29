@@ -95,90 +95,90 @@ class ManifestDetector : Detector(), XmlScanner {
     /** Wrong order of elements in the manifest */
     @JvmField
     val ORDER =
-      Issue.create(
-        id = "ManifestOrder",
-        briefDescription = "Incorrect order of elements in manifest",
-        explanation =
-          """
+        Issue.create(
+            id = "ManifestOrder",
+            briefDescription = "Incorrect order of elements in manifest",
+            explanation =
+                """
                 The `<application>` tag should appear after the elements which declare which version you need, \
                 which features you need, which libraries you need, and so on. In the past there have been subtle \
                 bugs (such as themes not getting applied correctly) when the `<application>` tag appears before \
                 some of these other elements, so it's best to order your manifest in the logical dependency \
                 order.
                 """,
-        category = Category.CORRECTNESS,
-        priority = 5,
-        severity = Severity.WARNING,
-        implementation = IMPLEMENTATION,
-      )
+            category = Category.CORRECTNESS,
+            priority = 5,
+            severity = Severity.WARNING,
+            implementation = IMPLEMENTATION,
+        )
 
     /** Using multiple `<uses-sdk>` elements */
     @JvmField
     val MULTIPLE_USES_SDK =
-      Issue.create(
-        id = "MultipleUsesSdk",
-        briefDescription = "Multiple `<uses-sdk>` elements in the manifest",
-        explanation =
-          """
+        Issue.create(
+            id = "MultipleUsesSdk",
+            briefDescription = "Multiple `<uses-sdk>` elements in the manifest",
+            explanation =
+                """
                 The `<uses-sdk>` element should appear just once; the tools will **not** merge the contents \
                 of all the elements so if you split up the attributes across multiple elements, only one of \
                 them will take effect. To fix this, just merge all the attributes from the various elements \
                 into a single <uses-sdk> element.
                 """,
-        category = Category.CORRECTNESS,
-        priority = 6,
-        severity = Severity.FATAL,
-        moreInfo = "https://developer.android.com/guide/topics/manifest/uses-sdk-element.html",
-        implementation = IMPLEMENTATION,
-      )
+            category = Category.CORRECTNESS,
+            priority = 6,
+            severity = Severity.FATAL,
+            moreInfo = "https://developer.android.com/guide/topics/manifest/uses-sdk-element.html",
+            implementation = IMPLEMENTATION,
+        )
 
     /** Missing a `<uses-sdk>` element */
     @JvmField
     val WRONG_PARENT =
-      Issue.create(
-        id = "WrongManifestParent",
-        briefDescription = "Wrong manifest parent",
-        explanation =
-          """
+        Issue.create(
+            id = "WrongManifestParent",
+            briefDescription = "Wrong manifest parent",
+            explanation =
+                """
                 The `<uses-library>` element should be defined as a direct child of the `<application>` \
                 tag, not the `<manifest>` tag or an `<activity>` tag. Similarly, a `<uses-sdk>` tag must \
                 be declared at the root level, and so on. This check looks for incorrect declaration \
                 locations in the manifest, and complains if an element is found in the wrong place.
                 """,
-        category = Category.CORRECTNESS,
-        priority = 6,
-        severity = Severity.FATAL,
-        moreInfo = "https://developer.android.com/guide/topics/manifest/manifest-intro.html",
-        implementation = IMPLEMENTATION,
-      )
+            category = Category.CORRECTNESS,
+            priority = 6,
+            severity = Severity.FATAL,
+            moreInfo = "https://developer.android.com/guide/topics/manifest/manifest-intro.html",
+            implementation = IMPLEMENTATION,
+        )
 
     /** Missing a `<uses-sdk>` element */
     @JvmField
     val DUPLICATE_ACTIVITY =
-      Issue.create(
-        id = "DuplicateActivity",
-        briefDescription = "Activity registered more than once",
-        explanation =
-          """
+        Issue.create(
+            id = "DuplicateActivity",
+            briefDescription = "Activity registered more than once",
+            explanation =
+                """
                 An activity should only be registered once in the manifest. If it is accidentally \
                 registered more than once, then subtle errors can occur, since attribute declarations \
                 from the two elements are not merged, so you may accidentally remove previous \
                 declarations.
                 """,
-        category = Category.CORRECTNESS,
-        priority = 5,
-        severity = Severity.FATAL,
-        implementation = IMPLEMENTATION,
-      )
+            category = Category.CORRECTNESS,
+            priority = 5,
+            severity = Severity.FATAL,
+            implementation = IMPLEMENTATION,
+        )
 
     /** Not specifying data extraction rules */
     @JvmField
     val DATA_EXTRACTION_RULES =
-      Issue.create(
-          "DataExtractionRules",
-          briefDescription = "Missing data extraction rules",
-          explanation =
-            """
+        Issue.create(
+                "DataExtractionRules",
+                briefDescription = "Missing data extraction rules",
+                explanation =
+                    """
                 Before Android 12, the attributes `android:allowBackup` and `android:fullBackupContent` \
                 were used to configure all forms of backup, including cloud backups, device-to-device \
                 transfers and adb backup.
@@ -190,21 +190,21 @@ class ManifestDetector : Detector(), XmlScanner {
                 versions, you'll still want to specify an `android:fullBackupContent` resource if the default \
                 behavior is not right for your app.
                 """,
-          category = Category.SECURITY,
-          priority = 3,
-          moreInfo = "https://developer.android.com/about/versions/12/backup-restore#xml-changes",
-          implementation = IMPLEMENTATION,
-        )
-        .addMoreInfo("https://goo.gle/DataExtractionRules")
+                category = Category.SECURITY,
+                priority = 3,
+                moreInfo = "https://developer.android.com/about/versions/12/backup-restore#xml-changes",
+                implementation = IMPLEMENTATION,
+            )
+            .addMoreInfo("https://goo.gle/DataExtractionRules")
 
     /** Conflicting permission names */
     @JvmField
     val UNIQUE_PERMISSION =
-      Issue.create(
-        id = "UniquePermission",
-        briefDescription = "Permission names are not unique",
-        explanation =
-          """
+        Issue.create(
+            id = "UniquePermission",
+            briefDescription = "Permission names are not unique",
+            explanation =
+                """
                 The unqualified names or your permissions must be unique. The reason for this is that at \
                 build time, the `aapt` tool will generate a class named `Manifest` which contains a field \
                 for each of your permissions. These fields are named using your permission unqualified names \
@@ -213,20 +213,20 @@ class ManifestDetector : Detector(), XmlScanner {
                 If more than one permission maps to the same field name, that field will arbitrarily name \
                 just one of them.
                 """,
-        category = Category.CORRECTNESS,
-        priority = 6,
-        severity = Severity.FATAL,
-        implementation = IMPLEMENTATION,
-      )
+            category = Category.CORRECTNESS,
+            priority = 6,
+            severity = Severity.FATAL,
+            implementation = IMPLEMENTATION,
+        )
 
     /** Using a resource for attributes that do not allow it */
     @JvmField
     val SET_VERSION =
-      Issue.create(
-        id = "MissingVersion",
-        briefDescription = "Missing application name/version",
-        explanation =
-          """
+        Issue.create(
+            id = "MissingVersion",
+            briefDescription = "Missing application name/version",
+            explanation =
+                """
                 You should define the version information for your application.
 
                 `android:versionCode`: An integer value that represents the version of the application code, \
@@ -235,71 +235,71 @@ class ManifestDetector : Detector(), XmlScanner {
                 `android:versionName`: A string value that represents the release version of the application \
                 code, as it should be shown to users.
                 """,
-        category = Category.CORRECTNESS,
-        priority = 2,
-        severity = Severity.WARNING,
-        moreInfo = "https://developer.android.com/studio/publish/versioning#appversioning",
-        implementation = IMPLEMENTATION,
-      )
+            category = Category.CORRECTNESS,
+            priority = 2,
+            severity = Severity.WARNING,
+            moreInfo = "https://developer.android.com/studio/publish/versioning#appversioning",
+            implementation = IMPLEMENTATION,
+        )
 
     /** Using a resource for attributes that do not allow it */
     @JvmField
     val ILLEGAL_REFERENCE =
-      Issue.create(
-        id = "IllegalResourceRef",
-        briefDescription = "Name and version must be integer or string, not resource",
-        explanation =
-          """
+        Issue.create(
+            id = "IllegalResourceRef",
+            briefDescription = "Name and version must be integer or string, not resource",
+            explanation =
+                """
                 For the `versionCode` attribute, you have to specify an actual integer literal; you cannot \
                 use an indirection with a `@dimen/name` resource. Similarly, the `versionName` attribute \
                 should be an actual string, not a string resource url.
                 """,
-        category = Category.CORRECTNESS,
-        priority = 8,
-        severity = Severity.WARNING,
-        implementation = IMPLEMENTATION,
-      )
+            category = Category.CORRECTNESS,
+            priority = 8,
+            severity = Severity.WARNING,
+            implementation = IMPLEMENTATION,
+        )
 
     /** Declaring a uses-feature multiple time */
     @JvmField
     val DUPLICATE_USES_FEATURE =
-      Issue.create(
-        id = "DuplicateUsesFeature",
-        briefDescription = "Feature declared more than once",
-        explanation = "A given feature should only be declared once in the manifest.",
-        category = Category.CORRECTNESS,
-        priority = 5,
-        severity = Severity.WARNING,
-        implementation = IMPLEMENTATION,
-      )
+        Issue.create(
+            id = "DuplicateUsesFeature",
+            briefDescription = "Feature declared more than once",
+            explanation = "A given feature should only be declared once in the manifest.",
+            category = Category.CORRECTNESS,
+            priority = 5,
+            severity = Severity.WARNING,
+            implementation = IMPLEMENTATION,
+        )
 
     /** Not explicitly defining application icon */
     @JvmField
     val APPLICATION_ICON =
-      Issue.create(
-        id = "MissingApplicationIcon",
-        briefDescription = "Missing application icon",
-        explanation =
-          """
+        Issue.create(
+            id = "MissingApplicationIcon",
+            briefDescription = "Missing application icon",
+            explanation =
+                """
                 You should set an icon for the application as whole because there is no default. This \
                 attribute must be set as a reference to a drawable resource containing the image (for \
                 example `@drawable/icon`).
                 """,
-        category = Category.ICONS,
-        priority = 5,
-        severity = Severity.WARNING,
-        moreInfo = "https://developer.android.com/studio/publish/preparing#publishing-configure",
-        implementation = IMPLEMENTATION,
-      )
+            category = Category.ICONS,
+            priority = 5,
+            severity = Severity.WARNING,
+            moreInfo = "https://developer.android.com/studio/publish/preparing#publishing-configure",
+            implementation = IMPLEMENTATION,
+        )
 
     /** Malformed Device Admin */
     @JvmField
     val DEVICE_ADMIN =
-      Issue.create(
-        id = "DeviceAdmin",
-        briefDescription = "Malformed Device Admin",
-        explanation =
-          """
+        Issue.create(
+            id = "DeviceAdmin",
+            briefDescription = "Malformed Device Admin",
+            explanation =
+                """
                 If you register a broadcast receiver which acts as a device admin, you must also register \
                 an `<intent-filter>` for the action `android.app.action.DEVICE_ADMIN_ENABLED`, without any \
                 `<data>`, such that the device admin can be activated/deactivated.
@@ -312,56 +312,56 @@ class ManifestDetector : Detector(), XmlScanner {
                 ```
                 to your `<receiver>`.
                 """,
-        category = Category.CORRECTNESS,
-        priority = 7,
-        severity = Severity.WARNING,
-        implementation = IMPLEMENTATION,
-      )
+            category = Category.CORRECTNESS,
+            priority = 7,
+            severity = Severity.WARNING,
+            implementation = IMPLEMENTATION,
+        )
 
     /** Using a mock location in a non-debug-specific manifest file */
     @JvmField
     val MOCK_LOCATION =
-      Issue.create(
-        id = "MockLocation",
-        briefDescription = "Using mock location provider in production",
-        explanation =
-          """
+        Issue.create(
+            id = "MockLocation",
+            briefDescription = "Using mock location provider in production",
+            explanation =
+                """
                 Using a mock location provider (by requiring the permission `android.permission.ACCESS_MOCK_LOCATION`) should **only** be done in debug builds (or from tests). In Gradle projects, that means you should only request this permission in a test or debug source set specific manifest file.
 
                 To fix this, create a new manifest file in the debug folder and move the `<uses-permission>` element there. A typical path to a debug manifest override file in a Gradle project is src/debug/AndroidManifest.xml.
                 """,
-        category = Category.CORRECTNESS,
-        priority = 8,
-        severity = Severity.FATAL,
-        implementation = IMPLEMENTATION,
-      )
+            category = Category.CORRECTNESS,
+            priority = 8,
+            severity = Severity.FATAL,
+            implementation = IMPLEMENTATION,
+        )
 
     /** Defining a value that is overridden by Gradle */
     @JvmField
     val GRADLE_OVERRIDES =
-      Issue.create(
-        id = "GradleOverrides",
-        briefDescription = "Value overridden by Gradle build script",
-        explanation =
-          """
+        Issue.create(
+            id = "GradleOverrides",
+            briefDescription = "Value overridden by Gradle build script",
+            explanation =
+                """
                 The value of (for example) `minSdkVersion` is only used if it is not specified in the \
                 `build.gradle` build scripts. When specified in the Gradle build scripts, the manifest \
                 value is ignored and can be misleading, so should be removed to avoid ambiguity.
                 """,
-        category = Category.CORRECTNESS,
-        priority = 4,
-        severity = Severity.WARNING,
-        implementation = IMPLEMENTATION,
-      )
+            category = Category.CORRECTNESS,
+            priority = 4,
+            severity = Severity.WARNING,
+            implementation = IMPLEMENTATION,
+        )
 
     /** Using drawable rather than mipmap launcher icons */
     @JvmField
     val MIPMAP =
-      Issue.create(
-        id = "MipmapIcons",
-        briefDescription = "Use Mipmap Launcher Icons",
-        explanation =
-          """
+        Issue.create(
+            id = "MipmapIcons",
+            briefDescription = "Use Mipmap Launcher Icons",
+            explanation =
+                """
                 Launcher icons should be provided in the `mipmap` resource directory. This is the same as \
                 the `drawable` resource directory, except resources in the `mipmap` directory will not get \
                 stripped out when creating density-specific APKs.
@@ -376,71 +376,67 @@ class ManifestDetector : Detector(), XmlScanner {
 
                 In Android Studio this lint warning has a quickfix to perform this automatically.
                 """,
-        category = Category.ICONS,
-        priority = 5,
-        severity = Severity.WARNING,
-        implementation = IMPLEMENTATION,
-      )
+            category = Category.ICONS,
+            priority = 5,
+            severity = Severity.WARNING,
+            implementation = IMPLEMENTATION,
+        )
 
     /** Uses Wear Bind Listener which is deprecated */
     @JvmField
     val WEARABLE_BIND_LISTENER =
-      Issue.create(
-        id = "WearableBindListener",
-        briefDescription = "Usage of Android Wear BIND_LISTENER is deprecated",
-        explanation =
-          """
+        Issue.create(
+            id = "WearableBindListener",
+            briefDescription = "Usage of Android Wear BIND_LISTENER is deprecated",
+            explanation =
+                """
                 BIND_LISTENER receives all Android Wear events whether the application needs them or not. \
                 This can be inefficient and cause applications to wake up unnecessarily. With Google Play \
                 Services 8.2.0 or later it is recommended to use a more efficient combination of manifest \
                 listeners and api-based live listeners filtered by action, path and/or path prefix.
                 """,
-        category = Category.PERFORMANCE,
-        priority = 6,
-        severity = Severity.FATAL,
-        moreInfo =
-          "https://android-developers.googleblog.com/2016/04/deprecation-of-bindlistener.html",
-        implementation = IMPLEMENTATION,
-      )
+            category = Category.PERFORMANCE,
+            priority = 6,
+            severity = Severity.FATAL,
+            moreInfo = "https://android-developers.googleblog.com/2016/04/deprecation-of-bindlistener.html",
+            implementation = IMPLEMENTATION,
+        )
 
     @JvmField
     val APP_INDEXING_SERVICE =
-      Issue.create(
-        id = "AppIndexingService",
-        briefDescription = "App Indexing Background Services",
-        explanation =
-          """
+        Issue.create(
+            id = "AppIndexingService",
+            briefDescription = "App Indexing Background Services",
+            explanation =
+                """
                 Apps targeting Android 8.0 or higher can no longer rely on background services while \
                 listening for updates to the on-device index. Use a `BroadcastReceiver` for the \
                 `UPDATE_INDEX` intent to continue supporting indexing in your app.
                 """,
-        category = Category.CORRECTNESS,
-        priority = 4,
-        severity = Severity.WARNING,
-        moreInfo =
-          "https://firebase.google.com/docs/app-indexing/android/personal-content#add-a-broadcast-receiver-to-your-app",
-        implementation = IMPLEMENTATION,
-      )
+            category = Category.CORRECTNESS,
+            priority = 4,
+            severity = Severity.WARNING,
+            moreInfo = "https://firebase.google.com/docs/app-indexing/android/personal-content#add-a-broadcast-receiver-to-your-app",
+            implementation = IMPLEMENTATION,
+        )
 
     @JvmField
     val REDUNDANT_LABEL =
-      Issue.create(
-        id = "RedundantLabel",
-        briefDescription = "Redundant label on activity",
-        explanation =
-          """
+        Issue.create(
+            id = "RedundantLabel",
+            briefDescription = "Redundant label on activity",
+            explanation =
+                """
                 When an activity does not have a label attribute, it will use the one from the application tag. \
                 Since the application has already specified the same label, the label on this activity can be omitted.
                 """,
-        category = Category.CORRECTNESS,
-        priority = 5,
-        severity = Severity.WARNING,
-        implementation = IMPLEMENTATION,
-      )
+            category = Category.CORRECTNESS,
+            priority = 5,
+            severity = Severity.WARNING,
+            implementation = IMPLEMENTATION,
+        )
 
-    @JvmStatic
-    fun isLaunchableActivity(activity: Element): Boolean =
-      findLaunchableCategoryNode(activity) != null
+    @JvmStatic fun isLaunchableActivity(activity: Element): Boolean = findLaunchableCategoryNode(activity) != null
 
     @JvmStatic
     fun findLaunchableCategoryNode(activity: Element): Attr? {
@@ -467,8 +463,7 @@ class ManifestDetector : Detector(), XmlScanner {
     const val MOCK_LOCATION_PERMISSION = "android.permission.ACCESS_MOCK_LOCATION"
 
     private val MIN_WEARABLE_GMS_VERSION = Version.parse("8.2.0")
-    private const val PLAY_SERVICES_WEARABLE =
-      GradleDetector.GMS_GROUP_ID + ":play-services-wearable"
+    private const val PLAY_SERVICES_WEARABLE = GradleDetector.GMS_GROUP_ID + ":play-services-wearable"
     private const val ATTR_DATA_EXTRACTION_RULES = "dataExtractionRules"
   }
 
@@ -497,8 +492,8 @@ class ManifestDetector : Detector(), XmlScanner {
   }
 
   /**
-   * Should we look at `<application>` tags in the source file? If true, yes, analyze source
-   * elements, if false, look at the merged manifest instead.
+   * Should we look at `<application>` tags in the source file? If true, yes, analyze source elements, if false, look at the merged manifest
+   * instead.
    */
   private fun onlyCheckSourceManifest(context: Context): Boolean {
     // When analyzing a single file in the IDE, limit the search to
@@ -524,18 +519,13 @@ class ManifestDetector : Detector(), XmlScanner {
     val root = mergedManifest.documentElement ?: return
     val application = XmlUtils.getFirstSubTagByName(root, TAG_APPLICATION)
     // Just an injected <application/> node from the manifest merger?
-    if (
-      application == null || application.firstChild == null && application.attributes.length == 0
-    ) {
+    if (application == null || application.firstChild == null && application.attributes.length == 0) {
       return
     }
     checkApplication(context, application)
   }
 
-  /**
-   * Checks that the main `<application>` tag specifies both an icon and allowBackup, possibly
-   * merged from some upstream dependency
-   */
+  /** Checks that the main `<application>` tag specifies both an icon and allowBackup, possibly merged from some upstream dependency */
   private fun checkApplication(context: Context, application: Element) {
     if (context.project.isLibrary) {
       return
@@ -549,8 +539,7 @@ class ManifestDetector : Detector(), XmlScanner {
       return
     }
     val allowBackupNode = application.getAttributeNodeNS(ANDROID_URI, ATTR_ALLOW_BACKUP)
-    val dataExtractionRules =
-      application.getAttributeNodeNS(ANDROID_URI, ATTR_DATA_EXTRACTION_RULES)
+    val dataExtractionRules = application.getAttributeNodeNS(ANDROID_URI, ATTR_DATA_EXTRACTION_RULES)
     val fullBackupNode = application.getAttributeNodeNS(ANDROID_URI, ATTR_FULL_BACKUP_CONTENT)
 
     val project = context.mainProject
@@ -560,78 +549,75 @@ class ManifestDetector : Detector(), XmlScanner {
       if (allowBackupNode?.value == VALUE_FALSE && dataExtractionRules == null) {
         val fix = createDataExtractionRulesFix(context, fullBackupNode)
         reportFromManifest(
-          context,
-          DATA_EXTRACTION_RULES,
-          allowBackupNode,
-          "The attribute `android:allowBackup` is deprecated from Android 12 and higher and may be removed " +
-            "in future versions. Consider adding the attribute `android:dataExtractionRules` specifying " +
-            "an `@xml` resource which configures cloud backups and device transfers on Android 12 " +
-            "and higher.",
-          LocationType.VALUE,
-          fix,
+            context,
+            DATA_EXTRACTION_RULES,
+            allowBackupNode,
+            "The attribute `android:allowBackup` is deprecated from Android 12 and higher and may be removed " +
+                "in future versions. Consider adding the attribute `android:dataExtractionRules` specifying " +
+                "an `@xml` resource which configures cloud backups and device transfers on Android 12 " +
+                "and higher.",
+            LocationType.VALUE,
+            fix,
         )
       } else if (fullBackupNode != null && dataExtractionRules == null) {
         val fix = createDataExtractionRulesFix(context, fullBackupNode)
         reportFromManifest(
-          context,
-          DATA_EXTRACTION_RULES,
-          fullBackupNode,
-          "The attribute `android:fullBackupContent` is deprecated from Android 12 and higher " +
-            "and may be removed in future versions. Consider adding the attribute " +
-            "`android:dataExtractionRules` specifying an `@xml` resource which configures cloud " +
-            "backups and device transfers on Android 12 and higher.",
-          LocationType.VALUE,
-          fix,
+            context,
+            DATA_EXTRACTION_RULES,
+            fullBackupNode,
+            "The attribute `android:fullBackupContent` is deprecated from Android 12 and higher " +
+                "and may be removed in future versions. Consider adding the attribute " +
+                "`android:dataExtractionRules` specifying an `@xml` resource which configures cloud " +
+                "backups and device transfers on Android 12 and higher.",
+            LocationType.VALUE,
+            fix,
         )
       } else if (dataExtractionRules != null && fullBackupNode == null) {
         reportFromManifest(
-          context,
-          DATA_EXTRACTION_RULES,
-          dataExtractionRules,
-          "The attribute `android:dataExtractionRules` only applies for Android 12 and higher; since " +
-            "`minSdkVersion` is API $min you should also set `android:fullBackupContent`",
-          LocationType.VALUE,
+            context,
+            DATA_EXTRACTION_RULES,
+            dataExtractionRules,
+            "The attribute `android:dataExtractionRules` only applies for Android 12 and higher; since " +
+                "`minSdkVersion` is API $min you should also set `android:fullBackupContent`",
+            LocationType.VALUE,
         )
       }
     } else if (min >= 31 && dataExtractionRules == null) {
-      if (
-        allowBackupNode != null && fullBackupNode == null && allowBackupNode.value == VALUE_TRUE
-      ) {
+      if (allowBackupNode != null && fullBackupNode == null && allowBackupNode.value == VALUE_TRUE) {
         reportFromManifest(
-          context,
-          DATA_EXTRACTION_RULES,
-          allowBackupNode,
-          "The attribute `android:allowBackup` is deprecated from Android 12 and the default " +
-            "allows backup",
-          LocationType.VALUE,
-          fix().unset(ANDROID_URI, ATTR_ALLOW_BACKUP).build(),
+            context,
+            DATA_EXTRACTION_RULES,
+            allowBackupNode,
+            "The attribute `android:allowBackup` is deprecated from Android 12 and the default " + "allows backup",
+            LocationType.VALUE,
+            fix().unset(ANDROID_URI, ATTR_ALLOW_BACKUP).build(),
         )
       } else if (allowBackupNode != null) {
         val fix = createDataExtractionRulesFix(context, fullBackupNode)
         reportFromManifest(
-          context,
-          DATA_EXTRACTION_RULES,
-          allowBackupNode,
-          "The attribute `android:allowBackup` is deprecated from Android 12 and may be " +
-            "removed in future versions. Consider adding the attribute `android:dataExtractionRules` " +
-            "specifying an `@xml` resource which configures backups and device transfers on " +
-            "Android 12 and higher.",
-          LocationType.VALUE,
-          fix,
+            context,
+            DATA_EXTRACTION_RULES,
+            allowBackupNode,
+            "The attribute `android:allowBackup` is deprecated from Android 12 and may be " +
+                "removed in future versions. Consider adding the attribute `android:dataExtractionRules` " +
+                "specifying an `@xml` resource which configures backups and device transfers on " +
+                "Android 12 and higher.",
+            LocationType.VALUE,
+            fix,
         )
       }
       if (fullBackupNode != null) {
         val fix = createDataExtractionRulesFix(context, fullBackupNode)
         reportFromManifest(
-          context,
-          DATA_EXTRACTION_RULES,
-          fullBackupNode,
-          "The attribute `android:fullBackupContent` is deprecated from Android 12 and higher " +
-            "and may be removed in future versions. Consider adding the attribute " +
-            "`android:dataExtractionRules` specifying an `@xml` resource which configures backups " +
-            "and device transfers on Android 12 and higher.",
-          LocationType.VALUE,
-          fix,
+            context,
+            DATA_EXTRACTION_RULES,
+            fullBackupNode,
+            "The attribute `android:fullBackupContent` is deprecated from Android 12 and higher " +
+                "and may be removed in future versions. Consider adding the attribute " +
+                "`android:dataExtractionRules` specifying an `@xml` resource which configures backups " +
+                "and device transfers on Android 12 and higher.",
+            LocationType.VALUE,
+            fix,
         )
       }
     }
@@ -675,10 +661,7 @@ class ManifestDetector : Detector(), XmlScanner {
       return null
     }
     val removeAttributes = mutableListOf<Attr>()
-    val clientSideEncryption =
-      root.visitAttributes {
-        it.name == "requireFlags" && it.value.contains("clientSideEncryption")
-      }
+    val clientSideEncryption = root.visitAttributes { it.name == "requireFlags" && it.value.contains("clientSideEncryption") }
 
     val prefix = xml.substring(0, rootStart)
     var childContent = xml.substring(firstStart, lastEnd)
@@ -687,19 +670,18 @@ class ManifestDetector : Detector(), XmlScanner {
         val start = parser.getNodeStartOffset(client, xmlFile, attr)
         val end = parser.getNodeEndOffset(client, xmlFile, attr)
         if (start != -1 && end != -1) {
-          childContent =
-            childContent.substring(0, start - firstStart) + childContent.substring(end - firstStart)
+          childContent = childContent.substring(0, start - firstStart) + childContent.substring(end - firstStart)
         }
       }
     }
     val indented = childContent.lines().joinToString("\n") { "    $it" }.removePrefix("    ")
     var descriptor =
-      prefix +
-        "<data-extraction-rules>\n    <cloud-backup" +
-        (if (clientSideEncryption) " disableIfNoEncryptionCapabilities=\"true\"" else "") +
-        ">\n" +
-        indented.trimEnd().removePrefix("\n") +
-        "\n    </cloud-backup>\n</data-extraction-rules>"
+        prefix +
+            "<data-extraction-rules>\n    <cloud-backup" +
+            (if (clientSideEncryption) " disableIfNoEncryptionCapabilities=\"true\"" else "") +
+            ">\n" +
+            indented.trimEnd().removePrefix("\n") +
+            "\n    </cloud-backup>\n</data-extraction-rules>"
 
     // Re-parse our modified file to get up to date offsets and insert comments
     // in the D2D rules
@@ -716,12 +698,7 @@ class ManifestDetector : Detector(), XmlScanner {
         val start = parser.getNodeStartOffset(client, xmlFile, element)
         val end = parser.getNodeEndOffset(client, xmlFile, element)
         if (start != -1 && end != -1) {
-          descriptor =
-            descriptor.substring(0, start) +
-              "<!-- " +
-              descriptor.substring(start, end) +
-              " -->" +
-              descriptor.substring(end)
+          descriptor = descriptor.substring(0, start) + "<!-- " + descriptor.substring(start, end) + " -->" + descriptor.substring(end)
         }
       }
     }
@@ -733,20 +710,19 @@ class ManifestDetector : Detector(), XmlScanner {
   private fun getDataExtractionFileContent(context: Context, fullBackupNode: Attr?): String {
     // If there's a full backup node use and migrate it
     fullBackupNode
-      ?.value
-      ?.let { ResourceUrl.parse(it) }
-      ?.let { url ->
-        val client = context.client
-        val project = context.project
-        val resources = client.getResources(project, ResourceRepositoryScope.LOCAL_DEPENDENCIES)
-        val item =
-          resources.getResources(ResourceNamespace.TODO(), url.type, url.name).firstOrNull()?.source
-        item?.toFile()?.let { file ->
-          getExtraction(client, file)?.let {
-            return it
+        ?.value
+        ?.let { ResourceUrl.parse(it) }
+        ?.let { url ->
+          val client = context.client
+          val project = context.project
+          val resources = client.getResources(project, ResourceRepositoryScope.LOCAL_DEPENDENCIES)
+          val item = resources.getResources(ResourceNamespace.TODO(), url.type, url.name).firstOrNull()?.source
+          item?.toFile()?.let { file ->
+            getExtraction(client, file)?.let {
+              return it
+            }
           }
         }
-      }
 
     // Fallback: no previous descriptor, or the descriptor couldn't be read or parsed; just use
     // a default template:
@@ -754,45 +730,45 @@ class ManifestDetector : Detector(), XmlScanner {
     @Suppress("UnnecessaryVariable") // here so we can annotate it with @Language("XML")
     @Language("XML")
     val descriptor =
-      """
-            <?xml version="1.0" encoding="utf-8"?>
-            <!--
-               Sample data extraction rules file; uncomment and customize as necessary.
-               See https://developer.android.com/about/versions/12/backup-restore#xml-changes
-               for details.
-            -->
-            <data-extraction-rules>
-                <cloud-backup>
-                    <!--
-                    TODO: Use <include> and <exclude> to control what is backed up.
-                    The domain can be file, database, sharedpref, external or root.
-                    Examples:
-
-                    <include domain="file" path="file_to_include"/>
-                    <exclude domain="file" path="file_to_exclude"/>
-                    <include domain="file" path="include_folder"/>
-                    <exclude domain="file" path="include_folder/file_to_exclude"/>
-                    <exclude domain="file" path="exclude_folder"/>
-                    <include domain="file" path="exclude_folder/file_to_include"/>
-
-                    <include domain="sharedpref" path="include_shared_pref1.xml"/>
-                    <include domain="database" path="db_name/file_to_include"/>
-                    <exclude domain="database" path="db_name/include_folder/file_to_exclude"/>
-                    <include domain="external" path="file_to_include"/>
-                    <exclude domain="external" path="file_to_exclude"/>
-                    <include domain="root" path="file_to_include"/>
-                    <exclude domain="root" path="file_to_exclude"/>
-                    -->
-                </cloud-backup>
+        """
+        <?xml version="1.0" encoding="utf-8"?>
+        <!--
+           Sample data extraction rules file; uncomment and customize as necessary.
+           See https://developer.android.com/about/versions/12/backup-restore#xml-changes
+           for details.
+        -->
+        <data-extraction-rules>
+            <cloud-backup>
                 <!--
-                <device-transfer>
-                    <include .../>
-                    <exclude .../>
-                </device-transfer>
+                TODO: Use <include> and <exclude> to control what is backed up.
+                The domain can be file, database, sharedpref, external or root.
+                Examples:
+
+                <include domain="file" path="file_to_include"/>
+                <exclude domain="file" path="file_to_exclude"/>
+                <include domain="file" path="include_folder"/>
+                <exclude domain="file" path="include_folder/file_to_exclude"/>
+                <exclude domain="file" path="exclude_folder"/>
+                <include domain="file" path="exclude_folder/file_to_include"/>
+
+                <include domain="sharedpref" path="include_shared_pref1.xml"/>
+                <include domain="database" path="db_name/file_to_include"/>
+                <exclude domain="database" path="db_name/include_folder/file_to_exclude"/>
+                <include domain="external" path="file_to_include"/>
+                <exclude domain="external" path="file_to_exclude"/>
+                <include domain="root" path="file_to_include"/>
+                <exclude domain="root" path="file_to_exclude"/>
                 -->
-            </data-extraction-rules>
-            """
-        .trimIndent()
+            </cloud-backup>
+            <!--
+            <device-transfer>
+                <include .../>
+                <exclude .../>
+            </device-transfer>
+            -->
+        </data-extraction-rules>
+        """
+            .trimIndent()
 
     return descriptor
   }
@@ -807,77 +783,69 @@ class ManifestDetector : Detector(), XmlScanner {
     }
 
     val descriptor = getDataExtractionFileContent(context, fullBackupNode)
-    val select =
-      if (descriptor.contains("TODO:")) " ()TODO:"
-      else if (descriptor.contains("<include")) "()<include" else "()"
+    val select = if (descriptor.contains("TODO:")) " ()TODO:" else if (descriptor.contains("<include")) "()<include" else "()"
     val createFix = fix().newFile(file, descriptor).select(select).build()
     val setAttributeFix = fix().set(ANDROID_URI, ATTR_DATA_EXTRACTION_RULES, "@xml/$name").build()
     return fix().name("Create $name.xml").composite(createFix, setAttributeFix)
   }
 
   private fun checkIcon(application: Element, context: Context) {
-    if (
-      !application.hasAttributeNS(ANDROID_URI, ATTR_ICON) && context.isEnabled(APPLICATION_ICON)
-    ) {
+    if (!application.hasAttributeNS(ANDROID_URI, ATTR_ICON) && context.isEnabled(APPLICATION_ICON)) {
       val fix = fix().set(ANDROID_URI, ATTR_ICON, "@mipmap/").caretEnd().build()
       reportFromManifest(
-        context,
-        APPLICATION_ICON,
-        application,
-        "Should explicitly set `android:icon`, there is no default",
-        LocationType.NAME,
-        fix,
+          context,
+          APPLICATION_ICON,
+          application,
+          "Should explicitly set `android:icon`, there is no default",
+          LocationType.NAME,
+          fix,
       )
     }
   }
 
   private fun checkDocumentElement(context: XmlContext, element: Element) {
     val codeNode = element.getAttributeNodeNS(ANDROID_URI, ATTR_VERSION_CODE)
-    if (
-      codeNode != null &&
-        codeNode.value.startsWith(PREFIX_RESOURCE_REF) &&
-        context.isEnabled(ILLEGAL_REFERENCE)
-    ) {
+    if (codeNode != null && codeNode.value.startsWith(PREFIX_RESOURCE_REF) && context.isEnabled(ILLEGAL_REFERENCE)) {
       context.report(
-        ILLEGAL_REFERENCE,
-        element,
-        context.getLocation(codeNode),
-        "The `android:versionCode` cannot be a resource url, it must be " + "a literal integer",
+          ILLEGAL_REFERENCE,
+          element,
+          context.getLocation(codeNode),
+          "The `android:versionCode` cannot be a resource url, it must be " + "a literal integer",
       )
     } else if (
-      codeNode == null &&
-        context.isEnabled(SET_VERSION) &&
-        !context.project.isLibrary &&
-        // Not required in Gradle projects; typically defined in build.gradle instead
-        // and inserted at build time
-        !context.project.isGradleProject
+        codeNode == null &&
+            context.isEnabled(SET_VERSION) &&
+            !context.project.isLibrary &&
+            // Not required in Gradle projects; typically defined in build.gradle instead
+            // and inserted at build time
+            !context.project.isGradleProject
     ) {
       val fix = fix().set().todo(ANDROID_URI, ATTR_VERSION_CODE).build()
       context.report(
-        SET_VERSION,
-        element,
-        context.getNameLocation(element),
-        "Should set `android:versionCode` to specify the application version",
-        fix,
+          SET_VERSION,
+          element,
+          context.getNameLocation(element),
+          "Should set `android:versionCode` to specify the application version",
+          fix,
       )
     }
     val nameNode = element.getAttributeNodeNS(ANDROID_URI, ATTR_VERSION_NAME)
     if (
-      nameNode == null &&
-        context.isEnabled(SET_VERSION) &&
-        !context.project.isLibrary &&
-        // Not required in Gradle projects; typically defined in build.gradle instead
-        // and inserted at build time
+        nameNode == null &&
+            context.isEnabled(SET_VERSION) &&
+            !context.project.isLibrary &&
+            // Not required in Gradle projects; typically defined in build.gradle instead
+            // and inserted at build time
 
-        !context.project.isGradleProject
+            !context.project.isGradleProject
     ) {
       val fix = fix().set().todo(ANDROID_URI, ATTR_VERSION_NAME).build()
       context.report(
-        SET_VERSION,
-        element,
-        context.getNameLocation(element),
-        "Should set `android:versionName` to specify the application version",
-        fix,
+          SET_VERSION,
+          element,
+          context.getNameLocation(element),
+          "Should set `android:versionName` to specify the application version",
+          fix,
       )
     }
     val pkgNode = element.getAttributeNode(ATTR_PACKAGE)
@@ -885,23 +853,22 @@ class ManifestDetector : Detector(), XmlScanner {
       val pkg = pkgNode.value
       if (pkg.contains("\${") && context.project.isGradleProject) {
         context.report(
-          GRADLE_OVERRIDES,
-          pkgNode,
-          context.getLocation(pkgNode),
-          "Cannot use placeholder for the package in the manifest; " +
-            "set `applicationId` in `build.gradle` instead",
+            GRADLE_OVERRIDES,
+            pkgNode,
+            context.getLocation(pkgNode),
+            "Cannot use placeholder for the package in the manifest; " + "set `applicationId` in `build.gradle` instead",
         )
       }
     }
   }
 
   private fun reportFromManifest(
-    context: Context,
-    issue: Issue,
-    node: Node?,
-    message: String,
-    type: LocationType,
-    fix: LintFix? = null,
+      context: Context,
+      issue: Issue,
+      node: Node?,
+      message: String,
+      type: LocationType,
+      fix: LintFix? = null,
   ) {
     val location = context.getLocation(node, type)
     if (location.start == null) {
@@ -925,34 +892,34 @@ class ManifestDetector : Detector(), XmlScanner {
       val variant = project.buildVariant
       if (variant != null) {
         val gradleValue =
-          when {
-            ATTR_MIN_SDK_VERSION == attributeName -> {
-              if (element.hasAttributeNS(TOOLS_URI, "overrideLibrary")) {
-                // The manifest may be setting a minSdkVersion here to deliberately
-                // let the manifest merger know that a library dependency's manifest
-                // with a higher value is okay: this value wins. The manifest merger
-                // should really be taking the Gradle file into account instead,
-                // but for now we filter these out; http://b.android.com/186762
+            when {
+              ATTR_MIN_SDK_VERSION == attributeName -> {
+                if (element.hasAttributeNS(TOOLS_URI, "overrideLibrary")) {
+                  // The manifest may be setting a minSdkVersion here to deliberately
+                  // let the manifest merger know that a library dependency's manifest
+                  // with a higher value is okay: this value wins. The manifest merger
+                  // should really be taking the Gradle file into account instead,
+                  // but for now we filter these out; http://b.android.com/186762
+                  return
+                }
+                val minSdkVersion = variant.minSdkVersion
+                minSdkVersion?.apiString
+              }
+              ATTR_TARGET_SDK_VERSION == attributeName -> {
+                val targetSdkVersion = variant.targetSdkVersion
+                targetSdkVersion?.apiString
+              }
+              else -> {
+                assert(false) { attributeName }
                 return
               }
-              val minSdkVersion = variant.minSdkVersion
-              minSdkVersion?.apiString
             }
-            ATTR_TARGET_SDK_VERSION == attributeName -> {
-              val targetSdkVersion = variant.targetSdkVersion
-              targetSdkVersion?.apiString
-            }
-            else -> {
-              assert(false) { attributeName }
-              return
-            }
-          }
         if (gradleValue != null) {
           val manifestValue = attribute.value
           val message =
-            "This `$attributeName` value (`$manifestValue`) is not used; it is " +
-              "always overridden by the value specified in the Gradle build " +
-              "script (`$gradleValue`)"
+              "This `$attributeName` value (`$manifestValue`) is not used; it is " +
+                  "always overridden by the value specified in the Gradle build " +
+                  "script (`$gradleValue`)"
           context.report(GRADLE_OVERRIDES, attribute, context.getLocation(attribute), message)
         }
       }
@@ -963,22 +930,22 @@ class ManifestDetector : Detector(), XmlScanner {
 
   override fun getApplicableElements(): Collection<String> {
     return listOf(
-      TAG_APPLICATION,
-      TAG_USES_PERMISSION,
-      TAG_PERMISSION,
-      "permission-tree",
-      "permission-group",
-      TAG_USES_SDK,
-      "uses-configuration",
-      TAG_USES_FEATURE,
-      "supports-screens",
-      "compatible-screens",
-      "supports-gl-texture",
-      TAG_USES_LIBRARY,
-      TAG_ACTIVITY,
-      TAG_SERVICE,
-      TAG_PROVIDER,
-      TAG_RECEIVER,
+        TAG_APPLICATION,
+        TAG_USES_PERMISSION,
+        TAG_PERMISSION,
+        "permission-tree",
+        "permission-group",
+        TAG_USES_SDK,
+        "uses-configuration",
+        TAG_USES_FEATURE,
+        "supports-screens",
+        "compatible-screens",
+        "supports-gl-texture",
+        TAG_USES_LIBRARY,
+        TAG_ACTIVITY,
+        TAG_SERVICE,
+        TAG_PROVIDER,
+        TAG_RECEIVER,
     )
   }
 
@@ -992,10 +959,10 @@ class ManifestDetector : Detector(), XmlScanner {
     if (tag == TAG_USES_LIBRARY || tag == TAG_ACTIVITY || tag == TAG_SERVICE || isReceiver) {
       if (TAG_APPLICATION != parentNode.nodeName && context.isEnabled(WRONG_PARENT)) {
         context.report(
-          WRONG_PARENT,
-          element,
-          context.getNameLocation(element),
-          "The `<$tag>` element must be a direct child of the <application> element",
+            WRONG_PARENT,
+            element,
+            context.getNameLocation(element),
+            "The `<$tag>` element must be a direct child of the <application> element",
         )
       }
       if (tag == TAG_ACTIVITY) {
@@ -1003,9 +970,7 @@ class ManifestDetector : Detector(), XmlScanner {
         if (nameNode != null) {
           var name = nameNode.value
           if (name.isNotEmpty()) {
-            val pkg =
-              context.document.documentElement.getAttributeNode(ATTR_PACKAGE)?.value
-                ?: context.project.getPackage()
+            val pkg = context.document.documentElement.getAttributeNode(ATTR_PACKAGE)?.value ?: context.project.getPackage()
             if (name[0] == '.') {
               name = pkg + name
             } else if (name.indexOf('.') == -1) {
@@ -1027,11 +992,10 @@ class ManifestDetector : Detector(), XmlScanner {
               val attr = innerChild.getAttributeNodeNS(ANDROID_URI, ATTR_NAME)
               if (attr != null && "com.google.firebase.appindexing.UPDATE_INDEX" == attr.value) {
                 val message =
-                  "`UPDATE_INDEX` is configured as a service in your app, " +
-                    "which is no longer supported for the API level you're targeting. " +
-                    "Use a `BroadcastReceiver` instead."
-                val incident =
-                  Incident(APP_INDEXING_SERVICE, attr, context.getLocation(attr), message)
+                    "`UPDATE_INDEX` is configured as a service in your app, " +
+                        "which is no longer supported for the API level you're targeting. " +
+                        "Use a `BroadcastReceiver` instead."
+                val incident = Incident(APP_INDEXING_SERVICE, attr, context.getLocation(attr), message)
                 context.report(incident, targetSdkAtLeast(26))
                 break
               }
@@ -1055,10 +1019,10 @@ class ManifestDetector : Detector(), XmlScanner {
         val variant = context.project.buildVariant
         if (variant != null && hasWearableGmsDependency(variant)) {
           context.report(
-            WEARABLE_BIND_LISTENER,
-            bindListenerAttr,
-            context.getLocation(bindListenerAttr),
-            "The `com.google.android.gms.wearable.BIND_LISTENER`" + " action is deprecated",
+              WEARABLE_BIND_LISTENER,
+              bindListenerAttr,
+              context.getLocation(bindListenerAttr),
+              "The `com.google.android.gms.wearable.BIND_LISTENER`" + " action is deprecated",
           )
           return
         }
@@ -1069,23 +1033,23 @@ class ManifestDetector : Detector(), XmlScanner {
         if (context.project.buildSdk >= 24 && sdkHome != null) {
           val repository = SdkMavenRepository.GOOGLE.getRepositoryLocation(sdkHome.toPath(), true)
           var message =
-            "The `com.google.android.gms.wearable.BIND_LISTENER`" +
-              " action is deprecated. Please upgrade to the latest version" +
-              " of play-services-wearable 8.2.0 or later"
+              "The `com.google.android.gms.wearable.BIND_LISTENER`" +
+                  " action is deprecated. Please upgrade to the latest version" +
+                  " of play-services-wearable 8.2.0 or later"
           if (repository != null) {
             val max =
-              MavenRepositories.getHighestInstalledVersion(
-                GradleDetector.GMS_GROUP_ID,
-                "play-services-wearable",
-                repository,
-                null,
-                false,
-              )
+                MavenRepositories.getHighestInstalledVersion(
+                    GradleDetector.GMS_GROUP_ID,
+                    "play-services-wearable",
+                    repository,
+                    null,
+                    false,
+                )
             if (max != null && max.version > MIN_WEARABLE_GMS_VERSION) {
               message =
-                "The `com.google.android.gms.wearable.BIND_LISTENER` " +
-                  "action is deprecated. Please upgrade to the latest available" +
-                  " version of play-services-wearable: `${max.version}`"
+                  "The `com.google.android.gms.wearable.BIND_LISTENER` " +
+                      "action is deprecated. Please upgrade to the latest available" +
+                      " version of play-services-wearable: `${max.version}`"
             }
           }
           val location = context.getLocation(bindListenerAttr)
@@ -1095,30 +1059,22 @@ class ManifestDetector : Detector(), XmlScanner {
       return
     }
     if (tag == TAG_PROVIDER) {
-      if (
-        TAG_APPLICATION != parentNode.nodeName &&
-          TAG_QUERIES != parentNode.nodeName &&
-          context.isEnabled(WRONG_PARENT)
-      ) {
+      if (TAG_APPLICATION != parentNode.nodeName && TAG_QUERIES != parentNode.nodeName && context.isEnabled(WRONG_PARENT)) {
         context.report(
-          WRONG_PARENT,
-          element,
-          context.getNameLocation(element),
-          "The `<$tag>` element must be a direct child of the `<application>` element or the `<queries>` element",
+            WRONG_PARENT,
+            element,
+            context.getNameLocation(element),
+            "The `<$tag>` element must be a direct child of the `<application>` element or the `<queries>` element",
         )
       }
       return
     }
-    if (
-      parentNode !== element.ownerDocument.documentElement &&
-        tag.indexOf(':') == -1 &&
-        context.isEnabled(WRONG_PARENT)
-    ) {
+    if (parentNode !== element.ownerDocument.documentElement && tag.indexOf(':') == -1 && context.isEnabled(WRONG_PARENT)) {
       context.report(
-        WRONG_PARENT,
-        element,
-        context.getNameLocation(element),
-        "The `<$tag>` element must be a direct child of the `<manifest>` root element",
+          WRONG_PARENT,
+          element,
+          context.getNameLocation(element),
+          "The `<$tag>` element must be a direct child of the `<manifest>` root element",
       )
     }
     if (tag == TAG_USES_SDK) {
@@ -1141,28 +1097,22 @@ class ManifestDetector : Detector(), XmlScanner {
         location.secondary = secondary
         if (context.isEnabled(MULTIPLE_USES_SDK)) {
           context.report(
-            MULTIPLE_USES_SDK,
-            element,
-            location,
-            "There should only be a single `<uses-sdk>` element in the manifest:" +
-              " merge these together",
+              MULTIPLE_USES_SDK,
+              element,
+              location,
+              "There should only be a single `<uses-sdk>` element in the manifest:" + " merge these together",
           )
         }
         return
       }
       if (element.hasAttributeNS(ANDROID_URI, ATTR_MIN_SDK_VERSION)) {
         val codeNode = element.getAttributeNodeNS(ANDROID_URI, ATTR_MIN_SDK_VERSION)
-        if (
-          codeNode != null &&
-            codeNode.value.startsWith(PREFIX_RESOURCE_REF) &&
-            context.isEnabled(ILLEGAL_REFERENCE)
-        ) {
+        if (codeNode != null && codeNode.value.startsWith(PREFIX_RESOURCE_REF) && context.isEnabled(ILLEGAL_REFERENCE)) {
           context.report(
-            ILLEGAL_REFERENCE,
-            element,
-            context.getLocation(codeNode),
-            "The `android:minSdkVersion` cannot be a resource url, it must be " +
-              "a literal integer (or string if a preview codename)",
+              ILLEGAL_REFERENCE,
+              element,
+              context.getLocation(codeNode),
+              "The `android:minSdkVersion` cannot be a resource url, it must be " + "a literal integer (or string if a preview codename)",
           )
         }
         checkOverride(context, element, ATTR_MIN_SDK_VERSION)
@@ -1171,17 +1121,12 @@ class ManifestDetector : Detector(), XmlScanner {
         checkOverride(context, element, ATTR_TARGET_SDK_VERSION)
       }
       val nameNode = element.getAttributeNodeNS(ANDROID_URI, ATTR_TARGET_SDK_VERSION)
-      if (
-        nameNode != null &&
-          nameNode.value.startsWith(PREFIX_RESOURCE_REF) &&
-          context.isEnabled(ILLEGAL_REFERENCE)
-      ) {
+      if (nameNode != null && nameNode.value.startsWith(PREFIX_RESOURCE_REF) && context.isEnabled(ILLEGAL_REFERENCE)) {
         context.report(
-          ILLEGAL_REFERENCE,
-          element,
-          context.getLocation(nameNode),
-          "The `android:targetSdkVersion` cannot be a resource url, it must be " +
-            "a literal integer (or string if a preview codename)",
+            ILLEGAL_REFERENCE,
+            element,
+            context.getLocation(nameNode),
+            "The `android:targetSdkVersion` cannot be a resource url, it must be " + "a literal integer (or string if a preview codename)",
         )
       }
     }
@@ -1194,15 +1139,15 @@ class ManifestDetector : Detector(), XmlScanner {
     if (tag == TAG_USES_PERMISSION) {
       val name = element.getAttributeNodeNS(ANDROID_URI, ATTR_NAME)
       if (
-        name != null &&
-          name.value == MOCK_LOCATION_PERMISSION &&
-          context.project.buildModule != null &&
-          !isDebugOrTestManifest(context, context.file) &&
-          context.isEnabled(MOCK_LOCATION)
+          name != null &&
+              name.value == MOCK_LOCATION_PERMISSION &&
+              context.project.buildModule != null &&
+              !isDebugOrTestManifest(context, context.file) &&
+              context.isEnabled(MOCK_LOCATION)
       ) {
         val message =
-          ("Mock locations should only be requested in a test or " +
-            "debug-specific manifest file (typically `src/debug/AndroidManifest.xml`)")
+            ("Mock locations should only be requested in a test or " +
+                "debug-specific manifest file (typically `src/debug/AndroidManifest.xml`)")
         val location = context.getLocation(name)
         context.report(MOCK_LOCATION, element, location, message)
       }
@@ -1218,10 +1163,10 @@ class ManifestDetector : Detector(), XmlScanner {
     } else if (seenApplication) {
       if (context.isEnabled(ORDER)) {
         context.report(
-          ORDER,
-          element,
-          context.getNameLocation(element),
-          "`<$tag>` tag appears after `<application>` tag",
+            ORDER,
+            element,
+            context.getNameLocation(element),
+            "`<$tag>` tag appears after `<application>` tag",
         )
       }
 
@@ -1233,8 +1178,7 @@ class ManifestDetector : Detector(), XmlScanner {
       if (nameNode != null) {
         val name = nameNode.value
         if (name.isNotEmpty()) {
-          val usesFeatures =
-            this.usesFeatures ?: mutableSetOf<String>().also { this.usesFeatures = it }
+          val usesFeatures = this.usesFeatures ?: mutableSetOf<String>().also { this.usesFeatures = it }
           if (!usesFeatures.add(name)) {
             val message = "Duplicate declaration of uses-feature `$name`"
             context.report(DUPLICATE_USES_FEATURE, element, context.getLocation(nameNode), message)
@@ -1256,17 +1200,16 @@ class ManifestDetector : Detector(), XmlScanner {
     checkedUniquePermissions = true
     val mainProject = context.mainProject
     val mergedManifest =
-      mainProject
-        .mergedManifest // This only happens when there is a parse error, for example if user
-        // is editing the manifest in the IDE and it's currently invalid
-        ?: return
+        mainProject.mergedManifest // This only happens when there is a parse error, for example if user
+            // is editing the manifest in the IDE and it's currently invalid
+            ?: return
     lookForNonUniqueNames(context, mainProject, mergedManifest, "permission", TAG_PERMISSION)
     lookForNonUniqueNames(
-      context,
-      mainProject,
-      mergedManifest,
-      "permission group",
-      TAG_PERMISSION_GROUP,
+        context,
+        mainProject,
+        mergedManifest,
+        "permission group",
+        TAG_PERMISSION_GROUP,
     )
   }
 
@@ -1276,11 +1219,11 @@ class ManifestDetector : Detector(), XmlScanner {
   }
 
   private fun lookForNonUniqueNames(
-    context: Context,
-    mainProject: Project,
-    mergedManifest: Document,
-    humanReadableName: String,
-    tagName: String,
+      context: Context,
+      mainProject: Project,
+      mergedManifest: Document,
+      humanReadableName: String,
+      tagName: String,
   ) {
     var nameToFull: MutableMap<String, String>? = null
     val root = mergedManifest.documentElement ?: return
@@ -1291,9 +1234,7 @@ class ManifestDetector : Detector(), XmlScanner {
       val nameNode = element.getAttributeNodeNS(ANDROID_URI, ATTR_NAME) ?: continue
       var name = nameNode.value
       val base = name.substring(name.lastIndexOf('.') + 1)
-      val pkg =
-        mergedManifest.documentElement.getAttributeNode(ATTR_PACKAGE)?.value
-          ?: mainProject.getPackage()
+      val pkg = mergedManifest.documentElement.getAttributeNode(ATTR_PACKAGE)?.value ?: mainProject.getPackage()
 
       if (!mainProject.isLibrary && pkg != null && name.contains("\${applicationId}")) {
         name = name.replace("\${applicationId}", pkg)
@@ -1305,50 +1246,47 @@ class ManifestDetector : Detector(), XmlScanner {
       }
 
       val map: MutableMap<String, String> =
-        if (nameToFull != null) {
-          if (nameToFull.containsKey(base) && name != nameToFull[base]) {
-            val prevName = nameToFull[base]
-            val location = context.getLocation(nameNode, LocationType.ALL)
-            val siblings = element.parentNode.childNodes
-            var i = 0
-            val n = siblings.length
-            while (i < n) {
-              val node = siblings.item(i)
-              if (node === element) {
-                break
-              } else if (node.nodeType == Node.ELEMENT_NODE) {
-                val sibling = node as Element
-                if (sibling.tagName == tagName) {
-                  if (prevName == sibling.getAttributeNS(ANDROID_URI, ATTR_NAME)) {
-                    val no = sibling.getAttributeNodeNS(ANDROID_URI, ATTR_NAME)
-                    val prevLocation = context.getLocation(no, LocationType.VALUE)
-                    prevLocation.message = "Previous $humanReadableName here"
-                    location.secondary = prevLocation
-                    break
+          if (nameToFull != null) {
+            if (nameToFull.containsKey(base) && name != nameToFull[base]) {
+              val prevName = nameToFull[base]
+              val location = context.getLocation(nameNode, LocationType.ALL)
+              val siblings = element.parentNode.childNodes
+              var i = 0
+              val n = siblings.length
+              while (i < n) {
+                val node = siblings.item(i)
+                if (node === element) {
+                  break
+                } else if (node.nodeType == Node.ELEMENT_NODE) {
+                  val sibling = node as Element
+                  if (sibling.tagName == tagName) {
+                    if (prevName == sibling.getAttributeNS(ANDROID_URI, ATTR_NAME)) {
+                      val no = sibling.getAttributeNodeNS(ANDROID_URI, ATTR_NAME)
+                      val prevLocation = context.getLocation(no, LocationType.VALUE)
+                      prevLocation.message = "Previous $humanReadableName here"
+                      location.secondary = prevLocation
+                      break
+                    }
                   }
                 }
+                i++
               }
-              i++
+              val message = "${humanReadableName.usLocaleCapitalize()} name `$base` is not unique (appears in both `$prevName` and `$name`)"
+              val incident = Incident(UNIQUE_PERMISSION, element, location, message)
+              context.report(incident)
+              if (context.isGlobalAnalysis()) {
+                incident.project(context.mainProject)
+              }
             }
-            val message =
-              "${humanReadableName.usLocaleCapitalize()} name `$base` is not unique (appears in both `$prevName` and `$name`)"
-            val incident = Incident(UNIQUE_PERMISSION, element, location, message)
-            context.report(incident)
-            if (context.isGlobalAnalysis()) {
-              incident.project(context.mainProject)
-            }
+            nameToFull
+          } else {
+            mutableMapOf<String, String>().also { nameToFull = it }
           }
-          nameToFull
-        } else {
-          mutableMapOf<String, String>().also { nameToFull = it }
-        }
       map[base] = name
     }
   }
 
-  /**
-   * Returns true if the manifest merger will skip this element due to a tools:node action attribute
-   */
+  /** Returns true if the manifest merger will skip this element due to a tools:node action attribute */
   private fun manifestMergerSkips(element: Element): Boolean {
     val operation = element.getAttributeNodeNS(TOOLS_URI, "node")
     if (operation != null) {
@@ -1363,9 +1301,7 @@ class ManifestDetector : Detector(), XmlScanner {
   // Method to check if the app has a gms wearable dependency that
   // matches the specific criteria i.e >= MIN_WEARABLE_GMS_VERSION
   private fun hasWearableGmsDependency(variant: LintModelVariant): Boolean {
-    val library =
-      variant.artifact.findCompileDependency(PLAY_SERVICES_WEARABLE) as? LintModelExternalLibrary
-        ?: return false
+    val library = variant.artifact.findCompileDependency(PLAY_SERVICES_WEARABLE) as? LintModelExternalLibrary ?: return false
     val mc = library.resolvedCoordinates
     val version = Version.parse(mc.version)
     return version >= MIN_WEARABLE_GMS_VERSION
@@ -1379,14 +1315,14 @@ class ManifestDetector : Detector(), XmlScanner {
         return
       }
       if (
-        context.isEnabled(MIPMAP) && // Only complain if this app is skipping some densities
-          context.project.applicableDensities != null
+          context.isEnabled(MIPMAP) && // Only complain if this app is skipping some densities
+              context.project.applicableDensities != null
       ) {
         context.report(
-          MIPMAP,
-          element,
-          context.getLocation(attribute),
-          "Should use `@mipmap` instead of `@drawable` for launcher icons",
+            MIPMAP,
+            element,
+            context.getLocation(attribute),
+            "Should use `@mipmap` instead of `@drawable` for launcher icons",
         )
       }
     }
@@ -1400,18 +1336,15 @@ class ManifestDetector : Detector(), XmlScanner {
     if (labelAttribute.value == applicationLabel) {
       val fix = fix().unset(ANDROID_URI, ATTR_LABEL).build()
       context.report(
-        REDUNDANT_LABEL,
-        context.getLocation(labelAttribute),
-        "Redundant label can be removed",
-        fix,
+          REDUNDANT_LABEL,
+          context.getLocation(labelAttribute),
+          "Redundant label can be removed",
+          fix,
       )
     }
   }
 
-  /**
-   * Returns true iff the given manifest file is in a debug-specific source set, or a test source
-   * set
-   */
+  /** Returns true iff the given manifest file is in a debug-specific source set, or a test source set */
   private fun isDebugOrTestManifest(context: XmlContext, manifestFile: File): Boolean {
     val variant = context.project.buildVariant
     if (variant != null) {
@@ -1463,10 +1396,10 @@ class ManifestDetector : Detector(), XmlScanner {
     }
     if (deviceAdmin && !requiredIntentFilterFound && context.isEnabled(DEVICE_ADMIN)) {
       context.report(
-        DEVICE_ADMIN,
-        locationNode,
-        context.getLocation(locationNode),
-        "You must have an intent filter for action " + "`android.app.action.DEVICE_ADMIN_ENABLED`",
+          DEVICE_ADMIN,
+          locationNode,
+          context.getLocation(locationNode),
+          "You must have an intent filter for action " + "`android.app.action.DEVICE_ADMIN_ENABLED`",
       )
     }
   }

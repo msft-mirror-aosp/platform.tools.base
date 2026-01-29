@@ -34,9 +34,8 @@ import org.w3c.dom.Document
 import org.w3c.dom.Node
 
 /**
- * Check which looks for invalid resources. Aapt already performs some validation, such as making
- * sure that resource references point to resources that exist, but this detector looks for
- * additional issues.
+ * Check which looks for invalid resources. Aapt already performs some validation, such as making sure that resource references point to
+ * resources that exist, but this detector looks for additional issues.
  */
 class ExtraTextDetector : ResourceXmlDetector() {
   companion object Issues {
@@ -44,30 +43,29 @@ class ExtraTextDetector : ResourceXmlDetector() {
     /** The main issue discovered by this detector. */
     @JvmField
     val ISSUE =
-      Issue.create(
-        id = "ExtraText",
-        briefDescription = "Extraneous text in resource files",
-        explanation =
-          """
+        Issue.create(
+            id = "ExtraText",
+            briefDescription = "Extraneous text in resource files",
+            explanation =
+                """
             Non-value resource files should only contain elements and attributes. Any XML text content found \
             in the file is likely accidental (and potentially dangerous if the text resembles XML and the \
             developer believes the text to be functional).
             """,
-        category = Category.CORRECTNESS,
-        priority = 3,
-        severity = Severity.ERROR,
-        implementation =
-          Implementation(
-            ExtraTextDetector::class.java,
-            Scope.MANIFEST_AND_RESOURCE_SCOPE,
-            Scope.RESOURCE_FILE_SCOPE,
-            Scope.MANIFEST_SCOPE,
-          ),
-      )
+            category = Category.CORRECTNESS,
+            priority = 3,
+            severity = Severity.ERROR,
+            implementation =
+                Implementation(
+                    ExtraTextDetector::class.java,
+                    Scope.MANIFEST_AND_RESOURCE_SCOPE,
+                    Scope.RESOURCE_FILE_SCOPE,
+                    Scope.MANIFEST_SCOPE,
+                ),
+        )
   }
 
-  override fun appliesTo(folderType: ResourceFolderType): Boolean =
-    folderType != VALUES && folderType != XML && folderType != RAW
+  override fun appliesTo(folderType: ResourceFolderType): Boolean = folderType != VALUES && folderType != XML && folderType != RAW
 
   override fun visitDocument(context: XmlContext, document: Document) {
     warnings = 0
@@ -101,8 +99,7 @@ class ExtraTextDetector : ResourceXmlDetector() {
           val warnOnly = text.none { it.isJavaIdentifierPart() }
           if (!warnOnly || warnings == 0) {
             val type = context.resourceFolderType?.getName() ?: "manifest"
-            val incident =
-              Incident(ISSUE, node, location, "Unexpected text found in $type file: \"$snippet\"")
+            val incident = Incident(ISSUE, node, location, "Unexpected text found in $type file: \"$snippet\"")
 
             // If the string only contains punctuation, only flag as a warning
             if (warnOnly) {

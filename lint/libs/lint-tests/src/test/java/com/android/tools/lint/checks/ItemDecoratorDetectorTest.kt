@@ -30,9 +30,9 @@ class ItemDecoratorDetectorTest : AbstractCheckTest() {
 
   fun test() {
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
                 package com.example.android.supportv7.widget.decorator;
 
                 import android.content.Context;
@@ -58,11 +58,11 @@ class ItemDecoratorDetectorTest : AbstractCheckTest() {
                     private int mOrientation;
                 }
                 """
-          )
-          .indented(),
-        // Stub
-        java(
-            """
+                )
+                .indented(),
+            // Stub
+            java(
+                    """
                 /* HIDE-FROM-DOCUMENTATION */
                 package android.support.v7.widget;
                 public class RecyclerView {
@@ -71,17 +71,17 @@ class ItemDecoratorDetectorTest : AbstractCheckTest() {
 
                 }
                 """
-          )
-          .indented(),
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+        )
+        .run()
+        .expect(
+            """
             src/com/example/android/supportv7/widget/decorator/DividerItemDecoration.java:11: Warning: Replace with android.support.v7.widget.DividerItemDecoration? [DuplicateDivider]
             public abstract class DividerItemDecoration extends RecyclerView.ItemDecoration {
                                   ~~~~~~~~~~~~~~~~~~~~~
             0 errors, 1 warnings
             """
-      )
+        )
   }
 }

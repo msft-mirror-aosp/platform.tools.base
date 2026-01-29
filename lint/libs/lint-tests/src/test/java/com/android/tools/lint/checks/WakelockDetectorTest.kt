@@ -19,10 +19,10 @@ import com.android.tools.lint.checks.infrastructure.TestMode
 import com.android.tools.lint.detector.api.Detector
 
 @Suppress(
-  "CallToPrintStackTrace",
-  "ConstantValue",
-  "CatchMayIgnoreException",
-  "RedundantSuppression",
+    "CallToPrintStackTrace",
+    "ConstantValue",
+    "CatchMayIgnoreException",
+    "RedundantSuppression",
 )
 class WakelockDetectorTest : AbstractCheckTest() {
   override fun getDetector(): Detector {
@@ -31,7 +31,7 @@ class WakelockDetectorTest : AbstractCheckTest() {
 
   fun testAcquireButNoReleaseGlobalAnalysis() {
     val expected =
-      """
+        """
       src/test/pkg/WakelockActivity1.java:15: Warning: Found a wakelock acquire() but no release() calls anywhere [Wakelock]
               mWakeLock.acquire(); // Never released
               ~~~~~~~~~~~~~~~~~~~
@@ -39,10 +39,10 @@ class WakelockDetectorTest : AbstractCheckTest() {
       """
 
     lint()
-      .files(
-        manifest().minSdk(10),
-        java(
-            """
+        .files(
+            manifest().minSdk(10),
+            java(
+                    """
           package test.pkg;
 
           import android.app.Activity;
@@ -61,12 +61,12 @@ class WakelockDetectorTest : AbstractCheckTest() {
               }
           }
           """
-          )
-          .indented(),
-      )
-      .issues(WakelockDetector.ISSUE)
-      .run()
-      .expect(expected)
+                )
+                .indented(),
+        )
+        .issues(WakelockDetector.ISSUE)
+        .run()
+        .expect(expected)
   }
 
   fun testAcquireButNoReleaseIsolatedAnalysis() {
@@ -74,10 +74,10 @@ class WakelockDetectorTest : AbstractCheckTest() {
     // (e.g. "on the fly" in the editor); no warnings in that case since we're not
     // looking everywhere for the release.
     lint()
-      .files(
-        manifest().minSdk(10),
-        java(
-            """
+        .files(
+            manifest().minSdk(10),
+            java(
+                    """
           package test.pkg;
 
           import android.app.Activity;
@@ -96,18 +96,18 @@ class WakelockDetectorTest : AbstractCheckTest() {
               }
           }
           """
-          )
-          .indented(),
-      )
-      .isolated("src/test/pkg/WakelockActivity1.java")
-      .issues(WakelockDetector.ISSUE)
-      .run()
-      .expectClean()
+                )
+                .indented(),
+        )
+        .isolated("src/test/pkg/WakelockActivity1.java")
+        .issues(WakelockDetector.ISSUE)
+        .run()
+        .expectClean()
   }
 
   fun testReleaseInRightLifecycleMethod() {
     val expected =
-      """
+        """
       src/test/pkg/WakelockActivity2.java:13: Warning: Wakelocks should be released in onPause, not onDestroy [Wakelock]
                   mWakeLock.release(); // Should be done in onPause instead
                   ~~~~~~~~~~~~~~~~~~~
@@ -115,10 +115,10 @@ class WakelockDetectorTest : AbstractCheckTest() {
       """
 
     lint()
-      .files(
-        manifest().minSdk(10),
-        java(
-            """
+        .files(
+            manifest().minSdk(10),
+            java(
+                    """
             package test.pkg;
 
             import android.app.Activity;
@@ -144,17 +144,17 @@ class WakelockDetectorTest : AbstractCheckTest() {
                 }
             }
             """
-          )
-          .indented(),
-      )
-      .issues(WakelockDetector.ISSUE)
-      .run()
-      .expect(expected)
+                )
+                .indented(),
+        )
+        .issues(WakelockDetector.ISSUE)
+        .run()
+        .expect(expected)
   }
 
   fun testDocumentationExample() {
     val expected =
-      """
+        """
       src/test/pkg/WakelockActivity3.java:13: Warning: The release() call is not always reached (because of a possible exception in the path acquire() → randomCall() → exit; use try/finally to ensure release is always called) [Wakelock]
               lock.release(); // Should be in finally block
                    ~~~~~~~
@@ -162,10 +162,10 @@ class WakelockDetectorTest : AbstractCheckTest() {
       """
 
     lint()
-      .files(
-        manifest().minSdk(10),
-        java(
-            """
+        .files(
+            manifest().minSdk(10),
+            java(
+                    """
             package test.pkg;
 
             import android.app.Activity;
@@ -186,20 +186,20 @@ class WakelockDetectorTest : AbstractCheckTest() {
                 }
             }
             """
-          )
-          .indented(),
-      )
-      .issues(WakelockDetector.ISSUE)
-      .run()
-      .expect(expected)
+                )
+                .indented(),
+        )
+        .issues(WakelockDetector.ISSUE)
+        .run()
+        .expect(expected)
   }
 
   fun testNoRelease() {
     lint()
-      .files(
-        manifest().minSdk(10),
-        java(
-            """
+        .files(
+            manifest().minSdk(10),
+            java(
+                    """
             package test.pkg;
 
             import android.os.PowerManager;
@@ -210,28 +210,28 @@ class WakelockDetectorTest : AbstractCheckTest() {
                 }
             }
             """
-          )
-          .indented(),
-      )
-      .incremental("src/test/pkg/LockUtility.java")
-      .issues(WakelockDetector.ISSUE)
-      .run()
-      .expectClean()
+                )
+                .indented(),
+        )
+        .incremental("src/test/pkg/LockUtility.java")
+        .issues(WakelockDetector.ISSUE)
+        .run()
+        .expectClean()
   }
 
   fun testLockIndirection() {
     val expected =
-      """
+        """
       src/test/pkg/WakelockActivity4.java:10: Warning: The release() call is not always reached (because of a possible exception in the path acquire() → randomCall() → getLock() → exit; use try/finally to ensure release is always called) [Wakelock]
               getLock().release(); // Should be in finally block
                         ~~~~~~~
       0 errors, 1 warnings
       """
     lint()
-      .files(
-        manifest().minSdk(10),
-        java(
-            """
+        .files(
+            manifest().minSdk(10),
+            java(
+                    """
             package test.pkg;
 
             import android.app.Activity;
@@ -260,27 +260,27 @@ class WakelockDetectorTest : AbstractCheckTest() {
                 }
             }
             """
-          )
-          .indented(),
-      )
-      .issues(WakelockDetector.ISSUE)
-      .run()
-      .expect(expected)
+                )
+                .indented(),
+        )
+        .issues(WakelockDetector.ISSUE)
+        .run()
+        .expect(expected)
   }
 
   fun testThrowingCall() {
     val expected =
-      """
+        """
       src/test/pkg/WakelockActivity5.java:13: Warning: The release() call is not always reached (because of a possible exception in the path acquire() → randomCall() → exit; use try/finally to ensure release is always called) [Wakelock]
               lock.release(); // Should be in finally block
                    ~~~~~~~
       0 errors, 1 warnings
       """
     lint()
-      .files(
-        manifest().minSdk(10),
-        java(
-            """
+        .files(
+            manifest().minSdk(10),
+            java(
+                    """
             package test.pkg;
 
             import android.app.Activity;
@@ -301,20 +301,20 @@ class WakelockDetectorTest : AbstractCheckTest() {
                 }
             }
             """
-          )
-          .indented(),
-      )
-      .issues(WakelockDetector.ISSUE)
-      .run()
-      .expect(expected)
+                )
+                .indented(),
+        )
+        .issues(WakelockDetector.ISSUE)
+        .run()
+        .expect(expected)
   }
 
   fun testMultipleReleaseMethodSomeMissing() {
     lint()
-      .files(
-        manifest().minSdk(10),
-        kotlin(
-            """
+        .files(
+            manifest().minSdk(10),
+            kotlin(
+                    """
             package test.pkg
 
             import android.app.Activity
@@ -332,14 +332,14 @@ class WakelockDetectorTest : AbstractCheckTest() {
                }
             }
             """
-          )
-          .indented(),
-      )
-      .issues(WakelockDetector.ISSUE)
-      .skipTestModes(TestMode.IF_TO_WHEN)
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+        )
+        .issues(WakelockDetector.ISSUE)
+        .skipTestModes(TestMode.IF_TO_WHEN)
+        .run()
+        .expect(
+            """
         src/test/pkg/test.kt:10: Warning: The release() call is not always reached (can exit the method via path acquire() → if → else if → else → exit; use try/finally to ensure release is always called) [Wakelock]
                lock.release()
                     ~~~~~~~
@@ -348,15 +348,15 @@ class WakelockDetectorTest : AbstractCheckTest() {
                    ~~~~~~~
         0 errors, 1 warnings
         """
-      )
+        )
   }
 
   fun testMultipleReleaseMethods() {
     lint()
-      .files(
-        manifest().minSdk(10),
-        kotlin(
-            """
+        .files(
+            manifest().minSdk(10),
+            kotlin(
+                    """
             package test.pkg
 
             import android.app.Activity
@@ -375,18 +375,18 @@ class WakelockDetectorTest : AbstractCheckTest() {
                }
             }
             """
-          )
-          .indented(),
-      )
-      .skipTestModes(TestMode.IF_TO_WHEN)
-      .issues(WakelockDetector.ISSUE)
-      .run()
-      .expectClean()
+                )
+                .indented(),
+        )
+        .skipTestModes(TestMode.IF_TO_WHEN)
+        .issues(WakelockDetector.ISSUE)
+        .run()
+        .expectClean()
   }
 
   fun testBasicFlows() {
     val expected =
-      """
+        """
       src/test/pkg/WakelockActivity6.java:17: Warning: The release() call is not always reached (can exit the method via path acquire() → if → === → getTaskId() → then → randomCall() → exit; use try/finally to ensure release is always called) [Wakelock]
                   lock.release(); // ERROR 1
                        ~~~~~~~
@@ -402,10 +402,10 @@ class WakelockDetectorTest : AbstractCheckTest() {
       0 errors, 4 warnings
       """
     lint()
-      .files(
-        manifest().minSdk(10),
-        java(
-            """
+        .files(
+            manifest().minSdk(10),
+            java(
+                    """
             package test.pkg;
 
             import android.annotation.SuppressLint;
@@ -487,22 +487,22 @@ class WakelockDetectorTest : AbstractCheckTest() {
                 }
             }
             """
-          )
-          .indented(),
-      )
-      .issues(WakelockDetector.ISSUE)
-      // Skipped because the block ({ }) shows up as expected in the error message path
-      .skipTestModes(TestMode.BODY_REMOVAL)
-      .run()
-      .expect(expected)
+                )
+                .indented(),
+        )
+        .issues(WakelockDetector.ISSUE)
+        // Skipped because the block ({ }) shows up as expected in the error message path
+        .skipTestModes(TestMode.BODY_REMOVAL)
+        .run()
+        .expect(expected)
   }
 
   fun testAnonymousInnerClass() {
     lint()
-      .files(
-        manifest().minSdk(10),
-        java(
-            """
+        .files(
+            manifest().minSdk(10),
+            java(
+                    """
             package test.pkg;
 
             import android.os.PowerManager.WakeLock;
@@ -521,20 +521,20 @@ class WakelockDetectorTest : AbstractCheckTest() {
                 }
             }
             """
-          )
-          .indented(),
-      )
-      .issues(WakelockDetector.ISSUE)
-      .run()
-      .expectClean()
+                )
+                .indented(),
+        )
+        .issues(WakelockDetector.ISSUE)
+        .run()
+        .expectClean()
   }
 
   fun testIsHeld() {
     lint()
-      .files(
-        manifest().minSdk(10),
-        java(
-            """
+        .files(
+            manifest().minSdk(10),
+            java(
+                    """
             package test.pkg;
 
             import android.os.PowerManager.WakeLock;
@@ -549,21 +549,21 @@ class WakelockDetectorTest : AbstractCheckTest() {
                 }
             }
             """
-          )
-          .indented(),
-      )
-      .issues(WakelockDetector.ISSUE)
-      .run()
-      .expectClean()
+                )
+                .indented(),
+        )
+        .issues(WakelockDetector.ISSUE)
+        .run()
+        .expectClean()
   }
 
   fun testNoWarningsForAcquireWithTimeout() {
     // Regression test for 66040
     lint()
-      .files(
-        manifest().minSdk(10),
-        java(
-            """
+        .files(
+            manifest().minSdk(10),
+            java(
+                    """
             package test.pkg;
 
             import android.app.Activity;
@@ -583,21 +583,21 @@ class WakelockDetectorTest : AbstractCheckTest() {
                 }
             }
             """
-          )
-          .indented(),
-      )
-      .issues(WakelockDetector.ISSUE)
-      .run()
-      .expectClean()
+                )
+                .indented(),
+        )
+        .issues(WakelockDetector.ISSUE)
+        .run()
+        .expectClean()
   }
 
   fun testThrowInCatch() {
     // Regression test for 43212
     lint()
-      .files(
-        manifest().minSdk(10),
-        java(
-            """
+        .files(
+            manifest().minSdk(10),
+            java(
+                    """
             package test.pkg;
 
             import android.app.Activity;
@@ -622,27 +622,27 @@ class WakelockDetectorTest : AbstractCheckTest() {
                 }
             }
             """
-          )
-          .indented(),
-      )
-      .issues(WakelockDetector.ISSUE)
-      .run()
-      .expectClean()
+                )
+                .indented(),
+        )
+        .issues(WakelockDetector.ISSUE)
+        .run()
+        .expectClean()
   }
 
   fun testDoNotSetBothFlags() {
     val expected =
-      """
+        """
       src/test/pkg/PowerManagerFlagTest.java:14: Warning: Should not set both PARTIAL_WAKE_LOCK and ACQUIRE_CAUSES_WAKEUP. If you do not want the screen to turn on, get rid of ACQUIRE_CAUSES_WAKEUP [Wakelock]
               pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK|ACQUIRE_CAUSES_WAKEUP, "Test"); // Bad
                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
       0 errors, 1 warnings
       """
     lint()
-      .files(
-        manifest().minSdk(10),
-        java(
-            """
+        .files(
+            manifest().minSdk(10),
+            java(
+                    """
             package test.pkg;
 
             import static android.os.PowerManager.ACQUIRE_CAUSES_WAKEUP;
@@ -661,19 +661,19 @@ class WakelockDetectorTest : AbstractCheckTest() {
                 }
             }
             """
-          )
-          .indented(),
-      )
-      .issues(WakelockDetector.ISSUE)
-      .run()
-      .expect(expected)
+                )
+                .indented(),
+        )
+        .issues(WakelockDetector.ISSUE)
+        .run()
+        .expect(expected)
   }
 
   fun testTimeout() {
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
             package test.pkg;
             import android.content.Context;
             import android.os.PowerManager;
@@ -696,35 +696,35 @@ class WakelockDetectorTest : AbstractCheckTest() {
                 }
             }
             """
-          )
-          .indented()
-      )
-      .issues(WakelockDetector.TIMEOUT)
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .issues(WakelockDetector.TIMEOUT)
+        .run()
+        .expect(
+            """
         src/test/pkg/WakelockTest.java:11: Warning: Provide a timeout when requesting a wakelock with PowerManager.Wakelock.acquire(long timeout). This will ensure the OS will cleanup any wakelocks that last longer than you intend, and will save your user's battery. [WakelockTimeout]
                 wakeLock.acquire(); // ERROR
                 ~~~~~~~~~~~~~~~~~~
         0 errors, 1 warnings
         """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
         Fix for src/test/pkg/WakelockTest.java line 11: Set timeout to 10 minutes:
         @@ -11 +11 @@
         -        wakeLock.acquire(); // ERROR
         +        wakeLock.acquire(10*60*1000L /*10 minutes*/); // ERROR
         """
-      )
+        )
   }
 
   fun testNoWarningsForFieldLocks() {
     // Regression test for 349491177
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
             package test.pkg;
 
             import android.app.PendingIntent;
@@ -761,11 +761,11 @@ class WakelockDetectorTest : AbstractCheckTest() {
                 }
             }
             """
-          )
-          .indented()
-      )
-      .issues(WakelockDetector.ISSUE)
-      .run()
-      .expectClean()
+                )
+                .indented()
+        )
+        .issues(WakelockDetector.ISSUE)
+        .run()
+        .expectClean()
   }
 }

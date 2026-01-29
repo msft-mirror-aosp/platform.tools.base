@@ -33,8 +33,7 @@ import org.w3c.dom.Element
 /**
  * Reports manifest attributes in `<activity-alias>` that have no effect.
  *
- * Specifically, reports attributes that are valid for `<activity>`, but have no effect when used on
- * `<activity-alias>`.
+ * Specifically, reports attributes that are valid for `<activity>`, but have no effect when used on `<activity-alias>`.
  *
  * We could report additional manifest attributes in the future (hence the generic name).
  *
@@ -60,14 +59,14 @@ class ManifestAttributeDetector : Detector(), XmlScanner {
       // some other solution.
 
       context.report(
-        Incident(
-          ISSUE,
-          element,
-          context.getLocation(attr),
-          "Attribute `$attributeName` on `<activity-alias>` `$aliasName` " +
-            "is invalid, and will be silently ignored. This attribute is always ignored on " +
-            "`<activity-alias>`.",
-        )
+          Incident(
+              ISSUE,
+              element,
+              context.getLocation(attr),
+              "Attribute `$attributeName` on `<activity-alias>` `$aliasName` " +
+                  "is invalid, and will be silently ignored. This attribute is always ignored on " +
+                  "`<activity-alias>`.",
+          )
       )
     }
   }
@@ -75,22 +74,22 @@ class ManifestAttributeDetector : Detector(), XmlScanner {
   companion object {
     @JvmField
     val ISSUE =
-      Issue.create(
-        id = "InvalidManifestAttribute",
-        briefDescription = "Invalid manifest attribute",
-        explanation =
-          """
+        Issue.create(
+            id = "InvalidManifestAttribute",
+            briefDescription = "Invalid manifest attribute",
+            explanation =
+                """
           Most manifest attributes can be added to any tag without triggering any build-time \
           warnings or errors, but those attributes may be invalid, and will be silently ignored.
 
           For example, only a very specific subset of `<activity>` attributes are valid on \
           an `<activity-alias>`; the rest are ignored, which can be confusing.
           """,
-        category = Category.CORRECTNESS,
-        severity = Severity.WARNING,
-        androidSpecific = true,
-        implementation = Implementation(ManifestAttributeDetector::class.java, Scope.MANIFEST_SCOPE),
-      )
+            category = Category.CORRECTNESS,
+            severity = Severity.WARNING,
+            androidSpecific = true,
+            implementation = Implementation(ManifestAttributeDetector::class.java, Scope.MANIFEST_SCOPE),
+        )
   }
 }
 
@@ -107,59 +106,59 @@ class ManifestAttributeDetector : Detector(), XmlScanner {
 //  definitely invalid attributes might be safest.
 private val String.invalidAttribute
   get() =
-    when (this) {
-      "allowEmbedded",
-      "allowTaskReparenting",
-      "alwaysFocusable",
-      "alwaysRetainTaskState",
-      "autoRemoveFromRecents",
-      "canDisplayOnRemoteDevices",
-      "clearTaskOnLaunch",
-      "colorMode",
-      "configChanges",
-      "directBootAware",
-      "documentLaunchMode",
-      "enableOnBackInvokedCallback",
-      "enableVrMode",
-      "excludeFromRecents",
-      "finishOnCloseSystemDialogs",
-      "finishOnTaskLaunch",
-      "forceQueryable",
-      "hardwareAccelerated",
-      "immersive",
-      "inheritShowWhenLocked",
-      "launchMode",
-      "lockTaskMode",
-      "maxAspectRatio",
-      "maxRecents",
-      "minAspectRatio",
-      "multiprocess",
-      "noHistory",
-      "persistableMode",
-      "playHomeTransitionSound",
-      "preferMinimalPostProcessing",
-      "process",
-      "recreateOnConfigChanges",
-      "relinquishTaskIdentity",
-      "requireContentUriPermissionFromCaller",
-      "requiredDisplayCategory",
-      "resizeableActivity",
-      "resumeWhilePausing",
-      "rotationAnimation",
-      "screenOrientation",
-      "showForAllUsers",
-      "showOnLockScreen",
-      "showWhenLocked",
-      "singleUser",
-      "splitName",
-      "stateNotNeeded",
-      "supportsPictureInPicture",
-      "systemUserOnly",
-      "taskAffinity",
-      "theme",
-      "turnScreenOn",
-      "uiOptions",
-      "visibleToInstantApps",
-      "windowSoftInputMode" -> true
-      else -> false
-    }
+      when (this) {
+        "allowEmbedded",
+        "allowTaskReparenting",
+        "alwaysFocusable",
+        "alwaysRetainTaskState",
+        "autoRemoveFromRecents",
+        "canDisplayOnRemoteDevices",
+        "clearTaskOnLaunch",
+        "colorMode",
+        "configChanges",
+        "directBootAware",
+        "documentLaunchMode",
+        "enableOnBackInvokedCallback",
+        "enableVrMode",
+        "excludeFromRecents",
+        "finishOnCloseSystemDialogs",
+        "finishOnTaskLaunch",
+        "forceQueryable",
+        "hardwareAccelerated",
+        "immersive",
+        "inheritShowWhenLocked",
+        "launchMode",
+        "lockTaskMode",
+        "maxAspectRatio",
+        "maxRecents",
+        "minAspectRatio",
+        "multiprocess",
+        "noHistory",
+        "persistableMode",
+        "playHomeTransitionSound",
+        "preferMinimalPostProcessing",
+        "process",
+        "recreateOnConfigChanges",
+        "relinquishTaskIdentity",
+        "requireContentUriPermissionFromCaller",
+        "requiredDisplayCategory",
+        "resizeableActivity",
+        "resumeWhilePausing",
+        "rotationAnimation",
+        "screenOrientation",
+        "showForAllUsers",
+        "showOnLockScreen",
+        "showWhenLocked",
+        "singleUser",
+        "splitName",
+        "stateNotNeeded",
+        "supportsPictureInPicture",
+        "systemUserOnly",
+        "taskAffinity",
+        "theme",
+        "turnScreenOn",
+        "uiOptions",
+        "visibleToInstantApps",
+        "windowSoftInputMode" -> true
+        else -> false
+      }

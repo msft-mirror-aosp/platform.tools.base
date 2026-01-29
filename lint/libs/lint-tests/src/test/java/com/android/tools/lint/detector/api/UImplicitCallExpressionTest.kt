@@ -38,8 +38,8 @@ class UImplicitCallExpressionTest {
   @Test
   fun testWrapping() {
     listOf(
-        kotlin(
-            """
+            kotlin(
+                    """
                 package test.pkg
 
                 class Resource {
@@ -64,68 +64,66 @@ class UImplicitCallExpressionTest {
                     println(resource / color)
                 }
                 """
+                )
+                .indented()
+        )
+        .use { context ->
+          val file = context.uastFile!!
+
+          val sb = StringBuilder()
+          file.accept(
+              object : UastCallVisitor() {
+                override fun visitCall(node: UCallExpression): Boolean {
+                  assertEquals(node.lang, KotlinLanguage.INSTANCE)
+                  val name = node.methodName
+                  if (name == "println") {
+                    return false
+                  }
+                  val receiver = node.receiver
+                  if (receiver != null) {
+                    sb.append("${receiver.sourcePsi?.text ?: ""}.")
+                  }
+                  sb.append("$name(${node.valueArguments.joinToString(",") { it.sourcePsi?.text ?: "" }})\n")
+                  if (node is UImplicitCallExpression) {
+                    sb.append("  from \"${node.sourcePsi?.text}\"\n")
+                  }
+                  return false
+                }
+              }
           )
-          .indented()
-      )
-      .use { context ->
-        val file = context.uastFile!!
 
-        val sb = StringBuilder()
-        file.accept(
-          object : UastCallVisitor() {
-            override fun visitCall(node: UCallExpression): Boolean {
-              assertEquals(node.lang, KotlinLanguage.INSTANCE)
-              val name = node.methodName
-              if (name == "println") {
-                return false
-              }
-              val receiver = node.receiver
-              if (receiver != null) {
-                sb.append("${receiver.sourcePsi?.text ?: ""}.")
-              }
-              sb.append(
-                "$name(${node.valueArguments.joinToString(",") { it.sourcePsi?.text ?: "" }})\n"
-              )
-              if (node is UImplicitCallExpression) {
-                sb.append("  from \"${node.sourcePsi?.text}\"\n")
-              }
-              return false
-            }
-          }
-        )
-
-        assertEquals(
-          """
-                resource.get(1,2,3)
-                  from "resource[1, 2, 3]"
-                resource.set(1,2,3,"hello")
-                  from "resource[1, 2, 3] = "hello""
-                resource.contains(color)
-                  from "color in resource"
-                resource.contains(string)
-                  from "string !in resource"
-                resource.times(string)
-                  from "resource * string"
-                resource.rangeTo(string)
-                  from "resource..string"
-                resource.combine(resource2)
-                resource.combine(resource2)
-                  from "resource combine resource2"
-                div(resource,color)
-                  from "resource / color"
-                """
-            .trimIndent()
-            .trim(),
-          sb.toString().trim(),
-        )
-      }
+          assertEquals(
+              """
+              resource.get(1,2,3)
+                from "resource[1, 2, 3]"
+              resource.set(1,2,3,"hello")
+                from "resource[1, 2, 3] = "hello""
+              resource.contains(color)
+                from "color in resource"
+              resource.contains(string)
+                from "string !in resource"
+              resource.times(string)
+                from "resource * string"
+              resource.rangeTo(string)
+                from "resource..string"
+              resource.combine(resource2)
+              resource.combine(resource2)
+                from "resource combine resource2"
+              div(resource,color)
+                from "resource / color"
+              """
+                  .trimIndent()
+                  .trim(),
+              sb.toString().trim(),
+          )
+        }
   }
 
   @Test
   fun testArrayResolve() {
     listOf(
-        kotlin(
-            """
+            kotlin(
+                    """
                 package test.pkg
 
                 class Test {
@@ -142,27 +140,27 @@ class UImplicitCallExpressionTest {
                     test[string, sb]
                 }
                 """
-          )
-          .indented()
-      )
-      .use { context ->
-        var found = false
-        context.uastFile?.accept(
-          object : AbstractUastVisitor() {
-            override fun visitArrayAccessExpression(node: UArrayAccessExpression): Boolean {
-              found = true
-              assertEquals("test[string, sb]", node.sourcePsi?.text)
-              val resolved = node.resolveOperator()
-              assertEquals(
-                "operator fun get(key: Int, key2: List<CharSequence>) {}",
-                resolved?.text,
-              )
-              return super.visitArrayAccessExpression(node)
-            }
-          }
+                )
+                .indented()
         )
-        assertTrue(found)
-      }
+        .use { context ->
+          var found = false
+          context.uastFile?.accept(
+              object : AbstractUastVisitor() {
+                override fun visitArrayAccessExpression(node: UArrayAccessExpression): Boolean {
+                  found = true
+                  assertEquals("test[string, sb]", node.sourcePsi?.text)
+                  val resolved = node.resolveOperator()
+                  assertEquals(
+                      "operator fun get(key: Int, key2: List<CharSequence>) {}",
+                      resolved?.text,
+                  )
+                  return super.visitArrayAccessExpression(node)
+                }
+              }
+          )
+          assertTrue(found)
+        }
   }
 
   @Test
@@ -172,9 +170,9 @@ class UImplicitCallExpressionTest {
     // called -- this lets us make sure that the element visitor is really invoking the call
     // mechanism for things like array access and binary operators.
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
                 package test.pkg
 
                 import kotlin.random.Random
@@ -233,13 +231,13 @@ class UImplicitCallExpressionTest {
                     println(resource..string)
                 }
                 """
-          )
-          .indented()
-      )
-      .issues(TestDispatchDetector.ISSUE)
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .issues(TestDispatchDetector.ISSUE)
+        .run()
+        .expect(
+            """
             src/test/pkg/Test.kt:11: Error: Found overloaded function call get [_DispatchTestIssue]
                 test[string]
                     ~
@@ -263,32 +261,32 @@ class UImplicitCallExpressionTest {
                                 ~~
             7 errors, 0 warnings
             """
-      )
+        )
   }
 
   class TestDispatchDetector : Detector(), SourceCodeScanner {
     override fun getApplicableMethodNames(): List<String> =
-      listOf("get", "set", "compareTo", "inc", "in", "rangeTo", "contains", "plus", "minus")
+        listOf("get", "set", "compareTo", "inc", "in", "rangeTo", "contains", "plus", "minus")
 
     override fun visitMethodCall(context: JavaContext, node: UCallExpression, method: PsiMethod) {
       context.report(
-        ISSUE,
-        context.getCallLocation(node, includeReceiver = false, includeArguments = false),
-        "Found overloaded function call ${node.methodName}",
+          ISSUE,
+          context.getCallLocation(node, includeReceiver = false, includeArguments = false),
+          "Found overloaded function call ${node.methodName}",
       )
     }
 
     companion object {
       val ISSUE =
-        Issue.create(
-          "_DispatchTestIssue",
-          "Blah blah",
-          "Blah blah blah",
-          Category.CORRECTNESS,
-          5,
-          Severity.ERROR,
-          Implementation(TestDispatchDetector::class.java, Scope.JAVA_FILE_SCOPE),
-        )
+          Issue.create(
+              "_DispatchTestIssue",
+              "Blah blah",
+              "Blah blah blah",
+              Category.CORRECTNESS,
+              5,
+              Severity.ERROR,
+              Implementation(TestDispatchDetector::class.java, Scope.JAVA_FILE_SCOPE),
+          )
     }
   }
 }

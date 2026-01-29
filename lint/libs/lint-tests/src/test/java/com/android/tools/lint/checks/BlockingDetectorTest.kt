@@ -44,146 +44,144 @@ class BlockingDetectorTest : AbstractCheckTest() {
 
   fun `test simple example`() {
     lint()
-      .files(
-        kotlin(
+        .files(
+            kotlin(
+                    """
+                    annotation class Blocking // TODO get rid of
+                    annotation class NonBlocking // TODO get rid of
+
+                    @Blocking
+                    fun doSomethingBlocking() { }
+
+                    fun nonBlocking(): () -> Unit = { doSomethingBlocking() }
+
+                    fun maybeBlocking(doIt: () -> Unit) = doIt()
+
+                    @NonBlocking // we want to alert that main() will block
+                    fun main() = maybeBlocking(nonBlocking())
+                    """
+                        .trimIndent()
+                )
+                .indented()
+        )
+        .run()
+        .expect(
             """
-          annotation class Blocking // TODO get rid of
-          annotation class NonBlocking // TODO get rid of
-
-          @Blocking
-          fun doSomethingBlocking() { }
-
-          fun nonBlocking(): () -> Unit = { doSomethingBlocking() }
-
-          fun maybeBlocking(doIt: () -> Unit) = doIt()
-
-          @NonBlocking // we want to alert that main() will block
-          fun main() = maybeBlocking(nonBlocking())
-          """
-              .trimIndent()
-          )
-          .indented()
-      )
-      .run()
-      .expect(
-        """
-        src/Blocking.kt:12: Error: Call blocks in a context not allowed to block [BlockingMethod]
-        fun main() = maybeBlocking(nonBlocking())
-                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        1 error
-        """
-          .trimIndent()
-      )
+            src/Blocking.kt:12: Error: Call blocks in a context not allowed to block [BlockingMethod]
+            fun main() = maybeBlocking(nonBlocking())
+                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            1 error
+            """
+                .trimIndent()
+        )
   }
 
   fun `test inheritance`() {
     lint()
-      .files(
-        kotlin(
+        .files(
+            kotlin(
+                    """
+                    annotation class Blocking // TODO get rid of
+                    annotation class NonBlocking // TODO get rid of
+
+                    interface UnannotatedIntf {
+                      fun doUnannotated()
+                    }
+
+                    interface NonBlockingIntf {
+                      @NonBlocking fun doAnnotatedNonBlocking()
+                    }
+
+                    interface BlockingIntf {
+                      @Blocking fun doAnnotatedBlocking()
+                    }
+
+                    class Impl: UnannotatedIntf, NonBlockingIntf, BlockingIntf {
+                      override fun doUnannotated() = block() // OK
+
+                      override fun doAnnotatedBlocking() = block() // OK
+
+                      override fun doAnnotatedNonBlocking() = block() // ERROR
+
+                      @Blocking private fun block() { }
+                    }
+
+                    class RelaxingImpl: BlockingIntf {
+                      // it's ok for subclass to strengthen its promise, or equivalently,
+                      // relax its requirement, than superclass
+                      @NonBlocking override fun doAnnotatedBlocking() { }
+                    }
+                    """
+                        .trimIndent()
+                )
+                .indented()
+        )
+        .run()
+        .expect(
             """
-          annotation class Blocking // TODO get rid of
-          annotation class NonBlocking // TODO get rid of
-
-          interface UnannotatedIntf {
-            fun doUnannotated()
-          }
-
-          interface NonBlockingIntf {
-            @NonBlocking fun doAnnotatedNonBlocking()
-          }
-
-          interface BlockingIntf {
-            @Blocking fun doAnnotatedBlocking()
-          }
-
-          class Impl: UnannotatedIntf, NonBlockingIntf, BlockingIntf {
-            override fun doUnannotated() = block() // OK
-
-            override fun doAnnotatedBlocking() = block() // OK
-
-            override fun doAnnotatedNonBlocking() = block() // ERROR
-
-            @Blocking private fun block() { }
-          }
-
-          class RelaxingImpl: BlockingIntf {
-            // it's ok for subclass to strengthen its promise, or equivalently,
-            // relax its requirement, than superclass
-            @NonBlocking override fun doAnnotatedBlocking() { }
-          }
-          """
-              .trimIndent()
-          )
-          .indented()
-      )
-      .run()
-      .expect(
-        """
-        src/Blocking.kt:21: Error: Call must not block, as required by super method NonBlockingIntf.doAnnotatedNonBlocking(…) [BlockingMethod]
-          override fun doAnnotatedNonBlocking() = block() // ERROR
-                                                  ~~~~~~~
-        1 error
-        """
-          .trimIndent()
-      )
+            src/Blocking.kt:21: Error: Call must not block, as required by super method NonBlockingIntf.doAnnotatedNonBlocking(…) [BlockingMethod]
+              override fun doAnnotatedNonBlocking() = block() // ERROR
+                                                      ~~~~~~~
+            1 error
+            """
+                .trimIndent()
+        )
   }
 
   fun `test external assumptions available`() {
     getTempDir().absolutePath.let { assumptionsPath ->
       System.setProperty(BlockingDetector.ASSUMPTIONS_PATH, assumptionsPath)
-      Truth.assertThat(System.getProperty(BlockingDetector.ASSUMPTIONS_PATH))
-        .isEqualTo(assumptionsPath)
+      Truth.assertThat(System.getProperty(BlockingDetector.ASSUMPTIONS_PATH)).isEqualTo(assumptionsPath)
 
       val assumptions =
-        BlockingDetector.statusLattice.build {
-          static<Long>(Thread::sleep) assumedAs
-            given(Type.Long) { concreteEffect = BlockingDetector.Status.MaybeBlocking }
-        }
+          BlockingDetector.statusLattice.build {
+            static<Long>(Thread::sleep) assumedAs given(Type.Long) { concreteEffect = BlockingDetector.Status.MaybeBlocking }
+          }
       detector.savePartialResults(assumptionsPath, assumptions)
     }
 
     lint()
-      .files(
-        kotlin(
+        .files(
+            kotlin(
+                    """
+                    annotation class NonBlocking // TODO get rid of
+
+                    @NonBlocking
+                    fun nonBlocking1() {
+                        doSomethingThenSleep()
+                    }
+
+                    @NonBlocking
+                    fun nonBlocking2(): Int = 42.also {
+                        doSomethingThenSleep()
+                    }
+
+                    @NonBlocking
+                    fun nonBlocking3() {
+                        val t = ::doSomethingThenSleep // ok
+                        println("Done")
+                    }
+
+                    fun doSomethingThenSleep() {
+                        Thread.sleep(10)
+                    }
+                    """
+                        .trimIndent()
+                )
+                .indented()
+        )
+        .run()
+        .expect(
             """
-          annotation class NonBlocking // TODO get rid of
-
-          @NonBlocking
-          fun nonBlocking1() {
-              doSomethingThenSleep()
-          }
-
-          @NonBlocking
-          fun nonBlocking2(): Int = 42.also {
-              doSomethingThenSleep()
-          }
-
-          @NonBlocking
-          fun nonBlocking3() {
-              val t = ::doSomethingThenSleep // ok
-              println("Done")
-          }
-
-          fun doSomethingThenSleep() {
-              Thread.sleep(10)
-          }
-          """
-              .trimIndent()
-          )
-          .indented()
-      )
-      .run()
-      .expect(
-        """
-        src/NonBlocking.kt:5: Error: Call blocks in a context not allowed to block [BlockingMethod]
-            doSomethingThenSleep()
-            ~~~~~~~~~~~~~~~~~~~~~~
-        src/NonBlocking.kt:9: Error: Call blocks in a context not allowed to block [BlockingMethod]
-        fun nonBlocking2(): Int = 42.also {
-                                     ^
-        2 errors
-        """
-          .trimIndent()
-      )
+            src/NonBlocking.kt:5: Error: Call blocks in a context not allowed to block [BlockingMethod]
+                doSomethingThenSleep()
+                ~~~~~~~~~~~~~~~~~~~~~~
+            src/NonBlocking.kt:9: Error: Call blocks in a context not allowed to block [BlockingMethod]
+            fun nonBlocking2(): Int = 42.also {
+                                         ^
+            2 errors
+            """
+                .trimIndent()
+        )
   }
 }

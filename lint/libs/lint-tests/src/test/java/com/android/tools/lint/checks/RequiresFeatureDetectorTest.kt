@@ -23,7 +23,7 @@ class RequiresFeatureDetectorTest : AbstractCheckTest() {
 
   fun testScenarios() {
     val expected =
-      """
+        """
             src/test/pkg/CheckFeatures.java:10: Warning: someMethod should only be called if the feature some.name is present; to check call test.framework.pkg.FeatureChecker#hasFeature [RequiresFeature]
                     api.someMethod(); // 1 - ERROR
                     ~~~~~~~~~~~~~~~~
@@ -57,9 +57,9 @@ class RequiresFeatureDetectorTest : AbstractCheckTest() {
             0 errors, 10 warnings
             """
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
                     package test.pkg;
 
                     import test.framework.pkg.FeatureChecker;
@@ -163,11 +163,11 @@ class RequiresFeatureDetectorTest : AbstractCheckTest() {
                         }
                     }
                 """
-          )
-          .indented(),
-        kotlin(
-            "src/test/pkg/test.kt",
-            """
+                )
+                .indented(),
+            kotlin(
+                    "src/test/pkg/test.kt",
+                    """
                 package test.pkg
 
                 import test.framework.pkg.FeatureChecker
@@ -208,20 +208,20 @@ class RequiresFeatureDetectorTest : AbstractCheckTest() {
                 }
 
                 """,
-          )
-          .indented(),
-        java(
-            """
+                )
+                .indented(),
+            java(
+                    """
                 package test.framework.pkg;
 
                 @SuppressWarnings({"ClassNameDiffersFromFileName", "MethodMayBeStatic"})
                 public class FeatureChecker {
                     public static boolean hasFeature(String name) { return true; }
                 }"""
-          )
-          .indented(),
-        java(
-            """
+                )
+                .indented(),
+            java(
+                    """
                 package test.pkg;
 
                 import androidx.annotation.RequiresFeature;
@@ -231,19 +231,19 @@ class RequiresFeatureDetectorTest : AbstractCheckTest() {
                     @RequiresFeature(name = "some.name", enforcement = "test.framework.pkg.FeatureChecker#hasFeature")
                     public boolean someMethod() { return true; }
                 }"""
-          )
-          .indented(),
-        SUPPORT_ANNOTATIONS_JAR,
-      )
-      .run()
-      .expect(expected)
+                )
+                .indented(),
+            SUPPORT_ANNOTATIONS_JAR,
+        )
+        .run()
+        .expect(expected)
   }
 
   fun test374896332() {
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
             package test.pkg;
 
             import androidx.annotation.RequiresFeature;
@@ -260,10 +260,10 @@ class RequiresFeatureDetectorTest : AbstractCheckTest() {
                 }
             }
             """
-          )
-          .indented(),
-        kotlin(
-            """
+                )
+                .indented(),
+            kotlin(
+                    """
             package test.pkg
 
             import androidx.annotation.RequiresFeature
@@ -283,13 +283,13 @@ class RequiresFeatureDetectorTest : AbstractCheckTest() {
               }
             }
             """
-          )
-          .indented(),
-        SUPPORT_ANNOTATIONS_JAR,
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            SUPPORT_ANNOTATIONS_JAR,
+        )
+        .run()
+        .expect(
+            """
         src/test/pkg/Java.java:12: Warning: javaFeature should only be called if the feature some.name is present; to check call com.test.FeatureManager#checkFeature [RequiresFeature]
                 javaFeature();   // ERROR 1
                 ~~~~~~~~~~~~~
@@ -304,6 +304,6 @@ class RequiresFeatureDetectorTest : AbstractCheckTest() {
               ~~~~~~~~~~~~~~~
         0 errors, 4 warnings
         """
-      )
+        )
   }
 }

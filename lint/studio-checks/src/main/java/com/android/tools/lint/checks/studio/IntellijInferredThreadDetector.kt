@@ -47,143 +47,139 @@ class IntellijInferredThreadDetector : ThreadConstraintDetector<Thread>(lattice,
   override val unsatisfiableConstraintIssue = UNSATISFIABLE_CONSTRAINT
 
   override fun parse(ann: UAnnotation) =
-    when (ann.qualifiedName) {
-      AnyThread::class.java.canonicalName -> lattice.AnyThread
-      RequiresBackgroundThread::class.java.canonicalName,
-      Slow::class.java.canonicalName,
-      WorkerThread::class.java.canonicalName -> lattice.of(Thread.Slow)
-      UiThread::class.java.canonicalName,
-      RequiresEdt::class.java.canonicalName -> lattice.of(Thread.Ui)
-      else -> null
-    }
+      when (ann.qualifiedName) {
+        AnyThread::class.java.canonicalName -> lattice.AnyThread
+        RequiresBackgroundThread::class.java.canonicalName,
+        Slow::class.java.canonicalName,
+        WorkerThread::class.java.canonicalName -> lattice.of(Thread.Slow)
+        UiThread::class.java.canonicalName,
+        RequiresEdt::class.java.canonicalName -> lattice.of(Thread.Ui)
+        else -> null
+      }
 
   /**
    * Thread groups we track in the Android Studio code base.
    *
-   * As far as thread compatibility is concerned, `@Slow` and `@WorkerThread` are equivalent, so
-   * they have the same internal representation, simplifying a preorder to a partial order. UX wise,
-   * a small price we're currently paying is that when reporting errors back to the user, we're
-   * displaying `@{Slow,WorkerThread}` instead of the exact one that they originally write.
+   * As far as thread compatibility is concerned, `@Slow` and `@WorkerThread` are equivalent, so they have the same internal representation,
+   * simplifying a preorder to a partial order. UX wise, a small price we're currently paying is that when reporting errors back to the
+   * user, we're displaying `@{Slow,WorkerThread}` instead of the exact one that they originally write.
    */
   enum class Thread {
     Ui,
     Slow;
 
     override fun toString() =
-      when (this) {
-        Ui -> "`@UiThread`"
-        Slow -> "`@{Slow,WorkerThread}`"
-      }
+        when (this) {
+          Ui -> "`@UiThread`"
+          Slow -> "`@{Slow,WorkerThread}`"
+        }
   }
 
   companion object {
 
-    private val Impl =
-      Implementation(IntellijInferredThreadDetector::class.java, Scope.JAVA_FILE_SCOPE)
+    private val Impl = Implementation(IntellijInferredThreadDetector::class.java, Scope.JAVA_FILE_SCOPE)
 
     @JvmField
     val THREAD =
-      Issue.create(
-        id = "WrongThread",
-        briefDescription = "Wrong Thread",
-        explanation =
-          """
+        Issue.create(
+            id = "WrongThread",
+            briefDescription = "Wrong Thread",
+            explanation =
+                """
                 Ensures that a method which expects to be called on a specific thread, is \
                 actually called from that thread. For example, calls on methods in widgets \
                 should always be made on the UI thread.
                 """,
-        //noinspection LintImplUnexpectedDomain
-        moreInfo = "http://go/do-not-freeze",
-        category = UI_RESPONSIVENESS,
-        priority = 6,
-        severity = Severity.ERROR,
-        enabledByDefault = true,
-        implementation = Impl,
-      )
+            //noinspection LintImplUnexpectedDomain
+            moreInfo = "http://go/do-not-freeze",
+            category = UI_RESPONSIVENESS,
+            priority = 6,
+            severity = Severity.ERROR,
+            enabledByDefault = true,
+            implementation = Impl,
+        )
 
     @JvmField
     val UNSATISFIABLE_CONSTRAINT =
-      Issue.create(
-        id = "UnsatisfiableThreadConstraint",
-        briefDescription = "Unsatisfiable Thread Requirement",
-        explanation =
-          """
+        Issue.create(
+            id = "UnsatisfiableThreadConstraint",
+            briefDescription = "Unsatisfiable Thread Requirement",
+            explanation =
+                """
                 Ensures that different parts of an expression have compatible thread requirements. \
                 This check at the moment may have a false positive, not recognizing that some \
                 branches of a conditional are safe to run following a condition that refines what \
                 is known about the current thread.
                 """,
-        //noinspection LintImplUnexpectedDomain
-        moreInfo = "http://go/do-not-freeze",
-        category = Category.CORRECTNESS,
-        // TODO(b/379742474) We make this low warning for now, since false positives are quite
-        //  likely, especially from conditional branches
-        priority = 3,
-        severity = Severity.WARNING,
-        enabledByDefault = true,
-        implementation = Impl,
-      )
+            //noinspection LintImplUnexpectedDomain
+            moreInfo = "http://go/do-not-freeze",
+            category = Category.CORRECTNESS,
+            // TODO(b/379742474) We make this low warning for now, since false positives are quite
+            //  likely, especially from conditional branches
+            priority = 3,
+            severity = Severity.WARNING,
+            enabledByDefault = true,
+            implementation = Impl,
+        )
 
     private val lattice = ThreadConstraintLattice(Thread::class.java)
 
     private val assumptions by
-      lazy(LazyThreadSafetyMode.NONE) {
-        lattice.build {
-          assumeCommonJavaAndKotlinSignatures()
+        lazy(LazyThreadSafetyMode.NONE) {
+          lattice.build {
+            assumeCommonJavaAndKotlinSignatures()
 
-          // `Application.invokeLater` overloadings
-          run {
-            virtual<Runnable>(Application::invokeLater) assumedAs
-              forAll<Runnable> { runnable ->
-                given(Application::class(), runnable) {
-                  constraint += runnable[Runnable::run] to lattice.of(Thread.Ui)
-                }
-              }
-            virtual<_, Condition<*>>(Application::invokeLater) assumedAs
-              forAll<Runnable> { runnable ->
-                given(Application::class(), runnable, Condition::class(Type.WildCard)) {
-                  constraint += runnable[Runnable::run] to lattice.of(Thread.Ui)
-                }
-              }
-            virtual<_, ModalityState>(Application::invokeLater) assumedAs
-              forAll<Runnable> { runnable ->
-                given(Application::class(), runnable, ModalityState::class()) {
-                  constraint += runnable[Runnable::run] to lattice.of(Thread.Ui)
-                }
-              }
-            virtual<_, _, _>(Application::invokeLater) assumedAs
-              forAll<Runnable> { runnable ->
-                given(
-                  Application::class(),
-                  runnable,
-                  ModalityState::class(),
-                  Condition::class(Type.WildCard),
-                ) {
-                  constraint += runnable[Runnable::run] to lattice.of(Thread.Ui)
-                }
-              }
-          }
-
-          // `Application.executeOnPooledThread` overloadings
-          run {
-            virtual<Runnable>(Application::executeOnPooledThread) assumedAs
-              forAll<Runnable> { runnable ->
-                given(Application::class(), runnable) {
-                  range = Future::class(Type.Unit)
-                  constraint += runnable[Runnable::run] to lattice.of(Thread.Slow)
-                }
-              }
-            virtual<Callable<Any>>(Application::executeOnPooledThread) assumedAs
-              forAll { a ->
-                forAll(Callable::class(a)) { callable ->
-                  given(Application::class(), callable) {
-                    range = Future::class(a)
-                    constraint += callable[Callable<*>::call] to lattice.of(Thread.Slow)
+            // `Application.invokeLater` overloadings
+            run {
+              virtual<Runnable>(Application::invokeLater) assumedAs
+                  forAll<Runnable> { runnable ->
+                    given(Application::class(), runnable) { constraint += runnable[Runnable::run] to lattice.of(Thread.Ui) }
                   }
-                }
-              }
+              virtual<_, Condition<*>>(Application::invokeLater) assumedAs
+                  forAll<Runnable> { runnable ->
+                    given(Application::class(), runnable, Condition::class(Type.WildCard)) {
+                      constraint += runnable[Runnable::run] to lattice.of(Thread.Ui)
+                    }
+                  }
+              virtual<_, ModalityState>(Application::invokeLater) assumedAs
+                  forAll<Runnable> { runnable ->
+                    given(Application::class(), runnable, ModalityState::class()) {
+                      constraint += runnable[Runnable::run] to lattice.of(Thread.Ui)
+                    }
+                  }
+              virtual<_, _, _>(Application::invokeLater) assumedAs
+                  forAll<Runnable> { runnable ->
+                    given(
+                        Application::class(),
+                        runnable,
+                        ModalityState::class(),
+                        Condition::class(Type.WildCard),
+                    ) {
+                      constraint += runnable[Runnable::run] to lattice.of(Thread.Ui)
+                    }
+                  }
+            }
+
+            // `Application.executeOnPooledThread` overloadings
+            run {
+              virtual<Runnable>(Application::executeOnPooledThread) assumedAs
+                  forAll<Runnable> { runnable ->
+                    given(Application::class(), runnable) {
+                      range = Future::class(Type.Unit)
+                      constraint += runnable[Runnable::run] to lattice.of(Thread.Slow)
+                    }
+                  }
+              virtual<Callable<Any>>(Application::executeOnPooledThread) assumedAs
+                  forAll { a ->
+                    forAll(Callable::class(a)) { callable ->
+                      given(Application::class(), callable) {
+                        range = Future::class(a)
+                        constraint += callable[Callable<*>::call] to lattice.of(Thread.Slow)
+                      }
+                    }
+                  }
+            }
           }
         }
-      }
   }
 }

@@ -25,10 +25,10 @@ class ChildCountDetectorTest : AbstractCheckTest() {
 
   fun testScrollView() {
     lint()
-      .files(
-        xml(
-            "res/layout/has_children.xml",
-            """
+        .files(
+            xml(
+                    "res/layout/has_children.xml",
+                    """
                 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent">
@@ -44,26 +44,26 @@ class ChildCountDetectorTest : AbstractCheckTest() {
 
                 </ScrollView>
                 """,
-          )
-          .indented()
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .run()
+        .expect(
+            """
             res/layout/has_children.xml:1: Warning: A scroll view can have only one child [ScrollViewCount]
             <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
              ~~~~~~~~~~
             0 errors, 1 warnings
             """
-      )
+        )
   }
 
   fun testChildCount() {
     lint()
-      .files(
-        xml(
-            "res/layout/has_children.xml",
-            """
+        .files(
+            xml(
+                    "res/layout/has_children.xml",
+                    """
                 <ListView
                     xmlns:android="http://schemas.android.com/apk/res/android"
 
@@ -76,27 +76,27 @@ class ChildCountDetectorTest : AbstractCheckTest() {
 
                 </ListView>
                 """,
-          )
-          .indented()
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .run()
+        .expect(
+            """
             res/layout/has_children.xml:1: Warning: A list/grid should have no children declared in XML [AdapterViewChildren]
             <ListView
              ~~~~~~~~
             0 errors, 1 warnings
             """
-      )
+        )
   }
 
   fun testChildCountRequestFocus() {
     // A <requestFocus/> tag is okay.
     lint()
-      .files(
-        xml(
-            "res/layout/has_children2.xml",
-            """
+        .files(
+            xml(
+                    "res/layout/has_children2.xml",
+                    """
                 <ListView
                     xmlns:android="http://schemas.android.com/apk/res/android"
 
@@ -107,20 +107,20 @@ class ChildCountDetectorTest : AbstractCheckTest() {
 
                 </ListView>
                 """,
-          )
-          .indented()
-      )
-      .run()
-      .expectClean()
+                )
+                .indented()
+        )
+        .run()
+        .expectClean()
   }
 
   fun testAapt77836768() {
     // Regression test for https://issuetracker.google.com/77836768
     lint()
-      .files(
-        xml(
-            "res/layout/aapt.xml",
-            """
+        .files(
+            xml(
+                    "res/layout/aapt.xml",
+                    """
                 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
                   xmlns:aapt="http://schemas.android.com/aapt"
                   xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -144,20 +144,20 @@ class ChildCountDetectorTest : AbstractCheckTest() {
                   </android.support.constraint.ConstraintLayout>
                 </ScrollView>
                 """,
-          )
-          .indented()
-      )
-      .run()
-      .expectClean()
+                )
+                .indented()
+        )
+        .run()
+        .expectClean()
   }
 
   fun testNestedScrollView() {
     // Regression test for https://issuetracker.google.com/191997480
     lint()
-      .files(
-        xml(
-            "res/layout/nested_scroll_views.xml",
-            """
+        .files(
+            xml(
+                    "res/layout/nested_scroll_views.xml",
+                    """
                 <layout xmlns:android="http://schemas.android.com/apk/res/android">
                     <androidx.core.widget.NestedScrollView
                         android:layout_width="match_parent"
@@ -177,17 +177,17 @@ class ChildCountDetectorTest : AbstractCheckTest() {
 
                 </layout>
                 """,
-          )
-          .indented()
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .run()
+        .expect(
+            """
             res/layout/nested_scroll_views.xml:2: Warning: A scroll view can have only one child [ScrollViewCount]
                 <androidx.core.widget.NestedScrollView
                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             0 errors, 1 warnings
             """
-      )
+        )
   }
 }

@@ -39,11 +39,10 @@ sealed interface Instantiable<out FX>
 
 /** A [Type] is parameterized by the effect [FX] that methods can have. */
 sealed interface Type<out FX> {
-  data class Application<out FX>(val constructor: ClassId, val args: List<Type<FX>> = listOf()) :
-    Type<FX> {
+  data class Application<out FX>(val constructor: ClassId, val args: List<Type<FX>> = listOf()) : Type<FX> {
     internal constructor(
-      classFqn: String,
-      args: List<Type<FX>> = listOf(),
+        classFqn: String,
+        args: List<Type<FX>> = listOf(),
     ) : this(ClassId.of(classFqn), args)
 
     override fun toString(): String {
@@ -62,47 +61,43 @@ sealed interface Type<out FX> {
 
   data class Union<out FX> private constructor(val cases: PersistentSet<Type<FX>>) : Type<FX> {
     override fun toString() =
-      when {
-        cases.isEmpty() -> "∅"
-        else -> cases.joinToString(" ∪ ")
-      }
+        when {
+          cases.isEmpty() -> "∅"
+          else -> cases.joinToString(" ∪ ")
+        }
 
     companion object {
       internal val Empty: Union<Nothing> = Union(persistentSetOf())
 
       operator fun <FX> invoke(cases: PersistentSet<Type<FX>>): Type<FX> =
-        when (cases.size) {
-          0 -> Empty
-          1 -> cases.first()
-          else -> Union(cases)
-        }
+          when (cases.size) {
+            0 -> Empty
+            1 -> cases.first()
+            else -> Union(cases)
+          }
     }
   }
 
   /**
-   * It seems confusing that we need a dedicated representation for [Lambda] even though we already
-   * take the first-order, "closure-converted" view of the program, and have [MethodRef]. The
-   * [Lambda] form is the reason [Type] (and many other classes) need parameterizing by [FX].
+   * It seems confusing that we need a dedicated representation for [Lambda] even though we already take the first-order,
+   * "closure-converted" view of the program, and have [MethodRef]. The [Lambda] form is the reason [Type] (and many other classes) need
+   * parameterizing by [FX].
    *
-   * But [Lambda] can do things that a lifted global function can't (e.g. early non-local return),
-   * and has restrictions compared to general methods (e.g. no calling to self, no introducing new
-   * type parameters, etc.). Having [Lambda] seems more straightforward for now.
+   * But [Lambda] can do things that a lifted global function can't (e.g. early non-local return), and has restrictions compared to general
+   * methods (e.g. no calling to self, no introducing new type parameters, etc.). Having [Lambda] seems more straightforward for now.
    *
-   * If we ever explore the route of having [MethodRef] only, we'll need to generalize
-   * [SpecializedMethodRef] to carry around an arbitrary partial substitution, corresponding to a
-   * returned, partially substituted closure.
+   * If we ever explore the route of having [MethodRef] only, we'll need to generalize [SpecializedMethodRef] to carry around an arbitrary
+   * partial substitution, corresponding to a returned, partially substituted closure.
    */
   data class Lambda<out FX>(
-    val params: List<Type<FX>>,
-    val body: Result<Type<FX>, Effect<FX>>,
-    val intf: ClassId?,
+      val params: List<Type<FX>>,
+      val body: Result<Type<FX>, Effect<FX>>,
+      val intf: ClassId?,
   ) : Type<FX>, Instantiable<FX> {
-    override fun toString() =
-      "⟪${if (intf != null) "$intf : " else ""}(${params.joinToString()}) -> $body⟫"
+    override fun toString() = "⟪${if (intf != null) "$intf : " else ""}(${params.joinToString()}) -> $body⟫"
   }
 
-  data class MethodRef(val klass: ClassId, val method: MethodId) :
-    Type<Nothing>, Point<Nothing>, Instantiable<Nothing> {
+  data class MethodRef(val klass: ClassId, val method: MethodId) : Type<Nothing>, Point<Nothing>, Instantiable<Nothing> {
     constructor(method: PsiMethod) : this(ClassId.of(method.containingClass!!), MethodId(method))
 
     override fun toString() = "$klass::$method"
@@ -112,48 +107,39 @@ sealed interface Type<out FX> {
 
       @JvmName("virtual1") fun <X0> virtual(method: KFunction2<*, X0, *>) = uncheckedVirtual(method)
 
-      @JvmName("virtual2")
-      fun <X0, X1> virtual(method: KFunction3<*, X0, X1, *>) = uncheckedVirtual(method)
+      @JvmName("virtual2") fun <X0, X1> virtual(method: KFunction3<*, X0, X1, *>) = uncheckedVirtual(method)
 
-      @JvmName("virtual3")
-      fun <X0, X1, X2> virtual(method: KFunction4<*, X0, X1, X2, *>) = uncheckedVirtual(method)
+      @JvmName("virtual3") fun <X0, X1, X2> virtual(method: KFunction4<*, X0, X1, X2, *>) = uncheckedVirtual(method)
 
-      @JvmName("virtual4")
-      fun <X0, X1, X2, X3> virtual(method: KFunction5<*, X0, X1, X2, X3, *>) =
-        uncheckedVirtual(method)
+      @JvmName("virtual4") fun <X0, X1, X2, X3> virtual(method: KFunction5<*, X0, X1, X2, X3, *>) = uncheckedVirtual(method)
 
       @JvmName("static0") fun static(method: KFunction0<*>) = uncheckedStatic(method)
 
       @JvmName("static1") fun <X0> static(method: KFunction1<X0, *>) = uncheckedStatic(method)
 
-      @JvmName("static2")
-      fun <X0, X1> static(method: KFunction2<X0, X1, *>) = uncheckedStatic(method)
+      @JvmName("static2") fun <X0, X1> static(method: KFunction2<X0, X1, *>) = uncheckedStatic(method)
 
-      @JvmName("static3")
-      fun <X0, X1, X2> static(method: KFunction3<X0, X1, X2, *>) = uncheckedStatic(method)
+      @JvmName("static3") fun <X0, X1, X2> static(method: KFunction3<X0, X1, X2, *>) = uncheckedStatic(method)
 
-      @JvmName("static4")
-      fun <X0, X1, X2, X3> static(method: KFunction4<X0, X1, X2, X3, *>) = uncheckedStatic(method)
+      @JvmName("static4") fun <X0, X1, X2, X3> static(method: KFunction4<X0, X1, X2, X3, *>) = uncheckedStatic(method)
 
-      @JvmName("static5")
-      fun <X0, X1, X2, X3, X4> static(method: KFunction5<X0, X1, X2, X3, X4, *>) =
-        uncheckedStatic(method)
+      @JvmName("static5") fun <X0, X1, X2, X3, X4> static(method: KFunction5<X0, X1, X2, X3, X4, *>) = uncheckedStatic(method)
 
       private fun uncheckedVirtual(method: KFunction<*>): MethodRef {
         val receiver =
-          method.parameters.firstOrNull()?.takeIf { it.kind == KParameter.Kind.INSTANCE }
-            ?: throw IllegalArgumentException("$method is static")
+            method.parameters.firstOrNull()?.takeIf { it.kind == KParameter.Kind.INSTANCE }
+                ?: throw IllegalArgumentException("$method is static")
         return MethodRef(
-          ClassId.of(receiver.type.classifier as KClass<*>),
-          MethodId.ofVirtual(method),
+            ClassId.of(receiver.type.classifier as KClass<*>),
+            MethodId.ofVirtual(method),
         )
       }
 
       fun rawVirtual(name: String, receiverFqn: String, vararg params: ClassId?): MethodRef =
-        MethodRef(ClassId.of(receiverFqn), MethodId(true, name, params.asList()))
+          MethodRef(ClassId.of(receiverFqn), MethodId(true, name, params.asList()))
 
       fun rawStatic(name: String, containerFqn: String, vararg params: ClassId?): MethodRef =
-        MethodRef(ClassId.of(containerFqn), MethodId(false, name, params.asList()))
+          MethodRef(ClassId.of(containerFqn), MethodId(false, name, params.asList()))
 
       // TODO for some reason, `kotlin.collections.CollectionsKt` show up as either
       //  `kotlin.collections.CollectionsKt___CollectionsKt` or
@@ -210,19 +196,14 @@ sealed interface Type<out FX> {
       val method: MethodId = methodPool.intern(method) as MethodId
       val args: List<Type<FX>> = argListPool.intern(args) as List<Type<FX>>
 
-      override fun equals(other: Any?) =
-        other is Invoke<*> &&
-          receiver === other.receiver &&
-          method === other.method &&
-          args === other.args
+      override fun equals(other: Any?) = other is Invoke<*> && receiver === other.receiver && method === other.method && args === other.args
 
       override fun hashCode() =
-        31 * (31 * System.identityHashCode(receiver) + System.identityHashCode(method)) +
-          System.identityHashCode(args)
+          31 * (31 * System.identityHashCode(receiver) + System.identityHashCode(method)) + System.identityHashCode(args)
 
       fun copy(
-        receiver: Sym<@UnsafeVariance FX> = this.receiver,
-        args: List<Type<@UnsafeVariance FX>> = this.args,
+          receiver: Sym<@UnsafeVariance FX> = this.receiver,
+          args: List<Type<@UnsafeVariance FX>> = this.args,
       ): Invoke<FX> = Invoke(receiver, method, args)
 
       override fun toString() = "$receiver.$method(${args.joinToString()})"
@@ -236,8 +217,8 @@ sealed interface Type<out FX> {
 
     data class Fix<out FX>
     internal constructor(
-      val baseCases: PersistentSet<Type<FX>>,
-      val inductiveCases: PersistentSet<Type<FX>>, // that refer to 1+ `Rec`
+        val baseCases: PersistentSet<Type<FX>>,
+        val inductiveCases: PersistentSet<Type<FX>>, // that refer to 1+ `Rec`
     ) : Sym<FX> {
       init {
         if (inductiveCases.isEmpty()) throw TrivialInduction(baseCases)
@@ -257,59 +238,58 @@ sealed interface Type<out FX> {
         }
 
         internal fun <FX> Type<FX>.hasFreeRec(): Boolean =
-          when (this) {
-            is Application -> args.any { it.hasFreeRec() }
-            is Lambda ->
-              body.value.hasFreeRec() || body.effect.invocations?.any { it.hasFreeRec() } == true
-            is Union -> cases.any { it.hasFreeRec() }
-            is SpecializedMethodRef -> receiver.hasFreeRec()
-            is Rec -> true
-            is Invoke -> receiver.hasFreeRec() || args.any { it.hasFreeRec() }
-            is Ellipsis<*> -> element.hasFreeRec()
-            is Param,
-            is This,
-            is Fix,
-            is MethodRef,
-            is WildCard -> false
-          }
+            when (this) {
+              is Application -> args.any { it.hasFreeRec() }
+              is Lambda -> body.value.hasFreeRec() || body.effect.invocations?.any { it.hasFreeRec() } == true
+              is Union -> cases.any { it.hasFreeRec() }
+              is SpecializedMethodRef -> receiver.hasFreeRec()
+              is Rec -> true
+              is Invoke -> receiver.hasFreeRec() || args.any { it.hasFreeRec() }
+              is Ellipsis<*> -> element.hasFreeRec()
+              is Param,
+              is This,
+              is Fix,
+              is MethodRef,
+              is WildCard -> false
+            }
 
         private fun <FX> Sym<FX>.substSym(base: PersistentSet<Sym<FX>>): PersistentSet<Sym<FX>> =
-          when (this) {
-            is Rec -> base
-            is Param,
-            is This -> persistentSetOf(this)
-            is Invoke -> {
-              val substReceivers = receiver.substSym(base)
-              val substArgs = args.map { it.subst(base) }
-              substReceivers.map { copy(receiver = it, args = substArgs) }
+            when (this) {
+              is Rec -> base
+              is Param,
+              is This -> persistentSetOf(this)
+              is Invoke -> {
+                val substReceivers = receiver.substSym(base)
+                val substArgs = args.map { it.subst(base) }
+                substReceivers.map { copy(receiver = it, args = substArgs) }
+              }
+              is Fix -> throw IllegalStateException("Nested inductive set not expected")
             }
-            is Fix -> throw IllegalStateException("Nested inductive set not expected")
-          }
 
         private fun <FX> Type<FX>.subst(base: PersistentSet<Sym<FX>>): Type<FX> =
-          when (this) {
-            is Application,
-            is Ellipsis,
-            is WildCard,
-            is MethodRef -> this
-            is Union -> Union(cases.map { it.subst(base) })
-            is Lambda -> Lambda(params, body.copy(value = body.value.subst(base)), intf)
-            is SpecializedMethodRef -> copy(receiver = receiver.subst(base))
-            is Sym -> Union(substSym(base))
-          }
+            when (this) {
+              is Application,
+              is Ellipsis,
+              is WildCard,
+              is MethodRef -> this
+              is Union -> Union(cases.map { it.subst(base) })
+              is Lambda -> Lambda(params, body.copy(value = body.value.subst(base)), intf)
+              is SpecializedMethodRef -> copy(receiver = receiver.subst(base))
+              is Sym -> Union(substSym(base))
+            }
       }
     }
 
     companion object {
       internal val <FX> Sym<FX>.chain: Pair<String, List<MethodId>>
         get() =
-          when (this) {
-            is Param -> name to listOf()
-            is This -> toString() to listOf()
-            is Invoke -> receiver.chain.let { (x, ms) -> x to ms + method }
-            is Rec,
-            is Fix -> throw java.lang.IllegalStateException()
-          }
+            when (this) {
+              is Param -> name to listOf()
+              is This -> toString() to listOf()
+              is Invoke -> receiver.chain.let { (x, ms) -> x to ms + method }
+              is Rec,
+              is Fix -> throw java.lang.IllegalStateException()
+            }
     }
   }
 
@@ -320,23 +300,23 @@ sealed interface Type<out FX> {
     fun genParam(hint: String): Sym.Param = Sym.Param(hint)
 
     fun ofLiteral(value: Any?): Type<Nothing> =
-      when (value) {
-        null -> None // TODO: ignoring `null` for now, so what's left is `Nothing`
-        is Boolean -> Boolean
-        is Char -> Char
-        is Byte -> Byte
-        is Short -> Short
-        is Int -> Int
-        is Long -> Long
-        is Float -> Float
-        is Double -> Double
-        is String -> String
-        is UByte -> UByte
-        is UShort -> UShort
-        is UInt -> UInt
-        is ULong -> ULong
-        else -> throw IllegalStateException("Unexpected value literal: $value")
-      }
+        when (value) {
+          null -> None // TODO: ignoring `null` for now, so what's left is `Nothing`
+          is Boolean -> Boolean
+          is Char -> Char
+          is Byte -> Byte
+          is Short -> Short
+          is Int -> Int
+          is Long -> Long
+          is Float -> Float
+          is Double -> Double
+          is String -> String
+          is UByte -> UByte
+          is UShort -> UShort
+          is UInt -> UInt
+          is ULong -> ULong
+          else -> throw IllegalStateException("Unexpected value literal: $value")
+        }
 
     // For each type, we're conflating Java's boxed and unboxed variant, and Kotlin's variant
     val Boolean = Application<Nothing>(ClassId.of<Boolean>())
@@ -359,33 +339,30 @@ sealed interface Type<out FX> {
 
 /** Erase a type's generic parameters for use in JVM's method descriptors */
 fun Type<*>.erased(): ClassId? =
-  when (this) {
-    is Type.Application -> constructor
-    is Type.Ellipsis -> ClassId.Array
-    is Type.WildCard,
-    is Type.Lambda,
-    is Type.MethodRef,
-    is Type.SpecializedMethodRef,
-    is Type.Sym -> null
-    is Type.Union -> throw IllegalStateException()
-  }
+    when (this) {
+      is Type.Application -> constructor
+      is Type.Ellipsis -> ClassId.Array
+      is Type.WildCard,
+      is Type.Lambda,
+      is Type.MethodRef,
+      is Type.SpecializedMethodRef,
+      is Type.Sym -> null
+      is Type.Union -> throw IllegalStateException()
+    }
 
-/**
- * An [Effect] has the [concrete] effect, the symbolic [invocations] of virtual methods, and the
- * constraints on symbolic invocations.
- */
+/** An [Effect] has the [concrete] effect, the symbolic [invocations] of virtual methods, and the constraints on symbolic invocations. */
 data class Effect<out FX>(
-  val concrete: FX,
-  val invocations: UnboundedSet<Type.Sym<FX>> = unboundedSetOf(),
-  val constraint: Constraint<FX> = Constraint.Companion.MostPermissive,
+    val concrete: FX,
+    val invocations: UnboundedSet<Type.Sym<FX>> = unboundedSetOf(),
+    val constraint: Constraint<FX> = Constraint.Companion.MostPermissive,
 ) {
   override fun toString(): String {
     val fx =
-      when {
-        invocations == null -> "⊤"
-        invocations.isEmpty() -> concrete.toString()
-        else -> "$concrete ⊔ ${invocations.joinToString(" ⊔ ")}"
-      }
+        when {
+          invocations == null -> "⊤"
+          invocations.isEmpty() -> concrete.toString()
+          else -> "$concrete ⊔ ${invocations.joinToString(" ⊔ ")}"
+        }
     return "$fx${constraint.prettyPrint()}"
   }
 }
@@ -396,17 +373,13 @@ data class Result<out T, out FX>(val value: T, val effect: FX) {
 
   companion object {
     fun <T, FX> domain(onValue: Lattice<T>, onEffects: Lattice<FX>): Lattice<Result<T, FX>> =
-      Lattice.product(::Result, Result<T, FX>::value, Result<T, FX>::effect, onValue, onEffects)
+        Lattice.product(::Result, Result<T, FX>::value, Result<T, FX>::effect, onValue, onEffects)
   }
 }
 
-/**
- * A [Point] is either a [Type.MethodRef] whose summary is polymorphic, or an [Instantiation] whose
- * summary is monomorphic
- */
+/** A [Point] is either a [Type.MethodRef] whose summary is polymorphic, or an [Instantiation] whose summary is monomorphic */
 sealed interface Point<out FX> {
-  data class Instantiation<out FX>(val method: Instantiable<FX>, val args: List<Type<FX>>) :
-    Point<FX> {
+  data class Instantiation<out FX>(val method: Instantiable<FX>, val args: List<Type<FX>>) : Point<FX> {
     override fun toString() = "$method @ (${args.joinToString()})"
   }
 }

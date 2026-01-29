@@ -20,9 +20,9 @@ class AccessibilityForceFocusDetectorTest : AbstractCheckTest() {
 
   fun testDocumentationExample() {
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
         package com.my.app
 
         import android.content.Context
@@ -38,25 +38,25 @@ class AccessibilityForceFocusDetectorTest : AbstractCheckTest() {
           }
         }
         """
-          )
-          .indented()
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .run()
+        .expect(
+            """
         src/com/my/app/MyView.kt:12: Warning: Do not force accessibility focus, as this interferes with screen readers and gives an inconsistent user experience, especially across apps [AccessibilityFocus]
             performAccessibilityAction(AccessibilityNodeInfo.ACTION_ACCESSIBILITY_FOCUS, null)
             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         0 errors, 1 warnings
         """
-      )
+        )
   }
 
   fun testFocusAction() {
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
         package com.my.app
 
         import android.content.Context
@@ -72,12 +72,12 @@ class AccessibilityForceFocusDetectorTest : AbstractCheckTest() {
           view.performAccessibilityAction(AccessibilityNodeInfo.ACTION_CLICK, null)
         }
         """
-          )
-          .indented()
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .run()
+        .expect(
+            """
         src/com/my/app/MyView.kt:10: Warning: Do not force accessibility focus, as this interferes with screen readers and gives an inconsistent user experience, especially across apps [AccessibilityFocus]
           view.performAccessibilityAction(AccessibilityNodeInfo.ACTION_ACCESSIBILITY_FOCUS, null)
           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -86,6 +86,6 @@ class AccessibilityForceFocusDetectorTest : AbstractCheckTest() {
           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         0 errors, 2 warnings
         """
-      )
+        )
   }
 }

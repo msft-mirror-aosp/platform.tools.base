@@ -42,11 +42,9 @@ class MotionLayoutDetector : ResourceXmlDetector() {
   private var resourceModel: ResourceUsageModel? = null
   private var references: MutableMap<Resource, Location>? = null
 
-  override fun appliesTo(folderType: ResourceFolderType) =
-    folderType == ResourceFolderType.LAYOUT || folderType == ResourceFolderType.XML
+  override fun appliesTo(folderType: ResourceFolderType) = folderType == ResourceFolderType.LAYOUT || folderType == ResourceFolderType.XML
 
-  override fun getApplicableElements() =
-    listOf(MOTION_LAYOUT.oldName(), MOTION_LAYOUT.newName(), MOTION_SCENE)
+  override fun getApplicableElements() = listOf(MOTION_LAYOUT.oldName(), MOTION_LAYOUT.newName(), MOTION_SCENE)
 
   override fun afterCheckRootProject(context: Context) {
     if (!referencesRecorded) {
@@ -58,10 +56,10 @@ class MotionLayoutDetector : ResourceXmlDetector() {
       if (!isIncremental && (resource == null || !resource.isDeclared)) {
         // Can only read all MotionScene files when analyzing the entire project.
         context.report(
-          INVALID_SCENE_FILE_REFERENCE,
-          location,
-          "The motion scene file: ${reference.url} doesn't exist",
-          fix().name("Create ${reference.url}").data(KEY_URL, reference.url),
+            INVALID_SCENE_FILE_REFERENCE,
+            location,
+            "The motion scene file: ${reference.url} doesn't exist",
+            fix().name("Create ${reference.url}").data(KEY_URL, reference.url),
         )
       }
     }
@@ -88,11 +86,11 @@ class MotionLayoutDetector : ResourceXmlDetector() {
     if (description == null) {
       val sceneUrl = motionSceneUrlFromMotionLayoutFileName(context)
       context.report(
-        INVALID_SCENE_FILE_REFERENCE,
-        element,
-        context.getNameLocation(element),
-        "The attribute: `$ATTR_CONSTRAINT_LAYOUT_DESCRIPTION` is missing",
-        fix().name("Create $sceneUrl and set attribute").data(KEY_URL, sceneUrl),
+          INVALID_SCENE_FILE_REFERENCE,
+          element,
+          context.getNameLocation(element),
+          "The attribute: `$ATTR_CONSTRAINT_LAYOUT_DESCRIPTION` is missing",
+          fix().name("Create $sceneUrl and set attribute").data(KEY_URL, sceneUrl),
       )
     } else {
       val model = resourceModel ?: ResourceUsageModel().also { resourceModel = it }
@@ -104,43 +102,40 @@ class MotionLayoutDetector : ResourceXmlDetector() {
       } else {
         val sceneUrl = motionSceneUrlFromMotionLayoutFileName(context)
         context.report(
-          INVALID_SCENE_FILE_REFERENCE,
-          element,
-          context.getValueLocation(description),
-          "`${description.value}` is an invalid value for $ATTR_CONSTRAINT_LAYOUT_DESCRIPTION",
-          fix().name("Create $sceneUrl and set attribute").data(KEY_URL, sceneUrl),
+            INVALID_SCENE_FILE_REFERENCE,
+            element,
+            context.getValueLocation(description),
+            "`${description.value}` is an invalid value for $ATTR_CONSTRAINT_LAYOUT_DESCRIPTION",
+            fix().name("Create $sceneUrl and set attribute").data(KEY_URL, sceneUrl),
         )
       }
     }
   }
 
-  private fun isIncrementalMode(context: Context): Boolean =
-    !context.scope.contains(Scope.ALL_RESOURCE_FILES)
+  private fun isIncrementalMode(context: Context): Boolean = !context.scope.contains(Scope.ALL_RESOURCE_FILES)
 
-  private fun motionSceneUrlFromMotionLayoutFileName(context: XmlContext): String =
-    "@xml/${context.file.nameWithoutExtension}_scene"
+  private fun motionSceneUrlFromMotionLayoutFileName(context: XmlContext): String = "@xml/${context.file.nameWithoutExtension}_scene"
 
   companion object {
     const val KEY_URL = "url"
 
-    private val IMPLEMENTATION =
-      Implementation(MotionLayoutDetector::class.java, Scope.RESOURCE_FILE_SCOPE)
+    private val IMPLEMENTATION = Implementation(MotionLayoutDetector::class.java, Scope.RESOURCE_FILE_SCOPE)
 
     @JvmField
     val INVALID_SCENE_FILE_REFERENCE =
-      Issue.create(
-        id = "MotionLayoutInvalidSceneFileReference",
-        briefDescription = "$ATTR_CONSTRAINT_LAYOUT_DESCRIPTION must specify a scene file",
-        explanation =
-          """
+        Issue.create(
+            id = "MotionLayoutInvalidSceneFileReference",
+            briefDescription = "$ATTR_CONSTRAINT_LAYOUT_DESCRIPTION must specify a scene file",
+            explanation =
+                """
                 A motion scene file specifies the animations used in a `MotionLayout`. \
                 The `$ATTR_CONSTRAINT_LAYOUT_DESCRIPTION` is required to specify a valid motion \
                 scene file.
                 """,
-        category = Category.CORRECTNESS,
-        priority = 8,
-        severity = Severity.ERROR,
-        implementation = IMPLEMENTATION,
-      )
+            category = Category.CORRECTNESS,
+            priority = 8,
+            severity = Severity.ERROR,
+            implementation = IMPLEMENTATION,
+        )
   }
 }

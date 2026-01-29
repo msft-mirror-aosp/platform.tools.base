@@ -48,8 +48,7 @@ import org.jetbrains.uast.getParentOfType
  *
  * Reports the call where the intent is instantiated.
  *
- * This scenario indicates that the developer needs to either set an action or make the intent
- * explicit by component
+ * This scenario indicates that the developer needs to either set an action or make the intent explicit by component
  *
  * For example:
  *
@@ -70,9 +69,9 @@ class IntentWillNullActionDetector : Detector(), SourceCodeScanner, XmlScanner {
   override fun getApplicableConstructorTypes() = listOf(CLASS_INTENT)
 
   override fun visitConstructor(
-    context: JavaContext,
-    node: UCallExpression,
-    constructor: PsiMethod,
+      context: JavaContext,
+      node: UCallExpression,
+      constructor: PsiMethod,
   ) {
     // This is an Intent constructor. We will track the Intent to see if it
     // satisfies various conditions.
@@ -81,8 +80,8 @@ class IntentWillNullActionDetector : Detector(), SourceCodeScanner, XmlScanner {
     // Also skip constructors that take a class (and thus create an intent for a
     // specific component).
     if (
-      constructor.parameterList.parameters.firstOrNull()?.type?.canonicalText == TYPE_STRING ||
-        constructor.parameterList.parameters.any { it.type.canonicalText == TYPE_CLASS }
+        constructor.parameterList.parameters.firstOrNull()?.type?.canonicalText == TYPE_STRING ||
+            constructor.parameterList.parameters.any { it.type.canonicalText == TYPE_CLASS }
     ) {
       return
     }
@@ -96,34 +95,34 @@ class IntentWillNullActionDetector : Detector(), SourceCodeScanner, XmlScanner {
     var isIntentUsedToLaunchComponent = false
     var escaped = false
     val visitor =
-      object : DataFlowAnalyzer(setOf(node)) {
+        object : DataFlowAnalyzer(setOf(node)) {
 
-        override fun receiver(call: UCallExpression) {
-          when (call.methodName) {
-            "setComponent",
-            "setClass",
-            "setClassName",
-            "setAction" -> isIntentComponentExplicitOrActionIsSet = true
-          }
-        }
-
-        override fun argument(call: UCallExpression, reference: UElement) {
-          when (call.methodName) {
-            // TODO: We should track the intent being added to an array and then
-            //  detect use of startActivities(...).
-            "startActivity",
-            "sendBroadcast",
-            "sendBroadcastAsUser" -> {
-              isIntentUsedToLaunchComponent = true
-            }
-            else -> {
-              // The intent is used as an argument that we will not track
-              // TODO: try to track deeply the intent object
-              escaped = true
+          override fun receiver(call: UCallExpression) {
+            when (call.methodName) {
+              "setComponent",
+              "setClass",
+              "setClassName",
+              "setAction" -> isIntentComponentExplicitOrActionIsSet = true
             }
           }
+
+          override fun argument(call: UCallExpression, reference: UElement) {
+            when (call.methodName) {
+              // TODO: We should track the intent being added to an array and then
+              //  detect use of startActivities(...).
+              "startActivity",
+              "sendBroadcast",
+              "sendBroadcastAsUser" -> {
+                isIntentUsedToLaunchComponent = true
+              }
+              else -> {
+                // The intent is used as an argument that we will not track
+                // TODO: try to track deeply the intent object
+                escaped = true
+              }
+            }
+          }
         }
-      }
 
     val parent = node.getParentOfType(UMethod::class.java) ?: return
     parent.accept(visitor)
@@ -138,8 +137,8 @@ class IntentWillNullActionDetector : Detector(), SourceCodeScanner, XmlScanner {
       for (intentId in intents) {
         val location = intents.getLocation(intentId)
         val message =
-          "This intent has no action set and is not explicit by component. " +
-            "You should either make this intent explicit by component or set an action matching the targeted intent filter."
+            "This intent has no action set and is not explicit by component. " +
+                "You should either make this intent explicit by component or set an action matching the targeted intent filter."
         context.report(Incident(ISSUE, location!!, message, buildQuickFix(location)))
       }
     }
@@ -147,25 +146,25 @@ class IntentWillNullActionDetector : Detector(), SourceCodeScanner, XmlScanner {
 
   private fun buildQuickFix(location: Location): LintFix {
     val setAction =
-      LintFix.create()
-        .name("Set action...")
-        .replace()
-        .reformat(true)
-        .range(location)
-        .end()
-        .with(".setAction(\"your.custom.action\")")
-        .select("your.custom.action")
-        .build()
+        LintFix.create()
+            .name("Set action...")
+            .replace()
+            .reformat(true)
+            .range(location)
+            .end()
+            .with(".setAction(\"your.custom.action\")")
+            .select("your.custom.action")
+            .build()
     val setClass =
-      LintFix.create()
-        .name("Set class...")
-        .replace()
-        .reformat(true)
-        .range(location)
-        .end()
-        .with(".setClassName(\"app.package.name\", \"your.classname\")")
-        .select("app.package.name")
-        .build()
+        LintFix.create()
+            .name("Set class...")
+            .replace()
+            .reformat(true)
+            .range(location)
+            .end()
+            .with(".setClassName(\"app.package.name\", \"your.classname\")")
+            .select("app.package.name")
+            .build()
     return fix().alternatives(setAction, setClass)
   }
 
@@ -181,20 +180,20 @@ class IntentWillNullActionDetector : Detector(), SourceCodeScanner, XmlScanner {
 
   companion object {
     private val IMPLEMENTATION =
-      Implementation(
-        IntentWillNullActionDetector::class.java,
-        EnumSet.of(Scope.JAVA_FILE, Scope.MANIFEST),
-        Scope.JAVA_FILE_SCOPE,
-      )
+        Implementation(
+            IntentWillNullActionDetector::class.java,
+            EnumSet.of(Scope.JAVA_FILE, Scope.MANIFEST),
+            Scope.JAVA_FILE_SCOPE,
+        )
 
     /** Issue describing the problem and pointing to the detector implementation. */
     @JvmField
     val ISSUE: Issue =
-      Issue.create(
-        id = "IntentWithNullActionLaunch",
-        briefDescription = "Unsafe intent launched with no action set",
-        explanation =
-          """
+        Issue.create(
+            id = "IntentWithNullActionLaunch",
+            briefDescription = "Unsafe intent launched with no action set",
+            explanation =
+                """
                     Intents that have no action and do not specify a component are a potential security risk, \
                     and using them will result in a crash in an upcoming version of Android. \
                     If a specific app is being targeted (including the case where the current app is the target) \
@@ -202,11 +201,11 @@ class IntentWillNullActionDetector : Detector(), SourceCodeScanner, XmlScanner {
                     or the Intent constructors that take a Class parameter. \
                     If the intent is not intended for a specific app then the action name should be set.
                     """,
-        category = Category.SECURITY,
-        priority = 9,
-        severity = Severity.WARNING,
-        androidSpecific = true,
-        implementation = IMPLEMENTATION,
-      )
+            category = Category.SECURITY,
+            priority = 9,
+            severity = Severity.WARNING,
+            androidSpecific = true,
+            implementation = IMPLEMENTATION,
+        )
   }
 }

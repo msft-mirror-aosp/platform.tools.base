@@ -30,23 +30,22 @@ import org.jetbrains.uast.UAnonymousClass
 import org.jetbrains.uast.UClass
 
 /**
- * Checks that Fragment subclasses can be instantiated via Class.newInstance: the class is public,
- * static, and has a public null constructor.
+ * Checks that Fragment subclasses can be instantiated via Class.newInstance: the class is public, static, and has a public null
+ * constructor.
  *
- * This helps track down issues like
- * http://stackoverflow.com/questions/8058809/fragment-activity-crashes-on-screen-rotate (and
- * countless duplicates)
+ * This helps track down issues like http://stackoverflow.com/questions/8058809/fragment-activity-crashes-on-screen-rotate (and countless
+ * duplicates)
  */
 class FragmentDetector : Detector(), SourceCodeScanner {
   companion object {
     /** Are fragment subclasses instantiatable? */
     @JvmField
     val ISSUE =
-      Issue.create(
-        id = "ValidFragment",
-        briefDescription = "Fragment not instantiatable",
-        explanation =
-          """
+        Issue.create(
+            id = "ValidFragment",
+            briefDescription = "Fragment not instantiatable",
+            explanation =
+                """
                 From the Fragment documentation:
                 **Every** fragment must have an empty constructor, so it can be instantiated \
                 when restoring its activity's state. It is strongly recommended that subclasses \
@@ -59,13 +58,13 @@ class FragmentDetector : Detector(), SourceCodeScanner {
                 `androidx.fragment.app.Fragment`; with the `FragmentFactory` you can supply \
                 any arguments you want (as of version androidx version 1.1).
                 """,
-        category = Category.CORRECTNESS,
-        androidSpecific = true,
-        priority = 6,
-        severity = Severity.ERROR,
-        moreInfo = "https://developer.android.com/reference/android/app/Fragment.html#Fragment()",
-        implementation = Implementation(FragmentDetector::class.java, Scope.JAVA_FILE_SCOPE),
-      )
+            category = Category.CORRECTNESS,
+            androidSpecific = true,
+            priority = 6,
+            severity = Severity.ERROR,
+            moreInfo = "https://developer.android.com/reference/android/app/Fragment.html#Fragment()",
+            implementation = Implementation(FragmentDetector::class.java, Scope.JAVA_FILE_SCOPE),
+        )
   }
 
   // ---- implements SourceCodeScanner ----
@@ -79,10 +78,10 @@ class FragmentDetector : Detector(), SourceCodeScanner {
   override fun visitClass(context: JavaContext, declaration: UClass) {
     if (declaration is UAnonymousClass) {
       context.report(
-        ISSUE,
-        declaration,
-        context.getNameLocation(declaration),
-        "Fragments should be static such that they can be re-instantiated by the system, and anonymous classes are not static",
+          ISSUE,
+          declaration,
+          context.getNameLocation(declaration),
+          "Fragments should be static such that they can be re-instantiated by the system, and anonymous classes are not static",
       )
       return
     }
@@ -94,20 +93,20 @@ class FragmentDetector : Detector(), SourceCodeScanner {
 
     if (!evaluator.isPublic(declaration)) {
       context.report(
-        ISSUE,
-        declaration,
-        context.getNameLocation(declaration),
-        "This fragment class should be public (${declaration.qualifiedName})",
+          ISSUE,
+          declaration,
+          context.getNameLocation(declaration),
+          "This fragment class should be public (${declaration.qualifiedName})",
       )
       return
     }
 
     if (declaration.javaPsi.containingClass != null && !evaluator.isStatic(declaration)) {
       context.report(
-        ISSUE,
-        declaration,
-        context.getNameLocation(declaration),
-        "This fragment inner class should be static (${declaration.qualifiedName})",
+          ISSUE,
+          declaration,
+          context.getNameLocation(declaration),
+          "This fragment inner class should be static (${declaration.qualifiedName})",
       )
       return
     }
@@ -127,15 +126,14 @@ class FragmentDetector : Detector(), SourceCodeScanner {
       } else {
         val location = context.getNameLocation(constructor)
         // TODO: Use separate issue for this which isn't an error
-        val message =
-          "Avoid non-default constructors in fragments: use a default constructor plus `Fragment#setArguments(Bundle)` instead"
+        val message = "Avoid non-default constructors in fragments: use a default constructor plus `Fragment#setArguments(Bundle)` instead"
         context.report(ISSUE, constructor, location, message)
       }
     }
 
     if (!hasDefaultConstructor && hasConstructor) {
       val message =
-        "This fragment should provide a default constructor (a public constructor with no arguments) (`${declaration.qualifiedName}`)"
+          "This fragment should provide a default constructor (a public constructor with no arguments) (`${declaration.qualifiedName}`)"
       context.report(ISSUE, declaration, context.getNameLocation(declaration), message)
     }
   }

@@ -44,25 +44,24 @@ class CallSuperDetector : Detector(), SourceCodeScanner {
   companion object Issues {
     const val KEY_METHOD = "method"
 
-    private val IMPLEMENTATION =
-      Implementation(CallSuperDetector::class.java, Scope.JAVA_FILE_SCOPE)
+    private val IMPLEMENTATION = Implementation(CallSuperDetector::class.java, Scope.JAVA_FILE_SCOPE)
 
     /** Missing call to super. */
     @JvmField
     val ISSUE =
-      Issue.create(
-        id = "MissingSuperCall",
-        briefDescription = "Missing Super Call",
-        explanation =
-          """
+        Issue.create(
+            id = "MissingSuperCall",
+            briefDescription = "Missing Super Call",
+            explanation =
+                """
             Some methods, such as `View#onDetachedFromWindow`, require that you also call the \
             super implementation as part of your method.
             """,
-        category = Category.CORRECTNESS,
-        priority = 9,
-        severity = Severity.ERROR,
-        implementation = IMPLEMENTATION,
-      )
+            category = Category.CORRECTNESS,
+            priority = 9,
+            severity = Severity.ERROR,
+            implementation = IMPLEMENTATION,
+        )
 
     val CALL_SUPER_ANNOTATION = AndroidxName.of(SUPPORT_ANNOTATIONS_PREFIX, "CallSuper")
     private const val AOSP_CALL_SUPER_ANNOTATION = "android.annotation.CallSuper"
@@ -70,8 +69,8 @@ class CallSuperDetector : Detector(), SourceCodeScanner {
     private const val ON_VISIBILITY_CHANGED = "onVisibilityChanged"
 
     /**
-     * Checks whether the given method overrides a method which requires the super method to be
-     * invoked, and if so, returns it (otherwise returns null)
+     * Checks whether the given method overrides a method which requires the super method to be invoked, and if so, returns it (otherwise
+     * returns null)
      */
     fun getRequiredSuperMethod(evaluator: JavaEvaluator, method: PsiMethod): PsiMethod? {
 
@@ -96,11 +95,11 @@ class CallSuperDetector : Detector(), SourceCodeScanner {
           // is updated to supply it once @CallSuper is available in
           // the support library
           if (
-            evaluator.isMemberInSubClassOf(
-              method,
-              "android.support.wearable.watchface.WatchFaceService.Engine",
-              false,
-            )
+              evaluator.isMemberInSubClassOf(
+                  method,
+                  "android.support.wearable.watchface.WatchFaceService.Engine",
+                  false,
+              )
           ) {
             return directSuper
           }
@@ -110,11 +109,10 @@ class CallSuperDetector : Detector(), SourceCodeScanner {
         for (annotation in annotations) {
           val signature = annotation.qualifiedName
           if (
-            CALL_SUPER_ANNOTATION.isEquals(signature) ||
-              signature == AOSP_CALL_SUPER_ANNOTATION ||
-              signature != null &&
-                (signature.endsWith(".OverrideMustInvoke") ||
-                  signature.endsWith(".OverridingMethodsMustInvokeSuper"))
+              CALL_SUPER_ANNOTATION.isEquals(signature) ||
+                  signature == AOSP_CALL_SUPER_ANNOTATION ||
+                  signature != null &&
+                      (signature.endsWith(".OverrideMustInvoke") || signature.endsWith(".OverridingMethodsMustInvokeSuper"))
           ) {
             return directSuper
           }
@@ -128,43 +126,42 @@ class CallSuperDetector : Detector(), SourceCodeScanner {
   override fun getApplicableUastTypes(): List<Class<out UElement>> = listOf(UMethod::class.java)
 
   override fun createUastHandler(context: JavaContext): UElementHandler =
-    object : UElementHandler() {
-      override fun visitMethod(node: UMethod) {
-        val evaluator = context.evaluator
-        val superMethod = getRequiredSuperMethod(evaluator, node.javaPsi) ?: return
-        val visitor = SuperCallVisitor(superMethod, node.getContainingUClass()?.sourcePsi)
-        node.accept(visitor)
-        val count = visitor.callsSuperCount
-        if (count == 0) {
-          val methodName = node.name
-          // Temporary workaround for 180509152:
-          if (methodName == "onCreate" && visitor.anySuperCallCount > 0) {
-            val superMethodClass = superMethod.containingClass?.qualifiedName
-            if (superMethodClass == "androidx.appcompat.app.AppCompatActivity") {
-              // In recent versions this class has no onCreate implementation
-              // and the super call visitor should not have found one; the
-              // implementation it should jump to is in indirect superclass
-              // FragmentActivity. For now hide this message.
-              return
+      object : UElementHandler() {
+        override fun visitMethod(node: UMethod) {
+          val evaluator = context.evaluator
+          val superMethod = getRequiredSuperMethod(evaluator, node.javaPsi) ?: return
+          val visitor = SuperCallVisitor(superMethod, node.getContainingUClass()?.sourcePsi)
+          node.accept(visitor)
+          val count = visitor.callsSuperCount
+          if (count == 0) {
+            val methodName = node.name
+            // Temporary workaround for 180509152:
+            if (methodName == "onCreate" && visitor.anySuperCallCount > 0) {
+              val superMethodClass = superMethod.containingClass?.qualifiedName
+              if (superMethodClass == "androidx.appcompat.app.AppCompatActivity") {
+                // In recent versions this class has no onCreate implementation
+                // and the super call visitor should not have found one; the
+                // implementation it should jump to is in indirect superclass
+                // FragmentActivity. For now hide this message.
+                return
+              }
             }
+            val message = "Overriding method should call `super.$methodName`"
+            val location = context.getNameLocation(node)
+            val fix = fix().data(KEY_METHOD, superMethod)
+            context.report(ISSUE, node, location, message, fix)
+          } else if (count > 1 && node.name == "onCreate") {
+            val overlap = visitor.findFirstOverlap(node) ?: return
+            val message = "Calling `super.${node.name}` more than once can lead to crashes"
+            val location = context.getNameLocation(overlap)
+            context.report(ISSUE, node, location, message)
           }
-          val message = "Overriding method should call `super.$methodName`"
-          val location = context.getNameLocation(node)
-          val fix = fix().data(KEY_METHOD, superMethod)
-          context.report(ISSUE, node, location, message, fix)
-        } else if (count > 1 && node.name == "onCreate") {
-          val overlap = visitor.findFirstOverlap(node) ?: return
-          val message = "Calling `super.${node.name}` more than once can lead to crashes"
-          val location = context.getNameLocation(overlap)
-          context.report(ISSUE, node, location, message)
         }
       }
-    }
 
   /** Visits a method and determines whether the method calls its super method. */
-  private class SuperCallVisitor
-  constructor(private val targetMethod: PsiMethod, private val childClass: PsiElement?) :
-    AbstractUastVisitor() {
+  private class SuperCallVisitor constructor(private val targetMethod: PsiMethod, private val childClass: PsiElement?) :
+      AbstractUastVisitor() {
     val superCalls = mutableListOf<USuperExpression>()
     val callsSuperCount: Int
       get() = superCalls.size
@@ -184,10 +181,10 @@ class CallSuperDetector : Detector(), SourceCodeScanner {
           val resolvedMethodName = resolved?.name
           val resolvedClassName = resolved?.containingClass?.qualifiedName
           if (
-            resolved == null ||
-              resolvedMethodName == null ||
-              resolvedClassName == null || // Avoid false positives for type resolution problems
-              resolvedMethodName == targetMethodName && resolvedClassName == targetSuperClassName
+              resolved == null ||
+                  resolvedMethodName == null ||
+                  resolvedClassName == null || // Avoid false positives for type resolution problems
+                  resolvedMethodName == targetMethodName && resolvedClassName == targetSuperClassName
           ) {
             superCalls.add(node)
           }

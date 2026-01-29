@@ -29,9 +29,9 @@ class BidirectionalTextDetectorTest : AbstractCheckTest() {
 
   fun testDocumentationExample() {
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
                 // From https://github.com/nickboucher/trojan-source/blob/main/Java/StretchedString.java
                 public class StretchedString {
                     public static void main(String[] args) {
@@ -42,10 +42,10 @@ class BidirectionalTextDetectorTest : AbstractCheckTest() {
                     }
                 }
               """
-          )
-          .indented(),
-        java(
-            """
+                )
+                .indented(),
+            java(
+                    """
                 // From https://github.com/nickboucher/trojan-source/blob/main/Java/CommentingOut.java
                 public class CommentingOut {
                     public static void main(String[] args) {
@@ -56,21 +56,21 @@ class BidirectionalTextDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-          )
-          .indented(),
-        kotlin(
-          """
+                )
+                .indented(),
+            kotlin(
+                """
                 /* Comment $RLO // OK
                  * and $LRI // OK
                  */
                 val valid1 = "Left${RLO}Right${PDF}Left" // OK
                 val valid2 = "Left${RLO}Right${LRI}Nested Left${PDI}${PDF}Left" // OK
                 """
-        ),
-      )
-      .run()
-      .expect(
-        """
+            ),
+        )
+        .run()
+        .expect(
+            """
                 src/CommentingOut.java:5: Error: Comment contains misleading Unicode bidirectional text [BidiSpoofing]
                         /*$RLO } ${LRI}if (isAdmin)$PDI $LRI begin admins only */
                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -82,70 +82,70 @@ class BidirectionalTextDetectorTest : AbstractCheckTest() {
                                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 3 errors, 0 warnings
                 """
-      )
+        )
   }
 
   fun testSuppress() {
     // Make sure warnings in comments can be suppressed
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
                 @SuppressWarnings("BidiSpoofing")
                 /** javadoc */
                 public enum LanguageInfo {
                   ARABIC(LanguageCode.ARABIC, "\u202B\u0627\u0644\u0639\u0631\u0628\u064A\u0629") // ${RLE}العربية
                 }
                 """
-          )
-          .indented(),
-        java(
-            """
+                )
+                .indented(),
+            java(
+                    """
                 public enum LanguageInfo2 {
                   @SuppressWarnings("BidiSpoofing")
                   ARABIC(LanguageCode.ARABIC, "\u202B\u0627\u0644\u0639\u0631\u0628\u064A\u0629") // ${RLE}العربية
                 }
                 """
-          )
-          .indented(),
-        java(
-            """
+                )
+                .indented(),
+            java(
+                    """
                 public enum LanguageInfo3 {
                   ARABIC(LanguageCode.ARABIC,
                     //noinspection BidiSpoofing
                     "\u202B\u0627\u0644\u0639\u0631\u0628\u064A\u0629") // ${RLE}العربية
                 }
                 """
-          )
-          .indented(),
-      )
-      .run()
-      .expectClean()
+                )
+                .indented(),
+        )
+        .run()
+        .expectClean()
   }
 
   fun testAllowUnicodes() {
     // Allow using the unicode escape syntax in source files; this doesn't have
     // the same confusing behavior
     lint()
-      .files(
-        java(
-          "" +
-            "public class Test {\n" +
-            "  private static final String CHARACTER_PATTERN = \"[\" +\n" +
-            "                                                  \"\\u0000-\\u0008\" + // Control codes\n" +
-            "                                                  \"\\u000E-\\u001F\" + // Control codes\n" +
-            "                                                  \"\\u007F-\\u0084\" + // Control codes\n" +
-            "                                                  \"\\u0086-\\u009F\" + // Control codes\n" +
-            "                                                  \"\\u200C-\\u200F\" + // ZERO WIDTH NON-JOINER..RIGHT-TO-LEFT MARK\n" +
-            "                                                  \"\\u202A-\\u202E\" + // LEFT-TO-RIGHT EMBEDDING..RIGHT-TO-LEFT OVERRIDE\n" +
-            "                                                  \"\\u2060-\\u206F\" + // WORD JOINER..NOMINAL DIGIT SHAPES\n" +
-            "                                                  \"\\uFEFF\" +        // ZERO WIDTH NO-BREAK SPACE\n" +
-            "                                                  \"\\uFFF0-\\uFFFB\" + // Format Controls\n" +
-            "                                                  \"]\";\n" +
-            "}"
+        .files(
+            java(
+                "" +
+                    "public class Test {\n" +
+                    "  private static final String CHARACTER_PATTERN = \"[\" +\n" +
+                    "                                                  \"\\u0000-\\u0008\" + // Control codes\n" +
+                    "                                                  \"\\u000E-\\u001F\" + // Control codes\n" +
+                    "                                                  \"\\u007F-\\u0084\" + // Control codes\n" +
+                    "                                                  \"\\u0086-\\u009F\" + // Control codes\n" +
+                    "                                                  \"\\u200C-\\u200F\" + // ZERO WIDTH NON-JOINER..RIGHT-TO-LEFT MARK\n" +
+                    "                                                  \"\\u202A-\\u202E\" + // LEFT-TO-RIGHT EMBEDDING..RIGHT-TO-LEFT OVERRIDE\n" +
+                    "                                                  \"\\u2060-\\u206F\" + // WORD JOINER..NOMINAL DIGIT SHAPES\n" +
+                    "                                                  \"\\uFEFF\" +        // ZERO WIDTH NO-BREAK SPACE\n" +
+                    "                                                  \"\\uFFF0-\\uFFFB\" + // Format Controls\n" +
+                    "                                                  \"]\";\n" +
+                    "}"
+            )
         )
-      )
-      .run()
-      .expectClean()
+        .run()
+        .expectClean()
   }
 }

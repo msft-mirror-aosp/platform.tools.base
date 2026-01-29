@@ -85,8 +85,7 @@ import org.jetbrains.uast.visitor.AbstractUastVisitor
 
 /** Suggests replacements in Kotlin code for KTX constructs. */
 class UseKtxDetector : Detector(), SourceCodeScanner, XmlScanner {
-  override fun getApplicableUastTypes(): List<Class<out UElement>> =
-    listOf(UCallExpression::class.java)
+  override fun getApplicableUastTypes(): List<Class<out UElement>> = listOf(UCallExpression::class.java)
 
   override fun createUastHandler(context: JavaContext): UElementHandler? {
     val sourcePsi = context.uastFile?.sourcePsi ?: return null
@@ -104,81 +103,76 @@ class UseKtxDetector : Detector(), SourceCodeScanner, XmlScanner {
   }
 
   private fun checkBlockExtensions(
-    context: JavaContext,
-    node: UCallExpression,
-    method: PsiMethod,
-    name: String,
+      context: JavaContext,
+      node: UCallExpression,
+      method: PsiMethod,
+      name: String,
   ) {
     when (name) {
       "obtainStyledAttributes" -> {
         checkBlock(
-          USE_KTX,
-          context,
-          node,
-          method,
-          name,
-          "android.content.Context",
-          "android.content.res.TypedArray",
-          "Context",
-          "withStyledAttributes",
-          "androidx.core.content.withStyledAttributes",
-          "androidx.core.content.ContextKt",
-          isTarget = { _, methodName, targetMethod, _ ->
-            methodName == "recycle" && targetMethod.isInClass("android.content.res.TypedArray")
-          },
-          // For the obtainStyledAttributes(int[] attrs) overload, we have to
-          // introduce a null parameter; the extension method doesn't match a single IntArray.
-          replaceArgList =
-            if (method.parameterList.parametersCount == 1)
-              "(null, ${node.valueArguments.firstOrNull()?.sourcePsi?.text}"
-            else "",
+            USE_KTX,
+            context,
+            node,
+            method,
+            name,
+            "android.content.Context",
+            "android.content.res.TypedArray",
+            "Context",
+            "withStyledAttributes",
+            "androidx.core.content.withStyledAttributes",
+            "androidx.core.content.ContextKt",
+            isTarget = { _, methodName, targetMethod, _ ->
+              methodName == "recycle" && targetMethod.isInClass("android.content.res.TypedArray")
+            },
+            // For the obtainStyledAttributes(int[] attrs) overload, we have to
+            // introduce a null parameter; the extension method doesn't match a single IntArray.
+            replaceArgList =
+                if (method.parameterList.parametersCount == 1) "(null, ${node.valueArguments.firstOrNull()?.sourcePsi?.text}" else "",
         )
       }
       "edit" -> {
         checkBlock(
-          USE_KTX,
-          context,
-          node,
-          method,
-          name,
-          "android.content.SharedPreferences",
-          "android.content.SharedPreferences.Editor",
-          "SharedPreferences",
-          "edit",
-          "androidx.core.content.edit",
-          "androidx.core.content.SharedPreferencesKt",
-          isTarget = { _, methodName, targetMethod, _ ->
-            (methodName == "apply" || methodName == "commit") &&
-              targetMethod.isInClass("android.content.SharedPreferences.Editor")
-          },
-          removeArgList = true,
+            USE_KTX,
+            context,
+            node,
+            method,
+            name,
+            "android.content.SharedPreferences",
+            "android.content.SharedPreferences.Editor",
+            "SharedPreferences",
+            "edit",
+            "androidx.core.content.edit",
+            "androidx.core.content.SharedPreferencesKt",
+            isTarget = { _, methodName, targetMethod, _ ->
+              (methodName == "apply" || methodName == "commit") && targetMethod.isInClass("android.content.SharedPreferences.Editor")
+            },
+            removeArgList = true,
         )
       }
       "beginTransaction",
       "beginTransactionNonExclusive" -> {
         checkBlock(
-          USE_KTX,
-          context,
-          node,
-          method,
-          name,
-          "android.database.sqlite.SQLiteDatabase",
-          "android.database.sqlite.SQLiteDatabase",
-          "SQLiteDatabase",
-          "transaction",
-          "androidx.core.database.sqlite.transaction",
-          "androidx.core.database.sqlite.SQLiteDatabaseKt",
-          isTarget = { _, methodName, targetMethod, _ ->
-            methodName == "endTransaction" &&
-              targetMethod.isInClass("android.database.sqlite.SQLiteDatabase")
-          },
-          isRequiredCall = { targetMethod ->
-            val methodName = targetMethod.name
-            methodName == "setTransactionSuccessful" &&
-              targetMethod.isInClass("android.database.sqlite.SQLiteDatabase")
-          },
-          replaceArgList = if (name == "beginTransactionNonExclusive") "(exclusive = false" else "",
-          removeArgList = name != "beginTransactionNonExclusive",
+            USE_KTX,
+            context,
+            node,
+            method,
+            name,
+            "android.database.sqlite.SQLiteDatabase",
+            "android.database.sqlite.SQLiteDatabase",
+            "SQLiteDatabase",
+            "transaction",
+            "androidx.core.database.sqlite.transaction",
+            "androidx.core.database.sqlite.SQLiteDatabaseKt",
+            isTarget = { _, methodName, targetMethod, _ ->
+              methodName == "endTransaction" && targetMethod.isInClass("android.database.sqlite.SQLiteDatabase")
+            },
+            isRequiredCall = { targetMethod ->
+              val methodName = targetMethod.name
+              methodName == "setTransactionSuccessful" && targetMethod.isInClass("android.database.sqlite.SQLiteDatabase")
+            },
+            replaceArgList = if (name == "beginTransactionNonExclusive") "(exclusive = false" else "",
+            removeArgList = name != "beginTransactionNonExclusive",
         )
       }
       "save" -> {
@@ -197,71 +191,69 @@ class UseKtxDetector : Detector(), SourceCodeScanner, XmlScanner {
               //noinspection LintImplPsiEquals
               if (nextReceiver != null && nextReceiver == receiver.tryResolve()) {
                 val mappedName =
-                  when (nextName) {
-                    "translate" -> "withTranslation"
-                    "rotate" -> "withRotation"
-                    "scale" -> "withScale"
-                    "skew" -> "withSkew"
-                    "concat" -> "withMatrix"
-                    "clipRect",
-                    "clipPath" -> {
-                      val lastType =
-                        nextSelector.valueArguments.lastOrNull()?.getExpressionType()?.canonicalText
-                      if (lastType == "android.graphics.Region.Op") {
-                        return
+                    when (nextName) {
+                      "translate" -> "withTranslation"
+                      "rotate" -> "withRotation"
+                      "scale" -> "withScale"
+                      "skew" -> "withSkew"
+                      "concat" -> "withMatrix"
+                      "clipRect",
+                      "clipPath" -> {
+                        val lastType = nextSelector.valueArguments.lastOrNull()?.getExpressionType()?.canonicalText
+                        if (lastType == "android.graphics.Region.Op") {
+                          return
+                        }
+                        "withClip"
                       }
-                      "withClip"
+                      else -> null
                     }
-                    else -> null
-                  }
                 if (mappedName != null) {
                   deleteName = nextName
                   newName = mappedName
-                  replaceArgs =
-                    (nextSelector.sourcePsi as? KtCallExpression)?.valueArgumentList?.text ?: ""
+                  replaceArgs = (nextSelector.sourcePsi as? KtCallExpression)?.valueArgumentList?.text ?: ""
                 }
               }
             }
           }
         }
         checkBlock(
-          USE_KTX,
-          context,
-          node,
-          method,
-          name,
-          "android.graphics.Canvas",
-          "android.graphics.Canvas",
-          "Canvas",
-          newName,
-          "androidx.core.graphics.$newName",
-          "androidx.core.graphics.CanvasKt",
-          isTarget = { call, methodName, targetMethod, variable ->
-            var ok = false
-            if (methodName == "restore" || methodName == "restoreToCount") {
-              ok = targetMethod.isInClass("android.graphics.Canvas")
-              if (ok) {
-                if (methodName == "restoreToCount") {
-                  // Check that we're passing in the same variable
-                  val reference = call.valueArguments.firstOrNull()?.tryResolve()
-                  if (reference != null) {
-                    //noinspection LintImplPsiEquals
-                    ok = reference == variable?.javaPsi || reference == variable?.sourcePsi
+            USE_KTX,
+            context,
+            node,
+            method,
+            name,
+            "android.graphics.Canvas",
+            "android.graphics.Canvas",
+            "Canvas",
+            newName,
+            "androidx.core.graphics.$newName",
+            "androidx.core.graphics.CanvasKt",
+            isTarget = { call, methodName, targetMethod, variable ->
+              var ok = false
+              if (methodName == "restore" || methodName == "restoreToCount") {
+                ok = targetMethod.isInClass("android.graphics.Canvas")
+                if (ok) {
+                  if (methodName == "restoreToCount") {
+                    // Check that we're passing in the same variable
+                    val reference = call.valueArguments.firstOrNull()?.tryResolve()
+                    if (reference != null) {
+                      //noinspection LintImplPsiEquals
+                      ok = reference == variable?.javaPsi || reference == variable?.sourcePsi
+                    }
                   }
                 }
               }
-            }
-            ok
-          },
-          isRequiredCall =
-            if (deleteName == null) null
-            else
-              { targetMethod ->
-                val methodName = targetMethod.name
-                methodName == deleteName && targetMethod.isInClass("android.graphics.Canvas")
-              },
-          replaceArgList = replaceArgs,
-          removeArgList = replaceArgs.isEmpty(),
+              ok
+            },
+            isRequiredCall =
+                if (deleteName == null) null
+                else
+                    { targetMethod ->
+                      val methodName = targetMethod.name
+                      methodName == deleteName && targetMethod.isInClass("android.graphics.Canvas")
+                    },
+            replaceArgList = replaceArgs,
+            removeArgList = replaceArgs.isEmpty(),
         )
       }
     }
@@ -302,15 +294,15 @@ class UseKtxDetector : Detector(), SourceCodeScanner, XmlScanner {
    *        operation()                   =>        operation()
    *     }.finish()                             }
    *
-   * Examples of these pairs of start() and finish() are SharedPreferences.edit() and apply(), and
-   * Context.obtainStyledAttributes() and recycle().
+   * Examples of these pairs of start() and finish() are SharedPreferences.edit() and apply(), and Context.obtainStyledAttributes() and
+   * recycle().
    *
-   * There are many other possible variations here which we don't flag because they're not as common
-   * and makes the refactoring more tricky, such as going via intermediate variables, using a
-   * mixture of the above patterns, having conditional patterns around the finish call, etc.
+   * There are many other possible variations here which we don't flag because they're not as common and makes the refactoring more tricky,
+   * such as going via intermediate variables, using a mixture of the above patterns, having conditional patterns around the finish call,
+   * etc.
    *
-   * We also look out for potential problems where we can't extract the code into a new block, for
-   * example where there is a new variable declared inside the block referenced outside of it:
+   * We also look out for potential problems where we can't extract the code into a new block, for example where there is a new variable
+   * declared inside the block referenced outside of it:
    *
    *     val var = something().start()           something().extension() {
    *     val resources = getResources()   =>        val resources = getResources()
@@ -318,33 +310,29 @@ class UseKtxDetector : Detector(), SourceCodeScanner, XmlScanner {
    *     process(resources)                      process(resources) // INVALID - resources not a variable
    */
   private fun checkBlock(
-    issue: Issue,
-    context: JavaContext,
-    startCall: UCallExpression,
-    method: PsiMethod,
-    startName: String,
-    startClass: String,
-    targetClass: String,
-    extensionClass: String,
-    extensionMethod: String,
-    import: String,
-    containingClass: String?,
-    isTarget: (UCallExpression, String?, PsiMethod, ULocalVariable?) -> Boolean,
-    isRequiredCall: ((PsiMethod) -> Boolean)? = null,
-    allowNesting: Boolean = false,
-    replaceArgList: String = "",
-    removeArgList: Boolean = false,
+      issue: Issue,
+      context: JavaContext,
+      startCall: UCallExpression,
+      method: PsiMethod,
+      startName: String,
+      startClass: String,
+      targetClass: String,
+      extensionClass: String,
+      extensionMethod: String,
+      import: String,
+      containingClass: String?,
+      isTarget: (UCallExpression, String?, PsiMethod, ULocalVariable?) -> Boolean,
+      isRequiredCall: ((PsiMethod) -> Boolean)? = null,
+      allowNesting: Boolean = false,
+      replaceArgList: String = "",
+      removeArgList: Boolean = false,
   ) {
     if (!method.isInClass(startClass)) {
       return
     }
 
     // If we require the library to be present, make sure we can access this extension function
-    if (
-      REQUIRE_LIBRARY.getValue(context) &&
-        containingClass != null &&
-        context.evaluator.findClass(containingClass) == null
-    ) {
+    if (REQUIRE_LIBRARY.getValue(context) && containingClass != null && context.evaluator.findClass(containingClass) == null) {
       return
     }
 
@@ -352,16 +340,16 @@ class UseKtxDetector : Detector(), SourceCodeScanner, XmlScanner {
     val variable = findVariable(startCall)
 
     val (target, requiredCall, chained, thisReferences, scopingFunction) =
-      findBlockInfo(
-        variable,
-        startCall,
-        startName,
-        startClass,
-        targetClass,
-        allowNesting,
-        isRequiredCall,
-        isTarget,
-      ) ?: return
+        findBlockInfo(
+            variable,
+            startCall,
+            startName,
+            startClass,
+            targetClass,
+            allowNesting,
+            isRequiredCall,
+            isTarget,
+        ) ?: return
 
     if (startCall.getParentOfType<UParenthesizedExpression>() != null) {
       // Unlikely but can break fixes if there
@@ -382,13 +370,13 @@ class UseKtxDetector : Detector(), SourceCodeScanner, XmlScanner {
 
     val rParen = call.valueArgumentList?.rightParenthesis ?: return
     val rParenStart =
-      rParen.startOffset.let {
-        if (extensionMethod == "edit" && it < source.length - 2 && source[it + 1] == ')') {
-          it + 1
-        } else {
-          it
+        rParen.startOffset.let {
+          if (extensionMethod == "edit" && it < source.length - 2 && source[it + 1] == ')') {
+            it + 1
+          } else {
+            it
+          }
         }
-      }
     val rParenEnd = rParenStart + 1
 
     var replacedAnchor = extensionMethod
@@ -406,57 +394,55 @@ class UseKtxDetector : Detector(), SourceCodeScanner, XmlScanner {
     // Delete variable declaration
     if (deleteLhsStart != -1) {
       fixList.add(
-        fix()
-          .replace()
-          .range(Location.create(context.file, source, deleteLhsStart, deleteLhsEnd))
-          .text(source.substring(deleteLhsStart, deleteLhsEnd))
-          .with("")
-          .build()
+          fix()
+              .replace()
+              .range(Location.create(context.file, source, deleteLhsStart, deleteLhsEnd))
+              .text(source.substring(deleteLhsStart, deleteLhsEnd))
+              .with("")
+              .build()
       )
     }
 
     // Replace ( obtainStyledAttributes with withStyledAttributes before the argument list
     fixList.add(
-      fix()
-        .replace()
-        .range(Location.create(context.file, source, replaceAnchorStart, replaceAnchorEnd))
-        .text(source.substring(replaceAnchorStart, replaceAnchorEnd))
-        .with(replacedAnchor)
-        .imports(import)
-        .reformat(true)
-        .build()
+        fix()
+            .replace()
+            .range(Location.create(context.file, source, replaceAnchorStart, replaceAnchorEnd))
+            .text(source.substring(replaceAnchorStart, replaceAnchorEnd))
+            .with(replacedAnchor)
+            .imports(import)
+            .reformat(true)
+            .build()
     )
 
     // Insert a "{" after the parameter list right parenthesis
     val argListReplacement =
-      when {
-        // Special hack needed for the commit-style target prefs where we need an extra
-        // parameter
-        target.methodName == "commit" &&
-          targetClass == "android.content.SharedPreferences.Editor" -> "(commit = true) {"
-        scopingFunction != null && scopingFunction.methodName == "with" -> ""
-        removeArgList -> " {"
-        else -> ") {"
-      }
+        when {
+          // Special hack needed for the commit-style target prefs where we need an extra
+          // parameter
+          target.methodName == "commit" && targetClass == "android.content.SharedPreferences.Editor" -> "(commit = true) {"
+          scopingFunction != null && scopingFunction.methodName == "with" -> ""
+          removeArgList -> " {"
+          else -> ") {"
+        }
     fixList.add(
-      fix()
-        .replace()
-        .range(Location.create(context.file, source, rParenStart, rParenEnd))
-        .text(source.substring(rParenStart, rParenEnd))
-        .with(argListReplacement)
-        .build()
+        fix()
+            .replace()
+            .range(Location.create(context.file, source, rParenStart, rParenEnd))
+            .text(source.substring(rParenStart, rParenEnd))
+            .with(argListReplacement)
+            .build()
     )
 
     val receiver = target.explicitReceiver
     val targetPsi = target.sourcePsi
     val recycleStart =
-      if (receiver?.skipParenthesizedExprDown().isNameOrThis())
-        receiver?.sourcePsi?.startOffset ?: return
-      else
-        (targetPsi?.parent as? KtDotQualifiedExpression)?.operationTokenNode?.startOffset
-          ?: receiver?.sourcePsi?.startOffset
-          ?: targetPsi?.startOffset
-          ?: return
+        if (receiver?.skipParenthesizedExprDown().isNameOrThis()) receiver?.sourcePsi?.startOffset ?: return
+        else
+            (targetPsi?.parent as? KtDotQualifiedExpression)?.operationTokenNode?.startOffset
+                ?: receiver?.sourcePsi?.startOffset
+                ?: targetPsi?.startOffset
+                ?: return
     val recycleEnd = targetPsi?.endOffset ?: return
     var indent = true
 
@@ -465,15 +451,14 @@ class UseKtxDetector : Detector(), SourceCodeScanner, XmlScanner {
 
       if (scopingFunction.methodName == "with") {
         val withStart = scopingFunction.sourcePsi?.startOffset ?: return
-        val withArgStart =
-          scopingFunction.valueArguments.firstOrNull()?.sourcePsi?.startOffset ?: return
+        val withArgStart = scopingFunction.valueArguments.firstOrNull()?.sourcePsi?.startOffset ?: return
         fixList.add(
-          fix()
-            .replace()
-            .range(Location.create(context.file, source, withStart, withArgStart))
-            .text(source.substring(withStart, withArgStart))
-            .with("")
-            .build()
+            fix()
+                .replace()
+                .range(Location.create(context.file, source, withStart, withArgStart))
+                .text(source.substring(withStart, withArgStart))
+                .with("")
+                .build()
         )
       }
 
@@ -491,12 +476,12 @@ class UseKtxDetector : Detector(), SourceCodeScanner, XmlScanner {
               val end = last.leftCurlyBrace.startOffset + 1
               val offset = sourcePsi.operationTokenNode.startOffset
               fixList.add(
-                fix()
-                  .replace()
-                  .range(Location.create(context.file, source, offset, end))
-                  .text(source.substring(offset, end))
-                  .with("")
-                  .build()
+                  fix()
+                      .replace()
+                      .range(Location.create(context.file, source, offset, end))
+                      .text(source.substring(offset, end))
+                      .with("")
+                      .build()
               )
             } else {
               return
@@ -513,14 +498,7 @@ class UseKtxDetector : Detector(), SourceCodeScanner, XmlScanner {
         if (p.receiver == originalParent) {
           if (sourcePsi is KtDotQualifiedExpression) {
             val offset = sourcePsi.operationTokenNode.startOffset
-            fixList.add(
-              fix()
-                .replace()
-                .range(Location.create(context.file, source, offset, offset + 1))
-                .text(".")
-                .with("")
-                .build()
-            )
+            fixList.add(fix().replace().range(Location.create(context.file, source, offset, offset + 1)).text(".").with("").build())
           }
           break
         }
@@ -532,12 +510,7 @@ class UseKtxDetector : Detector(), SourceCodeScanner, XmlScanner {
         val begin = source.lineBegin(requiredCall.startOffset)
         val end = source.lineEnd(requiredCall.endOffset) + 1 // +1: remove the \n as well
         fixList.add(
-          fix()
-            .replace()
-            .range(Location.create(context.file, source, begin, end))
-            .text(source.substring(begin, end))
-            .with("")
-            .build()
+            fix().replace().range(Location.create(context.file, source, begin, end)).text(source.substring(begin, end)).with("").build()
         )
       }
     }
@@ -554,25 +527,18 @@ class UseKtxDetector : Detector(), SourceCodeScanner, XmlScanner {
           refEnd++
           replacement = ""
         }
-        fixList.add(
-          fix()
-            .replace()
-            .range(Location.create(context.file, source, refStart, refEnd))
-            .text(content)
-            .with(replacement)
-            .build()
-        )
+        fixList.add(fix().replace().range(Location.create(context.file, source, refStart, refEnd)).text(content).with(replacement).build())
       }
     }
 
     // Remove final recycle call and replace with `}`
     fixList.add(
-      fix()
-        .replace()
-        .range(Location.create(context.file, source, recycleStart, recycleEnd))
-        .text(source.substring(recycleStart, recycleEnd))
-        .with(if (scopingFunction != null) "" else "}")
-        .build()
+        fix()
+            .replace()
+            .range(Location.create(context.file, source, recycleStart, recycleEnd))
+            .text(source.substring(recycleStart, recycleEnd))
+            .with(if (scopingFunction != null) "" else "}")
+            .build()
     )
 
     // Try to indent the lines in the block as well
@@ -583,49 +549,33 @@ class UseKtxDetector : Detector(), SourceCodeScanner, XmlScanner {
       val lineEnd = source.lineEnd(lineBegin)
 
       if (
-        source.isNotBlankAt(lineBegin, lineEnd) &&
-          // Don't add indentation on the line we plan to delete
-          (requiredCall == null ||
-            lineEnd < requiredCall.startOffset ||
-            lineBegin > requiredCall.endOffset)
+          source.isNotBlankAt(lineBegin, lineEnd) &&
+              // Don't add indentation on the line we plan to delete
+              (requiredCall == null || lineEnd < requiredCall.startOffset || lineBegin > requiredCall.endOffset)
       ) {
         // Make sure we don't add whitespace to any multi-line string literals
         // for example
         if (containingFile.findElementAt(lineBegin) is PsiWhiteSpace) {
           // Add indentation fix:
-          fixList.add(
-            fix()
-              .replace()
-              .range(Location.create(context.file, source, lineBegin, lineBegin))
-              .text("")
-              .with("    ")
-              .build()
-          )
+          fixList.add(fix().replace().range(Location.create(context.file, source, lineBegin, lineBegin)).text("").with("    ").build())
         }
       }
       lineBegin = lineEnd + 1
     }
 
-    val fix =
-      fix()
-        .name("Replace with the $extensionMethod extension function", true)
-        .composite(fixList)
-        .autoFix()
+    val fix = fix().name("Replace with the $extensionMethod extension function", true).composite(fixList).autoFix()
 
     // Make sure we don't have a symbol conflict
     if (context.definesConflictingSymbol(extensionMethod, import, isProperty = false)) {
       return
     }
 
-    val location =
-      context.getCallLocation(startCall, includeReceiver = true, includeArguments = true)
+    val location = context.getCallLocation(startCall, includeReceiver = true, includeArguments = true)
     val message = createMessage(extensionClass, extensionMethod, false, import)
     context.report(issue, startCall, location, message, fix)
   }
 
-  /**
-   * For a given call, returns the variable it's assigned to, or null if not assigned to a variable
-   */
+  /** For a given call, returns the variable it's assigned to, or null if not assigned to a variable */
   fun findVariable(startCall: UCallExpression): ULocalVariable? {
     var curr = skipParenthesizedExprUp(startCall.uastParent)
     while (true) {
@@ -639,53 +589,45 @@ class UseKtxDetector : Detector(), SourceCodeScanner, XmlScanner {
   }
 
   /**
-   * Information about a particular call (such as `beginTransaction`) which could potentially be
-   * replaced with an extension block call.
+   * Information about a particular call (such as `beginTransaction`) which could potentially be replaced with an extension block call.
    *
    * This is a result object for [findBlockInfo].
    */
   private class BlockInfo(
-    /**
-     * The target call we were looking for. For example, for `obtainStyledAttributes` we're looking
-     * for `TypedArray#recycle`.
-     */
-    val targetCall: UCallExpression,
-    /**
-     * If not null, a pointer to the required call. For example, for `beginTransaction` (which has
-     * [targetCall] `endTransaction` we also require the call `setTransactionSuccessful`.
-     */
-    val requiredCall: KtElement?,
-    /**
-     * Whether the calls in the block are chained (for example,
-     * `beginTransaction().setTransactionSuccessful().endTransaction()`, rather than `val t =
-     * beginTransaction(); t.setTransactionSuccessful(); t.endTransaction()`.)
-     */
-    val chained: Boolean,
-    /**
-     * A list of all the references in the newly formed block which are referring to the variable
-     * and need to be replaced with "this" instead. For example, if we have
-     *
-     * ```
-     *  database.beginTransaction()
-     *  create(database)
-     *  database.setTransactionSuccessful()
-     *  database.endTransaction()
-     * ```
-     *
-     * the `create(database)` call needs to be changed to `create(this)` in the replacement:
-     *
-     *  ```
-     *  database.transaction() {
-     *      create(this)
-     *  }
-     *  ```
-     */
-    val thisReferences: List<USimpleNameReferenceExpression>,
-    /**
-     * If this call body is using a scoping function (like also, run, let, with, etc.), that scoping
-     * function is provided here.
-     */
-    val scopingFunction: UCallExpression?,
+      /** The target call we were looking for. For example, for `obtainStyledAttributes` we're looking for `TypedArray#recycle`. */
+      val targetCall: UCallExpression,
+      /**
+       * If not null, a pointer to the required call. For example, for `beginTransaction` (which has [targetCall] `endTransaction` we also
+       * require the call `setTransactionSuccessful`.
+       */
+      val requiredCall: KtElement?,
+      /**
+       * Whether the calls in the block are chained (for example, `beginTransaction().setTransactionSuccessful().endTransaction()`, rather
+       * than `val t = beginTransaction(); t.setTransactionSuccessful(); t.endTransaction()`.)
+       */
+      val chained: Boolean,
+      /**
+       * A list of all the references in the newly formed block which are referring to the variable and need to be replaced with "this"
+       * instead. For example, if we have
+       *
+       * ```
+       *  database.beginTransaction()
+       *  create(database)
+       *  database.setTransactionSuccessful()
+       *  database.endTransaction()
+       * ```
+       *
+       * the `create(database)` call needs to be changed to `create(this)` in the replacement:
+       *
+       *  ```
+       *  database.transaction() {
+       *      create(this)
+       *  }
+       *  ```
+       */
+      val thisReferences: List<USimpleNameReferenceExpression>,
+      /** If this call body is using a scoping function (like also, run, let, with, etc.), that scoping function is provided here. */
+      val scopingFunction: UCallExpression?,
   ) {
     operator fun component1() = targetCall
 
@@ -698,24 +640,20 @@ class UseKtxDetector : Detector(), SourceCodeScanner, XmlScanner {
     operator fun component5() = scopingFunction
   }
 
-  /**
-   * Analyzes a method call to see if it looks like it matches the potential block extension method,
-   * and if so, return a [BlockInfo].
-   */
+  /** Analyzes a method call to see if it looks like it matches the potential block extension method, and if so, return a [BlockInfo]. */
   private fun findBlockInfo(
-    variable: ULocalVariable?,
-    startCall: UCallExpression,
-    startName: String,
-    startClass: String,
-    targetClass: String,
-    allowNesting: Boolean,
-    isRequiredCall: ((PsiMethod) -> Boolean)?,
-    isTarget: (UCallExpression, String?, PsiMethod, ULocalVariable?) -> Boolean,
+      variable: ULocalVariable?,
+      startCall: UCallExpression,
+      startName: String,
+      startClass: String,
+      targetClass: String,
+      allowNesting: Boolean,
+      isRequiredCall: ((PsiMethod) -> Boolean)?,
+      isTarget: (UCallExpression, String?, PsiMethod, ULocalVariable?) -> Boolean,
   ): BlockInfo? {
     val block = startCall.getParentOfType<UBlockExpression>(true) ?: return null
     val receiverIsThis = startClass == targetClass
-    val variablePsi =
-      variable?.javaPsi ?: if (receiverIsThis) startCall.receiver?.tryResolve() else null
+    val variablePsi = variable?.javaPsi ?: if (receiverIsThis) startCall.receiver?.tryResolve() else null
     val variableSourcePsi = variable?.sourcePsi
 
     var start: UCallExpression? = null
@@ -727,193 +665,172 @@ class UseKtxDetector : Detector(), SourceCodeScanner, XmlScanner {
     var letLambda: PsiElement? = null
     val thisReferences = mutableListOf<USimpleNameReferenceExpression>()
     block.accept(
-      object : AbstractUastVisitor() {
-        private fun foundStart() = start != null
+        object : AbstractUastVisitor() {
+          private fun foundStart() = start != null
 
-        private fun foundEnd() = target != null
+          private fun foundEnd() = target != null
 
-        private var variables = mutableListOf<PsiElement>()
+          private var variables = mutableListOf<PsiElement>()
 
-        init {
-          if (variable != null) {
-            variable.sourcePsi?.let { variables.add(it) }
-            variable.javaPsi?.let { variables.add(it) }
+          init {
+            if (variable != null) {
+              variable.sourcePsi?.let { variables.add(it) }
+              variable.javaPsi?.let { variables.add(it) }
+            }
           }
-        }
 
-        override fun visitLocalVariable(node: ULocalVariable): Boolean {
-          // Record any newly declared variables inside the start to end range.
-          // We want to make sure they aren't referenced AFTER the end.
-          if (foundStart() && !foundEnd()) {
-            node.sourcePsi?.let { variables.add(it) }
-            node.javaPsi?.let { variables.add(it) }
+          override fun visitLocalVariable(node: ULocalVariable): Boolean {
+            // Record any newly declared variables inside the start to end range.
+            // We want to make sure they aren't referenced AFTER the end.
+            if (foundStart() && !foundEnd()) {
+              node.sourcePsi?.let { variables.add(it) }
+              node.javaPsi?.let { variables.add(it) }
+            }
+            return super.visitVariable(node)
           }
-          return super.visitVariable(node)
-        }
 
-        override fun visitCallExpression(node: UCallExpression): Boolean {
-          val resolved = node.resolve() ?: return super.visitCallExpression(node)
+          override fun visitCallExpression(node: UCallExpression): Boolean {
+            val resolved = node.resolve() ?: return super.visitCallExpression(node)
 
-          if (start == null && node == startCall) {
-            start = node
+            if (start == null && node == startCall) {
+              start = node
 
-            // See if we have a scoping function call on it
-            // e.g. obtainStyledAttributes(...).run { ...; recycle() }
-            val parent = skipParenthesizedExprUp(node.uastParent)
-            val parentParent = skipParenthesizedExprUp(parent?.uastParent)
-            if (parentParent is UQualifiedReferenceExpression) {
-              if (parentParent.receiver.skipParenthesizedExprDown() === parent) {
-                val selector = parentParent.selector
-                if (selector is UCallExpression && isScopingFunction(selector)) {
-                  // apply, run, let.
-                  scopingFunction = selector
-                  if (selector.methodName == "let") {
-                    // collect `it`-references
-                    letLambda =
-                      (selector.valueArguments.singleOrNull() as? ULambdaExpression)?.sourcePsi
+              // See if we have a scoping function call on it
+              // e.g. obtainStyledAttributes(...).run { ...; recycle() }
+              val parent = skipParenthesizedExprUp(node.uastParent)
+              val parentParent = skipParenthesizedExprUp(parent?.uastParent)
+              if (parentParent is UQualifiedReferenceExpression) {
+                if (parentParent.receiver.skipParenthesizedExprDown() === parent) {
+                  val selector = parentParent.selector
+                  if (selector is UCallExpression && isScopingFunction(selector)) {
+                    // apply, run, let.
+                    scopingFunction = selector
+                    if (selector.methodName == "let") {
+                      // collect `it`-references
+                      letLambda = (selector.valueArguments.singleOrNull() as? ULambdaExpression)?.sourcePsi
+                    }
                   }
                 }
+              } else if (parentParent is UCallExpression && isScopingFunction(parentParent)) {
+                // with
+                scopingFunction = parentParent
               }
-            } else if (parentParent is UCallExpression && isScopingFunction(parentParent)) {
-              // with
-              scopingFunction = parentParent
-            }
-          } else if (
-            start != null &&
-              target == null &&
-              !allowNesting &&
-              resolved.name == startName &&
-              resolved.isInClass(startClass)
-          ) {
-            extractable = false
-            return true
-          } else if (start != null && (target == null || !allowNesting)) {
-            if (
-              isTarget(node, resolved.name, resolved, variable) &&
-                (variable == null ||
-                  node.getParentOfType(
-                    UBlockExpression::class.java,
-                    true,
-                    UIfExpression::class.java,
-                    USwitchExpression::class.java,
-                  ) == variable.getParentOfType<UBlockExpression>())
-            ) {
-              if (target != null && !allowNesting) {
-                extractable = false
-                return true
-              }
-              val parent = skipParenthesizedExprUp(node.uastParent)
-              chained = parent != null && start.isBelow(parent, true)
+            } else if (start != null && target == null && !allowNesting && resolved.name == startName && resolved.isInClass(startClass)) {
+              extractable = false
+              return true
+            } else if (start != null && (target == null || !allowNesting)) {
+              if (
+                  isTarget(node, resolved.name, resolved, variable) &&
+                      (variable == null ||
+                          node.getParentOfType(
+                              UBlockExpression::class.java,
+                              true,
+                              UIfExpression::class.java,
+                              USwitchExpression::class.java,
+                          ) == variable.getParentOfType<UBlockExpression>())
+              ) {
+                if (target != null && !allowNesting) {
+                  extractable = false
+                  return true
+                }
+                val parent = skipParenthesizedExprUp(node.uastParent)
+                chained = parent != null && start.isBelow(parent, true)
 
-              if (!chained && !sameBlockParent(start, node)) {
-                return false
-              }
+                if (!chained && !sameBlockParent(start, node)) {
+                  return false
+                }
 
-              if (!chained && scopingFunction != null) {
-                // Make sure it's the last statement in the block
-                var prev: UElement = node
-                var curr = node.uastParent
-                val lambda =
-                  // Most scoping functions take a single argument but with takes 2
-                  (scopingFunction.valueArguments.lastOrNull() as? ULambdaExpression)?.body
-                while (curr != null && curr != lambda) {
-                  if (curr is UQualifiedReferenceExpression) {
-                    if (
-                      prev !== curr.selector ||
-                        !curr.receiver.skipParenthesizedExprDown().isNameOrThis()
-                    ) {
+                if (!chained && scopingFunction != null) {
+                  // Make sure it's the last statement in the block
+                  var prev: UElement = node
+                  var curr = node.uastParent
+                  val lambda =
+                      // Most scoping functions take a single argument but with takes 2
+                      (scopingFunction.valueArguments.lastOrNull() as? ULambdaExpression)?.body
+                  while (curr != null && curr != lambda) {
+                    if (curr is UQualifiedReferenceExpression) {
+                      if (prev !== curr.selector || !curr.receiver.skipParenthesizedExprDown().isNameOrThis()) {
+                        extractable = false
+                        return false
+                      }
+                    } else if (curr is UParenthesizedExpression || curr is UReturnExpression) {
+                      // OK
+                    } else {
                       extractable = false
                       return false
                     }
-                  } else if (curr is UParenthesizedExpression || curr is UReturnExpression) {
-                    // OK
-                  } else {
+                    prev = curr
+                    curr = curr.uastParent
+                  }
+                  if (curr === lambda && lambda is UBlockExpression && prev !== lambda.expressions.last()) {
+                    // Make sure it's the last call in the block
                     extractable = false
                     return false
                   }
-                  prev = curr
-                  curr = curr.uastParent
                 }
-                if (
-                  curr === lambda &&
-                    lambda is UBlockExpression &&
-                    prev !== lambda.expressions.last()
-                ) {
-                  // Make sure it's the last call in the block
+
+                target = node
+
+                // Make sure we don't try to rewrite the final "variable.recycle()" call
+                // into "this.recycle()" since we'll be deleting this one
+
+                if (parent is UQualifiedReferenceExpression) {
+                  thisReferences.remove(parent.receiver.skipParenthesizedExprDown())
+                }
+              } else if (target == null && requiredCall == null && isRequiredCall != null && isRequiredCall(resolved)) {
+                if (!sameBlockParent(start, node)) {
                   extractable = false
-                  return false
+                }
+
+                var c: UElement? = node.uastParent
+                while (c != null && extractable) {
+                  if (c is UQualifiedReferenceExpression) {
+                    val receiver = c.receiver.skipParenthesizedExprDown()
+                    if (receiver is USimpleNameReferenceExpression) {
+                      thisReferences.remove(receiver)
+                    } else {
+                      extractable = false
+                    }
+                    if (c.selector is UCallExpression && c.selector != node) {
+                      // Make sure we don't have some suffix call on the result that potentially
+                      // has a side effect
+                      extractable = false
+                    }
+                  } else {
+                    break
+                  }
+                  requiredCall = c.sourcePsi as? KtElement
+                  c = skipParenthesizedExprUp(c.uastParent) ?: break
                 }
               }
+            }
+            return super.visitCallExpression(node)
+          }
 
-              target = node
-
-              // Make sure we don't try to rewrite the final "variable.recycle()" call
-              // into "this.recycle()" since we'll be deleting this one
-
-              if (parent is UQualifiedReferenceExpression) {
-                thisReferences.remove(parent.receiver.skipParenthesizedExprDown())
-              }
-            } else if (
-              target == null &&
-                requiredCall == null &&
-                isRequiredCall != null &&
-                isRequiredCall(resolved)
-            ) {
-              if (!sameBlockParent(start, node)) {
+          @Suppress("LintImplPsiEquals")
+          override fun visitSimpleNameReferenceExpression(node: USimpleNameReferenceExpression): Boolean {
+            // Make sure we aren't accessing a new variable OUTSIDE the extraction range
+            if (foundEnd() && extractable) {
+              val resolved = node.resolve()
+              if (variables.contains(resolved) && target != null && !node.isBelow(target, true)) {
                 extractable = false
               }
-
-              var c: UElement? = node.uastParent
-              while (c != null && extractable) {
-                if (c is UQualifiedReferenceExpression) {
-                  val receiver = c.receiver.skipParenthesizedExprDown()
-                  if (receiver is USimpleNameReferenceExpression) {
-                    thisReferences.remove(receiver)
-                  } else {
-                    extractable = false
-                  }
-                  if (c.selector is UCallExpression && c.selector != node) {
-                    // Make sure we don't have some suffix call on the result that potentially
-                    // has a side effect
-                    extractable = false
-                  }
-                } else {
-                  break
-                }
-                requiredCall = c.sourcePsi as? KtElement
-                c = skipParenthesizedExprUp(c.uastParent) ?: break
-              }
-            }
-          }
-          return super.visitCallExpression(node)
-        }
-
-        @Suppress("LintImplPsiEquals")
-        override fun visitSimpleNameReferenceExpression(
-          node: USimpleNameReferenceExpression
-        ): Boolean {
-          // Make sure we aren't accessing a new variable OUTSIDE the extraction range
-          if (foundEnd() && extractable) {
-            val resolved = node.resolve()
-            if (variables.contains(resolved) && target != null && !node.isBelow(target, true)) {
-              extractable = false
-            }
-          } else if (foundStart() && !foundEnd()) {
-            val resolved = node.resolve()
-            if (letLambda != null && resolved is PsiParameter && resolved.parent == letLambda) {
-              thisReferences.add(node)
-            }
-            if (variablePsi != null) {
+            } else if (foundStart() && !foundEnd()) {
               val resolved = node.resolve()
-              if (resolved != null && (resolved == variableSourcePsi || resolved == variablePsi)) {
+              if (letLambda != null && resolved is PsiParameter && resolved.parent == letLambda) {
                 thisReferences.add(node)
               }
+              if (variablePsi != null) {
+                val resolved = node.resolve()
+                if (resolved != null && (resolved == variableSourcePsi || resolved == variablePsi)) {
+                  thisReferences.add(node)
+                }
+              }
             }
-          }
 
-          return super.visitSimpleNameReferenceExpression(node)
+            return super.visitSimpleNameReferenceExpression(node)
+          }
         }
-      }
     )
 
     return if (extractable && target != null && !(isRequiredCall != null && requiredCall == null)) {
@@ -931,12 +848,7 @@ class UseKtxDetector : Detector(), SourceCodeScanner, XmlScanner {
   private fun UExpression.parentBlock(): UExpression? {
     var curr = uastParent
     while (curr != null) {
-      if (
-        curr is UBlockExpression ||
-          curr is UIfExpression ||
-          curr is USwitchExpression ||
-          curr is ULoopExpression
-      ) {
+      if (curr is UBlockExpression || curr is UIfExpression || curr is USwitchExpression || curr is ULoopExpression) {
         // TODO: Use analysis API here to look at returns self
         val parent = curr.uastParent
         if (parent is ULambdaExpression) {
@@ -954,9 +866,8 @@ class UseKtxDetector : Detector(), SourceCodeScanner, XmlScanner {
   }
 
   /**
-   * Given an opening and closing call, returns whether they are in the same logical block. For
-   * example, for `beginTransaction` and `endTransaction` below, the following two examples are both
-   * at the same level:
+   * Given an opening and closing call, returns whether they are in the same logical block. For example, for `beginTransaction` and
+   * `endTransaction` below, the following two examples are both at the same level:
    *
    *     database.beginTransaction
    *     ...
@@ -985,64 +896,57 @@ class UseKtxDetector : Detector(), SourceCodeScanner, XmlScanner {
   }
 
   /**
-   * Analyzes code for calls (and property references) where that call can be replaced with an
-   * extension function or extension property instead.
+   * Analyzes code for calls (and property references) where that call can be replaced with an extension function or extension property
+   * instead.
    *
    * It handles various scenarios:
-   * * A static utility method is replaced with an extension instance method, e.g.
-   *   rewriting`Uri.parse(url)` into `url.toUri()`
+   * * A static utility method is replaced with an extension instance method, e.g. rewriting`Uri.parse(url)` into `url.toUri()`
    * * Reordering arguments
-   * * Dropping arguments that are already default, e.g. replacing `Bitmap.createBitmap(width,
-   *   height, Bitmap.Config.ARGB_8888)` with `createBitmap(width, height)` (but only when the
-   *   bitmap type argument is ARGB_8888, the default)
-   * * Combining the result of a call and a comparison into a single method call, such as
-   *   `array.indexOfValue(value) >= 0` into `array.containsValue(value)`
+   * * Dropping arguments that are already default, e.g. replacing `Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)` with
+   *   `createBitmap(width, height)` (but only when the bitmap type argument is ARGB_8888, the default)
+   * * Combining the result of a call and a comparison into a single method call, such as `array.indexOfValue(value) >= 0` into
+   *   `array.containsValue(value)`
    *
-   * In the following, [node] is the function call to [method], named [methodName], with descriptor
-   * [descriptor], in [containingClass]. The suggested replacement is extension method named
-   * [extensionMethod], in [extensionPackage], on receiver class [extensionClass], defined in JVM
-   * class [extensionJvmClass].
+   * In the following, [node] is the function call to [method], named [methodName], with descriptor [descriptor], in [containingClass]. The
+   * suggested replacement is extension method named [extensionMethod], in [extensionPackage], on receiver class [extensionClass], defined
+   * in JVM class [extensionJvmClass].
    *
-   * If this method call is then compared (==, !=, >, >=, etc) with a constant, the comparison
-   * operator is passed in as [operator], and the constant as [rhs]. The constant is in Java source
-   * format, so 0 would be the string "0".
+   * If this method call is then compared (==, !=, >, >=, etc) with a constant, the comparison operator is passed in as [operator], and the
+   * constant as [rhs]. The constant is in Java source format, so 0 would be the string "0".
    *
-   * If the signatures match exactly, there is no argument mapping, but otherwise, the
-   * [argumentMapping] string has characters defining how each parameter in the replaced method
-   * should map to the parameters in the extension mapping. The meanings of the digits are:
+   * If the signatures match exactly, there is no argument mapping, but otherwise, the [argumentMapping] string has characters defining how
+   * each parameter in the replaced method should map to the parameters in the extension mapping. The meanings of the digits are:
    * * `R` - this argument should be the receiver
    * * '0'-'9' - this argument should be mapped to the numbered parameter.
    *
-   * For example, the string "R02" says that the first parameter should now be the *receiver* for
-   * the extension, the second parameter should be the first parameter in the extension call, the
-   * third parameter should also be the third parameter in the replacement.
+   * For example, the string "R02" says that the first parameter should now be the *receiver* for the extension, the second parameter should
+   * be the first parameter in the extension call, the third parameter should also be the third parameter in the replacement.
    *
-   * The [defaultArguments] correspond to the parameter default values of the extension function. An
-   * empty string means that there is no default. This method will drop arguments to the call if
-   * they match the existing default (and there aren't any non-default arguments remaining).
+   * The [defaultArguments] correspond to the parameter default values of the extension function. An empty string means that there is no
+   * default. This method will drop arguments to the call if they match the existing default (and there aren't any non-default arguments
+   * remaining).
    *
-   * Finally, the [isProperty] method indicates whether the extension is a property rather than a
-   * function.
+   * Finally, the [isProperty] method indicates whether the extension is a property rather than a function.
    *
    * This method should return `true` if there was a match; otherwise `false`.
    */
   @Suppress("LintImplPsiEquals")
   private fun checkCall(
-    context: JavaContext,
-    node: UCallExpression,
-    method: PsiMethod,
-    methodName: String,
-    descriptor: String,
-    containingClass: String,
-    extensionMethod: String,
-    extensionClass: String,
-    extensionJvmClass: String,
-    extensionPackage: String,
-    operator: String?,
-    rhs: String,
-    argumentMapping: String?,
-    isProperty: Boolean,
-    defaultArguments: List<String>?,
+      context: JavaContext,
+      node: UCallExpression,
+      method: PsiMethod,
+      methodName: String,
+      descriptor: String,
+      containingClass: String,
+      extensionMethod: String,
+      extensionClass: String,
+      extensionJvmClass: String,
+      extensionPackage: String,
+      operator: String?,
+      rhs: String,
+      argumentMapping: String?,
+      isProperty: Boolean,
+      defaultArguments: List<String>?,
   ): Boolean {
     if (containingClass.isNotEmpty() && !method.isInClass(containingClass)) return false
     if (descriptor.isNotEmpty()) {
@@ -1068,28 +972,28 @@ class UseKtxDetector : Detector(), SourceCodeScanner, XmlScanner {
       replacedElement = binary
       val left = binary.left?.skipParenthesizedExprDown() ?: return false
       call =
-        left as? KtCallExpression
-          ?: if (left is KtDotQualifiedExpression) {
-            if (left.selectorExpression is KtCallExpression) {
-              left.selectorExpression as KtCallExpression
-            } else if (left.selectorExpression is KtNameReferenceExpression) {
-              null
-            } else {
-              return false
-            }
-          } else if (left is KtNameReferenceExpression) {
-            null
-          } else {
-            return false
-          }
+          left as? KtCallExpression
+              ?: if (left is KtDotQualifiedExpression) {
+                if (left.selectorExpression is KtCallExpression) {
+                  left.selectorExpression as KtCallExpression
+                } else if (left.selectorExpression is KtNameReferenceExpression) {
+                  null
+                } else {
+                  return false
+                }
+              } else if (left is KtNameReferenceExpression) {
+                null
+              } else {
+                return false
+              }
     } else {
       call = sourcePsi as? KtCallExpression ?: return false
 
       val parent = sourcePsi.parent
       replacedElement =
-        if (parent is KtDotQualifiedExpression) {
-          if (parent.selectorExpression == call) parent else call
-        } else call
+          if (parent is KtDotQualifiedExpression) {
+            if (parent.selectorExpression == call) parent else call
+          } else call
     }
 
     // Map call arguments over to extension arguments
@@ -1098,8 +1002,7 @@ class UseKtxDetector : Detector(), SourceCodeScanner, XmlScanner {
     val newArgs: Array<KtExpression?>
     if (call != null) {
       arguments = getArgumentsInParameterOrder(call) ?: return false
-      val argumentInfo =
-        computeArgumentMapping(call, arguments, defaultArguments, argumentMapping) ?: return false
+      val argumentInfo = computeArgumentMapping(call, arguments, defaultArguments, argumentMapping) ?: return false
       newArgs = argumentInfo.extensionArgs
       receiver = argumentInfo.receiver
     } else {
@@ -1117,44 +1020,44 @@ class UseKtxDetector : Detector(), SourceCodeScanner, XmlScanner {
     // If we require the library to be present, make sure we can access this extension function
     if (REQUIRE_LIBRARY.getValue(context)) {
       val containingClass =
-        if (extensionJvmClass.contains('.')) extensionJvmClass
-        else {
-          "$extensionPackage.$extensionJvmClass"
-        }
+          if (extensionJvmClass.contains('.')) extensionJvmClass
+          else {
+            "$extensionPackage.$extensionJvmClass"
+          }
       if (context.evaluator.findClass(containingClass) == null) {
         return false
       }
     }
 
     val replacement =
-      generateCallReplacement(
-        extensionPackage,
-        extensionClass,
-        extensionMethod,
-        descriptor,
-        receiver,
-        sourcePsi.parent,
-        call,
-        isProperty,
-        defaultArguments,
-        context,
-        argumentMapping,
-        arguments,
-        newArgs,
-      )
+        generateCallReplacement(
+            extensionPackage,
+            extensionClass,
+            extensionMethod,
+            descriptor,
+            receiver,
+            sourcePsi.parent,
+            call,
+            isProperty,
+            defaultArguments,
+            context,
+            argumentMapping,
+            arguments,
+            newArgs,
+        )
 
     val location = context.getLocation(replacedElement)
     val fix =
-      fix()
-        .name(createFixMessage(extensionClass, extensionMethod, isProperty), true)
-        .replace()
-        .range(location)
-        .text(replacedElement.text)
-        .with(replacement)
-        .imports(*(if (extensionPackage.isNotBlank()) arrayOf(import) else emptyArray()))
-        .reformat(true)
-        .autoFix()
-        .build()
+        fix()
+            .name(createFixMessage(extensionClass, extensionMethod, isProperty), true)
+            .replace()
+            .range(location)
+            .text(replacedElement.text)
+            .with(replacement)
+            .imports(*(if (extensionPackage.isNotBlank()) arrayOf(import) else emptyArray()))
+            .reformat(true)
+            .autoFix()
+            .build()
 
     val message = createMessage(extensionClass, extensionMethod, isProperty, extensionPackage)
     context.report(USE_KTX, node, location, message, fix)
@@ -1162,14 +1065,14 @@ class UseKtxDetector : Detector(), SourceCodeScanner, XmlScanner {
   }
 
   /**
-   * Checks whether the given [symbol] (with fully qualified name [import]) has a conflict in this
-   * source file. This is the case if there is a method of the same name in the file, or if there is
-   * an import of a symbol with the same name (other than the fully qualified name itself.)
+   * Checks whether the given [symbol] (with fully qualified name [import]) has a conflict in this source file. This is the case if there is
+   * a method of the same name in the file, or if there is an import of a symbol with the same name (other than the fully qualified name
+   * itself.)
    */
   private fun JavaContext.definesConflictingSymbol(
-    symbol: String,
-    import: String,
-    isProperty: Boolean,
+      symbol: String,
+      import: String,
+      isProperty: Boolean,
   ): Boolean {
     val ktFile = psiFile as? KtFile ?: return false
     // Already imported a conflicting name?
@@ -1191,29 +1094,29 @@ class UseKtxDetector : Detector(), SourceCodeScanner, XmlScanner {
     // the current context, such as methods in sibling nested classes etc.)
     var found = false
     ktFile.accept(
-      object : KtTreeVisitorVoid() {
-        override fun visitNamedFunction(function: KtNamedFunction) {
-          // We *could* restrict the conflict check to only
-          // look for conflicting functions for imported extension
-          // functions, and for conflicting properties for imported
-          // extension functions, but this can still lead to some
-          // confusion for the user even if it doesn't confuse the
-          // compiler, so we don't skip the below check if !isProperty
-          // (and we don't have a check for "isProperty" in visitProperty
-          // below.)
-          if (function.name == symbol && !function.isLocal) {
-            found = true
+        object : KtTreeVisitorVoid() {
+          override fun visitNamedFunction(function: KtNamedFunction) {
+            // We *could* restrict the conflict check to only
+            // look for conflicting functions for imported extension
+            // functions, and for conflicting properties for imported
+            // extension functions, but this can still lead to some
+            // confusion for the user even if it doesn't confuse the
+            // compiler, so we don't skip the below check if !isProperty
+            // (and we don't have a check for "isProperty" in visitProperty
+            // below.)
+            if (function.name == symbol && !function.isLocal) {
+              found = true
+            }
+            super.visitNamedFunction(function)
           }
-          super.visitNamedFunction(function)
-        }
 
-        override fun visitProperty(property: KtProperty) {
-          if (property.name == symbol && !property.isLocal) {
-            found = true
+          override fun visitProperty(property: KtProperty) {
+            if (property.name == symbol && !property.isLocal) {
+              found = true
+            }
+            super.visitProperty(property)
           }
-          super.visitProperty(property)
         }
-      }
     )
 
     return found
@@ -1221,44 +1124,38 @@ class UseKtxDetector : Detector(), SourceCodeScanner, XmlScanner {
 
   /** Result info from [computeArgumentMapping] */
   private class ArgumentMapping(
-    /** If non-null, the given argument should become the new receiver instead */
-    val receiver: KtExpression?,
-    /**
-     * The argument expressions from the original call rearranged to map to the correct parameter
-     * order for the extension call (and some arguments possibly dropped)
-     */
-    val extensionArgs: Array<KtExpression?>,
+      /** If non-null, the given argument should become the new receiver instead */
+      val receiver: KtExpression?,
+      /**
+       * The argument expressions from the original call rearranged to map to the correct parameter order for the extension call (and some
+       * arguments possibly dropped)
+       */
+      val extensionArgs: Array<KtExpression?>,
   )
 
   /**
-   * Compute mapping from the current method [call] [arguments], to the new extension functions
-   * arguments (and receiver).
+   * Compute mapping from the current method [call] [arguments], to the new extension functions arguments (and receiver).
    *
-   * We need to rewrite the arguments to this call according to the argument map. The argument
-   * mapping is a string corresponding to the positions of the arguments in the call. For example,
-   * consider
+   * We need to rewrite the arguments to this call according to the argument map. The argument mapping is a string corresponding to the
+   * positions of the arguments in the call. For example, consider
    *
-   * `Array.binarySearch(element: T, comparator: Comparator<in T>, fromIndex: Int, toIndex: Int):
-   * Int = Arrays.binarySearch(this, fromIndex, toIndex, element, comparator)`
+   * `Array.binarySearch(element: T, comparator: Comparator<in T>, fromIndex: Int, toIndex: Int): Int = Arrays.binarySearch(this, fromIndex,
+   * toIndex, element, comparator)`
    *
-   * For this declaration, the mapping string is "R2301", corresponding to the 5 arguments to a call
-   * to Arrays.binarySearch.
+   * For this declaration, the mapping string is "R2301", corresponding to the 5 arguments to a call to Arrays.binarySearch.
    *
-   * For example, for this call: Arrays.binarySearch(array, 0, length, key, comparator) the mapping
-   * R2301 works out like this:
-   * * R: the first argument in the current call should be used as the receiver for the extension
-   *   call
-   * * 2: the second argument in the current call should be the third (because we count starting
-   *   with 0) argument in the extension call
+   * For example, for this call: Arrays.binarySearch(array, 0, length, key, comparator) the mapping R2301 works out like this:
+   * * R: the first argument in the current call should be used as the receiver for the extension call
+   * * 2: the second argument in the current call should be the third (because we count starting with 0) argument in the extension call
    * * 3: the third argument in the current call should be the fourth argument in the extension call
    * * 0: the fourth argument in the current call should be the first argument in the extension call
    * * 1: the fifth argument in the current call should be the second argument in the extension call
    */
   private fun computeArgumentMapping(
-    call: KtCallExpression,
-    arguments: List<KtExpression?>,
-    defaultArguments: List<String>?,
-    argumentMapping: String?,
+      call: KtCallExpression,
+      arguments: List<KtExpression?>,
+      defaultArguments: List<String>?,
+      argumentMapping: String?,
   ): ArgumentMapping? {
     if (arguments.size > MAX_ARGUMENTS) {
       return null
@@ -1285,11 +1182,7 @@ class UseKtxDetector : Detector(), SourceCodeScanner, XmlScanner {
           } else {
             if (target.isDigit()) {
               val position = target - '0'
-              if (
-                defaultArguments != null &&
-                  position < defaultArguments.size &&
-                  defaultArguments[position].isNotEmpty()
-              ) {
+              if (defaultArguments != null && position < defaultArguments.size && defaultArguments[position].isNotEmpty()) {
                 // We didn't supply an argument for this parameter, but that's fine,
                 // because it maps to an extension parameter that has a default.
                 continue
@@ -1319,19 +1212,19 @@ class UseKtxDetector : Detector(), SourceCodeScanner, XmlScanner {
 
   @Suppress("LintImplPsiEquals")
   private fun generateCallReplacement(
-    extensionPackage: String,
-    extensionClass: String,
-    extensionMethod: String,
-    descriptor: String,
-    receiver: KtExpression?,
-    parent: PsiElement?,
-    call: KtCallExpression?,
-    isProperty: Boolean,
-    defaultArguments: List<String>?,
-    context: JavaContext,
-    argumentMapping: String?,
-    args: List<KtExpression?>,
-    extensionArguments: Array<KtExpression?>,
+      extensionPackage: String,
+      extensionClass: String,
+      extensionMethod: String,
+      descriptor: String,
+      receiver: KtExpression?,
+      parent: PsiElement?,
+      call: KtCallExpression?,
+      isProperty: Boolean,
+      defaultArguments: List<String>?,
+      context: JavaContext,
+      argumentMapping: String?,
+      args: List<KtExpression?>,
+      extensionArguments: Array<KtExpression?>,
   ): String {
     val useArraySyntax = isArrayGetExtension(extensionMethod, descriptor)
     val isArraySet = useArraySyntax && extensionMethod == "set"
@@ -1384,11 +1277,7 @@ class UseKtxDetector : Detector(), SourceCodeScanner, XmlScanner {
           // we'd do a full comparison here (e.g. comparing using fully
           // qualified names, resolving type aliases, etc.)
           val argumentText = argument.text
-          if (
-            defaultArgument == argumentText ||
-              defaultArgument.endsWith(argumentText) ||
-              argumentText.endsWith(".$defaultArgument")
-          ) {
+          if (defaultArgument == argumentText || defaultArgument.endsWith(argumentText) || argumentText.endsWith(".$defaultArgument")) {
             extensionArguments[i] = null
           } else {
             break
@@ -1462,9 +1351,9 @@ class UseKtxDetector : Detector(), SourceCodeScanner, XmlScanner {
   }
 
   private fun getArgumentsInParameterOrder(
-    call: KtCallExpression,
-    argumentToParameterIndices: IntArray,
-    parameterToArgumentIndices: IntArray,
+      call: KtCallExpression,
+      argumentToParameterIndices: IntArray,
+      parameterToArgumentIndices: IntArray,
   ): List<KtExpression?> {
     val arguments = call.valueArguments
     val result = ArrayList<KtExpression?>(parameterToArgumentIndices.size)
@@ -1490,13 +1379,11 @@ class UseKtxDetector : Detector(), SourceCodeScanner, XmlScanner {
   }
 
   /**
-   * Given an array where each element in order represents the supplied arguments to a call and the
-   * array value is its corresponding parameter index, returns the corresponding array of elements
-   * in parameter order, where the array value corresponds to the index in the input array of the
-   * corresponding argument. A value of -1 means that no value was supplied to the corresponding
-   * parameter. If the value is less than -1, The last value may be negative; this means that there
-   * were multiple values supplied here as a varargs value (We don't just use the negative index, we
-   * use `-(x+2)`, since we're reserving -1 for "not supplied").
+   * Given an array where each element in order represents the supplied arguments to a call and the array value is its corresponding
+   * parameter index, returns the corresponding array of elements in parameter order, where the array value corresponds to the index in the
+   * input array of the corresponding argument. A value of -1 means that no value was supplied to the corresponding parameter. If the value
+   * is less than -1, The last value may be negative; this means that there were multiple values supplied here as a varargs value (We don't
+   * just use the negative index, we use `-(x+2)`, since we're reserving -1 for "not supplied").
    */
   private fun IntArray.reverse(parameterCount: Int): IntArray {
     val result = IntArray(parameterCount) { -1 }
@@ -1524,8 +1411,7 @@ class UseKtxDetector : Detector(), SourceCodeScanner, XmlScanner {
         val parameterCount = resolvedCall.symbol.valueParameters.size
 
         val parameterToArgumentIndices = argumentToParameterIndices.reverse(parameterCount)
-        val arguments =
-          getArgumentsInParameterOrder(call, argumentToParameterIndices, parameterToArgumentIndices)
+        val arguments = getArgumentsInParameterOrder(call, argumentToParameterIndices, parameterToArgumentIndices)
         return arguments
       }
     }
@@ -1534,10 +1420,10 @@ class UseKtxDetector : Detector(), SourceCodeScanner, XmlScanner {
   }
 
   private fun createMessage(
-    extensionClass: String,
-    extensionMethod: String,
-    property: Boolean,
-    import: String,
+      extensionClass: String,
+      extensionMethod: String,
+      property: Boolean,
+      import: String,
   ): String {
     val isStdlib = import.isBlank() || import.startsWith("kotlin.")
     val library = if (isStdlib) "stdlib" else "KTX"
@@ -1550,50 +1436,49 @@ class UseKtxDetector : Detector(), SourceCodeScanner, XmlScanner {
   }
 
   private fun createFixMessage(
-    extensionClass: String,
-    extensionMethod: String,
-    property: Boolean,
+      extensionClass: String,
+      extensionMethod: String,
+      property: Boolean,
   ): String {
-    val type =
-      "${if (extensionClass.isNotEmpty()) "extension " else ""}${if (property) "property" else "function"}"
+    val type = "${if (extensionClass.isNotEmpty()) "extension " else ""}${if (property) "property" else "function"}"
     return "Replace with the $extensionMethod $type"
   }
 
   private fun checkMethodExtensions(
-    context: JavaContext,
-    node: UCallExpression,
-    method: PsiMethod,
-    name: String,
+      context: JavaContext,
+      node: UCallExpression,
+      method: PsiMethod,
+      name: String,
   ) {
     fun check(
-      containingClass: String,
-      descriptor: String,
-      extensionMethod: String,
-      extensionPackage: String,
-      extensionClass: String,
-      extensionJvmClass: String,
-      op: String? = null,
-      rhs: String = "",
-      argmap: String? = null,
-      property: Boolean = false,
-      defaults: List<String>? = null,
+        containingClass: String,
+        descriptor: String,
+        extensionMethod: String,
+        extensionPackage: String,
+        extensionClass: String,
+        extensionJvmClass: String,
+        op: String? = null,
+        rhs: String = "",
+        argmap: String? = null,
+        property: Boolean = false,
+        defaults: List<String>? = null,
     ): Boolean {
       return checkCall(
-        context,
-        node,
-        method,
-        name,
-        descriptor,
-        containingClass,
-        extensionMethod,
-        extensionClass,
-        extensionJvmClass,
-        extensionPackage,
-        op,
-        rhs,
-        argmap,
-        property,
-        defaults,
+          context,
+          node,
+          method,
+          name,
+          descriptor,
+          containingClass,
+          extensionMethod,
+          extensionClass,
+          extensionJvmClass,
+          extensionPackage,
+          op,
+          rhs,
+          argmap,
+          property,
+          defaults,
       )
     }
 
@@ -1604,13 +1489,13 @@ class UseKtxDetector : Detector(), SourceCodeScanner, XmlScanner {
       "parse" -> {
         /* fun String.toUri(): Uri = Uri.parse(this) */
         check(
-          "android.net.Uri",
-          "(Ljava.lang.String;)",
-          "toUri",
-          "androidx.core.net",
-          "String",
-          "UriKt",
-          argmap = "R",
+            "android.net.Uri",
+            "(Ljava.lang.String;)",
+            "toUri",
+            "androidx.core.net",
+            "String",
+            "UriKt",
+            argmap = "R",
         )
       }
 
@@ -1619,76 +1504,76 @@ class UseKtxDetector : Detector(), SourceCodeScanner, XmlScanner {
       "getTrimmedLength" -> {
         /* fun CharSequence.trimmedLength(): Int = TextUtils.getTrimmedLength(this) */
         check(
-          "android.text.TextUtils",
-          "(Ljava.lang.CharSequence;)",
-          "trimmedLength",
-          "androidx.core.text",
-          "CharSequence",
-          "CharSequenceKt",
-          argmap = "R",
+            "android.text.TextUtils",
+            "(Ljava.lang.CharSequence;)",
+            "trimmedLength",
+            "androidx.core.text",
+            "CharSequence",
+            "CharSequenceKt",
+            argmap = "R",
         )
       }
       "isDigitsOnly" -> {
         /* fun CharSequence.isDigitsOnly(): Boolean = TextUtils.isDigitsOnly(this) */
         check(
-          "android.text.TextUtils",
-          "(Ljava.lang.CharSequence;)",
-          "isDigitsOnly",
-          "androidx.core.text",
-          "CharSequence",
-          "CharSequenceKt",
-          argmap = "R",
+            "android.text.TextUtils",
+            "(Ljava.lang.CharSequence;)",
+            "isDigitsOnly",
+            "androidx.core.text",
+            "CharSequence",
+            "CharSequenceKt",
+            argmap = "R",
         )
       }
       "fromHtml" -> {
         /* fun String.parseAsHtml(flags: Int = FROM_HTML_MODE_LEGACY, imageGetter: ImageGetter? = null, tagHandler: TagHandler? = null): Spanned = HtmlCompat.fromHtml(this, flags, imageGetter, tagHandler) */
         check(
-          "androidx.core.text.HtmlCompat",
-          "(Ljava.lang.String;ILandroid.text.Html.ImageGetter;Landroid.text.Html.TagHandler;)",
-          "parseAsHtml",
-          "androidx.core.text",
-          "String",
-          "HtmlKt",
-          argmap = "R012",
-          defaults = listOf("androidx.core.text.HtmlCompat.FROM_HTML_MODE_LEGACY", "null", "null"),
+            "androidx.core.text.HtmlCompat",
+            "(Ljava.lang.String;ILandroid.text.Html.ImageGetter;Landroid.text.Html.TagHandler;)",
+            "parseAsHtml",
+            "androidx.core.text",
+            "String",
+            "HtmlKt",
+            argmap = "R012",
+            defaults = listOf("androidx.core.text.HtmlCompat.FROM_HTML_MODE_LEGACY", "null", "null"),
         )
       }
       "toHtml" -> {
         /* fun Spanned.toHtml(option: Int = TO_HTML_PARAGRAPH_LINES_CONSECUTIVE): String = HtmlCompat.toHtml(this, option) */
         check(
-          "androidx.core.text.HtmlCompat",
-          "(Landroid.text.Spanned;I)",
-          "toHtml",
-          "androidx.core.text",
-          "Spanned",
-          "HtmlKt",
-          argmap = "R0",
-          defaults = listOf("androidx.core.text.HtmlCompat.TO_HTML_PARAGRAPH_LINES_CONSECUTIVE"),
+            "androidx.core.text.HtmlCompat",
+            "(Landroid.text.Spanned;I)",
+            "toHtml",
+            "androidx.core.text",
+            "Spanned",
+            "HtmlKt",
+            argmap = "R0",
+            defaults = listOf("androidx.core.text.HtmlCompat.TO_HTML_PARAGRAPH_LINES_CONSECUTIVE"),
         )
       }
       "htmlEncode" -> {
         /* fun String.htmlEncode(): String = TextUtils.htmlEncode(this) */
         check(
-          "android.text.TextUtils",
-          "(Ljava.lang.String;)",
-          "htmlEncode",
-          "androidx.core.text",
-          "String",
-          "StringKt",
-          argmap = "R",
+            "android.text.TextUtils",
+            "(Ljava.lang.String;)",
+            "htmlEncode",
+            "androidx.core.text",
+            "String",
+            "StringKt",
+            argmap = "R",
         )
       }
       "getLayoutDirectionFromLocale" -> {
         /* val Locale.layoutDirection: Int get() = TextUtils.getLayoutDirectionFromLocale(this) */
         check(
-          "android.text.TextUtils",
-          "(Ljava.util.Locale;)",
-          "layoutDirection",
-          "androidx.core.text",
-          "Locale",
-          "LocaleKt",
-          argmap = "R",
-          property = true,
+            "android.text.TextUtils",
+            "(Ljava.util.Locale;)",
+            "layoutDirection",
+            "androidx.core.text",
+            "Locale",
+            "LocaleKt",
+            argmap = "R",
+            property = true,
         )
       }
 
@@ -1697,61 +1582,61 @@ class UseKtxDetector : Detector(), SourceCodeScanner, XmlScanner {
       "createBitmap" -> {
         /* fun createBitmap(width: Int, height: Int, config: Bitmap.Config = Bitmap.Config.ARGB_8888): Bitmap { return Bitmap.createBitmap(width, height, config) } */
         check(
-          "android.graphics.Bitmap",
-          "(IILandroid.graphics.Bitmap.Config;)",
-          "createBitmap",
-          "androidx.core.graphics",
-          "",
-          "BitmapKt",
-          argmap = "012",
-          defaults = listOf("", "", "android.graphics.Bitmap.Config.ARGB_8888"),
+            "android.graphics.Bitmap",
+            "(IILandroid.graphics.Bitmap.Config;)",
+            "createBitmap",
+            "androidx.core.graphics",
+            "",
+            "BitmapKt",
+            argmap = "012",
+            defaults = listOf("", "", "android.graphics.Bitmap.Config.ARGB_8888"),
         )
         /* fun createBitmap(width: Int, height: Int, config: Bitmap.Config = Bitmap.Config.ARGB_8888, hasAlpha: Boolean = true, colorSpace: ColorSpace = ColorSpace.get(ColorSpace.Named.SRGB)): Bitmap { return Bitmap.createBitmap(width, height, config, hasAlpha, colorSpace) } */
         check(
-          "android.graphics.Bitmap",
-          "(IILandroid.graphics.Bitmap.Config;ZLandroid.graphics.ColorSpace;)",
-          "createBitmap",
-          "androidx.core.graphics",
-          "",
-          "BitmapKt",
-          argmap = "01234",
+            "android.graphics.Bitmap",
+            "(IILandroid.graphics.Bitmap.Config;ZLandroid.graphics.ColorSpace;)",
+            "createBitmap",
+            "androidx.core.graphics",
+            "",
+            "BitmapKt",
+            argmap = "01234",
         )
       }
       "createScaledBitmap" -> {
         /* fun Bitmap.scale(width: Int, height: Int, filter: Boolean = true): Bitmap { return Bitmap.createScaledBitmap(this, width, height, filter) } */
         check(
-          "android.graphics.Bitmap",
-          "(Landroid.graphics.Bitmap;IIZ)",
-          "scale",
-          "androidx.core.graphics",
-          "Bitmap",
-          "BitmapKt",
-          argmap = "R012",
-          defaults = listOf("", "", "true"),
+            "android.graphics.Bitmap",
+            "(Landroid.graphics.Bitmap;IIZ)",
+            "scale",
+            "androidx.core.graphics",
+            "Bitmap",
+            "BitmapKt",
+            argmap = "R012",
+            defaults = listOf("", "", "true"),
         )
       }
       "BitmapDrawable" -> {
         /* fun Bitmap.toDrawable(resources: Resources): BitmapDrawable = BitmapDrawable(resources, this) */
         check(
-          "android.graphics.drawable.BitmapDrawable",
-          "(Landroid.content.res.Resources;Landroid.graphics.Bitmap;)",
-          "toDrawable",
-          "androidx.core.graphics.drawable",
-          "Bitmap",
-          "BitmapDrawableKt",
-          argmap = "0R",
+            "android.graphics.drawable.BitmapDrawable",
+            "(Landroid.content.res.Resources;Landroid.graphics.Bitmap;)",
+            "toDrawable",
+            "androidx.core.graphics.drawable",
+            "Bitmap",
+            "BitmapDrawableKt",
+            argmap = "0R",
         )
       }
       "ColorDrawable" -> {
         /* fun Int.toDrawable(): ColorDrawable = ColorDrawable(this) */
         check(
-          "android.graphics.drawable.ColorDrawable",
-          "(I)",
-          "toDrawable",
-          "androidx.core.graphics.drawable",
-          "Int",
-          "ColorDrawableKt",
-          argmap = "R",
+            "android.graphics.drawable.ColorDrawable",
+            "(I)",
+            "toDrawable",
+            "androidx.core.graphics.drawable",
+            "Int",
+            "ColorDrawableKt",
+            argmap = "R",
         )
       }
 
@@ -1760,77 +1645,77 @@ class UseKtxDetector : Detector(), SourceCodeScanner, XmlScanner {
       "red" -> {
         /* val Long.red: Float get() = Color.red(this) */
         check(
-          "android.graphics.Color",
-          "(J)",
-          "red",
-          "androidx.core.graphics",
-          "Long",
-          "ColorKt",
-          argmap = "R",
-          property = true,
+            "android.graphics.Color",
+            "(J)",
+            "red",
+            "androidx.core.graphics",
+            "Long",
+            "ColorKt",
+            argmap = "R",
+            property = true,
         )
       }
       "green" -> {
         /* val Long.green: Float get() = Color.green(this) */
         check(
-          "android.graphics.Color",
-          "(J)",
-          "green",
-          "androidx.core.graphics",
-          "Long",
-          "ColorKt",
-          argmap = "R",
-          property = true,
+            "android.graphics.Color",
+            "(J)",
+            "green",
+            "androidx.core.graphics",
+            "Long",
+            "ColorKt",
+            argmap = "R",
+            property = true,
         )
       }
       "blue" -> {
         /* val Long.blue: Float get() = Color.blue(this) */
         check(
-          "android.graphics.Color",
-          "(J)",
-          "blue",
-          "androidx.core.graphics",
-          "Long",
-          "ColorKt",
-          argmap = "R",
-          property = true,
+            "android.graphics.Color",
+            "(J)",
+            "blue",
+            "androidx.core.graphics",
+            "Long",
+            "ColorKt",
+            argmap = "R",
+            property = true,
         )
       }
       "alpha" -> {
         /* val Long.alpha: Float get() = Color.alpha(this) */
         check(
-          "android.graphics.Color",
-          "(J)",
-          "alpha",
-          "androidx.core.graphics",
-          "Long",
-          "ColorKt",
-          argmap = "R",
-          property = true,
+            "android.graphics.Color",
+            "(J)",
+            "alpha",
+            "androidx.core.graphics",
+            "Long",
+            "ColorKt",
+            argmap = "R",
+            property = true,
         )
       }
       "parseColor" -> {
         /* fun String.toColorInt(): Int = Color.parseColor(this) */
         check(
-          "android.graphics.Color",
-          "(Ljava.lang.String;)",
-          "toColorInt",
-          "androidx.core.graphics",
-          "String",
-          "ColorKt",
-          argmap = "R",
+            "android.graphics.Color",
+            "(Ljava.lang.String;)",
+            "toColorInt",
+            "androidx.core.graphics",
+            "String",
+            "ColorKt",
+            argmap = "R",
         )
       }
       "toArgb" -> {
         /* fun Long.toColorInt(): Int = Color.toArgb(this) */
         check(
-          "android.graphics.Color",
-          "(J)",
-          "toColorInt",
-          "androidx.core.graphics",
-          "Long",
-          "ColorKt",
-          argmap = "R",
+            "android.graphics.Color",
+            "(J)",
+            "toColorInt",
+            "androidx.core.graphics",
+            "Long",
+            "ColorKt",
+            argmap = "R",
         )
       }
 
@@ -1839,23 +1724,23 @@ class UseKtxDetector : Detector(), SourceCodeScanner, XmlScanner {
       "findNavController" -> {
         /* fun Activity.findNavController(viewId: Int): NavController = Navigation.findNavController(this, viewId) */
         check(
-          "androidx.navigation.Navigation",
-          "(Landroid.app.Activity;I)",
-          "findNavController",
-          "androidx.navigation",
-          "Activity",
-          "ActivityKt",
-          argmap = "R0",
+            "androidx.navigation.Navigation",
+            "(Landroid.app.Activity;I)",
+            "findNavController",
+            "androidx.navigation",
+            "Activity",
+            "ActivityKt",
+            argmap = "R0",
         )
         /* fun View.findNavController(): NavController = Navigation.findNavController(this) */
         check(
-          "androidx.navigation.Navigation",
-          "(Landroid.view.View;)",
-          "findNavController",
-          "androidx.navigation",
-          "View",
-          "ViewKt",
-          argmap = "R",
+            "androidx.navigation.Navigation",
+            "(Landroid.view.View;)",
+            "findNavController",
+            "androidx.navigation",
+            "View",
+            "ViewKt",
+            argmap = "R",
         )
       }
 
@@ -1867,298 +1752,298 @@ class UseKtxDetector : Detector(), SourceCodeScanner, XmlScanner {
           "androidx.collection.LongSparseArrayKt" -> {
             /* val <T> LongSparseArray<T>.size: Int get() = size() */
             check(
-              "",
-              "()",
-              "size",
-              "androidx.collection",
-              "LongSparseArray",
-              "LongSparseArrayKt",
-              property = true,
+                "",
+                "()",
+                "size",
+                "androidx.collection",
+                "LongSparseArray",
+                "LongSparseArrayKt",
+                property = true,
             )
           }
           "android.util.LongSparseArray" -> {
             /* fun <T> LongSparseArray<T>.isEmpty(): Boolean = size() == 0 */
             check(
-              "",
-              "()",
-              "isEmpty",
-              "androidx.core.util",
-              "LongSparseArray",
-              "LongSparseArrayKt",
-              op = "==",
-              rhs = "0",
-            ) ||
-              /* fun <T> LongSparseArray<T>.isNotEmpty(): Boolean = size() != 0 */
-              check(
                 "",
                 "()",
-                "isNotEmpty",
+                "isEmpty",
                 "androidx.core.util",
                 "LongSparseArray",
                 "LongSparseArrayKt",
-                op = "!=",
+                op = "==",
                 rhs = "0",
-              ) ||
-              /* val <T> LongSparseArray<T>.size: Int get() = size() */
-              check(
-                "",
-                "()",
-                "size",
-                "androidx.core.util",
-                "LongSparseArray",
-                "LongSparseArrayKt",
-                property = true,
-              )
+            ) ||
+                /* fun <T> LongSparseArray<T>.isNotEmpty(): Boolean = size() != 0 */
+                check(
+                    "",
+                    "()",
+                    "isNotEmpty",
+                    "androidx.core.util",
+                    "LongSparseArray",
+                    "LongSparseArrayKt",
+                    op = "!=",
+                    rhs = "0",
+                ) ||
+                /* val <T> LongSparseArray<T>.size: Int get() = size() */
+                check(
+                    "",
+                    "()",
+                    "size",
+                    "androidx.core.util",
+                    "LongSparseArray",
+                    "LongSparseArrayKt",
+                    property = true,
+                )
           }
           "android.util.SparseArray" -> {
             /* fun <T> SparseArray<T>.isEmpty(): Boolean = size() == 0 */
             check(
-              "",
-              "()",
-              "isEmpty",
-              "androidx.core.util",
-              "SparseArray",
-              "SparseArrayKt",
-              op = "==",
-              rhs = "0",
-            ) ||
-              /* fun <T> SparseArray<T>.isNotEmpty(): Boolean = size() != 0 */
-              check(
                 "",
                 "()",
-                "isNotEmpty",
+                "isEmpty",
                 "androidx.core.util",
                 "SparseArray",
                 "SparseArrayKt",
-                op = "!=",
+                op = "==",
                 rhs = "0",
-              ) ||
-              /* val <T> SparseArray<T>.size: Int get() = size() */
-              check(
-                "",
-                "()",
-                "size",
-                "androidx.core.util",
-                "SparseArray",
-                "SparseArrayKt",
-                property = true,
-              )
+            ) ||
+                /* fun <T> SparseArray<T>.isNotEmpty(): Boolean = size() != 0 */
+                check(
+                    "",
+                    "()",
+                    "isNotEmpty",
+                    "androidx.core.util",
+                    "SparseArray",
+                    "SparseArrayKt",
+                    op = "!=",
+                    rhs = "0",
+                ) ||
+                /* val <T> SparseArray<T>.size: Int get() = size() */
+                check(
+                    "",
+                    "()",
+                    "size",
+                    "androidx.core.util",
+                    "SparseArray",
+                    "SparseArrayKt",
+                    property = true,
+                )
           }
           "android.util.SparseBooleanArray" -> {
             /* fun SparseBooleanArray.isEmpty(): Boolean = size() == 0 */
             check(
-              "",
-              "()",
-              "isEmpty",
-              "androidx.core.util",
-              "SparseBooleanArray",
-              "SparseBooleanArrayKt",
-              op = "==",
-              rhs = "0",
-            ) ||
-              /* fun SparseBooleanArray.isNotEmpty(): Boolean = size() != 0 */
-              check(
                 "",
                 "()",
-                "isNotEmpty",
+                "isEmpty",
                 "androidx.core.util",
                 "SparseBooleanArray",
                 "SparseBooleanArrayKt",
-                op = "!=",
+                op = "==",
                 rhs = "0",
-              ) ||
-              /* val SparseBooleanArray.size: Int get() = size() */
-              check(
-                "",
-                "()",
-                "size",
-                "androidx.core.util",
-                "SparseBooleanArray",
-                "SparseBooleanArrayKt",
-                property = true,
-              )
+            ) ||
+                /* fun SparseBooleanArray.isNotEmpty(): Boolean = size() != 0 */
+                check(
+                    "",
+                    "()",
+                    "isNotEmpty",
+                    "androidx.core.util",
+                    "SparseBooleanArray",
+                    "SparseBooleanArrayKt",
+                    op = "!=",
+                    rhs = "0",
+                ) ||
+                /* val SparseBooleanArray.size: Int get() = size() */
+                check(
+                    "",
+                    "()",
+                    "size",
+                    "androidx.core.util",
+                    "SparseBooleanArray",
+                    "SparseBooleanArrayKt",
+                    property = true,
+                )
           }
           "android.util.SparseIntArray" -> {
             /* fun SparseIntArray.isEmpty(): Boolean = size() == 0 */
             check(
-              "",
-              "()",
-              "isEmpty",
-              "androidx.core.util",
-              "SparseIntArray",
-              "SparseIntArrayKt",
-              op = "==",
-              rhs = "0",
-            ) ||
-              /* fun SparseIntArray.isNotEmpty(): Boolean = size() != 0 */
-              check(
                 "",
                 "()",
-                "isNotEmpty",
+                "isEmpty",
                 "androidx.core.util",
                 "SparseIntArray",
                 "SparseIntArrayKt",
-                op = "!=",
+                op = "==",
                 rhs = "0",
-              ) ||
-              /* val SparseIntArray.size: Int get() = size() */
-              check(
-                "",
-                "()",
-                "size",
-                "androidx.core.util",
-                "SparseIntArray",
-                "SparseIntArrayKt",
-                property = true,
-              )
+            ) ||
+                /* fun SparseIntArray.isNotEmpty(): Boolean = size() != 0 */
+                check(
+                    "",
+                    "()",
+                    "isNotEmpty",
+                    "androidx.core.util",
+                    "SparseIntArray",
+                    "SparseIntArrayKt",
+                    op = "!=",
+                    rhs = "0",
+                ) ||
+                /* val SparseIntArray.size: Int get() = size() */
+                check(
+                    "",
+                    "()",
+                    "size",
+                    "androidx.core.util",
+                    "SparseIntArray",
+                    "SparseIntArrayKt",
+                    property = true,
+                )
           }
           "android.util.SparseLongArray" -> {
             /* fun SparseLongArray.isEmpty(): Boolean = size() == 0 */
             check(
-              "",
-              "()",
-              "isEmpty",
-              "androidx.core.util",
-              "SparseLongArray",
-              "SparseLongArrayKt",
-              op = "==",
-              rhs = "0",
-            ) ||
-              /* fun SparseLongArray.isNotEmpty(): Boolean = size() != 0 */
-              check(
                 "",
                 "()",
-                "isNotEmpty",
+                "isEmpty",
                 "androidx.core.util",
                 "SparseLongArray",
                 "SparseLongArrayKt",
-                op = "!=",
+                op = "==",
                 rhs = "0",
-              ) ||
-              /* val SparseLongArray.size: Int get() = size() */
-              check(
-                "",
-                "()",
-                "size",
-                "androidx.core.util",
-                "SparseLongArray",
-                "SparseLongArrayKt",
-                property = true,
-              )
+            ) ||
+                /* fun SparseLongArray.isNotEmpty(): Boolean = size() != 0 */
+                check(
+                    "",
+                    "()",
+                    "isNotEmpty",
+                    "androidx.core.util",
+                    "SparseLongArray",
+                    "SparseLongArrayKt",
+                    op = "!=",
+                    rhs = "0",
+                ) ||
+                /* val SparseLongArray.size: Int get() = size() */
+                check(
+                    "",
+                    "()",
+                    "size",
+                    "androidx.core.util",
+                    "SparseLongArray",
+                    "SparseLongArrayKt",
+                    property = true,
+                )
           }
           "android.view.Menu" -> {
             /* fun Menu.isEmpty(): Boolean = size() == 0 */
             check(
-              "",
-              "()",
-              "isEmpty",
-              "androidx.core.view",
-              "Menu",
-              "MenuKt",
-              op = "==",
-              rhs = "0",
-            ) ||
-              /* fun Menu.isNotEmpty(): Boolean = size() != 0 */
-              check(
                 "",
                 "()",
-                "isNotEmpty",
+                "isEmpty",
                 "androidx.core.view",
                 "Menu",
                 "MenuKt",
-                op = "!=",
+                op = "==",
                 rhs = "0",
-              ) ||
-              /* val Menu.size: Int get() = size() */
-              check("", "()", "size", "androidx.core.view", "Menu", "MenuKt", property = true)
+            ) ||
+                /* fun Menu.isNotEmpty(): Boolean = size() != 0 */
+                check(
+                    "",
+                    "()",
+                    "isNotEmpty",
+                    "androidx.core.view",
+                    "Menu",
+                    "MenuKt",
+                    op = "!=",
+                    rhs = "0",
+                ) ||
+                /* val Menu.size: Int get() = size() */
+                check("", "()", "size", "androidx.core.view", "Menu", "MenuKt", property = true)
           }
         }
       }
       "getChildCount" -> {
         /* fun ViewGroup.isEmpty(): Boolean = childCount == 0 */
         check(
-          "android.view.ViewGroup",
-          "()",
-          "isEmpty",
-          "androidx.core.view",
-          "ViewGroup",
-          "ViewGroupKt",
-          op = "==",
-          rhs = "0",
-        ) ||
-          /* fun ViewGroup.isNotEmpty(): Boolean = childCount != 0 */
-          check(
             "android.view.ViewGroup",
             "()",
-            "isNotEmpty",
+            "isEmpty",
             "androidx.core.view",
             "ViewGroup",
             "ViewGroupKt",
-            op = "!=",
+            op = "==",
             rhs = "0",
-          ) ||
-          /* val ViewGroup.size: Int get() = childCount */
-          check(
-            "android.view.ViewGroup",
-            "()",
-            "size",
-            "androidx.core.view",
-            "ViewGroup",
-            "ViewGroupKt",
-            property = true,
-          )
+        ) ||
+            /* fun ViewGroup.isNotEmpty(): Boolean = childCount != 0 */
+            check(
+                "android.view.ViewGroup",
+                "()",
+                "isNotEmpty",
+                "androidx.core.view",
+                "ViewGroup",
+                "ViewGroupKt",
+                op = "!=",
+                rhs = "0",
+            ) ||
+            /* val ViewGroup.size: Int get() = childCount */
+            check(
+                "android.view.ViewGroup",
+                "()",
+                "size",
+                "androidx.core.view",
+                "ViewGroup",
+                "ViewGroupKt",
+                property = true,
+            )
       }
       "indexOfChild" -> {
         /* fun ViewGroup.contains(view: View): Boolean = indexOfChild(view) != -1 */
         check(
-          "android.view.ViewGroup",
-          "(Landroid.view.View;)",
-          "contains",
-          "androidx.core.view",
-          "ViewGroup",
-          "ViewGroupKt",
-          op = "!=",
-          rhs = "-1",
-          argmap = "0",
+            "android.view.ViewGroup",
+            "(Landroid.view.View;)",
+            "contains",
+            "androidx.core.view",
+            "ViewGroup",
+            "ViewGroupKt",
+            op = "!=",
+            rhs = "-1",
+            argmap = "0",
         )
       }
       "getVisibility" -> {
         /* val public inline var View.isVisible: Boolean get() = visibility == View.VISIBLE set(value) { visibility = if (value) View.VISIBLE else View.GONE } */
         check(
-          "android.view.View",
-          "()",
-          "isVisible",
-          "androidx.core.view",
-          "View",
-          "ViewKt",
-          op = "==",
-          rhs = "android.view.View.VISIBLE",
-          property = true,
+            "android.view.View",
+            "()",
+            "isVisible",
+            "androidx.core.view",
+            "View",
+            "ViewKt",
+            op = "==",
+            rhs = "android.view.View.VISIBLE",
+            property = true,
         ) ||
-          /* val public inline var View.isInvisible: Boolean get() = visibility == View.INVISIBLE set(value) { visibility = if (value) View.INVISIBLE else View.VISIBLE } */
-          check(
-            "android.view.View",
-            "()",
-            "isInvisible",
-            "androidx.core.view",
-            "View",
-            "ViewKt",
-            op = "==",
-            rhs = "android.view.View.INVISIBLE",
-            property = true,
-          ) ||
-          /* val public inline var View.isGone: Boolean get() = visibility == View.GONE set(value) { visibility = if (value) View.GONE else View.VISIBLE } */
-          check(
-            "android.view.View",
-            "()",
-            "isGone",
-            "androidx.core.view",
-            "View",
-            "ViewKt",
-            op = "==",
-            rhs = "android.view.View.GONE",
-            property = true,
-          )
+            /* val public inline var View.isInvisible: Boolean get() = visibility == View.INVISIBLE set(value) { visibility = if (value) View.INVISIBLE else View.VISIBLE } */
+            check(
+                "android.view.View",
+                "()",
+                "isInvisible",
+                "androidx.core.view",
+                "View",
+                "ViewKt",
+                op = "==",
+                rhs = "android.view.View.INVISIBLE",
+                property = true,
+            ) ||
+            /* val public inline var View.isGone: Boolean get() = visibility == View.GONE set(value) { visibility = if (value) View.GONE else View.VISIBLE } */
+            check(
+                "android.view.View",
+                "()",
+                "isGone",
+                "androidx.core.view",
+                "View",
+                "ViewKt",
+                op = "==",
+                rhs = "android.view.View.GONE",
+                property = true,
+            )
       }
       "indexOfValue" -> {
         val containingClass = method.containingClass?.qualifiedName ?: return
@@ -2166,71 +2051,71 @@ class UseKtxDetector : Detector(), SourceCodeScanner, XmlScanner {
           "android.util.LongSparseArray" -> {
             /* fun <T> LongSparseArray<T>.containsValue(value: T): Boolean = indexOfValue(value) >= 0 */
             check(
-              "",
-              "(Ljava.lang.Object;)",
-              "containsValue",
-              "androidx.core.util",
-              "LongSparseArray",
-              "LongSparseArrayKt",
-              op = ">=",
-              rhs = "0",
-              argmap = "0",
+                "",
+                "(Ljava.lang.Object;)",
+                "containsValue",
+                "androidx.core.util",
+                "LongSparseArray",
+                "LongSparseArrayKt",
+                op = ">=",
+                rhs = "0",
+                argmap = "0",
             )
           }
           "android.util.SparseArray" -> {
             /* fun <T> SparseArray<T>.containsValue(value: T): Boolean = indexOfValue(value) >= 0 */
             check(
-              "",
-              "(Ljava.lang.Object;)",
-              "containsValue",
-              "androidx.core.util",
-              "SparseArray",
-              "SparseArrayKt",
-              op = ">=",
-              rhs = "0",
-              argmap = "0",
+                "",
+                "(Ljava.lang.Object;)",
+                "containsValue",
+                "androidx.core.util",
+                "SparseArray",
+                "SparseArrayKt",
+                op = ">=",
+                rhs = "0",
+                argmap = "0",
             )
           }
           "android.util.SparseBooleanArray" -> {
             /* fun SparseBooleanArray.containsValue(value: Boolean): Boolean = indexOfValue(value) >= 0 */
             check(
-              "",
-              "(Z)",
-              "containsValue",
-              "androidx.core.util",
-              "SparseBooleanArray",
-              "SparseBooleanArrayKt",
-              op = ">=",
-              rhs = "0",
-              argmap = "0",
+                "",
+                "(Z)",
+                "containsValue",
+                "androidx.core.util",
+                "SparseBooleanArray",
+                "SparseBooleanArrayKt",
+                op = ">=",
+                rhs = "0",
+                argmap = "0",
             )
           }
           "android.util.SparseIntArray" -> {
             /* fun SparseIntArray.containsValue(value: Int): Boolean = indexOfValue(value) >= 0 */
             check(
-              "",
-              "(I)",
-              "containsValue",
-              "androidx.core.util",
-              "SparseIntArray",
-              "SparseIntArrayKt",
-              op = ">=",
-              rhs = "0",
-              argmap = "0",
+                "",
+                "(I)",
+                "containsValue",
+                "androidx.core.util",
+                "SparseIntArray",
+                "SparseIntArrayKt",
+                op = ">=",
+                rhs = "0",
+                argmap = "0",
             )
           }
           "android.util.SparseLongArray" -> {
             /* fun SparseLongArray.containsValue(value: Long): Boolean = indexOfValue(value) >= 0 */
             check(
-              "",
-              "(J)",
-              "containsValue",
-              "androidx.core.util",
-              "SparseLongArray",
-              "SparseLongArrayKt",
-              op = ">=",
-              rhs = "0",
-              argmap = "0",
+                "",
+                "(J)",
+                "containsValue",
+                "androidx.core.util",
+                "SparseLongArray",
+                "SparseLongArrayKt",
+                op = ">=",
+                rhs = "0",
+                argmap = "0",
             )
           }
         }
@@ -2240,13 +2125,13 @@ class UseKtxDetector : Detector(), SourceCodeScanner, XmlScanner {
       "intersect" -> {
         /* fun <T : Comparable<T>> Range<T>.and(other: Range<T>): Range<T> = intersect(other) */
         check(
-          "android.util.Range",
-          "(Landroid.util.Range;)",
-          "and",
-          "androidx.core.util",
-          "Range",
-          "RangeKt",
-          argmap = "0",
+            "android.util.Range",
+            "(Landroid.util.Range;)",
+            "and",
+            "androidx.core.util",
+            "Range",
+            "RangeKt",
+            argmap = "0",
         )
       }
 
@@ -2254,37 +2139,37 @@ class UseKtxDetector : Detector(), SourceCodeScanner, XmlScanner {
       "getItem" -> {
         /* fun Menu.get(index: Int): MenuItem = getItem(index) */
         check(
-          "android.view.Menu",
-          "(I)",
-          "get",
-          "androidx.core.view",
-          "Menu",
-          "MenuKt",
-          argmap = "0",
+            "android.view.Menu",
+            "(I)",
+            "get",
+            "androidx.core.view",
+            "Menu",
+            "MenuKt",
+            argmap = "0",
         )
       }
       "getPixel" -> {
         /* fun Bitmap.get(x: Int, y: Int): Int = getPixel(x, y) */
         check(
-          "android.graphics.Bitmap",
-          "(II)",
-          "get",
-          "androidx.core.graphics",
-          "Bitmap",
-          "BitmapKt",
-          argmap = "01",
+            "android.graphics.Bitmap",
+            "(II)",
+            "get",
+            "androidx.core.graphics",
+            "Bitmap",
+            "BitmapKt",
+            argmap = "01",
         )
       }
       "setPixel" -> {
         /* fun Bitmap.set(x: Int, y: Int, color: Int): Unit = setPixel(x, y, color) */
         check(
-          "android.graphics.Bitmap",
-          "(III)",
-          "set",
-          "androidx.core.graphics",
-          "Bitmap",
-          "BitmapKt",
-          argmap = "012",
+            "android.graphics.Bitmap",
+            "(III)",
+            "set",
+            "androidx.core.graphics",
+            "Bitmap",
+            "BitmapKt",
+            argmap = "012",
         )
       }
     }
@@ -2299,11 +2184,11 @@ class UseKtxDetector : Detector(), SourceCodeScanner, XmlScanner {
     // Whether to preserve named parameters (we'll be reordering)
 
     val REMOVE_DEFAULTS =
-      BooleanOption(
-        "remove-defaults",
-        "Whether to skip arguments that match the defaults provided by the extension",
-        true,
-        """
+        BooleanOption(
+            "remove-defaults",
+            "Whether to skip arguments that match the defaults provided by the extension",
+            true,
+            """
         Extensions often provide default values for some of the parameters. \
         For example:
         ```kotlin
@@ -2326,45 +2211,44 @@ class UseKtxDetector : Detector(), SourceCodeScanner, XmlScanner {
         ```
         You can turn this behavior off using this option.
         """,
-      )
+        )
 
     val REQUIRE_LIBRARY =
-      BooleanOption(
-        "require-present",
-        "Whether to only offer extensions already available",
-        true,
-        """
+        BooleanOption(
+            "require-present",
+            "Whether to only offer extensions already available",
+            true,
+            """
         This option lets you only have lint suggest extension replacements if those \
         extensions are already available on the class path (in other words, you're already \
         depending on the library containing the extension method.)
         """,
-      )
+        )
 
     /** Suggests equivalent but simpler KTX constructs. */
     @JvmField
     val USE_KTX =
-      Issue.create(
-          id = "UseKtx",
-          briefDescription = "Use KTX extension function",
-          explanation =
-            """
+        Issue.create(
+                id = "UseKtx",
+                briefDescription = "Use KTX extension function",
+                explanation =
+                    """
           The Android KTX libraries decorates the Android platform SDK as well \
           as various libraries with more convenient extension functions available \
           from Kotlin, allowing you to use default parameters, named parameters, \
           and more.
           """,
-          category = Category.PRODUCTIVITY, // Maybe MAD, or READABILITY, or SIMPLICITY, .... ?
-          priority = 6,
-          severity = Severity.WARNING,
-          androidSpecific = true,
-          implementation = IMPLEMENTATION,
-        )
-        .setOptions(listOf(REMOVE_DEFAULTS, REQUIRE_LIBRARY))
+                category = Category.PRODUCTIVITY, // Maybe MAD, or READABILITY, or SIMPLICITY, .... ?
+                priority = 6,
+                severity = Severity.WARNING,
+                androidSpecific = true,
+                implementation = IMPLEMENTATION,
+            )
+            .setOptions(listOf(REMOVE_DEFAULTS, REQUIRE_LIBRARY))
 
     private fun isArrayGetExtension(extensionMethod: String, descriptor: String): Boolean {
       if (extensionMethod == "get" || extensionMethod == "set") {
-        val lastIndex =
-          if (extensionMethod == "get") descriptor.length - 1 else descriptor.length - 2
+        val lastIndex = if (extensionMethod == "get") descriptor.length - 1 else descriptor.length - 2
         for (i in 1 until lastIndex) {
           if (descriptor[i] != 'I') {
             return false
@@ -2395,9 +2279,9 @@ fun KtBinaryExpression.getOperatorText(): String {
 }
 
 fun KtBinaryExpression.isSameComparison(
-  expectedOperator: String,
-  expectedValue: String,
-  methodName: String,
+    expectedOperator: String,
+    expectedValue: String,
+    methodName: String,
 ): Boolean {
   val value = right?.text ?: return false
   val operator = getOperatorText()
@@ -2405,23 +2289,21 @@ fun KtBinaryExpression.isSameComparison(
   if (operator == expectedOperator) {
     if (value.equalsIgnoringSpace(expectedValue)) {
       return true
-    } else if (
-      expectedValue.endsWith(value) && expectedValue[expectedValue.length - value.length - 1] == '.'
-    ) {
+    } else if (expectedValue.endsWith(value) && expectedValue[expectedValue.length - value.length - 1] == '.') {
       return true
     } else {
       // Type alias?
       val lastDot = expectedValue.lastIndexOf('.')
       val nameLength = expectedValue.length - (lastDot + 1)
       if (
-        lastDot != -1 &&
-          expectedValue.length - nameLength > 0 &&
-          expectedValue.regionMatches(
-            expectedValue.length - nameLength,
-            value,
-            value.length - nameLength,
-            nameLength,
-          )
+          lastDot != -1 &&
+              expectedValue.length - nameLength > 0 &&
+              expectedValue.regionMatches(
+                  expectedValue.length - nameLength,
+                  value,
+                  value.length - nameLength,
+                  nameLength,
+              )
       ) {
         val resolved = right.toUElement()?.tryResolve()
         if (resolved is PsiField) {
@@ -2437,11 +2319,11 @@ fun KtBinaryExpression.isSameComparison(
   // For size comparisons, consider "> 0" the same as "!= 0" since nobody
   // thinks size can be negative (size, childCount, etc.)
   if (
-    (methodName.contains("size", true) || methodName.contains("count", true)) &&
-      expectedOperator == "!=" &&
-      expectedValue == "0" &&
-      operator == ">" &&
-      value == "0"
+      (methodName.contains("size", true) || methodName.contains("count", true)) &&
+          expectedOperator == "!=" &&
+          expectedValue == "0" &&
+          operator == ">" &&
+          value == "0"
   ) {
     return true
   }
@@ -2449,12 +2331,9 @@ fun KtBinaryExpression.isSameComparison(
   // For index comparisons, consider >= 0 and != -1 as the same.
   // (indexOfValue, indexOfKey, indexOfChild, indexOf, etc.)
   if (
-    methodName.startsWith("index") &&
-      (expectedOperator == ">=" &&
-        expectedValue == "0" &&
-        operator == "!=" &&
-        value.equalsIgnoringSpace("-1")) ||
-      (expectedOperator == "!=" && expectedValue == "-1" && operator == ">=" && value == "0")
+      methodName.startsWith("index") &&
+          (expectedOperator == ">=" && expectedValue == "0" && operator == "!=" && value.equalsIgnoringSpace("-1")) ||
+          (expectedOperator == "!=" && expectedValue == "-1" && operator == ">=" && value == "0")
   ) {
     return true
   }
@@ -2483,8 +2362,8 @@ private fun CharSequence.isNotBlankAt(start: Int, end: Int): Boolean {
 }
 
 /**
- * Returns true if two strings have identical characters while ignoring optional whitespaces -- e.g.
- * "foo.bar" and "foo . bar " are considered the same string.
+ * Returns true if two strings have identical characters while ignoring optional whitespaces -- e.g. "foo.bar" and "foo . bar " are
+ * considered the same string.
  */
 fun String.equalsIgnoringSpace(other: String): Boolean {
   var i = 0
@@ -2494,16 +2373,15 @@ fun String.equalsIgnoringSpace(other: String): Boolean {
   while (true) {
     while (i < n && this[i].isWhitespace()) i++
     while (j < jn && other[j].isWhitespace()) j++
-    if (i == n) return j == jn
-    else if (j == jn) return false else if (this[i] != other[j]) return false
+    if (i == n) return j == jn else if (j == jn) return false else if (this[i] != other[j]) return false
     i++
     j++
   }
 }
 
 /**
- * Returns true if this sequence contains a given identifier (and not as part of another longer
- * identifier, e.g. it is surrounded by "word" boundaries)
+ * Returns true if this sequence contains a given identifier (and not as part of another longer identifier, e.g. it is surrounded by "word"
+ * boundaries)
  */
 fun CharSequence.containsIdentifier(identifier: String): Boolean {
   var i = 0
@@ -2514,8 +2392,8 @@ fun CharSequence.containsIdentifier(identifier: String): Boolean {
       return false
     }
     if (
-      (i == 0 || !this[i - 1].isJavaIdentifierPart()) &&
-        (i + identifier.length == n || !this[i + identifier.length].isJavaIdentifierPart())
+        (i == 0 || !this[i - 1].isJavaIdentifierPart()) &&
+            (i + identifier.length == n || !this[i + identifier.length].isJavaIdentifierPart())
     ) {
       return true
     }

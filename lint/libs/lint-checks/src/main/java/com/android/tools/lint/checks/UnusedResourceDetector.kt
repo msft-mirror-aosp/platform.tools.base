@@ -84,17 +84,16 @@ import org.w3c.dom.Element
 import org.w3c.dom.Node
 
 /** Finds unused resources. */
-class UnusedResourceDetector :
-  ResourceXmlDetector(), SourceCodeScanner, BinaryResourceScanner, XmlScanner {
+class UnusedResourceDetector : ResourceXmlDetector(), SourceCodeScanner, BinaryResourceScanner, XmlScanner {
   private val model = UnusedResourceDetectorUsageModel()
   private var projectUsesViewBinding = false
 
   /**
-   * Map of data binding / view binding Binding classes (simple names, not fully qualified names) to
-   * corresponding layout resource names (e.g. ActivityMainBinding -> "activity_main.xml")
+   * Map of data binding / view binding Binding classes (simple names, not fully qualified names) to corresponding layout resource names
+   * (e.g. ActivityMainBinding -> "activity_main.xml")
    *
-   * This map is created lazily only once it encounters a relevant layout file, since a significant
-   * enough number of modules don't use data binding or view binding.
+   * This map is created lazily only once it encounters a relevant layout file, since a significant enough number of modules don't use data
+   * binding or view binding.
    */
   private var bindingClasses: MutableMap<String, String>? = null
 
@@ -114,20 +113,20 @@ class UnusedResourceDetector :
   }
 
   private fun addDynamicResources(
-    project: Project,
-    resValues: Map<String, LintModelResourceField>,
+      project: Project,
+      resValues: Map<String, LintModelResourceField>,
   ) {
     val resFields = resValues.values
     if (resFields.isNotEmpty()) {
       val location = guessGradleLocation(project)
       for (field in resFields) {
         val type =
-          ResourceType.fromClassName(field.type)
-            // Highly unlikely. This would happen if in the future we add
-            // some new ResourceType, that the Gradle plugin (and the user's
-            // Gradle file is creating) and it's an older version of Studio which
-            // doesn't yet have this ResourceType in its enum.
-            ?: continue
+            ResourceType.fromClassName(field.type)
+                // Highly unlikely. This would happen if in the future we add
+                // some new ResourceType, that the Gradle plugin (and the user's
+                // Gradle file is creating) and it's an older version of Studio which
+                // doesn't yet have this ResourceType in its enum.
+                ?: continue
         val resource = model.declareResource(type, field.name, null) as LintResource
         resource.recordLocation(project, location)
       }
@@ -141,10 +140,7 @@ class UnusedResourceDetector :
     // of a resource (e.g. every translation of a resource). However, in a global analysis, and with
     // the client property below, we will store all resource versions, which is needed for the
     // "Remove Unused Resources" refactoring.
-    if (
-      context.isGlobalAnalysis() &&
-        context.client.getClientProperty(KEY_INCLUDE_ALL_RESOURCE_VERSIONS) != null
-    ) {
+    if (context.isGlobalAnalysis() && context.client.getClientProperty(KEY_INCLUDE_ALL_RESOURCE_VERSIONS) != null) {
       model.recordAllResourceVersionLocations = true
     }
   }
@@ -165,10 +161,10 @@ class UnusedResourceDetector :
     // apply the resource graph such that we also notice this implies
     // @layout/bar is used.
     val model =
-      partialResults
-        .asSequence()
-        .mapNotNull { (_, map) -> ResourceUsageModel.deserialize(map.getString(KEY_MODEL, "")) }
-        .reduceOrNull { acc, model -> acc.apply { merge(model) } } ?: return
+        partialResults
+            .asSequence()
+            .mapNotNull { (_, map) -> ResourceUsageModel.deserialize(map.getString(KEY_MODEL, "")) }
+            .reduceOrNull { acc, model -> acc.apply { merge(model) } } ?: return
 
     for (resource in findUnused(context, model)) {
       val field = resource.field
@@ -176,13 +172,13 @@ class UnusedResourceDetector :
 
       // Each module (possibly) provides a declaration location for the resource.
       val locations =
-        // partialResults is essentially a list of LintMaps (one per module).
-        partialResults
-          .maps()
-          .asSequence()
-          // For each module's LintMap, get the location for field (if present).
-          .mapNotNull { lintMap -> lintMap.getLocation(field) }
-          .ifEmpty { sequenceOf(Location.create(context.project.dir)) }
+          // partialResults is essentially a list of LintMaps (one per module).
+          partialResults
+              .maps()
+              .asSequence()
+              // For each module's LintMap, get the location for field (if present).
+              .mapNotNull { lintMap -> lintMap.getLocation(field) }
+              .ifEmpty { sequenceOf(Location.create(context.project.dir)) }
 
       val fix = fix().data(KEY_RESOURCE_FIELD, field)
       for (location in locations) {
@@ -233,9 +229,7 @@ class UnusedResourceDetector :
         // etc. makes it a little tricky if there's no base file provided).
         for (resource in unused) {
           // Only consider resources without a location that are file-based.
-          if (
-            resource.hasLocation || resource.type == null || !isFileBasedResourceType(resource.type)
-          ) {
+          if (resource.hasLocation || resource.type == null || !isFileBasedResourceType(resource.type)) {
             continue
           }
 
@@ -244,15 +238,13 @@ class UnusedResourceDetector :
           // folders in alphabetical order such that we process
           // base folders first: we want the locations in base folder order
           val folders =
-            context.project.resourceFolders
-              .asSequence()
-              .flatMap { it.listFilesOrEmpty() }
-              .filter { it.name.startsWith(type.getName()) }
-              .sortedBy(File::getName)
+              context.project.resourceFolders
+                  .asSequence()
+                  .flatMap { it.listFilesOrEmpty() }
+                  .filter { it.name.startsWith(type.getName()) }
+                  .sortedBy(File::getName)
           val files =
-            folders
-              .flatMap { it.listFilesOrEmpty().sorted() }
-              .filter { it.name.startsWith(name) && it.name.startsWith(".", name.length) }
+              folders.flatMap { it.listFilesOrEmpty().sorted() }.filter { it.name.startsWith(name) && it.name.startsWith(".", name.length) }
 
           for (file in files) {
             resource.recordLocation(context.project, Location.create(file))
@@ -298,9 +290,7 @@ class UnusedResourceDetector :
           val lintMap = storeSerializedModel(context)
 
           for (resource in unused) {
-            resource.getLocations(context.project).firstOrNull()?.let {
-              lintMap.put(resource.field, it)
-            }
+            resource.getLocations(context.project).firstOrNull()?.let { lintMap.put(resource.field, it) }
           }
         }
       }
@@ -356,13 +346,12 @@ class UnusedResourceDetector :
   // Tolerate parsing errors etc in these files; they're user
   // sources, and this is even for inactive source sets.
   private fun withParsingErrorTolerated(run: () -> Unit) =
-    try {
-      run()
-    } catch (_: Throwable) {}
+      try {
+        run()
+      } catch (_: Throwable) {}
 
   private fun addInactiveReferences(active: LintModelVariant) {
-    fun Collection<File>.forEachDir(record: (File) -> Unit) =
-      asSequence().filter(File::isDirectory).forEach(record)
+    fun Collection<File>.forEachDir(record: (File) -> Unit) = asSequence().filter(File::isDirectory).forEach(record)
     for (provider in active.module.getInactiveSourceProviders(active)) {
       provider.resDirectories.forEachDir(::recordInactiveXmlResources)
       provider.javaDirectories.forEachDir(::recordInactiveJavaReferences)
@@ -374,12 +363,12 @@ class UnusedResourceDetector :
 
   // ---- Implements BinaryResourceScanner ----
   override fun checkBinaryResource(context: ResourceContext) =
-    try {
-      model.context = context
-      model.visitBinaryResource(context.resourceFolderType, context.file)
-    } finally {
-      model.context = null
-    }
+      try {
+        model.context = context
+        model.visitBinaryResource(context.resourceFolderType, context.file)
+      } finally {
+        model.context = null
+      }
 
   // ---- Implements XmlScanner ----
   override fun visitDocument(context: XmlContext, document: Document) {
@@ -404,21 +393,19 @@ class UnusedResourceDetector :
             val resourceName = getBaseName(fileName)
 
             tailrec fun bindingClassFrom(data: Element?): String? =
-              when (data) {
-                null -> null
-                else -> {
-                  val bindingClass = data.getAttribute(ATTR_CLASS)
-                  when {
-                    bindingClass.isNotEmpty() ->
-                      bindingClass.substring(bindingClass.lastIndexOf('.') + 1)
-                    else -> bindingClassFrom(XmlUtils.getNextTagByName(data, TAG_DATA))
+                when (data) {
+                  null -> null
+                  else -> {
+                    val bindingClass = data.getAttribute(ATTR_CLASS)
+                    when {
+                      bindingClass.isNotEmpty() -> bindingClass.substring(bindingClass.lastIndexOf('.') + 1)
+                      else -> bindingClassFrom(XmlUtils.getNextTagByName(data, TAG_DATA))
+                    }
                   }
                 }
-              }
 
             val bindingClass =
-              bindingClassFrom(XmlUtils.getFirstSubTagByName(root, TAG_DATA))
-                ?: (resourceName.toClassName(postfix = "Binding"))
+                bindingClassFrom(XmlUtils.getFirstSubTagByName(root, TAG_DATA)) ?: (resourceName.toClassName(postfix = "Binding"))
 
             bindingClasses!![bindingClass] = resourceName
           }
@@ -447,11 +434,11 @@ class UnusedResourceDetector :
   override fun appliesToResourceRefs() = true
 
   override fun visitResourceReference(
-    context: JavaContext,
-    node: UElement,
-    type: ResourceType,
-    name: String,
-    isFramework: Boolean,
+      context: JavaContext,
+      node: UElement,
+      type: ResourceType,
+      name: String,
+      isFramework: Boolean,
   ) {
     if (!isFramework) {
       ResourceUsageModel.markReachable(model.addResource(type, name, null))
@@ -459,83 +446,75 @@ class UnusedResourceDetector :
   }
 
   override fun getApplicableUastTypes() =
-    listOf(
-      UCallableReferenceExpression::class.java,
-      UCallExpression::class.java,
-      UField::class.java,
-      USimpleNameReferenceExpression::class.java,
-      UQualifiedReferenceExpression::class.java,
-    )
+      listOf(
+          UCallableReferenceExpression::class.java,
+          UCallExpression::class.java,
+          UField::class.java,
+          USimpleNameReferenceExpression::class.java,
+          UQualifiedReferenceExpression::class.java,
+      )
 
   override fun createUastHandler(context: JavaContext): UElementHandler? =
-    // If using data binding / view binding, we also have to look for references to the
-    // Binding classes which could be implicit usages of layout resources
-    when (val bindingClasses = bindingClasses) {
-      null -> null
-      else ->
-        object : UElementHandler() {
+      // If using data binding / view binding, we also have to look for references to the
+      // Binding classes which could be implicit usages of layout resources
+      when (val bindingClasses = bindingClasses) {
+        null -> null
+        else ->
+            object : UElementHandler() {
 
-          private fun <C : PsiClass> visitClass(
-            psiClass: C?,
-            getBindingClassName: (C) -> String? = PsiClass::getName,
-          ) {
-            if (psiClass != null && isBindingClass(context.evaluator, psiClass)) {
-              bindingClasses[getBindingClassName(psiClass)]?.let { resourceName ->
-                ResourceUsageModel.markReachable(
-                  model.getResource(ResourceType.LAYOUT, resourceName)
-                )
-              }
-            }
-          }
-
-          override fun visitCallExpression(node: UCallExpression) =
-            visitClass(node.resolve()?.containingClass)
-
-          override fun visitSimpleNameReferenceExpression(node: USimpleNameReferenceExpression) {
-            when (val resolved = node.resolve()) {
-              is PsiClass -> visitClass(resolved) { node.identifier }
-              is PsiField ->
-                if (resolved.containingClass?.name in bindingClasses) {
-                  ResourceUsageModel.markReachable(
-                    model.getResource(ResourceType.ID, resolved.name)
-                  )
+              private fun <C : PsiClass> visitClass(
+                  psiClass: C?,
+                  getBindingClassName: (C) -> String? = PsiClass::getName,
+              ) {
+                if (psiClass != null && isBindingClass(context.evaluator, psiClass)) {
+                  bindingClasses[getBindingClassName(psiClass)]?.let { resourceName ->
+                    ResourceUsageModel.markReachable(model.getResource(ResourceType.LAYOUT, resourceName))
+                  }
                 }
-            }
-          }
-
-          override fun visitCallableReferenceExpression(node: UCallableReferenceExpression) =
-            visitClass((node.resolve() as? PsiMember)?.containingClass)
-
-          override fun visitQualifiedReferenceExpression(node: UQualifiedReferenceExpression) {
-            // referencing a binding class's field marks the corresponding id as reachable
-            val className = (node.receiver.getExpressionType() as? PsiClassType)?.className
-            if (className in bindingClasses) {
-              val id = node.resolvedName
-              if (id != null) {
-                ResourceUsageModel.markReachable(model.getResource(ResourceType.ID, id))
               }
+
+              override fun visitCallExpression(node: UCallExpression) = visitClass(node.resolve()?.containingClass)
+
+              override fun visitSimpleNameReferenceExpression(node: USimpleNameReferenceExpression) {
+                when (val resolved = node.resolve()) {
+                  is PsiClass -> visitClass(resolved) { node.identifier }
+                  is PsiField ->
+                      if (resolved.containingClass?.name in bindingClasses) {
+                        ResourceUsageModel.markReachable(model.getResource(ResourceType.ID, resolved.name))
+                      }
+                }
+              }
+
+              override fun visitCallableReferenceExpression(node: UCallableReferenceExpression) =
+                  visitClass((node.resolve() as? PsiMember)?.containingClass)
+
+              override fun visitQualifiedReferenceExpression(node: UQualifiedReferenceExpression) {
+                // referencing a binding class's field marks the corresponding id as reachable
+                val className = (node.receiver.getExpressionType() as? PsiClassType)?.className
+                if (className in bindingClasses) {
+                  val id = node.resolvedName
+                  if (id != null) {
+                    ResourceUsageModel.markReachable(model.getResource(ResourceType.ID, id))
+                  }
+                }
+              }
+
+              override fun visitField(node: UField) {
+                val classType = node.typeFromPsi as? PsiClassType
+                visitClass(classType?.resolve())
+                // When using property delegation, the field type will not be the binding class.
+                // It will be a delegate type with a type argument, so check that type argument too.
+                classType?.parameters?.forEach { typeArgument -> visitClass((typeArgument as? PsiClassType)?.resolve()) }
+              }
+
+              private fun isBindingClass(evaluator: JavaEvaluator, binding: PsiClass) =
+                  evaluator.extendsClass(binding, "android.databinding.ViewDataBinding", true) ||
+                      evaluator.extendsClass(binding, "androidx.databinding.ViewDataBinding", true) ||
+                      evaluator.extendsClass(binding, "androidx.viewbinding.ViewBinding", true)
             }
-          }
+      }
 
-          override fun visitField(node: UField) {
-            val classType = node.typeFromPsi as? PsiClassType
-            visitClass(classType?.resolve())
-            // When using property delegation, the field type will not be the binding class.
-            // It will be a delegate type with a type argument, so check that type argument too.
-            classType?.parameters?.forEach { typeArgument ->
-              visitClass((typeArgument as? PsiClassType)?.resolve())
-            }
-          }
-
-          private fun isBindingClass(evaluator: JavaEvaluator, binding: PsiClass) =
-            evaluator.extendsClass(binding, "android.databinding.ViewDataBinding", true) ||
-              evaluator.extendsClass(binding, "androidx.databinding.ViewDataBinding", true) ||
-              evaluator.extendsClass(binding, "androidx.viewbinding.ViewBinding", true)
-        }
-    }
-
-  private abstract class LintResource(type: ResourceType?, name: String?, value: Int) :
-    ResourceUsageModel.Resource(type, name, value) {
+  private abstract class LintResource(type: ResourceType?, name: String?, value: Int) : ResourceUsageModel.Resource(type, name, value) {
     abstract val hasLocation: Boolean
     abstract val locations: Collection<Location>
 
@@ -544,15 +523,13 @@ class UnusedResourceDetector :
     abstract fun recordLocation(project: Project, location: Location)
 
     /**
-     * There can be multiple versions of a resource across modules, but this is usually a bug, and
-     * only one resource will make it to the final app. There can also be multiple versions of a
-     * resource within a module (for example, a string resource called "hello" for each language).
-     * Trying to store all versions (within a module) can be expensive, and is not particularly
-     * helpful for the user. This class only stores the location with the shortest directory name;
-     * this heuristic favors default resources (resource directories without qualifiers).
+     * There can be multiple versions of a resource across modules, but this is usually a bug, and only one resource will make it to the
+     * final app. There can also be multiple versions of a resource within a module (for example, a string resource called "hello" for each
+     * language). Trying to store all versions (within a module) can be expensive, and is not particularly helpful for the user. This class
+     * only stores the location with the shortest directory name; this heuristic favors default resources (resource directories without
+     * qualifiers).
      */
-    class ShortestLocation(type: ResourceType?, name: String?, value: Int) :
-      LintResource(type, name, value) {
+    class ShortestLocation(type: ResourceType?, name: String?, value: Int) : LintResource(type, name, value) {
 
       /** Stores one location per module. */
       private val locationMap: MutableMap<Project, Location> = LinkedHashMap()
@@ -563,13 +540,11 @@ class UnusedResourceDetector :
       override val locations: Collection<Location>
         get() = locationMap.values
 
-      override fun getLocations(project: Project): Collection<Location> =
-        listOfNotNull(locationMap[project])
+      override fun getLocations(project: Project): Collection<Location> = listOfNotNull(locationMap[project])
 
       override fun recordLocation(project: Project, location: Location) {
         val existingLocation =
-          locationMap.putIfAbsent(project, location)
-            ?: return // There was no existing location, and we have now added the location.
+            locationMap.putIfAbsent(project, location) ?: return // There was no existing location, and we have now added the location.
 
         // Otherwise, if the new resource directory name is shorter than the existing, replace the
         // location.
@@ -580,8 +555,7 @@ class UnusedResourceDetector :
     }
 
     /** See [LintResource.ShortestLocation]. This class stores all locations. */
-    class AllLocations(type: ResourceType?, name: String?, value: Int) :
-      LintResource(type, name, value) {
+    class AllLocations(type: ResourceType?, name: String?, value: Int) : LintResource(type, name, value) {
 
       /** Stores many locations per module. */
       private val locationMap: MutableMap<Project, MutableMap<String, Location>> = LinkedHashMap()
@@ -592,8 +566,7 @@ class UnusedResourceDetector :
       override val locations: Collection<Location>
         get() = locationMap.values.flatMap { it.values }
 
-      override fun getLocations(project: Project): Collection<Location> =
-        locationMap[project]?.values ?: emptyList()
+      override fun getLocations(project: Project): Collection<Location> = locationMap[project]?.values ?: emptyList()
 
       override fun recordLocation(project: Project, location: Location) {
         val locations = locationMap.getOrPut(project, ::LinkedHashMap)
@@ -619,8 +592,7 @@ class UnusedResourceDetector :
       }
     }
 
-    override fun readText(file: File) =
-      context?.client?.readFile(file)?.toString() ?: super.readText(file)
+    override fun readText(file: File) = context?.client?.readFile(file)?.toString() ?: super.readText(file)
 
     public override fun declareResource(type: ResourceType, name: String, node: Node?): Resource? {
       if (name.isEmpty()) {
@@ -632,18 +604,15 @@ class UnusedResourceDetector :
         val xmlContext = xmlContext
         if (context.phase == 2 && unused.contains(resource)) {
           when {
-            xmlContext != null &&
-              xmlContext.driver.isSuppressed(xmlContext, getIssue(resource), node) ->
-              resource.isKeep = true
+            xmlContext != null && xmlContext.driver.isSuppressed(xmlContext, getIssue(resource), node) -> resource.isKeep = true
             // For positions we try to use the name node rather than the
             // whole declaration element
-            node == null || xmlContext == null ->
-              resource.recordLocation(context.project, Location.create(context.file))
+            node == null || xmlContext == null -> resource.recordLocation(context.project, Location.create(context.file))
             else ->
-              resource.recordLocation(
-                context.project,
-                xmlContext.getLocation((node as? Element)?.getAttributeNode(ATTR_NAME) ?: node),
-              )
+                resource.recordLocation(
+                    context.project,
+                    xmlContext.getLocation((node as? Element)?.getAttributeNode(ATTR_NAME) ?: node),
+                )
           }
         }
         if (type == ResourceType.RAW && isKeepFile(name, xmlContext)) {
@@ -658,31 +627,22 @@ class UnusedResourceDetector :
 
     companion object {
       private fun isKeepFile(name: String, xmlContext: XmlContext?) =
-        if ("keep" == name) {
-          true
-        } else if (
-          xmlContext?.document?.documentElement == null ||
-            xmlContext.document.documentElement.firstChild != null
-        ) {
-          false
-        } else {
-          val attributes = xmlContext.document.documentElement.attributes
-          (0 until attributes.length).any { i ->
-            val attr = attributes.item(i)
-            val nodeName = attr.nodeName
-            if (
-              !nodeName.startsWith(XMLNS_PREFIX) &&
-                !nodeName.startsWith(TOOLS_PREFIX) &&
-                TOOLS_URI != attr.namespaceURI
-            ) {
-              return@isKeepFile false
-            } else {
-              nodeName.endsWith(ATTR_SHRINK_MODE) ||
-                nodeName.endsWith(ATTR_DISCARD) ||
-                nodeName.endsWith(ATTR_KEEP)
+          if ("keep" == name) {
+            true
+          } else if (xmlContext?.document?.documentElement == null || xmlContext.document.documentElement.firstChild != null) {
+            false
+          } else {
+            val attributes = xmlContext.document.documentElement.attributes
+            (0 until attributes.length).any { i ->
+              val attr = attributes.item(i)
+              val nodeName = attr.nodeName
+              if (!nodeName.startsWith(XMLNS_PREFIX) && !nodeName.startsWith(TOOLS_PREFIX) && TOOLS_URI != attr.namespaceURI) {
+                return@isKeepFile false
+              } else {
+                nodeName.endsWith(ATTR_SHRINK_MODE) || nodeName.endsWith(ATTR_DISCARD) || nodeName.endsWith(ATTR_KEEP)
+              }
             }
           }
-        }
     }
   }
 
@@ -695,31 +655,28 @@ class UnusedResourceDetector :
     private const val INCLUDE_TESTS_PROPERTY = "lint.unused-resources.include-tests"
 
     private val IMPLEMENTATION =
-      EnumSet.of(
-          Scope.MANIFEST,
-          Scope.ALL_RESOURCE_FILES,
-          Scope.ALL_JAVA_FILES,
-          Scope.BINARY_RESOURCE_FILE,
-        )
-        .let { scopeSet ->
-          // Whether to include test sources in the scope. Currently true but controllable
-          // with a couple of flags.
-          if (
-            VALUE_TRUE == System.getProperty(INCLUDE_TESTS_PROPERTY) ||
-              VALUE_FALSE != System.getProperty(EXCLUDE_TESTS_PROPERTY)
-          ) {
-            scopeSet.add(Scope.TEST_SOURCES)
-          }
-          Implementation(UnusedResourceDetector::class.java, scopeSet)
-        }
+        EnumSet.of(
+                Scope.MANIFEST,
+                Scope.ALL_RESOURCE_FILES,
+                Scope.ALL_JAVA_FILES,
+                Scope.BINARY_RESOURCE_FILE,
+            )
+            .let { scopeSet ->
+              // Whether to include test sources in the scope. Currently true but controllable
+              // with a couple of flags.
+              if (VALUE_TRUE == System.getProperty(INCLUDE_TESTS_PROPERTY) || VALUE_FALSE != System.getProperty(EXCLUDE_TESTS_PROPERTY)) {
+                scopeSet.add(Scope.TEST_SOURCES)
+              }
+              Implementation(UnusedResourceDetector::class.java, scopeSet)
+            }
 
     @JvmField
     val SKIP_LIBRARIES =
-      BooleanOption(
-        "skip-libraries",
-        "Whether the unused resource check should skip reporting unused resources in libraries",
-        true,
-        """
+        BooleanOption(
+            "skip-libraries",
+            "Whether the unused resource check should skip reporting unused resources in libraries",
+            true,
+            """
         Many libraries will declare resources that are part of the library surface; other \
         modules depending on the library will also reference the resources. To avoid reporting \
         all these resources as unused (in the context of a library), the unused resource check \
@@ -729,10 +686,10 @@ class UnusedResourceDetector :
         However, there are cases where you want to check that all the resources declared in \
         a library are used; in that case, you can disable the skip option.
         """,
-      )
+        )
 
     private const val EXCLUDING_TESTS_EXPLANATION =
-      """
+        """
                 The unused resource check can ignore tests. If you want to include \
                 resources that are only referenced from tests, consider packaging them \
                 in a test source set instead.
@@ -749,30 +706,30 @@ class UnusedResourceDetector :
     /** Unused resources (other than ids). */
     @JvmField
     val ISSUE =
-      Issue.create(
-          id = "UnusedResources",
-          briefDescription = "Unused resources",
-          explanation =
-            """
+        Issue.create(
+                id = "UnusedResources",
+                briefDescription = "Unused resources",
+                explanation =
+                    """
                 Unused resources make applications larger and slow down builds.
 
                 $EXCLUDING_TESTS_EXPLANATION,
                 """,
-          category = Category.PERFORMANCE,
-          priority = 3,
-          severity = Severity.WARNING,
-          implementation = IMPLEMENTATION,
-        )
-        .setOptions(listOf(SKIP_LIBRARIES))
+                category = Category.PERFORMANCE,
+                priority = 3,
+                severity = Severity.WARNING,
+                implementation = IMPLEMENTATION,
+            )
+            .setOptions(listOf(SKIP_LIBRARIES))
 
     /** Unused id's */
     @JvmField
     val ISSUE_IDS =
-      Issue.create(
-        id = "UnusedIds",
-        briefDescription = "Unused id",
-        explanation =
-          """
+        Issue.create(
+            id = "UnusedIds",
+            briefDescription = "Unused id",
+            explanation =
+                """
                 This resource id definition appears not to be needed since it is not referenced \
                 from anywhere. Having id definitions, even if unused, is not necessarily a bad \
                 idea since they make working on layouts and menus easier, so there is not a \
@@ -780,41 +737,38 @@ class UnusedResourceDetector :
 
                 $EXCLUDING_TESTS_EXPLANATION
                 """,
-        category = Category.PERFORMANCE,
-        priority = 1,
-        severity = Severity.WARNING,
-        implementation = IMPLEMENTATION,
-        enabledByDefault = false,
-      )
+            category = Category.PERFORMANCE,
+            priority = 1,
+            severity = Severity.WARNING,
+            implementation = IMPLEMENTATION,
+            enabledByDefault = false,
+        )
 
     /**
-     * Whether the resource detector will look for inactive resources (e.g. resource and code
-     * references in source sets that are not the primary/active variant)
+     * Whether the resource detector will look for inactive resources (e.g. resource and code references in source sets that are not the
+     * primary/active variant)
      */
     @JvmField var sIncludeInactiveReferences = true
 
     private fun findUnused(
-      context: Context,
-      model: ResourceUsageModel,
+        context: Context,
+        model: ResourceUsageModel,
     ): Sequence<ResourceUsageModel.Resource> {
       model.processToolsAttributes()
       val idEnabled = context.isEnabled(ISSUE_IDS)
       return model
-        .findUnused()
-        .asSequence()
-        .filter(ResourceUsageModel.Resource::isDeclared)
-        // Remove id's if the user has disabled reporting issue ids
-        .filter { idEnabled || it.type != ResourceType.ID }
+          .findUnused()
+          .asSequence()
+          .filter(ResourceUsageModel.Resource::isDeclared)
+          // Remove id's if the user has disabled reporting issue ids
+          .filter { idEnabled || it.type != ResourceType.ID }
     }
 
-    private fun getIssue(resource: ResourceUsageModel.Resource) =
-      if (resource.type != ResourceType.ID) ISSUE else ISSUE_IDS
+    private fun getIssue(resource: ResourceUsageModel.Resource) = if (resource.type != ResourceType.ID) ISSUE else ISSUE_IDS
 
     // Copy from android.databinding.tool.util.ParserHelper:
     fun String.toClassName(postfix: String): String =
-      split("[_-]".toRegex())
-        .dropLastWhile { it.isEmpty() }
-        .joinToString(separator = "", postfix = postfix, transform = ::capitalize)
+        split("[_-]".toRegex()).dropLastWhile { it.isEmpty() }.joinToString(separator = "", postfix = postfix, transform = ::capitalize)
 
     // Copy from android.databinding.tool.util.StringUtils: using
     // this instead of IntelliJ's more flexible method to ensure
@@ -831,10 +785,10 @@ class UnusedResourceDetector :
 }
 
 private fun File.listFilesOrEmpty(): List<File> =
-  when (val files = listFiles()) {
-    null -> listOf()
-    else -> files.asList()
-  }
+    when (val files = listFiles()) {
+      null -> listOf()
+      else -> files.asList()
+    }
 
 private fun Location.resDirName(): String? {
   val dir = this.file.parentFile ?: return null

@@ -25,7 +25,7 @@ class DeprecationDetectorTest : AbstractCheckTest() {
 
   fun testApi4() {
     val expected =
-      """
+        """
             res/layout/deprecation.xml:1: Warning: AbsoluteLayout is deprecated [Deprecated]
             <AbsoluteLayout xmlns:android="http://schemas.android.com/apk/res/android"
              ~~~~~~~~~~~~~~
@@ -63,16 +63,16 @@ class DeprecationDetectorTest : AbstractCheckTest() {
 
   fun testUsesSdkM() {
     val expected =
-      """
+        """
             AndroidManifest.xml:7: Warning: uses-permission-sdk-m is deprecated: Use `uses-permission-sdk-23 instead [Deprecated]
                 <uses-permission-sdk-m android:name="foo.bar.BAZ" />
                  ~~~~~~~~~~~~~~~~~~~~~
             0 errors, 1 warnings
             """
     lint()
-      .files(
-        manifest(
-            """
+        .files(
+            manifest(
+                    """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="test.pkg">
 
@@ -97,18 +97,18 @@ class DeprecationDetectorTest : AbstractCheckTest() {
 
                 </manifest>
                 """
-          )
-          .indented()
-      )
-      .run()
-      .expect(expected)
+                )
+                .indented()
+        )
+        .run()
+        .expect(expected)
   }
 
   fun testAutoRevoke() {
     lint()
-      .files(
-        manifest(
-            """
+        .files(
+            manifest(
+                    """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="test.pkg">
                     <application
@@ -119,25 +119,25 @@ class DeprecationDetectorTest : AbstractCheckTest() {
 
                 </manifest>
                 """
-          )
-          .indented()
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .run()
+        .expect(
+            """
             AndroidManifest.xml:5: Warning: autoRevokePermissions has no effect; this flag was only used in preview versions of Android 11 [Deprecated]
                     android:autoRevokePermissions="discouraged"
                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             0 errors, 1 warnings
             """
-      )
+        )
   }
 
   // Sample code
   private val mDeprecation =
-    xml(
-        "res/layout/deprecation.xml",
-        """
+      xml(
+              "res/layout/deprecation.xml",
+              """
         <AbsoluteLayout xmlns:android="http://schemas.android.com/apk/res/android"
             android:layout_width="match_parent"
             android:layout_height="match_parent" >
@@ -167,15 +167,15 @@ class DeprecationDetectorTest : AbstractCheckTest() {
 
         </AbsoluteLayout>
         """,
-      )
-      .indented()
+          )
+          .indented()
 
   fun testAndroidX() {
     lint()
-      .files(
-        xml(
-            "res/xml/preferences.xml",
-            """
+        .files(
+            xml(
+                    "res/xml/preferences.xml",
+                    """
                 <androidx.preference.PreferenceScreen
                     xmlns:app="http://schemas.android.com/apk/res-auto">
 
@@ -190,78 +190,78 @@ class DeprecationDetectorTest : AbstractCheckTest() {
 
                 </androidx.preference.PreferenceScreen>
                 """,
-          )
-          .indented()
-      )
-      .run()
-      .expectClean()
+                )
+                .indented()
+        )
+        .run()
+        .expectClean()
   }
 
   fun testFrameworkOldProject() {
     lint()
-      .files(
-        xml(
-            "res/xml/preferences.xml",
-            """
+        .files(
+            xml(
+                    "res/xml/preferences.xml",
+                    """
                 <android.preference.PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
                     <CheckBoxPreference>
                     </CheckBoxPreference>
                 </android.preference.PreferenceScreen>
                 """,
-          )
-          .indented(),
-        manifest().targetSdk(29),
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            manifest().targetSdk(29),
+        )
+        .run()
+        .expect(
+            """
                 res/xml/preferences.xml:1: Warning: The android.preference library is deprecated, it is recommended that you migrate to the AndroidX Preference library instead. [Deprecated]
                 <android.preference.PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 0 errors, 1 warnings
                 """
-      )
+        )
   }
 
   fun testFrameworkNewProject() {
     lint()
-      .files(
-        xml(
-            "res/xml/preferences.xml",
-            """
+        .files(
+            xml(
+                    "res/xml/preferences.xml",
+                    """
                 <android.preference.PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
                     <CheckBoxPreference>
                     </CheckBoxPreference>
                 </android.preference.PreferenceScreen>
                 """,
-          )
-          .indented(),
-        manifest().targetSdk(30),
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            manifest().targetSdk(30),
+        )
+        .run()
+        .expect(
+            """
                 res/xml/preferences.xml:1: Warning: The android.preference library is deprecated, it is recommended that you migrate to the AndroidX Preference library instead. [Deprecated]
                 <android.preference.PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 0 errors, 1 warnings
                 """
-      )
+        )
   }
 
   fun testCustomFrameworkPreference() {
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
                 package android.preference;
                 public class Preference {
                     public CustomOldPreference() {}}
                 """
-          )
-          .indented(),
-        java(
-            """
+                )
+                .indented(),
+            java(
+                    """
                 package com.example.myapplication;
                 public class CustomOldPreference extends android.preference.Preference {
                     public CustomOldPreference() {
@@ -269,35 +269,35 @@ class DeprecationDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-          )
-          .indented(),
-        xml(
-            "res/xml/preferences.xml",
-            """
+                )
+                .indented(),
+            xml(
+                    "res/xml/preferences.xml",
+                    """
                 <com.example.myapplication.CustomOldPreference xmlns:android="http://schemas.android.com/apk/res/android">
                     <CheckBoxPreference>
                     </CheckBoxPreference>
                 </com.example.myapplication.CustomOldPreference>
                 """,
-          )
-          .indented(),
-        manifest().targetSdk(30),
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            manifest().targetSdk(30),
+        )
+        .run()
+        .expect(
+            """
                 res/xml/preferences.xml:1: Warning: com.example.myapplication.CustomOldPreference inherits from android.preference.Preference which is now deprecated, it is recommended that you migrate to the AndroidX Preference library. [Deprecated]
                 <com.example.myapplication.CustomOldPreference xmlns:android="http://schemas.android.com/apk/res/android">
                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 0 errors, 1 warnings"""
-      )
+        )
   }
 
   fun testGcmFjdDeprecation() {
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
                 package test.pkg;
                 import android.content.Context;
                 import com.firebase.jobdispatcher.FirebaseJobDispatcher;
@@ -314,10 +314,10 @@ class DeprecationDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-          )
-          .indented(),
-        kotlin(
-            """
+                )
+                .indented(),
+            kotlin(
+                    """
                 package test.pkg
                 import android.content.Context
                 import com.firebase.jobdispatcher.FirebaseJobDispatcher
@@ -333,21 +333,21 @@ class DeprecationDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-          )
-          .indented(),
+                )
+                .indented(),
 
-        // Stubs
-        java(
-            """
+            // Stubs
+            java(
+                    """
                 package com.firebase.jobdispatcher;
                 public class FirebaseJobDispatcher {
                     public FirebaseJobDispatcher(Object driver) { }
                 }
                 """
-          )
-          .indented(),
-        java(
-            """
+                )
+                .indented(),
+            java(
+                    """
                 package com.google.android.gms.gcm;
                 import android.content.Context;
                 public class GcmNetworkManager {
@@ -357,12 +357,12 @@ class DeprecationDetectorTest : AbstractCheckTest() {
                     public void schedule(Object task) { }
                 }
                 """
-          )
-          .indented(),
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+        )
+        .run()
+        .expect(
+            """
             src/test/pkg/DeprecationTestJava.java:10: Warning: Job scheduling with FirebaseJobDispatcher is deprecated: Use AndroidX WorkManager instead [Deprecated]
                             new FirebaseJobDispatcher(driver);
                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -377,29 +377,29 @@ class DeprecationDetectorTest : AbstractCheckTest() {
                                       ~~~~~~~~~~~
             0 errors, 4 warnings
             """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
             Show URL for src/test/pkg/DeprecationTestJava.java line 10: https://developer.android.com/topic/libraries/architecture/workmanager/migrating-fb
             Show URL for src/test/pkg/DeprecationTestJava.java line 13: https://developer.android.com/topic/libraries/architecture/workmanager/migrating-gcm
             Show URL for src/test/pkg/DeprecationTestKotlin.kt line 9: https://developer.android.com/topic/libraries/architecture/workmanager/migrating-fb
             Show URL for src/test/pkg/DeprecationTestKotlin.kt line 12: https://developer.android.com/topic/libraries/architecture/workmanager/migrating-gcm
             """
-      )
+        )
   }
 
   fun testManifestAppActionsDeprecation() {
     val expected =
-      """
+        """
             AndroidManifest.xml:9: Warning: App actions via actions.xml is deprecated; Please migrate to shortcuts.xml. See https://developers.google.com/assistant/app/legacy/migration-guide. [Deprecated]
                         android:name="com.google.android.actions"
                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             0 errors, 1 warnings
             """
     lint()
-      .files(
-        manifest(
-            """
+        .files(
+            manifest(
+                    """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="test.pkg">
                     <uses-sdk android:minSdkVersion="21" />
@@ -413,21 +413,19 @@ class DeprecationDetectorTest : AbstractCheckTest() {
                     </application>
                 </manifest>
                 """
-          )
-          .indented()
-      )
-      .run()
-      .expect(expected)
-      .expectFixDiffs(
-        "Show URL for AndroidManifest.xml line 9: https://developers.google.com/assistant/app/legacy/migration-guide"
-      )
+                )
+                .indented()
+        )
+        .run()
+        .expect(expected)
+        .expectFixDiffs("Show URL for AndroidManifest.xml line 9: https://developers.google.com/assistant/app/legacy/migration-guide")
   }
 
   fun testChooserTargetServiceDeprecation() {
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
                 package test.pkg;
                 import android.content.ComponentName;
                 import android.content.IntentFilter;
@@ -448,10 +446,10 @@ class DeprecationDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-          )
-          .indented(),
-        kotlin(
-            """
+                )
+                .indented(),
+            kotlin(
+                    """
                 package test.pkg
                 import android.content.ComponentName
                 import android.content.IntentFilter
@@ -473,12 +471,12 @@ class DeprecationDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-          )
-          .indented(),
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+        )
+        .run()
+        .expect(
+            """
             src/test/pkg/DeprecationTestJava.java:14: Warning: ChooserClass extends the deprecated ChooserTargetService: Use the Share API instead [Deprecated]
             class ChooserClass extends ChooserTargetService {
                   ~~~~~~~~~~~~
@@ -487,27 +485,27 @@ class DeprecationDetectorTest : AbstractCheckTest() {
                   ~~~~~~~~~~~~
             0 errors, 2 warnings
             """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
             Show URL for src/test/pkg/DeprecationTestJava.java line 14: https://developer.android.com/training/sharing/receive.html?source=studio#providing-direct-share-targets
             Show URL for src/test/pkg/DeprecationTestKotlin.kt line 14: https://developer.android.com/training/sharing/receive.html?source=studio#providing-direct-share-targets
             """
-      )
+        )
   }
 
   fun testUsesChooserTargetServicePermission() {
     val expected =
-      """
+        """
             AndroidManifest.xml:11: Warning: ChooserTargetService` is deprecated: Please see https://developer.android.com/training/sharing/receive.html?source=studio#providing-direct-share-targets [Deprecated]
                         android:permission="android.permission.BIND_CHOOSER_TARGET_SERVICE">
                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             0 errors, 1 warnings
             """
     lint()
-      .files(
-        manifest(
-            """
+        .files(
+            manifest(
+                    """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="test.pkg">
                     <uses-sdk android:minSdkVersion="1" />
@@ -526,89 +524,89 @@ class DeprecationDetectorTest : AbstractCheckTest() {
                     </application>
                 </manifest>
                 """
-          )
-          .indented()
-      )
-      .run()
-      .expect(expected)
-      .expectFixDiffs(
-        """
+                )
+                .indented()
+        )
+        .run()
+        .expect(expected)
+        .expectFixDiffs(
+            """
             Show URL for AndroidManifest.xml line 11: https://developer.android.com/training/sharing/receive.html?source=studio#providing-direct-share-targets
             """
-      )
+        )
   }
 
   fun testSharedUserId() {
     // Regression test for issue 233388117
     lint()
-      .files(
-        manifest(
-            """
+        .files(
+            manifest(
+                    """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="test.pkg"
                     android:sharedUserId="0"
                     android:sharedUserMaxSdkVersion="32">
                 </manifest>
                 """
-          )
-          .indented(),
-        manifest(
-            """
+                )
+                .indented(),
+            manifest(
+                    """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="test.pkg"
                     android:sharedUserId="0">
                 </manifest>
                 """
-          )
-          .to("../app/AndroidManifest.xml"),
-      )
-      .run()
-      .expect(
-        """
+                )
+                .to("../app/AndroidManifest.xml"),
+        )
+        .run()
+        .expect(
+            """
             AndroidManifest.xml:4: Warning: Consider removing sharedUserId for new users by adding android:sharedUserMaxSdkVersion="32" to your manifest. See https://developer.android.com/guide/topics/manifest/manifest-element for details. [Deprecated]
                                 android:sharedUserId="0">
                                 ~~~~~~~~~~~~~~~~~~~~~~~~
             0 errors, 1 warnings
             """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
             Fix for AndroidManifest.xml line 4: Set sharedUserMaxSdkVersion="32":
             @@ -4 +4,2 @@
             -    android:sharedUserId="0" >
             +    android:sharedUserId="0"
             +    android:sharedUserMaxSdkVersion="32" >
             """
-      )
+        )
   }
 
   fun testWatchFaceServiceDeprecation() {
     val stubs =
-      arrayOf(
-        // Androidx
-        kotlin(
-            """
+        arrayOf(
+            // Androidx
+            kotlin(
+                    """
         package androidx.wear.watchface
 
         interface WatchFaceService
       """
-          )
-          .indented(),
-        // Wear Support Library
-        kotlin(
-            """
+                )
+                .indented(),
+            // Wear Support Library
+            kotlin(
+                    """
         package android.support.wearable.watchface
 
         interface WatchFaceService
       """
-          )
-          .indented(),
-      )
+                )
+                .indented(),
+        )
 
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
                 package test.pkg;
 
                 import androidx.wear.watchface.WatchFaceService;
@@ -616,10 +614,10 @@ class DeprecationDetectorTest : AbstractCheckTest() {
                 class MyWatchFaceServiceAndroidx extends WatchFaceService {
                 }
                 """
-          )
-          .indented(),
-        java(
-            """
+                )
+                .indented(),
+            java(
+                    """
                 package test.pkg;
 
                 import android.support.wearable.watchface.WatchFaceService;
@@ -627,33 +625,33 @@ class DeprecationDetectorTest : AbstractCheckTest() {
                 class MyWatchFaceServiceWSL extends WatchFaceService {
                 }
                 """
-          )
-          .indented(),
-        kotlin(
-            """
+                )
+                .indented(),
+            kotlin(
+                    """
                 package test.pkg.kt
 
                 import androidx.wear.watchface.WatchFaceService
 
                 class MyWatchFaceServiceAndroidx : WatchFaceService()
                 """
-          )
-          .indented(),
-        kotlin(
-            """
+                )
+                .indented(),
+            kotlin(
+                    """
                 package test.pkg.kt
 
                 import android.support.wearable.watchface.WatchFaceService
 
                 class MyWatchFaceServiceWSL : WatchFaceService()
                 """
-          )
-          .indented(),
-        *stubs,
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            *stubs,
+        )
+        .run()
+        .expect(
+            """
           src/test/pkg/MyWatchFaceServiceAndroidx.java:5: Warning: MyWatchFaceServiceAndroidx extends the deprecated WatchFaceService: Use Watch Face Format instead [Deprecated]
           class MyWatchFaceServiceAndroidx extends WatchFaceService {
                 ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -668,14 +666,14 @@ class DeprecationDetectorTest : AbstractCheckTest() {
                 ~~~~~~~~~~~~~~~~~~~~~
           0 errors, 4 warnings
           """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
           Show URL for src/test/pkg/MyWatchFaceServiceAndroidx.java line 5: https://developer.android.com/training/wearables/wff
           Show URL for src/test/pkg/kt/MyWatchFaceServiceAndroidx.kt line 5: https://developer.android.com/training/wearables/wff
           Show URL for src/test/pkg/MyWatchFaceServiceWSL.java line 5: https://developer.android.com/training/wearables/wff
           Show URL for src/test/pkg/kt/MyWatchFaceServiceWSL.kt line 5: https://developer.android.com/training/wearables/wff
         """
-      )
+        )
   }
 }

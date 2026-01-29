@@ -54,11 +54,11 @@ class DataBindingDetector : LayoutDetector() {
       if (isContained) {
         val fix = fix().name("Change '<' to '&lt;'").replace().text("<").with("&lt;").build()
         context.report(
-          ESCAPE_XML,
-          attribute,
-          context.getValueLocation(attribute),
-          "`<` must be escaped (as `&lt;`) in attribute values",
-          fix,
+            ESCAPE_XML,
+            attribute,
+            context.getValueLocation(attribute),
+            "`<` must be escaped (as `&lt;`) in attribute values",
+            fix,
         )
       }
     }
@@ -72,18 +72,18 @@ class DataBindingDetector : LayoutDetector() {
     /** The main issue discovered by this detector. */
     @JvmField
     val ESCAPE_XML =
-      Issue.create(
-        id = "XmlEscapeNeeded",
-        briefDescription = "Missing XML Escape",
-        explanation =
-          """
+        Issue.create(
+            id = "XmlEscapeNeeded",
+            briefDescription = "Missing XML Escape",
+            explanation =
+                """
               When a string contains characters that have special usage in XML, \
               you must escape the characters.
             """,
-        category = Category.CORRECTNESS,
-        priority = 5,
-        severity = Severity.ERROR,
-        implementation = Implementation(DataBindingDetector::class.java, Scope.RESOURCE_FILE_SCOPE),
-      )
+            category = Category.CORRECTNESS,
+            priority = 5,
+            severity = Severity.ERROR,
+            implementation = Implementation(DataBindingDetector::class.java, Scope.RESOURCE_FILE_SCOPE),
+        )
   }
 }

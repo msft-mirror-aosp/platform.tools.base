@@ -20,9 +20,8 @@ import com.android.utils.SdkUtils
 import com.android.utils.XmlUtils
 
 /**
- * Lint error message, issue explanations and location descriptions are described in a [RAW] format
- * which looks similar to text but which can contain bold, symbols and links. These issues can also
- * be converted to plain text and to HTML markup, using the [convertTo] method.
+ * Lint error message, issue explanations and location descriptions are described in a [RAW] format which looks similar to text but which
+ * can contain bold, symbols and links. These issues can also be converted to plain text and to HTML markup, using the [convertTo] method.
  *
  * @see Issue.getExplanation
  * @see Issue.getBriefDescription
@@ -36,16 +35,15 @@ enum class TextFormat {
    * * Sentences immediately surrounded by *** will be shown as bold italics.
    * * Sentences immediately surrounded by ` will be shown using monospace fonts.
    * * Sentences immediately surrounded by ~~ will be shown as strikethrough.
-   * * You can escape the previous characters with a backslash, \. Backslash characters must
-   *   themselves be escaped with a backslash, e.g. use \\.
-   * * If you want to use bold or italics within a word, you can use the trick of putting a
-   *   zero-width space between the characters by entering a \\u200b unicode character.
-   * * Blocks of lines surrounded with ``` will be formatted as code; you can optionally add "xml",
-   *   "java", "kotlin" etc immediately after ``` on the opening line to get syntax highlighting
-   *   when lint supports it (such as in HTML reports.)
+   * * You can escape the previous characters with a backslash, \. Backslash characters must themselves be escaped with a backslash, e.g.
+   *   use \\.
+   * * If you want to use bold or italics within a word, you can use the trick of putting a zero-width space between the characters by
+   *   entering a \\u200b unicode character.
+   * * Blocks of lines surrounded with ``` will be formatted as code; you can optionally add "xml", "java", "kotlin" etc immediately
+   *   after ``` on the opening line to get syntax highlighting when lint supports it (such as in HTML reports.)
    *
-   * Furthermore, newlines are converted to br's when converting newlines. Note: It does not insert
-   * `<html>` tags around the fragment for HTML output.
+   * Furthermore, newlines are converted to br's when converting newlines. Note: It does not insert `<html>` tags around the fragment for
+   * HTML output.
    */
   RAW,
 
@@ -56,11 +54,11 @@ enum class TextFormat {
   HTML,
 
   /**
-   * HTML formatted output (note: does not include surrounding `<html></html>` tags). This is like
-   * [HTML], but it does not escape unicode characters with entities.
+   * HTML formatted output (note: does not include surrounding `<html></html>` tags). This is like [HTML], but it does not escape unicode
+   * characters with entities.
    *
-   * (This is used for example in the IDE, where some partial HTML support in some label widgets
-   * support some HTML markup, but not numeric code character entities.)
+   * (This is used for example in the IDE, where some partial HTML support in some label widgets support some HTML markup, but not numeric
+   * code character entities.)
    */
   HTML_WITH_UNICODE;
 
@@ -81,9 +79,9 @@ enum class TextFormat {
   fun toText(text: String): String = convertTo(text, TEXT)
 
   /**
-   * Converts the given message to the given format. Note that some conversions are lossy; e.g. once
-   * converting away from the raw format (which contains all the markup) you can't convert back to
-   * it. Note that you can convert to the format it's already in; that just returns the same string.
+   * Converts the given message to the given format. Note that some conversions are lossy; e.g. once converting away from the raw format
+   * (which contains all the markup) you can't convert back to it. Note that you can convert to the format it's already in; that just
+   * returns the same string.
    *
    * @param message the message to convert
    * @param to the format to convert to
@@ -183,17 +181,17 @@ enum class TextFormat {
         if (tag.equals("br", ignoreCase = true)) {
           sb.append('\n')
         } else if (
-          tag.equals("p", ignoreCase = true) || // Most common block tags
-            tag.equals("div", ignoreCase = true) ||
-            tag.equals("pre", ignoreCase = true) ||
-            tag.equals("blockquote", ignoreCase = true) ||
-            tag.equals("dl", ignoreCase = true) ||
-            tag.equals("dd", ignoreCase = true) ||
-            tag.equals("dt", ignoreCase = true) ||
-            tag.equals("ol", ignoreCase = true) ||
-            tag.equals("ul", ignoreCase = true) ||
-            tag.equals("li", ignoreCase = true) ||
-            (tag.length == 2 && tag.startsWith("h") && Character.isDigit(tag[1]))
+            tag.equals("p", ignoreCase = true) || // Most common block tags
+                tag.equals("div", ignoreCase = true) ||
+                tag.equals("pre", ignoreCase = true) ||
+                tag.equals("blockquote", ignoreCase = true) ||
+                tag.equals("dl", ignoreCase = true) ||
+                tag.equals("dd", ignoreCase = true) ||
+                tag.equals("dt", ignoreCase = true) ||
+                tag.equals("ol", ignoreCase = true) ||
+                tag.equals("ul", ignoreCase = true) ||
+                tag.equals("li", ignoreCase = true) ||
+                (tag.length == 2 && tag.startsWith("h") && Character.isDigit(tag[1]))
         ) {
           // Block tag: ensure new line
           if (sb.isNotEmpty() && sb[sb.length - 1] != '\n') {
@@ -217,9 +215,7 @@ enum class TextFormat {
         } else if (this == RAW) {
           if (tag.equals("code", ignoreCase = true)) {
             sb.append("`")
-          } else if (
-            tag.equals("strong", ignoreCase = true) || tag.equals("b", ignoreCase = true)
-          ) {
+          } else if (tag.equals("strong", ignoreCase = true) || tag.equals("b", ignoreCase = true)) {
             sb.append("**")
           } else if (tag.equals("i", ignoreCase = true)) {
             sb.append("*")
@@ -312,13 +308,13 @@ enum class TextFormat {
               sb.append("<pre>\n")
             }
             appendEscapedText(
-              sb,
-              text,
-              html,
-              nextLineStart,
-              end + 1,
-              escapeUnicode,
-              newlinesAsBr = false,
+                sb,
+                text,
+                html,
+                nextLineStart,
+                end + 1,
+                escapeUnicode,
+                newlinesAsBr = false,
             )
             if (html) {
               sb.append("</pre>\n")
@@ -326,11 +322,11 @@ enum class TextFormat {
 
             // Skip past the final ``` (and possibly \n if end of line)
             i =
-              if (end + 4 < n && text[end + 4] == '\n') {
-                end + 5
-              } else {
-                end + 4
-              }
+                if (end + 4 < n && text[end + 4] == '\n') {
+                  end + 5
+                } else {
+                  end + 4
+                }
             flushIndex = i
             continue
           }
@@ -392,15 +388,14 @@ enum class TextFormat {
           }
         }
       } else if (
-        html &&
-          c == 'h' &&
-          i < n - 1 &&
-          text[i + 1] == 't' &&
-          (text.startsWith(HTTP_PREFIX, i) || text.startsWith(HTTPS_PREFIX, i)) &&
-          !Character.isLetterOrDigit(prev)
+          html &&
+              c == 'h' &&
+              i < n - 1 &&
+              text[i + 1] == 't' &&
+              (text.startsWith(HTTP_PREFIX, i) || text.startsWith(HTTPS_PREFIX, i)) &&
+              !Character.isLetterOrDigit(prev)
       ) {
-        val length =
-          if (text.startsWith(HTTP_PREFIX, i)) HTTP_PREFIX.length else HTTPS_PREFIX.length
+        val length = if (text.startsWith(HTTP_PREFIX, i)) HTTP_PREFIX.length else HTTPS_PREFIX.length
         val end = findUrlEnd(text, i)
         if (end > i + length) {
           if (i > flushIndex) {
@@ -420,13 +415,13 @@ enum class TextFormat {
       } else if (c == '\n' && escaped) {
         flushIndex++
       } else if (
-        c == '~' &&
-          !escaped &&
-          i < n - 4 &&
-          text[i + 1] == '~' &&
-          text[i + 2] != '~' &&
-          !Character.isWhitespace(text[i + 2]) &&
-          !Character.isLetterOrDigit(prev)
+          c == '~' &&
+              !escaped &&
+              i < n - 4 &&
+              text[i + 1] == '~' &&
+              text[i + 2] != '~' &&
+              !Character.isWhitespace(text[i + 2]) &&
+              !Character.isLetterOrDigit(prev)
       ) {
         // Strikethrough span. Found ~~ immediately before a letter, and not in the middle of a
         // word.
@@ -463,13 +458,10 @@ enum class TextFormat {
     const val HTTPS_PREFIX = "https://"
     const val A_HREF_PREFIX = "<a href=\""
 
-    /**
-     * Given an http URL starting at [start] in [text], find the position right after the URL end.
-     */
+    /** Given an http URL starting at [start] in [text], find the position right after the URL end. */
     fun findUrlEnd(text: String, start: Int): Int {
       // Find url end
-      val length =
-        if (text.startsWith(HTTP_PREFIX, start)) HTTP_PREFIX.length else HTTPS_PREFIX.length
+      val length = if (text.startsWith(HTTP_PREFIX, start)) HTTP_PREFIX.length else HTTPS_PREFIX.length
       var end = start + length
       val n = text.length
       while (end < n) {
@@ -585,13 +577,13 @@ enum class TextFormat {
     }
 
     private fun appendEscapedText(
-      sb: StringBuilder,
-      text: String,
-      html: Boolean,
-      start: Int,
-      end: Int,
-      escapeUnicode: Boolean,
-      newlinesAsBr: Boolean = true,
+        sb: StringBuilder,
+        text: String,
+        html: Boolean,
+        start: Int,
+        end: Int,
+        escapeUnicode: Boolean,
+        newlinesAsBr: Boolean = true,
     ) {
       if (html) {
         for (i in start until end) {

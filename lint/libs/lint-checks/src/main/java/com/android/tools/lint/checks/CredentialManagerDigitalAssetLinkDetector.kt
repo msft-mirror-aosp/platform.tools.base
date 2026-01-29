@@ -42,23 +42,19 @@ import java.util.EnumSet
 import org.jetbrains.uast.UCallExpression
 
 /**
- * Reports the `<application>` element or `<meta-data>` element in the app's merged manifest if the
- * following conditions all hold:
+ * Reports the `<application>` element or `<meta-data>` element in the app's merged manifest if the following conditions all hold:
  * - Kotlin/Java code (in any module) calls the CreatePasswordRequest constructor.
- * - The `<meta-data android:name="asset_statements"
- *   android:resource="@string/myAssetStatementString" />` element is missing, or the resource
- *   attribute is missing, or the string content is missing "include" or missing
- *   ".well-known/assetlinks.json".
+ * - The `<meta-data android:name="asset_statements" android:resource="@string/myAssetStatementString" />` element is missing, or the
+ *   resource attribute is missing, or the string content is missing "include" or missing ".well-known/assetlinks.json".
  */
 class CredentialManagerDigitalAssetLinkDetector : Detector(), SourceCodeScanner {
 
-  override fun getApplicableConstructorTypes() =
-    listOf("androidx.credentials.CreatePasswordRequest")
+  override fun getApplicableConstructorTypes() = listOf("androidx.credentials.CreatePasswordRequest")
 
   override fun visitConstructor(
-    context: JavaContext,
-    node: UCallExpression,
-    constructor: PsiMethod,
+      context: JavaContext,
+      node: UCallExpression,
+      constructor: PsiMethod,
   ) {
     // Record that we have seen a call to the CreatePasswordRequest constructor.
     context.getPartialResults(ISSUE).map().put(CREATE_PASSWORD_REQUEST_SEEN_KEY, true)
@@ -67,69 +63,63 @@ class CredentialManagerDigitalAssetLinkDetector : Detector(), SourceCodeScanner 
   override fun checkPartialResults(context: Context, partialResults: PartialResult) {
     if (context.project.isLibrary) return
 
-    val createPasswordRequestSeen =
-      partialResults.maps().stream().anyMatch {
-        it.getBoolean(CREATE_PASSWORD_REQUEST_SEEN_KEY) == true
-      }
+    val createPasswordRequestSeen = partialResults.maps().stream().anyMatch { it.getBoolean(CREATE_PASSWORD_REQUEST_SEEN_KEY) == true }
 
     if (!createPasswordRequestSeen) return
 
     val manifest = context.project.mergedManifest?.documentElement ?: return
     val application = manifest.subtag(TAG_APPLICATION) ?: return
     val assetMetadata =
-      application.iterator().asSequence().lastOrNull {
-        it.localName == TAG_META_DATA &&
-          it.getAttributeNS(ANDROID_URI, ATTR_NAME) == "asset_statements"
-      }
+        application.iterator().asSequence().lastOrNull {
+          it.localName == TAG_META_DATA && it.getAttributeNS(ANDROID_URI, ATTR_NAME) == "asset_statements"
+        }
     if (assetMetadata == null) {
       context.report(
-        Incident(
-          ISSUE,
-          "Missing `<meta-data>` tag for asset statements for Credential Manager",
-          context.getLocation(application),
-        )
+          Incident(
+              ISSUE,
+              "Missing `<meta-data>` tag for asset statements for Credential Manager",
+              context.getLocation(application),
+          )
       )
       return
     }
     val resourceRef = assetMetadata.getAttributeNS(ANDROID_URI, ATTR_RESOURCE)
     if (resourceRef.isEmpty()) {
       context.report(
-        Incident(
-          ISSUE,
-          "Missing `android:resource` attribute for asset statements string resource",
-          context.getLocation(assetMetadata),
-        )
+          Incident(
+              ISSUE,
+              "Missing `android:resource` attribute for asset statements string resource",
+              context.getLocation(assetMetadata),
+          )
       )
       return
     }
     val resourceUrl = ResourceUrl.parse(resourceRef) ?: return
     if (resourceUrl.type != ResourceType.STRING) return
 
-    val projectResources =
-      context.client.getResources(context.project, ResourceRepositoryScope.ALL_DEPENDENCIES)
-    val statementsResources =
-      projectResources.getResources(ResourceNamespace.TODO(), resourceUrl.type, resourceUrl.name)
+    val projectResources = context.client.getResources(context.project, ResourceRepositoryScope.ALL_DEPENDENCIES)
+    val statementsResources = projectResources.getResources(ResourceNamespace.TODO(), resourceUrl.type, resourceUrl.name)
     if (statementsResources.isEmpty()) return
     // Shortest key.
     val statementsResource = statementsResources.minByOrNull { it.key } ?: return
     val statementsString = statementsResource.resourceValue?.value ?: return
     if (!statementsString.contains("include")) {
       context.report(
-        Incident(
-          ISSUE,
-          "Could not find \"include\" in asset statements string resource",
-          context.getLocation(assetMetadata),
-        )
+          Incident(
+              ISSUE,
+              "Could not find \"include\" in asset statements string resource",
+              context.getLocation(assetMetadata),
+          )
       )
       return
     }
     if (!statementsString.contains(".well-known/assetlinks.json")) {
       context.report(
-        Incident(
-          ISSUE,
-          "Could not find `.well-known/assetlinks.json` in asset statements string resource",
-          context.getLocation(assetMetadata),
-        )
+          Incident(
+              ISSUE,
+              "Could not find `.well-known/assetlinks.json` in asset statements string resource",
+              context.getLocation(assetMetadata),
+          )
       )
       return
     }
@@ -145,30 +135,29 @@ class CredentialManagerDigitalAssetLinkDetector : Detector(), SourceCodeScanner 
     const val CREATE_PASSWORD_REQUEST_SEEN_KEY = "CreatePasswordRequestSeen"
 
     private val IMPLEMENTATION =
-      Implementation(
-        CredentialManagerDigitalAssetLinkDetector::class.java,
-        EnumSet.of(Scope.ALL_JAVA_FILES),
-      )
+        Implementation(
+            CredentialManagerDigitalAssetLinkDetector::class.java,
+            EnumSet.of(Scope.ALL_JAVA_FILES),
+        )
 
     @JvmField
     val ISSUE =
-      Issue.create(
-        id = "CredManMissingDal",
-        briefDescription = "Missing Digital Asset Link for Credential Manager",
-        explanation =
-          """
+        Issue.create(
+            id = "CredManMissingDal",
+            briefDescription = "Missing Digital Asset Link for Credential Manager",
+            explanation =
+                """
           When using password sign-in through Credential Manager, \
           an asset statements string resource file \
           that includes the `assetlinks.json` files to load \
           must be declared in the manifest using a `<meta-data>` element.
           """,
-        moreInfo =
-          "https://developer.android.com/identity/sign-in/credential-manager#add-support-dal",
-        category = Category.CORRECTNESS,
-        priority = 5,
-        severity = Severity.ERROR,
-        implementation = IMPLEMENTATION,
-        androidSpecific = true,
-      )
+            moreInfo = "https://developer.android.com/identity/sign-in/credential-manager#add-support-dal",
+            category = Category.CORRECTNESS,
+            priority = 5,
+            severity = Severity.ERROR,
+            implementation = IMPLEMENTATION,
+            androidSpecific = true,
+        )
   }
 }

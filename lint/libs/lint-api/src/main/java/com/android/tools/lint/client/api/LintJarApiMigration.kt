@@ -46,24 +46,21 @@ import org.objectweb.asm.tree.MethodNode
 import org.objectweb.asm.tree.VarInsnNode
 
 /**
- * Bytecode rewriter which can adapt *some* older lint check jars from old API references to new API
- * references, such as migrations in the Kotlin analysis API.
+ * Bytecode rewriter which can adapt *some* older lint check jars from old API references to new API references, such as migrations in the
+ * Kotlin analysis API.
  *
- * The two main entry points are [migrateJar] which migrates the bytes of one lint jar and returns
- * it as an updated jar byte array, and [getMigratedJar] which operates at the File level and adds
- * caching.
+ * The two main entry points are [migrateJar] which migrates the bytes of one lint jar and returns it as an updated jar byte array, and
+ * [getMigratedJar] which operates at the File level and adds caching.
  *
- * NOTE: This does NOT handle all the various changes that have been made to the analysis API so
- * far; it's focusing on the ones observed in our existing 3rd party library usages (chiefly
- * AndroidX).
+ * NOTE: This does NOT handle all the various changes that have been made to the analysis API so far; it's focusing on the ones observed in
+ * our existing 3rd party library usages (chiefly AndroidX).
  */
 class LintJarApiMigration(private val client: LintClient) {
   /**
-   * For a file that has been determined that it needs API migration (via the [LintJarVerifier]),
-   * this method returns a migrated jar, possibly cached.
+   * For a file that has been determined that it needs API migration (via the [LintJarVerifier]), this method returns a migrated jar,
+   * possibly cached.
    *
-   * The registryClass is only used to make the cached file names more readable and can be left
-   * blank.
+   * The registryClass is only used to make the cached file names more readable and can be left blank.
    */
   @Suppress("UnstableApiUsage") // Guava Hashing
   fun getMigratedJar(jar: File, registryClass: String): File {
@@ -75,8 +72,7 @@ class LintJarApiMigration(private val client: LintClient) {
     hasher.putBytes(jarContents)
     val hashCode = hasher.hash()
     val hashCodeString = hashCode.toString()
-    val fileName =
-      "${if (registryClass.isNotBlank()) "$registryClass-" else ""}$hashCodeString.$DOT_JAR"
+    val fileName = "${if (registryClass.isNotBlank()) "$registryClass-" else ""}$hashCodeString.$DOT_JAR"
     val cachedJar = File(cacheDir, fileName)
 
     if (!cachedJar.isFile) {
@@ -87,9 +83,8 @@ class LintJarApiMigration(private val client: LintClient) {
   }
 
   /**
-   * Given the bytecode contents of a lint jar file, migrates the classes contained within and
-   * returns the bytecode for the migrated class. The actual per class migration is performed by
-   * [migrateClass].
+   * Given the bytecode contents of a lint jar file, migrates the classes contained within and returns the bytecode for the migrated class.
+   * The actual per class migration is performed by [migrateClass].
    */
   private fun migrateJar(jarBytes: ByteArray): ByteArray {
     val output = ByteArrayOutputStream()
@@ -122,12 +117,10 @@ class LintJarApiMigration(private val client: LintClient) {
   /**
    * Migrates the given `.class` file contents as bytecode. This current performs four migrations:
    * 1. Replaces inlined Kotlin analysis API `analyze()` method bodies
-   * 2. Replaces all renamed and moved Kotlin analysis APIs class references (including in type
-   *    signatures) to their new locations; this is based on the mapping table in [mapClass], which
-   *    was extracted from type aliases left in the source code for compatibility reasons
-   * 3. Changes from invoke virtual to invoke interface methods that have been moved from classes to
-   *    interfaces; this is done by looking up each method via reflection (as the bytecode verifier
-   *    already does) and checking the type of the declaring class
+   * 2. Replaces all renamed and moved Kotlin analysis APIs class references (including in type signatures) to their new locations; this is
+   *    based on the mapping table in [mapClass], which was extracted from type aliases left in the source code for compatibility reasons
+   * 3. Changes from invoke virtual to invoke interface methods that have been moved from classes to interfaces; this is done by looking up
+   *    each method via reflection (as the bytecode verifier already does) and checking the type of the declaring class
    * 4. Handles a small number of other refactorings, such as the KtTypeProviderMixin changes.
    *
    * (The exact set of migrations will likely change over time.)
@@ -136,10 +129,7 @@ class LintJarApiMigration(private val client: LintClient) {
     return migrateClassNames(migrateAnalyzeCall(bytes))
   }
 
-  /**
-   * For APIs relevant to API migration, returns a new internal name for the given class, or null if
-   * it has not moved or is unknown.
-   */
+  /** For APIs relevant to API migration, returns a new internal name for the given class, or null if it has not moved or is unknown. */
   fun mapClass(s: String?): String? {
     if (s == null || !isRelevantType(s)) {
       return null
@@ -154,654 +144,529 @@ class LintJarApiMigration(private val client: LintClient) {
 
     return when (s) {
       // Extracted via ExtractMigrationTable.kt in the unit tests
-      "org/jetbrains/kotlin/analysis/api/KaStarTypeProjection" ->
-        "org/jetbrains/kotlin/analysis/api/types/KaStarTypeProjection"
-      "org/jetbrains/kotlin/analysis/api/KaSymbolBasedReference" ->
-        "org/jetbrains/kotlin/analysis/api/resolution/KaSymbolBasedReference"
-      "org/jetbrains/kotlin/analysis/api/KaTypeArgumentWithVariance" ->
-        "org/jetbrains/kotlin/analysis/api/types/KaTypeArgumentWithVariance"
-      "org/jetbrains/kotlin/analysis/api/KaTypeProjection" ->
-        "org/jetbrains/kotlin/analysis/api/types/KaTypeProjection"
-      "org/jetbrains/kotlin/analysis/api/KtAnalysisApiInternals" ->
-        "org/jetbrains/kotlin/analysis/api/KaAnalysisApiInternals"
-      "org/jetbrains/kotlin/analysis/api/KtAnalysisNonPublicApi" ->
-        "org/jetbrains/kotlin/analysis/api/KaAnalysisNonPublicApi"
-      "org/jetbrains/kotlin/analysis/api/KtAnalysisSession" ->
-        "org/jetbrains/kotlin/analysis/api/KaSession"
-      "org/jetbrains/kotlin/analysis/api/KtStarTypeProjection" ->
-        "org/jetbrains/kotlin/analysis/api/types/KaStarTypeProjection"
-      "org/jetbrains/kotlin/analysis/api/KtSymbolBasedReference" ->
-        "org/jetbrains/kotlin/analysis/api/resolution/KaSymbolBasedReference"
-      "org/jetbrains/kotlin/analysis/api/KtTypeArgumentWithVariance" ->
-        "org/jetbrains/kotlin/analysis/api/types/KaTypeArgumentWithVariance"
-      "org/jetbrains/kotlin/analysis/api/KtTypeProjection" ->
-        "org/jetbrains/kotlin/analysis/api/types/KaTypeProjection"
+      "org/jetbrains/kotlin/analysis/api/KaStarTypeProjection" -> "org/jetbrains/kotlin/analysis/api/types/KaStarTypeProjection"
+      "org/jetbrains/kotlin/analysis/api/KaSymbolBasedReference" -> "org/jetbrains/kotlin/analysis/api/resolution/KaSymbolBasedReference"
+      "org/jetbrains/kotlin/analysis/api/KaTypeArgumentWithVariance" -> "org/jetbrains/kotlin/analysis/api/types/KaTypeArgumentWithVariance"
+      "org/jetbrains/kotlin/analysis/api/KaTypeProjection" -> "org/jetbrains/kotlin/analysis/api/types/KaTypeProjection"
+      "org/jetbrains/kotlin/analysis/api/KtAnalysisApiInternals" -> "org/jetbrains/kotlin/analysis/api/KaAnalysisApiInternals"
+      "org/jetbrains/kotlin/analysis/api/KtAnalysisNonPublicApi" -> "org/jetbrains/kotlin/analysis/api/KaAnalysisNonPublicApi"
+      "org/jetbrains/kotlin/analysis/api/KtAnalysisSession" -> "org/jetbrains/kotlin/analysis/api/KaSession"
+      "org/jetbrains/kotlin/analysis/api/KtStarTypeProjection" -> "org/jetbrains/kotlin/analysis/api/types/KaStarTypeProjection"
+      "org/jetbrains/kotlin/analysis/api/KtSymbolBasedReference" -> "org/jetbrains/kotlin/analysis/api/resolution/KaSymbolBasedReference"
+      "org/jetbrains/kotlin/analysis/api/KtTypeArgumentWithVariance" -> "org/jetbrains/kotlin/analysis/api/types/KaTypeArgumentWithVariance"
+      "org/jetbrains/kotlin/analysis/api/KtTypeProjection" -> "org/jetbrains/kotlin/analysis/api/types/KaTypeProjection"
       "org/jetbrains/kotlin/analysis/api/annotations/KaAnnotationApplication" ->
-        "org/jetbrains/kotlin/analysis/api/annotations/KaAnnotation"
+          "org/jetbrains/kotlin/analysis/api/annotations/KaAnnotation"
       "org/jetbrains/kotlin/analysis/api/annotations/KaAnnotationApplicationInfo" ->
-        "org/jetbrains/kotlin/analysis/api/annotations/KaAnnotation"
-      "org/jetbrains/kotlin/analysis/api/annotations/KaAnnotationApplicationValue" ->
-        "KaAnnotationValue\$NestedAnnotationValue"
+          "org/jetbrains/kotlin/analysis/api/annotations/KaAnnotation"
+      "org/jetbrains/kotlin/analysis/api/annotations/KaAnnotationApplicationValue" -> "KaAnnotationValue\$NestedAnnotationValue"
       "org/jetbrains/kotlin/analysis/api/annotations/KaAnnotationApplicationWithArgumentsInfo" ->
-        "org/jetbrains/kotlin/analysis/api/annotations/KaAnnotation"
-      "org/jetbrains/kotlin/analysis/api/annotations/KaAnnotationsList" ->
-        "org/jetbrains/kotlin/analysis/api/annotations/KaAnnotationList"
-      "org/jetbrains/kotlin/analysis/api/annotations/KaArrayAnnotationValue" ->
-        "KaAnnotationValue\$ArrayValue"
-      "org/jetbrains/kotlin/analysis/api/annotations/KaConstantAnnotationValue" ->
-        "KaAnnotationValue\$ConstantValue"
-      "org/jetbrains/kotlin/analysis/api/annotations/KaEnumEntryAnnotationValue" ->
-        "KaAnnotationValue\$EnumEntryValue"
-      "org/jetbrains/kotlin/analysis/api/annotations/KaKClassAnnotationValue" ->
-        "KaAnnotationValue\$ClassLiteralValue"
-      "org/jetbrains/kotlin/analysis/api/annotations/KaUnsupportedAnnotationValue" ->
-        "KaAnnotationValue\$UnsupportedValue"
-      "org/jetbrains/kotlin/analysis/api/annotations/KtAnnotated" ->
-        "org/jetbrains/kotlin/analysis/api/annotations/KaAnnotated"
+          "org/jetbrains/kotlin/analysis/api/annotations/KaAnnotation"
+      "org/jetbrains/kotlin/analysis/api/annotations/KaAnnotationsList" -> "org/jetbrains/kotlin/analysis/api/annotations/KaAnnotationList"
+      "org/jetbrains/kotlin/analysis/api/annotations/KaArrayAnnotationValue" -> "KaAnnotationValue\$ArrayValue"
+      "org/jetbrains/kotlin/analysis/api/annotations/KaConstantAnnotationValue" -> "KaAnnotationValue\$ConstantValue"
+      "org/jetbrains/kotlin/analysis/api/annotations/KaEnumEntryAnnotationValue" -> "KaAnnotationValue\$EnumEntryValue"
+      "org/jetbrains/kotlin/analysis/api/annotations/KaKClassAnnotationValue" -> "KaAnnotationValue\$ClassLiteralValue"
+      "org/jetbrains/kotlin/analysis/api/annotations/KaUnsupportedAnnotationValue" -> "KaAnnotationValue\$UnsupportedValue"
+      "org/jetbrains/kotlin/analysis/api/annotations/KtAnnotated" -> "org/jetbrains/kotlin/analysis/api/annotations/KaAnnotated"
       "org/jetbrains/kotlin/analysis/api/annotations/KtAnnotationApplication" ->
-        "org/jetbrains/kotlin/analysis/api/annotations/KaAnnotation"
+          "org/jetbrains/kotlin/analysis/api/annotations/KaAnnotation"
       "org/jetbrains/kotlin/analysis/api/annotations/KtAnnotationApplicationInfo" ->
-        "org/jetbrains/kotlin/analysis/api/annotations/KaAnnotation"
-      "org/jetbrains/kotlin/analysis/api/annotations/KtAnnotationApplicationValue" ->
-        "KaAnnotationValue\$NestedAnnotationValue"
+          "org/jetbrains/kotlin/analysis/api/annotations/KaAnnotation"
+      "org/jetbrains/kotlin/analysis/api/annotations/KtAnnotationApplicationValue" -> "KaAnnotationValue\$NestedAnnotationValue"
       "org/jetbrains/kotlin/analysis/api/annotations/KtAnnotationApplicationWithArgumentsInfo" ->
-        "org/jetbrains/kotlin/analysis/api/annotations/KaAnnotation"
-      "org/jetbrains/kotlin/analysis/api/annotations/KtAnnotationValue" ->
-        "org/jetbrains/kotlin/analysis/api/annotations/KaAnnotationValue"
-      "org/jetbrains/kotlin/analysis/api/annotations/KtAnnotationsList" ->
-        "org/jetbrains/kotlin/analysis/api/annotations/KaAnnotationList"
-      "org/jetbrains/kotlin/analysis/api/annotations/KtArrayAnnotationValue" ->
-        "KaAnnotationValue\$ArrayValue"
-      "org/jetbrains/kotlin/analysis/api/annotations/KtConstantAnnotationValue" ->
-        "KaAnnotationValue\$ConstantValue"
-      "org/jetbrains/kotlin/analysis/api/annotations/KtEnumEntryAnnotationValue" ->
-        "KaAnnotationValue\$EnumEntryValue"
-      "org/jetbrains/kotlin/analysis/api/annotations/KtKClassAnnotationValue" ->
-        "KaAnnotationValue\$ClassLiteralValue"
+          "org/jetbrains/kotlin/analysis/api/annotations/KaAnnotation"
+      "org/jetbrains/kotlin/analysis/api/annotations/KtAnnotationValue" -> "org/jetbrains/kotlin/analysis/api/annotations/KaAnnotationValue"
+      "org/jetbrains/kotlin/analysis/api/annotations/KtAnnotationsList" -> "org/jetbrains/kotlin/analysis/api/annotations/KaAnnotationList"
+      "org/jetbrains/kotlin/analysis/api/annotations/KtArrayAnnotationValue" -> "KaAnnotationValue\$ArrayValue"
+      "org/jetbrains/kotlin/analysis/api/annotations/KtConstantAnnotationValue" -> "KaAnnotationValue\$ConstantValue"
+      "org/jetbrains/kotlin/analysis/api/annotations/KtEnumEntryAnnotationValue" -> "KaAnnotationValue\$EnumEntryValue"
+      "org/jetbrains/kotlin/analysis/api/annotations/KtKClassAnnotationValue" -> "KaAnnotationValue\$ClassLiteralValue"
       "org/jetbrains/kotlin/analysis/api/annotations/KtNamedAnnotationValue" ->
-        "org/jetbrains/kotlin/analysis/api/annotations/KaNamedAnnotationValue"
-      "org/jetbrains/kotlin/analysis/api/annotations/KtUnsupportedAnnotationValue" ->
-        "KaAnnotationValue\$UnsupportedValue"
-      "org/jetbrains/kotlin/analysis/api/base/KtConstantValue" ->
-        "org/jetbrains/kotlin/analysis/api/base/KaConstantValue"
-      "org/jetbrains/kotlin/analysis/api/base/KtContextReceiver" ->
-        "org/jetbrains/kotlin/analysis/api/base/KaContextReceiver"
-      "org/jetbrains/kotlin/analysis/api/base/KtContextReceiversOwner" ->
-        "org/jetbrains/kotlin/analysis/api/base/KaContextReceiversOwner"
-      "org/jetbrains/kotlin/analysis/api/calls/KaAnnotationCall" ->
-        "org/jetbrains/kotlin/analysis/api/resolution/KaAnnotationCall"
+          "org/jetbrains/kotlin/analysis/api/annotations/KaNamedAnnotationValue"
+      "org/jetbrains/kotlin/analysis/api/annotations/KtUnsupportedAnnotationValue" -> "KaAnnotationValue\$UnsupportedValue"
+      "org/jetbrains/kotlin/analysis/api/base/KtConstantValue" -> "org/jetbrains/kotlin/analysis/api/base/KaConstantValue"
+      "org/jetbrains/kotlin/analysis/api/base/KtContextReceiver" -> "org/jetbrains/kotlin/analysis/api/base/KaContextReceiver"
+      "org/jetbrains/kotlin/analysis/api/base/KtContextReceiversOwner" -> "org/jetbrains/kotlin/analysis/api/base/KaContextReceiversOwner"
+      "org/jetbrains/kotlin/analysis/api/calls/KaAnnotationCall" -> "org/jetbrains/kotlin/analysis/api/resolution/KaAnnotationCall"
       "org/jetbrains/kotlin/analysis/api/calls/KaApplicableCallCandidateInfo" ->
-        "org/jetbrains/kotlin/analysis/api/resolution/KaApplicableCallCandidateInfo"
-      "org/jetbrains/kotlin/analysis/api/calls/KaCall" ->
-        "org/jetbrains/kotlin/analysis/api/resolution/KaCall"
-      "org/jetbrains/kotlin/analysis/api/calls/KaCallCandidateInfo" ->
-        "org/jetbrains/kotlin/analysis/api/resolution/KaCallCandidateInfo"
-      "org/jetbrains/kotlin/analysis/api/calls/KaCallInfo" ->
-        "org/jetbrains/kotlin/analysis/api/resolution/KaCallInfo"
-      "org/jetbrains/kotlin/analysis/api/calls/KaCallableMemberCall" ->
-        "org/jetbrains/kotlin/analysis/api/resolution/KaCallableMemberCall"
-      "org/jetbrains/kotlin/analysis/api/calls/KaCompoundAccess" ->
-        "org/jetbrains/kotlin/analysis/api/resolution/KaCompoundOperation"
-      "org/jetbrains/kotlin/analysis/api/calls/KaCompoundAccessCall" ->
-        "org/jetbrains/kotlin/analysis/api/resolution/KaCompoundAccessCall"
+          "org/jetbrains/kotlin/analysis/api/resolution/KaApplicableCallCandidateInfo"
+      "org/jetbrains/kotlin/analysis/api/calls/KaCall" -> "org/jetbrains/kotlin/analysis/api/resolution/KaCall"
+      "org/jetbrains/kotlin/analysis/api/calls/KaCallCandidateInfo" -> "org/jetbrains/kotlin/analysis/api/resolution/KaCallCandidateInfo"
+      "org/jetbrains/kotlin/analysis/api/calls/KaCallInfo" -> "org/jetbrains/kotlin/analysis/api/resolution/KaCallInfo"
+      "org/jetbrains/kotlin/analysis/api/calls/KaCallableMemberCall" -> "org/jetbrains/kotlin/analysis/api/resolution/KaCallableMemberCall"
+      "org/jetbrains/kotlin/analysis/api/calls/KaCompoundAccess" -> "org/jetbrains/kotlin/analysis/api/resolution/KaCompoundOperation"
+      "org/jetbrains/kotlin/analysis/api/calls/KaCompoundAccessCall" -> "org/jetbrains/kotlin/analysis/api/resolution/KaCompoundAccessCall"
       "org/jetbrains/kotlin/analysis/api/calls/KaCompoundArrayAccessCall" ->
-        "org/jetbrains/kotlin/analysis/api/resolution/KaCompoundArrayAccessCall"
+          "org/jetbrains/kotlin/analysis/api/resolution/KaCompoundArrayAccessCall"
       "org/jetbrains/kotlin/analysis/api/calls/KaCompoundVariableAccessCall" ->
-        "org/jetbrains/kotlin/analysis/api/resolution/KaCompoundVariableAccessCall"
+          "org/jetbrains/kotlin/analysis/api/resolution/KaCompoundVariableAccessCall"
       "org/jetbrains/kotlin/analysis/api/calls/KaDelegatedConstructorCall" ->
-        "org/jetbrains/kotlin/analysis/api/resolution/KaDelegatedConstructorCall"
-      "org/jetbrains/kotlin/analysis/api/calls/KaErrorCallInfo" ->
-        "org/jetbrains/kotlin/analysis/api/resolution/KaErrorCallInfo"
+          "org/jetbrains/kotlin/analysis/api/resolution/KaDelegatedConstructorCall"
+      "org/jetbrains/kotlin/analysis/api/calls/KaErrorCallInfo" -> "org/jetbrains/kotlin/analysis/api/resolution/KaErrorCallInfo"
       "org/jetbrains/kotlin/analysis/api/calls/KaExplicitReceiverValue" ->
-        "org/jetbrains/kotlin/analysis/api/resolution/KaExplicitReceiverValue"
-      "org/jetbrains/kotlin/analysis/api/calls/KaFunctionCall" ->
-        "org/jetbrains/kotlin/analysis/api/resolution/KaFunctionCall"
+          "org/jetbrains/kotlin/analysis/api/resolution/KaExplicitReceiverValue"
+      "org/jetbrains/kotlin/analysis/api/calls/KaFunctionCall" -> "org/jetbrains/kotlin/analysis/api/resolution/KaFunctionCall"
       "org/jetbrains/kotlin/analysis/api/calls/KaImplicitReceiverValue" ->
-        "org/jetbrains/kotlin/analysis/api/resolution/KaImplicitReceiverValue"
+          "org/jetbrains/kotlin/analysis/api/resolution/KaImplicitReceiverValue"
       "org/jetbrains/kotlin/analysis/api/calls/KaInapplicableCallCandidateInfo" ->
-        "org/jetbrains/kotlin/analysis/api/resolution/KaInapplicableCallCandidateInfo"
+          "org/jetbrains/kotlin/analysis/api/resolution/KaInapplicableCallCandidateInfo"
       "org/jetbrains/kotlin/analysis/api/calls/KaPartiallyAppliedFunctionSymbol" ->
-        "org/jetbrains/kotlin/analysis/api/resolution/KaPartiallyAppliedFunctionSymbol"
+          "org/jetbrains/kotlin/analysis/api/resolution/KaPartiallyAppliedFunctionSymbol"
       "org/jetbrains/kotlin/analysis/api/calls/KaPartiallyAppliedSymbol" ->
-        "org/jetbrains/kotlin/analysis/api/resolution/KaPartiallyAppliedSymbol"
+          "org/jetbrains/kotlin/analysis/api/resolution/KaPartiallyAppliedSymbol"
       "org/jetbrains/kotlin/analysis/api/calls/KaPartiallyAppliedVariableSymbol" ->
-        "org/jetbrains/kotlin/analysis/api/resolution/KaPartiallyAppliedVariableSymbol"
-      "org/jetbrains/kotlin/analysis/api/calls/KaReceiverValue" ->
-        "org/jetbrains/kotlin/analysis/api/resolution/KaReceiverValue"
-      "org/jetbrains/kotlin/analysis/api/calls/KaSimpleFunctionCall" ->
-        "org/jetbrains/kotlin/analysis/api/resolution/KaSimpleFunctionCall"
+          "org/jetbrains/kotlin/analysis/api/resolution/KaPartiallyAppliedVariableSymbol"
+      "org/jetbrains/kotlin/analysis/api/calls/KaReceiverValue" -> "org/jetbrains/kotlin/analysis/api/resolution/KaReceiverValue"
+      "org/jetbrains/kotlin/analysis/api/calls/KaSimpleFunctionCall" -> "org/jetbrains/kotlin/analysis/api/resolution/KaSimpleFunctionCall"
       "org/jetbrains/kotlin/analysis/api/calls/KaSimpleVariableAccess" ->
-        "org/jetbrains/kotlin/analysis/api/resolution/KaSimpleVariableAccess"
+          "org/jetbrains/kotlin/analysis/api/resolution/KaSimpleVariableAccess"
       "org/jetbrains/kotlin/analysis/api/calls/KaSimpleVariableAccessCall" ->
-        "org/jetbrains/kotlin/analysis/api/resolution/KaSimpleVariableAccessCall"
+          "org/jetbrains/kotlin/analysis/api/resolution/KaSimpleVariableAccessCall"
       "org/jetbrains/kotlin/analysis/api/calls/KaSmartCastedReceiverValue" ->
-        "org/jetbrains/kotlin/analysis/api/resolution/KaSmartCastedReceiverValue"
-      "org/jetbrains/kotlin/analysis/api/calls/KaSuccessCallInfo" ->
-        "org/jetbrains/kotlin/analysis/api/resolution/KaSuccessCallInfo"
-      "org/jetbrains/kotlin/analysis/api/calls/KaVariableAccessCall" ->
-        "org/jetbrains/kotlin/analysis/api/resolution/KaVariableAccessCall"
-      "org/jetbrains/kotlin/analysis/api/calls/KtAnnotationCall" ->
-        "org/jetbrains/kotlin/analysis/api/resolution/KaAnnotationCall"
+          "org/jetbrains/kotlin/analysis/api/resolution/KaSmartCastedReceiverValue"
+      "org/jetbrains/kotlin/analysis/api/calls/KaSuccessCallInfo" -> "org/jetbrains/kotlin/analysis/api/resolution/KaSuccessCallInfo"
+      "org/jetbrains/kotlin/analysis/api/calls/KaVariableAccessCall" -> "org/jetbrains/kotlin/analysis/api/resolution/KaVariableAccessCall"
+      "org/jetbrains/kotlin/analysis/api/calls/KtAnnotationCall" -> "org/jetbrains/kotlin/analysis/api/resolution/KaAnnotationCall"
       "org/jetbrains/kotlin/analysis/api/calls/KtApplicableCallCandidateInfo" ->
-        "org/jetbrains/kotlin/analysis/api/resolution/KaApplicableCallCandidateInfo"
-      "org/jetbrains/kotlin/analysis/api/calls/KtCall" ->
-        "org/jetbrains/kotlin/analysis/api/resolution/KaCall"
-      "org/jetbrains/kotlin/analysis/api/calls/KtCallCandidateInfo" ->
-        "org/jetbrains/kotlin/analysis/api/resolution/KaCallCandidateInfo"
-      "org/jetbrains/kotlin/analysis/api/calls/KtCallInfo" ->
-        "org/jetbrains/kotlin/analysis/api/resolution/KaCallInfo"
-      "org/jetbrains/kotlin/analysis/api/calls/KtCallableMemberCall" ->
-        "org/jetbrains/kotlin/analysis/api/resolution/KaCallableMemberCall"
-      "org/jetbrains/kotlin/analysis/api/calls/KtCompoundAccess" ->
-        "org/jetbrains/kotlin/analysis/api/resolution/KaCompoundOperation"
-      "org/jetbrains/kotlin/analysis/api/calls/KtCompoundAccessCall" ->
-        "org/jetbrains/kotlin/analysis/api/resolution/KaCompoundAccessCall"
+          "org/jetbrains/kotlin/analysis/api/resolution/KaApplicableCallCandidateInfo"
+      "org/jetbrains/kotlin/analysis/api/calls/KtCall" -> "org/jetbrains/kotlin/analysis/api/resolution/KaCall"
+      "org/jetbrains/kotlin/analysis/api/calls/KtCallCandidateInfo" -> "org/jetbrains/kotlin/analysis/api/resolution/KaCallCandidateInfo"
+      "org/jetbrains/kotlin/analysis/api/calls/KtCallInfo" -> "org/jetbrains/kotlin/analysis/api/resolution/KaCallInfo"
+      "org/jetbrains/kotlin/analysis/api/calls/KtCallableMemberCall" -> "org/jetbrains/kotlin/analysis/api/resolution/KaCallableMemberCall"
+      "org/jetbrains/kotlin/analysis/api/calls/KtCompoundAccess" -> "org/jetbrains/kotlin/analysis/api/resolution/KaCompoundOperation"
+      "org/jetbrains/kotlin/analysis/api/calls/KtCompoundAccessCall" -> "org/jetbrains/kotlin/analysis/api/resolution/KaCompoundAccessCall"
       "org/jetbrains/kotlin/analysis/api/calls/KtCompoundArrayAccessCall" ->
-        "org/jetbrains/kotlin/analysis/api/resolution/KaCompoundArrayAccessCall"
+          "org/jetbrains/kotlin/analysis/api/resolution/KaCompoundArrayAccessCall"
       "org/jetbrains/kotlin/analysis/api/calls/KtCompoundVariableAccessCall" ->
-        "org/jetbrains/kotlin/analysis/api/resolution/KaCompoundVariableAccessCall"
+          "org/jetbrains/kotlin/analysis/api/resolution/KaCompoundVariableAccessCall"
       "org/jetbrains/kotlin/analysis/api/calls/KtDelegatedConstructorCall" ->
-        "org/jetbrains/kotlin/analysis/api/resolution/KaDelegatedConstructorCall"
-      "org/jetbrains/kotlin/analysis/api/calls/KtErrorCallInfo" ->
-        "org/jetbrains/kotlin/analysis/api/resolution/KaErrorCallInfo"
+          "org/jetbrains/kotlin/analysis/api/resolution/KaDelegatedConstructorCall"
+      "org/jetbrains/kotlin/analysis/api/calls/KtErrorCallInfo" -> "org/jetbrains/kotlin/analysis/api/resolution/KaErrorCallInfo"
       "org/jetbrains/kotlin/analysis/api/calls/KtExplicitReceiverValue" ->
-        "org/jetbrains/kotlin/analysis/api/resolution/KaExplicitReceiverValue"
-      "org/jetbrains/kotlin/analysis/api/calls/KtFunctionCall" ->
-        "org/jetbrains/kotlin/analysis/api/resolution/KaFunctionCall"
+          "org/jetbrains/kotlin/analysis/api/resolution/KaExplicitReceiverValue"
+      "org/jetbrains/kotlin/analysis/api/calls/KtFunctionCall" -> "org/jetbrains/kotlin/analysis/api/resolution/KaFunctionCall"
       "org/jetbrains/kotlin/analysis/api/calls/KtImplicitReceiverValue" ->
-        "org/jetbrains/kotlin/analysis/api/resolution/KaImplicitReceiverValue"
+          "org/jetbrains/kotlin/analysis/api/resolution/KaImplicitReceiverValue"
       "org/jetbrains/kotlin/analysis/api/calls/KtInapplicableCallCandidateInfo" ->
-        "org/jetbrains/kotlin/analysis/api/resolution/KaInapplicableCallCandidateInfo"
+          "org/jetbrains/kotlin/analysis/api/resolution/KaInapplicableCallCandidateInfo"
       "org/jetbrains/kotlin/analysis/api/calls/KtPartiallyAppliedFunctionSymbol" ->
-        "org/jetbrains/kotlin/analysis/api/resolution/KaPartiallyAppliedFunctionSymbol"
+          "org/jetbrains/kotlin/analysis/api/resolution/KaPartiallyAppliedFunctionSymbol"
       "org/jetbrains/kotlin/analysis/api/calls/KtPartiallyAppliedSymbol" ->
-        "org/jetbrains/kotlin/analysis/api/resolution/KaPartiallyAppliedSymbol"
+          "org/jetbrains/kotlin/analysis/api/resolution/KaPartiallyAppliedSymbol"
       "org/jetbrains/kotlin/analysis/api/calls/KtPartiallyAppliedVariableSymbol" ->
-        "org/jetbrains/kotlin/analysis/api/resolution/KaPartiallyAppliedVariableSymbol"
-      "org/jetbrains/kotlin/analysis/api/calls/KtReceiverValue" ->
-        "org/jetbrains/kotlin/analysis/api/resolution/KaReceiverValue"
-      "org/jetbrains/kotlin/analysis/api/calls/KtSimpleFunctionCall" ->
-        "org/jetbrains/kotlin/analysis/api/resolution/KaSimpleFunctionCall"
+          "org/jetbrains/kotlin/analysis/api/resolution/KaPartiallyAppliedVariableSymbol"
+      "org/jetbrains/kotlin/analysis/api/calls/KtReceiverValue" -> "org/jetbrains/kotlin/analysis/api/resolution/KaReceiverValue"
+      "org/jetbrains/kotlin/analysis/api/calls/KtSimpleFunctionCall" -> "org/jetbrains/kotlin/analysis/api/resolution/KaSimpleFunctionCall"
       "org/jetbrains/kotlin/analysis/api/calls/KtSimpleVariableAccess" ->
-        "org/jetbrains/kotlin/analysis/api/resolution/KaSimpleVariableAccess"
+          "org/jetbrains/kotlin/analysis/api/resolution/KaSimpleVariableAccess"
       "org/jetbrains/kotlin/analysis/api/calls/KtSimpleVariableAccessCall" ->
-        "org/jetbrains/kotlin/analysis/api/resolution/KaSimpleVariableAccessCall"
+          "org/jetbrains/kotlin/analysis/api/resolution/KaSimpleVariableAccessCall"
       "org/jetbrains/kotlin/analysis/api/calls/KtSmartCastedReceiverValue" ->
-        "org/jetbrains/kotlin/analysis/api/resolution/KaSmartCastedReceiverValue"
-      "org/jetbrains/kotlin/analysis/api/calls/KtSuccessCallInfo" ->
-        "org/jetbrains/kotlin/analysis/api/resolution/KaSuccessCallInfo"
-      "org/jetbrains/kotlin/analysis/api/calls/KtVariableAccessCall" ->
-        "org/jetbrains/kotlin/analysis/api/resolution/KaVariableAccessCall"
-      "org/jetbrains/kotlin/analysis/api/components/KtBuiltinTypes" ->
-        "org/jetbrains/kotlin/analysis/api/components/KaBuiltinTypes"
-      "org/jetbrains/kotlin/analysis/api/components/KtClassTypeBuilder" ->
-        "org/jetbrains/kotlin/analysis/api/components/KaClassTypeBuilder"
+          "org/jetbrains/kotlin/analysis/api/resolution/KaSmartCastedReceiverValue"
+      "org/jetbrains/kotlin/analysis/api/calls/KtSuccessCallInfo" -> "org/jetbrains/kotlin/analysis/api/resolution/KaSuccessCallInfo"
+      "org/jetbrains/kotlin/analysis/api/calls/KtVariableAccessCall" -> "org/jetbrains/kotlin/analysis/api/resolution/KaVariableAccessCall"
+      "org/jetbrains/kotlin/analysis/api/components/KtBuiltinTypes" -> "org/jetbrains/kotlin/analysis/api/components/KaBuiltinTypes"
+      "org/jetbrains/kotlin/analysis/api/components/KtClassTypeBuilder" -> "org/jetbrains/kotlin/analysis/api/components/KaClassTypeBuilder"
       "org/jetbrains/kotlin/analysis/api/components/KtCompilationResult" ->
-        "org/jetbrains/kotlin/analysis/api/components/KaCompilationResult"
-      "org/jetbrains/kotlin/analysis/api/components/KtCompiledFile" ->
-        "org/jetbrains/kotlin/analysis/api/components/KaCompiledFile"
-      "org/jetbrains/kotlin/analysis/api/components/KtCompilerTarget" ->
-        "org/jetbrains/kotlin/analysis/api/components/KaCompilerTarget"
+          "org/jetbrains/kotlin/analysis/api/components/KaCompilationResult"
+      "org/jetbrains/kotlin/analysis/api/components/KtCompiledFile" -> "org/jetbrains/kotlin/analysis/api/components/KaCompiledFile"
+      "org/jetbrains/kotlin/analysis/api/components/KtCompilerTarget" -> "org/jetbrains/kotlin/analysis/api/components/KaCompilerTarget"
       "org/jetbrains/kotlin/analysis/api/components/KtCompletionExtensionCandidateChecker" ->
-        "org/jetbrains/kotlin/analysis/api/components/KaCompletionExtensionCandidateChecker"
+          "org/jetbrains/kotlin/analysis/api/components/KaCompletionExtensionCandidateChecker"
       "org/jetbrains/kotlin/analysis/api/components/KtDataFlowExitPointSnapshot" ->
-        "org/jetbrains/kotlin/analysis/api/components/KaDataFlowExitPointSnapshot"
+          "org/jetbrains/kotlin/analysis/api/components/KaDataFlowExitPointSnapshot"
       "org/jetbrains/kotlin/analysis/api/components/KtDiagnosticCheckerFilter" ->
-        "org/jetbrains/kotlin/analysis/api/components/KaDiagnosticCheckerFilter"
+          "org/jetbrains/kotlin/analysis/api/components/KaDiagnosticCheckerFilter"
       "org/jetbrains/kotlin/analysis/api/components/KtExtensionApplicabilityResult" ->
-        "org/jetbrains/kotlin/analysis/api/components/KaExtensionApplicabilityResult"
-      "org/jetbrains/kotlin/analysis/api/components/KtImplicitReceiver" ->
-        "org/jetbrains/kotlin/analysis/api/components/KaImplicitReceiver"
+          "org/jetbrains/kotlin/analysis/api/components/KaExtensionApplicabilityResult"
+      "org/jetbrains/kotlin/analysis/api/components/KtImplicitReceiver" -> "org/jetbrains/kotlin/analysis/api/components/KaImplicitReceiver"
       "org/jetbrains/kotlin/analysis/api/components/KtImplicitReceiverSmartCast" ->
-        "org/jetbrains/kotlin/analysis/api/components/KaImplicitReceiverSmartCast"
+          "org/jetbrains/kotlin/analysis/api/components/KaImplicitReceiverSmartCast"
       "org/jetbrains/kotlin/analysis/api/components/KtImplicitReceiverSmartCastKind" ->
-        "org/jetbrains/kotlin/analysis/api/components/KaImplicitReceiverSmartCastKind"
+          "org/jetbrains/kotlin/analysis/api/components/KaImplicitReceiverSmartCastKind"
       "org/jetbrains/kotlin/analysis/api/components/KtImportOptimizerResult" ->
-        "org/jetbrains/kotlin/analysis/api/components/KaImportOptimizerResult"
-      "org/jetbrains/kotlin/analysis/api/components/KtScopeContext" ->
-        "org/jetbrains/kotlin/analysis/api/components/KaScopeContext"
-      "org/jetbrains/kotlin/analysis/api/components/KtScopeKind" ->
-        "org/jetbrains/kotlin/analysis/api/components/KaScopeKind"
-      "org/jetbrains/kotlin/analysis/api/components/KtScopeWithKind" ->
-        "org/jetbrains/kotlin/analysis/api/components/KaScopeWithKind"
-      "org/jetbrains/kotlin/analysis/api/components/KtSmartCastInfo" ->
-        "org/jetbrains/kotlin/analysis/api/components/KaSmartCastInfo"
+          "org/jetbrains/kotlin/analysis/api/components/KaImportOptimizerResult"
+      "org/jetbrains/kotlin/analysis/api/components/KtScopeContext" -> "org/jetbrains/kotlin/analysis/api/components/KaScopeContext"
+      "org/jetbrains/kotlin/analysis/api/components/KtScopeKind" -> "org/jetbrains/kotlin/analysis/api/components/KaScopeKind"
+      "org/jetbrains/kotlin/analysis/api/components/KtScopeWithKind" -> "org/jetbrains/kotlin/analysis/api/components/KaScopeWithKind"
+      "org/jetbrains/kotlin/analysis/api/components/KtSmartCastInfo" -> "org/jetbrains/kotlin/analysis/api/components/KaSmartCastInfo"
       "org/jetbrains/kotlin/analysis/api/components/KtSubstitutorBuilder" ->
-        "org/jetbrains/kotlin/analysis/api/components/KaSubstitutorBuilder"
+          "org/jetbrains/kotlin/analysis/api/components/KaSubstitutorBuilder"
       "org/jetbrains/kotlin/analysis/api/components/KtSubtypingErrorTypePolicy" ->
-        "org/jetbrains/kotlin/analysis/api/components/KaSubtypingErrorTypePolicy"
+          "org/jetbrains/kotlin/analysis/api/components/KaSubtypingErrorTypePolicy"
       // Migrated without @Deprecated at 20966dc85a6ab00b0f851581d4fee8732975c6a3
       "org/jetbrains/kotlin/analysis/api/components/KtSymbolDeclarationOverridesProvider" ->
-        "org/jetbrains/kotlin/analysis/api/components/KaSymbolRelationProvider"
+          "org/jetbrains/kotlin/analysis/api/components/KaSymbolRelationProvider"
       // Migrated without @Deprecated at 20966dc85a6ab00b0f851581d4fee8732975c6a3
       "org/jetbrains/kotlin/analysis/api/components/KtSymbolDeclarationOverridesProviderMixIn" ->
-        "org/jetbrains/kotlin/analysis/api/components/KaSymbolRelationProviderMixIn"
-      "org/jetbrains/kotlin/analysis/api/components/KtTypeBuilder" ->
-        "org/jetbrains/kotlin/analysis/api/components/KaTypeBuilder"
+          "org/jetbrains/kotlin/analysis/api/components/KaSymbolRelationProviderMixIn"
+      "org/jetbrains/kotlin/analysis/api/components/KtTypeBuilder" -> "org/jetbrains/kotlin/analysis/api/components/KaTypeBuilder"
       "org/jetbrains/kotlin/analysis/api/components/KtTypeParameterTypeBuilder" ->
-        "org/jetbrains/kotlin/analysis/api/components/KaTypeParameterTypeBuilder"
+          "org/jetbrains/kotlin/analysis/api/components/KaTypeParameterTypeBuilder"
       "org/jetbrains/kotlin/analysis/api/contracts/description/KtContractCallsInPlaceContractEffectDeclaration" ->
-        "org/jetbrains/kotlin/analysis/api/contracts/description/KaContractCallsInPlaceContractEffectDeclaration"
+          "org/jetbrains/kotlin/analysis/api/contracts/description/KaContractCallsInPlaceContractEffectDeclaration"
       "org/jetbrains/kotlin/analysis/api/contracts/description/KtContractConditionalContractEffectDeclaration" ->
-        "org/jetbrains/kotlin/analysis/api/contracts/description/KaContractConditionalContractEffectDeclaration"
+          "org/jetbrains/kotlin/analysis/api/contracts/description/KaContractConditionalContractEffectDeclaration"
       "org/jetbrains/kotlin/analysis/api/contracts/description/KtContractConstantValue" ->
-        "org/jetbrains/kotlin/analysis/api/contracts/description/KaContractConstantValue"
+          "org/jetbrains/kotlin/analysis/api/contracts/description/KaContractConstantValue"
       "org/jetbrains/kotlin/analysis/api/contracts/description/KtContractEffectDeclaration" ->
-        "org/jetbrains/kotlin/analysis/api/contracts/description/KaContractEffectDeclaration"
+          "org/jetbrains/kotlin/analysis/api/contracts/description/KaContractEffectDeclaration"
       "org/jetbrains/kotlin/analysis/api/contracts/description/KtContractParameterValue" ->
-        "org/jetbrains/kotlin/analysis/api/contracts/description/KaContractParameterValue"
+          "org/jetbrains/kotlin/analysis/api/contracts/description/KaContractParameterValue"
       "org/jetbrains/kotlin/analysis/api/contracts/description/KtContractReturnsContractEffectDeclaration" ->
-        "org/jetbrains/kotlin/analysis/api/contracts/description/KaContractReturnsContractEffectDeclaration"
+          "org/jetbrains/kotlin/analysis/api/contracts/description/KaContractReturnsContractEffectDeclaration"
       "org/jetbrains/kotlin/analysis/api/contracts/description/booleans/KtContractBinaryLogicExpression" ->
-        "org/jetbrains/kotlin/analysis/api/contracts/description/booleans/KaContractBinaryLogicExpression"
+          "org/jetbrains/kotlin/analysis/api/contracts/description/booleans/KaContractBinaryLogicExpression"
       "org/jetbrains/kotlin/analysis/api/contracts/description/booleans/KtContractBooleanConstantExpression" ->
-        "org/jetbrains/kotlin/analysis/api/contracts/description/booleans/KaContractBooleanConstantExpression"
+          "org/jetbrains/kotlin/analysis/api/contracts/description/booleans/KaContractBooleanConstantExpression"
       "org/jetbrains/kotlin/analysis/api/contracts/description/booleans/KtContractBooleanExpression" ->
-        "org/jetbrains/kotlin/analysis/api/contracts/description/booleans/KaContractBooleanExpression"
+          "org/jetbrains/kotlin/analysis/api/contracts/description/booleans/KaContractBooleanExpression"
       "org/jetbrains/kotlin/analysis/api/contracts/description/booleans/KtContractBooleanValueParameterExpression" ->
-        "org/jetbrains/kotlin/analysis/api/contracts/description/booleans/KaContractBooleanValueParameterExpression"
+          "org/jetbrains/kotlin/analysis/api/contracts/description/booleans/KaContractBooleanValueParameterExpression"
       "org/jetbrains/kotlin/analysis/api/contracts/description/booleans/KtContractIsInstancePredicateExpression" ->
-        "org/jetbrains/kotlin/analysis/api/contracts/description/booleans/KaContractIsInstancePredicateExpression"
+          "org/jetbrains/kotlin/analysis/api/contracts/description/booleans/KaContractIsInstancePredicateExpression"
       "org/jetbrains/kotlin/analysis/api/contracts/description/booleans/KtContractIsNullPredicateExpression" ->
-        "org/jetbrains/kotlin/analysis/api/contracts/description/booleans/KaContractIsNullPredicateExpression"
+          "org/jetbrains/kotlin/analysis/api/contracts/description/booleans/KaContractIsNullPredicateExpression"
       "org/jetbrains/kotlin/analysis/api/contracts/description/booleans/KtContractLogicalNotExpression" ->
-        "org/jetbrains/kotlin/analysis/api/contracts/description/booleans/KaContractLogicalNotExpression"
-      "org/jetbrains/kotlin/analysis/api/diagnostics/KtDiagnostic" ->
-        "org/jetbrains/kotlin/analysis/api/diagnostics/KaDiagnostic"
+          "org/jetbrains/kotlin/analysis/api/contracts/description/booleans/KaContractLogicalNotExpression"
+      "org/jetbrains/kotlin/analysis/api/diagnostics/KtDiagnostic" -> "org/jetbrains/kotlin/analysis/api/diagnostics/KaDiagnostic"
       "org/jetbrains/kotlin/analysis/api/diagnostics/KtDiagnosticWithPsi" ->
-        "org/jetbrains/kotlin/analysis/api/diagnostics/KaDiagnosticWithPsi"
+          "org/jetbrains/kotlin/analysis/api/diagnostics/KaDiagnosticWithPsi"
       "org/jetbrains/kotlin/analysis/api/fir/diagnostics/KtCompilerPluginDiagnostic0" ->
-        "org/jetbrains/kotlin/analysis/api/fir/diagnostics/KaCompilerPluginDiagnostic0"
+          "org/jetbrains/kotlin/analysis/api/fir/diagnostics/KaCompilerPluginDiagnostic0"
       "org/jetbrains/kotlin/analysis/api/fir/diagnostics/KtCompilerPluginDiagnostic1" ->
-        "org/jetbrains/kotlin/analysis/api/fir/diagnostics/KaCompilerPluginDiagnostic1"
+          "org/jetbrains/kotlin/analysis/api/fir/diagnostics/KaCompilerPluginDiagnostic1"
       "org/jetbrains/kotlin/analysis/api/fir/diagnostics/KtCompilerPluginDiagnostic2" ->
-        "org/jetbrains/kotlin/analysis/api/fir/diagnostics/KaCompilerPluginDiagnostic2"
+          "org/jetbrains/kotlin/analysis/api/fir/diagnostics/KaCompilerPluginDiagnostic2"
       "org/jetbrains/kotlin/analysis/api/fir/diagnostics/KtCompilerPluginDiagnostic3" ->
-        "org/jetbrains/kotlin/analysis/api/fir/diagnostics/KaCompilerPluginDiagnostic3"
+          "org/jetbrains/kotlin/analysis/api/fir/diagnostics/KaCompilerPluginDiagnostic3"
       "org/jetbrains/kotlin/analysis/api/fir/diagnostics/KtCompilerPluginDiagnostic4" ->
-        "org/jetbrains/kotlin/analysis/api/fir/diagnostics/KaCompilerPluginDiagnostic4"
+          "org/jetbrains/kotlin/analysis/api/fir/diagnostics/KaCompilerPluginDiagnostic4"
       "org/jetbrains/kotlin/analysis/api/lifetime/KtIllegalLifetimeOwnerAccessException" ->
-        "org/jetbrains/kotlin/analysis/api/lifetime/KaIllegalLifetimeOwnerAccessException"
+          "org/jetbrains/kotlin/analysis/api/lifetime/KaIllegalLifetimeOwnerAccessException"
       "org/jetbrains/kotlin/analysis/api/lifetime/KtInaccessibleLifetimeOwnerAccessException" ->
-        "org/jetbrains/kotlin/analysis/api/lifetime/KaInaccessibleLifetimeOwnerAccessException"
+          "org/jetbrains/kotlin/analysis/api/lifetime/KaInaccessibleLifetimeOwnerAccessException"
       "org/jetbrains/kotlin/analysis/api/lifetime/KtInvalidLifetimeOwnerAccessException" ->
-        "org/jetbrains/kotlin/analysis/api/lifetime/KaInvalidLifetimeOwnerAccessException"
-      "org/jetbrains/kotlin/analysis/api/lifetime/KtLifetimeOwner" ->
-        "org/jetbrains/kotlin/analysis/api/lifetime/KaLifetimeOwner"
-      "org/jetbrains/kotlin/analysis/api/lifetime/KtLifetimeOwnerField" ->
-        "org/jetbrains/kotlin/analysis/api/lifetime/KaLifetimeOwnerField"
-      "org/jetbrains/kotlin/analysis/api/lifetime/KtLifetimeToken" ->
-        "org/jetbrains/kotlin/analysis/api/lifetime/KaLifetimeToken"
+          "org/jetbrains/kotlin/analysis/api/lifetime/KaInvalidLifetimeOwnerAccessException"
+      "org/jetbrains/kotlin/analysis/api/lifetime/KtLifetimeOwner" -> "org/jetbrains/kotlin/analysis/api/lifetime/KaLifetimeOwner"
+      "org/jetbrains/kotlin/analysis/api/lifetime/KtLifetimeOwnerField" -> "org/jetbrains/kotlin/analysis/api/lifetime/KaLifetimeOwnerField"
+      "org/jetbrains/kotlin/analysis/api/lifetime/KtLifetimeToken" -> "org/jetbrains/kotlin/analysis/api/lifetime/KaLifetimeToken"
       "org/jetbrains/kotlin/analysis/api/renderer/base/KtKeywordRenderer" ->
-        "org/jetbrains/kotlin/analysis/api/renderer/base/KaKeywordRenderer"
+          "org/jetbrains/kotlin/analysis/api/renderer/base/KaKeywordRenderer"
       "org/jetbrains/kotlin/analysis/api/renderer/base/KtKeywordsRenderer" ->
-        "org/jetbrains/kotlin/analysis/api/renderer/base/KaKeywordsRenderer"
+          "org/jetbrains/kotlin/analysis/api/renderer/base/KaKeywordsRenderer"
       "org/jetbrains/kotlin/analysis/api/renderer/base/annotations/KtAnnotationRenderer" ->
-        "org/jetbrains/kotlin/analysis/api/renderer/base/annotations/KaAnnotationRenderer"
+          "org/jetbrains/kotlin/analysis/api/renderer/base/annotations/KaAnnotationRenderer"
       "org/jetbrains/kotlin/analysis/api/renderer/base/annotations/KtAnnotationRendererForSource" ->
-        "org/jetbrains/kotlin/analysis/api/renderer/base/annotations/KaAnnotationRendererForSource"
+          "org/jetbrains/kotlin/analysis/api/renderer/base/annotations/KaAnnotationRendererForSource"
       "org/jetbrains/kotlin/analysis/api/renderer/base/annotations/KtRendererAnnotationsFilter" ->
-        "org/jetbrains/kotlin/analysis/api/renderer/base/annotations/KaRendererAnnotationsFilter"
+          "org/jetbrains/kotlin/analysis/api/renderer/base/annotations/KaRendererAnnotationsFilter"
       "org/jetbrains/kotlin/analysis/api/renderer/base/annotations/renderers/KtAnnotationArgumentsRenderer" ->
-        "org/jetbrains/kotlin/analysis/api/renderer/base/annotations/renderers/KaAnnotationArgumentsRenderer"
+          "org/jetbrains/kotlin/analysis/api/renderer/base/annotations/renderers/KaAnnotationArgumentsRenderer"
       "org/jetbrains/kotlin/analysis/api/renderer/base/annotations/renderers/KtAnnotationListRenderer" ->
-        "org/jetbrains/kotlin/analysis/api/renderer/base/annotations/renderers/KaAnnotationListRenderer"
+          "org/jetbrains/kotlin/analysis/api/renderer/base/annotations/renderers/KaAnnotationListRenderer"
       "org/jetbrains/kotlin/analysis/api/renderer/base/annotations/renderers/KtAnnotationQualifierRenderer" ->
-        "org/jetbrains/kotlin/analysis/api/renderer/base/annotations/renderers/KaAnnotationQualifierRenderer"
+          "org/jetbrains/kotlin/analysis/api/renderer/base/annotations/renderers/KaAnnotationQualifierRenderer"
       "org/jetbrains/kotlin/analysis/api/renderer/base/annotations/renderers/KtAnnotationUseSiteTargetRenderer" ->
-        "org/jetbrains/kotlin/analysis/api/renderer/base/annotations/renderers/KaAnnotationUseSiteTargetRenderer"
+          "org/jetbrains/kotlin/analysis/api/renderer/base/annotations/renderers/KaAnnotationUseSiteTargetRenderer"
       "org/jetbrains/kotlin/analysis/api/renderer/base/contextReceivers/KtContextReceiversRenderer" ->
-        "org/jetbrains/kotlin/analysis/api/renderer/base/contextReceivers/KaContextReceiversRenderer"
+          "org/jetbrains/kotlin/analysis/api/renderer/base/contextReceivers/KaContextReceiversRenderer"
       "org/jetbrains/kotlin/analysis/api/renderer/base/contextReceivers/KtContextReceiversRendererForSource" ->
-        "org/jetbrains/kotlin/analysis/api/renderer/base/contextReceivers/KaContextReceiversRendererForSource"
+          "org/jetbrains/kotlin/analysis/api/renderer/base/contextReceivers/KaContextReceiversRendererForSource"
       "org/jetbrains/kotlin/analysis/api/renderer/base/contextReceivers/renderers/KtContextReceiverLabelRenderer" ->
-        "org/jetbrains/kotlin/analysis/api/renderer/base/contextReceivers/renderers/KaContextReceiverLabelRenderer"
+          "org/jetbrains/kotlin/analysis/api/renderer/base/contextReceivers/renderers/KaContextReceiverLabelRenderer"
       "org/jetbrains/kotlin/analysis/api/renderer/base/contextReceivers/renderers/KtContextReceiverListRenderer" ->
-        "org/jetbrains/kotlin/analysis/api/renderer/base/contextReceivers/renderers/KaContextReceiverListRenderer"
+          "org/jetbrains/kotlin/analysis/api/renderer/base/contextReceivers/renderers/KaContextReceiverListRenderer"
       "org/jetbrains/kotlin/analysis/api/renderer/declarations/KtCallableReturnTypeFilter" ->
-        "org/jetbrains/kotlin/analysis/api/renderer/declarations/KaCallableReturnTypeFilter"
+          "org/jetbrains/kotlin/analysis/api/renderer/declarations/KaCallableReturnTypeFilter"
       "org/jetbrains/kotlin/analysis/api/renderer/declarations/KtDeclarationRenderer" ->
-        "org/jetbrains/kotlin/analysis/api/renderer/declarations/KaDeclarationRenderer"
+          "org/jetbrains/kotlin/analysis/api/renderer/declarations/KaDeclarationRenderer"
       "org/jetbrains/kotlin/analysis/api/renderer/declarations/KtRecommendedRendererCodeStyle" ->
-        "org/jetbrains/kotlin/analysis/api/renderer/declarations/KaRecommendedRendererCodeStyle"
+          "org/jetbrains/kotlin/analysis/api/renderer/declarations/KaRecommendedRendererCodeStyle"
       "org/jetbrains/kotlin/analysis/api/renderer/declarations/KtRendererCodeStyle" ->
-        "org/jetbrains/kotlin/analysis/api/renderer/declarations/KaRendererCodeStyle"
+          "org/jetbrains/kotlin/analysis/api/renderer/declarations/KaRendererCodeStyle"
       "org/jetbrains/kotlin/analysis/api/renderer/declarations/KtRendererTypeApproximator" ->
-        "org/jetbrains/kotlin/analysis/api/renderer/declarations/KaRendererTypeApproximator"
+          "org/jetbrains/kotlin/analysis/api/renderer/declarations/KaRendererTypeApproximator"
       "org/jetbrains/kotlin/analysis/api/renderer/declarations/bodies/KtFunctionLikeBodyRenderer" ->
-        "org/jetbrains/kotlin/analysis/api/renderer/declarations/bodies/KaFunctionLikeBodyRenderer"
+          "org/jetbrains/kotlin/analysis/api/renderer/declarations/bodies/KaFunctionLikeBodyRenderer"
       "org/jetbrains/kotlin/analysis/api/renderer/declarations/bodies/KtParameterDefaultValueRenderer" ->
-        "org/jetbrains/kotlin/analysis/api/renderer/declarations/bodies/KaParameterDefaultValueRenderer"
+          "org/jetbrains/kotlin/analysis/api/renderer/declarations/bodies/KaParameterDefaultValueRenderer"
       "org/jetbrains/kotlin/analysis/api/renderer/declarations/bodies/KtPropertyAccessorBodyRenderer" ->
-        "org/jetbrains/kotlin/analysis/api/renderer/declarations/bodies/KaPropertyAccessorBodyRenderer"
+          "org/jetbrains/kotlin/analysis/api/renderer/declarations/bodies/KaPropertyAccessorBodyRenderer"
       "org/jetbrains/kotlin/analysis/api/renderer/declarations/bodies/KtRendererBodyMemberScopeProvider" ->
-        "org/jetbrains/kotlin/analysis/api/renderer/declarations/bodies/KaRendererBodyMemberScopeProvider"
+          "org/jetbrains/kotlin/analysis/api/renderer/declarations/bodies/KaRendererBodyMemberScopeProvider"
       "org/jetbrains/kotlin/analysis/api/renderer/declarations/bodies/KtRendererBodyMemberScopeSorter" ->
-        "org/jetbrains/kotlin/analysis/api/renderer/declarations/bodies/KaRendererBodyMemberScopeSorter"
+          "org/jetbrains/kotlin/analysis/api/renderer/declarations/bodies/KaRendererBodyMemberScopeSorter"
       "org/jetbrains/kotlin/analysis/api/renderer/declarations/bodies/KtScriptInitializerRenderer" ->
-        "org/jetbrains/kotlin/analysis/api/renderer/declarations/bodies/KaScriptInitializerRenderer"
+          "org/jetbrains/kotlin/analysis/api/renderer/declarations/bodies/KaScriptInitializerRenderer"
       "org/jetbrains/kotlin/analysis/api/renderer/declarations/bodies/KtVariableInitializerRenderer" ->
-        "org/jetbrains/kotlin/analysis/api/renderer/declarations/bodies/KaVariableInitializerRenderer"
+          "org/jetbrains/kotlin/analysis/api/renderer/declarations/bodies/KaVariableInitializerRenderer"
       "org/jetbrains/kotlin/analysis/api/renderer/declarations/impl/KtDeclarationRendererForDebug" ->
-        "org/jetbrains/kotlin/analysis/api/renderer/declarations/impl/KaDeclarationRendererForDebug"
+          "org/jetbrains/kotlin/analysis/api/renderer/declarations/impl/KaDeclarationRendererForDebug"
       "org/jetbrains/kotlin/analysis/api/renderer/declarations/impl/KtDeclarationRendererForSource" ->
-        "org/jetbrains/kotlin/analysis/api/renderer/declarations/impl/KaDeclarationRendererForSource"
+          "org/jetbrains/kotlin/analysis/api/renderer/declarations/impl/KaDeclarationRendererForSource"
       "org/jetbrains/kotlin/analysis/api/renderer/declarations/modifiers/KtDeclarationModifiersRenderer" ->
-        "org/jetbrains/kotlin/analysis/api/renderer/declarations/modifiers/KaDeclarationModifiersRenderer"
+          "org/jetbrains/kotlin/analysis/api/renderer/declarations/modifiers/KaDeclarationModifiersRenderer"
       "org/jetbrains/kotlin/analysis/api/renderer/declarations/modifiers/impl/KtDeclarationModifiersRendererForSource" ->
-        "org/jetbrains/kotlin/analysis/api/renderer/declarations/modifiers/impl/KaDeclarationModifiersRendererForSource"
+          "org/jetbrains/kotlin/analysis/api/renderer/declarations/modifiers/impl/KaDeclarationModifiersRendererForSource"
       "org/jetbrains/kotlin/analysis/api/renderer/declarations/modifiers/renderers/KtModifierListRenderer" ->
-        "org/jetbrains/kotlin/analysis/api/renderer/declarations/modifiers/renderers/KaModifierListRenderer"
+          "org/jetbrains/kotlin/analysis/api/renderer/declarations/modifiers/renderers/KaModifierListRenderer"
       "org/jetbrains/kotlin/analysis/api/renderer/declarations/modifiers/renderers/KtModifiersSorter" ->
-        "org/jetbrains/kotlin/analysis/api/renderer/declarations/modifiers/renderers/KaModifiersSorter"
+          "org/jetbrains/kotlin/analysis/api/renderer/declarations/modifiers/renderers/KaModifiersSorter"
       "org/jetbrains/kotlin/analysis/api/renderer/declarations/modifiers/renderers/KtRendererKeywordFilter" ->
-        "org/jetbrains/kotlin/analysis/api/renderer/declarations/modifiers/renderers/KaRendererKeywordFilter"
+          "org/jetbrains/kotlin/analysis/api/renderer/declarations/modifiers/renderers/KaRendererKeywordFilter"
       "org/jetbrains/kotlin/analysis/api/renderer/declarations/modifiers/renderers/KtRendererModalityModifierProvider" ->
-        "org/jetbrains/kotlin/analysis/api/renderer/declarations/modifiers/renderers/KaRendererModalityModifierProvider"
+          "org/jetbrains/kotlin/analysis/api/renderer/declarations/modifiers/renderers/KaRendererModalityModifierProvider"
       "org/jetbrains/kotlin/analysis/api/renderer/declarations/modifiers/renderers/KtRendererOtherModifiersProvider" ->
-        "org/jetbrains/kotlin/analysis/api/renderer/declarations/modifiers/renderers/KaRendererOtherModifiersProvider"
+          "org/jetbrains/kotlin/analysis/api/renderer/declarations/modifiers/renderers/KaRendererOtherModifiersProvider"
       "org/jetbrains/kotlin/analysis/api/renderer/declarations/modifiers/renderers/KtRendererVisibilityModifierProvider" ->
-        "org/jetbrains/kotlin/analysis/api/renderer/declarations/modifiers/renderers/KaRendererVisibilityModifierProvider"
+          "org/jetbrains/kotlin/analysis/api/renderer/declarations/modifiers/renderers/KaRendererVisibilityModifierProvider"
       "org/jetbrains/kotlin/analysis/api/renderer/declarations/renderers/KtCallableParameterRenderer" ->
-        "org/jetbrains/kotlin/analysis/api/renderer/declarations/renderers/KaCallableParameterRenderer"
+          "org/jetbrains/kotlin/analysis/api/renderer/declarations/renderers/KaCallableParameterRenderer"
       "org/jetbrains/kotlin/analysis/api/renderer/declarations/renderers/KtClassInitializerRenderer" ->
-        "org/jetbrains/kotlin/analysis/api/renderer/declarations/renderers/KaClassInitializerRenderer"
+          "org/jetbrains/kotlin/analysis/api/renderer/declarations/renderers/KaClassInitializerRenderer"
       "org/jetbrains/kotlin/analysis/api/renderer/declarations/renderers/KtClassifierBodyRenderer" ->
-        "org/jetbrains/kotlin/analysis/api/renderer/declarations/renderers/KaClassifierBodyRenderer"
+          "org/jetbrains/kotlin/analysis/api/renderer/declarations/renderers/KaClassifierBodyRenderer"
       "org/jetbrains/kotlin/analysis/api/renderer/declarations/renderers/KtClassifierBodyWithMembersRenderer" ->
-        "org/jetbrains/kotlin/analysis/api/renderer/declarations/renderers/KaClassifierBodyWithMembersRenderer"
+          "org/jetbrains/kotlin/analysis/api/renderer/declarations/renderers/KaClassifierBodyWithMembersRenderer"
       "org/jetbrains/kotlin/analysis/api/renderer/declarations/renderers/KtDeclarationNameRenderer" ->
-        "org/jetbrains/kotlin/analysis/api/renderer/declarations/renderers/KaDeclarationNameRenderer"
+          "org/jetbrains/kotlin/analysis/api/renderer/declarations/renderers/KaDeclarationNameRenderer"
       "org/jetbrains/kotlin/analysis/api/renderer/declarations/renderers/KtTypeParameterRendererFilter" ->
-        "org/jetbrains/kotlin/analysis/api/renderer/declarations/renderers/KaTypeParameterRendererFilter"
+          "org/jetbrains/kotlin/analysis/api/renderer/declarations/renderers/KaTypeParameterRendererFilter"
       "org/jetbrains/kotlin/analysis/api/renderer/declarations/renderers/KtTypeParametersRenderer" ->
-        "org/jetbrains/kotlin/analysis/api/renderer/declarations/renderers/KaTypeParametersRenderer"
+          "org/jetbrains/kotlin/analysis/api/renderer/declarations/renderers/KaTypeParametersRenderer"
       "org/jetbrains/kotlin/analysis/api/renderer/declarations/renderers/callables/KaFunctionSymbolRenderer" ->
-        "org/jetbrains/kotlin/analysis/api/renderer/declarations/renderers/callables/KaNamedFunctionSymbolRenderer"
+          "org/jetbrains/kotlin/analysis/api/renderer/declarations/renderers/callables/KaNamedFunctionSymbolRenderer"
       "org/jetbrains/kotlin/analysis/api/renderer/declarations/renderers/callables/KtAnonymousFunctionSymbolRenderer" ->
-        "org/jetbrains/kotlin/analysis/api/renderer/declarations/renderers/callables/KaAnonymousFunctionSymbolRenderer"
+          "org/jetbrains/kotlin/analysis/api/renderer/declarations/renderers/callables/KaAnonymousFunctionSymbolRenderer"
       "org/jetbrains/kotlin/analysis/api/renderer/declarations/renderers/callables/KtBackingFieldSymbolRenderer" ->
-        "org/jetbrains/kotlin/analysis/api/renderer/declarations/renderers/callables/KaBackingFieldSymbolRenderer"
+          "org/jetbrains/kotlin/analysis/api/renderer/declarations/renderers/callables/KaBackingFieldSymbolRenderer"
       "org/jetbrains/kotlin/analysis/api/renderer/declarations/renderers/callables/KtCallableReceiverRenderer" ->
-        "org/jetbrains/kotlin/analysis/api/renderer/declarations/renderers/callables/KaCallableReceiverRenderer"
+          "org/jetbrains/kotlin/analysis/api/renderer/declarations/renderers/callables/KaCallableReceiverRenderer"
       "org/jetbrains/kotlin/analysis/api/renderer/declarations/renderers/callables/KtCallableReturnTypeRenderer" ->
-        "org/jetbrains/kotlin/analysis/api/renderer/declarations/renderers/callables/KaCallableReturnTypeRenderer"
+          "org/jetbrains/kotlin/analysis/api/renderer/declarations/renderers/callables/KaCallableReturnTypeRenderer"
       "org/jetbrains/kotlin/analysis/api/renderer/declarations/renderers/callables/KtCallableSignatureRenderer" ->
-        "org/jetbrains/kotlin/analysis/api/renderer/declarations/renderers/callables/KaCallableSignatureRenderer"
+          "org/jetbrains/kotlin/analysis/api/renderer/declarations/renderers/callables/KaCallableSignatureRenderer"
       "org/jetbrains/kotlin/analysis/api/renderer/declarations/renderers/callables/KtConstructorSymbolRenderer" ->
-        "org/jetbrains/kotlin/analysis/api/renderer/declarations/renderers/callables/KaConstructorSymbolRenderer"
+          "org/jetbrains/kotlin/analysis/api/renderer/declarations/renderers/callables/KaConstructorSymbolRenderer"
       "org/jetbrains/kotlin/analysis/api/renderer/declarations/renderers/callables/KtDestructuringDeclarationRenderer" ->
-        "org/jetbrains/kotlin/analysis/api/renderer/declarations/renderers/callables/KaDestructuringDeclarationRenderer"
+          "org/jetbrains/kotlin/analysis/api/renderer/declarations/renderers/callables/KaDestructuringDeclarationRenderer"
       "org/jetbrains/kotlin/analysis/api/renderer/declarations/renderers/callables/KtEnumEntrySymbolRenderer" ->
-        "org/jetbrains/kotlin/analysis/api/renderer/declarations/renderers/callables/KaEnumEntrySymbolRenderer"
+          "org/jetbrains/kotlin/analysis/api/renderer/declarations/renderers/callables/KaEnumEntrySymbolRenderer"
       "org/jetbrains/kotlin/analysis/api/renderer/declarations/renderers/callables/KtFunctionSymbolRenderer" ->
-        "org/jetbrains/kotlin/analysis/api/renderer/declarations/renderers/callables/KaNamedFunctionSymbolRenderer"
+          "org/jetbrains/kotlin/analysis/api/renderer/declarations/renderers/callables/KaNamedFunctionSymbolRenderer"
       "org/jetbrains/kotlin/analysis/api/renderer/declarations/renderers/callables/KtJavaFieldSymbolRenderer" ->
-        "org/jetbrains/kotlin/analysis/api/renderer/declarations/renderers/callables/KaJavaFieldSymbolRenderer"
+          "org/jetbrains/kotlin/analysis/api/renderer/declarations/renderers/callables/KaJavaFieldSymbolRenderer"
       "org/jetbrains/kotlin/analysis/api/renderer/declarations/renderers/callables/KtKotlinPropertySymbolRenderer" ->
-        "org/jetbrains/kotlin/analysis/api/renderer/declarations/renderers/callables/KaKotlinPropertySymbolRenderer"
+          "org/jetbrains/kotlin/analysis/api/renderer/declarations/renderers/callables/KaKotlinPropertySymbolRenderer"
       "org/jetbrains/kotlin/analysis/api/renderer/declarations/renderers/callables/KtLocalVariableSymbolRenderer" ->
-        "org/jetbrains/kotlin/analysis/api/renderer/declarations/renderers/callables/KaLocalVariableSymbolRenderer"
+          "org/jetbrains/kotlin/analysis/api/renderer/declarations/renderers/callables/KaLocalVariableSymbolRenderer"
       "org/jetbrains/kotlin/analysis/api/renderer/declarations/renderers/callables/KtPropertyAccessorsRenderer" ->
-        "org/jetbrains/kotlin/analysis/api/renderer/declarations/renderers/callables/KaPropertyAccessorsRenderer"
+          "org/jetbrains/kotlin/analysis/api/renderer/declarations/renderers/callables/KaPropertyAccessorsRenderer"
       "org/jetbrains/kotlin/analysis/api/renderer/declarations/renderers/callables/KtPropertyGetterSymbolRenderer" ->
-        "org/jetbrains/kotlin/analysis/api/renderer/declarations/renderers/callables/KaPropertyGetterSymbolRenderer"
+          "org/jetbrains/kotlin/analysis/api/renderer/declarations/renderers/callables/KaPropertyGetterSymbolRenderer"
       "org/jetbrains/kotlin/analysis/api/renderer/declarations/renderers/callables/KtPropertySetterSymbolRenderer" ->
-        "org/jetbrains/kotlin/analysis/api/renderer/declarations/renderers/callables/KaPropertySetterSymbolRenderer"
+          "org/jetbrains/kotlin/analysis/api/renderer/declarations/renderers/callables/KaPropertySetterSymbolRenderer"
       "org/jetbrains/kotlin/analysis/api/renderer/declarations/renderers/callables/KtSamConstructorSymbolRenderer" ->
-        "org/jetbrains/kotlin/analysis/api/renderer/declarations/renderers/callables/KaSamConstructorSymbolRenderer"
+          "org/jetbrains/kotlin/analysis/api/renderer/declarations/renderers/callables/KaSamConstructorSymbolRenderer"
       "org/jetbrains/kotlin/analysis/api/renderer/declarations/renderers/callables/KtScriptSymbolRenderer" ->
-        "org/jetbrains/kotlin/analysis/api/renderer/declarations/renderers/callables/KaScriptSymbolRenderer"
+          "org/jetbrains/kotlin/analysis/api/renderer/declarations/renderers/callables/KaScriptSymbolRenderer"
       "org/jetbrains/kotlin/analysis/api/renderer/declarations/renderers/callables/KtSyntheticJavaPropertySymbolRenderer" ->
-        "org/jetbrains/kotlin/analysis/api/renderer/declarations/renderers/callables/KaSyntheticJavaPropertySymbolRenderer"
+          "org/jetbrains/kotlin/analysis/api/renderer/declarations/renderers/callables/KaSyntheticJavaPropertySymbolRenderer"
       "org/jetbrains/kotlin/analysis/api/renderer/declarations/renderers/callables/KtValueParameterSymbolRenderer" ->
-        "org/jetbrains/kotlin/analysis/api/renderer/declarations/renderers/callables/KaValueParameterSymbolRenderer"
+          "org/jetbrains/kotlin/analysis/api/renderer/declarations/renderers/callables/KaValueParameterSymbolRenderer"
       "org/jetbrains/kotlin/analysis/api/renderer/declarations/renderers/classifiers/KaNamedClassOrObjectSymbolRenderer" ->
-        "org/jetbrains/kotlin/analysis/api/renderer/declarations/renderers/classifiers/KaNamedClassSymbolRenderer"
+          "org/jetbrains/kotlin/analysis/api/renderer/declarations/renderers/classifiers/KaNamedClassSymbolRenderer"
       "org/jetbrains/kotlin/analysis/api/renderer/declarations/renderers/classifiers/KtAnonymousObjectSymbolRenderer" ->
-        "org/jetbrains/kotlin/analysis/api/renderer/declarations/renderers/classifiers/KaAnonymousObjectSymbolRenderer"
+          "org/jetbrains/kotlin/analysis/api/renderer/declarations/renderers/classifiers/KaAnonymousObjectSymbolRenderer"
       "org/jetbrains/kotlin/analysis/api/renderer/declarations/renderers/classifiers/KtNamedClassOrObjectSymbolRenderer" ->
-        "org/jetbrains/kotlin/analysis/api/renderer/declarations/renderers/classifiers/KaNamedClassSymbolRenderer"
+          "org/jetbrains/kotlin/analysis/api/renderer/declarations/renderers/classifiers/KaNamedClassSymbolRenderer"
       "org/jetbrains/kotlin/analysis/api/renderer/declarations/renderers/classifiers/KtSingleTypeParameterSymbolRenderer" ->
-        "org/jetbrains/kotlin/analysis/api/renderer/declarations/renderers/classifiers/KaSingleTypeParameterSymbolRenderer"
+          "org/jetbrains/kotlin/analysis/api/renderer/declarations/renderers/classifiers/KaSingleTypeParameterSymbolRenderer"
       "org/jetbrains/kotlin/analysis/api/renderer/declarations/renderers/classifiers/KtTypeAliasSymbolRenderer" ->
-        "org/jetbrains/kotlin/analysis/api/renderer/declarations/renderers/classifiers/KaTypeAliasSymbolRenderer"
+          "org/jetbrains/kotlin/analysis/api/renderer/declarations/renderers/classifiers/KaTypeAliasSymbolRenderer"
       "org/jetbrains/kotlin/analysis/api/renderer/declarations/superTypes/KtSuperTypeListRenderer" ->
-        "org/jetbrains/kotlin/analysis/api/renderer/declarations/superTypes/KaSuperTypeListRenderer"
+          "org/jetbrains/kotlin/analysis/api/renderer/declarations/superTypes/KaSuperTypeListRenderer"
       "org/jetbrains/kotlin/analysis/api/renderer/declarations/superTypes/KtSuperTypeRenderer" ->
-        "org/jetbrains/kotlin/analysis/api/renderer/declarations/superTypes/KaSuperTypeRenderer"
+          "org/jetbrains/kotlin/analysis/api/renderer/declarations/superTypes/KaSuperTypeRenderer"
       "org/jetbrains/kotlin/analysis/api/renderer/declarations/superTypes/KtSuperTypesCallArgumentsRenderer" ->
-        "org/jetbrains/kotlin/analysis/api/renderer/declarations/superTypes/KaSuperTypesCallArgumentsRenderer"
+          "org/jetbrains/kotlin/analysis/api/renderer/declarations/superTypes/KaSuperTypesCallArgumentsRenderer"
       "org/jetbrains/kotlin/analysis/api/renderer/declarations/superTypes/KtSuperTypesFilter" ->
-        "org/jetbrains/kotlin/analysis/api/renderer/declarations/superTypes/KaSuperTypesFilter"
+          "org/jetbrains/kotlin/analysis/api/renderer/declarations/superTypes/KaSuperTypesFilter"
       "org/jetbrains/kotlin/analysis/api/renderer/types/KtExpandedTypeRenderingMode" ->
-        "org/jetbrains/kotlin/analysis/api/renderer/types/KaExpandedTypeRenderingMode"
-      "org/jetbrains/kotlin/analysis/api/renderer/types/KtTypeRenderer" ->
-        "org/jetbrains/kotlin/analysis/api/renderer/types/KaTypeRenderer"
+          "org/jetbrains/kotlin/analysis/api/renderer/types/KaExpandedTypeRenderingMode"
+      "org/jetbrains/kotlin/analysis/api/renderer/types/KtTypeRenderer" -> "org/jetbrains/kotlin/analysis/api/renderer/types/KaTypeRenderer"
       "org/jetbrains/kotlin/analysis/api/renderer/types/impl/KtTypeRendererForDebug" ->
-        "org/jetbrains/kotlin/analysis/api/renderer/types/impl/KaTypeRendererForDebug"
+          "org/jetbrains/kotlin/analysis/api/renderer/types/impl/KaTypeRendererForDebug"
       "org/jetbrains/kotlin/analysis/api/renderer/types/impl/KtTypeRendererForSource" ->
-        "org/jetbrains/kotlin/analysis/api/renderer/types/impl/KaTypeRendererForSource"
+          "org/jetbrains/kotlin/analysis/api/renderer/types/impl/KaTypeRendererForSource"
       "org/jetbrains/kotlin/analysis/api/renderer/types/renderers/KtCapturedTypeRenderer" ->
-        "org/jetbrains/kotlin/analysis/api/renderer/types/renderers/KaCapturedTypeRenderer"
+          "org/jetbrains/kotlin/analysis/api/renderer/types/renderers/KaCapturedTypeRenderer"
       "org/jetbrains/kotlin/analysis/api/renderer/types/renderers/KtClassTypeQualifierRenderer" ->
-        "org/jetbrains/kotlin/analysis/api/renderer/types/renderers/KaClassTypeQualifierRenderer"
+          "org/jetbrains/kotlin/analysis/api/renderer/types/renderers/KaClassTypeQualifierRenderer"
       "org/jetbrains/kotlin/analysis/api/renderer/types/renderers/KtDefinitelyNotNullTypeRenderer" ->
-        "org/jetbrains/kotlin/analysis/api/renderer/types/renderers/KaDefinitelyNotNullTypeRenderer"
+          "org/jetbrains/kotlin/analysis/api/renderer/types/renderers/KaDefinitelyNotNullTypeRenderer"
       "org/jetbrains/kotlin/analysis/api/renderer/types/renderers/KtDynamicTypeRenderer" ->
-        "org/jetbrains/kotlin/analysis/api/renderer/types/renderers/KaDynamicTypeRenderer"
+          "org/jetbrains/kotlin/analysis/api/renderer/types/renderers/KaDynamicTypeRenderer"
       "org/jetbrains/kotlin/analysis/api/renderer/types/renderers/KtFlexibleTypeRenderer" ->
-        "org/jetbrains/kotlin/analysis/api/renderer/types/renderers/KaFlexibleTypeRenderer"
+          "org/jetbrains/kotlin/analysis/api/renderer/types/renderers/KaFlexibleTypeRenderer"
       "org/jetbrains/kotlin/analysis/api/renderer/types/renderers/KtFunctionalTypeRenderer" ->
-        "org/jetbrains/kotlin/analysis/api/renderer/types/renderers/KaFunctionalTypeRenderer"
+          "org/jetbrains/kotlin/analysis/api/renderer/types/renderers/KaFunctionalTypeRenderer"
       "org/jetbrains/kotlin/analysis/api/renderer/types/renderers/KtIntersectionTypeRenderer" ->
-        "org/jetbrains/kotlin/analysis/api/renderer/types/renderers/KaIntersectionTypeRenderer"
+          "org/jetbrains/kotlin/analysis/api/renderer/types/renderers/KaIntersectionTypeRenderer"
       "org/jetbrains/kotlin/analysis/api/renderer/types/renderers/KtTypeErrorTypeRenderer" ->
-        "org/jetbrains/kotlin/analysis/api/renderer/types/renderers/KaErrorTypeRenderer"
+          "org/jetbrains/kotlin/analysis/api/renderer/types/renderers/KaErrorTypeRenderer"
       "org/jetbrains/kotlin/analysis/api/renderer/types/renderers/KtTypeNameRenderer" ->
-        "org/jetbrains/kotlin/analysis/api/renderer/types/renderers/KaTypeNameRenderer"
+          "org/jetbrains/kotlin/analysis/api/renderer/types/renderers/KaTypeNameRenderer"
       "org/jetbrains/kotlin/analysis/api/renderer/types/renderers/KtTypeParameterTypeRenderer" ->
-        "org/jetbrains/kotlin/analysis/api/renderer/types/renderers/KaTypeParameterTypeRenderer"
+          "org/jetbrains/kotlin/analysis/api/renderer/types/renderers/KaTypeParameterTypeRenderer"
       "org/jetbrains/kotlin/analysis/api/renderer/types/renderers/KtTypeProjectionRenderer" ->
-        "org/jetbrains/kotlin/analysis/api/renderer/types/renderers/KaTypeProjectionRenderer"
+          "org/jetbrains/kotlin/analysis/api/renderer/types/renderers/KaTypeProjectionRenderer"
       "org/jetbrains/kotlin/analysis/api/renderer/types/renderers/KtUnresolvedClassErrorTypeRenderer" ->
-        "org/jetbrains/kotlin/analysis/api/renderer/types/renderers/KaUnresolvedClassErrorTypeRenderer"
+          "org/jetbrains/kotlin/analysis/api/renderer/types/renderers/KaUnresolvedClassErrorTypeRenderer"
       "org/jetbrains/kotlin/analysis/api/renderer/types/renderers/KtUsualClassTypeRenderer" ->
-        "org/jetbrains/kotlin/analysis/api/renderer/types/renderers/KaUsualClassTypeRenderer"
-      "org/jetbrains/kotlin/analysis/api/resolution/KaCompoundAccess" ->
-        "org/jetbrains/kotlin/analysis/api/resolution/KaCompoundOperation"
+          "org/jetbrains/kotlin/analysis/api/renderer/types/renderers/KaUsualClassTypeRenderer"
+      "org/jetbrains/kotlin/analysis/api/resolution/KaCompoundAccess" -> "org/jetbrains/kotlin/analysis/api/resolution/KaCompoundOperation"
       "org/jetbrains/kotlin/analysis/api/resolution/KaPartiallyAppliedFunctionSymbol" ->
-        "org/jetbrains/kotlin/analysis/api/resolution/KaPartiallyAppliedSymbol"
+          "org/jetbrains/kotlin/analysis/api/resolution/KaPartiallyAppliedSymbol"
       "org/jetbrains/kotlin/analysis/api/resolution/KaPartiallyAppliedVariableSymbol" ->
-        "org/jetbrains/kotlin/analysis/api/resolution/KaPartiallyAppliedSymbol"
+          "org/jetbrains/kotlin/analysis/api/resolution/KaPartiallyAppliedSymbol"
       "org/jetbrains/kotlin/analysis/api/resolution/KtApplicableCallCandidateInfo" ->
-        "org/jetbrains/kotlin/analysis/api/resolution/KaApplicableCallCandidateInfo"
+          "org/jetbrains/kotlin/analysis/api/resolution/KaApplicableCallCandidateInfo"
       "org/jetbrains/kotlin/analysis/api/resolution/KtCallCandidateInfo" ->
-        "org/jetbrains/kotlin/analysis/api/resolution/KaCallCandidateInfo"
+          "org/jetbrains/kotlin/analysis/api/resolution/KaCallCandidateInfo"
       "org/jetbrains/kotlin/analysis/api/resolve/extensions/KtResolveExtension" ->
-        "org/jetbrains/kotlin/analysis/api/resolve/extensions/KaResolveExtension"
+          "org/jetbrains/kotlin/analysis/api/resolve/extensions/KaResolveExtension"
       "org/jetbrains/kotlin/analysis/api/resolve/extensions/KtResolveExtensionFile" ->
-        "org/jetbrains/kotlin/analysis/api/resolve/extensions/KaResolveExtensionFile"
+          "org/jetbrains/kotlin/analysis/api/resolve/extensions/KaResolveExtensionFile"
       "org/jetbrains/kotlin/analysis/api/resolve/extensions/KtResolveExtensionNavigationTargetsProvider" ->
-        "org/jetbrains/kotlin/analysis/api/resolve/extensions/KaResolveExtensionNavigationTargetsProvider"
+          "org/jetbrains/kotlin/analysis/api/resolve/extensions/KaResolveExtensionNavigationTargetsProvider"
       "org/jetbrains/kotlin/analysis/api/resolve/extensions/KtResolveExtensionProvider" ->
-        "org/jetbrains/kotlin/analysis/api/resolve/extensions/KaResolveExtensionProvider"
-      "org/jetbrains/kotlin/analysis/api/scopes/KtScope" ->
-        "org/jetbrains/kotlin/analysis/api/scopes/KaScope"
-      "org/jetbrains/kotlin/analysis/api/scopes/KtScopeLike" ->
-        "org/jetbrains/kotlin/analysis/api/scopes/KaScopeLike"
-      "org/jetbrains/kotlin/analysis/api/scopes/KtScopeNameFilter" ->
-        "org/jetbrains/kotlin/analysis/api/scopes/(Name) -> Boolean"
-      "org/jetbrains/kotlin/analysis/api/scopes/KtTypeScope" ->
-        "org/jetbrains/kotlin/analysis/api/scopes/KaTypeScope"
-      "org/jetbrains/kotlin/analysis/api/session/KtAnalysisSessionProvider" ->
-        "org/jetbrains/kotlin/analysis/api/session/KaSessionProvider"
+          "org/jetbrains/kotlin/analysis/api/resolve/extensions/KaResolveExtensionProvider"
+      "org/jetbrains/kotlin/analysis/api/scopes/KtScope" -> "org/jetbrains/kotlin/analysis/api/scopes/KaScope"
+      "org/jetbrains/kotlin/analysis/api/scopes/KtScopeLike" -> "org/jetbrains/kotlin/analysis/api/scopes/KaScopeLike"
+      "org/jetbrains/kotlin/analysis/api/scopes/KtScopeNameFilter" -> "org/jetbrains/kotlin/analysis/api/scopes/(Name) -> Boolean"
+      "org/jetbrains/kotlin/analysis/api/scopes/KtTypeScope" -> "org/jetbrains/kotlin/analysis/api/scopes/KaTypeScope"
+      "org/jetbrains/kotlin/analysis/api/session/KtAnalysisSessionProvider" -> "org/jetbrains/kotlin/analysis/api/session/KaSessionProvider"
       "org/jetbrains/kotlin/analysis/api/signatures/KaFunctionLikeSignature" ->
-        "org/jetbrains/kotlin/analysis/api/signatures/KaFunctionSignature"
+          "org/jetbrains/kotlin/analysis/api/signatures/KaFunctionSignature"
       "org/jetbrains/kotlin/analysis/api/signatures/KaVariableLikeSignature" ->
-        "org/jetbrains/kotlin/analysis/api/signatures/KaVariableSignature"
+          "org/jetbrains/kotlin/analysis/api/signatures/KaVariableSignature"
       "org/jetbrains/kotlin/analysis/api/signatures/KtCallableSignature" ->
-        "org/jetbrains/kotlin/analysis/api/signatures/KaCallableSignature"
+          "org/jetbrains/kotlin/analysis/api/signatures/KaCallableSignature"
       "org/jetbrains/kotlin/analysis/api/signatures/KtFunctionLikeSignature" ->
-        "org/jetbrains/kotlin/analysis/api/signatures/KaFunctionSignature"
+          "org/jetbrains/kotlin/analysis/api/signatures/KaFunctionSignature"
       "org/jetbrains/kotlin/analysis/api/signatures/KtVariableLikeSignature" ->
-        "org/jetbrains/kotlin/analysis/api/signatures/KaVariableSignature"
-      "org/jetbrains/kotlin/analysis/api/symbols/KaClassOrObjectSymbol" ->
-        "org/jetbrains/kotlin/analysis/api/symbols/KaClassSymbol"
-      "org/jetbrains/kotlin/analysis/api/symbols/KaFunctionLikeSymbol" ->
-        "org/jetbrains/kotlin/analysis/api/symbols/KaFunctionSymbol"
+          "org/jetbrains/kotlin/analysis/api/signatures/KaVariableSignature"
+      "org/jetbrains/kotlin/analysis/api/symbols/KaClassOrObjectSymbol" -> "org/jetbrains/kotlin/analysis/api/symbols/KaClassSymbol"
+      "org/jetbrains/kotlin/analysis/api/symbols/KaFunctionLikeSymbol" -> "org/jetbrains/kotlin/analysis/api/symbols/KaFunctionSymbol"
       "org/jetbrains/kotlin/analysis/api/symbols/KaNamedClassOrObjectSymbol" ->
-        "org/jetbrains/kotlin/analysis/api/symbols/KaNamedClassSymbol"
-      "org/jetbrains/kotlin/analysis/api/symbols/KaVariableLikeSymbol" ->
-        "org/jetbrains/kotlin/analysis/api/symbols/KaVariableSymbol"
+          "org/jetbrains/kotlin/analysis/api/symbols/KaNamedClassSymbol"
+      "org/jetbrains/kotlin/analysis/api/symbols/KaVariableLikeSymbol" -> "org/jetbrains/kotlin/analysis/api/symbols/KaVariableSymbol"
       "org/jetbrains/kotlin/analysis/api/symbols/KtAnonymousFunctionSymbol" ->
-        "org/jetbrains/kotlin/analysis/api/symbols/KaAnonymousFunctionSymbol"
+          "org/jetbrains/kotlin/analysis/api/symbols/KaAnonymousFunctionSymbol"
       "org/jetbrains/kotlin/analysis/api/symbols/KtAnonymousObjectSymbol" ->
-        "org/jetbrains/kotlin/analysis/api/symbols/KaAnonymousObjectSymbol"
-      "org/jetbrains/kotlin/analysis/api/symbols/KtBackingFieldSymbol" ->
-        "org/jetbrains/kotlin/analysis/api/symbols/KaBackingFieldSymbol"
-      "org/jetbrains/kotlin/analysis/api/symbols/KtCallableSymbol" ->
-        "org/jetbrains/kotlin/analysis/api/symbols/KaCallableSymbol"
+          "org/jetbrains/kotlin/analysis/api/symbols/KaAnonymousObjectSymbol"
+      "org/jetbrains/kotlin/analysis/api/symbols/KtBackingFieldSymbol" -> "org/jetbrains/kotlin/analysis/api/symbols/KaBackingFieldSymbol"
+      "org/jetbrains/kotlin/analysis/api/symbols/KtCallableSymbol" -> "org/jetbrains/kotlin/analysis/api/symbols/KaCallableSymbol"
       "org/jetbrains/kotlin/analysis/api/symbols/KtClassInitializerSymbol" ->
-        "org/jetbrains/kotlin/analysis/api/symbols/KaClassInitializerSymbol"
-      "org/jetbrains/kotlin/analysis/api/symbols/KtClassKind" ->
-        "org/jetbrains/kotlin/analysis/api/symbols/KaClassKind"
-      "org/jetbrains/kotlin/analysis/api/symbols/KtClassLikeSymbol" ->
-        "org/jetbrains/kotlin/analysis/api/symbols/KaClassLikeSymbol"
-      "org/jetbrains/kotlin/analysis/api/symbols/KtClassOrObjectSymbol" ->
-        "org/jetbrains/kotlin/analysis/api/symbols/KaClassSymbol"
-      "org/jetbrains/kotlin/analysis/api/symbols/KtClassifierSymbol" ->
-        "org/jetbrains/kotlin/analysis/api/symbols/KaClassifierSymbol"
-      "org/jetbrains/kotlin/analysis/api/symbols/KtConstructorSymbol" ->
-        "org/jetbrains/kotlin/analysis/api/symbols/KaConstructorSymbol"
-      "org/jetbrains/kotlin/analysis/api/symbols/KtDeclarationSymbol" ->
-        "org/jetbrains/kotlin/analysis/api/symbols/KaDeclarationSymbol"
+          "org/jetbrains/kotlin/analysis/api/symbols/KaClassInitializerSymbol"
+      "org/jetbrains/kotlin/analysis/api/symbols/KtClassKind" -> "org/jetbrains/kotlin/analysis/api/symbols/KaClassKind"
+      "org/jetbrains/kotlin/analysis/api/symbols/KtClassLikeSymbol" -> "org/jetbrains/kotlin/analysis/api/symbols/KaClassLikeSymbol"
+      "org/jetbrains/kotlin/analysis/api/symbols/KtClassOrObjectSymbol" -> "org/jetbrains/kotlin/analysis/api/symbols/KaClassSymbol"
+      "org/jetbrains/kotlin/analysis/api/symbols/KtClassifierSymbol" -> "org/jetbrains/kotlin/analysis/api/symbols/KaClassifierSymbol"
+      "org/jetbrains/kotlin/analysis/api/symbols/KtConstructorSymbol" -> "org/jetbrains/kotlin/analysis/api/symbols/KaConstructorSymbol"
+      "org/jetbrains/kotlin/analysis/api/symbols/KtDeclarationSymbol" -> "org/jetbrains/kotlin/analysis/api/symbols/KaDeclarationSymbol"
       "org/jetbrains/kotlin/analysis/api/symbols/KtDestructuringDeclarationSymbol" ->
-        "org/jetbrains/kotlin/analysis/api/symbols/KaDestructuringDeclarationSymbol"
+          "org/jetbrains/kotlin/analysis/api/symbols/KaDestructuringDeclarationSymbol"
       "org/jetbrains/kotlin/analysis/api/symbols/KtEnumEntryInitializerSymbol" ->
-        "org/jetbrains/kotlin/analysis/api/symbols/KaEnumEntryInitializerSymbol"
-      "org/jetbrains/kotlin/analysis/api/symbols/KtEnumEntrySymbol" ->
-        "org/jetbrains/kotlin/analysis/api/symbols/KaEnumEntrySymbol"
-      "org/jetbrains/kotlin/analysis/api/symbols/KtFileSymbol" ->
-        "org/jetbrains/kotlin/analysis/api/symbols/KaFileSymbol"
-      "org/jetbrains/kotlin/analysis/api/symbols/KtFunctionLikeSymbol" ->
-        "org/jetbrains/kotlin/analysis/api/symbols/KaFunctionSymbol"
-      "org/jetbrains/kotlin/analysis/api/symbols/KtFunctionSymbol" ->
-        "org/jetbrains/kotlin/analysis/api/symbols/KaNamedFunctionSymbol"
-      "org/jetbrains/kotlin/analysis/api/symbols/KtJavaFieldSymbol" ->
-        "org/jetbrains/kotlin/analysis/api/symbols/KaJavaFieldSymbol"
+          "org/jetbrains/kotlin/analysis/api/symbols/KaEnumEntryInitializerSymbol"
+      "org/jetbrains/kotlin/analysis/api/symbols/KtEnumEntrySymbol" -> "org/jetbrains/kotlin/analysis/api/symbols/KaEnumEntrySymbol"
+      "org/jetbrains/kotlin/analysis/api/symbols/KtFileSymbol" -> "org/jetbrains/kotlin/analysis/api/symbols/KaFileSymbol"
+      "org/jetbrains/kotlin/analysis/api/symbols/KtFunctionLikeSymbol" -> "org/jetbrains/kotlin/analysis/api/symbols/KaFunctionSymbol"
+      "org/jetbrains/kotlin/analysis/api/symbols/KtFunctionSymbol" -> "org/jetbrains/kotlin/analysis/api/symbols/KaNamedFunctionSymbol"
+      "org/jetbrains/kotlin/analysis/api/symbols/KtJavaFieldSymbol" -> "org/jetbrains/kotlin/analysis/api/symbols/KaJavaFieldSymbol"
       "org/jetbrains/kotlin/analysis/api/symbols/KtKotlinPropertySymbol" ->
-        "org/jetbrains/kotlin/analysis/api/symbols/KaKotlinPropertySymbol"
-      "org/jetbrains/kotlin/analysis/api/symbols/KtLocalVariableSymbol" ->
-        "org/jetbrains/kotlin/analysis/api/symbols/KaLocalVariableSymbol"
+          "org/jetbrains/kotlin/analysis/api/symbols/KaKotlinPropertySymbol"
+      "org/jetbrains/kotlin/analysis/api/symbols/KtLocalVariableSymbol" -> "org/jetbrains/kotlin/analysis/api/symbols/KaLocalVariableSymbol"
       "org/jetbrains/kotlin/analysis/api/symbols/KtNamedClassOrObjectSymbol" ->
-        "org/jetbrains/kotlin/analysis/api/symbols/KaNamedClassSymbol"
-      "org/jetbrains/kotlin/analysis/api/symbols/KtPackageSymbol" ->
-        "org/jetbrains/kotlin/analysis/api/symbols/KaPackageSymbol"
-      "org/jetbrains/kotlin/analysis/api/symbols/KtParameterSymbol" ->
-        "org/jetbrains/kotlin/analysis/api/symbols/KaParameterSymbol"
+          "org/jetbrains/kotlin/analysis/api/symbols/KaNamedClassSymbol"
+      "org/jetbrains/kotlin/analysis/api/symbols/KtPackageSymbol" -> "org/jetbrains/kotlin/analysis/api/symbols/KaPackageSymbol"
+      "org/jetbrains/kotlin/analysis/api/symbols/KtParameterSymbol" -> "org/jetbrains/kotlin/analysis/api/symbols/KaParameterSymbol"
       "org/jetbrains/kotlin/analysis/api/symbols/KtPropertyAccessorSymbol" ->
-        "org/jetbrains/kotlin/analysis/api/symbols/KaPropertyAccessorSymbol"
+          "org/jetbrains/kotlin/analysis/api/symbols/KaPropertyAccessorSymbol"
       "org/jetbrains/kotlin/analysis/api/symbols/KtPropertyGetterSymbol" ->
-        "org/jetbrains/kotlin/analysis/api/symbols/KaPropertyGetterSymbol"
+          "org/jetbrains/kotlin/analysis/api/symbols/KaPropertyGetterSymbol"
       "org/jetbrains/kotlin/analysis/api/symbols/KtPropertySetterSymbol" ->
-        "org/jetbrains/kotlin/analysis/api/symbols/KaPropertySetterSymbol"
-      "org/jetbrains/kotlin/analysis/api/symbols/KtPropertySymbol" ->
-        "org/jetbrains/kotlin/analysis/api/symbols/KaPropertySymbol"
+          "org/jetbrains/kotlin/analysis/api/symbols/KaPropertySetterSymbol"
+      "org/jetbrains/kotlin/analysis/api/symbols/KtPropertySymbol" -> "org/jetbrains/kotlin/analysis/api/symbols/KaPropertySymbol"
       "org/jetbrains/kotlin/analysis/api/symbols/KtReceiverParameterSymbol" ->
-        "org/jetbrains/kotlin/analysis/api/symbols/KaReceiverParameterSymbol"
+          "org/jetbrains/kotlin/analysis/api/symbols/KaReceiverParameterSymbol"
       "org/jetbrains/kotlin/analysis/api/symbols/KtSamConstructorSymbol" ->
-        "org/jetbrains/kotlin/analysis/api/symbols/KaSamConstructorSymbol"
-      "org/jetbrains/kotlin/analysis/api/symbols/KtScriptSymbol" ->
-        "org/jetbrains/kotlin/analysis/api/symbols/KaScriptSymbol"
-      "org/jetbrains/kotlin/analysis/api/symbols/KtSymbol" ->
-        "org/jetbrains/kotlin/analysis/api/symbols/KaSymbol"
-      "org/jetbrains/kotlin/analysis/api/symbols/KtSymbolOrigin" ->
-        "org/jetbrains/kotlin/analysis/api/symbols/KaSymbolOrigin"
+          "org/jetbrains/kotlin/analysis/api/symbols/KaSamConstructorSymbol"
+      "org/jetbrains/kotlin/analysis/api/symbols/KtScriptSymbol" -> "org/jetbrains/kotlin/analysis/api/symbols/KaScriptSymbol"
+      "org/jetbrains/kotlin/analysis/api/symbols/KtSymbol" -> "org/jetbrains/kotlin/analysis/api/symbols/KaSymbol"
+      "org/jetbrains/kotlin/analysis/api/symbols/KtSymbolOrigin" -> "org/jetbrains/kotlin/analysis/api/symbols/KaSymbolOrigin"
       "org/jetbrains/kotlin/analysis/api/symbols/KtSyntheticJavaPropertySymbol" ->
-        "org/jetbrains/kotlin/analysis/api/symbols/KaSyntheticJavaPropertySymbol"
-      "org/jetbrains/kotlin/analysis/api/symbols/KtTypeAliasSymbol" ->
-        "org/jetbrains/kotlin/analysis/api/symbols/KaTypeAliasSymbol"
-      "org/jetbrains/kotlin/analysis/api/symbols/KtTypeParameterSymbol" ->
-        "org/jetbrains/kotlin/analysis/api/symbols/KaTypeParameterSymbol"
+          "org/jetbrains/kotlin/analysis/api/symbols/KaSyntheticJavaPropertySymbol"
+      "org/jetbrains/kotlin/analysis/api/symbols/KtTypeAliasSymbol" -> "org/jetbrains/kotlin/analysis/api/symbols/KaTypeAliasSymbol"
+      "org/jetbrains/kotlin/analysis/api/symbols/KtTypeParameterSymbol" -> "org/jetbrains/kotlin/analysis/api/symbols/KaTypeParameterSymbol"
       "org/jetbrains/kotlin/analysis/api/symbols/KtValueParameterSymbol" ->
-        "org/jetbrains/kotlin/analysis/api/symbols/KaValueParameterSymbol"
-      "org/jetbrains/kotlin/analysis/api/symbols/KtVariableLikeSymbol" ->
-        "org/jetbrains/kotlin/analysis/api/symbols/KaVariableSymbol"
-      "org/jetbrains/kotlin/analysis/api/symbols/KtVariableSymbol" ->
-        "org/jetbrains/kotlin/analysis/api/symbols/KaVariableSymbol"
+          "org/jetbrains/kotlin/analysis/api/symbols/KaValueParameterSymbol"
+      "org/jetbrains/kotlin/analysis/api/symbols/KtVariableLikeSymbol" -> "org/jetbrains/kotlin/analysis/api/symbols/KaVariableSymbol"
+      "org/jetbrains/kotlin/analysis/api/symbols/KtVariableSymbol" -> "org/jetbrains/kotlin/analysis/api/symbols/KaVariableSymbol"
       "org/jetbrains/kotlin/analysis/api/symbols/markers/KaPossibleMultiplatformSymbol" ->
-        "org/jetbrains/kotlin/analysis/api/symbols/KaDeclarationSymbol"
+          "org/jetbrains/kotlin/analysis/api/symbols/KaDeclarationSymbol"
       "org/jetbrains/kotlin/analysis/api/symbols/markers/KaSymbolWithMembers" ->
-        "org/jetbrains/kotlin/analysis/api/symbols/markers/KaDeclarationContainerSymbol"
+          "org/jetbrains/kotlin/analysis/api/symbols/markers/KaDeclarationContainerSymbol"
       "org/jetbrains/kotlin/analysis/api/symbols/markers/KaSymbolWithModality" ->
-        "org/jetbrains/kotlin/analysis/api/symbols/KaDeclarationSymbol"
+          "org/jetbrains/kotlin/analysis/api/symbols/KaDeclarationSymbol"
       "org/jetbrains/kotlin/analysis/api/symbols/markers/KaSymbolWithTypeParameters" ->
-        "org/jetbrains/kotlin/analysis/api/symbols/markers/KaTypeParameterOwnerSymbol"
+          "org/jetbrains/kotlin/analysis/api/symbols/markers/KaTypeParameterOwnerSymbol"
       "org/jetbrains/kotlin/analysis/api/symbols/markers/KaSymbolWithVisibility" ->
-        "org/jetbrains/kotlin/analysis/api/symbols/KaDeclarationSymbol"
+          "org/jetbrains/kotlin/analysis/api/symbols/KaDeclarationSymbol"
       "org/jetbrains/kotlin/analysis/api/symbols/markers/KtAnnotatedSymbol" ->
-        "org/jetbrains/kotlin/analysis/api/symbols/markers/KaAnnotatedSymbol"
-      "org/jetbrains/kotlin/analysis/api/symbols/markers/KtNamedSymbol" ->
-        "org/jetbrains/kotlin/analysis/api/symbols/markers/KaNamedSymbol"
+          "org/jetbrains/kotlin/analysis/api/symbols/markers/KaAnnotatedSymbol"
+      "org/jetbrains/kotlin/analysis/api/symbols/markers/KtNamedSymbol" -> "org/jetbrains/kotlin/analysis/api/symbols/markers/KaNamedSymbol"
       "org/jetbrains/kotlin/analysis/api/symbols/markers/KtPossibleMultiplatformSymbol" ->
-        "org/jetbrains/kotlin/analysis/api/symbols/KaDeclarationSymbol"
+          "org/jetbrains/kotlin/analysis/api/symbols/KaDeclarationSymbol"
       "org/jetbrains/kotlin/analysis/api/symbols/markers/KtPossiblyNamedSymbol" ->
-        "org/jetbrains/kotlin/analysis/api/symbols/markers/KaPossiblyNamedSymbol"
-      "org/jetbrains/kotlin/analysis/api/symbols/markers/KtSymbolKind" ->
-        "org/jetbrains/kotlin/analysis/api/symbols/markers/KaSymbolKind"
+          "org/jetbrains/kotlin/analysis/api/symbols/markers/KaPossiblyNamedSymbol"
+      "org/jetbrains/kotlin/analysis/api/symbols/markers/KtSymbolKind" -> "org/jetbrains/kotlin/analysis/api/symbols/markers/KaSymbolKind"
       "org/jetbrains/kotlin/analysis/api/symbols/markers/KtSymbolWithKind" ->
-        "org/jetbrains/kotlin/analysis/api/symbols/markers/KaSymbolWithKind"
+          "org/jetbrains/kotlin/analysis/api/symbols/markers/KaSymbolWithKind"
       "org/jetbrains/kotlin/analysis/api/symbols/markers/KtSymbolWithMembers" ->
-        "org/jetbrains/kotlin/analysis/api/symbols/markers/KaDeclarationContainerSymbol"
+          "org/jetbrains/kotlin/analysis/api/symbols/markers/KaDeclarationContainerSymbol"
       "org/jetbrains/kotlin/analysis/api/symbols/markers/KtSymbolWithModality" ->
-        "org/jetbrains/kotlin/analysis/api/symbols/KaDeclarationSymbol"
+          "org/jetbrains/kotlin/analysis/api/symbols/KaDeclarationSymbol"
       "org/jetbrains/kotlin/analysis/api/symbols/markers/KtSymbolWithTypeParameters" ->
-        "org/jetbrains/kotlin/analysis/api/symbols/markers/KaTypeParameterOwnerSymbol"
+          "org/jetbrains/kotlin/analysis/api/symbols/markers/KaTypeParameterOwnerSymbol"
       "org/jetbrains/kotlin/analysis/api/symbols/markers/KtSymbolWithVisibility" ->
-        "org/jetbrains/kotlin/analysis/api/symbols/KaDeclarationSymbol"
+          "org/jetbrains/kotlin/analysis/api/symbols/KaDeclarationSymbol"
       "org/jetbrains/kotlin/analysis/api/symbols/pointers/KtPsiBasedSymbolPointer" ->
-        "org/jetbrains/kotlin/analysis/api/symbols/pointers/KaPsiBasedSymbolPointer"
+          "org/jetbrains/kotlin/analysis/api/symbols/pointers/KaPsiBasedSymbolPointer"
       "org/jetbrains/kotlin/analysis/api/symbols/pointers/KtSymbolPointer" ->
-        "org/jetbrains/kotlin/analysis/api/symbols/pointers/KaSymbolPointer"
-      "org/jetbrains/kotlin/analysis/api/types/KaFunctionalType" ->
-        "org/jetbrains/kotlin/analysis/api/types/KaFunctionType"
-      "org/jetbrains/kotlin/analysis/api/types/KaNonErrorClassType" ->
-        "org/jetbrains/kotlin/analysis/api/types/KaClassType"
-      "org/jetbrains/kotlin/analysis/api/types/KaTypeErrorType" ->
-        "org/jetbrains/kotlin/analysis/api/types/KaErrorType"
-      "org/jetbrains/kotlin/analysis/api/types/KtCapturedType" ->
-        "org/jetbrains/kotlin/analysis/api/types/KaCapturedType"
-      "org/jetbrains/kotlin/analysis/api/types/KtClassErrorType" ->
-        "org/jetbrains/kotlin/analysis/api/types/KaClassErrorType"
-      "org/jetbrains/kotlin/analysis/api/types/KtClassTypeQualifier" ->
-        "org/jetbrains/kotlin/analysis/api/types/KaClassTypeQualifier"
-      "org/jetbrains/kotlin/analysis/api/types/KtDefinitelyNotNullType" ->
-        "org/jetbrains/kotlin/analysis/api/types/KaDefinitelyNotNullType"
-      "org/jetbrains/kotlin/analysis/api/types/KtDynamicType" ->
-        "org/jetbrains/kotlin/analysis/api/types/KaDynamicType"
-      "org/jetbrains/kotlin/analysis/api/types/KtErrorType" ->
-        "org/jetbrains/kotlin/analysis/api/types/KaErrorType"
-      "org/jetbrains/kotlin/analysis/api/types/KtFlexibleType" ->
-        "org/jetbrains/kotlin/analysis/api/types/KaFlexibleType"
-      "org/jetbrains/kotlin/analysis/api/types/KtFunctionalType" ->
-        "org/jetbrains/kotlin/analysis/api/types/KaFunctionType"
-      "org/jetbrains/kotlin/analysis/api/types/KtIntersectionType" ->
-        "org/jetbrains/kotlin/analysis/api/types/KaIntersectionType"
-      "org/jetbrains/kotlin/analysis/api/types/KtNonErrorClassType" ->
-        "org/jetbrains/kotlin/analysis/api/types/KaClassType"
-      "org/jetbrains/kotlin/analysis/api/types/KtType" ->
-        "org/jetbrains/kotlin/analysis/api/types/KaType"
-      "org/jetbrains/kotlin/analysis/api/types/KtTypeErrorType" ->
-        "org/jetbrains/kotlin/analysis/api/types/KaErrorType"
-      "org/jetbrains/kotlin/analysis/api/types/KtTypeMappingMode" ->
-        "org/jetbrains/kotlin/analysis/api/types/KaTypeMappingMode"
-      "org/jetbrains/kotlin/analysis/api/types/KtTypeNullability" ->
-        "org/jetbrains/kotlin/analysis/api/types/KaTypeNullability"
-      "org/jetbrains/kotlin/analysis/api/types/KtTypeParameterType" ->
-        "org/jetbrains/kotlin/analysis/api/types/KaTypeParameterType"
-      "org/jetbrains/kotlin/analysis/api/types/KtUsualClassType" ->
-        "org/jetbrains/kotlin/analysis/api/types/KaUsualClassType"
+          "org/jetbrains/kotlin/analysis/api/symbols/pointers/KaSymbolPointer"
+      "org/jetbrains/kotlin/analysis/api/types/KaFunctionalType" -> "org/jetbrains/kotlin/analysis/api/types/KaFunctionType"
+      "org/jetbrains/kotlin/analysis/api/types/KaNonErrorClassType" -> "org/jetbrains/kotlin/analysis/api/types/KaClassType"
+      "org/jetbrains/kotlin/analysis/api/types/KaTypeErrorType" -> "org/jetbrains/kotlin/analysis/api/types/KaErrorType"
+      "org/jetbrains/kotlin/analysis/api/types/KtCapturedType" -> "org/jetbrains/kotlin/analysis/api/types/KaCapturedType"
+      "org/jetbrains/kotlin/analysis/api/types/KtClassErrorType" -> "org/jetbrains/kotlin/analysis/api/types/KaClassErrorType"
+      "org/jetbrains/kotlin/analysis/api/types/KtClassTypeQualifier" -> "org/jetbrains/kotlin/analysis/api/types/KaClassTypeQualifier"
+      "org/jetbrains/kotlin/analysis/api/types/KtDefinitelyNotNullType" -> "org/jetbrains/kotlin/analysis/api/types/KaDefinitelyNotNullType"
+      "org/jetbrains/kotlin/analysis/api/types/KtDynamicType" -> "org/jetbrains/kotlin/analysis/api/types/KaDynamicType"
+      "org/jetbrains/kotlin/analysis/api/types/KtErrorType" -> "org/jetbrains/kotlin/analysis/api/types/KaErrorType"
+      "org/jetbrains/kotlin/analysis/api/types/KtFlexibleType" -> "org/jetbrains/kotlin/analysis/api/types/KaFlexibleType"
+      "org/jetbrains/kotlin/analysis/api/types/KtFunctionalType" -> "org/jetbrains/kotlin/analysis/api/types/KaFunctionType"
+      "org/jetbrains/kotlin/analysis/api/types/KtIntersectionType" -> "org/jetbrains/kotlin/analysis/api/types/KaIntersectionType"
+      "org/jetbrains/kotlin/analysis/api/types/KtNonErrorClassType" -> "org/jetbrains/kotlin/analysis/api/types/KaClassType"
+      "org/jetbrains/kotlin/analysis/api/types/KtType" -> "org/jetbrains/kotlin/analysis/api/types/KaType"
+      "org/jetbrains/kotlin/analysis/api/types/KtTypeErrorType" -> "org/jetbrains/kotlin/analysis/api/types/KaErrorType"
+      "org/jetbrains/kotlin/analysis/api/types/KtTypeMappingMode" -> "org/jetbrains/kotlin/analysis/api/types/KaTypeMappingMode"
+      "org/jetbrains/kotlin/analysis/api/types/KtTypeNullability" -> "org/jetbrains/kotlin/analysis/api/types/KaTypeNullability"
+      "org/jetbrains/kotlin/analysis/api/types/KtTypeParameterType" -> "org/jetbrains/kotlin/analysis/api/types/KaTypeParameterType"
+      "org/jetbrains/kotlin/analysis/api/types/KtUsualClassType" -> "org/jetbrains/kotlin/analysis/api/types/KaUsualClassType"
       else -> {
         val ktPrefix = "org/jetbrains/kotlin/analysis/api/"
         val lastIndex = s.lastIndexOf("/")
@@ -819,49 +684,49 @@ class LintJarApiMigration(private val client: LintClient) {
   private fun migrateClassNames(jarBytes: ByteArray): ByteArray {
     val classReader = ClassReader(jarBytes)
     val classWriter =
-      object : ClassWriter(classReader, COMPUTE_MAXS or COMPUTE_FRAMES) {
-        override fun getCommonSuperClass(type1: String, type2: String): String {
-          return try {
-            super.getCommonSuperClass(type1, type2)
-          } catch (e: TypeNotPresentException) {
-            "java/lang/Object"
+        object : ClassWriter(classReader, COMPUTE_MAXS or COMPUTE_FRAMES) {
+          override fun getCommonSuperClass(type1: String, type2: String): String {
+            return try {
+              super.getCommonSuperClass(type1, type2)
+            } catch (e: TypeNotPresentException) {
+              "java/lang/Object"
+            }
           }
         }
-      }
     val mapper =
-      object : Remapper() {
-        override fun mapMethodName(owner: String?, name: String?, descriptor: String?): String? {
-          return mapClass(name) ?: name
-        }
+        object : Remapper() {
+          override fun mapMethodName(owner: String?, name: String?, descriptor: String?): String? {
+            return mapClass(name) ?: name
+          }
 
-        override fun mapInvokeDynamicMethodName(name: String?, descriptor: String?): String? {
-          return mapClass(name) ?: name
-        }
+          override fun mapInvokeDynamicMethodName(name: String?, descriptor: String?): String? {
+            return mapClass(name) ?: name
+          }
 
-        override fun mapRecordComponentName(
-          owner: String?,
-          name: String,
-          descriptor: String?,
-        ): String {
-          return mapClass(name) ?: name
-        }
+          override fun mapRecordComponentName(
+              owner: String?,
+              name: String,
+              descriptor: String?,
+          ): String {
+            return mapClass(name) ?: name
+          }
 
-        override fun mapFieldName(owner: String?, name: String?, descriptor: String?): String? {
-          return mapClass(name) ?: name
-        }
+          override fun mapFieldName(owner: String?, name: String?, descriptor: String?): String? {
+            return mapClass(name) ?: name
+          }
 
-        override fun mapPackageName(name: String): String {
-          return mapClass(name) ?: name
-        }
+          override fun mapPackageName(name: String): String {
+            return mapClass(name) ?: name
+          }
 
-        override fun mapModuleName(name: String): String {
-          return mapClass(name) ?: name
-        }
+          override fun mapModuleName(name: String): String {
+            return mapClass(name) ?: name
+          }
 
-        override fun map(internalName: String?): String? {
-          return mapClass(internalName) ?: internalName
+          override fun map(internalName: String?): String? {
+            return mapClass(internalName) ?: internalName
+          }
         }
-      }
 
     val myVisitor = SwitchToInterfaceClassVisitor(classWriter)
     val classMapper = ClassRemapper(myVisitor, mapper)
@@ -870,46 +735,39 @@ class LintJarApiMigration(private val client: LintClient) {
   }
 
   /**
-   * Class visitor which looks up method calls, locates the corresponding method call via reflection
-   * and checks whether the bytecode needs to be changed to interface invocation (since a bunch of
-   * Kotlin analysis API methods were moved to interfaces.)
+   * Class visitor which looks up method calls, locates the corresponding method call via reflection and checks whether the bytecode needs
+   * to be changed to interface invocation (since a bunch of Kotlin analysis API methods were moved to interfaces.)
    */
-  private inner class SwitchToInterfaceClassVisitor(chained: ClassVisitor) :
-    ClassVisitor(ASM9, chained) {
+  private inner class SwitchToInterfaceClassVisitor(chained: ClassVisitor) : ClassVisitor(ASM9, chained) {
     override fun visitMethod(
-      access: Int,
-      name: String?,
-      descriptor: String?,
-      signature: String?,
-      exceptions: Array<out String>?,
+        access: Int,
+        name: String?,
+        descriptor: String?,
+        signature: String?,
+        exceptions: Array<out String>?,
     ): MethodVisitor {
-      return SwitchToInterfaceMethodVisitor(
-        super.visitMethod(access, name, descriptor, signature, exceptions)
-      )
+      return SwitchToInterfaceMethodVisitor(super.visitMethod(access, name, descriptor, signature, exceptions))
     }
   }
 
-  private inner class SwitchToInterfaceMethodVisitor(chained: MethodVisitor) :
-    MethodVisitor(ASM9, chained) {
+  private inner class SwitchToInterfaceMethodVisitor(chained: MethodVisitor) : MethodVisitor(ASM9, chained) {
     override fun visitMethodInsn(
-      opcode: Int,
-      owner: String,
-      name: String,
-      descriptor: String,
-      isInterface: Boolean,
+        opcode: Int,
+        owner: String,
+        name: String,
+        descriptor: String,
+        isInterface: Boolean,
     ) {
       // It could be already INVOKEINTERFACE if the code is built with a newer version compiler / AA
       if (
-        (opcode == Opcodes.INVOKESTATIC ||
-          opcode == Opcodes.INVOKEVIRTUAL ||
-          opcode == Opcodes.INVOKEINTERFACE) && isRelevantType(owner)
+          (opcode == Opcodes.INVOKESTATIC || opcode == Opcodes.INVOKEVIRTUAL || opcode == Opcodes.INVOKEINTERFACE) && isRelevantType(owner)
       ) {
         val clz = findClass(owner)
         if (clz == null) {
           client.log(
-            Severity.WARNING,
-            null,
-            "WARNING: Missing analysis API method ${owner}#${name}${descriptor}",
+              Severity.WARNING,
+              null,
+              "WARNING: Missing analysis API method ${owner}#${name}${descriptor}",
           )
         } else {
           // Should be invoked on interface instead!
@@ -933,12 +791,12 @@ class LintJarApiMigration(private val client: LintClient) {
     // E.g., (L...;)...
     val beforeClosingParen = descriptor.substringBefore(")")
     val initialSig =
-      if (beforeClosingParen != descriptor && beforeClosingParen.length > 1) {
-        "$beforeClosingParen)"
-      } else {
-        // No ) or just () -> (
-        "(L$owner;)"
-      }
+        if (beforeClosingParen != descriptor && beforeClosingParen.length > 1) {
+          "$beforeClosingParen)"
+        } else {
+          // No ) or just () -> (
+          "(L$owner;)"
+        }
     val queue = mutableListOf<String>()
     queue.add(initialSig)
     while (queue.isNotEmpty()) {
@@ -962,787 +820,674 @@ class LintJarApiMigration(private val client: LintClient) {
   private fun getSuperTypes(type: String): Array<String> {
     return when (type) {
       // Extracted via ExtractMigrationTable.kt in the unit tests
-      "org/jetbrains/kotlin/analysis/api/KaConstantInitializerValue" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/KaInitializerValue")
-      "org/jetbrains/kotlin/analysis/api/KaConstantValueForAnnotation" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/KaInitializerValue")
-      "org/jetbrains/kotlin/analysis/api/KaNonConstantInitializerValue" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/KaInitializerValue")
+      "org/jetbrains/kotlin/analysis/api/KaConstantInitializerValue" -> arrayOf("org/jetbrains/kotlin/analysis/api/KaInitializerValue")
+      "org/jetbrains/kotlin/analysis/api/KaConstantValueForAnnotation" -> arrayOf("org/jetbrains/kotlin/analysis/api/KaInitializerValue")
+      "org/jetbrains/kotlin/analysis/api/KaNonConstantInitializerValue" -> arrayOf("org/jetbrains/kotlin/analysis/api/KaInitializerValue")
       "org/jetbrains/kotlin/analysis/api/KaSession" ->
-        arrayOf(
-          "org/jetbrains/kotlin/analysis/api/lifetime/KaLifetimeOwner",
-          "org/jetbrains/kotlin/analysis/api/KaResolver",
-          "org/jetbrains/kotlin/analysis/api/KaSymbolRelationProvider",
-          "org/jetbrains/kotlin/analysis/api/KaDiagnosticProvider",
-          "org/jetbrains/kotlin/analysis/api/KaScopeProvider",
-          "org/jetbrains/kotlin/analysis/api/KaCompletionCandidateChecker",
-          "org/jetbrains/kotlin/analysis/api/KaExpressionTypeProvider",
-          "org/jetbrains/kotlin/analysis/api/KaTypeProvider",
-          "org/jetbrains/kotlin/analysis/api/KaTypeInformationProvider",
-          "org/jetbrains/kotlin/analysis/api/KaSymbolProvider",
-          "org/jetbrains/kotlin/analysis/api/KaJavaInteroperabilityComponent",
-          "org/jetbrains/kotlin/analysis/api/KaSymbolInformationProvider",
-          "org/jetbrains/kotlin/analysis/api/KaTypeRelationChecker",
-          "org/jetbrains/kotlin/analysis/api/KaExpressionInformationProvider",
-          "org/jetbrains/kotlin/analysis/api/KaEvaluator",
-          "org/jetbrains/kotlin/analysis/api/KaReferenceShortener",
-          "org/jetbrains/kotlin/analysis/api/KaImportOptimizer",
-          "org/jetbrains/kotlin/analysis/api/KaRenderer",
-          "org/jetbrains/kotlin/analysis/api/KaVisibilityChecker",
-          "org/jetbrains/kotlin/analysis/api/KaOriginalPsiProvider",
-          "org/jetbrains/kotlin/analysis/api/KaTypeCreator",
-          "org/jetbrains/kotlin/analysis/api/KaAnalysisScopeProvider",
-          "org/jetbrains/kotlin/analysis/api/KaSignatureSubstitutor",
-          "org/jetbrains/kotlin/analysis/api/KaResolveExtensionInfoProvider",
-          "org/jetbrains/kotlin/analysis/api/KaCompilerPluginGeneratedDeclarationsProvider",
-          "org/jetbrains/kotlin/analysis/api/KaCompilerFacility",
-          "org/jetbrains/kotlin/analysis/api/KaMetadataCalculator",
-          "org/jetbrains/kotlin/analysis/api/KaSubstitutorProvider",
-          "org/jetbrains/kotlin/analysis/api/KaDataFlowProvider",
-          "org/jetbrains/kotlin/analysis/api/KaSourceProvider",
-        )
-      "org/jetbrains/kotlin/analysis/api/annotations/KaAnnotation" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/lifetime/KaLifetimeOwner")
+          arrayOf(
+              "org/jetbrains/kotlin/analysis/api/lifetime/KaLifetimeOwner",
+              "org/jetbrains/kotlin/analysis/api/KaResolver",
+              "org/jetbrains/kotlin/analysis/api/KaSymbolRelationProvider",
+              "org/jetbrains/kotlin/analysis/api/KaDiagnosticProvider",
+              "org/jetbrains/kotlin/analysis/api/KaScopeProvider",
+              "org/jetbrains/kotlin/analysis/api/KaCompletionCandidateChecker",
+              "org/jetbrains/kotlin/analysis/api/KaExpressionTypeProvider",
+              "org/jetbrains/kotlin/analysis/api/KaTypeProvider",
+              "org/jetbrains/kotlin/analysis/api/KaTypeInformationProvider",
+              "org/jetbrains/kotlin/analysis/api/KaSymbolProvider",
+              "org/jetbrains/kotlin/analysis/api/KaJavaInteroperabilityComponent",
+              "org/jetbrains/kotlin/analysis/api/KaSymbolInformationProvider",
+              "org/jetbrains/kotlin/analysis/api/KaTypeRelationChecker",
+              "org/jetbrains/kotlin/analysis/api/KaExpressionInformationProvider",
+              "org/jetbrains/kotlin/analysis/api/KaEvaluator",
+              "org/jetbrains/kotlin/analysis/api/KaReferenceShortener",
+              "org/jetbrains/kotlin/analysis/api/KaImportOptimizer",
+              "org/jetbrains/kotlin/analysis/api/KaRenderer",
+              "org/jetbrains/kotlin/analysis/api/KaVisibilityChecker",
+              "org/jetbrains/kotlin/analysis/api/KaOriginalPsiProvider",
+              "org/jetbrains/kotlin/analysis/api/KaTypeCreator",
+              "org/jetbrains/kotlin/analysis/api/KaAnalysisScopeProvider",
+              "org/jetbrains/kotlin/analysis/api/KaSignatureSubstitutor",
+              "org/jetbrains/kotlin/analysis/api/KaResolveExtensionInfoProvider",
+              "org/jetbrains/kotlin/analysis/api/KaCompilerPluginGeneratedDeclarationsProvider",
+              "org/jetbrains/kotlin/analysis/api/KaCompilerFacility",
+              "org/jetbrains/kotlin/analysis/api/KaMetadataCalculator",
+              "org/jetbrains/kotlin/analysis/api/KaSubstitutorProvider",
+              "org/jetbrains/kotlin/analysis/api/KaDataFlowProvider",
+              "org/jetbrains/kotlin/analysis/api/KaSourceProvider",
+          )
+      "org/jetbrains/kotlin/analysis/api/annotations/KaAnnotation" -> arrayOf("org/jetbrains/kotlin/analysis/api/lifetime/KaLifetimeOwner")
       "org/jetbrains/kotlin/analysis/api/annotations/KaAnnotationList" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/lifetime/KaLifetimeOwner")
+          arrayOf("org/jetbrains/kotlin/analysis/api/lifetime/KaLifetimeOwner")
       "org/jetbrains/kotlin/analysis/api/annotations/KaAnnotationValue" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/lifetime/KaLifetimeOwner")
+          arrayOf("org/jetbrains/kotlin/analysis/api/lifetime/KaLifetimeOwner")
       "org/jetbrains/kotlin/analysis/api/annotations/KaNamedAnnotationValue" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/lifetime/KaLifetimeOwner")
-      "org/jetbrains/kotlin/analysis/api/base/KaContextReceiver" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/lifetime/KaLifetimeOwner")
+          arrayOf("org/jetbrains/kotlin/analysis/api/lifetime/KaLifetimeOwner")
+      "org/jetbrains/kotlin/analysis/api/base/KaContextReceiver" -> arrayOf("org/jetbrains/kotlin/analysis/api/lifetime/KaLifetimeOwner")
       "org/jetbrains/kotlin/analysis/api/base/KaContextReceiversOwner" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/lifetime/KaLifetimeOwner")
-      "org/jetbrains/kotlin/analysis/api/components/KaBuiltinTypes" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/lifetime/KaLifetimeOwner")
+          arrayOf("org/jetbrains/kotlin/analysis/api/lifetime/KaLifetimeOwner")
+      "org/jetbrains/kotlin/analysis/api/components/KaBuiltinTypes" -> arrayOf("org/jetbrains/kotlin/analysis/api/lifetime/KaLifetimeOwner")
       "org/jetbrains/kotlin/analysis/api/components/KaClassTypeBuilder" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/components/KaTypeBuilder")
+          arrayOf("org/jetbrains/kotlin/analysis/api/components/KaTypeBuilder")
       "org/jetbrains/kotlin/analysis/api/components/KaCompilerPluginGeneratedDeclarations" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/lifetime/KaLifetimeOwner")
+          arrayOf("org/jetbrains/kotlin/analysis/api/lifetime/KaLifetimeOwner")
       "org/jetbrains/kotlin/analysis/api/components/KaExtensionApplicabilityResult" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/lifetime/KaLifetimeOwner")
+          arrayOf("org/jetbrains/kotlin/analysis/api/lifetime/KaLifetimeOwner")
       "org/jetbrains/kotlin/analysis/api/components/KaImplicitReceiver" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/lifetime/KaLifetimeOwner")
+          arrayOf("org/jetbrains/kotlin/analysis/api/lifetime/KaLifetimeOwner")
       "org/jetbrains/kotlin/analysis/api/components/KaImplicitReceiverSmartCast" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/lifetime/KaLifetimeOwner")
-      "org/jetbrains/kotlin/analysis/api/components/KaScopeContext" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/lifetime/KaLifetimeOwner")
+          arrayOf("org/jetbrains/kotlin/analysis/api/lifetime/KaLifetimeOwner")
+      "org/jetbrains/kotlin/analysis/api/components/KaScopeContext" -> arrayOf("org/jetbrains/kotlin/analysis/api/lifetime/KaLifetimeOwner")
       "org/jetbrains/kotlin/analysis/api/components/KaScopeWithKind" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/lifetime/KaLifetimeOwner")
+          arrayOf("org/jetbrains/kotlin/analysis/api/lifetime/KaLifetimeOwner")
       "org/jetbrains/kotlin/analysis/api/components/KaScopeWithKindImpl" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/components/KaScopeWithKind")
+          arrayOf("org/jetbrains/kotlin/analysis/api/components/KaScopeWithKind")
       "org/jetbrains/kotlin/analysis/api/components/KaSmartCastInfo" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/lifetime/KaLifetimeOwner")
+          arrayOf("org/jetbrains/kotlin/analysis/api/lifetime/KaLifetimeOwner")
       "org/jetbrains/kotlin/analysis/api/components/KaSubstitutorBuilder" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/lifetime/KaLifetimeOwner")
-      "org/jetbrains/kotlin/analysis/api/components/KaTypeBuilder" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/lifetime/KaLifetimeOwner")
+          arrayOf("org/jetbrains/kotlin/analysis/api/lifetime/KaLifetimeOwner")
+      "org/jetbrains/kotlin/analysis/api/components/KaTypeBuilder" -> arrayOf("org/jetbrains/kotlin/analysis/api/lifetime/KaLifetimeOwner")
       "org/jetbrains/kotlin/analysis/api/components/KaTypeParameterTypeBuilder" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/components/KaTypeBuilder")
+          arrayOf("org/jetbrains/kotlin/analysis/api/components/KaTypeBuilder")
       "org/jetbrains/kotlin/analysis/api/contracts/description/KaContractCallsInPlaceContractEffectDeclaration" ->
-        arrayOf(
-          "org/jetbrains/kotlin/analysis/api/contracts/description/KaContractEffectDeclaration"
-        )
+          arrayOf("org/jetbrains/kotlin/analysis/api/contracts/description/KaContractEffectDeclaration")
       "org/jetbrains/kotlin/analysis/api/contracts/description/KaContractConditionalContractEffectDeclaration" ->
-        arrayOf(
-          "org/jetbrains/kotlin/analysis/api/contracts/description/KaContractEffectDeclaration"
-        )
+          arrayOf("org/jetbrains/kotlin/analysis/api/contracts/description/KaContractEffectDeclaration")
       "org/jetbrains/kotlin/analysis/api/contracts/description/KaContractConstantValue" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/lifetime/KaLifetimeOwner")
+          arrayOf("org/jetbrains/kotlin/analysis/api/lifetime/KaLifetimeOwner")
       "org/jetbrains/kotlin/analysis/api/contracts/description/KaContractEffectDeclaration" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/lifetime/KaLifetimeOwner")
+          arrayOf("org/jetbrains/kotlin/analysis/api/lifetime/KaLifetimeOwner")
       "org/jetbrains/kotlin/analysis/api/contracts/description/KaContractParameterValue" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/lifetime/KaLifetimeOwner")
+          arrayOf("org/jetbrains/kotlin/analysis/api/lifetime/KaLifetimeOwner")
       "org/jetbrains/kotlin/analysis/api/contracts/description/KaContractReturnsContractEffectDeclaration" ->
-        arrayOf(
-          "org/jetbrains/kotlin/analysis/api/contracts/description/KaContractEffectDeclaration"
-        )
+          arrayOf("org/jetbrains/kotlin/analysis/api/contracts/description/KaContractEffectDeclaration")
       "org/jetbrains/kotlin/analysis/api/contracts/description/KaContractReturnsNotNullEffectDeclaration" ->
-        arrayOf(
-          "org/jetbrains/kotlin/analysis/api/contracts/description/KaContractReturnsContractEffectDeclaration"
-        )
+          arrayOf("org/jetbrains/kotlin/analysis/api/contracts/description/KaContractReturnsContractEffectDeclaration")
       "org/jetbrains/kotlin/analysis/api/contracts/description/KaContractReturnsSpecificValueEffectDeclaration" ->
-        arrayOf(
-          "org/jetbrains/kotlin/analysis/api/contracts/description/KaContractReturnsContractEffectDeclaration"
-        )
+          arrayOf("org/jetbrains/kotlin/analysis/api/contracts/description/KaContractReturnsContractEffectDeclaration")
       "org/jetbrains/kotlin/analysis/api/contracts/description/KaContractReturnsSuccessfullyEffectDeclaration" ->
-        arrayOf(
-          "org/jetbrains/kotlin/analysis/api/contracts/description/KaContractReturnsContractEffectDeclaration"
-        )
+          arrayOf("org/jetbrains/kotlin/analysis/api/contracts/description/KaContractReturnsContractEffectDeclaration")
       "org/jetbrains/kotlin/analysis/api/contracts/description/booleans/KaContractBinaryLogicExpression" ->
-        arrayOf(
-          "org/jetbrains/kotlin/analysis/api/contracts/description/booleans/KaContractBooleanExpression"
-        )
+          arrayOf("org/jetbrains/kotlin/analysis/api/contracts/description/booleans/KaContractBooleanExpression")
       "org/jetbrains/kotlin/analysis/api/contracts/description/booleans/KaContractBooleanConstantExpression" ->
-        arrayOf(
-          "org/jetbrains/kotlin/analysis/api/contracts/description/booleans/KaContractBooleanExpression"
-        )
+          arrayOf("org/jetbrains/kotlin/analysis/api/contracts/description/booleans/KaContractBooleanExpression")
       "org/jetbrains/kotlin/analysis/api/contracts/description/booleans/KaContractBooleanExpression" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/lifetime/KaLifetimeOwner")
+          arrayOf("org/jetbrains/kotlin/analysis/api/lifetime/KaLifetimeOwner")
       "org/jetbrains/kotlin/analysis/api/contracts/description/booleans/KaContractBooleanValueParameterExpression" ->
-        arrayOf(
-          "org/jetbrains/kotlin/analysis/api/contracts/description/booleans/KaContractBooleanExpression"
-        )
+          arrayOf("org/jetbrains/kotlin/analysis/api/contracts/description/booleans/KaContractBooleanExpression")
       "org/jetbrains/kotlin/analysis/api/contracts/description/booleans/KaContractIsInstancePredicateExpression" ->
-        arrayOf(
-          "org/jetbrains/kotlin/analysis/api/contracts/description/booleans/KaContractBooleanExpression"
-        )
+          arrayOf("org/jetbrains/kotlin/analysis/api/contracts/description/booleans/KaContractBooleanExpression")
       "org/jetbrains/kotlin/analysis/api/contracts/description/booleans/KaContractIsNullPredicateExpression" ->
-        arrayOf(
-          "org/jetbrains/kotlin/analysis/api/contracts/description/booleans/KaContractBooleanExpression"
-        )
+          arrayOf("org/jetbrains/kotlin/analysis/api/contracts/description/booleans/KaContractBooleanExpression")
       "org/jetbrains/kotlin/analysis/api/contracts/description/booleans/KaContractLogicalNotExpression" ->
-        arrayOf(
-          "org/jetbrains/kotlin/analysis/api/contracts/description/booleans/KaContractBooleanExpression"
-        )
+          arrayOf("org/jetbrains/kotlin/analysis/api/contracts/description/booleans/KaContractBooleanExpression")
       "org/jetbrains/kotlin/analysis/api/descriptors/symbols/descriptorBased/KaDefaultValueParameterSymbol" ->
-        arrayOf(
-          "org/jetbrains/kotlin/analysis/api/descriptors/symbols/descriptorBased/KaValueParameterSymbol"
-        )
+          arrayOf("org/jetbrains/kotlin/analysis/api/descriptors/symbols/descriptorBased/KaValueParameterSymbol")
       "org/jetbrains/kotlin/analysis/api/descriptors/symbols/psiBased/KaDefaultValueParameterSymbol" ->
-        arrayOf(
-          "org/jetbrains/kotlin/analysis/api/descriptors/symbols/psiBased/KaValueParameterSymbol"
-        )
-      "org/jetbrains/kotlin/analysis/api/diagnostics/KaDiagnostic" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/lifetime/KaLifetimeOwner")
+          arrayOf("org/jetbrains/kotlin/analysis/api/descriptors/symbols/psiBased/KaValueParameterSymbol")
+      "org/jetbrains/kotlin/analysis/api/diagnostics/KaDiagnostic" -> arrayOf("org/jetbrains/kotlin/analysis/api/lifetime/KaLifetimeOwner")
       "org/jetbrains/kotlin/analysis/api/diagnostics/KaDiagnosticWithPsi" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/diagnostics/KaDiagnostic")
+          arrayOf("org/jetbrains/kotlin/analysis/api/diagnostics/KaDiagnostic")
       "org/jetbrains/kotlin/analysis/api/fir/components/KaLazyCompletionExtensionCandidateChecker" ->
-        arrayOf(
-          "org/jetbrains/kotlin/analysis/api/components/KaCompletionExtensionCandidateChecker"
-        )
+          arrayOf("org/jetbrains/kotlin/analysis/api/components/KaCompletionExtensionCandidateChecker")
       "org/jetbrains/kotlin/analysis/api/fir/diagnostics/KaCompilerPluginDiagnostic0Impl" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/fir/diagnostics/KaCompilerPluginDiagnostic0")
+          arrayOf("org/jetbrains/kotlin/analysis/api/fir/diagnostics/KaCompilerPluginDiagnostic0")
       "org/jetbrains/kotlin/analysis/api/fir/diagnostics/KaCompilerPluginDiagnostic1Impl" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/fir/diagnostics/KaCompilerPluginDiagnostic1")
+          arrayOf("org/jetbrains/kotlin/analysis/api/fir/diagnostics/KaCompilerPluginDiagnostic1")
       "org/jetbrains/kotlin/analysis/api/fir/diagnostics/KaCompilerPluginDiagnostic2Impl" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/fir/diagnostics/KaCompilerPluginDiagnostic2")
+          arrayOf("org/jetbrains/kotlin/analysis/api/fir/diagnostics/KaCompilerPluginDiagnostic2")
       "org/jetbrains/kotlin/analysis/api/fir/diagnostics/KaCompilerPluginDiagnostic3Impl" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/fir/diagnostics/KaCompilerPluginDiagnostic3")
+          arrayOf("org/jetbrains/kotlin/analysis/api/fir/diagnostics/KaCompilerPluginDiagnostic3")
       "org/jetbrains/kotlin/analysis/api/fir/diagnostics/KaCompilerPluginDiagnostic4Impl" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/fir/diagnostics/KaCompilerPluginDiagnostic4")
+          arrayOf("org/jetbrains/kotlin/analysis/api/fir/diagnostics/KaCompilerPluginDiagnostic4")
       "org/jetbrains/kotlin/analysis/api/fir/symbols/pointers/KaTopLevelCallableSymbolPointer" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/fir/symbols/pointers/KaSymbolPointer")
+          arrayOf("org/jetbrains/kotlin/analysis/api/fir/symbols/pointers/KaSymbolPointer")
       "org/jetbrains/kotlin/analysis/api/fir/utils/KaGenericTypePointer" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/fir/utils/KaTypePointer")
+          arrayOf("org/jetbrains/kotlin/analysis/api/fir/utils/KaTypePointer")
       "org/jetbrains/kotlin/analysis/api/impl/base/KaBaseContextReceiver" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/base/KaContextReceiver")
+          arrayOf("org/jetbrains/kotlin/analysis/api/base/KaContextReceiver")
       "org/jetbrains/kotlin/analysis/api/impl/base/KaBaseSession" ->
-        arrayOf(
-          "org/jetbrains/kotlin/analysis/api/KaSession",
-          "org/jetbrains/kotlin/analysis/api/impl/base/KaResolver",
-          "org/jetbrains/kotlin/analysis/api/impl/base/KaSymbolRelationProvider",
-          "org/jetbrains/kotlin/analysis/api/impl/base/KaDiagnosticProvider",
-          "org/jetbrains/kotlin/analysis/api/impl/base/KaScopeProvider",
-          "org/jetbrains/kotlin/analysis/api/impl/base/KaCompletionCandidateChecker",
-          "org/jetbrains/kotlin/analysis/api/impl/base/KaExpressionTypeProvider",
-          "org/jetbrains/kotlin/analysis/api/impl/base/KaTypeProvider",
-          "org/jetbrains/kotlin/analysis/api/impl/base/KaTypeInformationProvider",
-          "org/jetbrains/kotlin/analysis/api/symbols/KaSymbolProvider",
-          "org/jetbrains/kotlin/analysis/api/impl/base/KaJavaInteroperabilityComponent",
-          "org/jetbrains/kotlin/analysis/api/impl/base/KaSymbolInformationProvider",
-          "org/jetbrains/kotlin/analysis/api/impl/base/KaTypeRelationChecker",
-          "org/jetbrains/kotlin/analysis/api/impl/base/KaExpressionInformationProvider",
-          "org/jetbrains/kotlin/analysis/api/impl/base/KaEvaluator",
-          "org/jetbrains/kotlin/analysis/api/impl/base/KaReferenceShortener",
-          "org/jetbrains/kotlin/analysis/api/impl/base/KaImportOptimizer",
-          "org/jetbrains/kotlin/analysis/api/impl/base/KaRenderer",
-          "org/jetbrains/kotlin/analysis/api/impl/base/KaVisibilityChecker",
-          "org/jetbrains/kotlin/analysis/api/impl/base/KaOriginalPsiProvider",
-          "org/jetbrains/kotlin/analysis/api/impl/base/KaTypeCreator",
-          "org/jetbrains/kotlin/analysis/api/impl/base/KaAnalysisScopeProvider",
-          "org/jetbrains/kotlin/analysis/api/impl/base/KaSignatureSubstitutor",
-          "org/jetbrains/kotlin/analysis/api/impl/base/KaResolveExtensionInfoProvider",
-          "org/jetbrains/kotlin/analysis/api/impl/base/KaCompilerPluginGeneratedDeclarationsProvider",
-          "org/jetbrains/kotlin/analysis/api/impl/base/KaCompilerFacility",
-          "org/jetbrains/kotlin/analysis/api/impl/base/KaMetadataCalculator",
-          "org/jetbrains/kotlin/analysis/api/impl/base/KaSubstitutorProvider",
-          "org/jetbrains/kotlin/analysis/api/impl/base/KaDataFlowProvider",
-          "org/jetbrains/kotlin/analysis/api/impl/base/KaSourceProvider",
-        )
+          arrayOf(
+              "org/jetbrains/kotlin/analysis/api/KaSession",
+              "org/jetbrains/kotlin/analysis/api/impl/base/KaResolver",
+              "org/jetbrains/kotlin/analysis/api/impl/base/KaSymbolRelationProvider",
+              "org/jetbrains/kotlin/analysis/api/impl/base/KaDiagnosticProvider",
+              "org/jetbrains/kotlin/analysis/api/impl/base/KaScopeProvider",
+              "org/jetbrains/kotlin/analysis/api/impl/base/KaCompletionCandidateChecker",
+              "org/jetbrains/kotlin/analysis/api/impl/base/KaExpressionTypeProvider",
+              "org/jetbrains/kotlin/analysis/api/impl/base/KaTypeProvider",
+              "org/jetbrains/kotlin/analysis/api/impl/base/KaTypeInformationProvider",
+              "org/jetbrains/kotlin/analysis/api/symbols/KaSymbolProvider",
+              "org/jetbrains/kotlin/analysis/api/impl/base/KaJavaInteroperabilityComponent",
+              "org/jetbrains/kotlin/analysis/api/impl/base/KaSymbolInformationProvider",
+              "org/jetbrains/kotlin/analysis/api/impl/base/KaTypeRelationChecker",
+              "org/jetbrains/kotlin/analysis/api/impl/base/KaExpressionInformationProvider",
+              "org/jetbrains/kotlin/analysis/api/impl/base/KaEvaluator",
+              "org/jetbrains/kotlin/analysis/api/impl/base/KaReferenceShortener",
+              "org/jetbrains/kotlin/analysis/api/impl/base/KaImportOptimizer",
+              "org/jetbrains/kotlin/analysis/api/impl/base/KaRenderer",
+              "org/jetbrains/kotlin/analysis/api/impl/base/KaVisibilityChecker",
+              "org/jetbrains/kotlin/analysis/api/impl/base/KaOriginalPsiProvider",
+              "org/jetbrains/kotlin/analysis/api/impl/base/KaTypeCreator",
+              "org/jetbrains/kotlin/analysis/api/impl/base/KaAnalysisScopeProvider",
+              "org/jetbrains/kotlin/analysis/api/impl/base/KaSignatureSubstitutor",
+              "org/jetbrains/kotlin/analysis/api/impl/base/KaResolveExtensionInfoProvider",
+              "org/jetbrains/kotlin/analysis/api/impl/base/KaCompilerPluginGeneratedDeclarationsProvider",
+              "org/jetbrains/kotlin/analysis/api/impl/base/KaCompilerFacility",
+              "org/jetbrains/kotlin/analysis/api/impl/base/KaMetadataCalculator",
+              "org/jetbrains/kotlin/analysis/api/impl/base/KaSubstitutorProvider",
+              "org/jetbrains/kotlin/analysis/api/impl/base/KaDataFlowProvider",
+              "org/jetbrains/kotlin/analysis/api/impl/base/KaSourceProvider",
+          )
       "org/jetbrains/kotlin/analysis/api/impl/base/KaBooleanConstantValueImpl" ->
-        arrayOf(
-          "org/jetbrains/kotlin/analysis/api/impl/base/KaConstantValue\$BooleanValue",
-          "org/jetbrains/kotlin/analysis/api/impl/base/KaConstantValue\$KaBooleanConstantValue",
-        )
+          arrayOf(
+              "org/jetbrains/kotlin/analysis/api/impl/base/KaConstantValue\$BooleanValue",
+              "org/jetbrains/kotlin/analysis/api/impl/base/KaConstantValue\$KaBooleanConstantValue",
+          )
       "org/jetbrains/kotlin/analysis/api/impl/base/KaByteConstantValueImpl" ->
-        arrayOf(
-          "org/jetbrains/kotlin/analysis/api/impl/base/KaConstantValue\$ByteValue",
-          "org/jetbrains/kotlin/analysis/api/impl/base/KaConstantValue\$KaByteConstantValue",
-        )
-      "org/jetbrains/kotlin/analysis/api/impl/base/KaChainedSubstitutor" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/types/KaSubstitutor")
+          arrayOf(
+              "org/jetbrains/kotlin/analysis/api/impl/base/KaConstantValue\$ByteValue",
+              "org/jetbrains/kotlin/analysis/api/impl/base/KaConstantValue\$KaByteConstantValue",
+          )
+      "org/jetbrains/kotlin/analysis/api/impl/base/KaChainedSubstitutor" -> arrayOf("org/jetbrains/kotlin/analysis/api/types/KaSubstitutor")
       "org/jetbrains/kotlin/analysis/api/impl/base/KaCharConstantValueImpl" ->
-        arrayOf(
-          "org/jetbrains/kotlin/analysis/api/impl/base/KaConstantValue\$CharValue",
-          "org/jetbrains/kotlin/analysis/api/impl/base/KaConstantValue\$KaCharConstantValue",
-        )
+          arrayOf(
+              "org/jetbrains/kotlin/analysis/api/impl/base/KaConstantValue\$CharValue",
+              "org/jetbrains/kotlin/analysis/api/impl/base/KaConstantValue\$KaCharConstantValue",
+          )
       "org/jetbrains/kotlin/analysis/api/impl/base/KaDoubleConstantValueImpl" ->
-        arrayOf(
-          "org/jetbrains/kotlin/analysis/api/impl/base/KaConstantValue\$DoubleValue",
-          "org/jetbrains/kotlin/analysis/api/impl/base/KaConstantValue\$KaDoubleConstantValue",
-        )
+          arrayOf(
+              "org/jetbrains/kotlin/analysis/api/impl/base/KaConstantValue\$DoubleValue",
+              "org/jetbrains/kotlin/analysis/api/impl/base/KaConstantValue\$KaDoubleConstantValue",
+          )
       "org/jetbrains/kotlin/analysis/api/impl/base/KaErrorConstantValueImpl" ->
-        arrayOf(
-          "org/jetbrains/kotlin/analysis/api/impl/base/KaConstantValue\$ErrorValue",
-          "org/jetbrains/kotlin/analysis/api/impl/base/KaConstantValue\$KaErrorConstantValue",
-        )
+          arrayOf(
+              "org/jetbrains/kotlin/analysis/api/impl/base/KaConstantValue\$ErrorValue",
+              "org/jetbrains/kotlin/analysis/api/impl/base/KaConstantValue\$KaErrorConstantValue",
+          )
       "org/jetbrains/kotlin/analysis/api/impl/base/KaFloatConstantValueImpl" ->
-        arrayOf(
-          "org/jetbrains/kotlin/analysis/api/impl/base/KaConstantValue\$FloatValue",
-          "org/jetbrains/kotlin/analysis/api/impl/base/KaConstantValue\$KaFloatConstantValue",
-        )
+          arrayOf(
+              "org/jetbrains/kotlin/analysis/api/impl/base/KaConstantValue\$FloatValue",
+              "org/jetbrains/kotlin/analysis/api/impl/base/KaConstantValue\$KaFloatConstantValue",
+          )
       "org/jetbrains/kotlin/analysis/api/impl/base/KaIntConstantValueImpl" ->
-        arrayOf(
-          "org/jetbrains/kotlin/analysis/api/impl/base/KaConstantValue\$IntValue",
-          "org/jetbrains/kotlin/analysis/api/impl/base/KaConstantValue\$KaIntConstantValue",
-        )
+          arrayOf(
+              "org/jetbrains/kotlin/analysis/api/impl/base/KaConstantValue\$IntValue",
+              "org/jetbrains/kotlin/analysis/api/impl/base/KaConstantValue\$KaIntConstantValue",
+          )
       "org/jetbrains/kotlin/analysis/api/impl/base/KaLongConstantValueImpl" ->
-        arrayOf(
-          "org/jetbrains/kotlin/analysis/api/impl/base/KaConstantValue\$LongValue",
-          "org/jetbrains/kotlin/analysis/api/impl/base/KaConstantValue\$KaLongConstantValue",
-        )
+          arrayOf(
+              "org/jetbrains/kotlin/analysis/api/impl/base/KaConstantValue\$LongValue",
+              "org/jetbrains/kotlin/analysis/api/impl/base/KaConstantValue\$KaLongConstantValue",
+          )
       "org/jetbrains/kotlin/analysis/api/impl/base/KaMapBackedSubstitutor" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/types/KaSubstitutor")
+          arrayOf("org/jetbrains/kotlin/analysis/api/types/KaSubstitutor")
       "org/jetbrains/kotlin/analysis/api/impl/base/KaNullConstantValueImpl" ->
-        arrayOf(
-          "org/jetbrains/kotlin/analysis/api/impl/base/KaConstantValue\$NullValue",
-          "org/jetbrains/kotlin/analysis/api/impl/base/KaConstantValue\$KaNullConstantValue",
-        )
+          arrayOf(
+              "org/jetbrains/kotlin/analysis/api/impl/base/KaConstantValue\$NullValue",
+              "org/jetbrains/kotlin/analysis/api/impl/base/KaConstantValue\$KaNullConstantValue",
+          )
       "org/jetbrains/kotlin/analysis/api/impl/base/KaShortConstantValueImpl" ->
-        arrayOf(
-          "org/jetbrains/kotlin/analysis/api/impl/base/KaConstantValue\$ShortValue",
-          "org/jetbrains/kotlin/analysis/api/impl/base/KaConstantValue\$KaShortConstantValue",
-        )
+          arrayOf(
+              "org/jetbrains/kotlin/analysis/api/impl/base/KaConstantValue\$ShortValue",
+              "org/jetbrains/kotlin/analysis/api/impl/base/KaConstantValue\$KaShortConstantValue",
+          )
       "org/jetbrains/kotlin/analysis/api/impl/base/KaStringConstantValueImpl" ->
-        arrayOf(
-          "org/jetbrains/kotlin/analysis/api/impl/base/KaConstantValue\$StringValue",
-          "org/jetbrains/kotlin/analysis/api/impl/base/KaConstantValue\$KaStringConstantValue",
-        )
+          arrayOf(
+              "org/jetbrains/kotlin/analysis/api/impl/base/KaConstantValue\$StringValue",
+              "org/jetbrains/kotlin/analysis/api/impl/base/KaConstantValue\$KaStringConstantValue",
+          )
       "org/jetbrains/kotlin/analysis/api/impl/base/KaUnsignedByteConstantValueImpl" ->
-        arrayOf(
-          "org/jetbrains/kotlin/analysis/api/impl/base/KaConstantValue\$UByteValue",
-          "org/jetbrains/kotlin/analysis/api/impl/base/KaConstantValue\$KaUnsignedByteConstantValue",
-        )
+          arrayOf(
+              "org/jetbrains/kotlin/analysis/api/impl/base/KaConstantValue\$UByteValue",
+              "org/jetbrains/kotlin/analysis/api/impl/base/KaConstantValue\$KaUnsignedByteConstantValue",
+          )
       "org/jetbrains/kotlin/analysis/api/impl/base/KaUnsignedIntConstantValueImpl" ->
-        arrayOf(
-          "org/jetbrains/kotlin/analysis/api/impl/base/KaConstantValue\$UIntValue",
-          "org/jetbrains/kotlin/analysis/api/impl/base/KaConstantValue\$KaUnsignedIntConstantValue",
-        )
+          arrayOf(
+              "org/jetbrains/kotlin/analysis/api/impl/base/KaConstantValue\$UIntValue",
+              "org/jetbrains/kotlin/analysis/api/impl/base/KaConstantValue\$KaUnsignedIntConstantValue",
+          )
       "org/jetbrains/kotlin/analysis/api/impl/base/KaUnsignedLongConstantValueImpl" ->
-        arrayOf(
-          "org/jetbrains/kotlin/analysis/api/impl/base/KaConstantValue\$ULongValue",
-          "org/jetbrains/kotlin/analysis/api/impl/base/KaConstantValue\$KaUnsignedLongConstantValue",
-        )
+          arrayOf(
+              "org/jetbrains/kotlin/analysis/api/impl/base/KaConstantValue\$ULongValue",
+              "org/jetbrains/kotlin/analysis/api/impl/base/KaConstantValue\$KaUnsignedLongConstantValue",
+          )
       "org/jetbrains/kotlin/analysis/api/impl/base/KaUnsignedShortConstantValueImpl" ->
-        arrayOf(
-          "org/jetbrains/kotlin/analysis/api/impl/base/KaConstantValue\$UShortValue",
-          "org/jetbrains/kotlin/analysis/api/impl/base/KaConstantValue\$KaUnsignedShortConstantValue",
-        )
+          arrayOf(
+              "org/jetbrains/kotlin/analysis/api/impl/base/KaConstantValue\$UShortValue",
+              "org/jetbrains/kotlin/analysis/api/impl/base/KaConstantValue\$KaUnsignedShortConstantValue",
+          )
       "org/jetbrains/kotlin/analysis/api/impl/base/annotations/KaAnnotationImpl" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/annotations/KaAnnotation")
+          arrayOf("org/jetbrains/kotlin/analysis/api/annotations/KaAnnotation")
       "org/jetbrains/kotlin/analysis/api/impl/base/annotations/KaArrayAnnotationValueImpl" ->
-        arrayOf(
-          "org/jetbrains/kotlin/analysis/api/impl/base/annotations/KaAnnotationValue\$ArrayValue"
-        )
+          arrayOf("org/jetbrains/kotlin/analysis/api/impl/base/annotations/KaAnnotationValue\$ArrayValue")
       "org/jetbrains/kotlin/analysis/api/impl/base/annotations/KaBaseEmptyAnnotationList" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/annotations/KaAnnotationList")
+          arrayOf("org/jetbrains/kotlin/analysis/api/annotations/KaAnnotationList")
       "org/jetbrains/kotlin/analysis/api/impl/base/annotations/KaBaseNamedAnnotationValue" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/annotations/KaNamedAnnotationValue")
+          arrayOf("org/jetbrains/kotlin/analysis/api/annotations/KaNamedAnnotationValue")
       "org/jetbrains/kotlin/analysis/api/impl/base/annotations/KaClassLiteralAnnotationValueImpl" ->
-        arrayOf(
-          "org/jetbrains/kotlin/analysis/api/impl/base/annotations/KaAnnotationValue\$ClassLiteralValue"
-        )
+          arrayOf("org/jetbrains/kotlin/analysis/api/impl/base/annotations/KaAnnotationValue\$ClassLiteralValue")
       "org/jetbrains/kotlin/analysis/api/impl/base/annotations/KaConstantAnnotationValueImpl" ->
-        arrayOf(
-          "org/jetbrains/kotlin/analysis/api/impl/base/annotations/KaAnnotationValue\$ConstantValue"
-        )
+          arrayOf("org/jetbrains/kotlin/analysis/api/impl/base/annotations/KaAnnotationValue\$ConstantValue")
       "org/jetbrains/kotlin/analysis/api/impl/base/annotations/KaEnumEntryAnnotationValueImpl" ->
-        arrayOf(
-          "org/jetbrains/kotlin/analysis/api/impl/base/annotations/KaAnnotationValue\$EnumEntryValue"
-        )
+          arrayOf("org/jetbrains/kotlin/analysis/api/impl/base/annotations/KaAnnotationValue\$EnumEntryValue")
       "org/jetbrains/kotlin/analysis/api/impl/base/annotations/KaNestedAnnotationAnnotationValueImpl" ->
-        arrayOf(
-          "org/jetbrains/kotlin/analysis/api/impl/base/annotations/KaAnnotationValue\$NestedAnnotationValue"
-        )
+          arrayOf("org/jetbrains/kotlin/analysis/api/impl/base/annotations/KaAnnotationValue\$NestedAnnotationValue")
       "org/jetbrains/kotlin/analysis/api/impl/base/annotations/KaUnsupportedAnnotationValueImpl" ->
-        arrayOf(
-          "org/jetbrains/kotlin/analysis/api/impl/base/annotations/KaAnnotationValue\$UnsupportedValue"
-        )
+          arrayOf("org/jetbrains/kotlin/analysis/api/impl/base/annotations/KaAnnotationValue\$UnsupportedValue")
       "org/jetbrains/kotlin/analysis/api/impl/base/components/KaAbstractResolver" ->
-        arrayOf(
-          "org/jetbrains/kotlin/analysis/api/impl/base/components/KaSessionComponent",
-          "org/jetbrains/kotlin/analysis/api/components/KaResolver",
-        )
+          arrayOf(
+              "org/jetbrains/kotlin/analysis/api/impl/base/components/KaSessionComponent",
+              "org/jetbrains/kotlin/analysis/api/components/KaResolver",
+          )
       "org/jetbrains/kotlin/analysis/api/impl/base/components/KaAbstractSignatureSubstitutor" ->
-        arrayOf(
-          "org/jetbrains/kotlin/analysis/api/impl/base/components/KaSessionComponent",
-          "org/jetbrains/kotlin/analysis/api/components/KaSignatureSubstitutor",
-        )
+          arrayOf(
+              "org/jetbrains/kotlin/analysis/api/impl/base/components/KaSessionComponent",
+              "org/jetbrains/kotlin/analysis/api/components/KaSignatureSubstitutor",
+          )
       "org/jetbrains/kotlin/analysis/api/impl/base/components/KaAnalysisScopeProviderImpl" ->
-        arrayOf(
-          "org/jetbrains/kotlin/analysis/api/impl/base/components/KaSessionComponent",
-          "org/jetbrains/kotlin/analysis/api/components/KaAnalysisScopeProvider",
-        )
+          arrayOf(
+              "org/jetbrains/kotlin/analysis/api/impl/base/components/KaSessionComponent",
+              "org/jetbrains/kotlin/analysis/api/components/KaAnalysisScopeProvider",
+          )
       "org/jetbrains/kotlin/analysis/api/impl/base/components/KaBaseClassTypeBuilder" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/components/KaClassTypeBuilder")
+          arrayOf("org/jetbrains/kotlin/analysis/api/components/KaClassTypeBuilder")
       "org/jetbrains/kotlin/analysis/api/impl/base/components/KaBaseCompilerPluginGeneratedDeclarations" ->
-        arrayOf(
-          "org/jetbrains/kotlin/analysis/api/components/KaCompilerPluginGeneratedDeclarations"
-        )
+          arrayOf("org/jetbrains/kotlin/analysis/api/components/KaCompilerPluginGeneratedDeclarations")
       "org/jetbrains/kotlin/analysis/api/impl/base/components/KaBaseImplicitReceiver" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/components/KaImplicitReceiver")
+          arrayOf("org/jetbrains/kotlin/analysis/api/components/KaImplicitReceiver")
       "org/jetbrains/kotlin/analysis/api/impl/base/components/KaBaseImplicitReceiverSmartCast" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/components/KaImplicitReceiverSmartCast")
+          arrayOf("org/jetbrains/kotlin/analysis/api/components/KaImplicitReceiverSmartCast")
       "org/jetbrains/kotlin/analysis/api/impl/base/components/KaBaseScopeContext" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/components/KaScopeContext")
+          arrayOf("org/jetbrains/kotlin/analysis/api/components/KaScopeContext")
       "org/jetbrains/kotlin/analysis/api/impl/base/components/KaBaseSmartCastInfo" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/components/KaSmartCastInfo")
+          arrayOf("org/jetbrains/kotlin/analysis/api/components/KaSmartCastInfo")
       "org/jetbrains/kotlin/analysis/api/impl/base/components/KaBaseSymbolProvider" ->
-        arrayOf(
-          "org/jetbrains/kotlin/analysis/api/impl/base/components/KaSessionComponent",
-          "org/jetbrains/kotlin/analysis/api/symbols/KaSymbolProvider",
-        )
+          arrayOf(
+              "org/jetbrains/kotlin/analysis/api/impl/base/components/KaSessionComponent",
+              "org/jetbrains/kotlin/analysis/api/symbols/KaSymbolProvider",
+          )
       "org/jetbrains/kotlin/analysis/api/impl/base/components/KaBaseTypeCreator" ->
-        arrayOf(
-          "org/jetbrains/kotlin/analysis/api/impl/base/components/KaSessionComponent",
-          "org/jetbrains/kotlin/analysis/api/components/KaTypeCreator",
-        )
+          arrayOf(
+              "org/jetbrains/kotlin/analysis/api/impl/base/components/KaSessionComponent",
+              "org/jetbrains/kotlin/analysis/api/components/KaTypeCreator",
+          )
       "org/jetbrains/kotlin/analysis/api/impl/base/components/KaBaseTypeParameterTypeBuilder" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/components/KaTypeParameterTypeBuilder")
+          arrayOf("org/jetbrains/kotlin/analysis/api/components/KaTypeParameterTypeBuilder")
       "org/jetbrains/kotlin/analysis/api/impl/base/components/KaBaseTypeRelationChecker" ->
-        arrayOf(
-          "org/jetbrains/kotlin/analysis/api/impl/base/components/KaSessionComponent",
-          "org/jetbrains/kotlin/analysis/api/components/KaTypeRelationChecker",
-        )
+          arrayOf(
+              "org/jetbrains/kotlin/analysis/api/impl/base/components/KaSessionComponent",
+              "org/jetbrains/kotlin/analysis/api/components/KaTypeRelationChecker",
+          )
       "org/jetbrains/kotlin/analysis/api/impl/base/components/KaRendererImpl" ->
-        arrayOf(
-          "org/jetbrains/kotlin/analysis/api/components/KaRenderer",
-          "org/jetbrains/kotlin/analysis/api/impl/base/components/KaSessionComponent",
-        )
+          arrayOf(
+              "org/jetbrains/kotlin/analysis/api/components/KaRenderer",
+              "org/jetbrains/kotlin/analysis/api/impl/base/components/KaSessionComponent",
+          )
       "org/jetbrains/kotlin/analysis/api/impl/base/components/KaSessionComponent" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/lifetime/KaLifetimeOwner")
+          arrayOf("org/jetbrains/kotlin/analysis/api/lifetime/KaLifetimeOwner")
       "org/jetbrains/kotlin/analysis/api/impl/base/contracts/description/KaBaseContractCallsInPlaceContractEffectDeclaration" ->
-        arrayOf(
-          "org/jetbrains/kotlin/analysis/api/contracts/description/KaContractCallsInPlaceContractEffectDeclaration"
-        )
+          arrayOf("org/jetbrains/kotlin/analysis/api/contracts/description/KaContractCallsInPlaceContractEffectDeclaration")
       "org/jetbrains/kotlin/analysis/api/impl/base/contracts/description/KaBaseContractConditionalContractEffectDeclaration" ->
-        arrayOf(
-          "org/jetbrains/kotlin/analysis/api/contracts/description/KaContractConditionalContractEffectDeclaration"
-        )
+          arrayOf("org/jetbrains/kotlin/analysis/api/contracts/description/KaContractConditionalContractEffectDeclaration")
       "org/jetbrains/kotlin/analysis/api/impl/base/contracts/description/KaBaseContractConstantValue" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/contracts/description/KaContractConstantValue")
+          arrayOf("org/jetbrains/kotlin/analysis/api/contracts/description/KaContractConstantValue")
       "org/jetbrains/kotlin/analysis/api/impl/base/contracts/description/KaBaseContractParameterValue" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/contracts/description/KaContractParameterValue")
+          arrayOf("org/jetbrains/kotlin/analysis/api/contracts/description/KaContractParameterValue")
       "org/jetbrains/kotlin/analysis/api/impl/base/contracts/description/KaBaseContractReturnsNotNullEffectDeclaration" ->
-        arrayOf(
-          "org/jetbrains/kotlin/analysis/api/contracts/description/KaContractReturnsContractEffectDeclaration\$KaContractReturnsNotNullEffectDeclaration"
-        )
+          arrayOf(
+              "org/jetbrains/kotlin/analysis/api/contracts/description/KaContractReturnsContractEffectDeclaration\$KaContractReturnsNotNullEffectDeclaration"
+          )
       "org/jetbrains/kotlin/analysis/api/impl/base/contracts/description/KaBaseContractReturnsSpecificValueEffectDeclaration" ->
-        arrayOf(
-          "org/jetbrains/kotlin/analysis/api/contracts/description/KaContractReturnsContractEffectDeclaration\$KaContractReturnsSpecificValueEffectDeclaration"
-        )
+          arrayOf(
+              "org/jetbrains/kotlin/analysis/api/contracts/description/KaContractReturnsContractEffectDeclaration\$KaContractReturnsSpecificValueEffectDeclaration"
+          )
       "org/jetbrains/kotlin/analysis/api/impl/base/contracts/description/KaBaseContractReturnsSuccessfullyEffectDeclaration" ->
-        arrayOf(
-          "org/jetbrains/kotlin/analysis/api/contracts/description/KaContractReturnsContractEffectDeclaration\$KaContractReturnsSuccessfullyEffectDeclaration"
-        )
+          arrayOf(
+              "org/jetbrains/kotlin/analysis/api/contracts/description/KaContractReturnsContractEffectDeclaration\$KaContractReturnsSuccessfullyEffectDeclaration"
+          )
       "org/jetbrains/kotlin/analysis/api/impl/base/contracts/description/booleans/KaBaseContractBinaryLogicExpression" ->
-        arrayOf(
-          "org/jetbrains/kotlin/analysis/api/contracts/description/booleans/KaContractBinaryLogicExpression"
-        )
+          arrayOf("org/jetbrains/kotlin/analysis/api/contracts/description/booleans/KaContractBinaryLogicExpression")
       "org/jetbrains/kotlin/analysis/api/impl/base/contracts/description/booleans/KaBaseContractBooleanConstantExpression" ->
-        arrayOf(
-          "org/jetbrains/kotlin/analysis/api/contracts/description/booleans/KaContractBooleanConstantExpression"
-        )
+          arrayOf("org/jetbrains/kotlin/analysis/api/contracts/description/booleans/KaContractBooleanConstantExpression")
       "org/jetbrains/kotlin/analysis/api/impl/base/contracts/description/booleans/KaBaseContractBooleanValueParameterExpression" ->
-        arrayOf(
-          "org/jetbrains/kotlin/analysis/api/contracts/description/booleans/KaContractBooleanValueParameterExpression"
-        )
+          arrayOf("org/jetbrains/kotlin/analysis/api/contracts/description/booleans/KaContractBooleanValueParameterExpression")
       "org/jetbrains/kotlin/analysis/api/impl/base/contracts/description/booleans/KaBaseContractIsInstancePredicateExpression" ->
-        arrayOf(
-          "org/jetbrains/kotlin/analysis/api/contracts/description/booleans/KaContractIsInstancePredicateExpression"
-        )
+          arrayOf("org/jetbrains/kotlin/analysis/api/contracts/description/booleans/KaContractIsInstancePredicateExpression")
       "org/jetbrains/kotlin/analysis/api/impl/base/contracts/description/booleans/KaBaseContractIsNullPredicateExpression" ->
-        arrayOf(
-          "org/jetbrains/kotlin/analysis/api/contracts/description/booleans/KaContractIsNullPredicateExpression"
-        )
+          arrayOf("org/jetbrains/kotlin/analysis/api/contracts/description/booleans/KaContractIsNullPredicateExpression")
       "org/jetbrains/kotlin/analysis/api/impl/base/contracts/description/booleans/KaBaseContractLogicalNotExpression" ->
-        arrayOf(
-          "org/jetbrains/kotlin/analysis/api/contracts/description/booleans/KaContractLogicalNotExpression"
-        )
+          arrayOf("org/jetbrains/kotlin/analysis/api/contracts/description/booleans/KaContractLogicalNotExpression")
       "org/jetbrains/kotlin/analysis/api/impl/base/lifetime/KaBaseLifetimeTracker" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/platform/lifetime/KaLifetimeTracker")
+          arrayOf("org/jetbrains/kotlin/analysis/api/platform/lifetime/KaLifetimeTracker")
       "org/jetbrains/kotlin/analysis/api/impl/base/permissions/KaBaseAnalysisPermissionChecker" ->
-        arrayOf(
-          "org/jetbrains/kotlin/analysis/api/platform/permissions/KaAnalysisPermissionChecker"
-        )
+          arrayOf("org/jetbrains/kotlin/analysis/api/platform/permissions/KaAnalysisPermissionChecker")
       "org/jetbrains/kotlin/analysis/api/impl/base/projectStructure/KaBaseModuleProvider" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/projectStructure/KaModuleProvider")
+          arrayOf("org/jetbrains/kotlin/analysis/api/projectStructure/KaModuleProvider")
       "org/jetbrains/kotlin/analysis/api/impl/base/projectStructure/KaBuiltinsModuleImpl" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/projectStructure/KaBuiltinsModule")
+          arrayOf("org/jetbrains/kotlin/analysis/api/projectStructure/KaBuiltinsModule")
       "org/jetbrains/kotlin/analysis/api/impl/base/references/KaBaseSimpleNameReference" ->
-        arrayOf("org/jetbrains/kotlin/idea/references/KtSimpleNameReference")
+          arrayOf("org/jetbrains/kotlin/idea/references/KtSimpleNameReference")
       "org/jetbrains/kotlin/analysis/api/impl/base/resolution/KaBaseAnnotationCall" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/resolution/KaAnnotationCall")
+          arrayOf("org/jetbrains/kotlin/analysis/api/resolution/KaAnnotationCall")
       "org/jetbrains/kotlin/analysis/api/impl/base/resolution/KaBaseApplicableCallCandidateInfo" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/resolution/KaApplicableCallCandidateInfo")
+          arrayOf("org/jetbrains/kotlin/analysis/api/resolution/KaApplicableCallCandidateInfo")
       "org/jetbrains/kotlin/analysis/api/impl/base/resolution/KaBaseCompoundArrayAccessCall" ->
-        arrayOf(
-          "org/jetbrains/kotlin/analysis/api/resolution/KaCompoundArrayAccessCall",
-          "org/jetbrains/kotlin/analysis/api/resolution/KaCompoundAccessCall",
-        )
+          arrayOf(
+              "org/jetbrains/kotlin/analysis/api/resolution/KaCompoundArrayAccessCall",
+              "org/jetbrains/kotlin/analysis/api/resolution/KaCompoundAccessCall",
+          )
       "org/jetbrains/kotlin/analysis/api/impl/base/resolution/KaBaseCompoundAssignOperation" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/resolution/KaCompoundAssignOperation")
+          arrayOf("org/jetbrains/kotlin/analysis/api/resolution/KaCompoundAssignOperation")
       "org/jetbrains/kotlin/analysis/api/impl/base/resolution/KaBaseCompoundUnaryOperation" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/resolution/KaCompoundUnaryOperation")
+          arrayOf("org/jetbrains/kotlin/analysis/api/resolution/KaCompoundUnaryOperation")
       "org/jetbrains/kotlin/analysis/api/impl/base/resolution/KaBaseCompoundVariableAccessCall" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/resolution/KaCompoundVariableAccessCall")
+          arrayOf("org/jetbrains/kotlin/analysis/api/resolution/KaCompoundVariableAccessCall")
       "org/jetbrains/kotlin/analysis/api/impl/base/resolution/KaBaseDelegatedConstructorCall" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/resolution/KaDelegatedConstructorCall")
+          arrayOf("org/jetbrains/kotlin/analysis/api/resolution/KaDelegatedConstructorCall")
       "org/jetbrains/kotlin/analysis/api/impl/base/resolution/KaBaseErrorCallInfo" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/resolution/KaErrorCallInfo")
+          arrayOf("org/jetbrains/kotlin/analysis/api/resolution/KaErrorCallInfo")
       "org/jetbrains/kotlin/analysis/api/impl/base/resolution/KaBaseExplicitReceiverValue" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/resolution/KaExplicitReceiverValue")
+          arrayOf("org/jetbrains/kotlin/analysis/api/resolution/KaExplicitReceiverValue")
       "org/jetbrains/kotlin/analysis/api/impl/base/resolution/KaBaseImplicitReceiverValue" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/resolution/KaImplicitReceiverValue")
+          arrayOf("org/jetbrains/kotlin/analysis/api/resolution/KaImplicitReceiverValue")
       "org/jetbrains/kotlin/analysis/api/impl/base/resolution/KaBaseInapplicableCallCandidateInfo" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/resolution/KaInapplicableCallCandidateInfo")
+          arrayOf("org/jetbrains/kotlin/analysis/api/resolution/KaInapplicableCallCandidateInfo")
       "org/jetbrains/kotlin/analysis/api/impl/base/resolution/KaBasePartiallyAppliedSymbol" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/impl/base/resolution/KaPartiallyAppliedSymbol")
+          arrayOf("org/jetbrains/kotlin/analysis/api/impl/base/resolution/KaPartiallyAppliedSymbol")
       "org/jetbrains/kotlin/analysis/api/impl/base/resolution/KaBaseSimpleFunctionCall" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/resolution/KaSimpleFunctionCall")
+          arrayOf("org/jetbrains/kotlin/analysis/api/resolution/KaSimpleFunctionCall")
       "org/jetbrains/kotlin/analysis/api/impl/base/resolution/KaBaseSimpleVariableAccessCall" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/resolution/KaSimpleVariableAccessCall")
+          arrayOf("org/jetbrains/kotlin/analysis/api/resolution/KaSimpleVariableAccessCall")
       "org/jetbrains/kotlin/analysis/api/impl/base/resolution/KaBaseSimpleVariableWriteAccess" ->
-        arrayOf(
-          "org/jetbrains/kotlin/analysis/api/impl/base/resolution/KaSimpleVariableAccess\$Write"
-        )
+          arrayOf("org/jetbrains/kotlin/analysis/api/impl/base/resolution/KaSimpleVariableAccess\$Write")
       "org/jetbrains/kotlin/analysis/api/impl/base/resolution/KaBaseSmartCastedReceiverValue" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/resolution/KaSmartCastedReceiverValue")
+          arrayOf("org/jetbrains/kotlin/analysis/api/resolution/KaSmartCastedReceiverValue")
       "org/jetbrains/kotlin/analysis/api/impl/base/resolution/KaBaseSuccessCallInfo" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/resolution/KaSuccessCallInfo")
+          arrayOf("org/jetbrains/kotlin/analysis/api/resolution/KaSuccessCallInfo")
       "org/jetbrains/kotlin/analysis/api/impl/base/scopes/KaBaseCompositeScope" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/scopes/KaScope")
+          arrayOf("org/jetbrains/kotlin/analysis/api/scopes/KaScope")
       "org/jetbrains/kotlin/analysis/api/impl/base/scopes/KaBaseCompositeTypeScope" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/scopes/KaTypeScope")
-      "org/jetbrains/kotlin/analysis/api/impl/base/scopes/KaBaseEmptyScope" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/scopes/KaScope")
+          arrayOf("org/jetbrains/kotlin/analysis/api/scopes/KaTypeScope")
+      "org/jetbrains/kotlin/analysis/api/impl/base/scopes/KaBaseEmptyScope" -> arrayOf("org/jetbrains/kotlin/analysis/api/scopes/KaScope")
       "org/jetbrains/kotlin/analysis/api/impl/base/sessions/KaBaseSessionProvider" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/session/KaSessionProvider")
-      "org/jetbrains/kotlin/analysis/api/impl/base/sessions/KaGlobalSearchScope" ->
-        arrayOf("com/intellij/psi/search/GlobalSearchScope")
+          arrayOf("org/jetbrains/kotlin/analysis/api/session/KaSessionProvider")
+      "org/jetbrains/kotlin/analysis/api/impl/base/sessions/KaGlobalSearchScope" -> arrayOf("com/intellij/psi/search/GlobalSearchScope")
       "org/jetbrains/kotlin/analysis/api/impl/base/symbols/pointers/KaBasePropertyAccessorSymbolPointer" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/impl/base/symbols/pointers/KaSymbolPointer")
+          arrayOf("org/jetbrains/kotlin/analysis/api/impl/base/symbols/pointers/KaSymbolPointer")
       "org/jetbrains/kotlin/analysis/api/impl/base/symbols/pointers/KaBasePropertyGetterSymbolPointer" ->
-        arrayOf(
-          "org/jetbrains/kotlin/analysis/api/impl/base/symbols/pointers/KaBasePropertyAccessorSymbolPointer"
-        )
+          arrayOf("org/jetbrains/kotlin/analysis/api/impl/base/symbols/pointers/KaBasePropertyAccessorSymbolPointer")
       "org/jetbrains/kotlin/analysis/api/impl/base/symbols/pointers/KaBasePropertySetterSymbolPointer" ->
-        arrayOf(
-          "org/jetbrains/kotlin/analysis/api/impl/base/symbols/pointers/KaBasePropertyAccessorSymbolPointer"
-        )
+          arrayOf("org/jetbrains/kotlin/analysis/api/impl/base/symbols/pointers/KaBasePropertyAccessorSymbolPointer")
       "org/jetbrains/kotlin/analysis/api/impl/base/symbols/pointers/KaBaseReceiverParameterSymbolPointer" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/impl/base/symbols/pointers/KaSymbolPointer")
+          arrayOf("org/jetbrains/kotlin/analysis/api/impl/base/symbols/pointers/KaSymbolPointer")
       "org/jetbrains/kotlin/analysis/api/impl/base/symbols/pointers/KaBaseValueParameterFromDefaultSetterSymbolPointer" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/impl/base/symbols/pointers/KaSymbolPointer")
+          arrayOf("org/jetbrains/kotlin/analysis/api/impl/base/symbols/pointers/KaSymbolPointer")
       "org/jetbrains/kotlin/analysis/api/impl/base/types/KaBaseResolvedClassTypeQualifier" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/types/KaResolvedClassTypeQualifier")
+          arrayOf("org/jetbrains/kotlin/analysis/api/types/KaResolvedClassTypeQualifier")
       "org/jetbrains/kotlin/analysis/api/impl/base/types/KaBaseStarTypeProjection" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/types/KaStarTypeProjection")
+          arrayOf("org/jetbrains/kotlin/analysis/api/types/KaStarTypeProjection")
       "org/jetbrains/kotlin/analysis/api/impl/base/types/KaBaseTypeArgumentWithVariance" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/types/KaTypeArgumentWithVariance")
+          arrayOf("org/jetbrains/kotlin/analysis/api/types/KaTypeArgumentWithVariance")
       "org/jetbrains/kotlin/analysis/api/impl/base/types/KaBaseUnresolvedClassTypeQualifier" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/types/KaUnresolvedClassTypeQualifier")
+          arrayOf("org/jetbrains/kotlin/analysis/api/types/KaUnresolvedClassTypeQualifier")
       "org/jetbrains/kotlin/analysis/api/impl/base/util/KaBaseCompiledFileForOutputFile" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/components/KaCompiledFile")
+          arrayOf("org/jetbrains/kotlin/analysis/api/components/KaCompiledFile")
       "org/jetbrains/kotlin/analysis/api/impl/base/util/KaNonBoundToPsiErrorDiagnostic" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/diagnostics/KaDiagnostic")
+          arrayOf("org/jetbrains/kotlin/analysis/api/diagnostics/KaDiagnostic")
       "org/jetbrains/kotlin/analysis/api/impl/base/util/KaSessionCreationContextImpl" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/impl/base/util/KaSessionCreationContext")
+          arrayOf("org/jetbrains/kotlin/analysis/api/impl/base/util/KaSessionCreationContext")
       "org/jetbrains/kotlin/analysis/api/lifetime/KaInaccessibleLifetimeOwnerAccessException" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/lifetime/KaIllegalLifetimeOwnerAccessException")
+          arrayOf("org/jetbrains/kotlin/analysis/api/lifetime/KaIllegalLifetimeOwnerAccessException")
       "org/jetbrains/kotlin/analysis/api/lifetime/KaInvalidLifetimeOwnerAccessException" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/lifetime/KaIllegalLifetimeOwnerAccessException")
+          arrayOf("org/jetbrains/kotlin/analysis/api/lifetime/KaIllegalLifetimeOwnerAccessException")
       "org/jetbrains/kotlin/analysis/api/permissions/KaAnalysisPermissionRegistryImpl" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/permissions/KaAnalysisPermissionRegistry")
+          arrayOf("org/jetbrains/kotlin/analysis/api/permissions/KaAnalysisPermissionRegistry")
       "org/jetbrains/kotlin/analysis/api/platform/lifetime/KaLifetimeTracker" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/platform/KaEngineService")
+          arrayOf("org/jetbrains/kotlin/analysis/api/platform/KaEngineService")
       "org/jetbrains/kotlin/analysis/api/platform/modification/KaSourceModificationService" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/platform/KaEngineService")
+          arrayOf("org/jetbrains/kotlin/analysis/api/platform/KaEngineService")
       "org/jetbrains/kotlin/analysis/api/platform/permissions/KaAnalysisPermissionChecker" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/platform/KaEngineService")
+          arrayOf("org/jetbrains/kotlin/analysis/api/platform/KaEngineService")
       "org/jetbrains/kotlin/analysis/api/platform/projectStructure/KaDanglingFileModuleImpl" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/projectStructure/KaDanglingFileModule")
+          arrayOf("org/jetbrains/kotlin/analysis/api/projectStructure/KaDanglingFileModule")
       "org/jetbrains/kotlin/analysis/api/projectStructure/KaBuiltinsModule" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/projectStructure/KaModule")
+          arrayOf("org/jetbrains/kotlin/analysis/api/projectStructure/KaModule")
       "org/jetbrains/kotlin/analysis/api/projectStructure/KaDanglingFileModule" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/projectStructure/KaModule")
+          arrayOf("org/jetbrains/kotlin/analysis/api/projectStructure/KaModule")
       "org/jetbrains/kotlin/analysis/api/projectStructure/KaLibraryModule" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/projectStructure/KaModule")
+          arrayOf("org/jetbrains/kotlin/analysis/api/projectStructure/KaModule")
       "org/jetbrains/kotlin/analysis/api/projectStructure/KaLibrarySourceModule" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/projectStructure/KaModule")
+          arrayOf("org/jetbrains/kotlin/analysis/api/projectStructure/KaModule")
       "org/jetbrains/kotlin/analysis/api/projectStructure/KaNotUnderContentRootModule" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/projectStructure/KaModule")
+          arrayOf("org/jetbrains/kotlin/analysis/api/projectStructure/KaModule")
       "org/jetbrains/kotlin/analysis/api/projectStructure/KaScriptDependencyModule" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/projectStructure/KaModule")
+          arrayOf("org/jetbrains/kotlin/analysis/api/projectStructure/KaModule")
       "org/jetbrains/kotlin/analysis/api/projectStructure/KaScriptModule" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/projectStructure/KaModule")
+          arrayOf("org/jetbrains/kotlin/analysis/api/projectStructure/KaModule")
       "org/jetbrains/kotlin/analysis/api/projectStructure/KaSourceModule" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/projectStructure/KaModule")
+          arrayOf("org/jetbrains/kotlin/analysis/api/projectStructure/KaModule")
       "org/jetbrains/kotlin/analysis/api/renderer/declarations/renderers/KaClassifierBodyWithMembersRenderer" ->
-        arrayOf(
-          "org/jetbrains/kotlin/analysis/api/renderer/declarations/renderers/KaClassifierBodyRenderer"
-        )
+          arrayOf("org/jetbrains/kotlin/analysis/api/renderer/declarations/renderers/KaClassifierBodyRenderer")
       "org/jetbrains/kotlin/analysis/api/resolution/KaAnnotationCall" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/resolution/KaFunctionCall")
+          arrayOf("org/jetbrains/kotlin/analysis/api/resolution/KaFunctionCall")
       "org/jetbrains/kotlin/analysis/api/resolution/KaApplicableCallCandidateInfo" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/resolution/KaCallCandidateInfo")
-      "org/jetbrains/kotlin/analysis/api/resolution/KaCall" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/lifetime/KaLifetimeOwner")
+          arrayOf("org/jetbrains/kotlin/analysis/api/resolution/KaCallCandidateInfo")
+      "org/jetbrains/kotlin/analysis/api/resolution/KaCall" -> arrayOf("org/jetbrains/kotlin/analysis/api/lifetime/KaLifetimeOwner")
       "org/jetbrains/kotlin/analysis/api/resolution/KaCallCandidateInfo" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/lifetime/KaLifetimeOwner")
-      "org/jetbrains/kotlin/analysis/api/resolution/KaCallInfo" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/lifetime/KaLifetimeOwner")
-      "org/jetbrains/kotlin/analysis/api/resolution/KaCallableMemberCall" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/resolution/KaCall")
+          arrayOf("org/jetbrains/kotlin/analysis/api/lifetime/KaLifetimeOwner")
+      "org/jetbrains/kotlin/analysis/api/resolution/KaCallInfo" -> arrayOf("org/jetbrains/kotlin/analysis/api/lifetime/KaLifetimeOwner")
+      "org/jetbrains/kotlin/analysis/api/resolution/KaCallableMemberCall" -> arrayOf("org/jetbrains/kotlin/analysis/api/resolution/KaCall")
       "org/jetbrains/kotlin/analysis/api/resolution/KaCompoundArrayAccessCall" ->
-        arrayOf(
-          "org/jetbrains/kotlin/analysis/api/resolution/KaCall",
-          "org/jetbrains/kotlin/analysis/api/resolution/KaCompoundAccessCall",
-        )
+          arrayOf(
+              "org/jetbrains/kotlin/analysis/api/resolution/KaCall",
+              "org/jetbrains/kotlin/analysis/api/resolution/KaCompoundAccessCall",
+          )
       "org/jetbrains/kotlin/analysis/api/resolution/KaCompoundAssignOperation" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/resolution/KaCompoundOperation")
+          arrayOf("org/jetbrains/kotlin/analysis/api/resolution/KaCompoundOperation")
       "org/jetbrains/kotlin/analysis/api/resolution/KaCompoundOperation" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/lifetime/KaLifetimeOwner")
+          arrayOf("org/jetbrains/kotlin/analysis/api/lifetime/KaLifetimeOwner")
       "org/jetbrains/kotlin/analysis/api/resolution/KaCompoundUnaryOperation" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/resolution/KaCompoundOperation")
+          arrayOf("org/jetbrains/kotlin/analysis/api/resolution/KaCompoundOperation")
       "org/jetbrains/kotlin/analysis/api/resolution/KaCompoundVariableAccessCall" ->
-        arrayOf(
-          "org/jetbrains/kotlin/analysis/api/resolution/KaCall",
-          "org/jetbrains/kotlin/analysis/api/resolution/KaCompoundAccessCall",
-        )
+          arrayOf(
+              "org/jetbrains/kotlin/analysis/api/resolution/KaCall",
+              "org/jetbrains/kotlin/analysis/api/resolution/KaCompoundAccessCall",
+          )
       "org/jetbrains/kotlin/analysis/api/resolution/KaDelegatedConstructorCall" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/resolution/KaFunctionCall")
-      "org/jetbrains/kotlin/analysis/api/resolution/KaErrorCallInfo" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/resolution/KaCallInfo")
+          arrayOf("org/jetbrains/kotlin/analysis/api/resolution/KaFunctionCall")
+      "org/jetbrains/kotlin/analysis/api/resolution/KaErrorCallInfo" -> arrayOf("org/jetbrains/kotlin/analysis/api/resolution/KaCallInfo")
       "org/jetbrains/kotlin/analysis/api/resolution/KaExplicitReceiverValue" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/resolution/KaReceiverValue")
+          arrayOf("org/jetbrains/kotlin/analysis/api/resolution/KaReceiverValue")
       "org/jetbrains/kotlin/analysis/api/resolution/KaFunctionCall" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/resolution/KaCallableMemberCall")
+          arrayOf("org/jetbrains/kotlin/analysis/api/resolution/KaCallableMemberCall")
       "org/jetbrains/kotlin/analysis/api/resolution/KaImplicitReceiverValue" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/resolution/KaReceiverValue")
+          arrayOf("org/jetbrains/kotlin/analysis/api/resolution/KaReceiverValue")
       "org/jetbrains/kotlin/analysis/api/resolution/KaInapplicableCallCandidateInfo" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/resolution/KaCallCandidateInfo")
+          arrayOf("org/jetbrains/kotlin/analysis/api/resolution/KaCallCandidateInfo")
       "org/jetbrains/kotlin/analysis/api/resolution/KaPartiallyAppliedSymbol" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/lifetime/KaLifetimeOwner")
+          arrayOf("org/jetbrains/kotlin/analysis/api/lifetime/KaLifetimeOwner")
       "org/jetbrains/kotlin/analysis/api/resolution/KaReceiverValue" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/lifetime/KaLifetimeOwner")
+          arrayOf("org/jetbrains/kotlin/analysis/api/lifetime/KaLifetimeOwner")
       "org/jetbrains/kotlin/analysis/api/resolution/KaSimpleFunctionCall" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/resolution/KaFunctionCall")
+          arrayOf("org/jetbrains/kotlin/analysis/api/resolution/KaFunctionCall")
       "org/jetbrains/kotlin/analysis/api/resolution/KaSimpleVariableAccessCall" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/resolution/KaVariableAccessCall")
+          arrayOf("org/jetbrains/kotlin/analysis/api/resolution/KaVariableAccessCall")
       "org/jetbrains/kotlin/analysis/api/resolution/KaSmartCastedReceiverValue" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/resolution/KaReceiverValue")
-      "org/jetbrains/kotlin/analysis/api/resolution/KaSuccessCallInfo" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/resolution/KaCallInfo")
-      "org/jetbrains/kotlin/analysis/api/resolution/KaSymbolBasedReference" ->
-        arrayOf("org/jetbrains/kotlin/idea/references/KtReference")
+          arrayOf("org/jetbrains/kotlin/analysis/api/resolution/KaReceiverValue")
+      "org/jetbrains/kotlin/analysis/api/resolution/KaSuccessCallInfo" -> arrayOf("org/jetbrains/kotlin/analysis/api/resolution/KaCallInfo")
+      "org/jetbrains/kotlin/analysis/api/resolution/KaSymbolBasedReference" -> arrayOf("org/jetbrains/kotlin/idea/references/KtReference")
       "org/jetbrains/kotlin/analysis/api/resolution/KaVariableAccessCall" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/resolution/KaCallableMemberCall")
-      "org/jetbrains/kotlin/analysis/api/resolve/extensions/KaResolveExtension" ->
-        arrayOf("com/intellij/openapi/Disposable")
-      "org/jetbrains/kotlin/analysis/api/scopes/KaScope" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/scopes/KaScopeLike")
-      "org/jetbrains/kotlin/analysis/api/scopes/KaScopeLike" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/lifetime/KaLifetimeOwner")
-      "org/jetbrains/kotlin/analysis/api/scopes/KaTypeScope" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/scopes/KaScopeLike")
-      "org/jetbrains/kotlin/analysis/api/session/KaSessionProvider" ->
-        arrayOf("com/intellij/openapi/Disposable")
+          arrayOf("org/jetbrains/kotlin/analysis/api/resolution/KaCallableMemberCall")
+      "org/jetbrains/kotlin/analysis/api/resolve/extensions/KaResolveExtension" -> arrayOf("com/intellij/openapi/Disposable")
+      "org/jetbrains/kotlin/analysis/api/scopes/KaScope" -> arrayOf("org/jetbrains/kotlin/analysis/api/scopes/KaScopeLike")
+      "org/jetbrains/kotlin/analysis/api/scopes/KaScopeLike" -> arrayOf("org/jetbrains/kotlin/analysis/api/lifetime/KaLifetimeOwner")
+      "org/jetbrains/kotlin/analysis/api/scopes/KaTypeScope" -> arrayOf("org/jetbrains/kotlin/analysis/api/scopes/KaScopeLike")
+      "org/jetbrains/kotlin/analysis/api/session/KaSessionProvider" -> arrayOf("com/intellij/openapi/Disposable")
       "org/jetbrains/kotlin/analysis/api/signatures/KaCallableSignature" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/lifetime/KaLifetimeOwner")
+          arrayOf("org/jetbrains/kotlin/analysis/api/lifetime/KaLifetimeOwner")
       "org/jetbrains/kotlin/analysis/api/signatures/KaFunctionSignature" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/signatures/KaCallableSignature")
+          arrayOf("org/jetbrains/kotlin/analysis/api/signatures/KaCallableSignature")
       "org/jetbrains/kotlin/analysis/api/signatures/KaVariableSignature" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/signatures/KaCallableSignature")
+          arrayOf("org/jetbrains/kotlin/analysis/api/signatures/KaCallableSignature")
       "org/jetbrains/kotlin/analysis/api/symbols/KaAnonymousFunctionSymbol" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/symbols/KaFunctionSymbol")
+          arrayOf("org/jetbrains/kotlin/analysis/api/symbols/KaFunctionSymbol")
       "org/jetbrains/kotlin/analysis/api/symbols/KaAnonymousObjectSymbol" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/symbols/KaClassSymbol")
+          arrayOf("org/jetbrains/kotlin/analysis/api/symbols/KaClassSymbol")
       "org/jetbrains/kotlin/analysis/api/symbols/KaBackingFieldSymbol" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/symbols/KaVariableSymbol")
+          arrayOf("org/jetbrains/kotlin/analysis/api/symbols/KaVariableSymbol")
       "org/jetbrains/kotlin/analysis/api/symbols/KaCallableSymbol" ->
-        arrayOf(
-          "org/jetbrains/kotlin/analysis/api/symbols/KaDeclarationSymbol",
-          "org/jetbrains/kotlin/analysis/api/base/KaContextReceiversOwner",
-        )
+          arrayOf(
+              "org/jetbrains/kotlin/analysis/api/symbols/KaDeclarationSymbol",
+              "org/jetbrains/kotlin/analysis/api/base/KaContextReceiversOwner",
+          )
       "org/jetbrains/kotlin/analysis/api/symbols/KaClassInitializerSymbol" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/symbols/KaDeclarationSymbol")
+          arrayOf("org/jetbrains/kotlin/analysis/api/symbols/KaDeclarationSymbol")
       "org/jetbrains/kotlin/analysis/api/symbols/KaClassLikeSymbol" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/symbols/KaClassifierSymbol")
+          arrayOf("org/jetbrains/kotlin/analysis/api/symbols/KaClassifierSymbol")
       "org/jetbrains/kotlin/analysis/api/symbols/KaClassSymbol" ->
-        arrayOf(
-          "org/jetbrains/kotlin/analysis/api/symbols/KaClassLikeSymbol",
-          "org/jetbrains/kotlin/analysis/api/symbols/KaDeclarationContainerSymbol",
-        )
+          arrayOf(
+              "org/jetbrains/kotlin/analysis/api/symbols/KaClassLikeSymbol",
+              "org/jetbrains/kotlin/analysis/api/symbols/KaDeclarationContainerSymbol",
+          )
       "org/jetbrains/kotlin/analysis/api/symbols/KaClassifierSymbol" ->
-        arrayOf(
-          "org/jetbrains/kotlin/analysis/api/symbols/KaSymbol",
-          "org/jetbrains/kotlin/analysis/api/symbols/KaDeclarationSymbol",
-        )
+          arrayOf(
+              "org/jetbrains/kotlin/analysis/api/symbols/KaSymbol",
+              "org/jetbrains/kotlin/analysis/api/symbols/KaDeclarationSymbol",
+          )
       "org/jetbrains/kotlin/analysis/api/symbols/KaConstructorSymbol" ->
-        arrayOf(
-          "org/jetbrains/kotlin/analysis/api/symbols/KaFunctionSymbol",
-          "org/jetbrains/kotlin/analysis/api/symbols/markers/KaTypeParameterOwnerSymbol",
-        )
+          arrayOf(
+              "org/jetbrains/kotlin/analysis/api/symbols/KaFunctionSymbol",
+              "org/jetbrains/kotlin/analysis/api/symbols/markers/KaTypeParameterOwnerSymbol",
+          )
       "org/jetbrains/kotlin/analysis/api/symbols/KaDeclarationSymbol" ->
-        arrayOf(
-          "org/jetbrains/kotlin/analysis/api/symbols/KaSymbol",
-          "org/jetbrains/kotlin/analysis/api/symbols/markers/KaAnnotatedSymbol",
-        )
+          arrayOf(
+              "org/jetbrains/kotlin/analysis/api/symbols/KaSymbol",
+              "org/jetbrains/kotlin/analysis/api/symbols/markers/KaAnnotatedSymbol",
+          )
       "org/jetbrains/kotlin/analysis/api/symbols/KaDestructuringDeclarationSymbol" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/symbols/KaDeclarationSymbol")
+          arrayOf("org/jetbrains/kotlin/analysis/api/symbols/KaDeclarationSymbol")
       "org/jetbrains/kotlin/analysis/api/symbols/KaEnumEntryInitializerSymbol" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/symbols/KaDeclarationContainerSymbol")
-      "org/jetbrains/kotlin/analysis/api/symbols/KaEnumEntrySymbol" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/symbols/KaVariableSymbol")
+          arrayOf("org/jetbrains/kotlin/analysis/api/symbols/KaDeclarationContainerSymbol")
+      "org/jetbrains/kotlin/analysis/api/symbols/KaEnumEntrySymbol" -> arrayOf("org/jetbrains/kotlin/analysis/api/symbols/KaVariableSymbol")
       "org/jetbrains/kotlin/analysis/api/symbols/KaFileSymbol" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/symbols/markers/KaAnnotatedSymbol")
-      "org/jetbrains/kotlin/analysis/api/symbols/KaFunctionSymbol" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/symbols/KaCallableSymbol")
-      "org/jetbrains/kotlin/analysis/api/symbols/KaJavaFieldSymbol" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/symbols/KaVariableSymbol")
+          arrayOf("org/jetbrains/kotlin/analysis/api/symbols/markers/KaAnnotatedSymbol")
+      "org/jetbrains/kotlin/analysis/api/symbols/KaFunctionSymbol" -> arrayOf("org/jetbrains/kotlin/analysis/api/symbols/KaCallableSymbol")
+      "org/jetbrains/kotlin/analysis/api/symbols/KaJavaFieldSymbol" -> arrayOf("org/jetbrains/kotlin/analysis/api/symbols/KaVariableSymbol")
       "org/jetbrains/kotlin/analysis/api/symbols/KaKotlinPropertySymbol" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/symbols/KaPropertySymbol")
+          arrayOf("org/jetbrains/kotlin/analysis/api/symbols/KaPropertySymbol")
       "org/jetbrains/kotlin/analysis/api/symbols/KaLocalVariableSymbol" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/symbols/KaVariableSymbol")
+          arrayOf("org/jetbrains/kotlin/analysis/api/symbols/KaVariableSymbol")
       "org/jetbrains/kotlin/analysis/api/symbols/KaNamedClassSymbol" ->
-        arrayOf(
-          "org/jetbrains/kotlin/analysis/api/symbols/KaClassSymbol",
-          "org/jetbrains/kotlin/analysis/api/symbols/KaTypeParameterOwnerSymbol",
-          "org/jetbrains/kotlin/analysis/api/symbols/KaNamedSymbol",
-          "org/jetbrains/kotlin/analysis/api/base/KaContextReceiversOwner",
-        )
+          arrayOf(
+              "org/jetbrains/kotlin/analysis/api/symbols/KaClassSymbol",
+              "org/jetbrains/kotlin/analysis/api/symbols/KaTypeParameterOwnerSymbol",
+              "org/jetbrains/kotlin/analysis/api/symbols/KaNamedSymbol",
+              "org/jetbrains/kotlin/analysis/api/base/KaContextReceiversOwner",
+          )
       "org/jetbrains/kotlin/analysis/api/symbols/KaNamedFunctionSymbol" ->
-        arrayOf(
-          "org/jetbrains/kotlin/analysis/api/symbols/KaFunctionSymbol",
-          "org/jetbrains/kotlin/analysis/api/symbols/markers/KaNamedSymbol",
-          "org/jetbrains/kotlin/analysis/api/symbols/markers/KaTypeParameterOwnerSymbol",
-        )
-      "org/jetbrains/kotlin/analysis/api/symbols/KaPackageSymbol" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/symbols/KaSymbol")
-      "org/jetbrains/kotlin/analysis/api/symbols/KaParameterSymbol" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/symbols/KaVariableSymbol")
+          arrayOf(
+              "org/jetbrains/kotlin/analysis/api/symbols/KaFunctionSymbol",
+              "org/jetbrains/kotlin/analysis/api/symbols/markers/KaNamedSymbol",
+              "org/jetbrains/kotlin/analysis/api/symbols/markers/KaTypeParameterOwnerSymbol",
+          )
+      "org/jetbrains/kotlin/analysis/api/symbols/KaPackageSymbol" -> arrayOf("org/jetbrains/kotlin/analysis/api/symbols/KaSymbol")
+      "org/jetbrains/kotlin/analysis/api/symbols/KaParameterSymbol" -> arrayOf("org/jetbrains/kotlin/analysis/api/symbols/KaVariableSymbol")
       "org/jetbrains/kotlin/analysis/api/symbols/KaPropertyAccessorSymbol" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/symbols/KaFunctionSymbol")
+          arrayOf("org/jetbrains/kotlin/analysis/api/symbols/KaFunctionSymbol")
       "org/jetbrains/kotlin/analysis/api/symbols/KaPropertyGetterSymbol" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/symbols/KaPropertyAccessorSymbol")
+          arrayOf("org/jetbrains/kotlin/analysis/api/symbols/KaPropertyAccessorSymbol")
       "org/jetbrains/kotlin/analysis/api/symbols/KaPropertySetterSymbol" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/symbols/KaPropertyAccessorSymbol")
+          arrayOf("org/jetbrains/kotlin/analysis/api/symbols/KaPropertyAccessorSymbol")
       "org/jetbrains/kotlin/analysis/api/symbols/KaPropertySymbol" ->
-        arrayOf(
-          "org/jetbrains/kotlin/analysis/api/symbols/KaVariableSymbol",
-          "org/jetbrains/kotlin/analysis/api/symbols/KaTypeParameterOwnerSymbol",
-        )
+          arrayOf(
+              "org/jetbrains/kotlin/analysis/api/symbols/KaVariableSymbol",
+              "org/jetbrains/kotlin/analysis/api/symbols/KaTypeParameterOwnerSymbol",
+          )
       "org/jetbrains/kotlin/analysis/api/symbols/KaReceiverParameterSymbol" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/symbols/KaParameterSymbol")
+          arrayOf("org/jetbrains/kotlin/analysis/api/symbols/KaParameterSymbol")
       "org/jetbrains/kotlin/analysis/api/symbols/KaSamConstructorSymbol" ->
-        arrayOf(
-          "org/jetbrains/kotlin/analysis/api/symbols/KaFunctionSymbol",
-          "org/jetbrains/kotlin/analysis/api/symbols/markers/KaNamedSymbol",
-          "org/jetbrains/kotlin/analysis/api/symbols/markers/KaTypeParameterOwnerSymbol",
-        )
+          arrayOf(
+              "org/jetbrains/kotlin/analysis/api/symbols/KaFunctionSymbol",
+              "org/jetbrains/kotlin/analysis/api/symbols/markers/KaNamedSymbol",
+              "org/jetbrains/kotlin/analysis/api/symbols/markers/KaTypeParameterOwnerSymbol",
+          )
       "org/jetbrains/kotlin/analysis/api/symbols/KaScriptSymbol" ->
-        arrayOf(
-          "org/jetbrains/kotlin/analysis/api/symbols/KaDeclarationSymbol",
-          "org/jetbrains/kotlin/analysis/api/symbols/markers/KaAnnotatedSymbol",
-          "org/jetbrains/kotlin/analysis/api/symbols/markers/KaNamedSymbol",
-          "org/jetbrains/kotlin/analysis/api/symbols/markers/KaDeclarationContainerSymbol",
-        )
-      "org/jetbrains/kotlin/analysis/api/symbols/KaSymbol" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/lifetime/KaLifetimeOwner")
+          arrayOf(
+              "org/jetbrains/kotlin/analysis/api/symbols/KaDeclarationSymbol",
+              "org/jetbrains/kotlin/analysis/api/symbols/markers/KaAnnotatedSymbol",
+              "org/jetbrains/kotlin/analysis/api/symbols/markers/KaNamedSymbol",
+              "org/jetbrains/kotlin/analysis/api/symbols/markers/KaDeclarationContainerSymbol",
+          )
+      "org/jetbrains/kotlin/analysis/api/symbols/KaSymbol" -> arrayOf("org/jetbrains/kotlin/analysis/api/lifetime/KaLifetimeOwner")
       "org/jetbrains/kotlin/analysis/api/symbols/KaSyntheticJavaPropertySymbol" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/symbols/KaPropertySymbol")
+          arrayOf("org/jetbrains/kotlin/analysis/api/symbols/KaPropertySymbol")
       "org/jetbrains/kotlin/analysis/api/symbols/KaTypeAliasSymbol" ->
-        arrayOf(
-          "org/jetbrains/kotlin/analysis/api/symbols/KaClassLikeSymbol",
-          "org/jetbrains/kotlin/analysis/api/symbols/KaNamedSymbol",
-          "org/jetbrains/kotlin/analysis/api/symbols/KaTypeParameterOwnerSymbol",
-        )
+          arrayOf(
+              "org/jetbrains/kotlin/analysis/api/symbols/KaClassLikeSymbol",
+              "org/jetbrains/kotlin/analysis/api/symbols/KaNamedSymbol",
+              "org/jetbrains/kotlin/analysis/api/symbols/KaTypeParameterOwnerSymbol",
+          )
       "org/jetbrains/kotlin/analysis/api/symbols/KaTypeParameterSymbol" ->
-        arrayOf(
-          "org/jetbrains/kotlin/analysis/api/symbols/KaClassifierSymbol",
-          "org/jetbrains/kotlin/analysis/api/symbols/KaNamedSymbol",
-        )
+          arrayOf(
+              "org/jetbrains/kotlin/analysis/api/symbols/KaClassifierSymbol",
+              "org/jetbrains/kotlin/analysis/api/symbols/KaNamedSymbol",
+          )
       "org/jetbrains/kotlin/analysis/api/symbols/KaValueParameterSymbol" ->
-        arrayOf(
-          "org/jetbrains/kotlin/analysis/api/symbols/KaParameterSymbol",
-          "org/jetbrains/kotlin/analysis/api/symbols/KaAnnotatedSymbol",
-        )
+          arrayOf(
+              "org/jetbrains/kotlin/analysis/api/symbols/KaParameterSymbol",
+              "org/jetbrains/kotlin/analysis/api/symbols/KaAnnotatedSymbol",
+          )
       "org/jetbrains/kotlin/analysis/api/symbols/KaVariableSymbol" ->
-        arrayOf(
-          "org/jetbrains/kotlin/analysis/api/symbols/KaCallableSymbol",
-          "org/jetbrains/kotlin/analysis/api/symbols/KaNamedSymbol",
-        )
+          arrayOf(
+              "org/jetbrains/kotlin/analysis/api/symbols/KaCallableSymbol",
+              "org/jetbrains/kotlin/analysis/api/symbols/KaNamedSymbol",
+          )
       "org/jetbrains/kotlin/analysis/api/symbols/markers/KaAnnotatedSymbol" ->
-        arrayOf(
-          "org/jetbrains/kotlin/analysis/api/symbols/KaSymbol",
-          "org/jetbrains/kotlin/analysis/api/annotations/KaAnnotated",
-        )
+          arrayOf(
+              "org/jetbrains/kotlin/analysis/api/symbols/KaSymbol",
+              "org/jetbrains/kotlin/analysis/api/annotations/KaAnnotated",
+          )
       "org/jetbrains/kotlin/analysis/api/symbols/markers/KaDeclarationContainerSymbol" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/symbols/KaSymbol")
+          arrayOf("org/jetbrains/kotlin/analysis/api/symbols/KaSymbol")
       "org/jetbrains/kotlin/analysis/api/symbols/markers/KaPossiblyNamedSymbol" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/symbols/KaSymbol")
-      "org/jetbrains/kotlin/analysis/api/symbols/markers/KaSymbolWithKind" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/symbols/KaSymbol")
+          arrayOf("org/jetbrains/kotlin/analysis/api/symbols/KaSymbol")
+      "org/jetbrains/kotlin/analysis/api/symbols/markers/KaSymbolWithKind" -> arrayOf("org/jetbrains/kotlin/analysis/api/symbols/KaSymbol")
       "org/jetbrains/kotlin/analysis/api/symbols/markers/KaTypeParameterOwnerSymbol" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/symbols/KaSymbol")
+          arrayOf("org/jetbrains/kotlin/analysis/api/symbols/KaSymbol")
       "org/jetbrains/kotlin/analysis/api/symbols/pointers/KaPsiBasedSymbolPointer" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/symbols/pointers/KaSymbolPointer")
-      "org/jetbrains/kotlin/analysis/api/types/KaCapturedType" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/types/KaType")
-      "org/jetbrains/kotlin/analysis/api/types/KaClassErrorType" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/types/KaErrorType")
-      "org/jetbrains/kotlin/analysis/api/types/KaClassType" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/types/KaType")
+          arrayOf("org/jetbrains/kotlin/analysis/api/symbols/pointers/KaSymbolPointer")
+      "org/jetbrains/kotlin/analysis/api/types/KaCapturedType" -> arrayOf("org/jetbrains/kotlin/analysis/api/types/KaType")
+      "org/jetbrains/kotlin/analysis/api/types/KaClassErrorType" -> arrayOf("org/jetbrains/kotlin/analysis/api/types/KaErrorType")
+      "org/jetbrains/kotlin/analysis/api/types/KaClassType" -> arrayOf("org/jetbrains/kotlin/analysis/api/types/KaType")
       "org/jetbrains/kotlin/analysis/api/types/KaClassTypeQualifier" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/lifetime/KaLifetimeOwner")
-      "org/jetbrains/kotlin/analysis/api/types/KaDefinitelyNotNullType" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/types/KaType")
-      "org/jetbrains/kotlin/analysis/api/types/KaDynamicType" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/types/KaType")
-      "org/jetbrains/kotlin/analysis/api/types/KaErrorType" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/types/KaType")
-      "org/jetbrains/kotlin/analysis/api/types/KaFlexibleType" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/types/KaType")
+          arrayOf("org/jetbrains/kotlin/analysis/api/lifetime/KaLifetimeOwner")
+      "org/jetbrains/kotlin/analysis/api/types/KaDefinitelyNotNullType" -> arrayOf("org/jetbrains/kotlin/analysis/api/types/KaType")
+      "org/jetbrains/kotlin/analysis/api/types/KaDynamicType" -> arrayOf("org/jetbrains/kotlin/analysis/api/types/KaType")
+      "org/jetbrains/kotlin/analysis/api/types/KaErrorType" -> arrayOf("org/jetbrains/kotlin/analysis/api/types/KaType")
+      "org/jetbrains/kotlin/analysis/api/types/KaFlexibleType" -> arrayOf("org/jetbrains/kotlin/analysis/api/types/KaType")
       "org/jetbrains/kotlin/analysis/api/types/KaFunctionType" ->
-        arrayOf(
-          "org/jetbrains/kotlin/analysis/api/types/KaClassType",
-          "org/jetbrains/kotlin/analysis/api/base/KaContextReceiversOwner",
-        )
-      "org/jetbrains/kotlin/analysis/api/types/KaIntersectionType" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/types/KaType")
+          arrayOf(
+              "org/jetbrains/kotlin/analysis/api/types/KaClassType",
+              "org/jetbrains/kotlin/analysis/api/base/KaContextReceiversOwner",
+          )
+      "org/jetbrains/kotlin/analysis/api/types/KaIntersectionType" -> arrayOf("org/jetbrains/kotlin/analysis/api/types/KaType")
       "org/jetbrains/kotlin/analysis/api/types/KaResolvedClassTypeQualifier" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/types/KaClassTypeQualifier")
-      "org/jetbrains/kotlin/analysis/api/types/KaStarTypeProjection" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/types/KaTypeProjection")
-      "org/jetbrains/kotlin/analysis/api/types/KaSubstitutor" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/lifetime/KaLifetimeOwner")
+          arrayOf("org/jetbrains/kotlin/analysis/api/types/KaClassTypeQualifier")
+      "org/jetbrains/kotlin/analysis/api/types/KaStarTypeProjection" -> arrayOf("org/jetbrains/kotlin/analysis/api/types/KaTypeProjection")
+      "org/jetbrains/kotlin/analysis/api/types/KaSubstitutor" -> arrayOf("org/jetbrains/kotlin/analysis/api/lifetime/KaLifetimeOwner")
       "org/jetbrains/kotlin/analysis/api/types/KaType" ->
-        arrayOf(
-          "org/jetbrains/kotlin/analysis/api/lifetime/KaLifetimeOwner",
-          "org/jetbrains/kotlin/analysis/api/annotations/KaAnnotated",
-        )
+          arrayOf(
+              "org/jetbrains/kotlin/analysis/api/lifetime/KaLifetimeOwner",
+              "org/jetbrains/kotlin/analysis/api/annotations/KaAnnotated",
+          )
       "org/jetbrains/kotlin/analysis/api/types/KaTypeArgumentWithVariance" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/types/KaTypeProjection")
-      "org/jetbrains/kotlin/analysis/api/types/KaTypeParameterType" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/types/KaType")
-      "org/jetbrains/kotlin/analysis/api/types/KaTypeProjection" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/lifetime/KaLifetimeOwner")
+          arrayOf("org/jetbrains/kotlin/analysis/api/types/KaTypeProjection")
+      "org/jetbrains/kotlin/analysis/api/types/KaTypeParameterType" -> arrayOf("org/jetbrains/kotlin/analysis/api/types/KaType")
+      "org/jetbrains/kotlin/analysis/api/types/KaTypeProjection" -> arrayOf("org/jetbrains/kotlin/analysis/api/lifetime/KaLifetimeOwner")
       "org/jetbrains/kotlin/analysis/api/types/KaUnresolvedClassTypeQualifier" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/types/KaClassTypeQualifier")
-      "org/jetbrains/kotlin/analysis/api/types/KaUsualClassType" ->
-        arrayOf("org/jetbrains/kotlin/analysis/api/types/KaClassType")
+          arrayOf("org/jetbrains/kotlin/analysis/api/types/KaClassTypeQualifier")
+      "org/jetbrains/kotlin/analysis/api/types/KaUsualClassType" -> arrayOf("org/jetbrains/kotlin/analysis/api/types/KaClassType")
       else -> emptyArray()
     }
   }
@@ -1757,29 +1502,21 @@ class LintJarApiMigration(private val client: LintClient) {
       // org/jetbrains/kotlin/analysis/api/KaSession
       "getAnalysisSession (Lorg/jetbrains/kotlin/analysis/api/KaSession;)" -> "getUseSiteSession"
       // org/jetbrains/kotlin/analysis/api/annotations/ConstantValue
-      "getConstantValue (Lorg/jetbrains/kotlin/analysis/api/annotations/ConstantValue;)" ->
-        "getValue"
+      "getConstantValue (Lorg/jetbrains/kotlin/analysis/api/annotations/ConstantValue;)" -> "getValue"
       // org/jetbrains/kotlin/analysis/api/annotations/KaAnnotated
-      "getAnnotationInfos (Lorg/jetbrains/kotlin/analysis/api/annotations/KaAnnotated;)" ->
-        "getAnnotations"
+      "getAnnotationInfos (Lorg/jetbrains/kotlin/analysis/api/annotations/KaAnnotated;)" -> "getAnnotations"
       // org/jetbrains/kotlin/analysis/api/annotations/KaAnnotated
-      "getAnnotationsList (Lorg/jetbrains/kotlin/analysis/api/annotations/KaAnnotated;)" ->
-        "getAnnotations"
+      "getAnnotationsList (Lorg/jetbrains/kotlin/analysis/api/annotations/KaAnnotated;)" -> "getAnnotations"
       // org/jetbrains/kotlin/analysis/api/annotations/KaAnnotationList
-      "annotationsByClassId (Lorg/jetbrains/kotlin/analysis/api/annotations/KaAnnotationList;Lorg/jetbrains/kotlin/name/ClassId;)" ->
-        "get"
+      "annotationsByClassId (Lorg/jetbrains/kotlin/analysis/api/annotations/KaAnnotationList;Lorg/jetbrains/kotlin/name/ClassId;)" -> "get"
       // org/jetbrains/kotlin/analysis/api/annotations/KaAnnotationList
-      "getAnnotationClassIds (Lorg/jetbrains/kotlin/analysis/api/annotations/KaAnnotationList;)" ->
-        "getClassIds"
+      "getAnnotationClassIds (Lorg/jetbrains/kotlin/analysis/api/annotations/KaAnnotationList;)" -> "getClassIds"
       // org/jetbrains/kotlin/analysis/api/annotations/KaAnnotationList
-      "hasAnnotation (Lorg/jetbrains/kotlin/analysis/api/annotations/KaAnnotationList;Lorg/jetbrains/kotlin/name/ClassId;)" ->
-        "contains"
+      "hasAnnotation (Lorg/jetbrains/kotlin/analysis/api/annotations/KaAnnotationList;Lorg/jetbrains/kotlin/name/ClassId;)" -> "contains"
       // org/jetbrains/kotlin/analysis/api/annotations/NestedAnnotationValue
-      "getAnnotationValue (Lorg/jetbrains/kotlin/analysis/api/annotations/NestedAnnotationValue;)" ->
-        "getAnnotation"
+      "getAnnotationValue (Lorg/jetbrains/kotlin/analysis/api/annotations/NestedAnnotationValue;)" -> "getAnnotation"
       // org/jetbrains/kotlin/analysis/api/base/KaConstantValue
-      "renderAsKotlinConstant (Lorg/jetbrains/kotlin/analysis/api/base/KaConstantValue;)" ->
-        "render"
+      "renderAsKotlinConstant (Lorg/jetbrains/kotlin/analysis/api/base/KaConstantValue;)" -> "render"
       // org/jetbrains/kotlin/analysis/api/components/KaBuiltinTypes
       "getANY (Lorg/jetbrains/kotlin/analysis/api/components/KaBuiltinTypes;)" -> "getAny"
       // org/jetbrains/kotlin/analysis/api/components/KaBuiltinTypes
@@ -1799,28 +1536,25 @@ class LintJarApiMigration(private val client: LintClient) {
       // org/jetbrains/kotlin/analysis/api/components/KaBuiltinTypes
       "getNOTHING (Lorg/jetbrains/kotlin/analysis/api/components/KaBuiltinTypes;)" -> "getNothing"
       // org/jetbrains/kotlin/analysis/api/components/KaBuiltinTypes
-      "getNULLABLE_ANY (Lorg/jetbrains/kotlin/analysis/api/components/KaBuiltinTypes;)" ->
-        "getNullableAny"
+      "getNULLABLE_ANY (Lorg/jetbrains/kotlin/analysis/api/components/KaBuiltinTypes;)" -> "getNullableAny"
       // org/jetbrains/kotlin/analysis/api/components/KaBuiltinTypes
-      "getNULLABLE_NOTHING (Lorg/jetbrains/kotlin/analysis/api/components/KaBuiltinTypes;)" ->
-        "getNullableNothing"
+      "getNULLABLE_NOTHING (Lorg/jetbrains/kotlin/analysis/api/components/KaBuiltinTypes;)" -> "getNullableNothing"
       // org/jetbrains/kotlin/analysis/api/components/KaBuiltinTypes
       "getSHORT (Lorg/jetbrains/kotlin/analysis/api/components/KaBuiltinTypes;)" -> "getShort"
       // org/jetbrains/kotlin/analysis/api/components/KaBuiltinTypes
       "getSTRING (Lorg/jetbrains/kotlin/analysis/api/components/KaBuiltinTypes;)" -> "getString"
       // org/jetbrains/kotlin/analysis/api/components/KaBuiltinTypes
-      "getTHROWABLE (Lorg/jetbrains/kotlin/analysis/api/components/KaBuiltinTypes;)" ->
-        "getThrowable"
+      "getTHROWABLE (Lorg/jetbrains/kotlin/analysis/api/components/KaBuiltinTypes;)" -> "getThrowable"
       // org/jetbrains/kotlin/analysis/api/components/KaBuiltinTypes
       "getUNIT (Lorg/jetbrains/kotlin/analysis/api/components/KaBuiltinTypes;)" -> "getUnit"
       // org/jetbrains/kotlin/analysis/api/components/KaDataFlowProvider
       "getExitPointSnapshot (Ljava/util/List;)" -> "computeExitPointSnapshot"
       // org/jetbrains/kotlin/analysis/api/components/KaDiagnosticProvider
       "collectDiagnosticsForFile (Lorg/jetbrains/kotlin/psi/KtFile;Lorg/jetbrains/kotlin/analysis/api/components/KaDiagnosticCheckerFilter;)" ->
-        "collectDiagnostics"
+          "collectDiagnostics"
       // org/jetbrains/kotlin/analysis/api/components/KaDiagnosticProvider
       "getDiagnostics (Lorg/jetbrains/kotlin/psi/KtElement;Lorg/jetbrains/kotlin/analysis/api/components/KaDiagnosticCheckerFilter;)" ->
-        "diagnostic"
+          "diagnostic"
       // org/jetbrains/kotlin/analysis/api/components/KaExpressionInformationProvider
       "getMissingCases (Lorg/jetbrains/kotlin/psi/KtWhenExpression;)" -> "computeMissingCases"
       // org/jetbrains/kotlin/analysis/api/components/KaExpressionInformationProvider
@@ -1841,7 +1575,7 @@ class LintJarApiMigration(private val client: LintClient) {
       "asKtType (Lcom/intellij/psi/PsiType;Lcom/intellij/psi/PsiElement;)" -> "asKaType"
       // org/jetbrains/kotlin/analysis/api/components/KaJavaInteroperabilityComponent
       "mapTypeToJvmType (Lorg/jetbrains/kotlin/analysis/api/types/KaType;Lorg/jetbrains/kotlin/load/kotlin/TypeMappingMode;)" ->
-        "mapToJvmType"
+          "mapToJvmType"
       // org/jetbrains/kotlin/analysis/api/components/KaResolver
       "collectCallCandidates (Lorg/jetbrains/kotlin/psi/KtElement;)" -> "collectCallCandidatesOld"
       // org/jetbrains/kotlin/analysis/api/components/KaResolver
@@ -1851,17 +1585,14 @@ class LintJarApiMigration(private val client: LintClient) {
       // org/jetbrains/kotlin/analysis/api/components/KaResolver
       "resolveCallOld (Lorg/jetbrains/kotlin/psi/KtElement;)" -> "resolveToCall"
       // org/jetbrains/kotlin/analysis/api/components/KaScopeProvider
-      "getScopeContextForPosition (Lorg/jetbrains/kotlin/psi/KtFile;Lorg/jetbrains/kotlin/psi/KtElement;)" ->
-        "scopeContext"
+      "getScopeContextForPosition (Lorg/jetbrains/kotlin/psi/KtFile;Lorg/jetbrains/kotlin/psi/KtElement;)" -> "scopeContext"
       // org/jetbrains/kotlin/analysis/api/components/KaSymbolInformationProvider
       "getDeprecationStatus (Lorg/jetbrains/kotlin/analysis/api/symbols/KaSymbol;Lorg/jetbrains/kotlin/descriptors/annotations/AnnotationUseSiteTarget;)" ->
-        "deprecationStatus"
+          "deprecationStatus"
       // org/jetbrains/kotlin/analysis/api/components/KaSymbolRelationProvider
-      "getUnwrapFakeOverrides (Lorg/jetbrains/kotlin/analysis/api/symbols/KaCallableSymbol;)" ->
-        "getFakeOverrideOriginal"
+      "getUnwrapFakeOverrides (Lorg/jetbrains/kotlin/analysis/api/symbols/KaCallableSymbol;)" -> "getFakeOverrideOriginal"
       // org/jetbrains/kotlin/analysis/api/components/KaTypeInformationProvider
-      "getExpandedClassSymbol (Lorg/jetbrains/kotlin/analysis/api/types/KaType;)" ->
-        "getExpandedSymbol"
+      "getExpandedClassSymbol (Lorg/jetbrains/kotlin/analysis/api/types/KaType;)" -> "getExpandedSymbol"
       // org/jetbrains/kotlin/analysis/api/components/KaTypeInformationProvider
       "isAny (Lorg/jetbrains/kotlin/analysis/api/types/KaType;)" -> "isAnyType"
       // org/jetbrains/kotlin/analysis/api/components/KaTypeInformationProvider
@@ -1873,15 +1604,13 @@ class LintJarApiMigration(private val client: LintClient) {
       // org/jetbrains/kotlin/analysis/api/components/KaTypeInformationProvider
       "isCharSequence (Lorg/jetbrains/kotlin/analysis/api/types/KaType;)" -> "isCharSequenceType"
       // org/jetbrains/kotlin/analysis/api/components/KaTypeInformationProvider
-      "isClassTypeWithClassId (Lorg/jetbrains/kotlin/analysis/api/types/KaType;Lorg/jetbrains/kotlin/name/ClassId;)" ->
-        "isClassType"
+      "isClassTypeWithClassId (Lorg/jetbrains/kotlin/analysis/api/types/KaType;Lorg/jetbrains/kotlin/name/ClassId;)" -> "isClassType"
       // org/jetbrains/kotlin/analysis/api/components/KaTypeInformationProvider
       "isDouble (Lorg/jetbrains/kotlin/analysis/api/types/KaType;)" -> "isDoubleType"
       // org/jetbrains/kotlin/analysis/api/components/KaTypeInformationProvider
       "isFloat (Lorg/jetbrains/kotlin/analysis/api/types/KaType;)" -> "isFloatType"
       // org/jetbrains/kotlin/analysis/api/components/KaTypeInformationProvider
-      "isFunctionalInterfaceType (Lorg/jetbrains/kotlin/analysis/api/types/KaType;)" ->
-        "isFunctionalInterface"
+      "isFunctionalInterfaceType (Lorg/jetbrains/kotlin/analysis/api/types/KaType;)" -> "isFunctionalInterface"
       // org/jetbrains/kotlin/analysis/api/components/KaTypeInformationProvider
       "isInt (Lorg/jetbrains/kotlin/analysis/api/types/KaType;)" -> "isIntType"
       // org/jetbrains/kotlin/analysis/api/components/KaTypeInformationProvider
@@ -1903,16 +1632,13 @@ class LintJarApiMigration(private val client: LintClient) {
       // org/jetbrains/kotlin/analysis/api/components/KaTypeInformationProvider
       "isUnit (Lorg/jetbrains/kotlin/analysis/api/types/KaType;)" -> "isUnitType"
       // org/jetbrains/kotlin/analysis/api/components/KaTypeProvider
-      "buildSelfClassType (Lorg/jetbrains/kotlin/analysis/api/symbols/KaNamedClassSymbol;)" ->
-        "getDefaultType"
+      "buildSelfClassType (Lorg/jetbrains/kotlin/analysis/api/symbols/KaNamedClassSymbol;)" -> "getDefaultType"
       // org/jetbrains/kotlin/analysis/api/components/KaTypeProvider
       "getAllSuperTypes (Lorg/jetbrains/kotlin/analysis/api/types/KaType;Z)" -> "allSupertypes"
       // org/jetbrains/kotlin/analysis/api/components/KaTypeProvider
-      "getDirectSuperTypes (Lorg/jetbrains/kotlin/analysis/api/types/KaType;Z)" ->
-        "directSuperTypes"
+      "getDirectSuperTypes (Lorg/jetbrains/kotlin/analysis/api/types/KaType;Z)" -> "directSuperTypes"
       // org/jetbrains/kotlin/analysis/api/components/KaTypeProvider
-      "getImplicitReceiverTypesAtPosition (Lorg/jetbrains/kotlin/psi/KtElement;)" ->
-        "collectImplicitReceiverTypes"
+      "getImplicitReceiverTypesAtPosition (Lorg/jetbrains/kotlin/psi/KtElement;)" -> "collectImplicitReceiverTypes"
       // org/jetbrains/kotlin/analysis/api/components/KaTypeProvider
       "getKaType (Lorg/jetbrains/kotlin/psi/KtTypeReference;)" -> "getType"
       // org/jetbrains/kotlin/analysis/api/components/KaTypeProvider
@@ -1921,71 +1647,55 @@ class LintJarApiMigration(private val client: LintClient) {
       "getReceiverKtType (Lorg/jetbrains/kotlin/psi/KtDoubleColonExpression;)" -> "getReceiverType"
       // org/jetbrains/kotlin/analysis/api/components/KaTypeProvider
       "hasCommonSubTypeWith (Lorg/jetbrains/kotlin/analysis/api/types/KaType;Lorg/jetbrains/kotlin/analysis/api/types/KaType;)" ->
-        "hasCommonSubtypeWith"
+          "hasCommonSubtypeWith"
       // org/jetbrains/kotlin/analysis/api/components/KaTypeRelationChecker
-      "isEqualTo (Lorg/jetbrains/kotlin/analysis/api/types/KaType;Lorg/jetbrains/kotlin/analysis/api/types/KaType;)" ->
-        "semanticallyEquals"
+      "isEqualTo (Lorg/jetbrains/kotlin/analysis/api/types/KaType;Lorg/jetbrains/kotlin/analysis/api/types/KaType;)" -> "semanticallyEquals"
       // org/jetbrains/kotlin/analysis/api/components/KaTypeRelationChecker
       "isEqualTo (Lorg/jetbrains/kotlin/analysis/api/types/KaType;Lorg/jetbrains/kotlin/analysis/api/types/KaType;Lorg/jetbrains/kotlin/analysis/api/components/KaSubtypingErrorTypePolicy;)" ->
-        "semanticallyEquals"
+          "semanticallyEquals"
       // org/jetbrains/kotlin/analysis/api/components/KaTypeRelationChecker
       "isSubTypeOf (Lorg/jetbrains/kotlin/analysis/api/types/KaType;Lorg/jetbrains/kotlin/analysis/api/types/KaType;Lorg/jetbrains/kotlin/analysis/api/components/KaSubtypingErrorTypePolicy;)" ->
-        "isSubtypeOf"
+          "isSubtypeOf"
       // org/jetbrains/kotlin/analysis/api/projectStructure/
-      "getAnalysisExtensionFileContextModule (Lcom/intellij/openapi/vfs/VirtualFile;)" ->
-        "getAnalysisContextModule"
+      "getAnalysisExtensionFileContextModule (Lcom/intellij/openapi/vfs/VirtualFile;)" -> "getAnalysisContextModule"
       // org/jetbrains/kotlin/analysis/api/projectStructure/KaModule
-      "getPlatform (Lorg/jetbrains/kotlin/analysis/api/projectStructure/KaModule;)" ->
-        "getTargetPlatform"
+      "getPlatform (Lorg/jetbrains/kotlin/analysis/api/projectStructure/KaModule;)" -> "getTargetPlatform"
       // org/jetbrains/kotlin/analysis/api/projectStructure/KaSourceModule
-      "getModuleName (Lorg/jetbrains/kotlin/analysis/api/projectStructure/KaSourceModule;)" ->
-        "getName"
+      "getModuleName (Lorg/jetbrains/kotlin/analysis/api/projectStructure/KaSourceModule;)" -> "getName"
       // org/jetbrains/kotlin/analysis/api/resolution/KaCompoundAccessCall
-      "getCompoundAccess (Lorg/jetbrains/kotlin/analysis/api/resolution/KaCompoundAccessCall;)" ->
-        "getCompoundOperation"
+      "getCompoundAccess (Lorg/jetbrains/kotlin/analysis/api/resolution/KaCompoundAccessCall;)" -> "getCompoundOperation"
       // org/jetbrains/kotlin/analysis/api/resolution/KaCompoundVariableAccessCall
       "getPartiallyAppliedSymbol (Lorg/jetbrains/kotlin/analysis/api/resolution/KaCompoundVariableAccessCall;)" ->
-        "getVariablePartiallyAppliedSymbol"
+          "getVariablePartiallyAppliedSymbol"
       // org/jetbrains/kotlin/analysis/api/scopes/KaScope
       "getAllSymbols (Lorg/jetbrains/kotlin/analysis/api/scopes/KaScope;)" -> "getDeclarations"
       // org/jetbrains/kotlin/analysis/api/scopes/KaScope
-      "getCallableSymbols (Lorg/jetbrains/kotlin/analysis/api/scopes/KaScope;Ljava/util/Collection;)" ->
-        "callables"
+      "getCallableSymbols (Lorg/jetbrains/kotlin/analysis/api/scopes/KaScope;Ljava/util/Collection;)" -> "callables"
       // org/jetbrains/kotlin/analysis/api/scopes/KaScope
-      "getCallableSymbols (Lorg/jetbrains/kotlin/analysis/api/scopes/KaScope;Lorg/jetbrains/kotlin/name/Name;)" ->
-        "callables"
+      "getCallableSymbols (Lorg/jetbrains/kotlin/analysis/api/scopes/KaScope;Lorg/jetbrains/kotlin/name/Name;)" -> "callables"
       // org/jetbrains/kotlin/analysis/api/scopes/KaScope
-      "getClassifierSymbols (Lorg/jetbrains/kotlin/analysis/api/scopes/KaScope;Ljava/util/Collection;)" ->
-        "classifiers"
+      "getClassifierSymbols (Lorg/jetbrains/kotlin/analysis/api/scopes/KaScope;Ljava/util/Collection;)" -> "classifiers"
       // org/jetbrains/kotlin/analysis/api/scopes/KaScope
-      "getClassifierSymbols (Lorg/jetbrains/kotlin/analysis/api/scopes/KaScope;Lorg/jetbrains/kotlin/name/Name;)" ->
-        "classifiers"
+      "getClassifierSymbols (Lorg/jetbrains/kotlin/analysis/api/scopes/KaScope;Lorg/jetbrains/kotlin/name/Name;)" -> "classifiers"
       // org/jetbrains/kotlin/analysis/api/signatures/KaCallableSignature
-      "getCallableIdIfNonLocal (Lorg/jetbrains/kotlin/analysis/api/signatures/KaCallableSignature;)" ->
-        "getCallableId"
+      "getCallableIdIfNonLocal (Lorg/jetbrains/kotlin/analysis/api/signatures/KaCallableSignature;)" -> "getCallableId"
       // org/jetbrains/kotlin/analysis/api/standalone/StandaloneAnalysisAPISession
       "getCreatePackagePartProvider (Lorg/jetbrains/kotlin/analysis/api/standalone/StandaloneAnalysisAPISession;)" ->
-        "getProject::createPackagePartProvider"
+          "getProject::createPackagePartProvider"
       // org/jetbrains/kotlin/analysis/api/standalone/StandaloneAnalysisAPISession
-      "getMockProject (Lorg/jetbrains/kotlin/analysis/api/standalone/StandaloneAnalysisAPISession;)" ->
-        "getProject"
+      "getMockProject (Lorg/jetbrains/kotlin/analysis/api/standalone/StandaloneAnalysisAPISession;)" -> "getProject"
       // org/jetbrains/kotlin/analysis/api/symbols/KaCallableSymbol
-      "getCallableIdIfNonLocal (Lorg/jetbrains/kotlin/analysis/api/symbols/KaCallableSymbol;)" ->
-        "getCallableId"
+      "getCallableIdIfNonLocal (Lorg/jetbrains/kotlin/analysis/api/symbols/KaCallableSymbol;)" -> "getCallableId"
       // org/jetbrains/kotlin/analysis/api/symbols/KaClassLikeSymbol
-      "getClassIdIfNonLocal (Lorg/jetbrains/kotlin/analysis/api/symbols/KaClassLikeSymbol;)" ->
-        "getClassId"
+      "getClassIdIfNonLocal (Lorg/jetbrains/kotlin/analysis/api/symbols/KaClassLikeSymbol;)" -> "getClassId"
       // org/jetbrains/kotlin/analysis/api/symbols/KaConstructorSymbol
-      "getContainingClassIdIfNonLocal (Lorg/jetbrains/kotlin/analysis/api/symbols/KaConstructorSymbol;)" ->
-        "getContainingClassId"
+      "getContainingClassIdIfNonLocal (Lorg/jetbrains/kotlin/analysis/api/symbols/KaConstructorSymbol;)" -> "getContainingClassId"
       // org/jetbrains/kotlin/analysis/api/symbols/KaReceiverParameterSymbol
-      "getType (Lorg/jetbrains/kotlin/analysis/api/symbols/KaReceiverParameterSymbol;)" ->
-        "getReturnType"
+      "getType (Lorg/jetbrains/kotlin/analysis/api/symbols/KaReceiverParameterSymbol;)" -> "getReturnType"
       // org/jetbrains/kotlin/analysis/api/symbols/KaSymbolProvider
       "getAnonymousFunctionSymbol (Lorg/jetbrains/kotlin/psi/KtFunctionLiteral;)" -> "getSymbol"
       // org/jetbrains/kotlin/analysis/api/symbols/KaSymbolProvider
-      "getAnonymousObjectSymbol (Lorg/jetbrains/kotlin/psi/KtObjectLiteralExpression;)" ->
-        "getSymbol"
+      "getAnonymousObjectSymbol (Lorg/jetbrains/kotlin/psi/KtObjectLiteralExpression;)" -> "getSymbol"
       // org/jetbrains/kotlin/analysis/api/symbols/KaSymbolProvider
       "getClassOrObjectSymbol (Lorg/jetbrains/kotlin/psi/KtClassOrObject;)" -> "getClassSymbol"
       // org/jetbrains/kotlin/analysis/api/symbols/KaSymbolProvider
@@ -1993,8 +1703,7 @@ class LintJarApiMigration(private val client: LintClient) {
       // org/jetbrains/kotlin/analysis/api/symbols/KaSymbolProvider
       "getConstructorSymbol (Lorg/jetbrains/kotlin/psi/KtConstructor;)" -> "getSymbol"
       // org/jetbrains/kotlin/analysis/api/symbols/KaSymbolProvider
-      "getDestructuringDeclarationEntrySymbol (Lorg/jetbrains/kotlin/psi/KtDestructuringDeclarationEntry;)" ->
-        "getSymbol"
+      "getDestructuringDeclarationEntrySymbol (Lorg/jetbrains/kotlin/psi/KtDestructuringDeclarationEntry;)" -> "getSymbol"
       // org/jetbrains/kotlin/analysis/api/symbols/KaSymbolProvider
       "getEnumEntrySymbol (Lorg/jetbrains/kotlin/psi/KtEnumEntry;)" -> "getSymbol"
       // org/jetbrains/kotlin/analysis/api/symbols/KaSymbolProvider
@@ -2002,8 +1711,7 @@ class LintJarApiMigration(private val client: LintClient) {
       // org/jetbrains/kotlin/analysis/api/symbols/KaSymbolProvider
       "getFunctionLikeSymbol (Lorg/jetbrains/kotlin/psi/KtNamedFunction;)" -> "getSymbol"
       // org/jetbrains/kotlin/analysis/api/symbols/KaSymbolProvider
-      "getNamedClassOrObjectSymbol (Lorg/jetbrains/kotlin/psi/KtClassOrObject;)" ->
-        "getNamedClassSymbol"
+      "getNamedClassOrObjectSymbol (Lorg/jetbrains/kotlin/psi/KtClassOrObject;)" -> "getNamedClassSymbol"
       // org/jetbrains/kotlin/analysis/api/symbols/KaSymbolProvider
       "getPackageSymbolIfPackageExists (Lorg/jetbrains/kotlin/name/FqName;)" -> "findPackage"
       // org/jetbrains/kotlin/analysis/api/symbols/KaSymbolProvider
@@ -2015,8 +1723,7 @@ class LintJarApiMigration(private val client: LintClient) {
       // org/jetbrains/kotlin/analysis/api/symbols/KaSymbolProvider
       "getScriptSymbol (Lorg/jetbrains/kotlin/psi/KtScript;)" -> "getSymbol"
       // org/jetbrains/kotlin/analysis/api/symbols/KaSymbolProvider
-      "getTopLevelCallableSymbols (Lorg/jetbrains/kotlin/name/FqName;Lorg/jetbrains/kotlin/name/Name;)" ->
-        "findTopLevelCallables"
+      "getTopLevelCallableSymbols (Lorg/jetbrains/kotlin/name/FqName;Lorg/jetbrains/kotlin/name/Name;)" -> "findTopLevelCallables"
       // org/jetbrains/kotlin/analysis/api/symbols/KaSymbolProvider
       "getTypeAliasByClassId (Lorg/jetbrains/kotlin/name/ClassId;)" -> "findTypeAlias"
       // org/jetbrains/kotlin/analysis/api/symbols/KaSymbolProvider
@@ -2026,19 +1733,15 @@ class LintJarApiMigration(private val client: LintClient) {
       // org/jetbrains/kotlin/analysis/api/symbols/KaSymbolProvider
       "getVariableSymbol (Lorg/jetbrains/kotlin/psi/KtProperty;)" -> "getSymbol"
       // org/jetbrains/kotlin/analysis/api/symbols/markers/KaSymbolWithKind
-      "getSymbolKind (Lorg/jetbrains/kotlin/analysis/api/symbols/markers/KaSymbolWithKind;)" ->
-        "getLocation"
+      "getSymbolKind (Lorg/jetbrains/kotlin/analysis/api/symbols/markers/KaSymbolWithKind;)" -> "getLocation"
       // org/jetbrains/kotlin/analysis/api/types/
-      "getAbbreviatedTypeOrSelf (Lorg/jetbrains/kotlin/analysis/api/types/KaType;)" ->
-        "getAbbreviationOrSelf"
+      "getAbbreviatedTypeOrSelf (Lorg/jetbrains/kotlin/analysis/api/types/KaType;)" -> "getAbbreviationOrSelf"
       // org/jetbrains/kotlin/analysis/api/types/KaClassErrorType
-      "getCandidateClassSymbols (Lorg/jetbrains/kotlin/analysis/api/types/KaClassErrorType;)" ->
-        "getCandidateSymbols"
+      "getCandidateClassSymbols (Lorg/jetbrains/kotlin/analysis/api/types/KaClassErrorType;)" -> "getCandidateSymbols"
       // org/jetbrains/kotlin/analysis/api/types/KaClassType
       "getClassSymbol (Lorg/jetbrains/kotlin/analysis/api/types/KaClassType;)" -> "getSymbol"
       // org/jetbrains/kotlin/analysis/api/types/KaClassType
-      "getOwnTypeArguments (Lorg/jetbrains/kotlin/analysis/api/types/KaClassType;)" ->
-        "getTypeArguments"
+      "getOwnTypeArguments (Lorg/jetbrains/kotlin/analysis/api/types/KaClassType;)" -> "getTypeArguments"
       // org/jetbrains/kotlin/analysis/api/types/KaType
       "asStringForDebugging (Lorg/jetbrains/kotlin/analysis/api/types/KaType;)" -> "toString"
       // org/jetbrains/kotlin/analysis/api/types/KaType
@@ -2048,9 +1751,7 @@ class LintJarApiMigration(private val client: LintClient) {
   }
 
   private fun isRelevantMethod(methodNode: MethodNode): Boolean {
-    return methodNode.find {
-      it is MethodInsnNode && it.owner.startsWith("org/jetbrains/kotlin/analysis/api/")
-    } != null
+    return methodNode.find { it is MethodInsnNode && it.owner.startsWith("org/jetbrains/kotlin/analysis/api/") } != null
   }
 
   private fun MethodNode.find(condition: (AbstractInsnNode) -> Boolean): AbstractInsnNode? {
@@ -2082,10 +1783,7 @@ class LintJarApiMigration(private val client: LintClient) {
         }
       }
 
-      if (
-        cn.name.startsWith("androidx/navigation/") &&
-          (method.name == "isClassReference" || method.name == "isClassReference\$default")
-      ) {
+      if (cn.name.startsWith("androidx/navigation/") && (method.name == "isClassReference" || method.name == "isClassReference\$default")) {
         if (handleLintUtilRedirection(method)) {
           modified = true
         }
@@ -2104,9 +1802,9 @@ class LintJarApiMigration(private val client: LintClient) {
 
   private fun handleLintUtilRedirection(method: MethodNode): Boolean {
     if (
-      method.name == "isClassReference" &&
-        (method.desc == "(Lorg/jetbrains/uast/UExpression;)Lkotlin/Pair;" ||
-          method.desc == "(Lorg/jetbrains/uast/UExpression;ZZZ)Lkotlin/Pair;")
+        method.name == "isClassReference" &&
+            (method.desc == "(Lorg/jetbrains/uast/UExpression;)Lkotlin/Pair;" ||
+                method.desc == "(Lorg/jetbrains/uast/UExpression;ZZZ)Lkotlin/Pair;")
     ) {
       // Map isClassReference() to LintUtils isClassReference(true, true, true) in lint
 
@@ -2129,12 +1827,12 @@ class LintJarApiMigration(private val client: LintClient) {
         return false
       }
       instructions.add(
-        MethodInsnNode(
-          Opcodes.INVOKESTATIC,
-          "com/android/tools/lint/detector/api/UastLintUtilsKt",
-          method.name,
-          "(Lorg/jetbrains/uast/UExpression;ZZZ)Lkotlin/Pair;",
-        )
+          MethodInsnNode(
+              Opcodes.INVOKESTATIC,
+              "com/android/tools/lint/detector/api/UastLintUtilsKt",
+              method.name,
+              "(Lorg/jetbrains/uast/UExpression;ZZZ)Lkotlin/Pair;",
+          )
       )
       instructions.add(InsnNode(Opcodes.ARETURN))
       val endLabel = LabelNode()
@@ -2144,28 +1842,27 @@ class LintJarApiMigration(private val client: LintClient) {
       method.tryCatchBlocks.clear()
       method.localVariables.clear()
       method.localVariables.add(
-        LocalVariableNode(
-          "\$this\$isClassReference",
-          "Lorg/jetbrains/uast/UExpression;",
-          null,
-          startLabel,
-          endLabel,
-          0,
-        )
+          LocalVariableNode(
+              "\$this\$isClassReference",
+              "Lorg/jetbrains/uast/UExpression;",
+              null,
+              startLabel,
+              endLabel,
+              0,
+          )
       )
       return true
     } else if (
-      method.name == "isClassReference\$default" &&
-        method.desc == "(Lorg/jetbrains/uast/UExpression;ZZZILjava/lang/Object;)Lkotlin/Pair;"
+        method.name == "isClassReference\$default" && method.desc == "(Lorg/jetbrains/uast/UExpression;ZZZILjava/lang/Object;)Lkotlin/Pair;"
     ) {
       val replace =
-        method.instructions.firstOrNull {
-          it.isStaticCall(
-            "isClassReference",
-            "androidx/navigation/lint/common/LintUtilKt",
-            "(Lorg/jetbrains/uast/UExpression;ZZZ)Lkotlin/Pair;",
-          )
-        } ?: return false
+          method.instructions.firstOrNull {
+            it.isStaticCall(
+                "isClassReference",
+                "androidx/navigation/lint/common/LintUtilKt",
+                "(Lorg/jetbrains/uast/UExpression;ZZZ)Lkotlin/Pair;",
+            )
+          } ?: return false
       (replace as MethodInsnNode).owner = "com/android/tools/lint/detector/api/UastLintUtilsKt"
       return true
     }
@@ -2184,17 +1881,17 @@ class LintJarApiMigration(private val client: LintClient) {
   }
 
   private fun AbstractInsnNode.isVirtualCall(
-    name: String,
-    owner: String,
-    desc: String? = null,
+      name: String,
+      owner: String,
+      desc: String? = null,
   ): Boolean {
     return opcode == Opcodes.INVOKEVIRTUAL && isCall(name, owner, desc)
   }
 
   private fun AbstractInsnNode.isStaticCall(
-    name: String,
-    owner: String,
-    desc: String? = null,
+      name: String,
+      owner: String,
+      desc: String? = null,
   ): Boolean {
     return opcode == Opcodes.INVOKESTATIC && isCall(name, owner, desc)
   }
@@ -2231,11 +1928,11 @@ class LintJarApiMigration(private val client: LintClient) {
     var ktElementVariable = -1
     while (curr != null) {
       if (
-        curr.isVirtualCall(
-          "beforeEnteringAnalysisContext",
-          "org/jetbrains/kotlin/analysis/api/lifetime/KtLifetimeTokenFactory",
-          "(Lorg/jetbrains/kotlin/analysis/api/lifetime/KtLifetimeToken;)V",
-        )
+          curr.isVirtualCall(
+              "beforeEnteringAnalysisContext",
+              "org/jetbrains/kotlin/analysis/api/lifetime/KtLifetimeTokenFactory",
+              "(Lorg/jetbrains/kotlin/analysis/api/lifetime/KtLifetimeToken;)V",
+          )
       ) {
         // We've found the fingerprint of the beginning of an analyze() {} call
         // using the old analysis API implementation:
@@ -2255,7 +1952,8 @@ class LintJarApiMigration(private val client: LintClient) {
         //          LINENUMBER 210 L17
         //          ALOAD 6
         //          INVOKEVIRTUAL
-        // org/jetbrains/kotlin/analysis/api/session/KtAnalysisSessionProvider.getNoWriteActionInAnalyseCallChecker ()Lorg/jetbrains/kotlin/analysis/api/lifetime/impl/NoWriteActionInAnalyseCallChecker;
+        // org/jetbrains/kotlin/analysis/api/session/KtAnalysisSessionProvider.getNoWriteActionInAnalyseCallChecker
+        // ()Lorg/jetbrains/kotlin/analysis/api/lifetime/impl/NoWriteActionInAnalyseCallChecker;
         //          INVOKEVIRTUAL
         // org/jetbrains/kotlin/analysis/api/lifetime/impl/NoWriteActionInAnalyseCallChecker.beforeEnteringAnalysisContext ()V
         //         L18
@@ -2268,30 +1966,30 @@ class LintJarApiMigration(private val client: LintClient) {
         //          INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/KtAnalysisSession.getToken
         // ()Lorg/jetbrains/kotlin/analysis/api/lifetime/KtLifetimeToken;
         //          INVOKEVIRTUAL
-        // org/jetbrains/kotlin/analysis/api/lifetime/KtLifetimeTokenFactory.beforeEnteringAnalysisContext (Lorg/jetbrains/kotlin/analysis/api/lifetime/KtLifetimeToken;)V
+        // org/jetbrains/kotlin/analysis/api/lifetime/KtLifetimeTokenFactory.beforeEnteringAnalysisContext
+        // (Lorg/jetbrains/kotlin/analysis/api/lifetime/KtLifetimeToken;)V
         val end = curr.next
 
         prev() ?: break
-        expectVirtualCall("getToken", "org/jetbrains/kotlin/analysis/api/KtAnalysisSession")
-          ?: break
+        expectVirtualCall("getToken", "org/jetbrains/kotlin/analysis/api/KtAnalysisSession") ?: break
         prev() ?: break
         val sessionVariable = expectAload() ?: break
         prev() ?: break
         expectVirtualCall(
-          "getTokenFactory",
-          "org/jetbrains/kotlin/analysis/api/session/KtAnalysisSessionProvider",
+            "getTokenFactory",
+            "org/jetbrains/kotlin/analysis/api/session/KtAnalysisSessionProvider",
         ) ?: break
         prev() ?: break
         val sessionProviderVariable = expectAload() ?: break
         prev() ?: break
         expectVirtualCall(
-          "beforeEnteringAnalysisContext",
-          "org/jetbrains/kotlin/analysis/api/lifetime/impl/NoWriteActionInAnalyseCallChecker",
+            "beforeEnteringAnalysisContext",
+            "org/jetbrains/kotlin/analysis/api/lifetime/impl/NoWriteActionInAnalyseCallChecker",
         ) ?: break
         prev() ?: break
         expectVirtualCall(
-          "getNoWriteActionInAnalyseCallChecker",
-          "org/jetbrains/kotlin/analysis/api/session/KtAnalysisSessionProvider",
+            "getNoWriteActionInAnalyseCallChecker",
+            "org/jetbrains/kotlin/analysis/api/session/KtAnalysisSessionProvider",
         ) ?: break
         prev() ?: break
         val sessionProviderVariable2 = expectAload() ?: break
@@ -2301,8 +1999,8 @@ class LintJarApiMigration(private val client: LintClient) {
         prev() ?: break // ASTORE (analysis session variable)
         val getAnalysisSession = prev() ?: break
         expectVirtualCall(
-          "getAnalysisSession",
-          "org/jetbrains/kotlin/analysis/api/session/KtAnalysisSessionProvider",
+            "getAnalysisSession",
+            "org/jetbrains/kotlin/analysis/api/session/KtAnalysisSessionProvider",
         ) ?: break
 
         prev() ?: break
@@ -2328,13 +2026,13 @@ class LintJarApiMigration(private val client: LintClient) {
         val i2 = VarInsnNode(Opcodes.ALOAD, sessionVariable)
         val i3 = VarInsnNode(Opcodes.ALOAD, ktElementVariable)
         val i4 =
-          MethodInsnNode(
-            Opcodes.INVOKEVIRTUAL,
-            "org/jetbrains/kotlin/analysis/api/session/KaSessionProvider",
-            "beforeEnteringAnalysis",
-            "(Lorg/jetbrains/kotlin/analysis/api/KaSession;Lorg/jetbrains/kotlin/psi/KtElement;)V",
-            false,
-          )
+            MethodInsnNode(
+                Opcodes.INVOKEVIRTUAL,
+                "org/jetbrains/kotlin/analysis/api/session/KaSessionProvider",
+                "beforeEnteringAnalysis",
+                "(Lorg/jetbrains/kotlin/analysis/api/KaSession;Lorg/jetbrains/kotlin/psi/KtElement;)V",
+                false,
+            )
 
         instructions.insert(last, i1)
         instructions.insert(i1, i2)
@@ -2344,10 +2042,10 @@ class LintJarApiMigration(private val client: LintClient) {
         curr = end
         modified = true
       } else if (
-        curr.isVirtualCall(
-          "afterLeavingAnalysisContext",
-          "org/jetbrains/kotlin/analysis/api/lifetime/impl/NoWriteActionInAnalyseCallChecker",
-        )
+          curr.isVirtualCall(
+              "afterLeavingAnalysisContext",
+              "org/jetbrains/kotlin/analysis/api/lifetime/impl/NoWriteActionInAnalyseCallChecker",
+          )
       ) {
         // This is the fingerprint of the *end* of the old analysis API's version
         // of the analyze() call, after the lambda. Replace it with the new
@@ -2378,25 +2076,24 @@ class LintJarApiMigration(private val client: LintClient) {
 
         prev() ?: break
         expectVirtualCall(
-          "getNoWriteActionInAnalyseCallChecker",
-          "org/jetbrains/kotlin/analysis/api/session/KtAnalysisSessionProvider",
+            "getNoWriteActionInAnalyseCallChecker",
+            "org/jetbrains/kotlin/analysis/api/session/KtAnalysisSessionProvider",
         ) ?: break
         prev() ?: break
         val sessionProviderVariable = expectAload() ?: break
         prev() ?: break
         expectVirtualCall(
-          "afterLeavingAnalysisContext",
-          "org/jetbrains/kotlin/analysis/api/lifetime/KtLifetimeTokenFactory",
+            "afterLeavingAnalysisContext",
+            "org/jetbrains/kotlin/analysis/api/lifetime/KtLifetimeTokenFactory",
         ) ?: break
         prev() ?: break
-        expectVirtualCall("getToken", "org/jetbrains/kotlin/analysis/api/KtAnalysisSession")
-          ?: break
+        expectVirtualCall("getToken", "org/jetbrains/kotlin/analysis/api/KtAnalysisSession") ?: break
         prev() ?: break
         val sessionVariable = expectAload() ?: break
         prev() ?: break
         expectVirtualCall(
-          "getTokenFactory",
-          "org/jetbrains/kotlin/analysis/api/session/KtAnalysisSessionProvider",
+            "getTokenFactory",
+            "org/jetbrains/kotlin/analysis/api/session/KtAnalysisSessionProvider",
         ) ?: break
         prev() ?: break
         expectAload() ?: break
@@ -2418,13 +2115,13 @@ class LintJarApiMigration(private val client: LintClient) {
         val i2 = VarInsnNode(Opcodes.ALOAD, sessionVariable)
         val i3 = VarInsnNode(Opcodes.ALOAD, ktElementVariable)
         val i4 =
-          MethodInsnNode(
-            Opcodes.INVOKEVIRTUAL,
-            "org/jetbrains/kotlin/analysis/api/session/KaSessionProvider",
-            "afterLeavingAnalysis",
-            "(Lorg/jetbrains/kotlin/analysis/api/KaSession;Lorg/jetbrains/kotlin/psi/KtElement;)V",
-            false,
-          )
+            MethodInsnNode(
+                Opcodes.INVOKEVIRTUAL,
+                "org/jetbrains/kotlin/analysis/api/session/KaSessionProvider",
+                "afterLeavingAnalysis",
+                "(Lorg/jetbrains/kotlin/analysis/api/KaSession;Lorg/jetbrains/kotlin/psi/KtElement;)V",
+                false,
+            )
 
         instructions.insert(last, i1)
         instructions.insert(i1, i2)
@@ -2434,11 +2131,11 @@ class LintJarApiMigration(private val client: LintClient) {
         curr = end
         modified = true
       } else if (
-        curr.isStaticCall(
-          "getAllSuperTypes\$default",
-          "org/jetbrains/kotlin/analysis/api/components/KtTypeProviderMixIn",
-          // "((Lorg/jetbrains/kotlin/analysis/api/components/KtTypeProviderMixIn;Lorg/jetbrains/kotlin/analysis/api/types/KtType;ZILjava/lang/Object;)Ljava/util/List;"
-        )
+          curr.isStaticCall(
+              "getAllSuperTypes\$default",
+              "org/jetbrains/kotlin/analysis/api/components/KtTypeProviderMixIn",
+              // "((Lorg/jetbrains/kotlin/analysis/api/components/KtTypeProviderMixIn;Lorg/jetbrains/kotlin/analysis/api/types/KtType;ZILjava/lang/Object;)Ljava/util/List;"
+          )
       ) {
         val end = curr.next
 
@@ -2477,22 +2174,22 @@ class LintJarApiMigration(private val client: LintClient) {
         // TODO: Handle the other related type provider renames seen in (Kotlin repo commits)
         // 3bffc6b788147b75d16a7d61a20127e8a3d22c08 and afc4032c85b5d2f838d6170de4753163566d8b0b
         val newCall =
-          MethodInsnNode(
-            Opcodes.INVOKEINTERFACE,
-            "org/jetbrains/kotlin/analysis/api/KaSession",
-            "allSupertypes",
-            "(Lorg/jetbrains/kotlin/analysis/api/types/KaType;Z)Lkotlin/sequences/Sequence;",
-            true,
-          )
+            MethodInsnNode(
+                Opcodes.INVOKEINTERFACE,
+                "org/jetbrains/kotlin/analysis/api/KaSession",
+                "allSupertypes",
+                "(Lorg/jetbrains/kotlin/analysis/api/types/KaType;Z)Lkotlin/sequences/Sequence;",
+                true,
+            )
         instructions.insert(shouldApproximateLoad, newCall)
         val toList =
-          MethodInsnNode(
-            Opcodes.INVOKESTATIC,
-            "kotlin/sequences/SequencesKt",
-            "toList",
-            "(Lkotlin/sequences/Sequence;)Ljava/util/List;",
-            false,
-          )
+            MethodInsnNode(
+                Opcodes.INVOKESTATIC,
+                "kotlin/sequences/SequencesKt",
+                "toList",
+                "(Lkotlin/sequences/Sequence;)Ljava/util/List;",
+                false,
+            )
         instructions.insert(newCall, toList)
         val next = toList.next
         instructions.remove(next)
@@ -2500,22 +2197,22 @@ class LintJarApiMigration(private val client: LintClient) {
         curr = end
         modified = true
       } else if (
-        curr.isStaticCall(
-          "org/jetbrains/kotlin/analysis/api/calls/KtCallKt"
-          // (Lorg/jetbrains/kotlin/analysis/api/resolution/KaCallInfo;)Lorg/jetbrains/kotlin/analysis/api/resolution/KaFunctionCall;
-        )
+          curr.isStaticCall(
+              "org/jetbrains/kotlin/analysis/api/calls/KtCallKt"
+              // (Lorg/jetbrains/kotlin/analysis/api/resolution/KaCallInfo;)Lorg/jetbrains/kotlin/analysis/api/resolution/KaFunctionCall;
+          )
       ) {
         val curr = curr as? MethodInsnNode ?: break
         val newOwner =
-          if (curr.name == "getSymbol") {
-            // The following util is the only one migrated to ...resolution/KaCallKt.
-            // public val <S : ...Symbol, C : ...Signature<S>> ...MemberCall<S, C>.symbol: S
-            //    get() = partiallyAppliedSymbol.symbol
-            "org/jetbrains/kotlin/analysis/api/resolution/KaCallKt"
-          } else {
-            // Everything else is migrated to ...resolution/KaCallInfoKt.
-            "org/jetbrains/kotlin/analysis/api/resolution/KaCallInfoKt"
-          }
+            if (curr.name == "getSymbol") {
+              // The following util is the only one migrated to ...resolution/KaCallKt.
+              // public val <S : ...Symbol, C : ...Signature<S>> ...MemberCall<S, C>.symbol: S
+              //    get() = partiallyAppliedSymbol.symbol
+              "org/jetbrains/kotlin/analysis/api/resolution/KaCallKt"
+            } else {
+              // Everything else is migrated to ...resolution/KaCallInfoKt.
+              "org/jetbrains/kotlin/analysis/api/resolution/KaCallInfoKt"
+            }
         curr.owner = newOwner
         modified = true
       } else {
@@ -2560,8 +2257,7 @@ class LintJarApiMigration(private val client: LintClient) {
       val textifier = textifierClass.getDeclaredConstructor().newInstance()
       val tcv = traceVisitorClass.getDeclaredConstructor(printerClass).newInstance(textifier)
       accept(tcv as MethodVisitor)
-      @Suppress("UNCHECKED_CAST")
-      val lines = printerClass.getDeclaredMethod("getText").invoke(textifier) as List<Any>
+      @Suppress("UNCHECKED_CAST") val lines = printerClass.getDeclaredMethod("getText").invoke(textifier) as List<Any>
       return lines.joinToString("")
     } else {
       return toString()
@@ -2572,14 +2268,12 @@ class LintJarApiMigration(private val client: LintClient) {
     /** Useful for before/after diffing while debugging */
     private const val DEBUG = false
 
-    /**
-     * Is the given internal JVM name related to an API that this API migration tool cares about?
-     */
+    /** Is the given internal JVM name related to an API that this API migration tool cares about? */
     fun isRelevantType(s: String) = s.startsWith("org/jetbrains/kotlin/analysis/api/")
 
     /**
-     * For a file that has been determined that it needs API migration (via the [LintJarVerifier],
-     * this method returns a migrated jar, possibly cached.)
+     * For a file that has been determined that it needs API migration (via the [LintJarVerifier], this method returns a migrated jar,
+     * possibly cached.)
      */
     fun getMigratedJar(client: LintClient, jar: File, registryClass: String = ""): File {
       return LintJarApiMigration(client).getMigratedJar(jar, registryClass)

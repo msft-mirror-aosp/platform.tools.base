@@ -22,9 +22,9 @@ import com.android.tools.lint.checks.infrastructure.TestFiles.xml
 import com.android.tools.lint.detector.api.Detector
 
 private val INPUT_TYPE_TEXT =
-  xml(
-      "res/layout/main.xml",
-      """
+    xml(
+            "res/layout/main.xml",
+            """
           <?xml version="1.0" encoding="utf-8"?>
           <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
               xmlns:tools="http://schemas.android.com/tools"
@@ -38,13 +38,13 @@ private val INPUT_TYPE_TEXT =
                 tools:ignore="LabelFor" />
           </LinearLayout>
     """,
-    )
-    .indented()
+        )
+        .indented()
 
 private val INPUT_TYPE_PASSWORD =
-  xml(
-      "res/layout/main.xml",
-      """
+    xml(
+            "res/layout/main.xml",
+            """
           <?xml version="1.0" encoding="utf-8"?>
           <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
               xmlns:tools="http://schemas.android.com/tools"
@@ -58,12 +58,12 @@ private val INPUT_TYPE_PASSWORD =
                 tools:ignore="LabelFor" />
           </LinearLayout>
     """,
-    )
-    .indented()
+        )
+        .indented()
 
 private val KOTLIN_INPUT_TYPE_NORMAL =
-  kotlin(
-      """
+    kotlin(
+            """
           package com.example.application
 
           import android.text.InputType
@@ -74,12 +74,12 @@ private val KOTLIN_INPUT_TYPE_NORMAL =
             editText.inputType = InputType.TYPE_TEXT_VARIATION_NORMAL
           }
       """
-    )
-    .indented()
+        )
+        .indented()
 
 private val KOTLIN_INPUT_TYPE_PASSWORD =
-  kotlin(
-      """
+    kotlin(
+            """
           package com.example.application
 
           import android.text.InputType
@@ -90,12 +90,12 @@ private val KOTLIN_INPUT_TYPE_PASSWORD =
             editText.inputType = InputType.TYPE_TEXT_VARIATION_PASSWORD
           }
       """
-    )
-    .indented()
+        )
+        .indented()
 
 private val JAVA_INPUT_TYPE_NORMAL =
-  java(
-      """
+    java(
+            """
           package com.example.application;
 
           import android.text.InputType;
@@ -113,12 +113,12 @@ private val JAVA_INPUT_TYPE_NORMAL =
             }
           }
       """
-    )
-    .indented()
+        )
+        .indented()
 
 private val JAVA_INPUT_TYPE_PASSWORD =
-  java(
-      """
+    java(
+            """
           package com.example.application;
 
           import android.text.InputType;
@@ -140,12 +140,12 @@ private val JAVA_INPUT_TYPE_PASSWORD =
             }
           }
       """
-    )
-    .indented()
+        )
+        .indented()
 
 private val NON_WEAR_MANIFEST =
-  manifest(
-      """
+    manifest(
+            """
           <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                package="com.example.helloworld"
                android:versionCode="1"
@@ -154,12 +154,12 @@ private val NON_WEAR_MANIFEST =
              <application android:icon="@drawable/icon" android:label="@string/app_name" />
           </manifest>
       """
-    )
-    .indented()
+        )
+        .indented()
 
 private val WEAR_MANIFEST =
-  manifest(
-      """
+    manifest(
+            """
           <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                package="com.example.helloworld"
                android:versionCode="1"
@@ -169,8 +169,8 @@ private val WEAR_MANIFEST =
              <application android:icon="@drawable/icon" android:label="@string/app_name" />
           </manifest>
       """
-    )
-    .indented()
+        )
+        .indented()
 
 class WearPasswordInputDetectorTest : AbstractCheckTest() {
 
@@ -178,16 +178,16 @@ class WearPasswordInputDetectorTest : AbstractCheckTest() {
 
   fun testDocumentationExample() {
     lint()
-      .files(INPUT_TYPE_PASSWORD, WEAR_MANIFEST)
-      .run()
-      .expect(
-        """
+        .files(INPUT_TYPE_PASSWORD, WEAR_MANIFEST)
+        .run()
+        .expect(
+            """
         res/layout/main.xml:10: Error: Don't ask Wear OS users for a password [WearPasswordInput]
               android:inputType="textPassword"
               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         1 errors, 0 warnings
       """
-      )
+        )
   }
 
   fun testInputTypeTextOnWear() {
@@ -204,15 +204,15 @@ class WearPasswordInputDetectorTest : AbstractCheckTest() {
 
   fun testKotlinInputTypePasswordOnWear() {
     lint()
-      .files(KOTLIN_INPUT_TYPE_PASSWORD, WEAR_MANIFEST)
-      .run()
-      .expect(
-        """
+        .files(KOTLIN_INPUT_TYPE_PASSWORD, WEAR_MANIFEST)
+        .run()
+        .expect(
+            """
           src/com/example/application/test.kt:8: Error: Don't ask Wear OS users for a password [WearPasswordInput]
             editText.inputType = InputType.TYPE_TEXT_VARIATION_PASSWORD
                                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
           1 errors, 0 warnings"""
-      )
+        )
   }
 
   fun testKotlinInputTypeNormalOnWear() {
@@ -229,10 +229,10 @@ class WearPasswordInputDetectorTest : AbstractCheckTest() {
 
   fun testJavaInputTypePasswordOnWear() {
     lint()
-      .files(JAVA_INPUT_TYPE_PASSWORD, WEAR_MANIFEST)
-      .run()
-      .expect(
-        """
+        .files(JAVA_INPUT_TYPE_PASSWORD, WEAR_MANIFEST)
+        .run()
+        .expect(
+            """
         src/com/example/application/MainActivity.java:11: Error: Don't ask Wear OS users for a password [WearPasswordInput]
             textView.setInputType(InputType.TYPE_TEXT_VARIATION_PASSWORD);
                                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -247,7 +247,7 @@ class WearPasswordInputDetectorTest : AbstractCheckTest() {
                                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         4 errors, 0 warnings
       """
-      )
+        )
   }
 
   fun testJavaInputTypeNormalOnWear() {

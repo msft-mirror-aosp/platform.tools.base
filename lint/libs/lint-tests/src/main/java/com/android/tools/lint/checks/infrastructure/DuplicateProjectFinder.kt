@@ -21,19 +21,15 @@ import com.google.common.hash.Hashing
 import java.io.File
 
 /**
- * Finds cases where the same lint project is seen by more than one test. This catches cases where
- * I've accidentally duplicated tests; this happened in cases where I for example had
- * ".incremental()" enabled to test scenarios for the IDE -- now that resource repositories are
- * always enabled, I want to remove the .incremental() call instead of the whole test, since it's
- * possible that the incremental tests is the only one covering various corner cases around using
- * the resource repository (since previously that was directly linked to resource repository
- * access). Instead, I can now just delete the incremental declarations and then run the tests
- * through this finder to see if they're unique or just duplicating something already being tested.
- * (Note that this detector does not encode all lint() task attributes, so take care to look at the
- * full project config to verify that two potentially duplicate tests are really duplicates.
+ * Finds cases where the same lint project is seen by more than one test. This catches cases where I've accidentally duplicated tests; this
+ * happened in cases where I for example had ".incremental()" enabled to test scenarios for the IDE -- now that resource repositories are
+ * always enabled, I want to remove the .incremental() call instead of the whole test, since it's possible that the incremental tests is the
+ * only one covering various corner cases around using the resource repository (since previously that was directly linked to resource
+ * repository access). Instead, I can now just delete the incremental declarations and then run the tests through this finder to see if
+ * they're unique or just duplicating something already being tested. (Note that this detector does not encode all lint() task attributes,
+ * so take care to look at the full project config to verify that two potentially duplicate tests are really duplicates.
  *
- * When I first ran this on the built-in tests (before auditing for subtle differences in the tests)
- * it flagged 62 tests as duplicates!
+ * When I first ran this on the built-in tests (before auditing for subtle differences in the tests) it flagged 62 tests as duplicates!
  */
 class DuplicateProjectFinder {
   /** Map from checksum to corresponding test. */

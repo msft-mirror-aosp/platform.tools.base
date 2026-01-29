@@ -22,36 +22,29 @@ class UnboundedSetTest {
 
   @Test
   fun `inclusion works`() {
-    Truth.assertThat(unboundedSetOf("foo", "bar") isSubsetOf unboundedSetOf("qux", "bar", "foo"))
-      .isTrue()
+    Truth.assertThat(unboundedSetOf("foo", "bar") isSubsetOf unboundedSetOf("qux", "bar", "foo")).isTrue()
     Truth.assertThat(unboundedSetOf("foo", "bar") isSubsetOf unboundedSetOfAll()).isTrue()
     Truth.assertThat(unboundedSetOfAll<String>() isSubsetOf unboundedSetOfAll()).isTrue()
   }
 
   @Test
   fun `intersection works`() {
-    Truth.assertThat(unboundedSetOf("foo", "bar") intersectedWith unboundedSetOf("qux", "bar"))
-      .isEqualTo(unboundedSetOf("bar"))
-    Truth.assertThat(unboundedSetOf("foo", "bar") intersectedWith unboundedSetOfAll())
-      .isEqualTo(unboundedSetOf("foo", "bar"))
+    Truth.assertThat(unboundedSetOf("foo", "bar") intersectedWith unboundedSetOf("qux", "bar")).isEqualTo(unboundedSetOf("bar"))
+    Truth.assertThat(unboundedSetOf("foo", "bar") intersectedWith unboundedSetOfAll()).isEqualTo(unboundedSetOf("foo", "bar"))
   }
 
   @Test
   fun `union works`() {
-    Truth.assertThat(unboundedSetOf("foo", "bar") unionedWith unboundedSetOf("bar", "qux"))
-      .isEqualTo(unboundedSetOf("foo", "bar", "qux"))
-    Truth.assertThat(unboundedSetOf("foo", "bar") unionedWith unboundedSetOfAll())
-      .isEqualTo(unboundedSetOfAll<String>())
+    Truth.assertThat(unboundedSetOf("foo", "bar") unionedWith unboundedSetOf("bar", "qux")).isEqualTo(unboundedSetOf("foo", "bar", "qux"))
+    Truth.assertThat(unboundedSetOf("foo", "bar") unionedWith unboundedSetOfAll()).isEqualTo(unboundedSetOfAll<String>())
   }
 
   @Test
   fun `map works`() {
-    Truth.assertThat(unboundedSetOf("foo", "bar", "yeah").map { it.length })
-      .isEqualTo(unboundedSetOf(3, 4))
+    Truth.assertThat(unboundedSetOf("foo", "bar", "yeah").map { it.length }).isEqualTo(unboundedSetOf(3, 4))
 
     // TODO unintuitive?
-    Truth.assertThat((unboundedSetOfAll<String>()).map { it.length })
-      .isEqualTo(unboundedSetOfAll<Int>())
+    Truth.assertThat((unboundedSetOfAll<String>()).map { it.length }).isEqualTo(unboundedSetOfAll<Int>())
   }
 
   @Test
@@ -66,9 +59,9 @@ class UnboundedSetTest {
   }
 
   private fun <X, Y, Z> testMapPreservingComposition(
-    pool: List<UnboundedSet<X>>,
-    fst: (X) -> Y,
-    snd: (Y) -> Z,
+      pool: List<UnboundedSet<X>>,
+      fst: (X) -> Y,
+      snd: (Y) -> Z,
   ) {
     for (s in pool) {
       val s1 = s.map(fst).map(snd)
@@ -79,13 +72,13 @@ class UnboundedSetTest {
 }
 
 class ConstraintLatticeTest :
-  LatticeTest<UnboundedSet<String>>(
-    lattice = constraintLattice(),
-    poolInits = listOf(unboundedSetOf("Ui"), unboundedSetOf("Binder"), unboundedSetOf("Worker")),
-  )
+    LatticeTest<UnboundedSet<String>>(
+        lattice = constraintLattice(),
+        poolInits = listOf(unboundedSetOf("Ui"), unboundedSetOf("Binder"), unboundedSetOf("Worker")),
+    )
 
 class PossibilityLatticeTest :
-  LatticeTest<UnboundedSet<String>>(
-    lattice = possibilityLattice(),
-    poolInits = listOf(unboundedSetOf("Cat"), unboundedSetOf("Dog")),
-  )
+    LatticeTest<UnboundedSet<String>>(
+        lattice = possibilityLattice(),
+        poolInits = listOf(unboundedSetOf("Cat"), unboundedSetOf("Dog")),
+    )

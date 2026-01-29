@@ -23,9 +23,9 @@ import com.android.tools.lint.detector.api.Detector
 class DiscouragedDetectorTest : AbstractCheckTest() {
 
   private val discouragedAnnotationStub =
-    kotlin(
-        "src/androidx/annotation/Discouraged.kt",
-        """
+      kotlin(
+              "src/androidx/annotation/Discouraged.kt",
+              """
         /* HIDE-FROM-DOCUMENTATION */
         package androidx.annotation
         @Retention(AnnotationRetention.SOURCE)
@@ -43,13 +43,13 @@ class DiscouragedDetectorTest : AbstractCheckTest() {
             val message: String
         )
         """,
-      )
-      .indented()
+          )
+          .indented()
 
   private val resourcesStub =
-    java(
-        "src/android/content/res/Resources.java",
-        """
+      java(
+              "src/android/content/res/Resources.java",
+              """
             /* HIDE-FROM-DOCUMENTATION */
             package android.content.res;
 
@@ -67,12 +67,12 @@ class DiscouragedDetectorTest : AbstractCheckTest() {
                 public int getValue(int id, TypedValue outValue, boolean resolveRefs) { }
             }
         """,
-      )
-      .indented()
+          )
+          .indented()
 
   fun testDocumentationExample() {
     val expected =
-      """
+        """
             src/test/pkg/Test1.java:9: Warning: Use of this function is discouraged. It is more efficient to retrieve resources by identifier than by name.
             See getValue(int id, TypedValue outValue, boolean resolveRefs). [DiscouragedApi]
                     Resources.getValue("name", testValue, false);
@@ -80,9 +80,9 @@ class DiscouragedDetectorTest : AbstractCheckTest() {
             0 errors, 1 warnings
             """
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
                 package test.pkg;
 
                 import android.content.res.Resources;
@@ -96,20 +96,20 @@ class DiscouragedDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-          )
-          .indented(),
-        resourcesStub,
-        discouragedAnnotationStub,
-      )
-      .run()
-      .expect(expected)
+                )
+                .indented(),
+            resourcesStub,
+            discouragedAnnotationStub,
+        )
+        .run()
+        .expect(expected)
   }
 
   fun test205800560() {
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
                 package test.pkg
 
                 import android.app.Activity
@@ -133,28 +133,28 @@ class DiscouragedDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-          )
-          .indented(),
-        rClass("test.pkg", "@layout/activity_main", "@id/text"),
-        discouragedAnnotationStub,
-      )
-      .allowDuplicates()
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            rClass("test.pkg", "@layout/activity_main", "@id/text"),
+            discouragedAnnotationStub,
+        )
+        .allowDuplicates()
+        .run()
+        .expect(
+            """
             src/test/pkg/MainActivity.kt:13: Warning: don't use this [DiscouragedApi]
                     findViewById<TextView>(R.id.text)?.text = getSomeString()
                                                               ~~~~~~~~~~~~~
             0 errors, 1 warnings
             """
-      )
+        )
   }
 
   fun testDiscouragedAttributes() {
     lint()
-      .files(
-        manifest(
-            """
+        .files(
+            manifest(
+                    """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="test.pkg">
                     <application
@@ -171,13 +171,13 @@ class DiscouragedDetectorTest : AbstractCheckTest() {
                     </application>
                 </manifest>
           """
-          )
-          .indented()
-      )
-      .allowDuplicates()
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .allowDuplicates()
+        .run()
+        .expect(
+            """
         AndroidManifest.xml:7: Warning: Minimum and maximum aspect ratios will be ignored in most cases, starting from Android 16. Android is moving toward a model where apps are expected to adapt to various orientations, display sizes, and aspect ratios. [DiscouragedApi]
                     android:maxAspectRatio="1.0"
                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -189,14 +189,14 @@ class DiscouragedDetectorTest : AbstractCheckTest() {
                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         0 errors, 3 warnings
             """
-      )
+        )
   }
 
   fun testScheduleAtFixedRate() {
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
             package com.pkg
 
             import java.time.Instant
@@ -218,12 +218,12 @@ class DiscouragedDetectorTest : AbstractCheckTest() {
               }
             }
             """
-          )
-          .indented()
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .run()
+        .expect(
+            """
         src/com/pkg/Main.kt:16: Warning: Use of scheduleAtFixedRate is strongly discouraged because it can lead to unexpected behavior when Android processes become cached (tasks may unexpectedly execute hundreds or thousands of times in quick succession when a process changes from cached to uncached); prefer using scheduleWithFixedDelay [DiscouragedApi]
             executor.scheduleAtFixedRate({}, 10, 30, TimeUnit.SECONDS)
             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -235,9 +235,9 @@ class DiscouragedDetectorTest : AbstractCheckTest() {
             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         0 errors, 3 warnings
         """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
         Fix for src/com/pkg/Main.kt line 16: Replace with scheduleWithFixedDelay:
         @@ -16 +16 @@
         -    executor.scheduleAtFixedRate({}, 10, 30, TimeUnit.SECONDS)
@@ -247,38 +247,38 @@ class DiscouragedDetectorTest : AbstractCheckTest() {
         -    timer.scheduleAtFixedRate(bar(), 10, 30)
         +    timer.schedule(bar(), 10, 30)
         """
-      )
+        )
   }
 
   fun testDiscouragedClassXmlReference() {
     lint()
-      .files(
-        kotlin(
-            "src/com/pkg/Button.kt",
-            """
+        .files(
+            kotlin(
+                    "src/com/pkg/Button.kt",
+                    """
             package com.pkg
             import androidx.annotation.Discouraged
             @Discouraged(message="Don't use this class")
             open class Button
             open class ToggleButton : Button // WARN 1: Referencing discouraged super class
             """,
-          )
-          .indented(),
-        xml(
-            "res/layout/activity_main.xml",
-            """
+                )
+                .indented(),
+            xml(
+                    "res/layout/activity_main.xml",
+                    """
             <merge>
                 <com.pkg.Button/> <!-- WARN 2: Directly annotated -->
                 <com.pkg.ToggleButton/> <!-- WARN 3: Superclass annotated -->
             </merge>
             """,
-          )
-          .indented(),
-        discouragedAnnotationStub,
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            discouragedAnnotationStub,
+        )
+        .run()
+        .expect(
+            """
         src/com/pkg/Button.kt:5: Warning: Don't use this class [DiscouragedApi]
         open class ToggleButton : Button // WARN 1: Referencing discouraged super class
                                   ~~~~~~
@@ -290,15 +290,15 @@ class DiscouragedDetectorTest : AbstractCheckTest() {
              ~~~~~~~~~~~~~~~~~~~~
         0 errors, 3 warnings
         """
-      )
+        )
   }
 
   fun testNested() {
     // Referencing a class that has an outer class that is discouraged
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
             package test.pkg
 
             import android.app.Activity
@@ -310,10 +310,10 @@ class DiscouragedDetectorTest : AbstractCheckTest() {
             }
             open class OkActivity : Activity()
             """
-          )
-          .indented(),
-        manifest(
-            """
+                )
+                .indented(),
+            manifest(
+                    """
             <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                 package="test.pkg" >
                 <application>
@@ -322,26 +322,26 @@ class DiscouragedDetectorTest : AbstractCheckTest() {
                 </application>
             </manifest>
             """
-          )
-          .indented(),
-        discouragedAnnotationStub,
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            discouragedAnnotationStub,
+        )
+        .run()
+        .expect(
+            """
         AndroidManifest.xml:5: Warning: Don't use this [DiscouragedApi]
                 <activity android:name="test.pkg.Private＄MyActivity"/>     <!-- WARN -->
                                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~
         0 errors, 1 warnings
         """
-      )
+        )
   }
 
   fun testDiscouragedManifestClassReference() {
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
             package test.pkg;
 
             import android.app.Activity;
@@ -354,19 +354,19 @@ class DiscouragedDetectorTest : AbstractCheckTest() {
                 }
             }
             """
-          )
-          .indented(),
-        java(
-            """
+                )
+                .indented(),
+            java(
+                    """
             package test.pkg;
 
             public class MyInheritedActivity extends Private.MyActivity { // WARN 5
             }
             """
-          )
-          .indented(),
-        manifest(
-            """
+                )
+                .indented(),
+            manifest(
+                    """
             <manifest xmlns:android="http://schemas.android.com/apk/res/android">
                 <!-- package="test.pkg" -->
                 <application>
@@ -378,23 +378,23 @@ class DiscouragedDetectorTest : AbstractCheckTest() {
                 </application>
             </manifest>
             """
-          )
-          .indented(),
-        kts(
-            """
+                )
+                .indented(),
+            kts(
+                    """
               android {
                   namespace = "test.pkg"
               }
               """
-          )
-          .indented(),
-        // Using Gradle, so we need to move stub to the right source set, src/main/java rather than
-        // src/
-        gradleSourceSet(discouragedAnnotationStub),
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            // Using Gradle, so we need to move stub to the right source set, src/main/java rather than
+            // src/
+            gradleSourceSet(discouragedAnnotationStub),
+        )
+        .run()
+        .expect(
+            """
         src/main/AndroidManifest.xml:5: Warning: Don't use this [DiscouragedApi]
                 <activity android:name="test.pkg.Private＄MyActivity"/>     <!-- WARN 1 -->
                                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -412,13 +412,13 @@ class DiscouragedDetectorTest : AbstractCheckTest() {
                                                  ~~~~~~~~~~~~~~~~~~
         0 errors, 5 warnings
         """
-      )
+        )
   }
 
   private fun gradleSourceSet(kotlinFile: TestFile): TestFile {
     return kotlin(
-      "src/main/java/" + kotlinFile.targetRelativePath.removePrefix("src/"),
-      kotlinFile.contents.trimIndent(),
+        "src/main/java/" + kotlinFile.targetRelativePath.removePrefix("src/"),
+        kotlinFile.contents.trimIndent(),
     )
   }
 

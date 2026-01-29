@@ -72,17 +72,16 @@ class PrivateApiParser {
   }
 }
 
-private fun String.fromSignature(): String =
-  if (startsWith("L") && endsWith(";")) substring(1, length - 1) else this
+private fun String.fromSignature(): String = if (startsWith("L") && endsWith(";")) substring(1, length - 1) else this
 
 private fun parse(name: String): Restriction =
-  when (name) {
-    "SDK" -> Restriction.ALLOW
-    "BLOCKED" -> Restriction.DENY
-    "UNSUPPORTED" -> Restriction.MAYBE
-    "MAX_TARGET_O" -> Restriction.MAYBE_MAX_O
-    "MAX_TARGET_P" -> Restriction.MAYBE_MAX_P
-    "MAX_TARGET_Q" -> Restriction.MAYBE_MAX_Q
-    "MAX_TARGET_R" -> Restriction.MAYBE_MAX_R
-    else -> Restriction.UNKNOWN
-  }
+    when (name) {
+      "SDK" -> Restriction.ALLOW
+      "BLOCKED" -> Restriction.DENY
+      "UNSUPPORTED" -> Restriction.MAYBE
+      "MAX_TARGET_O" -> Restriction.MAYBE_MAX_O
+      "MAX_TARGET_P" -> Restriction.MAYBE_MAX_P
+      "MAX_TARGET_Q" -> Restriction.MAYBE_MAX_Q
+      "MAX_TARGET_R" -> Restriction.MAYBE_MAX_R
+      else -> Restriction.UNKNOWN
+    }

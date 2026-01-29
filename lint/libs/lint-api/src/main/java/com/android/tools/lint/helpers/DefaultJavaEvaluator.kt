@@ -63,8 +63,8 @@ import org.jetbrains.uast.getContainingUFile
 import org.jetbrains.uast.kotlin.psi.UastFakeLightMethodBase
 
 open class DefaultJavaEvaluator(
-  private val myProject: com.intellij.openapi.project.Project?,
-  private val myLintProject: Project?,
+    private val myProject: com.intellij.openapi.project.Project?,
+    private val myLintProject: Project?,
 ) : JavaEvaluator() {
   // cache of package name to package-info.class.
   private val packageInfoCache = mutableMapOf<String, PsiPackage>()
@@ -99,16 +99,13 @@ open class DefaultJavaEvaluator(
   override fun findClass(qualifiedName: String): PsiClass? {
     myProject ?: return null
     try {
-      return JavaPsiFacade.getInstance(myProject)
-        .findClass(qualifiedName, GlobalSearchScope.allScope(myProject))
+      return JavaPsiFacade.getInstance(myProject).findClass(qualifiedName, GlobalSearchScope.allScope(myProject))
     } catch (ex: Exception) {
       // For example, ProcessCanceledException.
       if (ex is ControlFlowException) throw ex
 
       if (LintClient.isUnitTest) {
-        myLintProject
-          ?.client
-          ?.log(Severity.ERROR, ex, "Exception thrown for qualified class name: $qualifiedName")
+        myLintProject?.client?.log(Severity.ERROR, ex, "Exception thrown for qualified class name: $qualifiedName")
       }
 
       return null
@@ -116,9 +113,7 @@ open class DefaultJavaEvaluator(
   }
 
   override fun getClassType(psiClass: PsiClass?): PsiClassType? {
-    return if (myProject != null && psiClass != null)
-      JavaPsiFacade.getElementFactory(myProject).createType(psiClass)
-    else null
+    return if (myProject != null && psiClass != null) JavaPsiFacade.getElementFactory(myProject).createType(psiClass) else null
   }
 
   override fun getTypeClass(psiType: PsiType?): PsiClass? {
@@ -133,16 +128,15 @@ open class DefaultJavaEvaluator(
       // merge in external annotations and inherited annotations from the class
       // files, and pick unique.
       val annotations =
-        if (owner is UField) {
-          // https://youtrack.jetbrains.com/issue/KTIJ-33663
-          // Some annotations without field use-site target have been modeled in UField.
-          // Instead, we introduced a new one to retrieve all source-level annotations.
-          owner.sourceAnnotations
-        } else {
-          owner.uAnnotations
-        }
-      val mergeAnnotations =
-        getAnnotations(owner.javaPsi as? PsiModifierListOwner, inHierarchy, owner)
+          if (owner is UField) {
+            // https://youtrack.jetbrains.com/issue/KTIJ-33663
+            // Some annotations without field use-site target have been modeled in UField.
+            // Instead, we introduced a new one to retrieve all source-level annotations.
+            owner.sourceAnnotations
+          } else {
+            owner.uAnnotations
+          }
+      val mergeAnnotations = getAnnotations(owner.javaPsi as? PsiModifierListOwner, inHierarchy, owner)
       if (annotations.isNotEmpty()) {
         if (mergeAnnotations.isEmpty()) {
           return annotations
@@ -176,8 +170,8 @@ open class DefaultJavaEvaluator(
 
   @Suppress("DEPRECATION", "OverridingDeprecatedMember")
   override fun getAllAnnotations(
-    owner: PsiModifierListOwner,
-    inHierarchy: Boolean,
+      owner: PsiModifierListOwner,
+      inHierarchy: Boolean,
   ): Array<PsiAnnotation> {
     if (owner is UDeclaration) {
       // Work around bug: Passing in a UAST node to this method generates a
@@ -192,9 +186,9 @@ open class DefaultJavaEvaluator(
   }
 
   override fun getAnnotations(
-    owner: PsiModifierListOwner?,
-    inHierarchy: Boolean,
-    parent: UElement?,
+      owner: PsiModifierListOwner?,
+      inHierarchy: Boolean,
+      parent: UElement?,
   ): List<UAnnotation> {
     owner ?: return emptyList()
 
@@ -209,26 +203,25 @@ open class DefaultJavaEvaluator(
     // withInferred=false when running outside the IDE: we don't have an InferredAnnotationsManager
     val withInferred = false
     val psiAnnotations =
-      when (owner) {
-        is UastFakeLightMethodBase -> {
-          // For `reified inline` or `@Deprecated(Hidden)`, UAST creates a "fake" PSI
-          // since LC doesn't model that. Such modeling has a separate list of annotations,
-          // while [AnnotationUtil] expects to retrieve annotations from modifier list.
-          // As a stopgap, we better read the underlying annotations directly here.
-          owner.annotations
+        when (owner) {
+          is UastFakeLightMethodBase -> {
+            // For `reified inline` or `@Deprecated(Hidden)`, UAST creates a "fake" PSI
+            // since LC doesn't model that. Such modeling has a separate list of annotations,
+            // while [AnnotationUtil] expects to retrieve annotations from modifier list.
+            // As a stopgap, we better read the underlying annotations directly here.
+            owner.annotations
+          }
+          else -> AnnotationUtil.getAllAnnotations(owner, inHierarchy, null, withInferred)
         }
-        else -> AnnotationUtil.getAllAnnotations(owner, inHierarchy, null, withInferred)
-      }
     return psiAnnotations.mapNotNull { psi ->
-      UastFacade.convertElement(psi, if (inHierarchy) null else parent, UAnnotation::class.java)
-        as? UAnnotation
+      UastFacade.convertElement(psi, if (inHierarchy) null else parent, UAnnotation::class.java) as? UAnnotation
     }
   }
 
   @Suppress("DEPRECATION", "OverridingDeprecatedMember")
   override fun findAnnotationInHierarchy(
-    listOwner: PsiModifierListOwner,
-    vararg annotationNames: String,
+      listOwner: PsiModifierListOwner,
+      vararg annotationNames: String,
   ): PsiAnnotation? {
     if (listOwner is UDeclaration) {
       // Work around UAST bug
@@ -239,8 +232,8 @@ open class DefaultJavaEvaluator(
   }
 
   override fun getAnnotationInHierarchy(
-    listOwner: PsiModifierListOwner,
-    vararg annotationNames: String,
+      listOwner: PsiModifierListOwner,
+      vararg annotationNames: String,
   ): UAnnotation? {
     @Suppress("DEPRECATION")
     return findAnnotationInHierarchy(listOwner, *annotationNames)?.let { psi ->
@@ -250,8 +243,8 @@ open class DefaultJavaEvaluator(
 
   @Suppress("DEPRECATION", "OverridingDeprecatedMember")
   override fun findAnnotation(
-    listOwner: PsiModifierListOwner?,
-    vararg annotationNames: String,
+      listOwner: PsiModifierListOwner?,
+      vararg annotationNames: String,
   ): PsiAnnotation? {
     if (listOwner is UDeclaration) {
       // Work around UAST bug
@@ -262,8 +255,8 @@ open class DefaultJavaEvaluator(
   }
 
   override fun getAnnotation(
-    listOwner: PsiModifierListOwner?,
-    vararg annotationNames: String,
+      listOwner: PsiModifierListOwner?,
+      vararg annotationNames: String,
   ): UAnnotation? {
     @Suppress("DEPRECATION")
     return findAnnotation(listOwner, *annotationNames)?.let { psi ->
@@ -293,14 +286,15 @@ open class DefaultJavaEvaluator(
 
     val path = file.path
     return projects
-      .asSequence()
-      .filter { path == it.dir.path || path.startsWith(it.dir.path + File.separator) }
-      .maxByOrNull { it.dir.path.length }
+        .asSequence()
+        .filter { path == it.dir.path || path.startsWith(it.dir.path + File.separator) }
+        .maxByOrNull { it.dir.path.length }
   }
 
   override fun findJarPath(element: PsiElement): String? {
     val containingFile = element.containingFile
-    @Suppress("USELESS_CAST") return findJarPath(containingFile as PsiFile?)
+    @Suppress("USELESS_CAST")
+    return findJarPath(containingFile as PsiFile?)
   }
 
   override fun findJarPath(element: UElement): String? {
@@ -374,14 +368,14 @@ open class DefaultJavaEvaluator(
   override fun getPackage(node: UElement): PsiPackage? {
     val uFile = node.getContainingUFile() ?: return null
     val psi =
-      if (isKotlin(uFile.lang)) {
-        // [KotlinUFile.javaPsi] is a delegation to (U|S)LC's [FakeFileForLightClass]
-        // while we already have sourcePsi of [KtFile]
-        // through which we can easily get package fq name.
-        uFile.sourcePsi
-      } else {
-        uFile.javaPsi ?: uFile.sourcePsi
-      }
+        if (isKotlin(uFile.lang)) {
+          // [KotlinUFile.javaPsi] is a delegation to (U|S)LC's [FakeFileForLightClass]
+          // while we already have sourcePsi of [KtFile]
+          // through which we can easily get package fq name.
+          uFile.sourcePsi
+        } else {
+          uFile.javaPsi ?: uFile.sourcePsi
+        }
     return getPackage(psi)
   }
 
@@ -399,8 +393,7 @@ open class DefaultJavaEvaluator(
   @Suppress("OverridingDeprecatedMember", "DEPRECATION")
   override fun getInternalName(psiClassType: PsiClassType): String? {
     val erased = erasure(psiClassType)
-    return if (erased is PsiClassType) super.getInternalName(erased)
-    else super.getInternalName(psiClassType)
+    return if (erased is PsiClassType) super.getInternalName(erased) else super.getInternalName(psiClassType)
   }
 
   @Suppress("OverridingDeprecatedMember")
@@ -413,8 +406,8 @@ open class DefaultJavaEvaluator(
   }
 
   override fun computeArgumentMapping(
-    call: UCallExpression,
-    method: PsiMethod,
+      call: UCallExpression,
+      method: PsiMethod,
   ): Map<UExpression, PsiParameter> {
     val parameterList = method.parameterList
     if (parameterList.parametersCount == 0) {
@@ -433,10 +426,7 @@ open class DefaultJavaEvaluator(
     var j = 0
     val first = parameters.firstOrNull()?.name
     // check if "$self" for UltraLightParameter
-    if (
-      (first?.startsWith("\$this") == true || first?.startsWith("\$self") == true) &&
-        isKotlin(call.lang)
-    ) {
+    if ((first?.startsWith("\$this") == true || first?.startsWith("\$self") == true) && isKotlin(call.lang)) {
       // Kotlin extension method.
       j++
     }

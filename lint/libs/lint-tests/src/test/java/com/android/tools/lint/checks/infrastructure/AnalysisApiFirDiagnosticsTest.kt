@@ -54,13 +54,13 @@ class AnalysisApiFirDiagnosticsTest : AbstractCheckTest(), AnalysisApiDiagnostic
   @Test
   fun testDiagnostics_NullableFromJava_jspecify() {
     checkDiagnostics_NullableFromJava_jspecify(
-      """
+        """
       src/main.kt:3: Warning: $NULLNESS_MESSAGE 'String?'. [KotlinCompilerDiagnostic]
       fun go(j: J) = j.s().length
                      ~~~~~~~~~~~~
       0 errors, 1 warnings
       """,
-      "2.0",
+        "2.0",
     )
   }
 
@@ -74,7 +74,7 @@ class AnalysisApiFirDiagnosticsTest : AbstractCheckTest(), AnalysisApiDiagnostic
       return
     }
     checkDiagnostics_NullableFromJava_androidx(
-      """
+        """
       src/main.kt:7: Warning: $NULLNESS_MESSAGE 'String?'. [KotlinCompilerDiagnostic]
         val unused = v.compareTo("foo")
                      ~~~~~~~~~~~~~~~~~~
@@ -86,7 +86,7 @@ class AnalysisApiFirDiagnosticsTest : AbstractCheckTest(), AnalysisApiDiagnostic
   @Test
   fun testDiagnostics_NullableFromKt() {
     checkDiagnostics_NullableFromKt(
-      """
+        """
        src/main.kt:7: Warning: $NULLNESS_MESSAGE 'String?'. [KotlinCompilerDiagnostic]
          val unused = v.compareTo("foo")
                       ~~~~~~~~~~~~~~~~~~

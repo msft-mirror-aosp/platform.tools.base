@@ -25,53 +25,53 @@ class MissingResourcesPropertiesDetectorTest : AbstractCheckTest() {
 
   fun testDocumentationExample() {
     lint()
-      .files(
-        gradle(
-            "build.gradle",
-            """
-               apply plugin: 'com.android.application'
+        .files(
+            gradle(
+                    "build.gradle",
+                    """
+                    apply plugin: 'com.android.application'
 
-               android {
-                 androidResources {
-                   generateLocaleConfig true
-                 }
-               }
-           """
-              .trimIndent(),
-          )
-          .indented()
-      )
-      .run()
-      .expect(
-        """
+                    android {
+                      androidResources {
+                        generateLocaleConfig true
+                      }
+                    }
+                    """
+                        .trimIndent(),
+                )
+                .indented()
+        )
+        .run()
+        .expect(
+            """
             build.gradle:5: Warning: Missing resources.properties file [MissingResourcesProperties]
                 generateLocaleConfig true
                 ~~~~~~~~~~~~~~~~~~~~
             0 errors, 1 warnings
-        """
-          .trimIndent()
-      )
+            """
+                .trimIndent()
+        )
 
     // Remove warning
     lint()
-      .files(
-        gradle(
-            "build.gradle",
-            """
-              apply plugin: 'com.android.application'
+        .files(
+            gradle(
+                    "build.gradle",
+                    """
+                    apply plugin: 'com.android.application'
 
-              android {
-                androidResources {
-                  generateLocaleConfig true
-                }
-              }
-          """
-              .trimIndent(),
-          )
-          .indented(),
-        source("src/main/res/resources.properties", "unqualifiedResLocale=en-US").indented(),
-      )
-      .run()
-      .expectClean()
+                    android {
+                      androidResources {
+                        generateLocaleConfig true
+                      }
+                    }
+                    """
+                        .trimIndent(),
+                )
+                .indented(),
+            source("src/main/res/resources.properties", "unqualifiedResLocale=en-US").indented(),
+        )
+        .run()
+        .expectClean()
   }
 }

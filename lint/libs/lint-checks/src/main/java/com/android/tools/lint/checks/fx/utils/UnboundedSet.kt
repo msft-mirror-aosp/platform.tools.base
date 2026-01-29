@@ -22,9 +22,9 @@ import kotlinx.collections.immutable.persistentSetOf
 import kotlinx.collections.immutable.plus
 
 /**
- * An [UnboundedSet] is either a finite [PersistentSet], or `null`, representing *all* elements.
- * This means that if [T] is finite, then `null` is a *redundant* `⊤` distinct from the finite set
- * of all elements of [T], and [UnboundedSet] won't be an appropriate representation.
+ * An [UnboundedSet] is either a finite [PersistentSet], or `null`, representing *all* elements. This means that if [T] is finite, then
+ * `null` is a *redundant* `⊤` distinct from the finite set of all elements of [T], and [UnboundedSet] won't be an appropriate
+ * representation.
  */
 typealias UnboundedSet<T> = PersistentSet<T>?
 
@@ -35,43 +35,38 @@ fun <T> unboundedSetOf(vararg elements: T): UnboundedSet<T> = persistentSetOf(*e
 fun <T> unboundedSetOfAll(): UnboundedSet<T> = null
 
 infix fun <T> UnboundedSet<T>.isSubsetOf(that: UnboundedSet<T>) =
-  when {
-    that == null -> true
-    this == null -> false
-    else -> that.containsAll(this)
-  }
+    when {
+      that == null -> true
+      this == null -> false
+      else -> that.containsAll(this)
+    }
 
 infix fun <T> UnboundedSet<T>.intersectedWith(that: UnboundedSet<T>): UnboundedSet<T> =
-  when {
-    this != null && that != null -> this intersect that
-    else -> this ?: that
-  }
+    when {
+      this != null && that != null -> this intersect that
+      else -> this ?: that
+    }
 
 infix fun <T> UnboundedSet<T>.unionedWith(that: UnboundedSet<T>): UnboundedSet<T> =
-  when {
-    this != null && that != null -> this + that
-    else -> null
-  }
+    when {
+      this != null && that != null -> this + that
+      else -> null
+    }
 
 private val possibilityLattice =
-  object : Lattice<UnboundedSet<Nothing>> {
-    override val bottom = persistentSetOf<Nothing>()
-    override val top = null
+    object : Lattice<UnboundedSet<Nothing>> {
+      override val bottom = persistentSetOf<Nothing>()
+      override val top = null
 
-    override fun meetOf(first: UnboundedSet<Nothing>, second: UnboundedSet<Nothing>) =
-      first intersectedWith second
+      override fun meetOf(first: UnboundedSet<Nothing>, second: UnboundedSet<Nothing>) = first intersectedWith second
 
-    override fun joinOf(first: UnboundedSet<Nothing>, second: UnboundedSet<Nothing>) =
-      first unionedWith second
+      override fun joinOf(first: UnboundedSet<Nothing>, second: UnboundedSet<Nothing>) = first unionedWith second
 
-    override fun precede(first: UnboundedSet<Nothing>, second: UnboundedSet<Nothing>) =
-      first isSubsetOf second
-  }
+      override fun precede(first: UnboundedSet<Nothing>, second: UnboundedSet<Nothing>) = first isSubsetOf second
+    }
 
 private val constraintLattice = possibilityLattice.dual()
 
-fun <T> possibilityLattice(): Lattice<UnboundedSet<T>> =
-  possibilityLattice as Lattice<UnboundedSet<T>>
+fun <T> possibilityLattice(): Lattice<UnboundedSet<T>> = possibilityLattice as Lattice<UnboundedSet<T>>
 
-fun <T> constraintLattice(): Lattice<UnboundedSet<T>> =
-  constraintLattice as Lattice<UnboundedSet<T>>
+fun <T> constraintLattice(): Lattice<UnboundedSet<T>> = constraintLattice as Lattice<UnboundedSet<T>>

@@ -32,8 +32,8 @@ import org.w3c.dom.Element
 /**
  * Check which makes sure that only views that are `android.view.ViewGroup` have children.
  *
- * <ImageView android:layout_width="wrap_content" android:layout_height="wrap_content"
- * android:src="@drawable/icon" > <TextView /> </ImageView>
+ * <ImageView android:layout_width="wrap_content" android:layout_height="wrap_content" android:src="@drawable/icon" > <TextView />
+ * </ImageView>
  *
  * Attempting to inflate a layout above, will otherwise lead to the following exception:
  *
@@ -41,24 +41,23 @@ import org.w3c.dom.Element
  */
 class ChildInNonViewGroupDetector : LayoutDetector() {
   companion object Issues {
-    private val IMPLEMENTATION =
-      Implementation(ChildInNonViewGroupDetector::class.java, Scope.RESOURCE_FILE_SCOPE)
+    private val IMPLEMENTATION = Implementation(ChildInNonViewGroupDetector::class.java, Scope.RESOURCE_FILE_SCOPE)
 
     /** The main issue discovered by this detector. */
     @JvmField
     val CHILD_IN_NON_VIEW_GROUP_ISSUE =
-      Issue.create(
-        id = "ChildInNonViewGroup",
-        briefDescription = "Only view groups can have children",
-        explanation =
-          """
+        Issue.create(
+            id = "ChildInNonViewGroup",
+            briefDescription = "Only view groups can have children",
+            explanation =
+                """
             Only classes inheriting from `ViewGroup` can have children.
             """,
-        category = Category.CORRECTNESS,
-        priority = 8,
-        severity = Severity.ERROR,
-        implementation = IMPLEMENTATION,
-      )
+            category = Category.CORRECTNESS,
+            priority = 8,
+            severity = Severity.ERROR,
+            implementation = IMPLEMENTATION,
+        )
   }
 
   override fun getApplicableElements(): Collection<String> = ALL
@@ -80,13 +79,12 @@ class ChildInNonViewGroupDetector : LayoutDetector() {
   }
 
   private fun XmlContext.reportWrongParent(element: Element) =
-    report(
-      CHILD_IN_NON_VIEW_GROUP_ISSUE,
-      element,
-      getNameLocation(element),
-      "A ${element.parentNode.nodeName} should have no children declared in XML",
-    )
+      report(
+          CHILD_IN_NON_VIEW_GROUP_ISSUE,
+          element,
+          getNameLocation(element),
+          "A ${element.parentNode.nodeName} should have no children declared in XML",
+      )
 
-  private fun SdkInfo.isChildOfViewGroup(element: Element): Boolean =
-    isSubViewOf(VIEW_GROUP, element.parentNode.nodeName)
+  private fun SdkInfo.isChildOfViewGroup(element: Element): Boolean = isSubViewOf(VIEW_GROUP, element.parentNode.nodeName)
 }

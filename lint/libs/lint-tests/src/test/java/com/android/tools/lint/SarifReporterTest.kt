@@ -34,44 +34,44 @@ import org.junit.Test
 
 class SarifReporterTest {
   private val sampleManifest =
-    manifest(
-        """
+      manifest(
+              """
             <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                 package="test.pkg">
                 <uses-sdk android:minSdkVersion="10" />
                 <uses-sdk android:minSdkVersion="10" />
             </manifest>
             """
-      )
-      .indented()
+          )
+          .indented()
 
   private val sampleLayout =
-    xml(
-        "src/main/res/layout/main.xml",
-        """
+      xml(
+              "src/main/res/layout/main.xml",
+              """
             <Button xmlns:android="http://schemas.android.com/apk/res/android"
                     android:id="@+id/button1"
                     android:text="Fooo" />
             """,
-      )
-      .indented()
+          )
+          .indented()
 
   private val sampleStrings =
-    xml(
-        "src/main/res/values/strings.xml",
-        """
+      xml(
+              "src/main/res/values/strings.xml",
+              """
             <resources>
                 <string name="first">First</string>
                 <string name="second">Second</string>
                 <string name="first">Third</string>
             </resources>
             """,
-      )
-      .indented()
+          )
+          .indented()
 
   private val gradleFile =
-    gradle(
-        """
+      gradle(
+              """
             apply plugin: 'com.android.application'
             android {
                 defaultConfig {
@@ -85,29 +85,29 @@ class SarifReporterTest {
             }
             // STOPSHIP
             """
-      )
-      .indented()
+          )
+          .indented()
 
   private val singleLineJavaFile = java("// STOPSHIP")
 
   @Test
   fun testBasic() {
     lint()
-      .files(sampleManifest, sampleLayout, sampleStrings, gradleFile, singleLineJavaFile)
-      .issues(
-        ManifestDetector.MULTIPLE_USES_SDK,
-        HardcodedValuesDetector.ISSUE,
-        DuplicateResourceDetector.ISSUE,
-        // Issue included in registry but not found in results, to make
-        // sure our rules section only included encountered issues
-        MotionLayoutDetector.INVALID_SCENE_FILE_REFERENCE,
-        CommentDetector.STOP_SHIP,
-      )
-      .variant("release") // To enable STOP_SHIP detector.
-      .stripRoot(false)
-      .run()
-      .expectSarif(
-        """
+        .files(sampleManifest, sampleLayout, sampleStrings, gradleFile, singleLineJavaFile)
+        .issues(
+            ManifestDetector.MULTIPLE_USES_SDK,
+            HardcodedValuesDetector.ISSUE,
+            DuplicateResourceDetector.ISSUE,
+            // Issue included in registry but not found in results, to make
+            // sure our rules section only included encountered issues
+            MotionLayoutDetector.INVALID_SCENE_FILE_REFERENCE,
+            CommentDetector.STOP_SHIP,
+        )
+        .variant("release") // To enable STOP_SHIP detector.
+        .stripRoot(false)
+        .run()
+        .expectSarif(
+            """
                 {
                     "＄schema" : "https://docs.oasis-open.org/sarif/sarif/v2.1.0/errata01/os/schemas/sarif-schema-2.1.0.json",
                     "version" : "2.1.0",
@@ -538,19 +538,19 @@ class SarifReporterTest {
                     ]
                 }
                 """
-      )
+        )
   }
 
   @Test
   fun testQuickfixAlternatives() {
     lint()
-      .files(
-        manifest().targetSdk(26),
-        // layout file: should add segment to insert text (new attribute before the hint attr).
-        // Also, this tests a fix that has multiple alternatives.
-        xml(
-            "res/layout/autofill.xml",
-            """
+        .files(
+            manifest().targetSdk(26),
+            // layout file: should add segment to insert text (new attribute before the hint attr).
+            // Also, this tests a fix that has multiple alternatives.
+            xml(
+                    "res/layout/autofill.xml",
+                    """
                 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
                               android:layout_width="match_parent"
                               android:layout_height="match_parent"
@@ -564,26 +564,26 @@ class SarifReporterTest {
                         <requestFocus/>
                     </EditText>
                 </LinearLayout>""",
-          )
-          .indented(),
-        // Quickfix should edit existing range (both delete and insert)
-        xml(
-            "res/values/pxsp.xml",
-            """
+                )
+                .indented(),
+            // Quickfix should edit existing range (both delete and insert)
+            xml(
+                    "res/values/pxsp.xml",
+                    """
                 <resources>
                     <style name="Style2">
                         <item name="android:textSize">50dp</item>
                     </style>
                 </resources>
                 """,
-          )
-          .indented(),
-      )
-      .issues(AutofillDetector.ISSUE, PxUsageDetector.DP_ISSUE)
-      .stripRoot(false)
-      .run()
-      .expectSarif(
-        """
+                )
+                .indented(),
+        )
+        .issues(AutofillDetector.ISSUE, PxUsageDetector.DP_ISSUE)
+        .stripRoot(false)
+        .run()
+        .expectSarif(
+            """
             {
                 "＄schema" : "https://docs.oasis-open.org/sarif/sarif/v2.1.0/errata01/os/schemas/sarif-schema-2.1.0.json",
                 "version" : "2.1.0",
@@ -814,19 +814,19 @@ class SarifReporterTest {
                 ]
             }
             """
-      )
+        )
   }
 
   @Test
   fun testQuickfixComposite() {
     lint()
-      .files(
-        manifest().targetSdk(26),
-        // Creates lint fix which is composite (multiple fixes that should
-        // all be applied together: the edits must be merged)
-        xml(
-            "res/menu/showAction1.xml",
-            """
+        .files(
+            manifest().targetSdk(26),
+            // Creates lint fix which is composite (multiple fixes that should
+            // all be applied together: the edits must be merged)
+            xml(
+                    "res/menu/showAction1.xml",
+                    """
                 <menu xmlns:android="http://schemas.android.com/apk/res/android"
                     xmlns:app="http://schemas.android.com/apk/res-auto">
                     <item android:id="@+id/action_settings"
@@ -835,14 +835,14 @@ class SarifReporterTest {
                         app:showAsAction="never" />
                 </menu>
                 """,
-          )
-          .indented(),
-      )
-      .issues(AppCompatResourceDetector.ISSUE)
-      .stripRoot(false)
-      .run()
-      .expectSarif(
-        """
+                )
+                .indented(),
+        )
+        .issues(AppCompatResourceDetector.ISSUE)
+        .stripRoot(false)
+        .run()
+        .expectSarif(
+            """
             {
                 "＄schema" : "https://docs.oasis-open.org/sarif/sarif/v2.1.0/errata01/os/schemas/sarif-schema-2.1.0.json",
                 "version" : "2.1.0",
@@ -973,7 +973,7 @@ class SarifReporterTest {
                 ]
             }
            """
-      )
+        )
   }
 
   private fun lint(): TestLintTask {

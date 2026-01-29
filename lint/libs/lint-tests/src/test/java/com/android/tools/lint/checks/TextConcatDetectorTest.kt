@@ -26,9 +26,9 @@ class TextConcatDetectorTest : AbstractCheckTest() {
 
   fun testDocumentationExample() {
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
             package test.pkg;
 
             public class Test {
@@ -42,10 +42,10 @@ class TextConcatDetectorTest : AbstractCheckTest() {
                 }
             }
             """
-          )
-          .indented(),
-        kotlin(
-            """
+                )
+                .indented(),
+            kotlin(
+                    """
             package test.pkg
 
             fun test() {
@@ -54,12 +54,12 @@ class TextConcatDetectorTest : AbstractCheckTest() {
                     val t = "This is" + "same line" // OK 2
             }
             """
-          )
-          .indented(),
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+        )
+        .run()
+        .expect(
+            """
         src/test/pkg/Test.java:6: Warning: Missing space between "is" on the previous line and "a" here? Resulting string is "isa". [TextConcatSpace]
                   "a second line"; // ERROR 1
                   ~~~~~~~~~~~~~~~
@@ -86,9 +86,9 @@ class TextConcatDetectorTest : AbstractCheckTest() {
                          ~~~~~~~
         0 errors, 4 warnings
         """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
         Fix for src/test/pkg/Test.java line 6: Insert space:
         @@ -6 +6 @@
         -          "a second line"; // ERROR 1
@@ -106,14 +106,14 @@ class TextConcatDetectorTest : AbstractCheckTest() {
         -          "a second line" // ERROR 4
         +          " a second line" // ERROR 4
         """
-      )
+        )
   }
 
   fun testCornerCases() {
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
             package test.pkg;
 
             public class Test {
@@ -129,10 +129,10 @@ class TextConcatDetectorTest : AbstractCheckTest() {
                 }
             }
             """
-          )
-          .indented(),
-        kotlin(
-            """
+                )
+                .indented(),
+            kotlin(
+                    """
             package test.pkg
 
             fun test2(propertySuffix: String, propertyName: String) {
@@ -141,13 +141,13 @@ class TextConcatDetectorTest : AbstractCheckTest() {
                   "be accessed as a property from Kotlin; see https://android.github.io/kotlin-guides/interop.html#property-prefixes" // OK
             }
             """
-          )
-          .indented(),
-      )
-      .testModes(TestMode.DEFAULT)
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+        )
+        .testModes(TestMode.DEFAULT)
+        .run()
+        .expect(
+            """
         src/test/pkg/Test.java:6: Warning: Missing space between "is" on the previous line and "a" here? Resulting string is "isa". [TextConcatSpace]
                   (("a second line")+  // ERROR 1
                     ~~~~~~~~~~~~~~~
@@ -162,9 +162,9 @@ class TextConcatDetectorTest : AbstractCheckTest() {
                     ~~~~~~~~~~~~~~~
         0 errors, 2 warnings
         """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
         Fix for src/test/pkg/Test.java line 6: Insert space:
         @@ -6 +6 @@
         -          (("a second line")+  // ERROR 1
@@ -174,6 +174,6 @@ class TextConcatDetectorTest : AbstractCheckTest() {
         -          ("a third line") + "."); // ERROR 2
         +          (" a third line") + "."); // ERROR 2
         """
-      )
+        )
   }
 }

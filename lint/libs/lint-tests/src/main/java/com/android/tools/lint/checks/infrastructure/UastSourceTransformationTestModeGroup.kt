@@ -22,24 +22,22 @@ import java.io.File
 import org.jetbrains.uast.UFile
 
 /**
- * Special composite [TestMode] which takes a list of source transforming test modes, and attempts
- * to apply as many of them as possible at the same time. If there is a failure, it will then re-run
- * each individual test mode in isolation. This helps speed up the test suite as we add more and
- * more individual test modes since (with the exception of very noisy test modes like the one
- * inserting unnecessary parentheses) often test modes don't overlap and so we don't need to run
- * through all the machinery twice.
+ * Special composite [TestMode] which takes a list of source transforming test modes, and attempts to apply as many of them as possible at
+ * the same time. If there is a failure, it will then re-run each individual test mode in isolation. This helps speed up the test suite as
+ * we add more and more individual test modes since (with the exception of very noisy test modes like the one inserting unnecessary
+ * parentheses) often test modes don't overlap and so we don't need to run through all the machinery twice.
  */
 internal class UastSourceTransformationTestModeGroup(vararg modes: TestMode) :
-  UastSourceTransformationTestMode(
-    "Source code transformations",
-    "TestMode.SOURCE_CODE_TRANSFORMATIONS",
-    "default",
-  ) {
+    UastSourceTransformationTestMode(
+        "Source code transformations",
+        "TestMode.SOURCE_CODE_TRANSFORMATIONS",
+        "default",
+    ) {
   override fun transform(
-    source: String,
-    context: JavaContext,
-    root: UFile,
-    clientData: MutableMap<String, Any>,
+      source: String,
+      context: JavaContext,
+      root: UFile,
+      clientData: MutableMap<String, Any>,
   ): MutableList<Edit> {
     // This should never be called since we override [processTestFiles]
     // to perform composite editing
@@ -48,7 +46,7 @@ internal class UastSourceTransformationTestModeGroup(vararg modes: TestMode) :
 
   val modes: List<TestMode> = modes.toList()
   private val validModes: MutableList<UastSourceTransformationTestMode> =
-    modes.mapNotNull { it as? UastSourceTransformationTestMode }.toMutableList()
+      modes.mapNotNull { it as? UastSourceTransformationTestMode }.toMutableList()
   override val folderName: String = "default"
   override val modifiesSources: Boolean = true
 
@@ -63,8 +61,7 @@ internal class UastSourceTransformationTestModeGroup(vararg modes: TestMode) :
   }
 
   override fun partition(context: TestModeContext): List<TestMode> {
-    val (contexts, disposable) =
-      parse(dir = context.projectFolders.first(), sdkHome = context.task.sdkHome)
+    val (contexts, disposable) = parse(dir = context.projectFolders.first(), sdkHome = context.task.sdkHome)
     try {
       return partition(context, contexts)
     } finally {
@@ -73,8 +70,8 @@ internal class UastSourceTransformationTestModeGroup(vararg modes: TestMode) :
   }
 
   private fun partition(
-    testContext: TestModeContext,
-    contexts: List<JavaContext>,
+      testContext: TestModeContext,
+      contexts: List<JavaContext>,
   ): List<SourceTransformationTestMode> {
     // We're assuming two test modes don't cancel each other out, e.g. we shouldn't
     // put both an "add unnecessary parentheses" and a "remove unnecessary parentheses" mode
@@ -116,10 +113,7 @@ internal class UastSourceTransformationTestModeGroup(vararg modes: TestMode) :
       var conflict = false
       for ((file, edits) in pending) {
         val pair: Pair<String, MutableList<Edit>> =
-          currentEditMap[file]
-            ?: Pair<String, MutableList<Edit>>(contents[file]!!, mutableListOf()).also {
-              currentEditMap[file] = it
-            }
+            currentEditMap[file] ?: Pair<String, MutableList<Edit>>(contents[file]!!, mutableListOf()).also { currentEditMap[file] = it }
         val currentEdits = pair.second
         if (currentEdits.conflicts(edits)) {
           conflict = true
@@ -173,10 +167,10 @@ internal class UastSourceTransformationTestModeGroup(vararg modes: TestMode) :
   }
 
   override fun processTestFiles(
-    testContext: TestModeContext,
-    projectDir: File,
-    sdkHome: File?,
-    changeCallback: (JavaContext, String) -> Unit,
+      testContext: TestModeContext,
+      projectDir: File,
+      sdkHome: File?,
+      changeCallback: (JavaContext, String) -> Unit,
   ): Boolean {
     error("Should not be called")
   }

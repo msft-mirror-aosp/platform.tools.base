@@ -74,11 +74,11 @@ class LintClientTest {
   @Test
   fun testVersion() {
     val client: LintCliClient =
-      object : LintCliClient(CLIENT_UNIT_TESTS) {
-        override fun getSdkHome(): File? {
-          return TestUtils.getSdk().toFile()
+        object : LintCliClient(CLIENT_UNIT_TESTS) {
+          override fun getSdkHome(): File? {
+            return TestUtils.getSdk().toFile()
+          }
         }
-      }
     val revision = client.getClientRevision()
     assertThat(revision).isNotNull()
     assertThat(revision).isNotEmpty()
@@ -97,8 +97,8 @@ class LintClientTest {
     assertEquals(file("../../d/e/f").path, client.getRelativePath(file("a/b/c"), file("d/e/f")))
     assertEquals(file("../d/e/f").path, client.getRelativePath(file("a/b/c"), file("a/d/e/f")))
     assertEquals(
-      file("../d/e/f").path,
-      client.getRelativePath(file("1/2/3/a/b/c"), file("1/2/3/a/d/e/f")),
+        file("../d/e/f").path,
+        client.getRelativePath(file("1/2/3/a/b/c"), file("1/2/3/a/d/e/f")),
     )
     assertEquals(file("c").path, client.getRelativePath(file("a/b/c"), file("a/b/c")))
     assertEquals(file("../../e").path, client.getRelativePath(file("a/b/c/d/e/f"), file("a/b/c/e")))
@@ -121,55 +121,55 @@ class LintClientTest {
   @Test
   fun testGetXmlDocument() {
     lint()
-      .sdkHome(TestUtils.getSdk().toFile())
-      .files(
-        xml(
-            "res/values/test.xml",
-            """
+        .sdkHome(TestUtils.getSdk().toFile())
+        .files(
+            xml(
+                    "res/values/test.xml",
+                    """
                     <resources>
                         <string name="string1">String 1</string>
                     </resources>
                     """,
-          )
-          .indented(),
-        xml(
-            "res/values/.ignore.xml",
-            """
+                )
+                .indented(),
+            xml(
+                    "res/values/.ignore.xml",
+                    """
                     <resources>
                         <string name="ignore">Ignore</string>
                     </resources>
                     """,
-          )
-          .indented(),
-        xml("res/values/empty.xml", ""),
-        kotlin(
-            """
+                )
+                .indented(),
+            xml("res/values/empty.xml", ""),
+            kotlin(
+                    """
                 fun test() = TODO()
                 """
-          )
-          .indented(),
-      )
-      .issues(TestXmlParsingDetector.ISSUE)
-      .allowAbsolutePathsInMessages(true)
-      .testModes(TestMode.DEFAULT)
-      .run()
-      .expect(
-        // We pipe through the IO exception message and that one varies between Mac/Linux and
-        // Windows so
-        // we have per-platform messages here
-        if (isWindows)
-          """
+                )
+                .indented(),
+        )
+        .issues(TestXmlParsingDetector.ISSUE)
+        .allowAbsolutePathsInMessages(true)
+        .testModes(TestMode.DEFAULT)
+        .run()
+        .expect(
+            // We pipe through the IO exception message and that one varies between Mac/Linux and
+            // Windows so
+            // we have per-platform messages here
+            if (isWindows)
+                """
                     res/values/empty.xml: Error: XML file is empty; not a valid document: app\res\values\empty.xml [LintError]
                     res/values/nonexistent.xml: Error: app\res\values\nonexistent.xml (The system cannot find the file specified) [LintError]
                     2 errors, 0 warnings
                     """
-        else
-          """
+            else
+                """
                     res/values/empty.xml: Error: XML file is empty; not a valid document: app/res/values/empty.xml [LintError]
                     res/values/nonexistent.xml: Error: app/res/values/nonexistent.xml (No such file or directory) [LintError]
                     2 errors, 0 warnings
                     """
-      )
+        )
   }
 
   @Test
@@ -202,44 +202,44 @@ class LintClientTest {
     // added by "project_x" in the LintMap for "project_x", for x in {a,b}.
 
     lint()
-      .projects(
-        ProjectDescription(
-            xml(
-                "res/values/strings.xml",
-                """
+        .projects(
+            ProjectDescription(
+                    xml(
+                            "res/values/strings.xml",
+                            """
                     <resources>
                         <string name="project_a_string">project_a_string</string>
                     </resources>
                     """,
-              )
-              .indented()
-          )
-          .name("project_a"),
-        ProjectDescription(
-            xml(
-                "res/values/strings.xml",
-                """
+                        )
+                        .indented()
+                )
+                .name("project_a"),
+            ProjectDescription(
+                    xml(
+                            "res/values/strings.xml",
+                            """
                     <resources>
                         <string name="project_b_string">project_b_string</string>
                     </resources>
                     """,
-              )
-              .indented()
-          )
-          .name("project_b")
-          .dependsOn("project_a"),
-      )
-      .issues(TestXmlFakeIssueDetector.ISSUE)
-      .testModes(TestMode.PARTIAL)
-      .allowMissingSdk()
-      .run()
-      .expect(
-        """
+                        )
+                        .indented()
+                )
+                .name("project_b")
+                .dependsOn("project_a"),
+        )
+        .issues(TestXmlFakeIssueDetector.ISSUE)
+        .testModes(TestMode.PARTIAL)
+        .allowMissingSdk()
+        .run()
+        .expect(
+            """
                 project_b: Error: Found in LintMap for: project_a; Added by: project_a; Tag: project_a_string [TestXmlFakeIssueDetector]
                 project_b: Error: Found in LintMap for: project_b; Added by: project_b; Tag: project_b_string [TestXmlFakeIssueDetector]
                 2 errors, 0 warnings
                 """
-      )
+        )
   }
 
   /** Detector used by [testGetXmlDocument] */
@@ -285,20 +285,19 @@ class LintClientTest {
     companion object {
       @JvmField
       val ISSUE =
-        Issue.create(
-          id = "_ResourceRepositoryXmlPArsing",
-          briefDescription = "Lint check for testing out XML parsing",
-          explanation =
-            "Triggers specific XML parsing and IO errors and makes sure they're gracefully handled",
-          category = Category.TESTING,
-          priority = 10,
-          severity = Severity.WARNING,
-          implementation =
-            Implementation(
-              TestXmlParsingDetector::class.java,
-              EnumSet.of(Scope.JAVA_FILE, Scope.RESOURCE_FILE),
-            ),
-        )
+          Issue.create(
+              id = "_ResourceRepositoryXmlPArsing",
+              briefDescription = "Lint check for testing out XML parsing",
+              explanation = "Triggers specific XML parsing and IO errors and makes sure they're gracefully handled",
+              category = Category.TESTING,
+              priority = 10,
+              severity = Severity.WARNING,
+              implementation =
+                  Implementation(
+                      TestXmlParsingDetector::class.java,
+                      EnumSet.of(Scope.JAVA_FILE, Scope.RESOURCE_FILE),
+                  ),
+          )
     }
   }
 
@@ -311,10 +310,7 @@ class LintClientTest {
     override fun getApplicableElements() = setOf(SdkConstants.TAG_STRING)
 
     override fun visitElement(context: XmlContext, element: Element) {
-      context
-        .getPartialResults(ISSUE)
-        .map()
-        .put("Added by: ${context.project.name}; Tag: ${element.getAttribute("name")}", true)
+      context.getPartialResults(ISSUE).map().put("Added by: ${context.project.name}; Tag: ${element.getAttribute("name")}", true)
     }
 
     override fun checkPartialResults(context: Context, partialResults: PartialResult) {
@@ -323,9 +319,9 @@ class LintClientTest {
           // Example message:
           //  Found in LintMap for: project_a; Added by: project_a; Tag: project_a_string
           context.report(
-            issue = ISSUE,
-            location = Location.create(context.file),
-            message = "Found in LintMap for: ${project.name}; $key",
+              issue = ISSUE,
+              location = Location.create(context.file),
+              message = "Found in LintMap for: ${project.name}; $key",
           )
         }
       }
@@ -334,20 +330,19 @@ class LintClientTest {
     companion object {
       @JvmField
       val ISSUE =
-        Issue.create(
-          id = "TestXmlFakeIssueDetector",
-          briefDescription = "Fake lint check for testing partial analysis",
-          explanation =
-            "Stores data to each project's PartialResult via context.getPartialResults(ISSUE).map()",
-          category = Category.TESTING,
-          priority = 10,
-          severity = Severity.ERROR,
-          implementation =
-            Implementation(
-              TestXmlFakeIssueDetector::class.java,
-              EnumSet.of(Scope.ALL_RESOURCE_FILES),
-            ),
-        )
+          Issue.create(
+              id = "TestXmlFakeIssueDetector",
+              briefDescription = "Fake lint check for testing partial analysis",
+              explanation = "Stores data to each project's PartialResult via context.getPartialResults(ISSUE).map()",
+              category = Category.TESTING,
+              priority = 10,
+              severity = Severity.ERROR,
+              implementation =
+                  Implementation(
+                      TestXmlFakeIssueDetector::class.java,
+                      EnumSet.of(Scope.ALL_RESOURCE_FILES),
+                  ),
+          )
     }
   }
 }

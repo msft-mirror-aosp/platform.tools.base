@@ -25,14 +25,14 @@ import com.android.tools.lint.detector.api.TextFormat
 class WindowExtensionsDetectorTest : AbstractCheckTest() {
   override fun lint(): TestLintTask {
     return super.lint()
-      .textFormat(TextFormat.RAW)
-      // We deliberately haven't added support for possible but unlikely scenarios like
-      // this one:
-      //    when {
-      //       WindowSdkExtensions.getInstance().extensionVersion < 6 -> { ... }
-      //       else -> <safe code here>
-      //    }
-      .skipTestModes(TestMode.IF_TO_WHEN)
+        .textFormat(TextFormat.RAW)
+        // We deliberately haven't added support for possible but unlikely scenarios like
+        // this one:
+        //    when {
+        //       WindowSdkExtensions.getInstance().extensionVersion < 6 -> { ... }
+        //       else -> <safe code here>
+        //    }
+        .skipTestModes(TestMode.IF_TO_WHEN)
   }
 
   override fun getDetector(): Detector {
@@ -41,9 +41,9 @@ class WindowExtensionsDetectorTest : AbstractCheckTest() {
 
   fun testDocumentationExample() {
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
             @file:Suppress("unused", "UnusedVariable", "ControlFlowWithEmptyBody")
 
             package test.pkg
@@ -59,26 +59,26 @@ class WindowExtensionsDetectorTest : AbstractCheckTest() {
 
             }
             """
-          )
-          .indented(),
-        *stubs,
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            *stubs,
+        )
+        .run()
+        .expect(
+            """
         src/test/pkg/test.kt:12: Error: Field requires window SDK extension level 6: `androidx.window.layout.WindowInfoTracker#getSupportedPostures` [RequiresWindowSdk]
             val supportedPostures = windowInfoTracker.supportedPostures // ERROR 1
                                                       ~~~~~~~~~~~~~~~~~
         1 error
         """
-      )
+        )
   }
 
   fun testNegative() {
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
             @file:Suppress("unused", "UnusedVariable", "ControlFlowWithEmptyBody")
 
             package test.pkg
@@ -115,10 +115,10 @@ class WindowExtensionsDetectorTest : AbstractCheckTest() {
                 }
             }
             """
-          )
-          .indented(),
-        kotlin(
-            """
+                )
+                .indented(),
+            kotlin(
+                    """
             @file:RequiresWindowSdkExtension(6)
 
             package test.pkg
@@ -132,10 +132,10 @@ class WindowExtensionsDetectorTest : AbstractCheckTest() {
                 val supportedPostures = windowInfoTracker.supportedPostures // OK 5 -- suppressed on file
             }
             """
-          )
-          .indented(),
-        java(
-            """
+                )
+                .indented(),
+            java(
+                    """
             package test.pkg;
 
             import android.content.Context;
@@ -155,19 +155,19 @@ class WindowExtensionsDetectorTest : AbstractCheckTest() {
                 }
             }
             """
-          )
-          .indented(),
-        *stubs,
-      )
-      .run()
-      .expectClean()
+                )
+                .indented(),
+            *stubs,
+        )
+        .run()
+        .expectClean()
   }
 
   fun testPositive() {
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
             @file:Suppress("unused", "UnusedVariable", "ControlFlowWithEmptyBody")
 
             package test.pkg
@@ -193,13 +193,13 @@ class WindowExtensionsDetectorTest : AbstractCheckTest() {
                 }
             }
             """
-          )
-          .indented(),
-        *stubs,
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            *stubs,
+        )
+        .run()
+        .expect(
+            """
         src/test/pkg/test.kt:13: Error: Field requires window SDK extension level 6 (current is 5): `androidx.window.layout.WindowInfoTracker#getSupportedPostures` [RequiresWindowSdk]
             val supportedPostures = windowInfoTracker.supportedPostures // ERROR 1
                                                       ~~~~~~~~~~~~~~~~~
@@ -208,15 +208,15 @@ class WindowExtensionsDetectorTest : AbstractCheckTest() {
                                                           ~~~~~~~~~~~~~~~~~
         2 errors
         """
-      )
+        )
   }
 
   @Suppress("ControlFlowWithEmptyBody")
   fun testBinaryAndPolyadicExpressions() {
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
             package test.pkg
 
             import android.content.Context
@@ -251,44 +251,44 @@ class WindowExtensionsDetectorTest : AbstractCheckTest() {
                 val ok2 = extensions.extensionVersion < 5 || requires5()  // OK 6
             }
             """
-          )
-          .indented(),
-        *stubs,
-      )
-      .run()
-      .expectClean()
+                )
+                .indented(),
+            *stubs,
+        )
+        .run()
+        .expectClean()
   }
 
   fun testBaselineMatching() {
     val detector = WindowExtensionsDetector()
     assertTrue(
-      detector.sameMessage(
-        WindowExtensionsDetector.ISSUE,
-        "Field requires window SDK extension level 6 (current is 3): `androidx.window.layout.WindowInfoTracker#getSupportedPostures` [RequiresWindowSdk]",
-        "Field requires window SDK extension level 6: `androidx.window.layout.WindowInfoTracker#getSupportedPostures` [RequiresWindowSdk]",
-      )
+        detector.sameMessage(
+            WindowExtensionsDetector.ISSUE,
+            "Field requires window SDK extension level 6 (current is 3): `androidx.window.layout.WindowInfoTracker#getSupportedPostures` [RequiresWindowSdk]",
+            "Field requires window SDK extension level 6: `androidx.window.layout.WindowInfoTracker#getSupportedPostures` [RequiresWindowSdk]",
+        )
     )
     assertFalse(
-      detector.sameMessage(
-        WindowExtensionsDetector.ISSUE,
-        "Field requires window SDK extension level 6: `androidx.window.layout.WindowInfoTracker#getSupportedPostures` [RequiresWindowSdk]",
-        "Field requires window SDK extension level 6: `androidx.window.layout.WindowInfoTracker#getPostures` [RequiresWindowSdk]",
-      )
+        detector.sameMessage(
+            WindowExtensionsDetector.ISSUE,
+            "Field requires window SDK extension level 6: `androidx.window.layout.WindowInfoTracker#getSupportedPostures` [RequiresWindowSdk]",
+            "Field requires window SDK extension level 6: `androidx.window.layout.WindowInfoTracker#getPostures` [RequiresWindowSdk]",
+        )
     )
     assertTrue(
-      detector.sameMessage(
-        WindowExtensionsDetector.ISSUE,
-        "Field requires window SDK extension level 6 (current is 3): `androidx.window.layout.WindowInfoTracker#getSupportedPostures` [RequiresWindowSdk]",
-        "Field requires window SDK extension level 6 (current is 2): `androidx.window.layout.WindowInfoTracker#getSupportedPostures` [RequiresWindowSdk]",
-      )
+        detector.sameMessage(
+            WindowExtensionsDetector.ISSUE,
+            "Field requires window SDK extension level 6 (current is 3): `androidx.window.layout.WindowInfoTracker#getSupportedPostures` [RequiresWindowSdk]",
+            "Field requires window SDK extension level 6 (current is 2): `androidx.window.layout.WindowInfoTracker#getSupportedPostures` [RequiresWindowSdk]",
+        )
     )
   }
 }
 
 private val stubs: Array<TestFile> =
-  arrayOf(
-    kotlin(
-        """
+    arrayOf(
+        kotlin(
+                """
         // HIDE-FROM-DOCUMENTATION
         package androidx.window
 
@@ -307,10 +307,10 @@ private val stubs: Array<TestFile> =
             val version: Int
         )
         """
-      )
-      .indented(),
-    kotlin(
-        """
+            )
+            .indented(),
+        kotlin(
+                """
         // HIDE-FROM-DOCUMENTATION
         package androidx.window
 
@@ -323,10 +323,10 @@ private val stubs: Array<TestFile> =
             }
         }
         """
-      )
-      .indented(),
-    kotlin(
-        """
+            )
+            .indented(),
+        kotlin(
+                """
         // HIDE-FROM-DOCUMENTATION
         package androidx.window.layout
 
@@ -350,6 +350,6 @@ private val stubs: Array<TestFile> =
 
         class SupportedPosture
         """
-      )
-      .indented(),
-  )
+            )
+            .indented(),
+    )

@@ -27,9 +27,9 @@ class WebViewApiAvailabilityDetectorTest : AbstractCheckTest() {
 
   fun testUnguardedMethods() {
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
                 package test.pkg;
 
                 import android.app.Activity;
@@ -46,10 +46,10 @@ class WebViewApiAvailabilityDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-          )
-          .indented(),
-        kotlin(
-            """
+                )
+                .indented(),
+            kotlin(
+                    """
                 package test.pkg
 
                 import android.app.Activity
@@ -65,19 +65,19 @@ class WebViewApiAvailabilityDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-          )
-          .indented(),
-      )
-      .issues(WebViewApiAvailabilityDetector.ISSUE)
-      .run()
-      .expectClean()
+                )
+                .indented(),
+        )
+        .issues(WebViewApiAvailabilityDetector.ISSUE)
+        .run()
+        .expectClean()
   }
 
   fun testGuardedFrameworkOnlyMethods() {
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
                 package test.pkg;
 
                 import android.app.Activity;
@@ -110,10 +110,10 @@ class WebViewApiAvailabilityDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-          )
-          .indented(),
-        kotlin(
-            """
+                )
+                .indented(),
+            kotlin(
+                    """
                 package test.pkg
 
                 import android.app.Activity
@@ -144,53 +144,53 @@ class WebViewApiAvailabilityDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-          )
-          .indented(),
-      )
-      .issues(WebViewApiAvailabilityDetector.ISSUE)
-      .run()
-      .expectClean()
+                )
+                .indented(),
+        )
+        .issues(WebViewApiAvailabilityDetector.ISSUE)
+        .run()
+        .expectClean()
   }
 
   @Suppress("WrongTerminology")
   fun testGuardedAndroidXAvailableMethods() {
     val expected =
-      """
-            src/test/pkg/WebViewActivity.java:14: Warning: Consider using WebViewCompat.createWebMessageChannel instead which will support more devices. [WebViewApiAvailability]
-                        webView.createWebMessageChannel();
-                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            src/test/pkg/WebViewActivity.java:15: Warning: Consider using WebViewCompat.postVisualStateCallback instead which will support more devices. [WebViewApiAvailability]
-                        webView.postVisualStateCallback(0, null);
-                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            src/test/pkg/WebViewActivity.java:16: Warning: Consider using WebViewCompat.postWebMessage instead which will support more devices. [WebViewApiAvailability]
-                        webView.postWebMessage(null, null);
-                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            src/test/pkg/WebViewActivity.java:17: Warning: Consider using WebViewCompat.getCurrentWebViewPackage instead which will support more devices. [WebViewApiAvailability]
-                        WebView.getCurrentWebViewPackage();
-                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            src/test/pkg/WebViewActivity.java:18: Warning: Consider using WebViewCompat.getWebChromeClient instead which will support more devices. [WebViewApiAvailability]
-                        webView.getWebChromeClient();
-                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            src/test/pkg/WebViewActivity.java:19: Warning: Consider using WebViewCompat.getWebViewClient instead which will support more devices. [WebViewApiAvailability]
-                        webView.getWebViewClient();
-                        ~~~~~~~~~~~~~~~~~~~~~~~~~~
-            src/test/pkg/WebViewActivity.java:20: Warning: Consider using WebViewCompat.getSafeBrowsingPrivacyPolicyUrl instead which will support more devices. [WebViewApiAvailability]
-                        WebView.getSafeBrowsingPrivacyPolicyUrl();
-                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            src/test/pkg/WebViewActivity.java:21: Warning: Consider using WebViewCompat.setSafeBrowsingWhitelist instead which will support more devices. [WebViewApiAvailability]
-                        WebView.setSafeBrowsingWhitelist(null, null);
-                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            src/test/pkg/WebViewActivity.java:22: Warning: Consider using WebViewCompat.startSafeBrowsing instead which will support more devices. [WebViewApiAvailability]
-                        WebView.startSafeBrowsing(this, null);
-                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            0 errors, 9 warnings
-            """
-        .trimIndent()
+        """
+        src/test/pkg/WebViewActivity.java:14: Warning: Consider using WebViewCompat.createWebMessageChannel instead which will support more devices. [WebViewApiAvailability]
+                    webView.createWebMessageChannel();
+                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        src/test/pkg/WebViewActivity.java:15: Warning: Consider using WebViewCompat.postVisualStateCallback instead which will support more devices. [WebViewApiAvailability]
+                    webView.postVisualStateCallback(0, null);
+                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        src/test/pkg/WebViewActivity.java:16: Warning: Consider using WebViewCompat.postWebMessage instead which will support more devices. [WebViewApiAvailability]
+                    webView.postWebMessage(null, null);
+                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        src/test/pkg/WebViewActivity.java:17: Warning: Consider using WebViewCompat.getCurrentWebViewPackage instead which will support more devices. [WebViewApiAvailability]
+                    WebView.getCurrentWebViewPackage();
+                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        src/test/pkg/WebViewActivity.java:18: Warning: Consider using WebViewCompat.getWebChromeClient instead which will support more devices. [WebViewApiAvailability]
+                    webView.getWebChromeClient();
+                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        src/test/pkg/WebViewActivity.java:19: Warning: Consider using WebViewCompat.getWebViewClient instead which will support more devices. [WebViewApiAvailability]
+                    webView.getWebViewClient();
+                    ~~~~~~~~~~~~~~~~~~~~~~~~~~
+        src/test/pkg/WebViewActivity.java:20: Warning: Consider using WebViewCompat.getSafeBrowsingPrivacyPolicyUrl instead which will support more devices. [WebViewApiAvailability]
+                    WebView.getSafeBrowsingPrivacyPolicyUrl();
+                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        src/test/pkg/WebViewActivity.java:21: Warning: Consider using WebViewCompat.setSafeBrowsingWhitelist instead which will support more devices. [WebViewApiAvailability]
+                    WebView.setSafeBrowsingWhitelist(null, null);
+                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        src/test/pkg/WebViewActivity.java:22: Warning: Consider using WebViewCompat.startSafeBrowsing instead which will support more devices. [WebViewApiAvailability]
+                    WebView.startSafeBrowsing(this, null);
+                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        0 errors, 9 warnings
+        """
+            .trimIndent()
 
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
                 package test.pkg;
 
                 import android.app.Activity;
@@ -217,18 +217,18 @@ class WebViewApiAvailabilityDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-          )
-          .indented()
-      )
-      .issues(WebViewApiAvailabilityDetector.ISSUE)
-      .run()
-      .expect(expected)
+                )
+                .indented()
+        )
+        .issues(WebViewApiAvailabilityDetector.ISSUE)
+        .run()
+        .expect(expected)
   }
 
   @Suppress("WrongTerminology")
   fun testGuardedAndroidXAvailableMethodsKotlin() {
     val expected =
-      """
+        """
             src/test/pkg/MainActivity.kt:13: Warning: Consider using WebViewCompat.createWebMessageChannel instead which will support more devices. [WebViewApiAvailability]
                         webView.createWebMessageChannel()
                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -260,9 +260,9 @@ class WebViewApiAvailabilityDetectorTest : AbstractCheckTest() {
             """
 
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
                 package test.pkg
 
                 import android.app.Activity
@@ -288,11 +288,11 @@ class WebViewApiAvailabilityDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-          )
-          .indented()
-      )
-      .issues(WebViewApiAvailabilityDetector.ISSUE)
-      .run()
-      .expect(expected)
+                )
+                .indented()
+        )
+        .issues(WebViewApiAvailabilityDetector.ISSUE)
+        .run()
+        .expect(expected)
   }
 }

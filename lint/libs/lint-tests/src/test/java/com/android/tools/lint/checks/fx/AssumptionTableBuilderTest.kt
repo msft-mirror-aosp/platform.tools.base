@@ -61,42 +61,40 @@ class AssumptionTableBuilderTest {
   @Test
   fun `test assuming standard functions`() {
     val assumptions =
-      SideEffect.build {
-        // Math::max : (Int, Int) -> Int @ pure
-        static<Int, Int>(Math::max) assumedAs
-          given(Int::class(), Int::class()) { range = Int::class() }
+        SideEffect.build {
+          // Math::max : (Int, Int) -> Int @ pure
+          static<Int, Int>(Math::max) assumedAs given(Int::class(), Int::class()) { range = Int::class() }
 
-        // Math::max : (Float, Float) -> Float @ pure
-        static<Float, Float>(Math::max) assumedAs
-          given(Float::class(), Float::class()) { range = Float::class() }
+          // Math::max : (Float, Float) -> Float @ pure
+          static<Float, Float>(Math::max) assumedAs given(Float::class(), Float::class()) { range = Float::class() }
 
-        // println : () -> Unit @ effectful
-        static(::println) assumedAs
-          given {
-            range = Unit::class()
-            concreteEffect = SideEffect.Impure
-          }
+          // println : () -> Unit @ effectful
+          static(::println) assumedAs
+              given {
+                range = Unit::class()
+                concreteEffect = SideEffect.Impure
+              }
 
-        // Iterable::map : ∀ {X, Y, F ≼ (X) → Y}. (Iterable<X>, F) -> List<X> @ F(X)
-        static<_, (Any?) -> Any>(Iterable<*>::map) assumedAs
-          forAll { x ->
-            forAll { y ->
-              forAll(Function1::class(x, y)) { transform ->
-                given(Iterable::class(x), transform) {
-                  range = List::class(y)
-                  symbolicInvocations += transform[MethodId.Invoke[1], x]
+          // Iterable::map : ∀ {X, Y, F ≼ (X) → Y}. (Iterable<X>, F) -> List<X> @ F(X)
+          static<_, (Any?) -> Any>(Iterable<*>::map) assumedAs
+              forAll { x ->
+                forAll { y ->
+                  forAll(Function1::class(x, y)) { transform ->
+                    given(Iterable::class(x), transform) {
+                      range = List::class(y)
+                      symbolicInvocations += transform[MethodId.Invoke[1], x]
+                    }
+                  }
                 }
               }
-            }
-          }
 
-        // File::delete : (File) -> Unit @ effectful
-        virtual(File::delete) assumedAs
-          given(File::class()) {
-            range = Unit::class()
-            concreteEffect = SideEffect.Impure
-          }
-      }
+          // File::delete : (File) -> Unit @ effectful
+          virtual(File::delete) assumedAs
+              given(File::class()) {
+                range = Unit::class()
+                concreteEffect = SideEffect.Impure
+              }
+        }
 
     static<Int, Int>(Math::max).unambiguously { max ->
       with(assumptions[max]!!) {
@@ -137,8 +135,7 @@ class AssumptionTableBuilderTest {
         Truth.assertThat(domains).hasSize(2)
         Truth.assertThat(range).isInstanceOf(Type.Application::class.java)
         Truth.assertThat((range as Type.Application).args).hasSize(1)
-        Truth.assertThat((range as Type.Application).args.first())
-          .isInstanceOf(Type.Sym.Param::class.java)
+        Truth.assertThat((range as Type.Application).args.first()).isInstanceOf(Type.Sym.Param::class.java)
         Truth.assertThat(effect.concrete).isEqualTo(SideEffect.Pure)
         Truth.assertThat(effect.constraint).isEqualTo(Constraint.MostPermissive)
         Truth.assertThat(effect.invocations).hasSize(1)

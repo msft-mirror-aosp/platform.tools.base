@@ -45,9 +45,9 @@ import org.jetbrains.kotlin.light.classes.symbol.withSymbol
 
 @OptIn(KaExperimentalApi::class)
 internal class KlibLightFieldForEnumEntry(
-  enumEntrySymbol: KaEnumEntrySymbol,
-  val containingClass: SymbolLightClassForClassOrObject,
-  val psiManager: PsiManager,
+    enumEntrySymbol: KaEnumEntrySymbol,
+    val containingClass: SymbolLightClassForClassOrObject,
+    val psiManager: PsiManager,
 ) : SymbolLightField(containingClass = containingClass, lightMemberOrigin = null), PsiEnumConstant {
 
   val enumEntrySymbolPointer = enumEntrySymbol.createPointer()
@@ -55,51 +55,47 @@ internal class KlibLightFieldForEnumEntry(
   @OptIn(KaImplementationDetail::class)
   private val _modifierList by lazyPub {
     SymbolLightMemberModifierList(
-      containingDeclaration = this,
-      modifiersBox =
-        InitializedModifiersBox(PsiModifier.STATIC, PsiModifier.FINAL, PsiModifier.PUBLIC),
-      annotationsBox =
-        GranularAnnotationsBox(
-          annotationsProvider =
-            SymbolAnnotationsProvider(
-              ktModule = ktModule,
-              annotatedSymbolPointer = enumEntrySymbolPointer,
-            )
-        ),
+        containingDeclaration = this,
+        modifiersBox = InitializedModifiersBox(PsiModifier.STATIC, PsiModifier.FINAL, PsiModifier.PUBLIC),
+        annotationsBox =
+            GranularAnnotationsBox(
+                annotationsProvider =
+                    SymbolAnnotationsProvider(
+                        ktModule = ktModule,
+                        annotatedSymbolPointer = enumEntrySymbolPointer,
+                    )
+            ),
     )
   }
 
   private val _type: PsiType by lazyPub {
     enumEntrySymbolPointer.withSymbol(ktModule) { enumEntrySymbol ->
       enumEntrySymbol.returnType.asPsiType(
-        this@KlibLightFieldForEnumEntry,
-        allowErrorTypes = true,
-        allowNonJvmPlatforms = true,
+          this@KlibLightFieldForEnumEntry,
+          allowErrorTypes = true,
+          allowNonJvmPlatforms = true,
       ) ?: nonExistentType()
     }
   }
 
   override fun equals(other: Any?): Boolean {
     return this === other ||
-      other is KlibLightFieldForEnumEntry &&
-        containingClass == other.containingClass &&
-        psiManager == other.psiManager &&
-        compareSymbolPointers(enumEntrySymbolPointer, other.enumEntrySymbolPointer)
+        other is KlibLightFieldForEnumEntry &&
+            containingClass == other.containingClass &&
+            psiManager == other.psiManager &&
+            compareSymbolPointers(enumEntrySymbolPointer, other.enumEntrySymbolPointer)
   }
 
   // TODO: This is not good, but perhaps it doesn't matter.
   override fun hashCode(): Int = 0
 
   override fun isDeprecated(): Boolean =
-    enumEntrySymbolPointer.withSymbol(ktModule) { enumEntrySymbol ->
-      @Suppress("UnstableApiUsage")
-      enumEntrySymbol.deprecationStatus != null
-    }
+      enumEntrySymbolPointer.withSymbol(ktModule) { enumEntrySymbol ->
+        @Suppress("UnstableApiUsage")
+        enumEntrySymbol.deprecationStatus != null
+      }
 
-  override fun getName(): String =
-    enumEntrySymbolPointer.withSymbol(ktModule) { enumEntrySymbol ->
-      enumEntrySymbol.name.asString()
-    }
+  override fun getName(): String = enumEntrySymbolPointer.withSymbol(ktModule) { enumEntrySymbol -> enumEntrySymbol.name.asString() }
 
   override fun getModifierList(): PsiModifierList = _modifierList
 
@@ -112,8 +108,7 @@ internal class KlibLightFieldForEnumEntry(
   // TODO: This is definitely wrong.
   override fun getInitializingClass(): PsiEnumConstantInitializer? = null
 
-  override fun getOrCreateInitializingClass(): PsiEnumConstantInitializer =
-    initializingClass ?: cannotModify()
+  override fun getOrCreateInitializingClass(): PsiEnumConstantInitializer = initializingClass ?: cannotModify()
 
   override fun resolveConstructor(): PsiMethod? = null
 

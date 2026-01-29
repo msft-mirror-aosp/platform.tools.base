@@ -24,9 +24,9 @@ class HardcodedDebugModeDetectorTest : AbstractCheckTest() {
 
   fun test() {
     lint()
-      .files(
-        manifest(
-            """
+        .files(
+            manifest(
+                    """
 
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="foo.bar2"
@@ -52,18 +52,18 @@ class HardcodedDebugModeDetectorTest : AbstractCheckTest() {
 
                 </manifest>
                 """
-          )
-          .indented()
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .run()
+        .expect(
+            """
             AndroidManifest.xml:10: Error: Avoid hardcoding the debug mode; leaving it out allows debug and release builds to automatically assign one [HardcodedDebugMode]
                     android:debuggable="true"
                     ~~~~~~~~~~~~~~~~~~~~~~~~~
             1 errors, 0 warnings
             """
-      )
+        )
   }
 
   fun testOk() {
@@ -73,9 +73,9 @@ class HardcodedDebugModeDetectorTest : AbstractCheckTest() {
   fun testNoNS() {
     //noinspection all // Sample code
     lint()
-      .files(
-        manifest(
-            """
+        .files(
+            manifest(
+                    """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="foo.bar2"
                     android:versionCode="1"
@@ -87,10 +87,10 @@ class HardcodedDebugModeDetectorTest : AbstractCheckTest() {
 
                 </manifest>
                 """
-          )
-          .indented()
-      )
-      .run()
-      .expectClean()
+                )
+                .indented()
+        )
+        .run()
+        .expectClean()
   }
 }

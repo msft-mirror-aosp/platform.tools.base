@@ -31,8 +31,8 @@ import org.w3c.dom.Node
 
 class BlameFile
 internal constructor(
-  private val nodes: MutableMap<String, BlameNode>,
-  private val actions: Actions?,
+    private val nodes: MutableMap<String, BlameNode>,
+    private val actions: Actions?,
 ) {
 
   private fun findBlameNode(element: Element): BlameNode? {
@@ -118,9 +118,9 @@ internal constructor(
   }
 
   private fun findElementOrAttribute(
-    client: LintClient,
-    element: Element,
-    attribute: Attr?,
+      client: LintClient,
+      element: Element,
+      attribute: Attr?,
   ): Pair<File, Node>? {
     val blameNode = findBlameNode(element) ?: return null
 
@@ -199,18 +199,18 @@ internal constructor(
 
     val reference = AtomicReference<Element>()
     XmlVisitor.accept(
-      document,
-      object : XmlVisitor() {
-        override fun visitTag(element: Element, tag: String): Boolean {
-          val key = getNodeKey(element)
-          if (targetKey == key) {
-            reference.set(element)
-            return true
-          }
+        document,
+        object : XmlVisitor() {
+          override fun visitTag(element: Element, tag: String): Boolean {
+            val key = getNodeKey(element)
+            if (targetKey == key) {
+              reference.set(element)
+              return true
+            }
 
-          return false
-        }
-      },
+            return false
+          }
+        },
     )
     return Pair.of(manifest, reference.get())
   }

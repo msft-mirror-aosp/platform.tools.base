@@ -120,10 +120,10 @@ import kotlin.math.min
 /** A reporter is an output generator for lint warnings */
 abstract class Reporter
 protected constructor(
-  @JvmField protected val client: LintCliClient,
+    @JvmField protected val client: LintCliClient,
 
-  /** The report file, if any (reporters may write to stdout/stderr too) */
-  val output: File?,
+    /** The report file, if any (reporters may write to stdout/stderr too) */
+    val output: File?,
 ) {
   /** Whether this reporter is writing to the console. */
   val isWriteToConsole: Boolean
@@ -142,11 +142,10 @@ protected constructor(
    * Write the given warnings into the report
    *
    * @param stats the vital statistics for the lint report
-   * @param incidents the incidents to be reported @throws IOException if an error occurs @param
-   *   registry the issue registry for all issues used during analysis
+   * @param incidents the incidents to be reported @throws IOException if an error occurs @param registry the issue registry for all issues
+   *   used during analysis
    */
-  @Throws(IOException::class)
-  abstract fun write(stats: LintStats, incidents: List<Incident>, registry: IssueRegistry)
+  @Throws(IOException::class) abstract fun write(stats: LintStats, incidents: List<Incident>, registry: IssueRegistry)
 
   /**
    * Writes a project overview table
@@ -234,11 +233,11 @@ protected constructor(
      * @param close whether the writer should be closed when done
      */
     fun createTextReporter(
-      client: LintCliClient,
-      flags: LintCliFlags,
-      file: File?,
-      writer: Writer,
-      close: Boolean,
+        client: LintCliClient,
+        flags: LintCliFlags,
+        file: File?,
+        writer: Writer,
+        close: Boolean,
     ): TextReporter {
       return TextReporter(client, flags, file, writer, close)
     }
@@ -254,9 +253,9 @@ protected constructor(
     @JvmStatic
     @Throws(IOException::class)
     fun createXmlReporter(
-      client: LintCliClient,
-      output: File,
-      reportType: XmlFileType = XmlFileType.REPORT,
+        client: LintCliClient,
+        output: File,
+        reportType: XmlFileType = XmlFileType.REPORT,
     ): XmlReporter {
       return XmlReporter(client, output, reportType)
     }
@@ -366,155 +365,155 @@ protected constructor(
       // for updated code to generate this.
       if (studioFixes == null) {
         studioFixes =
-          setOf(
-            AccessibilityDetector.ISSUE,
-            ActionsXmlDetector.ISSUE,
-            AlwaysShowActionDetector.ISSUE,
-            AndroidAutoDetector.INVALID_USES_TAG_ISSUE,
-            AndroidTvDetector.MISSING_BANNER,
-            AndroidTvDetector.MISSING_LEANBACK_SUPPORT,
-            AndroidTvDetector.PERMISSION_IMPLIES_UNSUPPORTED_HARDWARE,
-            AndroidTvDetector.UNSUPPORTED_TV_HARDWARE,
-            AnnotationDetector.FLAG_STYLE,
-            AnnotationDetector.SWITCH_TYPE_DEF,
-            ApiDetector.INLINED,
-            ApiDetector.OBSOLETE_SDK,
-            ApiDetector.UNSUPPORTED,
-            ApiDetector.UNUSED,
-            AppCompatCallDetector.ISSUE,
-            AppCompatCustomViewDetector.ISSUE,
-            AppCompatResourceDetector.ISSUE,
-            AppLinksValidDetector.INTENT_FILTER_UNIQUE_DATA_ATTRIBUTES,
-            AppLinksValidDetector.VALIDATION,
-            AssertDetector.EXPENSIVE,
-            AutofillDetector.ISSUE,
-            ButtonDetector.STYLE,
-            ByteOrderMarkDetector.BOM,
-            CallSuperDetector.ISSUE,
-            CanvasSizeDetector.ISSUE,
-            CheckResultDetector.CHECK_PERMISSION,
-            CheckResultDetector.CHECK_RESULT,
-            ChromeOsDetector.NON_RESIZEABLE_ACTIVITY,
-            ChromeOsDetector.PERMISSION_IMPLIES_UNSUPPORTED_HARDWARE,
-            ChromeOsDetector.SETTING_ORIENTATION_ON_ACTIVITY,
-            ChromeOsDetector.UNSUPPORTED_CHROME_OS_HARDWARE,
-            ChromeOsSourceDetector.CHROMEOS_ON_CONFIGURATION_CHANGED,
-            ChromeOsSourceDetector.UNSUPPORTED_CAMERA_FEATURE,
-            ChromeOsSourceDetector.UNSUPPORTED_LOCKED_ORIENTATION,
-            CleanupDetector.APPLY_SHARED_PREF,
-            CleanupDetector.SHARED_PREF,
-            CommentDetector.STOP_SHIP,
-            DataBindingDetector.ESCAPE_XML,
-            DuplicateResourceDetector.TYPE_MISMATCH,
-            EllipsizeMaxLinesDetector.ISSUE,
-            ExportedFlagDetector.ISSUE,
-            FontDetector.FONT_VALIDATION,
-            GradleDetector.AGP_DEPENDENCY,
-            GradleDetector.ANNOTATION_PROCESSOR_ON_COMPILE_PATH,
-            GradleDetector.CHROMEOS_ABI_SUPPORT,
-            GradleDetector.COMPATIBILITY,
-            GradleDetector.DEPENDENCY,
-            GradleDetector.DEPRECATED,
-            GradleDetector.DEPRECATED_CONFIGURATION,
-            GradleDetector.DEPRECATED_LIBRARY,
-            GradleDetector.DUPLICATE_CLASSES,
-            GradleDetector.EXPIRED_TARGET_SDK_VERSION,
-            GradleDetector.EXPIRING_TARGET_SDK_VERSION,
-            GradleDetector.JAVA_PLUGIN_LANGUAGE_LEVEL,
-            GradleDetector.JCENTER_REPOSITORY_OBSOLETE,
-            GradleDetector.KTX_EXTENSION_AVAILABLE,
-            GradleDetector.MIN_SDK_TOO_LOW,
-            GradleDetector.NOT_INTERPOLATED,
-            GradleDetector.PATH,
-            GradleDetector.PLUS,
-            GradleDetector.REMOTE_VERSION,
-            GradleDetector.RISKY_LIBRARY,
-            GradleDetector.STRING_INTEGER,
-            GradleDetector.TARGET_NEWER,
-            GridLayoutDetector.ISSUE,
-            IconDetector.WEBP_ELIGIBLE,
-            IconDetector.WEBP_UNSUPPORTED,
-            IgnoreWithoutReasonDetector.ISSUE,
-            IncludeDetector.ISSUE,
-            InefficientWeightDetector.BASELINE_WEIGHTS,
-            InefficientWeightDetector.INEFFICIENT_WEIGHT,
-            InefficientWeightDetector.ORIENTATION,
-            InteroperabilityDetector.PLATFORM_NULLNESS,
-            JavaPerformanceDetector.USE_VALUE_OF,
-            KeyboardNavigationDetector.ISSUE,
-            LabelForDetector.ISSUE,
-            LintDetectorDetector.DOLLAR_STRINGS,
-            LintDetectorDetector.EXISTING_LINT_CONSTANTS,
-            LintDetectorDetector.TEXT_FORMAT,
-            LintDetectorDetector.TRIM_INDENT,
-            LocaleDetector.STRING_LOCALE,
-            ManifestDetector.APPLICATION_ICON,
-            ManifestDetector.DATA_EXTRACTION_RULES,
-            ManifestDetector.MIPMAP,
-            ManifestDetector.MOCK_LOCATION,
-            ManifestDetector.SET_VERSION,
-            MissingClassDetector.INNERCLASS,
-            MissingIdDetector.ISSUE,
-            MissingPrefixDetector.MISSING_NAMESPACE,
-            MotionLayoutDetector.INVALID_SCENE_FILE_REFERENCE,
-            MotionSceneDetector.MOTION_SCENE_FILE_VALIDATION_ERROR,
-            NamespaceDetector.REDUNDANT,
-            NamespaceDetector.RES_AUTO,
-            NamespaceDetector.TYPO,
-            NetworkSecurityConfigDetector.INSECURE_CONFIGURATION,
-            NetworkSecurityConfigDetector.ISSUE,
-            ObjectAnimatorDetector.MISSING_KEEP,
-            ObsoleteLayoutParamsDetector.ISSUE,
-            ParcelDetector.ISSUE,
-            PermissionDetector.MISSING_PERMISSION,
-            PropertyFileDetector.ESCAPE,
-            PropertyFileDetector.HTTP,
-            PxUsageDetector.DP_ISSUE,
-            PxUsageDetector.PX_ISSUE,
-            ReadParcelableDetector.ISSUE,
-            RtlDetector.COMPAT,
-            RtlDetector.USE_START,
-            SamDetector.ISSUE,
-            ScrollViewChildDetector.ISSUE,
-            SdkIntDetector.ISSUE,
-            SecurityDetector.EXPORTED_PROVIDER,
-            SecurityDetector.EXPORTED_RECEIVER,
-            SecurityDetector.EXPORTED_SERVICE,
-            ServiceCastDetector.WIFI_MANAGER,
-            ServiceCastDetector.WIFI_MANAGER_UNCERTAIN,
-            SignatureOrSystemDetector.ISSUE,
-            StringEscapeDetector.STRING_ESCAPING,
-            SyntheticAccessorDetector.ISSUE,
-            TextFieldDetector.ISSUE,
-            TextViewDetector.SELECTABLE,
-            TileProviderDetector.TILE_PROVIDER_PERMISSIONS,
-            TitleDetector.ISSUE,
-            ToastDetector.ISSUE,
-            TranslationDetector.EXTRA,
-            TranslationDetector.MISSING,
-            TranslationDetector.MISSING_BASE,
-            TranslationDetector.TRANSLATED_UNTRANSLATABLE,
-            TypoDetector.ISSUE,
-            TypographyDetector.DASHES,
-            TypographyDetector.ELLIPSIS,
-            TypographyDetector.FRACTIONS,
-            TypographyDetector.OTHER,
-            TypographyDetector.QUOTES,
-            UnsafeBroadcastReceiverDetector.BROADCAST_SMS,
-            UnusedResourceDetector.ISSUE,
-            UnusedResourceDetector.ISSUE_IDS,
-            UselessViewDetector.USELESS_LEAF,
-            Utf8Detector.ISSUE,
-            VectorPathDetector.PATH_VALID,
-            ViewTypeDetector.ADD_CAST,
-            ViewTypeDetector.WRONG_VIEW_CAST,
-            WakelockDetector.TIMEOUT,
-            WatchFaceForAndroidXDetector.ISSUE,
-            WatchFaceEditorDetector.ISSUE,
-            WearStandaloneAppDetector.WEAR_STANDALONE_APP_ISSUE,
-            WrongCallDetector.ISSUE,
-            WrongCaseDetector.WRONG_CASE,
-          )
+            setOf(
+                AccessibilityDetector.ISSUE,
+                ActionsXmlDetector.ISSUE,
+                AlwaysShowActionDetector.ISSUE,
+                AndroidAutoDetector.INVALID_USES_TAG_ISSUE,
+                AndroidTvDetector.MISSING_BANNER,
+                AndroidTvDetector.MISSING_LEANBACK_SUPPORT,
+                AndroidTvDetector.PERMISSION_IMPLIES_UNSUPPORTED_HARDWARE,
+                AndroidTvDetector.UNSUPPORTED_TV_HARDWARE,
+                AnnotationDetector.FLAG_STYLE,
+                AnnotationDetector.SWITCH_TYPE_DEF,
+                ApiDetector.INLINED,
+                ApiDetector.OBSOLETE_SDK,
+                ApiDetector.UNSUPPORTED,
+                ApiDetector.UNUSED,
+                AppCompatCallDetector.ISSUE,
+                AppCompatCustomViewDetector.ISSUE,
+                AppCompatResourceDetector.ISSUE,
+                AppLinksValidDetector.INTENT_FILTER_UNIQUE_DATA_ATTRIBUTES,
+                AppLinksValidDetector.VALIDATION,
+                AssertDetector.EXPENSIVE,
+                AutofillDetector.ISSUE,
+                ButtonDetector.STYLE,
+                ByteOrderMarkDetector.BOM,
+                CallSuperDetector.ISSUE,
+                CanvasSizeDetector.ISSUE,
+                CheckResultDetector.CHECK_PERMISSION,
+                CheckResultDetector.CHECK_RESULT,
+                ChromeOsDetector.NON_RESIZEABLE_ACTIVITY,
+                ChromeOsDetector.PERMISSION_IMPLIES_UNSUPPORTED_HARDWARE,
+                ChromeOsDetector.SETTING_ORIENTATION_ON_ACTIVITY,
+                ChromeOsDetector.UNSUPPORTED_CHROME_OS_HARDWARE,
+                ChromeOsSourceDetector.CHROMEOS_ON_CONFIGURATION_CHANGED,
+                ChromeOsSourceDetector.UNSUPPORTED_CAMERA_FEATURE,
+                ChromeOsSourceDetector.UNSUPPORTED_LOCKED_ORIENTATION,
+                CleanupDetector.APPLY_SHARED_PREF,
+                CleanupDetector.SHARED_PREF,
+                CommentDetector.STOP_SHIP,
+                DataBindingDetector.ESCAPE_XML,
+                DuplicateResourceDetector.TYPE_MISMATCH,
+                EllipsizeMaxLinesDetector.ISSUE,
+                ExportedFlagDetector.ISSUE,
+                FontDetector.FONT_VALIDATION,
+                GradleDetector.AGP_DEPENDENCY,
+                GradleDetector.ANNOTATION_PROCESSOR_ON_COMPILE_PATH,
+                GradleDetector.CHROMEOS_ABI_SUPPORT,
+                GradleDetector.COMPATIBILITY,
+                GradleDetector.DEPENDENCY,
+                GradleDetector.DEPRECATED,
+                GradleDetector.DEPRECATED_CONFIGURATION,
+                GradleDetector.DEPRECATED_LIBRARY,
+                GradleDetector.DUPLICATE_CLASSES,
+                GradleDetector.EXPIRED_TARGET_SDK_VERSION,
+                GradleDetector.EXPIRING_TARGET_SDK_VERSION,
+                GradleDetector.JAVA_PLUGIN_LANGUAGE_LEVEL,
+                GradleDetector.JCENTER_REPOSITORY_OBSOLETE,
+                GradleDetector.KTX_EXTENSION_AVAILABLE,
+                GradleDetector.MIN_SDK_TOO_LOW,
+                GradleDetector.NOT_INTERPOLATED,
+                GradleDetector.PATH,
+                GradleDetector.PLUS,
+                GradleDetector.REMOTE_VERSION,
+                GradleDetector.RISKY_LIBRARY,
+                GradleDetector.STRING_INTEGER,
+                GradleDetector.TARGET_NEWER,
+                GridLayoutDetector.ISSUE,
+                IconDetector.WEBP_ELIGIBLE,
+                IconDetector.WEBP_UNSUPPORTED,
+                IgnoreWithoutReasonDetector.ISSUE,
+                IncludeDetector.ISSUE,
+                InefficientWeightDetector.BASELINE_WEIGHTS,
+                InefficientWeightDetector.INEFFICIENT_WEIGHT,
+                InefficientWeightDetector.ORIENTATION,
+                InteroperabilityDetector.PLATFORM_NULLNESS,
+                JavaPerformanceDetector.USE_VALUE_OF,
+                KeyboardNavigationDetector.ISSUE,
+                LabelForDetector.ISSUE,
+                LintDetectorDetector.DOLLAR_STRINGS,
+                LintDetectorDetector.EXISTING_LINT_CONSTANTS,
+                LintDetectorDetector.TEXT_FORMAT,
+                LintDetectorDetector.TRIM_INDENT,
+                LocaleDetector.STRING_LOCALE,
+                ManifestDetector.APPLICATION_ICON,
+                ManifestDetector.DATA_EXTRACTION_RULES,
+                ManifestDetector.MIPMAP,
+                ManifestDetector.MOCK_LOCATION,
+                ManifestDetector.SET_VERSION,
+                MissingClassDetector.INNERCLASS,
+                MissingIdDetector.ISSUE,
+                MissingPrefixDetector.MISSING_NAMESPACE,
+                MotionLayoutDetector.INVALID_SCENE_FILE_REFERENCE,
+                MotionSceneDetector.MOTION_SCENE_FILE_VALIDATION_ERROR,
+                NamespaceDetector.REDUNDANT,
+                NamespaceDetector.RES_AUTO,
+                NamespaceDetector.TYPO,
+                NetworkSecurityConfigDetector.INSECURE_CONFIGURATION,
+                NetworkSecurityConfigDetector.ISSUE,
+                ObjectAnimatorDetector.MISSING_KEEP,
+                ObsoleteLayoutParamsDetector.ISSUE,
+                ParcelDetector.ISSUE,
+                PermissionDetector.MISSING_PERMISSION,
+                PropertyFileDetector.ESCAPE,
+                PropertyFileDetector.HTTP,
+                PxUsageDetector.DP_ISSUE,
+                PxUsageDetector.PX_ISSUE,
+                ReadParcelableDetector.ISSUE,
+                RtlDetector.COMPAT,
+                RtlDetector.USE_START,
+                SamDetector.ISSUE,
+                ScrollViewChildDetector.ISSUE,
+                SdkIntDetector.ISSUE,
+                SecurityDetector.EXPORTED_PROVIDER,
+                SecurityDetector.EXPORTED_RECEIVER,
+                SecurityDetector.EXPORTED_SERVICE,
+                ServiceCastDetector.WIFI_MANAGER,
+                ServiceCastDetector.WIFI_MANAGER_UNCERTAIN,
+                SignatureOrSystemDetector.ISSUE,
+                StringEscapeDetector.STRING_ESCAPING,
+                SyntheticAccessorDetector.ISSUE,
+                TextFieldDetector.ISSUE,
+                TextViewDetector.SELECTABLE,
+                TileProviderDetector.TILE_PROVIDER_PERMISSIONS,
+                TitleDetector.ISSUE,
+                ToastDetector.ISSUE,
+                TranslationDetector.EXTRA,
+                TranslationDetector.MISSING,
+                TranslationDetector.MISSING_BASE,
+                TranslationDetector.TRANSLATED_UNTRANSLATABLE,
+                TypoDetector.ISSUE,
+                TypographyDetector.DASHES,
+                TypographyDetector.ELLIPSIS,
+                TypographyDetector.FRACTIONS,
+                TypographyDetector.OTHER,
+                TypographyDetector.QUOTES,
+                UnsafeBroadcastReceiverDetector.BROADCAST_SMS,
+                UnusedResourceDetector.ISSUE,
+                UnusedResourceDetector.ISSUE_IDS,
+                UselessViewDetector.USELESS_LEAF,
+                Utf8Detector.ISSUE,
+                VectorPathDetector.PATH_VALID,
+                ViewTypeDetector.ADD_CAST,
+                ViewTypeDetector.WRONG_VIEW_CAST,
+                WakelockDetector.TIMEOUT,
+                WatchFaceForAndroidXDetector.ISSUE,
+                WatchFaceEditorDetector.ISSUE,
+                WearStandaloneAppDetector.WEAR_STANDALONE_APP_ISSUE,
+                WrongCallDetector.ISSUE,
+                WrongCaseDetector.WRONG_CASE,
+            )
       }
       return studioFixes?.contains(issue) ?: false
     }
@@ -522,8 +521,8 @@ protected constructor(
 }
 
 /**
- * Returns the path to display for a given incident. This is like [LintClient.getDisplayPath], but
- * also takes into account the [LintCliFlags.fullPath] property to use absolute paths if requested.
+ * Returns the path to display for a given incident. This is like [LintClient.getDisplayPath], but also takes into account the
+ * [LintCliFlags.fullPath] property to use absolute paths if requested.
  */
 fun Incident.getPath(client: LintCliClient, file: File = this.file): String {
   return if (project != null) {
@@ -534,16 +533,16 @@ fun Incident.getPath(client: LintCliClient, file: File = this.file): String {
 }
 
 /**
- * Produces the source line containing this error, as well as a second line showing the error range
- * using ~ characters. Suitable for text output.
+ * Produces the source line containing this error, as well as a second line showing the error range using ~ characters. Suitable for text
+ * output.
  */
 fun Incident.getErrorLines(textProvider: (File) -> CharSequence?): String? {
   return location.getErrorLines(textProvider)
 }
 
 /**
- * Produces the source line containing this error, as well as a second line showing the error range
- * using ~ characters. Suitable for text output.
+ * Produces the source line containing this error, as well as a second line showing the error range using ~ characters. Suitable for text
+ * output.
  */
 fun Location.getErrorLines(textProvider: (File) -> CharSequence?): String? {
   val location = this
@@ -638,14 +637,11 @@ private fun CharSequence.getLineOfOffset(offset: Int): String {
   return this.subSequence(offset, if (end != -1) end else this.length).toString()
 }
 
-/**
- * Returns a (by default 1-based line number, or 0-based if you pass 0 into [startLineNumber]) line
- * number.
- */
+/** Returns a (by default 1-based line number, or 0-based if you pass 0 into [startLineNumber]) line number. */
 private fun CharSequence.getLineNumber(
-  offset: Int,
-  startOffset: Int = 0,
-  startLineNumber: Int = 1,
+    offset: Int,
+    startOffset: Int = 0,
+    startLineNumber: Int = 1,
 ): Int {
   var lineNumber = startLineNumber
   for (i in startOffset until min(offset, length)) {

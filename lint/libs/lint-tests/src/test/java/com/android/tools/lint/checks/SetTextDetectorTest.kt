@@ -24,9 +24,9 @@ class SetTextDetectorTest : AbstractCheckTest() {
 
   fun test() {
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
                 package test.pkg;
 
                 import android.content.Context;
@@ -57,12 +57,12 @@ class SetTextDetectorTest : AbstractCheckTest() {
                   }
                 }
                 """
-          )
-          .indented()
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .run()
+        .expect(
+            """
             src/test/pkg/CustomScreen.java:13: Warning: String literal in setText can not be translated. Use Android resources instead. [SetTextI18n]
                 view.setText("Hardcoded");
                              ~~~~~~~~~~~
@@ -89,15 +89,15 @@ class SetTextDetectorTest : AbstractCheckTest() {
                             ~~~~~~~
             0 errors, 8 warnings
             """
-      )
+        )
   }
 
   fun test347356457() {
     // Regression test for b/347356457
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
             package test.pkg
 
             import android.content.Context
@@ -117,12 +117,12 @@ class SetTextDetectorTest : AbstractCheckTest() {
                 }
             }
             """
-          )
-          .indented()
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .run()
+        .expect(
+            """
         src/test/pkg/SetTextExample.kt:9: Warning: Do not concatenate text displayed with setText. Use resource string with placeholders. [SetTextI18n]
                 textView.text = "Hello ＄first ＄last!" // WARN 1 & 2
                                 ~~~~~~~~~~~~~~~~~~~~~
@@ -131,6 +131,6 @@ class SetTextDetectorTest : AbstractCheckTest() {
                                  ~~~~~~
         0 errors, 2 warnings
         """
-      )
+        )
   }
 }

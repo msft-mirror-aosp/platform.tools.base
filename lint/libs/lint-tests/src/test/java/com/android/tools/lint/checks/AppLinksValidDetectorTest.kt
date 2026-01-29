@@ -43,9 +43,9 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
 
   fun testIntentFilterDataDeclaration() {
     lint()
-      .files(
-        manifest(
-            """
+        .files(
+            manifest(
+                    """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="com.example.helloworld" >
                     <activity android:name="com.example.Activity">
@@ -97,13 +97,13 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
                     </activity>
                 </manifest>
                 """
-          )
-          .indented()
-      )
-      .issues(AppLinksValidDetector.INTENT_FILTER_UNIQUE_DATA_ATTRIBUTES)
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .issues(AppLinksValidDetector.INTENT_FILTER_UNIQUE_DATA_ATTRIBUTES)
+        .run()
+        .expect(
+            """
           AndroidManifest.xml:5: Warning: Consider splitting data tag into multiple tags with individual attributes to avoid confusion [IntentFilterUniqueDataAttributes]
                       <data android:scheme="https" android:host="example.com"/>
                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -124,11 +124,11 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
                       ^
           0 errors, 6 warnings
         """
-      )
-      .verifyFixes()
-      .robot(true)
-      .expectFixDiffs(
-        """
+        )
+        .verifyFixes()
+        .robot(true)
+        .expectFixDiffs(
+            """
         Autofix for AndroidManifest.xml line 5: Replace with <data android:scheme="https" />...:
         @@ -5 +5,2 @@
         -            <data android:scheme="https" android:host="example.com"/>
@@ -170,15 +170,15 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
         +            <data android:pathPrefix="/prefix" />
         +            <data android:pathPattern="/pattern/*" />
         """
-      )
+        )
   }
 
   fun testDocumentationExampleIntentFilterUniqueDataAttributes() {
     // Tests custom android namespace
     lint()
-      .files(
-        manifest(
-            """
+        .files(
+            manifest(
+                    """
                 <manifest xmlns:alt-android="http://schemas.android.com/apk/res/android"
                     package="com.example.helloworld" >
                     <activity alt-android:name="com.example.Activity">
@@ -189,13 +189,13 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
                     </activity>
                 </manifest>
                 """
-          )
-          .indented()
-      )
-      .issues(AppLinksValidDetector.INTENT_FILTER_UNIQUE_DATA_ATTRIBUTES)
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .issues(AppLinksValidDetector.INTENT_FILTER_UNIQUE_DATA_ATTRIBUTES)
+        .run()
+        .expect(
+            """
                 AndroidManifest.xml:5: Warning: Consider splitting data tag into multiple tags with individual attributes to avoid confusion [IntentFilterUniqueDataAttributes]
                             <data alt-android:scheme="https" alt-android:host="example.com"/>
                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -204,11 +204,11 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 0 errors, 2 warnings
                 """
-      )
-      .verifyFixes()
-      .robot(true)
-      .expectFixDiffs(
-        """
+        )
+        .verifyFixes()
+        .robot(true)
+        .expectFixDiffs(
+            """
         Autofix for AndroidManifest.xml line 5: Replace with <data alt-android:scheme="https" />...:
         @@ -5 +5,2 @@
         -            <data alt-android:scheme="https" alt-android:host="example.com"/>
@@ -220,22 +220,22 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
         +            <data alt-android:scheme="http" />
         +            <data alt-android:host="example.org" />
         """
-      )
+        )
   }
 
   fun testWrongNamespace() {
     val expected =
-      """
+        """
             AndroidManifest.xml:15: Error: Validation nodes should be in the tools: namespace to ensure they are removed from the manifest at build time [TestAppLink]
                         <validation />
                          ~~~~~~~~~~
             1 errors, 0 warnings
             """
     lint()
-      .files(
-        xml(
-            "AndroidManifest.xml",
-            """
+        .files(
+            xml(
+                    "AndroidManifest.xml",
+                    """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     xmlns:tools="http://schemas.android.com/tools"
                     package="test.pkg" >
@@ -256,26 +256,26 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
 
                 </manifest>
                 """,
-          )
-          .indented()
-      )
-      .run()
-      .expect(expected)
+                )
+                .indented()
+        )
+        .run()
+        .expect(expected)
   }
 
   fun testMissingTestUrl() {
     val expected =
-      """
+        """
             AndroidManifest.xml:15: Error: Expected testUrl attribute [AppLinkUrlError]
                         <tools:validation />
                         ~~~~~~~~~~~~~~~~~~~~
             1 errors, 0 warnings
             """
     lint()
-      .files(
-        xml(
-            "AndroidManifest.xml",
-            """
+        .files(
+            xml(
+                    "AndroidManifest.xml",
+                    """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     xmlns:tools="http://schemas.android.com/tools"
                     package="test.pkg" >
@@ -296,16 +296,16 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
 
                 </manifest>
                 """,
-          )
-          .indented()
-      )
-      .run()
-      .expect(expected)
+                )
+                .indented()
+        )
+        .run()
+        .expect(expected)
   }
 
   fun testBadTestUrl() {
     val expected =
-      """
+        """
             AndroidManifest.xml:14: Error: Invalid test URL: no protocol: no-protocol [TestAppLink]
                         <tools:validation testUrl="no-protocol"/>
                                                    ~~~~~~~~~~~
@@ -318,10 +318,10 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
             3 errors, 0 warnings
             """
     lint()
-      .files(
-        xml(
-            "AndroidManifest.xml",
-            """
+        .files(
+            xml(
+                    "AndroidManifest.xml",
+                    """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     xmlns:tools="http://schemas.android.com/tools"    package="test.pkg" >
 
@@ -343,16 +343,16 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
 
                 </manifest>
                 """,
-          )
-          .indented()
-      )
-      .run()
-      .expect(expected)
+                )
+                .indented()
+        )
+        .run()
+        .expect(expected)
   }
 
   fun testValidation1() {
     val expected =
-      """
+        """
             AndroidManifest.xml:17: Error: Test URL did not match path prefix /gizmos, path literal /literal/path [TestAppLink]
                         <tools:validation testUrl="http://example.com/notmatch/foo/bar"/>
                                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -365,10 +365,10 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
             3 errors, 0 warnings
             """
     lint()
-      .files(
-        xml(
-            "AndroidManifest.xml",
-            """
+        .files(
+            xml(
+                    "AndroidManifest.xml",
+                    """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     xmlns:tools="http://schemas.android.com/tools"
                     package="test.pkg" >
@@ -394,20 +394,20 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
 
                 </manifest>
                 """,
-          )
-          .indented()
-      )
-      .issues(TEST_URL)
-      .run()
-      .expect(expected)
+                )
+                .indented()
+        )
+        .issues(TEST_URL)
+        .run()
+        .expect(expected)
   }
 
   fun testValidation2() {
     lint()
-      .files(
-        xml(
-            "AndroidManifest.xml",
-            """
+        .files(
+            xml(
+                    "AndroidManifest.xml",
+                    """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     xmlns:tools="http://schemas.android.com/tools"
                     package="com.example.helloworld" >
@@ -435,27 +435,27 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
 
                 </manifest>
                 """,
-          )
-          .indented()
-      )
-      .issues(TEST_URL)
-      .run()
-      .expectClean()
+                )
+                .indented()
+        )
+        .issues(TEST_URL)
+        .run()
+        .expectClean()
   }
 
   fun testValidation_hostPortPairs() {
     val expected =
-      """
+        """
       AndroidManifest.xml:19: Error: Test URL did not match any of host+port example.com:8000, host+port twitter.com:8001 [TestAppLink]
                   <tools:validation testUrl="https://example.com:8001/" />
                                              ~~~~~~~~~~~~~~~~~~~~~~~~~
       1 errors, 0 warnings
       """
     lint()
-      .files(
-        xml(
-            "AndroidManifest.xml",
-            """
+        .files(
+            xml(
+                    "AndroidManifest.xml",
+                    """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     xmlns:tools="http://schemas.android.com/tools"
                     package="com.example.helloworld" >
@@ -479,26 +479,26 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
                     </application>
                 </manifest>
                 """,
-          )
-          .indented()
-      )
-      .run()
-      .expect(expected)
+                )
+                .indented()
+        )
+        .run()
+        .expect(expected)
   }
 
   fun testUrlMatchingWithOnlyPort() {
     val expected =
-      """
+        """
       AndroidManifest.xml:9: Error: The port must be specified in the same <data> element as the host [AppLinkUrlError]
                       <data android:port="8000" />
                                           ~~~~
       1 errors, 0 warnings
       """
     lint()
-      .files(
-        xml(
-            "AndroidManifest.xml",
-            """
+        .files(
+            xml(
+                    "AndroidManifest.xml",
+                    """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     xmlns:tools="http://schemas.android.com/tools"
                     package="test.pkg" >
@@ -516,26 +516,26 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
                     </application>
                 </manifest>
                 """,
-          )
-          .indented()
-      )
-      .run()
-      .expect(expected)
+                )
+                .indented()
+        )
+        .run()
+        .expect(expected)
   }
 
   fun testHostWildcardMatching() {
     val expected =
-      """
+        """
             AndroidManifest.xml:15: Error: Test URL did not match host *.example.com [TestAppLink]
                         <tools:validation testUrl="http://example.com/path/foo/bar"/>
                                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             1 errors, 0 warnings
             """
     lint()
-      .files(
-        xml(
-            "AndroidManifest.xml",
-            """
+        .files(
+            xml(
+                    "AndroidManifest.xml",
+                    """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     xmlns:tools="http://schemas.android.com/tools"
                     package="test.pkg" >
@@ -558,26 +558,26 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
 
                 </manifest>
                 """,
-          )
-          .indented()
-      )
-      .run()
-      .expect(expected)
+                )
+                .indented()
+        )
+        .run()
+        .expect(expected)
   }
 
   fun testPortMatching() {
     val expected =
-      """
+        """
       AndroidManifest.xml:38: Error: Test URL did not match host example.com or did not match host+port example.com:85 or did not match host+port android.com:86 [TestAppLink]
                   <tools:validation testUrl="http://android.com/path/foo/bar"/>
                                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
       1 errors, 0 warnings
       """
     lint()
-      .files(
-        xml(
-            "AndroidManifest.xml",
-            """
+        .files(
+            xml(
+                    "AndroidManifest.xml",
+                    """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     xmlns:tools="http://schemas.android.com/tools"
                     package="test.pkg" >
@@ -621,27 +621,27 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
 
                 </manifest>
                 """,
-          )
-          .indented()
-      )
-      .run()
-      .expect(expected)
+                )
+                .indented()
+        )
+        .run()
+        .expect(expected)
   }
 
   fun testHostAndPortCombination() {
     // Host and port must be specified on the same element
     val expected =
-      """
+        """
             AndroidManifest.xml:11: Error: The port must be specified in the same <data> element as the host [AppLinkUrlError]
                             <data android:port="80" />
                                                 ~~
             1 errors, 0 warnings
             """
     lint()
-      .files(
-        xml(
-            "AndroidManifest.xml",
-            """
+        .files(
+            xml(
+                    "AndroidManifest.xml",
+                    """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="test.pkg" >
                     <application>
@@ -661,19 +661,19 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
 
                 </manifest>
                 """,
-          )
-          .indented()
-      )
-      .run()
-      .expect(expected)
+                )
+                .indented()
+        )
+        .run()
+        .expect(expected)
   }
 
   fun testValidation_fileImplicitScheme() {
     lint()
-      .files(
-        xml(
-            "AndroidManifest.xml",
-            """
+        .files(
+            xml(
+                    "AndroidManifest.xml",
+                    """
           <manifest xmlns:android="http://schemas.android.com/apk/res/android"
               xmlns:tools="http://schemas.android.com/tools"
               package="com.example.helloworld" >
@@ -693,19 +693,19 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
               </application>
           </manifest>
           """,
-          )
-          .indented()
-      )
-      .run()
-      .expectClean()
+                )
+                .indented()
+        )
+        .run()
+        .expectClean()
   }
 
   fun testValidation_uriRelativeFilterGroup_noMatchForPathsOrGroups() {
     lint()
-      .files(
-        xml(
-            "AndroidManifest.xml",
-            """
+        .files(
+            xml(
+                    "AndroidManifest.xml",
+                    """
           <manifest xmlns:android="http://schemas.android.com/apk/res/android"
               xmlns:tools="http://schemas.android.com/tools"
               package="com.example.helloworld" >
@@ -732,26 +732,26 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
               </application>
           </manifest>
           """,
-          )
-          .indented()
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .run()
+        .expect(
+            """
         AndroidManifest.xml:22: Error: Test URL did not match path literal /path, UriRelativeFilterGroup { allow = false, uri_filters = literal /path2 }, UriRelativeFilterGroup { allow = true, uri_filters = UriRelativeFilter { uriPart = FRAGMENT, patternType = LITERAL, filter = fragment } } [TestAppLink]
                     <tools:validation testUrl="http://example.com/path3" />
                                                ~~~~~~~~~~~~~~~~~~~~~~~~
         1 errors, 0 warnings
         """
-      )
+        )
   }
 
   fun testValidation_uriRelativeFilterGroup_matchesExclusionRule() {
     lint()
-      .files(
-        xml(
-            "AndroidManifest.xml",
-            """
+        .files(
+            xml(
+                    "AndroidManifest.xml",
+                    """
           <manifest xmlns:android="http://schemas.android.com/apk/res/android"
               xmlns:tools="http://schemas.android.com/tools"
               package="com.example.helloworld" >
@@ -777,26 +777,26 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
               </application>
           </manifest>
           """,
-          )
-          .indented()
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .run()
+        .expect(
+            """
         AndroidManifest.xml:21: Error: Test URL matched exclusion rule UriRelativeFilterGroup { allow = false, uri_filters = UriRelativeFilter { uriPart = FRAGMENT, patternType = LITERAL, filter = fragment } } [TestAppLink]
                     <tools:validation testUrl="http://example.com#fragment" />
                                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~
         1 errors, 0 warnings
         """
-      )
+        )
   }
 
   fun testValidation_uriRelativeFilterGroup_noMatch_becauseOfCaps() {
     lint()
-      .files(
-        xml(
-            "AndroidManifest.xml",
-            """
+        .files(
+            xml(
+                    "AndroidManifest.xml",
+                    """
           <manifest xmlns:android="http://schemas.android.com/apk/res/android"
               xmlns:tools="http://schemas.android.com/tools"
               package="com.example.helloworld" >
@@ -819,26 +819,26 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
               </application>
           </manifest>
           """,
-          )
-          .indented()
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .run()
+        .expect(
+            """
         AndroidManifest.xml:18: Error: Test URL did not match UriRelativeFilterGroup { allow = true, uri_filters = UriRelativeFilter { uriPart = FRAGMENT, patternType = GLOB, filter = FRAGMENT } } Note that matching is case sensitive. [TestAppLink]
                     <tools:validation testUrl="http://example.com#fragment" />
                                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~
         1 errors, 0 warnings
         """
-      )
+        )
   }
 
   fun testValidation_uriRelativeFilterGroup_matchesPathEvaluatedBeforeExclusionRule() {
     lint()
-      .files(
-        xml(
-            "AndroidManifest.xml",
-            """
+        .files(
+            xml(
+                    "AndroidManifest.xml",
+                    """
           <manifest xmlns:android="http://schemas.android.com/apk/res/android"
               xmlns:tools="http://schemas.android.com/tools"
               package="com.example.helloworld" >
@@ -863,19 +863,19 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
               </application>
           </manifest>
           """,
-          )
-          .indented()
-      )
-      .run()
-      .expectClean()
+                )
+                .indented()
+        )
+        .run()
+        .expectClean()
   }
 
   fun testValidation_uriRelativeFilterGroup_matchesMultipleQueriesInAnyOrder() {
     lint()
-      .files(
-        xml(
-            "AndroidManifest.xml",
-            """
+        .files(
+            xml(
+                    "AndroidManifest.xml",
+                    """
           <manifest xmlns:android="http://schemas.android.com/apk/res/android"
               xmlns:tools="http://schemas.android.com/tools"
               package="com.example.helloworld" >
@@ -901,19 +901,19 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
               </application>
           </manifest>
           """,
-          )
-          .indented()
-      )
-      .run()
-      .expectClean()
+                )
+                .indented()
+        )
+        .run()
+        .expectClean()
   }
 
   fun testValidation_uriRelativeFilterGroup_matchesMultipleQueriesInAnyOrder_sameDataTag() {
     lint()
-      .files(
-        xml(
-            "AndroidManifest.xml",
-            """
+        .files(
+            xml(
+                    "AndroidManifest.xml",
+                    """
           <manifest xmlns:android="http://schemas.android.com/apk/res/android"
               xmlns:tools="http://schemas.android.com/tools"
               package="com.example.helloworld" >
@@ -939,19 +939,19 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
               </application>
           </manifest>
           """,
-          )
-          .indented()
-      )
-      .run()
-      .expectClean()
+                )
+                .indented()
+        )
+        .run()
+        .expectClean()
   }
 
   fun testValidation_uriRelativeFilterGroup_queryMatchesSpecialCharacter() {
     lint()
-      .files(
-        xml(
-            "AndroidManifest.xml",
-            """
+        .files(
+            xml(
+                    "AndroidManifest.xml",
+                    """
           <manifest xmlns:android="http://schemas.android.com/apk/res/android"
               xmlns:tools="http://schemas.android.com/tools"
               package="com.example.helloworld" >
@@ -975,19 +975,19 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
               </application>
           </manifest>
           """,
-          )
-          .indented()
-      )
-      .run()
-      .expectClean()
+                )
+                .indented()
+        )
+        .run()
+        .expectClean()
   }
 
   fun testValidation_uriRelativeFilterGroup_fragmentMatchesSpecialCharacter() {
     lint()
-      .files(
-        xml(
-            "AndroidManifest.xml",
-            """
+        .files(
+            xml(
+                    "AndroidManifest.xml",
+                    """
           <manifest xmlns:android="http://schemas.android.com/apk/res/android"
               xmlns:tools="http://schemas.android.com/tools"
               package="com.example.helloworld" >
@@ -1011,19 +1011,19 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
               </application>
           </manifest>
           """,
-          )
-          .indented()
-      )
-      .run()
-      .expectClean()
+                )
+                .indented()
+        )
+        .run()
+        .expectClean()
   }
 
   fun testValidation_uriRelativeFilterGroup_matchesWithExtraParams() {
     lint()
-      .files(
-        xml(
-            "AndroidManifest.xml",
-            """
+        .files(
+            xml(
+                    "AndroidManifest.xml",
+                    """
           <manifest xmlns:android="http://schemas.android.com/apk/res/android"
               xmlns:tools="http://schemas.android.com/tools"
               package="com.example.helloworld" >
@@ -1049,17 +1049,17 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
               </application>
           </manifest>
           """,
-          )
-          .indented()
-      )
-      .run()
-      .expectClean()
+                )
+                .indented()
+        )
+        .run()
+        .expectClean()
   }
 
   fun testValidPortNumber() {
     // Port numbers must be in the valid range
     val expected =
-      """
+        """
             AndroidManifest.xml:8: Error: not a valid port number [AppLinkUrlError]
                                   android:port="-1" />
                                                 ~~
@@ -1069,10 +1069,10 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
             2 errors, 0 warnings
             """
     lint()
-      .files(
-        xml(
-            "AndroidManifest.xml",
-            """
+        .files(
+            xml(
+                    "AndroidManifest.xml",
+                    """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="test.pkg" >
                     <application>
@@ -1089,17 +1089,17 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
 
                 </manifest>
                 """,
-          )
-          .indented()
-      )
-      .run()
-      .expect(expected)
+                )
+                .indented()
+        )
+        .run()
+        .expect(expected)
   }
 
   fun testNonEmpty() {
     // Attributes are not allowed to be empty
     val expected =
-      """
+        """
             AndroidManifest.xml:6: Error: android:scheme cannot be empty [AppLinkUrlError]
                             <data android:scheme=""
                                   ~~~~~~~~~~~~~~~~~
@@ -1121,10 +1121,10 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
             6 errors, 0 warnings
             """
     lint()
-      .files(
-        xml(
-            "AndroidManifest.xml",
-            """
+        .files(
+            xml(
+                    "AndroidManifest.xml",
+                    """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="test.pkg" >
                     <application>
@@ -1143,17 +1143,17 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
 
                 </manifest>
                 """,
-          )
-          .indented()
-      )
-      .run()
-      .expect(expected)
+                )
+                .indented()
+        )
+        .run()
+        .expect(expected)
   }
 
   fun testNoTrailingSchemeColon() {
     // There should be no trailing colons for schemes
     val expected =
-      """
+        """
             AndroidManifest.xml:6: Error: Don't include trailing colon in the scheme declaration [AppLinkUrlError]
                             <data android:scheme="http:"/>
                                                   ~~~~~
@@ -1163,10 +1163,10 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
             2 errors, 0 warnings
             """
     lint()
-      .files(
-        xml(
-            "AndroidManifest.xml",
-            """
+        .files(
+            xml(
+                    "AndroidManifest.xml",
+                    """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="test.pkg" >
                     <application>
@@ -1180,27 +1180,27 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
 
                 </manifest>
                 """,
-          )
-          .indented()
-      )
-      .run()
-      .expect(expected)
+                )
+                .indented()
+        )
+        .run()
+        .expect(expected)
   }
 
   fun testWrongHostnameWildcard() {
     // Wildcard can only be at the beginning
     val expected =
-      """
+        """
             AndroidManifest.xml:7: Error: The host wildcard (*) can only be the first character [AppLinkUrlError]
                             <data android:host="example.*.com"
                                                 ~~~~~~~~~~~~~
             1 errors, 0 warnings
             """
     lint()
-      .files(
-        xml(
-            "AndroidManifest.xml",
-            """
+        .files(
+            xml(
+                    "AndroidManifest.xml",
+                    """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="test.pkg" >
                     <application>
@@ -1215,17 +1215,17 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
 
                 </manifest>
                 """,
-          )
-          .indented()
-      )
-      .run()
-      .expect(expected)
+                )
+                .indented()
+        )
+        .run()
+        .expect(expected)
   }
 
   fun testLowerCase() {
     // Scheme, host and mime type are all case sensitive and should only use lower case
     val expected =
-      """
+        """
             AndroidManifest.xml:7: Error: Scheme matching is case sensitive and should only use lower-case characters [AppLinkUrlError]
                             <data android:scheme="HTTP"
                                                   ~~~~
@@ -1238,10 +1238,10 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
             3 errors, 0 warnings
             """
     lint()
-      .files(
-        xml(
-            "AndroidManifest.xml",
-            """
+        .files(
+            xml(
+                    "AndroidManifest.xml",
+                    """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="test.pkg" >
                     <application>
@@ -1262,17 +1262,17 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
 
                 </manifest>
                 """,
-          )
-          .indented()
-      )
-      .run()
-      .expect(expected)
+                )
+                .indented()
+        )
+        .run()
+        .expect(expected)
   }
 
   fun testPathsBeginWithSlash() {
     // Paths should begin with /
     val expected =
-      """
+        """
             AndroidManifest.xml:9: Error: android:pathPrefix attribute should start with /, but it is samplePrefix [AppLinkUrlError]
                                   android:pathPrefix="samplePrefix"
                                                       ~~~~~~~~~~~~
@@ -1285,10 +1285,10 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
             3 errors, 0 warnings
             """
     lint()
-      .files(
-        xml(
-            "AndroidManifest.xml",
-            """
+        .files(
+            xml(
+                    "AndroidManifest.xml",
+                    """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="test.pkg" >
                     <application>
@@ -1307,13 +1307,13 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
                     </application>
                 </manifest>
                 """,
-          )
-          .indented()
-      )
-      .run()
-      .expect(expected)
-      .expectFixDiffs(
-        """
+                )
+                .indented()
+        )
+        .run()
+        .expect(expected)
+        .expectFixDiffs(
+            """
             Fix for AndroidManifest.xml line 9: Replace with /samplePrefix:
             @@ -9 +9 @@
             -                      android:pathPrefix="samplePrefix"
@@ -1323,17 +1323,17 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
             -                      android:path="samplePath"
             +                      android:path="/samplePath"
             """
-      )
+        )
   }
 
   fun testSuppressWithOldId() {
     // Make sure that the ignore-issue mechanism works for both the current and the
     // previous issue id
     lint()
-      .files(
-        xml(
-            "AndroidManifest.xml",
-            """
+        .files(
+            xml(
+                    "AndroidManifest.xml",
+                    """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     xmlns:tools="http://schemas.android.com/tools"
                     package="test.pkg" >
@@ -1356,26 +1356,26 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
 
                 </manifest>
                 """,
-          )
-          .indented()
-      )
-      .run()
-      .expectClean()
+                )
+                .indented()
+        )
+        .run()
+        .expectClean()
   }
 
   fun testWrongPathPrefix() {
     val expected =
-      """
+        """
             AndroidManifest.xml:18: Error: android:pathPrefix attribute should start with /, but it is gizmos [AppLinkUrlError]
                                 android:pathPrefix="gizmos" />
                                                     ~~~~~~
             1 errors, 0 warnings
             """
     lint()
-      .files(
-        xml(
-            "AndroidManifest.xml",
-            """
+        .files(
+            xml(
+                    "AndroidManifest.xml",
+                    """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="com.example.helloworld" >
 
@@ -1403,26 +1403,26 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
 
                 </manifest>
                 """,
-          )
-          .indented()
-      )
-      .run()
-      .expect(expected)
+                )
+                .indented()
+        )
+        .run()
+        .expect(expected)
   }
 
   fun testWrongPort() {
     val expected =
-      """
+        """
             AndroidManifest.xml:18: Error: not a valid port number [AppLinkUrlError]
                                 android:port="ABCD"
                                               ~~~~
             1 errors, 0 warnings
             """
     lint()
-      .files(
-        xml(
-            "AndroidManifest.xml",
-            """
+        .files(
+            xml(
+                    "AndroidManifest.xml",
+                    """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="com.example.helloworld" >
 
@@ -1451,16 +1451,16 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
 
                 </manifest>
                 """,
-          )
-          .indented()
-      )
-      .run()
-      .expect(expected)
+                )
+                .indented()
+        )
+        .run()
+        .expect(expected)
   }
 
   fun testSchemeAndHostMissing() {
     val expected =
-      """
+        """
       AndroidManifest.xml:16: Error: At least one host must be specified [AppLinkUrlError]
                       <data android:pathPrefix="/gizmos" />
                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1470,10 +1470,10 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
       2 errors, 0 warnings
       """
     lint()
-      .files(
-        xml(
-            "AndroidManifest.xml",
-            """
+        .files(
+            xml(
+                    "AndroidManifest.xml",
+                    """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="com.example.helloworld" >
 
@@ -1497,15 +1497,15 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
                     </application>
                 </manifest>
                 """,
-          )
-          .indented()
-      )
-      .run()
-      .expect(expected)
-      .verifyFixes()
-      .window(1)
-      .expectFixDiffs(
-        """
+                )
+                .indented()
+        )
+        .run()
+        .expect(expected)
+        .verifyFixes()
+        .window(1)
+        .expectFixDiffs(
+            """
                 Fix for AndroidManifest.xml line 16: Set host:
                 @@ -17,3 +17,5 @@
 
@@ -1521,15 +1521,15 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
                 +                    android:pathPrefix="/gizmos"
                 +                    android:scheme="[TODO]|" />
                 """
-      )
+        )
   }
 
   fun testHostAndPathWithNoScheme() {
     lint()
-      .files(
-        xml(
-            "AndroidManifest.xml",
-            """
+        .files(
+            xml(
+                    "AndroidManifest.xml",
+                    """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="com.example.helloworld" >
 
@@ -1554,22 +1554,22 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
                     </application>
                 </manifest>
                 """,
-          )
-          .indented()
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .run()
+        .expect(
+            """
         AndroidManifest.xml:18: Error: At least one scheme must be specified [AppLinkUrlError]
                         <data android:host="example.com" />
                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         1 errors, 0 warnings
         """
-      )
-      .verifyFixes()
-      .window(1)
-      .expectFixDiffs(
-        """
+        )
+        .verifyFixes()
+        .window(1)
+        .expectFixDiffs(
+            """
         Fix for AndroidManifest.xml line 18: Set scheme:
         @@ -20,3 +20,5 @@
 
@@ -1579,15 +1579,15 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
         +                    android:scheme="[TODO]|" />
                          <data android:path="/gizmos" />
         """
-      )
+        )
   }
 
   fun testMultiData() {
     lint()
-      .files(
-        xml(
-            "AndroidManifest.xml",
-            """
+        .files(
+            xml(
+                    "AndroidManifest.xml",
+                    """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="com.example.helloworld" >
 
@@ -1615,19 +1615,19 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
 
                 </manifest>
                 """,
-          )
-          .indented()
-      )
-      .run()
-      .expectClean()
+                )
+                .indented()
+        )
+        .run()
+        .expectClean()
   }
 
   fun testMultiIntent() {
     lint()
-      .files(
-        xml(
-            "AndroidManifest.xml",
-            """
+        .files(
+            xml(
+                    "AndroidManifest.xml",
+                    """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="com.example.helloworld" >
 
@@ -1659,26 +1659,26 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
 
                 </manifest>
                 """,
-          )
-          .indented()
-      )
-      .run()
-      .expectClean()
+                )
+                .indented()
+        )
+        .run()
+        .expectClean()
   }
 
   fun testMultiIntentWithError() {
     val expected =
-      """
+        """
             AndroidManifest.xml:20: Error: At least one host must be specified [AppLinkUrlError]
                             <data android:scheme="http"
                             ^
             1 errors, 0 warnings
             """
     lint()
-      .files(
-        xml(
-            "AndroidManifest.xml",
-            """
+        .files(
+            xml(
+                    "AndroidManifest.xml",
+                    """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="com.example.helloworld" >
 
@@ -1709,37 +1709,37 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
 
                 </manifest>
                 """,
-          )
-          .indented()
-      )
-      .run()
-      .expect(expected)
-      .verifyFixes()
-      .window(1)
-      .expectFixDiffs(
-        """
+                )
+                .indented()
+        )
+        .run()
+        .expect(expected)
+        .verifyFixes()
+        .window(1)
+        .expectFixDiffs(
+            """
                 Fix for AndroidManifest.xml line 20: Set host:
                 @@ -23,2 +23,3 @@
                                  <data
                 +                    android:host="[TODO]|"
                                      android:pathPrefix="/gizmos"
                 """
-      )
+        )
   }
 
   fun testNotExported() {
     val expected =
-      """
+        """
       AndroidManifest.xml:6: Error: Activity supporting ACTION_VIEW is not exported [AppLinkUrlError]
               <activity android:name=".MainActivity"
               ^
       1 errors, 0 warnings
       """
     lint()
-      .files(
-        xml(
-            "AndroidManifest.xml",
-            """
+        .files(
+            xml(
+                    "AndroidManifest.xml",
+                    """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="com.example.helloworld" >
 
@@ -1779,19 +1779,19 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
 
                 </manifest>
                 """,
-          )
-          .indented()
-      )
-      .run()
-      .expect(expected)
+                )
+                .indented()
+        )
+        .run()
+        .expect(expected)
   }
 
   fun testOkWithResource() {
     lint()
-      .files(
-        xml(
-            "AndroidManifest.xml",
-            """
+        .files(
+            xml(
+                    "AndroidManifest.xml",
+                    """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                           package="com.example.helloworld">
 
@@ -1821,27 +1821,27 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
 
                 </manifest>
                 """,
-          )
-          .indented(),
-        xml(
-            "res/values/appindexing_strings.xml",
-            """
+                )
+                .indented(),
+            xml(
+                    "res/values/appindexing_strings.xml",
+                    """
                 <resources>
                     <string name="path_prefix">/pathprefix</string>
                     <string name="port">8080</string>
                 </resources>
                 """,
-          )
-          .indented(),
-      )
-      .incremental("AndroidManifest.xml")
-      .run()
-      .expectClean()
+                )
+                .indented(),
+        )
+        .incremental("AndroidManifest.xml")
+        .run()
+        .expectClean()
   }
 
   fun testWrongWithResource() {
     val expected =
-      """
+        """
             AndroidManifest.xml:18: Error: android:pathPrefix attribute should start with /, but it is pathprefix [AppLinkUrlError]
                                   android:pathPrefix="@string/path_prefix"
                                                       ~~~~~~~~~~~~~~~~~~~
@@ -1851,10 +1851,10 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
             2 errors, 0 warnings
             """
     lint()
-      .files(
-        xml(
-            "AndroidManifest.xml",
-            """
+        .files(
+            xml(
+                    "AndroidManifest.xml",
+                    """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                           package="com.example.helloworld">
 
@@ -1884,34 +1884,34 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
 
                 </manifest>
                 """,
-          )
-          .indented(),
-        xml(
-            "res/values/appindexing_wrong_strings.xml",
-            """
+                )
+                .indented(),
+            xml(
+                    "res/values/appindexing_wrong_strings.xml",
+                    """
                 <resources>
                     <string name="path_prefix">pathprefix</string>
                     <string name="port">gizmos</string>
                 </resources>
                 """,
-          )
-          .indented(),
-      )
-      .incremental("AndroidManifest.xml")
-      .run()
-      .expect(expected)
+                )
+                .indented(),
+        )
+        .incremental("AndroidManifest.xml")
+        .run()
+        .expect(expected)
   }
 
   fun testNoUri() {
     val expectedCheckMessages =
-      """
+        """
       AndroidManifest.xml:16: Error: VIEW actions require a URI [AppLinkUrlError]
                       <data />
                       ~~~~~~~~
       1 errors, 0 warnings
       """
     val expectedFixDiff =
-      """
+        """
       Fix for AndroidManifest.xml line 16: Set scheme:
       @@ -18 +18 @@
       -                <data />
@@ -1922,10 +1922,10 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
       +                <data android:mimeType="[TODO]|" />
       """
     lint()
-      .files(
-        xml(
-            "AndroidManifest.xml",
-            """
+        .files(
+            xml(
+                    "AndroidManifest.xml",
+                    """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="com.example.helloworld" >
 
@@ -1947,20 +1947,20 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
                     </application>
                 </manifest>
                 """,
-          )
-          .indented()
-      )
-      .run()
-      .expect(expectedCheckMessages)
-      .expectFixDiffs(expectedFixDiff)
+                )
+                .indented()
+        )
+        .run()
+        .expect(expectedCheckMessages)
+        .expectFixDiffs(expectedFixDiff)
   }
 
   fun testImplicitSchemeBecauseOfMimeType() {
     lint()
-      .files(
-        xml(
-            "AndroidManifest.xml",
-            """
+        .files(
+            xml(
+                    "AndroidManifest.xml",
+                    """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="com.example.helloworld" >
 
@@ -1983,19 +1983,19 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
                   </application>
                 </manifest>
                 """,
-          )
-          .indented()
-      )
-      .run()
-      .expectClean()
+                )
+                .indented()
+        )
+        .run()
+        .expectClean()
   }
 
   fun testViewWithMimeType() {
     lint()
-      .files(
-        xml(
-            "AndroidManifest.xml",
-            """
+        .files(
+            xml(
+                    "AndroidManifest.xml",
+                    """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="com.example.helloworld" >
 
@@ -2019,26 +2019,26 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
                   </application>
                 </manifest>
                 """,
-          )
-          .indented()
-      )
-      .run()
-      .expectClean()
+                )
+                .indented()
+        )
+        .run()
+        .expectClean()
   }
 
   fun testDataMissing() {
     val expected =
-      """
+        """
             AndroidManifest.xml:14: Error: Missing data element [AppLinkUrlError]
                         <intent-filter android:label="@string/title_activity_fullscreen">
                         ^
             1 errors, 0 warnings
             """
     lint()
-      .files(
-        xml(
-            "AndroidManifest.xml",
-            """
+        .files(
+            xml(
+                    "AndroidManifest.xml",
+                    """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="com.example.helloworld" >
 
@@ -2063,26 +2063,26 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
 
                 </manifest>
                 """,
-          )
-          .indented()
-      )
-      .run()
-      .expect(expected)
+                )
+                .indented()
+        )
+        .run()
+        .expect(expected)
   }
 
   fun testNotBrowsable() {
     val expected =
-      """
+        """
             AndroidManifest.xml:24: Error: Activity supporting ACTION_VIEW is not set as BROWSABLE [AppLinkUrlError]
                         <intent-filter android:label="@string/title_activity_fullscreen">
                         ^
             1 errors, 0 warnings
             """
     lint()
-      .files(
-        xml(
-            "AndroidManifest.xml",
-            """
+        .files(
+            xml(
+                    "AndroidManifest.xml",
+                    """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="com.example.helloworld" >
 
@@ -2119,21 +2119,21 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
 
                 </manifest>
                 """,
-          )
-          .indented()
-      )
-      .run()
-      .expect(expected)
+                )
+                .indented()
+        )
+        .run()
+        .expect(expected)
   }
 
   fun testDataBinding() {
     // When using data binding don't give incorrect validation messages such as
     // uppercase usage, missing slash prefix etc.
     lint()
-      .files(
-        xml(
-            "AndroidManifest.xml",
-            """
+        .files(
+            xml(
+                    "AndroidManifest.xml",
+                    """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     xmlns:tools="http://schemas.android.com/tools"
                     package="test.pkg" >
@@ -2154,20 +2154,20 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
 
                 </manifest>
                 """,
-          )
-          .indented()
-      )
-      .run()
-      .expectClean()
+                )
+                .indented()
+        )
+        .run()
+        .expectClean()
   }
 
   fun test37343746() {
     // Regression test for https://issuetracker.google.com/issues/37343746
     lint()
-      .files(
-        xml(
-            "AndroidManifest.xml",
-            """
+        .files(
+            xml(
+                    "AndroidManifest.xml",
+                    """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     xmlns:tools="http://schemas.android.com/tools"
                     package="test.pkg" >
@@ -2186,20 +2186,20 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
 
                 </manifest>
                 """,
-          )
-          .indented()
-      )
-      .run()
-      .expectClean()
+                )
+                .indented()
+        )
+        .run()
+        .expectClean()
   }
 
   fun test79995047() {
     // Regression test for https://issuetracker.google.com/issues/79995047
     lint()
-      .files(
-        xml(
-            "AndroidManifest.xml",
-            """
+        .files(
+            xml(
+                    "AndroidManifest.xml",
+                    """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     xmlns:tools="http://schemas.android.com/tools"
                     package="test.pkg" >
@@ -2218,44 +2218,44 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
 
                 </manifest>
                 """,
-          )
-          .indented(),
-        gradle(
-            """
+                )
+                .indented(),
+            gradle(
+                    """
                 android {
                     defaultConfig {
                         manifestPlaceholders = [ placeholder:"ABC"]
                     }
                 }
                 """
-          )
-          .indented(),
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+        )
+        .run()
+        .expect(
+            """
             src/main/AndroidManifest.xml:12: Error: Mime-type matching is case sensitive and should only use lower-case characters (without placeholders, value is vnd.android.cursor.item/vnd.ABC.item) [AppLinkUrlError]
                             <data android:mimeType="vnd.android.cursor.item/vnd.＄{placeholder}.item" /> <!-- WARN -->
                                                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             1 errors, 0 warnings
             """
-      )
+        )
   }
 
   fun testSuggestAddHost_whenCustomSchemeAndPathArePresent() {
     // Regression test for https://issuetracker.google.com/62810553
     val expected =
-      """
+        """
     AndroidManifest.xml:8: Error: At least one host must be specified [AppLinkUrlError]
                     <data android:scheme="myscheme" android:pathPrefix="/path/to/there"/> <!-- Missing host -->
                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     1 errors, 0 warnings
     """
     lint()
-      .files(
-        xml(
-            "AndroidManifest.xml",
-            """
+        .files(
+            xml(
+                    "AndroidManifest.xml",
+                    """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     xmlns:tools="http://schemas.android.com/tools"
                     package="test.pkg" >
@@ -2270,20 +2270,20 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
 
                 </manifest>
                 """,
-          )
-          .indented()
-      )
-      .run()
-      .expect(expected)
+                )
+                .indented()
+        )
+        .run()
+        .expect(expected)
   }
 
   fun test68322249() {
     // Regression test for https://issuetracker.google.com/issues/68322249
     lint()
-      .files(
-        xml(
-            "AndroidManifest.xml",
-            """
+        .files(
+            xml(
+                    "AndroidManifest.xml",
+                    """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     xmlns:tools="http://schemas.android.com/tools"
                     package="test.pkg" >
@@ -2304,18 +2304,18 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
 
                 </manifest>
                 """,
-          )
-          .indented()
-      )
-      .run()
-      .expectClean()
+                )
+                .indented()
+        )
+        .run()
+        .expectClean()
   }
 
   fun testStaticValidation() {
     // Usage outside of lint
     val document =
-      XmlUtils.parseDocument(
-        """
+        XmlUtils.parseDocument(
+            """
             <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                 xmlns:tools="http://schemas.android.com/tools"
                 package="test.pkg" >
@@ -2338,44 +2338,38 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
 
             </manifest>
             """,
-        true,
-      )
+            true,
+        )
     val root = document.documentElement
     val application = XmlUtils.getFirstSubTag(root)
     val activity = XmlUtils.getFirstSubTag(application)
     assertThat(activity).isNotNull()
 
     val mockContext =
-      mock<XmlContext>().apply {
-        whenever(getLocation(any())).thenReturn(mock())
-        whenever(client).thenReturn(mock())
-        whenever(driver).thenReturn(mock())
-        whenever(project).thenReturn(mock())
-      }
-    val infos =
-      XmlUtils.getSubTagsByName(activity, TAG_INTENT_FILTER).map {
-        getIntentFilterData(ElementWrapper(it, mockContext))
-      }
+        mock<XmlContext>().apply {
+          whenever(getLocation(any())).thenReturn(mock())
+          whenever(client).thenReturn(mock())
+          whenever(driver).thenReturn(mock())
+          whenever(project).thenReturn(mock())
+        }
+    val infos = XmlUtils.getSubTagsByName(activity, TAG_INTENT_FILTER).map { getIntentFilterData(ElementWrapper(it, mockContext)) }
 
-    fun testElement(testUrl: URL, infos: List<IntentFilterData>): String? =
-      detector.checkTestUrlMatchesAtLeastOneInfo(testUrl, infos)
+    fun testElement(testUrl: URL, infos: List<IntentFilterData>): String? = detector.checkTestUrlMatchesAtLeastOneInfo(testUrl, infos)
 
     assertThat(testElement(URL("http://example.com/literal/path"), infos)).isNull() // success
     assertThat(testElement(URL("http://example.com/gizmos/foo/bar"), infos)).isNull() // success
-    assertThat(testElement(URL("https://example.com/gizmos/foo/bar"), infos))
-      .isEqualTo("Test URL did not match scheme http")
+    assertThat(testElement(URL("https://example.com/gizmos/foo/bar"), infos)).isEqualTo("Test URL did not match scheme http")
     assertThat(testElement(URL("http://example.com/notmatch/foo/bar"), infos))
-      .isEqualTo("Test URL did not match path prefix /gizmos, path literal /literal/path")
-    assertThat(testElement(URL("http://notmatch.com/gizmos/foo/bar"), infos))
-      .isEqualTo("Test URL did not match host example.com")
+        .isEqualTo("Test URL did not match path prefix /gizmos, path literal /literal/path")
+    assertThat(testElement(URL("http://notmatch.com/gizmos/foo/bar"), infos)).isEqualTo("Test URL did not match host example.com")
   }
 
   fun testAutoVerifyMissingAttributes() {
     lint()
-      .files(
-        xml(
-            "AndroidManifest.xml",
-            """
+        .files(
+            xml(
+                    "AndroidManifest.xml",
+                    """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="com.example.helloworld" >
 
@@ -2473,12 +2467,12 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
                     </application>
                 </manifest>
                 """,
-          )
-          .indented()
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .run()
+        .expect(
+            """
           AndroidManifest.xml:27: Error: VIEW action is missing, but is required for Android App Links [AppLinkUrlError]
                       <intent-filter android:autoVerify="true"> <!-- Missing VIEW -->
                        ~~~~~~~~~~~~~
@@ -2505,9 +2499,9 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
                        ~~~~~~~~~~~~~
           8 errors, 0 warnings
         """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
         Autofix for AndroidManifest.xml line 27: Add VIEW action:
         @@ -27 +27,2 @@
         -            <intent-filter android:autoVerify="true"> <!-- Missing VIEW -->
@@ -2548,15 +2542,15 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
         +                <data android:scheme="https" />
         +                <data android:host="[TODO]|" /> <!-- No data tags at all -->
         """
-      )
+        )
   }
 
   fun testAutoVerify_extraAttribute_mimeType() {
     lint()
-      .files(
-        xml(
-            "AndroidManifest.xml",
-            """
+        .files(
+            xml(
+                    "AndroidManifest.xml",
+                    """
           <manifest xmlns:android="http://schemas.android.com/apk/res/android"
               package="com.example.helloworld" >
 
@@ -2613,12 +2607,12 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
               </application>
           </manifest>
           """,
-          )
-          .indented()
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .run()
+        .expect(
+            """
           AndroidManifest.xml:29: Error: MIME types prevent Android App Links from matching [AppLinkUriRelativeFilterGroupError]
                           <data android:mimeType="application/json" />
                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -2636,9 +2630,9 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
           3 errors, 2 warnings
         """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
         Autofix for AndroidManifest.xml line 29: Delete:
         @@ -29 +28,0 @@
         -                <data android:mimeType="application/json" />
@@ -2661,16 +2655,16 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
         +                <data android:host="example.com" />
         +                <data android:pathPrefix="/gizmos" />
         """
-      )
+        )
   }
 
   fun testAddAutoVerifySuggestion() {
     lint()
-      .issues(APP_LINK_WARNING)
-      .files(
-        xml(
-            "AndroidManifest.xml",
-            """
+        .issues(APP_LINK_WARNING)
+        .files(
+            xml(
+                    "AndroidManifest.xml",
+                    """
           <manifest xmlns:android="http://schemas.android.com/apk/res/android"
               package="com.example.helloworld" >
 
@@ -2765,34 +2759,34 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
               </application>
           </manifest>
           """,
-          )
-          .indented()
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .run()
+        .expect(
+            """
         AndroidManifest.xml:6: Warning: This intent filter has the format of an Android App Link but is missing the autoVerify attribute; add android:autoVerify="true" to ensure your domain will be validated and enable App Link-related Lint warnings. If you do not want clicked URLs to bring the user to your app, remove the android.intent.category.BROWSABLE category, or set android:autoVerify="false" to make it clear this is not intended to be an Android App Link. [AppLinkWarning]
                     <intent-filter> <!-- We expect a warning here -->
                      ~~~~~~~~~~~~~
         0 errors, 1 warnings
         """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
       Autofix for AndroidManifest.xml line 6: Set autoVerify="true":
       @@ -7 +7 @@
       -            <intent-filter> <!-- We expect a warning here -->
       +            <intent-filter android:autoVerify="true" > <!-- We expect a warning here -->
       """
-      )
+        )
   }
 
   fun testAutoVerifyFixesForEmptyIntentFilter() {
     lint()
-      .files(
-        xml(
-            "AndroidManifest.xml",
-            """
+        .files(
+            xml(
+                    "AndroidManifest.xml",
+                    """
           <manifest xmlns:android="http://schemas.android.com/apk/res/android"
               package="com.example.helloworld" >
 
@@ -2804,22 +2798,22 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
               </application>
           </manifest>
           """,
-          )
-          .indented()
-      )
-      // Necessary because the manifest merger complains about empty intent filters.
-      .allowManifestMergerErrors(true)
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        // Necessary because the manifest merger complains about empty intent filters.
+        .allowManifestMergerErrors(true)
+        .run()
+        .expect(
+            """
         AndroidManifest.xml:6: Error: Several elements/attributes (such as VIEW action) required for Android App Links are missing [AppLinkUrlError]
                     <intent-filter android:autoVerify='true'>
                      ~~~~~~~~~~~~~
         1 errors, 0 warnings
         """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
         Fix for AndroidManifest.xml line 6: Add missing elements/attributes:
         @@ -6,0 +7,6 @@
         +                <action android:name="android.intent.action.VIEW" />
@@ -2829,15 +2823,15 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
         +                <data android:scheme="https" />
         +                <data android:host="[TODO]|" />
         """
-      )
+        )
   }
 
   fun testAutoVerifyFixesForEmptyIntentFilter_customNs() {
     lint()
-      .files(
-        xml(
-            "AndroidManifest.xml",
-            """
+        .files(
+            xml(
+                    "AndroidManifest.xml",
+                    """
           <manifest xmlns:android-ns="http://schemas.android.com/apk/res/android"
               package="com.example.helloworld" >
 
@@ -2849,22 +2843,22 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
               </application>
           </manifest>
           """,
-          )
-          .indented()
-      )
-      // Necessary because the manifest merger complains about empty intent filters.
-      .allowManifestMergerErrors(true)
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        // Necessary because the manifest merger complains about empty intent filters.
+        .allowManifestMergerErrors(true)
+        .run()
+        .expect(
+            """
         AndroidManifest.xml:6: Error: Several elements/attributes (such as VIEW action) required for Android App Links are missing [AppLinkUrlError]
                     <intent-filter android-ns:autoVerify='true'>
                      ~~~~~~~~~~~~~
         1 errors, 0 warnings
         """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
         Fix for AndroidManifest.xml line 6: Add missing elements/attributes:
         @@ -6,0 +7,6 @@
         +                <action android-ns:name="android.intent.action.VIEW" />
@@ -2874,16 +2868,16 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
         +                <data android-ns:scheme="https" />
         +                <data android-ns:host="[TODO]|" />
         """
-      )
+        )
   }
 
   fun test365376495() {
     // Regression test for b365376495
     lint()
-      .files(
-        xml(
-            "AndroidManifest.xml",
-            """
+        .files(
+            xml(
+                    "AndroidManifest.xml",
+                    """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="com.example.helloworld" >
 
@@ -2905,19 +2899,19 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
                     </application>
                 </manifest>
                 """,
-          )
-          .indented()
-      )
-      .run()
-      .expectClean()
+                )
+                .indented()
+        )
+        .run()
+        .expectClean()
   }
 
   fun testPathMatcherOrdering() {
     lint()
-      .files(
-        xml(
-            "AndroidManifest.xml",
-            """
+        .files(
+            xml(
+                    "AndroidManifest.xml",
+                    """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="com.example.helloworld" >
 
@@ -2950,13 +2944,13 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
                     </application>
                 </manifest>
                 """,
-          )
-          .indented()
-      )
-      .issues(AppLinksValidDetector.INTENT_FILTER_UNIQUE_DATA_ATTRIBUTES)
-      .run()
-      .expectFixDiffs(
-        """
+                )
+                .indented()
+        )
+        .issues(AppLinksValidDetector.INTENT_FILTER_UNIQUE_DATA_ATTRIBUTES)
+        .run()
+        .expectFixDiffs(
+            """
         Autofix for AndroidManifest.xml line 21: Replace with <data android:scheme="https" />...:
         @@ -21,7 +21,7 @@
         -                <data android:scheme="https"
@@ -2974,15 +2968,15 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
         +                <data android:pathAdvancedPattern="[A-Z]gizmos" />
         +                <data android:pathSuffix="gizmos" />
         """
-      )
+        )
   }
 
   fun testPattern_startWithSlashOk() {
     lint()
-      .files(
-        xml(
-            "AndroidManifest.xml",
-            """
+        .files(
+            xml(
+                    "AndroidManifest.xml",
+                    """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="com.example.helloworld" >
 
@@ -3010,19 +3004,19 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
                     </application>
                 </manifest>
                 """,
-          )
-          .indented()
-      )
-      .run()
-      .expectClean()
+                )
+                .indented()
+        )
+        .run()
+        .expectClean()
   }
 
   fun testPattern_startWithDotStarOk() {
     lint()
-      .files(
-        xml(
-            "AndroidManifest.xml",
-            """
+        .files(
+            xml(
+                    "AndroidManifest.xml",
+                    """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="com.example.helloworld" >
 
@@ -3050,19 +3044,19 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
                     </application>
                 </manifest>
                 """,
-          )
-          .indented()
-      )
-      .run()
-      .expectClean()
+                )
+                .indented()
+        )
+        .run()
+        .expectClean()
   }
 
   fun testSuffixValidation() {
     lint()
-      .files(
-        xml(
-            "AndroidManifest.xml",
-            """
+        .files(
+            xml(
+                    "AndroidManifest.xml",
+                    """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="com.example.helloworld" >
 
@@ -3090,27 +3084,27 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
                     </application>
                 </manifest>
                 """,
-          )
-          .indented()
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .run()
+        .expect(
+            """
         AndroidManifest.xml:22: Error: android:pathSuffix cannot be empty [AppLinkUrlError]
                         <data android:pathSuffix="" />
                               ~~~~~~~~~~~~~~~~~~~~~
         1 errors, 0 warnings
       """
-      )
-      .expectFixDiffs("")
+        )
+        .expectFixDiffs("")
   }
 
   fun testAdvancedPatternValidation() {
     lint()
-      .files(
-        xml(
-            "AndroidManifest.xml",
-            """
+        .files(
+            xml(
+                    "AndroidManifest.xml",
+                    """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="com.example.helloworld" >
 
@@ -3137,18 +3131,18 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
                     </application>
                 </manifest>
                 """,
-          )
-          .indented()
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .run()
+        .expect(
+            """
         AndroidManifest.xml:21: Error: android:pathAdvancedPattern cannot be empty [AppLinkUrlError]
                         <data android:pathAdvancedPattern="" />
                               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         1 errors, 0 warnings
       """
-      )
+        )
   }
 
   fun testPortByItselfNotCounted() {
@@ -3157,10 +3151,10 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
     // Compare with the test below. Here, we should get a "Missing required elements/attributes for
     // Android App Links" error.
     lint()
-      .files(
-        xml(
-            "AndroidManifest.xml",
-            """
+        .files(
+            xml(
+                    "AndroidManifest.xml",
+                    """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="com.example.helloworld" >
 
@@ -3188,12 +3182,12 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
                     </application>
                 </manifest>
                 """,
-          )
-          .indented()
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .run()
+        .expect(
+            """
           AndroidManifest.xml:20: Error: At least one host must be specified [AppLinkUrlError]
                           <data android:scheme="http" />
                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -3202,9 +3196,9 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
                                               ~~~~
           2 errors, 0 warnings
         """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
         Fix for AndroidManifest.xml line 20: Set host:
         @@ -21 +21,3 @@
         -                <data android:scheme="http" />
@@ -3212,16 +3206,16 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
         +                    android:host="[TODO]|"
         +                    android:scheme="http" />
         """
-      )
+        )
   }
 
   fun testHostByItselfIsCounted() {
     // Compare with the test above.
     lint()
-      .files(
-        xml(
-            "AndroidManifest.xml",
-            """
+        .files(
+            xml(
+                    "AndroidManifest.xml",
+                    """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="com.example.helloworld" >
 
@@ -3248,56 +3242,50 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
                     </application>
                 </manifest>
                 """,
-          )
-          .indented()
-      )
-      .run()
-      .expectClean()
+                )
+                .indented()
+        )
+        .run()
+        .expectClean()
   }
 
   fun testSameMessage() {
-    assertThat(
-        AppLinksValidDetector()
-          .sameMessage(VALIDATION, new = "VIEW actions require a URI", old = "Missing URL")
-      )
-      .isTrue()
+    assertThat(AppLinksValidDetector().sameMessage(VALIDATION, new = "VIEW actions require a URI", old = "Missing URL")).isTrue()
 
     assertThat(
-        AppLinksValidDetector()
-          .sameMessage(
-            VALIDATION,
-            new = "VIEW action is missing, but is required for Android App Links",
-            old = "Missing required elements/attributes for Android App Links",
-          )
-      )
-      .isTrue()
+            AppLinksValidDetector()
+                .sameMessage(
+                    VALIDATION,
+                    new = "VIEW action is missing, but is required for Android App Links",
+                    old = "Missing required elements/attributes for Android App Links",
+                )
+        )
+        .isTrue()
     assertThat(
-        AppLinksValidDetector()
-          .sameMessage(
-            VALIDATION,
-            new =
-              "`http(s)` scheme and `host` attribute are missing, but are required for Android App Links",
-            old = "Missing required elements/attributes for Android App Links",
-          )
-      )
-      .isTrue()
+            AppLinksValidDetector()
+                .sameMessage(
+                    VALIDATION,
+                    new = "`http(s)` scheme and `host` attribute are missing, but are required for Android App Links",
+                    old = "Missing required elements/attributes for Android App Links",
+                )
+        )
+        .isTrue()
     assertThat(
-        AppLinksValidDetector()
-          .sameMessage(
-            VALIDATION,
-            new =
-              "Several elements/attributes (such as BROWSABLE category) required for Android App Links are missing",
-            old = "Missing required elements/attributes for Android App Links",
-          )
-      )
-      .isTrue()
+            AppLinksValidDetector()
+                .sameMessage(
+                    VALIDATION,
+                    new = "Several elements/attributes (such as BROWSABLE category) required for Android App Links are missing",
+                    old = "Missing required elements/attributes for Android App Links",
+                )
+        )
+        .isTrue()
   }
 
   fun test_queryParameter() {
     lint()
-      .files(
-        gradle(
-          """
+        .files(
+            gradle(
+                """
           apply plugin: 'com.android.application'
 
           android {
@@ -3310,10 +3298,10 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
               }
           }
         """
-        ),
-        xml(
-            "AndroidManifest.xml",
-            """
+            ),
+            xml(
+                    "AndroidManifest.xml",
+                    """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="com.example.helloworld" >
                     <uses-sdk android:compileSdkVersion="35" android:minSdkVersion="30" android:targetSdkVersion="35" />
@@ -3351,12 +3339,12 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
                     </application>
                 </manifest>
                 """,
-          )
-          .indented(),
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+        )
+        .run()
+        .expect(
+            """
         src/main/AndroidManifest.xml:15: Error: App link matching does not support query parameters or fragments, unless using <uri-relative-filter-group> (introduced in Android 15) [AppLinkUrlError]
                         <data android:path="/gizmos?queryParam=1&amp;otherParam=2" />
                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -3386,9 +3374,9 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
                                                            ~~~~~~~~~~~~~~~~~~
         9 errors, 0 warnings
         """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
         Autofix for src/main/AndroidManifest.xml line 15: Replace with <uri-relative-filter-group>...:
         @@ -15 +15,5 @@
         -                <data android:path="/gizmos?queryParam=1&amp;otherParam=2" />
@@ -3426,14 +3414,14 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
         +                    <data android:query="queryParam" />
         +                </uri-relative-filter-group>
         """
-      )
+        )
   }
 
   fun test_fragment() {
     lint()
-      .files(
-        gradle(
-          """
+        .files(
+            gradle(
+                """
           apply plugin: 'com.android.application'
 
           android {
@@ -3446,10 +3434,10 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
               }
           }
         """
-        ),
-        xml(
-            "AndroidManifest.xml",
-            """
+            ),
+            xml(
+                    "AndroidManifest.xml",
+                    """
             <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                 package="com.example.helloworld" >
                 <uses-sdk android:minSdkVersion="30" android:targetSdkVersion="35" />
@@ -3487,12 +3475,12 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
                 </application>
             </manifest>
             """,
-          )
-          .indented(),
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+        )
+        .run()
+        .expect(
+            """
         src/main/AndroidManifest.xml:15: Error: App link matching does not support query parameters or fragments, unless using <uri-relative-filter-group> (introduced in Android 15) [AppLinkUrlError]
                         <data android:path="/gizmos#fragment=1&amp;otherFragment=2" />
                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -3510,9 +3498,9 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         5 errors, 0 warnings
         """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
         Autofix for src/main/AndroidManifest.xml line 15: Replace with <uri-relative-filter-group>...:
         @@ -15 +15,4 @@
         -                <data android:path="/gizmos#fragment=1&amp;otherFragment=2" />
@@ -3549,14 +3537,14 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
         +                    <data android:fragment="fragment" />
         +                </uri-relative-filter-group>
         """
-      )
+        )
   }
 
   fun test_queryParamAndFragment() {
     lint()
-      .files(
-        gradle(
-          """
+        .files(
+            gradle(
+                """
           apply plugin: 'com.android.application'
 
           android {
@@ -3569,10 +3557,10 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
               }
           }
         """
-        ),
-        xml(
-            "AndroidManifest.xml",
-            """
+            ),
+            xml(
+                    "AndroidManifest.xml",
+                    """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="com.example.helloworld" >
                     <uses-sdk android:minSdkVersion="30" android:targetSdkVersion="35" />
@@ -3594,12 +3582,12 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
                     </application>
                 </manifest>
                 """,
-          )
-          .indented(),
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+        )
+        .run()
+        .expect(
+            """
         src/main/AndroidManifest.xml:15: Error: App link matching does not support query parameters or fragments, unless using <uri-relative-filter-group> (introduced in Android 15) [AppLinkUrlError]
                         <data android:path="/gizmos?queryParam#fragment" />
                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -3608,9 +3596,9 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         2 errors, 0 warnings
         """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
         Autofix for src/main/AndroidManifest.xml line 15: Replace with <uri-relative-filter-group>...:
         @@ -15 +15,5 @@
         -                <data android:path="/gizmos?queryParam#fragment" />
@@ -3628,14 +3616,14 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
         +                    <data android:fragment="fragment" />
         +                </uri-relative-filter-group>
         """
-      )
+        )
   }
 
   fun test_queryParamAndFragment_customAndroidNs() {
     lint()
-      .files(
-        gradle(
-          """
+        .files(
+            gradle(
+                """
           apply plugin: 'com.android.application'
 
           android {
@@ -3647,10 +3635,10 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
                   targetSdkVersion 35
               }
           }"""
-        ),
-        xml(
-            "AndroidManifest.xml",
-            """
+            ),
+            xml(
+                    "AndroidManifest.xml",
+                    """
                 <manifest xmlns:android-ns="http://schemas.android.com/apk/res/android"
                     package="com.example.helloworld" >
                     <uses-sdk android-ns:minSdkVersion="30" android-ns:targetSdkVersion="35" />
@@ -3672,12 +3660,12 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
                     </application>
                 </manifest>
                 """,
-          )
-          .indented(),
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+        )
+        .run()
+        .expect(
+            """
         src/main/AndroidManifest.xml:15: Error: App link matching does not support query parameters or fragments, unless using <uri-relative-filter-group> (introduced in Android 15) [AppLinkUrlError]
                         <data android-ns:path="/gizmos?queryParam#fragment" />
                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -3686,9 +3674,9 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         2 errors, 0 warnings
         """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
         Autofix for src/main/AndroidManifest.xml line 15: Replace with <uri-relative-filter-group>...:
         @@ -15 +15,5 @@
         -                <data android-ns:path="/gizmos?queryParam#fragment" />
@@ -3706,14 +3694,14 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
         +                    <data android-ns:fragment="fragment" />
         +                </uri-relative-filter-group>
         """
-      )
+        )
   }
 
   fun test_queryParamAndFragment_withOtherAttributes() {
     lint()
-      .files(
-        gradle(
-          """
+        .files(
+            gradle(
+                """
           apply plugin: 'com.android.application'
 
           android {
@@ -3726,10 +3714,10 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
               }
           }
         """
-        ),
-        xml(
-            "AndroidManifest.xml",
-            """
+            ),
+            xml(
+                    "AndroidManifest.xml",
+                    """
           <manifest xmlns:android="http://schemas.android.com/apk/res/android"
               package="com.example.helloworld" >
               <uses-sdk android:minSdkVersion="30" android:targetSdkVersion="35" />
@@ -3748,20 +3736,20 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
               </application>
           </manifest>
           """,
-          )
-          .indented(),
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+        )
+        .run()
+        .expect(
+            """
         src/main/AndroidManifest.xml:13: Error: App link matching does not support query parameters or fragments, unless using <uri-relative-filter-group> (introduced in Android 15) [AppLinkUrlError]
                         <data android:scheme="http" android:host="example.com" android:path="/gizmos?queryParam#fragment" android:pathPattern="/correctPathPattern*" />
                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         1 errors, 0 warnings
         """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
         Autofix for src/main/AndroidManifest.xml line 13: Replace with <data android:host="example.com" android:pathPattern="/correctPathPattern*" android:scheme="http" />...:
         @@ -13 +13,6 @@
         -                <data android:scheme="http" android:host="example.com" android:path="/gizmos?queryParam#fragment" android:pathPattern="/correctPathPattern*" />
@@ -3772,14 +3760,14 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
         +                    <data android:fragment="fragment" />
         +                </uri-relative-filter-group>
         """
-      )
+        )
   }
 
   fun test_queryParameter_andFragment_compileSdkVersionBelowAndroidV() {
     lint()
-      .files(
-        gradle(
-          """
+        .files(
+            gradle(
+                """
           apply plugin: 'com.android.application'
 
           android {
@@ -3792,10 +3780,10 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
               }
           }
         """
-        ),
-        xml(
-            "AndroidManifest.xml",
-            """
+            ),
+            xml(
+                    "AndroidManifest.xml",
+                    """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="com.example.helloworld" >
 
@@ -3816,12 +3804,12 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
                     </application>
                 </manifest>
                 """,
-          )
-          .indented(),
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+        )
+        .run()
+        .expect(
+            """
         src/main/AndroidManifest.xml:14: Error: App link matching does not support query parameters or fragments, unless using <uri-relative-filter-group> (introduced in Android 15) [AppLinkUrlError]
                         <data android:path="/gizmos?queryParam" />
                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -3830,15 +3818,15 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         2 errors, 0 warnings
         """
-      )
-      .expectFixDiffs("")
+        )
+        .expectFixDiffs("")
   }
 
   fun test_queryParameter_andFragment_targetSdkVersionBelowAndroidV() {
     lint()
-      .files(
-        gradle(
-          """
+        .files(
+            gradle(
+                """
           apply plugin: 'com.android.application'
 
           android {
@@ -3851,10 +3839,10 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
               }
           }
         """
-        ),
-        xml(
-            "AndroidManifest.xml",
-            """
+            ),
+            xml(
+                    "AndroidManifest.xml",
+                    """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="com.example.helloworld" >
 
@@ -3875,12 +3863,12 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
                     </application>
                 </manifest>
                 """,
-          )
-          .indented(),
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+        )
+        .run()
+        .expect(
+            """
         src/main/AndroidManifest.xml:14: Error: App link matching does not support query parameters or fragments, unless using <uri-relative-filter-group> (introduced in Android 15) [AppLinkUrlError]
                         <data android:path="/gizmos?queryParam" />
                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -3889,15 +3877,15 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         2 errors, 0 warnings
         """
-      )
-      .expectFixDiffs("")
+        )
+        .expectFixDiffs("")
   }
 
   fun test_queryParameter_andFragment_insideUriRelativeFilterGroup() {
     lint()
-      .files(
-        gradle(
-          """
+        .files(
+            gradle(
+                """
           apply plugin: 'com.android.application'
 
           android {
@@ -3910,10 +3898,10 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
               }
           }
         """
-        ),
-        xml(
-            "AndroidManifest.xml",
-            """
+            ),
+            xml(
+                    "AndroidManifest.xml",
+                    """
               <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                   package="com.example.helloworld" >
                   <uses-sdk android:compileSdkVersion="35" android:minSdkVersion="30" android:targetSdkVersion="35" />
@@ -3937,12 +3925,12 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
                   </application>
               </manifest>
               """,
-          )
-          .indented(),
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+        )
+        .run()
+        .expect(
+            """
           src/main/AndroidManifest.xml:16: Error: path attributes do not support query parameters or fragments [AppLinkUrlError]
                               <data android:path="/gizmos?queryParam" />
                               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -3951,9 +3939,9 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
                               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
           2 errors, 0 warnings
         """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
         Autofix for src/main/AndroidManifest.xml line 16: Replace with <data android:path="/gizmos" />...:
         @@ -16 +16,2 @@
         -                    <data android:path="/gizmos?queryParam" />
@@ -3965,15 +3953,15 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
         +                    <data android:path="/gizmos" />
         +                    <data android:fragment="fragment" />
         """
-      )
+        )
   }
 
   fun test_uriRelativeFilterGroup_emptyNotAllowed() {
     lint()
-      .files(
-        xml(
-            "AndroidManifest.xml",
-            """
+        .files(
+            xml(
+                    "AndroidManifest.xml",
+                    """
           <manifest xmlns:android="http://schemas.android.com/apk/res/android"
               package="com.example.helloworld" >
               <uses-sdk android:compileSdkVersion="35" android:minSdkVersion="31" android:targetSdkVersion="35" />
@@ -4005,12 +3993,12 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
               </application>
           </manifest>
           """,
-          )
-          .indented()
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .run()
+        .expect(
+            """
         AndroidManifest.xml:16: Error: query cannot be empty [AppLinkUriRelativeFilterGroupError]
                             <data android:query="" />
                                   ~~~~~~~~~~~~~~~~
@@ -4043,15 +4031,15 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
                                   ~~~~~~~~~~~~~~~~~~~~~~~~~
         10 errors, 0 warnings
         """
-      )
+        )
   }
 
   fun test_uriRelativeFilterGroup_unusefulAttributes_inSameDataTagAsUsefulAttributes() {
     lint()
-      .files(
-        xml(
-            "AndroidManifest.xml",
-            """
+        .files(
+            xml(
+                    "AndroidManifest.xml",
+                    """
           <manifest xmlns:android="http://schemas.android.com/apk/res/android"
               package="com.example.helloworld" >
               <uses-sdk android:compileSdkVersion="35" android:minSdkVersion="31" android:targetSdkVersion="35" />
@@ -4078,12 +4066,12 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
               </application>
           </manifest>
           """,
-          )
-          .indented()
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .run()
+        .expect(
+            """
         AndroidManifest.xml:16: Error: Attributes not starting with path, query, or fragment in uri-relative-filter-group are ignored [AppLinkUriRelativeFilterGroupError]
                             <data android:scheme="http" android:host="example.com" android:port="8000" android:mimeType="application/pdf" android:path="/path" />
                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -4095,9 +4083,9 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         3 errors, 0 warnings
         """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
         Autofix for AndroidManifest.xml line 16: Delete:
         @@ -16 +16 @@
         -                    <data android:scheme="http" android:host="example.com" android:port="8000" android:mimeType="application/pdf" android:path="/path" />
@@ -4111,15 +4099,15 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
         -                    <data android:scheme="http" android:path="/path" android:host="example.com" android:query="param" />
         +                    <data  android:path="/path"  android:query="param" />
         """
-      )
+        )
   }
 
   fun test_uriRelativeFilterGroup_unusefulAttributes_inSameDataTagAsUsefulAttributes_customNamespace() {
     lint()
-      .files(
-        xml(
-            "AndroidManifest.xml",
-            """
+        .files(
+            xml(
+                    "AndroidManifest.xml",
+                    """
           <manifest xmlns:android-ns="http://schemas.android.com/apk/res/android"
               package="com.example.helloworld" >
               <uses-sdk android-ns:compileSdkVersion="35" android-ns:minSdkVersion="31" android-ns:targetSdkVersion="35" />
@@ -4142,34 +4130,34 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
               </application>
           </manifest>
           """,
-          )
-          .indented()
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .run()
+        .expect(
+            """
         AndroidManifest.xml:16: Error: Attributes not starting with path, query, or fragment in uri-relative-filter-group are ignored [AppLinkUriRelativeFilterGroupError]
                             <data android-ns:scheme="http" android-ns:host="example.com" android-ns:port="8000" android-ns:mimeType="application/pdf" android-ns:path="/path" />
                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         1 errors, 0 warnings
         """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
         Autofix for AndroidManifest.xml line 16: Delete:
         @@ -16 +16 @@
         -                    <data android-ns:scheme="http" android-ns:host="example.com" android-ns:port="8000" android-ns:mimeType="application/pdf" android-ns:path="/path" />
         +                    <data     android-ns:path="/path" />
         """
-      )
+        )
   }
 
   fun test_uriRelativeFilterGroup_singleQuotes() {
     lint()
-      .files(
-        xml(
-            "AndroidManifest.xml",
-            """
+        .files(
+            xml(
+                    "AndroidManifest.xml",
+                    """
           <manifest xmlns:android="http://schemas.android.com/apk/res/android"
               package="com.example.helloworld" >
               <uses-sdk android:compileSdkVersion="35" android:minSdkVersion="31" android:targetSdkVersion="35" />
@@ -4193,12 +4181,12 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
               </application>
           </manifest>
           """,
-          )
-          .indented()
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .run()
+        .expect(
+            """
         AndroidManifest.xml:16: Error: Attributes not starting with path, query, or fragment in uri-relative-filter-group are ignored [AppLinkUriRelativeFilterGroupError]
                             <data android:scheme="http" android:host='example.com' android:port="8080" android:path='/path"with"quote' />
                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -4207,9 +4195,9 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         2 errors, 0 warnings
         """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
         Autofix for AndroidManifest.xml line 16: Delete:
         @@ -16 +16 @@
         -                    <data android:scheme="http" android:host='example.com' android:port="8080" android:path='/path"with"quote' />
@@ -4219,15 +4207,15 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
         -                    <data android:scheme='http' android:host="example.com" android:port='8080' android:path="/path'with'quote" />
         +                    <data    android:path="/path'with'quote" />
         """
-      )
+        )
   }
 
   fun test_uriRelativeFilterGroup_emptyDataTag() {
     lint()
-      .files(
-        xml(
-            "AndroidManifest.xml",
-            """
+        .files(
+            xml(
+                    "AndroidManifest.xml",
+                    """
           <manifest xmlns:android="http://schemas.android.com/apk/res/android"
               package="com.example.helloworld" >
               <uses-sdk android:compileSdkVersion="35" android:minSdkVersion="31" android:targetSdkVersion="35" />
@@ -4250,19 +4238,19 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
               </application>
           </manifest>
           """,
-          )
-          .indented()
-      )
-      .run()
-      .expectClean()
+                )
+                .indented()
+        )
+        .run()
+        .expectClean()
   }
 
   fun testHostValidation() {
     lint()
-      .files(
-        xml(
-            "AndroidManifest.xml",
-            """
+        .files(
+            xml(
+                    "AndroidManifest.xml",
+                    """
           <manifest xmlns:android="http://schemas.android.com/apk/res/android"
               package="com.example.helloworld" >
 
@@ -4310,26 +4298,26 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
               </application>
           </manifest>
           """,
-          )
-          .indented()
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .run()
+        .expect(
+            """
         AndroidManifest.xml:42: Error: Android App Links' host attributes must be valid web domains [AppLinkUrlError]
                         <data android:host="invalidhost" />
                                             ~~~~~~~~~~~
         1 errors, 0 warnings
         """
-      )
+        )
   }
 
   fun test_splitToWebAndCustomSchemes() {
     lint()
-      .files(
-        xml(
-            "AndroidManifest.xml",
-            """
+        .files(
+            xml(
+                    "AndroidManifest.xml",
+                    """
             <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="com.example.helloworld" >
                     <uses-sdk android:minSdkVersion="31" android:targetSdkVersion="34" />
@@ -4362,30 +4350,30 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
                 </application>
             </manifest>
           """,
-          )
-          .indented(),
-        xml(
-            "res/values/strings.xml",
-            """
+                )
+                .indented(),
+            xml(
+                    "res/values/strings.xml",
+                    """
             <resources>
                 <string name="path">/path</string>
             </resources>
             """,
-          )
-          .indented(),
-      )
-      .issues(APP_LINK_SPLIT_TO_WEB_AND_CUSTOM)
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+        )
+        .issues(APP_LINK_SPLIT_TO_WEB_AND_CUSTOM)
+        .run()
+        .expect(
+            """
         AndroidManifest.xml:7: Error: Split your http(s) and custom schemes into separate intent filters [AppLinkSplitToWebAndCustom]
                     <intent-filter android:autoVerify="true" android:order="-1" android:priority="-1">
                      ~~~~~~~~~~~~~
         1 errors, 0 warnings
         """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
         Autofix for AndroidManifest.xml line 7: Replace with <intent-filter android:autoVerify="true" android:order="-1" android:priority="-1">...:
         @@ -10,0 +11,5 @@
         +                <uri-relative-filter-group>
@@ -4423,15 +4411,15 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
         +                <data android:path="/single&quot;quote" />
         +                <data android:path="@string/path" />
         """
-      )
+        )
   }
 
   fun test_splitToWebAndCustomSchemes_customAndroidNs() {
     lint()
-      .files(
-        xml(
-            "AndroidManifest.xml",
-            """
+        .files(
+            xml(
+                    "AndroidManifest.xml",
+                    """
             <manifest xmlns:android-ns="http://schemas.android.com/apk/res/android"
                     package="com.example.helloworld" >
                     <uses-sdk android-ns:minSdkVersion="31" android-ns:targetSdkVersion="34" />
@@ -4450,20 +4438,20 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
                 </application>
             </manifest>
           """,
-          )
-          .indented()
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .run()
+        .expect(
+            """
         AndroidManifest.xml:7: Error: Split your http(s) and custom schemes into separate intent filters [AppLinkSplitToWebAndCustom]
                     <intent-filter android-ns:autoVerify="true" android-ns:order="-1" android-ns:priority="-1">
                      ~~~~~~~~~~~~~
         1 errors, 0 warnings
         """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
         Autofix for AndroidManifest.xml line 7: Replace with <intent-filter android-ns:autoVerify="true" android-ns:order="-1" android-ns:priority="-1">...:
         @@ -11,0 +12,6 @@
         +                <data android-ns:host="example.com" />
@@ -4473,15 +4461,15 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
         +                <category android-ns:name="android.intent.category.DEFAULT" />
         +                <category android-ns:name="android.intent.category.BROWSABLE" />
         """
-      )
+        )
   }
 
   fun test_splitToWebAndCustomSchemes_errorWhenOneHostNeedsVerification() {
     lint()
-      .files(
-        xml(
-            "AndroidManifest.xml",
-            """
+        .files(
+            xml(
+                    "AndroidManifest.xml",
+                    """
             <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="com.example.helloworld" >
                     <uses-sdk android:minSdkVersion="31" android:targetSdkVersion="34" />
@@ -4511,21 +4499,21 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
                 </application>
             </manifest>
           """,
-          )
-          .indented()
-      )
-      .issues(APP_LINK_SPLIT_TO_WEB_AND_CUSTOM)
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .issues(APP_LINK_SPLIT_TO_WEB_AND_CUSTOM)
+        .run()
+        .expect(
+            """
         AndroidManifest.xml:17: Error: Split your http(s) and custom schemes into separate intent filters [AppLinkSplitToWebAndCustom]
                     <intent-filter android:autoVerify="true">
                      ~~~~~~~~~~~~~
         1 errors, 0 warnings
         """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
         Autofix for AndroidManifest.xml line 17: Replace with <intent-filter android:autoVerify="true">...:
         @@ -21,0 +22,7 @@
         +                <data android:host="host1.com" />
@@ -4536,15 +4524,15 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
         +                <category android:name="android.intent.category.DEFAULT" />
         +                <category android:name="android.intent.category.BROWSABLE" />
         """
-      )
+        )
   }
 
   fun test_splitToWebAndCustomSchemes_errorWhenHostsUsedInNonAutoVerifyIntentFilter() {
     lint()
-      .files(
-        xml(
-            "AndroidManifest.xml",
-            """
+        .files(
+            xml(
+                    "AndroidManifest.xml",
+                    """
             <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="com.example.helloworld" >
                     <uses-sdk android:minSdkVersion="31" android:targetSdkVersion="34" />
@@ -4575,21 +4563,21 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
                 </application>
             </manifest>
           """,
-          )
-          .indented()
-      )
-      .issues(APP_LINK_SPLIT_TO_WEB_AND_CUSTOM)
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .issues(APP_LINK_SPLIT_TO_WEB_AND_CUSTOM)
+        .run()
+        .expect(
+            """
         AndroidManifest.xml:18: Error: Split your http(s) and custom schemes into separate intent filters [AppLinkSplitToWebAndCustom]
                     <intent-filter android:autoVerify="true">
                      ~~~~~~~~~~~~~
         1 errors, 0 warnings
         """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
         Autofix for AndroidManifest.xml line 18: Replace with <intent-filter android:autoVerify="true">...:
         @@ -22,0 +23,7 @@
         +                <data android:host="host1.com" />
@@ -4600,15 +4588,15 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
         +                <category android:name="android.intent.category.DEFAULT" />
         +                <category android:name="android.intent.category.BROWSABLE" />
         """
-      )
+        )
   }
 
   fun test_splitToWebAndCustomSchemes_noErrorWhenHostsAlreadyRequestVerification() {
     lint()
-      .files(
-        xml(
-            "AndroidManifest.xml",
-            """
+        .files(
+            xml(
+                    "AndroidManifest.xml",
+                    """
             <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="com.example.helloworld" >
                     <uses-sdk android:minSdkVersion="31" android:targetSdkVersion="34" />
@@ -4639,20 +4627,20 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
                 </application>
             </manifest>
           """,
-          )
-          .indented()
-      )
-      .issues(APP_LINK_SPLIT_TO_WEB_AND_CUSTOM)
-      .run()
-      .expectClean()
+                )
+                .indented()
+        )
+        .issues(APP_LINK_SPLIT_TO_WEB_AND_CUSTOM)
+        .run()
+        .expectClean()
   }
 
   fun test_splitToWebAndCustomSchemes_noErrorWhenHostsAlreadyRequestVerification_inLibrary() {
     lint()
-      .projects(
-        project(
-            manifest(
-                """
+        .projects(
+            project(
+                    manifest(
+                            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                         package="com.example.helloworld" >
                         <uses-sdk android:minSdkVersion="31" android:targetSdkVersion="34" />
@@ -4674,15 +4662,15 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
                     </application>
                 </manifest>
                 """
-              )
-              .indented(),
-            projectProperties().dependsOn("../library").manifestMerger(true),
-          )
-          .name("app")
-          .dependsOn(
-            project(
-                manifest(
-                    """
+                        )
+                        .indented(),
+                    projectProperties().dependsOn("../library").manifestMerger(true),
+                )
+                .name("app")
+                .dependsOn(
+                    project(
+                            manifest(
+                                    """
                     <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                         package="com.example.library" >
 
@@ -4701,24 +4689,24 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
                         </application>
                     </manifest>
                     """
-                  )
-                  .indented(),
-                projectProperties().library(true),
-              )
-              .name("library")
-          )
-      )
-      .issues(APP_LINK_SPLIT_TO_WEB_AND_CUSTOM)
-      .run()
-      .expectClean()
+                                )
+                                .indented(),
+                            projectProperties().library(true),
+                        )
+                        .name("library")
+                )
+        )
+        .issues(APP_LINK_SPLIT_TO_WEB_AND_CUSTOM)
+        .run()
+        .expectClean()
   }
 
   fun test_b386174049() {
     lint()
-      .files(
-        xml(
-            "AndroidManifest.xml",
-            """
+        .files(
+            xml(
+                    "AndroidManifest.xml",
+                    """
             <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                       package="com.example.helloworld">
 
@@ -4735,20 +4723,20 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
                 </application>
             </manifest>
             """,
-          )
-          .indented(),
-        xml(
-            "res/values/integers.xml",
-            """
+                )
+                .indented(),
+            xml(
+                    "res/values/integers.xml",
+                    """
               <resources>
                   <integer name="order">0</integer>
                   <integer name="priority">noninteger</integer>
               </resources>
             """,
-          )
-          .indented(),
-      )
-      .run()
-      .expectClean()
+                )
+                .indented(),
+        )
+        .run()
+        .expectClean()
   }
 }

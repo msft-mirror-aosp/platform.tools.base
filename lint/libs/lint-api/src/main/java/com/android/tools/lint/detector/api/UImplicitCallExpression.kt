@@ -45,22 +45,20 @@ import org.jetbrains.uast.visitor.UastTypedVisitor
 import org.jetbrains.uast.visitor.UastVisitor
 
 /**
- * A [UImplicitCallExpression] represents an overloaded function call which is not represented as a
- * call in the AST; for example, a [UArrayAccessExpression] for `[]` which calls `get` (or inside an
- * assignment, `set`) methods, or a [UBinaryExpression] for `<` which calls `compareTo`, or a
- * [UUnaryExpression] for '++' calling `inc` and so on.
+ * A [UImplicitCallExpression] represents an overloaded function call which is not represented as a call in the AST; for example, a
+ * [UArrayAccessExpression] for `[]` which calls `get` (or inside an assignment, `set`) methods, or a [UBinaryExpression] for `<` which
+ * calls `compareTo`, or a [UUnaryExpression] for '++' calling `inc` and so on.
  *
- * This makes it easier to handle calls in a uniform way. You can use [UElement.asCall] to convert a
- * random element to a call if applicable, or one of the dedicated [UBinaryExpression.asCall],
- * [UUnaryExpression.asCall], or [UArrayAccessExpression] directly.
+ * This makes it easier to handle calls in a uniform way. You can use [UElement.asCall] to convert a random element to a call if applicable,
+ * or one of the dedicated [UBinaryExpression.asCall], [UUnaryExpression.asCall], or [UArrayAccessExpression] directly.
  *
  * If you just want to visit calls, consider using the [UastCallVisitor].
  */
 abstract class UImplicitCallExpression(
-  /** The original expression that is implicitly making a call to an overloaded function. */
-  val expression: UExpression,
-  /** The function being called. */
-  val operator: PsiMethod,
+    /** The original expression that is implicitly making a call to an overloaded function. */
+    val expression: UExpression,
+    /** The function being called. */
+    val operator: PsiMethod,
 ) : UCallExpression {
   abstract override val receiver: UExpression?
   abstract override val receiverType: PsiType?
@@ -82,8 +80,7 @@ abstract class UImplicitCallExpression(
 
   override fun getExpressionType(): PsiType? = expression.getExpressionType()
 
-  override fun <D, R> accept(visitor: UastTypedVisitor<D, R>, data: D): R =
-    expression.accept(visitor, data)
+  override fun <D, R> accept(visitor: UastTypedVisitor<D, R>, data: D): R = expression.accept(visitor, data)
 
   override fun accept(visitor: UastVisitor) = expression.accept(visitor)
 
@@ -156,10 +153,7 @@ abstract class UImplicitCallExpression(
   override fun resolve(): PsiMethod = operator
 }
 
-/**
- * If this [UElement] references an overloaded function call, returns a [UCallExpression] which
- * presents this element as a call
- */
+/** If this [UElement] references an overloaded function call, returns a [UCallExpression] which presents this element as a call */
 fun UElement.asCall(): UCallExpression? {
   return when (this) {
     is UCallExpression -> this
@@ -171,8 +165,8 @@ fun UElement.asCall(): UCallExpression? {
 }
 
 /**
- * If this [UBinaryExpression] references an overloaded function call, returns a [UCallExpression]
- * which represents the call of that binary function.
+ * If this [UBinaryExpression] references an overloaded function call, returns a [UCallExpression] which represents the call of that binary
+ * function.
  */
 fun UBinaryExpression.asCall(): UCallExpression? {
   val operator = resolveOverloadedOperator() ?: return null
@@ -180,16 +174,15 @@ fun UBinaryExpression.asCall(): UCallExpression? {
 }
 
 /**
- * When this [UBinaryExpression] is calling the given [operator] method, returns a [UCallExpression]
- * which represents the call of that binary function.
+ * When this [UBinaryExpression] is calling the given [operator] method, returns a [UCallExpression] which represents the call of that
+ * binary function.
  */
 fun UBinaryExpression.asCall(operator: PsiMethod): UCallExpression {
   return BinaryExpressionAsCallExpression(this, operator)
 }
 
 /**
- * If this [UArrayAccessExpression] references an overloaded function call, returns a
- * [UCallExpression] which represents the array access.
+ * If this [UArrayAccessExpression] references an overloaded function call, returns a [UCallExpression] which represents the array access.
  */
 fun UArrayAccessExpression.asCall(): UCallExpression? {
   val operator = resolveOperator() ?: return null
@@ -197,23 +190,22 @@ fun UArrayAccessExpression.asCall(): UCallExpression? {
 }
 
 /**
- * When this [UArrayAccessExpression] is calling the given [operator] method, returns a
- * [UCallExpression] which represents the array access.
+ * When this [UArrayAccessExpression] is calling the given [operator] method, returns a [UCallExpression] which represents the array access.
  */
 fun UArrayAccessExpression.asCall(operator: PsiMethod): UCallExpression {
   val parent = this.uastParent as? UBinaryExpression
   val setter =
-    if (parent != null && parent.isAssignment()) {
-      parent.rightOperand
-    } else {
-      null
-    }
+      if (parent != null && parent.isAssignment()) {
+        parent.rightOperand
+      } else {
+        null
+      }
   return ArrayAccessAsCallExpression(this, setter, operator)
 }
 
 /**
- * If this [UUnaryExpression] references an overloaded function call, returns a [UCallExpression]
- * which represents the call of that unary function.
+ * If this [UUnaryExpression] references an overloaded function call, returns a [UCallExpression] which represents the call of that unary
+ * function.
  */
 fun UUnaryExpression.asCall(): UCallExpression? {
   val operator = resolveOperator() ?: return null
@@ -221,8 +213,8 @@ fun UUnaryExpression.asCall(): UCallExpression? {
 }
 
 /**
- * When this [UUnaryExpression] is calling the given [operator] method, returns a [UCallExpression]
- * which represents the call of that unary function.
+ * When this [UUnaryExpression] is calling the given [operator] method, returns a [UCallExpression] which represents the call of that unary
+ * function.
  */
 fun UUnaryExpression.asCall(operator: PsiMethod): UCallExpression {
   return UnaryExpressionAsCallExpression(this, operator)
@@ -234,8 +226,8 @@ fun UUnaryExpression.asCall(operator: PsiMethod): UCallExpression {
  * See [UUnaryExpression.asCall].
  */
 private class UnaryExpressionAsCallExpression(
-  private val unary: UUnaryExpression,
-  operator: PsiMethod,
+    private val unary: UUnaryExpression,
+    operator: PsiMethod,
 ) : UImplicitCallExpression(unary, operator) {
   override val receiver: UExpression
     get() = unary.operand
@@ -258,14 +250,13 @@ private class UnaryExpressionAsCallExpression(
  * See [UBinaryExpression.asCall].
  */
 private class BinaryExpressionAsCallExpression(
-  private val binary: UBinaryExpression,
-  operator: PsiMethod,
+    private val binary: UBinaryExpression,
+    operator: PsiMethod,
 ) : UImplicitCallExpression(binary, operator) {
   // See https://kotlinlang.org/docs/operator-overloading.html#binary-operations
   // All the operators are "a.something(b)" except for the containment operators
   // which are "b.contains(a)"
-  private val isReversed: Boolean =
-    binary.operator.text.let { text -> text == "in" || text == "!in" }
+  private val isReversed: Boolean = binary.operator.text.let { text -> text == "in" || text == "!in" }
 
   /** Infix or extension function? */
   private val isSingleParameter: Boolean = operator.parameterList.parameters.size == 1
@@ -275,12 +266,10 @@ private class BinaryExpressionAsCallExpression(
 
   override val receiver: UExpression?
     get() =
-      when (binary.operator) {
-        UastBinaryOperator.ASSIGN -> (binary.leftOperand as? UArrayAccessExpression)?.receiver
-        else ->
-          if (isSingleParameter) if (isReversed) binary.rightOperand else binary.leftOperand
-          else null
-      }
+        when (binary.operator) {
+          UastBinaryOperator.ASSIGN -> (binary.leftOperand as? UArrayAccessExpression)?.receiver
+          else -> if (isSingleParameter) if (isReversed) binary.rightOperand else binary.leftOperand else null
+        }
 
   override val receiverType: PsiType?
     get() = receiver?.getExpressionType()
@@ -292,33 +281,29 @@ private class BinaryExpressionAsCallExpression(
       if (arguments != null) {
         return arguments
       }
-      if (
-        binary.operator == UastBinaryOperator.ASSIGN && binary.leftOperand is UArrayAccessExpression
-      ) {
+      if (binary.operator == UastBinaryOperator.ASSIGN && binary.leftOperand is UArrayAccessExpression) {
         // overloaded, indexed setter: rcv[index1, index2, ...] = value
         // which invokes rcv.set(index, index2, ..., value)
-        val newArguments =
-          (binary.leftOperand as UArrayAccessExpression).indices +
-            listOfNotNull(binary.rightOperand)
+        val newArguments = (binary.leftOperand as UArrayAccessExpression).indices + listOfNotNull(binary.rightOperand)
         _arguments = newArguments
         return newArguments
       }
       val newArguments =
-        if (isReversed) {
-          if (isSingleParameter) {
-            // extension function, second parameter is receiver
-            listOf(binary.leftOperand)
+          if (isReversed) {
+            if (isSingleParameter) {
+              // extension function, second parameter is receiver
+              listOf(binary.leftOperand)
+            } else {
+              listOf(binary.rightOperand, binary.leftOperand)
+            }
           } else {
-            listOf(binary.rightOperand, binary.leftOperand)
+            if (isSingleParameter) {
+              // extension function, first parameter is receiver
+              listOf(binary.rightOperand)
+            } else {
+              listOf(binary.leftOperand, binary.rightOperand)
+            }
           }
-        } else {
-          if (isSingleParameter) {
-            // extension function, first parameter is receiver
-            listOf(binary.rightOperand)
-          } else {
-            listOf(binary.leftOperand, binary.rightOperand)
-          }
-        }
       _arguments = newArguments
       return newArguments
     }
@@ -333,11 +318,11 @@ private class BinaryExpressionAsCallExpression(
     val arguments = this.valueArguments
     val argumentCount = arguments.size
     val start =
-      when (parameters.size) {
-        argumentCount -> 0
-        argumentCount + 1 -> 1
-        else -> return emptyMap()
-      }
+        when (parameters.size) {
+          argumentCount -> 0
+          argumentCount + 1 -> 1
+          else -> return emptyMap()
+        }
     return arguments.mapIndexed { index, value -> value to parameters[index + start] }.toMap()
   }
 }
@@ -348,9 +333,9 @@ private class BinaryExpressionAsCallExpression(
  * See [UArrayAccessExpression.asCall].
  */
 private class ArrayAccessAsCallExpression(
-  private val accessExpression: UArrayAccessExpression,
-  private val setter: UExpression?,
-  operator: PsiMethod,
+    private val accessExpression: UArrayAccessExpression,
+    private val setter: UExpression?,
+    operator: PsiMethod,
 ) : UImplicitCallExpression(accessExpression, operator) {
   override val receiver: UExpression
     get() = accessExpression.receiver
@@ -362,13 +347,13 @@ private class ArrayAccessAsCallExpression(
     get() {
       val indices = accessExpression.indices.firstOrNull()?.sourcePsi ?: return null
       var bracket =
-        if (indices is KtLiteralStringTemplateEntry) {
-          // With KotlinConverter.INSTANCE.setForceUInjectionHost enabled,
-          // we have to look at the parent instead to find the left bracket
-          indices.parent.prevSibling
-        } else {
-          indices.prevSibling
-        }
+          if (indices is KtLiteralStringTemplateEntry) {
+            // With KotlinConverter.INSTANCE.setForceUInjectionHost enabled,
+            // we have to look at the parent instead to find the left bracket
+            indices.parent.prevSibling
+          } else {
+            indices.prevSibling
+          }
       while (bracket is PsiWhiteSpace || bracket is PsiComment) {
         bracket = bracket.prevSibling
       }
@@ -400,8 +385,7 @@ private class ArrayAccessAsCallExpression(
     val argumentCount = arguments.size
     val parameterCount = parameters.size
     val start = if (parameters[0].isReceiver()) 1 else 0
-    val indices =
-      arguments.asSequence().mapIndexed { index, value -> value to parameters[start + index] }
+    val indices = arguments.asSequence().mapIndexed { index, value -> value to parameters[start + index] }
     if (parameterCount - start == argumentCount) {
       return indices.toMap()
     }

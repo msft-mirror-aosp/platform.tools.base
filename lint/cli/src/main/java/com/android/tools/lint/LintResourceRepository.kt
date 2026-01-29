@@ -70,19 +70,19 @@ import org.w3c.dom.Node
  * - the same DOM XML parse trees we're sharing with lint's resource visitor
  * - deserialized strings
  *
- * For lint internal use only. It does not support all operations that the general resource
- * repository does, such as namespaces or public resources, only those relevant to lint analysis.
+ * For lint internal use only. It does not support all operations that the general resource repository does, such as namespaces or public
+ * resources, only those relevant to lint analysis.
  */
 open class LintResourceRepository(
-  private val project: Project?,
-  internal val typeToMap: MutableMap<ResourceType, ListMultimap<String, ResourceItem>>,
-  private val namespace: ResourceNamespace,
-  val libraryName: String?,
+    private val project: Project?,
+    internal val typeToMap: MutableMap<ResourceType, ListMultimap<String, ResourceItem>>,
+    private val namespace: ResourceNamespace,
+    val libraryName: String?,
 ) : AbstractResourceRepository(), SingleNamespaceResourceRepository {
 
   override fun getResourcesInternal(
-    namespace: ResourceNamespace,
-    resourceType: ResourceType,
+      namespace: ResourceNamespace,
+      resourceType: ResourceType,
   ): ListMultimap<String, ResourceItem> {
     // We could enforce namespace == this.namespace here, but
     // right now there's a mixture of RES_AUTO and so we'd
@@ -125,8 +125,8 @@ open class LintResourceRepository(
   }
 
   override fun getPublicResources(
-    namespace: ResourceNamespace,
-    type: ResourceType,
+      namespace: ResourceNamespace,
+      type: ResourceType,
   ): MutableCollection<ResourceItem> {
     unsupported()
   }
@@ -138,9 +138,9 @@ open class LintResourceRepository(
   }
 
   internal class MergedResourceRepository(
-    private val project: Project,
-    private val repositories: List<LintResourceRepository>,
-    private val namespace: ResourceNamespace,
+      private val project: Project,
+      private val repositories: List<LintResourceRepository>,
+      private val namespace: ResourceNamespace,
   ) : AbstractResourceRepository() {
     override fun accept(visitor: ResourceVisitor): ResourceVisitor.VisitResult {
       for (type in ResourceType.values()) {
@@ -163,8 +163,8 @@ open class LintResourceRepository(
     }
 
     override fun getPublicResources(
-      namespace: ResourceNamespace,
-      type: ResourceType,
+        namespace: ResourceNamespace,
+        type: ResourceType,
     ): MutableCollection<ResourceItem> {
       unsupported()
     }
@@ -177,32 +177,31 @@ open class LintResourceRepository(
       return repositories
     }
 
-    private val cache: EnumMap<ResourceType, ListMultimap<String, ResourceItem>> =
-      EnumMap(ResourceType::class.java)
+    private val cache: EnumMap<ResourceType, ListMultimap<String, ResourceItem>> = EnumMap(ResourceType::class.java)
 
     override fun getResourcesInternal(
-      namespace: ResourceNamespace,
-      type: ResourceType,
+        namespace: ResourceNamespace,
+        type: ResourceType,
     ): ListMultimap<String, ResourceItem> {
       return cache[type]
-        ?: run {
-          val keyCount = 100
-          val valuesPerKey = 5
-          val map = ArrayListMultimap.create<String, ResourceItem>(keyCount, valuesPerKey)
-          repositories.forEach { repository ->
-            val repoMap: ListMultimap<String, ResourceItem>? = repository.typeToMap[type]
-            repoMap?.let { map.putAll(it) }
-          }
+          ?: run {
+            val keyCount = 100
+            val valuesPerKey = 5
+            val map = ArrayListMultimap.create<String, ResourceItem>(keyCount, valuesPerKey)
+            repositories.forEach { repository ->
+              val repoMap: ListMultimap<String, ResourceItem>? = repository.typeToMap[type]
+              repoMap?.let { map.putAll(it) }
+            }
 
-          cache[type] = map
-          map
-        }
+            cache[type] = map
+            map
+          }
     }
 
     override fun getResources(
-      namespace: ResourceNamespace,
-      resourceType: ResourceType,
-      resourceName: String,
+        namespace: ResourceNamespace,
+        resourceType: ResourceType,
+        resourceName: String,
     ): MutableList<ResourceItem> {
       // Optimized because most of the time, only
       // hasResources(type,name) and getResources(type,name) are called,
@@ -212,16 +211,14 @@ open class LintResourceRepository(
       // lists for the vast majority of resources that will never be looked
       // at.
       val list = ArrayList<ResourceItem>()
-      repositories.forEach { repository ->
-        list.addAll(repository.getResources(namespace, resourceType, resourceName))
-      }
+      repositories.forEach { repository -> list.addAll(repository.getResources(namespace, resourceType, resourceName)) }
       return list
     }
 
     override fun hasResources(
-      namespace: ResourceNamespace,
-      resourceType: ResourceType,
-      resourceName: String,
+        namespace: ResourceNamespace,
+        resourceType: ResourceType,
+        resourceName: String,
     ): Boolean {
       // Optimized because most of the time, only
       // hasResources(type,name) and getResources(type,name) are called,
@@ -255,65 +252,63 @@ open class LintResourceRepository(
 
   /** A repository wrapping an AAR backed library. */
   class LintLibraryRepository(
-    private val client: LintCliClient,
-    private val library: LintModelAndroidLibrary,
-    namespace: ResourceNamespace,
+      private val client: LintCliClient,
+      private val library: LintModelAndroidLibrary,
+      namespace: ResourceNamespace,
   ) :
-    LintResourceRepository(
-      null,
-      EnumMap(ResourceType::class.java),
-      namespace,
-      library.resolvedCoordinates.toString(),
-    ) {
+      LintResourceRepository(
+          null,
+          EnumMap(ResourceType::class.java),
+          namespace,
+          library.resolvedCoordinates.toString(),
+      ) {
     // Just passing in an empty mutable map to the super which we'll populate
     // lazily in getResourcesInternal
 
     init {
       val listFiles: Array<File>? = library.resFolder.listFiles()
-      listFiles?.filter(skipHidden)?.sorted()?.forEach { folder ->
-        scanTypeFolder(client, folder, libraryName, namespace, typeToMap)
-      }
+      listFiles?.filter(skipHidden)?.sorted()?.forEach { folder -> scanTypeFolder(client, folder, libraryName, namespace, typeToMap) }
     }
 
     override fun getResourcesInternal(
-      namespace: ResourceNamespace,
-      resourceType: ResourceType,
+        namespace: ResourceNamespace,
+        resourceType: ResourceType,
     ): ListMultimap<String, ResourceItem> {
       // Populate lazily since in libraries there tend to be a LOT
       // of resources
       return typeToMap[resourceType]
-        ?: run {
-          val folderTypes = FolderTypeRelationship.getRelatedFolders(resourceType)
-          val folders =
-            library.resFolder.listFiles { folder ->
-              val folderType = ResourceFolderType.getFolderType(folder.name)
-              folderType != null && folderTypes.contains(folderType)
-            } ?: emptyArray()
+          ?: run {
+            val folderTypes = FolderTypeRelationship.getRelatedFolders(resourceType)
+            val folders =
+                library.resFolder.listFiles { folder ->
+                  val folderType = ResourceFolderType.getFolderType(folder.name)
+                  folderType != null && folderTypes.contains(folderType)
+                } ?: emptyArray()
 
-          val libraryName = library.resolvedCoordinates.toString()
-          for (folder in folders.sorted()) { // sorted: offer stable order in resource lists
-            // TODO: For @id, cheat and just look at the R.txt file! We don't need
-            // to parse through ALL The resources for this
-            scanTypeFolder(client, folder, libraryName, namespace, typeToMap)
-          }
+            val libraryName = library.resolvedCoordinates.toString()
+            for (folder in folders.sorted()) { // sorted: offer stable order in resource lists
+              // TODO: For @id, cheat and just look at the R.txt file! We don't need
+              // to parse through ALL The resources for this
+              scanTypeFolder(client, folder, libraryName, namespace, typeToMap)
+            }
 
-          // Make sure we record not just this specific type but any types for any
-          // folders we scanned. E.g. if the map request came in for a @dimen, we
-          // ended up scanning all the values/ folders, which also populates for example
-          // the @string entries found there -- make sure we record that we've done
-          // scanning these now (since if no strings were found, the entry would still be
-          // null, and we'd try scanning again.)
-          for (scannedFolderTypes in folderTypes) {
-            val scannedTypes = FolderTypeRelationship.getRelatedResourceTypes(scannedFolderTypes)
-            for (scannedType in scannedTypes) {
-              if (typeToMap[scannedType] == null) {
-                typeToMap[scannedType] = ArrayListMultimap.create()
+            // Make sure we record not just this specific type but any types for any
+            // folders we scanned. E.g. if the map request came in for a @dimen, we
+            // ended up scanning all the values/ folders, which also populates for example
+            // the @string entries found there -- make sure we record that we've done
+            // scanning these now (since if no strings were found, the entry would still be
+            // null, and we'd try scanning again.)
+            for (scannedFolderTypes in folderTypes) {
+              val scannedTypes = FolderTypeRelationship.getRelatedResourceTypes(scannedFolderTypes)
+              for (scannedType in scannedTypes) {
+                if (typeToMap[scannedType] == null) {
+                  typeToMap[scannedType] = ArrayListMultimap.create()
+                }
               }
             }
-          }
 
-          typeToMap[resourceType]!!
-        }
+            typeToMap[resourceType]!!
+          }
     }
 
     // If we get the .aar file (need to add to model (LintModelLibrary.kt) and pass in
@@ -334,9 +329,8 @@ open class LintResourceRepository(
     private val skipHidden: (File) -> Boolean = { file -> !file.name.startsWith('.') }
 
     /**
-     * In partial analysis mode, you cannot look at the resource files from **other** modules. To
-     * make sure detectors don't do this, the testing infrastructure calls this method to strip
-     * resource access (rewriting ResourceItems to have invalid paths).
+     * In partial analysis mode, you cannot look at the resource files from **other** modules. To make sure detectors don't do this, the
+     * testing infrastructure calls this method to strip resource access (rewriting ResourceItems to have invalid paths).
      */
     @TestOnly
     fun removeFileAccess(project: Project, repository: ResourceRepository): ResourceRepository {
@@ -354,42 +348,42 @@ open class LintResourceRepository(
           for ((type, multiMap) in original) {
             for ((name, item) in multiMap.entries()) {
               val withoutSource =
-                if (item is LintResourceItem) {
-                  object : LintResourceItem(item, true) {
-                    private fun reportPathAccess(method: String) {
-                      if (LintClient.isUnitTest) {
-                        if (
-                          !Context.checkForbidden(
-                            "ResourceItem.$method()",
-                            item.file,
-                            null,
-                            "You can only call this on resources in the current module, not library resources.",
-                          )
-                        ) {
-                          // This only happens if checkForbidden can't find the relevant detector
-                          error("Cannot access resources from libraries in analysis mode")
+                  if (item is LintResourceItem) {
+                    object : LintResourceItem(item, true) {
+                      private fun reportPathAccess(method: String) {
+                        if (LintClient.isUnitTest) {
+                          if (
+                              !Context.checkForbidden(
+                                  "ResourceItem.$method()",
+                                  item.file,
+                                  null,
+                                  "You can only call this on resources in the current module, not library resources.",
+                              )
+                          ) {
+                            // This only happens if checkForbidden can't find the relevant detector
+                            error("Cannot access resources from libraries in analysis mode")
+                          }
                         }
                       }
-                    }
 
-                    override fun getSource(): PathString {
-                      reportPathAccess("getSource")
-                      return item.source
-                    }
+                      override fun getSource(): PathString {
+                        reportPathAccess("getSource")
+                        return item.source
+                      }
 
-                    override fun getSourceFile(): ResourceFile? {
-                      reportPathAccess("getSourceFile")
-                      return item.sourceFile
-                    }
+                      override fun getSourceFile(): ResourceFile? {
+                        reportPathAccess("getSourceFile")
+                        return item.sourceFile
+                      }
 
-                    override fun getFile(): File {
-                      reportPathAccess("getFile")
-                      return item.file
+                      override fun getFile(): File {
+                        reportPathAccess("getFile")
+                        return item.file
+                      }
                     }
+                  } else {
+                    item
                   }
-                } else {
-                  item
-                }
               recordItem(map, type, name, withoutSource)
             }
           }
@@ -399,16 +393,16 @@ open class LintResourceRepository(
     }
 
     /**
-     * An empty repository which is only used if you request the resource repository for a
-     * non-Android project or when the compilation target can't be found etc.
+     * An empty repository which is only used if you request the resource repository for a non-Android project or when the compilation
+     * target can't be found etc.
      */
     object EmptyRepository :
-      LintResourceRepository(
-        null,
-        EnumMap(ResourceType::class.java),
-        ResourceNamespace.RES_AUTO,
-        null,
-      ) {
+        LintResourceRepository(
+            null,
+            EnumMap(ResourceType::class.java),
+            ResourceNamespace.RES_AUTO,
+            null,
+        ) {
       override fun accept(visitor: ResourceVisitor): ResourceVisitor.VisitResult {
         return ResourceVisitor.VisitResult.ABORT
       }
@@ -422,8 +416,8 @@ open class LintResourceRepository(
       }
 
       override fun getResourcesInternal(
-        namespace: ResourceNamespace,
-        resourceType: ResourceType,
+          namespace: ResourceNamespace,
+          resourceType: ResourceType,
       ): ListMultimap<String, ResourceItem> {
         return ImmutableListMultimap.of()
       }
@@ -447,19 +441,19 @@ open class LintResourceRepository(
 
     /** Returns the resource repository for the given [project] with the given scope. */
     fun get(
-      client: LintCliClient,
-      project: Project,
-      scope: ResourceRepositoryScope,
+        client: LintCliClient,
+        project: Project,
+        scope: ResourceRepositoryScope,
     ): ResourceRepository {
       // Repository with dependencies
       return project.getClientProperty<ResourceRepository>(scope)
-        ?: createRepository(client, project, scope).also { project.putClientProperty(scope, it) }
+          ?: createRepository(client, project, scope).also { project.putClientProperty(scope, it) }
     }
 
     private fun createRepository(
-      client: LintCliClient,
-      project: Project,
-      scope: ResourceRepositoryScope,
+        client: LintCliClient,
+        project: Project,
+        scope: ResourceRepositoryScope,
     ): ResourceRepository {
 
       if (scope == ResourceRepositoryScope.ANDROID) {
@@ -478,29 +472,21 @@ open class LintResourceRepository(
       repositories += projectRepository
 
       if (scope.includesDependencies()) {
-        project.allLibraries
-          .filter { !it.isExternalLibrary }
-          .map { getForProjectOnly(client, it) }
-          .forEach { repositories += it }
+        project.allLibraries.filter { !it.isExternalLibrary }.map { getForProjectOnly(client, it) }.forEach { repositories += it }
 
         // If we're only computing local dependencies, not library and
         // framework (this is common) don't bother creating a composite
         // resource repository if there are no dependencies
-        if (
-          scope == ResourceRepositoryScope.LOCAL_DEPENDENCIES && repositories.size == 1
-        ) { // 1: the project
+        if (scope == ResourceRepositoryScope.LOCAL_DEPENDENCIES && repositories.size == 1) { // 1: the project
           return projectRepository
         }
       }
 
       if (scope.includesLibraries()) {
         val libs: List<LintModelAndroidLibrary> =
-          project.buildVariant
-            ?.mainArtifact
-            ?.dependencies
-            ?.getAll()
-            ?.filterIsInstance<LintModelAndroidLibrary>()
-            ?.toList() ?: project.buildLibraryModel?.let { listOf(it) } ?: emptyList()
+            project.buildVariant?.mainArtifact?.dependencies?.getAll()?.filterIsInstance<LintModelAndroidLibrary>()?.toList()
+                ?: project.buildLibraryModel?.let { listOf(it) }
+                ?: emptyList()
 
         // No libraries? Just share the same repository instance as
         // local only
@@ -508,11 +494,7 @@ open class LintResourceRepository(
           return get(client, project, ResourceRepositoryScope.LOCAL_DEPENDENCIES)
         }
 
-        libs
-          .asSequence()
-          .map { getForLibrary(client, it) }
-          .filter { it !== EmptyRepository }
-          .forEach { repositories += it }
+        libs.asSequence().map { getForLibrary(client, it) }.filter { it !== EmptyRepository }.forEach { repositories += it }
       }
 
       return MergedResourceRepository(project, repositories, ResourceNamespace.TODO())
@@ -522,18 +504,16 @@ open class LintResourceRepository(
     private var warned = false
 
     /**
-     * Gets or creates the resource repository for [project], the Android framework, or an AAR
-     * library.
+     * Gets or creates the resource repository for [project], the Android framework, or an AAR library.
      *
-     * Note that [project] will be null when requesting the resource repository for the Android
-     * framework or an AAR library.
+     * Note that [project] will be null when requesting the resource repository for the Android framework or an AAR library.
      */
     private fun getOrCreateRepository(
-      serializedFile: File,
-      client: LintCliClient,
-      root: File?,
-      project: Project?,
-      factory: () -> LintResourceRepository,
+        serializedFile: File,
+        client: LintCliClient,
+        root: File?,
+        project: Project?,
+        factory: () -> LintResourceRepository,
     ): LintResourceRepository {
       // For the framework or AAR case, resource repositories act like a cache, so we read/write
       // resource repositories.
@@ -542,30 +522,27 @@ open class LintResourceRepository(
       // For the module case, the resource repositories are output files from ANALYSIS_ONLY mode,
       // which we can deserialize.
       val readPartialResults =
-        // Lint must have information (partial-results-dir) about the module, so project must not be
-        // null.
-        project != null &&
-          // We only read analysis results from modules in ANALYSIS_ONLY or MERGE modes. In
-          // ANALYSIS_ONLY mode, we do not try to read analysis results for the current module being
-          // analyzed.
-          ((client.driver.mode == ANALYSIS_ONLY && project != client.driver.projectRoots.first()) ||
-            client.driver.mode == MERGE)
+          // Lint must have information (partial-results-dir) about the module, so project must not be
+          // null.
+          project != null &&
+              // We only read analysis results from modules in ANALYSIS_ONLY or MERGE modes. In
+              // ANALYSIS_ONLY mode, we do not try to read analysis results for the current module being
+              // analyzed.
+              ((client.driver.mode == ANALYSIS_ONLY && project != client.driver.projectRoots.first()) || client.driver.mode == MERGE)
 
       // Deserialize existing resource repository.
       if ((isFrameworkOrAar || readPartialResults) && serializedFile.isFile) {
         val serialized = serializedFile.readText()
         try {
           return LintResourcePersistence.deserialize(
-            serialized,
-            client.pathVariables,
-            root,
-            project,
-            // Path variables might be missing, but only in ANALYSIS_ONLY mode and only for
-            // dependencies.
-            allowMissingPathVariable =
-              project != null &&
-                client.driver.mode == ANALYSIS_ONLY &&
-                project != client.driver.projectRoots.first(),
+              serialized,
+              client.pathVariables,
+              root,
+              project,
+              // Path variables might be missing, but only in ANALYSIS_ONLY mode and only for
+              // dependencies.
+              allowMissingPathVariable =
+                  project != null && client.driver.mode == ANALYSIS_ONLY && project != client.driver.projectRoots.first(),
           )
         } catch (e: Throwable) {
           // Some sort of problem deserializing the lint resource repository. Try to gracefully
@@ -574,10 +551,10 @@ open class LintResourceRepository(
             warned = true
             val sb = StringBuilder()
             sb.append(
-              "Failed to deserialize cached resource repository.\n" +
-                "This is an internal lint error which typically means that lint is being passed a\n" +
-                "serialized file that was created with an older version of lint or with a different\n" +
-                "set of path variable names. Attempting to gracefully recover.\n"
+                "Failed to deserialize cached resource repository.\n" +
+                    "This is an internal lint error which typically means that lint is being passed a\n" +
+                    "serialized file that was created with an older version of lint or with a different\n" +
+                    "set of path variable names. Attempting to gracefully recover.\n"
             )
 
             sb.append("The serialized content was:\n")
@@ -587,11 +564,11 @@ open class LintResourceRepository(
             sb.append("`:")
             LintDriver.appendStackTraceSummary(e, sb)
             LintClient.report(
-              client = client,
-              issue = IssueRegistry.LINT_WARNING,
-              message = sb.toString(),
-              file = serializedFile,
-              project = project,
+                client = client,
+                issue = IssueRegistry.LINT_WARNING,
+                message = sb.toString(),
+                file = serializedFile,
+                project = project,
             )
           }
 
@@ -606,16 +583,12 @@ open class LintResourceRepository(
 
       // For the module case, we only serialize the resource repository in ANALYSIS_ONLY mode and
       // only for the current module being analyzed.
-      val writePartialResults =
-        project != null &&
-          client.driver.mode == ANALYSIS_ONLY &&
-          project == client.driver.projectRoots.first()
+      val writePartialResults = project != null && client.driver.mode == ANALYSIS_ONLY && project == client.driver.projectRoots.first()
 
       // Serialize resource repository.
       if (isFrameworkOrAar || writePartialResults) {
         serializedFile.parentFile?.mkdirs()
-        val serialized =
-          LintResourcePersistence.serialize(repository, client.pathVariables, project?.dir)
+        val serialized = LintResourcePersistence.serialize(repository, client.pathVariables, project?.dir)
         serializedFile.writeText(serialized)
       }
       return repository
@@ -624,25 +597,25 @@ open class LintResourceRepository(
     /** Returns the resource repository for the given [project], *not* including dependencies. */
     private fun getForProjectOnly(client: LintCliClient, project: Project): LintResourceRepository {
       return project.getClientProperty<LintResourceRepository>(ResourceRepositoryScope.PROJECT_ONLY)
-        ?: getOrCreateRepository(
-            client.getSerializationFile(project, XmlFileType.RESOURCE_REPOSITORY),
-            client,
-            project.dir,
-            project,
-          ) {
-            createFromFolder(client, project, ResourceNamespace.TODO())
-          }
-          .also { project.putClientProperty(ResourceRepositoryScope.PROJECT_ONLY, it) }
+          ?: getOrCreateRepository(
+                  client.getSerializationFile(project, XmlFileType.RESOURCE_REPOSITORY),
+                  client,
+                  project.dir,
+                  project,
+              ) {
+                createFromFolder(client, project, ResourceNamespace.TODO())
+              }
+              .also { project.putClientProperty(ResourceRepositoryScope.PROJECT_ONLY, it) }
     }
 
     private fun getLibraryResourceCacheFile(
-      client: LintCliClient,
-      library: LintModelAndroidLibrary,
+        client: LintCliClient,
+        library: LintModelAndroidLibrary,
     ): File {
       return File(
-        client.getCacheDir("library-resources-v1", true),
-        // avoid ":" in filenames for Windows
-        library.identifier.replace(':', '_'),
+          client.getCacheDir("library-resources-v1", true),
+          // avoid ":" in filenames for Windows
+          library.identifier.replace(':', '_'),
       )
     }
 
@@ -652,114 +625,100 @@ open class LintResourceRepository(
 
     /** Returns a repository for a library consumed by the given project. */
     private fun getForLibrary(
-      client: LintCliClient,
-      library: LintModelAndroidLibrary,
+        client: LintCliClient,
+        library: LintModelAndroidLibrary,
     ): LintResourceRepository {
       val cache =
-        client.getClientProperty<MutableMap<LintModelAndroidLibrary, LintResourceRepository>>(
-          KEY_LIBRARY_CACHE
-        )
-          ?: HashMap<LintModelAndroidLibrary, LintResourceRepository>().also {
-            client.putClientProperty(KEY_LIBRARY_CACHE, it)
-          }
+          client.getClientProperty<MutableMap<LintModelAndroidLibrary, LintResourceRepository>>(KEY_LIBRARY_CACHE)
+              ?: HashMap<LintModelAndroidLibrary, LintResourceRepository>().also { client.putClientProperty(KEY_LIBRARY_CACHE, it) }
       return getForLibrary(client, library, cache)
     }
 
     private fun getForFramework(
-      client: LintCliClient,
-      target: IAndroidTarget,
+        client: LintCliClient,
+        target: IAndroidTarget,
     ): LintResourceRepository {
       val res = target.getPath(IAndroidTarget.RESOURCES).toFile()
       return getForFramework(target.hashString(), res, client)
     }
 
-    /**
-     * Returns a repository for a given framework resource folder which corresponds to an
-     * [IAndroidTarget] res folder.
-     */
+    /** Returns a repository for a given framework resource folder which corresponds to an [IAndroidTarget] res folder. */
     private fun getForFramework(
-      hash: String,
-      res: File,
-      client: LintCliClient,
+        hash: String,
+        res: File,
+        client: LintCliClient,
     ): LintResourceRepository {
       // Cache from target hash, such as "android-12" or "android-S"
       val cache =
-        client.getClientProperty<MutableMap<String, LintResourceRepository>>(KEY_FRAMEWORK_CACHE)
-          ?: HashMap<String, LintResourceRepository>().also {
-            client.putClientProperty(KEY_FRAMEWORK_CACHE, it)
-          }
+          client.getClientProperty<MutableMap<String, LintResourceRepository>>(KEY_FRAMEWORK_CACHE)
+              ?: HashMap<String, LintResourceRepository>().also { client.putClientProperty(KEY_FRAMEWORK_CACHE, it) }
       return getForFramework(client, hash, res, cache)
     }
 
-    /**
-     * Returns a resource repository for an Android SDK resource folder (and the SDK always has
-     * exactly one; there are no source sets)
-     */
+    /** Returns a resource repository for an Android SDK resource folder (and the SDK always has exactly one; there are no source sets) */
     private fun getForFramework(
-      client: LintCliClient,
-      hash: String,
-      res: File,
-      cache: MutableMap<String, LintResourceRepository>,
+        client: LintCliClient,
+        hash: String,
+        res: File,
+        cache: MutableMap<String, LintResourceRepository>,
     ): LintResourceRepository {
       return cache[hash]
-        ?: getOrCreateRepository(
-            getFrameworkResourceCacheFile(client, hash),
-            client,
-            root = null,
-            project = null,
-          ) {
-            createFromFolder(client, sequenceOf(res), null, null, ResourceNamespace.ANDROID)
-          }
-          .also { cache[hash] = it }
+          ?: getOrCreateRepository(
+                  getFrameworkResourceCacheFile(client, hash),
+                  client,
+                  root = null,
+                  project = null,
+              ) {
+                createFromFolder(client, sequenceOf(res), null, null, ResourceNamespace.ANDROID)
+              }
+              .also { cache[hash] = it }
     }
 
     /** Returns a resource repository for an AAR library. */
     private fun getForLibrary(
-      client: LintCliClient,
-      library: LintModelAndroidLibrary,
-      cache: MutableMap<LintModelAndroidLibrary, LintResourceRepository>,
+        client: LintCliClient,
+        library: LintModelAndroidLibrary,
+        cache: MutableMap<LintModelAndroidLibrary, LintResourceRepository>,
     ): LintResourceRepository {
       return cache[library]
-        // TODO: Handle relative paths over in AAR folders under ~/.gradle/
-        ?: getOrCreateRepository(
-            getLibraryResourceCacheFile(client, library),
-            client,
-            root = null,
-            project = null,
-          ) {
-            LintLibraryRepository(client, library, ResourceNamespace.TODO())
-          }
-          .also { cache[library] = it }
+          // TODO: Handle relative paths over in AAR folders under ~/.gradle/
+          ?: getOrCreateRepository(
+                  getLibraryResourceCacheFile(client, library),
+                  client,
+                  root = null,
+                  project = null,
+              ) {
+                LintLibraryRepository(client, library, ResourceNamespace.TODO())
+              }
+              .also { cache[library] = it }
     }
 
     private fun createFromFolder(
-      client: LintClient,
-      project: Project,
-      namespace: ResourceNamespace,
+        client: LintClient,
+        project: Project,
+        namespace: ResourceNamespace,
     ): LintResourceRepository {
       return createFromFolder(
-        client,
-        project.resourceFolders.asSequence() + project.generatedResourceFolders,
-        project,
-        null,
-        namespace,
+          client,
+          project.resourceFolders.asSequence() + project.generatedResourceFolders,
+          project,
+          null,
+          namespace,
       )
     }
 
     fun createFromFolder(
-      client: LintClient,
-      resourceFolders: Sequence<File>,
-      project: Project?,
-      libraryName: String?,
-      namespace: ResourceNamespace,
+        client: LintClient,
+        resourceFolders: Sequence<File>,
+        project: Project?,
+        libraryName: String?,
+        namespace: ResourceNamespace,
     ): LintResourceRepository {
-      val map: MutableMap<ResourceType, ListMultimap<String, ResourceItem>> =
-        EnumMap(ResourceType::class.java)
+      val map: MutableMap<ResourceType, ListMultimap<String, ResourceItem>> = EnumMap(ResourceType::class.java)
 
       for (resourceFolder in resourceFolders) {
         val folders = resourceFolder.listFiles() ?: continue
-        for (folder in
-          folders.filter(skipHidden).sorted()) { // sorted: offer stable order in resource lists
+        for (folder in folders.filter(skipHidden).sorted()) { // sorted: offer stable order in resource lists
           scanTypeFolder(client, folder, libraryName, namespace, map)
         }
       }
@@ -768,11 +727,11 @@ open class LintResourceRepository(
     }
 
     private fun scanTypeFolder(
-      client: LintClient,
-      folder: File,
-      libraryName: String?,
-      namespace: ResourceNamespace,
-      map: MutableMap<ResourceType, ListMultimap<String, ResourceItem>>,
+        client: LintClient,
+        folder: File,
+        libraryName: String?,
+        namespace: ResourceNamespace,
+        map: MutableMap<ResourceType, ListMultimap<String, ResourceItem>>,
     ) {
       if (!folder.isDirectory) return
 
@@ -793,12 +752,12 @@ open class LintResourceRepository(
     }
 
     private fun processValues(
-      client: LintClient,
-      namespace: ResourceNamespace,
-      map: MutableMap<ResourceType, ListMultimap<String, ResourceItem>>,
-      config: FolderConfiguration,
-      libraryName: String?,
-      file: File,
+        client: LintClient,
+        namespace: ResourceNamespace,
+        map: MutableMap<ResourceType, ListMultimap<String, ResourceItem>>,
+        config: FolderConfiguration,
+        libraryName: String?,
+        file: File,
     ) {
       if (!isXmlFile(file)) {
         return
@@ -818,16 +777,16 @@ open class LintResourceRepository(
         if (name.isEmpty()) {
           if (type == ResourceType.PUBLIC) {
             addItems(
-              file,
-              "",
-              type,
-              element,
-              config,
-              libraryName,
-              namespace,
-              map,
-              items,
-              ignoredIds,
+                file,
+                "",
+                type,
+                element,
+                config,
+                libraryName,
+                namespace,
+                map,
+                items,
+                ignoredIds,
             )
           }
           // erroneous source
@@ -841,33 +800,33 @@ open class LintResourceRepository(
     }
 
     private fun addItems(
-      file: File,
-      name: String,
-      type: ResourceType,
-      element: Element,
-      config: FolderConfiguration,
-      libraryName: String?,
-      namespace: ResourceNamespace,
-      map: MutableMap<ResourceType, ListMultimap<String, ResourceItem>>,
-      added: MutableList<LintResourceItem>?,
-      ignoredIds: String,
+        file: File,
+        name: String,
+        type: ResourceType,
+        element: Element,
+        config: FolderConfiguration,
+        libraryName: String?,
+        namespace: ResourceNamespace,
+        map: MutableMap<ResourceType, ListMultimap<String, ResourceItem>>,
+        added: MutableList<LintResourceItem>?,
+        ignoredIds: String,
     ) {
       // See ValueResourceParser2
       val position = PositionXmlParser.getPosition(element)
       val item =
-        LintResourceItem(
-          file,
-          name,
-          namespace,
-          type,
-          element,
-          libraryName != null,
-          libraryName,
-          config,
-          false,
-          ignoredIds,
-          position,
-        )
+          LintResourceItem(
+              file,
+              name,
+              namespace,
+              type,
+              element,
+              libraryName != null,
+              libraryName,
+              config,
+              false,
+              ignoredIds,
+              position,
+          )
       recordItem(map, type, name, item)
       added?.add(item)
 
@@ -878,13 +837,13 @@ open class LintResourceRepository(
     }
 
     private fun addStyleableItems(
-      file: File,
-      styleableNode: Element,
-      namespace: ResourceNamespace,
-      map: MutableMap<ResourceType, ListMultimap<String, ResourceItem>>,
-      config: FolderConfiguration,
-      added: MutableList<LintResourceItem>?,
-      elementIgnoredIds: String,
+        file: File,
+        styleableNode: Element,
+        namespace: ResourceNamespace,
+        map: MutableMap<ResourceType, ListMultimap<String, ResourceItem>>,
+        config: FolderConfiguration,
+        added: MutableList<LintResourceItem>?,
+        elementIgnoredIds: String,
     ) {
       assert(styleableNode.nodeName == SdkConstants.TAG_DECLARE_STYLEABLE)
       for (element in styleableNode) {
@@ -895,19 +854,19 @@ open class LintResourceRepository(
         val ignoredIds = elementIgnoredIds.appendIgnore(element)
         val position = PositionXmlParser.getPosition(element)
         val attr =
-          LintResourceItem(
-            file,
-            name,
-            namespace,
-            type,
-            element,
-            isFromDependency = false,
-            libraryName = null,
-            config = config,
-            fileBased = false,
-            ignoredIds = ignoredIds,
-            position = position,
-          )
+            LintResourceItem(
+                file,
+                name,
+                namespace,
+                type,
+                element,
+                isFromDependency = false,
+                libraryName = null,
+                config = config,
+                fileBased = false,
+                ignoredIds = ignoredIds,
+                position = position,
+            )
         recordItem(map, type, name, attr)
         added?.add(attr)
       }
@@ -925,14 +884,14 @@ open class LintResourceRepository(
     }
 
     private fun addIds(
-      client: LintClient,
-      element: Element,
-      map: MutableMap<ResourceType, ListMultimap<String, ResourceItem>>,
-      folderType: ResourceFolderType,
-      config: FolderConfiguration,
-      file: File,
-      namespace: ResourceNamespace,
-      added: MutableList<ResourceMergerItem>,
+        client: LintClient,
+        element: Element,
+        map: MutableMap<ResourceType, ListMultimap<String, ResourceItem>>,
+        folderType: ResourceFolderType,
+        config: FolderConfiguration,
+        file: File,
+        namespace: ResourceNamespace,
+        added: MutableList<ResourceMergerItem>,
     ) {
       val attributes = element.attributes
       for (i in 0 until attributes.length) {
@@ -941,24 +900,24 @@ open class LintResourceRepository(
         if (value.startsWith(NEW_ID_PREFIX)) {
           val name = value.substring(NEW_ID_PREFIX.length)
           val item =
-            LintResourceItem(
-              file,
-              name,
-              namespace,
-              ResourceType.ID,
-              value = null,
-              isFromDependency = false,
-              libraryName = null,
-              config = config,
-              fileBased = true,
-              ignoredIds = "",
-              // We could pass in PositionXmlParser.getPosition(attribute) here,
-              // but position information is not cached by the parser, it's
-              // computed lazily, and it's semi expensive (searching through
-              // the source code). Let's just use the less accurate surrounding
-              // element position for this
-              position = PositionXmlParser.getPosition(element),
-            )
+              LintResourceItem(
+                  file,
+                  name,
+                  namespace,
+                  ResourceType.ID,
+                  value = null,
+                  isFromDependency = false,
+                  libraryName = null,
+                  config = config,
+                  fileBased = true,
+                  ignoredIds = "",
+                  // We could pass in PositionXmlParser.getPosition(attribute) here,
+                  // but position information is not cached by the parser, it's
+                  // computed lazily, and it's semi expensive (searching through
+                  // the source code). Let's just use the less accurate surrounding
+                  // element position for this
+                  position = PositionXmlParser.getPosition(element),
+              )
           recordItem(map, ResourceType.ID, name, item)
           added.add(item)
         }
@@ -970,13 +929,13 @@ open class LintResourceRepository(
     }
 
     private fun processFiles(
-      client: LintClient,
-      map: MutableMap<ResourceType, ListMultimap<String, ResourceItem>>,
-      folderType: ResourceFolderType,
-      config: FolderConfiguration,
-      libraryName: String?,
-      namespace: ResourceNamespace,
-      file: File,
+        client: LintClient,
+        map: MutableMap<ResourceType, ListMultimap<String, ResourceItem>>,
+        folderType: ResourceFolderType,
+        config: FolderConfiguration,
+        libraryName: String?,
+        namespace: ResourceNamespace,
+        file: File,
     ) {
       if (isXmlFile(file) && FolderTypeRelationship.isIdGeneratingFolderType(folderType)) {
         client.getXmlDocument(file)?.documentElement?.let {
@@ -996,76 +955,72 @@ open class LintResourceRepository(
       val name = getBaseName(file.name)
       val type = FolderTypeRelationship.getNonIdRelatedResourceType(folderType)
       val item =
-        LintResourceItem(
-          file,
-          name,
-          namespace,
-          type,
-          value = null,
-          isFromDependency = libraryName != null,
-          libraryName = libraryName,
-          config = config,
-          fileBased = true,
-          ignoredIds = "",
-          // No offsets for file based resources (such as @layout/main)
-          position = null,
-        )
+          LintResourceItem(
+              file,
+              name,
+              namespace,
+              type,
+              value = null,
+              isFromDependency = libraryName != null,
+              libraryName = libraryName,
+              config = config,
+              fileBased = true,
+              ignoredIds = "",
+              // No offsets for file based resources (such as @layout/main)
+              position = null,
+          )
       recordItem(map, type, name, item)
       // Side effect: sets item source file
       ResourceFile(file, item, config)
     }
 
     internal fun recordItem(
-      map: MutableMap<ResourceType, ListMultimap<String, ResourceItem>>,
-      type: ResourceType,
-      name: String,
-      item: ResourceItem,
+        map: MutableMap<ResourceType, ListMultimap<String, ResourceItem>>,
+        type: ResourceType,
+        name: String,
+        item: ResourceItem,
     ) {
       val typeMap =
-        map[type]
-          ?: run {
-            val newMap: ListMultimap<String, ResourceItem> =
-              ArrayListMultimap.create() // TODO: Default size
-            map[type] = newMap
-            newMap
-          }
+          map[type]
+              ?: run {
+                val newMap: ListMultimap<String, ResourceItem> = ArrayListMultimap.create() // TODO: Default size
+                map[type] = newMap
+                newMap
+              }
       typeMap.put(name, item)
     }
   }
 }
 
 internal open class LintResourceItem(
-  private val sourceFile: File,
-  name: String,
-  namespace: ResourceNamespace,
-  type: ResourceType,
-  value: Node?,
-  isFromDependency: Boolean?,
-  libraryName: String?,
-  private val config: FolderConfiguration,
-  private val fileBased: Boolean,
-  private val ignoredIds: String,
-  val position: SourcePosition?,
-) :
-  ResourceMergerItem(name, namespace, type, value, isFromDependency, libraryName),
-  LocationAware,
-  IgnoredIdProvider {
+    private val sourceFile: File,
+    name: String,
+    namespace: ResourceNamespace,
+    type: ResourceType,
+    value: Node?,
+    isFromDependency: Boolean?,
+    libraryName: String?,
+    private val config: FolderConfiguration,
+    private val fileBased: Boolean,
+    private val ignoredIds: String,
+    val position: SourcePosition?,
+) : ResourceMergerItem(name, namespace, type, value, isFromDependency, libraryName), LocationAware, IgnoredIdProvider {
 
   constructor(
-    item: LintResourceItem,
-    fromDependency: Boolean,
+      item: LintResourceItem,
+      fromDependency: Boolean,
   ) : this(
-    item.sourceFile,
-    item.name,
-    item.namespace,
-    item.type,
-    item.value,
-    fromDependency,
-    item.libraryName,
-    item.config,
-    item.fileBased,
-    item.ignoredIds,
-    item.position,
+      item.sourceFile,
+      item.name,
+      item.namespace,
+      item.type,
+      item.value,
+      fromDependency,
+      item.libraryName,
+      item.config,
+      item.fileBased,
+      item.ignoredIds,
+      item.position,
   )
 
   override fun getConfiguration(): FolderConfiguration {
@@ -1091,9 +1046,9 @@ internal open class LintResourceItem(
   override fun getLocation(): Location {
     return if (position != null) {
       Location.create(
-        sourceFile,
-        DefaultPosition(position.startLine, position.startColumn, position.startOffset),
-        DefaultPosition(position.endLine, position.endColumn, position.endOffset),
+          sourceFile,
+          DefaultPosition(position.startLine, position.startColumn, position.startOffset),
+          DefaultPosition(position.endLine, position.endColumn, position.endOffset),
       )
     } else {
       Location.create(sourceFile)
@@ -1111,5 +1066,4 @@ internal open class LintResourceItem(
   }
 }
 
-private fun unsupported(): Nothing =
-  error("This resource repository operation not supported in lint")
+private fun unsupported(): Nothing = error("This resource repository operation not supported in lint")

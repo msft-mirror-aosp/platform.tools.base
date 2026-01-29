@@ -27,12 +27,10 @@ import org.jetbrains.uast.UAnnotation
 class IntRangeConstraint private constructor(val from: Long, val to: Long) : RangeConstraint() {
 
   constructor(
-    range: FloatRangeConstraint
+      range: FloatRangeConstraint
   ) : this(
-    if (range.from == Double.NEGATIVE_INFINITY) MIN_VALUE
-    else if (!range.fromInclusive) range.from.toLong() + 1 else range.from.toLong(),
-    if (range.to == Double.POSITIVE_INFINITY) MAX_VALUE
-    else if (!range.toInclusive) range.to.toLong() - 1 else range.to.toLong(),
+      if (range.from == Double.NEGATIVE_INFINITY) MIN_VALUE else if (!range.fromInclusive) range.from.toLong() + 1 else range.from.toLong(),
+      if (range.to == Double.POSITIVE_INFINITY) MAX_VALUE else if (!range.toInclusive) range.to.toLong() - 1 else range.to.toLong(),
   )
 
   fun isValid(value: Long): Boolean {
@@ -94,9 +92,9 @@ class IntRangeConstraint private constructor(val from: Long, val to: Long) : Ran
   }
 
   override fun describeDelta(
-    actual: RangeConstraint,
-    actualLabel: String,
-    allowedLabel: String,
+      actual: RangeConstraint,
+      actualLabel: String,
+      allowedLabel: String,
   ): String {
     if (actual !is IntRangeConstraint) {
       return if (actual is FloatRangeConstraint) {
@@ -143,11 +141,11 @@ class IntRangeConstraint private constructor(val from: Long, val to: Long) : Ran
     other ?: return this
 
     val range: IntRangeConstraint =
-      when (other) {
-        is IntRangeConstraint -> other
-        is FloatRangeConstraint -> IntRangeConstraint(other)
-        else -> error(other.javaClass.name)
-      }
+        when (other) {
+          is IntRangeConstraint -> other
+          is FloatRangeConstraint -> IntRangeConstraint(other)
+          else -> error(other.javaClass.name)
+        }
 
     val start = max(from, range.from)
     val end = min(to, range.to)
@@ -177,10 +175,7 @@ class IntRangeConstraint private constructor(val from: Long, val to: Long) : Ran
     if (other is IntRangeConstraint) {
       return other.from >= from && other.to <= to
     } else if (other is FloatRangeConstraint) {
-      if (
-        !other.fromInclusive && other.from == from.toDouble() ||
-          !other.toInclusive && other.to == to.toDouble()
-      ) {
+      if (!other.fromInclusive && other.from == from.toDouble() || !other.toInclusive && other.to == to.toDouble()) {
         return false
       }
 

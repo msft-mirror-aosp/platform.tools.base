@@ -58,114 +58,114 @@ class LintFixVerifierTest {
   @Test
   fun kotlinAssertionsImport() {
     lint()
-      .allowCompilationErrors()
-      .files(kotlin("import org.assertj.core.api.Assertions"))
-      .issues(AssertjDetector.ISSUE_ASSERTJ_IMPORT)
-      .sdkHome(TestUtils.getSdk().toFile())
-      .run()
-      .expect(
-        """
+        .allowCompilationErrors()
+        .files(kotlin("import org.assertj.core.api.Assertions"))
+        .issues(AssertjDetector.ISSUE_ASSERTJ_IMPORT)
+        .sdkHome(TestUtils.getSdk().toFile())
+        .run()
+        .expect(
+            """
                   src/test.kt:1: Warning: Should use Java6Assertions instead [_AssertjImport]
                   import org.assertj.core.api.Assertions
                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                   0 errors, 1 warnings"""
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
                 Fix for src/test.kt line 1: Replace with org.assertj.core.api.Java6Assertions:
                 @@ -1 +1
                 - import org.assertj.core.api.Assertions
                 + import org.assertj.core.api.Java6Assertions
                 """
-      )
-      // Make sure we also accept the older diff format for compatibility
-      .expectFixDiffs(
-        """
+        )
+        // Make sure we also accept the older diff format for compatibility
+        .expectFixDiffs(
+            """
                 Fix for src/test.kt line 1: Replace with org.assertj.core.api.Java6Assertions:
                 @@ -1 +1
                 - import org.assertj.core.api.Assertions
                 @@ -2 +1
                 + import org.assertj.core.api.Java6Assertions
                 """
-      )
+        )
   }
 
   // Regression test for 80491636: AssertionError: Didn't find test file src/test.kt
   @Test
   fun testJavaAssertionsImport() {
     lint()
-      .allowCompilationErrors()
-      .files(
-        java(
-            """
+        .allowCompilationErrors()
+        .files(
+            java(
+                    """
                       package foo;
 
                       import org.assertj.core.api.Assertions;
                       """
-          )
-          .indented()
-      )
-      .sdkHome(TestUtils.getSdk().toFile())
-      .issues(AssertjDetector.ISSUE_ASSERTJ_IMPORT)
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .sdkHome(TestUtils.getSdk().toFile())
+        .issues(AssertjDetector.ISSUE_ASSERTJ_IMPORT)
+        .run()
+        .expect(
+            """
                   src/foo/package-info.java:3: Warning: Should use Java6Assertions instead [_AssertjImport]
                   import org.assertj.core.api.Assertions;
                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                   0 errors, 1 warnings"""
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
                 Fix for src/foo/package-info.java line 3: Replace with org.assertj.core.api.Java6Assertions:
                 @@ -3 +3
                 - import org.assertj.core.api.Assertions;
                 + import org.assertj.core.api.Java6Assertions;
                 """
-      )
-      // Make sure we also accept the older diff format for compatibility
-      .expectFixDiffs(
-        """
+        )
+        // Make sure we also accept the older diff format for compatibility
+        .expectFixDiffs(
+            """
                   Fix for src/foo/package-info.java line 3: Replace with org.assertj.core.api.Java6Assertions:
                   @@ -3 +3
                   - import org.assertj.core.api.Assertions;
                   @@ -4 +3
                   + import org.assertj.core.api.Java6Assertions;
                   """
-      )
+        )
   }
 
   @Test
   fun testSuppressImportWarningOnClass() {
     // Regression test for https://issuetracker.google.com/121092580
     lint()
-      .allowCompilationErrors()
-      .files(
-        java(
-            """
+        .allowCompilationErrors()
+        .files(
+            java(
+                    """
                       package foo;
                       import org.assertj.core.api.Assertions;
                       @SuppressWarnings("_AssertjImport")
                       public class Foo {
                       }
                       """
-          )
-          .indented()
-      )
-      .sdkHome(TestUtils.getSdk().toFile())
-      .issues(AssertjDetector.ISSUE_ASSERTJ_IMPORT)
-      .run()
-      .expectClean()
+                )
+                .indented()
+        )
+        .sdkHome(TestUtils.getSdk().toFile())
+        .issues(AssertjDetector.ISSUE_ASSERTJ_IMPORT)
+        .run()
+        .expectClean()
   }
 
   @Test
   fun testModifyOtherFiles() {
     // Regression test for 161410735
     lint()
-      .allowCompilationErrors()
-      .files(
-        java(
-            """
+        .allowCompilationErrors()
+        .files(
+            java(
+                    """
                     package test.pkg;
                     class Test {
                        public void oldName() {
@@ -185,22 +185,22 @@ class LintFixVerifierTest {
                        }
                     }
                     """
-          )
-          .indented(),
-        gradle(
-            """
+                )
+                .indented(),
+            gradle(
+                    """
                     // Dummy Gradle File
                     apply plugin: 'java'
                     """
-          )
-          .indented(),
-        source("delete_me.txt", "Delete\nThis\nFile"),
-      )
-      .sdkHome(TestUtils.getSdk().toFile())
-      .issues(*LintFixVerifierRegistry().issues.toTypedArray())
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            source("delete_me.txt", "Delete\nThis\nFile"),
+        )
+        .sdkHome(TestUtils.getSdk().toFile())
+        .issues(*LintFixVerifierRegistry().issues.toTypedArray())
+        .run()
+        .expect(
+            """
                 src/main/java/test/pkg/Test.java:4: Warning: This error has a quickfix which edits parent method name instead [_LintFixVerifier]
                        renameMethodNameInstead();
                        ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -215,9 +215,9 @@ class LintFixVerifierTest {
                        ~~~~~~~~~~~~~~~~~~~~~~
                 0 errors, 4 warnings
                 """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
                 Fix for src/main/java/test/pkg/Test.java line 4: Rename Containing Method:
                 @@ -3 +3
                 -    public void oldName() {
@@ -253,17 +253,17 @@ class LintFixVerifierTest {
                 @@ -16 +16
                 -        Test.deleteStatement() ;
                 """
-      )
+        )
   }
 
   @Test
   fun testMultipleEditOperationsOrder() {
     // This test makes sure that multiple quickfixes applied to the same file are applied correctly
     lint()
-      .files(
-        manifest().minSdk(14),
-        java(
-            """
+        .files(
+            manifest().minSdk(14),
+            java(
+                    """
                     package androidx;
 
                     import android.content.res.ColorStateList;
@@ -287,23 +287,23 @@ class LintFixVerifierTest {
                         }
                     }
                     """
-          )
-          .indented(),
-      )
-      .sdkHome(TestUtils.getSdk().toFile())
-      .issues(ClassVerificationFailureDetector.ISSUE)
-      .testModes(TestMode.DEFAULT)
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+        )
+        .sdkHome(TestUtils.getSdk().toFile())
+        .issues(ClassVerificationFailureDetector.ISSUE)
+        .testModes(TestMode.DEFAULT)
+        .run()
+        .expect(
+            """
                 src/androidx/AutofixUnsafeVoidMethodReferenceJava.java:19: Error: This call references a method added in API level 21; however, the containing class androidx.AutofixUnsafeVoidMethodReferenceJava is reachable from earlier API levels and will fail run-time class verification. [_ClassVerificationFailure]
                             view.setBackgroundTintList(tint);
                                  ~~~~~~~~~~~~~~~~~~~~~
                 1 errors, 0 warnings
                 """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
                 Fix for src/androidx/AutofixUnsafeVoidMethodReferenceJava.java line 19: Extract to static inner class:
                 @@ -19 +19
                 -             view.setBackgroundTintList(tint);
@@ -320,7 +320,7 @@ class LintFixVerifierTest {
                 +             obj.setBackgroundTintList(tint);
                 +         }
                 """
-      )
+        )
   }
 
   @Test
@@ -329,10 +329,10 @@ class LintFixVerifierTest {
     // we fail properly
     try {
       lint()
-        .files(
-          manifest().minSdk(14),
-          java(
-              """
+          .files(
+              manifest().minSdk(14),
+              java(
+                      """
               package androidx;
               import android.content.res.ColorStateList;
               import android.view.View;
@@ -342,22 +342,22 @@ class LintFixVerifierTest {
                   }
               }
               """
-            )
-            .indented(),
-        )
-        .sdkHome(TestUtils.getSdk().toFile())
-        .issues(BrokenClassVerificationFailureDetector.ISSUE)
-        .run()
-        .expect(
-          """
+                  )
+                  .indented(),
+          )
+          .sdkHome(TestUtils.getSdk().toFile())
+          .issues(BrokenClassVerificationFailureDetector.ISSUE)
+          .run()
+          .expect(
+              """
           src/androidx/AutofixUnsafeVoidMethodReferenceJava.java:6: Error: This call references a method added in API level 21; however, the containing class androidx.AutofixUnsafeVoidMethodReferenceJava is reachable from earlier API levels and will fail run-time class verification. [_BrokenClassVerificationFailure]
                   view.setBackgroundTintList(tint);
                        ~~~~~~~~~~~~~~~~~~~~~
           1 errors, 0 warnings
           """
-        )
-        .expectFixDiffs(
-          """
+          )
+          .expectFixDiffs(
+              """
           Fix for src/androidx/AutofixUnsafeVoidMethodReferenceJava.java line 19: Extract to static inner class:
           @@ -19 +19
           -             view.setBackgroundTintList(tint);
@@ -373,60 +373,60 @@ class LintFixVerifierTest {
           +             obj.setBackgroundTintList(tint);
           +         }
           """
-        )
+          )
     } catch (e: Throwable) {
       Assert.assertEquals(
-        """
-        expected:<[]> but was:<[After applying a fix (Extract to static inner class),
-        found syntax errors in the source file (src/androidx/AutofixUnsafeVoidMethodReferenceJava.java):
-        PsiErrorElement:'}' expected
-        in src/androidx/AutofixUnsafeVoidMethodReferenceJava.java:17 with text "" inside "public class AutofixUnsafeVoidMethodReferenceJava {
-            void unsafeReferenceWithSdkCheck(View view, ColorStateList tint) {
-                Api21Impl.setBackgroundTintList(view, tint);
-            }
-                @RequiresApi(21)
-                static class Api21Impl {
-                    private Api21Impl() {
-                        // This class is non-instantiable.
-                    }
+          """
+          expected:<[]> but was:<[After applying a fix (Extract to static inner class),
+          found syntax errors in the source file (src/androidx/AutofixUnsafeVoidMethodReferenceJava.java):
+          PsiErrorElement:'}' expected
+          in src/androidx/AutofixUnsafeVoidMethodReferenceJava.java:17 with text "" inside "public class AutofixUnsafeVoidMethodReferenceJava {
+              void unsafeReferenceWithSdkCheck(View view, ColorStateList tint) {
+                  Api21Impl.setBackgroundTintList(view, tint);
+              }
+                  @RequiresApi(21)
+                  static class Api21Impl {
+                      private Api21Impl() {
+                          // This class is non-instantiable.
+                      }
 
-                static void setBackgroundTintList(View obj, ColorStateList tint) {
-                    obj.setBackgroundTintList(tint);
-                }
-        }"
-        }
-         ^
+                  static void setBackgroundTintList(View obj, ColorStateList tint) {
+                      obj.setBackgroundTintList(tint);
+                  }
+          }"
+          }
+           ^
 
 
-        If this is intentional, you can turn this off with `.verifyFixedFileSyntax(false)`.
+          If this is intentional, you can turn this off with `.verifyFixedFileSyntax(false)`.
 
-        Fixed file:
+          Fixed file:
 
-        //////////////////////////////////////////////////////////////////////
-        src/androidx/AutofixUnsafeVoidMethodReferenceJava.java:
-        //////////////////////////////////////////////////////////////////////
+          //////////////////////////////////////////////////////////////////////
+          src/androidx/AutofixUnsafeVoidMethodReferenceJava.java:
+          //////////////////////////////////////////////////////////////////////
 
-         1 package androidx;
-         2 import android.content.res.ColorStateList;
-         3 import android.view.View;
-         4 public class AutofixUnsafeVoidMethodReferenceJava {
-         5     void unsafeReferenceWithSdkCheck(View view, ColorStateList tint) {
-         6         Api21Impl.setBackgroundTintList(view, tint);
-         7     }
-         8         @RequiresApi(21)
-         9         static class Api21Impl {
-        10             private Api21Impl() {
-        11                 // This class is non-instantiable.
-        12             }
-        13
-        14         static void setBackgroundTintList(View obj, ColorStateList tint) {
-        15             obj.setBackgroundTintList(tint);
-        16         }
-        17 }]>
-        """
-          .trimIndent()
-          .trim(),
-        e.message?.trim(),
+           1 package androidx;
+           2 import android.content.res.ColorStateList;
+           3 import android.view.View;
+           4 public class AutofixUnsafeVoidMethodReferenceJava {
+           5     void unsafeReferenceWithSdkCheck(View view, ColorStateList tint) {
+           6         Api21Impl.setBackgroundTintList(view, tint);
+           7     }
+           8         @RequiresApi(21)
+           9         static class Api21Impl {
+          10             private Api21Impl() {
+          11                 // This class is non-instantiable.
+          12             }
+          13
+          14         static void setBackgroundTintList(View obj, ColorStateList tint) {
+          15             obj.setBackgroundTintList(tint);
+          16         }
+          17 }]>
+          """
+              .trimIndent()
+              .trim(),
+          e.message?.trim(),
       )
     }
   }
@@ -460,53 +460,48 @@ class LintFixVerifierTest {
 
     @Suppress("BooleanLiteralArgument")
     override fun visitMethodCall(context: JavaContext, node: UCallExpression, method: PsiMethod) {
-      val part1 =
-        fix()
-          .replace()
-          .range(context.getLocation(node))
-          .with("Api21Impl.setBackgroundTintList(view, tint)")
-          .build()
+      val part1 = fix().replace().range(context.getLocation(node)).with("Api21Impl.setBackgroundTintList(view, tint)").build()
       val part2 =
-        fix()
-          .replace()
-          .range(context.getLocation(node.getContainingUClass()!!.sourcePsi?.lastChild))
-          .beginning()
-          .with(
-            "        @RequiresApi(21)\n" +
-              "        static class Api21Impl {\n" +
-              "            private Api21Impl() {\n" +
-              "                // This class is non-instantiable.\n" +
-              "            }\n" +
-              "        }\n" +
-              "\n" +
-              "        static void setBackgroundTintList(View obj, ColorStateList tint) {\n" +
-              "            obj.setBackgroundTintList(tint);\n" +
-              "        }\n"
-          )
-          .build()
+          fix()
+              .replace()
+              .range(context.getLocation(node.getContainingUClass()!!.sourcePsi?.lastChild))
+              .beginning()
+              .with(
+                  "        @RequiresApi(21)\n" +
+                      "        static class Api21Impl {\n" +
+                      "            private Api21Impl() {\n" +
+                      "                // This class is non-instantiable.\n" +
+                      "            }\n" +
+                      "        }\n" +
+                      "\n" +
+                      "        static void setBackgroundTintList(View obj, ColorStateList tint) {\n" +
+                      "            obj.setBackgroundTintList(tint);\n" +
+                      "        }\n"
+              )
+              .build()
       val fix = fix().name("Extract to static inner class").composite(part1, part2)
       context.report(
-        ISSUE,
-        context.getCallLocation(node, false, false),
-        "This call references a method added in API level 21; however, the containing class " +
-          "`androidx.AutofixUnsafeVoidMethodReferenceJava` is reachable from earlier API levels and " +
-          "will fail run-time class verification.",
-        fix,
+          ISSUE,
+          context.getCallLocation(node, false, false),
+          "This call references a method added in API level 21; however, the containing class " +
+              "`androidx.AutofixUnsafeVoidMethodReferenceJava` is reachable from earlier API levels and " +
+              "will fail run-time class verification.",
+          fix,
       )
     }
 
     companion object {
       val ISSUE =
-        Issue.create(
-            "_ClassVerificationFailure",
-            "Blah blah",
-            "Blah blah blah",
-            Category.CORRECTNESS,
-            5,
-            Severity.ERROR,
-            Implementation(ClassVerificationFailureDetector::class.java, Scope.JAVA_FILE_SCOPE),
-          )
-          .setAndroidSpecific(true)
+          Issue.create(
+                  "_ClassVerificationFailure",
+                  "Blah blah",
+                  "Blah blah blah",
+                  Category.CORRECTNESS,
+                  5,
+                  Severity.ERROR,
+                  Implementation(ClassVerificationFailureDetector::class.java, Scope.JAVA_FILE_SCOPE),
+              )
+              .setAndroidSpecific(true)
     }
   }
 
@@ -517,55 +512,50 @@ class LintFixVerifierTest {
 
     @Suppress("BooleanLiteralArgument")
     override fun visitMethodCall(context: JavaContext, node: UCallExpression, method: PsiMethod) {
-      val part1 =
-        fix()
-          .replace()
-          .range(context.getLocation(node))
-          .with("Api21Impl.setBackgroundTintList(view, tint)")
-          .build()
+      val part1 = fix().replace().range(context.getLocation(node)).with("Api21Impl.setBackgroundTintList(view, tint)").build()
       val part2 =
-        fix()
-          .replace()
-          .range(context.getLocation(node.getContainingUClass()!!.sourcePsi?.lastChild))
-          .beginning()
-          .with(
-            "        @RequiresApi(21)\n" +
-              "        static class Api21Impl {\n" +
-              "            private Api21Impl() {\n" +
-              "                // This class is non-instantiable.\n" +
-              "            }\n" +
-              "\n" +
-              "        static void setBackgroundTintList(View obj, ColorStateList tint) {\n" +
-              "            obj.setBackgroundTintList(tint);\n" +
-              "        }\n"
-          )
-          .build()
+          fix()
+              .replace()
+              .range(context.getLocation(node.getContainingUClass()!!.sourcePsi?.lastChild))
+              .beginning()
+              .with(
+                  "        @RequiresApi(21)\n" +
+                      "        static class Api21Impl {\n" +
+                      "            private Api21Impl() {\n" +
+                      "                // This class is non-instantiable.\n" +
+                      "            }\n" +
+                      "\n" +
+                      "        static void setBackgroundTintList(View obj, ColorStateList tint) {\n" +
+                      "            obj.setBackgroundTintList(tint);\n" +
+                      "        }\n"
+              )
+              .build()
       val fix = fix().name("Extract to static inner class").composite(part1, part2)
       context.report(
-        ISSUE,
-        context.getCallLocation(node, false, false),
-        "This call references a method added in API level 21; however, the containing class " +
-          "`androidx.AutofixUnsafeVoidMethodReferenceJava` is reachable from earlier API levels and " +
-          "will fail run-time class verification.",
-        fix,
+          ISSUE,
+          context.getCallLocation(node, false, false),
+          "This call references a method added in API level 21; however, the containing class " +
+              "`androidx.AutofixUnsafeVoidMethodReferenceJava` is reachable from earlier API levels and " +
+              "will fail run-time class verification.",
+          fix,
       )
     }
 
     companion object {
       val ISSUE =
-        Issue.create(
-            "_BrokenClassVerificationFailure",
-            "Blah blah",
-            "Blah blah blah",
-            Category.CORRECTNESS,
-            5,
-            Severity.ERROR,
-            Implementation(
-              BrokenClassVerificationFailureDetector::class.java,
-              Scope.JAVA_FILE_SCOPE,
-            ),
-          )
-          .setAndroidSpecific(true)
+          Issue.create(
+                  "_BrokenClassVerificationFailure",
+                  "Blah blah",
+                  "Blah blah blah",
+                  Category.CORRECTNESS,
+                  5,
+                  Severity.ERROR,
+                  Implementation(
+                      BrokenClassVerificationFailureDetector::class.java,
+                      Scope.JAVA_FILE_SCOPE,
+                  ),
+              )
+              .setAndroidSpecific(true)
     }
   }
 
@@ -585,25 +575,25 @@ class LintFixVerifierTest {
         node.importReference?.let { importReference ->
           if (importReference.asSourceString().startsWith("org.assertj.core.api.Assertions")) {
             val fix =
-              LintFix.create()
-                .replace()
-                .text(importReference.asSourceString())
-                .with(
-                  importReference
-                    .asSourceString()
-                    .replace(
-                      "org.assertj.core.api.Assertions",
-                      "org.assertj.core.api.Java6Assertions",
+                LintFix.create()
+                    .replace()
+                    .text(importReference.asSourceString())
+                    .with(
+                        importReference
+                            .asSourceString()
+                            .replace(
+                                "org.assertj.core.api.Assertions",
+                                "org.assertj.core.api.Java6Assertions",
+                            )
                     )
-                )
-                .build()
+                    .build()
 
             context.report(
-              ISSUE_ASSERTJ_IMPORT,
-              node,
-              context.getLocation(importReference),
-              "Should use Java6Assertions instead",
-              fix,
+                ISSUE_ASSERTJ_IMPORT,
+                node,
+                context.getLocation(importReference),
+                "Should use Java6Assertions instead",
+                fix,
             )
           }
         }
@@ -613,24 +603,24 @@ class LintFixVerifierTest {
     companion object {
       @JvmField
       val ISSUE_ASSERTJ_IMPORT =
-        Issue.create(
-          id = "_AssertjImport",
-          briefDescription = "Flags Java 6 incompatible imports.",
-          // Not great grammar but just a unit test, not an issue shown to users:
-          explanation =
-            "Importing org.assertj.core.api.Assertions is not ideal. " +
-              "Since it can require Java 8. It's simple as " +
-              "instead org.assertj.core.api.Java6Assertions can be imported " +
-              "and provides guarantee to run on Java 6 as well.",
-          category = Category.CORRECTNESS,
-          priority = 10,
-          severity = Severity.WARNING,
-          implementation =
-            Implementation(
-              AssertjDetector::class.java,
-              EnumSet.of(Scope.JAVA_FILE, Scope.TEST_SOURCES),
-            ),
-        )
+          Issue.create(
+              id = "_AssertjImport",
+              briefDescription = "Flags Java 6 incompatible imports.",
+              // Not great grammar but just a unit test, not an issue shown to users:
+              explanation =
+                  "Importing org.assertj.core.api.Assertions is not ideal. " +
+                      "Since it can require Java 8. It's simple as " +
+                      "instead org.assertj.core.api.Java6Assertions can be imported " +
+                      "and provides guarantee to run on Java 6 as well.",
+              category = Category.CORRECTNESS,
+              priority = 10,
+              severity = Severity.WARNING,
+              implementation =
+                  Implementation(
+                      AssertjDetector::class.java,
+                      EnumSet.of(Scope.JAVA_FILE, Scope.TEST_SOURCES),
+                  ),
+          )
     }
   }
 }
@@ -644,70 +634,57 @@ class LintFixVerifierDetector : Detector(), Detector.UastScanner {
   override fun visitMethodCall(context: JavaContext, node: UCallExpression, method: PsiMethod) {
     val parentMethod = node.getParentOfType<UMethod>(UMethod::class.java, false)
     val fix =
-      fix()
-        .name("Rename Containing Method")
-        .replace()
-        .all()
-        .with("renamedMethod")
-        .range(context.getNameLocation(parentMethod!!))
-        .build()
+        fix().name("Rename Containing Method").replace().all().with("renamedMethod").range(context.getNameLocation(parentMethod!!)).build()
     if (method.name == "renameMethodNameInstead") {
       context.report(
-        ISSUE,
-        context.getLocation(node),
-        "This error has a quickfix which edits parent method name instead",
-        fix,
+          ISSUE,
+          context.getLocation(node),
+          "This error has a quickfix which edits parent method name instead",
+          fix,
       )
     } else if (method.name == "updateBuildGradle") {
       val file =
-        File(context.file.parentFile?.parentFile?.parentFile?.parentFile!!, FN_BUILD_GRADLE).let {
-          file ->
-          if (file.isFile) {
-            file
-          } else {
-            File(file.parentFile.parentFile.parentFile, FN_BUILD_GRADLE)
+          File(context.file.parentFile?.parentFile?.parentFile?.parentFile!!, FN_BUILD_GRADLE).let { file ->
+            if (file.isFile) {
+              file
+            } else {
+              File(file.parentFile.parentFile.parentFile, FN_BUILD_GRADLE)
+            }
           }
-        }
       val source = file.readText()
       val start = source.indexOf("java")
       val end = start + 4
       val range = Location.Companion.create(file, source, start, end)
 
       // Test modifying a file other than the one containing the incident
-      val gradleFix =
-        fix().name("Update build.gradle").replace().all().with("kotlin").range(range).build()
+      val gradleFix = fix().name("Update build.gradle").replace().all().with("kotlin").range(range).build()
 
       // Test creating a new file too
       val newFileFix =
-        fix()
-          .name("Create file")
-          .newFile(
-            File(range.file.parentFile, "new.txt"),
-            "First line in new file.\nSecond line.\nThe End.",
-          )
-          .select("(new)")
-          .build()
+          fix()
+              .name("Create file")
+              .newFile(
+                  File(range.file.parentFile, "new.txt"),
+                  "First line in new file.\nSecond line.\nThe End.",
+              )
+              .select("(new)")
+              .build()
 
       // And a new binary
-      val newBinaryFix =
-        fix()
-          .name("Create blob")
-          .newFile(File(range.file.parentFile, "data.bin"), ByteArray(150))
-          .build()
+      val newBinaryFix = fix().name("Create blob").newFile(File(range.file.parentFile, "data.bin"), ByteArray(150)).build()
 
       // And delete a file
       val deleteFix = fix().deleteFile(File(file.parentFile, "delete_me.txt")).build()
 
       // Test both updating a file separate from the incident location, but also
       // updating multiple files in a single fix
-      val composite =
-        fix().name("Update files").composite(fix, gradleFix, newFileFix, newBinaryFix, deleteFix)
+      val composite = fix().name("Update files").composite(fix, gradleFix, newFileFix, newBinaryFix, deleteFix)
 
       context.report(
-        ISSUE,
-        context.getLocation(node),
-        "This error has a quickfix which edits something in a separate build.gradle file instead",
-        composite,
+          ISSUE,
+          context.getLocation(node),
+          "This error has a quickfix which edits something in a separate build.gradle file instead",
+          composite,
       )
     } else if (method.name == "deleteStatement") {
       val deleteFix = fix().replace().with("").reformat(true)
@@ -727,11 +704,11 @@ class LintFixVerifierDetector : Detector(), Detector.UastScanner {
       }
 
       context.report(
-        ISSUE,
-        node,
-        context.getLocation(node),
-        "This method call should be fully deleted",
-        deleteFix.build(),
+          ISSUE,
+          node,
+          context.getLocation(node),
+          "This method call should be fully deleted",
+          deleteFix.build(),
       )
     } else {
       error(method.name)
@@ -741,19 +718,19 @@ class LintFixVerifierDetector : Detector(), Detector.UastScanner {
   companion object {
     @JvmField
     val ISSUE =
-      Issue.create(
-        id = "_LintFixVerifier",
-        briefDescription = "Lint check for test purposes with a quickfix.",
-        explanation = "Check with fix to exercise more complicated replacement fixes",
-        category = Category.TESTING,
-        priority = 10,
-        severity = Severity.WARNING,
-        implementation =
-          Implementation(
-            LintFixVerifierDetector::class.java,
-            EnumSet.of(Scope.JAVA_FILE, Scope.TEST_SOURCES),
-          ),
-      )
+        Issue.create(
+            id = "_LintFixVerifier",
+            briefDescription = "Lint check for test purposes with a quickfix.",
+            explanation = "Check with fix to exercise more complicated replacement fixes",
+            category = Category.TESTING,
+            priority = 10,
+            severity = Severity.WARNING,
+            implementation =
+                Implementation(
+                    LintFixVerifierDetector::class.java,
+                    EnumSet.of(Scope.JAVA_FILE, Scope.TEST_SOURCES),
+                ),
+        )
   }
 }
 

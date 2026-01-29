@@ -39,9 +39,9 @@ import org.jetbrains.uast.tryResolve
 object BroadcastReceiverUtils {
   @JvmStatic
   fun checkIsProtectedReceiverAndReturnUnprotectedActions(
-    filterArg: UExpression,
-    node: UCallExpression,
-    javaEvaluator: JavaEvaluator,
+      filterArg: UExpression,
+      node: UCallExpression,
+      javaEvaluator: JavaEvaluator,
   ): Pair<Boolean, List<String>> { // isProtected, unprotectedActions
     val constantEvaluator = ConstantEvaluator().allowFieldInitializers()
     val actions = mutableSetOf<String>()
@@ -66,8 +66,7 @@ object BroadcastReceiverUtils {
     val constructorActionArg = construction.getArgumentForParameter(0)
     (constructorActionArg?.let(constantEvaluator::evaluate) as? String)?.let(actions::add)
 
-    val actionCollectorVisitor =
-      ActionCollectorVisitor(setOf(construction), node, constantEvaluator)
+    val actionCollectorVisitor = ActionCollectorVisitor(setOf(construction), node, constantEvaluator)
 
     val parent = node.getContainingUMethod()
     parent?.accept(actionCollectorVisitor)
@@ -79,28 +78,26 @@ object BroadcastReceiverUtils {
   }
 
   /**
-   * For the supplied expression (e.g. intent filter argument), attempts to find its construction.
-   * This will be an `IntentFilter()` constructor, an `IntentFilter.create()` call, or `null`. It
-   * will only be found if the intent filter is constructed within the body of the supplied call
-   * expression (as in, it is a local variable defined within the function).
+   * For the supplied expression (e.g. intent filter argument), attempts to find its construction. This will be an `IntentFilter()`
+   * constructor, an `IntentFilter.create()` call, or `null`. It will only be found if the intent filter is constructed within the body of
+   * the supplied call expression (as in, it is a local variable defined within the function).
    */
   private fun findIntentFilterConstruction(
-    expression: UExpression,
-    endAt: UElement,
+      expression: UExpression,
+      endAt: UElement,
   ): UCallExpression? {
     return findConstruction("android.content.IntentFilter", expression, endAt)
   }
 
   private fun isIntentFilterFactoryMethod(method: PsiMethod?) =
-    method != null &&
-      (method.containingClass?.qualifiedName == "android.content.IntentFilter" &&
-        (method.returnType?.canonicalText == "android.content.IntentFilter" ||
-          method.isConstructor))
+      method != null &&
+          (method.containingClass?.qualifiedName == "android.content.IntentFilter" &&
+              (method.returnType?.canonicalText == "android.content.IntentFilter" || method.isConstructor))
 
   private fun addActionArg(
-    call: UCallExpression,
-    evaluator: ConstantEvaluator,
-    actions: MutableSet<String>,
+      call: UCallExpression,
+      evaluator: ConstantEvaluator,
+      actions: MutableSet<String>,
   ) {
     val actionArg = call.getArgumentForParameter(0) ?: return
     val action = evaluator.evaluate(actionArg) as? String ?: return
@@ -108,9 +105,9 @@ object BroadcastReceiverUtils {
   }
 
   private class ActionCollectorVisitor(
-    start: Collection<UElement>,
-    val functionCall: UCallExpression,
-    val evaluator: ConstantEvaluator,
+      start: Collection<UElement>,
+      val functionCall: UCallExpression,
+      val evaluator: ConstantEvaluator,
   ) : EscapeCheckingDataFlowAnalyzer(start) {
     private var finished = false
     val actions = mutableSetOf<String>()
@@ -133,13 +130,13 @@ object BroadcastReceiverUtils {
   }
 
   /**
-   * Visits the provided class, accumulating the actions added to `intentFilterField`. Detects if
-   * `intentFilterField` escapes the class's scope.
+   * Visits the provided class, accumulating the actions added to `intentFilterField`. Detects if `intentFilterField` escapes the class's
+   * scope.
    */
   private class IntentFilterFieldDataFlowAnalyzer(
-    val intentFilterField: PsiField,
-    val javaEvaluator: JavaEvaluator,
-    val constantEvaluator: ConstantEvaluator,
+      val intentFilterField: PsiField,
+      val javaEvaluator: JavaEvaluator,
+      val constantEvaluator: ConstantEvaluator,
   ) : EscapeCheckingDataFlowAnalyzer(listOfNotNull(intentFilterField.toUElement())) {
     val actions: MutableSet<String> = mutableSetOf()
 
@@ -152,10 +149,7 @@ object BroadcastReceiverUtils {
     override fun ignoreArgument(call: UCallExpression, reference: UElement): Boolean {
       val resolved = call.resolve() ?: return super.ignoreArgument(call, reference)
       // We don't care about registerReceiver methods (the overarching logic starts with those)
-      if (
-        getMethodName(call) == "registerReceiver" &&
-          javaEvaluator.isMemberInSubClassOf(resolved, "android.content.Context")
-      ) {
+      if (getMethodName(call) == "registerReceiver" && javaEvaluator.isMemberInSubClassOf(resolved, "android.content.Context")) {
         return true
       }
       return super.ignoreArgument(call, reference)
@@ -169,22 +163,15 @@ object BroadcastReceiverUtils {
     }
 
     /**
-     * If `intentFilterField` can be set via a public method's parameter, then it escapes the class'
-     * scope because we don't know what actions may have been added externally before passing in
-     * said parameter.
+     * If `intentFilterField` can be set via a public method's parameter, then it escapes the class' scope because we don't know what
+     * actions may have been added externally before passing in said parameter.
      */
     override fun visitBinaryExpression(node: UBinaryExpression): Boolean {
       if (escaped) return super.visitBinaryExpression(node)
-      if (
-        node.operator == UastBinaryOperator.ASSIGN &&
-          node.leftOperand.tryResolve() == intentFilterField
-      ) {
+      if (node.operator == UastBinaryOperator.ASSIGN && node.leftOperand.tryResolve() == intentFilterField) {
         val parameter = node.rightOperand.tryResolve() as? PsiParameter
         val method = parameter?.let { it.declarationScope as? PsiMethod }
-        if (
-          method?.containingClass == intentFilterField.containingClass &&
-            !javaEvaluator.isPrivate(method)
-        ) {
+        if (method?.containingClass == intentFilterField.containingClass && !javaEvaluator.isPrivate(method)) {
           escaped = true
         }
       }
@@ -200,16 +187,13 @@ object BroadcastReceiverUtils {
       return super.visitCallExpression(node)
     }
 
-    /**
-     * detect if the call is the construction of `intentFilterField` itself, e.g. field = new
-     * IntentFilter("action")
-     */
+    /** detect if the call is the construction of `intentFilterField` itself, e.g. field = new IntentFilter("action") */
     private fun isIntentFilterFieldConstruction(node: UCallExpression): Boolean {
       if (!isIntentFilterFactoryMethod(node.resolve())) return false
       val parent =
-        if (node.uastParent is UParenthesizedExpression) {
-          skipParenthesizedExprUp(node.uastParent as? UExpression)
-        } else node.uastParent
+          if (node.uastParent is UParenthesizedExpression) {
+            skipParenthesizedExprUp(node.uastParent as? UExpression)
+          } else node.uastParent
       if (parent?.sourcePsi == intentFilterField) return true
       return (parent as? UBinaryExpression)?.let {
         it.operator == UastBinaryOperator.ASSIGN && it.leftOperand.tryResolve() == intentFilterField
@@ -217,17 +201,13 @@ object BroadcastReceiverUtils {
     }
   }
 
-  val BROADCAST_RECEIVER_METHOD_NAMES =
-    listOf("registerReceiver", "registerReceiverAsUser", "registerReceiverForAllUsers")
+  val BROADCAST_RECEIVER_METHOD_NAMES = listOf("registerReceiver", "registerReceiverAsUser", "registerReceiverForAllUsers")
 
   /**
-   * Returns whether the given [actionName] corresponds to a protected broadcast. Protected
-   * broadcast strings are defined by <protected-broadcast> entries in the manifest of system-level
-   * components or applications. The below list is copied from
-   * frameworks/base/core/res/AndroidManifest.xml and
-   * packages/services/Telephony/AndroidManifest.xml . It should be periodically updated. This list
-   * will likely not be complete, since protected-broadcast entries can be defined elsewhere, but
-   * should address most situations.
+   * Returns whether the given [actionName] corresponds to a protected broadcast. Protected broadcast strings are defined by
+   * <protected-broadcast> entries in the manifest of system-level components or applications. The below list is copied from
+   * frameworks/base/core/res/AndroidManifest.xml and packages/services/Telephony/AndroidManifest.xml . It should be periodically updated.
+   * This list will likely not be complete, since protected-broadcast entries can be defined elsewhere, but should address most situations.
    *
    * To update this, run BroadcastReceiverUtilsTest.testDbUpToDate (with update in place enabled)
    */

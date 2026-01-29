@@ -23,72 +23,72 @@ class CredentialManagerDependencyDetectorTest : AbstractCheckTest() {
 
   fun testDocumentationExample() {
     lint()
-      .files(
-        manifest(MANIFEST_MIN_ANDROID_13).indented(),
-        // Only Gradle DSL (not kts) seems to allow project.dependsOn(...) to work in unit tests.
-        gradle(
-            """
+        .files(
+            manifest(MANIFEST_MIN_ANDROID_13).indented(),
+            // Only Gradle DSL (not kts) seems to allow project.dependsOn(...) to work in unit tests.
+            gradle(
+                    """
             dependencies {
                 implementation 'androidx.credentials:credentials:+'
             }
             """
-          )
-          .indented(),
-      )
-      .issues(CREDENTIAL_DEP)
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+        )
+        .issues(CREDENTIAL_DEP)
+        .run()
+        .expect(
+            """
         src/main/AndroidManifest.xml:5: Warning: This app supports Android 13 and depends on androidx.credentials:credentials, and so should also depend on androidx.credentials:credentials-play-services-auth [CredentialDependency]
                 <application>
                  ~~~~~~~~~~~
         0 errors, 1 warnings
         """
-      )
+        )
   }
 
   fun testHasPlayServicesDependency() {
     lint()
-      .files(
-        manifest(MANIFEST_MIN_ANDROID_13).indented(),
-        gradle(
-            """
+        .files(
+            manifest(MANIFEST_MIN_ANDROID_13).indented(),
+            gradle(
+                    """
             dependencies {
                 implementation 'androidx.credentials:credentials:+'
                 implementation 'androidx.credentials:credentials-play-services-auth:+'
             }
             """
-          )
-          .indented(),
-      )
-      .issues(CREDENTIAL_DEP)
-      .run()
-      .expectClean()
+                )
+                .indented(),
+        )
+        .issues(CREDENTIAL_DEP)
+        .run()
+        .expectClean()
   }
 
   fun testAndroid14ApiLevel() {
     lint()
-      .files(
-        manifest(MANIFEST_MIN_ANDROID_14),
-        gradle(
-            """
+        .files(
+            manifest(MANIFEST_MIN_ANDROID_14),
+            gradle(
+                    """
             dependencies {
                 implementation 'androidx.credentials:credentials:+'
             }
             """
-          )
-          .indented(),
-      )
-      .issues(CREDENTIAL_DEP)
-      .run()
-      .expectClean()
+                )
+                .indented(),
+        )
+        .issues(CREDENTIAL_DEP)
+        .run()
+        .expectClean()
   }
 
   companion object {
     // We use manually written manifests because we want an <application> tag.
     @Language("XML")
     const val MANIFEST_MIN_ANDROID_13 =
-      """<?xml version="1.0" encoding="utf-8"?>
+        """<?xml version="1.0" encoding="utf-8"?>
       <!-- HIDE-FROM-DOCUMENTATION -->
       <manifest package="com.example.app" xmlns:android="http://schemas.android.com/apk/res/android">
         <uses-sdk android:minSdkVersion="33" android:targetSdkVersion="34" />
@@ -105,7 +105,7 @@ class CredentialManagerDependencyDetectorTest : AbstractCheckTest() {
 
     @Language("XML")
     const val MANIFEST_MIN_ANDROID_14 =
-      """<?xml version="1.0" encoding="utf-8"?>
+        """<?xml version="1.0" encoding="utf-8"?>
       <!-- HIDE-FROM-DOCUMENTATION -->
       <manifest package="com.example.app" xmlns:android="http://schemas.android.com/apk/res/android">
         <uses-sdk android:minSdkVersion="34" android:targetSdkVersion="34" />

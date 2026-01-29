@@ -116,24 +116,19 @@ class MotionSceneDetector : ResourceXmlDetector() {
     val name = element.getAttributeNS(AUTO_URI, ATTR_CUSTOM_ATTRIBUTE_NAME)
     if (name.isNullOrEmpty()) {
       context.report(
-        MOTION_SCENE_FILE_VALIDATION_ERROR,
-        element,
-        context.getNameLocation(element),
-        "`$ATTR_CUSTOM_ATTRIBUTE_NAME` should be defined",
-        fix().set().todo(AUTO_URI, ATTR_CUSTOM_ATTRIBUTE_NAME).build(),
+          MOTION_SCENE_FILE_VALIDATION_ERROR,
+          element,
+          context.getNameLocation(element),
+          "`$ATTR_CUSTOM_ATTRIBUTE_NAME` should be defined",
+          fix().set().todo(AUTO_URI, ATTR_CUSTOM_ATTRIBUTE_NAME).build(),
       )
     } else if (!customAttributeNames.add(name)) {
       context.report(
-        MOTION_SCENE_FILE_VALIDATION_ERROR,
-        element,
-        context.getNameLocation(element),
-        "The custom attribute `$name` was specified multiple times",
-        fix()
-          .name("Delete this custom attribute")
-          .replace()
-          .with("")
-          .range(context.getLocation(element))
-          .build(),
+          MOTION_SCENE_FILE_VALIDATION_ERROR,
+          element,
+          context.getNameLocation(element),
+          "The custom attribute `$name` was specified multiple times",
+          fix().name("Delete this custom attribute").replace().with("").range(context.getLocation(element)).build(),
       )
     }
   }
@@ -151,22 +146,17 @@ class MotionSceneDetector : ResourceXmlDetector() {
 
   private fun checkMultipleOnClicks(context: XmlContext, element: Element) {
     XmlUtils.getSubTags(element)
-      .filter { it.tagName == ON_CLICK }
-      .drop(1)
-      .forEach { onClickElement ->
-        context.report(
-          MOTION_SCENE_FILE_VALIDATION_ERROR,
-          onClickElement,
-          context.getNameLocation(onClickElement),
-          "Can only have one `$ON_CLICK` per `$TRANSITION`",
-          fix()
-            .name("Delete additional $ON_CLICK")
-            .replace()
-            .with("")
-            .range(context.getLocation(onClickElement))
-            .build(),
-        )
-      }
+        .filter { it.tagName == ON_CLICK }
+        .drop(1)
+        .forEach { onClickElement ->
+          context.report(
+              MOTION_SCENE_FILE_VALIDATION_ERROR,
+              onClickElement,
+              context.getNameLocation(onClickElement),
+              "Can only have one `$ON_CLICK` per `$TRANSITION`",
+              fix().name("Delete additional $ON_CLICK").replace().with("").range(context.getLocation(onClickElement)).build(),
+          )
+        }
   }
 
   private fun visitKeyFrameSet(context: XmlContext, element: Element) {
@@ -247,38 +237,32 @@ class MotionSceneDetector : ResourceXmlDetector() {
   private fun checkNoSubTags(context: XmlContext, element: Element) {
     for (subTag in element) {
       context.report(
-        MOTION_SCENE_FILE_VALIDATION_ERROR,
-        subTag,
-        context.getNameLocation(subTag),
-        "`${element.tagName}` can not have any child tags",
-        fix()
-          .name("Delete ${subTag.tagName}")
-          .replace()
-          .with("")
-          .range(context.getLocation(subTag))
-          .build(),
+          MOTION_SCENE_FILE_VALIDATION_ERROR,
+          subTag,
+          context.getNameLocation(subTag),
+          "`${element.tagName}` can not have any child tags",
+          fix().name("Delete ${subTag.tagName}").replace().with("").range(context.getLocation(subTag)).build(),
       )
     }
   }
 
   companion object {
-    private val IMPLEMENTATION =
-      Implementation(MotionSceneDetector::class.java, Scope.RESOURCE_FILE_SCOPE)
+    private val IMPLEMENTATION = Implementation(MotionSceneDetector::class.java, Scope.RESOURCE_FILE_SCOPE)
 
     @JvmField
     val MOTION_SCENE_FILE_VALIDATION_ERROR =
-      Issue.create(
-        id = "MotionSceneFileValidationError",
-        briefDescription = "Validation errors in `MotionScene` files",
-        explanation =
-          """
+        Issue.create(
+            id = "MotionSceneFileValidationError",
+            briefDescription = "Validation errors in `MotionScene` files",
+            explanation =
+                """
                 A motion scene file specifies the animations used in a `MotionLayout`. \
                 This check performs various serious correctness checks in a motion scene file.
                 """,
-        category = Category.CORRECTNESS,
-        priority = 8,
-        severity = Severity.ERROR,
-        implementation = IMPLEMENTATION,
-      )
+            category = Category.CORRECTNESS,
+            priority = 8,
+            severity = Severity.ERROR,
+            implementation = IMPLEMENTATION,
+        )
   }
 }

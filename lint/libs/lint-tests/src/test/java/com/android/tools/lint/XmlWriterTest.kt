@@ -44,9 +44,9 @@ class XmlWriterTest : AbstractCheckTest() {
     // Detector.
     try {
       lint()
-        .files(
-          kotlin(
-              """
+          .files(
+              kotlin(
+                      """
               package com.example.app
 
               fun foo() {
@@ -55,18 +55,18 @@ class XmlWriterTest : AbstractCheckTest() {
 
               fun bar() {}
               """
-            )
-            .indented()
-        )
-        .issues(WritePartialResultsDetector.ISSUE)
-        .testModes(TestMode.PARTIAL)
-        .clientFactory {
-          val client = com.android.tools.lint.checks.infrastructure.TestLintClient()
-          WritePartialResultsDetector.realClient = client
-          client
-        }
-        .run()
-        .expectClean()
+                  )
+                  .indented()
+          )
+          .issues(WritePartialResultsDetector.ISSUE)
+          .testModes(TestMode.PARTIAL)
+          .clientFactory {
+            val client = com.android.tools.lint.checks.infrastructure.TestLintClient()
+            WritePartialResultsDetector.realClient = client
+            client
+          }
+          .run()
+          .expectClean()
     } finally {
       WritePartialResultsDetector.realClient = null
     }
@@ -83,178 +83,174 @@ class XmlWriterTest : AbstractCheckTest() {
       done = true
 
       fun createIssue(id: String) =
-        Issue.create(
-          id,
-          "Not applicable",
-          "Not applicable",
-          Category.MESSAGES,
-          5,
-          Severity.WARNING,
-          Implementation(WritePartialResultsDetector::class.java, Scope.JAVA_FILE_SCOPE),
-        )
+          Issue.create(
+              id,
+              "Not applicable",
+              "Not applicable",
+              Category.MESSAGES,
+              5,
+              Severity.WARNING,
+              Implementation(WritePartialResultsDetector::class.java, Scope.JAVA_FILE_SCOPE),
+          )
 
       val issueToMap: Map<Issue, LintMap> =
-        mapOf(
-          createIssue("Z") to
-            LintMap().apply {
-              put("z", 1)
-              put("s", true)
-              put("a", context.getLocation(node))
-              put(
-                "m",
-                LintMap().apply {
-                  put("5", "")
-                  put("1", "")
-                  put("9", "")
-                },
-              )
-            },
-          createIssue("A") to
-            LintMap().apply {
-              put("Banana", false)
-              put("Apple", "yes")
-              put("Carrot", 2)
-            },
-          createIssue("M") to
-            LintMap().apply {
-              put("foo", "")
-              put("bar", "")
-              put("zzz", "123")
-              put(
-                "aaa",
-                LintMap().apply {
-                  put("UAST", true)
-                  put("PSI", 42)
-                  put("XML", context.getLocation(node))
-                },
-              )
-            },
-        )
+          mapOf(
+              createIssue("Z") to
+                  LintMap().apply {
+                    put("z", 1)
+                    put("s", true)
+                    put("a", context.getLocation(node))
+                    put(
+                        "m",
+                        LintMap().apply {
+                          put("5", "")
+                          put("1", "")
+                          put("9", "")
+                        },
+                    )
+                  },
+              createIssue("A") to
+                  LintMap().apply {
+                    put("Banana", false)
+                    put("Apple", "yes")
+                    put("Carrot", 2)
+                  },
+              createIssue("M") to
+                  LintMap().apply {
+                    put("foo", "")
+                    put("bar", "")
+                    put("zzz", "123")
+                    put(
+                        "aaa",
+                        LintMap().apply {
+                          put("UAST", true)
+                          put("PSI", 42)
+                          put("XML", context.getLocation(node))
+                        },
+                    )
+                  },
+          )
 
       val client = realClient!!
       val writer = StringBuilderWriter()
 
-      XmlWriter(client, XmlFileType.PARTIAL_RESULTS, writer, client.pathVariables)
-        .writePartialResults(issueToMap, context.project)
+      XmlWriter(client, XmlFileType.PARTIAL_RESULTS, writer, client.pathVariables).writePartialResults(issueToMap, context.project)
 
       // Remove the format number.
-      val partialResultsOutput =
-        writer.toString().replace(Regex("""format="\d+""""), """format="REMOVED"""")
+      val partialResultsOutput = writer.toString().replace(Regex("""format="\d+""""), """format="REMOVED"""")
 
       // The main thing we are checking is that entries are sorted.
       assertEquals(
-        """
-        <?xml version="1.0" encoding="UTF-8"?>
-        <incidents format="REMOVED" by="lint unittest" type="partial_results">
-            <map id="A">
-                <entry
-                    name="Apple"
-                    string="yes"/>
-                <entry
-                    name="Banana"
-                    boolean="false"/>
-                <entry
-                    name="Carrot"
-                    int="2"/>
-            </map>
-            <map id="M">
-                    <map id="aaa">
-                        <entry
-                            name="PSI"
-                            int="42"/>
-                        <entry
-                            name="UAST"
-                            boolean="true"/>
-                        <location id="XML"
-                            file="${"$"}TEST_ROOT/partial/app/src/com/example/app/test.kt"
-                            line="4"
-                            column="3"
-                            startOffset="39"
-                            endLine="4"
-                            endColumn="8"
-                            endOffset="44"/>
-                    </map>
-                <entry
-                    name="bar"
-                    string=""/>
-                <entry
-                    name="foo"
-                    string=""/>
-                <entry
-                    name="zzz"
-                    string="123"/>
-            </map>
-            <map id="Z">
-                <location id="a"
-                    file="${"$"}TEST_ROOT/partial/app/src/com/example/app/test.kt"
-                    line="4"
-                    column="3"
-                    startOffset="39"
-                    endLine="4"
-                    endColumn="8"
-                    endOffset="44"/>
-                    <map id="m">
-                        <entry
-                            name="1"
-                            string=""/>
-                        <entry
-                            name="5"
-                            string=""/>
-                        <entry
-                            name="9"
-                            string=""/>
-                    </map>
-                <entry
-                    name="s"
-                    boolean="true"/>
-                <entry
-                    name="z"
-                    int="1"/>
-            </map>
+          """
+          <?xml version="1.0" encoding="UTF-8"?>
+          <incidents format="REMOVED" by="lint unittest" type="partial_results">
+              <map id="A">
+                  <entry
+                      name="Apple"
+                      string="yes"/>
+                  <entry
+                      name="Banana"
+                      boolean="false"/>
+                  <entry
+                      name="Carrot"
+                      int="2"/>
+              </map>
+              <map id="M">
+                      <map id="aaa">
+                          <entry
+                              name="PSI"
+                              int="42"/>
+                          <entry
+                              name="UAST"
+                              boolean="true"/>
+                          <location id="XML"
+                              file="${"$"}TEST_ROOT/partial/app/src/com/example/app/test.kt"
+                              line="4"
+                              column="3"
+                              startOffset="39"
+                              endLine="4"
+                              endColumn="8"
+                              endOffset="44"/>
+                      </map>
+                  <entry
+                      name="bar"
+                      string=""/>
+                  <entry
+                      name="foo"
+                      string=""/>
+                  <entry
+                      name="zzz"
+                      string="123"/>
+              </map>
+              <map id="Z">
+                  <location id="a"
+                      file="${"$"}TEST_ROOT/partial/app/src/com/example/app/test.kt"
+                      line="4"
+                      column="3"
+                      startOffset="39"
+                      endLine="4"
+                      endColumn="8"
+                      endOffset="44"/>
+                      <map id="m">
+                          <entry
+                              name="1"
+                              string=""/>
+                          <entry
+                              name="5"
+                              string=""/>
+                          <entry
+                              name="9"
+                              string=""/>
+                      </map>
+                  <entry
+                      name="s"
+                      boolean="true"/>
+                  <entry
+                      name="z"
+                      int="1"/>
+              </map>
 
-        </incidents>
+          </incidents>
 
-        """
-          .trimIndent(),
-        partialResultsOutput,
+          """
+              .trimIndent(),
+          partialResultsOutput,
       )
 
       writer.builder.clear()
 
       val severityMap: Map<String, Severity> =
-        mapOf(
-          "Zebra" to Severity.WARNING,
-          "Walrus" to Severity.WARNING,
-          "Shark" to Severity.IGNORE,
-          "Alpaca" to Severity.WARNING,
-          "Cheetah" to Severity.ERROR,
-          "Gazelle" to Severity.INFORMATIONAL,
-        )
+          mapOf(
+              "Zebra" to Severity.WARNING,
+              "Walrus" to Severity.WARNING,
+              "Shark" to Severity.IGNORE,
+              "Alpaca" to Severity.WARNING,
+              "Cheetah" to Severity.ERROR,
+              "Gazelle" to Severity.INFORMATIONAL,
+          )
 
-      XmlWriter(client, XmlFileType.CONFIGURED_ISSUES, writer, client.pathVariables)
-        .writeConfiguredIssues(severityMap)
+      XmlWriter(client, XmlFileType.CONFIGURED_ISSUES, writer, client.pathVariables).writeConfiguredIssues(severityMap)
 
       // Remove the format number.
-      val configuredIssuesOutput =
-        writer.toString().replace(Regex("""format="\d+""""), """format="REMOVED"""")
+      val configuredIssuesOutput = writer.toString().replace(Regex("""format="\d+""""), """format="REMOVED"""")
 
       // The main thing we are checking is that entries are sorted.
       assertEquals(
-        """
-        <?xml version="1.0" encoding="UTF-8"?>
-        <incidents format="REMOVED" by="lint unittest" type="configured_issues">
-            <config id="Alpaca" severity="warning"/>
-            <config id="Cheetah" severity="error"/>
-            <config id="Gazelle" severity="informational"/>
-            <config id="Shark" severity="ignore"/>
-            <config id="Walrus" severity="warning"/>
-            <config id="Zebra" severity="warning"/>
+          """
+          <?xml version="1.0" encoding="UTF-8"?>
+          <incidents format="REMOVED" by="lint unittest" type="configured_issues">
+              <config id="Alpaca" severity="warning"/>
+              <config id="Cheetah" severity="error"/>
+              <config id="Gazelle" severity="informational"/>
+              <config id="Shark" severity="ignore"/>
+              <config id="Walrus" severity="warning"/>
+              <config id="Zebra" severity="warning"/>
 
-        </incidents>
+          </incidents>
 
-        """
-          .trimIndent(),
-        configuredIssuesOutput,
+          """
+              .trimIndent(),
+          configuredIssuesOutput,
       )
     }
 
@@ -262,15 +258,15 @@ class XmlWriterTest : AbstractCheckTest() {
       var realClient: LintCliClient? = null
 
       val ISSUE =
-        Issue.create(
-          "_WritesPartialResults",
-          "Not applicable",
-          "Not applicable",
-          Category.MESSAGES,
-          5,
-          Severity.WARNING,
-          Implementation(WritePartialResultsDetector::class.java, Scope.JAVA_FILE_SCOPE),
-        )
+          Issue.create(
+              "_WritesPartialResults",
+              "Not applicable",
+              "Not applicable",
+              Category.MESSAGES,
+              5,
+              Severity.WARNING,
+              Implementation(WritePartialResultsDetector::class.java, Scope.JAVA_FILE_SCOPE),
+          )
     }
   }
 }

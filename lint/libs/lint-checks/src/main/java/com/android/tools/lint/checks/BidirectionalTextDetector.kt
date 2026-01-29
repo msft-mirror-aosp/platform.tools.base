@@ -56,10 +56,10 @@ class BidirectionalTextDetector : ResourceXmlDetector(), SourceCodeScanner, Grad
     if (containsUnterminatedBidiSegment(source)) {
       val type = if (node is UComment) "Comment" else "String"
       context.report(
-        BIDI_SPOOFING,
-        node,
-        context.getLocation(node),
-        "$type contains misleading Unicode bidirectional text",
+          BIDI_SPOOFING,
+          node,
+          context.getLocation(node),
+          "$type contains misleading Unicode bidirectional text",
       )
     }
   }
@@ -95,31 +95,30 @@ class BidirectionalTextDetector : ResourceXmlDetector(), SourceCodeScanner, Grad
   }
 
   companion object {
-    private val IMPLEMENTATION =
-      Implementation(BidirectionalTextDetector::class.java, Scope.JAVA_FILE_SCOPE)
+    private val IMPLEMENTATION = Implementation(BidirectionalTextDetector::class.java, Scope.JAVA_FILE_SCOPE)
 
     /** Looks for bidirectional text spans which may be used to change the meaning of the code */
     @JvmField
     val BIDI_SPOOFING =
-      create(
-          id = "BidiSpoofing",
-          briefDescription = "Bidirectional text spoofing",
-          explanation =
-            """
+        create(
+                id = "BidiSpoofing",
+                briefDescription = "Bidirectional text spoofing",
+                explanation =
+                    """
                 Unicode bidirectional text characters can alter the order in which the compiler processes \
                 tokens. However, this can also be used to hide malicious code, and can be difficult to spot. \
                 This lint check audits the source code and looks for cases where it looks like bidirectional \
                 text has the potential to be misleading.
                 """,
-          category = Category.SECURITY,
-          priority = 2,
-          severity = Severity.ERROR,
-          implementation = IMPLEMENTATION,
-          moreInfo =
-            //noinspection LintImplUnexpectedDomain
-            "https://krebsonsecurity.com/2021/11/trojan-source-bug-threatens-the-security-of-all-code/",
-        )
-        .addMoreInfo("https://goo.gle/BidiSpoofing")
+                category = Category.SECURITY,
+                priority = 2,
+                severity = Severity.ERROR,
+                implementation = IMPLEMENTATION,
+                moreInfo =
+                    //noinspection LintImplUnexpectedDomain
+                    "https://krebsonsecurity.com/2021/11/trojan-source-bug-threatens-the-security-of-all-code/",
+            )
+            .addMoreInfo("https://goo.gle/BidiSpoofing")
 
     const val VT = '\u000B'
     const val FF = '\u000C'

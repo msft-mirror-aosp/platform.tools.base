@@ -25,9 +25,9 @@ class CanvasSizeDetectorTest : AbstractCheckTest() {
 
   fun testBasic() {
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
                     package test.pkg;
 
                     import android.annotation.SuppressLint;
@@ -71,10 +71,10 @@ class CanvasSizeDetectorTest : AbstractCheckTest() {
                         }
                     }
                     """
-          )
-          .indented(),
-        kotlin(
-            """
+                )
+                .indented(),
+            kotlin(
+                    """
                 package test.pkg
 
                 import android.annotation.SuppressLint
@@ -98,10 +98,10 @@ class CanvasSizeDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-          )
-          .indented(),
-        java(
-            """
+                )
+                .indented(),
+            java(
+                    """
                 package test.pkg;
 
                 import android.graphics.Canvas;
@@ -117,10 +117,10 @@ class CanvasSizeDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-          )
-          .indented(),
-        kotlin(
-            """
+                )
+                .indented(),
+            kotlin(
+                    """
                 package test.pkg
 
                 import android.graphics.Canvas
@@ -134,12 +134,12 @@ class CanvasSizeDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-          )
-          .indented(),
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+        )
+        .run()
+        .expect(
+            """
         src/test/pkg/MyCustomView1.java:27: Warning: Calling Canvas.getWidth() is usually wrong; you should be calling getWidth() instead [CanvasSize]
                 int width4 = canvas.getWidth(); // WARN
                              ~~~~~~~~~~~~~~~~~
@@ -178,9 +178,9 @@ class CanvasSizeDetectorTest : AbstractCheckTest() {
                               ~~~~~~~~~~~~~
         0 errors, 12 warnings
         """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
         Fix for src/test/pkg/MyCustomView1.java line 27: Call getWidth() instead:
         @@ -27 +27 @@
         -        int width4 = canvas.getWidth(); // WARN
@@ -230,15 +230,15 @@ class CanvasSizeDetectorTest : AbstractCheckTest() {
         -        val height2 = canvas.height // WARN
         +        val height2 = bounds.height() // WARN
         """
-      )
+        )
   }
 
   fun test78378459() {
     // Regression test for issue 78378459
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
                 package test.pkg
 
                 import android.graphics.Canvas
@@ -263,25 +263,25 @@ class CanvasSizeDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-          )
-          .indented()
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .run()
+        .expect(
+            """
             src/test/pkg/GradientBackgroundDrawable.kt:17: Warning: Referencing Canvas.height is usually wrong; you should be referencing bounds.height instead [CanvasSize]
                     val rectF = RectF(0f, padding.toFloat(), shape.width, canvas.height - padding.toFloat())
                                                                           ~~~~~~~~~~~~~
             0 errors, 1 warnings
             """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
             Fix for src/test/pkg/GradientBackgroundDrawable.kt line 17: Call bounds.height() instead:
             @@ -17 +17 @@
             -        val rectF = RectF(0f, padding.toFloat(), shape.width, canvas.height - padding.toFloat())
             +        val rectF = RectF(0f, padding.toFloat(), shape.width, bounds.height() - padding.toFloat())
             """
-      )
+        )
   }
 }

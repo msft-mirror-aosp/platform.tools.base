@@ -32,9 +32,9 @@ class WrongGradleMethodDetectorTest : AbstractCheckTest() {
 
   fun testDocumentationExample() {
     lint()
-      .files(
-        kts(
-            """
+        .files(
+            kts(
+                    """
             plugins {
                 id("com.google.firebase.appdistribution")
             }
@@ -57,32 +57,32 @@ class WrongGradleMethodDetectorTest : AbstractCheckTest() {
                 }
             }
            """
-          )
-          .indented()
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .run()
+        .expect(
+            """
         build.gradle.kts:15: Error: This does not resolve to the right method; you need to explicitly add `import com.google.firebase.appdistribution.gradle.firebaseAppDistribution` to this file! [WrongGradleMethod]
                     firebaseAppDistribution {
                     ~~~~~~~~~~~~~~~~~~~~~~~
         1 error
         """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
         Fix for build.gradle.kts line 15: Import com.google.firebase.appdistribution.gradle.firebaseAppDistribution:
         @@ -0,0 +1 @@
         +import com.google.firebase.appdistribution.gradle.firebaseAppDistribution
         """
-      )
+        )
   }
 
   fun testDependenciesWrongPlace() {
     lint()
-      .files(
-        kts(
-            """
+        .files(
+            kts(
+                    """
             android {
                 flavorDimensions += "version"
                 buildTypes {
@@ -107,12 +107,12 @@ class WrongGradleMethodDetectorTest : AbstractCheckTest() {
               implementation("foo.bar:baz:1.0.0") // OK
             }
             """
-          )
-          .indented()
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .run()
+        .expect(
+            """
         build.gradle.kts:5: Error: Suspicious receiver type; this does not apply to build types. This will apply to a receiver of type `Project`, found in one of the enclosing lambdas. Make sure it's declared in the right place in the file. If you wanted a build type specific dependency, use `debugImplementation` rather than `implementation` in the top level `dependencies` block. [WrongGradleMethod]
                     dependencies {
                     ~~~~~~~~~~~~
@@ -121,14 +121,14 @@ class WrongGradleMethodDetectorTest : AbstractCheckTest() {
                     ~~~~~~~~~~~~
         2 errors
         """
-      )
+        )
   }
 
   fun testDependenciesGroovy() {
     lint()
-      .files(
-        gradle(
-            """
+        .files(
+            gradle(
+                    """
             android {
                 buildTypes {
                     debug {
@@ -142,25 +142,25 @@ class WrongGradleMethodDetectorTest : AbstractCheckTest() {
                 implementation("foo.bar:baz:1.0.0") // OK 3
             }
             """
-          )
-          .indented()
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .run()
+        .expect(
+            """
         build.gradle:4: Error: Suspicious receiver type; this does not apply to build types. This will apply to a receiver of type `Project`, found in one of the enclosing lambdas. Make sure it's declared in the right place in the file. If you wanted a build type specific dependency, use `debugImplementation` rather than `implementation` in the top level `dependencies` block. [WrongGradleMethod]
                     dependencies {
                     ^
         1 error
         """
-      )
+        )
   }
 
   fun testNegative() {
     lint()
-      .files(
-        kts(
-            """
+        .files(
+            kts(
+                    """
             import com.google.firebase.appdistribution.gradle.firebaseAppDistribution
             plugins {
                 id("com.google.firebase.appdistribution")
@@ -197,19 +197,19 @@ class WrongGradleMethodDetectorTest : AbstractCheckTest() {
                 }
             }
            """
-          )
-          .indented(),
-        // Stub to make import work
-        kotlin(
-            """
+                )
+                .indented(),
+            // Stub to make import work
+            kotlin(
+                    """
             package com.google.firebase.appdistribution.gradle
             @Suppress("UnusedReceiverParameter")
             fun com.android.build.api.dsl.ProductFlavor.firebaseAppDistribution(action: com.google.firebase.appdistribution.gradle.AppDistributionExtension.() -> kotlin.Unit): kotlin.Unit { /* compiled code */ }
             """
-          )
-          .indented(),
-      )
-      .run()
-      .expectClean()
+                )
+                .indented(),
+        )
+        .run()
+        .expectClean()
   }
 }

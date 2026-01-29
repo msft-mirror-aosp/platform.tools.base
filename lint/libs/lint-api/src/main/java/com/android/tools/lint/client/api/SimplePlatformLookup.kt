@@ -46,16 +46,15 @@ import org.xmlpull.v1.XmlPullParser
 /**
  * Fast lookup of platform metadata.
  *
- * The purpose is to have a much faster implementation (which doesn't look recursively at files or
- * at a lot of other unrelated SDK components), and doesn't have side effects such as writing
- * metadata files into the SDK folder.
+ * The purpose is to have a much faster implementation (which doesn't look recursively at files or at a lot of other unrelated SDK
+ * components), and doesn't have side effects such as writing metadata files into the SDK folder.
  *
  * It serves a small subset of the full SDK manager:
  * <ul>
  * <li> Only supports Android platform components
  * <li> Only works for platforms 15 and later
- * <li> Only supports reading some platform metadata and looking up file locations (like
- *   android.jar), not downloading or installing files. [sdkHome] is the location of the SDK.
+ * <li> Only supports reading some platform metadata and looking up file locations (like android.jar), not downloading or installing files.
+ *   [sdkHome] is the location of the SDK.
  * </ul>
  */
 internal class SimplePlatformLookup(private val sdkHome: File) : PlatformLookup {
@@ -88,26 +87,25 @@ internal class SimplePlatformLookup(private val sdkHome: File) : PlatformLookup 
   }
 
   override fun getLatestSdkTarget(
-    minApi: Int,
-    includePreviews: Boolean,
-    includeAddOns: Boolean,
+      minApi: Int,
+      includePreviews: Boolean,
+      includeAddOns: Boolean,
   ): IAndroidTarget? {
     if (includeAddOns) {
       error("Add-ons not supported in this platform lookup")
     }
     val latest =
-      if (includePreviews) {
-        targets.lastOrNull { it.isPlatform }
-      } else {
-        targets.lastOrNull { it.isPlatform && it.version.codename == null }
-      } ?: return null
+        if (includePreviews) {
+          targets.lastOrNull { it.isPlatform }
+        } else {
+          targets.lastOrNull { it.isPlatform && it.version.codename == null }
+        } ?: return null
     return if (latest.version.androidApiLevel.majorVersion >= minApi) latest else null
   }
 
   /**
-   * Looks up a file for the platform with the given [compileSdkPrefix], or null if the platform is
-   * unknown. The specific file to be returned is specified by the given [pathId], which is one of
-   * the path constants defined in [IAndroidTarget].
+   * Looks up a file for the platform with the given [compileSdkPrefix], or null if the platform is unknown. The specific file to be
+   * returned is specified by the given [pathId], which is one of the path constants defined in [IAndroidTarget].
    */
   fun getFile(compileSdkPrefix: String, pathId: Int): File? {
     return getTarget(compileSdkPrefix)?.getPath(pathId)?.toFile()
@@ -122,23 +120,20 @@ internal class SimplePlatformLookup(private val sdkHome: File) : PlatformLookup 
     }
 
     /**
-     * Skim through a platforms folder and adds any platforms found within to the given list. This
-     * only works for directory structures following the standard layout (the full SDK manager
-     * allows more arbitrary renames of top level folders etc; that's not supported here.)
+     * Skim through a platforms folder and adds any platforms found within to the given list. This only works for directory structures
+     * following the standard layout (the full SDK manager allows more arbitrary renames of top level folders etc; that's not supported
+     * here.)
      */
     private fun addPlatforms(
-      into: MutableList<IAndroidTarget>,
-      sdkHome: File,
-      folder: String,
-      prefix: String?,
+        into: MutableList<IAndroidTarget>,
+        sdkHome: File,
+        folder: String,
+        prefix: String?,
     ) {
       val platformFolders = File(sdkHome, folder).listFiles() ?: return
       for (platformFolder in platformFolders) {
         val name = platformFolder.name
-        if (
-          (prefix == null || name.startsWith(prefix) && !name.startsWith('.')) &&
-            platformFolder.isDirectory
-        ) {
+        if ((prefix == null || name.startsWith(prefix) && !name.startsWith('.')) && platformFolder.isDirectory) {
           // LocalRepoLoaderImpl.PACKAGE_XML_FN
           val packageXml = File(platformFolder, "package.xml")
           if (packageXml.isFile) {
@@ -176,11 +171,7 @@ internal class SimplePlatformLookup(private val sdkHome: File) : PlatformLookup 
               val tag = parser.name
               if (tag == "revision") {
                 // <revision><major>4</major></revision>
-                if (
-                  parser.next() == XmlPullParser.START_TAG &&
-                    parser.name == "major" &&
-                    parser.next() == XmlPullParser.TEXT
-                ) {
+                if (parser.next() == XmlPullParser.START_TAG && parser.name == "major" && parser.next() == XmlPullParser.TEXT) {
                   revision = parser.text.toIntOrNull() ?: 1
                 }
               }
@@ -214,21 +205,13 @@ internal class SimplePlatformLookup(private val sdkHome: File) : PlatformLookup 
                 }
                 "vendor" -> {
                   // <vendor><id>google</id>
-                  if (
-                    parser.next() == XmlPullParser.START_TAG &&
-                      parser.name == "id" &&
-                      parser.next() == XmlPullParser.TEXT
-                  ) {
+                  if (parser.next() == XmlPullParser.START_TAG && parser.name == "id" && parser.next() == XmlPullParser.TEXT) {
                     vendorId = parser.text
                   }
                 }
                 "tag" -> {
                   // <tag><id>google_apis</id>
-                  if (
-                    parser.next() == XmlPullParser.START_TAG &&
-                      parser.name == "id" &&
-                      parser.next() == XmlPullParser.TEXT
-                  ) {
+                  if (parser.next() == XmlPullParser.START_TAG && parser.name == "id" && parser.next() == XmlPullParser.TEXT) {
                     nameId = parser.text
                   }
                 }
@@ -277,21 +260,21 @@ internal class SimplePlatformLookup(private val sdkHome: File) : PlatformLookup 
           val extensionLevel = prop.getProperty("AndroidVersion.ExtensionLevel")?.toIntOrNull()
           val isBaseExtension = prop.getProperty("AndroidVersion.IsBaseSdk") != "false"
           val androidVersion =
-            prop.getProperty("AndroidVersion.ApiLevel")?.let {
-              val level = AndroidApiLevel.fromString(it)
-              if (level != null) {
-                AndroidVersion(level, codeName, extensionLevel, isBaseExtension)
-              } else {
-                null
+              prop.getProperty("AndroidVersion.ApiLevel")?.let {
+                val level = AndroidApiLevel.fromString(it)
+                if (level != null) {
+                  AndroidVersion(level, codeName, extensionLevel, isBaseExtension)
+                } else {
+                  null
+                }
               }
-            }
           if (platformVersion != null && androidVersion != null) {
             return PlatformTarget(
-              location,
-              sourceProperties.parentFile!!.name,
-              androidVersion,
-              revision,
-              true,
+                location,
+                sourceProperties.parentFile!!.name,
+                androidVersion,
+                revision,
+                true,
             )
           }
         }
@@ -416,17 +399,17 @@ internal class SimplePlatformLookup(private val sdkHome: File) : PlatformLookup 
         if (name != null && jar != null) {
           val jarPath = File(optional, jar.replace('/', separatorChar)).toPath()
           val library =
-            object : OptionalLibrary {
-              override fun getName(): String = name
+              object : OptionalLibrary {
+                override fun getName(): String = name
 
-              override fun getJar(): Path = jarPath
+                override fun getJar(): Path = jarPath
 
-              override fun getDescription(): String = name
+                override fun getDescription(): String = name
 
-              override fun isManifestEntryRequired(): Boolean = manifest
+                override fun isManifestEntryRequired(): Boolean = manifest
 
-              override fun getLocalJarPath(): String = getJar().fileName.toString()
-            }
+                override fun getLocalJarPath(): String = getJar().fileName.toString()
+              }
           libraries.add(library)
         }
       }
@@ -436,19 +419,17 @@ internal class SimplePlatformLookup(private val sdkHome: File) : PlatformLookup 
   }
 
   /**
-   * Represents a single Android platform installed in the SDK folder; the [location] is the
-   * platforms/ folder containing all the platform metadata; the [buildTargetHash] is the string
-   * which corresponds to the compileSdkVersion as a string (e.g. if you specify 30 it will be
-   * interpreted as "android-31", and if you specify "android-R" it will be used as is). The
-   * [version] is the API level and optionally code name for previews. For normal SDK releases,
-   * [platform] is true, and for add-ons it's false.
+   * Represents a single Android platform installed in the SDK folder; the [location] is the platforms/ folder containing all the platform
+   * metadata; the [buildTargetHash] is the string which corresponds to the compileSdkVersion as a string (e.g. if you specify 30 it will be
+   * interpreted as "android-31", and if you specify "android-R" it will be used as is). The [version] is the API level and optionally code
+   * name for previews. For normal SDK releases, [platform] is true, and for add-ons it's false.
    */
   private class PlatformTarget(
-    val location: File,
-    val buildTargetHash: String,
-    private val version: AndroidVersion,
-    private val revision: Int,
-    private val platform: Boolean,
+      val location: File,
+      val buildTargetHash: String,
+      private val version: AndroidVersion,
+      private val revision: Int,
+      private val platform: Boolean,
   ) : IAndroidTarget, Comparable<IAndroidTarget> {
     override fun isPlatform(): Boolean = platform
 
@@ -460,18 +441,14 @@ internal class SimplePlatformLookup(private val sdkHome: File) : PlatformLookup 
 
     override fun getPath(pathId: Int): Path = getFile(pathId).toPath()
 
-    /**
-     * Looks up a file for this platform by the given [pathId], which is one of the path constants
-     * defined in [IAndroidTarget]
-     */
+    /** Looks up a file for this platform by the given [pathId], which is one of the path constants defined in [IAndroidTarget] */
     fun getFile(pathId: Int): File {
       return when (pathId) {
         IAndroidTarget.ANDROID_JAR -> File(location, FN_FRAMEWORK_LIBRARY)
         IAndroidTarget.DATA -> File(location, FD_DATA)
         IAndroidTarget.RESOURCES -> File(location, FD_DATA + separator + FD_RES)
         IAndroidTarget.ATTRIBUTES -> File(location, "data/res/values/attrs.xml")
-        IAndroidTarget.PERMISSION_VERSIONS ->
-          File(location, FD_DATA + separator + FN_PERMISSION_VERSIONS)
+        IAndroidTarget.PERMISSION_VERSIONS -> File(location, FD_DATA + separator + FN_PERMISSION_VERSIONS)
         else -> error("Unsupported path id in ${SimplePlatformLookup::class.java.name}")
       }
     }
@@ -481,8 +458,7 @@ internal class SimplePlatformLookup(private val sdkHome: File) : PlatformLookup 
     private var optionalLibraries: List<OptionalLibrary>? = null
 
     override fun getOptionalLibraries(): List<OptionalLibrary> {
-      return optionalLibraries
-        ?: run { getOptionalLibraries(location).also { optionalLibraries = it } }
+      return optionalLibraries ?: run { getOptionalLibraries(location).also { optionalLibraries = it } }
     }
 
     // Sort in ascending order
@@ -545,7 +521,6 @@ internal class SimplePlatformLookup(private val sdkHome: File) : PlatformLookup 
 
     override fun getAdditionalLibraries(): MutableList<OptionalLibrary> = unsupported()
 
-    private fun unsupported(): Nothing =
-      error("This operation is not supported on light weight IAndroidTargets")
+    private fun unsupported(): Nothing = error("This operation is not supported on light weight IAndroidTargets")
   }
 }

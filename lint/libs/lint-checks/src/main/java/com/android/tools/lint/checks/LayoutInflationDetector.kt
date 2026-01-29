@@ -63,10 +63,7 @@ class LayoutInflationDetector : LayoutDetector(), SourceCodeScanner {
     val pendingErrors = pendingErrors ?: return
     for (pair in pendingErrors) {
       val inflatedLayout = pair.first
-      if (
-        layoutsWithRootLayoutParams == null ||
-          !layoutsWithRootLayoutParams!!.contains(inflatedLayout)
-      ) {
+      if (layoutsWithRootLayoutParams == null || !layoutsWithRootLayoutParams!!.contains(inflatedLayout)) {
         // No root layout parameters on the inflated layout: no need to complain
         continue
       }
@@ -85,17 +82,14 @@ class LayoutInflationDetector : LayoutDetector(), SourceCodeScanner {
       val n = attributes.length
       while (i < n) {
         val attribute = attributes.item(i) as Attr
-        if (
-          attribute.localName != null &&
-            attribute.localName.startsWith(SdkConstants.ATTR_LAYOUT_RESOURCE_PREFIX)
-        ) {
+        if (attribute.localName != null && attribute.localName.startsWith(SdkConstants.ATTR_LAYOUT_RESOURCE_PREFIX)) {
           val layouts =
-            layoutsWithRootLayoutParams
-              ?: run {
-                val new = HashSet<String>(20)
-                layoutsWithRootLayoutParams = new
-                new
-              }
+              layoutsWithRootLayoutParams
+                  ?: run {
+                    val new = HashSet<String>(20)
+                    layoutsWithRootLayoutParams = new
+                    new
+                  }
           layouts.add(getBaseName(context.file.name))
           break
         }
@@ -131,12 +125,12 @@ class LayoutInflationDetector : LayoutDetector(), SourceCodeScanner {
       // incrementally
       if (!context.driver.isSuppressed(context, ISSUE, node)) {
         val pending =
-          pendingErrors
-            ?: run {
-              val new = ArrayList<Pair<String?, Location?>>()
-              pendingErrors = new
-              new
-            }
+            pendingErrors
+                ?: run {
+                  val new = ArrayList<Pair<String?, Location?>>()
+                  pendingErrors = new
+                  new
+                }
         val location = context.getLocation(second)
         pending.add(Pair.of(layoutName, location))
       }
@@ -177,39 +171,38 @@ class LayoutInflationDetector : LayoutDetector(), SourceCodeScanner {
 
   companion object {
     private val IMPLEMENTATION =
-      Implementation(
-        LayoutInflationDetector::class.java,
-        Scope.JAVA_AND_RESOURCE_FILES,
-        Scope.JAVA_FILE_SCOPE,
-      )
+        Implementation(
+            LayoutInflationDetector::class.java,
+            Scope.JAVA_AND_RESOURCE_FILES,
+            Scope.JAVA_FILE_SCOPE,
+        )
 
     /** Passing in a null parent to a layout inflater. */
     @JvmField
     val ISSUE =
-      Issue.create(
-        id = "InflateParams",
-        briefDescription = "Layout Inflation without a Parent",
-        explanation =
-          """
+        Issue.create(
+            id = "InflateParams",
+            briefDescription = "Layout Inflation without a Parent",
+            explanation =
+                """
                     When inflating a layout, avoid passing in null as the parent view, since \
                     otherwise any layout parameters on the root of the inflated layout will be \
                     ignored.""",
-        moreInfo =
-          //noinspection LintImplUnexpectedDomain
-          "https://www.bignerdranch.com/blog/understanding-androids-layoutinflater-inflate/",
-        category = Category.CORRECTNESS,
-        priority = 5,
-        severity = Severity.WARNING,
-        implementation = IMPLEMENTATION,
-      )
+            moreInfo =
+                //noinspection LintImplUnexpectedDomain
+                "https://www.bignerdranch.com/blog/understanding-androids-layoutinflater-inflate/",
+            category = Category.CORRECTNESS,
+            priority = 5,
+            severity = Severity.WARNING,
+            implementation = IMPLEMENTATION,
+        )
 
     private const val ERROR_MESSAGE =
-      "Avoid passing `null` as the view root (needed to resolve layout parameters on the inflated layout's root element)"
+        "Avoid passing `null` as the view root (needed to resolve layout parameters on the inflated layout's root element)"
 
     /**
-     * Is this call to the layout inflater used for the Alert Dialog? If so, a null root is okay.
-     * See for example "Every Rule Has An Exception" here:
-     * https://wundermanthompsonmobile.com/2013/05/layout-inflation-as-intended/
+     * Is this call to the layout inflater used for the Alert Dialog? If so, a null root is okay. See for example "Every Rule Has An
+     * Exception" here: https://wundermanthompsonmobile.com/2013/05/layout-inflation-as-intended/
      */
     private fun isUsedWithAlertDialog(context: JavaContext, call: UCallExpression): Boolean {
       val variable = call.getParentOfType<UElement>(UVariable::class.java) ?: return false
@@ -218,50 +211,48 @@ class LayoutInflationDetector : LayoutDetector(), SourceCodeScanner {
       val javaPsi = variable.javaPsi
       val isAlertBuilderUsage = Ref(false)
       method.accept(
-        object : AbstractUastVisitor() {
-          override fun visitSimpleNameReferenceExpression(
-            node: USimpleNameReferenceExpression
-          ): Boolean {
-            checkUsage(node)
-            return super.visitSimpleNameReferenceExpression(node)
-          }
-
-          private fun checkUsage(node: USimpleNameReferenceExpression) {
-            val resolved = node.resolve() ?: return
-            if (resolved != sourcePsi && resolved != javaPsi) {
-              return
+          object : AbstractUastVisitor() {
+            override fun visitSimpleNameReferenceExpression(node: USimpleNameReferenceExpression): Boolean {
+              checkUsage(node)
+              return super.visitSimpleNameReferenceExpression(node)
             }
-            val setViewCall = node.uastParent as? UCallExpression ?: return
-            if ("setView" != setViewCall.methodName) {
-              return
-            }
-            val receiver = setViewCall.receiver ?: return
-            val psiType = receiver.getExpressionType() ?: return
-            if (isAlertBuilder(psiType.canonicalText)) {
-              isAlertBuilderUsage.set(true)
-            } else {
-              val evaluator = context.evaluator
-              val typeClass = evaluator.getTypeClass(psiType) ?: return
-              // Look for create method returning an AlertDialog
-              for (m in typeClass.methods) {
-                val returnType = m.returnType ?: continue
-                if (returnType is PsiPrimitiveType) {
-                  continue
-                }
-                val returnClass = evaluator.getTypeClass(returnType) ?: continue
 
-                // In builders, most methods return self so avoid inheritance check
-                if (returnClass === typeClass) {
-                  continue
-                }
-                if (isAlertBuilder(evaluator, returnClass)) {
-                  isAlertBuilderUsage.set(true)
-                  break
+            private fun checkUsage(node: USimpleNameReferenceExpression) {
+              val resolved = node.resolve() ?: return
+              if (resolved != sourcePsi && resolved != javaPsi) {
+                return
+              }
+              val setViewCall = node.uastParent as? UCallExpression ?: return
+              if ("setView" != setViewCall.methodName) {
+                return
+              }
+              val receiver = setViewCall.receiver ?: return
+              val psiType = receiver.getExpressionType() ?: return
+              if (isAlertBuilder(psiType.canonicalText)) {
+                isAlertBuilderUsage.set(true)
+              } else {
+                val evaluator = context.evaluator
+                val typeClass = evaluator.getTypeClass(psiType) ?: return
+                // Look for create method returning an AlertDialog
+                for (m in typeClass.methods) {
+                  val returnType = m.returnType ?: continue
+                  if (returnType is PsiPrimitiveType) {
+                    continue
+                  }
+                  val returnClass = evaluator.getTypeClass(returnType) ?: continue
+
+                  // In builders, most methods return self so avoid inheritance check
+                  if (returnClass === typeClass) {
+                    continue
+                  }
+                  if (isAlertBuilder(evaluator, returnClass)) {
+                    isAlertBuilderUsage.set(true)
+                    break
+                  }
                 }
               }
             }
           }
-        }
       )
       return isAlertBuilderUsage.get()
     }
@@ -280,9 +271,9 @@ class LayoutInflationDetector : LayoutDetector(), SourceCodeScanner {
       return if (!evaluator.inheritsFrom(cls, "android.app.Dialog", true)) {
         false
       } else
-        evaluator.inheritsFrom(cls, "android.app.AlertDialog", false) ||
-          evaluator.inheritsFrom(cls, "android.support.v7.app.AlertDialog", false) ||
-          evaluator.inheritsFrom(cls, "androidx.appcompat.app.AlertDialog", false)
+          evaluator.inheritsFrom(cls, "android.app.AlertDialog", false) ||
+              evaluator.inheritsFrom(cls, "android.support.v7.app.AlertDialog", false) ||
+              evaluator.inheritsFrom(cls, "androidx.appcompat.app.AlertDialog", false)
     }
 
     @JvmStatic
@@ -295,11 +286,7 @@ class LayoutInflationDetector : LayoutDetector(), SourceCodeScanner {
           for (i in 0 until parser.attributeCount) {
             if (parser.getAttributeName(i).startsWith(SdkConstants.ATTR_LAYOUT_RESOURCE_PREFIX)) {
               val prefix = parser.getAttributePrefix(i)
-              if (
-                prefix != null &&
-                  prefix.isNotEmpty() &&
-                  SdkConstants.ANDROID_URI == parser.getNamespace(prefix)
-              ) {
+              if (prefix != null && prefix.isNotEmpty() && SdkConstants.ANDROID_URI == parser.getNamespace(prefix)) {
                 return true
               }
             }

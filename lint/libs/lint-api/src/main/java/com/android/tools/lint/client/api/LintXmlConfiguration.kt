@@ -59,97 +59,79 @@ import org.xmlpull.v1.XmlPullParser
 import org.xmlpull.v1.XmlPullParserException
 
 /**
- * Default implementation of a [Configuration] which reads and writes configuration data into
- * `lint.xml` from a given file.
+ * Default implementation of a [Configuration] which reads and writes configuration data into `lint.xml` from a given file.
  *
  * XML Syntax
  * ===========
  *
- * The root tag is always `<lint>`, and it can contain one or more `<issue>` elements. Each <issue>
- * can specify the following attributes: `id`: The issue id the following configuration applies to.
- * Note that this can be a comma separated list of multiple id's, in which case the configuration
- * applies to all of them. It can also be the special value "all", which will match all issue id's.
- * And when configuring severity, the id is also allowed to be a category, such as "Security".
+ * The root tag is always `<lint>`, and it can contain one or more `<issue>` elements. Each <issue> can specify the following attributes:
+ * `id`: The issue id the following configuration applies to. Note that this can be a comma separated list of multiple id's, in which case
+ * the configuration applies to all of them. It can also be the special value "all", which will match all issue id's. And when configuring
+ * severity, the id is also allowed to be a category, such as "Security".
  *
- * `in`: Specifies that this configuration only applies when lint runs in the given hosts. There are
- * predefined names for various integrations of lint; "gradle" refers to lint running in the Gradle
- * plugin; "studio" refers to lint running in the IDE, "cli" refers to lint running from the command
- * line tools "lint" binary, etc. Like with id's, this can be a comma separated list, which makes
- * the rule match if the lint host is any of the listed hosts. Finally, note that you can also add a
- * "!" in front of each host to negate the check. For example, to enable a check anywhere except
- * when running in Studio, use {@code in="!studio"}.
+ * `in`: Specifies that this configuration only applies when lint runs in the given hosts. There are predefined names for various
+ * integrations of lint; "gradle" refers to lint running in the Gradle plugin; "studio" refers to lint running in the IDE, "cli" refers to
+ * lint running from the command line tools "lint" binary, etc. Like with id's, this can be a comma separated list, which makes the rule
+ * match if the lint host is any of the listed hosts. Finally, note that you can also add a "!" in front of each host to negate the check.
+ * For example, to enable a check anywhere except when running in Studio, use {@code in="!studio"}.
  *
  * In addition, the <issue> element can specify one or more children:
  *
- * `<ignore path="...">`: Specifies a path to ignore. Can contain the globbing character "*" to
- * match any substring in the path. `<ignore regexp="...">`: Specifies either a regular expression
- * to ignore. The regular expression is matched against both the location of the error and the error
- * message itself. `<option name="..." value="...">`: Specifies an option value. This can be used to
- * configure some lint checks with options.
+ * `<ignore path="...">`: Specifies a path to ignore. Can contain the globbing character "*" to match any substring in the path. `<ignore
+ * regexp="...">`: Specifies either a regular expression to ignore. The regular expression is matched against both the location of the error
+ * and the error message itself. `<option name="..." value="...">`: Specifies an option value. This can be used to configure some lint
+ * checks with options.
  *
- * Finally, on the root <lint> element you can specify a number of attributes, such as `lintJars` (a
- * list of jar files containing custom lint checks, separated by a semicolon as a path separator),
- * and flags like warningsAsErrors, checkTestSources, etc (matching most of the flags offered via
- * the lintOptions block in Gradle files.)
+ * Finally, on the root <lint> element you can specify a number of attributes, such as `lintJars` (a list of jar files containing custom
+ * lint checks, separated by a semicolon as a path separator), and flags like warningsAsErrors, checkTestSources, etc (matching most of the
+ * flags offered via the lintOptions block in Gradle files.)
  *
  * Nesting & Precedence
  * ======================
  *
- * You can specify configurations for "all", but these will be matched after an exact match has been
- * done. E.g. if we have both `<issue id="all" severity="ignore">` and `<issue id="MyId"
- * severity="error">`, the severity for `MyId` will be "error"" since that's a more exact match.
+ * You can specify configurations for "all", but these will be matched after an exact match has been done. E.g. if we have both `<issue
+ * id="all" severity="ignore">` and `<issue id="MyId" severity="error">`, the severity for `MyId` will be "error"" since that's a more exact
+ * match.
  *
- * The lint.xml files can be nested in a directory structure, and when lint reports an error, it
- * looks up the closest lint.xml file, and if no configuration is found there, continues searching
- * upwards in the directory tree. This means that the configuration closest to the report location
- * takes precedence. Note however, that this has higher priority than the above all versus id match,
- * so if there is an `all` match in a `lint.xml` file and an exact match in a more distant parent
- * `lint.xml` file, the closest `lint.xml` all match will be used.
+ * The lint.xml files can be nested in a directory structure, and when lint reports an error, it looks up the closest lint.xml file, and if
+ * no configuration is found there, continues searching upwards in the directory tree. This means that the configuration closest to the
+ * report location takes precedence. Note however, that this has higher priority than the above all versus id match, so if there is an `all`
+ * match in a `lint.xml` file and an exact match in a more distant parent `lint.xml` file, the closest `lint.xml` all match will be used.
  *
  * When there are configurations which specify a host, lint will search in this order:
- * 1. An exact host match. E.g. if you're running in Studio and there is an `<issue>` configuration
- *    which specifies `in="studio"`, then that configuration will be used.
- * 2. A match which does not specify a host. Usually `<issue>` configurations do not specify a host,
- *    and these will be consulted next.
- * 3. A match which specifies other hosts. For example, if you're running in Studio and a
- *    configuration specifies "!gradle", this will match after the other attempts.
+ * 1. An exact host match. E.g. if you're running in Studio and there is an `<issue>` configuration which specifies `in="studio"`, then that
+ *    configuration will be used.
+ * 2. A match which does not specify a host. Usually `<issue>` configurations do not specify a host, and these will be consulted next.
+ * 3. A match which specifies other hosts. For example, if you're running in Studio and a configuration specifies "!gradle", this will match
+ *    after the other attempts.
  *
  * @sample com.android.tools.lint.client.api.LintXmlConfigurationTest.sampleFile
  */
 open class LintXmlConfiguration
 protected constructor(
-  configurations: ConfigurationHierarchy,
-  val configFile: File,
-  dir: File? = configFile.parentFile,
-  override var fileLevel: Boolean = true,
+    configurations: ConfigurationHierarchy,
+    val configFile: File,
+    dir: File? = configFile.parentFile,
+    override var fileLevel: Boolean = true,
 ) : Configuration(configurations) {
   init {
     this.dir = dir
   }
 
   protected constructor(
-    configurations: ConfigurationHierarchy,
-    project: Project,
+      configurations: ConfigurationHierarchy,
+      project: Project,
   ) : this(configurations, project.dir.getLintXmlFile(), project.dir, true)
 
   private var bulkEditing = false
 
-  /**
-   * Returns whether lint should check all warnings, including those off by default, or null if not
-   * configured in this configuration.
-   */
+  /** Returns whether lint should check all warnings, including those off by default, or null if not configured in this configuration. */
   private var checkAllWarnings: Boolean? = null
 
-  /**
-   * Returns whether lint will only check for errors (ignoring warnings), or null if not configured
-   * in this configuration.
-   */
+  /** Returns whether lint will only check for errors (ignoring warnings), or null if not configured in this configuration. */
   private var ignoreWarnings: Boolean? = null
 
-  /**
-   * Returns whether lint should treat all warnings as errors, or null if not configured in this
-   * configuration.
-   */
+  /** Returns whether lint should treat all warnings as errors, or null if not configured in this configuration. */
   private var warningsAsErrors: Boolean? = null
   private var fatalOnly: Boolean? = null
   private var checkTestSources: Boolean? = null
@@ -163,37 +145,29 @@ protected constructor(
   private var lintJars: List<File>? = null
 
   /**
-   * Specific issue configuration specified in a lint.xml file. This corresponds to configuration
-   * for one specific issue. We don't store the issue id in the data class itself; the issue id's
-   * are used as map keys instead.
+   * Specific issue configuration specified in a lint.xml file. This corresponds to configuration for one specific issue. We don't store the
+   * issue id in the data class itself; the issue id's are used as map keys instead.
    */
   data class IssueData(
-    /** Severity of the issue. */
-    var severity: Severity? = null,
-    /** Paths (optionally with glob patterns) to treat as ignored/suppressed. */
-    var paths: MutableList<String>? = null,
-    /**
-     * Regular expressions to match against the message and location of errors to suppress or ignore
-     * issues.
-     */
-    var patterns: MutableList<Pattern>? = null,
-    /** Optional parameters to the issue checker, defined by the detector. */
-    var options: MutableMap<String, String>? = null,
-    /**
-     * Whether this issue should always be analyzed, even if in test sources (where
-     * [LintDriver.checkTestSources] is false, the default)
-     */
-    var appliesToTests: Boolean = false,
+      /** Severity of the issue. */
+      var severity: Severity? = null,
+      /** Paths (optionally with glob patterns) to treat as ignored/suppressed. */
+      var paths: MutableList<String>? = null,
+      /** Regular expressions to match against the message and location of errors to suppress or ignore issues. */
+      var patterns: MutableList<Pattern>? = null,
+      /** Optional parameters to the issue checker, defined by the detector. */
+      var options: MutableMap<String, String>? = null,
+      /**
+       * Whether this issue should always be analyzed, even if in test sources (where [LintDriver.checkTestSources] is false, the default)
+       */
+      var appliesToTests: Boolean = false,
   ) {
-    /**
-     * Returns true if there is no significant configuration for this issue (so can be skipped in
-     * serialization)
-     */
+    /** Returns true if there is no significant configuration for this issue (so can be skipped in serialization) */
     fun isEmpty(): Boolean {
       return severity == null &&
-        (paths == null || paths!!.isEmpty()) &&
-        (patterns == null || patterns!!.isEmpty()) &&
-        (options == null || options!!.isEmpty())
+          (paths == null || paths!!.isEmpty()) &&
+          (patterns == null || patterns!!.isEmpty()) &&
+          (options == null || options!!.isEmpty())
     }
 
     // For debugging only
@@ -218,28 +192,21 @@ protected constructor(
     }
   }
 
-  /**
-   * Map from issue id (or [VALUE_ALL] to specific issue configuration, such as a custom severity or
-   * specific paths to ignore.
-   */
+  /** Map from issue id (or [VALUE_ALL] to specific issue configuration, such as a custom severity or specific paths to ignore. */
   private var issueMap: MutableMap<String, IssueData>? = null
 
   /**
-   * Applicable maps to look at: first client-specific maps for the current client, then the (no
-   * client specified) map, then any other applicable client maps (e.g. !other)
+   * Applicable maps to look at: first client-specific maps for the current client, then the (no client specified) map, then any other
+   * applicable client maps (e.g. !other)
    */
   private var issueMaps: List<Map<String, IssueData>> = emptyList()
 
   /**
-   * Like [issueMap], but limited to specific integrations of lint, based on the
-   * [LintClient.clientName], as well as negated client names.
+   * Like [issueMap], but limited to specific integrations of lint, based on the [LintClient.clientName], as well as negated client names.
    */
   private var clientIssueMaps: MutableMap<String, MutableMap<String, IssueData>>? = null
 
-  /**
-   * If non null, the whole configuration applies to the given [LintClient]. Could be a comma
-   * separated list.
-   */
+  /** If non null, the whole configuration applies to the given [LintClient]. Could be a comma separated list. */
   private var fileClients: String? = null
 
   /** Invokes the checker for all the applicable issue configurations. */
@@ -324,15 +291,15 @@ protected constructor(
 
     val location = getLocation { element ->
       element.tagName == TAG_OPTION &&
-        element.getAttribute(ATTR_NAME) == option.name &&
-        (element.parentNode as? Element)?.getAttribute(ATTR_ID) == option.issue.id
+          element.getAttribute(ATTR_NAME) == option.name &&
+          (element.parentNode as? Element)?.getAttribute(ATTR_ID) == option.issue.id
     }
 
     report(
-      client = client,
-      issue = IssueRegistry.LINT_ERROR,
-      message = message,
-      location = location,
+        client = client,
+        issue = IssueRegistry.LINT_ERROR,
+        message = message,
+        location = location,
     )
   }
 
@@ -349,8 +316,8 @@ protected constructor(
               // we don't know the associated Issue to look up options for during lint.xml parsing
               // (for third party loaded lint checks)
               reportOptionValidationError(
-                option,
-                "Option value must be `true` or `false` (was $valueString)",
+                  option,
+                  "Option value must be `true` or `false` (was $valueString)",
               )
               option.defaultValue
             }
@@ -365,8 +332,8 @@ protected constructor(
             value
           } catch (_: NumberFormatException) {
             reportOptionValidationError(
-              option,
-              "${option.name} must be an integer (was $valueString)",
+                option,
+                "${option.name} must be an integer (was $valueString)",
             )
             option.defaultValue
           }
@@ -398,9 +365,7 @@ protected constructor(
   }
 
   override fun getOptionAsFile(issue: Issue, name: String, default: File?): File? {
-    val value =
-      getLocalOption(issue, name, null)
-        ?: return parent?.getOptionAsFile(issue, name, null) ?: default
+    val value = getLocalOption(issue, name, null) ?: return parent?.getOptionAsFile(issue, name, null) ?: default
 
     val file = File(value.replace('/', File.separatorChar))
     if (file.isAbsolute) {
@@ -433,11 +398,11 @@ protected constructor(
   /** Sets the given File option to the given value. Intended for [LintFix] usage. */
   fun setFileOption(issue: Issue, name: String, value: File?) {
     val relative =
-      if (value != null && value.isAbsolute) {
-        client.getRelativePath(configFile.parentFile, value)
-      } else {
-        null
-      }
+        if (value != null && value.isAbsolute) {
+          client.getRelativePath(configFile.parentFile, value)
+        } else {
+          null
+        }
     if (relative != null) {
       setOption(issue, name, relative.replace('\\', '/'))
     } else {
@@ -456,9 +421,7 @@ protected constructor(
     }
     val file = location.file
     val parentFile = configFile.parentFile
-    val relativePath =
-      if (parentFile != null) client.getRelativePath(parentFile, file) ?: return false
-      else file.path
+    val relativePath = if (parentFile != null) client.getRelativePath(parentFile, file) ?: return false else file.path
     for (suppressedPath in paths) {
       if (suppressedPath == relativePath) {
         return true
@@ -506,9 +469,7 @@ protected constructor(
   private fun getOrCreateIssueMap(client: String?): MutableMap<String, IssueData> {
     ensureInitialized()
     return if (client != null) {
-      val clientMap =
-        clientIssueMaps
-          ?: LinkedHashMap<String, MutableMap<String, IssueData>>().also { clientIssueMaps = it }
+      val clientMap = clientIssueMaps ?: LinkedHashMap<String, MutableMap<String, IssueData>>().also { clientIssueMaps = it }
       val map = clientMap[client] ?: HashMap<String, IssueData>().also { clientMap[client] = it }
       map
     } else {
@@ -527,19 +488,19 @@ protected constructor(
   }
 
   private fun isPatternIgnored(
-    id: String,
-    message: String,
-    location: Location,
-    context: Context,
+      id: String,
+      message: String,
+      location: Location,
+      context: Context,
   ): Boolean {
     return checkIgnored(id) { data -> isPatternIgnored(data, message, location, context) }
   }
 
   private fun isPatternIgnored(
-    issueData: IssueData,
-    message: String,
-    location: Location,
-    context: Context,
+      issueData: IssueData,
+      message: String,
+      location: Location,
+      context: Context,
   ): Boolean {
     val regexps = issueData.patterns
     if (regexps == null || regexps.isEmpty()) {
@@ -571,9 +532,7 @@ protected constructor(
           // like ".*/src/main/java" but if the relative path from above
           // is "src/main/java" that won't match; so in that case we'll
           // match "/src/main/java" instead.
-          if (
-            pattern.startsWith(".*/") || pattern.startsWith("^.*/") || pattern.startsWith("^.*?/")
-          ) {
+          if (pattern.startsWith(".*/") || pattern.startsWith("^.*/") || pattern.startsWith("^.*?/")) {
             if (regexp.matcher("/$relativePath").find()) {
               return true
             }
@@ -595,9 +554,9 @@ protected constructor(
   }
 
   override fun addConfiguredIssues(
-    targetMap: MutableMap<String, Severity>,
-    registry: IssueRegistry,
-    specificOnly: Boolean,
+      targetMap: MutableMap<String, Severity>,
+      registry: IssueRegistry,
+      specificOnly: Boolean,
   ) {
     parent?.addConfiguredIssues(targetMap, registry, specificOnly)
 
@@ -621,10 +580,10 @@ protected constructor(
   }
 
   override fun getLocalIssueConfigLocation(
-    issue: String,
-    specificOnly: Boolean,
-    severityOnly: Boolean,
-    source: Configuration,
+      issue: String,
+      specificOnly: Boolean,
+      severityOnly: Boolean,
+      source: Configuration,
   ): Location? {
     val issueMaps = getIssueMaps()
 
@@ -652,9 +611,9 @@ protected constructor(
   }
 
   override fun getDefinedSeverity(
-    issue: Issue,
-    source: Configuration,
-    visibleDefault: Severity,
+      issue: Issue,
+      source: Configuration,
+      visibleDefault: Severity,
   ): Severity? {
     if (issue.suppressNames != null && !issue.suppressNames.contains(issue.id)) {
       // Not allowed to suppress this issue via lint.xml.
@@ -675,21 +634,21 @@ protected constructor(
     val issueMaps = getIssueMaps()
     for (issueMap in issueMaps) {
       val severity =
-        issueMap[issue.id]?.severity
-          ?: issueMap[issue.category.name]?.severity // id's can also refer to categories
-          ?: issueMap[issue.category.fullName]?.severity
-          ?: run { // recursively
-            var currentCategory = issue.category.parent
-            var s: Severity? = null
-            while (currentCategory != null) {
-              s = issueMap[currentCategory.name]?.severity
-              if (s != null) {
-                break
+          issueMap[issue.id]?.severity
+              ?: issueMap[issue.category.name]?.severity // id's can also refer to categories
+              ?: issueMap[issue.category.fullName]?.severity
+              ?: run { // recursively
+                var currentCategory = issue.category.parent
+                var s: Severity? = null
+                while (currentCategory != null) {
+                  s = issueMap[currentCategory.name]?.severity
+                  if (s != null) {
+                    break
+                  }
+                  currentCategory = currentCategory.parent
+                }
+                s
               }
-              currentCategory = currentCategory.parent
-            }
-            s
-          }
       if (severity != null) {
         return severity
       }
@@ -704,8 +663,7 @@ protected constructor(
     }
 
     // or inherited?
-    return parent?.getDefinedSeverity(issue, source, visibleDefault)
-      ?: super.getDefinedSeverity(issue, source, visibleDefault)
+    return parent?.getDefinedSeverity(issue, source, visibleDefault) ?: super.getDefinedSeverity(issue, source, visibleDefault)
   }
 
   private fun ensureInitialized() {
@@ -715,9 +673,7 @@ protected constructor(
   }
 
   private fun getConfigLocation(id: String, severityOnly: Boolean): Location {
-    return getLocation { element ->
-      id == element.getAttribute(ATTR_ID) && (!severityOnly || element.hasAttribute(ATTR_SEVERITY))
-    }
+    return getLocation { element -> id == element.getAttribute(ATTR_ID) && (!severityOnly || element.hasAttribute(ATTR_SEVERITY)) }
   }
 
   private fun getLocation(filter: (Element) -> Boolean): Location {
@@ -750,23 +706,23 @@ protected constructor(
   }
 
   private fun reportError(
-    message: String,
-    parser: XmlPullParser? = null,
-    exception: XmlPullParserException? = null,
-    location: Location? =
-      when {
-        parser != null -> getLocation(parser)
-        exception != null -> getLocation(exception)
-        else -> Location.create(configFile)
-      },
-    severity: Severity = Severity.WARNING,
+      message: String,
+      parser: XmlPullParser? = null,
+      exception: XmlPullParserException? = null,
+      location: Location? =
+          when {
+            parser != null -> getLocation(parser)
+            exception != null -> getLocation(exception)
+            else -> Location.create(configFile)
+          },
+      severity: Severity = Severity.WARNING,
   ) {
     report(
-      client = client,
-      issue = if (severity.isError) IssueRegistry.LINT_ERROR else IssueRegistry.LINT_WARNING,
-      message = message,
-      location = location,
-      driver = null,
+        client = client,
+        issue = if (severity.isError) IssueRegistry.LINT_ERROR else IssueRegistry.LINT_WARNING,
+        message = message,
+        location = location,
+        driver = null,
     )
   }
 
@@ -785,8 +741,7 @@ protected constructor(
   }
 
   private fun readConfig(parser: XmlPullParser) {
-    val issueMap: MutableMap<String, IssueData> =
-      HashMap<String, IssueData>().also { this.issueMap = it }
+    val issueMap: MutableMap<String, IssueData> = HashMap<String, IssueData>().also { this.issueMap = it }
     try {
       fun String.asBoolean(): Boolean? {
         return when {
@@ -816,37 +771,32 @@ protected constructor(
                     fileClients = value
                     if (i > 0) {
                       reportError(
-                        "$ATTR_IN for the whole " +
-                          "file, if specified, must always be the " +
-                          "first attribute in <$TAG_LINT>",
-                        parser,
+                          "$ATTR_IN for the whole " + "file, if specified, must always be the " + "first attribute in <$TAG_LINT>",
+                          parser,
                       )
                     } else if (value == VALUE_ALL) {
                       reportError("$VALUE_ALL not supported for $ATTR_IN", parser)
                     }
                   }
-                  ATTR_BASELINE ->
-                    if (applies()) this.baselineFile = File(value.replace('/', File.separatorChar))
+                  ATTR_BASELINE -> if (applies()) this.baselineFile = File(value.replace('/', File.separatorChar))
                   "checkAllWarnings" -> if (applies()) checkAllWarnings = value.asBoolean()
                   "ignoreWarnings" -> if (applies()) ignoreWarnings = value.asBoolean()
                   "warningsAsErrors" -> if (applies()) warningsAsErrors = value.asBoolean()
                   "fatalOnly" -> if (applies()) fatalOnly = value.asBoolean()
                   "checkTestSources" -> if (applies()) checkTestSources = value.asBoolean()
                   "ignoreTestSources" -> if (applies()) ignoreTestSources = value.asBoolean()
-                  "checkGeneratedSources" ->
-                    if (applies()) checkGeneratedSources = value.asBoolean()
+                  "checkGeneratedSources" -> if (applies()) checkGeneratedSources = value.asBoolean()
                   "checkDependencies" -> if (applies()) checkDependencies = value.asBoolean()
                   "explainIssues" -> if (applies()) explainIssues = value.asBoolean()
                   "applySuggestions" -> if (applies()) applySuggestions = value.asBoolean()
-                  "removeFixedBaselineIssues" ->
-                    if (applies()) removeFixedBaselineIssues = value.asBoolean()
+                  "removeFixedBaselineIssues" -> if (applies()) removeFixedBaselineIssues = value.asBoolean()
                   "abortOnError" -> if (applies()) abortOnError = value.asBoolean()
                   "lintJar",
                   "lintJars" -> {
                     if (fileLevel) {
                       reportError(
-                        "`lintJar` can only be specified for lint.xml files at the module level or higher",
-                        parser,
+                          "`lintJar` can only be specified for lint.xml files at the module level or higher",
+                          parser,
                       )
                     } else if (applies()) {
                       // Using ; instead of File.pathSeparator here
@@ -856,18 +806,17 @@ protected constructor(
                       // and frequently contains : in paths, such as C:\),
                       // to be split on the : on Linux/Mac.
                       lintJars =
-                        value
-                          .split(';')
-                          .map { path ->
-                            val file = File(path)
-                            val absolute =
-                              if (file.isAbsolute) file else File(configFile.parentFile, path)
-                            if (!absolute.exists()) {
-                              reportError("lintJar $absolute does not exist")
-                            }
-                            absolute
-                          }
-                          .toList()
+                          value
+                              .split(';')
+                              .map { path ->
+                                val file = File(path)
+                                val absolute = if (file.isAbsolute) file else File(configFile.parentFile, path)
+                                if (!absolute.exists()) {
+                                  reportError("lintJar $absolute does not exist")
+                                }
+                                absolute
+                              }
+                              .toList()
                     }
                   }
                   else -> reportError("Unexpected attribute `$name`", parser)
@@ -892,8 +841,8 @@ protected constructor(
                     // back out
                     if (fileClients != null) {
                       reportError(
-                        "If you specify `$ATTR_IN` on the root <$TAG_LINT> element you cannot specify it anywhere else",
-                        parser,
+                          "If you specify `$ATTR_IN` on the root <$TAG_LINT> element you cannot specify it anywhere else",
+                          parser,
                       )
                     } else if (value == VALUE_ALL) {
                       reportError("$VALUE_ALL not supported for $ATTR_IN", parser)
@@ -909,29 +858,29 @@ protected constructor(
                     appliesToTests = value.toBoolean()
                     if (fileLevel) {
                       reportError(
-                        "The `tests` attribute can only be specified for lint.xml files at the module level or higher",
-                        parser,
-                        severity = Severity.WARNING,
+                          "The `tests` attribute can only be specified for lint.xml files at the module level or higher",
+                          parser,
+                          severity = Severity.WARNING,
                       )
                     }
                   }
                   else ->
-                    reportError(
-                      "Unexpected attribute `$name`, expected `$ATTR_ID`, `$ATTR_IN` or `$ATTR_SEVERITY`",
-                      parser,
-                    )
+                      reportError(
+                          "Unexpected attribute `$name`, expected `$ATTR_ID`, `$ATTR_IN` or `$ATTR_SEVERITY`",
+                          parser,
+                      )
                 }
               }
               if (idString.isEmpty()) {
                 reportError("Missing required issue `id` attribute", parser)
               } else if (severityString.isNotEmpty()) {
                 val severity =
-                  Severity.fromName(severityString)
-                    ?: if (severityString == "hide" || severityString == "hidden") {
-                      Severity.IGNORE
-                    } else if (severityString == "info" || severityString == "information") {
-                      Severity.INFORMATIONAL
-                    } else null
+                    Severity.fromName(severityString)
+                        ?: if (severityString == "hide" || severityString == "hidden") {
+                          Severity.IGNORE
+                        } else if (severityString == "info" || severityString == "information") {
+                          Severity.INFORMATIONAL
+                        } else null
                 if (severity != null) {
                   // TODO: If !projectLevel and we're turning on a check
                   // here, report a warning that this can only be done at
@@ -963,10 +912,10 @@ protected constructor(
                     ATTR_PATH -> path = value
                     ATTR_REGEXP -> regexp = value
                     else ->
-                      reportError(
-                        "Unexpected attribute `$name`, expected `$ATTR_PATH` or `$ATTR_REGEXP`",
-                        parser,
-                      )
+                        reportError(
+                            "Unexpected attribute `$name`, expected `$ATTR_PATH` or `$ATTR_REGEXP`",
+                            parser,
+                        )
                   }
                 }
                 if (path.isEmpty()) {
@@ -979,21 +928,21 @@ protected constructor(
                   // Normalize path format to File.separator. Also
                   // handle the file format containing / or \.
                   path =
-                    if (File.separatorChar == '/') {
-                      path.replace('\\', '/')
-                    } else {
-                      path.replace('/', File.separatorChar)
-                    }
+                      if (File.separatorChar == '/') {
+                        path.replace('\\', '/')
+                      } else {
+                        path.replace('/', File.separatorChar)
+                      }
                   if (path.indexOf('*') != -1) {
                     // Convert glob path to pattern
                     addRegexp(
-                      parser,
-                      idString,
-                      idList,
-                      n,
-                      SdkUtils.globToRegexp(path),
-                      fileClients,
-                      issueClients,
+                        parser,
+                        idString,
+                        idList,
+                        n,
+                        SdkUtils.globToRegexp(path),
+                        fileClients,
+                        issueClients,
                     )
                   } else {
                     addPaths(idList, n, path, fileClients, issueClients)
@@ -1015,16 +964,16 @@ protected constructor(
                     ATTR_NAME -> optionKey = value
                     ATTR_VALUE -> optionValue = value
                     else ->
-                      reportError(
-                        "Unexpected attribute `$name`, expected `$ATTR_NAME` or `$ATTR_VALUE`",
-                        parser,
-                      )
+                        reportError(
+                            "Unexpected attribute `$name`, expected `$ATTR_NAME` or `$ATTR_VALUE`",
+                            parser,
+                        )
                   }
                 }
                 if (optionKey.isEmpty() || optionValue.isEmpty()) {
                   reportError(
-                    "Must specify both $ATTR_NAME and $ATTR_VALUE in <$TAG_OPTION>",
-                    parser,
+                      "Must specify both $ATTR_NAME and $ATTR_VALUE in <$TAG_OPTION>",
+                      parser,
                   )
                 } else {
                   // If it's a path?
@@ -1033,10 +982,10 @@ protected constructor(
               }
             }
             else ->
-              reportError(
-                "Unsupported tag <`${parser.name}`>, expected one of `$TAG_LINT`, `$TAG_ISSUE`, `$TAG_IGNORE` or `$TAG_OPTION`",
-                parser,
-              )
+                reportError(
+                    "Unsupported tag <`${parser.name}`>, expected one of `$TAG_LINT`, `$TAG_ISSUE`, `$TAG_IGNORE` or `$TAG_OPTION`",
+                    parser,
+                )
           }
         } else if (eventType == XmlPullParser.END_TAG) {
           if (parser.name == TAG_ISSUE) {
@@ -1056,7 +1005,7 @@ protected constructor(
       // so strip that out to ensure stable output
       val index = detail.indexOf(" (position:")
       val message =
-        "Failed parsing ${configFile.name}: ${
+          "Failed parsing ${configFile.name}: ${
             if (index != -1) detail.substring(0, index) else detail}"
       reportError(message, exception = e)
     }
@@ -1089,17 +1038,16 @@ protected constructor(
   }
 
   /**
-   * Checks whether the given [client] name is applicable for the current [LintClient]. If
-   * [checkEquals] is true, will check for exact matches. If [checkOther] is true, will also check
-   * to see if the [LintClient] matches client strings like "!name" where the name is **not** the
-   * name of the host, e.g. "studio" would match "!gradle". A null client name means "not specific
-   * to a client" and will always match. Note also that the [client] string can be a comma separated
-   * list, and this method will return true if **any** of the items match.
+   * Checks whether the given [client] name is applicable for the current [LintClient]. If [checkEquals] is true, will check for exact
+   * matches. If [checkOther] is true, will also check to see if the [LintClient] matches client strings like "!name" where the name is
+   * **not** the name of the host, e.g. "studio" would match "!gradle". A null client name means "not specific to a client" and will always
+   * match. Note also that the [client] string can be a comma separated list, and this method will return true if **any** of the items
+   * match.
    */
   private fun isApplicableClient(
-    client: String?,
-    checkEquals: Boolean = true,
-    checkOther: Boolean = true,
+      client: String?,
+      checkEquals: Boolean = true,
+      checkOther: Boolean = true,
   ): Boolean {
     client ?: return true
 
@@ -1116,24 +1064,19 @@ protected constructor(
       return true
     }
 
-    if (
-      checkOther && client.startsWith("!") && !client.regionMatches(1, host, 0, host.length, true)
-    ) {
+    if (checkOther && client.startsWith("!") && !client.regionMatches(1, host, 0, host.length, true)) {
       return true
     }
 
     return false
   }
 
-  /**
-   * When parsing an XML file an element can reference multiple id's; this method sets the given
-   * severity to all the referenced id's.
-   */
+  /** When parsing an XML file an element can reference multiple id's; this method sets the given severity to all the referenced id's. */
   private fun addSeverity(
-    idList: Iterable<String>,
-    severity: Severity,
-    fileClients: String?,
-    issueClients: String?,
+      idList: Iterable<String>,
+      severity: Severity,
+      fileClients: String?,
+      issueClients: String?,
   ) {
     val issueMap = getOrCreateIssueMap(issueClients ?: fileClients)
     for (id in idList) {
@@ -1143,15 +1086,14 @@ protected constructor(
   }
 
   /**
-   * When parsing an XML file an element can reference multiple id's; this method adds the given
-   * suppress path to all the referenced id's.
+   * When parsing an XML file an element can reference multiple id's; this method adds the given suppress path to all the referenced id's.
    */
   private fun addPaths(
-    ids: Iterable<String>,
-    n: Int,
-    path: String,
-    fileClients: String?,
-    issueClients: String?,
+      ids: Iterable<String>,
+      n: Int,
+      path: String,
+      fileClients: String?,
+      issueClients: String?,
   ) {
     val issueMap = getOrCreateIssueMap(issueClients ?: fileClients)
     for (id in ids) {
@@ -1162,17 +1104,17 @@ protected constructor(
   }
 
   /**
-   * When parsing an XML file an element can reference multiple id's; this method adds the given
-   * regular expression pattern to all the referenced id's.
+   * When parsing an XML file an element can reference multiple id's; this method adds the given regular expression pattern to all the
+   * referenced id's.
    */
   private fun addRegexp(
-    parser: XmlPullParser,
-    idList: String,
-    ids: Iterable<String>,
-    n: Int,
-    regexp: String,
-    fileClients: String?,
-    issueClients: String?,
+      parser: XmlPullParser,
+      idList: String,
+      ids: Iterable<String>,
+      n: Int,
+      regexp: String,
+      fileClients: String?,
+      issueClients: String?,
   ) {
     try {
       val issueMap = getOrCreateIssueMap(issueClients ?: fileClients)
@@ -1188,27 +1130,27 @@ protected constructor(
   }
 
   private fun addOption(
-    ids: Iterable<String>,
-    key: String,
-    value: String,
-    fileClients: String? = null,
-    issueClients: String? = null,
+      ids: Iterable<String>,
+      key: String,
+      value: String,
+      fileClients: String? = null,
+      issueClients: String? = null,
   ) {
     val issueMap = getOrCreateIssueMap(issueClients ?: fileClients)
     for (id in ids) {
       val data = issueMap[id] ?: IssueData().also { issueMap[id] = it }
       val options =
-        data.options
-          // LinkedHashMap: preserve lint.xml order
-          ?: LinkedHashMap<String, String>().also { data.options = it }
+          data.options
+              // LinkedHashMap: preserve lint.xml order
+              ?: LinkedHashMap<String, String>().also { data.options = it }
       options[key] = value
     }
   }
 
   private fun addAppliesToTests(
-    ids: Iterable<String>,
-    fileClients: String? = null,
-    issueClients: String? = null,
+      ids: Iterable<String>,
+      fileClients: String? = null,
+      issueClients: String? = null,
   ) {
     val issueMap = getOrCreateIssueMap(issueClients ?: fileClients)
     for (id in ids) {
@@ -1310,27 +1252,21 @@ protected constructor(
       checkDependencies?.let { writeAttribute(writer, "checkDependencies", it.toString()) }
       explainIssues?.let { writeAttribute(writer, "explainIssues", it.toString()) }
       applySuggestions?.let { writeAttribute(writer, "applySuggestions", it.toString()) }
-      removeFixedBaselineIssues?.let {
-        writeAttribute(writer, "removeFixedBaselineIssues", it.toString())
-      }
+      removeFixedBaselineIssues?.let { writeAttribute(writer, "removeFixedBaselineIssues", it.toString()) }
       abortOnError?.let { writeAttribute(writer, "abortOnError", it.toString()) }
       lintJars?.let {
         writeAttribute(
-          writer,
-          "lintJars",
-          it.joinToString(";") { f ->
-            val lintPath = f.path
-            val xmlPath = configFile.parentFile?.path ?: ""
-            if (
-              lintPath.startsWith(xmlPath) &&
-                lintPath != xmlPath &&
-                lintPath[xmlPath.length] == File.separatorChar
-            ) {
-              lintPath.substring(xmlPath.length + 1).replace(File.separatorChar, '/')
-            } else {
-              lintPath.replace(File.separatorChar, '/')
-            }
-          },
+            writer,
+            "lintJars",
+            it.joinToString(";") { f ->
+              val lintPath = f.path
+              val xmlPath = configFile.parentFile?.path ?: ""
+              if (lintPath.startsWith(xmlPath) && lintPath != xmlPath && lintPath[xmlPath.length] == File.separatorChar) {
+                lintPath.substring(xmlPath.length + 1).replace(File.separatorChar, '/')
+              } else {
+                lintPath.replace(File.separatorChar, '/')
+              }
+            },
         )
       }
       writer.write(">\n")
@@ -1363,11 +1299,7 @@ protected constructor(
           val regexps = data.patterns
           val paths = data.paths
           val options = data.options
-          if (
-            paths != null && paths.isNotEmpty() ||
-              regexps != null && regexps.isNotEmpty() ||
-              options != null && options.isNotEmpty()
-          ) {
+          if (paths != null && paths.isNotEmpty() || regexps != null && regexps.isNotEmpty() || options != null && options.isNotEmpty()) {
             writer.write(">\n")
             if (options != null) {
               // The options are kept in file order by LinkedHashMap
@@ -1484,31 +1416,30 @@ protected constructor(
     get() = _baselineFile
     set(value) {
       _baselineFile =
-        if (value != null && !value.isAbsolute) {
-          val dir = configFile.parentFile
-          if (dir != null) {
-            File(dir, value.path)
+          if (value != null && !value.isAbsolute) {
+            val dir = configFile.parentFile
+            if (dir != null) {
+              File(dir, value.path)
+            } else {
+              value
+            }
           } else {
             value
           }
-        } else {
-          value
-        }
     }
 
   /**
-   * Already validated this issue? We can encounter the same configuration multiple times when
-   * searching up the parent tree. (We can't skip calling the parent because the parent references
-   * can change over time.)
+   * Already validated this issue? We can encounter the same configuration multiple times when searching up the parent tree. (We can't skip
+   * calling the parent because the parent references can change over time.)
    */
   private var validated = false
 
   override fun validateIssueIds(
-    client: LintClient,
-    driver: LintDriver,
-    project: Project?,
-    registry: IssueRegistry,
-    allowed: Set<String>,
+      client: LintClient,
+      driver: LintDriver,
+      project: Project?,
+      registry: IssueRegistry,
+      allowed: Set<String>,
   ) {
     parent?.validateIssueIds(client, driver, project, registry, allowed)
     if (validated) {
@@ -1524,12 +1455,12 @@ protected constructor(
   }
 
   private fun validateIssueIds(
-    client: LintClient,
-    driver: LintDriver,
-    project: Project?,
-    registry: IssueRegistry,
-    map: MutableMap<String, IssueData>,
-    allowed: Set<String>,
+      client: LintClient,
+      driver: LintDriver,
+      project: Project?,
+      registry: IssueRegistry,
+      map: MutableMap<String, IssueData>,
+      allowed: Set<String>,
   ) {
     for (id in map.keys.toList()) {
       if (id == SUPPRESS_ALL) {
@@ -1602,18 +1533,16 @@ protected constructor(
     private val RES_PATH_START_LEN = RES_PATH_START.length
 
     /**
-     * Options we've already generated validation warnings for. We have to keep track of these such
-     * that we don't spam the output with repeated warnings because these validations are done when
-     * options are *read* rather when the XML file is parsed; this is necessary because at lint.xml
-     * parsing time we still don't have access to the issue registries, and it's quite likely that
-     * some of these options correspond to detectors loaded dynamically (e.g. 3rd party lint checks)
-     * so we don't yet know the constraints.
+     * Options we've already generated validation warnings for. We have to keep track of these such that we don't spam the output with
+     * repeated warnings because these validations are done when options are *read* rather when the XML file is parsed; this is necessary
+     * because at lint.xml parsing time we still don't have access to the issue registries, and it's quite likely that some of these options
+     * correspond to detectors loaded dynamically (e.g. 3rd party lint checks) so we don't yet know the constraints.
      */
     var warnedOptions: MutableSet<Option>? = null
 
     /**
-     * Creates a new [LintXmlConfiguration] for the given lint config file, not affiliated with a
-     * project. This is used for global configurations.
+     * Creates a new [LintXmlConfiguration] for the given lint config file, not affiliated with a project. This is used for global
+     * configurations.
      *
      * @param configurations the configuration manager
      * @param lintFile the lint file containing the configuration
@@ -1625,20 +1554,20 @@ protected constructor(
     }
 
     /**
-     * Creates a new [LintXmlConfiguration] for the given lint config file contents (and associated
-     * file handle), not affiliated with a project. This is used for global configurations.
+     * Creates a new [LintXmlConfiguration] for the given lint config file contents (and associated file handle), not affiliated with a
+     * project. This is used for global configurations.
      *
      * @param configurations the configuration manager
-     * @param lintFile the lint file containing the configuration (which will not be read, but any
-     *   parsing errors etc will be attributed to this path)
+     * @param lintFile the lint file containing the configuration (which will not be read, but any parsing errors etc will be attributed to
+     *   this path)
      * @param contents the actual contents of the lint file handle
      * @return a new configuration
      */
     @JvmStatic
     fun create(
-      configurations: ConfigurationHierarchy,
-      lintFile: File,
-      contents: CharSequence,
+        configurations: ConfigurationHierarchy,
+        lintFile: File,
+        contents: CharSequence,
     ): LintXmlConfiguration {
       val config = LintXmlConfiguration(configurations, lintFile)
       val parser = KXmlParser()

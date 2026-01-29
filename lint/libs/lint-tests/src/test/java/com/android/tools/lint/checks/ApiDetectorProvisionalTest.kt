@@ -32,10 +32,10 @@ class ApiDetectorProvisionalTest : AbstractCheckTest() {
     // the serialized results from the library) correctly works, and correctly
     // updates the incident error messages etc.
     val lib =
-      project(
-          manifest().minSdk(2),
-          kotlin(
-              """
+        project(
+                manifest().minSdk(2),
+                kotlin(
+                        """
                 import android.graphics.drawable.BitmapDrawable
                 import android.widget.GridLayout
 
@@ -44,33 +44,33 @@ class ApiDetectorProvisionalTest : AbstractCheckTest() {
                    val drawable = BitmapDrawable(resources) // requires API 4
                 }
                 """
+                    )
+                    .indented(),
             )
-            .indented(),
-        )
-        .name("library")
+            .name("library")
 
     val app = project(manifest().minSdk(8)).dependsOn(lib)
 
     lint()
-      .projects(app, lib)
-      .reportFrom(app)
-      .run()
-      .expect(
-        """
+        .projects(app, lib)
+        .reportFrom(app)
+        .run()
+        .expect(
+            """
                 ../library/src/test.kt:5: Error: Call requires API level 14 (current min is 8): android.widget.GridLayout() [NewApi]
                    val layout = GridLayout(null) // requires API 14
                                 ~~~~~~~~~~
                 1 errors, 0 warnings
                 """
-      )
+        )
   }
 
   fun testDisabledIssues() {
     val lib =
-      project(
-          manifest().minSdk(2),
-          kotlin(
-            """
+        project(
+                manifest().minSdk(2),
+                kotlin(
+                    """
                 import android.widget.GridLayout
                 import android.graphics.drawable.BitmapDrawable
 
@@ -81,10 +81,10 @@ class ApiDetectorProvisionalTest : AbstractCheckTest() {
                     val drawable = BitmapDrawable(resources) // requires API 4
                 }
                 """
-          ),
-          xml(
-              "lint.xml",
-              """
+                ),
+                xml(
+                        "lint.xml",
+                        """
                 <lint>
                     <!-- Normally enabled; disabled while analyzing this module -->
                     <issue id="UseValueOf" severity="hide" />
@@ -92,17 +92,17 @@ class ApiDetectorProvisionalTest : AbstractCheckTest() {
                     <issue id="UseSparseArrays" severity="hide" />
                 </lint>
                 """,
+                    )
+                    .indented(),
             )
-            .indented(),
-        )
-        .name("lib")
+            .name("lib")
 
     val app =
-      project(
-          manifest().minSdk(8),
-          xml(
-              "lint.xml",
-              """
+        project(
+                manifest().minSdk(8),
+                xml(
+                        "lint.xml",
+                        """
                 <lint>
                     <!-- This issue was not explicitly enabled in library but is off by default -->
                     <issue id="StopShip" severity="error" />
@@ -121,35 +121,35 @@ class ApiDetectorProvisionalTest : AbstractCheckTest() {
                     <issue id="UseSparseArrays" severity="hide" />
                 </lint>
                 """,
+                    )
+                    .indented(),
             )
-            .indented(),
-        )
-        .dependsOn(lib)
-        .name("app")
+            .dependsOn(lib)
+            .name("app")
 
     lint()
-      .projects(app, lib)
-      .issues(
-        CommentDetector.STOP_SHIP,
-        JavaPerformanceDetector.USE_VALUE_OF,
-        JavaPerformanceDetector.USE_SPARSE_ARRAY,
-        HardcodedValuesDetector.ISSUE,
-        ApiDetector.UNSUPPORTED,
-        SdCardDetector.ISSUE,
-      )
-      // Normally issues referenced by a test are all forced to
-      // be enabled (to make it easy to test issues that are disabled
-      // by default) via a special test configuration. However, here we
-      // need to use a real configuration where issues can be disabled.
-      .useTestConfiguration(false)
-      .reportFrom(app)
-      // Here we're testing that we get the extra UnknownIssueId errors
-      // reported; those will only be used in partial analysis mode
-      // so limit test runs to that
-      .testModes(TestMode.PARTIAL)
-      .run()
-      .expect(
-        """
+        .projects(app, lib)
+        .issues(
+            CommentDetector.STOP_SHIP,
+            JavaPerformanceDetector.USE_VALUE_OF,
+            JavaPerformanceDetector.USE_SPARSE_ARRAY,
+            HardcodedValuesDetector.ISSUE,
+            ApiDetector.UNSUPPORTED,
+            SdCardDetector.ISSUE,
+        )
+        // Normally issues referenced by a test are all forced to
+        // be enabled (to make it easy to test issues that are disabled
+        // by default) via a special test configuration. However, here we
+        // need to use a real configuration where issues can be disabled.
+        .useTestConfiguration(false)
+        .reportFrom(app)
+        // Here we're testing that we get the extra UnknownIssueId errors
+        // reported; those will only be used in partial analysis mode
+        // so limit test runs to that
+        .testModes(TestMode.PARTIAL)
+        .run()
+        .expect(
+            """
                 lint.xml:3: Warning: Issue StopShip was configured with severity error in app, but was not enabled (or was disabled) in library lib [CannotEnableHidden]
                     <issue id="StopShip" severity="error" />
                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -170,15 +170,15 @@ class ApiDetectorProvisionalTest : AbstractCheckTest() {
                                                 ~~~~~~~~~~~~
                 1 errors, 5 warnings
                 """
-      )
+        )
   }
 
   fun testOverrides() {
     val lib =
-      project(
-          manifest().minSdk(2),
-          kotlin(
-            """
+        project(
+                manifest().minSdk(2),
+                kotlin(
+                    """
                 import android.widget.GridLayout
                 import android.graphics.drawable.BitmapDrawable
 
@@ -189,35 +189,35 @@ class ApiDetectorProvisionalTest : AbstractCheckTest() {
                     val drawable = BitmapDrawable(resources) // requires API 4
                 }
                 """
-          ),
-          xml(
-              "lint.xml",
-              """
+                ),
+                xml(
+                        "lint.xml",
+                        """
                 <lint>
                     <!-- Normally enabled; disabled while analyzing this module -->
                     <issue id="UseValueOf" severity="hide" />
                 </lint>
                 """,
-            )
-            .indented(),
-          gradle(
-            """
+                    )
+                    .indented(),
+                gradle(
+                    """
                 android {
                     lintOptions {
                         enable 'BogusId'
                     }
                 }
                 """
-          ),
-        )
-        .name("lib")
+                ),
+            )
+            .name("lib")
 
     val app =
-      project(
-          manifest().minSdk(8),
-          xml(
-              "lint-override.xml",
-              """
+        project(
+                manifest().minSdk(8),
+                xml(
+                        "lint-override.xml",
+                        """
                 <lint>
                     <!-- This issue was not explicitly enabled in library but is off by default.
                          We don't warn about this because the override config will turn it on. -->
@@ -240,35 +240,35 @@ class ApiDetectorProvisionalTest : AbstractCheckTest() {
                     <issue id="SdCardPath2" severity="hide" />
                 </lint>
                 """,
+                    )
+                    .indented(),
             )
-            .indented(),
-        )
-        .dependsOn(lib)
-        .name("app")
+            .dependsOn(lib)
+            .name("app")
 
     lint()
-      .projects(app, lib)
-      .issues(
-        CommentDetector.STOP_SHIP,
-        JavaPerformanceDetector.USE_VALUE_OF,
-        HardcodedValuesDetector.ISSUE,
-        ApiDetector.UNSUPPORTED,
-        SdCardDetector.ISSUE,
-      )
-      // TODO: Try setting lint.xml file above library and make sure it's
-      // not inherited  "../lint.xml" for one of the issues that
-      // is explicitly overridden in lint-overrides. E.g. if I
-      // disable on of them.
-      .useTestConfiguration(false)
-      .reportFrom(app)
-      // We're testing specific error messages created in partial analysis
-      // mode when you disable in upstream libraries
-      .testModes(TestMode.PARTIAL)
-      .run()
-      // The problem seems to be that we don't run validation on override
-      // configurations
-      .expect(
-        """
+        .projects(app, lib)
+        .issues(
+            CommentDetector.STOP_SHIP,
+            JavaPerformanceDetector.USE_VALUE_OF,
+            HardcodedValuesDetector.ISSUE,
+            ApiDetector.UNSUPPORTED,
+            SdCardDetector.ISSUE,
+        )
+        // TODO: Try setting lint.xml file above library and make sure it's
+        // not inherited  "../lint.xml" for one of the issues that
+        // is explicitly overridden in lint-overrides. E.g. if I
+        // disable on of them.
+        .useTestConfiguration(false)
+        .reportFrom(app)
+        // We're testing specific error messages created in partial analysis
+        // mode when you disable in upstream libraries
+        .testModes(TestMode.PARTIAL)
+        .run()
+        // The problem seems to be that we don't run validation on override
+        // configurations
+        .expect(
+            """
                 lint-override.xml:4: Warning: Issue StopShip was configured with severity error in app, but was not enabled (or was disabled) in library lib [CannotEnableHidden]
                     <issue id="StopShip" severity="error" />
                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -283,7 +283,7 @@ class ApiDetectorProvisionalTest : AbstractCheckTest() {
                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 0 errors, 4 warnings
                 """
-      )
+        )
   }
 
   override fun getDetector(): Detector = ApiDetector()

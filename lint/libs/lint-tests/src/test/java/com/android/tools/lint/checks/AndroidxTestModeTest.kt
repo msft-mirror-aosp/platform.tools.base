@@ -31,8 +31,8 @@ class AndroidxTestModeTest {
   fun testBasic() {
     @Language("java")
     val java =
-      java(
-          """
+        java(
+                """
             package test.pkg;
 
             import android.support.v4.app.DialogFragment;
@@ -52,34 +52,34 @@ class AndroidxTestModeTest {
                 }
             }
           """
-        )
-        .indented()
+            )
+            .indented()
 
     @Suppress("DanglingJavadoc", "PointlessBooleanExpression", "ConstantConditions")
     @Language("java")
     val expected =
-      """
-            package test.pkg;
-
-            import androidx.fragment.app.DialogFragment;
-            import androidx.fragment.app.Fragment;
-            import androidx.fragment.app.FragmentManager;
-            import androidx.fragment.app.FragmentTransaction;
-
-            public class CommitTest2 {
-                private void test() {
-                    FragmentTransaction transaction = getFragmentManager().beginTransaction();
-                    MyDialogFragment fragment = new MyDialogFragment();
-                    fragment.show(transaction, "MyTag");
-                }
-
-                private FragmentManager getFragmentManager() {
-                    return null;
-                }
-            }
         """
-        .trimIndent()
-        .trim()
+        package test.pkg;
+
+        import androidx.fragment.app.DialogFragment;
+        import androidx.fragment.app.Fragment;
+        import androidx.fragment.app.FragmentManager;
+        import androidx.fragment.app.FragmentTransaction;
+
+        public class CommitTest2 {
+            private void test() {
+                FragmentTransaction transaction = getFragmentManager().beginTransaction();
+                MyDialogFragment fragment = new MyDialogFragment();
+                fragment.show(transaction, "MyTag");
+            }
+
+            private FragmentManager getFragmentManager() {
+                return null;
+            }
+        }
+        """
+            .trimIndent()
+            .trim()
     val modified = migrate(java)
     assertEquals(expected, modified)
   }

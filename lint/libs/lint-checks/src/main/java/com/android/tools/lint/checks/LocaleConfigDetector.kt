@@ -62,8 +62,8 @@ class LocaleConfigDetector : Detector(), XmlScanner, ResourceFolderScanner {
 
     val client = context.client
     val resources =
-      if (context.isGlobalAnalysis()) client.getResources(context.mainProject, LOCAL_DEPENDENCIES)
-      else client.getResources(context.project, PROJECT_ONLY)
+        if (context.isGlobalAnalysis()) client.getResources(context.mainProject, LOCAL_DEPENDENCIES)
+        else client.getResources(context.project, PROJECT_ONLY)
     val namespace = context.project.resourceNamespace
     val configs: List<ResourceItem> = resources.getResources(namespace, url.type, url.name)
     for (config in configs) {
@@ -78,14 +78,13 @@ class LocaleConfigDetector : Detector(), XmlScanner, ResourceFolderScanner {
         val language = actualLocale.language ?: continue
         if (!configLanguages.contains(language)) {
           val desc = LocaleManager.getLanguageName(language)?.let { "$language ($it)" } ?: language
-          val message =
-            "The language `$desc` is present in this project, but not declared in the `localeConfig` resource"
+          val message = "The language `$desc` is present in this project, but not declared in the `localeConfig` resource"
           context.report(
-            ISSUE,
-            attribute,
-            context.getValueLocation(attribute),
-            message,
-            createFix(context, path, language),
+              ISSUE,
+              attribute,
+              context.getValueLocation(attribute),
+              message,
+              createFix(context, path, language),
           )
         }
       }
@@ -112,10 +111,7 @@ class LocaleConfigDetector : Detector(), XmlScanner, ResourceFolderScanner {
     val replacement = "<locale $prefix:name=\"$language\"/>"
     val fix = fix().name("Add $language to ${file.name}").replace()
     if (location == null) {
-      fix
-        .range(parser.getLocation(file, XmlUtils.getSubTags(document.documentElement).last()))
-        .end()
-        .with("\n    $replacement")
+      fix.range(parser.getLocation(file, XmlUtils.getSubTags(document.documentElement).last())).end().with("\n    $replacement")
     } else {
       val start = location.start!!.offset
       var offset = start - 1
@@ -158,30 +154,30 @@ class LocaleConfigDetector : Detector(), XmlScanner, ResourceFolderScanner {
 
   companion object {
     private val IMPLEMENTATION =
-      Implementation(
-        LocaleConfigDetector::class.java,
-        Scope.MANIFEST_AND_RESOURCE_SCOPE,
-        Scope.RESOURCE_FILE_SCOPE,
-      )
+        Implementation(
+            LocaleConfigDetector::class.java,
+            Scope.MANIFEST_AND_RESOURCE_SCOPE,
+            Scope.RESOURCE_FILE_SCOPE,
+        )
 
     /** Are all translations included in the localeConfig? */
     @JvmField
     val ISSUE =
-      Issue.create(
-        id = "UnusedTranslation",
-        briefDescription = "Unused Translation",
-        explanation =
-          """
+        Issue.create(
+            id = "UnusedTranslation",
+            briefDescription = "Unused Translation",
+            explanation =
+                """
               If an application defines a translation for a language which is not included in \
               the app's `localeConfig` file (when declared in the manifest), that language will \
               be "unused"; it will not be presented to the user. Usually this means you have \
               forgotten to include it in the locale config file.
               """,
-        category = Category.MESSAGES,
-        priority = 2,
-        severity = Severity.WARNING,
-        implementation = IMPLEMENTATION,
-        moreInfo = "https://developer.android.com/about/versions/13/features/app-languages",
-      )
+            category = Category.MESSAGES,
+            priority = 2,
+            severity = Severity.WARNING,
+            implementation = IMPLEMENTATION,
+            moreInfo = "https://developer.android.com/about/versions/13/features/app-languages",
+        )
   }
 }

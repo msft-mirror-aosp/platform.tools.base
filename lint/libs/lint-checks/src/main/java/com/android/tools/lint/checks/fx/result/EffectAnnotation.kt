@@ -18,17 +18,15 @@ package com.android.tools.lint.checks.fx.result
 import org.jetbrains.uast.UElement
 
 /**
- * An effect annotation is either explicit (with a source location for error reporting), or implicit
- * (with zero or more inherited annotations from the nearest super-classes/methods, accounting for
- * multiple inheritance).
+ * An effect annotation is either explicit (with a source location for error reporting), or implicit (with zero or more inherited
+ * annotations from the nearest super-classes/methods, accounting for multiple inheritance).
  */
 sealed interface EffectAnnotation<out FX> {
   data class Explicit<out FX>(val annotated: FX, val origin: UElement) : EffectAnnotation<FX> {
     override fun toString() = annotated.toString()
   }
 
-  data class Implicit<out FX>(val nearestBaseAnnotations: List<Explicit<FX>>) :
-    EffectAnnotation<FX>
+  data class Implicit<out FX>(val nearestBaseAnnotations: List<Explicit<FX>>) : EffectAnnotation<FX>
 
   companion object {
     val None = Implicit<Nothing>(listOf())

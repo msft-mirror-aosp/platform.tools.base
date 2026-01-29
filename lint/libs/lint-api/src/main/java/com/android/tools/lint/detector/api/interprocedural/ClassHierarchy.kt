@@ -27,13 +27,11 @@ interface ClassHierarchy {
 
   fun directInheritorsOf(superClass: UClass): Sequence<UClass>
 
-  fun allInheritorsOf(superClass: UClass): Sequence<UClass> =
-    directInheritorsOf(superClass).flatMap { allInheritorsOf(it) + it }
+  fun allInheritorsOf(superClass: UClass): Sequence<UClass> = directInheritorsOf(superClass).flatMap { allInheritorsOf(it) + it }
 
   fun directOverridesOf(superMethod: UMethod): Sequence<UMethod>
 
-  fun allOverridesOf(superMethod: UMethod): Sequence<UMethod> =
-    directOverridesOf(superMethod).flatMap { allOverridesOf(it) + it }
+  fun allOverridesOf(superMethod: UMethod): Sequence<UMethod> = directOverridesOf(superMethod).flatMap { allOverridesOf(it) + it }
 }
 
 class MutableClassHierarchy : ClassHierarchy {
@@ -45,16 +43,14 @@ class MutableClassHierarchy : ClassHierarchy {
   override fun directOverridesOf(superMethod: UMethod) = directOverrides[superMethod].asSequence()
 
   fun addClass(subClass: UClass) {
-    subClass.javaPsi.supers
-      .mapNotNull { it.navigationElement.toUElementOfType<UClass>() }
-      .forEach { directInheritors.put(it, subClass) }
+    subClass.javaPsi.supers.mapNotNull { it.navigationElement.toUElementOfType<UClass>() }.forEach { directInheritors.put(it, subClass) }
   }
 
   fun addMethod(subMethod: UMethod) {
     subMethod.javaPsi
-      .findSuperMethods()
-      .mapNotNull { it.navigationElement.toUElementOfType<UMethod>() }
-      .forEach { directOverrides.put(it, subMethod) }
+        .findSuperMethods()
+        .mapNotNull { it.navigationElement.toUElementOfType<UMethod>() }
+        .forEach { directOverrides.put(it, subMethod) }
   }
 }
 

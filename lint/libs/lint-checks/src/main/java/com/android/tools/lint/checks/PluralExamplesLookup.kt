@@ -20,10 +20,8 @@ class PluralExamplesLookup {
 
   init {
     val lines =
-      PluralExamplesLookup::class.java.getResourceAsStream(filename)?.buffered()?.reader()?.use {
-        stream ->
-        stream.readLines()
-      } ?: error("Could not load plural-examples.txt")
+        PluralExamplesLookup::class.java.getResourceAsStream(filename)?.buffered()?.reader()?.use { stream -> stream.readLines() }
+            ?: error("Could not load plural-examples.txt")
     exampleMap = lines.map(Companion::parseLine).associate { it }
   }
 
@@ -35,8 +33,7 @@ class PluralExamplesLookup {
     private const val filename = "/plural-examples.txt"
     private var instance: PluralExamplesLookup? = null
 
-    fun getInstance(): PluralExamplesLookup =
-      instance ?: PluralExamplesLookup().also { instance = it }
+    fun getInstance(): PluralExamplesLookup = instance ?: PluralExamplesLookup().also { instance = it }
 
     private fun parseLine(line: String): Pair<String, Map<String, PluralExample>> {
       val lineParts = line.split('/')
@@ -44,24 +41,24 @@ class PluralExamplesLookup {
       val examples = lineParts[1]
       val exampleParts = examples.split('|')
       return language to
-        exampleParts
-          .map { examplePart ->
-            val parts = examplePart.split(':')
-            val keyword = parts[0]
-            val number = parts[1].substringBefore('~')
-            val example = parts[2].takeIf(String::isNotEmpty)
-            PluralExample(language, keyword, number, example)
-          }
-          .associateBy { it.keyword }
+          exampleParts
+              .map { examplePart ->
+                val parts = examplePart.split(':')
+                val keyword = parts[0]
+                val number = parts[1].substringBefore('~')
+                val example = parts[2].takeIf(String::isNotEmpty)
+                PluralExample(language, keyword, number, example)
+              }
+              .associateBy { it.keyword }
     }
   }
 }
 
 data class PluralExample(
-  val language: String,
-  val keyword: String,
-  val number: String,
-  val example: String?,
+    val language: String,
+    val keyword: String,
+    val number: String,
+    val example: String?,
 ) {
   fun formattedWithNumber() = example?.replace("{0}", number) ?: number
 }

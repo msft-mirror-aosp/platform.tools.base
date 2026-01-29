@@ -42,15 +42,15 @@ interface LintModelSourceProvider {
 }
 
 class DefaultLintModelSourceProvider(
-  override val manifestFiles: Collection<File>,
-  override val javaDirectories: Collection<File>,
-  override val resDirectories: Collection<File>,
-  override val assetsDirectories: Collection<File>,
-  override val keepRulesDirectories: Collection<File>,
-  private val debugOnly: Boolean,
-  private val unitTestOnly: Boolean,
-  private val instrumentationTestOnly: Boolean,
-  private val testFixture: Boolean,
+    override val manifestFiles: Collection<File>,
+    override val javaDirectories: Collection<File>,
+    override val resDirectories: Collection<File>,
+    override val assetsDirectories: Collection<File>,
+    override val keepRulesDirectories: Collection<File>,
+    private val debugOnly: Boolean,
+    private val unitTestOnly: Boolean,
+    private val instrumentationTestOnly: Boolean,
+    private val testFixture: Boolean,
 ) : LintModelSourceProvider {
   override fun isUnitTest(): Boolean = unitTestOnly
 

@@ -26,9 +26,9 @@ class C2dmDetectorTest : AbstractCheckTest() {
   fun testPattern1() {
     // See b/112195797
     lint()
-      .files(
-        manifest(
-            """
+        .files(
+            manifest(
+                    """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="test.pkg">
 
@@ -45,25 +45,25 @@ class C2dmDetectorTest : AbstractCheckTest() {
 
                 </manifest>
                 """
-          )
-          .indented()
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .run()
+        .expect(
+            """
                 AndroidManifest.xml:7: Error: The C2DM library does not work on Android P or newer devices; you should migrate to Firebase Cloud Messaging to ensure reliable message delivery [UsingC2DM]
                         <receiver android:name="com.google.android.c2dm.C2DMBroadcastReceiver">
                                                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 1 errors, 0 warnings
             """
-      )
+        )
   }
 
   fun testPattern2() {
     lint()
-      .files(
-        manifest(
-            """
+        .files(
+            manifest(
+                    """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="test.pkg">
 
@@ -82,25 +82,25 @@ class C2dmDetectorTest : AbstractCheckTest() {
 
                 </manifest>
                 """
-          )
-          .indented()
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .run()
+        .expect(
+            """
             AndroidManifest.xml:7: Error: The C2DM library does not work on Android P or newer devices; you should migrate to Firebase Cloud Messaging to ensure reliable message delivery [UsingC2DM]
                     <receiver android:name="com.google.android.gcm.GCMBroadcastReceiver">
                                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             1 errors, 0 warnings
             """
-      )
+        )
   }
 
   fun testSuppress() {
     lint()
-      .files(
-        manifest(
-            """
+        .files(
+            manifest(
+                    """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     xmlns:tools="http://schemas.android.com/tools"
                     package="test.pkg">
@@ -119,18 +119,18 @@ class C2dmDetectorTest : AbstractCheckTest() {
 
                 </manifest>
                 """
-          )
-          .indented()
-      )
-      .run()
-      .expectClean()
+                )
+                .indented()
+        )
+        .run()
+        .expectClean()
   }
 
   fun testMissingAction() {
     lint()
-      .files(
-        manifest(
-            """
+        .files(
+            manifest(
+                    """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="test.pkg">
 
@@ -146,10 +146,10 @@ class C2dmDetectorTest : AbstractCheckTest() {
 
                 </manifest>
                 """
-          )
-          .indented()
-      )
-      .run()
-      .expectClean()
+                )
+                .indented()
+        )
+        .run()
+        .expectClean()
   }
 }

@@ -24,9 +24,9 @@ class ManifestPermissionAttributeDetectorTest : AbstractCheckTest() {
 
   fun testWrongTagPermissions1() {
     lint()
-      .files(
-        manifest(
-            """
+        .files(
+            manifest(
+                    """
 
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                           package="foo.bar2"
@@ -56,12 +56,12 @@ class ManifestPermissionAttributeDetectorTest : AbstractCheckTest() {
                 </manifest>
 
                 """
-          )
-          .indented()
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .run()
+        .expect(
+            """
             AndroidManifest.xml:19: Error: Protecting an unsupported element with a permission is a no-op and potentially dangerous [InvalidPermission]
                                     android:permission="android.permission.READ_CONTACTS"/>
                                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -70,14 +70,14 @@ class ManifestPermissionAttributeDetectorTest : AbstractCheckTest() {
                                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             2 errors, 0 warnings
             """
-      )
+        )
   }
 
   fun testWrongTagPermissions2() {
     lint()
-      .files(
-        manifest(
-            """
+        .files(
+            manifest(
+                    """
 
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                           package="foo.bar2"
@@ -108,18 +108,18 @@ class ManifestPermissionAttributeDetectorTest : AbstractCheckTest() {
                 </manifest>
 
                 """
-          )
-          .indented()
-      )
-      .run()
-      .expectClean()
+                )
+                .indented()
+        )
+        .run()
+        .expectClean()
   }
 
   fun testPathPermissionOk() {
     lint()
-      .files(
-        manifest(
-            """
+        .files(
+            manifest(
+                    """
 
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                           package="foo.bar2"
@@ -149,18 +149,18 @@ class ManifestPermissionAttributeDetectorTest : AbstractCheckTest() {
                 </manifest>
 
                 """
-          )
-          .indented()
-      )
-      .run()
-      .expectClean()
+                )
+                .indented()
+        )
+        .run()
+        .expectClean()
   }
 
   fun testPermissionInPermission() {
     lint()
-      .files(
-        manifest(
-            """
+        .files(
+            manifest(
+                    """
 
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                           package="foo.bar2"
@@ -189,17 +189,17 @@ class ManifestPermissionAttributeDetectorTest : AbstractCheckTest() {
                 </manifest>
 
                 """
-          )
-          .indented()
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .run()
+        .expect(
+            """
         AndroidManifest.xml:9: Error: Protecting an unsupported element with a permission is a no-op and potentially dangerous [InvalidPermission]
             <permission android:name="foo.bar.PERMISSION_NAME_1" android:permission="foo.bar.PERMISSION_NAME_1" />
                                                                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         1 errors, 0 warnings
         """
-      )
+        )
   }
 }

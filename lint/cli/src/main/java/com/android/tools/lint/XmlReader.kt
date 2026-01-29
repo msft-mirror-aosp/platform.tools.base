@@ -59,10 +59,10 @@ import org.xmlpull.v1.XmlPullParserException
 
 /** The [XmlReader] can restore the state saved by [XmlWriter] */
 class XmlReader(
-  private val client: LintCliClient,
-  private val registry: IssueRegistry,
-  private val project: Project?,
-  xmlFile: File,
+    private val client: LintCliClient,
+    private val registry: IssueRegistry,
+    private val project: Project?,
+    xmlFile: File,
 ) {
   private val incidents = mutableListOf<Incident>()
   private var data: MutableMap<Issue, LintMap>? = null
@@ -120,11 +120,11 @@ class XmlReader(
   }
 
   private fun getParentFix(): LintFix? =
-    if (fixLists.isEmpty()) {
-      fix
-    } else {
-      fixLists.last.last()
-    }
+      if (fixLists.isEmpty()) {
+        fix
+      } else {
+        fixLists.last.last()
+      }
 
   /** Read in and parse the XML file. */
   private fun parse() {
@@ -168,10 +168,10 @@ class XmlReader(
                 it.secondary = newLocation
                 this.prevLocation = newLocation
               }
-                ?: run {
-                  location = newLocation
-                  this.prevLocation = newLocation
-                }
+                  ?: run {
+                    location = newLocation
+                    this.prevLocation = newLocation
+                  }
             }
             TAG_RANGE -> {
               readRange()
@@ -294,9 +294,7 @@ class XmlReader(
     // Not using a builder because we want to mutate the
     // list of fixes after construction
     val fixList = ArrayList<LintFix>()
-    val type =
-      if (tag == TAG_FIX_ALTERNATIVES) LintFix.GroupType.ALTERNATIVES
-      else LintFix.GroupType.COMPOSITE
+    val type = if (tag == TAG_FIX_ALTERNATIVES) LintFix.GroupType.ALTERNATIVES else LintFix.GroupType.COMPOSITE
     val newFix = LintFix.LintFixGroup(displayName, familyName, type, fixList, robot, independent)
     newFix.autoFix(robot, independent)
     addFix(newFix)
@@ -336,11 +334,11 @@ class XmlReader(
 
     val builder = LintFix.create().name(displayName).sharedName(familyName)
     val fix =
-      when {
-        delete -> builder.deleteFile(file!!)
-        text != null -> builder.newFile(file!!, text)
-        else -> builder.newFile(file!!, binary!!)
-      }
+        when {
+          delete -> builder.deleteFile(file!!)
+          text != null -> builder.newFile(file!!, text)
+          else -> builder.newFile(file!!, binary!!)
+        }
     return fix.select(selectPattern).reformat(reformat).autoFix(robot, independent).build()
   }
 
@@ -377,16 +375,16 @@ class XmlReader(
     // and the separate TAG_RANGE handling will add it to the
     // existing fix
     return LintFix.create()
-      .set()
-      .name(displayName)
-      .sharedName(familyName)
-      .namespace(namespace)
-      .attribute(attributeName)
-      .value(attributeValue)
-      .range(null)
-      .apply { if (point != null && mark != null) select(point, mark) }
-      .autoFix(robot, independent)
-      .build()
+        .set()
+        .name(displayName)
+        .sharedName(familyName)
+        .namespace(namespace)
+        .attribute(attributeName)
+        .value(attributeValue)
+        .range(null)
+        .apply { if (point != null && mark != null) select(point, mark) }
+        .autoFix(robot, independent)
+        .build()
   }
 
   private fun readFixAnnotate(): LintFix {
@@ -417,12 +415,12 @@ class XmlReader(
     // and the separate TAG_RANGE handling will add it to the
     // existing fix
     return LintFix.create()
-      .name(displayName)
-      .sharedName(familyName)
-      .annotate(source!!, null, null, replace)
-      .select(selectPattern)
-      .autoFix(robot, independent)
-      .build()
+        .name(displayName)
+        .sharedName(familyName)
+        .annotate(source!!, null, null, replace)
+        .select(selectPattern)
+        .autoFix(robot, independent)
+        .build()
   }
 
   private fun readFixShowUrl(): LintFix {
@@ -507,21 +505,21 @@ class XmlReader(
     // and the separate TAG_RANGE handling will add it to the
     // existing fix
     return LintFix.create()
-      .replace()
-      .name(displayName)
-      .sharedName(familyName)
-      .text(oldString)
-      .pattern(oldPattern, patternFlags)
-      .select(selectPattern)
-      .with(replacement ?: "")
-      .shortenNames(shortenNames)
-      .reformat(reformat)
-      .apply { imports?.let { this.imports(*it.toTypedArray()) } }
-      .repeatedly(repeatedly)
-      .optional(optional)
-      .priority(sortPriority)
-      .autoFix(robot, independent)
-      .build()
+        .replace()
+        .name(displayName)
+        .sharedName(familyName)
+        .text(oldString)
+        .pattern(oldPattern, patternFlags)
+        .select(selectPattern)
+        .with(replacement ?: "")
+        .shortenNames(shortenNames)
+        .reformat(reformat)
+        .apply { imports?.let { this.imports(*it.toTypedArray()) } }
+        .repeatedly(repeatedly)
+        .optional(optional)
+        .priority(sortPriority)
+        .autoFix(robot, independent)
+        .build()
   }
 
   private fun getFile(path: String, allowMissingPathVariable: Boolean = false): File {
@@ -560,26 +558,26 @@ class XmlReader(
       error("Missing $file attribute")
     }
     val newLocation =
-      if (line == null && startOffset == null) {
-        Location.create(file)
-      } else
-        try {
-          val start =
-            DefaultPosition(
-              if (line != null) line.toInt() - 1 else -1,
-              column.toInt() - 1,
-              startOffset?.toInt() ?: -1,
-            )
-          val end =
-            DefaultPosition(
-              if (endLine != null) endLine.toInt() - 1 else -1,
-              endColumn.toInt() - 1,
-              endOffset?.toInt() ?: -1,
-            )
-          Location.create(file, start, end)
-        } catch (e: NumberFormatException) {
-          error("Invalid number: $e")
-        }
+        if (line == null && startOffset == null) {
+          Location.create(file)
+        } else
+            try {
+              val start =
+                  DefaultPosition(
+                      if (line != null) line.toInt() - 1 else -1,
+                      column.toInt() - 1,
+                      startOffset?.toInt() ?: -1,
+                  )
+              val end =
+                  DefaultPosition(
+                      if (endLine != null) endLine.toInt() - 1 else -1,
+                      endColumn.toInt() - 1,
+                      endOffset?.toInt() ?: -1,
+                  )
+              Location.create(file, start, end)
+            } catch (e: NumberFormatException) {
+              error("Invalid number: $e")
+            }
 
     if (locationMessage != null) {
       newLocation.message = locationMessage

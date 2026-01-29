@@ -26,7 +26,7 @@ class StringEscapeDetectorTest : AbstractCheckTest() {
     // Regression test for https://code.google.com/p/android/issues/detail?id=224150
     // 224150: Flag apostrophes escaping in XML string resources
     val expected =
-      """
+        """
       res/values/strings.xml:3: Error: Apostrophe not preceded by \ [StringEscaping]
       <string name="some_string">'ERROR'</string>
                                  ~~~~~~~
@@ -45,10 +45,10 @@ class StringEscapeDetectorTest : AbstractCheckTest() {
       5 errors
       """
     lint()
-      .files(
-        xml(
-            "res/values/strings.xml",
-            """
+        .files(
+            xml(
+                    "res/values/strings.xml",
+                    """
                     <?xml version="1.0" encoding="utf-8"?>
                     <resources>
                     <string name="some_string">'ERROR'</string>
@@ -77,13 +77,13 @@ class StringEscapeDetectorTest : AbstractCheckTest() {
                     <string name="foo">Letzte Freischaltung:\\ </string> <!-- b/387281249 -->
                     </resources>
                     """,
-          )
-          .indented()
-      )
-      .run()
-      .expect(expected)
-      .expectFixDiffs(
-        """
+                )
+                .indented()
+        )
+        .run()
+        .expect(expected)
+        .expectFixDiffs(
+            """
                     Fix for res/values/strings.xml line 3: Escape Apostrophe:
                     @@ -3 +3 @@
                     -<string name="some_string">'ERROR'</string>
@@ -101,6 +101,6 @@ class StringEscapeDetectorTest : AbstractCheckTest() {
                     -    <item quantity="few">%d piose'nki.</item>
                     +    <item quantity="few">%d piose\'nki.</item>
           """
-      )
+        )
   }
 }

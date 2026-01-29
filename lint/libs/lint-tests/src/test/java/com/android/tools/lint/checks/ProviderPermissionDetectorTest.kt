@@ -23,9 +23,9 @@ class ProviderPermissionDetectorTest : AbstractCheckTest() {
 
   fun testDocumentationExample() {
     lint()
-      .files(
-        manifest(
-            """
+        .files(
+            manifest(
+                    """
             <manifest xmlns:android="http://schemas.android.com/apk/res/android"
               xmlns:tools="http://schemas.android.com/tools"
               package="test.pkg">
@@ -35,14 +35,14 @@ class ProviderPermissionDetectorTest : AbstractCheckTest() {
               </application>
             </manifest>
             """
-          )
-          .indented(),
-        javaSingleApi,
-        kotlinSingleApi,
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            javaSingleApi,
+            kotlinSingleApi,
+        )
+        .run()
+        .expect(
+            """
           AndroidManifest.xml:5: Warning: test.pkg.JavaTestContentProvider implements {insert} write APIs but does not protect them with a permission. Update the <provider> tag to use android:permission or android:writePermission [ProviderReadPermissionOnly]
               <provider android:name="test.pkg.JavaTestContentProvider" android:readPermission="android.permission.READ_DATA"/>
                                                                         ~~~~~~~~~~~~~~~~~~~~~~
@@ -51,9 +51,9 @@ class ProviderPermissionDetectorTest : AbstractCheckTest() {
                                                                           ~~~~~~~~~~~~~~~~~~~~~~
           0 errors, 2 warnings
         """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
           Fix for AndroidManifest.xml line 5: Replace with permission:
           @@ -5 +5 @@
           -    <provider android:name="test.pkg.JavaTestContentProvider" android:readPermission="android.permission.READ_DATA"/>
@@ -63,14 +63,14 @@ class ProviderPermissionDetectorTest : AbstractCheckTest() {
           -    <provider android:name="test.pkg.KotlinTestContentProvider" android:readPermission="android.permission.READ_DATA"/>
           +    <provider android:name="test.pkg.KotlinTestContentProvider" android:permission="android.permission.READ_DATA"/>
         """
-      )
+        )
   }
 
   fun testReadPermissionOnly_singleApiImplemented_shortProviderNamesWithDot_throwsWarnings() {
     lint()
-      .files(
-        manifest(
-            """
+        .files(
+            manifest(
+                    """
             <manifest xmlns:android="http://schemas.android.com/apk/res/android"
               xmlns:tools="http://schemas.android.com/tools"
               package="test.pkg">
@@ -80,14 +80,14 @@ class ProviderPermissionDetectorTest : AbstractCheckTest() {
               </application>
             </manifest>
             """
-          )
-          .indented(),
-        javaSingleApi,
-        kotlinSingleApi,
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            javaSingleApi,
+            kotlinSingleApi,
+        )
+        .run()
+        .expect(
+            """
           AndroidManifest.xml:5: Warning: test.pkg.JavaTestContentProvider implements {insert} write APIs but does not protect them with a permission. Update the <provider> tag to use android:permission or android:writePermission [ProviderReadPermissionOnly]
               <provider android:name=".JavaTestContentProvider" android:readPermission="android.permission.READ_DATA"/>
                                                                 ~~~~~~~~~~~~~~~~~~~~~~
@@ -96,9 +96,9 @@ class ProviderPermissionDetectorTest : AbstractCheckTest() {
                                                                   ~~~~~~~~~~~~~~~~~~~~~~
           0 errors, 2 warnings
         """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
           Fix for AndroidManifest.xml line 5: Replace with permission:
           @@ -5 +5 @@
           -    <provider android:name=".JavaTestContentProvider" android:readPermission="android.permission.READ_DATA"/>
@@ -108,14 +108,14 @@ class ProviderPermissionDetectorTest : AbstractCheckTest() {
           -    <provider android:name=".KotlinTestContentProvider" android:readPermission="android.permission.READ_DATA"/>
           +    <provider android:name=".KotlinTestContentProvider" android:permission="android.permission.READ_DATA"/>
         """
-      )
+        )
   }
 
   fun testReadPermissionOnly_someWriteApisImplemented_throwsWarnings() {
     lint()
-      .files(
-        manifest(
-            """
+        .files(
+            manifest(
+                    """
             <manifest xmlns:android="http://schemas.android.com/apk/res/android"
               xmlns:tools="http://schemas.android.com/tools"
               package="test.pkg">
@@ -125,14 +125,14 @@ class ProviderPermissionDetectorTest : AbstractCheckTest() {
               </application>
             </manifest>
             """
-          )
-          .indented(),
-        javaSomeApis,
-        kotlinSomeApis,
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            javaSomeApis,
+            kotlinSomeApis,
+        )
+        .run()
+        .expect(
+            """
           AndroidManifest.xml:5: Warning: test.pkg.JavaTestContentProvider implements {insert, delete} write APIs but does not protect them with a permission. Update the <provider> tag to use android:permission or android:writePermission [ProviderReadPermissionOnly]
               <provider android:name="test.pkg.JavaTestContentProvider" android:readPermission="android.permission.READ_DATA"/>
                                                                         ~~~~~~~~~~~~~~~~~~~~~~
@@ -141,9 +141,9 @@ class ProviderPermissionDetectorTest : AbstractCheckTest() {
                                                                           ~~~~~~~~~~~~~~~~~~~~~~
           0 errors, 2 warnings
         """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
           Fix for AndroidManifest.xml line 5: Replace with permission:
           @@ -5 +5 @@
           -    <provider android:name="test.pkg.JavaTestContentProvider" android:readPermission="android.permission.READ_DATA"/>
@@ -153,14 +153,14 @@ class ProviderPermissionDetectorTest : AbstractCheckTest() {
           -    <provider android:name="test.pkg.KotlinTestContentProvider" android:readPermission="android.permission.READ_DATA"/>
           +    <provider android:name="test.pkg.KotlinTestContentProvider" android:permission="android.permission.READ_DATA"/>
         """
-      )
+        )
   }
 
   fun testReadPermissionOnly_noWriteApisImplemented_isClean() {
     lint()
-      .files(
-        manifest(
-            """
+        .files(
+            manifest(
+                    """
             <manifest xmlns:android="http://schemas.android.com/apk/res/android"
               xmlns:tools="http://schemas.android.com/tools"
               package="test.pkg">
@@ -171,21 +171,21 @@ class ProviderPermissionDetectorTest : AbstractCheckTest() {
               </application>
             </manifest>
             """
-          )
-          .indented(),
-        javaNoApis,
-        kotlinNoApis,
-        kotlinNoApisWithThrows,
-      )
-      .run()
-      .expectClean()
+                )
+                .indented(),
+            javaNoApis,
+            kotlinNoApis,
+            kotlinNoApisWithThrows,
+        )
+        .run()
+        .expectClean()
   }
 
   fun testPermissionExists_someWriteApisImplemented_isClean() {
     lint()
-      .files(
-        manifest(
-            """
+        .files(
+            manifest(
+                    """
             <manifest xmlns:android="http://schemas.android.com/apk/res/android"
               xmlns:tools="http://schemas.android.com/tools"
               package="test.pkg">
@@ -195,20 +195,20 @@ class ProviderPermissionDetectorTest : AbstractCheckTest() {
               </application>
             </manifest>
             """
-          )
-          .indented(),
-        javaSomeApis,
-        kotlinSomeApis,
-      )
-      .run()
-      .expectClean()
+                )
+                .indented(),
+            javaSomeApis,
+            kotlinSomeApis,
+        )
+        .run()
+        .expectClean()
   }
 
   fun testWritePermissionExists_someWriteApisImplemented_isClean() {
     lint()
-      .files(
-        manifest(
-            """
+        .files(
+            manifest(
+                    """
             <manifest xmlns:android="http://schemas.android.com/apk/res/android"
               xmlns:tools="http://schemas.android.com/tools"
               package="test.pkg">
@@ -218,20 +218,20 @@ class ProviderPermissionDetectorTest : AbstractCheckTest() {
               </application>
             </manifest>
             """
-          )
-          .indented(),
-        javaSomeApis,
-        kotlinSomeApis,
-      )
-      .run()
-      .expectClean()
+                )
+                .indented(),
+            javaSomeApis,
+            kotlinSomeApis,
+        )
+        .run()
+        .expectClean()
   }
 
   fun testIsolatedClass_ReadPermissionOnly_singleWriteApiImplemented_throwsWarningInClass() {
     lint()
-      .files(
-        manifest(
-            """
+        .files(
+            manifest(
+                    """
             <manifest xmlns:android="http://schemas.android.com/apk/res/android"
               xmlns:tools="http://schemas.android.com/tools"
               package="test.pkg">
@@ -241,38 +241,38 @@ class ProviderPermissionDetectorTest : AbstractCheckTest() {
               </application>
             </manifest>
             """
-          )
-          .indented(),
-        javaSingleApi,
-      )
-      .isolated(javaSingleApiPath)
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            javaSingleApi,
+        )
+        .isolated(javaSingleApiPath)
+        .run()
+        .expect(
+            """
           src/test/pkg/JavaTestContentProvider.java:7: Warning: test.pkg.JavaTestContentProvider implements {insert} write APIs but does not protect them with a permission. Update the <provider> tag to use android:permission or android:writePermission [ProviderReadPermissionOnly]
           public class JavaTestContentProvider extends ContentProvider {
                        ~~~~~~~~~~~~~~~~~~~~~~~
           0 errors, 1 warnings
         """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
           Fix for src/test/pkg/JavaTestContentProvider.java line 7: Replace with permission:
           AndroidManifest.xml:
           @@ -5 +5 @@
           -    <provider android:name=".JavaTestContentProvider" android:readPermission="android.permission.READ_DATA"/>
           +    <provider android:name=".JavaTestContentProvider" android:permission="android.permission.READ_DATA"/>
         """
-      )
+        )
   }
 
   fun testIsolatedLibraryClass_ReadPermissionOnly_singleWriteApiImplemented_throwsWarningInLibraryClass() {
     val project1 =
-      project()
-        .files(
-          javaSingleApiJvModule,
-          manifest(
-              """
+        project()
+            .files(
+                javaSingleApiJvModule,
+                manifest(
+                        """
             <manifest xmlns:android="http://schemas.android.com/apk/res/android"
               xmlns:tools="http://schemas.android.com/tools"
               package="test.jv.pkg">
@@ -281,15 +281,15 @@ class ProviderPermissionDetectorTest : AbstractCheckTest() {
               </application>
             </manifest>
             """
+                    )
+                    .indented(),
             )
-            .indented(),
-        )
 
     val project2 =
-      project()
-        .files(
-          manifest(
-              """
+        project()
+            .files(
+                manifest(
+                        """
             <manifest xmlns:android="http://schemas.android.com/apk/res/android"
               xmlns:tools="http://schemas.android.com/tools"
               package="test.pkg">
@@ -297,40 +297,40 @@ class ProviderPermissionDetectorTest : AbstractCheckTest() {
               </application>
             </manifest>
             """
+                    )
+                    .indented()
             )
-            .indented()
-        )
-        .dependsOn(project1)
+            .dependsOn(project1)
 
     lint()
-      .projects(project1, project2)
-      .isolated("../lib/src/test/jv/pkg/JavaTestContentProvider.java")
-      .run()
-      .expect(
-        """
+        .projects(project1, project2)
+        .isolated("../lib/src/test/jv/pkg/JavaTestContentProvider.java")
+        .run()
+        .expect(
+            """
           ../lib/src/test/jv/pkg/JavaTestContentProvider.java:7: Warning: test.jv.pkg.JavaTestContentProvider implements {insert} write APIs but does not protect them with a permission. Update the <provider> tag to use android:permission or android:writePermission [ProviderReadPermissionOnly]
           public class JavaTestContentProvider extends ContentProvider {
                        ~~~~~~~~~~~~~~~~~~~~~~~
           0 errors, 1 warnings
         """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
           Fix for ../lib/src/test/jv/pkg/JavaTestContentProvider.java line 7: Replace with permission:
           AndroidManifest.xml:
           @@ -5 +5 @@
           -    <provider android:name=".JavaTestContentProvider" android:readPermission="android.permission.READ_DATA" />
           +    <provider android:name=".JavaTestContentProvider" android:permission="android.permission.READ_DATA" />
         """
-      )
+        )
   }
 
   fun testIsolatedManifest_ReadPermissionOnly_singleWriteApiImplemented_isClean() {
     lint()
-      .files(
-        manifest(
-            "AndroidManifest.xml",
-            """
+        .files(
+            manifest(
+                    "AndroidManifest.xml",
+                    """
             <manifest xmlns:android="http://schemas.android.com/apk/res/android"
               xmlns:tools="http://schemas.android.com/tools"
               package="test.pkg">
@@ -340,20 +340,20 @@ class ProviderPermissionDetectorTest : AbstractCheckTest() {
               </application>
             </manifest>
             """,
-          )
-          .indented(),
-        javaSingleApi,
-      )
-      .isolated("AndroidManifest.xml")
-      .run()
-      .expectClean()
+                )
+                .indented(),
+            javaSingleApi,
+        )
+        .isolated("AndroidManifest.xml")
+        .run()
+        .expectClean()
   }
 
   fun testSuppressed_ReadPermissionOnly_someWriteApisImplemented_isClean() {
     lint()
-      .files(
-        manifest(
-            """
+        .files(
+            manifest(
+                    """
             <manifest xmlns:android="http://schemas.android.com/apk/res/android"
               xmlns:tools="http://schemas.android.com/tools"
               package="test.pkg">
@@ -363,13 +363,13 @@ class ProviderPermissionDetectorTest : AbstractCheckTest() {
               </application>
             </manifest>
             """
-          )
-          .indented(),
-        javaSomeApis,
-        kotlinSomeApis,
-      )
-      .run()
-      .expectClean()
+                )
+                .indented(),
+            javaSomeApis,
+            kotlinSomeApis,
+        )
+        .run()
+        .expectClean()
   }
 
   fun testClassesInDifferentModules_ReadPermissionOnly_singleApiImplemented_throwsWarnings() {
@@ -378,10 +378,10 @@ class ProviderPermissionDetectorTest : AbstractCheckTest() {
     val project2 = project().files(kotlinSingleApiKtModule)
 
     val project3 =
-      project()
-        .files(
-          manifest(
-              """
+        project()
+            .files(
+                manifest(
+                        """
               <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                 xmlns:tools="http://schemas.android.com/tools"
                 package="test.pkg">
@@ -391,17 +391,17 @@ class ProviderPermissionDetectorTest : AbstractCheckTest() {
                 </application>
               </manifest>
               """
+                    )
+                    .indented()
             )
-            .indented()
-        )
-        .dependsOn(project1)
-        .dependsOn(project2)
+            .dependsOn(project1)
+            .dependsOn(project2)
 
     lint()
-      .projects(project1, project2, project3)
-      .run()
-      .expect(
-        """
+        .projects(project1, project2, project3)
+        .run()
+        .expect(
+            """
           AndroidManifest.xml:5: Warning: test.jv.pkg.JavaTestContentProvider implements {insert} write APIs but does not protect them with a permission. Update the <provider> tag to use android:permission or android:writePermission [ProviderReadPermissionOnly]
               <provider android:name="test.jv.pkg.JavaTestContentProvider" android:readPermission="android.permission.READ_DATA"/>
                                                                            ~~~~~~~~~~~~~~~~~~~~~~
@@ -410,9 +410,9 @@ class ProviderPermissionDetectorTest : AbstractCheckTest() {
                                                                              ~~~~~~~~~~~~~~~~~~~~~~
           0 errors, 2 warnings
         """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
           Fix for AndroidManifest.xml line 5: Replace with permission:
           @@ -5 +5 @@
           -    <provider android:name="test.jv.pkg.JavaTestContentProvider" android:readPermission="android.permission.READ_DATA"/>
@@ -422,17 +422,17 @@ class ProviderPermissionDetectorTest : AbstractCheckTest() {
           -    <provider android:name="test.kt.pkg.KotlinTestContentProvider" android:readPermission="android.permission.READ_DATA"/>
           +    <provider android:name="test.kt.pkg.KotlinTestContentProvider" android:permission="android.permission.READ_DATA"/>
         """
-      )
+        )
   }
 
   fun testClassesInDifferentModules_Suppressed_ReadPermissionOnly_singleApiImplemented_isClean() {
     val project1 = project().files(javaSingleApiJvModule)
     val project2 = project().files(kotlinSingleApiKtModule)
     val project3 =
-      project()
-        .files(
-          manifest(
-              """
+        project()
+            .files(
+                manifest(
+                        """
               <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                 xmlns:tools="http://schemas.android.com/tools"
                 package="test.pkg">
@@ -442,11 +442,11 @@ class ProviderPermissionDetectorTest : AbstractCheckTest() {
                 </application>
               </manifest>
               """
+                    )
+                    .indented()
             )
-            .indented()
-        )
-        .dependsOn(project1)
-        .dependsOn(project2)
+            .dependsOn(project1)
+            .dependsOn(project2)
 
     lint().projects(project1, project2, project3).run().expectClean()
   }
@@ -455,10 +455,10 @@ class ProviderPermissionDetectorTest : AbstractCheckTest() {
     val project1 = project().files(javaSingleApiJvModule)
 
     val project2 =
-      project()
-        .files(
-          manifest(
-              """
+        project()
+            .files(
+                manifest(
+                        """
               <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                 xmlns:tools="http://schemas.android.com/tools"
                 package="test.pkg">
@@ -468,17 +468,17 @@ class ProviderPermissionDetectorTest : AbstractCheckTest() {
                 </application>
               </manifest>
               """
+                    )
+                    .indented(),
+                kotlinSingleApi,
             )
-            .indented(),
-          kotlinSingleApi,
-        )
-        .dependsOn(project1)
+            .dependsOn(project1)
 
     lint()
-      .projects(project1, project2)
-      .run()
-      .expect(
-        """
+        .projects(project1, project2)
+        .run()
+        .expect(
+            """
           AndroidManifest.xml:5: Warning: test.jv.pkg.JavaTestContentProvider implements {insert} write APIs but does not protect them with a permission. Update the <provider> tag to use android:permission or android:writePermission [ProviderReadPermissionOnly]
               <provider android:name="test.jv.pkg.JavaTestContentProvider" android:readPermission="android.permission.READ_DATA"/>
                                                                            ~~~~~~~~~~~~~~~~~~~~~~
@@ -487,9 +487,9 @@ class ProviderPermissionDetectorTest : AbstractCheckTest() {
                                                                   ~~~~~~~~~~~~~~~~~~~~~~
           0 errors, 2 warnings
         """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
           Fix for AndroidManifest.xml line 5: Replace with permission:
           @@ -5 +5 @@
           -    <provider android:name="test.jv.pkg.JavaTestContentProvider" android:readPermission="android.permission.READ_DATA"/>
@@ -499,15 +499,15 @@ class ProviderPermissionDetectorTest : AbstractCheckTest() {
           -    <provider android:name=".KotlinTestContentProvider" android:readPermission="android.permission.READ_DATA"/>
           +    <provider android:name=".KotlinTestContentProvider" android:permission="android.permission.READ_DATA"/>
         """
-      )
+        )
   }
 
   fun testMainManifestOverridesDefinition_ReadPermissionOnly_mainDependentNoApisImplemented_librarySingleApiImplemented_isClean() {
     val project1 =
-      project()
-        .files(
-          manifest(
-              """
+        project()
+            .files(
+                manifest(
+                        """
               <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                 xmlns:tools="http://schemas.android.com/tools"
                 package="test.jv.pkg">
@@ -516,16 +516,16 @@ class ProviderPermissionDetectorTest : AbstractCheckTest() {
                 </application>
               </manifest>
               """
+                    )
+                    .indented(),
+                javaNoApisJvModule,
             )
-            .indented(),
-          javaNoApisJvModule,
-        )
     val project2 = project().files(kotlinSingleApiKtModule)
     val project3 =
-      project()
-        .files(
-          manifest(
-              """
+        project()
+            .files(
+                manifest(
+                        """
               <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                 xmlns:tools="http://schemas.android.com/tools"
                 package="test.pkg">
@@ -535,21 +535,21 @@ class ProviderPermissionDetectorTest : AbstractCheckTest() {
               </application>
               </manifest>
               """
+                    )
+                    .indented()
             )
-            .indented()
-        )
-        .dependsOn(project1)
-        .dependsOn(project2)
+            .dependsOn(project1)
+            .dependsOn(project2)
 
     lint().projects(project1, project2, project3).run().expectClean()
   }
 
   fun testDifferentModulesManifestsImpactMain_ReadPermissionOnly_mainDependentNoApisImplemented_librarySingleApiImplemented_throwsWarnings() {
     val project1 =
-      project()
-        .files(
-          manifest(
-              """
+        project()
+            .files(
+                manifest(
+                        """
               <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                 xmlns:tools="http://schemas.android.com/tools"
                 package="test.jv.pkg">
@@ -558,16 +558,16 @@ class ProviderPermissionDetectorTest : AbstractCheckTest() {
                 </application>
               </manifest>
               """
+                    )
+                    .indented(),
+                javaNoApisJvModule,
             )
-            .indented(),
-          javaNoApisJvModule,
-        )
     val project2 = project().files(kotlinSingleApiKtModule)
     val project3 =
-      project()
-        .files(
-          manifest(
-              """
+        project()
+            .files(
+                manifest(
+                        """
               <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                 xmlns:tools="http://schemas.android.com/tools"
                 package="test.pkg">
@@ -576,38 +576,38 @@ class ProviderPermissionDetectorTest : AbstractCheckTest() {
               </application>
               </manifest>
               """
+                    )
+                    .indented()
             )
-            .indented()
-        )
-        .dependsOn(project1)
-        .dependsOn(project2)
+            .dependsOn(project1)
+            .dependsOn(project2)
 
     lint()
-      .projects(project1, project2, project3)
-      .run()
-      .expect(
-        """
+        .projects(project1, project2, project3)
+        .run()
+        .expect(
+            """
           ../lib/AndroidManifest.xml:5: Warning: test.kt.pkg.KotlinTestContentProvider implements {insert} write APIs but does not protect them with a permission. Update the <provider> tag to use android:permission or android:writePermission [ProviderReadPermissionOnly]
               <provider android:name="test.kt.pkg.KotlinTestContentProvider" android:readPermission="android.permission.READ_DATA"/>
                                                                              ~~~~~~~~~~~~~~~~~~~~~~
           0 errors, 1 warnings
         """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
           Fix for lib/AndroidManifest.xml line 5: Replace with permission:
           @@ -5 +5 @@
           -    <provider android:name="test.kt.pkg.KotlinTestContentProvider" android:readPermission="android.permission.READ_DATA"/>
           +    <provider android:name="test.kt.pkg.KotlinTestContentProvider" android:permission="android.permission.READ_DATA"/>
         """
-      )
+        )
   }
 
   private val javaSingleApiPath = "src/test/pkg/JavaTestContentProvider.java"
   private val javaSingleApi: TestFile =
-    java(
-        javaSingleApiPath,
-        """
+      java(
+              javaSingleApiPath,
+              """
         package test.pkg;
 
         import android.content.ContentProvider;
@@ -635,11 +635,11 @@ class ProviderPermissionDetectorTest : AbstractCheckTest() {
           }
         }
         """,
-      )
-      .indented()
+          )
+          .indented()
   private val kotlinSingleApi: TestFile =
-    kotlin(
-        """
+      kotlin(
+              """
         package test.pkg
 
         import android.content.ContentProvider
@@ -665,11 +665,11 @@ class ProviderPermissionDetectorTest : AbstractCheckTest() {
           }
         }
         """
-      )
-      .indented()
+          )
+          .indented()
   private val javaSomeApis: TestFile =
-    java(
-        """
+      java(
+              """
         package test.pkg;
 
         import android.content.ContentProvider;
@@ -702,11 +702,11 @@ class ProviderPermissionDetectorTest : AbstractCheckTest() {
           }
         }
         """
-      )
-      .indented()
+          )
+          .indented()
   private val kotlinSomeApis: TestFile =
-    kotlin(
-        """
+      kotlin(
+              """
         package test.pkg
 
         import android.content.ContentProvider
@@ -737,11 +737,11 @@ class ProviderPermissionDetectorTest : AbstractCheckTest() {
           }
         }
         """
-      )
-      .indented()
+          )
+          .indented()
   private val javaNoApis: TestFile =
-    java(
-        """
+      java(
+              """
         package test.pkg;
 
         import android.content.ContentProvider;
@@ -765,11 +765,11 @@ class ProviderPermissionDetectorTest : AbstractCheckTest() {
           }
         }
         """
-      )
-      .indented()
+          )
+          .indented()
   private val kotlinNoApis =
-    kotlin(
-        """
+      kotlin(
+              """
         package test.pkg
 
         import android.content.ContentProvider
@@ -790,11 +790,11 @@ class ProviderPermissionDetectorTest : AbstractCheckTest() {
           ): Int = 0
         }
         """
-      )
-      .indented()
+          )
+          .indented()
   private val kotlinNoApisWithThrows =
-    kotlin(
-        """
+      kotlin(
+              """
         package test.pkg
 
         import android.content.ContentProvider
@@ -815,11 +815,11 @@ class ProviderPermissionDetectorTest : AbstractCheckTest() {
           ): Int = TODO()
         }
         """
-      )
-      .indented()
+          )
+          .indented()
   private val javaSingleApiJvModule: TestFile =
-    java(
-        """
+      java(
+              """
         package test.jv.pkg;
 
         import android.content.ContentProvider;
@@ -847,11 +847,11 @@ class ProviderPermissionDetectorTest : AbstractCheckTest() {
           }
         }
         """
-      )
-      .indented()
+          )
+          .indented()
   private val kotlinSingleApiKtModule: TestFile =
-    kotlin(
-        """
+      kotlin(
+              """
         package test.kt.pkg
 
         import android.content.ContentProvider
@@ -876,11 +876,11 @@ class ProviderPermissionDetectorTest : AbstractCheckTest() {
           }
         }
         """
-      )
-      .indented()
+          )
+          .indented()
   private val javaNoApisJvModule: TestFile =
-    java(
-        """
+      java(
+              """
         package test.jv.pkg;
 
         import android.content.ContentProvider;
@@ -904,6 +904,6 @@ class ProviderPermissionDetectorTest : AbstractCheckTest() {
           }
         }
         """
-      )
-      .indented()
+          )
+          .indented()
 }

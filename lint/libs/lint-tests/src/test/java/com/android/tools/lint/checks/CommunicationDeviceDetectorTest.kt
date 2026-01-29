@@ -27,10 +27,10 @@ class CommunicationDeviceDetectorTest : AbstractCheckTest() {
 
   fun testDocumentationExample() {
     lint()
-      .files(
-        manifest().targetSdk(31),
-        kotlin(
-            """
+        .files(
+            manifest().targetSdk(31),
+            kotlin(
+                    """
                 package test.pkg
 
                 import android.media.AudioDeviceInfo
@@ -43,28 +43,28 @@ class CommunicationDeviceDetectorTest : AbstractCheckTest() {
                   }
                 }
                 """
-          )
-          .indented(),
-        audioManagerStub,
-        audioDeviceInfoStub,
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            audioManagerStub,
+            audioDeviceInfoStub,
+        )
+        .run()
+        .expect(
+            """
             src/test/pkg/Test.kt:9: Warning: Must call clearCommunicationDevice() after setCommunicationDevice() [SetAndClearCommunicationDevice]
                 manager.setCommunicationDevice(AudioDeviceInfo())
                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             0 errors, 1 warnings
         """
-      )
+        )
   }
 
   fun testTwoSetCalls() {
     lint()
-      .files(
-        manifest().targetSdk(31),
-        kotlin(
-            """
+        .files(
+            manifest().targetSdk(31),
+            kotlin(
+                    """
                 package test.pkg
 
                 import android.media.AudioDeviceInfo
@@ -77,10 +77,10 @@ class CommunicationDeviceDetectorTest : AbstractCheckTest() {
                   }
                 }
                 """
-          )
-          .indented(),
-        kotlin(
-            """
+                )
+                .indented(),
+            kotlin(
+                    """
                 package test.pkg
 
                 import android.media.AudioDeviceInfo
@@ -93,14 +93,14 @@ class CommunicationDeviceDetectorTest : AbstractCheckTest() {
                   }
                 }
                 """
-          )
-          .indented(),
-        audioManagerStub,
-        audioDeviceInfoStub,
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            audioManagerStub,
+            audioDeviceInfoStub,
+        )
+        .run()
+        .expect(
+            """
             src/test/pkg/Test1.kt:9: Warning: Must call clearCommunicationDevice() after setCommunicationDevice() [SetAndClearCommunicationDevice]
                 manager.setCommunicationDevice(AudioDeviceInfo())
                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -109,15 +109,15 @@ class CommunicationDeviceDetectorTest : AbstractCheckTest() {
                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             0 errors, 2 warnings
         """
-      )
+        )
   }
 
   fun testSuppressed() {
     lint()
-      .files(
-        manifest().targetSdk(31),
-        kotlin(
-            """
+        .files(
+            manifest().targetSdk(31),
+            kotlin(
+                    """
                 package test.pkg
 
                 import android.media.AudioDeviceInfo
@@ -131,21 +131,21 @@ class CommunicationDeviceDetectorTest : AbstractCheckTest() {
                   }
                 }
                 """
-          )
-          .indented(),
-        audioManagerStub,
-        audioDeviceInfoStub,
-      )
-      .run()
-      .expectClean()
+                )
+                .indented(),
+            audioManagerStub,
+            audioDeviceInfoStub,
+        )
+        .run()
+        .expectClean()
   }
 
   fun testSetNoClearOldApk() {
     lint()
-      .files(
-        manifest().targetSdk(30),
-        kotlin(
-            """
+        .files(
+            manifest().targetSdk(30),
+            kotlin(
+                    """
                 package test.pkg
 
                 import android.media.AudioDeviceInfo
@@ -158,21 +158,21 @@ class CommunicationDeviceDetectorTest : AbstractCheckTest() {
                   }
                 }
                 """
-          )
-          .indented(),
-        audioManagerStub,
-        audioDeviceInfoStub,
-      )
-      .run()
-      .expectClean()
+                )
+                .indented(),
+            audioManagerStub,
+            audioDeviceInfoStub,
+        )
+        .run()
+        .expectClean()
   }
 
   fun testSetAndClearInSameFile() {
     lint()
-      .files(
-        manifest().targetSdk(31),
-        kotlin(
-            """
+        .files(
+            manifest().targetSdk(31),
+            kotlin(
+                    """
                 package test.pkg
 
                 import android.media.AudioDeviceInfo
@@ -186,21 +186,21 @@ class CommunicationDeviceDetectorTest : AbstractCheckTest() {
                   }
                 }
                 """
-          )
-          .indented(),
-        audioManagerStub,
-        audioDeviceInfoStub,
-      )
-      .run()
-      .expectClean()
+                )
+                .indented(),
+            audioManagerStub,
+            audioDeviceInfoStub,
+        )
+        .run()
+        .expectClean()
   }
 
   fun testSetAndClearInSameModule() {
     lint()
-      .files(
-        manifest().targetSdk(31),
-        kotlin(
-            """
+        .files(
+            manifest().targetSdk(31),
+            kotlin(
+                    """
                 package test.pkg
 
                 import android.media.AudioDeviceInfo
@@ -213,10 +213,10 @@ class CommunicationDeviceDetectorTest : AbstractCheckTest() {
                   }
                 }
                 """
-          )
-          .indented(),
-        kotlin(
-            """
+                )
+                .indented(),
+            kotlin(
+                    """
                 package test.pkg
 
                 import android.media.AudioDeviceInfo
@@ -229,22 +229,22 @@ class CommunicationDeviceDetectorTest : AbstractCheckTest() {
                   }
                 }
                 """
-          )
-          .indented(),
-        audioManagerStub,
-        audioDeviceInfoStub,
-      )
-      .run()
-      .expectClean()
+                )
+                .indented(),
+            audioManagerStub,
+            audioDeviceInfoStub,
+        )
+        .run()
+        .expectClean()
   }
 
   fun testSetAndClearInDifferentModules() {
     val project1 =
-      project()
-        .files(
-          manifest().targetSdk(31),
-          kotlin(
-              """
+        project()
+            .files(
+                manifest().targetSdk(31),
+                kotlin(
+                        """
                 package set.pkg
 
                 import android.media.AudioDeviceInfo
@@ -257,17 +257,17 @@ class CommunicationDeviceDetectorTest : AbstractCheckTest() {
                   }
                 }
                 """
+                    )
+                    .indented(),
             )
-            .indented(),
-        )
-        .dependsOn(mediaModuleStub)
+            .dependsOn(mediaModuleStub)
 
     val project2 =
-      project()
-        .files(
-          manifest().targetSdk(31),
-          kotlin(
-              """
+        project()
+            .files(
+                manifest().targetSdk(31),
+                kotlin(
+                        """
                 package clear.pkg
 
                 import android.media.AudioDeviceInfo
@@ -280,19 +280,19 @@ class CommunicationDeviceDetectorTest : AbstractCheckTest() {
                   }
                 }
                 """
+                    )
+                    .indented(),
             )
-            .indented(),
-        )
-        .dependsOn(mediaModuleStub)
-        .dependsOn(project1)
+            .dependsOn(mediaModuleStub)
+            .dependsOn(project1)
 
     lint().projects(project1, project2, mediaModuleStub).run().expectClean()
   }
 }
 
 private val audioManagerStub: TestFile =
-  java(
-      """
+    java(
+            """
       /* HIDE-FROM-DOCUMENTATION */
       package android.media;
 
@@ -301,18 +301,17 @@ private val audioManagerStub: TestFile =
         public void clearCommunicationDevice() {}
       }
     """
-    )
-    .indented()
+        )
+        .indented()
 
 private val audioDeviceInfoStub: TestFile =
-  java(
-      """
+    java(
+            """
       /* HIDE-FROM-DOCUMENTATION */
       package android.media;
       public class AudioDeviceInfo {}
       """
-    )
-    .indented()
+        )
+        .indented()
 
-private val mediaModuleStub: ProjectDescription =
-  project().files(audioManagerStub, audioDeviceInfoStub)
+private val mediaModuleStub: ProjectDescription = project().files(audioManagerStub, audioDeviceInfoStub)

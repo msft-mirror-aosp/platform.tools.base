@@ -26,77 +26,77 @@ class LocaleConfigDetectorTest : AbstractCheckTest() {
 
   fun testDocumentationExample() {
     lint()
-      .files(
-        manifest(
-            """
+        .files(
+            manifest(
+                    """
                 <manifest
                     xmlns:android="http://schemas.android.com/apk/res/android"
                     package="test.pkg">
                     <application android:localeConfig="@xml/locale_config"/>
                 </manifest>
                 """
-          )
-          .indented(),
-        xml(
-            "res/xml/locale_config.xml",
-            """
+                )
+                .indented(),
+            xml(
+                    "res/xml/locale_config.xml",
+                    """
                 <locale-config xmlns:android="http://schemas.android.com/apk/res/android">
                     <locale android:name="en-us"/>
                     <locale android:name="nor-NOR"/>
                     <locale android:name="pt"/>
                 </locale-config>
                 """,
-          )
-          .indented(),
-        xml(
-            "res/values-en/strings.xml",
-            """
+                )
+                .indented(),
+            xml(
+                    "res/values-en/strings.xml",
+                    """
                 <resources>
                     <string name="hello">Hello</string>
                 </resources>
                 """,
-          )
-          .indented(),
-        xml(
-            "res/values-ar/strings.xml",
-            """
+                )
+                .indented(),
+            xml(
+                    "res/values-ar/strings.xml",
+                    """
                 <resources>
                     <string name="hello">أهلا</string>
                 </resources>
                 """,
-          )
-          .indented(),
-        xml(
-            "res/values-nb/strings.xml",
-            """
+                )
+                .indented(),
+            xml(
+                    "res/values-nb/strings.xml",
+                    """
                 <resources>
                     <string name="hello">Hallo</string>
                 </resources>
                 """,
-          )
-          .indented(),
-        xml(
-            "res/values-b+es+419/strings.xml",
-            """
+                )
+                .indented(),
+            xml(
+                    "res/values-b+es+419/strings.xml",
+                    """
                 <resources>
                     <string name="hello">Hola</string>
                 </resources>
                 """,
-          )
-          .indented(),
-        xml(
-            "res/values-b+zh+Hans+SG/strings.xml",
-            """
+                )
+                .indented(),
+            xml(
+                    "res/values-b+zh+Hans+SG/strings.xml",
+                    """
                 <resources>
                     <string name="hello">你好</string>
                 </resources>
                 """,
-          )
-          .indented(),
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+        )
+        .run()
+        .expect(
+            """
             AndroidManifest.xml:4: Warning: The language ar (Arabic) is present in this project, but not declared in the localeConfig resource [UnusedTranslation]
                 <application android:localeConfig="@xml/locale_config"/>
                                                    ~~~~~~~~~~~~~~~~~~
@@ -111,11 +111,11 @@ class LocaleConfigDetectorTest : AbstractCheckTest() {
                                                    ~~~~~~~~~~~~~~~~~~
             0 errors, 4 warnings
             """
-      )
-      .verifyFixes()
-      .window(1)
-      .expectFixDiffs(
-        """
+        )
+        .verifyFixes()
+        .window(1)
+        .expectFixDiffs(
+            """
             Fix for AndroidManifest.xml line 4: Add ar to locale_config.xml:
             res/xml/locale_config.xml:
             @@ -1,2 +1,3 @@
@@ -141,65 +141,65 @@ class LocaleConfigDetectorTest : AbstractCheckTest() {
             +    <locale android:name="zh"/>
              </locale-config>
             """
-      )
+        )
   }
 
   fun testCustomXmlnsPrefix() {
     // xmlns:a -- note how we have a: instead of android: -- this test makes sure the quickfix also
     // uses this prefix
     lint()
-      .files(
-        manifest(
-            """
+        .files(
+            manifest(
+                    """
                 <manifest
                     xmlns:a="http://schemas.android.com/apk/res/android"
                     package="test.pkg">
                     <application a:localeConfig="@xml/locale_config"/>
                 </manifest>
                 """
-          )
-          .indented(),
-        xml(
-            "res/xml/locale_config.xml",
-            """
+                )
+                .indented(),
+            xml(
+                    "res/xml/locale_config.xml",
+                    """
                 <locale-config xmlns:a="http://schemas.android.com/apk/res/android">
                     <locale a:name="en-us"/>
                 </locale-config>
                 """,
-          )
-          .indented(),
-        xml(
-            "res/values-en/strings.xml",
-            """
+                )
+                .indented(),
+            xml(
+                    "res/values-en/strings.xml",
+                    """
                 <resources>
                     <string name="hello">Hello</string>
                 </resources>
                 """,
-          )
-          .indented(),
-        xml(
-            "res/values-nb/strings.xml",
-            """
+                )
+                .indented(),
+            xml(
+                    "res/values-nb/strings.xml",
+                    """
                 <resources>
                     <string name="hello">Hallo</string>
                 </resources>
                 """,
-          )
-          .indented(),
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+        )
+        .run()
+        .expect(
+            """
             AndroidManifest.xml:4: Warning: The language nb (Norwegian Bokmål) is present in this project, but not declared in the localeConfig resource [UnusedTranslation]
                 <application a:localeConfig="@xml/locale_config"/>
                                              ~~~~~~~~~~~~~~~~~~
             0 errors, 1 warnings
             """
-      )
-      .verifyFixes()
-      .window(1)
-      .expectFixDiffs(
-        """
+        )
+        .verifyFixes()
+        .window(1)
+        .expectFixDiffs(
+            """
             Fix for AndroidManifest.xml line 4: Add nb to locale_config.xml:
             res/xml/locale_config.xml:
             @@ -2,2 +2,3 @@
@@ -207,7 +207,7 @@ class LocaleConfigDetectorTest : AbstractCheckTest() {
             +    <locale a:name="nb"/>
              </locale-config>
             """
-      )
+        )
   }
 
   fun testSplitAcrossModules() {
@@ -215,87 +215,87 @@ class LocaleConfigDetectorTest : AbstractCheckTest() {
     // as testDocumentationExample but with manifest in its own downstream
     // module.) We don't check locales across module boundaries in this case.
     val lib =
-      project(
-        xml(
-            "res/xml/locale_config.xml",
-            """
+        project(
+            xml(
+                    "res/xml/locale_config.xml",
+                    """
             <locale-config xmlns:android="http://schemas.android.com/apk/res/android">
                 <locale android:name="en-us"/>
                 <locale android:name="nor-NOR"/>
                 <locale android:name="pt"/>
             </locale-config>
             """,
-          )
-          .indented(),
-        xml(
-            "res/values-en/strings.xml",
-            """
+                )
+                .indented(),
+            xml(
+                    "res/values-en/strings.xml",
+                    """
             <resources>
                 <string name="hello">Hello</string>
             </resources>
             """,
-          )
-          .indented(),
-        xml(
-            "res/values-ar/strings.xml",
-            """
+                )
+                .indented(),
+            xml(
+                    "res/values-ar/strings.xml",
+                    """
             <resources>
                 <string name="hello">أهلا</string>
             </resources>
             """,
-          )
-          .indented(),
-        xml(
-            "res/values-nb/strings.xml",
-            """
+                )
+                .indented(),
+            xml(
+                    "res/values-nb/strings.xml",
+                    """
             <resources>
                 <string name="hello">Hallo</string>
             </resources>
             """,
-          )
-          .indented(),
-        xml(
-            "res/values-b+es+419/strings.xml",
-            """
+                )
+                .indented(),
+            xml(
+                    "res/values-b+es+419/strings.xml",
+                    """
             <resources>
                 <string name="hello">Hola</string>
             </resources>
             """,
-          )
-          .indented(),
-        xml(
-            "res/values-b+zh+Hans+SG/strings.xml",
-            """
+                )
+                .indented(),
+            xml(
+                    "res/values-b+zh+Hans+SG/strings.xml",
+                    """
             <resources>
                 <string name="hello">你好</string>
             </resources>
             """,
-          )
-          .indented(),
-      )
+                )
+                .indented(),
+        )
 
     val main =
-      project(
-          manifest(
-              """
+        project(
+                manifest(
+                        """
               <manifest
                   xmlns:android="http://schemas.android.com/apk/res/android"
                   package="test.pkg">
                   <application android:localeConfig="@xml/locale_config"/>
               </manifest>
               """
+                    )
+                    .indented()
             )
-            .indented()
-        )
-        .dependsOn(lib)
+            .dependsOn(lib)
 
     lint()
-      .projects(lib, main)
-      .testModes(TestMode.DEFAULT, TestMode.PARTIAL)
-      .expectIdenticalTestModeOutput(false)
-      .run()
-      .expect(
-        """
+        .projects(lib, main)
+        .testModes(TestMode.DEFAULT, TestMode.PARTIAL)
+        .expectIdenticalTestModeOutput(false)
+        .run()
+        .expect(
+            """
         AndroidManifest.xml:4: Warning: The language ar (Arabic) is present in this project, but not declared in the localeConfig resource [UnusedTranslation]
             <application android:localeConfig="@xml/locale_config"/>
                                                ~~~~~~~~~~~~~~~~~~
@@ -310,8 +310,8 @@ class LocaleConfigDetectorTest : AbstractCheckTest() {
                                                ~~~~~~~~~~~~~~~~~~
         0 errors, 4 warnings
         """,
-        testMode = TestMode.DEFAULT,
-      )
-      .expect("No warnings.", testMode = TestMode.PARTIAL)
+            testMode = TestMode.DEFAULT,
+        )
+        .expect("No warnings.", testMode = TestMode.PARTIAL)
   }
 }

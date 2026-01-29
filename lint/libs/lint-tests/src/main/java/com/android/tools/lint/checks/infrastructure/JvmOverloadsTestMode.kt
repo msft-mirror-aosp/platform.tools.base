@@ -37,20 +37,19 @@ import org.jetbrains.uast.UFile
 import org.jetbrains.uast.UMethod
 
 /**
- * Test mode which converts if statements in Kotlin files to when statements. In the future we could
- * also try to convert Java if statements into switches if the comparisons are eligible (e.g.
- * constant expressions).
+ * Test mode which converts if statements in Kotlin files to when statements. In the future we could also try to convert Java if statements
+ * into switches if the comparisons are eligible (e.g. constant expressions).
  */
 class JvmOverloadsTestMode :
-  UastSourceTransformationTestMode(
-    description = "Handling @JvmOverloads methods",
-    "TestMode.JVM_OVERLOADS",
-    "jvmoverloads",
-  ) {
+    UastSourceTransformationTestMode(
+        description = "Handling @JvmOverloads methods",
+        "TestMode.JVM_OVERLOADS",
+        "jvmoverloads",
+    ) {
   override val diffExplanation: String =
-    // first line shorter: expecting to prefix that line with
-    // "org.junit.ComparisonFailure: "
-    """
+      // first line shorter: expecting to prefix that line with
+      // "org.junit.ComparisonFailure: "
+      """
         Kotlin methods with @JvmOverloads in
         the signature will be *inlined* as multiple repeated `UMethod`s in
         UAST. This means that you can see the same underlying method multiple times
@@ -74,7 +73,7 @@ class JvmOverloadsTestMode :
         specific to @JvmOverloads or exact parameter signatures, you can turn off this
         test mode using `.skipTestModes($fieldName)`.
         """
-      .trimIndent()
+          .trimIndent()
 
   override fun isRelevantFile(file: TestFile): Boolean {
     // Only applies to Kotlin
@@ -82,10 +81,10 @@ class JvmOverloadsTestMode :
   }
 
   override fun transform(
-    source: String,
-    context: JavaContext,
-    root: UFile,
-    clientData: MutableMap<String, Any>,
+      source: String,
+      context: JavaContext,
+      root: UFile,
+      clientData: MutableMap<String, Any>,
   ): MutableList<Edit> {
     if (!isKotlin(root.lang)) {
       return mutableListOf()
@@ -93,125 +92,111 @@ class JvmOverloadsTestMode :
     val seen = LinkedHashSet<PsiElement>()
     val edits = mutableListOf<Edit>()
     root.acceptSourceFile(
-      object : EditVisitor() {
-        override fun visitMethod(node: UMethod): Boolean {
-          rewriteMethod(node)
-          // By adding `@JvmOverloads`, method's annotation is invalid.
-          // K2's stricter symbol resolution/cache invalidates annotations,
-          // and thus we should make this visitor stop here.
-          return !node.javaPsi.isValid || super.visitMethod(node)
-        }
-
-        private fun rewriteMethod(node: UMethod) {
-          // Already annotated?
-          val method = node.sourcePsi as? KtFunction ?: return
-          if (!seen.add(method)) {
-            return
+        object : EditVisitor() {
+          override fun visitMethod(node: UMethod): Boolean {
+            rewriteMethod(node)
+            // By adding `@JvmOverloads`, method's annotation is invalid.
+            // K2's stricter symbol resolution/cache invalidates annotations,
+            // and thus we should make this visitor stop here.
+            return !node.javaPsi.isValid || super.visitMethod(node)
           }
 
-          // Can't have defaults or @JvmOverloads on interface methods
-          val parentClass = method.parentOfType<KtClass>()
-          if (parentClass != null && (parentClass.isInterface() || parentClass.isAnnotation())) {
-            return
-          }
-
-          if (
-            method.annotationEntries.any {
-              it.shortName?.asString() == JVM_OVERLOADS_FQ_NAME.shortName().asString()
-            }
-          ) {
-            return
-          }
-
-          val modifierList = method.modifierList
-          if (
-            modifierList != null &&
-              (modifierList.hasModifier(KtTokens.OVERRIDE_KEYWORD) ||
-                modifierList.hasModifier(KtTokens.OPERATOR_KEYWORD) ||
-                modifierList.hasModifier(KtTokens.INFIX_KEYWORD))
-          ) {
-            return
-          }
-
-          // If there is a single parameter, and it's of an interface type, the method
-          // may be accessed as a SAM, which would break if we introduce an extra
-          // default parameter.
-          val valueParameters = method.valueParameters
-          if (valueParameters.size == 1) {
-            val parameter = valueParameters[0]
-            analyze(parameter) {
-              val parameterSymbol = parameter.symbol
-              val returnType = parameterSymbol.returnType
-              val typeSymbol = returnType.expandedSymbol
-              if (typeSymbol is KaClassSymbol) {
-                val classKind = typeSymbol.classKind
-                if (classKind == KaClassKind.INTERFACE) {
-                  return
-                }
-              }
-            }
-          }
-
-          val lastParameter = valueParameters.lastOrNull()
-
-          if (lastParameter != null) {
-            // Last parameter is a vararg parameter? Don't add default argument
-            // after since it's ambiguous at the call site.
-            if (lastParameter.isVarArg) {
+          private fun rewriteMethod(node: UMethod) {
+            // Already annotated?
+            val method = node.sourcePsi as? KtFunction ?: return
+            if (!seen.add(method)) {
               return
             }
 
-            // Last parameter is lambda? Don't add default argument after since
-            // caller may have placed lambda outside the argument list
+            // Can't have defaults or @JvmOverloads on interface methods
+            val parentClass = method.parentOfType<KtClass>()
+            if (parentClass != null && (parentClass.isInterface() || parentClass.isAnnotation())) {
+              return
+            }
+
+            if (method.annotationEntries.any { it.shortName?.asString() == JVM_OVERLOADS_FQ_NAME.shortName().asString() }) {
+              return
+            }
+
+            val modifierList = method.modifierList
             if (
-              lastParameter.typeReference?.text?.contains("->") == true &&
-                !lastParameter.hasDefaultValue()
+                modifierList != null &&
+                    (modifierList.hasModifier(KtTokens.OVERRIDE_KEYWORD) ||
+                        modifierList.hasModifier(KtTokens.OPERATOR_KEYWORD) ||
+                        modifierList.hasModifier(KtTokens.INFIX_KEYWORD))
             ) {
               return
             }
-          }
 
-          val constructor = method as? KtPrimaryConstructor
-
-          val startOffset =
-            (method as? KtNamedFunction)?.funKeyword?.startOffset ?: method.startOffset
-
-          val lineBegin = source.lastIndexOf('\n', startOffset - 1) + 1
-          val prefix =
-            if (constructor != null) {
-              " "
-            } else {
-              ""
+            // If there is a single parameter, and it's of an interface type, the method
+            // may be accessed as a SAM, which would break if we introduce an extra
+            // default parameter.
+            val valueParameters = method.valueParameters
+            if (valueParameters.size == 1) {
+              val parameter = valueParameters[0]
+              analyze(parameter) {
+                val parameterSymbol = parameter.symbol
+                val returnType = parameterSymbol.returnType
+                val typeSymbol = returnType.expandedSymbol
+                if (typeSymbol is KaClassSymbol) {
+                  val classKind = typeSymbol.classKind
+                  if (classKind == KaClassKind.INTERFACE) {
+                    return
+                  }
+                }
+              }
             }
-          val suffix =
-            if (constructor != null && constructor.getConstructorKeyword() == null) {
-              " constructor "
-            } else if (source.substring(lineBegin, startOffset).isBlank()) {
-              "\n" + getIndent(source, startOffset)
-            } else {
-              " "
-            }
-          edits.add(insert(startOffset, "$prefix@JvmOverloads$suffix"))
 
-          // Do we have to inject a default parameter?
-          val needDefault = valueParameters.none { it.hasDefaultValue() }
-          if (needDefault) {
-            val valueEnd = method.valueParameterList?.endOffset ?: return
-            if (source[valueEnd - 1] == ')') {
-              val comma =
-                valueParameters.isNotEmpty() &&
-                  valueParameters.last().nextSibling?.text?.endsWith(",") != true
-              edits.add(
-                insert(valueEnd - 1, "${if (comma) ", " else ""}$DEFAULT_PROPERTY_PARAMETER")
-              )
-            } else {
-              println(
-                "Unexpected missing ) in value parameter list `${method.valueParameterList?.text}`"
-              )
+            val lastParameter = valueParameters.lastOrNull()
+
+            if (lastParameter != null) {
+              // Last parameter is a vararg parameter? Don't add default argument
+              // after since it's ambiguous at the call site.
+              if (lastParameter.isVarArg) {
+                return
+              }
+
+              // Last parameter is lambda? Don't add default argument after since
+              // caller may have placed lambda outside the argument list
+              if (lastParameter.typeReference?.text?.contains("->") == true && !lastParameter.hasDefaultValue()) {
+                return
+              }
+            }
+
+            val constructor = method as? KtPrimaryConstructor
+
+            val startOffset = (method as? KtNamedFunction)?.funKeyword?.startOffset ?: method.startOffset
+
+            val lineBegin = source.lastIndexOf('\n', startOffset - 1) + 1
+            val prefix =
+                if (constructor != null) {
+                  " "
+                } else {
+                  ""
+                }
+            val suffix =
+                if (constructor != null && constructor.getConstructorKeyword() == null) {
+                  " constructor "
+                } else if (source.substring(lineBegin, startOffset).isBlank()) {
+                  "\n" + getIndent(source, startOffset)
+                } else {
+                  " "
+                }
+            edits.add(insert(startOffset, "$prefix@JvmOverloads$suffix"))
+
+            // Do we have to inject a default parameter?
+            val needDefault = valueParameters.none { it.hasDefaultValue() }
+            if (needDefault) {
+              val valueEnd = method.valueParameterList?.endOffset ?: return
+              if (source[valueEnd - 1] == ')') {
+                val comma = valueParameters.isNotEmpty() && valueParameters.last().nextSibling?.text?.endsWith(",") != true
+                edits.add(insert(valueEnd - 1, "${if (comma) ", " else ""}$DEFAULT_PROPERTY_PARAMETER"))
+              } else {
+                println("Unexpected missing ) in value parameter list `${method.valueParameterList?.text}`")
+              }
             }
           }
         }
-      }
     )
 
     return edits

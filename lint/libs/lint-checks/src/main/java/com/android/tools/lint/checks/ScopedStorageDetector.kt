@@ -40,15 +40,15 @@ import org.w3c.dom.Element
  * Helps apps transition to using scoped storage, which is described at
  * https://developer.android.com/preview/privacy/storage#scoped-storage.
  *
- * Warns about WRITE_EXTERNAL_STORAGE, which no longer provides write access to files. Warns about
- * MANAGE_EXTERNAL_STORAGE, which is disallowed for most apps.
+ * Warns about WRITE_EXTERNAL_STORAGE, which no longer provides write access to files. Warns about MANAGE_EXTERNAL_STORAGE, which is
+ * disallowed for most apps.
  */
 class ScopedStorageDetector : Detector(), XmlScanner {
   private var cachedStoragePermissions: StoragePermissions? = null
 
   private data class StoragePermissions(
-    val canManageStorage: Boolean,
-    val requestedLegacyStorage: Boolean,
+      val canManageStorage: Boolean,
+      val requestedLegacyStorage: Boolean,
   )
 
   override fun getApplicableElements() = listOf(TAG_USES_PERMISSION)
@@ -62,19 +62,19 @@ class ScopedStorageDetector : Detector(), XmlScanner {
       val maxSdk = getMaxSdk(element)
       val incident = Incident(ISSUE, context.getValueLocation(permission), "")
       context.report(
-        incident,
-        map().put(ATTR_MAX_SDK_VERSION, maxSdk).put(ATTR_READ, value == READ_STORAGE),
+          incident,
+          map().put(ATTR_MAX_SDK_VERSION, maxSdk).put(ATTR_READ, value == READ_STORAGE),
       )
     }
 
     // MANAGE_EXTERNAL_STORAGE.
     if (value == MANAGE_STORAGE) {
       val incident =
-        Incident(
-          ISSUE,
-          context.getValueLocation(permission),
-          "The Google Play store has a policy that limits usage of MANAGE_EXTERNAL_STORAGE",
-        )
+          Incident(
+              ISSUE,
+              context.getValueLocation(permission),
+              "The Google Play store has a policy that limits usage of MANAGE_EXTERNAL_STORAGE",
+          )
       context.report(incident)
     }
   }
@@ -97,16 +97,14 @@ class ScopedStorageDetector : Detector(), XmlScanner {
     if (sdk >= VersionCodes.TIRAMISU) {
       val name = if (isRead) READ_STORAGE else WRITE_STORAGE
       incident.message =
-        "" +
-          "${name.substringAfterLast('.')} is deprecated (and is not granted) when targeting Android 13+. " +
-          if (isRead)
-            "If you need to query or interact with MediaStore or media files on the " +
-              "shared storage, you should instead use one or more new storage permissions: " +
-              "`READ_MEDIA_IMAGES`, `READ_MEDIA_VIDEO` or `READ_MEDIA_AUDIO`."
-          else
-            "If you need to write to shared storage, use the `MediaStore.createWriteRequest` intent."
-      incident.fix =
-        fix().set(ANDROID_URI, ATTR_MAX_SDK_VERSION, VersionCodes.S_V2.toString()).build()
+          "" +
+              "${name.substringAfterLast('.')} is deprecated (and is not granted) when targeting Android 13+. " +
+              if (isRead)
+                  "If you need to query or interact with MediaStore or media files on the " +
+                      "shared storage, you should instead use one or more new storage permissions: " +
+                      "`READ_MEDIA_IMAGES`, `READ_MEDIA_VIDEO` or `READ_MEDIA_AUDIO`."
+              else "If you need to write to shared storage, use the `MediaStore.createWriteRequest` intent."
+      incident.fix = fix().set(ANDROID_URI, ATTR_MAX_SDK_VERSION, VersionCodes.S_V2.toString()).build()
       return true
     } else if (isRead) {
       return false
@@ -114,12 +112,11 @@ class ScopedStorageDetector : Detector(), XmlScanner {
 
     var msg = "WRITE_EXTERNAL_STORAGE no longer provides write access when targeting "
     msg +=
-      when {
-        permissions.requestedLegacyStorage ->
-          "Android 11+, even when using `requestLegacyExternalStorage`"
-        sdk == VersionCodes.Q -> "Android 10, unless you use `requestLegacyExternalStorage`"
-        else -> "Android 10+"
-      }
+        when {
+          permissions.requestedLegacyStorage -> "Android 11+, even when using `requestLegacyExternalStorage`"
+          sdk == VersionCodes.Q -> "Android 10, unless you use `requestLegacyExternalStorage`"
+          else -> "Android 10+"
+        }
     incident.message = msg
     return true
   }
@@ -156,9 +153,7 @@ class ScopedStorageDetector : Detector(), XmlScanner {
       }
     }
 
-    return StoragePermissions(canManageStorage, requestedLegacyStorage).also {
-      cachedStoragePermissions = it
-    }
+    return StoragePermissions(canManageStorage, requestedLegacyStorage).also { cachedStoragePermissions = it }
   }
 
   companion object {
@@ -170,11 +165,11 @@ class ScopedStorageDetector : Detector(), XmlScanner {
 
     @JvmField
     val ISSUE =
-      Issue.create(
-        id = "ScopedStorage",
-        briefDescription = "Affected by scoped storage",
-        explanation =
-          """
+        Issue.create(
+            id = "ScopedStorage",
+            briefDescription = "Affected by scoped storage",
+            explanation =
+                """
                 Scoped storage is enforced on Android 10+ (or Android 11+ if using \
                 `requestLegacyExternalStorage`). In particular, `WRITE_EXTERNAL_STORAGE` \
                 will no longer provide write access to all files; it will provide the \
@@ -200,12 +195,12 @@ class ScopedStorageDetector : Detector(), XmlScanner {
                 Play policy: https://goo.gle/policy-storage-help \
                 Allowable use cases: https://goo.gle/policy-storage-usecases
             """,
-        category = Category.CORRECTNESS,
-        priority = 8,
-        severity = Severity.WARNING,
-        androidSpecific = true,
-        implementation = Implementation(ScopedStorageDetector::class.java, Scope.MANIFEST_SCOPE),
-        moreInfo = "https://goo.gle/android-storage-usecases",
-      )
+            category = Category.CORRECTNESS,
+            priority = 8,
+            severity = Severity.WARNING,
+            androidSpecific = true,
+            implementation = Implementation(ScopedStorageDetector::class.java, Scope.MANIFEST_SCOPE),
+            moreInfo = "https://goo.gle/android-storage-usecases",
+        )
   }
 }

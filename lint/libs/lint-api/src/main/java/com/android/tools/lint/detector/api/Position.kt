@@ -46,7 +46,6 @@ abstract class Position : Comparable<Position> {
 
   override operator fun compareTo(other: Position): Int {
     return if (this.line == other.line && this.offset == other.offset) 0
-    else if (this.line < other.line || this.line == other.line && this.offset < other.offset) -1
-    else 1
+    else if (this.line < other.line || this.line == other.line && this.offset < other.offset) -1 else 1
   }
 }

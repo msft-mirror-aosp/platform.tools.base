@@ -49,25 +49,24 @@ class ActivityIconColorDetector : Detector(), SourceCodeScanner, BinaryResourceS
 
     @JvmField
     val ISSUE =
-      Issue.create(
-        id = "ActivityIconColor",
-        briefDescription = "Ongoing activity icon is not white",
-        explanation =
-          """
+        Issue.create(
+            id = "ActivityIconColor",
+            briefDescription = "Ongoing activity icon is not white",
+            explanation =
+                """
             The resources passed to `setAnimatedIcon` and `setStaticIcon` should be white \
             with a transparent background, preferably a VectorDrawable or AnimatedVectorDrawable.
             """,
-        moreInfo =
-          "https://developer.android.com/training/wearables/ongoing-activity#best-practices",
-        category = Category.ICONS,
-        priority = 4,
-        severity = Severity.WARNING,
-        implementation =
-          Implementation(
-            ActivityIconColorDetector::class.java,
-            EnumSet.of(Scope.JAVA_FILE, Scope.BINARY_RESOURCE_FILE, Scope.RESOURCE_FILE),
-          ),
-      )
+            moreInfo = "https://developer.android.com/training/wearables/ongoing-activity#best-practices",
+            category = Category.ICONS,
+            priority = 4,
+            severity = Severity.WARNING,
+            implementation =
+                Implementation(
+                    ActivityIconColorDetector::class.java,
+                    EnumSet.of(Scope.JAVA_FILE, Scope.BINARY_RESOURCE_FILE, Scope.RESOURCE_FILE),
+                ),
+        )
 
     val COLOR_REGEX = """#[a-fA-F\d]{6}""".toRegex()
     const val BLACK = "#000000"
@@ -76,10 +75,10 @@ class ActivityIconColorDetector : Detector(), SourceCodeScanner, BinaryResourceS
   }
 
   data class IconSetterInfo(
-    val url: ResourceUrl,
-    val element: UElement,
-    val location: Location,
-    val message: String,
+      val url: ResourceUrl,
+      val element: UElement,
+      val location: Location,
+      val message: String,
   )
 
   private val iconSetCalls: MutableMap<String, IconSetterInfo> = mutableMapOf()
@@ -118,13 +117,12 @@ class ActivityIconColorDetector : Detector(), SourceCodeScanner, BinaryResourceS
     val url = ResourceEvaluator.getResource(context.evaluator, iconResource) ?: return
     val iconKind = if (method.name == "setAnimatedIcon") "animated icon" else "static icon"
     iconSetCalls[url.name] =
-      IconSetterInfo(
-        url = url,
-        element = node,
-        location = context.getLocation(iconResource),
-        message =
-          "The $iconKind for an ongoing activity should be white with a transparent background",
-      )
+        IconSetterInfo(
+            url = url,
+            element = node,
+            location = context.getLocation(iconResource),
+            message = "The $iconKind for an ongoing activity should be white with a transparent background",
+        )
   }
 
   override fun getApplicableAttributes(): Collection<String> {

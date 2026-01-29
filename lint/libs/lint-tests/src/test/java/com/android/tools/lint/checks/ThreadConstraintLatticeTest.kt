@@ -19,13 +19,11 @@ import com.android.tools.lint.checks.fx.utils.LatticeTest
 import com.google.common.truth.Truth
 import org.junit.Test
 
-abstract class ThreadConstraintLatticeTest<T : Enum<T>>(
-  private val lattice: ThreadConstraintDetector.ThreadConstraintLattice<T>
-) :
-  LatticeTest<ThreadConstraintDetector.ThreadConstraint<T>>(
-    lattice = lattice,
-    poolInits = lattice.threadTag.enumConstants.map { lattice.of(it) },
-  ) {
+abstract class ThreadConstraintLatticeTest<T : Enum<T>>(private val lattice: ThreadConstraintDetector.ThreadConstraintLattice<T>) :
+    LatticeTest<ThreadConstraintDetector.ThreadConstraint<T>>(
+        lattice = lattice,
+        poolInits = lattice.threadTag.enumConstants.map { lattice.of(it) },
+    ) {
 
   @Test
   fun `AnyThread strictly precedes the 'meet' over explicit tags`() {

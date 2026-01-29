@@ -35,13 +35,13 @@ class LintPsiArtifactSanityTest {
     val ktFiles = fileNamesInJar(kt)
     val ijFiles = fileNamesInJar(ij)
     val both =
-      ktFiles.intersect(ijFiles).filterNot { fileName ->
-        fileName.contains("org/jetbrains/annotations") ||
-          // https://github.com/JetBrains/kotlin/commit/4b2c54d5e6bc1aae5a1d7cc5df56006c11f26d7e
-          fileName.contains("com/intellij/openapi/util/Object") ||
-          fileName.contains("kotlinx/collections") ||
-          fileName.contains("kotlinx-collections")
-      }
+        ktFiles.intersect(ijFiles).filterNot { fileName ->
+          fileName.contains("org/jetbrains/annotations") ||
+              // https://github.com/JetBrains/kotlin/commit/4b2c54d5e6bc1aae5a1d7cc5df56006c11f26d7e
+              fileName.contains("com/intellij/openapi/util/Object") ||
+              fileName.contains("kotlinx/collections") ||
+              fileName.contains("kotlinx-collections")
+        }
     assertThat(both).isEmpty()
   }
 

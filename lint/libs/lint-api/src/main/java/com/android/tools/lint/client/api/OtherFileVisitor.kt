@@ -37,8 +37,7 @@ import java.util.EnumMap
 import java.util.EnumSet
 
 /**
- * Visitor for "other" files: files that aren't java sources, XML sources, etc -- or which should
- * have custom handling in some other way.
+ * Visitor for "other" files: files that aren't java sources, XML sources, etc -- or which should have custom handling in some other way.
  */
 internal class OtherFileVisitor(private val detectors: List<Detector>) {
 
@@ -153,11 +152,7 @@ internal class OtherFileVisitor(private val detectors: List<Detector>) {
       if (subset != null && !subset.isEmpty()) {
         val files = ArrayList<File>(subset.size)
         for (file in subset) {
-          if (
-            file.name.endsWith(DOT_GRADLE) ||
-              file.name.endsWith(DOT_KTS) ||
-              file.name.endsWith(DOT_DECLARATIVE)
-          ) {
+          if (file.name.endsWith(DOT_GRADLE) || file.name.endsWith(DOT_KTS) || file.name.endsWith(DOT_DECLARATIVE)) {
             files.add(file)
           }
         }

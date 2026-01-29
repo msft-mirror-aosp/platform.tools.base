@@ -24,19 +24,18 @@ import java.util.EnumSet
 
 /** Information about a request to run lint. */
 open class LintRequest(
-  /**
-   * The lint client requesting the lint check
-   *
-   * @return the client, never null
-   */
-  val client: LintClient,
+    /**
+     * The lint client requesting the lint check
+     *
+     * @return the client, never null
+     */
+    val client: LintClient,
 
-  /**
-   * The set of files to check with lint. This can reference Android projects, or directories
-   * containing Android projects, or individual XML or Java files (typically for incremental IDE
-   * analysis).
-   */
-  val files: List<File>,
+    /**
+     * The set of files to check with lint. This can reference Android projects, or directories containing Android projects, or individual
+     * XML or Java files (typically for incremental IDE analysis).
+     */
+    val files: List<File>,
 ) {
 
   /** The root directory containing all the projects. */
@@ -49,11 +48,9 @@ open class LintRequest(
   @JvmField protected var releaseMode: Boolean? = null
 
   /**
-   * The projects for the lint requests. This is optional; if not provided lint will search the
-   * [files] directories and look for projects via [LintClient.isProjectDirectory]. However, this
-   * method allows a lint client to set up all the projects ahead of time, and associate those
-   * projects with native resources (in an IDE for example, each lint project can be associated with
-   * the corresponding IDE project).
+   * The projects for the lint requests. This is optional; if not provided lint will search the [files] directories and look for projects
+   * via [LintClient.isProjectDirectory]. However, this method allows a lint client to set up all the projects ahead of time, and associate
+   * those projects with native resources (in an IDE for example, each lint project can be associated with the corresponding IDE project).
    */
   @JvmField protected var projects: Collection<Project>? = null
 
@@ -93,16 +90,16 @@ open class LintRequest(
   }
 
   /**
-   * Returns `true` if lint is invoked as part of a release mode build, `false` if it is part of a
-   * debug mode build, and `null` if the release mode is not known
+   * Returns `true` if lint is invoked as part of a release mode build, `false` if it is part of a debug mode build, and `null` if the
+   * release mode is not known
    *
    * @return true if this lint is running in release mode, null if not known
    */
   fun isReleaseMode(): Boolean? = releaseMode
 
   /**
-   * Sets the release mode. Use `true` if lint is invoked as part of a release mode build, `false`
-   * if it is part of a debug mode build, and `null` if the release mode is not known
+   * Sets the release mode. Use `true` if lint is invoked as part of a release mode build, `false` if it is part of a debug mode build, and
+   * `null` if the release mode is not known
    *
    * @param releaseMode true if this lint is running in release mode, null if not known
    * @return this, for constructor chaining
@@ -113,9 +110,8 @@ open class LintRequest(
   }
 
   /**
-   * Returns the project to be used as the main project during analysis. This is usually the project
-   * itself, but when you are for example analyzing a library project, it can be the app project
-   * using the library.
+   * Returns the project to be used as the main project during analysis. This is usually the project itself, but when you are for example
+   * analyzing a library project, it can be the app project using the library.
    *
    * @param project the project to look up the main project for
    * @return the main project

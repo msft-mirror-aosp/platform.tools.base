@@ -31,19 +31,19 @@ class MemberExtensionConflictDetectorTest : AbstractCheckTest() {
       return
     }
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
             package my.cool.lib
             interface MyList {
               val magicCount: Int
               fun removeMiddle()
             }
           """
-          )
-          .indented(),
-        kotlin(
-            """
+                )
+                .indented(),
+            kotlin(
+                    """
             package users.own
 
             import my.cool.lib.MyList
@@ -53,10 +53,10 @@ class MemberExtensionConflictDetectorTest : AbstractCheckTest() {
 
             fun MyList.removeMiddle() {}
           """
-          )
-          .indented(),
-        kotlin(
-            """
+                )
+                .indented(),
+            kotlin(
+                    """
             import my.cool.lib.MyList
             import users.own.magicCount
             import users.own.removeMiddle
@@ -70,15 +70,15 @@ class MemberExtensionConflictDetectorTest : AbstractCheckTest() {
               l.removeMiddle() // WARNING 2
             }
           """
-          )
-          .indented(),
-      )
-      // Some test modes change the function signature of interest
-      .skipTestModes(TestMode.JVM_OVERLOADS, TestMode.TYPE_ALIAS)
-      .textFormat(TextFormat.RAW)
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+        )
+        // Some test modes change the function signature of interest
+        .skipTestModes(TestMode.JVM_OVERLOADS, TestMode.TYPE_ALIAS)
+        .textFormat(TextFormat.RAW)
+        .run()
+        .expect(
+            """
 src/ListWrapper.kt:10: Warning: `magicCount` is defined both as a member in class `ListWrapper` and an extension in package `users.own`. The defined behavior for this is to use the member, but since the extension is explicitly imported into this file, there's a chance that this was not expected. (One common way this happens is for members to be added to a class after code was already written to use an extension). [MemberExtensionConflict]
   val x = l.magicCount // WARNING 1
             ~~~~~~~~~~
@@ -87,7 +87,7 @@ src/ListWrapper.kt:11: Warning: `removeMiddle` is defined both as a member in cl
   ~~~~~~~~~~~~~~~~
 0 errors, 2 warnings
         """
-      )
+        )
   }
 
   fun testConflictsFromBinary() {
@@ -96,26 +96,26 @@ src/ListWrapper.kt:11: Warning: `removeMiddle` is defined both as a member in cl
       return
     }
     lint()
-      .files(
-        bytecode(
-          "libs/lib1.jar",
-          kotlin(
-              """
+        .files(
+            bytecode(
+                "libs/lib1.jar",
+                kotlin(
+                        """
             package my.cool.lib
             interface MyList {
               val magicCount: Int
               fun removeMiddle()
             }
             """
-            )
-            .indented(),
-          0x30ac8af8,
-          """
+                    )
+                    .indented(),
+                0x30ac8af8,
+                """
                 META-INF/main.kotlin_module:
                 H4sIAAAAAAAA/2NgYGBmYGBgBGJOBijgEuRiEOL1ySwuCS9KLChILfIu4RLm
                 4iwtTi0q1ssvzxNiC0ktLvEuUWLQYgAASi63EEAAAAA=
                 """,
-          """
+                """
                 my/cool/lib/MyList.class:
                 H4sIAAAAAAAA/2VPzU7CQBic3Za2VNCCiMADGL1YJN48GYyxhsYEE2LCqbQr
                 WelPwhYiN57Fgw/hwRCOPpTxK15MTDYzs/N92dn5+v74BHCJDkM9WblhlsVu
@@ -126,11 +126,11 @@ src/ListWrapper.kt:11: Warning: `removeMiddle` is defined both as a member in cl
                 J7G4TtMsD3KZpcqgBOhFCXCdoQQDIDZhFQ5aOzxGm7hPcWXasMfQPOx5qHio
                 Yp8kDjw4qI3BFOo4HMNSaCgcKTR3WFIwFEzSP4O1Xny1AQAA
                 """,
-        ),
-        bytecode(
-          "libs/lib2.jar",
-          kotlin(
-              """
+            ),
+            bytecode(
+                "libs/lib2.jar",
+                kotlin(
+                        """
             package users.own
 
             import my.cool.lib.MyList
@@ -140,15 +140,15 @@ src/ListWrapper.kt:11: Warning: `removeMiddle` is defined both as a member in cl
 
             fun MyList.removeMiddle() {}
             """
-            )
-            .indented(),
-          0x4bf50ed4,
-          """
+                    )
+                    .indented(),
+                0x4bf50ed4,
+                """
                 META-INF/main.kotlin_module:
                 H4sIAAAAAAAA/2NgYGBmYGBgBGJOBijgEuRiEOL1ySwuCS9KLChILfIu4RLm
                 4iwtTi0q1ssvzxNiC0ktLvEuUWLQYgAASi63EEAAAAA=
                 """,
-          """
+                """
                 users/own/TestKt.class:
                 H4sIAAAAAAAA/3VRTW/TQBB966R2alLqhJa2AQq0gbY54BQ4IAUhUKVKFk6L
                 aJVLTxtnlW7iD8m7CfTW38KZCzfEAVUc+VGI2SaCUECWZ97MzryZt/v9x5ev
@@ -164,9 +164,9 @@ src/ListWrapper.kt:11: Warning: `removeMiddle` is defined both as a member in cl
                 DVXcmLLtTtmcCdunK1ylGS4HS39zWdi+tJvYIf+Sssu0680TFAKsBFgNaFot
                 wC3cDnAH6ydgCndx7wSOwn2FDYWKwpyCrVCl8CdD0glRewMAAA==
                 """,
-        ),
-        kotlin(
-            """
+            ),
+            kotlin(
+                    """
             import my.cool.lib.MyList
             import users.own.magicCount
             import users.own.removeMiddle
@@ -180,13 +180,13 @@ src/ListWrapper.kt:11: Warning: `removeMiddle` is defined both as a member in cl
               l.removeMiddle() // WARNING 2
             }
           """
-          )
-          .indented(),
-      )
-      .textFormat(TextFormat.RAW)
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+        )
+        .textFormat(TextFormat.RAW)
+        .run()
+        .expect(
+            """
 src/ListWrapper.kt:10: Warning: `magicCount` is defined both as a member in class `ListWrapper` and an extension in package `users.own`. The defined behavior for this is to use the member, but since the extension is explicitly imported into this file, there's a chance that this was not expected. (One common way this happens is for members to be added to a class after code was already written to use an extension). [MemberExtensionConflict]
   val x = l.magicCount // WARNING 1
             ~~~~~~~~~~
@@ -195,43 +195,43 @@ src/ListWrapper.kt:11: Warning: `removeMiddle` is defined both as a member in cl
   ~~~~~~~~~~~~~~~~
 0 errors, 2 warnings
         """
-      )
+        )
   }
 
   fun testOnlyMultipleExtensions() {
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
             package my.cool.lib
             interface MyList {
               fun removeFirst()
             }
           """
-          )
-          .indented(),
-        kotlin(
-            """
+                )
+                .indented(),
+            kotlin(
+                    """
             package another.cool.lib
 
             import my.cool.lib.MyList
 
             fun MyList.removeMiddle() {}
           """
-          )
-          .indented(),
-        kotlin(
-            """
+                )
+                .indented(),
+            kotlin(
+                    """
           package users.own
 
           import my.cool.lib.MyList
 
           fun MyList.removeMiddle() {}
           """
-          )
-          .indented(),
-        kotlin(
-            """
+                )
+                .indented(),
+            kotlin(
+                    """
             import my.cool.lib.MyList
             import users.own.removeMiddle // explicit
 
@@ -243,11 +243,11 @@ src/ListWrapper.kt:11: Warning: `removeMiddle` is defined both as a member in cl
               l.removeMiddle() // OK
             }
           """
-          )
-          .indented(),
-      )
-      .run()
-      .expectClean()
+                )
+                .indented(),
+        )
+        .run()
+        .expectClean()
   }
 
   fun testNullableExtensionReceiver() {
@@ -257,19 +257,19 @@ src/ListWrapper.kt:11: Warning: `removeMiddle` is defined both as a member in cl
     }
     // b/406935594
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
             package another.pkg
 
             import test.pkg.Foo
 
             fun Foo?.bar() { this?.baz() }
           """
-          )
-          .indented(),
-        kotlin(
-            """
+                )
+                .indented(),
+            kotlin(
+                    """
             package test.pkg
 
             import another.pkg.bar
@@ -285,15 +285,15 @@ src/ListWrapper.kt:11: Warning: `removeMiddle` is defined both as a member in cl
               (foo as Foo?)?.bar() // Member
             }
           """
-          )
-          .indented(),
-      )
-      // Some test modes change the function signature of interest
-      .skipTestModes(TestMode.JVM_OVERLOADS, TestMode.TYPE_ALIAS)
-      .textFormat(TextFormat.RAW)
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+        )
+        // Some test modes change the function signature of interest
+        .skipTestModes(TestMode.JVM_OVERLOADS, TestMode.TYPE_ALIAS)
+        .textFormat(TextFormat.RAW)
+        .run()
+        .expect(
+            """
 src/test/pkg/Foo.kt:11: Warning: `bar` is defined both as a member in class `test.pkg.Foo` and an extension in package `another.pkg`. The defined behavior for this is to use the member, but since the extension is explicitly imported into this file, there's a chance that this was not expected. (One common way this happens is for members to be added to a class after code was already written to use an extension). [MemberExtensionConflict]
   foo.bar() // Member
   ~~~~~~~~~
@@ -302,15 +302,15 @@ src/test/pkg/Foo.kt:13: Warning: `bar` is defined both as a member in class `tes
   ~~~~~~~~~~~~~~~~~~~~
 0 errors, 2 warnings
         """
-      )
+        )
   }
 
   fun testNullableToString() {
     // b/406935594
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
             fun test() {
               42.toString()
               // Any?.toString() extension
@@ -318,19 +318,19 @@ src/test/pkg/Foo.kt:13: Warning: `bar` is defined both as a member in class `tes
               (0 as Int?)?.toString()
             }
           """
-          )
-          .indented()
-      )
-      .run()
-      .expectClean()
+                )
+                .indented()
+        )
+        .run()
+        .expectClean()
   }
 
   fun testStringBuilder() {
     // b/406991279
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
             fun test(p: List<Any>): String {
               val sb = StringBuilder()
               for (item in p) {
@@ -340,11 +340,11 @@ src/test/pkg/Foo.kt:13: Warning: `bar` is defined both as a member in class `tes
               return sb.toString()
             }
           """
-          )
-          .indented()
-      )
-      .run()
-      .expectClean()
+                )
+                .indented()
+        )
+        .run()
+        .expectClean()
   }
 
   fun testUserLib_implicitImport() {
@@ -354,10 +354,10 @@ src/test/pkg/Foo.kt:13: Warning: `bar` is defined both as a member in class `tes
     }
     // b/427761232
     lint()
-      .files(
-        kotlin(
-            "src/my/cool/lib/MyList.kt",
-            """
+        .files(
+            kotlin(
+                    "src/my/cool/lib/MyList.kt",
+                    """
             package my.cool.lib
 
             interface MyList {
@@ -365,20 +365,20 @@ src/test/pkg/Foo.kt:13: Warning: `bar` is defined both as a member in class `tes
               fun removeMiddle()
             }
           """,
-          )
-          .indented(),
-        kotlin(
-            "src/my/cool/lib/Utils.kt",
-            """
+                )
+                .indented(),
+            kotlin(
+                    "src/my/cool/lib/Utils.kt",
+                    """
             package my.cool.lib
 
             fun MyList.removeMiddle() {}
           """,
-          )
-          .indented(),
-        kotlin(
-            "src/my/cool/lib/test.kt",
-            """
+                )
+                .indented(),
+            kotlin(
+                    "src/my/cool/lib/test.kt",
+                    """
             package my.cool.lib
             // same package, hence implicitly imported
 
@@ -386,55 +386,55 @@ src/test/pkg/Foo.kt:13: Warning: `bar` is defined both as a member in class `tes
               l.removeMiddle() // WARNING
             }
           """,
-          )
-          .indented(),
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+        )
+        .run()
+        .expect(
+            """
 src/my/cool/lib/test.kt:5: Warning: removeMiddle is defined both as a member in class my.cool.lib.MyList and an extension in package my.cool.lib. The defined behavior for this is to use the member, but since the extension is explicitly imported into this file, there's a chance that this was not expected. (One common way this happens is for members to be added to a class after code was already written to use an extension). [MemberExtensionConflict]
   l.removeMiddle() // WARNING
   ~~~~~~~~~~~~~~~~
 0 errors, 1 warning
         """
-      )
+        )
   }
 
   fun testKotlinCollection_implicitImport() {
     // b/427761232
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
             fun test() {
               val set = mutableSetOf<String>()
               set.add("hi")
               set.remove("hi") // Member
             }
           """
-          )
-          .indented()
-      )
-      .run()
-      .expectClean()
+                )
+                .indented()
+        )
+        .run()
+        .expectClean()
   }
 
   fun testKotlinCollection_randomImport() {
     // b/427761232
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
             package another.pkg
 
             class Foo
 
             fun Foo?.bar() { this?.baz() }
           """
-          )
-          .indented(),
-        kotlin(
-            """
+                )
+                .indented(),
+            kotlin(
+                    """
             import another.pkg.bar // random import
 
             fun test() {
@@ -443,11 +443,11 @@ src/my/cool/lib/test.kt:5: Warning: removeMiddle is defined both as a member in 
               set.remove("hi") // Member
             }
           """
-          )
-          .indented(),
-      )
-      .run()
-      .expectClean()
+                )
+                .indented(),
+        )
+        .run()
+        .expectClean()
   }
 
   fun testKotlinCollection_explicitImport() {
@@ -457,9 +457,9 @@ src/my/cool/lib/test.kt:5: Warning: removeMiddle is defined both as a member in 
     }
     // b/427761232
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
             import kotlin.collections.remove // technically unused yet explicit import
 
             fun test() {
@@ -468,26 +468,26 @@ src/my/cool/lib/test.kt:5: Warning: removeMiddle is defined both as a member in 
               set.remove("hi") // Member
             }
           """
-          )
-          .indented()
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .run()
+        .expect(
+            """
 src/test.kt:6: Warning: remove is defined both as a member in class kotlin.collections.MutableSet and an extension in package kotlin.collections. The defined behavior for this is to use the member, but since the extension is explicitly imported into this file, there's a chance that this was not expected. (One common way this happens is for members to be added to a class after code was already written to use an extension). [MemberExtensionConflict]
   set.remove("hi") // Member
   ~~~~~~~~~~~~~~~~
 0 errors, 1 warning
         """
-      )
+        )
   }
 
   fun testKotlinCollection_explicitImportAlias() {
     // b/427761232
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
             import kotlin.collections.remove as extRemove
 
             fun test() {
@@ -496,34 +496,34 @@ src/test.kt:6: Warning: remove is defined both as a member in class kotlin.colle
               set.extRemove("hi") // Extension
             }
           """
-          )
-          .indented()
-      )
-      .run()
-      .expectClean()
+                )
+                .indented()
+        )
+        .run()
+        .expectClean()
   }
 
   fun testValueClass_source() {
     // b/427808171
     val project1 =
-      project()
-        .files(
-          java(
-              """
+        project()
+            .files(
+                java(
+                        """
             package my.pkg;
 
             public interface MyView {
               void setBackgroundColor(int rgb);
             }
           """
+                    )
+                    .indented()
             )
-            .indented()
-        )
     val project2 =
-      project()
-        .files(
-          kotlin(
-              """
+        project()
+            .files(
+                kotlin(
+                        """
             package another.pkg
 
             import my.pkg.MyView
@@ -539,15 +539,15 @@ src/test.kt:6: Warning: remove is defined both as a member in class kotlin.colle
 
             fun colorWhite() = MyColor.White
           """
+                    )
+                    .indented()
             )
-            .indented()
-        )
-        .dependsOn(project1)
+            .dependsOn(project1)
     val project3 =
-      project()
-        .files(
-          kotlin(
-              """
+        project()
+            .files(
+                kotlin(
+                        """
             package yet.another.pkg
 
             import another.pkg.MyColor
@@ -561,48 +561,48 @@ src/test.kt:6: Warning: remove is defined both as a member in class kotlin.colle
               v.setBackgroundColor(colorWhite()) // Extension
             }
           """
+                    )
+                    .indented()
             )
-            .indented()
-        )
-        .dependsOn(project1)
-        .dependsOn(project2)
+            .dependsOn(project1)
+            .dependsOn(project2)
     lint().projects(project1, project2, project3).run().expectClean()
   }
 
   fun testValueClass_binary() {
     // b/427808171
     val project1 =
-      project()
-        .files(
-          bytecode(
-            "libs/view.jar",
-            java(
-                """
+        project()
+            .files(
+                bytecode(
+                    "libs/view.jar",
+                    java(
+                            """
               package my.pkg;
 
               public interface MyView {
                 void setBackgroundColor(int rgb);
               }
             """
-              )
-              .indented(),
-            0xe4b0da78,
-            """
+                        )
+                        .indented(),
+                    0xe4b0da78,
+                    """
                 my/pkg/MyView.class:
                 H4sIAAAAAAAA/zv1b9c+BgYGWwZOdgYmRgbe3Er9gux0fd/KsMzUcnYGFkYG
                 gazEskT9nMS8dH3/pKzU5BJGBqHi1BKnxOTs9KL80rwU5/yc/CJGBhYNT80w
                 Rgau4PzSouRUt8ycVEYGbog5eiAj2BgZGBmYGUCAEWgsKwMbiMXADiSZGDgA
                 Eo20k4gAAAA=
                 """,
-          )
-        )
+                )
+            )
     val project2 =
-      project()
-        .files(
-          bytecode(
-            "libs/ui.jar",
-            kotlin(
-                """
+        project()
+            .files(
+                bytecode(
+                    "libs/ui.jar",
+                    kotlin(
+                            """
               package another.pkg
 
               import my.pkg.MyView
@@ -618,15 +618,15 @@ src/test.kt:6: Warning: remove is defined both as a member in class kotlin.colle
 
               fun colorWhite() = MyColor.White
             """
-              )
-              .indented(),
-            0x63c9e678,
-            """
+                        )
+                        .indented(),
+                    0x63c9e678,
+                    """
                 META-INF/main.kotlin_module:
                 H4sIAAAAAAAA/2NgYGBmYGBgBGJOBijg4uJiEGILSS0u8S7hkuDiTszLL8lI
                 LdIryE4X4vStdM7PyS/yLlFi0GIAAHsJ/lI+AAAA
                 """,
-            """
+                    """
                 another/pkg/MyColor＄Companion.class:
                 H4sIAAAAAAAA/5VSTU8TURQ97820MwyVlk8p8iFaFVCYQthhTLDGpEnRBEld
                 sDCv0ycMnc6Qea9Ed40L/4eu3bCSuDBN3fmjjHemRY0hJi7mfpz7zr0398z3
@@ -643,7 +643,7 @@ src/test.kt:6: Warning: remove is defined both as a member in class kotlin.colle
                 T56nOiaEmQE4HJZEU5immoE1ypyUNIY7KOJ+OvAuHpCvED5Db68fwqhitopi
                 FXO4QSHmq1jA4iGYwhJuHsJWcBSWFbIKtxRuK4wq5BRKPwH+rztqxgMAAA==
                 """,
-            """
+                    """
                 another/pkg/MyColor.class:
                 H4sIAAAAAAAA/31VS3PTVhT+rvySZSUoDoRYCeWVgpMADimllEAaMKUoOKFN
                 aGhIX7IjHMWy5Epyhu4y3bS/oItu6HTTDYtS2iQDM50Udv1NnU7PlRQ7dTyd
@@ -676,7 +676,7 @@ src/test.kt:6: Warning: remove is defined both as a member in class kotlin.colle
                 cqgHCB/BJlmj3TLJh5RiZQUxDZ9q+EzD5/iCtvhSg47yCpiHClZXcNiD7MHw
                 kArWaQ+jHhIekh6uBJrL9Jl7mPRwzkPew8lA2eOh18PCvzEalxy6CQAA
                 """,
-            """
+                    """
                 another/pkg/MyColorKt.class:
                 H4sIAAAAAAAA/31UW08TQRT+ZktvS4ECcmkRqlKlVGELoojVByAh2VjQCKkx
                 PJjpdtIu3e6SnS3KG/Gf6LMv+mDQB0PwzR9lPFMqIqCb7Jxzvjnzzbnt/vj5
@@ -696,13 +696,13 @@ src/test.kt:6: Warning: remove is defined both as a member in class kotlin.colle
                 XGzffQ+PSK4RPkXR5rYRMjFtIm/iNu6YmMGsCQOFbTCV2/w24pJ+I7grMSbp
                 q8KCxIjEqERYIvILKZtzMZ0EAAA=
                 """,
-          )
-        )
+                )
+            )
     val project3 =
-      project()
-        .files(
-          kotlin(
-              """
+        project()
+            .files(
+                kotlin(
+                        """
             import another.pkg.MyColor
             import another.pkg.colorWhite
             import another.pkg.setBackgroundColor
@@ -714,25 +714,25 @@ src/test.kt:6: Warning: remove is defined both as a member in class kotlin.colle
               v.setBackgroundColor(colorWhite()) // Extension
             }
           """
+                    )
+                    .indented()
             )
-            .indented()
-        )
-        .dependsOn(project1)
-        .dependsOn(project2)
+            .dependsOn(project1)
+            .dependsOn(project2)
     lint()
-      .projects(project1, project2, project3)
-      // TODO(b/430184413)
-      .allowCompilationErrors()
-      .run()
-      .expectClean()
+        .projects(project1, project2, project3)
+        // TODO(b/430184413)
+        .allowCompilationErrors()
+        .run()
+        .expectClean()
   }
 
   fun testFunctionValueParameter() {
     // b/429730003
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
             @JvmInline
             value class Color(val rgb: Int) {
               companion object {
@@ -755,10 +755,10 @@ src/test.kt:6: Warning: remove is defined both as a member in class kotlin.colle
             inline fun Int.replaceAlpha(alpha: Int) =
               Color.argb(alpha, red, green, blue)
           """
-          )
-          .indented()
-      )
-      .run()
-      .expectClean()
+                )
+                .indented()
+        )
+        .run()
+        .expectClean()
   }
 }

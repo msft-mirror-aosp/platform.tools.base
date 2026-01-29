@@ -81,11 +81,11 @@ class AssertDetector : Detector(), SourceCodeScanner {
     /** Whether assertions have a side effect. */
     @JvmField
     val SIDE_EFFECT =
-      Issue.create(
-        id = "AssertionSideEffect",
-        briefDescription = "Assertions with Side Effects",
-        explanation =
-          """
+        Issue.create(
+            id = "AssertionSideEffect",
+            briefDescription = "Assertions with Side Effects",
+            explanation =
+                """
                 Assertion conditions can have side effects. This is risky because the behavior \
                 depends on whether assertions are on or off. This is usually not intentional, \
                 and can lead to bugs where the production version differs from the version tested \
@@ -94,20 +94,20 @@ class AssertDetector : Detector(), SourceCodeScanner {
                 Generally, you'll want to perform the operation with the side effect before the \
                 assertion, and then assert that the result was what you expected.
                 """,
-        category = Category.PERFORMANCE,
-        priority = 4,
-        severity = Severity.WARNING,
-        implementation = IMPLEMENTATION,
-      )
+            category = Category.PERFORMANCE,
+            priority = 4,
+            severity = Severity.WARNING,
+            implementation = IMPLEMENTATION,
+        )
 
     /** In Kotlin arguments to assertions are always evaluated. */
     @JvmField
     val EXPENSIVE =
-      Issue.create(
-        id = "ExpensiveAssertion",
-        briefDescription = "Expensive Assertions",
-        explanation =
-          """
+        Issue.create(
+            id = "ExpensiveAssertion",
+            briefDescription = "Expensive Assertions",
+            explanation =
+                """
                 In Kotlin, assertions are not handled the same way as from the Java programming \
                 language. In particular, they're just implemented as a library call, and inside \
                 the library call the error is only thrown if assertions are enabled.
@@ -143,20 +143,18 @@ class AssertDetector : Detector(), SourceCodeScanner {
                 }
                 ```
                 """,
-        category = Category.PERFORMANCE,
-        priority = 6,
-        severity = Severity.WARNING,
-        implementation = IMPLEMENTATION,
-        enabledByDefault = false,
-      )
+            category = Category.PERFORMANCE,
+            priority = 6,
+            severity = Severity.WARNING,
+            implementation = IMPLEMENTATION,
+            enabledByDefault = false,
+        )
 
     /** Maximum number of indirect calls it will search */
     private val MAX_CALL_DEPTH = if (LintClient.isStudio) 1 else 2
     /** Maximum depth of the AST tree it will search */
     private val MAX_RECURSION_DEPTH = if (LintClient.isStudio) 5 else 10
-    /**
-     * When analyzing a block such as a method, the maximum number of statements it will consider
-     */
+    /** When analyzing a block such as a method, the maximum number of statements it will consider */
     private val MAX_STATEMENT_COUNT = if (LintClient.isStudio) 8 else 20
   }
 
@@ -169,17 +167,15 @@ class AssertDetector : Detector(), SourceCodeScanner {
       override fun visitCallExpression(node: UCallExpression) {
         if (node.sourcePsi is PsiAssertStatement) {
           val condition = (node.sourcePsi as PsiAssertStatement).assertCondition ?: return
-          UastFacade.convertElement(condition, node, UExpression::class.java)?.let {
-            checkSideEffect(context, it as UExpression)
-          }
+          UastFacade.convertElement(condition, node, UExpression::class.java)?.let { checkSideEffect(context, it as UExpression) }
         }
       }
     }
   }
 
   override fun getApplicableMethodNames(): List<String> =
-    // Kotlin assertions -- regular method call
-    listOf("assert")
+      // Kotlin assertions -- regular method call
+      listOf("assert")
 
   override fun visitMethodCall(context: JavaContext, node: UCallExpression, method: PsiMethod) {
     // Make sure it's Kotlin, and that the assert() call being called is the stdlib one
@@ -188,30 +184,27 @@ class AssertDetector : Detector(), SourceCodeScanner {
     }
 
     val containingClass = method.containingClass?.qualifiedName ?: return
-    if (
-      containingClass != "kotlin.PreconditionsKt__AssertionsJVMKt" &&
-        containingClass != "kotlin.PreconditionsKt"
-    ) {
+    if (containingClass != "kotlin.PreconditionsKt__AssertionsJVMKt" && containingClass != "kotlin.PreconditionsKt") {
       return
     }
 
     val valueArguments = node.valueArguments
     val first = valueArguments.firstOrNull()?.skipParenthesizedExprDown() ?: return
     val condition =
-      if (first is ULambdaExpression) {
-        valueArguments.last()
-      } else {
-        first
-      }
+        if (first is ULambdaExpression) {
+          valueArguments.last()
+        } else {
+          first
+        }
 
     checkKotlinAssertion(context, node, condition)
     checkSideEffect(context, condition)
   }
 
   private fun checkKotlinAssertion(
-    context: JavaContext,
-    assertion: UCallExpression,
-    condition: UExpression,
+      context: JavaContext,
+      assertion: UCallExpression,
+      condition: UExpression,
   ) {
     if (context.isEnabled(EXPENSIVE) && warnAboutWork(assertion, condition)) {
       val location = context.getLocation(condition)
@@ -220,8 +213,7 @@ class AssertDetector : Detector(), SourceCodeScanner {
       val cls = assertion.getParentOfType(UClass::class.java, true)
       if (cls?.sourcePsi != null) { // sourcePsi == null: top level functions
         fix = createKotlinAssertionStatusFix(context, assertion)
-        message +=
-          ". Consider surrounding assertion with `if (javaClass.desiredAssertionStatus()) { assert(...) }`"
+        message += ". Consider surrounding assertion with `if (javaClass.desiredAssertionStatus()) { assert(...) }`"
       } else {
         fix = null
       }
@@ -234,19 +226,19 @@ class AssertDetector : Detector(), SourceCodeScanner {
     val sideEffect = getSideEffect(condition, 0, 0)
     if (sideEffect != null) {
       context.report(
-        SIDE_EFFECT,
-        condition,
-        context.getLocation(sideEffect.first),
-        "Assertion condition has a side effect: ${sideEffect.second}",
+          SIDE_EFFECT,
+          condition,
+          context.getLocation(sideEffect.first),
+          "Assertion condition has a side effect: ${sideEffect.second}",
       )
     }
   }
 
   /** Looks for side effects, up to 2 calls deep and up to 5 statements in each method. */
   private fun getSideEffect(
-    node: UExpression?,
-    depth: Int,
-    callDepth: Int,
+      node: UExpression?,
+      depth: Int,
+      callDepth: Int,
   ): Pair<UExpression, String>? {
     node ?: return null
     if (depth == MAX_RECURSION_DEPTH) {
@@ -256,10 +248,10 @@ class AssertDetector : Detector(), SourceCodeScanner {
       is UUnaryExpression -> {
         val operator = node.operator
         if (
-          operator == UastPrefixOperator.INC ||
-            operator == UastPrefixOperator.DEC ||
-            operator == UastPostfixOperator.INC ||
-            operator == UastPostfixOperator.DEC
+            operator == UastPrefixOperator.INC ||
+                operator == UastPrefixOperator.DEC ||
+                operator == UastPostfixOperator.INC ||
+                operator == UastPostfixOperator.DEC
         ) {
           if ((callDepth > 0 && isLocal(node.operand))) {
             // If we're inside a called method and we're just manipulating local variables,
@@ -271,9 +263,9 @@ class AssertDetector : Detector(), SourceCodeScanner {
       }
       is UPolyadicExpression -> {
         if (
-          node is UBinaryExpression &&
-            node.operator is UastBinaryOperator.AssignOperator &&
-            (callDepth == 0 || !isLocal(node.leftOperand))
+            node is UBinaryExpression &&
+                node.operator is UastBinaryOperator.AssignOperator &&
+                (callDepth == 0 || !isLocal(node.leftOperand))
         ) {
           return Pair(node, node.sourcePsi?.text ?: node.operator.text)
         }
@@ -304,10 +296,7 @@ class AssertDetector : Detector(), SourceCodeScanner {
               }
               is KaFunctionSymbol -> {
                 val callableId = functionSymbol.callableId ?: return null
-                if (
-                  !callableId.packageName.startsWith(FqName("kotlin")) &&
-                    mayHaveSideEffects(callableId.callableName.identifier)
-                ) {
+                if (!callableId.packageName.startsWith(FqName("kotlin")) && mayHaveSideEffects(callableId.callableName.identifier)) {
                   return Pair(node, sourcePsi.text)
                 }
               }
@@ -364,14 +353,14 @@ class AssertDetector : Detector(), SourceCodeScanner {
   }
 
   private fun mayHaveSideEffects(name: String): Boolean =
-    name == "add" ||
-      name == "remove" ||
-      name == "put" ||
-      name == "delete" ||
-      name == "mkdir" ||
-      name == "mkdirs" ||
-      // generic setter
-      name.startsWith("set") && name.length > 3 && name[3].isUpperCase()
+      name == "add" ||
+          name == "remove" ||
+          name == "put" ||
+          name == "delete" ||
+          name == "mkdir" ||
+          name == "mkdirs" ||
+          // generic setter
+          name.startsWith("set") && name.length > 3 && name[3].isUpperCase()
 
   private fun isLocal(lhs: UExpression): Boolean {
     val resolved = lhs.tryResolve()
@@ -379,22 +368,22 @@ class AssertDetector : Detector(), SourceCodeScanner {
   }
 
   private fun createKotlinAssertionStatusFix(
-    context: JavaContext,
-    assertCall: UCallExpression,
+      context: JavaContext,
+      assertCall: UCallExpression,
   ): LintFix {
     return fix()
-      .name("Surround with desiredAssertionStatus() check")
-      .replace()
-      .range(context.getLocation(assertCall))
-      .pattern("(.*)")
-      .with("if (javaClass.desiredAssertionStatus()) { \\k<1> }")
-      .reformat(true)
-      .build()
+        .name("Surround with desiredAssertionStatus() check")
+        .replace()
+        .range(context.getLocation(assertCall))
+        .pattern("(.*)")
+        .with("if (javaClass.desiredAssertionStatus()) { \\k<1> }")
+        .reformat(true)
+        .build()
   }
 
   /**
-   * Returns true if the given assert call is performing computation in its condition without
-   * explicitly checking for whether assertions are enabled.
+   * Returns true if the given assert call is performing computation in its condition without explicitly checking for whether assertions are
+   * enabled.
    */
   private fun warnAboutWork(assertCall: UCallExpression, condition: UExpression): Boolean {
     return isExpensive(condition, 0) && !isWithinAssertionStatusCheck(assertCall)
@@ -424,12 +413,11 @@ class AssertDetector : Detector(), SourceCodeScanner {
       return false
     } else if (argument is UParenthesizedExpression) {
       return isExpensive(
-        argument.expression,
-        depth,
+          argument.expression,
+          depth,
       ) // not +1: cheap and want to allow parenthesis mode tests
     } else if (argument is UBinaryExpression) {
-      return isExpensive(argument.leftOperand, depth + 1) ||
-        isExpensive(argument.rightOperand, depth + 1)
+      return isExpensive(argument.leftOperand, depth + 1) || isExpensive(argument.rightOperand, depth + 1)
     } else if (argument is UUnaryExpression) {
       return isExpensive(argument.operand, depth + 1)
     } else if (argument is USimpleNameReferenceExpression) {
@@ -475,8 +463,8 @@ class AssertDetector : Detector(), SourceCodeScanner {
     var curr = node.uastParent ?: return false
     while (true) {
       if (
-        curr is UIfExpression && isAssertionStatusCheck(curr.condition) ||
-          curr is USwitchClauseExpressionWithBody && curr.caseValues.all(::isAssertionStatusCheck)
+          curr is UIfExpression && isAssertionStatusCheck(curr.condition) ||
+              curr is USwitchClauseExpressionWithBody && curr.caseValues.all(::isAssertionStatusCheck)
       ) {
         return true
       }

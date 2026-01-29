@@ -25,9 +25,9 @@ class WrongImportDetectorTest : AbstractCheckTest() {
   fun testJava() {
     //noinspection all // Sample code
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
                 package test.pkg;
 
                 import android.app.Activity;
@@ -38,39 +38,39 @@ class WrongImportDetectorTest : AbstractCheckTest() {
                 public class BadImport {
                 }
                 """
-          )
-          .indented()
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .run()
+        .expect(
+            """
             src/test/pkg/BadImport.java:5: Warning: Don't include android.R here; use a fully qualified name for each usage instead [SuspiciousImport]
             import android.R;
             ~~~~~~~~~~~~~~~~~
             0 errors, 1 warnings
             """
-      )
+        )
   }
 
   fun testKotlin() {
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
                 import android.R // ERROR
                 import android.R as AndroidR // OK
                 """
-          )
-          .indented()
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .run()
+        .expect(
+            """
             src/test.kt:1: Warning: Don't include android.R here; use a fully qualified name for each usage instead [SuspiciousImport]
             import android.R // ERROR
             ~~~~~~~~~~~~~~~~~~~~~~~~~
             0 errors, 1 warnings
             """
-      )
+        )
   }
 }

@@ -38,11 +38,10 @@ import com.android.xml.AndroidManifest.NODE_APPLICATION
 import org.w3c.dom.Attr
 
 /**
- * Detector that checks that the `android:hasCode` application attribute is set to false when we
- * detect a Watch Face Format usage.
+ * Detector that checks that the `android:hasCode` application attribute is set to false when we detect a Watch Face Format usage.
  *
- * We detect the usage of WFF by checking the presence of the [WATCH_FACE_FORMAT_VERSION_PROPERTY]
- * property or the presence of a Declarative Watch Face file in `res/raw`.
+ * We detect the usage of WFF by checking the presence of the [WATCH_FACE_FORMAT_VERSION_PROPERTY] property or the presence of a Declarative
+ * Watch Face file in `res/raw`.
  */
 class WatchFaceFormatDeclaresHasNoCodeDetector : WearDetector(), XmlScanner {
   override fun afterCheckFile(context: Context) {
@@ -50,10 +49,7 @@ class WatchFaceFormatDeclaresHasNoCodeDetector : WearDetector(), XmlScanner {
     val xmlContext = context as? XmlContext ?: return
     val root = xmlContext.document.documentElement
     val application = XmlUtils.getFirstSubTagByName(root, NODE_APPLICATION) ?: return
-    if (
-      !hasWatchFaceFormatVersionProperty(application) &&
-        !hasDeclarativeWatchFaceFile(context.project)
-    ) {
+    if (!hasWatchFaceFormatVersionProperty(application) && !hasDeclarativeWatchFaceFile(context.project)) {
       return
     }
 
@@ -61,13 +57,13 @@ class WatchFaceFormatDeclaresHasNoCodeDetector : WearDetector(), XmlScanner {
     if (hasCodeAttribute != null && hasCodeAttribute.isFalse(context)) return
 
     context.report(
-      ISSUE,
-      context.getLocation(
-        node = hasCodeAttribute ?: application,
-        type = if (hasCodeAttribute != null) LocationType.DEFAULT else LocationType.NAME,
-      ),
-      "Applications using Watch Face Format must declare `hasCode=false`",
-      fix().set(ANDROID_URI, ATTRIBUTE_HASCODE, VALUE_FALSE).build(),
+        ISSUE,
+        context.getLocation(
+            node = hasCodeAttribute ?: application,
+            type = if (hasCodeAttribute != null) LocationType.DEFAULT else LocationType.NAME,
+        ),
+        "Applications using Watch Face Format must declare `hasCode=false`",
+        fix().set(ANDROID_URI, ATTRIBUTE_HASCODE, VALUE_FALSE).build(),
     )
   }
 
@@ -78,31 +74,31 @@ class WatchFaceFormatDeclaresHasNoCodeDetector : WearDetector(), XmlScanner {
     }
 
     return context.client
-      // Declarative Watch Faces can only use resources declared within the project
-      .getResources(context.project, ResourceRepositoryScope.PROJECT_ONLY)
-      .getResources(ResourceNamespace.RES_AUTO, resourceUrl.type, resourceUrl.name)
-      .mapNotNull { it.resourceValue?.value }
-      .all { it == VALUE_FALSE }
+        // Declarative Watch Faces can only use resources declared within the project
+        .getResources(context.project, ResourceRepositoryScope.PROJECT_ONLY)
+        .getResources(ResourceNamespace.RES_AUTO, resourceUrl.type, resourceUrl.name)
+        .mapNotNull { it.resourceValue?.value }
+        .all { it == VALUE_FALSE }
   }
 
   companion object {
     @JvmField
     val ISSUE =
-      Issue.create(
-        id = "WatchFaceFormatDeclaresHasNoCode",
-        briefDescription = "The `hasCode` attribute should be set to `false`",
-        explanation =
-          "Watch Face Format is a resource-only format, so the `hasCode` attribute should be set to `false` to reflect this.",
-        category = Category.CORRECTNESS,
-        priority = 7,
-        severity = Severity.ERROR,
-        moreInfo = "https://developer.android.com/training/wearables/wff/setup#declare-wff-use",
-        implementation =
-          Implementation(
-            WatchFaceFormatDeclaresHasNoCodeDetector::class.java,
-            Scope.MANIFEST_SCOPE,
-          ),
-        androidSpecific = true,
-      )
+        Issue.create(
+            id = "WatchFaceFormatDeclaresHasNoCode",
+            briefDescription = "The `hasCode` attribute should be set to `false`",
+            explanation =
+                "Watch Face Format is a resource-only format, so the `hasCode` attribute should be set to `false` to reflect this.",
+            category = Category.CORRECTNESS,
+            priority = 7,
+            severity = Severity.ERROR,
+            moreInfo = "https://developer.android.com/training/wearables/wff/setup#declare-wff-use",
+            implementation =
+                Implementation(
+                    WatchFaceFormatDeclaresHasNoCodeDetector::class.java,
+                    Scope.MANIFEST_SCOPE,
+                ),
+            androidSpecific = true,
+        )
   }
 }

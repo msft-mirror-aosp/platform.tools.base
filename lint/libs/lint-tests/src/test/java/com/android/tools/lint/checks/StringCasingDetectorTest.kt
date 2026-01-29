@@ -21,9 +21,9 @@ import com.android.tools.lint.detector.api.Detector
 class StringCasingDetectorTest : AbstractCheckTest() {
 
   private val duplicateStrings =
-    xml(
-      "res/values/duplicate_strings.xml",
-      """<?xml version="1.0" encoding="utf-8"?>
+      xml(
+          "res/values/duplicate_strings.xml",
+          """<?xml version="1.0" encoding="utf-8"?>
                 <resources>
                     <string name="hello">hello</string>
                     <string name="hello_caps">HELLO</string>
@@ -31,7 +31,7 @@ class StringCasingDetectorTest : AbstractCheckTest() {
                     <string name="title_casing_hello_world">Hello World</string>
                 </resources>
                 """,
-    )
+      )
 
   override fun getDetector(): Detector {
     return StringCasingDetector()
@@ -39,7 +39,7 @@ class StringCasingDetectorTest : AbstractCheckTest() {
 
   fun testDuplicateStrings() {
     val expected =
-      """
+        """
             res/values/duplicate_strings.xml:3: Warning: Duplicate string value HELLO, used in hello_caps and hello. Use android:inputType or android:capitalize to treat these as the same and avoid string duplication. [DuplicateStrings]
                                 <string name="hello">hello</string>
                                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -58,34 +58,34 @@ class StringCasingDetectorTest : AbstractCheckTest() {
   }
 
   private val turkishNonDuplicateStrings =
-    xml(
-      "res/values-tr/duplicate_strings.xml",
-      """<?xml version="1.0" encoding="utf-8"?>
+      xml(
+          "res/values-tr/duplicate_strings.xml",
+          """<?xml version="1.0" encoding="utf-8"?>
                 <resources>
                     <string name="hello i">hello i</string>
                     <string name="hello_cap">hello I</string>
                 </resources>
                 """,
-    )
+      )
 
   fun testTurkishNonDuplicateStrings() {
     lint().files(turkishNonDuplicateStrings).run().expectClean()
   }
 
   private val turkishDuplicateStrings =
-    xml(
-      "res/values-tr/duplicate_strings.xml",
-      """<?xml version="1.0" encoding="utf-8"?>
+      xml(
+          "res/values-tr/duplicate_strings.xml",
+          """<?xml version="1.0" encoding="utf-8"?>
                 <resources>
                     <string name="hello">hello i</string>
                     <string name="hello_caps">hello İ</string>
                 </resources>
                 """,
-    )
+      )
 
   fun testTurkishDuplicateStrings() {
     val expected =
-      """
+        """
             res/values-tr/duplicate_strings.xml:3: Warning: Duplicate string value hello İ, used in hello_caps and hello. Use android:inputType or android:capitalize to treat these as the same and avoid string duplication. [DuplicateStrings]
                                 <string name="hello">hello i</string>
                                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -99,7 +99,7 @@ class StringCasingDetectorTest : AbstractCheckTest() {
 
   fun testDuplicatesWithoutCaseDifferences() {
     val expected =
-      """
+        """
             res/values/duplicate_strings.xml:3: Warning: Duplicate string value Hello, used in hello1, hello2 and hello3 [DuplicateStrings]
                                 <string name="hello1">Hello</string>
                                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -112,76 +112,76 @@ class StringCasingDetectorTest : AbstractCheckTest() {
             0 errors, 1 warnings
             """
     lint()
-      .files(
-        xml(
-          "res/values/duplicate_strings.xml",
-          """<?xml version="1.0" encoding="utf-8"?>
+        .files(
+            xml(
+                "res/values/duplicate_strings.xml",
+                """<?xml version="1.0" encoding="utf-8"?>
                 <resources>
                     <string name="hello1">Hello</string>
                     <string name="hello2">Hello</string>
                     <string name="hello3">Hello</string>
                 </resources>
                 """,
+            )
         )
-      )
-      .run()
-      .expect(expected)
+        .run()
+        .expect(expected)
   }
 
   fun testIgnoredNonTranslatable() {
     // Regression test for
     // https://issuetracker.google.com/112492581
     lint()
-      .files(
-        xml(
-            "res/values/duplicate_strings.xml",
-            """
+        .files(
+            xml(
+                    "res/values/duplicate_strings.xml",
+                    """
                 <resources>
                     <string name="off">off</string>
                     <string translatable="false" name="off_debug">Off</string>
                 </resources>
                 """,
-          )
-          .indented()
-      )
-      .run()
-      .expectClean()
+                )
+                .indented()
+        )
+        .run()
+        .expectClean()
   }
 
   fun testCharacterData() {
     // Regression test for
     // https://issuetracker.google.com/142533357: Duplicate string doesn't work with CDATA
     lint()
-      .files(
-        xml(
-            "res/values/duplicate_strings.xml",
-            "<resources>\n" +
-              "    <string name=\"app_name\">lint bug</string>\n" +
-              "    <string name=\"item_one\"><![CDATA[<b>%1$\\s</b>]]> did something</string>\n" +
-              "    <string name=\"item_two\"><![CDATA[<b>You</b>]]> did something <![CDATA[<b>%1$\\s</b>]]></string>\n" +
-              "</resources>",
-          )
-          .indented()
-      )
-      .run()
-      .expectClean()
+        .files(
+            xml(
+                    "res/values/duplicate_strings.xml",
+                    "<resources>\n" +
+                        "    <string name=\"app_name\">lint bug</string>\n" +
+                        "    <string name=\"item_one\"><![CDATA[<b>%1$\\s</b>]]> did something</string>\n" +
+                        "    <string name=\"item_two\"><![CDATA[<b>You</b>]]> did something <![CDATA[<b>%1$\\s</b>]]></string>\n" +
+                        "</resources>",
+                )
+                .indented()
+        )
+        .run()
+        .expectClean()
   }
 
   fun testMarkup() {
     lint()
-      .files(
-        xml(
-            "res/values/colors.xml",
-            """
+        .files(
+            xml(
+                    "res/values/colors.xml",
+                    """
             <resources>
                 <string name="text1"><font color="#FF0000">text</font></string>
                 <string name="text2"><font color="#00FF00">text</font></string>
             </resources>
           """,
-          )
-          .indented()
-      )
-      .run()
-      .expectClean()
+                )
+                .indented()
+        )
+        .run()
+        .expectClean()
   }
 }

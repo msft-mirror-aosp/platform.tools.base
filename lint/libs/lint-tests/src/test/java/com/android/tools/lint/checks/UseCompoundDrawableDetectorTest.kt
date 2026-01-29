@@ -26,17 +26,17 @@ class UseCompoundDrawableDetectorTest : AbstractCheckTest() {
   fun testCompound() {
 
     val expected =
-      """
+        """
             res/layout/compound.xml:1: Warning: This tag and its children can be replaced by one <TextView/> and a compound drawable [UseCompoundDrawables]
             <LinearLayout
              ~~~~~~~~~~~~
             0 errors, 1 warnings
             """
     lint()
-      .files(
-        xml(
-            "res/layout/compound.xml",
-            """
+        .files(
+            xml(
+                    "res/layout/compound.xml",
+                    """
                     <LinearLayout
                         xmlns:android="http://schemas.android.com/apk/res/android"
 
@@ -53,20 +53,20 @@ class UseCompoundDrawableDetectorTest : AbstractCheckTest() {
 
                     </LinearLayout>
                     """,
-          )
-          .indented()
-      )
-      .run()
-      .expect(expected)
+                )
+                .indented()
+        )
+        .run()
+        .expect(expected)
   }
 
   fun testCompound2() {
     // Ignore layouts that set a custom background
     lint()
-      .files(
-        xml(
-            "res/layout/compound2.xml",
-            """
+        .files(
+            xml(
+                    "res/layout/compound2.xml",
+                    """
                 <LinearLayout
                     xmlns:android="http://schemas.android.com/apk/res/android"
                     android:background="@android:drawable/ic_dialog_alert"
@@ -83,20 +83,20 @@ class UseCompoundDrawableDetectorTest : AbstractCheckTest() {
 
                 </LinearLayout>
                 """,
-          )
-          .indented()
-      )
-      .run()
-      .expectClean()
+                )
+                .indented()
+        )
+        .run()
+        .expectClean()
   }
 
   fun testCompound3() {
     // Ignore layouts that set an image scale type
     lint()
-      .files(
-        xml(
-            "res/layout/compound3.xml",
-            """
+        .files(
+            xml(
+                    "res/layout/compound3.xml",
+                    """
                     <LinearLayout
                         xmlns:android="http://schemas.android.com/apk/res/android"
 
@@ -114,21 +114,21 @@ class UseCompoundDrawableDetectorTest : AbstractCheckTest() {
 
                     </LinearLayout>
                     """,
-          )
-          .indented()
-      )
-      .run()
-      .expectClean()
+                )
+                .indented()
+        )
+        .run()
+        .expectClean()
   }
 
   fun testSkipClickable() {
     // Regression test for issue 133864395
 
     lint()
-      .files(
-        xml(
-            "res/layout/clickable.xml",
-            """
+        .files(
+            xml(
+                    "res/layout/clickable.xml",
+                    """
                     <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
                         xmlns:tools="http://schemas.android.com/tools"
                         android:layout_width="match_parent"
@@ -157,10 +157,10 @@ class UseCompoundDrawableDetectorTest : AbstractCheckTest() {
                             tools:text="Testing" />
                     </LinearLayout>
                     """,
-          )
-          .indented()
-      )
-      .run()
-      .expectClean()
+                )
+                .indented()
+        )
+        .run()
+        .expectClean()
   }
 }

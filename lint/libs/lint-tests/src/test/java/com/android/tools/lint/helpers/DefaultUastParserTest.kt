@@ -40,88 +40,86 @@ class DefaultUastParserTest {
   @Test
   fun testNameLocationForDefaultSetterParameter() {
     listOf(
-        kotlin(
-          """
+            kotlin(
+                """
                 package test.pkg
 
                 class Test {
                   var variable = ""
                 }
                 """
+            )
         )
-      )
-      .use { context ->
-        var propertyNameLocation: Location? = null
-        var propertyLocation: Location? = null
-        var setterParameterNameLocation: Location? = null
-        var setterParameterLocation: Location? = null
-        context.uastFile!!.accept(
-          object : AbstractUastVisitor() {
-            override fun visitVariable(node: UVariable): Boolean {
-              if (node.name == "variable") {
-                propertyNameLocation = context.getNameLocation(node)
-                propertyLocation = context.getLocation(node as UElement)
+        .use { context ->
+          var propertyNameLocation: Location? = null
+          var propertyLocation: Location? = null
+          var setterParameterNameLocation: Location? = null
+          var setterParameterLocation: Location? = null
+          context.uastFile!!.accept(
+              object : AbstractUastVisitor() {
+                override fun visitVariable(node: UVariable): Boolean {
+                  if (node.name == "variable") {
+                    propertyNameLocation = context.getNameLocation(node)
+                    propertyLocation = context.getLocation(node as UElement)
+                  }
+                  return super.visitVariable(node)
+                }
+
+                override fun visitParameter(node: UParameter): Boolean {
+                  // NB: we're testing synthetic setter parameter, i.e., no sourcePsi
+                  val name = (node.javaPsi as? PsiNamedElement)?.name
+                  if (name == SpecialNames.IMPLICIT_SET_PARAMETER.asString()) {
+                    setterParameterNameLocation = context.getNameLocation(node)
+                    setterParameterLocation = context.getLocation(node as UElement)
+                  }
+
+                  return super.visitParameter(node)
+                }
               }
-              return super.visitVariable(node)
-            }
+          )
 
-            override fun visitParameter(node: UParameter): Boolean {
-              // NB: we're testing synthetic setter parameter, i.e., no sourcePsi
-              val name = (node.javaPsi as? PsiNamedElement)?.name
-              if (name == SpecialNames.IMPLICIT_SET_PARAMETER.asString()) {
-                setterParameterNameLocation = context.getNameLocation(node)
-                setterParameterLocation = context.getLocation(node as UElement)
-              }
+          assertEquals(
+              """
+              var variable = ""
+              ~~~~~~~~~~~~~~~~~
+              """
+                  .trimIndent(),
+              propertyLocation!!.getErrorLines { context.getContents() }?.trimIndent(),
+          )
 
-              return super.visitParameter(node)
-            }
-          }
-        )
+          assertEquals(
+              """
+              var variable = ""
+                  ~~~~~~~~
+              """
+                  .trimIndent(),
+              propertyNameLocation!!.getErrorLines { context.getContents() }?.trimIndent(),
+          )
 
-        assertEquals(
-          """
-                var variable = ""
-                ~~~~~~~~~~~~~~~~~
-                """
-            .trimIndent(),
-          propertyLocation!!.getErrorLines { context.getContents() }?.trimIndent(),
-        )
+          assertNotNull(setterParameterNameLocation)
+          // Position 0 (from empty range) may indicate that this name location is valid,
+          // which is not true for synthetic, default setter parameter, since it doesn't exist.
+          // Better to restore/stick to the old behavior: `null` position.
+          assertNull(setterParameterNameLocation!!.start)
 
-        assertEquals(
-          """
-                var variable = ""
-                    ~~~~~~~~
-                """
-            .trimIndent(),
-          propertyNameLocation!!.getErrorLines { context.getContents() }?.trimIndent(),
-        )
+          assertEquals(
+              """
+              var variable = ""
+              ~~~~~~~~~~~~~~~~~
+              """
+                  .trimIndent(),
+              setterParameterLocation!!.getErrorLines { context.getContents() }?.trimIndent(),
+          )
 
-        assertNotNull(setterParameterNameLocation)
-        // Position 0 (from empty range) may indicate that this name location is valid,
-        // which is not true for synthetic, default setter parameter, since it doesn't exist.
-        // Better to restore/stick to the old behavior: `null` position.
-        assertNull(setterParameterNameLocation!!.start)
-
-        assertEquals(
-          """
-                var variable = ""
-                ~~~~~~~~~~~~~~~~~
-                """
-            .trimIndent(),
-          setterParameterLocation!!.getErrorLines { context.getContents() }?.trimIndent(),
-        )
-
-        assertNull(
-          setterParameterNameLocation!!.getErrorLines { context.getContents() }?.trimIndent()
-        )
-      }
+          assertNull(setterParameterNameLocation!!.getErrorLines { context.getContents() }?.trimIndent())
+        }
   }
 
   @Test
   fun testUDeclarationsExpression() {
     listOf(
-        java(
-          """
+            java(
+                """
                 package test.pkg;
                 class Test {
                   public void foo() {
@@ -133,46 +131,46 @@ class DefaultUastParserTest {
                   }
                 }
                 """
+            )
         )
-      )
-      .use { context ->
-        var callLocation: Location? = null
-        var declarationLocation: Location? = null
+        .use { context ->
+          var callLocation: Location? = null
+          var declarationLocation: Location? = null
 
-        context.uastFile!!.accept(
-          object : AbstractUastVisitor() {
-            override fun visitMethod(node: UMethod): Boolean {
-              when (node.name) {
-                "foo" -> {
-                  callLocation = context.getLocation(node.firstExpression)
-                }
-                "bar" -> {
-                  declarationLocation = context.getLocation(node.firstExpression)
+          context.uastFile!!.accept(
+              object : AbstractUastVisitor() {
+                override fun visitMethod(node: UMethod): Boolean {
+                  when (node.name) {
+                    "foo" -> {
+                      callLocation = context.getLocation(node.firstExpression)
+                    }
+                    "bar" -> {
+                      declarationLocation = context.getLocation(node.firstExpression)
+                    }
+                  }
+                  return super.visitMethod(node)
                 }
               }
-              return super.visitMethod(node)
-            }
-          }
-        )
+          )
 
-        assertEquals(
-          """
-                System.out.println("foo");
-                ~~~~~~~~~~~~~~~~~~~~~~~~~
-                """
-            .trimIndent(),
-          callLocation?.getErrorLines { context.getContents() }?.trimIndent(),
-        )
+          assertEquals(
+              """
+              System.out.println("foo");
+              ~~~~~~~~~~~~~~~~~~~~~~~~~
+              """
+                  .trimIndent(),
+              callLocation?.getErrorLines { context.getContents() }?.trimIndent(),
+          )
 
-        assertEquals(
-          """
-                String bar = "bar";
-                ~~~~~~~~~~~~~~~~~~~
-                """
-            .trimIndent(),
-          declarationLocation?.getErrorLines { context.getContents() }?.trimIndent(),
-        )
-      }
+          assertEquals(
+              """
+              String bar = "bar";
+              ~~~~~~~~~~~~~~~~~~~
+              """
+                  .trimIndent(),
+              declarationLocation?.getErrorLines { context.getContents() }?.trimIndent(),
+          )
+        }
   }
 
   private val UMethod.firstExpression: UExpression?

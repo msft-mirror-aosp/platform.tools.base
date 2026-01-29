@@ -22,7 +22,7 @@ class AddJavascriptInterfaceDetectorTest : AbstractCheckTest() {
 
   fun test() {
     val expected =
-      """
+        """
             src/test/pkg/AddJavascriptInterfaceTest.java:16: Warning: WebView.addJavascriptInterface should not be called with minSdkVersion < 17 for security reasons: JavaScript can use reflection to manipulate application [AddJavascriptInterface]
                         webView.addJavascriptInterface(object, string);
                                 ~~~~~~~~~~~~~~~~~~~~~~
@@ -54,9 +54,9 @@ class AddJavascriptInterfaceDetectorTest : AbstractCheckTest() {
   }
 
   private val testFile =
-    java(
-        "src/test/pkg/AddJavascriptInterfaceTest.java",
-        """
+      java(
+              "src/test/pkg/AddJavascriptInterfaceTest.java",
+              """
         package test.pkg;
 
         import android.webkit.WebView;
@@ -94,8 +94,8 @@ class AddJavascriptInterfaceDetectorTest : AbstractCheckTest() {
                 }
             }
         }""",
-      )
-      .indented()
+          )
+          .indented()
 
   override fun getDetector(): Detector {
     return AddJavascriptInterfaceDetector()

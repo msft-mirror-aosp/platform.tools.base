@@ -20,27 +20,27 @@ class MonochromeLauncherIconDetectorTest : AbstractCheckTest() {
 
   fun testDocumentationExample() {
     lint()
-      .files(
-        xml(
-          "res/drawable-ldpi/ic_icon.xml",
-          """
+        .files(
+            xml(
+                "res/drawable-ldpi/ic_icon.xml",
+                """
                     <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
                         <background android:drawable="@drawable/ic_launcher_background" />
                         <foreground android:drawable="@drawable/ic_launcher_foreground" />
                     </adaptive-icon>
                 """,
-        ),
-        xml(
-          "res/drawable-ldpi/ic_round_icon.xml",
-          """
+            ),
+            xml(
+                "res/drawable-ldpi/ic_round_icon.xml",
+                """
                     <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
                         <background android:drawable="@drawable/ic_launcher_background" />
                         <foreground android:drawable="@drawable/ic_launcher_foreground" />
                     </adaptive-icon>
                 """,
-        ),
-        manifest(
-            """
+            ),
+            manifest(
+                    """
                     <manifest xmlns:android="http://schemas.android.com/apk/res/android" package="test.pkg">
                         <application
                             android:icon="@drawable/ic_icon"
@@ -48,12 +48,12 @@ class MonochromeLauncherIconDetectorTest : AbstractCheckTest() {
                             android:label="@string/app_name" >
                         </application>
                     </manifest>"""
-          )
-          .indented(),
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+        )
+        .run()
+        .expect(
+            """
                 res/drawable-ldpi/ic_icon.xml:2: Warning: The application adaptive icon is missing a monochrome tag [MonochromeLauncherIcon]
                                     <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
                                     ^
@@ -62,34 +62,34 @@ class MonochromeLauncherIconDetectorTest : AbstractCheckTest() {
                                     ^
                 0 errors, 2 warnings
                 """
-      )
+        )
   }
 
   fun testNoIssues() {
     lint()
-      .files(
-        xml(
-          "res/drawable-ldpi/ic_icon.xml",
-          """
+        .files(
+            xml(
+                "res/drawable-ldpi/ic_icon.xml",
+                """
                     <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
                         <background android:drawable="@drawable/ic_launcher_background" />
                         <foreground android:drawable="@drawable/ic_launcher_foreground" />
                         <monochrome android:drawable="@drawable/myicon" />
                     </adaptive-icon>
                 """,
-        ),
-        xml(
-          "res/drawable-ldpi/ic_round_icon.xml",
-          """
+            ),
+            xml(
+                "res/drawable-ldpi/ic_round_icon.xml",
+                """
                     <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
                         <background android:drawable="@drawable/ic_launcher_background" />
                         <foreground android:drawable="@drawable/ic_launcher_foreground" />
                         <monochrome android:drawable="@drawable/myicon" />
                     </adaptive-icon>
                 """,
-        ),
-        manifest(
-            """
+            ),
+            manifest(
+                    """
                     <manifest xmlns:android="http://schemas.android.com/apk/res/android" package="test.pkg">
                         <application
                             android:icon="@drawable/ic_icon"
@@ -97,37 +97,37 @@ class MonochromeLauncherIconDetectorTest : AbstractCheckTest() {
                             android:label="@string/app_name" >
                         </application>
                     </manifest>"""
-          )
-          .indented(),
-      )
-      .run()
-      .expectClean()
+                )
+                .indented(),
+        )
+        .run()
+        .expectClean()
   }
 
   fun testOnlyRoundIconMonochrome() {
     lint()
-      .files(
-        xml(
-          "res/drawable-ldpi/ic_icon.xml",
-          """
+        .files(
+            xml(
+                "res/drawable-ldpi/ic_icon.xml",
+                """
                     <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
                         <background android:drawable="@drawable/ic_launcher_background" />
                         <foreground android:drawable="@drawable/ic_launcher_foreground" />
                     </adaptive-icon>
                 """,
-        ),
-        xml(
-          "res/drawable-ldpi/ic_round_icon.xml",
-          """
+            ),
+            xml(
+                "res/drawable-ldpi/ic_round_icon.xml",
+                """
                     <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
                         <background android:drawable="@drawable/ic_launcher_background" />
                         <foreground android:drawable="@drawable/ic_launcher_foreground" />
                         <monochrome android:drawable="@drawable/myicon" />
                     </adaptive-icon>
                 """,
-        ),
-        manifest(
-            """
+            ),
+            manifest(
+                    """
                     <manifest xmlns:android="http://schemas.android.com/apk/res/android" package="test.pkg">
                         <application
                             android:icon="@drawable/ic_icon"
@@ -135,36 +135,36 @@ class MonochromeLauncherIconDetectorTest : AbstractCheckTest() {
                             android:label="@string/app_name" >
                         </application>
                     </manifest>"""
-          )
-          .indented(),
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+        )
+        .run()
+        .expect(
+            """
                 res/drawable-ldpi/ic_icon.xml:2: Warning: The application adaptive icon is missing a monochrome tag [MonochromeLauncherIcon]
                                     <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
                                     ^
                 0 errors, 1 warnings
                 """
-      )
+        )
   }
 
   fun testPngIcon() {
     lint()
-      .files(
-        xml(
-          "res/drawable-ldpi/ic_icon.xml",
-          """
+        .files(
+            xml(
+                "res/drawable-ldpi/ic_icon.xml",
+                """
                     <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
                         <background android:drawable="@drawable/ic_launcher_background" />
                         <foreground android:drawable="@drawable/ic_launcher_foreground" />
                         <monochrome android:drawable="@drawable/myicon" />
                     </adaptive-icon>
                 """,
-        ),
-        image("res/drawable/ic_round_icon.png", 48, 48),
-        manifest(
-            """
+            ),
+            image("res/drawable/ic_round_icon.png", 48, 48),
+            manifest(
+                    """
                     <manifest xmlns:android="http://schemas.android.com/apk/res/android" package="test.pkg">
                         <application
                             android:icon="@drawable/ic_icon"
@@ -172,10 +172,10 @@ class MonochromeLauncherIconDetectorTest : AbstractCheckTest() {
                             android:label="@string/app_name" >
                         </application>
                     </manifest>"""
-          )
-          .indented(),
-      )
-      .run()
-      .expectClean()
+                )
+                .indented(),
+        )
+        .run()
+        .expectClean()
   }
 }

@@ -40,12 +40,12 @@ class UastEnvironmentSourceSetTest {
     // Regression test for b/347624107
     val root = temp.newFolder().canonicalFile.absoluteFile
     val projects =
-      lint()
-        .files(
-          SUPPORT_ANNOTATIONS_JAR,
-          java(
-              "src/Foo.java",
-              """
+        lint()
+            .files(
+                SUPPORT_ANNOTATIONS_JAR,
+                java(
+                        "src/Foo.java",
+                        """
                   import androidx.annotation.RequiresApi;
                   public class Foo {
                     @RequiresApi(24)
@@ -54,11 +54,11 @@ class UastEnvironmentSourceSetTest {
                     }
                   }
                   """,
-            )
-            .indented(),
-          kotlin(
-              "src/Foo.kt",
-              """
+                    )
+                    .indented(),
+                kotlin(
+                        "src/Foo.kt",
+                        """
                   public open class Foo {
                     companion object {
                       @JvmStatic
@@ -68,11 +68,11 @@ class UastEnvironmentSourceSetTest {
                     }
                   }
                   """,
-            )
-            .indented(),
-          java(
-              "src/Bar.java",
-              """
+                    )
+                    .indented(),
+                java(
+                        "src/Bar.java",
+                        """
                   import static Foo.foo;
                   public class Bar {
                     public String bar(String x) {
@@ -80,15 +80,15 @@ class UastEnvironmentSourceSetTest {
                     }
                   }
                   """,
+                    )
+                    .indented(),
             )
-            .indented(),
-        )
-        .allowClassNameClashes(true)
-        .createProjects(root)
+            .allowClassNameClashes(true)
+            .createProjects(root)
 
     @Language("XML")
     val descriptor =
-      """
+        """
         <project>
           <sdk dir='${TestUtils.getSdk()}'/>
           <module name="app" android="true" library="false" compute_source_roots="false">
@@ -103,19 +103,19 @@ class UastEnvironmentSourceSetTest {
 
     Files.asCharSink(File(root, "project.xml"), Charsets.UTF_8).write(descriptor)
     MainTest.checkDriver(
-      "src/Bar.java:4: Error: Call requires API level 24 (current min is 1): foo [NewApi]\n" +
-        "    return foo(x);\n" +
-        "           ~~~\n" +
-        "1 error",
-      "",
+        "src/Bar.java:4: Error: Call requires API level 24 (current min is 1): foo [NewApi]\n" +
+            "    return foo(x);\n" +
+            "           ~~~\n" +
+            "1 error",
+        "",
 
-      // Expected exit code
-      ERRNO_SUCCESS,
+        // Expected exit code
+        ERRNO_SUCCESS,
 
-      // Args
-      arrayOf("--check", "NewApi", "--project", File(root, "project.xml").path),
-      { it.dos2unix() },
-      null,
+        // Args
+        arrayOf("--check", "NewApi", "--project", File(root, "project.xml").path),
+        { it.dos2unix() },
+        null,
     )
   }
 
@@ -124,12 +124,12 @@ class UastEnvironmentSourceSetTest {
     // Regression test for b/347624107
     val root = temp.newFolder().canonicalFile.absoluteFile
     val projects =
-      lint()
-        .files(
-          SUPPORT_ANNOTATIONS_JAR,
-          java(
-              "src/Foo.java",
-              """
+        lint()
+            .files(
+                SUPPORT_ANNOTATIONS_JAR,
+                java(
+                        "src/Foo.java",
+                        """
                   import androidx.annotation.RequiresApi;
                   public class Foo {
                     @RequiresApi(24)
@@ -138,11 +138,11 @@ class UastEnvironmentSourceSetTest {
                     }
                   }
                   """,
-            )
-            .indented(),
-          kotlin(
-              "src/Foo.kt",
-              """
+                    )
+                    .indented(),
+                kotlin(
+                        "src/Foo.kt",
+                        """
                   public open class Foo {
                     companion object {
                       @JvmStatic
@@ -152,11 +152,11 @@ class UastEnvironmentSourceSetTest {
                     }
                   }
                   """,
-            )
-            .indented(),
-          java(
-              "src/Bar.java",
-              """
+                    )
+                    .indented(),
+                java(
+                        "src/Bar.java",
+                        """
                   import static Foo.foo;
                   public class Bar {
                     public String bar(String x) {
@@ -164,15 +164,15 @@ class UastEnvironmentSourceSetTest {
                     }
                   }
                   """,
+                    )
+                    .indented(),
             )
-            .indented(),
-        )
-        .allowClassNameClashes(true)
-        .createProjects(root)
+            .allowClassNameClashes(true)
+            .createProjects(root)
 
     @Language("XML")
     val descriptor =
-      """
+        """
         <project>
           <sdk dir='${TestUtils.getSdk()}'/>
           <module name="app" android="true" library="false" compute_source_roots="false">
@@ -188,7 +188,7 @@ class UastEnvironmentSourceSetTest {
 
     Files.asCharSink(File(root, "project.xml"), Charsets.UTF_8).write(descriptor)
     MainTest.checkDriver(
-      """
+        """
         src/Bar.java:4: Error: Call requires API level 24 (current min is 1): foo [NewApi]
             return foo(x);
                    ~~~
@@ -196,17 +196,17 @@ class UastEnvironmentSourceSetTest {
             return foo(x);
                    ~~~
         2 errors
-      """
-        .trimIndent(),
-      "",
+        """
+            .trimIndent(),
+        "",
 
-      // Expected exit code
-      ERRNO_SUCCESS,
+        // Expected exit code
+        ERRNO_SUCCESS,
 
-      // Args
-      arrayOf("--check", "NewApi", "--project", File(root, "project.xml").path),
-      { it.dos2unix() },
-      null,
+        // Args
+        arrayOf("--check", "NewApi", "--project", File(root, "project.xml").path),
+        { it.dos2unix() },
+        null,
     )
   }
 
@@ -216,12 +216,12 @@ class UastEnvironmentSourceSetTest {
     // Regression test for b/347624107
     val root = temp.newFolder().canonicalFile.absoluteFile
     val projects =
-      lint()
-        .files(
-          SUPPORT_ANNOTATIONS_JAR,
-          java(
-              "src/Foo.java",
-              """
+        lint()
+            .files(
+                SUPPORT_ANNOTATIONS_JAR,
+                java(
+                        "src/Foo.java",
+                        """
                   import androidx.annotation.RequiresApi;
                   public class Foo {
                     @RequiresApi(24)
@@ -230,11 +230,11 @@ class UastEnvironmentSourceSetTest {
                     }
                   }
                   """,
-            )
-            .indented(),
-          kotlin(
-              "src/Foo.kt",
-              """
+                    )
+                    .indented(),
+                kotlin(
+                        "src/Foo.kt",
+                        """
                   public open class Foo {
                     companion object {
                       @JvmStatic
@@ -244,11 +244,11 @@ class UastEnvironmentSourceSetTest {
                     }
                   }
                   """,
-            )
-            .indented(),
-          java(
-              "src/Bar.java",
-              """
+                    )
+                    .indented(),
+                java(
+                        "src/Bar.java",
+                        """
                   import static Foo.foo;
                   public class Bar {
                     public String bar(String x) {
@@ -256,15 +256,15 @@ class UastEnvironmentSourceSetTest {
                     }
                   }
                   """,
+                    )
+                    .indented(),
             )
-            .indented(),
-        )
-        .allowClassNameClashes(true)
-        .createProjects(root)
+            .allowClassNameClashes(true)
+            .createProjects(root)
 
     @Language("XML")
     val descriptor =
-      """
+        """
         <project>
           <sdk dir='${TestUtils.getSdk()}'/>
           <module name="app" android="true" library="false" compute_source_roots="false">
@@ -280,16 +280,16 @@ class UastEnvironmentSourceSetTest {
 
     Files.asCharSink(File(root, "project.xml"), Charsets.UTF_8).write(descriptor)
     MainTest.checkDriver(
-      "No issues found.", // `foo` not resolved due to conflict, so error not detected
-      "",
+        "No issues found.", // `foo` not resolved due to conflict, so error not detected
+        "",
 
-      // Expected exit code
-      ERRNO_SUCCESS,
+        // Expected exit code
+        ERRNO_SUCCESS,
 
-      // Args
-      arrayOf("--check", "NewApi", "--project", File(root, "project.xml").path),
-      { it.dos2unix() },
-      null,
+        // Args
+        arrayOf("--check", "NewApi", "--project", File(root, "project.xml").path),
+        { it.dos2unix() },
+        null,
     )
   }
 
@@ -300,23 +300,23 @@ class UastEnvironmentSourceSetTest {
     // Intentional to run for both K1 and K2
     val root = temp.newFolder().canonicalFile.absoluteFile
     val projects =
-      lint()
-        .files(
-          manifest().minSdk(14),
-          SUPPORT_ANNOTATIONS_JAR,
-          java(
-              "src/test/pkg/package-info.java",
-              """
+        lint()
+            .files(
+                manifest().minSdk(14),
+                SUPPORT_ANNOTATIONS_JAR,
+                java(
+                        "src/test/pkg/package-info.java",
+                        """
               @RequiresApi(21)
               package test.pkg;
 
               import androidx.annotation.RequiresApi;
             """,
-            )
-            .indented(),
-          java(
-              "src/test/pkg/Foo.java",
-              """
+                    )
+                    .indented(),
+                java(
+                        "src/test/pkg/Foo.java",
+                        """
               package test.pkg;
 
               import androidx.annotation.RequiresApi;
@@ -330,14 +330,14 @@ class UastEnvironmentSourceSetTest {
                 }
               }
             """,
+                    )
+                    .indented(),
             )
-            .indented(),
-        )
-        .createProjects(root)
+            .createProjects(root)
 
     @Language("XML")
     val descriptor =
-      """
+        """
         <project>
           <sdk dir='${TestUtils.getSdk()}'/>
           <module name="app" android="true" library="false" compute_source_roots="false">
@@ -350,16 +350,16 @@ class UastEnvironmentSourceSetTest {
 
     Files.asCharSink(File(root, "project.xml"), Charsets.UTF_8).write(descriptor)
     MainTest.checkDriver(
-      "No issues found.", // if the annotation in package-info is propagated
-      "",
+        "No issues found.", // if the annotation in package-info is propagated
+        "",
 
-      // Expected exit code
-      ERRNO_SUCCESS,
+        // Expected exit code
+        ERRNO_SUCCESS,
 
-      // Args
-      arrayOf("--check", "NewApi", "--project", File(root, "project.xml").path),
-      { it.dos2unix() },
-      null,
+        // Args
+        arrayOf("--check", "NewApi", "--project", File(root, "project.xml").path),
+        { it.dos2unix() },
+        null,
     )
   }
 
@@ -370,23 +370,23 @@ class UastEnvironmentSourceSetTest {
     Assume.assumeTrue(useFirUast())
     val root = temp.newFolder().canonicalFile.absoluteFile
     val projects =
-      lint()
-        .files(
-          manifest().minSdk(14),
-          SUPPORT_ANNOTATIONS_JAR,
-          java(
-              "src/test/pkg/package-info.java",
-              """
+        lint()
+            .files(
+                manifest().minSdk(14),
+                SUPPORT_ANNOTATIONS_JAR,
+                java(
+                        "src/test/pkg/package-info.java",
+                        """
               @RequiresApi(21)
               package test.pkg;
 
               import androidx.annotation.RequiresApi;
             """,
-            )
-            .indented(),
-          java(
-              "src/test/pkg/Foo.java",
-              """
+                    )
+                    .indented(),
+                java(
+                        "src/test/pkg/Foo.java",
+                        """
               package test.pkg;
 
               import androidx.annotation.RequiresApi;
@@ -400,14 +400,14 @@ class UastEnvironmentSourceSetTest {
                 }
               }
             """,
+                    )
+                    .indented(),
             )
-            .indented(),
-        )
-        .createProjects(root)
+            .createProjects(root)
 
     @Language("XML")
     val descriptor =
-      """
+        """
         <project>
           <sdk dir='${TestUtils.getSdk()}'/>
           <module name="app" android="true" library="false" compute_source_roots="false">
@@ -420,16 +420,16 @@ class UastEnvironmentSourceSetTest {
 
     Files.asCharSink(File(root, "project.xml"), Charsets.UTF_8).write(descriptor)
     MainTest.checkDriver(
-      "No issues found.", // if the annotation in package-info is propagated
-      "",
+        "No issues found.", // if the annotation in package-info is propagated
+        "",
 
-      // Expected exit code
-      ERRNO_SUCCESS,
+        // Expected exit code
+        ERRNO_SUCCESS,
 
-      // Args
-      arrayOf("--check", "NewApi", "--project", File(root, "project.xml").path),
-      { it.dos2unix() },
-      null,
+        // Args
+        arrayOf("--check", "NewApi", "--project", File(root, "project.xml").path),
+        { it.dos2unix() },
+        null,
     )
   }
 

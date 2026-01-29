@@ -39,10 +39,10 @@ class IncidentTest : AbstractCheckTest() {
 
   fun testComparator() {
     val projectDir =
-      getProjectDir(
-        null, // Rename .txt files to .java
-        java(
-            """
+        getProjectDir(
+            null, // Rename .txt files to .java
+            java(
+                    """
                 package my.pgk;
 
                 class Test {
@@ -54,10 +54,10 @@ class IncidentTest : AbstractCheckTest() {
                    }
                 }
                 """
-          )
-          .indented(),
-        java(
-            """
+                )
+                .indented(),
+            java(
+                    """
                 package my.pkg;
                 public final class R {
                     public static final class attr {
@@ -83,12 +83,12 @@ class IncidentTest : AbstractCheckTest() {
                     }
                 }
                 """
-          )
-          .indented(),
-        manifest().minSdk(14),
-        xml(
-            "res/layout/accessibility.xml",
-            """
+                )
+                .indented(),
+            manifest().minSdk(14),
+            xml(
+                    "res/layout/accessibility.xml",
+                    """
 
                 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:id="@+id/newlinear" android:orientation="vertical" android:layout_width="match_parent" android:layout_height="match_parent">
                     <Button android:text="Button" android:id="@+id/button1" android:layout_width="wrap_content" android:layout_height="wrap_content"></Button>
@@ -99,22 +99,22 @@ class IncidentTest : AbstractCheckTest() {
                     <ImageButton android:importantForAccessibility="no" android:layout_width="wrap_content" android:layout_height="wrap_content" android:src="@drawable/android_button" android:focusable="false" android:clickable="false" android:layout_weight="1.0" />
                 </LinearLayout>
                 """,
-          )
-          .indented(),
-      )
+                )
+                .indented(),
+        )
     val holder = AtomicReference<List<Incident>>()
     val lintClient: TestLintClient =
-      object : TestLintClient() {
-        override fun analyze(files: List<File>): String {
-          val lintRequest = LintRequest(this, files)
-          lintRequest.setScope(getLintScope(files))
-          driver = LintDriver(CustomIssueRegistry(), this, lintRequest)
-          configureDriver(driver)
-          driver.analyze()
-          holder.set(definiteIncidents)
-          return "<unused>"
+        object : TestLintClient() {
+          override fun analyze(files: List<File>): String {
+            val lintRequest = LintRequest(this, files)
+            lintRequest.setScope(getLintScope(files))
+            driver = LintDriver(CustomIssueRegistry(), this, lintRequest)
+            configureDriver(driver)
+            driver.analyze()
+            holder.set(definiteIncidents)
+            return "<unused>"
+          }
         }
-      }
     val files = listOf(projectDir)
     lintClient.analyze(files)
     val incidents = holder.get()
@@ -149,24 +149,24 @@ class IncidentTest : AbstractCheckTest() {
     val incident1 = incidents[0]
     val location1 = incident1.location
     val location2 =
-      create(
-        location1.file,
-        DefaultPosition(
-          location1.start!!.line,
-          location1.start!!.column + 1,
-          location1.start!!.offset + 1,
-        ),
-        DefaultPosition(
-          location1.end!!.line,
-          location1.end!!.column + 1,
-          location1.end!!.offset + 1,
-        ),
-      )
+        create(
+            location1.file,
+            DefaultPosition(
+                location1.start!!.line,
+                location1.start!!.column + 1,
+                location1.start!!.offset + 1,
+            ),
+            DefaultPosition(
+                location1.end!!.line,
+                location1.end!!.column + 1,
+                location1.end!!.offset + 1,
+            ),
+        )
     val incident2 =
-      Incident(incident1.issue, incident1.message, location2, incident1.fix).apply {
-        this.project = incident1.project
-        this.severity = incident1.severity
-      }
+        Incident(incident1.issue, incident1.message, location2, incident1.fix).apply {
+          this.project = incident1.project
+          this.severity = incident1.severity
+        }
 
     // Make position on same line but shifted one char to the right; should not equal!
     assertTrue(incident2.compareTo(incident1) > 0)
@@ -177,8 +177,7 @@ class IncidentTest : AbstractCheckTest() {
     incident2.location.secondary = secondary2
     assertTrue(incident2.compareTo(incident1) > 0)
     assertTrue(incident1.compareTo(incident2) < 0)
-    secondary2 =
-      create(File(location1.file.parentFile, "_before"), location1.start!!, location1.end)
+    secondary2 = create(File(location1.file.parentFile, "_before"), location1.start!!, location1.end)
     incident2.location.secondary = secondary2
     assertTrue(incident2.compareTo(incident1) > 0)
     assertTrue(incident1.compareTo(incident2) < 0)

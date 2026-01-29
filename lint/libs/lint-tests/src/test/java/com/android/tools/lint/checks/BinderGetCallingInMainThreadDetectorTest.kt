@@ -24,8 +24,8 @@ class BinderGetCallingInMainThreadDetectorTest : AbstractCheckTest() {
   }
 
   private val misuseServiceJavaExample: TestFile =
-    java(
-        """
+      java(
+              """
                 package test.pkg;
 
                 import android.app.Service;
@@ -42,12 +42,12 @@ class BinderGetCallingInMainThreadDetectorTest : AbstractCheckTest() {
                     }
                 }
         """
-      )
-      .indented()
+          )
+          .indented()
 
   private val misuseServiceKotlinExample: TestFile =
-    kotlin(
-        """
+      kotlin(
+              """
                 package test.pkg
 
                 import android.app.Service
@@ -62,12 +62,12 @@ class BinderGetCallingInMainThreadDetectorTest : AbstractCheckTest() {
                     }
                 }
         """
-      )
-      .indented()
+          )
+          .indented()
 
   private val misuseFragmentJavaExample: TestFile =
-    java(
-        """
+      java(
+              """
                 package test.pkg;
 
                 import android.app.Fragment;
@@ -84,12 +84,12 @@ class BinderGetCallingInMainThreadDetectorTest : AbstractCheckTest() {
                     }
                 }
         """
-      )
-      .indented()
+          )
+          .indented()
 
   private val misuseFragmentKotlinExample: TestFile =
-    kotlin(
-        """
+      kotlin(
+              """
                 package test.pkg
 
                 import android.os.Binder
@@ -109,12 +109,12 @@ class BinderGetCallingInMainThreadDetectorTest : AbstractCheckTest() {
                     }
                 }
         """
-      )
-      .indented()
+          )
+          .indented()
 
   private val misuseActivityJavaExample: TestFile =
-    java(
-        """
+      java(
+              """
                 package test.pkg;
 
                 import android.app.Activity;
@@ -131,12 +131,12 @@ class BinderGetCallingInMainThreadDetectorTest : AbstractCheckTest() {
                     }
                 }
         """
-      )
-      .indented()
+          )
+          .indented()
 
   private val misuseActivityKotlinExample: TestFile =
-    kotlin(
-        """
+      kotlin(
+              """
                 package test.pkg
 
                 import android.os.Binder
@@ -150,12 +150,12 @@ class BinderGetCallingInMainThreadDetectorTest : AbstractCheckTest() {
                     }
                 }
         """
-      )
-      .indented()
+          )
+          .indented()
 
   private val correctUsageJavaExample: TestFile =
-    java(
-        """
+      java(
+              """
                 package test.pkg;
 
                 import android.os.IBinder;
@@ -171,12 +171,12 @@ class BinderGetCallingInMainThreadDetectorTest : AbstractCheckTest() {
                     }
                 }
         """
-      )
-      .indented()
+          )
+          .indented()
 
   private val correctUsageKotlinExample: TestFile =
-    kotlin(
-        """
+      kotlin(
+              """
                 package test.pkg
 
                 import android.os.Binder
@@ -190,15 +190,15 @@ class BinderGetCallingInMainThreadDetectorTest : AbstractCheckTest() {
                     }
                 }
         """
-      )
-      .indented()
+          )
+          .indented()
 
   fun testDocumentationExample() {
     lint()
-      .files(misuseServiceKotlinExample)
-      .run()
-      .expect(
-        """
+        .files(misuseServiceKotlinExample)
+        .run()
+        .expect(
+            """
             src/test/pkg/MyService.kt:10: Error: Binder.getCallingUid() should not be used inside onBind() [BinderGetCallingInMainThread]
                     Binder.getCallingUid()
                     ~~~~~~~~~~~~~~~~~~~~~~
@@ -207,25 +207,25 @@ class BinderGetCallingInMainThreadDetectorTest : AbstractCheckTest() {
                     ~~~~~~~~~~~~~~~~~~~~~~
             2 errors, 0 warnings
             """
-      )
+        )
   }
 
   fun testComprehensiveExamples() {
     lint()
-      .files(
-        misuseServiceJavaExample,
-        misuseServiceKotlinExample,
-        misuseFragmentJavaExample,
-        misuseFragmentKotlinExample,
-        misuseActivityJavaExample,
-        misuseActivityKotlinExample,
-        correctUsageJavaExample,
-        correctUsageKotlinExample,
-      )
-      .allowClassNameClashes(true)
-      .run()
-      .expect(
-        """
+        .files(
+            misuseServiceJavaExample,
+            misuseServiceKotlinExample,
+            misuseFragmentJavaExample,
+            misuseFragmentKotlinExample,
+            misuseActivityJavaExample,
+            misuseActivityKotlinExample,
+            correctUsageJavaExample,
+            correctUsageKotlinExample,
+        )
+        .allowClassNameClashes(true)
+        .run()
+        .expect(
+            """
             src/test/pkg/FirstFragment.java:12: Error: Binder.getCallingUid() should not be used inside onCreate() [BinderGetCallingInMainThread]
                     Binder.getCallingUid();
                     ~~~~~~~~~~~~~~~~~~~~~~
@@ -264,6 +264,6 @@ class BinderGetCallingInMainThreadDetectorTest : AbstractCheckTest() {
                     ~~~~~~~~~~~~~~~~~~~~~~
             12 errors, 0 warnings
             """
-      )
+        )
   }
 }

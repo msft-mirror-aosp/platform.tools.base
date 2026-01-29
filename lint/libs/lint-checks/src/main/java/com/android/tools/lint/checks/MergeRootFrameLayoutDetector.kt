@@ -63,17 +63,15 @@ import org.w3c.dom.Node
 /** Checks whether a root FrameLayout can be replaced with a `<merge>` tag. */
 class MergeRootFrameLayoutDetector : LayoutDetector(), SourceCodeScanner {
   /**
-   * Set of layouts that we want to enable the warning for. We only warn for `<FrameLayout>`'s that
-   * are the root of a layout included from another layout, or directly referenced via a
-   * `setContentView` call.
+   * Set of layouts that we want to enable the warning for. We only warn for `<FrameLayout>`'s that are the root of a layout included from
+   * another layout, or directly referenced via a `setContentView` call.
    */
   private var allowedLayouts: MutableSet<String>? = null
 
   /**
-   * Set of pending [layout, location] pairs where the given layout is a FrameLayout that perhaps
-   * should be replaced by a `<merge>` tag (if the layout is included or set as the content view.
-   * This must be processed after the whole project has been scanned since the set of includes etc
-   * can be encountered after the included layout.
+   * Set of pending [layout, location] pairs where the given layout is a FrameLayout that perhaps should be replaced by a `<merge>` tag (if
+   * the layout is included or set as the content view. This must be processed after the whole project has been scanned since the set of
+   * includes etc can be encountered after the included layout.
    */
   private var pending: MutableList<Pair<String, Location.Handle>>? = null
 
@@ -114,13 +112,12 @@ class MergeRootFrameLayoutDetector : LayoutDetector(), SourceCodeScanner {
     } else {
       assert(tag == FRAME_LAYOUT)
       if (
-        isRootElement(element) &&
-          (isWidthFillParent(element) && isHeightFillParent(element) ||
-            !element.hasAttributeNS(ANDROID_URI, ATTR_LAYOUT_GRAVITY)) &&
-          !element.hasAttributeNS(ANDROID_URI, ATTR_BACKGROUND) &&
-          !element.hasAttributeNS(ANDROID_URI, ATTR_FOREGROUND) &&
-          element.getAttributeNS(ANDROID_URI, ATTR_FITS_SYSTEM_WINDOWS) != VALUE_TRUE &&
-          !hasPadding(element)
+          isRootElement(element) &&
+              (isWidthFillParent(element) && isHeightFillParent(element) || !element.hasAttributeNS(ANDROID_URI, ATTR_LAYOUT_GRAVITY)) &&
+              !element.hasAttributeNS(ANDROID_URI, ATTR_BACKGROUND) &&
+              !element.hasAttributeNS(ANDROID_URI, ATTR_FOREGROUND) &&
+              element.getAttributeNS(ANDROID_URI, ATTR_FITS_SYSTEM_WINDOWS) != VALUE_TRUE &&
+              !hasPadding(element)
       ) {
         if (!context.project.reportIssues) {
           // If this is a library project not being analyzed, ignore it
@@ -130,13 +127,13 @@ class MergeRootFrameLayoutDetector : LayoutDetector(), SourceCodeScanner {
         element.getAttributeNode(ATTR_STYLE)?.value?.let { url ->
           // Root frame theme defines it
           val styles =
-            getStyleAttributes(
-              context.project,
-              context.client,
-              url,
-              ANDROID_URI,
-              ATTR_FITS_SYSTEM_WINDOWS,
-            )
+              getStyleAttributes(
+                  context.project,
+                  context.client,
+                  url,
+                  ANDROID_URI,
+                  ATTR_FITS_SYSTEM_WINDOWS,
+              )
           if (styles != null && styles.any { it.value == VALUE_TRUE }) {
             return
           }
@@ -175,27 +172,26 @@ class MergeRootFrameLayoutDetector : LayoutDetector(), SourceCodeScanner {
   companion object {
     @JvmField
     val ISSUE =
-      create(
-        id = "MergeRootFrame",
-        briefDescription = "FrameLayout can be replaced with `<merge>` tag",
-        explanation =
-          """
+        create(
+            id = "MergeRootFrame",
+            briefDescription = "FrameLayout can be replaced with `<merge>` tag",
+            explanation =
+                """
                 If a `<FrameLayout>` is the root of a layout and does not provide background or padding \
                 etc, it can often be replaced with a `<merge>` tag which is slightly more efficient. \
                 Note that this depends on context, so make sure you understand how the `<merge>` tag \
                 works before proceeding.
                 """,
-        category = Category.PERFORMANCE,
-        priority = 4,
-        severity = Severity.WARNING,
-        moreInfo =
-          "https://android-developers.googleblog.com/2009/03/android-layout-tricks-3-optimize-by.html",
-        implementation =
-          Implementation(
-            MergeRootFrameLayoutDetector::class.java,
-            EnumSet.of(Scope.ALL_RESOURCE_FILES, Scope.JAVA_FILE),
-          ),
-      )
+            category = Category.PERFORMANCE,
+            priority = 4,
+            severity = Severity.WARNING,
+            moreInfo = "https://android-developers.googleblog.com/2009/03/android-layout-tricks-3-optimize-by.html",
+            implementation =
+                Implementation(
+                    MergeRootFrameLayoutDetector::class.java,
+                    EnumSet.of(Scope.ALL_RESOURCE_FILES, Scope.JAVA_FILE),
+                ),
+        )
 
     private const val ATTR_FITS_SYSTEM_WINDOWS = "fitsSystemWindows"
 
@@ -214,10 +210,10 @@ class MergeRootFrameLayoutDetector : LayoutDetector(), SourceCodeScanner {
 
     private fun hasPadding(root: Element): Boolean {
       return root.hasAttributeNS(ANDROID_URI, ATTR_PADDING) ||
-        root.hasAttributeNS(ANDROID_URI, ATTR_PADDING_LEFT) ||
-        root.hasAttributeNS(ANDROID_URI, ATTR_PADDING_RIGHT) ||
-        root.hasAttributeNS(ANDROID_URI, ATTR_PADDING_TOP) ||
-        root.hasAttributeNS(ANDROID_URI, ATTR_PADDING_BOTTOM)
+          root.hasAttributeNS(ANDROID_URI, ATTR_PADDING_LEFT) ||
+          root.hasAttributeNS(ANDROID_URI, ATTR_PADDING_RIGHT) ||
+          root.hasAttributeNS(ANDROID_URI, ATTR_PADDING_TOP) ||
+          root.hasAttributeNS(ANDROID_URI, ATTR_PADDING_BOTTOM)
     }
   }
 }

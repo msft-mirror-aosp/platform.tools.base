@@ -26,8 +26,8 @@ import org.junit.Test
 
 class PathVariablesTest {
   /**
-   * For a given [file], make sure that with the given path [variables] it will serialize to the
-   * given [path], and deserialize from that path to the given file.
+   * For a given [file], make sure that with the given path [variables] it will serialize to the given [path], and deserialize from that
+   * path to the given file.
    */
   private fun check(variables: PathVariables, file: File, path: String) {
     assertEquals(path, variables.toPathString(file, unix = true))
@@ -75,12 +75,12 @@ class PathVariablesTest {
     // temp and other deliberately not added; we want to check relative and absolute path handling
 
     assertEquals(
-      "\$HOME/dir1/dir2",
-      variables.toPathString(underHome, relativeTo = home, unix = true),
+        "\$HOME/dir1/dir2",
+        variables.toPathString(underHome, relativeTo = home, unix = true),
     )
     assertEquals(
-      "\$HOME${separator}dir1${separator}dir2",
-      variables.toPathString(underHome, relativeTo = home, unix = false),
+        "\$HOME${separator}dir1${separator}dir2",
+        variables.toPathString(underHome, relativeTo = home, unix = false),
     )
 
     assertEquals(underHome, variables.fromPathString("dir1/dir2", relativeTo = home))
@@ -89,8 +89,8 @@ class PathVariablesTest {
     // If no variable match, use relativeTo anchor
     assertEquals("dir1/dir2", variables.toPathString(underTemp, relativeTo = temp, unix = true))
     assertEquals(
-      "dir1${separator}dir2",
-      variables.toPathString(underTemp, relativeTo = temp, unix = false),
+        "dir1${separator}dir2",
+        variables.toPathString(underTemp, relativeTo = temp, unix = false),
     )
 
     assertEquals(underTemp, variables.fromPathString("dir1/dir2", relativeTo = temp))
@@ -145,17 +145,17 @@ class PathVariablesTest {
       add("V6", File("foo/baa/baz"))
     }
     assertEquals(
-      "" +
-        "V6=foo/baa/baz\n" +
-        "V3=foo/bar/bax\n" +
-        "V4=foo/bar/bay\n" +
-        "V5=foo/bar/baz\n" +
-        "V2=foo/bar\n" +
-        "V1=foo\n" +
-        "V8_canonical=canonicalized_foo/bar\n" +
-        "V7_canonical=canonicalized_foo\n" +
-        "V9_canonical=canonicalized_foo",
-      variables.toString().dos2unix(),
+        "" +
+            "V6=foo/baa/baz\n" +
+            "V3=foo/bar/bax\n" +
+            "V4=foo/bar/bay\n" +
+            "V5=foo/bar/baz\n" +
+            "V2=foo/bar\n" +
+            "V1=foo\n" +
+            "V8_canonical=canonicalized_foo/bar\n" +
+            "V7_canonical=canonicalized_foo\n" +
+            "V9_canonical=canonicalized_foo",
+        variables.toString().dos2unix(),
     )
   }
 }

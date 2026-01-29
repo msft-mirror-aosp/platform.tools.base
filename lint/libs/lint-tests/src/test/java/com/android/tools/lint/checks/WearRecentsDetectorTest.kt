@@ -23,9 +23,9 @@ class WearRecentsDetectorTest : AbstractCheckTest() {
 
   fun testDocumentationExample() {
     lint()
-      .files(
-        manifest(
-            """
+        .files(
+            manifest(
+                    """
             <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                   package="com.example.helloworld"
                   android:versionCode="1"
@@ -36,20 +36,20 @@ class WearRecentsDetectorTest : AbstractCheckTest() {
                 <activity android:name=".MainActivity" />
                 </application>
             </manifest>"""
-          )
-          .indented()
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .run()
+        .expect(
+            """
         AndroidManifest.xml:8: Warning: Set taskAffinity for Wear activities to make them appear correctly in recents [WearRecents]
             <activity android:name=".MainActivity" />
             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         0 errors, 1 warnings
       """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
               Autofix for AndroidManifest.xml line 8: Set `taskAffinity`:
               @@ -14 +14,3 @@
               -        <activity android:name=".MainActivity" />
@@ -64,7 +64,7 @@ class WearRecentsDetectorTest : AbstractCheckTest() {
               +            android:excludeFromRecents="true"
               +            android:noHistory="true" />
         """
-      )
+        )
   }
 
   fun testMultiModuleWithWearLibrary() {
@@ -72,27 +72,27 @@ class WearRecentsDetectorTest : AbstractCheckTest() {
     // android.hardware.type.watch, but it will be added in the merged manifest due to the library
     // module's manifest. The lint check should still trigger.
     val lib =
-      project()
-        .name("lib")
-        .files(
-          manifest(
-              """
+        project()
+            .name("lib")
+            .files(
+                manifest(
+                        """
               <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="com.example.helloworld.lib">
                   <uses-sdk android:minSdkVersion="30" />
                   <uses-feature android:name="android.hardware.type.watch" />
               </manifest>"""
+                    )
+                    .indented()
             )
-            .indented()
-        )
-        .type(ProjectDescription.Type.LIBRARY)
+            .type(ProjectDescription.Type.LIBRARY)
 
     val app =
-      project()
-        .name("app")
-        .files(
-          manifest(
-              """
+        project()
+            .name("app")
+            .files(
+                manifest(
+                        """
               <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="com.example.helloworld"
                     android:versionCode="1"
@@ -102,25 +102,25 @@ class WearRecentsDetectorTest : AbstractCheckTest() {
                   <activity android:name=".MainActivity" />
                   </application>
               </manifest>"""
+                    )
+                    .indented()
             )
-            .indented()
-        )
-        .type(ProjectDescription.Type.APP)
-        .dependsOn(lib)
+            .type(ProjectDescription.Type.APP)
+            .dependsOn(lib)
 
     lint()
-      .projects(lib, app)
-      .run()
-      .expect(
-        """
+        .projects(lib, app)
+        .run()
+        .expect(
+            """
         AndroidManifest.xml:7: Warning: Set taskAffinity for Wear activities to make them appear correctly in recents [WearRecents]
             <activity android:name=".MainActivity" />
             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         0 errors, 1 warnings
       """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
               Autofix for AndroidManifest.xml line 7: Set `taskAffinity`:
               @@ -12 +12,3 @@
               -        <activity android:name=".MainActivity" />
@@ -135,14 +135,14 @@ class WearRecentsDetectorTest : AbstractCheckTest() {
               +            android:excludeFromRecents="true"
               +            android:noHistory="true" />
         """
-      )
+        )
   }
 
   fun testTaskAffinityNonWear() {
     lint()
-      .files(
-        manifest(
-            """
+        .files(
+            manifest(
+                    """
             <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                   package="com.example.helloworld"
                   android:versionCode="1"
@@ -152,18 +152,18 @@ class WearRecentsDetectorTest : AbstractCheckTest() {
                 <activity android:name=".MainActivity" />
                 </application>
             </manifest>"""
-          )
-          .indented()
-      )
-      .run()
-      .expectClean()
+                )
+                .indented()
+        )
+        .run()
+        .expectClean()
   }
 
   fun testExcludeFromRecentsWithoutNoHistory() {
     lint()
-      .files(
-        manifest(
-            """
+        .files(
+            manifest(
+                    """
             <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                   package="com.example.helloworld"
                   android:versionCode="1"
@@ -174,34 +174,34 @@ class WearRecentsDetectorTest : AbstractCheckTest() {
                 <activity android:name=".MainActivity" android:excludeFromRecents="true" />
                 </application>
             </manifest>"""
-          )
-          .indented()
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .run()
+        .expect(
+            """
         AndroidManifest.xml:8: Warning: In addition to excludeFromRecents, set noHistory flag to avoid showing this activity in recents [WearRecents]
             <activity android:name=".MainActivity" android:excludeFromRecents="true" />
             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         0 errors, 1 warnings
       """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
           Fix for AndroidManifest.xml line 8: Set noHistory:
           @@ -16 +16,2 @@
           -            android:excludeFromRecents="true" />
           +            android:excludeFromRecents="true"
           +            android:noHistory="true" />
       """
-      )
+        )
   }
 
   fun testExcludeFromRecentsWithNoHistory() {
     lint()
-      .files(
-        manifest(
-            """
+        .files(
+            manifest(
+                    """
             <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                   package="com.example.helloworld"
                   android:versionCode="1"
@@ -214,18 +214,18 @@ class WearRecentsDetectorTest : AbstractCheckTest() {
                         android:noHistory="true" />
                 </application>
             </manifest>"""
-          )
-          .indented()
-      )
-      .run()
-      .expectClean()
+                )
+                .indented()
+        )
+        .run()
+        .expectClean()
   }
 
   fun testExcludeFromRecentsWithoutNoHistoryNonWear() {
     lint()
-      .files(
-        manifest(
-            """
+        .files(
+            manifest(
+                    """
             <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                   package="com.example.helloworld"
                   android:versionCode="1"
@@ -235,18 +235,18 @@ class WearRecentsDetectorTest : AbstractCheckTest() {
                 <activity android:name=".MainActivity" android:excludeFromRecents="true" />
                 </application>
             </manifest>"""
-          )
-          .indented()
-      )
-      .run()
-      .expectClean()
+                )
+                .indented()
+        )
+        .run()
+        .expectClean()
   }
 
   fun testFlagActivityNewTask() {
     lint()
-      .files(
-        java(
-          """
+        .files(
+            java(
+                """
           import android.content.Intent;
 
           public static class MainActivity {
@@ -255,9 +255,9 @@ class WearRecentsDetectorTest : AbstractCheckTest() {
             }
           }
         """
-        ),
-        manifest(
-            """
+            ),
+            manifest(
+                    """
             <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                   package="com.example.helloworld"
                   android:versionCode="1"
@@ -266,25 +266,25 @@ class WearRecentsDetectorTest : AbstractCheckTest() {
                 <uses-feature android:name="android.hardware.type.watch" />
                 <application android:icon="@drawable/icon" android:label="@string/app_name" />
             </manifest>"""
-          )
-          .indented(),
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+        )
+        .run()
+        .expect(
+            """
             src/MainActivity.java:6: Warning: Avoid using FLAG_ACTIVITY_NEW_TASK and FLAG_ACTIVITY_CLEAR_TOP [WearRecents]
                           startActivity(Intent("ACTION_TEST").setFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
                                                                               ~~~~~~~~~~~~~~~~~~~~~~
             0 errors, 1 warnings
       """
-      )
+        )
   }
 
   fun testFlagActivityNewTaskNonWear() {
     lint()
-      .files(
-        java(
-          """
+        .files(
+            java(
+                """
           import android.content.Intent;
 
           public static class MainActivity {
@@ -293,9 +293,9 @@ class WearRecentsDetectorTest : AbstractCheckTest() {
             }
           }
         """
-        ),
-        manifest(
-            """
+            ),
+            manifest(
+                    """
             <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                   package="com.example.helloworld"
                   android:versionCode="1"
@@ -303,10 +303,10 @@ class WearRecentsDetectorTest : AbstractCheckTest() {
                 <uses-sdk android:minSdkVersion="30" />
                 <application android:icon="@drawable/icon" android:label="@string/app_name" />
             </manifest>"""
-          )
-          .indented(),
-      )
-      .run()
-      .expectClean()
+                )
+                .indented(),
+        )
+        .run()
+        .expectClean()
   }
 }

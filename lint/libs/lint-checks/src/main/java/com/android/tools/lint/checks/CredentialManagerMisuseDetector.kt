@@ -32,10 +32,7 @@ import org.jetbrains.uast.UCallExpression
 import org.jetbrains.uast.UCatchClause
 import org.jetbrains.uast.UTypeReferenceExpression
 
-/**
- * Reports all calls to `getCredential` and `getCredentialAsync`, unless we see a reference to
- * `NoCredentialException`.
- */
+/** Reports all calls to `getCredential` and `getCredentialAsync`, unless we see a reference to `NoCredentialException`. */
 class CredentialManagerMisuseDetector : Detector(), SourceCodeScanner {
 
   override fun getApplicableMethodNames() = listOf("getCredential", "getCredentialAsync")
@@ -43,61 +40,57 @@ class CredentialManagerMisuseDetector : Detector(), SourceCodeScanner {
   override fun visitMethodCall(context: JavaContext, node: UCallExpression, method: PsiMethod) {
     val cls = method.containingClass ?: return
     if (
-      !context.evaluator.implementsInterface(
-        cls,
-        "androidx.credentials.CredentialManager",
-        strict = false,
-      )
+        !context.evaluator.implementsInterface(
+            cls,
+            "androidx.credentials.CredentialManager",
+            strict = false,
+        )
     )
-      return
+        return
 
     // Skip if suppressed.
     if (context.driver.isSuppressed(context, ISSUE, node)) return
 
     // Otherwise, store the location.
     context
-      .getPartialResults(ISSUE)
-      // The LintMap for the current module.
-      .map()
-      .getOrPutLintMap(KEY_GET_CREDENTIAL_CALLS)
-      .appendLocation(context.getLocation(node))
+        .getPartialResults(ISSUE)
+        // The LintMap for the current module.
+        .map()
+        .getOrPutLintMap(KEY_GET_CREDENTIAL_CALLS)
+        .appendLocation(context.getLocation(node))
   }
 
-  override fun getApplicableUastTypes() =
-    listOf(UCatchClause::class.java, UTypeReferenceExpression::class.java)
+  override fun getApplicableUastTypes() = listOf(UCatchClause::class.java, UTypeReferenceExpression::class.java)
 
   override fun createUastHandler(context: JavaContext) =
-    object : UElementHandler() {
+      object : UElementHandler() {
 
-      private fun storeSawNoCredentialException() {
-        context.getPartialResults(ISSUE).map().put(KEY_SAW_NO_CREDENTIAL_EXCEPTION, true)
-      }
+        private fun storeSawNoCredentialException() {
+          context.getPartialResults(ISSUE).map().put(KEY_SAW_NO_CREDENTIAL_EXCEPTION, true)
+        }
 
-      override fun visitCatchClause(node: UCatchClause) {
-        // UCatchClause.accept does not visit the type references, so we must check them manually.
-        // UCatchClause.typeReferences includes the children of disjoint exception types, like in
-        // `catch (A|B|C ex) { ... }`.
-        for (typeReference in node.typeReferences) {
-          if (
-            typeReference.type.canonicalText ==
-              "androidx.credentials.exceptions.NoCredentialException"
-          ) {
+        override fun visitCatchClause(node: UCatchClause) {
+          // UCatchClause.accept does not visit the type references, so we must check them manually.
+          // UCatchClause.typeReferences includes the children of disjoint exception types, like in
+          // `catch (A|B|C ex) { ... }`.
+          for (typeReference in node.typeReferences) {
+            if (typeReference.type.canonicalText == "androidx.credentials.exceptions.NoCredentialException") {
+              storeSawNoCredentialException()
+              break
+            }
+          }
+        }
+
+        override fun visitTypeReferenceExpression(node: UTypeReferenceExpression) {
+          // E.g.
+          //  x is NoCredentialException
+          //  x instanceof NoCredentialException
+          //  when(x) { is NoCredentialException -> ... }
+          if (node.type.canonicalText == "androidx.credentials.exceptions.NoCredentialException") {
             storeSawNoCredentialException()
-            break
           }
         }
       }
-
-      override fun visitTypeReferenceExpression(node: UTypeReferenceExpression) {
-        // E.g.
-        //  x is NoCredentialException
-        //  x instanceof NoCredentialException
-        //  when(x) { is NoCredentialException -> ... }
-        if (node.type.canonicalText == "androidx.credentials.exceptions.NoCredentialException") {
-          storeSawNoCredentialException()
-        }
-      }
-    }
 
   override fun checkPartialResults(context: Context, partialResults: PartialResult) {
     if (context.project.isLibrary) return
@@ -109,18 +102,18 @@ class CredentialManagerMisuseDetector : Detector(), SourceCodeScanner {
 
     // Otherwise: report all getCredential calls.
     val locations =
-      partialResults
-        .maps()
-        // Each module's LintMap _might_ contain a LintMap of locations.
-        .mapNotNull { it.getMap(KEY_GET_CREDENTIAL_CALLS) }
-        // We can flatten these into a single list of locations.
-        .flatMap { it.asLocationSequence() }
+        partialResults
+            .maps()
+            // Each module's LintMap _might_ contain a LintMap of locations.
+            .mapNotNull { it.getMap(KEY_GET_CREDENTIAL_CALLS) }
+            // We can flatten these into a single list of locations.
+            .flatMap { it.asLocationSequence() }
 
     for (location in locations) {
       context.report(
-        ISSUE,
-        location,
-        "Call to `CredentialManager.getCredential` without use of `NoCredentialException`",
+          ISSUE,
+          location,
+          "Call to `CredentialManager.getCredential` without use of `NoCredentialException`",
       )
     }
   }
@@ -136,26 +129,24 @@ class CredentialManagerMisuseDetector : Detector(), SourceCodeScanner {
     private const val KEY_GET_CREDENTIAL_CALLS = "GET_CREDENTIAL_CALLS"
     private const val KEY_SAW_NO_CREDENTIAL_EXCEPTION = "SAW_NO_CREDENTIAL_EXCEPTION"
 
-    private val IMPLEMENTATION =
-      Implementation(CredentialManagerMisuseDetector::class.java, EnumSet.of(Scope.ALL_JAVA_FILES))
+    private val IMPLEMENTATION = Implementation(CredentialManagerMisuseDetector::class.java, EnumSet.of(Scope.ALL_JAVA_FILES))
 
     @JvmField
     val ISSUE =
-      Issue.create(
-        id = "CredentialManagerMisuse",
-        briefDescription = "Misuse of Credential Manager API",
-        explanation =
-          """
+        Issue.create(
+            id = "CredentialManagerMisuse",
+            briefDescription = "Misuse of Credential Manager API",
+            explanation =
+                """
           When calling `CredentialManager.getCredential` or `CredentialManager.getCredentialAsync`, \
           you should handle `NoCredentialException` somewhere in your project.
           """,
-        moreInfo =
-          "https://developer.android.com/identity/sign-in/credential-manager#handle-exceptions",
-        category = Category.CORRECTNESS,
-        priority = 5,
-        severity = Severity.WARNING,
-        implementation = IMPLEMENTATION,
-        androidSpecific = true,
-      )
+            moreInfo = "https://developer.android.com/identity/sign-in/credential-manager#handle-exceptions",
+            category = Category.CORRECTNESS,
+            priority = 5,
+            severity = Severity.WARNING,
+            implementation = IMPLEMENTATION,
+            androidSpecific = true,
+        )
   }
 }

@@ -32,26 +32,25 @@ class DosLineEndingDetector : LayoutDetector() {
     /** Detects mangled DOS line ending documents. */
     @JvmField
     val ISSUE =
-      Issue.create(
-        id = "MangledCRLF",
-        briefDescription = "Mangled file line endings",
-        explanation =
-          """
+        Issue.create(
+            id = "MangledCRLF",
+            briefDescription = "Mangled file line endings",
+            explanation =
+                """
             On Windows, line endings are typically recorded as carriage return plus newline: \\r\\n.
 
             This detector looks for invalid line endings with repeated carriage return characters \
             (without newlines). Previous versions of the ADT plugin could accidentally introduce these \
             into the file, and when editing the file, the editor could produce confusing visual artifacts.
             """,
-        moreInfo = "https://bugs.eclipse.org/bugs/show_bug.cgi?id=375421",
-        category = Category.CORRECTNESS,
-        priority = 2,
-        severity = Severity.ERROR,
-        // This check is probably not relevant for most users anymore
-        enabledByDefault = false,
-        implementation =
-          Implementation(DosLineEndingDetector::class.java, Scope.RESOURCE_FILE_SCOPE),
-      )
+            moreInfo = "https://bugs.eclipse.org/bugs/show_bug.cgi?id=375421",
+            category = Category.CORRECTNESS,
+            priority = 2,
+            severity = Severity.ERROR,
+            // This check is probably not relevant for most users anymore
+            enabledByDefault = false,
+            implementation = Implementation(DosLineEndingDetector::class.java, Scope.RESOURCE_FILE_SCOPE),
+        )
   }
 
   override fun visitDocument(context: XmlContext, document: Document) {
@@ -67,8 +66,7 @@ class DosLineEndingDetector : LayoutDetector() {
     while (i < n) {
       val c = contents[i]
       if (c == '\r' && prev == '\r') {
-        val message =
-          "Incorrect line ending: found carriage return (`\\r`) without corresponding newline (`\\n`)"
+        val message = "Incorrect line ending: found carriage return (`\\r`) without corresponding newline (`\\n`)"
 
         // Mark the whole line as the error range, since pointing just to the
         // line ending makes the error invisible in IDEs and error reports etc

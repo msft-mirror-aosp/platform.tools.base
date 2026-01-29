@@ -46,12 +46,12 @@ class LocaleDetector : Detector(), SourceCodeScanner {
 
   override fun getApplicableMethodNames(): List<String> {
     return listOf(
-      TO_LOWER_CASE,
-      TO_UPPER_CASE,
-      FORMAT_METHOD,
-      GET_DEFAULT,
-      CAPITALIZE,
-      DECAPITALIZE,
+        TO_LOWER_CASE,
+        TO_UPPER_CASE,
+        FORMAT_METHOD,
+        GET_DEFAULT,
+        CAPITALIZE,
+        DECAPITALIZE,
     )
   }
 
@@ -70,8 +70,7 @@ class LocaleDetector : Detector(), SourceCodeScanner {
       }
     } else if (containingClass == KOTLIN_STRINGS_JVM_KT || containingClass == KOTLIN_STRINGS_KT) {
       when (methodName) {
-        FORMAT_METHOD ->
-          checkFormat(context, method, node, 1) // 1: extension function, 0 arg is this
+        FORMAT_METHOD -> checkFormat(context, method, node, 1) // 1: extension function, 0 arg is this
         CAPITALIZE,
         DECAPITALIZE -> checkStringsKt(context, method, node)
         TO_LOWER_CASE,
@@ -81,9 +80,9 @@ class LocaleDetector : Detector(), SourceCodeScanner {
   }
 
   private fun checkJavaToUpperLowerCase(
-    context: JavaContext,
-    method: PsiMethod,
-    node: UCallExpression,
+      context: JavaContext,
+      method: PsiMethod,
+      node: UCallExpression,
   ) {
     // In the IDE, don't flag java toUpperCase/toLowerCase; these
     // are already flagged by built-in IDE inspections, so we don't
@@ -92,13 +91,13 @@ class LocaleDetector : Detector(), SourceCodeScanner {
     if (method.parameterList.parametersCount != 0) return
     val location = context.getNameLocation(node)
     val message =
-      String.format(
-        Locale.US,
-        "Implicitly using the default locale is a common source of bugs: " +
-          "Use `%1\$s(Locale)` instead. For strings meant to be internal " +
-          "use `Locale.ROOT`, otherwise `Locale.getDefault()`.",
-        method.name,
-      )
+        String.format(
+            Locale.US,
+            "Implicitly using the default locale is a common source of bugs: " +
+                "Use `%1\$s(Locale)` instead. For strings meant to be internal " +
+                "use `Locale.ROOT`, otherwise `Locale.getDefault()`.",
+            method.name,
+        )
     context.report(STRING_LOCALE, node, location, message)
   }
 
@@ -106,47 +105,44 @@ class LocaleDetector : Detector(), SourceCodeScanner {
     if (method.parameterList.parametersCount > 1) return
     val location = context.getNameLocation(node)
     val message =
-      String.format(
-        Locale.US,
-        "Implicitly using the default locale is a common source of bugs: " +
-          "Use `%1\$s(Locale)` instead. For strings meant to be internal " +
-          "use `Locale.ROOT`, otherwise `Locale.getDefault()`.",
-        method.name,
-      )
+        String.format(
+            Locale.US,
+            "Implicitly using the default locale is a common source of bugs: " +
+                "Use `%1\$s(Locale)` instead. For strings meant to be internal " +
+                "use `Locale.ROOT`, otherwise `Locale.getDefault()`.",
+            method.name,
+        )
 
     val range = context.getCallLocation(node, includeReceiver = false, includeArguments = true)
     val quickfixData =
-      fix()
-        .group()
-        .also { groupBuilder ->
-          for (localeName in listOf("ROOT", "getDefault()")) {
-            groupBuilder.add(
-              fix()
-                .name("Replace with `${method.name}(Locale.$localeName)`")
-                .sharedName("Use explicit locale")
-                .replace()
-                .range(range)
-                .with("${method.name}(java.util.Locale.$localeName)")
-                .shortenNames()
-                .build()
-            )
-          }
-        }
-        .build()
+        fix()
+            .group()
+            .also { groupBuilder ->
+              for (localeName in listOf("ROOT", "getDefault()")) {
+                groupBuilder.add(
+                    fix()
+                        .name("Replace with `${method.name}(Locale.$localeName)`")
+                        .sharedName("Use explicit locale")
+                        .replace()
+                        .range(range)
+                        .with("${method.name}(java.util.Locale.$localeName)")
+                        .shortenNames()
+                        .build()
+                )
+              }
+            }
+            .build()
     context.report(STRING_LOCALE, node, location, message, quickfixData)
   }
 
   private fun checkFormat(
-    context: JavaContext,
-    method: PsiMethod,
-    call: UCallExpression,
-    stringIndex: Int,
+      context: JavaContext,
+      method: PsiMethod,
+      call: UCallExpression,
+      stringIndex: Int,
   ) {
     // Only check the non-locale version of String.format
-    if (
-      method.parameterList.parametersCount <= stringIndex ||
-        !context.evaluator.parameterHasType(method, stringIndex, TYPE_STRING)
-    ) {
+    if (method.parameterList.parametersCount <= stringIndex || !context.evaluator.parameterHasType(method, stringIndex, TYPE_STRING)) {
       return
     }
 
@@ -169,42 +165,40 @@ class LocaleDetector : Detector(), SourceCodeScanner {
       }
 
       val location: Location =
-        if (FORMAT_METHOD == getMethodName(call)) {
-          // For String#format, include receiver (String), but not for .toUppercase etc
-          // since the receiver can often be a complex expression
-          context.getCallLocation(call, true, true)
-        } else {
-          context.getCallLocation(call, false, true)
-        }
-      val message =
-        "Implicitly using the default locale is a common source of bugs: " +
-          "Use `String.format(Locale, ...)` instead"
+          if (FORMAT_METHOD == getMethodName(call)) {
+            // For String#format, include receiver (String), but not for .toUppercase etc
+            // since the receiver can often be a complex expression
+            context.getCallLocation(call, true, true)
+          } else {
+            context.getCallLocation(call, false, true)
+          }
+      val message = "Implicitly using the default locale is a common source of bugs: " + "Use `String.format(Locale, ...)` instead"
       context.report(STRING_LOCALE, call, location, message)
     }
   }
 
   private fun checkLocaleGetDefault(
-    context: JavaContext,
-    @Suppress("UNUSED_PARAMETER") method: PsiMethod,
-    node: UCallExpression,
+      context: JavaContext,
+      @Suppress("UNUSED_PARAMETER") method: PsiMethod,
+      node: UCallExpression,
   ) {
     val field =
-      node.getParentOfType<UField>(
-        UField::class.java,
-        true,
-        UMethod::class.java,
-        ULambdaExpression::class.java,
-      ) ?: return
+        node.getParentOfType<UField>(
+            UField::class.java,
+            true,
+            UMethod::class.java,
+            ULambdaExpression::class.java,
+        ) ?: return
 
     val evaluator = context.evaluator
     if (evaluator.isStatic(field) && evaluator.isFinal(field)) {
       context.report(
-        FINAL_LOCALE,
-        node,
-        context.getLocation(node),
-        "Assigning `Locale.getDefault()` to a final static field is suspicious; " +
-          "this code will not work correctly if the user changes locale while " +
-          "the app is running",
+          FINAL_LOCALE,
+          node,
+          context.getLocation(node),
+          "Assigning `Locale.getDefault()` to a final static field is suspicious; " +
+              "this code will not work correctly if the user changes locale while " +
+              "the app is running",
       )
     }
   }
@@ -240,11 +234,11 @@ class LocaleDetector : Detector(), SourceCodeScanner {
     /** Calling risky convenience methods. */
     @JvmField
     val STRING_LOCALE =
-      Issue.create(
-        id = "DefaultLocale",
-        briefDescription = "Implied default locale in case conversion",
-        explanation =
-          """
+        Issue.create(
+            id = "DefaultLocale",
+            briefDescription = "Implied default locale in case conversion",
+            explanation =
+                """
                 Calling `String#toLowerCase()` or `#toUpperCase()` **without specifying an \
                 explicit locale** is a common source of bugs. The reason for that is that \
                 those methods will use the current locale on the user's device, and even \
@@ -257,28 +251,28 @@ class LocaleDetector : Detector(), SourceCodeScanner {
                 really want to use the current locale, call \
                 `String#toUpperCase(Locale.getDefault())` instead.
                 """,
-        moreInfo = "https://developer.android.com/reference/java/util/Locale.html#default_locale",
-        category = Category.CORRECTNESS,
-        priority = 6,
-        severity = Severity.WARNING,
-        implementation = IMPLEMENTATION,
-      )
+            moreInfo = "https://developer.android.com/reference/java/util/Locale.html#default_locale",
+            category = Category.CORRECTNESS,
+            priority = 6,
+            severity = Severity.WARNING,
+            implementation = IMPLEMENTATION,
+        )
 
     /** Assuming locale doesn't change. */
     @JvmField
     val FINAL_LOCALE =
-      Issue.create(
-        id = "ConstantLocale",
-        briefDescription = "Constant Locale",
-        explanation =
-          """
+        Issue.create(
+            id = "ConstantLocale",
+            briefDescription = "Constant Locale",
+            explanation =
+                """
                 Assigning `Locale.getDefault()` to a constant is suspicious, because \
                 the locale can change while the app is running.""",
-        category = Category.I18N,
-        priority = 6,
-        severity = Severity.WARNING,
-        androidSpecific = true,
-        implementation = IMPLEMENTATION,
-      )
+            category = Category.I18N,
+            priority = 6,
+            severity = Severity.WARNING,
+            androidSpecific = true,
+            implementation = IMPLEMENTATION,
+        )
   }
 }

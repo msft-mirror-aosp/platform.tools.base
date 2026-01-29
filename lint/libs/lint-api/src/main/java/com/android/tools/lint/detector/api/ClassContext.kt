@@ -40,51 +40,46 @@ import org.objectweb.asm.tree.MethodNode
 
 /** A [Context] used when checking .class files. */
 class ClassContext(
-  /** the driver running through the checks */
-  driver: LintDriver,
+    /** the driver running through the checks */
+    driver: LintDriver,
 
-  /** the project containing the file being checked */
-  project: Project,
+    /** the project containing the file being checked */
+    project: Project,
 
-  /**
-   * The "main" project. For normal projects, this is the same as [.project], but for library
-   * projects, it's the root project that includes (possibly indirectly) the various library
-   * projects and their library projects.
-   *
-   * Note that this is a property on the [Context], not the [Project], since a library project can
-   * be included from multiple different top level projects, so there isn't **one** main project,
-   * just one per main project being analyzed with its library projects.
-   */
-  main: Project?,
+    /**
+     * The "main" project. For normal projects, this is the same as [.project], but for library projects, it's the root project that
+     * includes (possibly indirectly) the various library projects and their library projects.
+     *
+     * Note that this is a property on the [Context], not the [Project], since a library project can be included from multiple different top
+     * level projects, so there isn't **one** main project, just one per main project being analyzed with its library projects.
+     */
+    main: Project?,
 
-  /** the file being checked */
-  file: File,
+    /** the file being checked */
+    file: File,
 
-  /**
-   * The jar file, if any. If this is null, the .class file is a real file on disk, otherwise it
-   * represents a relative path within the jar file.
-   *
-   * @return the jar file, or null
-   */
-  val jarFile: File?,
+    /**
+     * The jar file, if any. If this is null, the .class file is a real file on disk, otherwise it represents a relative path within the jar
+     * file.
+     *
+     * @return the jar file, or null
+     */
+    val jarFile: File?,
 
-  /** the root binary directory containing this .class file */
-  private val binDir: File,
+    /** the root binary directory containing this .class file */
+    private val binDir: File,
 
-  /** The class file byte data. */
-  val bytecode: ByteArray,
+    /** The class file byte data. */
+    val bytecode: ByteArray,
 
-  /** The class file DOM root node. */
-  val classNode: ClassNode,
+    /** The class file DOM root node. */
+    val classNode: ClassNode,
 
-  /**
-   * Whether this class is part of a library (rather than corresponding to one of the source files
-   * in this project.
-   */
-  val isFromClassLibrary: Boolean,
+    /** Whether this class is part of a library (rather than corresponding to one of the source files in this project. */
+    val isFromClassLibrary: Boolean,
 
-  /** The contents of the source file, if source file is known/found. */
-  private var sourceContents: CharSequence?,
+    /** The contents of the source file, if source file is known/found. */
+    private var sourceContents: CharSequence?,
 ) : Context(driver, project, main, file) {
 
   /** The source file, if known/found. */
@@ -130,10 +125,10 @@ class ClassContext(
         if (parentPath.startsWith(topPath)) {
           val start = topPath.length + 1
           val relative =
-            if (start > parentPath.length) {
-              // default package?
-              ""
-            } else parentPath.substring(start)
+              if (start > parentPath.length) {
+                // default package?
+                ""
+              } else parentPath.substring(start)
           val sources = project.getJavaSourceFolders()
           for (dir in sources) {
             val sourceFile = File(dir, relative + File.separator + source)
@@ -170,13 +165,12 @@ class ClassContext(
   }
 
   /**
-   * Returns the contents of the source file for this class file, if found. If `read` is false, do
-   * not read the source contents if it has not already been read. (This is primarily intended for
-   * the lint infrastructure; most client code would call [.getSourceContents] .)
+   * Returns the contents of the source file for this class file, if found. If `read` is false, do not read the source contents if it has
+   * not already been read. (This is primarily intended for the lint infrastructure; most client code would call [.getSourceContents] .)
    *
    * @param read whether to read the source contents if it has not already been initialized
-   * @return the source contents, which will never be null if `read` is true, or null if `read` is
-   *   false and the source contents hasn't already been read.
+   * @return the source contents, which will never be null if `read` is true, or null if `read` is false and the source contents hasn't
+   *   already been read.
    */
   fun getSourceContents(read: Boolean): CharSequence? {
     return if (read) {
@@ -187,8 +181,7 @@ class ClassContext(
   }
 
   /**
-   * Returns a location for the given source line number in this class file's source file, if
-   * available.
+   * Returns a location for the given source line number in this class file's source file, if available.
    *
    * @param line the line number (1-based, which is what ASM uses)
    * @param patternStart optional pattern to search for in the source for range start
@@ -197,10 +190,10 @@ class ClassContext(
    * @return a location, never null
    */
   fun getLocationForLine(
-    line: Int,
-    patternStart: String?,
-    patternEnd: String?,
-    hints: SearchHints?,
+      line: Int,
+      patternStart: String?,
+      patternEnd: String?,
+      hints: SearchHints?,
   ): Location {
     val sourceFile = getSourceFile()
     if (sourceFile != null) {
@@ -218,9 +211,8 @@ class ClassContext(
   /**
    * Reports an issue.
    *
-   * Detectors should only call this method if an error applies to the whole class scope and there
-   * is no specific method or field that applies to the error. If so, use [.report], such that
-   * suppress annotations are checked.
+   * Detectors should only call this method if an error applies to the whole class scope and there is no specific method or field that
+   * applies to the error. If so, use [.report], such that suppress annotations are checked.
    *
    * @param issue the issue to report
    * @param location the location of the issue, or null if not known
@@ -268,24 +260,21 @@ class ClassContext(
    * Reports an issue applicable to a given method node.
    *
    * @param issue the issue to report
-   * @param method the method scope the error applies to. The lint infrastructure will check whether
-   *   there are suppress annotations on this method (or its enclosing class) and if so suppress the
-   *   warning without involving the client.
-   * @param instruction the instruction within the method the error applies to. You cannot place
-   *   annotations on individual method instructions (for example, annotations on local variables
-   *   are allowed, but are not kept in the .class file). However, this instruction is needed to
-   *   handle suppressing errors on field initializations; in that case, the errors may be reported
-   *   in the `<clinit>` method, but the annotation is found not on that method but for the
-   *   [FieldNode]'s.
+   * @param method the method scope the error applies to. The lint infrastructure will check whether there are suppress annotations on this
+   *   method (or its enclosing class) and if so suppress the warning without involving the client.
+   * @param instruction the instruction within the method the error applies to. You cannot place annotations on individual method
+   *   instructions (for example, annotations on local variables are allowed, but are not kept in the .class file). However, this
+   *   instruction is needed to handle suppressing errors on field initializations; in that case, the errors may be reported in the
+   *   `<clinit>` method, but the annotation is found not on that method but for the [FieldNode]'s.
    * @param location the location of the issue, or null if not known
    * @param message the message for this warning
    */
   fun report(
-    issue: Issue,
-    method: MethodNode?,
-    instruction: AbstractInsnNode?,
-    location: Location,
-    message: String,
+      issue: Issue,
+      method: MethodNode?,
+      instruction: AbstractInsnNode?,
+      location: Location,
+      message: String,
   ) {
     if (method != null && driver.isSuppressed(issue, classNode, method, instruction)) {
       return
@@ -297,9 +286,8 @@ class ClassContext(
    * Reports an issue applicable to a given method node.
    *
    * @param issue the issue to report
-   * @param field the scope the error applies to. The lint infrastructure will check whether there
-   *   are suppress annotations on this field (or its enclosing class) and if so suppress the
-   *   warning without involving the client.
+   * @param field the scope the error applies to. The lint infrastructure will check whether there are suppress annotations on this field
+   *   (or its enclosing class) and if so suppress the warning without involving the client.
    * @param location the location of the issue, or null if not known
    * @param message the message for this warning
    */
@@ -311,8 +299,8 @@ class ClassContext(
   }
 
   /**
-   * Returns a location for the given [ClassNode], where class node is either the top level class,
-   * or an inner class, in the current context.
+   * Returns a location for the given [ClassNode], where class node is either the top level class, or an inner class, in the current
+   * context.
    *
    * @param classNode the class in the current context
    * @return a location pointing to the class declaration, or as close to it as possible
@@ -324,11 +312,11 @@ class ClassContext(
     // around it for a suitable tag, such as the class name.
     var pattern: String
     pattern =
-      if (isAnonymousClass(classNode.name)) {
-        classNode.superName
-      } else {
-        classNode.name
-      }
+        if (isAnonymousClass(classNode.name)) {
+          classNode.superName
+        } else {
+          classNode.name
+        }
     var index = pattern.lastIndexOf('$')
     if (index != -1) {
       pattern = pattern.substring(index + 1)
@@ -339,10 +327,10 @@ class ClassContext(
     }
 
     return getLocationForLine(
-      findLineNumber(classNode),
-      pattern,
-      null,
-      SearchHints.create(BACKWARD).matchJavaSymbol(),
+        findLineNumber(classNode),
+        pattern,
+        null,
+        SearchHints.create(BACKWARD).matchJavaSymbol(),
     )
   }
 
@@ -363,21 +351,21 @@ class ClassContext(
     if (methodNode.name == CONSTRUCTOR_NAME) {
       searchMode = EOL_BACKWARD
       pattern =
-        if (isAnonymousClass(classNode.name)) {
-          classNode.superName.substring(classNode.superName.lastIndexOf('/') + 1)
-        } else {
-          classNode.name.substring(classNode.name.lastIndexOf('$') + 1)
-        }
+          if (isAnonymousClass(classNode.name)) {
+            classNode.superName.substring(classNode.superName.lastIndexOf('/') + 1)
+          } else {
+            classNode.name.substring(classNode.name.lastIndexOf('$') + 1)
+          }
     } else {
       searchMode = BACKWARD
       pattern = methodNode.name
     }
 
     return getLocationForLine(
-      findLineNumber(methodNode),
-      pattern,
-      null,
-      SearchHints.create(searchMode).matchJavaSymbol(),
+        findLineNumber(methodNode),
+        pattern,
+        null,
+        SearchHints.create(searchMode).matchJavaSymbol(),
     )
   }
 
@@ -519,8 +507,7 @@ class ClassContext(
     }
 
     /**
-     * Converts from a VM owner name (such as foo/bar/Foo$Baz) to a fully qualified class name (such
-     * as foo.bar.Foo.Baz).
+     * Converts from a VM owner name (such as foo/bar/Foo$Baz) to a fully qualified class name (such as foo.bar.Foo.Baz).
      *
      * @param owner the owner name to convert
      * @return the corresponding fully qualified class name
@@ -528,9 +515,8 @@ class ClassContext(
     @JvmStatic fun getFqcn(owner: String): String = owner.replace('/', '.').replace('$', '.')
 
     /**
-     * Computes a user-readable type signature from the given class owner, name and description. For
-     * example, for owner="foo/bar/Foo$Baz", name="foo", description="(I)V", it returns "void
-     * foo.bar.Foo.Bar#foo(int)".
+     * Computes a user-readable type signature from the given class owner, name and description. For example, for owner="foo/bar/Foo$Baz",
+     * name="foo", description="(I)V", it returns "void foo.bar.Foo.Bar#foo(int)".
      *
      * @param owner the class name
      * @param name the method name
@@ -585,8 +571,8 @@ class ClassContext(
     }
 
     /**
-     * Computes the internal class name of the given fully qualified class name. For example, it
-     * converts foo.bar.Foo.Bar into foo/bar/Foo$Bar
+     * Computes the internal class name of the given fully qualified class name. For example, it converts foo.bar.Foo.Bar into
+     * foo/bar/Foo$Bar
      *
      * @param qualifiedName the fully qualified class name
      * @return the internal class name

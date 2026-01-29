@@ -22,9 +22,8 @@ import java.nio.charset.StandardCharsets
 /**
  * Represents a class and its hidden methods/fields, which are not part of the public SDK.
  *
- * Each member has an attached reflective access [Restriction], corresponding to the platform's
- * runtime behavior (e.g. a reflective call to a denied method is forbidden on all API versions, a
- * call to a maybe allowed method will be allowed with a warning, etc.)
+ * Each member has an attached reflective access [Restriction], corresponding to the platform's runtime behavior (e.g. a reflective call to
+ * a denied method is forbidden on all API versions, a call to a maybe allowed method will be allowed with a warning, etc.)
  */
 class PrivateApiClass(name: String) : ApiClassBase(name) {
 
@@ -58,9 +57,9 @@ class PrivateApiClass(name: String) : ApiClassBase(name) {
   }
 
   internal override fun writeMemberData(
-    info: Api<out ApiClassBase>,
-    member: String,
-    buffer: ByteBuffer,
+      info: Api<out ApiClassBase>,
+      member: String,
+      buffer: ByteBuffer,
   ) {
     val payload = (if (member.indexOf('(') >= 0) methods[member] else fields[member]) ?: return
 
@@ -93,13 +92,13 @@ enum class Restriction(val encoding: Int) {
 }
 
 fun decode(encoding: Int): Restriction =
-  when (encoding) {
-    1 -> Restriction.ALLOW
-    2 -> Restriction.DENY
-    3 -> Restriction.MAYBE
-    4 -> Restriction.MAYBE_MAX_O
-    5 -> Restriction.MAYBE_MAX_P
-    6 -> Restriction.MAYBE_MAX_Q
-    7 -> Restriction.MAYBE_MAX_R
-    else -> Restriction.UNKNOWN
-  }
+    when (encoding) {
+      1 -> Restriction.ALLOW
+      2 -> Restriction.DENY
+      3 -> Restriction.MAYBE
+      4 -> Restriction.MAYBE_MAX_O
+      5 -> Restriction.MAYBE_MAX_P
+      6 -> Restriction.MAYBE_MAX_Q
+      7 -> Restriction.MAYBE_MAX_R
+      else -> Restriction.UNKNOWN
+    }

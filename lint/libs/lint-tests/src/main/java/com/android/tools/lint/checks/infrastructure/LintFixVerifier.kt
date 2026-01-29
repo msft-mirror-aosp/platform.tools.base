@@ -52,14 +52,14 @@ import org.xml.sax.SAXException
 /**
  * Verifier which can simulate IDE quickfixes and check fix data.
  *
- * TODO: Merge with [LintCliFixPerformer] (though they work slightly differently; the fix verifier
- *   shows each individual fix applied to the doc in sequence, whereas the fix performer accumulates
- *   all the fixes into a single edit. But we should be able to share a bunch of the logic.)
+ * TODO: Merge with [LintCliFixPerformer] (though they work slightly differently; the fix verifier shows each individual fix applied to the
+ *   doc in sequence, whereas the fix performer accumulates all the fixes into a single edit. But we should be able to share a bunch of the
+ *   logic.)
  */
 class LintFixVerifier(
-  private val task: TestLintTask,
-  private val mode: TestMode,
-  state: TestResultState,
+    private val task: TestLintTask,
+    private val mode: TestMode,
+    state: TestResultState,
 ) {
   private val incidents: List<Incident> = state.incidents
   private val client: TestLintClient = state.client
@@ -74,10 +74,7 @@ class LintFixVerifier(
     return this
   }
 
-  /**
-   * Specifies whether a robot is driving the quickfixes (which means it will only allow
-   * auto-fixable lint fixes. Default is false.
-   */
+  /** Specifies whether a robot is driving the quickfixes (which means it will only allow auto-fixable lint fixes. Default is false. */
   fun robot(isRobot: Boolean): LintFixVerifier {
     robot = isRobot
     return this
@@ -91,27 +88,23 @@ class LintFixVerifier(
   }
 
   /**
-   * Sets whether lint should reformat before and after files before diffing. If not set explicitly
-   * to true or false, it will default to true for XML files that set/remove attributes and false
-   * otherwise. (May not have any effect on other file types than XML.)
+   * Sets whether lint should reformat before and after files before diffing. If not set explicitly to true or false, it will default to
+   * true for XML files that set/remove attributes and false otherwise. (May not have any effect on other file types than XML.)
    */
   fun reformatDiffs(reformatDiffs: Boolean): LintFixVerifier {
     reformat = reformatDiffs
     return this
   }
 
-  /**
-   * Sets whether lint should verify that any Kotlin, Java, or XML files have valid syntax after
-   * applying the fixes.
-   */
+  /** Sets whether lint should verify that any Kotlin, Java, or XML files have valid syntax after applying the fixes. */
   fun verifyFixedFileSyntax(verify: Boolean): LintFixVerifier {
     verifyFixedFileSyntax = verify
     return this
   }
 
   /**
-   * Checks what happens with the given fix in this result as applied to the given test file, and
-   * making sure that the result is the new contents
+   * Checks what happens with the given fix in this result as applied to the given test file, and making sure that the result is the new
+   * contents
    *
    * @param fix the fix description, or null to pick the first one
    * @param after the file after applying the fix
@@ -139,19 +132,13 @@ class LintFixVerifier(
   }
 
   /**
-   * Applies the fixes and provides diffs of all the affected files, then compares it against the
-   * expected result.
+   * Applies the fixes and provides diffs of all the affected files, then compares it against the expected result.
    *
    * @param expected the diff description resulting from applying the diffs
    * @return this
    */
   fun expectFixDiffs(expected: String): LintFixVerifier {
-    if (
-      expected.isBlank() &&
-        !verifyFixedFileSyntax &&
-        task.verifyFixedFileSyntax == null &&
-        mode == task.testModes.firstOrNull()
-    ) {
+    if (expected.isBlank() && !verifyFixedFileSyntax && task.verifyFixedFileSyntax == null && mode == task.testModes.firstOrNull()) {
       // First time we're registering this fix; check that the generated
       // files are valid across all test modes. Note that we do this
       // *before* checking the fix diffs, and we check *all*
@@ -172,8 +159,7 @@ class LintFixVerifier(
   }
 
   /**
-   * Applies the fixes and provides diffs of all the affected files, then compares it against the
-   * expected result.
+   * Applies the fixes and provides diffs of all the affected files, then compares it against the expected result.
    *
    * @param expected the diff description resulting from applying the diffs
    * @param transformer which will convert the output from the fix performer before the comparison
@@ -185,11 +171,11 @@ class LintFixVerifier(
       // the older format (but if that doesn't fail, use the original
       // failure exceptions such that we present the new format.
       expectFixDiffs(
-        expected,
-        compatMode1 = false,
-        compatMode2 = false,
-        compatMode3 = false,
-        transformer = transformer,
+          expected,
+          compatMode1 = false,
+          compatMode2 = false,
+          compatMode3 = false,
+          transformer = transformer,
       )
     } catch (throwable: Throwable) {
       if (expected.isBlank()) {
@@ -197,29 +183,29 @@ class LintFixVerifier(
       }
       try {
         expectFixDiffs(
-          expected,
-          compatMode1 = false,
-          compatMode2 = false,
-          compatMode3 = true,
-          transformer = transformer,
+            expected,
+            compatMode1 = false,
+            compatMode2 = false,
+            compatMode3 = true,
+            transformer = transformer,
         )
       } catch (_: Throwable) {
         try {
           expectFixDiffs(
-            expected,
-            compatMode1 = false,
-            compatMode2 = true,
-            compatMode3 = true,
-            transformer = transformer,
+              expected,
+              compatMode1 = false,
+              compatMode2 = true,
+              compatMode3 = true,
+              transformer = transformer,
           )
         } catch (_: Throwable) {
           try {
             expectFixDiffs(
-              expected,
-              compatMode1 = true,
-              compatMode2 = true,
-              compatMode3 = true,
-              transformer = transformer,
+                expected,
+                compatMode1 = true,
+                compatMode2 = true,
+                compatMode3 = true,
+                transformer = transformer,
             )
           } catch (_: Throwable) {
             throw throwable
@@ -231,33 +217,32 @@ class LintFixVerifier(
   }
 
   /**
-   * Like [expectFixDiffs] but does not check the fix diff output -- it only applies the fixes and
-   * then verifies that the resulting modified files are syntactically valid.
+   * Like [expectFixDiffs] but does not check the fix diff output -- it only applies the fixes and then verifies that the resulting modified
+   * files are syntactically valid.
    */
   fun verifyFixesValid(transformer: TestResultTransformer): LintFixVerifier {
     expectFixDiffs(
-      null,
-      compatMode1 = false,
-      compatMode2 = false,
-      compatMode3 = false,
-      transformer = transformer,
+        null,
+        compatMode1 = false,
+        compatMode2 = false,
+        compatMode3 = false,
+        transformer = transformer,
     )
     return this
   }
 
   private fun expectFixDiffs(
-    expected: String?,
-    compatMode1: Boolean,
-    compatMode2: Boolean,
-    compatMode3: Boolean,
-    transformer: TestResultTransformer = TestResultTransformer { it },
+      expected: String?,
+      compatMode1: Boolean,
+      compatMode2: Boolean,
+      compatMode3: Boolean,
+      transformer: TestResultTransformer = TestResultTransformer { it },
   ): LintFixVerifier {
     val verifyOnly = verifyFixedFileSyntax && expected == null
     var expected = expected ?: ""
     val diff = StringBuilder(100)
     checkFixes(null, null, diff, compatMode1, compatMode2, compatMode3)
-    var actual =
-      transformer.transform(diff.toString().replace("\r\n", "\n").trimIndent().replace('$', '＄'))
+    var actual = transformer.transform(diff.toString().replace("\r\n", "\n").trimIndent().replace('$', '＄'))
     val originalActual = actual
     expected = expected.trimIndent().replace('$', '＄')
 
@@ -281,11 +266,10 @@ class LintFixVerifier(
   private fun outputMatches(expected: String, actual: String): Boolean {
     var actual = actual
     if (
-      expected != actual &&
-        // Also allow trailing spaces in embedded lines since the old differ
-        // included that
-        actual.replace("\\s+\n".toRegex(), "\n").trim() !=
-          expected.replace("\\s+\n".toRegex(), "\n").trim()
+        expected != actual &&
+            // Also allow trailing spaces in embedded lines since the old differ
+            // included that
+            actual.replace("\\s+\n".toRegex(), "\n").trim() != expected.replace("\\s+\n".toRegex(), "\n").trim()
     ) {
       // Older files than AGP 7.2 may not have labeled auto-fixes as such.
       // Being tolerant here makes us not break older fix description files,
@@ -297,17 +281,12 @@ class LintFixVerifier(
       }
 
       // Import order was adjusted recently
-      if (
-        diffWindow == 0 && dropImportLineNumberDiffs(expected) == dropImportLineNumberDiffs(actual)
-      ) {
+      if (diffWindow == 0 && dropImportLineNumberDiffs(expected) == dropImportLineNumberDiffs(actual)) {
         return true
       }
 
       // Until 3.2 canary 10 the line numbers were off by one; try adjusting
-      if (
-        bumpFixLineNumbers(expected.replace("\\s+\n".toRegex(), "\n")).trim() !=
-          actual.replace("\\s+\n".toRegex(), "\n").trim()
-      ) {
+      if (bumpFixLineNumbers(expected.replace("\\s+\n".toRegex(), "\n")).trim() != actual.replace("\\s+\n".toRegex(), "\n").trim()) {
         if (mode.sameOutput(expected, actual, TestMode.OutputKind.QUICKFIXES)) {
           return true
         }
@@ -340,12 +319,12 @@ class LintFixVerifier(
   }
 
   private fun checkFixes(
-    fixName: String?,
-    expectedFile: TestFile?,
-    diffs: StringBuilder?,
-    compatMode1: Boolean,
-    compatMode2: Boolean,
-    compatMode3: Boolean,
+      fixName: String?,
+      expectedFile: TestFile?,
+      diffs: StringBuilder?,
+      compatMode1: Boolean,
+      compatMode2: Boolean,
+      compatMode3: Boolean,
   ) {
     assertTrue(expectedFile != null || diffs != null)
     val names: MutableList<String?> = Lists.newArrayList()
@@ -356,16 +335,16 @@ class LintFixVerifier(
         continue
       }
       val list: List<LintFix> =
-        if (fix is LintFixGroup) {
-          if (fix.type == GroupType.COMPOSITE) {
-            // separated out again in applyFix
-            listOf(fix)
+          if (fix is LintFixGroup) {
+            if (fix.type == GroupType.COMPOSITE) {
+              // separated out again in applyFix
+              listOf(fix)
+            } else {
+              fix.fixes
+            }
           } else {
-            fix.fixes
+            listOf(fix)
           }
-        } else {
-          listOf(fix)
-        }
 
       if (!task.allowNonAlphabeticalFixOrder) {
         ensureIdeCompatibleSorting(list)
@@ -410,10 +389,8 @@ class LintFixVerifier(
                 continue
               }
               try {
-                initial[f] =
-                  XmlPrettyPrinter.prettyPrint(XmlUtils.parseDocument(initial[f]!!, true), true)
-                edited[f] =
-                  XmlPrettyPrinter.prettyPrint(XmlUtils.parseDocument(contents, true), true)
+                initial[f] = XmlPrettyPrinter.prettyPrint(XmlUtils.parseDocument(initial[f]!!, true), true)
+                edited[f] = XmlPrettyPrinter.prettyPrint(XmlUtils.parseDocument(contents, true), true)
               } catch (e: SAXException) {
                 throw RuntimeException(e)
               } catch (e: IOException) {
@@ -422,15 +399,15 @@ class LintFixVerifier(
             }
           }
           appendDiff(
-            incident,
-            lintFix.getDisplayName(),
-            lintFix.robot,
-            initial,
-            edited,
-            diffs,
-            compatMode1,
-            compatMode2,
-            compatMode3,
+              incident,
+              lintFix.getDisplayName(),
+              lintFix.robot,
+              initial,
+              edited,
+              diffs,
+              compatMode1,
+              compatMode2,
+              compatMode3,
           )
         }
 
@@ -458,66 +435,65 @@ class LintFixVerifier(
   }
 
   fun applyFixes(
-    pickFix: (Incident, List<LintFix>) -> LintFix?,
-    apply: (Project?, File, ByteArray?) -> Unit,
+      pickFix: (Incident, List<LintFix>) -> LintFix?,
+      apply: (Project?, File, ByteArray?) -> Unit,
   ) {
     val project = incidents.firstNotNullOfOrNull { it.project } ?: return
     val performer =
-      object : LintCliFixPerformer(client, false, false, true /* for includes */) {
-        override fun writeFile(file: File, contents: ByteArray?) {
-          apply(project, file, contents)
-        }
+        object : LintCliFixPerformer(client, false, false, true /* for includes */) {
+          override fun writeFile(file: File, contents: ByteArray?) {
+            apply(project, file, contents)
+          }
 
-        override fun writeFile(file: File, contents: String) {
-          apply(project, file, contents.toByteArray(Charsets.UTF_8))
+          override fun writeFile(file: File, contents: String) {
+            apply(project, file, contents.toByteArray(Charsets.UTF_8))
+          }
         }
-      }
     // TODO: Add filtering of incidents/fixes?
     performer.fix(incidents)
   }
 
   private fun applyFix(
-    incident: Incident,
-    lintFix: LintFix,
-    before: MutableMap<String, String>,
-    after: MutableMap<String, String>,
-    compatMode: Boolean,
+      incident: Incident,
+      lintFix: LintFix,
+      before: MutableMap<String, String>,
+      after: MutableMap<String, String>,
+      compatMode: Boolean,
   ): Boolean {
     if (isEditingFix(lintFix) || lintFix is LintFixGroup) {
       val edits = getLeafFixes(lintFix)
       val includeMarkers = task.includeSelectionMarkers
       val performer =
-        object :
-          LintCliFixPerformer(
-            client,
-            printStatistics = false,
-            requireAutoFixable = false,
-            includeMarkers = includeMarkers,
-            updateImports = includeMarkers,
-            shortenAll = includeMarkers && !compatMode,
-          ) {
-          override fun writeFile(file: File, contents: ByteArray?) {
-            val project = incident.project
-            val targetPath = project?.getDisplayPath(file) ?: file.path
-            val initial = findTestFile(targetPath)?.getContents() ?: "" // creating new file
-            before[targetPath] = initial
-            if (contents == null) {
-              after[targetPath] = ""
-            } else {
-              val base64 = "base64: " + Base64.getEncoder().encodeToString(contents)
-              after[targetPath] =
-                Splitter.fixedLength(60).split(base64).joinToString("\n") { "  $it" }
+          object :
+              LintCliFixPerformer(
+                  client,
+                  printStatistics = false,
+                  requireAutoFixable = false,
+                  includeMarkers = includeMarkers,
+                  updateImports = includeMarkers,
+                  shortenAll = includeMarkers && !compatMode,
+              ) {
+            override fun writeFile(file: File, contents: ByteArray?) {
+              val project = incident.project
+              val targetPath = project?.getDisplayPath(file) ?: file.path
+              val initial = findTestFile(targetPath)?.getContents() ?: "" // creating new file
+              before[targetPath] = initial
+              if (contents == null) {
+                after[targetPath] = ""
+              } else {
+                val base64 = "base64: " + Base64.getEncoder().encodeToString(contents)
+                after[targetPath] = Splitter.fixedLength(60).split(base64).joinToString("\n") { "  $it" }
+              }
+            }
+
+            override fun writeFile(file: File, contents: String) {
+              val project = incident.project
+              val targetPath = project?.getDisplayPath(file) ?: file.path
+              val initial = getSourceText(file).toString()
+              before[targetPath] = initial
+              after[targetPath] = contents
             }
           }
-
-          override fun writeFile(file: File, contents: String) {
-            val project = incident.project
-            val targetPath = project?.getDisplayPath(file) ?: file.path
-            val initial = getSourceText(file).toString()
-            before[targetPath] = initial
-            after[targetPath] = contents
-          }
-        }
       performer.fix(incident, edits)
       return true
     }
@@ -525,15 +501,15 @@ class LintFixVerifier(
   }
 
   private fun appendDiff(
-    incident: Incident,
-    fixDescription: String?,
-    autoFixable: Boolean,
-    initial: MutableMap<String, String>,
-    edited: MutableMap<String, String>,
-    diffs: StringBuilder,
-    compatMode1: Boolean,
-    compatMode2: Boolean,
-    compatMode3: Boolean,
+      incident: Incident,
+      fixDescription: String?,
+      autoFixable: Boolean,
+      initial: MutableMap<String, String>,
+      edited: MutableMap<String, String>,
+      diffs: StringBuilder,
+      compatMode1: Boolean,
+      compatMode2: Boolean,
+      compatMode3: Boolean,
   ) {
     var first = true
 
@@ -541,17 +517,17 @@ class LintFixVerifier(
     // incident location is associated with goes first
     val incidentPath = incident.getDisplayPath()
     val comparator =
-      object : Comparator<String> {
-        override fun compare(o1: String, o2: String): Int {
-          val v1 = if (o1 == incidentPath) 0 else 1
-          val v2 = if (o2 == incidentPath) 0 else 1
-          val delta = v1 - v2
-          if (delta != 0) {
-            return delta
+        object : Comparator<String> {
+          override fun compare(o1: String, o2: String): Int {
+            val v1 = if (o1 == incidentPath) 0 else 1
+            val v2 = if (o2 == incidentPath) 0 else 1
+            val delta = v1 - v2
+            if (delta != 0) {
+              return delta
+            }
+            return v1.compareTo(v2)
           }
-          return v1.compareTo(v2)
         }
-      }
     val sortedFiles = edited.keys.sortedWith(comparator)
 
     for (file in sortedFiles) {
@@ -566,12 +542,7 @@ class LintFixVerifier(
           } else {
             diffs.append("Fix ")
           }
-          diffs
-            .append("for ")
-            .append(incidentPath)
-            .append(" line ")
-            .append(incident.line + 1)
-            .append(":")
+          diffs.append("for ").append(incidentPath).append(" line ").append(incident.line + 1).append(":")
           if (fixDescription != null) {
             first = false
             diffs.append(" ").append(fixDescription).append(":\n")
@@ -602,11 +573,10 @@ class LintFixVerifier(
     temporaryFolder.create()
     try {
       val (contexts, disposable) =
-        parse(
-          temporaryFolder = temporaryFolder,
-          testFiles =
-            arrayOf(if (path.endsWith(DOT_JAVA)) java(path, source) else kotlin(path, source)),
-        )
+          parse(
+              temporaryFolder = temporaryFolder,
+              testFiles = arrayOf(if (path.endsWith(DOT_JAVA)) java(path, source) else kotlin(path, source)),
+          )
       try {
         for (context in contexts) {
           val root = context.psiFile!!
@@ -615,9 +585,7 @@ class LintFixVerifier(
             val line = context.getLocation(error).start?.line ?: -1
             val location = context.getLocation(error)
             val lines = location.getErrorLines { source }
-            return "$error\nin ${path}:${line + 1} with text " +
-              "\"${error.text}\" inside \"${error.parent.text}\"\n" +
-              "$lines\n"
+            return "$error\nin ${path}:${line + 1} with text " + "\"${error.text}\" inside \"${error.parent.text}\"\n" + "$lines\n"
           }
         }
       } finally {
@@ -630,16 +598,15 @@ class LintFixVerifier(
   }
 
   /**
-   * Makes sure that the [after] file is a valid XML/Java/Kotlin source file (after applying
-   * quickfixes to it). The original contents was [before] and its source path is [path]; these are
-   * used to only complain if the file wasn't already containing parsing problems before the
-   * quickfix, and to pick the language to use to validate.
+   * Makes sure that the [after] file is a valid XML/Java/Kotlin source file (after applying quickfixes to it). The original contents was
+   * [before] and its source path is [path]; these are used to only complain if the file wasn't already containing parsing problems before
+   * the quickfix, and to pick the language to use to validate.
    */
   private fun validateSourceFile(
-    path: String,
-    before: String,
-    after: String,
-    fixName: String? = null,
+      path: String,
+      before: String,
+      after: String,
+      fixName: String? = null,
   ) {
     if (task.includeSelectionMarkers && (after.contains("|") || after.contains("["))) {
       // For example, we might add this: `@RequiresApi([TODO]|)`
@@ -647,13 +614,13 @@ class LintFixVerifier(
     }
 
     val validator =
-      if (path.endsWith(DOT_KT) || path.endsWith(DOT_KTS) || path.endsWith(DOT_JAVA)) {
-        ::validateJavaOrKotlinSource
-      } else if (path.endsWith(DOT_XML)) {
-        ::validateXmlSource
-      } else {
-        return
-      }
+        if (path.endsWith(DOT_KT) || path.endsWith(DOT_KTS) || path.endsWith(DOT_JAVA)) {
+          ::validateJavaOrKotlinSource
+        } else if (path.endsWith(DOT_XML)) {
+          ::validateXmlSource
+        } else {
+          return
+        }
 
     val message = validator(path, after) ?: return
     if (validator(path, before) != null) {
@@ -669,9 +636,7 @@ class LintFixVerifier(
     }
     sb.append(",\nfound syntax errors in the source file ($path):\n")
     sb.append(message).append("\n")
-    sb.append(
-      "If this is intentional, you can turn this off with `.verifyFixedFileSyntax(false)`.\n\n"
-    )
+    sb.append("If this is intentional, you can turn this off with `.verifyFixedFileSyntax(false)`.\n\n")
     sb.append("Fixed file:\n")
     sb.append(listFile(path, after))
 
@@ -683,11 +648,11 @@ class LintFixVerifier(
   private fun appendShowUrl(incident: Incident, fix: ShowUrl, diffs: StringBuilder) {
     val targetPath = incident.getDisplayPath()
     diffs
-      .append("Show URL for ")
-      .append(targetPath.replace(File.separatorChar, '/'))
-      .append(" line ")
-      .append(incident.line + 1)
-      .append(": ")
+        .append("Show URL for ")
+        .append(targetPath.replace(File.separatorChar, '/'))
+        .append(" line ")
+        .append(incident.line + 1)
+        .append(": ")
     val fixDescription = fix.getDisplayName()
     // Compatibility: before we created a custom name here we just showed the URL
     if (fixDescription != "Show " + fix.url && fixDescription != null) {
@@ -699,12 +664,7 @@ class LintFixVerifier(
 
   private fun appendDataMap(incident: Incident, map: LintFix.DataMap, diffs: StringBuilder) {
     val targetPath = incident.getDisplayPath()
-    diffs
-      .append("Data for ")
-      .append(targetPath.replace(File.separatorChar, '/'))
-      .append(" line ")
-      .append(incident.line + 1)
-      .append(": ")
+    diffs.append("Data for ").append(targetPath.replace(File.separatorChar, '/')).append(" line ").append(incident.line + 1).append(": ")
     val fixDescription = map.getDisplayName()
     if (fixDescription != null) {
       diffs.append(fixDescription).append(":\n")
@@ -726,17 +686,16 @@ class LintFixVerifier(
     private const val TOLERATE_AUTO_FIX_DIFFS = true
 
     /**
-     * Given fix-delta output, increases the line numbers by one (needed to gracefully handle older
-     * fix diffs where the line numbers were 0-based instead of 1-based like the error output.)
+     * Given fix-delta output, increases the line numbers by one (needed to gracefully handle older fix diffs where the line numbers were
+     * 0-based instead of 1-based like the error output.)
      */
     fun bumpFixLineNumbers(output: String): String {
       return adjustLineNumbers(output) { it + 1 }
     }
 
     /**
-     * We recently updated the quickfix applier to insert imports alphabetically rather than always
-     * prepending to the front. This can create some diffs in existing tests. This CL just removes
-     * line numbers in diffs for import lines.
+     * We recently updated the quickfix applier to insert imports alphabetically rather than always prepending to the front. This can create
+     * some diffs in existing tests. This CL just removes line numbers in diffs for import lines.
      */
     fun dropImportLineNumberDiffs(output: String): String {
       if (output.contains("@@")) {
@@ -744,9 +703,7 @@ class LintFixVerifier(
         val sb = StringBuilder(output.length)
         for (i in lines.indices) {
           val line = lines[i]
-          if (
-            line.startsWith("@@ ") && i < lines.size - 1 && lines[i + 1].startsWith("+ import ")
-          ) {
+          if (line.startsWith("@@ ") && i < lines.size - 1 && lines[i + 1].startsWith("+ import ")) {
             sb.append("@@ -x +y")
           } else {
             sb.append(line)
@@ -759,8 +716,8 @@ class LintFixVerifier(
     }
 
     /**
-     * Given fix-delta output, increases the line numbers by one (needed to gracefully handle older
-     * fix diffs where the line numbers were 0-based instead of 1-based like the error output.)
+     * Given fix-delta output, increases the line numbers by one (needed to gracefully handle older fix diffs where the line numbers were
+     * 0-based instead of 1-based like the error output.)
      */
     fun adjustLineNumbers(output: String, adjust: (Int) -> Int): String {
       val sb = StringBuilder(output.length)
@@ -827,50 +784,50 @@ class LintFixVerifier(
       val actual = "${labels[0]}\n${logicalOrder.joinToString("\n")}"
       if (expected != actual) {
         assertEquals(
-          // First line deliberately shorted to allow room for the
-          // prefix "org.junit.ComparisonFailure: "
-          """
-                    When a quickfix registers multiple
-                    alternatives, these will be shown as options for developers as
-                    intention actions (alt/option+enter) in the IDE.
+            // First line deliberately shorted to allow room for the
+            // prefix "org.junit.ComparisonFailure: "
+            """
+            When a quickfix registers multiple
+            alternatives, these will be shown as options for developers as
+            intention actions (alt/option+enter) in the IDE.
 
-                    Unfortunately, IntelliJ imposes an **alphabetical** ordering of
-                    intention actions. This means that the intended logical order the fixes
-                    were registered in (perhaps listing the recommended suggestion first)
-                    is not necessarily the order the user will see them.
+            Unfortunately, IntelliJ imposes an **alphabetical** ordering of
+            intention actions. This means that the intended logical order the fixes
+            were registered in (perhaps listing the recommended suggestion first)
+            is not necessarily the order the user will see them.
 
-                    Lint has a partial workaround for this; it can mark **one** action as
-                    having top priority which will cause it to be listed first, so for
-                    lists of up to two items, the order is preserved. However, for 3 or
-                    more, the order for the items after the first one will be alphabetical.
+            Lint has a partial workaround for this; it can mark **one** action as
+            having top priority which will cause it to be listed first, so for
+            lists of up to two items, the order is preserved. However, for 3 or
+            more, the order for the items after the first one will be alphabetical.
 
-                    This lint test infrastructure check will look up and flag quickfixes
-                    where the logical order differs from this alphabetical order (well, the
-                    alphabetical order *after* the first item, which lint can always list
-                    first).
+            This lint test infrastructure check will look up and flag quickfixes
+            where the logical order differs from this alphabetical order (well, the
+            alphabetical order *after* the first item, which lint can always list
+            first).
 
-                    To fix this you have two options:
+            To fix this you have two options:
 
-                    1. If the order really doesn't matter and you're okay with the
-                       alphabetical order, you can either reorder the way you're
-                       registering the alternative fixes, or you can disable this test
-                       validation step by setting `lint.allowNonAlphabeticalFixOrder(true)`.
+            1. If the order really doesn't matter and you're okay with the
+               alphabetical order, you can either reorder the way you're
+               registering the alternative fixes, or you can disable this test
+               validation step by setting `lint.allowNonAlphabeticalFixOrder(true)`.
 
-                     * If the order does matter, your only option is to change the labels
-                       of your quickfixes. You need to pick suitable labels that have your
-                       intended order alphabetically. Ideally you can find natural ways to
-                       express the action, but as a last resort you could prefix your fixes
-                       with numbers, as in "1. Set width" and "2. Set height".)
+             * If the order does matter, your only option is to change the labels
+               of your quickfixes. You need to pick suitable labels that have your
+               intended order alphabetically. Ideally you can find natural ways to
+               express the action, but as a last resort you could prefix your fixes
+               with numbers, as in "1. Set width" and "2. Set height".)
 
-                       If the fix names are implicit (for example, if you create a string
-                       replacement quick fix using
-                       `fix().replace().text("something").with("something-else"))`, lint
-                       will create a default display name for you), you can set the label
-                       by calling `.name("label here")` on the fix descriptor.
-                    """
-            .trimIndent(),
-          expected,
-          actual,
+               If the fix names are implicit (for example, if you create a string
+               replacement quick fix using
+               `fix().replace().text("something").with("something-else"))`, lint
+               will create a default display name for you), you can set the label
+               by calling `.name("label here")` on the fix descriptor.
+            """
+                .trimIndent(),
+            expected,
+            actual,
         )
       }
     }

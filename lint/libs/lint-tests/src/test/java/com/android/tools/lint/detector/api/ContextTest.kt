@@ -34,9 +34,9 @@ class ContextTest : AbstractCheckTest() {
   fun testSuppressFileAnnotation() {
     // Regression test for https://issuetracker.google.com/116838536
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
                 @file:Suppress("unused", "_TestIssueId")
                 package test.pkg
 
@@ -44,13 +44,13 @@ class ContextTest : AbstractCheckTest() {
                     val s: String = "/sdcard/mydir"
                 }
                 """
-          )
-          .indented(),
-        gradle(""),
-      )
-      .issues(TEST_ISSUE)
-      .run()
-      .expectClean()
+                )
+                .indented(),
+            gradle(""),
+        )
+        .issues(TEST_ISSUE)
+        .run()
+        .expectClean()
   }
 
   fun testSuppressLine() {
@@ -84,30 +84,30 @@ class ContextTest : AbstractCheckTest() {
   fun testSuppressObjectAnnotation() {
     // Regression test for https://issuetracker.google.com/116838536
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
                 package test.pkg
                 import android.annotation.SuppressLint
                 @SuppressLint("_TestIssueId")
                 object TestClass1 {
                     const val s: String = "/sdcard/mydir"
                 }"""
-          )
-          .indented(),
-        gradle(""),
-      )
-      .issues(TEST_ISSUE)
-      .run()
-      .expectClean()
+                )
+                .indented(),
+            gradle(""),
+        )
+        .issues(TEST_ISSUE)
+        .run()
+        .expectClean()
   }
 
   fun testSuppressCompanionObjectAnnotation() {
     // Regression test for b/293334438
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
                 package test.pkg
                 import android.annotation.SuppressLint
 
@@ -118,21 +118,21 @@ class ContextTest : AbstractCheckTest() {
                   }
                 }
                 """
-          )
-          .indented(),
-        gradle(""),
-      )
-      .issues(TEST_ISSUE)
-      .run()
-      .expectClean()
+                )
+                .indented(),
+            gradle(""),
+        )
+        .issues(TEST_ISSUE)
+        .run()
+        .expectClean()
   }
 
   fun testSuppressPropertyAnnotation() {
     // Regression test for b/296288411
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
                 package test.pkg
                 import android.annotation.SuppressLint
 
@@ -145,13 +145,13 @@ class ContextTest : AbstractCheckTest() {
                   }
                 }
                 """
-          )
-          .indented(),
-        gradle(""),
-      )
-      .issues(TEST_ISSUE)
-      .run()
-      .expectClean()
+                )
+                .indented(),
+            gradle(""),
+        )
+        .issues(TEST_ISSUE)
+        .run()
+        .expectClean()
   }
 
   fun testKotlinSuppressionAnnotationsWithPsiScope() {
@@ -160,9 +160,9 @@ class ContextTest : AbstractCheckTest() {
     // In particular, it needs to implement the same logic for both Kotlin and Java PSI, which it
     // was not doing when b/274787712 was reported.
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
                 package test.pkg
                 import android.annotation.SuppressLint
 
@@ -171,13 +171,13 @@ class ContextTest : AbstractCheckTest() {
                   const val s: String = "/sdcard/mydir"
                 }
                 """
-          )
-          .indented(),
-        gradle(""),
-      )
-      .issues(PSI_TEST_ISSUE)
-      .run()
-      .expectClean()
+                )
+                .indented(),
+            gradle(""),
+        )
+        .issues(PSI_TEST_ISSUE)
+        .run()
+        .expectClean()
   }
 
   fun testKotlinSuppressionWithPropertyInitializer() {
@@ -185,9 +185,9 @@ class ContextTest : AbstractCheckTest() {
     // When using custom suppress annotations, a different code path is used to check for
     // annotations, and this was not including UField.sourceAnnotations.
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
             package com.example.app
 
             annotation class Sup
@@ -199,12 +199,12 @@ class ContextTest : AbstractCheckTest() {
               var s: Any = foo("")
             }
             """
-          )
-          .indented()
-      )
-      .issues(ReportsCallDetector.ISSUE)
-      .run()
-      .expectClean()
+                )
+                .indented()
+        )
+        .issues(ReportsCallDetector.ISSUE)
+        .run()
+        .expectClean()
   }
 
   fun testMultilineReporter() {
@@ -212,26 +212,26 @@ class ContextTest : AbstractCheckTest() {
     // (\) the
     // message is properly processed.
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
             fun method() {
                method() // ERROR
             }
             """
-          )
-          .indented()
-      )
-      .issues(MultiLineReporter.ISSUE)
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .issues(MultiLineReporter.ISSUE)
+        .run()
+        .expect(
+            """
         src/test.kt:2: Warning: Error message indented and split across multiple lines. [_MultilineReporter]
            method() // ERROR
            ~~~~~~~~
         0 errors, 1 warnings
         """
-      )
+        )
   }
 
   class MultiLineReporter : Detector(), SourceCodeScanner {
@@ -240,38 +240,38 @@ class ContextTest : AbstractCheckTest() {
 
     override fun visitMethodCall(context: JavaContext, node: UCallExpression, method: PsiMethod) {
       context.report(
-        Incident(
-          ISSUE,
-          node,
-          context.getLocation(node),
-          """
+          Incident(
+              ISSUE,
+              node,
+              context.getLocation(node),
+              """
           Error message indented and split across \
           multiple lines.
           """,
-        )
+          )
       )
     }
 
     companion object {
       val ISSUE =
-        Issue.create(
-          "_MultilineReporter",
-          "Not applicable",
-          "Not applicable",
-          Category.MESSAGES,
-          5,
-          Severity.WARNING,
-          Implementation(MultiLineReporter::class.java, Scope.JAVA_FILE_SCOPE),
-        )
+          Issue.create(
+              "_MultilineReporter",
+              "Not applicable",
+              "Not applicable",
+              Category.MESSAGES,
+              5,
+              Severity.WARNING,
+              Implementation(MultiLineReporter::class.java, Scope.JAVA_FILE_SCOPE),
+          )
     }
   }
 
   fun testLocationOfKotlinString() {
     val tripleQuotes = "\"\"\""
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
                 package com.example
 
                 class MyClass {
@@ -291,13 +291,13 @@ class ContextTest : AbstractCheckTest() {
                   }
                 }
                 """
-          )
-          .indented()
-      )
-      .issues(ReportsArgumentDetector.ISSUE)
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .issues(ReportsArgumentDetector.ISSUE)
+        .run()
+        .expect(
+            """
           src/com/example/MyClass.kt:11: Warning: Argument to foo [_UReportsArgumentIssue]
               foo(arg1 = "hello")
                          ~~~~~~~
@@ -318,7 +318,7 @@ class ContextTest : AbstractCheckTest() {
                          ~~~~~~~~~~~
           0 errors, 6 warnings
           """
-      )
+        )
   }
 
   class ReportsArgumentDetector : Detector(), SourceCodeScanner {
@@ -332,15 +332,15 @@ class ContextTest : AbstractCheckTest() {
 
     companion object {
       val ISSUE =
-        Issue.create(
-          "_UReportsArgumentIssue",
-          "Not applicable",
-          "Not applicable",
-          Category.MESSAGES,
-          5,
-          Severity.WARNING,
-          Implementation(ReportsArgumentDetector::class.java, Scope.JAVA_FILE_SCOPE),
-        )
+          Issue.create(
+              "_UReportsArgumentIssue",
+              "Not applicable",
+              "Not applicable",
+              Category.MESSAGES,
+              5,
+              Severity.WARNING,
+              Implementation(ReportsArgumentDetector::class.java, Scope.JAVA_FILE_SCOPE),
+          )
     }
   }
 
@@ -354,16 +354,16 @@ class ContextTest : AbstractCheckTest() {
 
     companion object {
       val ISSUE =
-        Issue.create(
-          id = "_UReportsCallIssue",
-          briefDescription = "Not applicable",
-          explanation = "Not applicable",
-          category = Category.MESSAGES,
-          priority = 5,
-          severity = Severity.WARNING,
-          implementation = Implementation(ReportsCallDetector::class.java, Scope.JAVA_FILE_SCOPE),
-          suppressAnnotations = listOf("com.example.app.Sup"),
-        )
+          Issue.create(
+              id = "_UReportsCallIssue",
+              briefDescription = "Not applicable",
+              explanation = "Not applicable",
+              category = Category.MESSAGES,
+              priority = 5,
+              severity = Severity.WARNING,
+              implementation = Implementation(ReportsCallDetector::class.java, Scope.JAVA_FILE_SCOPE),
+              suppressAnnotations = listOf("com.example.app.Sup"),
+          )
     }
   }
 
@@ -377,9 +377,9 @@ class ContextTest : AbstractCheckTest() {
     // Regression test for b/296986527 and b/293517205
 
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
                 package test.pkg
 
                 class MyClass {
@@ -390,75 +390,75 @@ class ContextTest : AbstractCheckTest() {
                   }
                 }
                 """
-          )
-          .indented(),
-        gradle(
-            """
+                )
+                .indented(),
+            gradle(
+                    """
           android {
             defaultConfig {
               applicationId "com.android.tools.test"
             }
           }
           """
-          )
-          .indented(),
-      )
-      .issues(ReportsUElementFromGradleContextDetector.ISSUE)
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+        )
+        .issues(ReportsUElementFromGradleContextDetector.ISSUE)
+        .run()
+        .expect(
+            """
           build.gradle:3: Warning: Bad [_UElementIssue]
               applicationId "com.android.tools.test"
                             ~~~~~~~~~~~~~~~~~~~~~~~~
           0 errors, 1 warnings
           """
-      )
+        )
   }
 
   fun testAccessLibraryResource() {
     // Makes sure we complain about accessing library resources in partial analysis mode
     val lib =
-      project(
-        xml(
-            "res/values/string.xml",
-            """
+        project(
+            xml(
+                    "res/values/string.xml",
+                    """
             <resources>
               <string name="lib">Library Resource</string>
             </resources>
             """,
-          )
-          .indented()
-      )
+                )
+                .indented()
+        )
 
     val main =
-      project(
-          xml(
-              "res/values/string.xml",
-              """
+        project(
+                xml(
+                        "res/values/string.xml",
+                        """
               <resources>
                 <string name="local">Local Resource</string>
               </resources>
               """,
-            )
-            .indented(),
-          kotlin(
-              """
+                    )
+                    .indented(),
+                kotlin(
+                        """
               private const val s = "testAccessLibraryResource"// Triggers detector to look up resources
               """
+                    )
+                    .indented(),
             )
-            .indented(),
-        )
-        .dependsOn(lib)
+            .dependsOn(lib)
 
     lint()
-      .issues(TEST_ISSUE)
-      .projects(lib, main)
-      // We only care about partial mode where accessing library resources
-      // should trigger an error in the analysis phase
-      .testModes(TestMode.PARTIAL)
-      .run()
-      .expectContains(
-        """
+        .issues(TEST_ISSUE)
+        .projects(lib, main)
+        // We only care about partial mode where accessing library resources
+        // should trigger an error in the analysis phase
+        .testModes(TestMode.PARTIAL)
+        .run()
+        .expectContains(
+            """
         ../lib/res/values/string.xml: Error: The lint detector
             com.android.tools.lint.detector.api.ContextTest＄NoLocationNodeDetector
         called ResourceItem.getSource() during module analysis.
@@ -479,27 +479,27 @@ class ContextTest : AbstractCheckTest() {
         Issue Vendors:
         Call stack: LintResourceRepository＄Companion＄removeFileAccess＄withoutSource＄1.reportPathAccess(LintResourceRepository.kt
         """
-      )
+        )
   }
 
   fun testAccessMainProject() {
     // Makes sure we complain about accessing the main project in analysis mode
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
             private const val s = "testAccessMainProject"// Triggers detector to access the main project
             """
-          )
-          .indented()
-      )
-      .issues(TEST_ISSUE)
-      // We only care about partial mode where accessing library resources
-      // should trigger an error in the analysis phase
-      .testModes(TestMode.PARTIAL)
-      .run()
-      .expectContains(
-        """
+                )
+                .indented()
+        )
+        .issues(TEST_ISSUE)
+        // We only care about partial mode where accessing library resources
+        // should trigger an error in the analysis phase
+        .testModes(TestMode.PARTIAL)
+        .run()
+        .expectContains(
+            """
         src/test.kt: Error: The lint detector
             com.android.tools.lint.detector.api.ContextTest＄NoLocationNodeDetector
         called context.getMainProject() during module analysis.
@@ -519,7 +519,7 @@ class ContextTest : AbstractCheckTest() {
         Issue Vendors:
         Call stack: Context＄Companion.checkForbidden＄default(Context.kt:
         """
-      )
+        )
   }
 
   class ReportsUElementFromGradleContextDetector : Detector(), SourceCodeScanner, GradleScanner {
@@ -534,32 +534,32 @@ class ContextTest : AbstractCheckTest() {
     }
 
     override fun checkDslPropertyAssignment(
-      context: GradleContext,
-      property: String,
-      value: String,
-      parent: String,
-      parentParent: String?,
-      propertyCookie: Any,
-      valueCookie: Any,
-      statementCookie: Any,
+        context: GradleContext,
+        property: String,
+        value: String,
+        parent: String,
+        parentParent: String?,
+        propertyCookie: Any,
+        valueCookie: Any,
+        statementCookie: Any,
     ) {
       context.report(Incident(ISSUE, element!!, context.getLocation(valueCookie), "Bad"))
     }
 
     companion object {
       val ISSUE =
-        Issue.create(
-          "_UElementIssue",
-          "Not applicable",
-          "Not applicable",
-          Category.MESSAGES,
-          5,
-          Severity.WARNING,
-          Implementation(
-            ReportsUElementFromGradleContextDetector::class.java,
-            EnumSet.of(Scope.JAVA_FILE, Scope.GRADLE_FILE),
-          ),
-        )
+          Issue.create(
+              "_UElementIssue",
+              "Not applicable",
+              "Not applicable",
+              Category.MESSAGES,
+              5,
+              Severity.WARNING,
+              Implementation(
+                  ReportsUElementFromGradleContextDetector::class.java,
+                  EnumSet.of(Scope.JAVA_FILE, Scope.GRADLE_FILE),
+              ),
+          )
     }
   }
 
@@ -569,70 +569,69 @@ class ContextTest : AbstractCheckTest() {
 
   // Detector which reproduces problem in issue https://issuetracker.google.com/116838536
   class NoLocationNodeDetector : Detector(), SourceCodeScanner {
-    override fun getApplicableUastTypes(): List<Class<out UElement>>? =
-      listOf(ULiteralExpression::class.java)
+    override fun getApplicableUastTypes(): List<Class<out UElement>>? = listOf(ULiteralExpression::class.java)
 
     override fun createUastHandler(context: JavaContext): UElementHandler? =
-      object : UElementHandler() {
-        override fun visitLiteralExpression(node: ULiteralExpression) {
-          val s = node.getValueIfStringLiteral()
-          if (s != null && s.startsWith("/sdcard/")) {
-            val message = """Sample error message"""
-            val location = context.getLocation(node)
-            // Note: We're calling
-            //    context.report(Issue, Location, String)
-            // NOT:
-            //    context.report(Issue, UElement, Location, String)
-            // to test that we suppress based on stashed location
-            // source element from above; this tests issue 116838536
-            context.report(TEST_ISSUE, location, message)
+        object : UElementHandler() {
+          override fun visitLiteralExpression(node: ULiteralExpression) {
+            val s = node.getValueIfStringLiteral()
+            if (s != null && s.startsWith("/sdcard/")) {
+              val message = """Sample error message"""
+              val location = context.getLocation(node)
+              // Note: We're calling
+              //    context.report(Issue, Location, String)
+              // NOT:
+              //    context.report(Issue, UElement, Location, String)
+              // to test that we suppress based on stashed location
+              // source element from above; this tests issue 116838536
+              context.report(TEST_ISSUE, location, message)
 
-            // If we pass a PsiElement as the scope of an incident, LintDriver will use a
-            // PSI-specific code path to deduce suppressions. We need to test this path
-            // explicitly, so tests may choose to look for this issue.
-            // See LintDriver.isSuppressedLocally,
-            // and LintDriver.isSuppressed(context: JavaContext?, issue: Issue, scope:
-            // PsiElement?)
-            context.report(PSI_TEST_ISSUE, scope = node.sourcePsi, location, message)
-          } else if (s == "testAccessLibraryResource") {
-            // Trigger scenario in testAccessLibraryResource()
-            val resources =
-              context.client.getResources(
-                context.project,
-                ResourceRepositoryScope.LOCAL_DEPENDENCIES,
-              )
-            resources.getResources(ResourceNamespace.RES_AUTO, ResourceType.STRING, "local")
-            val lib = resources.getResources(ResourceNamespace.RES_AUTO, ResourceType.STRING, "lib")
-            lib.first().source // Trigger error
-          } else if (s == "testAccessMainProject") {
-            context.mainProject
+              // If we pass a PsiElement as the scope of an incident, LintDriver will use a
+              // PSI-specific code path to deduce suppressions. We need to test this path
+              // explicitly, so tests may choose to look for this issue.
+              // See LintDriver.isSuppressedLocally,
+              // and LintDriver.isSuppressed(context: JavaContext?, issue: Issue, scope:
+              // PsiElement?)
+              context.report(PSI_TEST_ISSUE, scope = node.sourcePsi, location, message)
+            } else if (s == "testAccessLibraryResource") {
+              // Trigger scenario in testAccessLibraryResource()
+              val resources =
+                  context.client.getResources(
+                      context.project,
+                      ResourceRepositoryScope.LOCAL_DEPENDENCIES,
+                  )
+              resources.getResources(ResourceNamespace.RES_AUTO, ResourceType.STRING, "local")
+              val lib = resources.getResources(ResourceNamespace.RES_AUTO, ResourceType.STRING, "lib")
+              lib.first().source // Trigger error
+            } else if (s == "testAccessMainProject") {
+              context.mainProject
+            }
           }
         }
-      }
   }
 
   companion object {
     val TEST_ISSUE =
-      Issue.create(
-        "_TestIssueId",
-        "Not applicable",
-        "Not applicable",
-        Category.MESSAGES,
-        5,
-        Severity.WARNING,
-        Implementation(NoLocationNodeDetector::class.java, Scope.JAVA_FILE_SCOPE),
-      )
+        Issue.create(
+            "_TestIssueId",
+            "Not applicable",
+            "Not applicable",
+            Category.MESSAGES,
+            5,
+            Severity.WARNING,
+            Implementation(NoLocationNodeDetector::class.java, Scope.JAVA_FILE_SCOPE),
+        )
 
     val PSI_TEST_ISSUE =
-      Issue.create(
-        "_PsiTestIssueId",
-        "Not applicable",
-        "Not applicable",
-        Category.MESSAGES,
-        5,
-        Severity.WARNING,
-        Implementation(NoLocationNodeDetector::class.java, Scope.JAVA_FILE_SCOPE),
-      )
+        Issue.create(
+            "_PsiTestIssueId",
+            "Not applicable",
+            "Not applicable",
+            Category.MESSAGES,
+            5,
+            Severity.WARNING,
+            Implementation(NoLocationNodeDetector::class.java, Scope.JAVA_FILE_SCOPE),
+        )
 
     //    val REPORT_BAD_ISSUE =
     //      Issue.create(

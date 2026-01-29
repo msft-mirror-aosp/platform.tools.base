@@ -25,9 +25,9 @@ class SamDetectorTest : AbstractCheckTest() {
 
   fun testStashingImplicitInstances() {
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
                 @file:Suppress("RedundantSamConstructor", "MoveLambdaOutsideParentheses")
 
                 package test.pkg
@@ -74,10 +74,10 @@ class SamDetectorTest : AbstractCheckTest() {
                     view.postDelayed({ println ("Hello") }, 50)
                 }
                 """
-          )
-          .indented(),
-        java(
-            """
+                )
+                .indented(),
+            java(
+                    """
                 package test.pkg;
 
                 import java.util.List;
@@ -89,20 +89,20 @@ class SamDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-          )
-          .indented(),
-        java(
-            """
+                )
+                .indented(),
+            java(
+                    """
                 package test.pkg;
 
                 public interface MyInterface {
                     void act();
                 }
                 """
-          )
-          .indented(),
-        java(
-            """
+                )
+                .indented(),
+            java(
+                    """
                 package test.pkg;
 
                 import java.util.List;
@@ -168,12 +168,12 @@ class SamDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-          )
-          .indented(),
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+        )
+        .run()
+        .expect(
+            """
         src/test/pkg/test.kt:21: Warning: Implicit new MyInterface instance being passed to method which ends up checking instance equality; this can lead to subtle bugs [ImplicitSamInstance]
             handler.delete(lambda) // ERROR 1
                            ~~~~~~
@@ -191,9 +191,9 @@ class SamDetectorTest : AbstractCheckTest() {
                            ~~~~~~~
         0 errors, 5 warnings
         """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
         Fix for src/test/pkg/test.kt line 21: Explicitly create MyInterface instance:
         @@ -18 +18 @@
         -    val lambda = { println("hello") }
@@ -215,14 +215,14 @@ class SamDetectorTest : AbstractCheckTest() {
         -    val lambda3: () -> Unit = { println("hello") }
         +    val lambda3: () -> Unit = MyInterface { println("hello") }
         """
-      )
+        )
   }
 
   fun testHandler() {
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
             package test.pkg
 
             import android.os.Handler
@@ -239,12 +239,12 @@ class SamDetectorTest : AbstractCheckTest() {
                 view.removeCallbacks(ok) // OK 4
             }
             """
-          )
-          .indented()
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .run()
+        .expect(
+            """
         src/test/pkg/test.kt:10: Warning: Implicit new Runnable instance being passed to method which ends up checking instance equality; this can lead to subtle bugs [ImplicitSamInstance]
             handler.removeCallbacks(::callback) // ERROR 1
                                     ~~~~~~~~~~
@@ -253,15 +253,15 @@ class SamDetectorTest : AbstractCheckTest() {
                                  ~~~~~~~~~~~~~~
         0 errors, 2 warnings
         """
-      )
-      .expectFixDiffs("")
+        )
+        .expectFixDiffs("")
   }
 
   fun testAidlCompileTestCase() {
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
                 package test.pkg
                 abstract class AidlCompile {
                     abstract val execOperations: ExecOperations
@@ -271,10 +271,10 @@ class SamDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-          )
-          .indented(),
-        java(
-          """
+                )
+                .indented(),
+            java(
+                """
                 package test.pkg;
                 import java.util.function.Function;
                 public class GradleProcessExecutor {
@@ -288,51 +288,51 @@ class SamDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-        ),
-        java(
-          """
+            ),
+            java(
+                """
                 package test.pkg;
                 public interface Action<T> {
                     void execute(T var1);
                 }
                 """
-        ),
-        java(
-          """
+            ),
+            java(
+                """
                 package test.pkg;
                 public interface ExecOperations {
                     ExecResult exec(Action<? super ExecSpec> var1);
                     ExecResult javaexec(Action<? super ExecSpec> var1);
                 }
                 """
-        ),
-        java(
-          """
+            ),
+            java(
+                """
                 package test.pkg;
                 public interface ExecResult { }
                 """
-        ),
-        java(
-          """
+            ),
+            java(
+                """
                 package test.pkg;
                 import java.util.List;
                 public interface ExecSpec {
                     void setCommandLine(List<String> var1);
                 }
                 """
-        ),
-      )
-      .run()
-      .expectClean()
+            ),
+        )
+        .run()
+        .expectClean()
   }
 
   fun testPostRemove() {
     // Regression test for
     // 376498180: kotlin android.os.Handler removeCallbacks Runnable
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
             @file:Suppress("unused", "RedundantExplicitType")
 
             package test.pkg
@@ -434,12 +434,12 @@ class SamDetectorTest : AbstractCheckTest() {
                 }
             }
             """
-          )
-          .indented()
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .run()
+        .expect(
+            """
         src/test/pkg/Test.kt:15: Warning: connectRunnable is an implicit SAM conversion, so the instance you are removing here will not match anything. To fix this, use for example val runnable = Runnable { connectRunnable() } and post and remove the runnable val instead. [ImplicitSamInstance]
                 handler.removeCallbacks(connectRunnable) // ERROR 1
                                         ~~~~~~~~~~~~~~~
@@ -493,19 +493,19 @@ class SamDetectorTest : AbstractCheckTest() {
                                 ~~~~~~
         0 errors, 9 warnings
         """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
 
         """
-      )
+        )
   }
 
   fun testRemoveMethod() {
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
             @file:Suppress("unused", "RedundantExplicitType")
 
             package test.pkg
@@ -571,12 +571,12 @@ class SamDetectorTest : AbstractCheckTest() {
                 }
             }
             """
-          )
-          .indented()
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .run()
+        .expect(
+            """
         src/test/pkg/MyOwnHandler.kt:29: Warning: predicate1 is an implicit SAM conversion, so the instance you are removing here will not match anything. To fix this, use for example val predicate = Predicate<Boolean> { predicate1() } and add and remove the predicate val instead. [ImplicitSamInstance]
             handler.removePredicate(predicate1) // ERROR 1
                                     ~~~~~~~~~~
@@ -597,9 +597,9 @@ class SamDetectorTest : AbstractCheckTest() {
                                  ~~~~~~
         0 errors, 6 warnings
         """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
         Fix for src/test/pkg/MyOwnHandler.kt line 43: Explicitly create Predicate<Boolean> instance:
         @@ -39 +39 @@
         -    val lambda: (Boolean)->Boolean = {
@@ -614,15 +614,15 @@ class SamDetectorTest : AbstractCheckTest() {
         -    val runner = {}
         +    val runner = Runnable {}
         """
-      )
+        )
   }
 
   fun testNoRemoval() {
     // Using a lambda here is fine
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
             package test.pkg
 
             import android.os.Handler
@@ -642,19 +642,19 @@ class SamDetectorTest : AbstractCheckTest() {
                 }
             }
             """
-          )
-          .indented()
-      )
-      .run()
-      .expectClean()
+                )
+                .indented()
+        )
+        .run()
+        .expectClean()
   }
 
   fun testNonFunctionalInterface() {
     // Example from AndroidX
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
             @file:Suppress("unused")
             package test.pkg.sub
 
@@ -666,19 +666,19 @@ class SamDetectorTest : AbstractCheckTest() {
                 }
             }
             """
-          )
-          .indented()
-      )
-      .run()
-      .expectClean()
+                )
+                .indented()
+        )
+        .run()
+        .expectClean()
   }
 
   fun testNonFunctionalInterface2() {
     // Example from AndroidX
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
             package test.pkg.sub
 
             import java.util.concurrent.CopyOnWriteArrayList
@@ -720,18 +720,18 @@ class SamDetectorTest : AbstractCheckTest() {
                 }
             }
             """
-          )
-          .indented()
-      )
-      .run()
-      .expectClean()
+                )
+                .indented()
+        )
+        .run()
+        .expectClean()
   }
 
   fun testWear() {
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
             package test.pkg;
 
             import android.app.AlarmManager;
@@ -754,10 +754,10 @@ class SamDetectorTest : AbstractCheckTest() {
                 }
             }
             """
-          )
-          .indented(),
-        kotlin(
-            """
+                )
+                .indented(),
+            kotlin(
+                    """
             package test.pkg
 
             import android.app.AlarmManager
@@ -772,19 +772,19 @@ class SamDetectorTest : AbstractCheckTest() {
                     )
             }
             """
-          )
-          .indented(),
-      )
-      .run()
-      .expectClean()
+                )
+                .indented(),
+        )
+        .run()
+        .expectClean()
   }
 
   fun testRemoveSecondArg() {
     // Make sure the lambda parameter doesn't have to be the first argument
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
             @file:Suppress("unused", "RedundantExplicitType")
 
             package test.pkg
@@ -804,26 +804,26 @@ class SamDetectorTest : AbstractCheckTest() {
                 handler.removePredicate(0, predicate1) // ERROR 1
             }
             """
-          )
-          .indented()
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .run()
+        .expect(
+            """
         src/test/pkg/Handler.kt:17: Warning: predicate1 is an implicit SAM conversion, so the instance you are removing here will not match anything. To fix this, use for example val predicate = Predicate<Boolean> { predicate1() } and add and remove the predicate val instead. [ImplicitSamInstance]
             handler.removePredicate(0, predicate1) // ERROR 1
                                        ~~~~~~~~~~
         0 errors, 1 warnings
         """
-      )
+        )
   }
 
   fun testUnregisterTerminology() {
     // Make sure we also handle register/unregister terminology and start/stop
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
             package test.pkg
 
             import android.app.AppOpsManager
@@ -846,12 +846,12 @@ class SamDetectorTest : AbstractCheckTest() {
                 manager.stopWatchingActive(lambda2) // ERROR 3
             }
             """
-          )
-          .indented()
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .run()
+        .expect(
+            """
         src/test/pkg/Test.kt:11: Warning: lambda is an implicit SAM conversion, so the instance you are removing here will not match anything. To fix this, use for example val runnable = Runnable { lambda() } and add and remove the runnable val instead. [ImplicitSamInstance]
             unregisterAntennaInfoListener(lambda) // ERROR 1
                                           ~~~~~~
@@ -863,14 +863,14 @@ class SamDetectorTest : AbstractCheckTest() {
                                        ~~~~~~~
         0 errors, 3 warnings
         """
-      )
+        )
   }
 
   fun test413411317() {
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
             package test.pkg
 
             import android.app.Service
@@ -882,10 +882,10 @@ class SamDetectorTest : AbstractCheckTest() {
             }
             abstract class ForegroundService : Service()
             """
-          )
-          .indented()
-      )
-      .run()
-      .expectClean()
+                )
+                .indented()
+        )
+        .run()
+        .expectClean()
   }
 }

@@ -46,35 +46,31 @@ object TargetSdkRequirements {
   /** The API requirement the previous year. */
   const val PREVIOUS_WEAR_MINIMUM_TARGET_SDK_VERSION = 30
 
-  /**
-   * The year that the API requirement of [MINIMUM_TARGET_SDK_VERSION] and
-   * [MINIMUM_WEAR_TARGET_SDK_VERSION] is enforced.
-   */
+  /** The year that the API requirement of [MINIMUM_TARGET_SDK_VERSION] and [MINIMUM_WEAR_TARGET_SDK_VERSION] is enforced. */
   const val MINIMUM_TARGET_SDK_VERSION_YEAR = 2023
 }
 
 sealed interface TargetSdkCheckResult {
 
   data class Expired(
-    val requiredVersion: Int,
-    val message: String =
-      "Google Play requires that apps target API level $requiredVersion or higher.",
+      val requiredVersion: Int,
+      val message: String = "Google Play requires that apps target API level $requiredVersion or higher.",
   ) : TargetSdkCheckResult
 
   data class Expiring(
-    val requiredVersion: Int,
-    val message: String =
-      "Google Play will soon require that apps target API " +
-        "level $requiredVersion or higher. This will be required for new apps and updates " +
-        "starting on August 31, $MINIMUM_TARGET_SDK_VERSION_YEAR.",
+      val requiredVersion: Int,
+      val message: String =
+          "Google Play will soon require that apps target API " +
+              "level $requiredVersion or higher. This will be required for new apps and updates " +
+              "starting on August 31, $MINIMUM_TARGET_SDK_VERSION_YEAR.",
   ) : TargetSdkCheckResult
 
   data class NotLatest(val highestVersion: Int) : TargetSdkCheckResult {
     val message: String
       get() =
-        "Not targeting the latest versions of Android; compatibility " +
-          "modes apply. Consider testing and updating this version. " +
-          "Consult the `android.os.Build.VERSION_CODES` javadoc for details."
+          "Not targeting the latest versions of Android; compatibility " +
+              "modes apply. Consider testing and updating this version. " +
+              "Consult the `android.os.Build.VERSION_CODES` javadoc for details."
   }
 
   object NoIssue : TargetSdkCheckResult {
@@ -83,18 +79,14 @@ sealed interface TargetSdkCheckResult {
 }
 
 /**
- * Starting on August 31, 2023, the apps are required to use API 33 or higher, except for Wear OS
- * apps, which must target 30 See https://developer.android.com/google/play/requirements/target-sdk
+ * Starting on August 31, 2023, the apps are required to use API 33 or higher, except for Wear OS apps, which must target 30 See
+ * https://developer.android.com/google/play/requirements/target-sdk
  */
 fun checkTargetSdk(context: Context, nowCalendar: Calendar, version: Int): TargetSdkCheckResult {
   val isWearProject = WearDetector.isWearProject(context)
-  val minimumTargetSdkVersion =
-    if (isWearProject) MINIMUM_WEAR_TARGET_SDK_VERSION else MINIMUM_TARGET_SDK_VERSION
-  val previousMinimumTargetSdkVersion =
-    if (isWearProject) PREVIOUS_WEAR_MINIMUM_TARGET_SDK_VERSION
-    else PREVIOUS_MINIMUM_TARGET_SDK_VERSION
-  val sdkEnforceDate =
-    Calendar.getInstance().apply { set(MINIMUM_TARGET_SDK_VERSION_YEAR, Calendar.AUGUST, 31) }
+  val minimumTargetSdkVersion = if (isWearProject) MINIMUM_WEAR_TARGET_SDK_VERSION else MINIMUM_TARGET_SDK_VERSION
+  val previousMinimumTargetSdkVersion = if (isWearProject) PREVIOUS_WEAR_MINIMUM_TARGET_SDK_VERSION else PREVIOUS_MINIMUM_TARGET_SDK_VERSION
+  val sdkEnforceDate = Calendar.getInstance().apply { set(MINIMUM_TARGET_SDK_VERSION_YEAR, Calendar.AUGUST, 31) }
 
   return when {
     // If the version is at least the minimum then there's no enforcement issue

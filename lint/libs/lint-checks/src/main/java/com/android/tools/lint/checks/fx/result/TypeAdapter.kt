@@ -63,91 +63,82 @@ internal object PsiClassAdapter : TypeAdapter<PsiClass> {
 internal object PsiTypeAdapter : TypeAdapter<PsiType> {
   override fun translate(env: Set<String>, repr: PsiType): Type<Nothing> {
     fun loop(t: PsiType): Type<Nothing> =
-      when (t) {
-        PsiTypes.booleanType() -> Type.Boolean
-        PsiTypes.intType() -> Type.Int
-        PsiTypes.charType() -> Type.Char
-        PsiTypes.byteType() -> Type.Byte
-        PsiTypes.shortType() -> Type.Short
-        PsiTypes.longType() -> Type.Long
-        PsiTypes.floatType() -> Type.Float
-        PsiTypes.doubleType() -> Type.Double
-        PsiTypes.voidType() -> Type.Unit
-        PsiTypes.nullType() -> Type.None
-        is PsiClassType ->
-          when (val c = t.className) {
-            in env -> Type.Sym.Param(c)
-            else -> Type.Application(ClassId.of(t), t.parameters.map(::loop))
-          }
-        is PsiTypeParameter -> Type.Sym.Param(t.canonicalText)
-        is PsiWildcardType -> Type.WildCard // TODO
-        is PsiEllipsisType -> Type.Ellipsis(translate(env, t.componentType))
-        is PsiArrayType -> Type.Application(ClassId.Array, listOf(translate(env, t.componentType)))
-        is PsiDisjunctionType ->
-          Type.Union(
-            t.disjunctions.map(::loop).fold(persistentSetOf<Type<Nothing>>()) { acc, t -> acc + t }
-          )
-        is UastErrorType -> Type.WildCard
-        is PsiCapturedWildcardType -> Type.WildCard // TODO
-        else -> throw NotImplementedError("Translate XXX $t of type '${t::class.java}'")
-      }
+        when (t) {
+          PsiTypes.booleanType() -> Type.Boolean
+          PsiTypes.intType() -> Type.Int
+          PsiTypes.charType() -> Type.Char
+          PsiTypes.byteType() -> Type.Byte
+          PsiTypes.shortType() -> Type.Short
+          PsiTypes.longType() -> Type.Long
+          PsiTypes.floatType() -> Type.Float
+          PsiTypes.doubleType() -> Type.Double
+          PsiTypes.voidType() -> Type.Unit
+          PsiTypes.nullType() -> Type.None
+          is PsiClassType ->
+              when (val c = t.className) {
+                in env -> Type.Sym.Param(c)
+                else -> Type.Application(ClassId.of(t), t.parameters.map(::loop))
+              }
+          is PsiTypeParameter -> Type.Sym.Param(t.canonicalText)
+          is PsiWildcardType -> Type.WildCard // TODO
+          is PsiEllipsisType -> Type.Ellipsis(translate(env, t.componentType))
+          is PsiArrayType -> Type.Application(ClassId.Array, listOf(translate(env, t.componentType)))
+          is PsiDisjunctionType -> Type.Union(t.disjunctions.map(::loop).fold(persistentSetOf<Type<Nothing>>()) { acc, t -> acc + t })
+          is UastErrorType -> Type.WildCard
+          is PsiCapturedWildcardType -> Type.WildCard // TODO
+          else -> throw NotImplementedError("Translate XXX $t of type '${t::class.java}'")
+        }
     return loop(repr)
   }
 
   override fun isFinal(repr: PsiType): Boolean =
-    when (repr) {
-      is PsiPrimitiveType -> true
-      is PsiEllipsisType -> isFinal(repr.componentType)
-      is PsiArrayType -> isFinal(repr.deepComponentType)
-      is PsiClassType -> repr.resolve()?.let(PsiClassAdapter::isFinal) == true
-      else -> false
-    }
+      when (repr) {
+        is PsiPrimitiveType -> true
+        is PsiEllipsisType -> isFinal(repr.componentType)
+        is PsiArrayType -> isFinal(repr.deepComponentType)
+        is PsiClassType -> repr.resolve()?.let(PsiClassAdapter::isFinal) == true
+        else -> false
+      }
 }
 
 internal object KtTypeReferenceAdapter : TypeAdapter<KtTypeReference?> {
   internal val resolveProviderService: BaseKotlinUastResolveProviderService by
-    lazy(LazyThreadSafetyMode.NONE) {
-      ApplicationManager.getApplication()
-        .getService(BaseKotlinUastResolveProviderService::class.java)
-    }
+      lazy(LazyThreadSafetyMode.NONE) { ApplicationManager.getApplication().getService(BaseKotlinUastResolveProviderService::class.java) }
 
   override fun translate(env: Set<String>, repr: KtTypeReference?) =
-    when (repr) {
-      null -> Type.WildCard
-      else ->
-        resolveProviderService.resolveToType(repr, null)?.let { PsiTypeAdapter.translate(env, it) }
-          ?: Type.WildCard
-    }
+      when (repr) {
+        null -> Type.WildCard
+        else -> resolveProviderService.resolveToType(repr, null)?.let { PsiTypeAdapter.translate(env, it) } ?: Type.WildCard
+      }
 
   override fun isFinal(repr: KtTypeReference?) =
-    repr != null &&
-      resolveProviderService.resolveToType(repr, null)?.let(PsiTypeAdapter::isFinal) == true
+      repr != null && resolveProviderService.resolveToType(repr, null)?.let(PsiTypeAdapter::isFinal) == true
 }
 
 object KTypeAdapter : TypeAdapter<KType> {
   override fun translate(env: Set<String>, repr: KType): Type<Nothing> =
-    when (val c = repr.classifier) {
-      Boolean::class -> Type.Boolean
-      Int::class -> Type.Int
-      Char::class -> Type.Char
-      Byte::class -> Type.Short
-      Long::class -> Type.Long
-      Float::class -> Type.Float
-      Double::class -> Type.Double
-      Unit::class -> Type.Unit
-      is KClass<*> ->
-        Type.Application(
-          ClassId.of(c),
-          repr.arguments.map { translate(env, it.type ?: return@map Type.WildCard) },
-        )
-      is KTypeParameter -> Type.Sym.Param(c.name)
-      else -> throw NotImplementedError("Translate $repr")
-    }
+      when (val c = repr.classifier) {
+        Boolean::class -> Type.Boolean
+        Int::class -> Type.Int
+        Char::class -> Type.Char
+        Byte::class -> Type.Short
+        Long::class -> Type.Long
+        Float::class -> Type.Float
+        Double::class -> Type.Double
+        Unit::class -> Type.Unit
+        is KClass<*> ->
+            Type.Application(
+                ClassId.of(c),
+                repr.arguments.map { translate(env, it.type ?: return@map Type.WildCard) },
+            )
+        is KTypeParameter -> Type.Sym.Param(c.name)
+        else -> throw NotImplementedError("Translate $repr")
+      }
 
   override fun isFinal(repr: KType): Boolean =
-    when (val c = repr.classifier) {
-      null -> false
-      is KClass<*> -> c.isFinal
-      else -> true
-    }
+      when (val c = repr.classifier) {
+        null -> false
+        is KClass<*> -> c.isFinal
+        else -> true
+      }
 }

@@ -44,13 +44,13 @@ class UastGradleVisitorTest {
   @Test
   fun testBasic() {
     check(
-      """
+        """
       dependencies {
           implementation(platform(libs.compose.bom))
           implementation(platform("androidx.compose:compose-bom:2022.12.00"))
       }
       """,
-      """
+        """
       checkMethodCall(statement="dependencies", unnamedArguments="{ implementation(platform(libs.compose.bom)) implementation(platform("androidx.compose:compose-bom:2022.12.00")) }")
       checkMethodCall(statement="implementation", parent="dependencies", unnamedArguments="platform(libs.compose.bom)")
       checkDslPropertyAssignment(property="implementation", value="platform(libs.compose.bom)", parent="dependencies")
@@ -67,7 +67,7 @@ class UastGradleVisitorTest {
     // Make sure we treat "dependencies.x" as a property, but not y (e.g. dependencies.x.y); that
     // should only be the case for x { y { ... } }
     check(
-      """
+        """
       dependencies {
           x(y(z(a(b(c("hello world"))))))
           x {
@@ -77,7 +77,7 @@ class UastGradleVisitorTest {
           }
       }
       """,
-      """
+        """
       checkMethodCall(statement="dependencies", unnamedArguments="{ x(y(z(a(b(c("hello world")))))) x { y { z("hello world") } } }")
       checkMethodCall(statement="x", parent="dependencies", unnamedArguments="y(z(a(b(c("hello world")))))")
       checkDslPropertyAssignment(property="x", value="y(z(a(b(c("hello world")))))", parent="dependencies")
@@ -97,7 +97,7 @@ class UastGradleVisitorTest {
   @Test
   fun testNesting2() {
     check(
-      """
+        """
       android {
           buildTypes {
               debug {
@@ -106,7 +106,7 @@ class UastGradleVisitorTest {
           }
       }
       """,
-      """
+        """
       checkMethodCall(statement="android", unnamedArguments="{ buildTypes { debug { packageNameSuffix = ".debug" } } }")
       checkMethodCall(statement="buildTypes", parent="android", unnamedArguments="{ debug { packageNameSuffix = ".debug" } }")
       checkMethodCall(statement="debug", parent="buildTypes", parentParent="android", unnamedArguments="{ packageNameSuffix = ".debug" }")
@@ -118,7 +118,7 @@ class UastGradleVisitorTest {
   @Test
   fun testLanguageLevels() {
     check(
-      """
+        """
       plugins {
           id("java")
       }
@@ -127,7 +127,7 @@ class UastGradleVisitorTest {
       android.compileOptions.sourceCompatibility = JavaVersion.VERSION_1_8
       android.defaultConfig.vectorDrawables.useSupportLibrary = true
       """,
-      """
+        """
       checkMethodCall(statement="plugins", unnamedArguments="{ id("java") }")
       checkMethodCall(statement="id", parent="plugins", unnamedArguments=""java"")
       checkDslPropertyAssignment(property="id", value=""java"", parent="plugins")
@@ -142,14 +142,14 @@ class UastGradleVisitorTest {
   @Test
   fun testZeroArgMethod() {
     check(
-      """
+        """
       buildscript {
         repositories {
           mavenCentral()
         }
       }
       """,
-      """
+        """
       checkMethodCall(statement="buildscript", unnamedArguments="{ repositories { mavenCentral() } }")
       checkMethodCall(statement="repositories", parent="buildscript", unnamedArguments="{ mavenCentral() }")
       checkMethodCall(statement="mavenCentral", parent="repositories", parentParent="buildscript")
@@ -160,12 +160,12 @@ class UastGradleVisitorTest {
   @Test
   fun testPluginsDsl() {
     check(
-      """
+        """
       plugins {
         id("android") version "2.2.3" apply true
       }
       """,
-      """
+        """
       checkDslPropertyAssignment(property="id", value=""android"", parent="plugins")
       checkDslPropertyAssignment(property="apply", value="true", parent="android", parentParent="plugins")
       checkDslPropertyAssignment(property="version", value=""2.2.3"", parent="android", parentParent="plugins")
@@ -178,12 +178,12 @@ class UastGradleVisitorTest {
   @Test
   fun testPluginsAlias() {
     check(
-      """
+        """
       plugins {
         alias("android-application") apply true
       }
       """,
-      """
+        """
       checkDslPropertyAssignment(property="alias", value=""android-application"", parent="plugins")
       checkMethodCall(statement="alias", parent="plugins", unnamedArguments=""android-application"")
       checkMethodCall(statement="plugins", unnamedArguments="{ alias("android-application") apply true }")
@@ -194,12 +194,12 @@ class UastGradleVisitorTest {
   @Test
   fun testPluginsComputedId() {
     check(
-      """
+        """
       plugins {
         id("org.jetbrains.kotlin" + ".jvm") version "1.9.0"
       }
       """,
-      """
+        """
       checkDslPropertyAssignment(property="id", value=""org.jetbrains.kotlin" + ".jvm"", parent="plugins")
       checkDslPropertyAssignment(property="version", value=""1.9.0"", parent="org.jetbrains.kotlin.jvm", parentParent="plugins")
       checkMethodCall(statement="id", parent="plugins", unnamedArguments=""org.jetbrains.kotlin" + ".jvm"")
@@ -211,12 +211,12 @@ class UastGradleVisitorTest {
   @Test
   fun testMethodCallReceiver() {
     check(
-      """
+        """
       tasks.withType(Test::class.java) {
         enabled = false
       }
       """,
-      """
+        """
       checkDslPropertyAssignment(property="enabled", value="false", parent="withType", parentParent="tasks")
       checkMethodCall(statement="withType", parent="tasks", unnamedArguments="Test::class.java, { enabled = false }")
       """,
@@ -226,12 +226,12 @@ class UastGradleVisitorTest {
   @Test
   fun testNamedArg() {
     check(
-      """
+        """
       dependencies {
           implementation(group = "com.example", name = "example", version = "latest")
       }
       """,
-      """
+        """
       checkMethodCall(statement="dependencies", unnamedArguments="{ implementation(group = "com.example", name = "example", version = "latest") }")
       checkMethodCall(statement="implementation", parent="dependencies", namedArguments="group="com.example", name="example", version="latest"")
       """,
@@ -241,19 +241,19 @@ class UastGradleVisitorTest {
   @Test
   fun testOneNamedArg() {
     check(
-      """
+        """
       dependencies {
           testImplementation(libs.kotlin.test.junit) {
               exclude(group = "junit")
          }
       }
       """,
-      """
-      checkMethodCall(statement="dependencies", unnamedArguments="{ testImplementation(libs.kotlin.test.junit) { exclude(group = "junit") } }")
-      checkMethodCall(statement="exclude", parent="testImplementation", parentParent="dependencies", namedArguments="group="junit"")
-      checkMethodCall(statement="testImplementation", parent="dependencies", unnamedArguments="libs.kotlin.test.junit, { exclude(group = "junit") }")
-      """
-        .trimIndent(),
+        """
+        checkMethodCall(statement="dependencies", unnamedArguments="{ testImplementation(libs.kotlin.test.junit) { exclude(group = "junit") } }")
+        checkMethodCall(statement="exclude", parent="testImplementation", parentParent="dependencies", namedArguments="group="junit"")
+        checkMethodCall(statement="testImplementation", parent="dependencies", unnamedArguments="libs.kotlin.test.junit, { exclude(group = "junit") }")
+        """
+            .trimIndent(),
     )
   }
 
@@ -261,24 +261,24 @@ class UastGradleVisitorTest {
 
   private fun check(@Language("kotlin-script") gradleSource: String, expected: String) {
     val (contexts, disposable) =
-      parse(
-        temporaryFolder = temporaryFolder,
-        sdkHome = TestUtils.getSdk().toFile(),
-        testFiles =
-          arrayOf(
-            TestFiles.java(
-                // just here to give us a way to construct contexts and projects using the test
-                // infrastructure
-                """
+        parse(
+            temporaryFolder = temporaryFolder,
+            sdkHome = TestUtils.getSdk().toFile(),
+            testFiles =
+                arrayOf(
+                    TestFiles.java(
+                            // just here to give us a way to construct contexts and projects using the test
+                            // infrastructure
+                            """
                 package foo;
                 public class Foo {
                 }
                 """
-              )
-              .indented(),
-            TestFiles.kts("build.gradle.kts", gradleSource).indented(),
-          ),
-      )
+                        )
+                        .indented(),
+                    TestFiles.kts("build.gradle.kts", gradleSource).indented(),
+                ),
+        )
 
     val javaContext = contexts.first()
     val project = javaContext.project
@@ -299,8 +299,8 @@ class UastGradleVisitorTest {
     // the ASTs (e.g. do we get a property callback or a method callback
     // first?), but the order should not matter to detectors
     Assert.assertEquals(
-      expected.trimIndent().trim().lines().sorted().joinToString("\n"),
-      detector.toString().trim().lines().sorted().joinToString("\n"),
+        expected.trimIndent().trim().lines().sorted().joinToString("\n"),
+        detector.toString().trim().lines().sorted().joinToString("\n"),
     )
 
     Disposer.dispose(disposable)
@@ -324,40 +324,40 @@ class UastGradleVisitorTest {
     }
 
     override fun checkDslPropertyAssignment(
-      context: GradleContext,
-      property: String,
-      value: String,
-      parent: String,
-      parentParent: String?,
-      propertyCookie: Any,
-      valueCookie: Any,
-      statementCookie: Any,
+        context: GradleContext,
+        property: String,
+        value: String,
+        parent: String,
+        parentParent: String?,
+        propertyCookie: Any,
+        valueCookie: Any,
+        statementCookie: Any,
     ) {
       log(
-        "checkDslPropertyAssignment",
-        "property" to property,
-        "value" to value,
-        "parent" to parent,
-        "parentParent" to parentParent,
+          "checkDslPropertyAssignment",
+          "property" to property,
+          "value" to value,
+          "parent" to parent,
+          "parentParent" to parentParent,
       )
     }
 
     override fun checkMethodCall(
-      context: GradleContext,
-      statement: String,
-      parent: String?,
-      parentParent: String?,
-      namedArguments: Map<String, String>,
-      unnamedArguments: List<String>,
-      cookie: Any,
+        context: GradleContext,
+        statement: String,
+        parent: String?,
+        parentParent: String?,
+        namedArguments: Map<String, String>,
+        unnamedArguments: List<String>,
+        cookie: Any,
     ) {
       log(
-        "checkMethodCall",
-        "statement" to statement,
-        "parent" to parent,
-        "parentParent" to parentParent,
-        "namedArguments" to namedArguments.log(),
-        "unnamedArguments" to unnamedArguments.log(),
+          "checkMethodCall",
+          "statement" to statement,
+          "parent" to parent,
+          "parentParent" to parentParent,
+          "namedArguments" to namedArguments.log(),
+          "unnamedArguments" to unnamedArguments.log(),
       )
     }
 

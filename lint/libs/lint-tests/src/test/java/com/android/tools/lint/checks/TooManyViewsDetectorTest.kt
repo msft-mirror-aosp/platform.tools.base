@@ -24,10 +24,10 @@ class TooManyViewsDetectorTest : AbstractCheckTest() {
 
   fun testTooMany() {
     lint()
-      .files(
-        xml(
-            "res/layout/too_many.xml",
-            """
+        .files(
+            xml(
+                    "res/layout/too_many.xml",
+                    """
                 <FrameLayout
                     xmlns:android="http://schemas.android.com/apk/res/android"
 
@@ -440,26 +440,26 @@ class TooManyViewsDetectorTest : AbstractCheckTest() {
 
                 </FrameLayout>
                 """,
-          )
-          .indented()
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .run()
+        .expect(
+            """
             res/layout/too_many.xml:397: Warning: too_many.xml has more than 80 views, bad for performance [TooManyViews]
                             <Button
                              ~~~~~~
             0 errors, 1 warnings
             """
-      )
+        )
   }
 
   fun testTooDeep() {
     lint()
-      .files(
-        xml(
-            "res/layout/too_deep.xml",
-            """
+        .files(
+            xml(
+                    "res/layout/too_deep.xml",
+                    """
                 <LinearLayout
                     xmlns:android="http://schemas.android.com/apk/res/android"
 
@@ -533,17 +533,17 @@ class TooManyViewsDetectorTest : AbstractCheckTest() {
                     </LinearLayout>
                 </LinearLayout>
                 """,
-          )
-          .indented()
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .run()
+        .expect(
+            """
             res/layout/too_deep.xml:44: Warning: too_deep.xml has more than 10 levels, bad for performance [TooDeepLayout]
                                                 <LinearLayout
                                                  ~~~~~~~~~~~~
             0 errors, 1 warnings
             """
-      )
+        )
   }
 }

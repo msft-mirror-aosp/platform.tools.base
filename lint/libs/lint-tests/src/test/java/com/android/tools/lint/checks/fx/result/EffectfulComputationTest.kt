@@ -29,9 +29,7 @@ import com.google.common.truth.Truth
 import org.jetbrains.uast.UExpression
 import org.junit.Test
 
-class EffectfulComputationTest :
-  EffectfulComputation<UnboundedSet<String>>,
-  Lattice<UnboundedSet<String>> by possibilityLattice<String>() {
+class EffectfulComputationTest : EffectfulComputation<UnboundedSet<String>>, Lattice<UnboundedSet<String>> by possibilityLattice<String>() {
 
   @Test
   fun `pure returns with no effect`() {
@@ -42,18 +40,17 @@ class EffectfulComputationTest :
 
   @Test
   fun `forM collects and join all effects`() {
-    val runForEffect =
-      forM(instrumentedStrLen(), listOf(StringExpr("foo"), StringExpr("bar"), StringExpr("apple")))
+    val runForEffect = forM(instrumentedStrLen(), listOf(StringExpr("foo"), StringExpr("bar"), StringExpr("apple")))
     Truth.assertThat(runForEffect).isEqualTo(unboundedSetOf("foo", "bar", "apple"))
   }
 
   @Test
   fun `lastM returns last computation and join all effects`() {
     val runForLast =
-      lastM(
-        instrumentedStrLen(),
-        listOf(StringExpr("foo"), StringExpr("bar"), StringExpr("apple")),
-      )!!
+        lastM(
+            instrumentedStrLen(),
+            listOf(StringExpr("foo"), StringExpr("bar"), StringExpr("apple")),
+        )!!
     Truth.assertThat(runForLast.value).isEqualTo("apple".length)
     Truth.assertThat(runForLast.effect).isEqualTo(unboundedSetOf("foo", "bar", "apple"))
   }
@@ -65,40 +62,38 @@ class EffectfulComputationTest :
 
   @Test
   fun `mapM transforms list and joins effects`() {
-    val runForEach =
-      mapM(instrumentedStrLen(), listOf(StringExpr("foo"), StringExpr("null"), StringExpr("apple")))
-    Truth.assertThat(runForEach.value)
-      .isEqualTo(listOf("foo".length, "null".length, "apple".length))
+    val runForEach = mapM(instrumentedStrLen(), listOf(StringExpr("foo"), StringExpr("null"), StringExpr("apple")))
+    Truth.assertThat(runForEach.value).isEqualTo(listOf("foo".length, "null".length, "apple".length))
     Truth.assertThat(runForEach.effect).isEqualTo(null)
   }
 
   @Test
   fun `foldM accumulates result and joins effects`() {
     val runFold =
-      foldM(
-        1,
-        Int::times,
-        instrumentedStrLen(),
-        listOf(StringExpr("foo"), StringExpr("bar"), StringExpr("apple")),
-      )
+        foldM(
+            1,
+            Int::times,
+            instrumentedStrLen(),
+            listOf(StringExpr("foo"), StringExpr("bar"), StringExpr("apple")),
+        )
     Truth.assertThat(runFold.value).isEqualTo("foo".length * "bar".length * "apple".length)
     Truth.assertThat(runFold.effect).isEqualTo(unboundedSetOf("foo", "bar", "apple"))
   }
 
   /**
-   * Silly evaluation example of [StringExpr], whose value is the string's length, and effect is the
-   * set of strings called, except if the string is "null" then `null`
+   * Silly evaluation example of [StringExpr], whose value is the string's length, and effect is the set of strings called, except if the
+   * string is "null" then `null`
    */
   private fun instrumentedStrLen(): (StringExpr) -> Result<Int, UnboundedSet<String>> {
     return fun(s) =
-      Result(
-        value = s.str.length,
-        effect =
-          when (s.str) {
-            "null" -> null
-            else -> unboundedSetOf(s.str)
-          },
-      )
+        Result(
+            value = s.str.length,
+            effect =
+                when (s.str) {
+                  "null" -> null
+                  else -> unboundedSetOf(s.str)
+                },
+        )
   }
 
   private class StringExpr(val str: String) : UExpression {

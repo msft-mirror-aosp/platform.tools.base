@@ -41,11 +41,11 @@ import java.util.concurrent.TimeUnit
 /** Helper for submitting analytics for batch usage of lint (for users who have opted in) */
 class LintBatchAnalytics {
   fun logSession(
-    registry: IssueRegistry,
-    flags: LintCliFlags,
-    driver: LintDriver,
-    projects: Collection<Project>,
-    incidents: List<Incident>,
+      registry: IssueRegistry,
+      flags: LintCliFlags,
+      driver: LintDriver,
+      projects: Collection<Project>,
+      incidents: List<Incident>,
   ) {
     val client = driver.client
     if (LintClient.isUnitTest) {
@@ -75,10 +75,7 @@ class LintBatchAnalytics {
       val clientName = client.getClientDisplayName()
       val clientVersion = client.getClientDisplayRevision() ?: "unknown"
       UsageTracker.version = "$clientName $clientVersion"
-      if (
-        java.lang.Boolean.getBoolean("idea.is.internal") ||
-          ApplicationManager.getApplication().isInternal
-      ) {
+      if (java.lang.Boolean.getBoolean("idea.is.internal") || ApplicationManager.getApplication().isInternal) {
         UsageTracker.ideaIsInternal = true
       }
     }
@@ -86,35 +83,35 @@ class LintBatchAnalytics {
     assert(!projects.isEmpty())
 
     val session =
-      LintSession.newBuilder()
-        .apply {
-          analysisType = computeAnalysisType(flags)
-          projectId = computeProjectId(projects)
-          lintPerformance = computePerformance(driver)
-          baselineEnabled = driver.baseline != null
-          includingGeneratedSources = driver.checkGeneratedSources
-          includingTestSources = driver.checkTestSources
-          includingDependencies = driver.checkDependencies
-          abortOnError = flags.isSetExitCode
-          ignoreWarnings = flags.isIgnoreWarnings
-          warningsAsErrors = flags.isWarningsAsErrors
-          for (issueBuilder in computeIssueData(incidents, flags, registry).values) {
-            addIssueIds(issueBuilder)
-          }
-        }
-        .build()
+        LintSession.newBuilder()
+            .apply {
+              analysisType = computeAnalysisType(flags)
+              projectId = computeProjectId(projects)
+              lintPerformance = computePerformance(driver)
+              baselineEnabled = driver.baseline != null
+              includingGeneratedSources = driver.checkGeneratedSources
+              includingTestSources = driver.checkTestSources
+              includingDependencies = driver.checkDependencies
+              abortOnError = flags.isSetExitCode
+              ignoreWarnings = flags.isIgnoreWarnings
+              warningsAsErrors = flags.isWarningsAsErrors
+              for (issueBuilder in computeIssueData(incidents, flags, registry).values) {
+                addIssueIds(issueBuilder)
+              }
+            }
+            .build()
 
     val event =
-      AndroidStudioEvent.newBuilder().apply {
-        kind = LINT_SESSION
-        lintSession = session
-        javaProcessStats = CommonMetricsData.javaProcessStats
-        jvmDetails = CommonMetricsData.jvmDetails
+        AndroidStudioEvent.newBuilder().apply {
+          kind = LINT_SESSION
+          lintSession = session
+          javaProcessStats = CommonMetricsData.javaProcessStats
+          jvmDetails = CommonMetricsData.jvmDetails
 
-        // We may not have raw project id's, for example when analyzing
-        // non-Android projects
-        computeApplicationId(projects)?.let { rawProjectId = it }
-      }
+          // We may not have raw project id's, for example when analyzing
+          // non-Android projects
+          computeApplicationId(projects)?.let { rawProjectId = it }
+        }
 
     UsageTracker.log(event)
 
@@ -147,7 +144,7 @@ class LintBatchAnalytics {
   }
 
   private fun computeAnalysisType(flags: LintCliFlags) =
-    if (flags.isFatalOnly) LintSession.AnalysisType.VITAL else LintSession.AnalysisType.BUILD
+      if (flags.isFatalOnly) LintSession.AnalysisType.VITAL else LintSession.AnalysisType.BUILD
 
   private fun computeProjectId(projects: Collection<Project>): String? {
     return computeProjectId(projects.firstOrNull()?.dir)
@@ -160,30 +157,30 @@ class LintBatchAnalytics {
   }
 
   private fun computePerformance(driver: LintDriver): LintPerformance =
-    LintPerformance.newBuilder()
-      .apply {
-        analysisTimeMs = System.currentTimeMillis() - driver.analysisStartTime
-        fileCount = driver.fileCount.toLong()
-        moduleCount = driver.moduleCount.toLong()
-        javaSourceCount = driver.javaFileCount.toLong()
-        kotlinSourceCount = driver.kotlinFileCount.toLong()
-        resourceFileCount = driver.resourceFileCount.toLong()
-        testSourceCount = driver.testSourceCount.toLong()
-        initializeTimeMs = driver.initializeTimeMs
-        registerCustomDetectorsTimeMs = driver.registerCustomDetectorsTimeMs
-        computeDetectorsTimeMs = driver.computeDetectorsTimeMs
-        checkProjectTimeMs = driver.checkProjectTimeMs
-        extraPhasesTimeMs = driver.extraPhasesTimeMs
-        reportBaselineIssuesTimeMs = driver.reportBaselineIssuesTimeMs
-        disposeProjectsTimeMs = driver.disposeProjectsTimeMs
-        reportGenerationTimeMs = driver.reportGenerationTimeMs
-      }
-      .build()
+      LintPerformance.newBuilder()
+          .apply {
+            analysisTimeMs = System.currentTimeMillis() - driver.analysisStartTime
+            fileCount = driver.fileCount.toLong()
+            moduleCount = driver.moduleCount.toLong()
+            javaSourceCount = driver.javaFileCount.toLong()
+            kotlinSourceCount = driver.kotlinFileCount.toLong()
+            resourceFileCount = driver.resourceFileCount.toLong()
+            testSourceCount = driver.testSourceCount.toLong()
+            initializeTimeMs = driver.initializeTimeMs
+            registerCustomDetectorsTimeMs = driver.registerCustomDetectorsTimeMs
+            computeDetectorsTimeMs = driver.computeDetectorsTimeMs
+            checkProjectTimeMs = driver.checkProjectTimeMs
+            extraPhasesTimeMs = driver.extraPhasesTimeMs
+            reportBaselineIssuesTimeMs = driver.reportBaselineIssuesTimeMs
+            disposeProjectsTimeMs = driver.disposeProjectsTimeMs
+            reportGenerationTimeMs = driver.reportGenerationTimeMs
+          }
+          .build()
 
   private fun recordSeverityOverride(
-    map: HashMap<String, LintIssueId.Builder>,
-    id: String,
-    lintSeverity: Severity,
+      map: HashMap<String, LintIssueId.Builder>,
+      id: String,
+      lintSeverity: Severity,
   ) {
     val builder = map[id]
     if (builder != null) {
@@ -200,38 +197,38 @@ class LintBatchAnalytics {
 
   // Mapping from Lint's severity enum to analytics severity
   private fun Severity.toAnalyticsSeverity(): LintIssueId.LintSeverity =
-    when (this) {
-      Severity.FATAL -> LintIssueId.LintSeverity.FATAL_SEVERITY
-      Severity.ERROR -> LintIssueId.LintSeverity.ERROR_SEVERITY
-      Severity.WARNING -> LintIssueId.LintSeverity.WARNING_SEVERITY
-      Severity.INFORMATIONAL -> LintIssueId.LintSeverity.INFORMATIONAL_SEVERITY
-      Severity.IGNORE -> LintIssueId.LintSeverity.IGNORE_SEVERITY
-      else -> LintIssueId.LintSeverity.UNKNOWN_SEVERITY
-    }
+      when (this) {
+        Severity.FATAL -> LintIssueId.LintSeverity.FATAL_SEVERITY
+        Severity.ERROR -> LintIssueId.LintSeverity.ERROR_SEVERITY
+        Severity.WARNING -> LintIssueId.LintSeverity.WARNING_SEVERITY
+        Severity.INFORMATIONAL -> LintIssueId.LintSeverity.INFORMATIONAL_SEVERITY
+        Severity.IGNORE -> LintIssueId.LintSeverity.IGNORE_SEVERITY
+        else -> LintIssueId.LintSeverity.UNKNOWN_SEVERITY
+      }
 
   private fun computeIssueData(
-    incidents: List<Incident>,
-    flags: LintCliFlags,
-    registry: IssueRegistry,
+      incidents: List<Incident>,
+      flags: LintCliFlags,
+      registry: IssueRegistry,
   ): Map<String, LintIssueId.Builder> {
     val map = LinkedHashMap<String, LintIssueId.Builder>(registry.issues.size)
     for (incident in incidents) {
       val issue = incident.issue
       val id = issue.id
       val issueBuilder =
-        map[id]
-          ?: run {
-            LintIssueId.newBuilder().apply {
-              map[id] = this
-              issueId = issue.id
-              severity =
-                if (incident.severity == issue.defaultSeverity) {
-                  LintIssueId.LintSeverity.DEFAULT_SEVERITY
-                } else {
-                  incident.severity.toAnalyticsSeverity()
+          map[id]
+              ?: run {
+                LintIssueId.newBuilder().apply {
+                  map[id] = this
+                  issueId = issue.id
+                  severity =
+                      if (incident.severity == issue.defaultSeverity) {
+                        LintIssueId.LintSeverity.DEFAULT_SEVERITY
+                      } else {
+                        incident.severity.toAnalyticsSeverity()
+                      }
                 }
-            }
-          }
+              }
       issueBuilder.count = issueBuilder.count + 1
     }
 

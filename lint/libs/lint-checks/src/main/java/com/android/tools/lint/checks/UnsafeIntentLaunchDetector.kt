@@ -85,11 +85,9 @@ class UnsafeIntentLaunchDetector : Detector(), SourceCodeScanner, XmlScanner {
 
   private val registerReceiverMethods = BROADCAST_RECEIVER_METHOD_NAMES
 
-  override fun getApplicableMethodNames() =
-    listOf("getParcelableExtra", "getParcelable", "getIntent", "parseUri") + registerReceiverMethods
+  override fun getApplicableMethodNames() = listOf("getParcelableExtra", "getParcelable", "getIntent", "parseUri") + registerReceiverMethods
 
-  override fun applicableSuperClasses() =
-    listOf("android.app.Activity", "android.content.BroadcastReceiver", "android.app.Service")
+  override fun applicableSuperClasses() = listOf("android.app.Activity", "android.content.BroadcastReceiver", "android.app.Service")
 
   override fun getApplicableElements() = listOf(TAG_ACTIVITY, TAG_SERVICE, TAG_RECEIVER)
 
@@ -98,9 +96,9 @@ class UnsafeIntentLaunchDetector : Detector(), SourceCodeScanner, XmlScanner {
   }
 
   private fun isComponentExported(
-    context: Context,
-    root: Element,
-    incidentComponent: String?,
+      context: Context,
+      root: Element,
+      incidentComponent: String?,
   ): Boolean {
     val application = root.subtag(SdkConstants.TAG_APPLICATION) ?: return false
     for (component in application) {
@@ -119,10 +117,7 @@ class UnsafeIntentLaunchDetector : Detector(), SourceCodeScanner, XmlScanner {
   // The element passed in is guaranteed to be one of the activity, receiver or service tag.
   private fun getProtectedComponent(context: Context, component: Element): String? {
     val exportedAttr = component.getAttributeNS(ANDROID_URI, ATTR_EXPORTED)
-    if (
-      "true" == exportedAttr ||
-        exportedAttr.isEmpty() && component.getElementsByTagName("intent-filter").length > 0
-    ) {
+    if ("true" == exportedAttr || exportedAttr.isEmpty() && component.getElementsByTagName("intent-filter").length > 0) {
       val permission = component.getAttributeNS(ANDROID_URI, ATTR_PERMISSION)
       if (!isProbablyProtectedBySignaturePermission(permission)) {
         var componentName = component.getAttributeNS(ANDROID_URI, ATTR_NAME)
@@ -144,34 +139,30 @@ class UnsafeIntentLaunchDetector : Detector(), SourceCodeScanner, XmlScanner {
     // This method handles unsafe intent passed in as parameter to certain methods by the platform.
     val evaluator = context.evaluator
     val methodNames =
-      when {
-        evaluator.extendsClass(declaration.javaPsi, ACTIVITY_CLASS, true) ->
-          UNSAFE_INTENT_AS_PARAMETER_METHODS[ACTIVITY_CLASS]
-        evaluator.extendsClass(declaration.javaPsi, SERVICE_CLASS, true) ->
-          UNSAFE_INTENT_AS_PARAMETER_METHODS[SERVICE_CLASS]
-        evaluator.extendsClass(declaration.javaPsi, BROADCAST_RECEIVER_CLASS, true) ->
-          UNSAFE_INTENT_AS_PARAMETER_METHODS[BROADCAST_RECEIVER_CLASS]
-        else -> return
-      } ?: return
+        when {
+          evaluator.extendsClass(declaration.javaPsi, ACTIVITY_CLASS, true) -> UNSAFE_INTENT_AS_PARAMETER_METHODS[ACTIVITY_CLASS]
+          evaluator.extendsClass(declaration.javaPsi, SERVICE_CLASS, true) -> UNSAFE_INTENT_AS_PARAMETER_METHODS[SERVICE_CLASS]
+          evaluator.extendsClass(declaration.javaPsi, BROADCAST_RECEIVER_CLASS, true) ->
+              UNSAFE_INTENT_AS_PARAMETER_METHODS[BROADCAST_RECEIVER_CLASS]
+          else -> return
+        } ?: return
     for (methodName in methodNames) {
       for (psiMethod in declaration.javaPsi.findMethodsByName(methodName, false)) {
         val method = psiMethod.toUElementOfType<UMethod>()
         val intentParam =
-          method
-            ?.javaPsi
-            ?.parameterList
-            ?.parameters
-            ?.firstOrNull { it.type.canonicalText == INTENT_CLASS }
-            ?.toUElementOfType<UParameter>()
+            method
+                ?.javaPsi
+                ?.parameterList
+                ?.parameters
+                ?.firstOrNull { it.type.canonicalText == INTENT_CLASS }
+                ?.toUElementOfType<UParameter>()
         val visitor =
-          IntentLaunchChecker(
-            initial = setOf(intentParam ?: return),
-            context = context,
-            location = context.getLocation(intentParam.sourcePsi),
-            checkProtectedBroadcast =
-              UNSAFE_INTENT_AS_PARAMETER_METHODS[BROADCAST_RECEIVER_CLASS]?.contains(methodName) ==
-                true,
-          )
+            IntentLaunchChecker(
+                initial = setOf(intentParam ?: return),
+                context = context,
+                location = context.getLocation(intentParam.sourcePsi),
+                checkProtectedBroadcast = UNSAFE_INTENT_AS_PARAMETER_METHODS[BROADCAST_RECEIVER_CLASS]?.contains(methodName) == true,
+            )
         method.accept(visitor)
         if (visitor.launched) {
           reportIncident(context, visitor)
@@ -182,22 +173,17 @@ class UnsafeIntentLaunchDetector : Detector(), SourceCodeScanner, XmlScanner {
 
   override fun visitMethodCall(context: JavaContext, node: UCallExpression, method: PsiMethod) {
     val evaluator = context.evaluator
-    if (
-      method.name in registerReceiverMethods &&
-        evaluator.isMemberInSubClassOf(method, CONTEXT_CLASS)
-    ) {
+    if (method.name in registerReceiverMethods && evaluator.isMemberInSubClassOf(method, CONTEXT_CLASS)) {
       // register receiver at runtime methods, figure out if it is registered as unprotected.
       processRuntimeReceiver(context, node, method)
-    } else if (
-      isUnParcellingIntentMethods(evaluator, method) or isParseUnsafeUri(evaluator, node, method)
-    ) {
+    } else if (isUnParcellingIntentMethods(evaluator, method) or isParseUnsafeUri(evaluator, node, method)) {
       // methods that launch Intent. Figure out if the Intent is launched.
       val visitor =
-        IntentLaunchChecker(
-          initial = setOf(node),
-          context = context,
-          location = context.getLocation(node),
-        )
+          IntentLaunchChecker(
+              initial = setOf(node),
+              context = context,
+              location = context.getLocation(node),
+          )
       val containingMethod = node.getParentOfType(UMethod::class.java)
       containingMethod?.accept(visitor)
       if (visitor.launched) {
@@ -213,62 +199,55 @@ class UnsafeIntentLaunchDetector : Detector(), SourceCodeScanner, XmlScanner {
   }
 
   private fun isParseUnsafeUri(
-    evaluator: JavaEvaluator,
-    call: UCallExpression,
-    method: PsiMethod,
+      evaluator: JavaEvaluator,
+      call: UCallExpression,
+      method: PsiMethod,
   ): Boolean {
     if (method.name == "parseUri" && evaluator.isMemberInClass(method, INTENT_CLASS)) {
       val intentArg = call.getArgumentForParameter(0)?.skipParenthesizedExprDown()
       val getUriStringCall =
-        if (intentArg is USimpleNameReferenceExpression) {
-          findLastAssignment(intentArg.resolve() as? PsiVariable ?: return false, call)
-        } else intentArg
+          if (intentArg is USimpleNameReferenceExpression) {
+            findLastAssignment(intentArg.resolve() as? PsiVariable ?: return false, call)
+          } else intentArg
 
-      val getUriStringMethod =
-        (getUriStringCall?.findSelector() as? UCallExpression)?.resolve() ?: return false
+      val getUriStringMethod = (getUriStringCall?.findSelector() as? UCallExpression)?.resolve() ?: return false
       return isUnParcellingStringMethods(evaluator, getUriStringMethod)
     } else return false
   }
 
   private fun isUnParcellingIntentMethods(evaluator: JavaEvaluator, method: PsiMethod): Boolean {
     return when (method.name) {
-      "getParcelableExtra" ->
-        evaluator.isMemberInSubClassOf(method, INTENT_CLASS) ||
-          evaluator.isMemberInClass(method, INTENT_COMPAT_CLASS)
-      "getParcelable" ->
-        evaluator.isMemberInSubClassOf(method, BUNDLE_CLASS) ||
-          evaluator.isMemberInClass(method, BUNDLE_COMPAT_CLASS)
+      "getParcelableExtra" -> evaluator.isMemberInSubClassOf(method, INTENT_CLASS) || evaluator.isMemberInClass(method, INTENT_COMPAT_CLASS)
+      "getParcelable" -> evaluator.isMemberInSubClassOf(method, BUNDLE_CLASS) || evaluator.isMemberInClass(method, BUNDLE_COMPAT_CLASS)
       "getIntent" -> evaluator.isMemberInSubClassOf(method, CONTEXT_CLASS)
       else -> false
     }
   }
 
   private fun isUnParcellingStringMethods(evaluator: JavaEvaluator, method: PsiMethod): Boolean {
-    return (method.name == "getStringExtra") &&
-      evaluator.isMemberInSubClassOf(method, INTENT_CLASS) ||
-      method.name == "getString" && evaluator.isMemberInSubClassOf(method, BUNDLE_CLASS)
+    return (method.name == "getStringExtra") && evaluator.isMemberInSubClassOf(method, INTENT_CLASS) ||
+        method.name == "getString" && evaluator.isMemberInSubClassOf(method, BUNDLE_CLASS)
   }
 
   private fun processRuntimeReceiver(
-    context: JavaContext,
-    call: UCallExpression,
-    method: PsiMethod,
+      context: JavaContext,
+      call: UCallExpression,
+      method: PsiMethod,
   ) {
     val receiverArg = UastLintUtils.findArgument(call, method, BROADCAST_RECEIVER_CLASS) ?: return
     if (receiverArg.isNullLiteral()) return
 
     if (!isRuntimeReceiverProtected(call, method, context.evaluator)) {
       val receiverConstructor = findConstruction(BROADCAST_RECEIVER_CLASS, receiverArg, call, true)
-      val unprotectedReceiverClassName =
-        receiverConstructor?.classReference.getQualifiedName() ?: return
+      val unprotectedReceiverClassName = receiverConstructor?.classReference.getQualifiedName() ?: return
       storeUnprotectedComponents(context, unprotectedReceiverClassName)
     }
   }
 
   fun isRuntimeReceiverProtected(
-    call: UCallExpression,
-    method: PsiMethod,
-    javaEvaluator: JavaEvaluator,
+      call: UCallExpression,
+      method: PsiMethod,
+      javaEvaluator: JavaEvaluator,
   ): Boolean {
     // The parameter positions vary across the various registerReceiver*() methods, so rather
     // than hardcode them we simply look them up based on the parameter name and type.
@@ -282,22 +261,20 @@ class UnsafeIntentLaunchDetector : Detector(), SourceCodeScanner, XmlScanner {
     val permission = evaluator.evaluate(permissionArg) as? String
     if (isProbablyProtectedBySignaturePermission(permission)) return true
 
-    val filterArg =
-      UastLintUtils.findArgument(call, method, "android.content.IntentFilter") ?: return true
+    val filterArg = UastLintUtils.findArgument(call, method, "android.content.IntentFilter") ?: return true
     val (isProtected, _) =
-      BroadcastReceiverUtils.checkIsProtectedReceiverAndReturnUnprotectedActions(
-        filterArg,
-        call,
-        javaEvaluator,
-      )
+        BroadcastReceiverUtils.checkIsProtectedReceiverAndReturnUnprotectedActions(
+            filterArg,
+            call,
+            javaEvaluator,
+        )
 
     return isProtected
   }
 
   private fun storeUnprotectedComponents(context: Context, unprotectedComponentName: String) {
     val lintMap = context.getPartialResults(ISSUE).map()
-    val unprotectedComponents =
-      lintMap.getMap(KEY_UNPROTECTED) ?: map().also { lintMap.put(KEY_UNPROTECTED, it) }
+    val unprotectedComponents = lintMap.getMap(KEY_UNPROTECTED) ?: map().also { lintMap.put(KEY_UNPROTECTED, it) }
     // the value of the lintMap is not used. only the key is used later.
     unprotectedComponents.put(unprotectedComponentName, true)
   }
@@ -306,11 +283,11 @@ class UnsafeIntentLaunchDetector : Detector(), SourceCodeScanner, XmlScanner {
     if (context.isGlobalAnalysis()) {
       val incidentComponent = visitor.incidentClass
       if (
-        isComponentExported(
-          context,
-          context.mainProject.mergedManifest?.documentElement ?: return,
-          incidentComponent,
-        )
+          isComponentExported(
+              context,
+              context.mainProject.mergedManifest?.documentElement ?: return,
+              incidentComponent,
+          )
       ) {
         reportIssue(context, incidentComponent, visitor.location)
       }
@@ -319,12 +296,12 @@ class UnsafeIntentLaunchDetector : Detector(), SourceCodeScanner, XmlScanner {
       val incidents = lintMap.getMap(KEY_INCIDENTS) ?: map().also { lintMap.put(KEY_INCIDENTS, it) }
       // key is not important. so the size of the map is used to make it unique.
       incidents.put(
-        incidents.size.toString(),
-        map().apply {
-          put(KEY_LOCATION, visitor.location)
-          put(KEY_SECONDARY_LOCATION, visitor.location.secondary ?: return)
-          put(KEY_INCIDENT_CLASS, visitor.incidentClass ?: return)
-        },
+          incidents.size.toString(),
+          map().apply {
+            put(KEY_LOCATION, visitor.location)
+            put(KEY_SECONDARY_LOCATION, visitor.location.secondary ?: return)
+            put(KEY_INCIDENT_CLASS, visitor.incidentClass ?: return)
+          },
       )
     }
   }
@@ -352,35 +329,32 @@ class UnsafeIntentLaunchDetector : Detector(), SourceCodeScanner, XmlScanner {
   private fun reportIssue(context: Context, incidentComponent: String?, location: Location) {
     val component = if (incidentComponent.isNullOrBlank()) "" else " $incidentComponent"
     val message =
-      """
+        """
           This intent could be coming from an untrusted source. It is later launched by \
           an unprotected component$component. You could either make the component$component \
           protected; or sanitize this intent using androidx.core.content.IntentSanitizer.
       """
-        .trimIndent()
+            .trimIndent()
     context.report(Incident(ISSUE, location, message))
   }
 
   private inner class IntentLaunchChecker(
-    initial: Collection<UElement>,
-    var context: JavaContext,
-    var location: Location,
-    var incidentClass: String? = null,
-    var launched: Boolean = false,
-    var returned: Boolean = false,
-    var unprotectedReceiver: Boolean = false,
-    var resolveCallDepth: Int = 0,
-    var checkProtectedBroadcast: Boolean = false,
+      initial: Collection<UElement>,
+      var context: JavaContext,
+      var location: Location,
+      var incidentClass: String? = null,
+      var launched: Boolean = false,
+      var returned: Boolean = false,
+      var unprotectedReceiver: Boolean = false,
+      var resolveCallDepth: Int = 0,
+      var checkProtectedBroadcast: Boolean = false,
   ) : DataFlowAnalyzer(initial) {
 
     override fun returnsSelf(call: UCallExpression): Boolean {
       // intent = getIntent().getParcelableExtra() could have been considered chained builder
       // without this override
       // and falsely identify the getIntent() calls as an issue.
-      if (
-        call.methodName in INTENT_METHODS_RETURNS_INTENT_BUT_NOT_SELF &&
-          call.receiverType?.canonicalText == INTENT_CLASS
-      ) {
+      if (call.methodName in INTENT_METHODS_RETURNS_INTENT_BUT_NOT_SELF && call.receiverType?.canonicalText == INTENT_CLASS) {
         return false
       }
 
@@ -389,9 +363,7 @@ class UnsafeIntentLaunchDetector : Detector(), SourceCodeScanner, XmlScanner {
           if (lambda !is ULambdaExpression) break
           // call's arguments could either be empty (in case of run, with, apply) or the context (in
           // case of let, also)
-          val tracked =
-            (if (lambda.valueParameters.isEmpty()) getThisExpression(lambda.body)
-            else lambda.valueParameters[0]) ?: break
+          val tracked = (if (lambda.valueParameters.isEmpty()) getThisExpression(lambda.body) else lambda.valueParameters[0]) ?: break
           val returnsTracker = ReturnsTracker(context, tracked)
           lambda.body.accept(returnsTracker)
           if (returnsTracker.returned) return true
@@ -421,16 +393,15 @@ class UnsafeIntentLaunchDetector : Detector(), SourceCodeScanner, XmlScanner {
         if (resolveCallDepth > MAX_CALL_DEPTH) return
         // escaped to another method call. check the method recursively.
         val containingMethod = call.resolve()?.toUElementOfType<UMethod>() ?: return
-        val intentParameter =
-          context.evaluator.computeArgumentMapping(call, containingMethod.javaPsi)[reference]
+        val intentParameter = context.evaluator.computeArgumentMapping(call, containingMethod.javaPsi)[reference]
         val visitor =
-          IntentLaunchChecker(
-            initial = setOf(intentParameter.toUElement() ?: return),
-            context = context,
-            location = location,
-            incidentClass = incidentClass,
-            resolveCallDepth = resolveCallDepth + 1,
-          )
+            IntentLaunchChecker(
+                initial = setOf(intentParameter.toUElement() ?: return),
+                context = context,
+                location = location,
+                incidentClass = incidentClass,
+                resolveCallDepth = resolveCallDepth + 1,
+            )
         containingMethod.accept(visitor)
         if (visitor.launched) {
           reportIncident(context, visitor)
@@ -443,30 +414,26 @@ class UnsafeIntentLaunchDetector : Detector(), SourceCodeScanner, XmlScanner {
 
     /** Returns if the expression is evaluated to a protected broadcast action. */
     private fun isProtectedBroadcastAction(expression: UExpression?): Boolean {
-      val action =
-        (ConstantEvaluator().allowFieldInitializers().evaluate(expression)) as? String
-          ?: return false
+      val action = (ConstantEvaluator().allowFieldInitializers().evaluate(expression)) as? String ?: return false
       return BroadcastReceiverUtils.isProtectedBroadcast(action)
     }
 
     /**
-     * Check if the call is within a branch of code that is protected by a protected broadcast
-     * action. It could either be an if statement that checks if the action of the intent is equal
-     * to a protected action; or an equivalent of a switch case statement.
+     * Check if the call is within a branch of code that is protected by a protected broadcast action. It could either be an if statement
+     * that checks if the action of the intent is equal to a protected action; or an equivalent of a switch case statement.
      */
     private fun inProtectedBroadcastBranch(
-      context: JavaContext,
-      call: UCallExpression,
-      reference: UElement,
+        context: JavaContext,
+        call: UCallExpression,
+        reference: UElement,
     ): Boolean {
-      return inProtectedBroadcastIfBranch(context, call, reference) ||
-        inProtectedBroadcastSwitchCase(call, reference)
+      return inProtectedBroadcastIfBranch(context, call, reference) || inProtectedBroadcastSwitchCase(call, reference)
     }
 
     private fun inProtectedBroadcastIfBranch(
-      context: JavaContext,
-      call: UCallExpression,
-      reference: UElement,
+        context: JavaContext,
+        call: UCallExpression,
+        reference: UElement,
     ): Boolean {
       var ifExp = call.getParentOfType<UIfExpression>()
       while (ifExp != null) {
@@ -486,10 +453,10 @@ class UnsafeIntentLaunchDetector : Detector(), SourceCodeScanner, XmlScanner {
           }
         }
         if (
-          op1 != null &&
-            op2 != null &&
-            ((isIntentAction(op1, reference) && isProtectedBroadcastAction(op2)) ||
-              (isIntentAction(op2, reference) && isProtectedBroadcastAction(op1)))
+            op1 != null &&
+                op2 != null &&
+                ((isIntentAction(op1, reference) && isProtectedBroadcastAction(op2)) ||
+                    (isIntentAction(op2, reference) && isProtectedBroadcastAction(op1)))
         ) {
           return context.getLocation(call) in context.getLocation(ifExp.thenExpression)
         }
@@ -499,16 +466,15 @@ class UnsafeIntentLaunchDetector : Detector(), SourceCodeScanner, XmlScanner {
     }
 
     private fun inProtectedBroadcastSwitchCase(
-      call: UCallExpression,
-      reference: UElement,
+        call: UCallExpression,
+        reference: UElement,
     ): Boolean {
       var switchExp = call.getParentOfType<USwitchExpression>()
       while (switchExp != null) {
         val subject = switchExp.expression as? UReferenceExpression
         val caseExpression = call.getParentOfType<USwitchClauseExpression>() ?: return false
         val caseValue = caseExpression.caseValues.firstOrNull() ?: return false
-        if ((caseValue.sourcePsi as? PsiSwitchLabelStatementBase)?.isDefaultCase == true)
-          return false
+        if ((caseValue.sourcePsi as? PsiSwitchLabelStatementBase)?.isDefaultCase == true) return false
         if (isIntentAction(subject, reference) && isProtectedBroadcastAction(caseValue)) return true
         switchExp = switchExp.getParentOfType()
       }
@@ -517,8 +483,7 @@ class UnsafeIntentLaunchDetector : Detector(), SourceCodeScanner, XmlScanner {
 
     private fun isIntentAction(expression: UExpression?, intentRef: UElement): Boolean {
       val actionAssignmentCall = findIntentActionAssignmentCall(expression)
-      return actionAssignmentCall?.receiver?.skipParenthesizedExprDown()?.tryResolve() ===
-        intentRef.tryResolve()
+      return actionAssignmentCall?.receiver?.skipParenthesizedExprDown()?.tryResolve() === intentRef.tryResolve()
     }
 
     private fun findIntentActionAssignmentCall(expression: UExpression?): UCallExpression? {
@@ -557,43 +522,40 @@ class UnsafeIntentLaunchDetector : Detector(), SourceCodeScanner, XmlScanner {
     private fun isIntentLaunchedBySystem(evaluator: JavaEvaluator, call: UCallExpression): Boolean {
       val method = call.resolve() ?: return false
       return isIntentLaunchedByContextMethods(evaluator, method) ||
-        isIntentLaunchedByActivityMethods(evaluator, method) ||
-        isIntentLaunchedByBroadcastReceiver(evaluator, method) ||
-        isIntentLaunchedByPendingIntentMethods(evaluator, method)
+          isIntentLaunchedByActivityMethods(evaluator, method) ||
+          isIntentLaunchedByBroadcastReceiver(evaluator, method) ||
+          isIntentLaunchedByPendingIntentMethods(evaluator, method)
     }
 
     private fun isIntentLaunchedByContextMethods(
-      evaluator: JavaEvaluator,
-      method: PsiMethod,
+        evaluator: JavaEvaluator,
+        method: PsiMethod,
     ): Boolean {
       return method.containingClass?.qualifiedName == CONTEXT_CLASS ||
-        method.containingClass?.qualifiedName == CONTEXT_COMPAT_CLASS ||
-        method.findSuperMethods(evaluator.findClass(CONTEXT_CLASS)).isNotEmpty()
+          method.containingClass?.qualifiedName == CONTEXT_COMPAT_CLASS ||
+          method.findSuperMethods(evaluator.findClass(CONTEXT_CLASS)).isNotEmpty()
     }
 
     private fun isIntentLaunchedByActivityMethods(
-      evaluator: JavaEvaluator,
-      method: PsiMethod,
+        evaluator: JavaEvaluator,
+        method: PsiMethod,
     ): Boolean {
       return method.name in ACTIVITY_INTENT_LAUNCH_METHODS &&
-        (evaluator.isMemberInSubClassOf(method, ACTIVITY_CLASS) ||
-          evaluator.isMemberInClass(method, ACTIVITY_COMPAT_CLASS))
+          (evaluator.isMemberInSubClassOf(method, ACTIVITY_CLASS) || evaluator.isMemberInClass(method, ACTIVITY_COMPAT_CLASS))
     }
 
     private fun isIntentLaunchedByBroadcastReceiver(
-      evaluator: JavaEvaluator,
-      method: PsiMethod,
+        evaluator: JavaEvaluator,
+        method: PsiMethod,
     ): Boolean {
-      return method.name == "peekService" &&
-        evaluator.isMemberInSubClassOf(method, BROADCAST_RECEIVER_CLASS)
+      return method.name == "peekService" && evaluator.isMemberInSubClassOf(method, BROADCAST_RECEIVER_CLASS)
     }
 
     private fun isIntentLaunchedByPendingIntentMethods(
-      evaluator: JavaEvaluator,
-      method: PsiMethod,
+        evaluator: JavaEvaluator,
+        method: PsiMethod,
     ): Boolean {
-      return method.name in PENDING_INTENT_LAUNCH_METHODS &&
-        evaluator.isMemberInClass(method, PENDING_INTENT_CLASS)
+      return method.name in PENDING_INTENT_LAUNCH_METHODS && evaluator.isMemberInClass(method, PENDING_INTENT_CLASS)
     }
 
     private fun handleAnonymousBroadcastReceiver(call: UCallExpression): Boolean {
@@ -606,17 +568,17 @@ class UnsafeIntentLaunchDetector : Detector(), SourceCodeScanner, XmlScanner {
       val parent = anonymousClass?.uastParent ?: return false
       var result = false
       val visitor =
-        object : DataFlowAnalyzer(setOf(parent)) {
-          override fun argument(call: UCallExpression, reference: UElement) {
-            if (call.methodName in registerReceiverMethods) {
-              val method = call.resolve() ?: return
+          object : DataFlowAnalyzer(setOf(parent)) {
+            override fun argument(call: UCallExpression, reference: UElement) {
+              if (call.methodName in registerReceiverMethods) {
+                val method = call.resolve() ?: return
 
-              if (!isRuntimeReceiverProtected(call, method, context.evaluator)) {
-                result = true
+                if (!isRuntimeReceiverProtected(call, method, context.evaluator)) {
+                  result = true
+                }
               }
             }
           }
-        }
       // We will only handle the case the receiver instance did not escape the class where it is
       // instantiated.
       parent.getParentOfType(UMethod::class.java)?.accept(visitor)
@@ -627,25 +589,22 @@ class UnsafeIntentLaunchDetector : Detector(), SourceCodeScanner, XmlScanner {
     private fun getThisExpression(block: UExpression): UThisExpression? {
       var result: UThisExpression? = null
       block.accept(
-        object : AbstractUastVisitor() {
-          override fun visitThisExpression(node: UThisExpression): Boolean {
-            result = node
-            return super.visitThisExpression(node)
+          object : AbstractUastVisitor() {
+            override fun visitThisExpression(node: UThisExpression): Boolean {
+              result = node
+              return super.visitThisExpression(node)
+            }
           }
-        }
       )
       return result
     }
 
-    /**
-     * check if the tracked is returned from the visited method. It will follow the tracked if it is
-     * passed down to another method.
-     */
+    /** check if the tracked is returned from the visited method. It will follow the tracked if it is passed down to another method. */
     inner class ReturnsTracker(
-      val context: JavaContext,
-      tracked: UElement,
-      var returned: Boolean = false,
-      var resolveCallDepth: Int = 0,
+        val context: JavaContext,
+        tracked: UElement,
+        var returned: Boolean = false,
+        var resolveCallDepth: Int = 0,
     ) : DataFlowAnalyzer(setOf(tracked)) {
       override fun returns(expression: UReturnExpression) {
         returned = true
@@ -654,12 +613,8 @@ class UnsafeIntentLaunchDetector : Detector(), SourceCodeScanner, XmlScanner {
       override fun argument(call: UCallExpression, reference: UElement) {
         if (resolveCallDepth > MAX_CALL_DEPTH) return
         val containingMethod = call.resolve()?.toUElementOfType<UMethod>() ?: return
-        val tracked =
-          context.evaluator
-            .computeArgumentMapping(call, containingMethod.javaPsi)[reference]
-            .toUElement() ?: return
-        val returnsTracker =
-          ReturnsTracker(context, tracked, resolveCallDepth = resolveCallDepth + 1)
+        val tracked = context.evaluator.computeArgumentMapping(call, containingMethod.javaPsi)[reference].toUElement() ?: return
+        val returnsTracker = ReturnsTracker(context, tracked, resolveCallDepth = resolveCallDepth + 1)
         call.resolve()?.toUElementOfType<UMethod>()?.accept(returnsTracker)
         returned = returnsTracker.returned
       }
@@ -668,30 +623,30 @@ class UnsafeIntentLaunchDetector : Detector(), SourceCodeScanner, XmlScanner {
 
   companion object {
     private val IMPLEMENTATION =
-      Implementation(
-        UnsafeIntentLaunchDetector::class.java,
-        EnumSet.of(Scope.JAVA_FILE, Scope.MANIFEST),
-        Scope.JAVA_FILE_SCOPE,
-      )
+        Implementation(
+            UnsafeIntentLaunchDetector::class.java,
+            EnumSet.of(Scope.JAVA_FILE, Scope.MANIFEST),
+            Scope.JAVA_FILE_SCOPE,
+        )
 
     /** Issue describing the problem and pointing to the detector implementation. */
     @JvmField
     val ISSUE: Issue =
-      Issue.create(
-        id = "UnsafeIntentLaunch",
-        briefDescription = "Launched Unsafe Intent",
-        explanation =
-          """
+        Issue.create(
+            id = "UnsafeIntentLaunch",
+            briefDescription = "Launched Unsafe Intent",
+            explanation =
+                """
                     Intent that potentially could come from an untrusted source should not be \
                     launched from an unprotected component without first being sanitized. See \
                     this support FAQ for details: https://support.google.com/faqs/answer/9267555
                     """,
-        category = Category.SECURITY,
-        priority = 6,
-        severity = Severity.WARNING,
-        androidSpecific = true,
-        implementation = IMPLEMENTATION,
-      )
+            category = Category.SECURITY,
+            priority = 6,
+            severity = Severity.WARNING,
+            androidSpecific = true,
+            implementation = IMPLEMENTATION,
+        )
 
     private const val RECEIVER_NOT_EXPORTED = 0x4
     private const val KEY_UNPROTECTED = "unprotected"
@@ -714,112 +669,110 @@ class UnsafeIntentLaunchDetector : Detector(), SourceCodeScanner, XmlScanner {
     private const val MAX_CALL_DEPTH = 3
 
     private val UNSAFE_INTENT_AS_PARAMETER_METHODS =
-      mapOf(
-        BROADCAST_RECEIVER_CLASS to arrayOf("onReceive"),
-        ACTIVITY_CLASS to arrayOf("onNewIntent", "onActivityResult", "onActivityReenter"),
-        SERVICE_CLASS to
-          arrayOf("onBind", "onUnbind", "onRebind", "onTaskRemoved", "onStartCommand", "onStart"),
-      )
+        mapOf(
+            BROADCAST_RECEIVER_CLASS to arrayOf("onReceive"),
+            ACTIVITY_CLASS to arrayOf("onNewIntent", "onActivityResult", "onActivityReenter"),
+            SERVICE_CLASS to arrayOf("onBind", "onUnbind", "onRebind", "onTaskRemoved", "onStartCommand", "onStart"),
+        )
 
     private val ACTIVITY_INTENT_LAUNCH_METHODS =
-      listOf(
-        "createPendingResult",
-        "navigateUpTo",
-        "navigateUpToFromChild",
-        "startActivityIfNeeded",
-        "startActivityForResult",
-        "startActivityFromChild",
-        "startActivityFromFragment",
-        "startIntentSender",
-        "startIntentSenderFromChild",
-        "startIntentSenderForResult",
-        "startNextMatchingActivity",
-        "setResult",
-      )
+        listOf(
+            "createPendingResult",
+            "navigateUpTo",
+            "navigateUpToFromChild",
+            "startActivityIfNeeded",
+            "startActivityForResult",
+            "startActivityFromChild",
+            "startActivityFromFragment",
+            "startIntentSender",
+            "startIntentSenderFromChild",
+            "startIntentSenderForResult",
+            "startNextMatchingActivity",
+            "setResult",
+        )
 
-    private val PENDING_INTENT_LAUNCH_METHODS =
-      listOf("getActivity", "getBroadcast", "getService", "getForegroundService")
+    private val PENDING_INTENT_LAUNCH_METHODS = listOf("getActivity", "getBroadcast", "getService", "getForegroundService")
 
     private val INTENT_METHODS_RETURNS_INTENT_BUT_NOT_SELF =
-      arrayOf("cloneFilter", "getOriginalIntent", "getSelector", "getParcelableExtra")
+        arrayOf("cloneFilter", "getOriginalIntent", "getSelector", "getParcelableExtra")
 
     private val KNOWN_NORMAL_PERMISSIONS =
-      listOf(
-        "android.permission.READ_BASIC_PHONE_STATE",
-        "android.permission.MANAGE_OWN_CALLS",
-        "android.permission.CALL_COMPANION_APP",
-        "android.permission.HIGH_SAMPLING_RATE_SENSORS",
-        "android.permission.USE_FINGERPRINT",
-        "android.permission.USE_BIOMETRIC",
-        "android.permission.READ_PROFILE",
-        "android.permission.WRITE_PROFILE",
-        "android.permission.READ_SOCIAL_STREAM",
-        "android.permission.WRITE_SOCIAL_STREAM",
-        "android.permission.READ_USER_DICTIONARY",
-        "android.permission.WRITE_USER_DICTIONARY",
-        "android.permission.WRITE_SMS",
-        "com.android.browser.permission.READ_HISTORY_BOOKMARKS",
-        "com.android.browser.permission.WRITE_HISTORY_BOOKMARKS",
-        "android.permission.AUTHENTICATE_ACCOUNTS",
-        "android.permission.MANAGE_ACCOUNTS",
-        "android.permission.USE_CREDENTIALS",
-        "android.permission.SUBSCRIBED_FEEDS_READ",
-        "android.permission.SUBSCRIBED_FEEDS_WRITE",
-        "android.permission.FLASHLIGHT",
-        "com.android.alarm.permission.SET_ALARM",
-        "android.permission.ACCESS_LOCATION_EXTRA_COMMANDS",
-        "android.permission.INTERNET",
-        "android.permission.ACCESS_NETWORK_STATE",
-        "android.permission.ACCESS_WIFI_STATE",
-        "android.permission.CHANGE_WIFI_STATE",
-        "android.permission.BLUETOOTH",
-        "android.permission.BLUETOOTH_ADMIN",
-        "android.permission.NFC",
-        "android.permission.NFC_TRANSACTION_EVENT",
-        "android.permission.NFC_PREFERRED_PAYMENT_INFO",
-        "android.permission.CHANGE_WIFI_MULTICAST_STATE",
-        "android.permission.VIBRATE",
-        "android.permission.WAKE_LOCK",
-        "android.permission.TRANSMIT_IR",
-        "android.permission.TURN_SCREEN_ON",
-        "android.permission.MODIFY_AUDIO_SETTINGS",
-        "android.permission.DISABLE_KEYGUARD",
-        "android.permission.REQUEST_PASSWORD_COMPLEXITY",
-        "android.permission.GET_TASKS",
-        "android.permission.REORDER_TASKS",
-        "android.permission.RESTART_PACKAGES",
-        "android.permission.KILL_BACKGROUND_PROCESSES",
-        "android.permission.REQUEST_COMPANION_RUN_IN_BACKGROUND",
-        "android.permission.REQUEST_COMPANION_START_FOREGROUND_SERVICES_FROM_BACKGROUND",
-        "android.permission.REQUEST_COMPANION_USE_DATA_IN_BACKGROUND",
-        "android.permission.REQUEST_COMPANION_PROFILE_WATCH",
-        "android.permission.HIDE_OVERLAY_WINDOWS",
-        "android.permission.SET_WALLPAPER",
-        "android.permission.SET_WALLPAPER_HINTS",
-        "android.permission.EXPAND_STATUS_BAR",
-        "com.android.launcher.permission.INSTALL_SHORTCUT",
-        "com.android.launcher.permission.UNINSTALL_SHORTCUT",
-        "android.permission.READ_SYNC_SETTINGS",
-        "android.permission.WRITE_SYNC_SETTINGS",
-        "android.permission.READ_SYNC_STATS",
-        "android.permission.PERSISTENT_ACTIVITY",
-        "android.permission.GET_PACKAGE_SIZE",
-        "android.permission.RECEIVE_BOOT_COMPLETED",
-        "android.permission.BROADCAST_STICKY",
-        "android.permission.CHANGE_NETWORK_STATE",
-        "android.permission.SCHEDULE_EXACT_ALARM",
-        "android.permission.USE_EXACT_ALARM",
-        "android.permission.REQUEST_DELETE_PACKAGES",
-        "android.permission.REQUEST_OBSERVE_COMPANION_DEVICE_PRESENCE",
-        "android.permission.DELIVER_COMPANION_MESSAGES",
-        "android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS",
-        "android.permission.ACCESS_NOTIFICATION_POLICY",
-        "android.permission.READ_INSTALL_SESSIONS",
-        "android.permission.FOREGROUND_SERVICE",
-        "android.permission.USE_FULL_SCREEN_INTENT",
-        "android.permission.QUERY_ALL_PACKAGES",
-        "android.permission.READ_NEARBY_STREAMING_POLICY",
-        "android.permission.UPDATE_PACKAGES_WITHOUT_USER_ACTION",
-      )
+        listOf(
+            "android.permission.READ_BASIC_PHONE_STATE",
+            "android.permission.MANAGE_OWN_CALLS",
+            "android.permission.CALL_COMPANION_APP",
+            "android.permission.HIGH_SAMPLING_RATE_SENSORS",
+            "android.permission.USE_FINGERPRINT",
+            "android.permission.USE_BIOMETRIC",
+            "android.permission.READ_PROFILE",
+            "android.permission.WRITE_PROFILE",
+            "android.permission.READ_SOCIAL_STREAM",
+            "android.permission.WRITE_SOCIAL_STREAM",
+            "android.permission.READ_USER_DICTIONARY",
+            "android.permission.WRITE_USER_DICTIONARY",
+            "android.permission.WRITE_SMS",
+            "com.android.browser.permission.READ_HISTORY_BOOKMARKS",
+            "com.android.browser.permission.WRITE_HISTORY_BOOKMARKS",
+            "android.permission.AUTHENTICATE_ACCOUNTS",
+            "android.permission.MANAGE_ACCOUNTS",
+            "android.permission.USE_CREDENTIALS",
+            "android.permission.SUBSCRIBED_FEEDS_READ",
+            "android.permission.SUBSCRIBED_FEEDS_WRITE",
+            "android.permission.FLASHLIGHT",
+            "com.android.alarm.permission.SET_ALARM",
+            "android.permission.ACCESS_LOCATION_EXTRA_COMMANDS",
+            "android.permission.INTERNET",
+            "android.permission.ACCESS_NETWORK_STATE",
+            "android.permission.ACCESS_WIFI_STATE",
+            "android.permission.CHANGE_WIFI_STATE",
+            "android.permission.BLUETOOTH",
+            "android.permission.BLUETOOTH_ADMIN",
+            "android.permission.NFC",
+            "android.permission.NFC_TRANSACTION_EVENT",
+            "android.permission.NFC_PREFERRED_PAYMENT_INFO",
+            "android.permission.CHANGE_WIFI_MULTICAST_STATE",
+            "android.permission.VIBRATE",
+            "android.permission.WAKE_LOCK",
+            "android.permission.TRANSMIT_IR",
+            "android.permission.TURN_SCREEN_ON",
+            "android.permission.MODIFY_AUDIO_SETTINGS",
+            "android.permission.DISABLE_KEYGUARD",
+            "android.permission.REQUEST_PASSWORD_COMPLEXITY",
+            "android.permission.GET_TASKS",
+            "android.permission.REORDER_TASKS",
+            "android.permission.RESTART_PACKAGES",
+            "android.permission.KILL_BACKGROUND_PROCESSES",
+            "android.permission.REQUEST_COMPANION_RUN_IN_BACKGROUND",
+            "android.permission.REQUEST_COMPANION_START_FOREGROUND_SERVICES_FROM_BACKGROUND",
+            "android.permission.REQUEST_COMPANION_USE_DATA_IN_BACKGROUND",
+            "android.permission.REQUEST_COMPANION_PROFILE_WATCH",
+            "android.permission.HIDE_OVERLAY_WINDOWS",
+            "android.permission.SET_WALLPAPER",
+            "android.permission.SET_WALLPAPER_HINTS",
+            "android.permission.EXPAND_STATUS_BAR",
+            "com.android.launcher.permission.INSTALL_SHORTCUT",
+            "com.android.launcher.permission.UNINSTALL_SHORTCUT",
+            "android.permission.READ_SYNC_SETTINGS",
+            "android.permission.WRITE_SYNC_SETTINGS",
+            "android.permission.READ_SYNC_STATS",
+            "android.permission.PERSISTENT_ACTIVITY",
+            "android.permission.GET_PACKAGE_SIZE",
+            "android.permission.RECEIVE_BOOT_COMPLETED",
+            "android.permission.BROADCAST_STICKY",
+            "android.permission.CHANGE_NETWORK_STATE",
+            "android.permission.SCHEDULE_EXACT_ALARM",
+            "android.permission.USE_EXACT_ALARM",
+            "android.permission.REQUEST_DELETE_PACKAGES",
+            "android.permission.REQUEST_OBSERVE_COMPANION_DEVICE_PRESENCE",
+            "android.permission.DELIVER_COMPANION_MESSAGES",
+            "android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS",
+            "android.permission.ACCESS_NOTIFICATION_POLICY",
+            "android.permission.READ_INSTALL_SESSIONS",
+            "android.permission.FOREGROUND_SERVICE",
+            "android.permission.USE_FULL_SCREEN_INTENT",
+            "android.permission.QUERY_ALL_PACKAGES",
+            "android.permission.READ_NEARBY_STREAMING_POLICY",
+            "android.permission.UPDATE_PACKAGES_WITHOUT_USER_ACTION",
+        )
   }
 }

@@ -54,15 +54,14 @@ import org.jetbrains.uast.visitor.AbstractUastVisitor
 import org.junit.Assert.assertNotEquals
 
 /**
- * Unit tests for the data flow analyzer. Note that there are also a number of additional unit tests
- * in CleanupDetectorTest, ToastDetectorTest, SliceDetectorTest and WorkManagerDetectorTest, and
- * over time possibly others.
+ * Unit tests for the data flow analyzer. Note that there are also a number of additional unit tests in CleanupDetectorTest,
+ * ToastDetectorTest, SliceDetectorTest and WorkManagerDetectorTest, and over time possibly others.
  */
 class DataFlowAnalyzerTest : TestCase() {
   fun testJava() {
     val parsed =
-      LintUtilsTest.parse(
-        """
+        LintUtilsTest.parse(
+            """
                 package test.pkg;
 
                 @SuppressWarnings("all")
@@ -86,21 +85,21 @@ class DataFlowAnalyzerTest : TestCase() {
                     public Test other() { return this; }
                 }
             """,
-        File("test/pkg/Test.java"),
-      )
+            File("test/pkg/Test.java"),
+        )
 
     val target = findMethodCall(parsed, "d")
 
     val receivers = mutableListOf<String>()
     val analyzer =
-      object : DataFlowAnalyzer(listOf(target)) {
-        override fun receiver(call: UCallExpression) {
-          val name = call.methodName ?: "?"
-          assertNotEquals(name, "hashCode")
-          receivers.add(name)
-          super.receiver(call)
+        object : DataFlowAnalyzer(listOf(target)) {
+          override fun receiver(call: UCallExpression) {
+            val name = call.methodName ?: "?"
+            assertNotEquals(name, "hashCode")
+            receivers.add(name)
+            super.receiver(call)
+          }
         }
-      }
     val method = target.getParentOfType(UMethod::class.java)
     method?.accept(analyzer)
 
@@ -111,8 +110,8 @@ class DataFlowAnalyzerTest : TestCase() {
 
   fun testParameter() {
     val parsed =
-      LintUtilsTest.parse(
-        """
+        LintUtilsTest.parse(
+            """
                 package test.pkg;
 
                 @SuppressWarnings("all")
@@ -130,8 +129,8 @@ class DataFlowAnalyzerTest : TestCase() {
                     public void m(int x) { }
                 }
             """,
-        File("test/pkg/Test.java"),
-      )
+            File("test/pkg/Test.java"),
+        )
 
     val variable = findVariableDeclaration(parsed, "c")
     val method = variable.getParentOfType(UMethod::class.java)!!
@@ -139,12 +138,12 @@ class DataFlowAnalyzerTest : TestCase() {
 
     val arguments = mutableListOf<String>()
     val analyzer =
-      object : DataFlowAnalyzer(listOf(parameter, variable)) {
-        override fun argument(call: UCallExpression, reference: UElement) {
-          val name = call.methodName ?: "?"
-          arguments.add(name + "(" + reference.sourcePsi?.text + ")")
+        object : DataFlowAnalyzer(listOf(parameter, variable)) {
+          override fun argument(call: UCallExpression, reference: UElement) {
+            val name = call.methodName ?: "?"
+            arguments.add(name + "(" + reference.sourcePsi?.text + ")")
+          }
         }
-      }
     method.accept(analyzer)
 
     assertEquals("m(b), m(c), m(d)", arguments.joinToString { it })
@@ -154,8 +153,8 @@ class DataFlowAnalyzerTest : TestCase() {
 
   fun testKotlin() {
     val parsed =
-      LintUtilsTest.parseKotlin(
-        """
+        LintUtilsTest.parseKotlin(
+            """
                 package test.pkg
 
                 class Test {
@@ -182,21 +181,21 @@ class DataFlowAnalyzerTest : TestCase() {
                     fun other(): Test = this
                 }
             """,
-        File("test/pkg/Test.kt"),
-      )
+            File("test/pkg/Test.kt"),
+        )
 
     val target = findMethodCall(parsed, "d")
 
     val receivers = mutableListOf<String>()
     val analyzer =
-      object : DataFlowAnalyzer(listOf(target)) {
-        override fun receiver(call: UCallExpression) {
-          val name = call.methodName ?: "?"
-          assertNotEquals(name, "hashCode")
-          receivers.add(name)
-          super.receiver(call)
+        object : DataFlowAnalyzer(listOf(target)) {
+          override fun receiver(call: UCallExpression) {
+            val name = call.methodName ?: "?"
+            assertNotEquals(name, "hashCode")
+            receivers.add(name)
+            super.receiver(call)
+          }
         }
-      }
     val method = target.getParentOfType(UMethod::class.java)
     method?.accept(analyzer)
 
@@ -206,44 +205,44 @@ class DataFlowAnalyzerTest : TestCase() {
   }
 
   private fun findMethodCall(
-    parsed: com.android.utils.Pair<JavaContext, Disposable>,
-    targetName: String,
+      parsed: com.android.utils.Pair<JavaContext, Disposable>,
+      targetName: String,
   ): UCallExpression {
     var target: UCallExpression? = null
     val file = parsed.first.uastFile!!
     file.accept(
-      object : AbstractUastVisitor() {
-        override fun visitCallExpression(node: UCallExpression): Boolean {
-          if (target != null) return super.visitCallExpression(node)
+        object : AbstractUastVisitor() {
+          override fun visitCallExpression(node: UCallExpression): Boolean {
+            if (target != null) return super.visitCallExpression(node)
 
-          if (node.methodName == targetName) {
-            target = node
-          } else if (node.isConstructorCall() && node.classReference?.resolvedName == targetName) {
-            target = node
+            if (node.methodName == targetName) {
+              target = node
+            } else if (node.isConstructorCall() && node.classReference?.resolvedName == targetName) {
+              target = node
+            }
+            return super.visitCallExpression(node)
           }
-          return super.visitCallExpression(node)
         }
-      }
     )
     assertNotNull(target)
     return target!!
   }
 
   private fun findVariableDeclaration(
-    parsed: com.android.utils.Pair<JavaContext, Disposable>,
-    targetName: String,
+      parsed: com.android.utils.Pair<JavaContext, Disposable>,
+      targetName: String,
   ): UVariable {
     var target: UVariable? = null
     val file = parsed.first.uastFile!!
     file.accept(
-      object : AbstractUastVisitor() {
-        override fun visitVariable(node: UVariable): Boolean {
-          if (node.name == targetName) {
-            target = node
+        object : AbstractUastVisitor() {
+          override fun visitVariable(node: UVariable): Boolean {
+            if (node.name == targetName) {
+              target = node
+            }
+            return super.visitVariable(node)
           }
-          return super.visitVariable(node)
         }
-      }
     )
     assertNotNull(target)
     return target!!
@@ -253,9 +252,9 @@ class DataFlowAnalyzerTest : TestCase() {
     // Makes sure the semantics of let, apply, also, with and run are handled correctly.
     // Regression test for https://issuetracker.google.com/187437289.
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
                 @file:Suppress("unused")
 
                 package test.pkg
@@ -370,15 +369,15 @@ class DataFlowAnalyzerTest : TestCase() {
                         }
                 }
                 """
-          )
-          .indented(),
-        rClass,
-      )
-      .testModes(TestMode.DEFAULT)
-      .issues(ToastDetector.ISSUE)
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            rClass,
+        )
+        .testModes(TestMode.DEFAULT)
+        .issues(ToastDetector.ISSUE)
+        .run()
+        .expect(
+            """
             src/test/pkg/StandardTest.kt:16: Warning: Toast created but not shown: did you forget to call show()? [ShowToast]
                     val toast = Toast.makeText(context, R.string.app_name, Toast.LENGTH_LONG) // ERROR 1
                                 ~~~~~~~~~~~~~~
@@ -396,14 +395,14 @@ class DataFlowAnalyzerTest : TestCase() {
                                 ~~~~~~~~~~~~~~
             0 errors, 5 warnings
             """
-      )
+        )
   }
 
   fun testNestedExtensionMethods() {
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
                 @file:Suppress("unused")
 
                 package test.pkg
@@ -465,21 +464,21 @@ class DataFlowAnalyzerTest : TestCase() {
                 }
                 private fun Toast.extension(): Toast = this
                 """
-          )
-          .indented(),
-        rClass,
-      )
-      .testModes(TestMode.DEFAULT)
-      .issues(ToastDetector.ISSUE)
-      .run()
-      .expectClean()
+                )
+                .indented(),
+            rClass,
+        )
+        .testModes(TestMode.DEFAULT)
+        .issues(ToastDetector.ISSUE)
+        .run()
+        .expectClean()
   }
 
   fun testBlocksAndReturns() {
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
                 @file:Suppress("unused")
 
                 package test.pkg
@@ -532,15 +531,15 @@ class DataFlowAnalyzerTest : TestCase() {
 
                 private fun Toast.extension(): Toast = this
                 """
-          )
-          .indented(),
-        rClass,
-      )
-      .testModes(TestMode.DEFAULT)
-      .issues(ToastDetector.ISSUE)
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            rClass,
+        )
+        .testModes(TestMode.DEFAULT)
+        .issues(ToastDetector.ISSUE)
+        .run()
+        .expect(
+            """
             src/test/pkg/ExtensionAndNesting.kt:36: Warning: Toast created but not shown: did you forget to call show()? [ShowToast]
                         Toast.makeText(c, r, d) // ERROR 1
                         ~~~~~~~~~~~~~~
@@ -549,15 +548,15 @@ class DataFlowAnalyzerTest : TestCase() {
                         ~~~~~~~~~~~~~~
             0 errors, 2 warnings
             """
-      )
+        )
   }
 
   fun testNonTopLevelReferences() {
     // References to this are not direct children inside the lambda
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
                 import android.view.View
                 import com.google.android.material.snackbar.Snackbar
 
@@ -569,20 +568,20 @@ class DataFlowAnalyzerTest : TestCase() {
                     }
                 }
                 """
-          )
-          .indented(),
-        *snackbarStubs,
-      )
-      .issues(ToastDetector.ISSUE)
-      .run()
-      .expectClean()
+                )
+                .indented(),
+            *snackbarStubs,
+        )
+        .issues(ToastDetector.ISSUE)
+        .run()
+        .expectClean()
   }
 
   fun testNestedLambdas() {
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
                 import android.view.View
                 import com.google.android.material.snackbar.BaseTransientBottomBar
                 import com.google.android.material.snackbar.Snackbar
@@ -623,14 +622,14 @@ class DataFlowAnalyzerTest : TestCase() {
                 }
 
                 """
-          )
-          .indented(),
-        *snackbarStubs,
-      )
-      .issues(ToastDetector.ISSUE)
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            *snackbarStubs,
+        )
+        .issues(ToastDetector.ISSUE)
+        .run()
+        .expect(
+            """
             src/test.kt:6: Warning: Snackbar created but not shown: did you forget to call show()? [ShowToast]
                 Snackbar.make(parent, msg, duration).apply { // ERROR 1
                 ~~~~~~~~~~~~~
@@ -639,14 +638,14 @@ class DataFlowAnalyzerTest : TestCase() {
                 ~~~~~~~~~~~~~
             0 errors, 2 warnings
             """
-      )
+        )
   }
 
   fun testNestedScopes() {
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
                 @file:Suppress("unused")
 
                 package test.pkg
@@ -694,16 +693,16 @@ class DataFlowAnalyzerTest : TestCase() {
 
                 private fun Toast.extension(): Toast = this
                 """
-          )
-          .indented(),
-        rClass,
-        *snackbarStubs,
-      )
-      .testModes(TestMode.DEFAULT)
-      .issues(ToastDetector.ISSUE)
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            rClass,
+            *snackbarStubs,
+        )
+        .testModes(TestMode.DEFAULT)
+        .issues(ToastDetector.ISSUE)
+        .run()
+        .expect(
+            """
                 src/test/pkg/test.kt:11: Warning: Toast created but not shown: did you forget to call show()? [ShowToast]
                     val toast = Toast.makeText(context, R.string.app_name, Toast.LENGTH_LONG) // ERROR 1
                                 ~~~~~~~~~~~~~~
@@ -712,14 +711,14 @@ class DataFlowAnalyzerTest : TestCase() {
                     ~~~~~~~~~~~~~
                 0 errors, 2 warnings
                 """
-      )
+        )
   }
 
   fun testIgnoredArguments() {
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
                 import android.content.Context
                 import android.util.Log
                 import android.widget.Toast
@@ -731,29 +730,29 @@ class DataFlowAnalyzerTest : TestCase() {
                     Log.d("tag", toast)
                 }
                 """
-          )
-          .indented(),
-        *snackbarStubs,
-      )
-      .issues(ToastDetector.ISSUE)
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            *snackbarStubs,
+        )
+        .issues(ToastDetector.ISSUE)
+        .run()
+        .expect(
+            """
             src/test.kt:6: Warning: Toast created but not shown: did you forget to call show()? [ShowToast]
                 val toast = Toast.makeText(c, r, d) // ERROR
                             ~~~~~~~~~~~~~~
             0 errors, 1 warnings
             """
-      )
+        )
   }
 
   fun testClone() {
     // Methods that are named clone (& similar) should not be treated as transferring
     // the value even though their types match the expectation
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
                 import android.view.View
                 import com.google.android.material.snackbar.Snackbar
 
@@ -761,13 +760,13 @@ class DataFlowAnalyzerTest : TestCase() {
                     Snackbar.make(parent, msg, duration).clone().toDebug().show() // ERROR
                 }
                 """
-          )
-          .indented(),
-        // Note: using a different stub here since we're adding methods that don't exist in a real
-        // snackbar
-        // to simulate this scenario
-        java(
-          """
+                )
+                .indented(),
+            // Note: using a different stub here since we're adding methods that don't exist in a real
+            // snackbar
+            // to simulate this scenario
+            java(
+                """
                 package com.google.android.material.snackbar;
                 import android.view.View;
                 public class Snackbar {
@@ -779,25 +778,25 @@ class DataFlowAnalyzerTest : TestCase() {
                     public Snackbar toDebug() { return new Snackbar(); }
                 }
                 """
-        ),
-      )
-      .issues(ToastDetector.ISSUE)
-      .run()
-      .expect(
-        """
+            ),
+        )
+        .issues(ToastDetector.ISSUE)
+        .run()
+        .expect(
+            """
             src/test.kt:5: Warning: Snackbar created but not shown: did you forget to call show()? [ShowToast]
                 Snackbar.make(parent, msg, duration).clone().toDebug().show() // ERROR
                 ~~~~~~~~~~~~~
             0 errors, 1 warnings
             """
-      )
+        )
   }
 
   fun testCasts() {
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
                 import android.content.Context
                 import android.widget.Toast
 
@@ -822,19 +821,19 @@ class DataFlowAnalyzerTest : TestCase() {
                     toast.intermediate().show()
                 }
                 """
-          )
-          .indented()
-      )
-      .issues(ToastDetector.ISSUE)
-      .run()
-      .expectClean()
+                )
+                .indented()
+        )
+        .issues(ToastDetector.ISSUE)
+        .run()
+        .expectClean()
   }
 
   fun testMethodReferences() {
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
             import android.content.Context
             import android.widget.Toast
 
@@ -859,19 +858,19 @@ class DataFlowAnalyzerTest : TestCase() {
                 toast.let(::display) // escapes
             }
             """
-          )
-          .indented()
-      )
-      .issues(ToastDetector.ISSUE)
-      .run()
-      .expectClean()
+                )
+                .indented()
+        )
+        .issues(ToastDetector.ISSUE)
+        .run()
+        .expectClean()
   }
 
   fun testMethodReferences2() {
     val parsed =
-      LintUtilsTest.parse(
-        kotlin(
-            """
+        LintUtilsTest.parse(
+            kotlin(
+                    """
             package com.pkg
 
             class Intent {
@@ -894,34 +893,34 @@ class DataFlowAnalyzerTest : TestCase() {
 
             private fun display(intent: Intent) {}
             """
-          )
-          .indented()
-      )
+                )
+                .indented()
+        )
 
     val target = findMethodCall(parsed, "Intent")
     val method = target.getParentOfType(UMethod::class.java)
     val dfa = LoggingDataFlowAnalyzer(listOf(target))
     method?.accept(dfa)
     assertEquals(
-      """
-      argument(handle1(intent), intent)
-      methodReference(intent::show2)
-      receiver(show())
-      argument(let(::display), intent)
-      argument(also(::display), intent)
-      receiver(show())
-      """
-        .trimIndent(),
-      dfa.events.joinToString(separator = "\n") { it },
+        """
+        argument(handle1(intent), intent)
+        methodReference(intent::show2)
+        receiver(show())
+        argument(let(::display), intent)
+        argument(also(::display), intent)
+        receiver(show())
+        """
+            .trimIndent(),
+        dfa.events.joinToString(separator = "\n") { it },
     )
     Disposer.dispose(parsed.second)
   }
 
   fun testElvis() {
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
             @file:Suppress("unused")
 
             package test.pkg
@@ -945,19 +944,19 @@ class DataFlowAnalyzerTest : TestCase() {
                 toast.show()
             }
             """
-          )
-          .indented()
-      )
-      .issues(ToastDetector.ISSUE)
-      .run()
-      .expectClean()
+                )
+                .indented()
+        )
+        .issues(ToastDetector.ISSUE)
+        .run()
+        .expectClean()
   }
 
   fun testDoubleBang() {
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
             @file:Suppress("unused")
 
             package test.pkg
@@ -973,20 +972,20 @@ class DataFlowAnalyzerTest : TestCase() {
                 }
             }
             """
-          )
-          .indented()
-      )
-      .issues(ToastDetector.ISSUE)
-      .run()
-      .expectClean()
+                )
+                .indented()
+        )
+        .issues(ToastDetector.ISSUE)
+        .run()
+        .expectClean()
   }
 
   fun testArgumentCalls() {
     // Make sure we visit the registerReceiver call exactly once
     val parsed =
-      LintUtilsTest.parse(
-        kotlin(
-            """
+        LintUtilsTest.parse(
+            kotlin(
+                    """
                 package test.pkg
 
                 import android.content.BroadcastReceiver
@@ -999,20 +998,20 @@ class DataFlowAnalyzerTest : TestCase() {
                     }
                 }
                 """
-          )
-          .indented()
-      )
+                )
+                .indented()
+        )
 
     val target = findMethodCall(parsed, "IntentFilter")
 
     val calls = mutableListOf<UCallExpression>()
     val method = target.getParentOfType(UMethod::class.java)
     method?.accept(
-      object : DataFlowAnalyzer(listOf(target)) {
-        override fun argument(call: UCallExpression, reference: UElement) {
-          assertTrue(calls.add(call))
+        object : DataFlowAnalyzer(listOf(target)) {
+          override fun argument(call: UCallExpression, reference: UElement) {
+            assertTrue(calls.add(call))
+          }
         }
-      }
     )
     assertEquals(1, calls.size)
     assertSame(calls[0], target.getParentOfType(UCallExpression::class.java, strict = true))
@@ -1021,9 +1020,9 @@ class DataFlowAnalyzerTest : TestCase() {
 
   fun testExplicitThisWithinScope() {
     val parsed =
-      LintUtilsTest.parse(
-        kotlin(
-            """
+        LintUtilsTest.parse(
+            kotlin(
+                    """
                 package com.pkg
 
                 class Intent {
@@ -1084,9 +1083,9 @@ class DataFlowAnalyzerTest : TestCase() {
                 }
 
                 """
-          )
-          .indented()
-      )
+                )
+                .indented()
+        )
 
     val target = findMethodCall(parsed, "Intent")
 
@@ -1096,22 +1095,22 @@ class DataFlowAnalyzerTest : TestCase() {
 
     val method = target.getParentOfType(UMethod::class.java)
     method?.accept(
-      object : DataFlowAnalyzer(listOf(target)) {
+        object : DataFlowAnalyzer(listOf(target)) {
 
-        override fun argument(call: UCallExpression, reference: UElement) {
-          assertTrue(argumentCalls.add(call.methodName!!))
-          assertTrue(argumentReferences.add(reference.sourcePsi!!.text))
-        }
+          override fun argument(call: UCallExpression, reference: UElement) {
+            assertTrue(argumentCalls.add(call.methodName!!))
+            assertTrue(argumentReferences.add(reference.sourcePsi!!.text))
+          }
 
-        override fun receiver(call: UCallExpression) {
-          assertTrue(receivers.add(call.methodName!!))
+          override fun receiver(call: UCallExpression) {
+            assertTrue(receivers.add(call.methodName!!))
+          }
         }
-      }
     )
     assertEquals("fa, fb, fc, fh, fi, fj", argumentCalls.joinToString { it })
     assertEquals(
-      "it, this, this@l, this@l, this, this@apply",
-      argumentReferences.joinToString { it },
+        "it, this, this@l, this@l, this, this@apply",
+        argumentReferences.joinToString { it },
     )
 
     assertEquals("intentFun", receivers.joinToString { it })
@@ -1122,11 +1121,11 @@ class DataFlowAnalyzerTest : TestCase() {
   fun testCompiledExtensionFunctions() {
     // Tests that compiled extension functions are correctly handled (treated as escapes).
     lint()
-      .files(
-        bytecode(
-          "bin/classes",
-          kotlin(
-              """
+        .files(
+            bytecode(
+                "bin/classes",
+                kotlin(
+                        """
             package com.pkg.mylib
 
             class Intent {
@@ -1137,15 +1136,15 @@ class DataFlowAnalyzerTest : TestCase() {
               intentFun()
             }
             """
-            )
-            .indented(),
-          0x37304ed6,
-          """
+                    )
+                    .indented(),
+                0x37304ed6,
+                """
         META-INF/main.kotlin_module:
         H4sIAAAAAAAA/2NgYGBmYGBgBGJOBijgkuTiTc7P1SvITtfLrczJTBLi8Mwr
         Sc0r8S5RYtBiAAD479xhMwAAAA==
         """,
-          """
+                """
         com/pkg/mylib/Intent.class:
         H4sIAAAAAAAA/21RwU7bQBSct44NMZQ4KdCEUs4UJJygnlqEBEhIrlyQ2iqX
         nDaJlS6x1yjeIHrLt/QPeqrUQxVx5KMQb01UoaqWPG9mnmf9/Hz/8PsPgHfY
@@ -1157,7 +1156,7 @@ class DataFlowAnalyzerTest : TestCase() {
         yz/L9hajV5oOXjOuPj2AKnyudaz8De+XW+D732DlWZAWQYHtEpt4w/U9+/b3
         vOjBibAWoRYhQJ0pGhFeYr0HKrCBzR7cAn6BVwW8AitMHgG8CTN0HwIAAA==
         """,
-          """
+                """
         com/pkg/mylib/IntentKt.class:
         H4sIAAAAAAAA/21SW08TQRT+zhZ6WYqUAoUWxQtVSjVuMb6YGhNjQrKxFiOm
         LzxNt5My7e6s2Z02+MZf8sUYHwzP/ijjmbZRQniYc/nmfOc28/vPz18AXuIZ
@@ -1172,9 +1171,9 @@ class DataFlowAnalyzerTest : TestCase() {
         YJv1IZ8cLwi5GaE5k4/xdPaNCTtcpXqGjI+aj10fd3HPxx7u+3iAh2egFI+w
         z/cpllPUU2z/BShsKIYDAwAA
         """,
-        ),
-        kotlin(
-            """
+            ),
+            kotlin(
+                    """
             package com.pkg.myapp
 
             import com.pkg.mylib.Intent
@@ -1187,20 +1186,20 @@ class DataFlowAnalyzerTest : TestCase() {
               }
             }
             """
-          )
-          .indented(),
-      )
-      .testModes(TestMode.DEFAULT)
-      .issues(ReportsIntentAndEscapes.ISSUE)
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+        )
+        .testModes(TestMode.DEFAULT)
+        .issues(ReportsIntentAndEscapes.ISSUE)
+        .run()
+        .expect(
+            """
       src/com/pkg/myapp/Hello.kt:8: Warning: Intent use escaped? true [_ReportsIntentAndEscapes]
           val intent = Intent()
                        ~~~~~~~~
       0 errors, 1 warnings
         """
-      )
+        )
   }
 
   class ReportsIntentAndEscapes : Detector(), SourceCodeScanner {
@@ -1208,29 +1207,27 @@ class DataFlowAnalyzerTest : TestCase() {
     override fun getApplicableConstructorTypes() = listOf("com.pkg.mylib.Intent")
 
     override fun visitConstructor(
-      context: JavaContext,
-      node: UCallExpression,
-      constructor: PsiMethod,
+        context: JavaContext,
+        node: UCallExpression,
+        constructor: PsiMethod,
     ) {
       val method = node.getParentOfType(UMethod::class.java)
       val analyzer = EscapeCheckingDataFlowAnalyzer(listOf(node))
       method!!.accept(analyzer)
-      context.report(
-        Incident(ISSUE, node, context.getLocation(node), "Intent use escaped? " + analyzer.escaped)
-      )
+      context.report(Incident(ISSUE, node, context.getLocation(node), "Intent use escaped? " + analyzer.escaped))
     }
 
     companion object {
       val ISSUE =
-        Issue.create(
-          "_ReportsIntentAndEscapes",
-          "Not applicable",
-          "Not applicable",
-          Category.MESSAGES,
-          5,
-          Severity.WARNING,
-          Implementation(ReportsIntentAndEscapes::class.java, Scope.JAVA_FILE_SCOPE),
-        )
+          Issue.create(
+              "_ReportsIntentAndEscapes",
+              "Not applicable",
+              "Not applicable",
+              Category.MESSAGES,
+              5,
+              Severity.WARNING,
+              Implementation(ReportsIntentAndEscapes::class.java, Scope.JAVA_FILE_SCOPE),
+          )
     }
   }
 
@@ -1239,9 +1236,9 @@ class DataFlowAnalyzerTest : TestCase() {
     // higher-order function (as opposed to something like a lambda expression or a method
     // reference, which we can handle specially).
     val parsed =
-      LintUtilsTest.parse(
-        kotlin(
-            """
+        LintUtilsTest.parse(
+            kotlin(
+                    """
             package com.pkg
 
             class Intent
@@ -1251,9 +1248,9 @@ class DataFlowAnalyzerTest : TestCase() {
               intent.apply(handler) // escape
             }
             """
-          )
-          .indented()
-      )
+                )
+                .indented()
+        )
 
     val target = findMethodCall(parsed, "Intent")
     val method = target.getParentOfType(UMethod::class.java)
@@ -1266,9 +1263,9 @@ class DataFlowAnalyzerTest : TestCase() {
   fun testScopeFunctionNoEscape() {
     // Tests that a trivial scope function use (with a lambda expression) does not cause an escape.
     val parsed =
-      LintUtilsTest.parse(
-        kotlin(
-            """
+        LintUtilsTest.parse(
+            kotlin(
+                    """
             package com.pkg
 
             class Intent {
@@ -1282,9 +1279,9 @@ class DataFlowAnalyzerTest : TestCase() {
               }
             }
             """
-          )
-          .indented()
-      )
+                )
+                .indented()
+        )
 
     val target = findMethodCall(parsed, "Intent")
     val method = target.getParentOfType(UMethod::class.java)
@@ -1297,9 +1294,9 @@ class DataFlowAnalyzerTest : TestCase() {
   fun testExtensionPropertyNoEscape() {
     // Tests that use of an extension property does not cause an escape.
     val parsed =
-      LintUtilsTest.parse(
-        kotlin(
-            """
+        LintUtilsTest.parse(
+            kotlin(
+                    """
             package com.pkg
 
             class Intent {
@@ -1316,9 +1313,9 @@ class DataFlowAnalyzerTest : TestCase() {
               intent.extensionProperty = i + 1
             }
             """
-          )
-          .indented()
-      )
+                )
+                .indented()
+        )
 
     val target = findMethodCall(parsed, "Intent")
     val method = target.getParentOfType(UMethod::class.java)
@@ -1329,8 +1326,8 @@ class DataFlowAnalyzerTest : TestCase() {
   }
 
   class LoggingDataFlowAnalyzer(
-    initial: Collection<UElement>,
-    initialReferences: Collection<PsiVariable> = emptyList(),
+      initial: Collection<UElement>,
+      initialReferences: Collection<PsiVariable> = emptyList(),
   ) : DataFlowAnalyzer(initial, initialReferences) {
     val events = mutableListOf<String>()
 
@@ -1360,9 +1357,7 @@ class DataFlowAnalyzerTest : TestCase() {
     }
 
     override fun argument(call: UCallExpression, reference: UElement) {
-      events.add(
-        "argument(${call.sourcePsi!!.text}, ${reference.sourcePsi?.text ?: reference.asRenderString()})"
-      )
+      events.add("argument(${call.sourcePsi!!.text}, ${reference.sourcePsi?.text ?: reference.asRenderString()})")
       super.argument(call, reference)
     }
   }
@@ -1373,9 +1368,9 @@ class DataFlowAnalyzerTest : TestCase() {
     // "argument". Also ensures returns that do not target a handled scope
     // function lambda still trigger "returns".
     val parsed =
-      LintUtilsTest.parse(
-        kotlin(
-            """
+        LintUtilsTest.parse(
+            kotlin(
+                    """
             package com.pkg
 
             class Intent {
@@ -1408,17 +1403,17 @@ class DataFlowAnalyzerTest : TestCase() {
             fun b(intent: Intent) {}
             fun c(intent: Intent) {}
             """
-          )
-          .indented()
-      )
+                )
+                .indented()
+        )
 
     val target = findMethodCall(parsed, "Intent")
     val method = target.getParentOfType(UMethod::class.java)
     val dfa = LoggingDataFlowAnalyzer(listOf(target))
     method?.accept(dfa)
     assertEquals(
-      "argument(a(intent), intent), argument(b(intent2), intent2), returns(return@hello this)",
-      dfa.events.joinToString { it },
+        "argument(a(intent), intent), argument(b(intent2), intent2), returns(return@hello this)",
+        dfa.events.joinToString { it },
     )
     Disposer.dispose(parsed.second)
   }
@@ -1426,9 +1421,9 @@ class DataFlowAnalyzerTest : TestCase() {
   fun testScopeFunctionWith() {
     // Tests "with" scope function.
     val parsed =
-      LintUtilsTest.parse(
-        kotlin(
-            """
+        LintUtilsTest.parse(
+            kotlin(
+                    """
             package com.pkg
 
             class Intent {
@@ -1460,17 +1455,17 @@ class DataFlowAnalyzerTest : TestCase() {
             }
 
             """
-          )
-          .indented()
-      )
+                )
+                .indented()
+        )
 
     val target = findMethodCall(parsed, "Intent")
     val method = target.getParentOfType(UMethod::class.java)
     val dfa = LoggingDataFlowAnalyzer(listOf(target))
     method?.accept(dfa)
     assertEquals(
-      "argument(with(intent, handler), intent), receiver(intentFun())",
-      dfa.events.joinToString { it },
+        "argument(with(intent, handler), intent), receiver(intentFun())",
+        dfa.events.joinToString { it },
     )
     Disposer.dispose(parsed.second)
   }
@@ -1478,9 +1473,9 @@ class DataFlowAnalyzerTest : TestCase() {
   fun testScopeFunctionLet() {
     // Tests "let" scope function.
     val parsed =
-      LintUtilsTest.parse(
-        kotlin(
-            """
+        LintUtilsTest.parse(
+            kotlin(
+                    """
             package com.pkg
 
             class Intent {
@@ -1528,17 +1523,17 @@ class DataFlowAnalyzerTest : TestCase() {
             }
 
             """
-          )
-          .indented()
-      )
+                )
+                .indented()
+        )
 
     val target = findMethodCall(parsed, "Intent")
     val method = target.getParentOfType(UMethod::class.java)
     val dfa = LoggingDataFlowAnalyzer(listOf(target))
     method?.accept(dfa)
     assertEquals(
-      "receiver(apply(handler)), argument(apply(handler), intent), receiver(d()), receiver(e())",
-      dfa.events.joinToString { it },
+        "receiver(apply(handler)), argument(apply(handler), intent), receiver(d()), receiver(e())",
+        dfa.events.joinToString { it },
     )
     Disposer.dispose(parsed.second)
   }
@@ -1547,9 +1542,9 @@ class DataFlowAnalyzerTest : TestCase() {
     // Tests that nested lambdas and extension function definitions do not confuse the support for
     // tracking across scope functions.
     val parsed =
-      LintUtilsTest.parse(
-        kotlin(
-            """
+        LintUtilsTest.parse(
+            kotlin(
+                    """
             package com.pkg
 
             class Intent {
@@ -1584,31 +1579,31 @@ class DataFlowAnalyzerTest : TestCase() {
             }
 
             """
-          )
-          .indented()
-      )
+                )
+                .indented()
+        )
 
     val target = findMethodCall(parsed, "Intent")
     val method = target.getParentOfType(UMethod::class.java)
     val dfa = LoggingDataFlowAnalyzer(listOf(target))
     method?.accept(dfa)
     assertEquals(
-      """
-      receiver(b())
-      receiver(extFuncA {
-            e() // ignored
-            it.f() // ignored
-            intent // returned
-          })
-      argument(extFuncA {
-            e() // ignored
-            it.f() // ignored
-            intent // returned
-          }, var <this>: com.pkg.Intent)
-      returns(return intent)
-      """
-        .trimIndent(),
-      dfa.events.joinToString(separator = "\n") { it },
+        """
+        receiver(b())
+        receiver(extFuncA {
+              e() // ignored
+              it.f() // ignored
+              intent // returned
+            })
+        argument(extFuncA {
+              e() // ignored
+              it.f() // ignored
+              intent // returned
+            }, var <this>: com.pkg.Intent)
+        returns(return intent)
+        """
+            .trimIndent(),
+        dfa.events.joinToString(separator = "\n") { it },
     )
     Disposer.dispose(parsed.second)
   }
@@ -1621,9 +1616,9 @@ class DataFlowAnalyzerTest : TestCase() {
     //  looking at the AST because the same AST can result in quite different sets of calls
     //  depending on various factors. See disabledTestKtCompoundArrayAccessCallWithTwoReceivers.
     val parsed =
-      LintUtilsTest.parse(
-        kotlin(
-            """
+        LintUtilsTest.parse(
+            kotlin(
+                    """
             package com.pkg
 
             class Intent
@@ -1636,20 +1631,20 @@ class DataFlowAnalyzerTest : TestCase() {
               a["aaa"]
             }
             """
-          )
-          .indented()
-      )
+                )
+                .indented()
+        )
 
     val target = findMethodCall(parsed, "A")
     val method = target.getParentOfType(UMethod::class.java)
     val dfa = LoggingDataFlowAnalyzer(listOf(target))
     method?.accept(dfa)
     assertEquals(
-      """
-      receiver(...something...)
-      """
-        .trimIndent(),
-      dfa.events.joinToString(separator = "\n") { it },
+        """
+        receiver(...something...)
+        """
+            .trimIndent(),
+        dfa.events.joinToString(separator = "\n") { it },
     )
     Disposer.dispose(parsed.second)
   }
@@ -1662,9 +1657,9 @@ class DataFlowAnalyzerTest : TestCase() {
     // TODO: DataFlowAnalyzer does not yet handle these implicit function calls. See
     //  disabledTestImplicitFunctionCalls.
     val parsed =
-      LintUtilsTest.parse(
-        kotlin(
-            """
+        LintUtilsTest.parse(
+            kotlin(
+                    """
             package com.pkg
 
             class Intent
@@ -1679,20 +1674,20 @@ class DataFlowAnalyzerTest : TestCase() {
               }
             }
             """
-          )
-          .indented()
-      )
+                )
+                .indented()
+        )
 
     val target = findMethodCall(parsed, "A")
     val method = target.getParentOfType(UMethod::class.java)
     val dfa = LoggingDataFlowAnalyzer(listOf(target))
     method?.accept(dfa)
     assertEquals(
-      """
-      receiver(...something...)
-      """
-        .trimIndent(),
-      dfa.events.joinToString(separator = "\n") { it },
+        """
+        receiver(...something...)
+        """
+            .trimIndent(),
+        dfa.events.joinToString(separator = "\n") { it },
     )
     Disposer.dispose(parsed.second)
   }
@@ -1703,9 +1698,9 @@ class DataFlowAnalyzerTest : TestCase() {
     // the parent expression when called via a Kotlin property access.
     // See UCallExpression.isSyntheticJavaGetterSetterCallForPropertyAccess.
     val parsed =
-      LintUtilsTest.parse(
-        kotlin(
-            """
+        LintUtilsTest.parse(
+            kotlin(
+                    """
             package com.pkg
 
             import android.content.ContentResolver
@@ -1718,29 +1713,29 @@ class DataFlowAnalyzerTest : TestCase() {
 
             fun bar(contentResolver: ContentResolver) {}
             """
-          )
-          .indented()
-      )
+                )
+                .indented()
+        )
 
     val target = findMethodCall(parsed, "getContentResolver")
     val method = target.getParentOfType(UMethod::class.java)
     val dfa = LoggingDataFlowAnalyzer(listOf(target))
     method?.accept(dfa)
     assertEquals(
-      """
-      argument(bar(contentResolver), contentResolver)
-      """
-        .trimIndent(),
-      dfa.events.joinToString(separator = "\n") { it },
+        """
+        argument(bar(contentResolver), contentResolver)
+        """
+            .trimIndent(),
+        dfa.events.joinToString(separator = "\n") { it },
     )
     Disposer.dispose(parsed.second)
   }
 
   fun disabledTestScopeArgumentPropagation1() {
     val parsed =
-      LintUtilsTest.parse(
-        kotlin(
-            """
+        LintUtilsTest.parse(
+            kotlin(
+                    """
             package com.pkg
 
             import android.content.ContentResolver
@@ -1754,29 +1749,29 @@ class DataFlowAnalyzerTest : TestCase() {
 
             fun bar(contentResolver: ContentResolver) {}
             """
-          )
-          .indented()
-      )
+                )
+                .indented()
+        )
 
     val target = findMethodCall(parsed, "getContentResolver")
     val method = target.getParentOfType(UMethod::class.java)
     val dfa = LoggingDataFlowAnalyzer(listOf(target))
     method?.accept(dfa)
     assertEquals(
-      """
-      argument(bar(this), this)
-      """
-        .trimIndent(),
-      dfa.events.joinToString(separator = "\n") { it },
+        """
+        argument(bar(this), this)
+        """
+            .trimIndent(),
+        dfa.events.joinToString(separator = "\n") { it },
     )
     Disposer.dispose(parsed.second)
   }
 
   fun disabledTestScopeArgumentPropagation2() {
     val parsed =
-      LintUtilsTest.parse(
-        kotlin(
-            """
+        LintUtilsTest.parse(
+            kotlin(
+                    """
             package com.pkg
 
             import android.content.Intent
@@ -1790,20 +1785,20 @@ class DataFlowAnalyzerTest : TestCase() {
 
             fun bar(intent: Intent) {}
             """
-          )
-          .indented()
-      )
+                )
+                .indented()
+        )
 
     val target = findMethodCall(parsed, "Intent")
     val method = target.getParentOfType(UMethod::class.java)
     val dfa = LoggingDataFlowAnalyzer(listOf(target))
     method?.accept(dfa)
     assertEquals(
-      """
-      argument(bar(this), this)
-      """
-        .trimIndent(),
-      dfa.events.joinToString(separator = "\n") { it },
+        """
+        argument(bar(this), this)
+        """
+            .trimIndent(),
+        dfa.events.joinToString(separator = "\n") { it },
     )
     Disposer.dispose(parsed.second)
   }

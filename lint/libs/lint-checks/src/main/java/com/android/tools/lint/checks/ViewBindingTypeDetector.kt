@@ -58,22 +58,20 @@ import org.xmlpull.v1.XmlPullParser
 /** Detect issues related to misusing the tools:viewBindingType attribute. */
 class ViewBindingTypeDetector : LayoutDetector(), XmlScanner {
   companion object {
-    private val IMPLEMENTATION =
-      Implementation(ViewBindingTypeDetector::class.java, Scope.RESOURCE_FILE_SCOPE)
+    private val IMPLEMENTATION = Implementation(ViewBindingTypeDetector::class.java, Scope.RESOURCE_FILE_SCOPE)
 
     @JvmField
     val ISSUE =
-      Issue.create(
-        id = "ViewBindingType",
-        briefDescription = "`tools:viewBindingType` issues",
-        explanation =
-          "All issues related to using the View Binding `tools:viewBindingType` attribute.",
-        category = Category.CORRECTNESS,
-        priority = 1,
-        severity = Severity.ERROR,
-        androidSpecific = true,
-        implementation = IMPLEMENTATION,
-      )
+        Issue.create(
+            id = "ViewBindingType",
+            briefDescription = "`tools:viewBindingType` issues",
+            explanation = "All issues related to using the View Binding `tools:viewBindingType` attribute.",
+            category = Category.CORRECTNESS,
+            priority = 1,
+            severity = Severity.ERROR,
+            androidSpecific = true,
+            implementation = IMPLEMENTATION,
+        )
   }
 
   override fun getApplicableAttributes(): Collection<String> = listOf(ATTR_VIEW_BINDING_TYPE)
@@ -85,22 +83,22 @@ class ViewBindingTypeDetector : LayoutDetector(), XmlScanner {
     val isDataBindingLayout = context.document.documentElement.tagName == TAG_LAYOUT
     if (isDataBindingLayout) {
       context.report(
-        Incident(
-          ISSUE,
-          "`tools:viewBindingType` is not applicable in data binding layouts.",
-          context.getLocation(attribute),
-        )
+          Incident(
+              ISSUE,
+              "`tools:viewBindingType` is not applicable in data binding layouts.",
+              context.getLocation(attribute),
+          )
       )
     } else {
       val element = attribute.ownerElement
       val tagName = element.tagName
       if (tagName == TAG_INCLUDE) {
         context.report(
-          Incident(
-            ISSUE,
-            "`tools:viewBindingType` is not applicable on `<$tagName>` tags.",
-            context.getLocation(attribute),
-          )
+            Incident(
+                ISSUE,
+                "`tools:viewBindingType` is not applicable on `<$tagName>` tags.",
+                context.getLocation(attribute),
+            )
         )
       } else {
         val typeTag = attribute.value
@@ -108,37 +106,35 @@ class ViewBindingTypeDetector : LayoutDetector(), XmlScanner {
         val psiClass = findViewForTag(typeTag, evaluator)
         if (psiClass == null || !evaluator.extendsClass(psiClass, CLASS_VIEW)) {
           context.report(
-            Incident(
-              ISSUE,
-              "`tools:viewBindingType` (`$typeTag`) must refer to a class that inherits from `$CLASS_VIEW`",
-              context.getLocation(attribute),
-            )
+              Incident(
+                  ISSUE,
+                  "`tools:viewBindingType` (`$typeTag`) must refer to a class that inherits from `$CLASS_VIEW`",
+                  context.getLocation(attribute),
+              )
           )
         } else {
           // If here, the attribute is locally valid and defined in a valid location
           val idAttribute = element.getAttributeNodeNS(ANDROID_URI, ATTR_ID)
           if (idAttribute == null) {
             context.report(
-              Incident(
-                ISSUE,
-                "`tools:viewBindingType` should be defined on a tag that also defines an `android:id`. Otherwise, its value won't have any effect.",
-                context.getLocation(attribute),
-              )
+                Incident(
+                    ISSUE,
+                    "`tools:viewBindingType` should be defined on a tag that also defines an `android:id`. Otherwise, its value won't have any effect.",
+                    context.getLocation(attribute),
+                )
             )
           } else {
             // Make sure this type definition is valid
             val tagView = element.toTagOrClass()
             val typeClass = findViewForTag(typeTag, evaluator)?.qualifiedName
             val tagClass = findViewForTag(tagView, evaluator)
-            if (
-              typeClass != null && tagClass != null && !evaluator.extendsClass(tagClass, typeClass)
-            ) {
+            if (typeClass != null && tagClass != null && !evaluator.extendsClass(tagClass, typeClass)) {
               context.report(
-                Incident(
-                  ISSUE,
-                  "`tools:viewBindingType` (`$typeTag`) is not compatible (i.e. a match or superclass) with its tag (`$tagView`).",
-                  context.getLocation(attribute),
-                )
+                  Incident(
+                      ISSUE,
+                      "`tools:viewBindingType` (`$typeTag`) is not compatible (i.e. a match or superclass) with its tag (`$tagView`).",
+                      context.getLocation(attribute),
+                  )
               )
             } else {
               // Make sure the binding type is consistent for this id across variations of this
@@ -152,15 +148,15 @@ class ViewBindingTypeDetector : LayoutDetector(), XmlScanner {
   }
 
   private fun checkConsistentAcrossLayouts(
-    context: XmlContext,
-    idAttribute: Attr,
-    evaluator: JavaEvaluator,
-    element: Element,
+      context: XmlContext,
+      idAttribute: Attr,
+      evaluator: JavaEvaluator,
+      element: Element,
   ) {
     val client = context.client
     val resources =
-      if (context.isGlobalAnalysis()) client.getResources(context.mainProject, LOCAL_DEPENDENCIES)
-      else client.getResources(context.project, PROJECT_ONLY)
+        if (context.isGlobalAnalysis()) client.getResources(context.mainProject, LOCAL_DEPENDENCIES)
+        else client.getResources(context.project, PROJECT_ONLY)
     val resourceUrl = ResourceUrl.parse(idAttribute.value)
     if (resourceUrl != null && resourceUrl.type == ResourceType.ID && !resourceUrl.isFramework) {
       val id = resourceUrl.name
@@ -175,16 +171,15 @@ class ViewBindingTypeDetector : LayoutDetector(), XmlScanner {
           }
         }
         if (bindingTypes.size > 1) {
-          val views =
-            bindingTypes.map { findViewForTag(it, evaluator)?.qualifiedName ?: it }.toSortedSet()
+          val views = bindingTypes.map { findViewForTag(it, evaluator)?.qualifiedName ?: it }.toSortedSet()
           val location = context.getLocation(element)
           attachLocations(context, location, id, layout)
           context.report(
-            Incident(
-              ISSUE,
-              "`tools:viewBindingType` is not defined consistently, with the following types resolved across layouts: ${views.joinToString { "`$it`" }}",
-              location,
-            )
+              Incident(
+                  ISSUE,
+                  "`tools:viewBindingType` is not defined consistently, with the following types resolved across layouts: ${views.joinToString { "`$it`" }}",
+                  location,
+              )
           )
         }
       }
@@ -231,8 +226,8 @@ class ViewBindingTypeDetector : LayoutDetector(), XmlScanner {
   private fun Context.toLayoutName() = fileNameToResourceName(file.name)
 
   /**
-   * Assuming this element represents a view tag, return either the tag itself or the value of the
-   * "class" attribute if this is a <view> tag.
+   * Assuming this element represents a view tag, return either the tag itself or the value of the "class" attribute if this is a <view>
+   * tag.
    *
    * In other words, "<EditText>" and "<view class='EditText'>" both return "EditText" here.
    */
@@ -254,8 +249,8 @@ class ViewBindingTypeDetector : LayoutDetector(), XmlScanner {
     get() = client.getUastParser(project).evaluator
 
   /**
-   * Given a resource [item], returns the set of binding types found for the given id resource item
-   * (including implicit binding items, e.g. the corresponding tag)
+   * Given a resource [item], returns the set of binding types found for the given id resource item (including implicit binding items, e.g.
+   * the corresponding tag)
    */
   private fun getViewBindingTypesForId(context: Context, item: ResourceItem): Collection<String>? {
     val source = item.source ?: return null
@@ -267,17 +262,13 @@ class ViewBindingTypeDetector : LayoutDetector(), XmlScanner {
   private var layoutToBindingIdPairs: MutableMap<PathString, Multimap<String, String>>? = null
 
   private fun getViewBindingTypesForId(
-    context: Context,
-    file: PathString,
+      context: Context,
+      file: PathString,
   ): Multimap<String, String>? {
     if (!file.fileName.endsWith(DOT_XML)) {
       return null
     }
-    val cache =
-      layoutToBindingIdPairs
-        ?: mutableMapOf<PathString, Multimap<String, String>>().also {
-          this.layoutToBindingIdPairs = it
-        }
+    val cache = layoutToBindingIdPairs ?: mutableMapOf<PathString, Multimap<String, String>>().also { this.layoutToBindingIdPairs = it }
     var map: Multimap<String, String>? = cache[file]
     if (map == null) {
       map = ArrayListMultimap.create()
@@ -299,8 +290,7 @@ class ViewBindingTypeDetector : LayoutDetector(), XmlScanner {
       val event = parser.next()
       if (event == XmlPullParser.START_TAG) {
         var id = parser.getAttributeValue(ANDROID_URI, ATTR_ID) ?: continue
-        val binding =
-          parser.getAttributeValue(TOOLS_URI, ATTR_VIEW_BINDING_TYPE) ?: parser.toTagOrClass()
+        val binding = parser.getAttributeValue(TOOLS_URI, ATTR_VIEW_BINDING_TYPE) ?: parser.toTagOrClass()
         if (id.isNotEmpty() && binding.isNotEmpty()) {
           @Suppress("DEPRECATION")
           id = stripIdPrefix(id)

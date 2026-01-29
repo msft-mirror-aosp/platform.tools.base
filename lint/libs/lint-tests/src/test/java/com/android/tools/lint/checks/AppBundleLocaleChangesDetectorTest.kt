@@ -24,9 +24,9 @@ class AppBundleLocaleChangesDetectorTest : AbstractCheckTest() {
 
   fun testJava1() {
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
                 package test.pkg;
 
                 import android.content.res.Configuration;
@@ -38,25 +38,25 @@ class AppBundleLocaleChangesDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-          )
-          .indented()
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .run()
+        .expect(
+            """
                 src/test/pkg/Example.java:8: Warning: Found dynamic locale changes, but did not find corresponding Play Core library calls for downloading languages and splitting by language is not disabled in the bundle configuration [AppBundleLocaleChanges]
                         configuration.locale = locale;
                                       ~~~~~~
                 0 errors, 1 warnings
               """
-      )
+        )
   }
 
   fun testJava2() {
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
                 package test.pkg;
 
                 import android.content.res.Configuration;
@@ -68,25 +68,25 @@ class AppBundleLocaleChangesDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-          )
-          .indented()
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .run()
+        .expect(
+            """
                 src/test/pkg/Example.java:8: Warning: Found dynamic locale changes, but did not find corresponding Play Core library calls for downloading languages and splitting by language is not disabled in the bundle configuration [AppBundleLocaleChanges]
                         configuration.setLocale(locale);
                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 0 errors, 1 warnings
                 """
-      )
+        )
   }
 
   fun testJava3() {
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
                 package test.pkg;
 
                 import android.content.res.Configuration;
@@ -98,25 +98,25 @@ class AppBundleLocaleChangesDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-          )
-          .indented()
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .run()
+        .expect(
+            """
                 src/test/pkg/Example.java:8: Warning: Found dynamic locale changes, but did not find corresponding Play Core library calls for downloading languages and splitting by language is not disabled in the bundle configuration [AppBundleLocaleChanges]
                         configuration.setLocales(locales);
                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 0 errors, 1 warnings
                """
-      )
+        )
   }
 
   fun testDocumentationExample() {
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
                 import android.content.res.Configuration
                 import java.util.Locale
 
@@ -124,25 +124,25 @@ class AppBundleLocaleChangesDetectorTest : AbstractCheckTest() {
                     configuration.locale = locale
                 }
                 """
-          )
-          .indented()
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .run()
+        .expect(
+            """
                 src/test.kt:5: Warning: Found dynamic locale changes, but did not find corresponding Play Core library calls for downloading languages and splitting by language is not disabled in the bundle configuration [AppBundleLocaleChanges]
                     configuration.locale = locale
                                   ~~~~~~
                 0 errors, 1 warnings
                 """
-      )
+        )
   }
 
   fun testKotlin2() {
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
                 import android.content.res.Configuration
                 import java.util.Locale
 
@@ -150,25 +150,25 @@ class AppBundleLocaleChangesDetectorTest : AbstractCheckTest() {
                     configuration.setLocale(locale)
                 }
                 """
-          )
-          .indented()
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .run()
+        .expect(
+            """
                 src/test.kt:5: Warning: Found dynamic locale changes, but did not find corresponding Play Core library calls for downloading languages and splitting by language is not disabled in the bundle configuration [AppBundleLocaleChanges]
                     configuration.setLocale(locale)
                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 0 errors, 1 warnings
                 """
-      )
+        )
   }
 
   fun testKotlin3() {
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
                 import android.content.res.Configuration
                 import android.os.LocaleList
 
@@ -176,26 +176,26 @@ class AppBundleLocaleChangesDetectorTest : AbstractCheckTest() {
                     configuration.setLocales(locales)
                 }
                 """
-          )
-          .indented()
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .run()
+        .expect(
+            """
                 src/test.kt:5: Warning: Found dynamic locale changes, but did not find corresponding Play Core library calls for downloading languages and splitting by language is not disabled in the bundle configuration [AppBundleLocaleChanges]
                     configuration.setLocales(locales)
                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 0 errors, 1 warnings
                 """
-      )
+        )
   }
 
   fun testSuppress() {
     // 203115468: SuppressLint not working for AppBundleLocaleChanges
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
                 import android.content.res.Configuration
                 import android.os.LocaleList
 
@@ -204,19 +204,19 @@ class AppBundleLocaleChangesDetectorTest : AbstractCheckTest() {
                     configuration.setLocales(locales) // OK
                 }
                 """
-          )
-          .indented()
-      )
-      .run()
-      .expectClean()
+                )
+                .indented()
+        )
+        .run()
+        .expectClean()
   }
 
   fun testSuppressWithComment() {
     // 203115468: SuppressLint not working for AppBundleLocaleChanges
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
                 import android.content.res.Configuration
                 import android.os.LocaleList
 
@@ -225,19 +225,19 @@ class AppBundleLocaleChangesDetectorTest : AbstractCheckTest() {
                     configuration.setLocales(locales) // OK
                 }
                 """
-          )
-          .indented()
-      )
-      .run()
-      .expectClean()
+                )
+                .indented()
+        )
+        .run()
+        .expectClean()
   }
 
   fun testJavaPlayCoreUsage() {
     lint()
-      .files(
-        PLAYCORE_FILE2,
-        java(
-            """
+        .files(
+            PLAYCORE_FILE2,
+            java(
+                    """
                 package test.pkg;
 
                 import android.content.res.Configuration;
@@ -251,19 +251,19 @@ class AppBundleLocaleChangesDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-          )
-          .indented(),
-      )
-      .run()
-      .expectClean()
+                )
+                .indented(),
+        )
+        .run()
+        .expectClean()
   }
 
   fun testKotlinPlayCoreUsage() {
     lint()
-      .files(
-        PLAYCORE_FILE2,
-        kotlin(
-            """
+        .files(
+            PLAYCORE_FILE2,
+            kotlin(
+                    """
                 import android.content.res.Configuration
                 import java.util.Locale
                 import com.google.android.play.core.splitinstall.SplitInstallRequest
@@ -273,20 +273,20 @@ class AppBundleLocaleChangesDetectorTest : AbstractCheckTest() {
                     SplitInstallRequest.Builder().addLanguage(locale).build()
                 }
                 """
-          )
-          .indented(),
-      )
-      .run()
-      .expectClean()
+                )
+                .indented(),
+        )
+        .run()
+        .expectClean()
   }
 
   fun testKotlinPlayCoreUsage2() {
     lint()
-      .files(
-        PLAYCORE_FILE,
-        PLAYCORE_KTX_FILE,
-        kotlin(
-            """
+        .files(
+            PLAYCORE_FILE,
+            PLAYCORE_KTX_FILE,
+            kotlin(
+                    """
                 import android.content.res.Configuration
                 import java.util.Locale
                 import com.google.android.play.core.splitinstall.SplitInstallManager
@@ -301,20 +301,20 @@ class AppBundleLocaleChangesDetectorTest : AbstractCheckTest() {
                     mgr.requestInstall(listOf(), listOf("en"))
                 }
                 """
-          )
-          .indented(),
-      )
-      .run()
-      .expectClean()
+                )
+                .indented(),
+        )
+        .run()
+        .expectClean()
   }
 
   fun testKotlinPlayCoreUsage3() {
     lint()
-      .files(
-        PLAYCORE_FILE,
-        PLAYCORE_KTX_FILE,
-        kotlin(
-            """
+        .files(
+            PLAYCORE_FILE,
+            PLAYCORE_KTX_FILE,
+            kotlin(
+                    """
                 import android.content.res.Configuration
                 import java.util.Locale
                 import com.google.android.play.core.splitinstall.SplitInstallManager
@@ -329,19 +329,19 @@ class AppBundleLocaleChangesDetectorTest : AbstractCheckTest() {
                     mgr.requestInstall(languages = listOf("en"))
                 }
                 """
-          )
-          .indented(),
-      )
-      .run()
-      .expectClean()
+                )
+                .indented(),
+        )
+        .run()
+        .expectClean()
   }
 
   fun testLanguageSplitsDisabled() {
     lint()
-      .files(
-        GRADLE_LANGUAGES_SPLIT_DISABLED,
-        java(
-            """
+        .files(
+            GRADLE_LANGUAGES_SPLIT_DISABLED,
+            java(
+                    """
                 package test.pkg;
 
                 import android.content.res.Configuration;
@@ -353,17 +353,17 @@ class AppBundleLocaleChangesDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-          )
-          .indented(),
-      )
-      .run()
-      .expectClean()
+                )
+                .indented(),
+        )
+        .run()
+        .expectClean()
   }
 
   companion object {
     private val GRADLE_LANGUAGES_SPLIT_DISABLED =
-      gradle(
-          """
+        gradle(
+                """
                 android {
                     bundle {
                         language {
@@ -372,12 +372,12 @@ class AppBundleLocaleChangesDetectorTest : AbstractCheckTest() {
                     }
                 }
             """
-        )
-        .indented()
+            )
+            .indented()
 
     private val PLAYCORE_FILE =
-      java(
-          """
+        java(
+                """
                 package com.google.android.play.core.splitinstall;
 
                 public class SplitInstallManager { }
@@ -391,12 +391,12 @@ class AppBundleLocaleChangesDetectorTest : AbstractCheckTest() {
                     public void build() { }
                 }
             """
-        )
-        .indented()
+            )
+            .indented()
 
     private val PLAYCORE_FILE2 =
-      java(
-          """
+        java(
+                """
                 package com.google.android.play.core.splitinstall;
 
                 public class SplitInstallRequest {
@@ -408,12 +408,12 @@ class AppBundleLocaleChangesDetectorTest : AbstractCheckTest() {
                     }
                 }
             """
-        )
-        .indented()
+            )
+            .indented()
 
     private val PLAYCORE_KTX_FILE =
-      kotlin(
-          """
+        kotlin(
+                """
                 package com.google.android.play.core.ktx
 
                 import com.google.android.play.core.splitinstall.SplitInstallManager
@@ -423,7 +423,7 @@ class AppBundleLocaleChangesDetectorTest : AbstractCheckTest() {
                   languages: List<String> = listOf()
                 ): Int = 0
             """
-        )
-        .indented()
+            )
+            .indented()
   }
 }

@@ -24,9 +24,9 @@ import com.android.tools.lint.client.api.LintFixPerformer.Companion.skipComments
 import java.util.regex.Pattern
 
 /**
- * A pair of package name and class name inferred from Java or Kotlin source code. The [source] is
- * the source code, and the [extension] is the file extension (including the leading dot) which
- * states whether this is a Kotlin source file, a Java source file, a Groovy source file, etc.
+ * A pair of package name and class name inferred from Java or Kotlin source code. The [source] is the source code, and the [extension] is
+ * the file extension (including the leading dot) which states whether this is a Kotlin source file, a Java source file, a Groovy source
+ * file, etc.
  */
 open class ClassName(val source: String, val extension: String = DOT_JAVA) {
   val packageName: String?
@@ -62,10 +62,10 @@ open class ClassName(val source: String, val extension: String = DOT_JAVA) {
       if (c.isWhitespace()) {
         sb.append(c)
       } else if (
-        c == '@' &&
-          !contents.startsWith("@interface", current) &&
-          !contents.startsWith("@file:JvmName", current) &&
-          !contents.startsWith("@file:kotlin.jvm.JvmName", current)
+          c == '@' &&
+              !contents.startsWith("@interface", current) &&
+              !contents.startsWith("@file:JvmName", current) &&
+              !contents.startsWith("@file:kotlin.jvm.JvmName", current)
       ) {
         val afterAnnotation = skipAnnotation(contents, current)
         sb.append(' ')
@@ -94,13 +94,12 @@ open class ClassName(val source: String, val extension: String = DOT_JAVA) {
 private val PACKAGE_PATTERN = Pattern.compile("""package\s+([\S&&[^;]]*)""")
 
 private val CLASS_PATTERN =
-  Pattern.compile(
-    """(\bclass\b|\binterface\b|\benum class\b|\benum\b|\bobject\b|\brecord\b)+?\s*([^\s:(]+)""",
-    Pattern.MULTILINE,
-  )
+    Pattern.compile(
+        """(\bclass\b|\binterface\b|\benum class\b|\benum\b|\bobject\b|\brecord\b)+?\s*([^\s:(]+)""",
+        Pattern.MULTILINE,
+    )
 
-private val JVM_NAME_PATTERN =
-  Pattern.compile("""@file:(kotlin.jvm.)?JvmName\(\"(.+)\"\)""", Pattern.MULTILINE)
+private val JVM_NAME_PATTERN = Pattern.compile("""@file:(kotlin.jvm.)?JvmName\(\"(.+)\"\)""", Pattern.MULTILINE)
 
 private fun getJvmName(source: String): String? {
   val matcher = JVM_NAME_PATTERN.matcher(source)

@@ -50,20 +50,18 @@ class ToastDetector : Detector(), SourceCodeScanner {
         val duration = args[2].skipParenthesizedExprDown()
         if (duration is ULiteralExpression) {
           context.report(
-            ISSUE,
-            duration,
-            context.getLocation(duration),
-            "Expected duration `Toast.LENGTH_SHORT` or `Toast.LENGTH_LONG`, a custom " +
-              "duration value is not supported",
+              ISSUE,
+              duration,
+              context.getLocation(duration),
+              "Expected duration `Toast.LENGTH_SHORT` or `Toast.LENGTH_LONG`, a custom " + "duration value is not supported",
           )
         }
       }
 
       checkShown(context, node, "Toast")
     } else if (
-      name == "make" &&
-        (className == "com.google.android.material.snackbar.Snackbar" ||
-          className == "android.support.design.widget.Snackbar")
+        name == "make" &&
+            (className == "com.google.android.material.snackbar.Snackbar" || className == "android.support.design.widget.Snackbar")
     ) {
       checkShown(context, node, "Snackbar")
     }
@@ -73,24 +71,18 @@ class ToastDetector : Detector(), SourceCodeScanner {
     val method = node.getParentOfType(UMethod::class.java) ?: return
     if (method.isMissingTarget(TargetMethodDataFlowAnalyzer.create(node, "show", null))) {
       val fix =
-        if (CheckResultDetector.isExpressionValueUnused(node)) {
-          fix()
-            .replace()
-            .name("Call show()")
-            .range(context.getLocation(node))
-            .end()
-            .with(".show()")
-            .build()
-        } else {
-          null
-        }
+          if (CheckResultDetector.isExpressionValueUnused(node)) {
+            fix().replace().name("Call show()").range(context.getLocation(node)).end().with(".show()").build()
+          } else {
+            null
+          }
 
       context.report(
-        ISSUE,
-        node,
-        context.getCallLocation(node, includeReceiver = true, includeArguments = false),
-        "$toastName created but not shown: did you forget to call `show()`?",
-        fix,
+          ISSUE,
+          node,
+          context.getCallLocation(node, includeReceiver = true, includeArguments = false),
+          "$toastName created but not shown: did you forget to call `show()`?",
+          fix,
       )
     }
   }
@@ -98,19 +90,19 @@ class ToastDetector : Detector(), SourceCodeScanner {
   companion object {
     @JvmField
     val ISSUE =
-      Issue.create(
-        id = "ShowToast",
-        briefDescription = "Toast created but not shown",
-        explanation =
-          """
+        Issue.create(
+            id = "ShowToast",
+            briefDescription = "Toast created but not shown",
+            explanation =
+                """
                     `Toast.makeText()` creates a `Toast` but does **not** show it. You must \
                     call `show()` on the resulting object to actually make the `Toast` \
                     appear.""",
-        category = Category.CORRECTNESS,
-        priority = 6,
-        severity = Severity.WARNING,
-        androidSpecific = true,
-        implementation = Implementation(ToastDetector::class.java, Scope.JAVA_FILE_SCOPE),
-      )
+            category = Category.CORRECTNESS,
+            priority = 6,
+            severity = Severity.WARNING,
+            androidSpecific = true,
+            implementation = Implementation(ToastDetector::class.java, Scope.JAVA_FILE_SCOPE),
+        )
   }
 }

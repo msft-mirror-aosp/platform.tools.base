@@ -41,24 +41,20 @@ class PersistentCollectionUtilsTest {
   @Test
   fun `flat map to persistent sets works`() {
     val s = persistentSetOf(0, 10, 20)
-    Truth.assertThat(s.flatMapToPersistentSet { listOf(it, it + 1) })
-      .isEqualTo(persistentSetOf(0, 1, 10, 11, 20, 21))
+    Truth.assertThat(s.flatMapToPersistentSet { listOf(it, it + 1) }).isEqualTo(persistentSetOf(0, 1, 10, 11, 20, 21))
   }
 
   @Test
   fun `map works on persistent set`() {
-    Truth.assertThat(persistentSetOf("foo", "bar", "word").map(String::length))
-      .isEqualTo(persistentSetOf(3, 4))
-    Truth.assertThat(persistentSetOf<String>().map(String::length))
-      .isEqualTo(persistentSetOf<Int>())
+    Truth.assertThat(persistentSetOf("foo", "bar", "word").map(String::length)).isEqualTo(persistentSetOf(3, 4))
+    Truth.assertThat(persistentSetOf<String>().map(String::length)).isEqualTo(persistentSetOf<Int>())
   }
 
   @Test
   fun `assoc to persistent map works`() {
     val m = persistentMapOf(0 to "foo", 1 to "bar")
     val d = listOf(1 to "qux", 2 to "word")
-    Truth.assertThat(d.assoc(m) { it })
-      .isEqualTo(persistentMapOf(0 to "foo", 1 to "qux", 2 to "word"))
+    Truth.assertThat(d.assoc(m) { it }).isEqualTo(persistentMapOf(0 to "foo", 1 to "qux", 2 to "word"))
   }
 
   @Test
@@ -69,9 +65,7 @@ class PersistentCollectionUtilsTest {
 
   @Test
   fun `map merging works`() {
-    Truth.assertThat(
-        persistentMapOf(1 to "foo", 2 to "bar") + persistentMapOf(1 to "qux", 3 to "word")
-      )
-      .isEqualTo(persistentMapOf(1 to "qux", 2 to "bar", 3 to "word"))
+    Truth.assertThat(persistentMapOf(1 to "foo", 2 to "bar") + persistentMapOf(1 to "qux", 3 to "word"))
+        .isEqualTo(persistentMapOf(1 to "qux", 2 to "bar", 3 to "word"))
   }
 }

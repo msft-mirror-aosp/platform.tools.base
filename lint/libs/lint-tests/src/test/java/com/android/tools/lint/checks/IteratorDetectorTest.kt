@@ -25,9 +25,9 @@ class IteratorDetectorTest : AbstractCheckTest() {
 
   fun testLinkedHashMap() {
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
                 package test.pkg;
 
                 import android.os.Build;
@@ -74,10 +74,10 @@ class IteratorDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-          )
-          .indented(),
-        kotlin(
-            """
+                )
+                .indented(),
+            kotlin(
+                    """
                 package test.pkg.kt
 
                 import android.os.Build
@@ -115,13 +115,13 @@ class IteratorDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-          )
-          .indented(),
-        SUPPORT_ANNOTATIONS_JAR,
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            SUPPORT_ANNOTATIONS_JAR,
+        )
+        .run()
+        .expect(
+            """
             src/test/pkg/LinkedHashmapTest.java:34: Warning: LinkedHashMap#spliterator was broken in API 24 and 25. Workaround: Use java.util.Spliterators.spliterator(c2a, c2a.spliterator().characteristics()) [BrokenIterator]
                     Spliterator<String> keys2a = c2a.spliterator(); // Warn
                                                  ~~~~~~~~~~~~~~~~~
@@ -154,14 +154,14 @@ class IteratorDetectorTest : AbstractCheckTest() {
                                          ~~~~~~~~~~~~~~~~~
             0 errors, 10 warnings
             """
-      )
+        )
   }
 
   fun testVector() {
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
                 package test.pkg;
 
                 import java.util.ArrayList;
@@ -183,10 +183,10 @@ class IteratorDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-          )
-          .indented(),
-        kotlin(
-            """
+                )
+                .indented(),
+            kotlin(
+                    """
                 package test.pkg
 
                 import java.util.ArrayList
@@ -206,12 +206,12 @@ class IteratorDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-          )
-          .indented(),
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+        )
+        .run()
+        .expect(
+            """
             src/test/pkg/VectorTest.java:15: Warning: Vector#listIterator was broken in API 24 and 25; it can return hasNext()=false before the last element. Consider switching to ArrayList with synchronization if you need it. [BrokenIterator]
                     error1.add("test");
                     ~~~~~~~~~~~~~~~~~~
@@ -226,6 +226,6 @@ class IteratorDetectorTest : AbstractCheckTest() {
                     ~~~~~~~~~~~~~~~~~~
             0 errors, 4 warnings
             """
-      )
+        )
   }
 }

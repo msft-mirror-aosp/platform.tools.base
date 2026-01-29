@@ -45,21 +45,18 @@ import org.jetbrains.uast.toUElementOfType
 import org.jetbrains.uast.visitor.AbstractUastVisitor
 
 /**
- * Reports overrides of `View.onInitializeAccessibilityNodeInfo(info)` when all the following are
- * true:
- * - In the function body, we see at least one of
- *   `info.addAction(ACTION_SCROLL_{FORWARD,BACKWARD})`.
- * - In the function body, we do NOT see any of
- *   `info.addAction(ACTION_SCROLL_{UP,DOWN,LEFT,RIGHT})`.
+ * Reports overrides of `View.onInitializeAccessibilityNodeInfo(info)` when all the following are true:
+ * - In the function body, we see at least one of `info.addAction(ACTION_SCROLL_{FORWARD,BACKWARD})`.
+ * - In the function body, we do NOT see any of `info.addAction(ACTION_SCROLL_{UP,DOWN,LEFT,RIGHT})`.
  * - In the function body, `info` does NOT escape (ignoring escape via a call to the super method).
- * - The containing class (subclass of `View`) is NOT a subclass of `ScrollView`, but behaves like a
- *   `ScrollView`; that is, at least one of the following must hold:
+ * - The containing class (subclass of `View`) is NOT a subclass of `ScrollView`, but behaves like a `ScrollView`; that is, at least one of
+ *   the following must hold:
  *     - In the function body, we see `info.setCollectionInfo(...)`.
  *     - In the function body, we see `info.setClassName(S)`.
  *     - The containing class overrides `getAccessibilityClassName` and just returns `S`.
  *
- * ...where S is a String that contains "ScrollView" or contains a reference to `ScrollView.class`
- * (to allow for expressions like `ScrollView.class.getName()`).
+ * ...where S is a String that contains "ScrollView" or contains a reference to `ScrollView.class` (to allow for expressions like
+ * `ScrollView.class.getName()`).
  */
 class AccessibilityViewScrollActionsDetector : Detector(), SourceCodeScanner {
 
@@ -78,10 +75,7 @@ class AccessibilityViewScrollActionsDetector : Detector(), SourceCodeScanner {
     // implements things correctly.
     if (context.evaluator.inheritsFrom(psiClass, FQCN_SCROLL_VIEW, strict = false)) return
 
-    /**
-     * Returns true if [method]'s signature is `void
-     * onInitializeAccessibilityNodeInfo(AccessibilityNodeInfo p0)` and is an override.
-     */
+    /** Returns true if [method]'s signature is `void onInitializeAccessibilityNodeInfo(AccessibilityNodeInfo p0)` and is an override. */
     fun isInitializeMethod(method: PsiMethod): Boolean {
       if (PsiTypes.voidType() != method.returnType) return false
       val parameters = method.parameterList.parameters
@@ -90,15 +84,11 @@ class AccessibilityViewScrollActionsDetector : Detector(), SourceCodeScanner {
       if (parameter.isVarArgs) return false
       val type = parameter.type
       if (type !is PsiClassReferenceType) return false
-      if (type.reference.qualifiedName != "android.view.accessibility.AccessibilityNodeInfo")
-        return false
+      if (type.reference.qualifiedName != "android.view.accessibility.AccessibilityNodeInfo") return false
       return context.evaluator.isOverride(method, includeInterfaces = false)
     }
 
-    /**
-     * Returns true if [method]'s signature is `CharSequence getAccessibilityClassName()` and is an
-     * override.
-     */
+    /** Returns true if [method]'s signature is `CharSequence getAccessibilityClassName()` and is an override. */
     fun isGetAccessibilityClassNameMethod(method: PsiMethod): Boolean {
       val returnType = method.returnType as? PsiClassReferenceType ?: return false
       if (returnType.reference.qualifiedName != "java.lang.CharSequence") return false
@@ -109,21 +99,21 @@ class AccessibilityViewScrollActionsDetector : Detector(), SourceCodeScanner {
 
     // We must find the overridden onInitializeAccessibilityNodeInfo method.
     val initializeMethod =
-      psiClass
-        .findMethodsByName("onInitializeAccessibilityNodeInfo", false)
-        .asSequence()
-        .singleOrNull { isInitializeMethod(it) }
-        ?.toUElementOfType<UMethod>() ?: return
+        psiClass
+            .findMethodsByName("onInitializeAccessibilityNodeInfo", false)
+            .asSequence()
+            .singleOrNull { isInitializeMethod(it) }
+            ?.toUElementOfType<UMethod>() ?: return
 
     // We might find the overridden getAccessibilityClassName method, and it might trivially return
     // "android.widget.ScrollView" (imitating the ScrollView class).
     fun overridesAccessibilityClassNameAsScrollView(): Boolean {
       val classNameMethod =
-        psiClass
-          .findMethodsByName("getAccessibilityClassName", false)
-          .asSequence()
-          .singleOrNull { isGetAccessibilityClassNameMethod(it) }
-          ?.toUElementOfType<UMethod>() ?: return false
+          psiClass
+              .findMethodsByName("getAccessibilityClassName", false)
+              .asSequence()
+              .singleOrNull { isGetAccessibilityClassNameMethod(it) }
+              ?.toUElementOfType<UMethod>() ?: return false
       // We only check for the simple case where there is just a return expression inside a block.
       // This still works for Kotlin single-expression functions like `fun a(): Type = blah`.
       val block = classNameMethod.uastBody as? UBlockExpression ?: return false
@@ -143,99 +133,90 @@ class AccessibilityViewScrollActionsDetector : Detector(), SourceCodeScanner {
     var setsClassNameToScrollView = false
 
     val superMethods =
-      lazy(LazyThreadSafetyMode.NONE) {
-        (initializeMethod.javaPsi as? PsiMethod)?.findSuperMethods() ?: emptyArray<PsiMethod>()
-      }
+        lazy(LazyThreadSafetyMode.NONE) { (initializeMethod.javaPsi as? PsiMethod)?.findSuperMethods() ?: emptyArray<PsiMethod>() }
 
     val dfa =
-      object : EscapeCheckingDataFlowAnalyzer(listOf(accessibilityNodeInfoParam)) {
+        object : EscapeCheckingDataFlowAnalyzer(listOf(accessibilityNodeInfoParam)) {
 
-        override fun argument(call: UCallExpression, reference: UElement) {
-          val isSuperCall =
-            call.resolve()?.let { resolved ->
-              superMethods.value.any { sup -> resolved.isEquivalentTo(sup) }
-            } ?: false
-          // Ignore escapes from calls to super method. There is a risk of false-warnings here: the
-          // onInitializeAccessibilityNodeInfo override could call
-          // info.addAction(ACTION_SCROLL_FORWARD) and the super method could call
-          // info.addAction(ACTION_SCROLL_UP). However, this seems very unlikely.
-          if (!isSuperCall) {
-            super.argument(call, reference)
+          override fun argument(call: UCallExpression, reference: UElement) {
+            val isSuperCall = call.resolve()?.let { resolved -> superMethods.value.any { sup -> resolved.isEquivalentTo(sup) } } ?: false
+            // Ignore escapes from calls to super method. There is a risk of false-warnings here: the
+            // onInitializeAccessibilityNodeInfo override could call
+            // info.addAction(ACTION_SCROLL_FORWARD) and the super method could call
+            // info.addAction(ACTION_SCROLL_UP). However, this seems very unlikely.
+            if (!isSuperCall) {
+              super.argument(call, reference)
+            }
           }
-        }
 
-        override fun receiver(call: UCallExpression) {
-          super.receiver(call)
-          when (call.methodName) {
-            "addAction" -> {
-              val param = call.getArgumentForParameter(0) ?: return
-              val paramField = (param as? UReferenceExpression)?.resolve() as? PsiField
-              if (paramField != null) {
-                when (paramField.name) {
-                  "ACTION_SCROLL_FORWARD",
-                  "ACTION_SCROLL_BACKWARD" -> addsForwardBackward = true
-                  "ACTION_SCROLL_LEFT",
-                  "ACTION_SCROLL_RIGHT",
-                  "ACTION_SCROLL_UP",
-                  "ACTION_SCROLL_DOWN" -> addsUpDownLeftRight = true
-                  else -> {}
-                }
-              } else {
-                val paramValue = param.evaluate()
-                if (paramValue is Int) {
-                  when (paramValue) {
-                    ACTION_SCROLL_FORWARD,
-                    ACTION_SCROLL_BACKWARD -> addsForwardBackward = true
-                    // The up, down, left, right values are resource ids; we skip checking for
-                    // these, as we assume code will instead just reference the fields that are
-                    // checked above.
+          override fun receiver(call: UCallExpression) {
+            super.receiver(call)
+            when (call.methodName) {
+              "addAction" -> {
+                val param = call.getArgumentForParameter(0) ?: return
+                val paramField = (param as? UReferenceExpression)?.resolve() as? PsiField
+                if (paramField != null) {
+                  when (paramField.name) {
+                    "ACTION_SCROLL_FORWARD",
+                    "ACTION_SCROLL_BACKWARD" -> addsForwardBackward = true
+                    "ACTION_SCROLL_LEFT",
+                    "ACTION_SCROLL_RIGHT",
+                    "ACTION_SCROLL_UP",
+                    "ACTION_SCROLL_DOWN" -> addsUpDownLeftRight = true
                     else -> {}
+                  }
+                } else {
+                  val paramValue = param.evaluate()
+                  if (paramValue is Int) {
+                    when (paramValue) {
+                      ACTION_SCROLL_FORWARD,
+                      ACTION_SCROLL_BACKWARD -> addsForwardBackward = true
+                      // The up, down, left, right values are resource ids; we skip checking for
+                      // these, as we assume code will instead just reference the fields that are
+                      // checked above.
+                      else -> {}
+                    }
                   }
                 }
               }
-            }
-            "setCollectionInfo" -> {
-              val paramPsi = call.getArgumentForParameter(0)?.sourcePsi ?: return
-              if (paramPsi is PsiLiteralExpression || paramPsi is KtConstantExpression) {
-                // assume this is null
-                return
+              "setCollectionInfo" -> {
+                val paramPsi = call.getArgumentForParameter(0)?.sourcePsi ?: return
+                if (paramPsi is PsiLiteralExpression || paramPsi is KtConstantExpression) {
+                  // assume this is null
+                  return
+                }
+                // Otherwise:
+                setsCollectionInfo = true
               }
-              // Otherwise:
-              setsCollectionInfo = true
-            }
-            "setClassName" -> {
-              val param = call.getArgumentForParameter(0) ?: return
-              val paramPsi = param.sourcePsi
-              if (paramPsi is PsiLiteralExpression || paramPsi is KtConstantExpression) {
-                // assume this is null
-                return
-              }
-              if (param.isScrollViewClassNameString()) {
-                setsClassNameToScrollView = true
+              "setClassName" -> {
+                val param = call.getArgumentForParameter(0) ?: return
+                val paramPsi = param.sourcePsi
+                if (paramPsi is PsiLiteralExpression || paramPsi is KtConstantExpression) {
+                  // assume this is null
+                  return
+                }
+                if (param.isScrollViewClassNameString()) {
+                  setsClassNameToScrollView = true
+                }
               }
             }
           }
         }
-      }
     initializeMethod.accept(dfa)
 
     if (
-      !dfa.escaped &&
-        addsForwardBackward &&
-        !addsUpDownLeftRight &&
-        (setsCollectionInfo ||
-          setsClassNameToScrollView ||
-          overridesAccessibilityClassNameAsScrollView())
+        !dfa.escaped &&
+            addsForwardBackward &&
+            !addsUpDownLeftRight &&
+            (setsCollectionInfo || setsClassNameToScrollView || overridesAccessibilityClassNameAsScrollView())
     ) {
       context.report(
-        issue = ISSUE,
-        scope =
-          initializeMethod
-            as? UElement, // The cast is needed to disambiguate the report function signature.
-        location = context.getLocation(initializeMethod),
-        message =
-          "Views that behave like `ScrollView` and support `ACTION_SCROLL_{FORWARD,BACKWARD}` should also support " +
-            "`ACTION_SCROLL_{LEFT,RIGHT}` and/or `ACTION_SCROLL_{UP,DOWN}`",
+          issue = ISSUE,
+          scope = initializeMethod as? UElement, // The cast is needed to disambiguate the report function signature.
+          location = context.getLocation(initializeMethod),
+          message =
+              "Views that behave like `ScrollView` and support `ACTION_SCROLL_{FORWARD,BACKWARD}` should also support " +
+                  "`ACTION_SCROLL_{LEFT,RIGHT}` and/or `ACTION_SCROLL_{UP,DOWN}`",
       )
     }
   }
@@ -246,21 +227,20 @@ class AccessibilityViewScrollActionsDetector : Detector(), SourceCodeScanner {
 
     @JvmField
     val ISSUE =
-      Issue.create(
-        id = "AccessibilityScrollActions",
-        briefDescription = "Incomplete Scroll Action support",
-        explanation =
-          """
+        Issue.create(
+            id = "AccessibilityScrollActions",
+            briefDescription = "Incomplete Scroll Action support",
+            explanation =
+                """
           Views that behave like `ScrollView` and support `ACTION_SCROLL_{FORWARD,BACKWARD}` should also support \
           `ACTION_SCROLL_{LEFT,RIGHT}` and/or `ACTION_SCROLL_{UP,DOWN}`.
           """,
-        category = Category.A11Y,
-        priority = 5,
-        severity = Severity.WARNING,
-        implementation =
-          Implementation(AccessibilityViewScrollActionsDetector::class.java, Scope.JAVA_FILE_SCOPE),
-        androidSpecific = true,
-      )
+            category = Category.A11Y,
+            priority = 5,
+            severity = Severity.WARNING,
+            implementation = Implementation(AccessibilityViewScrollActionsDetector::class.java, Scope.JAVA_FILE_SCOPE),
+            androidSpecific = true,
+        )
   }
 }
 
@@ -275,17 +255,17 @@ private fun UExpression.isScrollViewClassNameString(): Boolean {
   // We just check if the expression contains the ScrollView class literal.
   var foundClassLiteral = false
   this.accept(
-    object : AbstractUastVisitor() {
-      override fun visitClassLiteralExpression(node: UClassLiteralExpression): Boolean {
-        val type = node.type
-        if (type is PsiClassReferenceType && type.reference.qualifiedName == FQCN_SCROLL_VIEW) {
-          foundClassLiteral = true
-          // Stop visiting.
-          return true
+      object : AbstractUastVisitor() {
+        override fun visitClassLiteralExpression(node: UClassLiteralExpression): Boolean {
+          val type = node.type
+          if (type is PsiClassReferenceType && type.reference.qualifiedName == FQCN_SCROLL_VIEW) {
+            foundClassLiteral = true
+            // Stop visiting.
+            return true
+          }
+          return super.visitClassLiteralExpression(node)
         }
-        return super.visitClassLiteralExpression(node)
       }
-    }
   )
 
   return foundClassLiteral

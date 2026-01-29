@@ -23,9 +23,7 @@ import com.google.common.annotations.VisibleForTesting
 import java.io.File
 import java.net.URL
 
-class PrivateApiLookup
-private constructor(client: LintClient, binaryFile: File, cacheCreator: CacheCreator) :
-  ApiDatabase() {
+class PrivateApiLookup private constructor(client: LintClient, binaryFile: File, cacheCreator: CacheCreator) : ApiDatabase() {
 
   init {
     readData(client, binaryFile, cacheCreator, PRIVATE_API_BINARY_FORMAT_VERSION)
@@ -133,23 +131,23 @@ private constructor(client: LintClient, binaryFile: File, cacheCreator: CacheCre
     private const val PRIVATE_API_BINARY_FORMAT_VERSION = 0
 
     private fun getCacheFileName(fileName: String, buildNumber: String?): String =
-      buildString(100) {
-        if (fileName.endsWith(".txt")) {
-          append(fileName.substring(0, fileName.length - 4))
-        } else {
-          append(fileName)
+        buildString(100) {
+          if (fileName.endsWith(".txt")) {
+            append(fileName.substring(0, fileName.length - 4))
+          } else {
+            append(fileName)
+          }
+
+          // Incorporate version number in the filename to avoid upgrade filename
+          // conflicts on Windows (such as issue #26663)
+          append('-').append(getBinaryFormatVersion(PRIVATE_API_BINARY_FORMAT_VERSION))
+
+          if (buildNumber != null) {
+            append('-').append(buildNumber.replace(' ', '_'))
+          }
+
+          append(".bin")
         }
-
-        // Incorporate version number in the filename to avoid upgrade filename
-        // conflicts on Windows (such as issue #26663)
-        append('-').append(getBinaryFormatVersion(PRIVATE_API_BINARY_FORMAT_VERSION))
-
-        if (buildNumber != null) {
-          append('-').append(buildNumber.replace(' ', '_'))
-        }
-
-        append(".bin")
-      }
 
     private fun cacheCreator(input: URL) = CacheCreator { client, binaryData ->
       val begin = if (WRITE_STATS) System.currentTimeMillis() else 0
@@ -206,10 +204,7 @@ private constructor(client: LintClient, binaryFile: File, cacheCreator: CacheCre
       val cache = cacheCreator(stream)
 
       if (DEBUG_FORCE_REGENERATE_BINARY) {
-        System.err.println(
-          "\nTemporarily regenerating binary data unconditionally \n" +
-            "from $stream\nto $binaryData"
-        )
+        System.err.println("\nTemporarily regenerating binary data unconditionally \n" + "from $stream\nto $binaryData")
         if (!cache.create(client, binaryData)) {
           return null
         }

@@ -24,10 +24,10 @@ class IntellijApiUsageDetectorTest {
   @Test
   fun testDeprecatedApiUsagesKotlin() {
     studioLint()
-      .files(
-        API_STATUS_ANNOTATION_STUB,
-        kotlin(
-            """
+        .files(
+            API_STATUS_ANNOTATION_STUB,
+            kotlin(
+                    """
             package test.pkg
 
             import org.jetbrains.annotations.ApiStatus
@@ -67,10 +67,10 @@ class IntellijApiUsageDetectorTest {
               fun foo() {}
             }
             """
-          )
-          .indented(),
-        kotlin(
-            """
+                )
+                .indented(),
+            kotlin(
+                    """
             package test.pkg
 
             fun test() {
@@ -84,14 +84,14 @@ class IntellijApiUsageDetectorTest {
               NotDeprecated().foo() // OK
             }
             """
-          )
-          .indented(),
-      )
-      .issues(IntellijApiUsageDetector.SCHEDULED_FOR_REMOVAL)
-      .allowDuplicates() // For some reason, type references are visited twice sometimes.
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+        )
+        .issues(IntellijApiUsageDetector.SCHEDULED_FOR_REMOVAL)
+        .allowDuplicates() // For some reason, type references are visited twice sometimes.
+        .run()
+        .expect(
+            """
         src/test/pkg/DeprecatedClass.kt:19: Warning: foo is @ScheduledForRemoval [ScheduledForRemoval]
           override fun foo() {} // ERROR
                        ~~~
@@ -124,16 +124,16 @@ class IntellijApiUsageDetectorTest {
                                  ~~~
         0 errors, 10 warnings
         """
-      )
+        )
   }
 
   @Test
   fun testDeprecatedApiUsagesJava() {
     studioLint()
-      .files(
-        API_STATUS_ANNOTATION_STUB,
-        java(
-            """
+        .files(
+            API_STATUS_ANNOTATION_STUB,
+            java(
+                    """
             package test.pkg;
 
             class DeprecatedJavaField {
@@ -144,10 +144,10 @@ class IntellijApiUsageDetectorTest {
               void deprecatedButNotForRemoval() {}
             }
             """
-          )
-          .indented(),
-        java(
-            """
+                )
+                .indented(),
+            java(
+                    """
             package test.pkg;
 
             class Test {
@@ -157,28 +157,28 @@ class IntellijApiUsageDetectorTest {
               }
             }
             """
-          )
-          .indented(),
-      )
-      .issues(IntellijApiUsageDetector.SCHEDULED_FOR_REMOVAL)
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+        )
+        .issues(IntellijApiUsageDetector.SCHEDULED_FOR_REMOVAL)
+        .run()
+        .expect(
+            """
         src/test/pkg/Test.java:5: Warning: myField is @Deprecated(forRemoval=true) [ScheduledForRemoval]
             new DeprecatedJavaField().myField; // ERROR
                                       ~~~~~~~
         0 errors, 1 warnings
         """
-      )
+        )
   }
 
   @Test
   fun testOverrideOfNonDeprecatedMethod() {
     studioLint()
-      .files(
-        API_STATUS_ANNOTATION_STUB,
-        java(
-            """
+        .files(
+            API_STATUS_ANNOTATION_STUB,
+            java(
+                    """
           package test.pkg;
 
           public abstract class LocalFileSystem {
@@ -187,10 +187,10 @@ class IntellijApiUsageDetectorTest {
             }
           }
           """
-          )
-          .indented(),
-        java(
-            """
+                )
+                .indented(),
+            java(
+                    """
           package test.pkg;
 
           @Deprecated(forRemoval = true)
@@ -202,10 +202,10 @@ class IntellijApiUsageDetectorTest {
             public void someDeprecatedMethod() {}
           }
           """
-          )
-          .indented(),
-        java(
-            """
+                )
+                .indented(),
+            java(
+                    """
           package test.pkg;
 
           @SuppressWarnings("ScheduledForRemoval")
@@ -215,10 +215,10 @@ class IntellijApiUsageDetectorTest {
             }
           }
           """
-          )
-          .indented(),
-        kotlin(
-            """
+                )
+                .indented(),
+            kotlin(
+                    """
           package test.pkg
 
           fun test() {
@@ -228,13 +228,13 @@ class IntellijApiUsageDetectorTest {
             (fs as LocalFileSystemBase).findFileByPath() // ERROR (for the downcast).
           }
           """
-          )
-          .indented(),
-      )
-      .issues(IntellijApiUsageDetector.SCHEDULED_FOR_REMOVAL)
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+        )
+        .issues(IntellijApiUsageDetector.SCHEDULED_FOR_REMOVAL)
+        .run()
+        .expect(
+            """
         src/test/pkg/test.kt:5: Warning: Containing class LocalFileSystemBase is @Deprecated(forRemoval=true) [ScheduledForRemoval]
           fs.someDeprecatedMethod() // ERROR.
              ~~~~~~~~~~~~~~~~~~~~
@@ -243,13 +243,13 @@ class IntellijApiUsageDetectorTest {
                  ~~~~~~~~~~~~~~~~~~~
         0 errors, 2 warnings
         """
-      )
+        )
   }
 }
 
 private val API_STATUS_ANNOTATION_STUB =
-  java(
-      """
+    java(
+            """
       package org.jetbrains.annotations;
 
       import java.lang.annotation.*;
@@ -291,5 +291,5 @@ private val API_STATUS_ANNOTATION_STUB =
         public @interface OverrideOnly {}
       }
       """
-    )
-    .indented()
+        )
+        .indented()

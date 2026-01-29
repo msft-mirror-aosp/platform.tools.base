@@ -24,9 +24,9 @@ class UnsafeIntentLaunchDetectorTest : AbstractCheckTest() {
 
   fun testDocumentationExampleUnparceledIntentLaunchFromExportedComponents() {
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
                 package test.pkg;
 
                 import android.app.Activity;
@@ -41,10 +41,10 @@ class UnsafeIntentLaunchDetectorTest : AbstractCheckTest() {
                     }
                 }
             """
-          )
-          .indented(),
-        java(
-            """
+                )
+                .indented(),
+            java(
+                    """
                 package test.pkg;
 
                 import android.content.Intent;
@@ -58,10 +58,10 @@ class UnsafeIntentLaunchDetectorTest : AbstractCheckTest() {
                     }
                 }
             """
-          )
-          .indented(),
-        java(
-            """
+                )
+                .indented(),
+            java(
+                    """
                 package test.pkg;
 
                 import android.content.BroadcastReceiver;
@@ -76,10 +76,10 @@ class UnsafeIntentLaunchDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-          )
-          .indented(),
-        manifest(
-            """
+                )
+                .indented(),
+            manifest(
+                    """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                         package="test.pkg">
                     <application>
@@ -89,14 +89,14 @@ class UnsafeIntentLaunchDetectorTest : AbstractCheckTest() {
                     </application>
                 </manifest>
                 """
-          )
-          .indented(),
-        *stubs,
-      )
-      .issues(UnsafeIntentLaunchDetector.ISSUE)
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            *stubs,
+        )
+        .issues(UnsafeIntentLaunchDetector.ISSUE)
+        .run()
+        .expect(
+            """
             src/test/pkg/TestActivity.java:10: Warning: This intent could be coming from an untrusted source. It is later launched by an unprotected component test.pkg.TestActivity. You could either make the component test.pkg.TestActivity protected; or sanitize this intent using androidx.core.content.IntentSanitizer. [UnsafeIntentLaunch]
                     Intent intent = getIntent().getParcelableExtra(Intent.EXTRA_INTENT);
                                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -117,17 +117,15 @@ class UnsafeIntentLaunchDetectorTest : AbstractCheckTest() {
                     ~~~~~~~~~~~~~~~~~~~
             0 errors, 3 warnings
             """
-      )
+        )
   }
 
-  /**
-   * Activity that does not declare export attribute but with intentFilter is considered exported.
-   */
+  /** Activity that does not declare export attribute but with intentFilter is considered exported. */
   fun testUnparceledIntentLaunchFromActivityWithFilter() {
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
                 package test.pkg;
 
                 import android.content.Intent;
@@ -142,10 +140,10 @@ class UnsafeIntentLaunchDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-          )
-          .indented(),
-        manifest(
-            """
+                )
+                .indented(),
+            manifest(
+                    """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                         package="test.pkg">
                     <application>
@@ -158,14 +156,14 @@ class UnsafeIntentLaunchDetectorTest : AbstractCheckTest() {
                     </application>
                 </manifest>
                 """
-          )
-          .indented(),
-        *stubs,
-      )
-      .issues(UnsafeIntentLaunchDetector.ISSUE)
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            *stubs,
+        )
+        .issues(UnsafeIntentLaunchDetector.ISSUE)
+        .run()
+        .expect(
+            """
             src/test/pkg/TestActivity.java:10: Warning: This intent could be coming from an untrusted source. It is later launched by an unprotected component test.pkg.TestActivity. You could either make the component test.pkg.TestActivity protected; or sanitize this intent using androidx.core.content.IntentSanitizer. [UnsafeIntentLaunch]
                     Intent intent = getIntent().getExtras().getParcelable(Intent.EXTRA_INTENT);
                                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -174,15 +172,15 @@ class UnsafeIntentLaunchDetectorTest : AbstractCheckTest() {
                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             0 errors, 1 warnings
             """
-      )
+        )
   }
 
   /** Exported activity with unknown permission is considered protected. */
   fun testUnparceledIntentLaunchFromExportedActivityWithPermission() {
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
                 package test.pkg;
 
                 import android.content.Intent;
@@ -197,10 +195,10 @@ class UnsafeIntentLaunchDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-          )
-          .indented(),
-        manifest(
-            """
+                )
+                .indented(),
+            manifest(
+                    """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                         package="test.pkg">
                     <application>
@@ -211,21 +209,21 @@ class UnsafeIntentLaunchDetectorTest : AbstractCheckTest() {
                     </application>
                 </manifest>
                 """
-          )
-          .indented(),
-        *stubs,
-      )
-      .issues(UnsafeIntentLaunchDetector.ISSUE)
-      .run()
-      .expectClean()
+                )
+                .indented(),
+            *stubs,
+        )
+        .issues(UnsafeIntentLaunchDetector.ISSUE)
+        .run()
+        .expectClean()
   }
 
   /** Exported activity with known system-defined permission is NOT considered protected. */
   fun testUnparceledIntentLaunchFromExportedActivityWithNormalPermission() {
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
                 package test.pkg;
 
                 import android.content.Intent;
@@ -240,10 +238,10 @@ class UnsafeIntentLaunchDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-          )
-          .indented(),
-        manifest(
-            """
+                )
+                .indented(),
+            manifest(
+                    """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                         package="test.pkg">
                     <application>
@@ -254,14 +252,14 @@ class UnsafeIntentLaunchDetectorTest : AbstractCheckTest() {
                     </application>
                 </manifest>
                 """
-          )
-          .indented(),
-        *stubs,
-      )
-      .issues(UnsafeIntentLaunchDetector.ISSUE)
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            *stubs,
+        )
+        .issues(UnsafeIntentLaunchDetector.ISSUE)
+        .run()
+        .expect(
+            """
             src/test/pkg/TestActivity.java:10: Warning: This intent could be coming from an untrusted source. It is later launched by an unprotected component test.pkg.TestActivity. You could either make the component test.pkg.TestActivity protected; or sanitize this intent using androidx.core.content.IntentSanitizer. [UnsafeIntentLaunch]
                     Intent intent = getIntent().getParcelableExtra(Intent.EXTRA_INTENT);
                                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -270,14 +268,14 @@ class UnsafeIntentLaunchDetectorTest : AbstractCheckTest() {
                     ~~~~~~~~~~~~~~~~~~~~~
             0 errors, 1 warnings
             """
-      )
+        )
   }
 
   fun testUnparceledIntentLaunchFromNotExportedComponent() {
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
                 package test.pkg;
 
                 import android.content.Intent;
@@ -292,10 +290,10 @@ class UnsafeIntentLaunchDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-          )
-          .indented(),
-        java(
-            """
+                )
+                .indented(),
+            java(
+                    """
                 package test.pkg;
 
                 import android.content.Intent;
@@ -309,10 +307,10 @@ class UnsafeIntentLaunchDetectorTest : AbstractCheckTest() {
                     }
                 }
             """
-          )
-          .indented(),
-        java(
-            """
+                )
+                .indented(),
+            java(
+                    """
                 package test.pkg;
 
                 import android.content.BroadcastReceiver;
@@ -327,10 +325,10 @@ class UnsafeIntentLaunchDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-          )
-          .indented(),
-        manifest(
-            """
+                )
+                .indented(),
+            manifest(
+                    """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                         package="test.pkg">
                     <application>
@@ -340,24 +338,21 @@ class UnsafeIntentLaunchDetectorTest : AbstractCheckTest() {
                     </application>
                 </manifest>
                 """
-          )
-          .indented(),
-        *stubs,
-      )
-      .issues(UnsafeIntentLaunchDetector.ISSUE)
-      .run()
-      .expectClean()
+                )
+                .indented(),
+            *stubs,
+        )
+        .issues(UnsafeIntentLaunchDetector.ISSUE)
+        .run()
+        .expectClean()
   }
 
-  /**
-   * Activity that does not declare export attribute and without intentFilter is considered not
-   * exported.
-   */
+  /** Activity that does not declare export attribute and without intentFilter is considered not exported. */
   fun testUnparcelIntentLaunchFromActivityWithoutFilter() {
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
                 package test.pkg;
 
                 import android.content.Intent;
@@ -372,10 +367,10 @@ class UnsafeIntentLaunchDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-          )
-          .indented(),
-        manifest(
-            """
+                )
+                .indented(),
+            manifest(
+                    """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                         package="test.pkg">
                     <application>
@@ -384,20 +379,20 @@ class UnsafeIntentLaunchDetectorTest : AbstractCheckTest() {
                     </application>
                 </manifest>
                 """
-          )
-          .indented(),
-        *stubs,
-      )
-      .issues(UnsafeIntentLaunchDetector.ISSUE)
-      .run()
-      .expectClean()
+                )
+                .indented(),
+            *stubs,
+        )
+        .issues(UnsafeIntentLaunchDetector.ISSUE)
+        .run()
+        .expectClean()
   }
 
   fun testUnparcelIntentNotLaunched() {
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
                 package test.pkg;
 
                 import android.content.Intent;
@@ -418,10 +413,10 @@ class UnsafeIntentLaunchDetectorTest : AbstractCheckTest() {
                     }
                 }
             """
-          )
-          .indented(),
-        manifest(
-            """
+                )
+                .indented(),
+            manifest(
+                    """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                         package="test.pkg">
                     <application>
@@ -429,20 +424,20 @@ class UnsafeIntentLaunchDetectorTest : AbstractCheckTest() {
                     </application>
                 </manifest>
                 """
-          )
-          .indented(),
-        *stubs,
-      )
-      .issues(UnsafeIntentLaunchDetector.ISSUE)
-      .run()
-      .expectClean()
+                )
+                .indented(),
+            *stubs,
+        )
+        .issues(UnsafeIntentLaunchDetector.ISSUE)
+        .run()
+        .expectClean()
   }
 
   fun testUnparcelIntentLaunchedAfterReturnedFromAnotherMethod() {
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
                 package test.pkg;
 
                 import android.content.Intent;
@@ -468,10 +463,10 @@ class UnsafeIntentLaunchDetectorTest : AbstractCheckTest() {
                     }
                 }
             """
-          )
-          .indented(),
-        manifest(
-            """
+                )
+                .indented(),
+            manifest(
+                    """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                         package="test.pkg">
                     <application>
@@ -479,14 +474,14 @@ class UnsafeIntentLaunchDetectorTest : AbstractCheckTest() {
                     </application>
                 </manifest>
                 """
-          )
-          .indented(),
-        *stubs,
-      )
-      .issues(UnsafeIntentLaunchDetector.ISSUE)
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            *stubs,
+        )
+        .issues(UnsafeIntentLaunchDetector.ISSUE)
+        .run()
+        .expect(
+            """
             src/test/pkg/TestActivity.java:10: Warning: This intent could be coming from an untrusted source. It is later launched by an unprotected component test.pkg.TestActivity. You could either make the component test.pkg.TestActivity protected; or sanitize this intent using androidx.core.content.IntentSanitizer. [UnsafeIntentLaunch]
                     Intent intent = getIntent().getParcelableExtra(Intent.EXTRA_INTENT);
                                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -495,14 +490,14 @@ class UnsafeIntentLaunchDetectorTest : AbstractCheckTest() {
                     ~~~~~~~~~~~~~~~~~~~~~
             0 errors, 1 warnings
             """
-      )
+        )
   }
 
   fun testUnparceledIntentLaunchFromActivity() {
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
                 package test.pkg;
 
                 import android.content.Intent;
@@ -546,10 +541,10 @@ class UnsafeIntentLaunchDetectorTest : AbstractCheckTest() {
                     }
                 }
             """
-          )
-          .indented(),
-        manifest(
-            """
+                )
+                .indented(),
+            manifest(
+                    """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                         package="test.pkg">
                     <application>
@@ -557,14 +552,14 @@ class UnsafeIntentLaunchDetectorTest : AbstractCheckTest() {
                     </application>
                 </manifest>
                 """
-          )
-          .indented(),
-        *stubs,
-      )
-      .issues(UnsafeIntentLaunchDetector.ISSUE)
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            *stubs,
+        )
+        .issues(UnsafeIntentLaunchDetector.ISSUE)
+        .run()
+        .expect(
+            """
             src/test/pkg/TestActivity.java:13: Warning: This intent could be coming from an untrusted source. It is later launched by an unprotected component test.pkg.TestActivity. You could either make the component test.pkg.TestActivity protected; or sanitize this intent using androidx.core.content.IntentSanitizer. [UnsafeIntentLaunch]
                     Intent intent = getIntent().getExtras().getParcelable(Intent.EXTRA_INTENT);
                                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -621,14 +616,14 @@ class UnsafeIntentLaunchDetectorTest : AbstractCheckTest() {
                     ~~~~~~~~~~~~~~~~~~
             0 errors, 9 warnings
             """
-      )
+        )
   }
 
   fun testUnparceledIntentLaunchFromService() {
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
                 package test.pkg;
 
                 import android.content.Intent;
@@ -680,10 +675,10 @@ class UnsafeIntentLaunchDetectorTest : AbstractCheckTest() {
                     }
                 }
             """
-          )
-          .indented(),
-        manifest(
-            """
+                )
+                .indented(),
+            manifest(
+                    """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                         package="test.pkg">
                     <application>
@@ -691,14 +686,14 @@ class UnsafeIntentLaunchDetectorTest : AbstractCheckTest() {
                     </application>
                 </manifest>
                 """
-          )
-          .indented(),
-        *stubs,
-      )
-      .issues(UnsafeIntentLaunchDetector.ISSUE)
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            *stubs,
+        )
+        .issues(UnsafeIntentLaunchDetector.ISSUE)
+        .run()
+        .expect(
+            """
             src/test/pkg/TestService.java:13: Warning: This intent could be coming from an untrusted source. It is later launched by an unprotected component test.pkg.TestService. You could either make the component test.pkg.TestService protected; or sanitize this intent using androidx.core.content.IntentSanitizer. [UnsafeIntentLaunch]
                     Intent intent = getIntent().getParcelableExtra(Intent.EXTRA_INTENT);
                                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -761,14 +756,14 @@ class UnsafeIntentLaunchDetectorTest : AbstractCheckTest() {
                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             0 errors, 10 warnings
             """
-      )
+        )
   }
 
   fun testUnparceledIntentLaunchInAnotherMethod() {
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
                 package test.pkg;
 
                 import android.content.Intent;
@@ -798,10 +793,10 @@ class UnsafeIntentLaunchDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-          )
-          .indented(),
-        java(
-            """
+                )
+                .indented(),
+            java(
+                    """
                 package test.pkg;
 
                 import android.content.Intent;
@@ -818,10 +813,10 @@ class UnsafeIntentLaunchDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-          )
-          .indented(),
-        manifest(
-            """
+                )
+                .indented(),
+            manifest(
+                    """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                         package="test.pkg">
                     <application>
@@ -829,14 +824,14 @@ class UnsafeIntentLaunchDetectorTest : AbstractCheckTest() {
                     </application>
                 </manifest>
                 """
-          )
-          .indented(),
-        *stubs,
-      )
-      .issues(UnsafeIntentLaunchDetector.ISSUE)
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            *stubs,
+        )
+        .issues(UnsafeIntentLaunchDetector.ISSUE)
+        .run()
+        .expect(
+            """
             src/test/pkg/TestActivity.java:11: Warning: This intent could be coming from an untrusted source. It is later launched by an unprotected component test.pkg.TestActivity. You could either make the component test.pkg.TestActivity protected; or sanitize this intent using androidx.core.content.IntentSanitizer. [UnsafeIntentLaunch]
                     Intent intent = getIntent().getParcelableExtra(Intent.EXTRA_INTENT);
                                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -857,14 +852,14 @@ class UnsafeIntentLaunchDetectorTest : AbstractCheckTest() {
                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             0 errors, 3 warnings
             """
-      )
+        )
   }
 
   fun testRuntimeExportedBroadcastReceiver() {
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
                 package test.pkg;
 
                 import android.app.Activity;
@@ -885,10 +880,10 @@ class UnsafeIntentLaunchDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-          )
-          .indented(),
-        java(
-            """
+                )
+                .indented(),
+            java(
+                    """
                 package test.pkg;
 
                 import android.content.BroadcastReceiver;
@@ -904,15 +899,15 @@ class UnsafeIntentLaunchDetectorTest : AbstractCheckTest() {
 
                 }
                 """
-          )
-          .indented(),
-        *stubs,
-      )
-      .issues(UnsafeIntentLaunchDetector.ISSUE)
-      .testModes(TestMode.PARTIAL)
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            *stubs,
+        )
+        .issues(UnsafeIntentLaunchDetector.ISSUE)
+        .testModes(TestMode.PARTIAL)
+        .run()
+        .expect(
+            """
             src/test/pkg/TestReceiver.java:10: Warning: This intent could be coming from an untrusted source. It is later launched by an unprotected component test.pkg.TestReceiver. You could either make the component test.pkg.TestReceiver protected; or sanitize this intent using androidx.core.content.IntentSanitizer. [UnsafeIntentLaunch]
                 public void onReceive(Context context, Intent intent) {
                                                        ~~~~~~~~~~~~~
@@ -921,14 +916,14 @@ class UnsafeIntentLaunchDetectorTest : AbstractCheckTest() {
                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             0 errors, 1 warnings
             """
-      )
+        )
   }
 
   fun testRuntimeNotExportedBroadcastReceiver() {
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
                 package test.pkg;
 
                 import android.app.Activity;
@@ -949,10 +944,10 @@ class UnsafeIntentLaunchDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-          )
-          .indented(),
-        java(
-            """
+                )
+                .indented(),
+            java(
+                    """
                 package test.pkg;
 
                 import android.content.BroadcastReceiver;
@@ -968,20 +963,20 @@ class UnsafeIntentLaunchDetectorTest : AbstractCheckTest() {
 
                 }
                 """
-          )
-          .indented(),
-        *stubs,
-      )
-      .issues(UnsafeIntentLaunchDetector.ISSUE)
-      .run()
-      .expectClean()
+                )
+                .indented(),
+            *stubs,
+        )
+        .issues(UnsafeIntentLaunchDetector.ISSUE)
+        .run()
+        .expectClean()
   }
 
   fun testRuntimeBroadcastReceiverRegisteredWithNoFlag() {
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
                 package test.pkg;
 
                 import android.app.Activity;
@@ -1002,10 +997,10 @@ class UnsafeIntentLaunchDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-          )
-          .indented(),
-        java(
-            """
+                )
+                .indented(),
+            java(
+                    """
                 package test.pkg;
 
                 import android.content.BroadcastReceiver;
@@ -1021,15 +1016,15 @@ class UnsafeIntentLaunchDetectorTest : AbstractCheckTest() {
 
                 }
                 """
-          )
-          .indented(),
-        *stubs,
-      )
-      .issues(UnsafeIntentLaunchDetector.ISSUE)
-      .testModes(TestMode.PARTIAL)
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            *stubs,
+        )
+        .issues(UnsafeIntentLaunchDetector.ISSUE)
+        .testModes(TestMode.PARTIAL)
+        .run()
+        .expect(
+            """
             src/test/pkg/TestReceiver.java:10: Warning: This intent could be coming from an untrusted source. It is later launched by an unprotected component test.pkg.TestReceiver. You could either make the component test.pkg.TestReceiver protected; or sanitize this intent using androidx.core.content.IntentSanitizer. [UnsafeIntentLaunch]
                 public void onReceive(Context context, Intent intent) {
                                                        ~~~~~~~~~~~~~
@@ -1038,14 +1033,14 @@ class UnsafeIntentLaunchDetectorTest : AbstractCheckTest() {
                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             0 errors, 1 warnings
             """
-      )
+        )
   }
 
   fun testAnonymousBroadcastReceiver() {
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
                 package test.pkg;
 
                 import android.content.BroadcastReceiver;
@@ -1078,14 +1073,14 @@ class UnsafeIntentLaunchDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-          )
-          .indented(),
-        *stubs,
-      )
-      .issues(UnsafeIntentLaunchDetector.ISSUE)
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            *stubs,
+        )
+        .issues(UnsafeIntentLaunchDetector.ISSUE)
+        .run()
+        .expect(
+            """
             src/test/pkg/AnonymousBroadcastReceiverTest.java:15: Warning: This intent could be coming from an untrusted source. It is later launched by an unprotected component. You could either make the component protected; or sanitize this intent using androidx.core.content.IntentSanitizer. [UnsafeIntentLaunch]
                                 context.startActivity(checkNotNull(intent.getParcelableExtra(Intent.EXTRA_INTENT)));
                                                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1094,14 +1089,14 @@ class UnsafeIntentLaunchDetectorTest : AbstractCheckTest() {
                                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             0 errors, 1 warnings
             """
-      )
+        )
   }
 
   fun testRegisterReceiverWithPermissionProtected() {
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
                 package test.pkg
 
                 import android.app.Activity
@@ -1125,10 +1120,10 @@ class UnsafeIntentLaunchDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-          )
-          .indented(),
-        manifest(
-            """
+                )
+                .indented(),
+            manifest(
+                    """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                         package="test.pkg">
                     <permission android:name="com.example.MY_PERMISSION" android:protectionLevel="signature" />
@@ -1138,20 +1133,20 @@ class UnsafeIntentLaunchDetectorTest : AbstractCheckTest() {
                     </application>
                 </manifest>
                 """
-          )
-          .indented(),
-        *stubs,
-      )
-      .issues(UnsafeIntentLaunchDetector.ISSUE)
-      .run()
-      .expectClean()
+                )
+                .indented(),
+            *stubs,
+        )
+        .issues(UnsafeIntentLaunchDetector.ISSUE)
+        .run()
+        .expectClean()
   }
 
   fun testKotlin() {
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
                 package test.pkg
 
                 import android.content.Intent
@@ -1215,10 +1210,10 @@ class UnsafeIntentLaunchDetectorTest : AbstractCheckTest() {
                     }
                 }
             """
-          )
-          .indented(),
-        manifest(
-            """
+                )
+                .indented(),
+            manifest(
+                    """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                         package="test.pkg">
                     <application>
@@ -1226,14 +1221,14 @@ class UnsafeIntentLaunchDetectorTest : AbstractCheckTest() {
                     </application>
                 </manifest>
                 """
-          )
-          .indented(),
-        *stubs,
-      )
-      .issues(UnsafeIntentLaunchDetector.ISSUE)
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            *stubs,
+        )
+        .issues(UnsafeIntentLaunchDetector.ISSUE)
+        .run()
+        .expect(
+            """
             src/test/pkg/TestActivity.kt:10: Warning: This intent could be coming from an untrusted source. It is later launched by an unprotected component test.pkg.TestActivity. You could either make the component test.pkg.TestActivity protected; or sanitize this intent using androidx.core.content.IntentSanitizer. [UnsafeIntentLaunch]
                     val intent = getIntent().getParcelableExtra(Intent.EXTRA_INTENT).let { // ERROR 1
                                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1266,14 +1261,14 @@ class UnsafeIntentLaunchDetectorTest : AbstractCheckTest() {
                         ~~~~~~~~~~~~~~~~~
             0 errors, 5 warnings
             """
-      )
+        )
   }
 
   fun testParseUri() {
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
                 package test.pkg;
 
                 import android.content.Intent;
@@ -1296,10 +1291,10 @@ class UnsafeIntentLaunchDetectorTest : AbstractCheckTest() {
                     }
                 }
             """
-          )
-          .indented(),
-        manifest(
-            """
+                )
+                .indented(),
+            manifest(
+                    """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                         package="test.pkg">
                     <application>
@@ -1307,14 +1302,14 @@ class UnsafeIntentLaunchDetectorTest : AbstractCheckTest() {
                     </application>
                 </manifest>
                 """
-          )
-          .indented(),
-        *stubs,
-      )
-      .issues(UnsafeIntentLaunchDetector.ISSUE)
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            *stubs,
+        )
+        .issues(UnsafeIntentLaunchDetector.ISSUE)
+        .run()
+        .expect(
+            """
             src/test/pkg/TestActivity.java:11: Warning: This intent could be coming from an untrusted source. It is later launched by an unprotected component test.pkg.TestActivity. You could either make the component test.pkg.TestActivity protected; or sanitize this intent using androidx.core.content.IntentSanitizer. [UnsafeIntentLaunch]
                     Intent intent = Intent.parseUri(intentUri, 0);
                                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1341,14 +1336,14 @@ class UnsafeIntentLaunchDetectorTest : AbstractCheckTest() {
                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             0 errors, 4 warnings
             """
-      )
+        )
   }
 
   fun testAndroidXApi() {
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
                 package test.pkg;
 
                 import android.content.Intent;
@@ -1377,10 +1372,10 @@ class UnsafeIntentLaunchDetectorTest : AbstractCheckTest() {
                     }
                 }
             """
-          )
-          .indented(),
-        manifest(
-            """
+                )
+                .indented(),
+            manifest(
+                    """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                         package="test.pkg">
                     <application>
@@ -1388,14 +1383,14 @@ class UnsafeIntentLaunchDetectorTest : AbstractCheckTest() {
                     </application>
                 </manifest>
                 """
-          )
-          .indented(),
-        *stubs,
-      )
-      .issues(UnsafeIntentLaunchDetector.ISSUE)
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            *stubs,
+        )
+        .issues(UnsafeIntentLaunchDetector.ISSUE)
+        .run()
+        .expect(
+            """
         src/test/pkg/TestActivity.java:14: Warning: This intent could be coming from an untrusted source. It is later launched by an unprotected component test.pkg.TestActivity. You could either make the component test.pkg.TestActivity protected; or sanitize this intent using androidx.core.content.IntentSanitizer. [UnsafeIntentLaunch]
                 Intent intent = IntentCompat.getParcelableExtra(getIntent(), Intent.EXTRA_INTENT, Intent.class); // ERROR 1
                                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1428,14 +1423,14 @@ class UnsafeIntentLaunchDetectorTest : AbstractCheckTest() {
                 ^
         0 errors, 5 warnings
         """
-      )
+        )
   }
 
   fun testRuntimeExportedBroadcastReceiverLaunchWithProtectedBroadcast() {
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
           package test.pkg;
 
           import android.app.Activity;
@@ -1460,10 +1455,10 @@ class UnsafeIntentLaunchDetectorTest : AbstractCheckTest() {
               }
           }
           """
-          )
-          .indented(),
-        java(
-            """
+                )
+                .indented(),
+            java(
+                    """
           package test.pkg;
 
           import android.content.BroadcastReceiver;
@@ -1489,10 +1484,10 @@ class UnsafeIntentLaunchDetectorTest : AbstractCheckTest() {
               }
           }
           """
-          )
-          .indented(),
-        java(
-            """
+                )
+                .indented(),
+            java(
+                    """
           package test.pkg;
 
           import android.content.BroadcastReceiver;
@@ -1519,10 +1514,10 @@ class UnsafeIntentLaunchDetectorTest : AbstractCheckTest() {
               }
           }
           """
-          )
-          .indented(),
-        java(
-            """
+                )
+                .indented(),
+            java(
+                    """
           package test.pkg;
 
           import android.content.BroadcastReceiver;
@@ -1546,10 +1541,10 @@ class UnsafeIntentLaunchDetectorTest : AbstractCheckTest() {
               }
           }
           """
-          )
-          .indented(),
-        java(
-            """
+                )
+                .indented(),
+            java(
+                    """
           package test.pkg;
 
           import android.content.BroadcastReceiver;
@@ -1572,15 +1567,15 @@ class UnsafeIntentLaunchDetectorTest : AbstractCheckTest() {
               }
           }
           """
-          )
-          .indented(),
-        *stubs,
-      )
-      .issues(UnsafeIntentLaunchDetector.ISSUE)
-      .testModes(TestMode.PARTIAL)
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            *stubs,
+        )
+        .issues(UnsafeIntentLaunchDetector.ISSUE)
+        .testModes(TestMode.PARTIAL)
+        .run()
+        .expect(
+            """
         src/test/pkg/TestReceiver.java:12: Warning: This intent could be coming from an untrusted source. It is later launched by an unprotected component test.pkg.TestReceiver. You could either make the component test.pkg.TestReceiver protected; or sanitize this intent using androidx.core.content.IntentSanitizer. [UnsafeIntentLaunch]
             public void onReceive(Context context, Intent intent) {
                                                    ~~~~~~~~~~~~~
@@ -1625,14 +1620,14 @@ class UnsafeIntentLaunchDetectorTest : AbstractCheckTest() {
                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         0 errors, 7 warnings
         """
-      )
+        )
   }
 
   fun testRuntimeExportedBroadcastReceiverLaunchWithProtectedBroadcastKotlin() {
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
           package test.pkg;
 
           import android.app.Activity;
@@ -1654,10 +1649,10 @@ class UnsafeIntentLaunchDetectorTest : AbstractCheckTest() {
               }
           }
           """
-          )
-          .indented(),
-        kotlin(
-            """
+                )
+                .indented(),
+            kotlin(
+                    """
           package test.pkg
 
           import android.content.BroadcastReceiver
@@ -1682,10 +1677,10 @@ class UnsafeIntentLaunchDetectorTest : AbstractCheckTest() {
               }
           }
           """
-          )
-          .indented(),
-        kotlin(
-            """
+                )
+                .indented(),
+            kotlin(
+                    """
           package test.pkg
 
           import android.content.BroadcastReceiver
@@ -1709,16 +1704,16 @@ class UnsafeIntentLaunchDetectorTest : AbstractCheckTest() {
               }
           }
           """
-          )
-          .indented(),
-        *stubs,
-      )
-      .issues(UnsafeIntentLaunchDetector.ISSUE)
-      .skipTestModes(TestMode.SUPPRESSIBLE)
-      .testModes(TestMode.PARTIAL)
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            *stubs,
+        )
+        .issues(UnsafeIntentLaunchDetector.ISSUE)
+        .skipTestModes(TestMode.SUPPRESSIBLE)
+        .testModes(TestMode.PARTIAL)
+        .run()
+        .expect(
+            """
         src/test/pkg/TestReceiver.kt:11: Warning: This intent could be coming from an untrusted source. It is later launched by an unprotected component test.pkg.TestReceiver. You could either make the component test.pkg.TestReceiver protected; or sanitize this intent using androidx.core.content.IntentSanitizer. [UnsafeIntentLaunch]
             override fun onReceive(context : Context, intent : Intent) {
                                                       ~~~~~~~~~~~~~~~
@@ -1739,12 +1734,12 @@ class UnsafeIntentLaunchDetectorTest : AbstractCheckTest() {
                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         0 errors, 3 warnings
         """
-      )
+        )
   }
 
   private val intentStub: TestFile =
-    java(
-        """
+      java(
+              """
         package android.content;
         import android.os.Parcelable;
         import android.os.Bundle;
@@ -1762,12 +1757,12 @@ class UnsafeIntentLaunchDetectorTest : AbstractCheckTest() {
             public static Intent parseUri(String uri, int flags) { return null; }
         }
         """
-      )
-      .indented()
+          )
+          .indented()
 
   private val contextStub: TestFile =
-    java(
-        """
+      java(
+              """
         package android.content;
         public class Context {
             public static final int RECEIVER_EXPORTED = 0x2;
@@ -1798,12 +1793,12 @@ class UnsafeIntentLaunchDetectorTest : AbstractCheckTest() {
                         int flagsMask, int flagsValues,  int extraFlags);
         }
         """
-      )
-      .indented()
+          )
+          .indented()
 
   private val activityStub: TestFile =
-    java(
-        """
+      java(
+              """
         package android.app;
         import android.content.Intent;
         import android.content.Context;
@@ -1826,12 +1821,12 @@ class UnsafeIntentLaunchDetectorTest : AbstractCheckTest() {
             public final void setResult(int resultCode, Intent data) {}
         }
         """
-      )
-      .indented()
+          )
+          .indented()
 
   private val bundleStub: TestFile =
-    java(
-        """
+      java(
+              """
         package android.os;
         import android.content.Intent;
 
@@ -1840,22 +1835,22 @@ class UnsafeIntentLaunchDetectorTest : AbstractCheckTest() {
             public String getString(String key) { return null; }
         }
         """
-      )
-      .indented()
+          )
+          .indented()
 
   private val parcelableStub: TestFile =
-    java(
-        """
+      java(
+              """
         package android.os;
 
         public interface Parcelable {}
         """
-      )
-      .indented()
+          )
+          .indented()
 
   private val broadcastReceiverStub: TestFile =
-    java(
-        """
+      java(
+              """
             package android.content;
             import android.os.IBinder;
             public abstract class BroadcastReceiver {
@@ -1863,12 +1858,12 @@ class UnsafeIntentLaunchDetectorTest : AbstractCheckTest() {
                 public IBinder peekService(Context myContext, Intent service) { return null;}
             }
             """
-      )
-      .indented()
+          )
+          .indented()
 
   private val intentFilterStub: TestFile =
-    java(
-        """
+      java(
+              """
             package android.content;
             public class IntentFilter {
                 public IntentFilter() {}
@@ -1880,36 +1875,36 @@ class UnsafeIntentLaunchDetectorTest : AbstractCheckTest() {
                 public final void addAction(String action) {}
             }
             """
-      )
-      .indented()
+          )
+          .indented()
 
   private val intentSenderStub: TestFile =
-    java(
-      """
+      java(
+          """
         package android.content;
         public class IntentSender {}
         """
-    )
+      )
 
   private val componentNameStub: TestFile =
-    java(
-      """
+      java(
+          """
         package android.content;
         public class ComponentName {}
         """
-    )
+      )
 
   private val serviceConnectionStub: TestFile =
-    java(
-      """
+      java(
+          """
         package android.content;
         public class ServiceConnection {}
         """
-    )
+      )
 
   private val serviceStub: TestFile =
-    java(
-      """
+      java(
+          """
         package android.app;
         import android.os.IBinder;
         import android.content.Intent;
@@ -1924,19 +1919,19 @@ class UnsafeIntentLaunchDetectorTest : AbstractCheckTest() {
             public int onStartCommand(Intent intent, int flags, int startId) {}
         }
         """
-    )
+      )
 
   private val iBinderStub: TestFile =
-    java(
-      """
+      java(
+          """
         package android.os;
         public interface IBinder{}
         """
-    )
+      )
 
   private val pendingIntentStub: TestFile =
-    java(
-      """
+      java(
+          """
         package android.app;
         import android.content.Context;
         import android.content.Intent;
@@ -1948,11 +1943,11 @@ class UnsafeIntentLaunchDetectorTest : AbstractCheckTest() {
             public static PendingIntent getService(Context context, int requestCode, Intent intent, int flags) { return null; }
         }
         """
-    )
+      )
 
   private val xCompActivityStub: TestFile =
-    java(
-      """
+      java(
+          """
         package androidx.activity;
         import android.content.Context;
         import android.content.Intent;
@@ -1960,22 +1955,22 @@ class UnsafeIntentLaunchDetectorTest : AbstractCheckTest() {
         public class ComponentActivity extends androidx.core.app.ComponentActivity {
         }
         """
-    )
+      )
 
   private val xCoreCompActivityStub: TestFile =
-    java(
-      """
+      java(
+          """
         package androidx.core.app;
         import android.app.Activity;
 
         public class ComponentActivity extends Activity {
         }
         """
-    )
+      )
 
   private val xContextCompatStub: TestFile =
-    java(
-      """
+      java(
+          """
         package androidx.core.content;
         import android.content.Context;
         import android.content.Intent;
@@ -1987,11 +1982,11 @@ class UnsafeIntentLaunchDetectorTest : AbstractCheckTest() {
             public static void startForegroundService(@NonNull Context context, @NonNull Intent intent) { }
         }
         """
-    )
+      )
 
   private val xIntentCompatStub: TestFile =
-    java(
-      """
+      java(
+          """
         package androidx.core.content;
         import android.content.Context;
         import android.content.Intent;
@@ -2002,11 +1997,11 @@ class UnsafeIntentLaunchDetectorTest : AbstractCheckTest() {
                     @NonNull Class<T> clazz) { return null; }
         }
         """
-    )
+      )
 
   private val xBundleCompatStub: TestFile =
-    java(
-      """
+      java(
+          """
         package androidx.core.os;
         import android.content.Context;
         import android.content.Intent;
@@ -2017,11 +2012,11 @@ class UnsafeIntentLaunchDetectorTest : AbstractCheckTest() {
                     @NonNull Class<T> clazz) { return null; }
         }
         """
-    )
+      )
 
   private val xActivityCompatStub: TestFile =
-    java(
-      """
+      java(
+          """
         package androidx.core.app;
         import android.content.Context;
         import android.content.Intent;
@@ -2036,28 +2031,28 @@ class UnsafeIntentLaunchDetectorTest : AbstractCheckTest() {
                         throws IntentSender.SendIntentException { }
         }
         """
-    )
+      )
 
   private val stubs =
-    arrayOf(
-      intentStub,
-      activityStub,
-      bundleStub,
-      parcelableStub,
-      broadcastReceiverStub,
-      contextStub,
-      intentFilterStub,
-      intentSenderStub,
-      componentNameStub,
-      serviceConnectionStub,
-      serviceStub,
-      iBinderStub,
-      pendingIntentStub,
-      xCompActivityStub,
-      xCoreCompActivityStub,
-      xContextCompatStub,
-      xIntentCompatStub,
-      xBundleCompatStub,
-      xActivityCompatStub,
-    )
+      arrayOf(
+          intentStub,
+          activityStub,
+          bundleStub,
+          parcelableStub,
+          broadcastReceiverStub,
+          contextStub,
+          intentFilterStub,
+          intentSenderStub,
+          componentNameStub,
+          serviceConnectionStub,
+          serviceStub,
+          iBinderStub,
+          pendingIntentStub,
+          xCompActivityStub,
+          xCoreCompActivityStub,
+          xContextCompatStub,
+          xIntentCompatStub,
+          xBundleCompatStub,
+          xActivityCompatStub,
+      )
 }

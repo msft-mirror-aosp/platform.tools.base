@@ -40,21 +40,20 @@ import org.jetbrains.uast.UQualifiedReferenceExpression
 import org.jetbrains.uast.skipParenthesizedExprUp
 
 /**
- * Test mode which introduces import aliases for all imported types to make sure detectors handle
- * presence of import aliases.
+ * Test mode which introduces import aliases for all imported types to make sure detectors handle presence of import aliases.
  *
  * (See also the [TypeAliasTestMode].)
  */
 class ImportAliasTestMode :
-  UastSourceTransformationTestMode(
-    description = "Import aliases",
-    "TestMode.IMPORT_ALIAS",
-    "import-alias",
-  ) {
+    UastSourceTransformationTestMode(
+        description = "Import aliases",
+        "TestMode.IMPORT_ALIAS",
+        "import-alias",
+    ) {
   override val diffExplanation: String =
-    // first line shorter: expecting to prefix that line with
-    // "org.junit.ComparisonFailure: "
-    """
+      // first line shorter: expecting to prefix that line with
+      // "org.junit.ComparisonFailure: "
+      """
         In Kotlin, types can be renamed
         via import aliases. This means that detectors should look at the
         resolved types, not the local identifier names.
@@ -67,7 +66,7 @@ class ImportAliasTestMode :
         specific to import aliasing, you can turn off this test mode using
         `.skipTestModes($fieldName)`.
         """
-      .trimIndent()
+          .trimIndent()
 
   override fun isRelevantFile(file: TestFile): Boolean {
     // import as is only applicable to Kotlin
@@ -75,10 +74,10 @@ class ImportAliasTestMode :
   }
 
   override fun transform(
-    source: String,
-    context: JavaContext,
-    root: UFile,
-    clientData: MutableMap<String, Any>,
+      source: String,
+      context: JavaContext,
+      root: UFile,
+      clientData: MutableMap<String, Any>,
   ): MutableList<Edit> {
     if (!isKotlin(root.lang)) {
       return mutableListOf()
@@ -88,120 +87,116 @@ class ImportAliasTestMode :
     val aliasNames = linkedMapOf<String, String>()
 
     root.acceptSourceFile(
-      object : FullyQualifyNamesTestMode.TypeVisitor(context, source) {
-        override fun visitImportStatement(node: UImportStatement): Boolean {
-          val ktImportDirective = node.sourcePsi as? KtImportDirective
-          if (
-            ktImportDirective != null && !node.isOnDemand && ktImportDirective.aliasName == null
-          ) {
-            val resolved = node.resolve()
-            val reference = node.importReference
-            val text = reference?.sourcePsi?.text
-            if (text != null && resolved != null) {
-              if (resolved is PsiClass) {
-                val qualifiedName = resolved.qualifiedName
-                if (qualifiedName != null) {
+        object : FullyQualifyNamesTestMode.TypeVisitor(context, source) {
+          override fun visitImportStatement(node: UImportStatement): Boolean {
+            val ktImportDirective = node.sourcePsi as? KtImportDirective
+            if (ktImportDirective != null && !node.isOnDemand && ktImportDirective.aliasName == null) {
+              val resolved = node.resolve()
+              val reference = node.importReference
+              val text = reference?.sourcePsi?.text
+              if (text != null && resolved != null) {
+                if (resolved is PsiClass) {
+                  val qualifiedName = resolved.qualifiedName
+                  if (qualifiedName != null) {
+                    imported.add(qualifiedName)
+                  }
+                } else if (resolved is PsiMember) {
+                  val qualifiedName =
+                      getQualifiedName(reference, resolved)
+                          // Analysis API doesn't always resolve import names
+                          ?: text
                   imported.add(qualifiedName)
                 }
-              } else if (resolved is PsiMember) {
-                val qualifiedName =
-                  getQualifiedName(reference, resolved)
-                    // Analysis API doesn't always resolve import names
-                    ?: text
-                imported.add(qualifiedName)
+              }
+            }
+            return super.visitImportStatement(node)
+          }
+
+          private fun getImportAlias(qualified: String?): String? {
+            return if (qualified != null && imported.contains(qualified)) {
+              aliasNames[qualified]
+                  ?: "IMPORT_ALIAS_${aliasNames.size + 1}_${qualified.substring(qualified.lastIndexOf('.') + 1).uppercase(Locale.US)}"
+                      .also { aliasNames[qualified] = it }
+            } else {
+              null
+            }
+          }
+
+          override fun checkFieldReference(node: UElement, field: PsiField) {
+            checkMember(node, field)
+          }
+
+          override fun checkMethodReference(node: UElement, method: PsiMethod) {
+            checkMember(node, method)
+          }
+
+          private fun checkMember(node: UElement, member: PsiMember) {
+            val parent = skipParenthesizedExprUp(node.uastParent)
+            if (parent is UQualifiedReferenceExpression) {
+              return
+            }
+            val qualified = getQualifiedName(node, member) ?: return
+            val range = node.sourcePsi?.textRange ?: return
+            getImportAlias(qualified)?.let { aliasName ->
+              editMap[range.startOffset] = replace(range.startOffset, range.endOffset, aliasName)
+            }
+          }
+
+          override fun checkTypeReference(
+              node: UElement,
+              cls: PsiClass?,
+              offset: Int,
+              type: PsiType,
+          ) {
+            val typeText = node.sourcePsi?.text?.substringBefore('<') ?: return
+            if (typeText.isBlank()) {
+              return
+            }
+            val range = node.sourcePsi?.textRange ?: return
+            if (type is PsiArrayType && type !is PsiEllipsisType && cls != null) {
+              getImportAlias(cls.qualifiedName)?.let { aliasName ->
+                editMap[offset] = replace(range.startOffset, range.endOffset, "Array<$aliasName>")
+              }
+              return
+            } else if (type is PsiClassType) {
+              val qualified = cls?.qualifiedName
+              getImportAlias(qualified)?.let { aliasName ->
+                editMap[offset] =
+                    replace(
+                        range.startOffset,
+                        min(range.endOffset, range.startOffset + typeText.length),
+                        if (typeText.endsWith("?")) "$aliasName?" else if (typeText.endsWith("!!")) "$aliasName!!" else aliasName,
+                    )
               }
             }
           }
-          return super.visitImportStatement(node)
-        }
 
-        private fun getImportAlias(qualified: String?): String? {
-          return if (qualified != null && imported.contains(qualified)) {
-            aliasNames[qualified]
-              ?: "IMPORT_ALIAS_${aliasNames.size + 1}_${qualified.substring(qualified.lastIndexOf('.') + 1).uppercase(Locale.US)}"
-                .also { aliasNames[qualified] = it }
-          } else {
-            null
-          }
-        }
+          override fun afterVisitFile(node: UFile) {
+            if (aliasNames.isNotEmpty()) {
+              val start =
+                  node.imports.lastOrNull()?.sourcePsi?.textRange?.endOffset
+                      ?: node.classes.firstOrNull()?.sourcePsi?.textRange?.startOffset
+                      ?: run {
+                        val index = source.indexOf(node.packageName)
+                        val end = index + node.packageName.length
+                        source.indexOf('\n', end) + 1
+                      }
 
-        override fun checkFieldReference(node: UElement, field: PsiField) {
-          checkMember(node, field)
-        }
-
-        override fun checkMethodReference(node: UElement, method: PsiMethod) {
-          checkMember(node, method)
-        }
-
-        private fun checkMember(node: UElement, member: PsiMember) {
-          val parent = skipParenthesizedExprUp(node.uastParent)
-          if (parent is UQualifiedReferenceExpression) {
-            return
-          }
-          val qualified = getQualifiedName(node, member) ?: return
-          val range = node.sourcePsi?.textRange ?: return
-          getImportAlias(qualified)?.let { aliasName ->
-            editMap[range.startOffset] = replace(range.startOffset, range.endOffset, aliasName)
-          }
-        }
-
-        override fun checkTypeReference(
-          node: UElement,
-          cls: PsiClass?,
-          offset: Int,
-          type: PsiType,
-        ) {
-          val typeText = node.sourcePsi?.text?.substringBefore('<') ?: return
-          if (typeText.isBlank()) {
-            return
-          }
-          val range = node.sourcePsi?.textRange ?: return
-          if (type is PsiArrayType && type !is PsiEllipsisType && cls != null) {
-            getImportAlias(cls.qualifiedName)?.let { aliasName ->
-              editMap[offset] = replace(range.startOffset, range.endOffset, "Array<$aliasName>")
+              val aliases = aliasNames.map { (type, name) -> "import $type as $name" }.joinToString("\n")
+              editMap[start] = insert(start, "\n$aliases")
             }
-            return
-          } else if (type is PsiClassType) {
-            val qualified = cls?.qualifiedName
-            getImportAlias(qualified)?.let { aliasName ->
-              editMap[offset] =
-                replace(
-                  range.startOffset,
-                  min(range.endOffset, range.startOffset + typeText.length),
-                  if (typeText.endsWith("?")) "$aliasName?"
-                  else if (typeText.endsWith("!!")) "$aliasName!!" else aliasName,
-                )
+            super.afterVisitFile(node)
+          }
+
+          override fun visitClassLiteralExpression(node: UClassLiteralExpression): Boolean {
+            val cls = context.evaluator.getTypeClass(node.type)
+            if (cls is PsiTypeParameter) {
+              // Do not alter T::class.java
+              return true
             }
+            return super.visitClassLiteralExpression(node)
           }
         }
-
-        override fun afterVisitFile(node: UFile) {
-          if (aliasNames.isNotEmpty()) {
-            val start =
-              node.imports.lastOrNull()?.sourcePsi?.textRange?.endOffset
-                ?: node.classes.firstOrNull()?.sourcePsi?.textRange?.startOffset
-                ?: run {
-                  val index = source.indexOf(node.packageName)
-                  val end = index + node.packageName.length
-                  source.indexOf('\n', end) + 1
-                }
-
-            val aliases =
-              aliasNames.map { (type, name) -> "import $type as $name" }.joinToString("\n")
-            editMap[start] = insert(start, "\n$aliases")
-          }
-          super.afterVisitFile(node)
-        }
-
-        override fun visitClassLiteralExpression(node: UClassLiteralExpression): Boolean {
-          val cls = context.evaluator.getTypeClass(node.type)
-          if (cls is PsiTypeParameter) {
-            // Do not alter T::class.java
-            return true
-          }
-          return super.visitClassLiteralExpression(node)
-        }
-      }
     )
 
     return editMap.values.toMutableList()

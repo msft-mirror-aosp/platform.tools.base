@@ -27,9 +27,9 @@ class WrongCommentTypeDetectorTest : AbstractCheckTest() {
 
   fun testDocumentationExample() {
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
             /* Block comment
              * @see tags point to KDoc
              */
@@ -40,20 +40,20 @@ class WrongCommentTypeDetectorTest : AbstractCheckTest() {
                 open fun someMethod2(arg: Int) { }
             }
             """
-          )
-          .indented(),
-        java(
-            """
+                )
+                .indented(),
+            java(
+                    """
             public class Test {
                 /* @since 1.5 */ String text;
             }
             """
-          )
-          .indented(),
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+        )
+        .run()
+        .expect(
+            """
         src/ParentClass.kt:2: Warning: This block comment looks like it was intended to be a KDoc comment [WrongCommentType]
          * @see tags point to KDoc
            ~~~~~~~~~~~~~~~~~~~~~~~
@@ -62,9 +62,9 @@ class WrongCommentTypeDetectorTest : AbstractCheckTest() {
                ~~~~~~~~~~
         0 errors, 2 warnings
         """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
         Autofix for src/ParentClass.kt line 2: Replace with /**:
         @@ -1 +1 @@
         -/* Block comment
@@ -74,31 +74,31 @@ class WrongCommentTypeDetectorTest : AbstractCheckTest() {
         -    /* @since 1.5 */ String text;
         +    /** @since 1.5 */ String text;
         """
-      )
+        )
   }
 
   fun testJavadocLink() {
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
             /* This is a [link](http://wwww.google.com) */
             open class ParentClass
             """
-          )
-          .indented(),
-        java(
-            """
+                )
+                .indented(),
+            java(
+                    """
             /* This is a {@link ParentClass} */
             public class Test {
             }
             """
-          )
-          .indented(),
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+        )
+        .run()
+        .expect(
+            """
         src/ParentClass.kt:1: Warning: This block comment looks like it was intended to be a KDoc comment [WrongCommentType]
         /* This is a [link](http://wwww.google.com) */
                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -107,9 +107,9 @@ class WrongCommentTypeDetectorTest : AbstractCheckTest() {
                      ~~~~~~~~~~~~~~~~~~~
         0 errors, 2 warnings
         """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
         Autofix for src/ParentClass.kt line 1: Replace with /**:
         @@ -1 +1 @@
         -/* This is a [link](http://wwww.google.com) */
@@ -119,14 +119,14 @@ class WrongCommentTypeDetectorTest : AbstractCheckTest() {
         -/* This is a {@link ParentClass} */
         +/** This is a {@link ParentClass} */
         """
-      )
+        )
   }
 
   fun testComposeFunction() {
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
              /*
             * Greeting element.
             *
@@ -136,50 +136,50 @@ class WrongCommentTypeDetectorTest : AbstractCheckTest() {
                 Text(text = "Hello")
             }
             """
-          )
-          .indented()
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .run()
+        .expect(
+            """
         src/test.kt:4: Warning: This block comment looks like it was intended to be a KDoc comment [WrongCommentType]
         * @sample DefaultPreview
           ~~~~~~~~~~~~~~~~~~~~~~
         0 errors, 1 warnings
         """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
         Autofix for src/test.kt line 4: Replace with /**:
         @@ -1 +1 @@
         - /*
         + /**
         """
-      )
+        )
   }
 
   fun testIgnoreNonApi() {
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
             fun test() {
                /* @see Ignore me **/
             }
             """
-          )
-          .indented()
-      )
-      .testModes(TestMode.DEFAULT)
-      .run()
-      .expectClean()
+                )
+                .indented()
+        )
+        .testModes(TestMode.DEFAULT)
+        .run()
+        .expectClean()
   }
 
   fun testProperties() {
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
             class Test(
                 /* @param Comment **/
                 var prop: String
@@ -191,12 +191,12 @@ class WrongCommentTypeDetectorTest : AbstractCheckTest() {
                 companion object
             }
             """
-          )
-          .indented()
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .run()
+        .expect(
+            """
         src/Test.kt:2: Warning: This block comment looks like it was intended to be a KDoc comment [WrongCommentType]
             /* @param Comment **/
                ~~~~~~~~~~~~~~
@@ -208,14 +208,14 @@ class WrongCommentTypeDetectorTest : AbstractCheckTest() {
                ~~~~~~~~~~~~
         0 errors, 3 warnings
         """
-      )
+        )
   }
 
   fun testSkipPrivate() {
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
             class Test {
                 /* @property Comment **/
                 private var prop2: String
@@ -224,19 +224,19 @@ class WrongCommentTypeDetectorTest : AbstractCheckTest() {
                 private fun test(foo: String) { }
             }
             """
-          )
-          .indented()
-      )
-      .run()
-      .expectClean()
+                )
+                .indented()
+        )
+        .run()
+        .expectClean()
   }
 
   fun testNonJavadoc() {
     // See https://stackoverflow.com/questions/5172841/non-javadoc-meaning
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
             /*
              * (non-Javadoc)
              * @see com.android.ddmlib.IDevice#isOnline()
@@ -246,10 +246,10 @@ class WrongCommentTypeDetectorTest : AbstractCheckTest() {
                 public int test;
             }
             """
-          )
-          .indented(),
-        kotlin(
-            """
+                )
+                .indented(),
+            kotlin(
+                    """
             /*
             Not deprecating this yet: wait until report(Incident) has been available for
             a reasonable number of releases such that third party checks can rely on it
@@ -265,46 +265,46 @@ class WrongCommentTypeDetectorTest : AbstractCheckTest() {
             */
             class Context
             """
-          )
-          .indented(),
-      )
-      .run()
-      .expectClean()
+                )
+                .indented(),
+        )
+        .run()
+        .expectClean()
   }
 
   fun testFqnAnnotation() {
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
             /* Commented out for now:
                @com.android.tools.screenshot.PreviewTest
              */
             class Test
             """
-          )
-          .indented()
-      )
-      .run()
-      .expectClean()
+                )
+                .indented()
+        )
+        .run()
+        .expectClean()
   }
 
   fun testTolerateBaselineChanges() {
     val baseline = LintBaseline(ToolsBaseTestLintClient(), File(""))
     assertTrue(
-      baseline.sameMessage(
-        WrongCommentTypeDetector.ISSUE,
-        "This block comment looks like it was intended to be a KDoc comment",
-        "This block comment looks like it was intended to be a javadoc comment",
-      )
+        baseline.sameMessage(
+            WrongCommentTypeDetector.ISSUE,
+            "This block comment looks like it was intended to be a KDoc comment",
+            "This block comment looks like it was intended to be a javadoc comment",
+        )
     )
 
     assertTrue(
-      baseline.sameMessage(
-        WrongCommentTypeDetector.ISSUE,
-        "This block comment looks like it was intended to be a javadoc comment",
-        "This block comment looks like it was intended to be a KDoc comment",
-      )
+        baseline.sameMessage(
+            WrongCommentTypeDetector.ISSUE,
+            "This block comment looks like it was intended to be a javadoc comment",
+            "This block comment looks like it was intended to be a KDoc comment",
+        )
     )
   }
 }

@@ -27,9 +27,9 @@ class KeepRuleDetectorTest : AbstractCheckTest() {
 
   fun testDocumentationExample() {
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
             package test.pkg
             fun simpleCall(p: Any, s: String) {
                 Class.forName("androidx.api.Printer")
@@ -37,11 +37,11 @@ class KeepRuleDetectorTest : AbstractCheckTest() {
                     .invoke(p, s)
             }
             """
-          )
-          .indented(),
-        // Test both Java and Kotlin, since they have different quickfix syntax
-        java(
-            """
+                )
+                .indented(),
+            // Test both Java and Kotlin, since they have different quickfix syntax
+            java(
+                    """
             package test.pkg;
 
             import java.lang.reflect.Method;
@@ -54,13 +54,13 @@ class KeepRuleDetectorTest : AbstractCheckTest() {
                 }
             }
             """
-          )
-          .indented(),
-        *usesReflectionStubs,
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            *usesReflectionStubs,
+        )
+        .run()
+        .expect(
+            """
         src/test/pkg/JavaUsage.java:9: Warning: This method calls androidx.api.Printer.print() reflectively, so it should be annotated with @UsesReflectionToAccessMethod(...) [ReflectionAnnotation]
                         .invoke(p, s);
                          ~~~~~~
@@ -69,9 +69,9 @@ class KeepRuleDetectorTest : AbstractCheckTest() {
                  ~~~~~~
         0 errors, 2 warnings
         """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
         Autofix for src/test/pkg/JavaUsage.java line 9: Annotate with @UsesReflectionToAccessMethod:
         @@ -2,0 +3 @@
         +import androidx.annotation.keep.UsesReflectionToAccessMethod;
@@ -90,14 +90,14 @@ class KeepRuleDetectorTest : AbstractCheckTest() {
         +    parameterTypes = [String::class]
         +)
         """
-      )
+        )
   }
 
   fun testAlreadyAnnotated() {
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
             package test.pkg
 
             import androidx.annotation.keep.UsesReflectionToAccessMethod
@@ -113,10 +113,10 @@ class KeepRuleDetectorTest : AbstractCheckTest() {
                     .invoke(p, s) // OK, already annotated
             }
             """
-          )
-          .indented(),
-        java(
-            """
+                )
+                .indented(),
+            java(
+                    """
             package test.pkg;
 
             import androidx.annotation.keep.UsesReflectionToAccessMethod;
@@ -130,19 +130,19 @@ class KeepRuleDetectorTest : AbstractCheckTest() {
                 }
             }
             """
-          )
-          .indented(),
-        *usesReflectionStubs,
-      )
-      .run()
-      .expectClean()
+                )
+                .indented(),
+            *usesReflectionStubs,
+        )
+        .run()
+        .expectClean()
   }
 
   fun testAlreadyAnnotatedOuterClass() {
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
             package test.pkg
 
             import androidx.annotation.keep.UsesReflectionToAccessMethod
@@ -160,19 +160,19 @@ class KeepRuleDetectorTest : AbstractCheckTest() {
               }
             }
             """
-          )
-          .indented(),
-        *usesReflectionStubs,
-      )
-      .run()
-      .expectClean()
+                )
+                .indented(),
+            *usesReflectionStubs,
+        )
+        .run()
+        .expectClean()
   }
 
   fun testAnnotationClassNotAvailable() {
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
             package test.pkg
 
             fun test(p: Any, s: String) {
@@ -181,12 +181,12 @@ class KeepRuleDetectorTest : AbstractCheckTest() {
                     .invoke(p, s) // OK - keep annotations not on the classpath
             }
             """
-          )
-          .indented()
-        // Deliberately not including *usesReflectionStubs here
-      )
-      .run()
-      .expectClean()
+                )
+                .indented()
+            // Deliberately not including *usesReflectionStubs here
+        )
+        .run()
+        .expectClean()
   }
 
   fun testAnnotationMatching() {
@@ -200,9 +200,9 @@ class KeepRuleDetectorTest : AbstractCheckTest() {
     //  (5) Test the special handling where not specifying parameters should
     //      match all; make sure that isn't confused as meaning an empty list
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
             package test.pkg
 
             import androidx.annotation.keep.UsesReflectionToAccessMethod
@@ -271,13 +271,13 @@ class KeepRuleDetectorTest : AbstractCheckTest() {
                     .invoke(p, s) // ERROR 3: Shouldn't match empty parameter list
             }
             """
-          )
-          .indented(),
-        *usesReflectionStubs,
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            *usesReflectionStubs,
+        )
+        .run()
+        .expect(
+            """
         src/test/pkg/test.kt:13: Warning: This method calls androidx.api.Printer.print() reflectively, so it should be annotated with @UsesReflectionToAccessMethod(...) [ReflectionAnnotation]
                 .invoke(p, s) // ERROR 1: wrong class name
                  ~~~~~~
@@ -289,14 +289,14 @@ class KeepRuleDetectorTest : AbstractCheckTest() {
                  ~~~~~~
         0 errors, 3 warnings
         """
-      )
+        )
   }
 
   fun testConstructorExplicit() {
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
             @file:Suppress("unused", "NewApi")
 
             package com.example.keeptest
@@ -323,21 +323,21 @@ class KeepRuleDetectorTest : AbstractCheckTest() {
                 }
             }
             """
-          )
-          .indented(),
-        kotlin(
-            """
+                )
+                .indented(),
+            kotlin(
+                    """
             package test.pkg.api
             interface Foo
             open class Bar
             """
-          )
-          .indented(),
-        *usesReflectionStubs,
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            *usesReflectionStubs,
+        )
+        .run()
+        .expect(
+            """
         src/com/example/keeptest/test.kt:11: Warning: This method calls com.example.FooImpl.<init>() reflectively, so it should be annotated with @UsesReflectionToConstruct(...) [ReflectionAnnotation]
                 klass.getConstructor(Context::class.java, Clock::class.java).newInstance(context, clock)
                                                                              ~~~~~~~~~~~
@@ -346,9 +346,9 @@ class KeepRuleDetectorTest : AbstractCheckTest() {
                                                ~~~~~~~~~~~
         0 errors, 2 warnings
         """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
         Autofix for src/com/example/keeptest/test.kt line 11: Annotate with @UsesReflectionToConstruct:
         @@ -5,0 +6 @@
         +import androidx.annotation.keep.UsesReflectionToConstruct
@@ -366,14 +366,14 @@ class KeepRuleDetectorTest : AbstractCheckTest() {
         +    parameterTypes = []
         +)
         """
-      )
+        )
   }
 
   fun testConstructorAlreadyAnnotated() {
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
             @file:Suppress("unused")
 
             package com.example.keeptest
@@ -409,27 +409,27 @@ class KeepRuleDetectorTest : AbstractCheckTest() {
                 }
             }
             """
-          )
-          .indented(),
-        kotlin(
-            """
+                )
+                .indented(),
+            kotlin(
+                    """
             package test.pkg.api
             interface Foo
             open class Bar
             """
-          )
-          .indented(),
-        *usesReflectionStubs,
-      )
-      .run()
-      .expectClean()
+                )
+                .indented(),
+            *usesReflectionStubs,
+        )
+        .run()
+        .expectClean()
   }
 
   fun testConstructorSubclass() {
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
             package com.example.keeptest;
 
             import test.pkg.api.Bar;
@@ -463,11 +463,11 @@ class KeepRuleDetectorTest : AbstractCheckTest() {
                 }
             }
             """
-          )
-          .indented(),
-        kotlin(
-            "src/test/pkg/KotlinTest.kt",
-            """
+                )
+                .indented(),
+            kotlin(
+                    "src/test/pkg/KotlinTest.kt",
+                    """
             @file:Suppress("unused")
 
             package test.pkg
@@ -503,20 +503,20 @@ class KeepRuleDetectorTest : AbstractCheckTest() {
                 return Class.forName(name) as Class<Bar> // ERROR 7
             }
             """,
-          )
-          .indented(),
-        kotlin(
-            """
+                )
+                .indented(),
+            kotlin(
+                    """
             package test.pkg.api
             open class Bar
             """
-          )
-          .indented(),
-        *usesReflectionStubs,
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            *usesReflectionStubs,
+        )
+        .run()
+        .expect(
+            """
         src/com/example/keeptest/JavaTest.java:12: Warning: This method calls test.pkg.api.Bar.<init>() reflectively, so it should be annotated with @UsesReflectionToConstruct(...) [ReflectionAnnotation]
                     return (Bar) constructor.newInstance(); // ERROR 1
                                              ~~~~~~~~~~~
@@ -540,9 +540,9 @@ class KeepRuleDetectorTest : AbstractCheckTest() {
                          ~~~~~~~
         0 errors, 7 warnings
         """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
         Autofix for src/com/example/keeptest/JavaTest.java line 12: Annotate with @UsesReflectionToConstruct:
         @@ -3,0 +4 @@
         +import androidx.annotation.keep.UsesReflectionToConstruct;
@@ -576,14 +576,14 @@ class KeepRuleDetectorTest : AbstractCheckTest() {
         +    parameterTypes = []
         +)
         """
-      )
+        )
   }
 
   fun testField1() {
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
             package com.example.keeptest
 
             import test.pkg.api.Foo
@@ -599,28 +599,28 @@ class KeepRuleDetectorTest : AbstractCheckTest() {
                 return foo.getOrNull()
             }
             """
-          )
-          .indented(),
-        kotlin(
-            """
+                )
+                .indented(),
+            kotlin(
+                    """
             package test.pkg.api
             interface Foo
             """
-          )
-          .indented(),
-        *usesReflectionStubs,
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            *usesReflectionStubs,
+        )
+        .run()
+        .expect(
+            """
         src/com/example/keeptest/test.kt:11: Warning: This method references com.example.SomeClass.foo reflectively, so it should be annotated with @UsesReflectionToAccessField(...) [ReflectionAnnotation]
                 fieldRef.get(null) as? Foo
                          ~~~
         0 errors, 1 warning
         """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
         Autofix for src/com/example/keeptest/test.kt line 11: Annotate with @UsesReflectionToAccessField:
         @@ -2,0 +3 @@
         +import androidx.annotation.keep.UsesReflectionToAccessField
@@ -631,14 +631,14 @@ class KeepRuleDetectorTest : AbstractCheckTest() {
         +    fieldType = Foo::class
         +)
         """
-      )
+        )
   }
 
   fun testField1_alreadyAnnotated() {
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
             package com.example.keeptest
 
             import androidx.annotation.keep.UsesReflectionToAccessField
@@ -660,27 +660,27 @@ class KeepRuleDetectorTest : AbstractCheckTest() {
                 return foo.getOrNull()
             }
             """
-          )
-          .indented(),
-        kotlin(
-            """
+                )
+                .indented(),
+            kotlin(
+                    """
             package test.pkg.api
             interface Foo
             """
-          )
-          .indented(),
-        *usesReflectionStubs,
-      )
-      .run()
-      .expectClean()
+                )
+                .indented(),
+            *usesReflectionStubs,
+        )
+        .run()
+        .expectClean()
   }
 
   fun testField2() {
     lint()
-      .files(
-        kotlin(
-            // Example from ErrorCode in health:connect:connect-client
-            """
+        .files(
+            kotlin(
+                    // Example from ErrorCode in health:connect:connect-client
+                    """
             package test.pkg
 
             import java.lang.reflect.Field
@@ -711,28 +711,28 @@ class KeepRuleDetectorTest : AbstractCheckTest() {
 
             fun getFields() {}
             """
-          )
-          .indented(),
-        *usesReflectionStubs,
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            *usesReflectionStubs,
+        )
+        .run()
+        .expect(
+            """
         src/test/pkg/ErrorCode.kt:17: Warning: This method references test.pkg.ErrorCode.* reflectively, so it should be annotated with @UsesReflectionToAccessField(...) [ReflectionAnnotation]
                 .declaredFields
                  ~~~~~~~~~~~~~~
         0 errors, 1 warning
         """
-      )
-      // No fix since we don't know specific method
-      .expectFixDiffs("")
+        )
+        // No fix since we don't know specific method
+        .expectFixDiffs("")
   }
 
   fun testFieldAlreadyAnnotated() {
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
             package test.pkg
 
             import androidx.annotation.keep.UsesReflectionToAccessField
@@ -768,21 +768,21 @@ class KeepRuleDetectorTest : AbstractCheckTest() {
 
             fun getFields() {}
             """
-          )
-          .indented(),
-        *usesReflectionStubs,
-      )
-      .run()
-      .expectClean()
+                )
+                .indented(),
+            *usesReflectionStubs,
+        )
+        .run()
+        .expectClean()
   }
 
   fun testField4() {
     lint()
-      .files(
-        java(
-            // From androidx'
-            // core/core/src/main/java/androidx/core/app/NotificationManagerCompat.java
-            """
+        .files(
+            java(
+                    // From androidx'
+                    // core/core/src/main/java/androidx/core/app/NotificationManagerCompat.java
+                    """
             package com.example.keeptest;
 
             import android.content.Context;
@@ -813,13 +813,13 @@ class KeepRuleDetectorTest : AbstractCheckTest() {
                 }
             }
             """
-          )
-          .indented(),
-        *usesReflectionStubs,
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            *usesReflectionStubs,
+        )
+        .run()
+        .expect(
+            """
         src/com/example/keeptest/AppOpsTest.java:25: Warning: This method references OP_POST_NOTIFICATION reflectively, so it should be annotated with @UsesReflectionToAccessField(...) [ReflectionAnnotation]
                 int value = (int) opPostNotificationValue.get(Integer.class);
                                                           ~~~
@@ -828,9 +828,9 @@ class KeepRuleDetectorTest : AbstractCheckTest() {
                                                    ~~~~~~
         0 errors, 2 warnings
         """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
         Fix for src/com/example/keeptest/AppOpsTest.java line 25: Annotate with @UsesReflectionToAccessField:
         @@ -7,0 +8 @@
         +import androidx.annotation.keep.UsesReflectionToAccessField;
@@ -851,14 +851,14 @@ class KeepRuleDetectorTest : AbstractCheckTest() {
         +        returnType = int.class
         +    )
         """
-      )
+        )
   }
 
   fun testInvalid() {
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
             import androidx.annotation.keep.UsesReflectionToConstruct
             import androidx.annotation.keep.UsesReflectionToAccessField
             import androidx.annotation.keep.UsesReflectionToAccessMethod
@@ -884,14 +884,14 @@ class KeepRuleDetectorTest : AbstractCheckTest() {
 
             class Foo
             """
-          )
-          .indented(),
-        *usesReflectionStubs,
-      )
-      .issues(AnnotationDetector.ANNOTATION_USAGE)
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            *usesReflectionStubs,
+        )
+        .issues(AnnotationDetector.ANNOTATION_USAGE)
+        .run()
+        .expect(
+            """
         src/Foo.kt:5: Error: @UsesReflectionToConstruct must specify either a classConstant or a className attribute [SupportAnnotationUsage]
         @UsesReflectionToConstruct() // ERROR 1
         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -936,14 +936,14 @@ class KeepRuleDetectorTest : AbstractCheckTest() {
                                                ~~~~~~
         10 errors
         """
-      )
+        )
   }
 
   fun testMethod1() {
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
             package com.example.keeptest
 
             import test.pkg.api.Foo
@@ -960,29 +960,29 @@ class KeepRuleDetectorTest : AbstractCheckTest() {
                 return foo.getOrNull()
             }
             """
-          )
-          .indented(),
-        kotlin(
-            """
+                )
+                .indented(),
+            kotlin(
+                    """
             package test.pkg.api
             interface Foo
             open class Bar
             """
-          )
-          .indented(),
-        *usesReflectionStubs,
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            *usesReflectionStubs,
+        )
+        .run()
+        .expect(
+            """
         src/com/example/keeptest/test.kt:12: Warning: This method calls com.example.SomeClass.getFoo() reflectively, so it should be annotated with @UsesReflectionToAccessMethod(...) [ReflectionAnnotation]
                 methodRef.invoke(null) as? Foo
                           ~~~~~~
         0 errors, 1 warning
         """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
         Autofix for src/com/example/keeptest/test.kt line 12: Annotate with @UsesReflectionToAccessMethod:
         @@ -2,0 +3 @@
         +import androidx.annotation.keep.UsesReflectionToAccessMethod
@@ -994,14 +994,14 @@ class KeepRuleDetectorTest : AbstractCheckTest() {
         +    returnType = Foo::class
         +)
         """
-      )
+        )
   }
 
   fun testMethod2() {
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
             package com.example.keeptest
 
             import test.pkg.api.Bar
@@ -1023,21 +1023,21 @@ class KeepRuleDetectorTest : AbstractCheckTest() {
                 return foo.getOrNull()
             }
             """
-          )
-          .indented(),
-        kotlin(
-            """
+                )
+                .indented(),
+            kotlin(
+                    """
             package test.pkg.api
             interface Foo
             open class Bar
             """
-          )
-          .indented(),
-        *usesReflectionStubs,
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            *usesReflectionStubs,
+        )
+        .run()
+        .expect(
+            """
         src/com/example/keeptest/test.kt:13: Warning: This method calls com.example.SomeClass.getBar() reflectively, so it should be annotated with @UsesReflectionToAccessMethod(...) [ReflectionAnnotation]
                 if (clazz.getMethod("getBar").invoke(null) as? Bar == null) {
                                               ~~~~~~
@@ -1046,9 +1046,9 @@ class KeepRuleDetectorTest : AbstractCheckTest() {
                                             ~~~~~~
         0 errors, 2 warnings
         """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
         Autofix for src/com/example/keeptest/test.kt line 13: Annotate with @UsesReflectionToAccessMethod:
         @@ -2,0 +3 @@
         +import androidx.annotation.keep.UsesReflectionToAccessMethod
@@ -1070,16 +1070,16 @@ class KeepRuleDetectorTest : AbstractCheckTest() {
         +    returnType = Foo::class
         +)
         """
-      )
+        )
   }
 
   fun testMethod3() {
     // Several tricky things here; the reflected type is as type parameter
     // and the method signature is accessed via varargs dereference
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
             package com.example.keeptest
 
             import android.util.ArrayMap
@@ -1127,23 +1127,23 @@ class KeepRuleDetectorTest : AbstractCheckTest() {
                 override fun isInitialized(): Boolean = cached != null
             }
             """
-          )
-          .indented(),
-        *usesReflectionStubs,
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            *usesReflectionStubs,
+        )
+        .run()
+        .expect(
+            """
         src/com/example/keeptest/NavArgs.kt:39: Warning: This method calls fromBundle() reflectively, so it should be annotated with @UsesReflectionToAccessMethod(...) [ReflectionAnnotation]
                         args = method.invoke(null, arguments) as Args
                                       ~~~~~~
         0 errors, 1 warning
         """
-      )
-      .verifyFixes()
-      .window(1)
-      .expectFixDiffs(
-        """
+        )
+        .verifyFixes()
+        .window(1)
+        .expectFixDiffs(
+            """
         Fix for src/com/example/keeptest/NavArgs.kt line 39: Annotate with @UsesReflectionToAccessMethod:
         @@ -3,2 +3,3 @@
          import android.util.ArrayMap
@@ -1159,16 +1159,16 @@ class KeepRuleDetectorTest : AbstractCheckTest() {
         +        )
                  get() {
         """
-      )
+        )
   }
 
   fun testMethodNegative() {
     // Already annotated; this is testMethod1, testMethod2 and testMethod3 combined
     // along with explanations
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
             package test.pkg
 
             import test.pkg.api.Bar
@@ -1268,28 +1268,28 @@ class KeepRuleDetectorTest : AbstractCheckTest() {
                 override fun isInitialized(): Boolean = cached != null
             }
             """
-          )
-          .indented(),
-        kotlin(
-            """
+                )
+                .indented(),
+            kotlin(
+                    """
             package test.pkg.api
             interface Foo
             open class Bar
             """
-          )
-          .indented(),
-        *usesReflectionStubs,
-      )
-      .run()
-      .expectClean()
+                )
+                .indented(),
+            *usesReflectionStubs,
+        )
+        .run()
+        .expectClean()
   }
 
   fun testAddFirstAnnotationInKotlin() {
     // Checks the quickfix to make sure we're correctly inserting the right annotations
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
             fun simpleCall(p: Any, s: String) {
                 Class.forName("androidx.api.Printer")
                     .getDeclaredMethod("print", String::class.java)
@@ -1302,13 +1302,13 @@ class KeepRuleDetectorTest : AbstractCheckTest() {
                     ?.invoke(p, s) // ERROR 2
             }
             """
-          )
-          .indented(),
-        *usesReflectionStubs,
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            *usesReflectionStubs,
+        )
+        .run()
+        .expect(
+            """
         src/test.kt:4: Warning: This method calls androidx.api.Printer.print() reflectively, so it should be annotated with @UsesReflectionToAccessMethod(...) [ReflectionAnnotation]
                 .invoke(p, s) // ERROR 1
                  ~~~~~~
@@ -1317,9 +1317,9 @@ class KeepRuleDetectorTest : AbstractCheckTest() {
                   ~~~~~~
         0 errors, 2 warnings
         """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
         Autofix for src/test.kt line 4: Annotate with @UsesReflectionToAccessMethod:
         @@ -0,0 +1,6 @@
         +import androidx.annotation.keep.UsesReflectionToAccessMethod
@@ -1338,14 +1338,14 @@ class KeepRuleDetectorTest : AbstractCheckTest() {
         +    parameterTypes = [String::class]
         +)
         """
-      )
+        )
   }
 
   fun testSecondKeepTargetInKotlin() {
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
               package test.pkg
 
               import androidx.annotation.keep.UsesReflectionToAccessMethod
@@ -1365,21 +1365,21 @@ class KeepRuleDetectorTest : AbstractCheckTest() {
                   cls.getDeclaredMethod("close").invoke(p)
               }
               """
-          )
-          .indented(),
-        *usesReflectionStubs,
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            *usesReflectionStubs,
+        )
+        .run()
+        .expect(
+            """
           src/test/pkg/test.kt:17: Warning: This method calls androidx.api.Printer.close() reflectively, so it should be annotated with @UsesReflectionToAccessMethod(...) [ReflectionAnnotation]
               cls.getDeclaredMethod("close").invoke(p)
                                              ~~~~~~
           0 errors, 1 warnings
           """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
         Autofix for src/test/pkg/test.kt line 17: Annotate with @UsesReflectionToAccessMethod:
         @@ -4,0 +5,5 @@
         +@UsesReflectionToAccessMethod(
@@ -1388,14 +1388,14 @@ class KeepRuleDetectorTest : AbstractCheckTest() {
         +    parameterTypes = []
         +)
           """
-      )
+        )
   }
 
   fun testAddFirstAnnotationInJava() {
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
               package test.pkg;
 
               public class JavaUsage {
@@ -1405,21 +1405,21 @@ class KeepRuleDetectorTest : AbstractCheckTest() {
                   }
               }
               """
-          )
-          .indented(),
-        *usesReflectionStubs,
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            *usesReflectionStubs,
+        )
+        .run()
+        .expect(
+            """
           src/test/pkg/JavaUsage.java:6: Warning: This method calls androidx.api.Printer.print() reflectively, so it should be annotated with @UsesReflectionToAccessMethod(...) [ReflectionAnnotation]
                   cls.getDeclaredMethod("print", String.class).invoke(p, s);
                                                                ~~~~~~
           0 errors, 1 warnings
           """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
         Autofix for src/test/pkg/JavaUsage.java line 6: Annotate with @UsesReflectionToAccessMethod:
         @@ -1,0 +2 @@
         +import androidx.annotation.keep.UsesReflectionToAccessMethod;
@@ -1430,14 +1430,14 @@ class KeepRuleDetectorTest : AbstractCheckTest() {
         +        parameterTypes = {String.class}
         +    )
           """
-      )
+        )
   }
 
   fun testSecondKeepTargetInJava() {
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
             package test.pkg;
 
             import androidx.annotation.keep.UsesReflectionToAccessMethod;
@@ -1451,21 +1451,21 @@ class KeepRuleDetectorTest : AbstractCheckTest() {
                 }
             }
             """
-          )
-          .indented(),
-        *usesReflectionStubs,
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            *usesReflectionStubs,
+        )
+        .run()
+        .expect(
+            """
         src/test/pkg/JavaUsage.java:9: Warning: This method calls androidx.api.Printer.print() reflectively, so it should be annotated with @UsesReflectionToAccessMethod(...) [ReflectionAnnotation]
                 cls.getDeclaredMethod("print", String.class).invoke(p, s);
                                                              ~~~~~~
         0 errors, 1 warnings
         """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
         Autofix for src/test/pkg/JavaUsage.java line 9: Annotate with @UsesReflectionToAccessMethod:
         @@ -5,0 +6,5 @@
         +    @UsesReflectionToAccessMethod(
@@ -1474,17 +1474,17 @@ class KeepRuleDetectorTest : AbstractCheckTest() {
         +        parameterTypes = {String.class}
         +    )
         """
-      )
+        )
   }
 
   @Suppress("LiftReturnOrAssignment")
   fun testPrimitiveIntCast() {
     lint()
-      .files(
-        kotlin(
-            // Example reduced from
-            // androidx/privacysandbox/sdkruntime/client/loader/VersionHandshake.kt
-            """
+        .files(
+            kotlin(
+                    // Example reduced from
+                    // androidx/privacysandbox/sdkruntime/client/loader/VersionHandshake.kt
+                    """
             package test.pkg
 
             import java.lang.reflect.InvocationTargetException
@@ -1500,21 +1500,21 @@ class KeepRuleDetectorTest : AbstractCheckTest() {
                 }
             }
             """
-          )
-          .indented(),
-        *usesReflectionStubs,
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            *usesReflectionStubs,
+        )
+        .run()
+        .expect(
+            """
         src/test/pkg/test.kt:10: Warning: This method calls androidx.privacysandbox.sdkruntime.core.Versions.handShake() reflectively, so it should be annotated with @UsesReflectionToAccessMethod(...) [ReflectionAnnotation]
                 return handShakeMethod.invoke(null, 0) as Int
                                        ~~~~~~
         0 errors, 1 warning
         """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
         Autofix for src/test/pkg/test.kt line 10: Annotate with @UsesReflectionToAccessMethod:
         @@ -2,0 +3 @@
         +import androidx.annotation.keep.UsesReflectionToAccessMethod
@@ -1526,14 +1526,14 @@ class KeepRuleDetectorTest : AbstractCheckTest() {
         +    returnType = Int::class
         +)
         """
-      )
+        )
   }
 
   fun testInlineConstants() {
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
               package test.pkg;
 
               public class JavaUsage {
@@ -1549,21 +1549,21 @@ class KeepRuleDetectorTest : AbstractCheckTest() {
                   }
               }
               """
-          )
-          .indented(),
-        *usesReflectionStubs,
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            *usesReflectionStubs,
+        )
+        .run()
+        .expect(
+            """
         src/test/pkg/JavaUsage.java:8: Warning: This method calls androidx.api.Printer.print() reflectively, so it should be annotated with @UsesReflectionToAccessMethod(...) [ReflectionAnnotation]
                 cls.getDeclaredMethod(methodName, String.class).invoke(p, s);
                                                                 ~~~~~~
         0 errors, 1 warnings
         """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
         Autofix for src/test/pkg/JavaUsage.java line 8: Annotate with @UsesReflectionToAccessMethod:
         @@ -1,0 +2 @@
         +import androidx.annotation.keep.UsesReflectionToAccessMethod;
@@ -1574,14 +1574,14 @@ class KeepRuleDetectorTest : AbstractCheckTest() {
         +        parameterTypes = {String.class}
         +    )
         """
-      )
+        )
   }
 
   fun testConstructor() {
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
               package test.pkg
 
               fun callConstructor(): Any? {
@@ -1593,21 +1593,21 @@ class KeepRuleDetectorTest : AbstractCheckTest() {
                   }
               }
               """
-          )
-          .indented(),
-        *usesReflectionStubs,
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            *usesReflectionStubs,
+        )
+        .run()
+        .expect(
+            """
         src/test/pkg/test.kt:6: Warning: This method calls androidx.transition.FragmentTransitionSupport.<init>() reflectively, so it should be annotated with @UsesReflectionToConstruct(...) [ReflectionAnnotation]
                 impl.getDeclaredConstructor().newInstance()
                                               ~~~~~~~~~~~
         0 errors, 1 warnings
         """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
         Autofix for src/test/pkg/test.kt line 6: Annotate with @UsesReflectionToConstruct:
         @@ -1,0 +2 @@
         +import androidx.annotation.keep.UsesReflectionToConstruct
@@ -1617,15 +1617,15 @@ class KeepRuleDetectorTest : AbstractCheckTest() {
         +    parameterTypes = []
         +)
         """
-      )
+        )
   }
 
   fun testKotlinInvokeSyntax() {
     // using method(args) instead of method.invoke(args)
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
               package test.pkg
 
               // From compose/ui/ui-inspection/src/main/java/androidx/compose/ui/inspection/ComposeLayoutInspector.kt
@@ -1636,19 +1636,19 @@ class KeepRuleDetectorTest : AbstractCheckTest() {
                   field(instance)
               }
               """
-          )
-          .indented(),
-        *usesReflectionStubs,
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            *usesReflectionStubs,
+        )
+        .run()
+        .expect(
+            """
         src/test/pkg/test.kt:8: Warning: This method calls androidx.compose.ui.platform.WrappedComposition.getOwner() reflectively, so it should be annotated with @UsesReflectionToAccessMethod(...) [ReflectionAnnotation]
             field(instance)
             ~~~~~
         0 errors, 1 warnings
         """
-      )
+        )
   }
 
   @Suppress("JavaReflectionInvocation")
@@ -1656,9 +1656,9 @@ class KeepRuleDetectorTest : AbstractCheckTest() {
     // Test some corner cases for parameter types handling -- arrays,
     // primitives, Java primitive wrappers
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
             package test.pkg;
 
             import androidx.annotation.keep.UsesReflectionToAccessMethod;
@@ -1688,10 +1688,10 @@ class KeepRuleDetectorTest : AbstractCheckTest() {
                 }
             }
             """
-          )
-          .indented(),
-        kotlin(
-            """
+                )
+                .indented(),
+            kotlin(
+                    """
             package test.pkg
 
             import androidx.annotation.keep.UsesReflectionToAccessMethod
@@ -1732,13 +1732,13 @@ class KeepRuleDetectorTest : AbstractCheckTest() {
                 }
             }
             """
-          )
-          .indented(),
-        *usesReflectionStubs,
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            *usesReflectionStubs,
+        )
+        .run()
+        .expect(
+            """
         src/test/pkg/JavaTest.java:11: Warning: This method calls androidx.api.Printer.print() reflectively, so it should be annotated with @UsesReflectionToAccessMethod(...) [ReflectionAnnotation]
                         .invoke(p, s); // ERROR 1
                          ~~~~~~
@@ -1747,9 +1747,9 @@ class KeepRuleDetectorTest : AbstractCheckTest() {
                      ~~~~~~
         0 errors, 2 warnings
         """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
         Autofix for src/test/pkg/JavaTest.java line 11: Annotate with @UsesReflectionToAccessMethod:
         @@ -7,0 +8,5 @@
         +    @UsesReflectionToAccessMethod(
@@ -1767,14 +1767,14 @@ class KeepRuleDetectorTest : AbstractCheckTest() {
         +        parameterTypes = [Integer::class, Int::class, List::class, Array<String>::class, Array<Array<String>>::class]
         +    )
         """
-      )
+        )
   }
 
   fun testMethodByFilterWithInvocation() {
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
             package test.pkg
 
             fun accessMethodWithoutInvocation(instance: Any, content: String) {
@@ -1810,13 +1810,13 @@ class KeepRuleDetectorTest : AbstractCheckTest() {
                 method.newInstance(instance, content) // ERROR 9
             }
             """
-          )
-          .indented(),
-        *usesReflectionStubs,
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            *usesReflectionStubs,
+        )
+        .run()
+        .expect(
+            """
         src/test/pkg/test.kt:5: Warning: This method calls androidx.compose.ui.platform.WrappedComposition.setContent() reflectively, so it should be annotated with @UsesReflectionToAccessMethod(...) [ReflectionAnnotation]
             val method = wrapper.declaredMethods.firstOrNull { it.name == "setContent" } ?: return  // ERROR 1
                                                                ~~~~~~~~~~~~~~~~~~~~~~~
@@ -1846,16 +1846,16 @@ class KeepRuleDetectorTest : AbstractCheckTest() {
                                  ~~~~~~~~~~~~
         0 errors, 9 warnings
         """
-      )
+        )
   }
 
   fun testNoArgsInFix() {
     // If we access method/field without invoking, then we don't know the signature so make
     // sure the annotation leaves it out
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
               package test.pkg
 
               fun accessMethodWithoutInvocation(instance: Any, content: String) {
@@ -1863,21 +1863,21 @@ class KeepRuleDetectorTest : AbstractCheckTest() {
                   val method = wrapper.declaredMethods.firstOrNull { it.name == "setContent" } ?: return  // ERROR 1
               }
               """
-          )
-          .indented(),
-        *usesReflectionStubs,
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            *usesReflectionStubs,
+        )
+        .run()
+        .expect(
+            """
         src/test/pkg/test.kt:5: Warning: This method calls androidx.compose.ui.platform.WrappedComposition.setContent() reflectively, so it should be annotated with @UsesReflectionToAccessMethod(...) [ReflectionAnnotation]
             val method = wrapper.declaredMethods.firstOrNull { it.name == "setContent" } ?: return  // ERROR 1
                                                                ~~~~~~~~~~~~~~~~~~~~~~~
         0 errors, 1 warnings
         """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
         Autofix for src/test/pkg/test.kt line 5: Annotate with @UsesReflectionToAccessMethod:
         @@ -1,0 +2 @@
         +import androidx.annotation.keep.UsesReflectionToAccessMethod
@@ -1887,14 +1887,14 @@ class KeepRuleDetectorTest : AbstractCheckTest() {
         +    methodName = "setContent"
         +)
         """
-      )
+        )
   }
 
   fun testInvokeFirstConstructor() {
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
               package test.pkg
 
               fun callMethodByFilter(instance: Any) {
@@ -1902,21 +1902,21 @@ class KeepRuleDetectorTest : AbstractCheckTest() {
                   val instanceA = wrapper.constructors.first().newInstance()
               }
               """
-          )
-          .indented(),
-        *usesReflectionStubs,
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            *usesReflectionStubs,
+        )
+        .run()
+        .expect(
+            """
         src/test/pkg/test.kt:5: Warning: This method calls androidx.compose.ui.platform.WrappedComposition.<init>() reflectively, so it should be annotated with @UsesReflectionToConstruct(...) [ReflectionAnnotation]
             val instanceA = wrapper.constructors.first().newInstance()
                                     ~~~~~~~~~~~~
         0 errors, 1 warnings
         """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
         Autofix for src/test/pkg/test.kt line 5: Annotate with @UsesReflectionToConstruct:
         @@ -1,0 +2 @@
         +import androidx.annotation.keep.UsesReflectionToConstruct
@@ -1925,14 +1925,14 @@ class KeepRuleDetectorTest : AbstractCheckTest() {
         +    className = "androidx.compose.ui.platform.WrappedComposition"
         +)
         """
-      )
+        )
   }
 
   fun testCompanionObjectAccess() {
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
               package test.pkg
 
               import android.content.Context
@@ -1951,13 +1951,13 @@ class KeepRuleDetectorTest : AbstractCheckTest() {
                   load(companion, state)
               }
               """
-          )
-          .indented(),
-        *usesReflectionStubs,
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            *usesReflectionStubs,
+        )
+        .run()
+        .expect(
+            """
         src/test/pkg/test.kt:8: Warning: This method references androidx.compose.runtime.HotReloader.Companion reflectively, so it should be annotated with @UsesReflectionToAccessField(...) [ReflectionAnnotation]
             val companion = hotReload.getField("Companion").get(null)
                                                             ~~~
@@ -1969,9 +1969,9 @@ class KeepRuleDetectorTest : AbstractCheckTest() {
             ~~~~
         0 errors, 3 warnings
         """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
         Autofix for src/test/pkg/test.kt line 8: Annotate with @UsesReflectionToAccessField:
         @@ -3,0 +4 @@
         +import androidx.annotation.keep.UsesReflectionToAccessField
@@ -1999,14 +1999,14 @@ class KeepRuleDetectorTest : AbstractCheckTest() {
         +    parameterTypes = [Object::class]
         +)
         """
-      )
+        )
   }
 
   fun testDynamicClassJava() {
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
               package test.pkg;
 
               import android.content.Context;
@@ -2022,13 +2022,13 @@ class KeepRuleDetectorTest : AbstractCheckTest() {
                   }
               }
               """
-          )
-          .indented(),
-        *usesReflectionStubs,
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            *usesReflectionStubs,
+        )
+        .run()
+        .expect(
+            """
         src/test/pkg/JavaUsages2.java:9: Warning: This method references androidx.compose.runtime.HotReloader.Companion reflectively, so it should be annotated with @UsesReflectionToAccessField(...) [ReflectionAnnotation]
                 Object companion = hotReload.getField("Companion").get(null);
                                                                    ~~~
@@ -2037,9 +2037,9 @@ class KeepRuleDetectorTest : AbstractCheckTest() {
                      ~~~~~~
         0 errors, 2 warnings
         """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
         Autofix for src/test/pkg/JavaUsages2.java line 9: Annotate with @UsesReflectionToAccessField:
         @@ -3,0 +4 @@
         +import androidx.annotation.keep.UsesReflectionToAccessField;
@@ -2058,14 +2058,14 @@ class KeepRuleDetectorTest : AbstractCheckTest() {
         +        parameterTypes = {Object.class}
         +    )
         """
-      )
+        )
   }
 
   fun testReflectionOnFieldInitializerKotlin() {
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
             package test.pkg
             // From compose/runtime/runtime/src/nonEmulatorJvmTest/kotlin/androidx/compose/runtime/reflect/ComposableMethodTest.kt
             class ComposableMethodTest {
@@ -2076,17 +2076,17 @@ class KeepRuleDetectorTest : AbstractCheckTest() {
                     wrapperClazz.declaredMethods.find { it.name == "composableMethod" }!!
             }
             """
-          )
-          .indented(),
-        *usesReflectionStubs,
-      )
-      .run()
-      .expect(
-        // NOTE: Here we're also flagging the fields that look up a class. Here
-        // we know it's a private field that is ONLY used for method lookup, so I
-        // shouldn't need to annotate these to keep the whole class. But we don't
-        // currently analyze the whole class to look for this. Should we?
-        """
+                )
+                .indented(),
+            *usesReflectionStubs,
+        )
+        .run()
+        .expect(
+            // NOTE: Here we're also flagging the fields that look up a class. Here
+            // we know it's a private field that is ONLY used for method lookup, so I
+            // shouldn't need to annotate these to keep the whole class. But we don't
+            // currently analyze the whole class to look for this. Should we?
+            """
         src/test/pkg/ComposableMethodTest.kt:4: Warning: This code calls androidx.compose.runtime.reflect.ComposableMethodTestKt reflectively, so it should be annotated with @UsesReflectionToAccessMethod(...) [ReflectionAnnotation]
             private val clazz = Class.forName("androidx.compose.runtime.reflect.ComposableMethodTestKt")
                                       ~~~~~~~
@@ -2101,9 +2101,9 @@ class KeepRuleDetectorTest : AbstractCheckTest() {
                                                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         0 errors, 4 warnings
         """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
         Autofix for src/test/pkg/ComposableMethodTest.kt line 6: Annotate with @UsesReflectionToAccessMethod:
         @@ -1,0 +2 @@
         +import androidx.annotation.keep.UsesReflectionToAccessMethod
@@ -2121,14 +2121,14 @@ class KeepRuleDetectorTest : AbstractCheckTest() {
         +        methodName = "composableMethod"
         +    )
         """
-      )
+        )
   }
 
   fun testReflectionOnFieldInitializer_AlreadyAnnotated() {
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
             package test.pkg
 
             import androidx.annotation.keep.UsesReflectionToAccessMethod
@@ -2144,45 +2144,45 @@ class KeepRuleDetectorTest : AbstractCheckTest() {
                     wrapperClazz.declaredMethods.find { it.name == "composableMethod" }!!
             }
             """
-          )
-          .indented(),
-        *usesReflectionStubs,
-      )
-      .run()
-      .expectClean()
+                )
+                .indented(),
+            *usesReflectionStubs,
+        )
+        .run()
+        .expectClean()
   }
 
   fun testAccessClass() {
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
               fun accessClass(): Class<*> {
                   return Class.forName("test.pkg.Something")
               }
               """
-          )
-          .indented(),
-        *usesReflectionStubs,
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            *usesReflectionStubs,
+        )
+        .run()
+        .expect(
+            """
         src/test.kt:2: Warning: This method calls test.pkg.Something reflectively, so it should be annotated with @UsesReflectionToAccessMethod(...) [ReflectionAnnotation]
             return Class.forName("test.pkg.Something")
                          ~~~~~~~
         0 errors, 1 warning
         """
-      )
-      // No fix since we don't know specific method
-      .expectFixDiffs("")
+        )
+        // No fix since we don't know specific method
+        .expectFixDiffs("")
   }
 
   fun testAccessClassAlreadyAnnotated() {
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
             package test.pkg
 
             import androidx.annotation.keep.UsesReflectionToAccessMethod
@@ -2195,19 +2195,19 @@ class KeepRuleDetectorTest : AbstractCheckTest() {
                 return Class.forName("test.pkg.Something")
             }
             """
-          )
-          .indented(),
-        *usesReflectionStubs,
-      )
-      .run()
-      .expectClean()
+                )
+                .indented(),
+            *usesReflectionStubs,
+        )
+        .run()
+        .expectClean()
   }
 
   fun testAccessWithoutCall() {
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
             package test.pkg
 
             @Suppress("PrivateApi", "DiscouragedPrivateApi")
@@ -2223,21 +2223,21 @@ class KeepRuleDetectorTest : AbstractCheckTest() {
                 }
             }
             """
-          )
-          .indented(),
-        *usesReflectionStubs,
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            *usesReflectionStubs,
+        )
+        .run()
+        .expect(
+            """
         src/test/pkg/test.kt:8: Warning: This method references androidx.webkit.WebViewFactory.sProviderInstance reflectively, so it should be annotated with @UsesReflectionToAccessField(...) [ReflectionAnnotation]
                     webViewFactoryClass.getDeclaredField("sProviderInstance")
                                         ~~~~~~~~~~~~~~~~
         0 errors, 1 warnings
         """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
         Autofix for src/test/pkg/test.kt line 8: Annotate with @UsesReflectionToAccessField:
         @@ -1,0 +2 @@
         +import androidx.annotation.keep.UsesReflectionToAccessField
@@ -2247,15 +2247,15 @@ class KeepRuleDetectorTest : AbstractCheckTest() {
         +    fieldName = "sProviderInstance"
         +)
         """
-      )
+        )
   }
 
   fun testMissingAnnotation() {
     // One method already annotated, but the other one is not
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
             package test.pkg;
 
             import androidx.annotation.keep.UsesReflectionToAccessMethod;
@@ -2280,10 +2280,10 @@ class KeepRuleDetectorTest : AbstractCheckTest() {
                 }
             }
             """
-          )
-          .indented(),
-        kotlin(
-            """
+                )
+                .indented(),
+            kotlin(
+                    """
             package test.pkg
 
             import androidx.annotation.keep.UsesReflectionToAccessMethod
@@ -2303,13 +2303,13 @@ class KeepRuleDetectorTest : AbstractCheckTest() {
                 cls.getDeclaredMethod("close").invoke(p)
             }
             """
-          )
-          .indented(),
-        *usesReflectionStubs,
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            *usesReflectionStubs,
+        )
+        .run()
+        .expect(
+            """
         src/test/pkg/JavaUsage.java:12: Warning: This method calls androidx.api.Printer.close() reflectively, so it should be annotated with @UsesReflectionToAccessMethod(...) [ReflectionAnnotation]
                 cls.getDeclaredMethod("close").invoke(p);
                                                ~~~~~~
@@ -2321,9 +2321,9 @@ class KeepRuleDetectorTest : AbstractCheckTest() {
                                            ~~~~~~
         0 errors, 3 warnings
         """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
         Autofix for src/test/pkg/JavaUsage.java line 12: Annotate with @UsesReflectionToAccessMethod:
         @@ -5,0 +6,5 @@
         +    @UsesReflectionToAccessMethod(
@@ -2346,14 +2346,14 @@ class KeepRuleDetectorTest : AbstractCheckTest() {
         +    parameterTypes = []
         +)
         """
-      )
+        )
   }
 
   fun testField3() {
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
               package test.pkg
               fun accessField(o: Any) {
                   Class.forName("androidx.api.Printer")
@@ -2361,21 +2361,21 @@ class KeepRuleDetectorTest : AbstractCheckTest() {
                       .get(o)
               }
               """
-          )
-          .indented(),
-        *usesReflectionStubs,
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            *usesReflectionStubs,
+        )
+        .run()
+        .expect(
+            """
           src/test/pkg/test.kt:5: Warning: This method references androidx.api.Printer.SPOOL_SIZE reflectively, so it should be annotated with @UsesReflectionToAccessField(...) [ReflectionAnnotation]
                   .get(o)
                    ~~~
           0 errors, 1 warnings
           """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
         Autofix for src/test/pkg/test.kt line 5: Annotate with @UsesReflectionToAccessField:
         @@ -1,0 +2,5 @@
         +import androidx.annotation.keep.UsesReflectionToAccessField
@@ -2384,15 +2384,15 @@ class KeepRuleDetectorTest : AbstractCheckTest() {
         +    fieldName = "SPOOL_SIZE"
         +)
           """
-      )
+        )
   }
 
   fun testPlatform() {
     // When accessing platform APIs we don't want @UsesReflection annotations
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
               package test.pkg
 
               @Suppress("PrivateApi", "DiscouragedPrivateApi")
@@ -2409,20 +2409,20 @@ class KeepRuleDetectorTest : AbstractCheckTest() {
                   }
               }
               """
-          )
-          .indented(),
-        *usesReflectionStubs,
-      )
-      .run()
-      .expectClean()
+                )
+                .indented(),
+            *usesReflectionStubs,
+        )
+        .run()
+        .expectClean()
   }
 
   fun testInit() {
     // Make sure we can attach annotations outside normal methods
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
             package test.pkg;
 
             import java.lang.reflect.Field;
@@ -2437,20 +2437,20 @@ class KeepRuleDetectorTest : AbstractCheckTest() {
                 Field[] fields = MyClass.class.getDeclaredFields(); // ERROR 2
             }
             """
-          )
-          .indented(),
-        java(
-            """
+                )
+                .indented(),
+            java(
+                    """
             package test.pkg;
             public class MyClass {}
             """
-          )
-          .indented(),
-        *usesReflectionStubs,
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            *usesReflectionStubs,
+        )
+        .run()
+        .expect(
+            """
         src/test/pkg/JavaUsages.java:7: Warning: This code references test.pkg.MyClass.* reflectively, so it should be annotated with @UsesReflectionToAccessField(...) [ReflectionAnnotation]
                 for (Field field : MyClass.class.getDeclaredFields()) { // ERROR 1
                                                  ~~~~~~~~~~~~~~~~~
@@ -2459,16 +2459,16 @@ class KeepRuleDetectorTest : AbstractCheckTest() {
                                            ~~~~~~~~~~~~~~~~~
         0 errors, 2 warnings
         """
-      )
-      // No fix since we don't know specific method
-      .expectFixDiffs("")
+        )
+        // No fix since we don't know specific method
+        .expectFixDiffs("")
   }
 
   fun testJavaFieldPrinter() {
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
               package test.pkg;
 
               import java.lang.reflect.Field;
@@ -2487,30 +2487,30 @@ class KeepRuleDetectorTest : AbstractCheckTest() {
                   }
               }
               """
-          )
-          .indented(),
-        *usesReflectionStubs,
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            *usesReflectionStubs,
+        )
+        .run()
+        .expect(
+            """
         src/test/pkg/MyFieldValuePrinter.java:9: Warning: This method references * reflectively, so it should be annotated with @UsesReflectionToAccessField(...) [ReflectionAnnotation]
                 for (Field field : objectWithFields.getClass().getDeclaredFields()) {
                                                                ~~~~~~~~~~~~~~~~~
         0 errors, 1 warning
         """
-      )
-      // No fix since we don't know specific method
-      .expectFixDiffs("")
+        )
+        // No fix since we don't know specific method
+        .expectFixDiffs("")
   }
 
   fun testClassInSamePackage() {
     // Make sure our import cleanup machinery for the command line doesn't optimize out the
     // package prefix in the keep target annotation if it's the same as the package
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
             package test.pkg;
 
             public class MyHiddenMethodCaller {
@@ -2519,21 +2519,21 @@ class KeepRuleDetectorTest : AbstractCheckTest() {
                 }
             }
             """
-          )
-          .indented(),
-        *usesReflectionStubs,
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            *usesReflectionStubs,
+        )
+        .run()
+        .expect(
+            """
           src/test/pkg/MyHiddenMethodCaller.java:5: Warning: This method calls test.pkg.MyHiddenMethodCaller.BaseClass.hiddenMethod() reflectively, so it should be annotated with @UsesReflectionToAccessMethod(...) [ReflectionAnnotation]
                   Class.forName("test.pkg.MyHiddenMethodCaller.BaseClass").getDeclaredMethod("hiddenMethod").invoke(base);
                                                                                                              ~~~~~~
           0 errors, 1 warnings
           """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
         Autofix for src/test/pkg/MyHiddenMethodCaller.java line 5: Annotate with @UsesReflectionToAccessMethod:
         @@ -1,0 +2 @@
         +import androidx.annotation.keep.UsesReflectionToAccessMethod;
@@ -2544,14 +2544,14 @@ class KeepRuleDetectorTest : AbstractCheckTest() {
         +        parameterTypes = {}
         +    )
           """
-      )
+        )
   }
 
   fun testSuppressWithDotClass() {
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
               package test.pkg;
 
               public class MyHiddenMethodCaller {
@@ -2564,21 +2564,21 @@ class KeepRuleDetectorTest : AbstractCheckTest() {
                   }
               }
               """
-          )
-          .indented(),
-        *usesReflectionStubs,
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            *usesReflectionStubs,
+        )
+        .run()
+        .expect(
+            """
           src/test/pkg/MyHiddenMethodCaller.java:5: Warning: This method calls test.pkg.MyHiddenMethodCaller.BaseClass.hiddenMethod() reflectively, so it should be annotated with @UsesReflectionToAccessMethod(...) [ReflectionAnnotation]
                   BaseClass.class.getDeclaredMethod("hiddenMethod").invoke(base);
                                                                     ~~~~~~
           0 errors, 1 warnings
           """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
         Autofix for src/test/pkg/MyHiddenMethodCaller.java line 5: Annotate with @UsesReflectionToAccessMethod:
         @@ -1,0 +2 @@
         +import androidx.annotation.keep.UsesReflectionToAccessMethod;
@@ -2589,14 +2589,14 @@ class KeepRuleDetectorTest : AbstractCheckTest() {
         +        parameterTypes = {}
         +    )
         """
-      )
+        )
   }
 
   fun testAlreadyDeclaredWithClassConstantJava() {
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
               package test.pkg;
 
               import androidx.annotation.keep.UsesReflectionToAccessMethod;
@@ -2613,19 +2613,19 @@ class KeepRuleDetectorTest : AbstractCheckTest() {
                   }
               }
               """
-          )
-          .indented(),
-        *usesReflectionStubs,
-      )
-      .run()
-      .expectClean()
+                )
+                .indented(),
+            *usesReflectionStubs,
+        )
+        .run()
+        .expectClean()
   }
 
   fun testAlreadyDeclaredWithClassConstantKotlin() {
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
               package test.pkg
 
               import androidx.annotation.keep.UsesReflectionToAccessMethod
@@ -2654,12 +2654,12 @@ class KeepRuleDetectorTest : AbstractCheckTest() {
                   }
               }
               """
-          )
-          .indented(),
-        *usesReflectionStubs,
-      )
-      .run()
-      .expectClean()
+                )
+                .indented(),
+            *usesReflectionStubs,
+        )
+        .run()
+        .expectClean()
   }
 
   @Suppress("unchecked")
@@ -2667,9 +2667,9 @@ class KeepRuleDetectorTest : AbstractCheckTest() {
     // Make sure that if the parameter is a class array, we don't conclude the
     // parameter type is a class array
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
             package test.pkg;
 
             import android.content.Context;
@@ -2687,10 +2687,10 @@ class KeepRuleDetectorTest : AbstractCheckTest() {
                 }
             }
             """
-          )
-          .indented(),
-        kotlin(
-            """
+                )
+                .indented(),
+            kotlin(
+                    """
             package test.pkg
 
             import android.content.Context
@@ -2711,13 +2711,13 @@ class KeepRuleDetectorTest : AbstractCheckTest() {
                 }
             }
             """
-          )
-          .indented(),
-        *usesReflectionStubs,
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            *usesReflectionStubs,
+        )
+        .run()
+        .expect(
+            """
         src/test/pkg/JavaParameterTypes.java:14: Warning: This method calls <init>() reflectively, so it should be annotated with @UsesReflectionToConstruct(...) [ReflectionAnnotation]
                 return (T) constructor.newInstance(arguments);
                                        ~~~~~~~~~~~
@@ -2726,9 +2726,9 @@ class KeepRuleDetectorTest : AbstractCheckTest() {
                                    ~~~~~~~~~~~
         0 errors, 2 warnings
         """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
         Fix for src/test/pkg/JavaParameterTypes.java line 14: Annotate with @UsesReflectionToConstruct:
         @@ -4,0 +5 @@
         +import androidx.annotation.keep.UsesReflectionToConstruct;
@@ -2744,17 +2744,17 @@ class KeepRuleDetectorTest : AbstractCheckTest() {
         +        className = [TODO()]|
         +    )
         """
-      )
+        )
   }
 
   fun testFieldType() {
     // Make sure we don't assume the class is the type of the holder object
     lint()
-      .files(
-        java(
-            // Example from
-            // appcompat/appcompat/src/main/java/androidx/appcompat/view/menu/MenuItemWrapperICS.java
-            """
+        .files(
+            java(
+                    // Example from
+                    // appcompat/appcompat/src/main/java/androidx/appcompat/view/menu/MenuItemWrapperICS.java
+                    """
             package test.pkg;
 
             import java.lang.reflect.Method;
@@ -2774,10 +2774,10 @@ class KeepRuleDetectorTest : AbstractCheckTest() {
                 }
             }
             """
-          )
-          .indented(),
-        kotlin(
-            """
+                )
+                .indented(),
+            kotlin(
+                    """
             package test.pkg
 
             import java.lang.Boolean
@@ -2798,21 +2798,21 @@ class KeepRuleDetectorTest : AbstractCheckTest() {
                 }
             }
             """
-          )
-          .indented(),
-        java(
-            """
+                )
+                .indented(),
+            java(
+                    """
             package test.pkg;
             class SupportMenuItem {
             }
             """
-          )
-          .indented(),
-        *usesReflectionStubs,
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            *usesReflectionStubs,
+        )
+        .run()
+        .expect(
+            """
         src/test/pkg/JavaFieldType.java:12: Warning: This method calls setExclusiveCheckable() reflectively, so it should be annotated with @UsesReflectionToAccessMethod(...) [ReflectionAnnotation]
                                 .getDeclaredMethod("setExclusiveCheckable", Boolean.TYPE);
                                  ~~~~~~~~~~~~~~~~~
@@ -2821,9 +2821,9 @@ class KeepRuleDetectorTest : AbstractCheckTest() {
                              ~~~~~~~~~~~~~~~~~
         0 errors, 2 warnings
         """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
         Fix for src/test/pkg/JavaFieldType.java line 12: Annotate with @UsesReflectionToAccessMethod:
         @@ -2,0 +3 @@
         +import androidx.annotation.keep.UsesReflectionToAccessMethod;
@@ -2843,14 +2843,14 @@ class KeepRuleDetectorTest : AbstractCheckTest() {
         +        parameterTypes = []
         +    )
         """
-      )
+        )
   }
 
   fun testKotlinReflect() {
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
             @file:Suppress("unused", "UnusedVariable")
 
             package test.pkg
@@ -2951,11 +2951,11 @@ class KeepRuleDetectorTest : AbstractCheckTest() {
 
             class AbsoluteAlignment
             """
-          )
-          .indented(),
-        // Stubs for reflect
-        kotlin(
-            """
+                )
+                .indented(),
+            // Stubs for reflect
+            kotlin(
+                    """
             /* HIDE-FROM-DOCUMENTATION */
             @file:JvmName("KClasses")
             package kotlin.reflect.full
@@ -2972,13 +2972,13 @@ class KeepRuleDetectorTest : AbstractCheckTest() {
             val <T : Any> KClass<T>.memberProperties: Collection<KProperty1<T, *>> get() = emptyList()
             val <T : Any> KClass<T>.declaredMemberProperties: Collection<KProperty1<T, *>> get() = emptyList()
             """
-          )
-          .indented(),
-        *usesReflectionStubs,
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            *usesReflectionStubs,
+        )
+        .run()
+        .expect(
+            """
         src/test/pkg/KotlinReflect.kt:16: Warning: This method calls code reflectively, so it should be annotated with @UsesReflectionToAccessMethod(...) [ReflectionAnnotation]
                 val field = Context::class.members.find { it.name == "BIND_NOT_FOREGROUND" } // ERROR 1
                                            ~~~~~~~
@@ -2996,16 +2996,16 @@ class KeepRuleDetectorTest : AbstractCheckTest() {
                            ~~~~~~~~~~~~~~~~~~~~~~~~
         0 errors, 5 warnings
         """
-      )
-      // No fix since we don't know specific method
-      .expectFixDiffs("")
+        )
+        // No fix since we don't know specific method
+        .expectFixDiffs("")
   }
 
   fun testObjectAnimators() {
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
             package test.pkg;
 
             import android.animation.ObjectAnimator;
@@ -3040,14 +3040,14 @@ class KeepRuleDetectorTest : AbstractCheckTest() {
                 }
             }
             """
-          )
-          .indented(),
-        *usesReflectionStubs,
-      )
-      .issues(ObjectAnimatorDetector.MISSING_KEEP, KeepRuleDetector.ISSUE)
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            *usesReflectionStubs,
+        )
+        .issues(ObjectAnimatorDetector.MISSING_KEEP, KeepRuleDetector.ISSUE)
+        .run()
+        .expect(
+            """
         src/test/pkg/AnimatorTest.java:12: Warning: This method calls test.pkg.AnimatorTest.MyObject.getProp1() reflectively, so it should be annotated with @UsesReflectionToAccessMethod(...) [ReflectionAnnotation]
                 ObjectAnimator animator1 = ObjectAnimator.ofInt(myObject, "prop1", 0, 1, 2, 5);
                                                                           ~~~~~~~
@@ -3080,9 +3080,9 @@ class KeepRuleDetectorTest : AbstractCheckTest() {
                                                      ~~~~~~~
         0 errors, 10 warnings
         """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
         Autofix for src/test/pkg/AnimatorTest.java line 12: Annotate with @UsesReflectionToAccessMethod:
         @@ -5,0 +6 @@
         +import androidx.annotation.keep.UsesReflectionToAccessMethod;
@@ -3164,14 +3164,14 @@ class KeepRuleDetectorTest : AbstractCheckTest() {
         +        methodName = "setProp2"
         +    )
         """
-      )
+        )
   }
 }
 
 val usesReflectionStubs: Array<TestFile> =
-  arrayOf(
-    kotlin(
-        """
+    arrayOf(
+        kotlin(
+                """
         package androidx.annotation.keep
         import kotlin.reflect.KClass
         @Retention(AnnotationRetention.BINARY)
@@ -3189,10 +3189,10 @@ val usesReflectionStubs: Array<TestFile> =
             val parameterTypeNames: Array<String> = [""],
         )
         """
-      )
-      .indented(),
-    kotlin(
-        """
+            )
+            .indented(),
+        kotlin(
+                """
         package androidx.annotation.keep
         import kotlin.reflect.KClass
         @Retention(AnnotationRetention.BINARY)
@@ -3211,10 +3211,10 @@ val usesReflectionStubs: Array<TestFile> =
             val fieldTypeName: String = "",
         )
         """
-      )
-      .indented(),
-    kotlin(
-        """
+            )
+            .indented(),
+        kotlin(
+                """
         package androidx.annotation.keep
         import kotlin.reflect.KClass
         @Retention(AnnotationRetention.BINARY)
@@ -3235,10 +3235,10 @@ val usesReflectionStubs: Array<TestFile> =
             val returnTypeName: String = "",
         )
         """
-      )
-      .indented(),
-    kotlin(
-        """
+            )
+            .indented(),
+        kotlin(
+                """
         package androidx.annotation.keep
         @Retention(AnnotationRetention.BINARY)
         @Target(
@@ -3251,13 +3251,13 @@ val usesReflectionStubs: Array<TestFile> =
             val shouldPreserveName: Boolean = true
         )
         """
-      )
-      .indented(),
-    kotlin(
-        """
+            )
+            .indented(),
+        kotlin(
+                """
         package androidx.annotation.keep
         class Unspecified
         """
-      )
-      .indented(),
-  )
+            )
+            .indented(),
+    )

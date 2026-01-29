@@ -31,27 +31,26 @@ import org.jetbrains.uast.ULambdaExpression
 class SwingWorkerDetector : Detector(), SourceCodeScanner {
 
   companion object Issues {
-    private val IMPLEMENTATION =
-      Implementation(SwingWorkerDetector::class.java, Scope.JAVA_FILE_SCOPE)
+    private val IMPLEMENTATION = Implementation(SwingWorkerDetector::class.java, Scope.JAVA_FILE_SCOPE)
 
     @JvmField
     val ISSUE =
-      Issue.create(
-        id = "SwingWorker",
-        briefDescription = "Using SwingWorker",
-        explanation =
-          """
+        Issue.create(
+            id = "SwingWorker",
+            briefDescription = "Using SwingWorker",
+            explanation =
+                """
                 Do not use `javax.swing.SwingWorker`; use \
                 `com.intellij.util.concurrency.SwingWorker` instead.
 
                 For more, see `go/do-not-freeze`.
             """,
-        category = UI_RESPONSIVENESS,
-        priority = 6,
-        severity = Severity.ERROR,
-        platforms = STUDIO_PLATFORMS,
-        implementation = IMPLEMENTATION,
-      )
+            category = UI_RESPONSIVENESS,
+            priority = 6,
+            severity = Severity.ERROR,
+            platforms = STUDIO_PLATFORMS,
+            implementation = IMPLEMENTATION,
+        )
   }
 
   override fun applicableSuperClasses(): List<String> = listOf("javax.swing.SwingWorker")
@@ -67,10 +66,10 @@ class SwingWorkerDetector : Detector(), SourceCodeScanner {
 
   private fun report(context: JavaContext, node: UElement, locationNode: UElement) {
     context.report(
-      ISSUE,
-      node,
-      context.getNameLocation(locationNode),
-      "Do not use `javax.swing.SwingWorker`, use `com.intellij.util.concurrency.SwingWorker` instead. See `go/do-not-freeze`.",
+        ISSUE,
+        node,
+        context.getNameLocation(locationNode),
+        "Do not use `javax.swing.SwingWorker`, use `com.intellij.util.concurrency.SwingWorker` instead. See `go/do-not-freeze`.",
     )
   }
 }

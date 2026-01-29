@@ -70,35 +70,32 @@ import org.objectweb.asm.tree.MethodNode
 import org.w3c.dom.Element
 import org.w3c.dom.Node
 
-/**
- * Makes sure that when targeting T or above an application which posts notifications also declares
- * the POST_NOTIFICATIONS permission.
- */
+/** Makes sure that when targeting T or above an application which posts notifications also declares the POST_NOTIFICATIONS permission. */
 class NotificationPermissionDetector : Detector(), SourceCodeScanner, ClassScanner {
   companion object Issues {
     private val IMPLEMENTATION =
-      Implementation(
-        NotificationPermissionDetector::class.java,
-        EnumSet.of(Scope.JAVA_FILE, Scope.JAVA_LIBRARIES),
-        Scope.JAVA_FILE_SCOPE,
-      )
+        Implementation(
+            NotificationPermissionDetector::class.java,
+            EnumSet.of(Scope.JAVA_FILE, Scope.JAVA_LIBRARIES),
+            Scope.JAVA_FILE_SCOPE,
+        )
 
     @JvmField
     val ISSUE =
-      Issue.create(
-        id = "NotificationPermission",
-        briefDescription = "Notifications Without Permission",
-        explanation =
-          """
+        Issue.create(
+            id = "NotificationPermission",
+            briefDescription = "Notifications Without Permission",
+            explanation =
+                """
                 When targeting Android 13 and higher, posting permissions requires holding the runtime permission \
                 `android.permission.POST_NOTIFICATIONS`.
                 """,
-        category = Category.CORRECTNESS,
-        priority = 6,
-        severity = Severity.ERROR,
-        androidSpecific = true,
-        implementation = IMPLEMENTATION,
-      )
+            category = Category.CORRECTNESS,
+            priority = 6,
+            severity = Severity.ERROR,
+            androidSpecific = true,
+            implementation = IMPLEMENTATION,
+        )
 
     /** Boolean property: whether we've found at least one notification call in the source code. */
     private const val KEY_SOURCE = "source"
@@ -120,10 +117,7 @@ class NotificationPermissionDetector : Detector(), SourceCodeScanner, ClassScann
 
     private const val MIN_TARGET = 33
 
-    /**
-     * Is the given [element] inside an `areNotificationsEnabled` check, or after an early return of
-     * the negated check?
-     */
+    /** Is the given [element] inside an `areNotificationsEnabled` check, or after an early return of the negated check? */
     fun isNotificationPermissionChecked(element: UElement): Boolean {
       var curr = element.uastParent ?: return false
 
@@ -140,21 +134,17 @@ class NotificationPermissionDetector : Detector(), SourceCodeScanner, ClassScann
             } else {
               // Handle "if (!areNotificationsEnabled) else <CALL>"
               val op = condition.skipParenthesizedExprDown()
-              if (
-                op is UUnaryExpression &&
-                  op.operator == UastPrefixOperator.LOGICAL_NOT &&
-                  isNotificationPermissionCheck(op.operand)
-              ) {
+              if (op is UUnaryExpression && op.operator == UastPrefixOperator.LOGICAL_NOT && isNotificationPermissionCheck(op.operand)) {
                 return true
               } else if (
-                op is UPolyadicExpression &&
-                  op.operator == UastBinaryOperator.LOGICAL_OR &&
-                  (op.operands.any {
-                    val nested = it.skipParenthesizedExprDown()
-                    nested is UUnaryExpression &&
-                      nested.operator == UastPrefixOperator.LOGICAL_NOT &&
-                      isNotificationPermissionCheck(nested.operand)
-                  })
+                  op is UPolyadicExpression &&
+                      op.operator == UastBinaryOperator.LOGICAL_OR &&
+                      (op.operands.any {
+                        val nested = it.skipParenthesizedExprDown()
+                        nested is UUnaryExpression &&
+                            nested.operator == UastPrefixOperator.LOGICAL_NOT &&
+                            isNotificationPermissionCheck(nested.operand)
+                      })
               ) {
                 return true
               }
@@ -169,9 +159,9 @@ class NotificationPermissionDetector : Detector(), SourceCodeScanner, ClassScann
             if (first is UIfExpression) {
               val condition = first.condition.skipParenthesizedExprDown()
               if (
-                condition is UUnaryExpression &&
-                  condition.operator == UastPrefixOperator.LOGICAL_NOT &&
-                  isNotificationPermissionCheck(condition.operand)
+                  condition is UUnaryExpression &&
+                      condition.operator == UastPrefixOperator.LOGICAL_NOT &&
+                      isNotificationPermissionCheck(condition.operand)
               ) {
                 // It's a notifications enabled check; make sure we only return
                 val then = first.thenExpression?.skipParenthesizedExprDown()
@@ -191,8 +181,7 @@ class NotificationPermissionDetector : Detector(), SourceCodeScanner, ClassScann
     }
 
     /**
-     * Is the given [element] a notify-allowed check, e.g.
-     * `NotificationManager.areNotificationsEnabled()` or
+     * Is the given [element] a notify-allowed check, e.g. `NotificationManager.areNotificationsEnabled()` or
      * `NotificationManagerCompat.areNotificationsEnabled()` ?
      */
     private fun isNotificationPermissionCheck(element: UElement): Boolean {
@@ -235,10 +224,7 @@ class NotificationPermissionDetector : Detector(), SourceCodeScanner, ClassScann
 
   override fun visitMethodCall(context: JavaContext, node: UCallExpression, method: PsiMethod) {
     val evaluator = context.evaluator
-    if (
-      !evaluator.isMemberInClass(method, NOTIFICATION_MANAGER) &&
-        !evaluator.isMemberInClass(method, NOTIFICATION_MANAGER_COMPAT)
-    ) {
+    if (!evaluator.isMemberInClass(method, NOTIFICATION_MANAGER) && !evaluator.isMemberInClass(method, NOTIFICATION_MANAGER_COMPAT)) {
       return
     }
 
@@ -250,10 +236,10 @@ class NotificationPermissionDetector : Detector(), SourceCodeScanner, ClassScann
     // bail out if permission is held or not yet targeting T
     if (context.isGlobalAnalysis()) {
       if (
-        context.mainProject.targetSdk < MIN_TARGET ||
-          isHoldingPostNotificationsViaAnnotations(node) ||
-          isHoldingPostNotifications(context.mainProject) != false ||
-          context.mainProject.isLibrary
+          context.mainProject.targetSdk < MIN_TARGET ||
+              isHoldingPostNotificationsViaAnnotations(node) ||
+              isHoldingPostNotifications(context.mainProject) != false ||
+              context.mainProject.isLibrary
       ) {
         return
       }
@@ -267,8 +253,7 @@ class NotificationPermissionDetector : Detector(), SourceCodeScanner, ClassScann
       }
     }
 
-    val incident =
-      Incident(ISSUE, node, context.getLocation(node), getWarningMessage(), createFix())
+    val incident = Incident(ISSUE, node, context.getLocation(node), getWarningMessage(), createFix())
     if (context.isGlobalAnalysis()) {
       context.report(incident)
       if (context.driver.scope.contains(Scope.JAVA_LIBRARIES)) {
@@ -280,36 +265,33 @@ class NotificationPermissionDetector : Detector(), SourceCodeScanner, ClassScann
   }
 
   private fun getWarningMessage() =
-    "When targeting Android 13 or higher, posting a permission requires holding the `POST_NOTIFICATIONS` permission"
+      "When targeting Android 13 or higher, posting a permission requires holding the `POST_NOTIFICATIONS` permission"
 
   override fun getApplicableCallNames(): List<String> = listOf("notify")
 
   override fun checkCall(
-    context: ClassContext,
-    classNode: ClassNode,
-    method: MethodNode,
-    call: MethodInsnNode,
+      context: ClassContext,
+      classNode: ClassNode,
+      method: MethodNode,
+      call: MethodInsnNode,
   ) {
     val owner = classNode.name
     if (
-      owner.startsWith("android/") ||
-        owner.startsWith("androidx/") ||
-        owner.startsWith("com/google/android/gms/") // such as play-services-base
+        owner.startsWith("android/") ||
+            owner.startsWith("androidx/") ||
+            owner.startsWith("com/google/android/gms/") // such as play-services-base
     ) {
       // Call from within AndroidX libraries; just depending on AndroidX doesn't mean you're using
       // its notification utility methods.
       return
     }
-    if (
-      call.owner == "android/app/NotificationManager" ||
-        call.owner == "androidx/core/app/NotificationManagerCompat"
-    ) {
+    if (call.owner == "android/app/NotificationManager" || call.owner == "androidx/core/app/NotificationManagerCompat") {
       val map = context.getPartialResults(ISSUE).map()
       if (
-        !map.containsKey(KEY_CLASS) ||
-          // We special case the exo player reference later, so if there are any *other*
-          // notification manager usages, make sure we record those
-          map[KEY_CLASS_NAME]?.startsWith(EXO_PLAYER_CLASS_NAME_PREFIX) == true
+          !map.containsKey(KEY_CLASS) ||
+              // We special case the exo player reference later, so if there are any *other*
+              // notification manager usages, make sure we record those
+              map[KEY_CLASS_NAME]?.startsWith(EXO_PLAYER_CLASS_NAME_PREFIX) == true
       ) {
         if (isHoldingPostNotificationsViaAnnotations(classNode, method)) {
           return
@@ -321,11 +303,7 @@ class NotificationPermissionDetector : Detector(), SourceCodeScanner, ClassScann
   }
 
   override fun afterCheckRootProject(context: Context) {
-    if (
-      context.isGlobalAnalysis() &&
-        context.driver.scope.contains(Scope.JAVA_LIBRARIES) &&
-        !context.mainProject.isLibrary
-    ) {
+    if (context.isGlobalAnalysis() && context.driver.scope.contains(Scope.JAVA_LIBRARIES) && !context.mainProject.isLibrary) {
       checkClassReference(context.getPartialResults(ISSUE).map(), context)
     }
   }
@@ -359,10 +337,7 @@ class NotificationPermissionDetector : Detector(), SourceCodeScanner, ClassScann
     }
 
     val owner = map[KEY_CLASS_NAME] ?: return
-    if (
-      owner.startsWith(EXO_PLAYER_CLASS_NAME_PREFIX) &&
-        (mergedManifest == null || !mergedManifest.hasExoPlayerDownloader())
-    ) {
+    if (owner.startsWith(EXO_PLAYER_CLASS_NAME_PREFIX) && (mergedManifest == null || !mergedManifest.hasExoPlayerDownloader())) {
       // The only reference was from exoplayer, which uses notifications only for
       // the optional download service; here we've seen that you're not using it
       // so there's no reason to warn.
@@ -381,9 +356,8 @@ class NotificationPermissionDetector : Detector(), SourceCodeScanner, ClassScann
     val gradleFile = findGradleBuildFile(context.mainProject.dir)
 
     val location =
-      if (manifest != null) Location.create(manifest)
-      else if (gradleFile.isFile) Location.create(gradleFile)
-      else map.getLocation(KEY_CLASS) ?: return
+        if (manifest != null) Location.create(manifest)
+        else if (gradleFile.isFile) Location.create(gradleFile) else map.getLocation(KEY_CLASS) ?: return
     val message = getWarningMessage() + " (usage from ${ClassContext.getFqcn(owner)})"
     context.report(ISSUE, location, message, createFix())
   }
@@ -405,8 +379,7 @@ class NotificationPermissionDetector : Detector(), SourceCodeScanner, ClassScann
   }
 
   /**
-   * Is the given [scope] surrounded by a `@RequiresPermission` annotation which lists the
-   * POST_NOTIFICATIONS permission as a prerequisite?
+   * Is the given [scope] surrounded by a `@RequiresPermission` annotation which lists the POST_NOTIFICATIONS permission as a prerequisite?
    */
   private fun isHoldingPostNotificationsViaAnnotations(scope: UElement): Boolean {
     var currentScope: UElement? = scope
@@ -445,23 +418,19 @@ class NotificationPermissionDetector : Detector(), SourceCodeScanner, ClassScann
   }
 
   private fun isHoldingPostNotificationsViaAnnotations(
-    classNode: ClassNode,
-    method: MethodNode,
+      classNode: ClassNode,
+      method: MethodNode,
   ): Boolean {
     val requirement =
-      method.invisibleAnnotations?.getPermissionRequirement()
-        ?: classNode.invisibleAnnotations?.getPermissionRequirement()
-        ?: return false
+        method.invisibleAnnotations?.getPermissionRequirement()
+            ?: classNode.invisibleAnnotations?.getPermissionRequirement()
+            ?: return false
 
     return isHoldingPostNotificationsViaAnnotations(requirement)
   }
 
-  private fun isHoldingPostNotificationsViaAnnotations(
-    requirement: PermissionRequirement
-  ): Boolean {
-    return requirement
-      .getMissingPermissions(PermissionHolder.NONE)
-      .contains(POST_NOTIFICATIONS_PERMISSION)
+  private fun isHoldingPostNotificationsViaAnnotations(requirement: PermissionRequirement): Boolean {
+    return requirement.getMissingPermissions(PermissionHolder.NONE).contains(POST_NOTIFICATIONS_PERMISSION)
   }
 
   private fun isHoldingPostNotifications(project: Project): Boolean? {
@@ -481,11 +450,7 @@ class NotificationPermissionDetector : Detector(), SourceCodeScanner, ClassScann
 
   override fun filterIncident(context: Context, incident: Incident, map: LintMap): Boolean {
     val project = context.mainProject
-    if (
-      project.targetSdk >= MIN_TARGET &&
-        !project.isLibrary &&
-        isHoldingPostNotifications(project) == false
-    ) {
+    if (project.targetSdk >= MIN_TARGET && !project.isLibrary && isHoldingPostNotifications(project) == false) {
       map.put(KEY_SOURCE, true)
       return true
     }
@@ -494,7 +459,6 @@ class NotificationPermissionDetector : Detector(), SourceCodeScanner, ClassScann
   }
 
   private fun createFix(): LintFix {
-    return fix()
-      .data(PermissionDetector.KEY_MISSING_PERMISSIONS, listOf(POST_NOTIFICATIONS_PERMISSION))
+    return fix().data(PermissionDetector.KEY_MISSING_PERMISSIONS, listOf(POST_NOTIFICATIONS_PERMISSION))
   }
 }

@@ -53,94 +53,92 @@ abstract class AnalysisApiServicesTestBase {
   // Usage from [InteroperabilityDetector] (built-in Lint detector)
   protected fun checkDynamicType() {
     listOf(
-        kotlin(
-          """
+            kotlin(
+                """
                 fun jsFun(p: String): dynamic
                 """
+            )
         )
-      )
-      .use { context ->
-        context.uastFile!!.accept(
-          object : AbstractUastVisitor() {
-            override fun visitMethod(node: UMethod): Boolean {
-              val returnTypeReference =
-                node.returnTypeReference?.sourcePsi as? KtTypeReference
-                  ?: return super.visitMethod(node)
+        .use { context ->
+          context.uastFile!!.accept(
+              object : AbstractUastVisitor() {
+                override fun visitMethod(node: UMethod): Boolean {
+                  val returnTypeReference = node.returnTypeReference?.sourcePsi as? KtTypeReference ?: return super.visitMethod(node)
 
-              analyze(returnTypeReference) {
-                val ktType = returnTypeReference.type
-                assertTrue(ktType is KaDynamicType)
+                  analyze(returnTypeReference) {
+                    val ktType = returnTypeReference.type
+                    assertTrue(ktType is KaDynamicType)
+                  }
+
+                  return super.visitMethod(node)
+                }
               }
-
-              return super.visitMethod(node)
-            }
-          }
-        )
-      }
+          )
+        }
   }
 
   // Usage from PsiModifierItem in Metalava
   protected fun checkInternalModifier() {
     listOf(
-        kotlin(
-          """
+            kotlin(
+                """
                 internal fun foo() {}
                 """
+            )
         )
-      )
-      .use { context ->
-        context.uastFile!!.accept(
-          object : AbstractUastVisitor() {
-            override fun visitMethod(node: UMethod): Boolean {
-              val ktDeclaration = node.sourcePsi as? KtDeclaration ?: return super.visitMethod(node)
+        .use { context ->
+          context.uastFile!!.accept(
+              object : AbstractUastVisitor() {
+                override fun visitMethod(node: UMethod): Boolean {
+                  val ktDeclaration = node.sourcePsi as? KtDeclaration ?: return super.visitMethod(node)
 
-              analyze(ktDeclaration) {
-                val visibility = ktDeclaration.symbol.visibility
-                assertEquals(KaSymbolVisibility.INTERNAL, visibility)
+                  analyze(ktDeclaration) {
+                    val visibility = ktDeclaration.symbol.visibility
+                    assertEquals(KaSymbolVisibility.INTERNAL, visibility)
+                  }
+
+                  return super.visitMethod(node)
+                }
               }
-
-              return super.visitMethod(node)
-            }
-          }
-        )
-      }
+          )
+        }
   }
 
   // Usage from PsiParameterItem in Metalava
   protected fun checkSamType() {
     listOf(
-        kotlin(
-          """
+            kotlin(
+                """
                 fun interface Fun {
                   fun run()
                 }
                 fun foo(p : Fun) { p.run() }
                 """
+            )
         )
-      )
-      .use { context ->
-        context.uastFile!!.accept(
-          object : AbstractUastVisitor() {
-            override fun visitParameter(node: UParameter): Boolean {
-              val ktParameter = node.sourcePsi as? KtParameter ?: return super.visitParameter(node)
+        .use { context ->
+          context.uastFile!!.accept(
+              object : AbstractUastVisitor() {
+                override fun visitParameter(node: UParameter): Boolean {
+                  val ktParameter = node.sourcePsi as? KtParameter ?: return super.visitParameter(node)
 
-              analyze(ktParameter) {
-                val ktType = ktParameter.symbol.returnType
-                assertTrue(ktType.isFunctionalInterface)
+                  analyze(ktParameter) {
+                    val ktType = ktParameter.symbol.returnType
+                    assertTrue(ktType.isFunctionalInterface)
+                  }
+
+                  return super.visitParameter(node)
+                }
               }
-
-              return super.visitParameter(node)
-            }
-          }
-        )
-      }
+          )
+        }
   }
 
   // Usage from KotlinPsiUtils in g3
   protected fun checkExtensionLambda() {
     listOf(
-        kotlin(
-          """
+            kotlin(
+                """
                 inline fun <T> myInit(e: T, init : T.() -> Unit): T {
                     e.init()
                     return e
@@ -152,68 +150,67 @@ abstract class AnalysisApiServicesTestBase {
                   }
                 }
                 """
+            )
         )
-      )
-      .use { context ->
-        context.uastFile!!.accept(
-          object : AbstractUastVisitor() {
-            override fun visitLambdaExpression(node: ULambdaExpression): Boolean {
-              val ktLambdaExpression =
-                node.sourcePsi as? KtLambdaExpression ?: return super.visitLambdaExpression(node)
+        .use { context ->
+          context.uastFile!!.accept(
+              object : AbstractUastVisitor() {
+                override fun visitLambdaExpression(node: ULambdaExpression): Boolean {
+                  val ktLambdaExpression = node.sourcePsi as? KtLambdaExpression ?: return super.visitLambdaExpression(node)
 
-              analyze(ktLambdaExpression) {
-                val lambdaType = ktLambdaExpression.expressionType
-                assertTrue(lambdaType is KaFunctionType && lambdaType.hasReceiver)
+                  analyze(ktLambdaExpression) {
+                    val lambdaType = ktLambdaExpression.expressionType
+                    assertTrue(lambdaType is KaFunctionType && lambdaType.hasReceiver)
+                  }
+
+                  return super.visitLambdaExpression(node)
+                }
               }
-
-              return super.visitLambdaExpression(node)
-            }
-          }
-        )
-      }
+          )
+        }
   }
 
   // Usage from KotlinPsiUtils in g3
   protected fun checkAnnotationOnTypeParameter() {
     listOf(
-        kotlin(
-          """
+            kotlin(
+                """
                 @Target(AnnotationTarget.TYPE_PARAMETER)
                 annotation class Ann
 
                 class Foo<@Ann T> {}
                 """
+            )
         )
-      )
-      .use { context ->
-        context.uastFile!!.accept(
-          object : AbstractUastVisitor() {
-            override fun visitClass(node: UClass): Boolean {
-              if (node.isAnnotationType) return super.visitClass(node)
+        .use { context ->
+          context.uastFile!!.accept(
+              object : AbstractUastVisitor() {
+                override fun visitClass(node: UClass): Boolean {
+                  if (node.isAnnotationType) return super.visitClass(node)
 
-              val ktClass = node.sourcePsi as? KtClassOrObject ?: return super.visitClass(node)
+                  val ktClass = node.sourcePsi as? KtClassOrObject ?: return super.visitClass(node)
 
-              analyze(ktClass) {
-                val symbol = ktClass.classSymbol!!
-                @OptIn(KaExperimentalApi::class) val typeParams = symbol.typeParameters
-                assertEquals(1, typeParams.size)
-                val typeParam = typeParams.single()
-                val hasAnn = typeParam.annotations.any { it.classId?.asFqNameString() == "Ann" }
-                assertTrue(hasAnn)
+                  analyze(ktClass) {
+                    val symbol = ktClass.classSymbol!!
+                    @OptIn(KaExperimentalApi::class) val typeParams = symbol.typeParameters
+                    assertEquals(1, typeParams.size)
+                    val typeParam = typeParams.single()
+                    val hasAnn = typeParam.annotations.any { it.classId?.asFqNameString() == "Ann" }
+                    assertTrue(hasAnn)
+                  }
+
+                  return super.visitClass(node)
+                }
               }
-
-              return super.visitClass(node)
-            }
-          }
-        )
-      }
+          )
+        }
   }
 
   // Usage from AbstractGuardedByVisitor in g3
   protected fun checkParameterModifiers() {
     listOf(
-        kotlin(
-          """
+            kotlin(
+                """
                 inline fun <T, R> T.myLet(noinline myBlock: (T) -> R): R {
                   return block(this)
                 }
@@ -223,130 +220,126 @@ abstract class AnalysisApiServicesTestBase {
                   2.myLet { "noinline" }
                 }
                 """
+            )
         )
-      )
-      .use { context ->
-        context.uastFile!!.accept(
-          object : AbstractUastVisitor() {
-            override fun visitCallExpression(node: UCallExpression): Boolean {
-              val ktElement = node.sourcePsi as? KtElement ?: return super.visitCallExpression(node)
-              analyze(ktElement) {
-                val ktFunctionSymbol =
-                  ktElement.resolveToCall()?.singleFunctionCallOrNull()?.symbol
-                    ?: return super.visitCallExpression(node)
-                val ktParamSymbol = ktFunctionSymbol.valueParameters.single()
-                if (ktFunctionSymbol.callableId?.callableName?.identifier == "myLet") {
-                  assertTrue(ktParamSymbol.isNoinline)
-                } else { // built-in `let`
-                  assertFalse(ktParamSymbol.isNoinline)
+        .use { context ->
+          context.uastFile!!.accept(
+              object : AbstractUastVisitor() {
+                override fun visitCallExpression(node: UCallExpression): Boolean {
+                  val ktElement = node.sourcePsi as? KtElement ?: return super.visitCallExpression(node)
+                  analyze(ktElement) {
+                    val ktFunctionSymbol =
+                        ktElement.resolveToCall()?.singleFunctionCallOrNull()?.symbol ?: return super.visitCallExpression(node)
+                    val ktParamSymbol = ktFunctionSymbol.valueParameters.single()
+                    if (ktFunctionSymbol.callableId?.callableName?.identifier == "myLet") {
+                      assertTrue(ktParamSymbol.isNoinline)
+                    } else { // built-in `let`
+                      assertFalse(ktParamSymbol.isNoinline)
+                    }
+                  }
+
+                  return super.visitCallExpression(node)
                 }
               }
-
-              return super.visitCallExpression(node)
-            }
-          }
-        )
-      }
+          )
+        }
   }
 
   protected fun checkCancellation() {
     listOf(
-        kotlin(
-          """
+            kotlin(
+                """
           fun foo() { }
                """
+            )
         )
-      )
-      .use { context ->
-        context.uastFile!!.accept(
-          object : AbstractUastVisitor() {
-            override fun visitMethod(node: UMethod): Boolean {
-              assertTrue(ProgressManager.getInstance().isInNonCancelableSection)
+        .use { context ->
+          context.uastFile!!.accept(
+              object : AbstractUastVisitor() {
+                override fun visitMethod(node: UMethod): Boolean {
+                  assertTrue(ProgressManager.getInstance().isInNonCancelableSection)
 
-              return super.visitMethod(node)
-            }
-          }
-        )
-      }
+                  return super.visitMethod(node)
+                }
+              }
+          )
+        }
   }
 
   @OptIn(KaImplementationDetail::class)
   protected fun checkAnalysisAPIOnPsiElement(isK2: Boolean) {
     listOf(
-        kotlin(
-          """
+            kotlin(
+                """
           fun test(i : JavaClass) {
               val c = i.count
           }
         """
-        ),
-        java(
-          """
+            ),
+            java(
+                """
           public class JavaClass {
               public Integer count = 0;
           }
         """
-        ),
-      )
-      .use { context -> checkJavaSymbol(context, isK2) }
+            ),
+        )
+        .use { context -> checkJavaSymbol(context, isK2) }
   }
 
   protected fun checkAnalysisAPIOnJava(isK2: Boolean) {
     listOf(
-        java(
-          """
+            java(
+                """
           class Test {
               static void test(JavaClass i) {
                   Integer c = i.count;
               }
           }
         """
-        ),
-        java(
-          """
+            ),
+            java(
+                """
           public class JavaClass {
               public Integer count = 0;
           }
         """
-        ),
-      )
-      .use { context -> checkJavaSymbol(context, isK2) }
+            ),
+        )
+        .use { context -> checkJavaSymbol(context, isK2) }
   }
 
   private fun checkJavaSymbol(context: JavaContext, isK2: Boolean) {
     context.uastFile!!.accept(
-      object : AbstractUastVisitor() {
-        override fun visitSimpleNameReferenceExpression(
-          node: USimpleNameReferenceExpression
-        ): Boolean {
-          val c = node.resolve()
-          assertNotNull(c)
+        object : AbstractUastVisitor() {
+          override fun visitSimpleNameReferenceExpression(node: USimpleNameReferenceExpression): Boolean {
+            val c = node.resolve()
+            assertNotNull(c)
 
-          if (node.resolvedName != "count") {
-            // parameter i
+            if (node.resolvedName != "count") {
+              // parameter i
+              return super.visitSimpleNameReferenceExpression(node)
+            }
+
+            assertTrue(c is PsiField)
+            assertEquals("JavaClass", c.containingClass?.qualifiedName)
+
+            if (!isK2) {
+              return super.visitSimpleNameReferenceExpression(node)
+            }
+
+            val projectStructureProvider = c.project.getService(KotlinProjectStructureProvider::class.java)
+            val module = projectStructureProvider.getModule(c, null)
+            analyze(module) {
+              val symbolFromPsiElement = c.callableSymbol
+              val callableId = symbolFromPsiElement?.callableId
+              assertEquals("JavaClass", callableId?.classId?.asFqNameString())
+              assertEquals("count", callableId?.callableName?.identifier)
+            }
+
             return super.visitSimpleNameReferenceExpression(node)
           }
-
-          assertTrue(c is PsiField)
-          assertEquals("JavaClass", c.containingClass?.qualifiedName)
-
-          if (!isK2) {
-            return super.visitSimpleNameReferenceExpression(node)
-          }
-
-          val projectStructureProvider =
-            c.project.getService(KotlinProjectStructureProvider::class.java)
-          val module = projectStructureProvider.getModule(c, null)
-          analyze(module) {
-            val symbolFromPsiElement = c.callableSymbol
-            val callableId = symbolFromPsiElement?.callableId
-            assertEquals("JavaClass", callableId?.classId?.asFqNameString())
-            assertEquals("count", callableId?.callableName?.identifier)
-          }
-
-          return super.visitSimpleNameReferenceExpression(node)
         }
-      }
     )
   }
 }

@@ -42,16 +42,13 @@ internal object DecompiledPsiDeclarationProvider : FirKotlinUastLibraryPsiProvid
   }
 
   private fun KaSession.providePsiForConstructor(
-    constructorSymbol: KaConstructorSymbol,
-    project: Project,
+      constructorSymbol: KaConstructorSymbol,
+      project: Project,
   ): PsiElement? {
     val classId = constructorSymbol.containingClassId ?: return null
     val candidates =
-      project
-        .createPsiDeclarationProvider(constructorSymbol.scope(project))
-        ?.getClassesByClassId(classId)
-        ?.firstOrNull()
-        ?.constructors ?: return null
+        project.createPsiDeclarationProvider(constructorSymbol.scope(project))?.getClassesByClassId(classId)?.firstOrNull()?.constructors
+            ?: return null
     return if (candidates.size == 1) candidates.single()
     else {
       candidates.find { psiMethod -> representsTheSameDeclaration(psiMethod, constructorSymbol) }
@@ -59,35 +56,28 @@ internal object DecompiledPsiDeclarationProvider : FirKotlinUastLibraryPsiProvid
   }
 
   private fun KaSession.providePsiForFunction(
-    functionLikeSymbol: KaFunctionSymbol,
-    project: Project,
+      functionLikeSymbol: KaFunctionSymbol,
+      project: Project,
   ): PsiElement? {
-    val candidates =
-      project
-        .createPsiDeclarationProvider(functionLikeSymbol.scope(project))
-        ?.getFunctions(functionLikeSymbol)
+    val candidates = project.createPsiDeclarationProvider(functionLikeSymbol.scope(project))?.getFunctions(functionLikeSymbol)
     return if (candidates?.size == 1) candidates.single()
-    else
-      candidates?.find { psiMethod -> representsTheSameDeclaration(psiMethod, functionLikeSymbol) }
+    else candidates?.find { psiMethod -> representsTheSameDeclaration(psiMethod, functionLikeSymbol) }
   }
 
   private fun KaSession.providePsiForProperty(
-    variableLikeSymbol: KaVariableSymbol,
-    context: KtElement?,
-    project: Project,
+      variableLikeSymbol: KaVariableSymbol,
+      context: KtElement?,
+      project: Project,
   ): PsiElement? {
-    val candidates =
-      project
-        .createPsiDeclarationProvider(variableLikeSymbol.scope(project))
-        ?.getProperties(variableLikeSymbol)
+    val candidates = project.createPsiDeclarationProvider(variableLikeSymbol.scope(project))?.getProperties(variableLikeSymbol)
     if (candidates?.size == 1) return candidates.single()
     else {
       // Weigh [PsiField]
       candidates
-        ?.firstOrNull { psiMember -> psiMember is PsiField }
-        ?.let {
-          return it
-        }
+          ?.firstOrNull { psiMember -> psiMember is PsiField }
+          ?.let {
+            return it
+          }
       if (variableLikeSymbol is KaPropertySymbol) {
         val getterSymbol = variableLikeSymbol.getter
         val setterSymbol = variableLikeSymbol.setter
@@ -95,41 +85,35 @@ internal object DecompiledPsiDeclarationProvider : FirKotlinUastLibraryPsiProvid
         val isGetter = getterSymbol != null && readWriteAccess?.isRead == true
         val isSetter = setterSymbol != null && readWriteAccess?.isWrite == true
         candidates
-          ?.filterIsInstance<PsiMethod>()
-          ?.firstOrNull { psiMethod ->
-            (isGetter && representsTheSameDeclaration(psiMethod, getterSymbol)) ||
-              (isSetter && representsTheSameDeclaration(psiMethod, setterSymbol))
-          }
-          ?.let {
-            return it
-          }
+            ?.filterIsInstance<PsiMethod>()
+            ?.firstOrNull { psiMethod ->
+              (isGetter && representsTheSameDeclaration(psiMethod, getterSymbol)) ||
+                  (isSetter && representsTheSameDeclaration(psiMethod, setterSymbol))
+            }
+            ?.let {
+              return it
+            }
       }
       return candidates?.firstOrNull()
     }
   }
 
   private fun providePsiForClass(
-    classLikeSymbol: KaClassLikeSymbol,
-    project: Project,
+      classLikeSymbol: KaClassLikeSymbol,
+      project: Project,
   ): PsiElement? {
     return classLikeSymbol.classId?.let {
-      project
-        .createPsiDeclarationProvider(classLikeSymbol.scope(project))
-        ?.getClassesByClassId(it)
-        ?.firstOrNull()
+      project.createPsiDeclarationProvider(classLikeSymbol.scope(project))?.getClassesByClassId(it)?.firstOrNull()
     }
   }
 
   private fun providePsiForEnumEntry(
-    enumEntrySymbol: KaEnumEntrySymbol,
-    project: Project,
+      enumEntrySymbol: KaEnumEntrySymbol,
+      project: Project,
   ): PsiElement? {
     val classId = enumEntrySymbol.callableId?.classId ?: return null
     val psiClass =
-      project
-        .createPsiDeclarationProvider(enumEntrySymbol.scope(project))
-        ?.getClassesByClassId(classId)
-        ?.firstOrNull() ?: return null
+        project.createPsiDeclarationProvider(enumEntrySymbol.scope(project))?.getClassesByClassId(classId)?.firstOrNull() ?: return null
     return psiClass.fields.find { it.name == enumEntrySymbol.name.asString() }
   }
 

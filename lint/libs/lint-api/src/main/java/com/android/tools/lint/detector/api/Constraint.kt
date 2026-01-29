@@ -20,11 +20,9 @@ package com.android.tools.lint.detector.api
 
 import com.android.tools.lint.detector.api.ExtensionSdk.Companion.ANDROID_SDK_ID
 
-fun minSdkAtLeast(minSdkVersion: Int): Constraint =
-  MinSdkAtLeast(ApiConstraint.atLeast(minSdkVersion, ANDROID_SDK_ID))
+fun minSdkAtLeast(minSdkVersion: Int): Constraint = MinSdkAtLeast(ApiConstraint.atLeast(minSdkVersion, ANDROID_SDK_ID))
 
-fun minSdkLessThan(minSdkVersion: Int): Constraint =
-  MinSdkLessThan(ApiConstraint.atLeast(minSdkVersion, ANDROID_SDK_ID))
+fun minSdkLessThan(minSdkVersion: Int): Constraint = MinSdkLessThan(ApiConstraint.atLeast(minSdkVersion, ANDROID_SDK_ID))
 
 fun minSdkAtLeast(minSdkVersion: ApiConstraint): Constraint = MinSdkAtLeast(minSdkVersion)
 
@@ -43,26 +41,23 @@ fun notLibraryProject(): Constraint = NotLibraryProject()
 fun notAndroidProject(): Constraint = NotAndroidProject()
 
 /**
- * An optional condition to attach to an [Incident] to indicate that whether the incident is valid
- * depends on some conditions which cannot be evaluated in the current project context.
+ * An optional condition to attach to an [Incident] to indicate that whether the incident is valid depends on some conditions which cannot
+ * be evaluated in the current project context.
  *
- * A very common condition is a minimumSdkVersion requirement. This cannot be evaluated when for
- * example a library is being analyzed, because the actual minSdkVersion depends on the consuming
- * app, which is not available when the library is analyzed (and if the library is consumed by more
- * than one app the answers can be different in each context).
+ * A very common condition is a minimumSdkVersion requirement. This cannot be evaluated when for example a library is being analyzed,
+ * because the actual minSdkVersion depends on the consuming app, which is not available when the library is analyzed (and if the library is
+ * consumed by more than one app the answers can be different in each context).
  *
  * There are various built-in conditions for common operations.
  *
- * Note that this class is sealed such that only the specifically enumerated conditions here are
- * allowed. This is done because these conditions must all be persisted, and to avoid having to
- * introduce a whole general serialization mechanism which can work with any arbitrary class,
- * instead we define a specific set of conditions, with a general fallback mechanism.
+ * Note that this class is sealed such that only the specifically enumerated conditions here are allowed. This is done because these
+ * conditions must all be persisted, and to avoid having to introduce a whole general serialization mechanism which can work with any
+ * arbitrary class, instead we define a specific set of conditions, with a general fallback mechanism.
  */
 sealed class Constraint {
   /**
-   * Returns true if the given incident should be reported. If the answer is true, the condition
-   * implementation is allowed to mutate state in the [Incident], such as updating the error
-   * message.
+   * Returns true if the given incident should be reported. If the answer is true, the condition implementation is allowed to mutate state
+   * in the [Incident], such as updating the error message.
    */
   abstract fun accept(context: Context, incident: Incident): Boolean
 
@@ -126,8 +121,7 @@ class TargetSdkLessThan internal constructor(val targetSdkVersion: Int) : Constr
  *
  * Don't use this method directly; use [Constraint.and] instead.
  */
-class AllOfConstraint internal constructor(val left: Constraint, val right: Constraint) :
-  Constraint() {
+class AllOfConstraint internal constructor(val left: Constraint, val right: Constraint) : Constraint() {
   override fun accept(context: Context, incident: Incident): Boolean {
     return left.accept(context, incident) || right.accept(context, incident)
   }
@@ -138,8 +132,7 @@ class AllOfConstraint internal constructor(val left: Constraint, val right: Cons
  *
  * Don't use this method directly; use [Constraint.or] instead.
  */
-class AnyOfConstraint internal constructor(val left: Constraint, val right: Constraint) :
-  Constraint() {
+class AnyOfConstraint internal constructor(val left: Constraint, val right: Constraint) : Constraint() {
   override fun accept(context: Context, incident: Incident): Boolean {
     return left.accept(context, incident) && right.accept(context, incident)
   }

@@ -39,22 +39,22 @@ class ShortNameCacheDetector : Detector(), SourceCodeScanner {
     @Suppress("LintImplUnexpectedDomain")
     @JvmField
     val ISSUE =
-      Issue.create(
-        id = "ShortNamesCache",
-        briefDescription = "PsiShortNamesCaches which abort processing",
-        explanation =
-          """
+        Issue.create(
+            id = "ShortNamesCache",
+            briefDescription = "PsiShortNamesCaches which abort processing",
+            explanation =
+                """
                 The various `process` methods in PsiShortNamesCache take a boolean \
                 return value. If you return "false" from this method, you're saying \
                 that cache processing should not continue. This will break other name caches, \
                 which for example happened with http://b/152432842.
             """,
-        category = Category.CORRECTNESS,
-        priority = 1,
-        severity = Severity.ERROR,
-        platforms = STUDIO_PLATFORMS,
-        implementation = Implementation(ShortNameCacheDetector::class.java, Scope.JAVA_FILE_SCOPE),
-      )
+            category = Category.CORRECTNESS,
+            priority = 1,
+            severity = Severity.ERROR,
+            platforms = STUDIO_PLATFORMS,
+            implementation = Implementation(ShortNameCacheDetector::class.java, Scope.JAVA_FILE_SCOPE),
+        )
   }
 
   override fun applicableSuperClasses(): List<String>? {
@@ -64,10 +64,8 @@ class ShortNameCacheDetector : Detector(), SourceCodeScanner {
   override fun visitClass(context: JavaContext, declaration: UClass) {
     for (method in declaration.methods) {
       if (
-        method.name.startsWith("process") &&
-          method.javaPsi.findSuperMethods().any {
-            it.containingClass?.qualifiedName == "com.intellij.psi.search.PsiShortNamesCache"
-          }
+          method.name.startsWith("process") &&
+              method.javaPsi.findSuperMethods().any { it.containingClass?.qualifiedName == "com.intellij.psi.search.PsiShortNamesCache" }
       ) {
         checkMethod(context, method)
       }
@@ -76,30 +74,30 @@ class ShortNameCacheDetector : Detector(), SourceCodeScanner {
 
   private fun checkMethod(context: JavaContext, method: UMethod) {
     method.accept(
-      object : AbstractUastVisitor() {
-        override fun visitReturnExpression(node: UReturnExpression): Boolean {
-          val expression = node.returnExpression ?: return true
-          val value = ConstantEvaluator.evaluate(context, expression)
-          if (value == false) {
-            val ifParent: UIfExpression? = expression.getParentOfType(strict = true)
-            if (ifParent != null) {
-              // Surrounding if check; conditionally handling this return; probably
-              // a reasonable usage
-              return true
-            }
+        object : AbstractUastVisitor() {
+          override fun visitReturnExpression(node: UReturnExpression): Boolean {
+            val expression = node.returnExpression ?: return true
+            val value = ConstantEvaluator.evaluate(context, expression)
+            if (value == false) {
+              val ifParent: UIfExpression? = expression.getParentOfType(strict = true)
+              if (ifParent != null) {
+                // Surrounding if check; conditionally handling this return; probably
+                // a reasonable usage
+                return true
+              }
 
-            context.report(
-              ISSUE,
-              node,
-              context.getLocation(node),
-              "Do **not** return `false`; this will mark processing as " +
-                "consumed for this element and other cache processors will not " +
-                "run. This can lead to bugs like b/152432842.",
-            )
+              context.report(
+                  ISSUE,
+                  node,
+                  context.getLocation(node),
+                  "Do **not** return `false`; this will mark processing as " +
+                      "consumed for this element and other cache processors will not " +
+                      "run. This can lead to bugs like b/152432842.",
+              )
+            }
+            return true
           }
-          return true
         }
-      }
     )
   }
 }

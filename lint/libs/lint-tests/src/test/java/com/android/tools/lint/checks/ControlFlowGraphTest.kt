@@ -11,7 +11,6 @@ import com.android.tools.lint.checks.infrastructure.TestFiles.java
 import com.android.tools.lint.checks.infrastructure.TestFiles.kotlin
 import com.android.tools.lint.checks.infrastructure.parseFirst
 import com.android.tools.lint.detector.api.JavaContext
-import com.android.tools.lint.useFirUast
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.Segment
 import com.intellij.psi.PsiMethod
@@ -53,28 +52,27 @@ import org.objectweb.asm.tree.TypeInsnNode
 import org.objectweb.asm.tree.VarInsnNode
 
 private const val SHOW_DOT_ON_FAILURE = false
-@Suppress("RedundantNullableReturnType", "RedundantSuppression")
-private val UPDATE_IN_PLACE: String? = null
+@Suppress("RedundantNullableReturnType", "RedundantSuppression") private val UPDATE_IN_PLACE: String? = null
 
 // Ignore warnings in test files
 @Suppress(
-  "KotlinConstantConditions",
-  "CallToPrintStackTrace",
-  "ConstantValue",
-  "CatchMayIgnoreException",
-  "EqualsBetweenInconvertibleTypes",
-  "UnnecessarySemicolon",
-  "SameParameterValue",
-  "ConstantConditionIf",
-  "Convert2Lambda",
-  "TryFinallyCanBeTryWithResources",
-  "DataFlowIssue",
-  "UnnecessaryLabelOnBreakStatement",
-  "UnusedLabel",
-  "InfiniteLoopStatement",
-  "ResultOfMethodCallIgnored",
-  "TestFunctionName",
-  "ConvertToStringTemplate",
+    "KotlinConstantConditions",
+    "CallToPrintStackTrace",
+    "ConstantValue",
+    "CatchMayIgnoreException",
+    "EqualsBetweenInconvertibleTypes",
+    "UnnecessarySemicolon",
+    "SameParameterValue",
+    "ConstantConditionIf",
+    "Convert2Lambda",
+    "TryFinallyCanBeTryWithResources",
+    "DataFlowIssue",
+    "UnnecessaryLabelOnBreakStatement",
+    "UnusedLabel",
+    "InfiniteLoopStatement",
+    "ResultOfMethodCallIgnored",
+    "TestFunctionName",
+    "ConvertToStringTemplate",
 )
 class ControlFlowGraphTest {
   @get:Rule val temporaryFolder = TemporaryFolder()
@@ -82,7 +80,7 @@ class ControlFlowGraphTest {
   @Test
   fun checkCallChainInFunctionArgument() {
     val expectedCfg =
-      """
+        """
          Block:   ╭─ { foo(bar(baz("42"))) }
       FuncCall: ╭─╰→ foo(bar(baz("42")))
       FuncCall: ╰→╭─ bar(baz("42"))
@@ -90,13 +88,13 @@ class ControlFlowGraphTest {
                 ╰→   *exit*                         ←╯
       """
     val expectedPaths =
-      """
+        """
             foo() → bar() → baz() → exit
             foo() → bar() → baz() → exit
       """
     checkAstGraph(
-      kotlin(
-          """
+        kotlin(
+                """
           fun baz(p: String): Int { return p.toInt() }
           fun bar(p: Int): Boolean { return p > 0 }
           fun foo(p: Boolean) { }
@@ -108,19 +106,17 @@ class ControlFlowGraphTest {
             foo(bar(baz("42")))
           }
         """
-        )
-        .indented(),
-      expectedCfg,
-      useGraph = { graph, start ->
-        checkPaths(graph, start, expectedPaths, followExceptionalFlow = false)
-      },
+            )
+            .indented(),
+        expectedCfg,
+        useGraph = { graph, start -> checkPaths(graph, start, expectedPaths, followExceptionalFlow = false) },
     )
   }
 
   @Test
   fun checkCallChainInFunctionArgument_expanded() {
     val expectedCfg =
-      """
+        """
               Block:   ╭─ { val i = baz(…bar(i) foo(b) }
            FuncCall: ╭─╰→ baz("42")                      ─╮ Exception
       LocalVariable: ╰→╭─ val i = baz("42")               ┆
@@ -132,13 +128,13 @@ class ControlFlowGraphTest {
                      ╰→   *exit*                         ←╯
       """
     val expectedPaths =
-      """
+        """
             baz() → bar() → foo() → exit
             baz() → exit
       """
     checkAstGraph(
-      kotlin(
-          """
+        kotlin(
+                """
           fun baz(p: String): Int { return p.toInt() }
           fun bar(p: Int): Boolean { return p > 0 }
           fun foo(p: Boolean) { }
@@ -149,20 +145,18 @@ class ControlFlowGraphTest {
             foo(b)
           }
         """
-        )
-        .indented(),
-      expectedCfg,
-      useGraph = { graph, start ->
-        checkPaths(graph, start, expectedPaths, followExceptionalFlow = false)
-      },
+            )
+            .indented(),
+        expectedCfg,
+        useGraph = { graph, start -> checkPaths(graph, start, expectedPaths, followExceptionalFlow = false) },
     )
   }
 
   @Test
   fun checkTryCatchJava() {
     val testFile =
-      java(
-          """
+        java(
+                """
           package test.pkg;
 
           import android.app.Activity;
@@ -185,11 +179,11 @@ class ControlFlowGraphTest {
               }
           }
           """
-        )
-        .indented()
+            )
+            .indented()
     checkAstGraph(
-      testFile,
-      """
+        testFile,
+        """
                 CodeBlock:     ╭─ { lock.acquire….release(); } }
       QualifiedExpression:   ╭─╰→ lock.acquire()
                      Call:   ╰→╭─ lock.acquire()
@@ -205,9 +199,9 @@ class ControlFlowGraphTest {
                      Call:   ╰→╭─ lock.release()
                                ╰→ *exit*
       """,
-      canThrow = { _, method -> method.name == "randomCall" },
-      expectedDotGraph =
-        """
+        canThrow = { _, method -> method.name == "randomCall" },
+        expectedDotGraph =
+            """
         digraph {
           labelloc="t"
 
@@ -253,8 +247,8 @@ class ControlFlowGraphTest {
   @Test
   fun checkTryCatchKotlin1a() {
     checkAstGraph(
-      kotlin(
-          """
+        kotlin(
+                """
           import android.app.Activity
           import android.os.PowerManager.WakeLock
 
@@ -275,9 +269,9 @@ class ControlFlowGraphTest {
               }
           }
           """
-        )
-        .indented(),
-      """
+            )
+            .indented(),
+        """
                     Block:     ╭─ { lock.acquire…k.release() } }
       QualifiedExpression:   ╭─╰→ lock.acquire()
                  FuncCall:   ╰→╭─ acquire()
@@ -293,9 +287,9 @@ class ControlFlowGraphTest {
                  FuncCall:   ╰→╭─ release()
                                ╰→ *exit*
       """,
-      canThrow = { _, method -> method.name == "randomCall" },
-      expectedDotGraph =
-        """
+        canThrow = { _, method -> method.name == "randomCall" },
+        expectedDotGraph =
+            """
         digraph {
           labelloc="t"
 
@@ -342,8 +336,8 @@ class ControlFlowGraphTest {
     // Like checkTryCatchKotlin1a, but removed the `finally`, and added an additional function call
     // for clarity.
     checkAstGraph(
-      kotlin(
-          """
+        kotlin(
+                """
           import android.app.Activity
           import android.os.PowerManager.WakeLock
 
@@ -367,9 +361,9 @@ class ControlFlowGraphTest {
               }
           }
           """
-        )
-        .indented(),
-      """
+            )
+            .indented(),
+        """
                     Block:     ╭─ { lock.acquire…meOtherCall() }
       QualifiedExpression:   ╭─╰→ lock.acquire()
                  FuncCall:   ╰→╭─ acquire()
@@ -383,7 +377,7 @@ class ControlFlowGraphTest {
                  FuncCall: ╰→╰→╭─ someOtherCall()
                                ╰→ *exit*
       """,
-      canThrow = { _, method -> method.name == "randomCall" },
+        canThrow = { _, method -> method.name == "randomCall" },
     )
   }
 
@@ -392,8 +386,8 @@ class ControlFlowGraphTest {
     // Like checkTryCatchKotlin1b, but we've changed the catch type from Exception to
     // ArrayIndexOutOfBoundsException
     checkAstGraph(
-      kotlin(
-          """
+        kotlin(
+                """
           import android.app.Activity
           import android.os.PowerManager.WakeLock
 
@@ -417,9 +411,9 @@ class ControlFlowGraphTest {
               }
           }
           """
-        )
-        .indented(),
-      """
+            )
+            .indented(),
+        """
                     Block:     ╭─ { lock.acquire…meOtherCall() }
       QualifiedExpression:   ╭─╰→ lock.acquire()
                  FuncCall:   ╰→╭─ acquire()
@@ -433,7 +427,7 @@ class ControlFlowGraphTest {
                  FuncCall: ╰→╰→╭─ someOtherCall()                   ┆
                                ╰→ *exit*                           ←╯
       """,
-      canThrow = { _, method -> method.name == "randomCall" },
+        canThrow = { _, method -> method.name == "randomCall" },
     )
   }
 
@@ -442,8 +436,8 @@ class ControlFlowGraphTest {
     // Like checkTryCatchKotlin1c, but here the randomCall method is annotated to
     // throw Throwable rather than Exception
     checkAstGraph(
-      kotlin(
-          """
+        kotlin(
+                """
           import android.app.Activity
           import android.os.PowerManager.WakeLock
 
@@ -468,9 +462,9 @@ class ControlFlowGraphTest {
               }
           }
           """
-        )
-        .indented(),
-      """
+            )
+            .indented(),
+        """
                     Block:     ╭─ { lock.acquire…meOtherCall() }
       QualifiedExpression:   ╭─╰→ lock.acquire()
                  FuncCall:   ╰→╭─ acquire()
@@ -484,15 +478,15 @@ class ControlFlowGraphTest {
                  FuncCall: ╰→╰→╭─ someOtherCall()                   ┆
                                ╰→ *exit*                           ←╯
       """,
-      canThrow = { _, method -> method.name == "randomCall" },
+        canThrow = { _, method -> method.name == "randomCall" },
     )
   }
 
   @Test
   fun checkTryCatchKotlin2() {
     checkAstGraph(
-      kotlin(
-          """
+        kotlin(
+                """
           import java.io.FileNotFoundException
           import java.io.IOException
 
@@ -521,9 +515,9 @@ class ControlFlowGraphTest {
           @Throws(Exception::class)
           fun randomCall3()
           """
-        )
-        .indented(),
-      """
+            )
+            .indented(),
+        """
               Block:         ╭─ { try { random…ys() } done() }
                 Try:       ╭─╰→ try { randomCa…ly { always() }
           Try Block:       ╰→╭─ { randomCall1(…randomCall3() }
@@ -544,9 +538,9 @@ class ControlFlowGraphTest {
            FuncCall:       ╭─╰→ done()                          ┆
                            ╰→   *exit*                         ←╯
       """,
-      canThrow = { _, method -> if (method.name.startsWith("randomCall")) true else null },
-      expectedDotGraph =
-        """
+        canThrow = { _, method -> if (method.name.startsWith("randomCall")) true else null },
+        expectedDotGraph =
+            """
         digraph {
           labelloc="t"
 
@@ -610,8 +604,8 @@ class ControlFlowGraphTest {
     // Checks that when we throw an exception of a certain subclass,
     // then a catch of a superclass will consume it.
     checkAstGraph(
-      kotlin(
-          """
+        kotlin(
+                """
           import java.io.FileNotFoundException
           import java.io.IOException
 
@@ -630,9 +624,9 @@ class ControlFlowGraphTest {
           @Throws(FileNotFoundException::class)
           fun randomCall1()
           """
-        )
-        .indented(),
-      """
+            )
+            .indented(),
+        """
               Block:     ╭─ { try { random…ys() } done() }
                 Try:   ╭─╰→ try { randomCa…ly { always() }
           Try Block:   ╰→╭─ { randomCall1() }
@@ -653,7 +647,7 @@ class ControlFlowGraphTest {
            FuncCall: ╭─╰→ done()
                      ╰→   *exit*
       """,
-      canThrow = { _, method -> if (method.name.startsWith("randomCall")) true else null },
+        canThrow = { _, method -> if (method.name.startsWith("randomCall")) true else null },
     )
   }
 
@@ -665,8 +659,8 @@ class ControlFlowGraphTest {
     // whereas an inner IOException catch would subsume an outer
     // FileNotFoundException catch."
     checkAstGraph(
-      kotlin(
-          """
+        kotlin(
+                """
           import java.io.FileNotFoundException
           import java.io.IOException
 
@@ -684,9 +678,9 @@ class ControlFlowGraphTest {
           @Throws(IOException::class)
           fun randomCall1() {}
           """
-        )
-        .indented(),
-      """
+            )
+            .indented(),
+        """
             Block:       ╭─ { try { try { …sometimes() } }
               Try:     ╭─╰→ try { try { ra…{ sometimes() }
         Try Block:     ╰→╭─ { try { random…sometimes() } }
@@ -701,12 +695,12 @@ class ControlFlowGraphTest {
          FuncCall: ╰→╭─│ │  sometimes()
                      ╰→╰→╰→ *exit*
       """,
-      canThrow = { _, method -> if (method.name.startsWith("randomCall")) true else null },
+        canThrow = { _, method -> if (method.name.startsWith("randomCall")) true else null },
     )
 
     checkAstGraph(
-      kotlin(
-          """
+        kotlin(
+                """
           import java.io.FileNotFoundException
           import java.io.IOException
 
@@ -725,9 +719,9 @@ class ControlFlowGraphTest {
           @Throws(IOException::class)
           fun randomCall1() {}
           """
-        )
-        .indented(),
-      """
+            )
+            .indented(),
+        """
             Block:     ╭─ { try { try { …ock never() } }
               Try:   ╭─╰→ try { try { ra…block never() }
         Try Block:   ╰→╭─ { try { random…sometimes() } }
@@ -744,7 +738,7 @@ class ControlFlowGraphTest {
          FuncCall: ╰→╭─ never()
                      ╰→ *exit*
       """,
-      canThrow = { _, method -> if (method.name.startsWith("randomCall")) true else null },
+        canThrow = { _, method -> if (method.name.startsWith("randomCall")) true else null },
     )
   }
 
@@ -753,8 +747,8 @@ class ControlFlowGraphTest {
     // Here we want both an *exceptional* edge and a normal edge from randomCall1 into the finally
     // block
     checkAstGraph(
-      kotlin(
-          """
+        kotlin(
+                """
           import java.io.FileNotFoundException
           import java.io.IOException
 
@@ -769,9 +763,9 @@ class ControlFlowGraphTest {
           @Throws(FileNotFoundException::class)
           fun randomCall1() {}
           """
-        )
-        .indented(),
-      """
+            )
+            .indented(),
+        """
               Block:   ╭─ { try { random…up() } next() }
                 Try: ╭─╰→ try { randomCa…y { cleanup() }
           Try Block: ╰→╭─ { randomCall1() }
@@ -781,41 +775,41 @@ class ControlFlowGraphTest {
            FuncCall: ╰→╭─ next()                          ┆
                        ╰→ *exit*                         ←╯
       """,
-      canThrow = { _, method -> if (method.name.startsWith("randomCall")) true else null },
-      useGraph = { graph, start ->
-        checkPaths(
-          graph,
-          start,
-          """
+        canThrow = { _, method -> if (method.name.startsWith("randomCall")) true else null },
+        useGraph = { graph, start ->
+          checkPaths(
+              graph,
+              start,
+              """
           try → randomCall1() → finally → cleanup() → next() → exit
           try → randomCall1() → finally → cleanup() → java.io.FileNotFoundException exit
           try → randomCall1() → java.io.FileNotFoundException → cleanup() → next() → exit
           try → randomCall1() → java.io.FileNotFoundException → cleanup() → java.io.FileNotFoundException exit
           """,
-          followExceptionalFlow = false,
-        )
+              followExceptionalFlow = false,
+          )
 
-        // Notice how the third path is no longer there: we do not flow to the "next" node via an
-        // exception path
-        checkPaths(
-          graph,
-          start,
-          """
+          // Notice how the third path is no longer there: we do not flow to the "next" node via an
+          // exception path
+          checkPaths(
+              graph,
+              start,
+              """
           try → randomCall1() → finally → cleanup() → next() → exit
           try → randomCall1() → finally → cleanup() → java.io.FileNotFoundException exit
           try → randomCall1() → java.io.FileNotFoundException → cleanup() → java.io.FileNotFoundException exit
           """,
-          followExceptionalFlow = true,
-        )
-      },
+              followExceptionalFlow = true,
+          )
+        },
     )
   }
 
   @Test
   fun checkExplicitThrow() {
     checkAstGraph(
-      kotlin(
-          """
+        kotlin(
+                """
           import java.io.FileNotFoundException
           import java.io.IOException
 
@@ -834,9 +828,9 @@ class ControlFlowGraphTest {
               done()
           }
           """
-        )
-        .indented(),
-      """
+            )
+            .indented(),
+        """
               Block:     ╭─ { try { if (so…ys() } done() }
                 Try:   ╭─╰→ try { if (some…ly { always() }
           Try Block:   ╰→╭─ { if (somethin…such file") } }
@@ -861,15 +855,15 @@ class ControlFlowGraphTest {
            FuncCall: ╭─╰→ done()
                      ╰→   *exit*
       """,
-      canThrow = { _, _ -> false },
+        canThrow = { _, _ -> false },
     )
   }
 
   @Test
   fun checkTryUncaughtKotlin() {
     checkAstGraph(
-      kotlin(
-          """
+        kotlin(
+                """
           import android.app.Activity
           import android.os.PowerManager.WakeLock
 
@@ -889,9 +883,9 @@ class ControlFlowGraphTest {
               }
           }
           """
-        )
-        .indented(),
-      """
+            )
+            .indented(),
+        """
                     Block:   ╭─ { lock.acquire…se() } next() }
       QualifiedExpression: ╭─╰→ lock.acquire()
                  FuncCall: ╰→╭─ acquire()
@@ -904,15 +898,15 @@ class ControlFlowGraphTest {
                  FuncCall: ╭─╰→ next()                          ┆
                            ╰→   *exit*                         ←╯
       """,
-      canThrow = { _, method -> method.name == "randomCall" },
+        canThrow = { _, method -> method.name == "randomCall" },
     )
   }
 
   @Test
   fun checkTryUncaughtKotlin2() {
     checkAstGraph(
-      kotlin(
-          """
+        kotlin(
+                """
           import android.app.Activity
           import android.os.PowerManager.WakeLock
 
@@ -939,9 +933,9 @@ class ControlFlowGraphTest {
               }
           }
           """
-        )
-        .indented(),
-      """
+            )
+            .indented(),
+        """
                     Block:     ╭─ { try { lock.a…y() } after() }
                       Try:   ╭─╰→ try { lock.acq…uterFinally() }
                 Try Block:   ╰→╭─ { lock.acquire…se() } next() }
@@ -962,7 +956,7 @@ class ControlFlowGraphTest {
                  FuncCall:   ╭─╰→ after()
                              ╰→   *exit*
       """,
-      canThrow = { _, method -> method.name == "randomCall" },
+        canThrow = { _, method -> method.name == "randomCall" },
     )
   }
 
@@ -970,8 +964,8 @@ class ControlFlowGraphTest {
   fun checkTryFinallyKotlin() {
     // Try/finally (with no catch) -- make sure we also exit
     checkAstGraph(
-      kotlin(
-          """
+        kotlin(
+                """
           import android.app.Activity
           import android.os.PowerManager.WakeLock
 
@@ -990,9 +984,9 @@ class ControlFlowGraphTest {
               }
           }
           """
-        )
-        .indented(),
-      """
+            )
+            .indented(),
+        """
                     Block:   ╭─ { lock.acquire…k.release() } }
       QualifiedExpression: ╭─╰→ lock.acquire()
                  FuncCall: ╰→╭─ acquire()
@@ -1004,15 +998,15 @@ class ControlFlowGraphTest {
                  FuncCall: ╰→╭─ release()                      ─╮ Exception
                              ╰→ *exit*                         ←╯
       """,
-      canThrow = { _, method -> method.name == "randomCall" },
+        canThrow = { _, method -> method.name == "randomCall" },
     )
   }
 
   @Test
   fun checkTryFinallyEmpty() {
     checkAstGraph(
-      kotlin(
-          """
+        kotlin(
+                """
           import android.app.Activity
           import android.os.PowerManager.WakeLock
 
@@ -1027,9 +1021,9 @@ class ControlFlowGraphTest {
               fun randomCall() { error("throws") }
           }
           """
-        )
-        .indented(),
-      """
+            )
+            .indented(),
+        """
               Block:   ╭─ { try { random…ly { } next() }
                 Try: ╭─╰→ try { randomCa…) } finally { }
           Try Block: ╰→╭─ { randomCall() }
@@ -1038,15 +1032,15 @@ class ControlFlowGraphTest {
            FuncCall: ╭─╰→ next()                            ┆
                      ╰→   *exit*                           ←╯
       """,
-      canThrow = { _, method -> method.name == "randomCall" },
+        canThrow = { _, method -> method.name == "randomCall" },
     )
   }
 
   @Test
   fun checkCallExceptionEdge1() {
     checkAstGraph(
-      kotlin(
-          """
+        kotlin(
+                """
           fun target() {
               var i = 0
               randomCall()
@@ -1054,9 +1048,9 @@ class ControlFlowGraphTest {
           }
           fun randomCall() { error("throws") }
           """
-        )
-        .indented(),
-      """
+            )
+            .indented(),
+        """
               Block:   ╭─ { var i = 0 randomCall() i++ }
       LocalVariable: ╭─╰→ var i = 0
        Declarations: ╰→╭─ var i = 0
@@ -1071,8 +1065,8 @@ class ControlFlowGraphTest {
   fun checkCallExceptionEdge2() {
     // From TransactionDetectorTest.testSimpleBlockingCall
     checkAstGraph(
-      kotlin(
-          """
+        kotlin(
+                """
           package test.pkg
 
           import android.os.Trace
@@ -1085,9 +1079,9 @@ class ControlFlowGraphTest {
 
           fun blockingCall() { }
           """
-        )
-        .indented(),
-      """
+            )
+            .indented(),
+        """
                     Block:   ╭─ { Trace.beginS….endSection() }
       QualifiedExpression: ╭─╰→ Trace.beginSection("wrong")
                  FuncCall: ╰→╭─ beginSection("wrong")
@@ -1096,7 +1090,7 @@ class ControlFlowGraphTest {
                  FuncCall: ╭─╰→ endSection()                    ┆
                            ╰→   *exit*                         ←╯
       """,
-      canThrow = { _, method -> method.name == "blockingCall" },
+        canThrow = { _, method -> method.name == "blockingCall" },
     )
   }
 
@@ -1104,8 +1098,8 @@ class ControlFlowGraphTest {
   fun checkCallExceptionFromCatch() {
     // From TransactionDetectorTest.testTryCatchVariations.wrong1
     checkAstGraph(
-      kotlin(
-          """
+        kotlin(
+                """
           fun target() {
               Trace.beginSection("wrong-1")
               try {
@@ -1122,9 +1116,9 @@ class ControlFlowGraphTest {
           }
           fun blockingCall() { }
           """
-        )
-        .indented(),
-      """
+            )
+            .indented(),
+        """
                     Block:     ╭─ { Trace.beginS….endSection() }
       QualifiedExpression:   ╭─╰→ Trace.beginSection("wrong-1")
                  FuncCall:   ╰→╭─ beginSection("wrong-1")
@@ -1140,7 +1134,7 @@ class ControlFlowGraphTest {
                  FuncCall:   ╰→╭─ endSection()                      ┆
                                ╰→ *exit*                           ←╯
       """,
-      canThrow = { _, method -> method.name == "blockingCall" || method.name == "printStackTrace" },
+        canThrow = { _, method -> method.name == "blockingCall" || method.name == "printStackTrace" },
     )
   }
 
@@ -1148,8 +1142,8 @@ class ControlFlowGraphTest {
   fun checkCallExceptionFromFinally() {
     // From TransactionDetectorTest.testTryCatchVariations.wrong4
     checkAstGraph(
-      kotlin(
-          """
+        kotlin(
+                """
           fun target() {
               try {
                 Trace.beginSection("wrong-4")
@@ -1161,9 +1155,9 @@ class ControlFlowGraphTest {
           }
           fun blockingCall() { }
           """
-        )
-        .indented(),
-      """
+            )
+            .indented(),
+        """
                     Block:   ╭─ { try { Trace.…ndSection() } }
                       Try: ╭─╰→ try { Trace.be….endSection() }
                 Try Block: ╰→╭─ { Trace.beginS…on("wrong-4") }
@@ -1175,7 +1169,7 @@ class ControlFlowGraphTest {
                  FuncCall: ╰→╭─ endSection()                    ┆
                              ╰→ *exit*                         ←╯
       """,
-      canThrow = { _, method -> method.name == "blockingCall" },
+        canThrow = { _, method -> method.name == "blockingCall" },
     )
   }
 
@@ -1184,8 +1178,8 @@ class ControlFlowGraphTest {
     // makes sure that if we have an exception thrown, there is a path through the
     // finally blocks that doesn't touch the non-finally blocks.
     checkAstGraph(
-      kotlin(
-          """
+        kotlin(
+                """
           fun target() {
               try {
                 before()
@@ -1204,9 +1198,9 @@ class ControlFlowGraphTest {
           }
           fun blockingCall() { }
           """
-        )
-        .indented(),
-      """
+            )
+            .indented(),
+        """
               Block:   ╭─ { try { before…y2() } done() }
                 Try: ╭─╰→ try { before()…ondFinally2() }
           Try Block: ╰→╭─ { before() try…2() } after() }
@@ -1224,35 +1218,31 @@ class ControlFlowGraphTest {
            FuncCall: ╰→╭─ done()                          ┆
                        ╰→ *exit*                         ←╯
       """,
-      canThrow = { _, method -> method.name == "blockingCall" },
-      useGraph = { graph, start ->
-        // Check some path computations
-        checkGraphPath(
-          graph,
-          start,
-          targetNode = { call ->
-            call is UCallExpression && call.methodIdentifier?.name == "before"
-          },
-          expected = "try → before()",
-        )
-        checkGraphPath(
-          graph,
-          start,
-          targetNode = { call ->
-            call is UCallExpression && call.methodIdentifier?.name == "secondFinally2"
-          },
-          expected =
-            "try → before() → try → blockingCall() → finally → firstFinally1() → firstFinally2() → after() → finally → secondFinally1() → secondFinally2()",
-        )
-      },
+        canThrow = { _, method -> method.name == "blockingCall" },
+        useGraph = { graph, start ->
+          // Check some path computations
+          checkGraphPath(
+              graph,
+              start,
+              targetNode = { call -> call is UCallExpression && call.methodIdentifier?.name == "before" },
+              expected = "try → before()",
+          )
+          checkGraphPath(
+              graph,
+              start,
+              targetNode = { call -> call is UCallExpression && call.methodIdentifier?.name == "secondFinally2" },
+              expected =
+                  "try → before() → try → blockingCall() → finally → firstFinally1() → firstFinally2() → after() → finally → secondFinally1() → secondFinally2()",
+          )
+        },
     )
   }
 
   @Test
   fun checkIfElse() {
     checkAstGraph(
-      java(
-          """
+        java(
+                """
           package test.pkg;
 
           import android.app.Activity;
@@ -1270,9 +1260,9 @@ class ControlFlowGraphTest {
               }
           }
           """
-        )
-        .indented(),
-      """
+            )
+            .indented(),
+        """
                 CodeBlock:     ╭─ { lock.acquire….release(); } }
       QualifiedExpression:   ╭─╰→ lock.acquire()
                      Call:   ╰→╭─ lock.acquire()
@@ -1287,9 +1277,9 @@ class ControlFlowGraphTest {
                      Call: ╰→╭─│  lock.release()
                              ╰→╰→ *exit*
       """,
-      canThrow = { _, _ -> false },
-      expectedDotGraph =
-        """
+        canThrow = { _, _ -> false },
+        expectedDotGraph =
+            """
         digraph {
           labelloc="t"
 
@@ -1332,8 +1322,8 @@ class ControlFlowGraphTest {
   @Test
   fun checkNullGuard() {
     val testFile =
-      java(
-          """
+        java(
+                """
           package test.pkg;
 
           import android.app.Activity;
@@ -1350,12 +1340,12 @@ class ControlFlowGraphTest {
               }
           }
           """
-        )
-        .indented()
+            )
+            .indented()
 
     checkAstGraph(
-      testFile,
-      """
+        testFile,
+        """
                 CodeBlock:     ╭─ { lock.acquire… int i = 0; } }
       QualifiedExpression:   ╭─╰→ lock.acquire()
                      Call:   ╰→╭─ lock.acquire()
@@ -1369,13 +1359,13 @@ class ControlFlowGraphTest {
              Declarations: ╰→│ ╭─ var i: int = 0
                              ╰→╰→ *exit*
       """,
-      canThrow = { _, _ -> false },
+        canThrow = { _, _ -> false },
     )
 
     // Prune graph to only follow then-branch
     checkAstGraph(
-      testFile,
-      """
+        testFile,
+        """
                 CodeBlock:   ╭─ { lock.acquire… int i = 0; } }
       QualifiedExpression: ╭─╰→ lock.acquire()
                      Call: ╰→╭─ lock.acquire()
@@ -1386,14 +1376,14 @@ class ControlFlowGraphTest {
                      Call: ╭─╰→ lock.release()
                            ╰→   *exit*
       """,
-      canThrow = { _, _ -> false },
-      checkBranchPaths = { ControlFlowGraph.FollowBranch.THEN },
+        canThrow = { _, _ -> false },
+        checkBranchPaths = { ControlFlowGraph.FollowBranch.THEN },
     )
 
     // Prune graph to only follow else-branch
     checkAstGraph(
-      testFile,
-      """
+        testFile,
+        """
                 CodeBlock:   ╭─ { lock.acquire… int i = 0; } }
       QualifiedExpression: ╭─╰→ lock.acquire()
                      Call: ╰→╭─ lock.acquire()
@@ -1404,16 +1394,16 @@ class ControlFlowGraphTest {
              Declarations: ╭─╰→ var i: int = 0
                            ╰→   *exit*
       """,
-      canThrow = { _, _ -> false },
-      checkBranchPaths = { ControlFlowGraph.FollowBranch.ELSE },
+        canThrow = { _, _ -> false },
+        checkBranchPaths = { ControlFlowGraph.FollowBranch.ELSE },
     )
   }
 
   @Test
   fun checkNullGuardWhenStatement() {
     val testFile =
-      kotlin(
-          """
+        kotlin(
+                """
         import android.os.PowerManager.WakeLock
         fun target(lock: WakeLock?) {
             lock?.acquire()
@@ -1425,12 +1415,12 @@ class ControlFlowGraphTest {
             }
         }
         """
-        )
-        .indented()
+            )
+            .indented()
 
     checkAstGraph(
-      testFile,
-      """
+        testFile,
+        """
                      Block:         ╭─ { lock?.acquir…var i = 0 } } }
       SafeQuali…Expression:     ╭─╭─╰→ lock?.acquire()
                   FuncCall:     │ ╰→╭─ acquire()
@@ -1446,13 +1436,13 @@ class ControlFlowGraphTest {
               Declarations: ╰─╰→│   │  var i = 0
                                 ╰→  ╰→ *exit*
       """,
-      canThrow = { _, _ -> false },
+        canThrow = { _, _ -> false },
     )
 
     // Prune graph to only follow then-branch
     checkAstGraph(
-      testFile,
-      """
+        testFile,
+        """
                      Block:       ╭─ { lock?.acquir…var i = 0 } } }
       SafeQuali…Expression:   ╭─╭─╰→ lock?.acquire()
                   FuncCall:   │ ╰→╭─ acquire()
@@ -1464,14 +1454,14 @@ class ControlFlowGraphTest {
                   FuncCall: ╰─╰→  │  release()
                                   ╰→ *exit*
       """,
-      canThrow = { _, _ -> false },
-      checkBranchPaths = { ControlFlowGraph.FollowBranch.THEN },
+        canThrow = { _, _ -> false },
+        checkBranchPaths = { ControlFlowGraph.FollowBranch.THEN },
     )
 
     // Prune graph to only follow else-branch
     checkAstGraph(
-      testFile,
-      """
+        testFile,
+        """
                      Block:       ╭─ { lock?.acquir…var i = 0 } } }
       SafeQuali…Expression:   ╭─╭─╰→ lock?.acquire()
                   FuncCall:   │ ╰→╭─ acquire()
@@ -1482,16 +1472,16 @@ class ControlFlowGraphTest {
               Declarations: ╰─╰→│    var i = 0
                                 ╰→   *exit*
       """,
-      canThrow = { _, _ -> false },
-      checkBranchPaths = { ControlFlowGraph.FollowBranch.ELSE },
+        canThrow = { _, _ -> false },
+        checkBranchPaths = { ControlFlowGraph.FollowBranch.ELSE },
     )
   }
 
   @Test
   fun checkAlwaysTrueOrFalse() {
     checkAstGraph(
-      kotlin(
-          """
+        kotlin(
+                """
           fun target() {
               if (true)
                  always()
@@ -1503,9 +1493,9 @@ class ControlFlowGraphTest {
                   always()
           }
           """
-        )
-        .indented(),
-      """
+            )
+            .indented(),
+        """
          Block:   ╭─ { if (true) al…else always() }
             If: ╭─╰→ if (true) alwa…() else never()
       FuncCall: ╰→╭─ always()
@@ -1513,7 +1503,7 @@ class ControlFlowGraphTest {
       FuncCall: ╰→╭─ always()
                   ╰→ *exit*
       """,
-      canThrow = { _, _ -> false },
+        canThrow = { _, _ -> false },
     )
   }
 
@@ -1521,8 +1511,8 @@ class ControlFlowGraphTest {
   fun checkExceptionsForImplicitCalls() {
     // Make sure we add exception edges for various implicit calls in Kotlin
     checkAstGraph(
-      kotlin(
-          """
+        kotlin(
+                """
           package test.pkg
 
           import java.math.BigInteger
@@ -1540,9 +1530,9 @@ class ControlFlowGraphTest {
               }
           }
           """
-        )
-        .indented(),
-      """
+            )
+            .indented(),
+        """
                     Block:     ╭─ { try { b1 + b…tackTrace() } }
                       Try:   ╭─╰→ try { b1 + b2 …tStackTrace() }
                 Try Block:   ╰→╭─ { b1 + b2 // o…ro? Does ASM? }
@@ -1558,16 +1548,14 @@ class ControlFlowGraphTest {
                  FuncCall: ╭─╰→│  printStackTrace()
                            ╰→  ╰→ *exit*
       """,
-      useGraph = { graph, start ->
-        checkGraphPath(
-          graph,
-          start,
-          targetNode = { call ->
-            call is UCallExpression && call.methodIdentifier?.name == "printStackTrace"
-          },
-          expected = "try → + → = → ! → in → catch → printStackTrace()",
-        )
-      },
+        useGraph = { graph, start ->
+          checkGraphPath(
+              graph,
+              start,
+              targetNode = { call -> call is UCallExpression && call.methodIdentifier?.name == "printStackTrace" },
+              expected = "try → + → = → ! → in → catch → printStackTrace()",
+          )
+        },
     )
   }
 
@@ -1575,8 +1563,8 @@ class ControlFlowGraphTest {
   fun checkExceptionsForImplicitPropertyCalls() {
     // Make sure we add exception edges for implicit calls related to properties
     checkAstGraph(
-      kotlin(
-          """
+        kotlin(
+                """
           class MyTest {
             var foo: Int = 1
             var bar: Int get() = 1
@@ -1590,9 +1578,9 @@ class ControlFlowGraphTest {
             }
           }
           """
-        )
-        .indented(),
-      """
+            )
+            .indented(),
+        """
                 Block:   ╭─ { with (test) …call2 = bar } }
              FuncCall: ╭─╰→ with (test) { …l call2 = bar } ─╮ Exception
                Lambda: ╰→╭─ { val notCall2…l call2 = bar }  ┆
@@ -1605,7 +1593,7 @@ class ControlFlowGraphTest {
       Implicit Return: ╭─╰→ return var call2: int = bar     ┆ ┆
                        ╰→   *exit*                         ←╯←╯
       """,
-      canThrow = { _, _ -> true },
+        canThrow = { _, _ -> true },
     )
   }
 
@@ -1613,8 +1601,8 @@ class ControlFlowGraphTest {
   fun checkExceptionsForImplicitPropertyCalls2() {
     // Make sure we add exception edges for implicit calls related to properties
     checkAstGraph(
-      kotlin(
-          """
+        kotlin(
+                """
           class MyTest {
             var foo: Int = 1
             var bar: Int get() = 1
@@ -1634,9 +1622,9 @@ class ControlFlowGraphTest {
             test.lazyValue
           }
           """
-        )
-        .indented(),
-      """
+            )
+            .indented(),
+        """
                     Block:   ╭─ { val notCall1…est.lazyValue }
       QualifiedExpression: ╭─╰→ test.foo
             LocalVariable: ╰→╭─ val notCall1 = test.foo
@@ -1660,15 +1648,15 @@ class ControlFlowGraphTest {
                 SimpleRef: ╰→╭─ lazyValue                       ┆ ┆ ┆ ┆─╮ Exception
                              ╰→ *exit*                         ←╯←╯←╯←╯←╯
       """,
-      canThrow = { _, _ -> true },
+        canThrow = { _, _ -> true },
     )
   }
 
   @Test
   fun checkForLoop() {
     checkAstGraph(
-      java(
-          """
+        java(
+                """
           package test.pkg;
 
           public class Test {
@@ -1689,9 +1677,9 @@ class ControlFlowGraphTest {
             }
           }
           """
-        )
-        .indented(),
-      """
+            )
+            .indented(),
+        """
           CodeBlock:               ╭─ { for (int i =…rint("done"); }
                 For:             ╭─╰→ for (int i = 0…lse print(j); }
       LocalVariable:             ╰→╭─ int i = 0;
@@ -1716,23 +1704,21 @@ class ControlFlowGraphTest {
                Call:           ╰→╭─╰→ print("done")
                                  ╰→   *exit*
       """,
-      canThrow = { _, _ -> false },
-      useGraph = { graph, start ->
-        checkGraphPath(
-          graph,
-          start,
-          targetNode = { call ->
-            call is UCallExpression && call.methodIdentifier?.name == "print"
-          },
-          expected = "for → < → if → === → % → then → break → print()",
-        )
-        checkGraphPath(
-          graph,
-          start,
-          targetNode = { node -> node is UBreakExpression },
-          expected = "for → < → if → === → % → then → break",
-        )
-      },
+        canThrow = { _, _ -> false },
+        useGraph = { graph, start ->
+          checkGraphPath(
+              graph,
+              start,
+              targetNode = { call -> call is UCallExpression && call.methodIdentifier?.name == "print" },
+              expected = "for → < → if → === → % → then → break → print()",
+          )
+          checkGraphPath(
+              graph,
+              start,
+              targetNode = { node -> node is UBreakExpression },
+              expected = "for → < → if → === → % → then → break",
+          )
+        },
     )
   }
 
@@ -1742,8 +1728,8 @@ class ControlFlowGraphTest {
     // wasn't handled correctly; finishing the try block wouldn't
     // return out of the for loop.
     checkAstGraph(
-      kotlin(
-          """
+        kotlin(
+                """
           package test.pkg
 
           import android.os.Trace
@@ -1755,9 +1741,9 @@ class ControlFlowGraphTest {
             next()
           }
           """
-        )
-        .indented(),
-      """
+            )
+            .indented(),
+        """
          Block:       ╭─ { for (i in 0.…ed() } next() }
        ForEach: ╭→╭─╭─╰→ for (i in 0..10) { nested() }
          Block: │ │ ╰→╭─ { nested() }
@@ -1765,15 +1751,15 @@ class ControlFlowGraphTest {
       FuncCall:   ╰→  ╭─ next()
                       ╰→ *exit*
       """,
-      canThrow = { _, _ -> false },
+        canThrow = { _, _ -> false },
     )
   }
 
   @Test
   fun checkForEachLoopWithBreak() {
     checkAstGraph(
-      java(
-          """
+        java(
+                """
           package test.pkg;
 
           public class Test {
@@ -1788,9 +1774,9 @@ class ControlFlowGraphTest {
             }
           }
           """
-        )
-        .indented(),
-      """
+            )
+            .indented(),
+        """
                 CodeBlock:         ╭─ { for (String …ntln("Done"); }
                   ForEach: ╭→  ╭─╭─╰→ for (String s …n("looping"); }
                     Block: │   │ ╰→╭─ { if (s.length…n("looping"); }
@@ -1804,15 +1790,15 @@ class ControlFlowGraphTest {
                      Call:     ╰→╭─╰→ println("Done")
                                  ╰→   *exit*
       """,
-      canThrow = { _, _ -> false },
+        canThrow = { _, _ -> false },
     )
   }
 
   @Test
   fun checkDoWhileLoop() {
     checkAstGraph(
-      java(
-          """
+        java(
+                """
           package test.pkg;
 
           public class Test {
@@ -1827,9 +1813,9 @@ class ControlFlowGraphTest {
             }
           }
           """
-        )
-        .indented(),
-      """
+            )
+            .indented(),
+        """
       CodeBlock:         ╭─ { do { i++; if…ntln("Done"); }
         DoWhile: ╭→    ╭─╰→ do { i++; if (…le (i < 2 * j);
           Block: │     ╰→╭─ { i++; if (i >…ontinue; j++; }
@@ -1847,15 +1833,15 @@ class ControlFlowGraphTest {
            Call:     ╭─╰→╰→ println("Done")
                      ╰→     *exit*
        """,
-      canThrow = { _, _ -> false },
+        canThrow = { _, _ -> false },
     )
   }
 
   @Test
   fun checkWhileLoop() {
     checkAstGraph(
-      java(
-          """
+        java(
+                """
           package test.pkg;
 
           public class Test {
@@ -1868,9 +1854,9 @@ class ControlFlowGraphTest {
             }
           }
           """
-        )
-        .indented(),
-      """
+            )
+            .indented(),
+        """
       CodeBlock:         ╭─ { while (i < j…ntln("Done"); }
           While: ╭→  ╭─╭─╰→ while (i < j) …) break; j++; }
           Block: │   │ ╰→╭─ { if (i > j / 2) break; j++; }
@@ -1882,15 +1868,15 @@ class ControlFlowGraphTest {
            Call:     ╰→╭─╰→ println("Done")
                        ╰→   *exit*
        """,
-      canThrow = { _, _ -> false },
+        canThrow = { _, _ -> false },
     )
   }
 
   @Test
   fun checkJavaSwitch() {
     checkAstGraph(
-      java(
-          """
+        java(
+                """
           package test.pkg;
 
           public class Test {
@@ -1912,9 +1898,9 @@ class ControlFlowGraphTest {
             }
           }
           """
-        )
-        .indented(),
-      """
+            )
+            .indented(),
+        """
                 CodeBlock:         ╭─ { switch (valu…ing else"); } }
                    Switch: ╭─╭─╭─╭─╰→ switch (value)…thing else"); }
           SwitchEntryBody: │ │ │ ╰→╭─ case 0:
@@ -1939,16 +1925,16 @@ class ControlFlowGraphTest {
                      Call:     ╰→│ ╭─ System.out.pri…omething else")
                                  ╰→╰→ *exit*
       """,
-      // keep graph simpler for test
-      canThrow = { _, _ -> false },
+        // keep graph simpler for test
+        canThrow = { _, _ -> false },
     )
   }
 
   @Test
   fun checkKotlinWhenStatementWithSubject() {
     checkAstGraph(
-      kotlin(
-          """
+        kotlin(
+                """
           package test.pkg
 
           fun target(list: List<String>) {
@@ -1967,9 +1953,9 @@ class ControlFlowGraphTest {
             println("after")
           }
           """
-        )
-        .indented(),
-      """
+            )
+            .indented(),
+        """
                  Block:         ╭─ { when (list) …ntln("after") }
                 Switch:       ╭─╰→ when (list) { …hing else") } }
        SwitchEntryBody:   ╭→  │ ╭─ is ArrayDeque,…ntln("array") }
@@ -1990,25 +1976,23 @@ class ControlFlowGraphTest {
               FuncCall:   ╰→╰→╰→╭─ println("after")
                                 ╰→ *exit*
       """,
-      canThrow = { _, _ -> false },
-      useGraph = { graph, start ->
-        checkGraphPath(
-          graph,
-          start,
-          targetNode = { call ->
-            call is UCallExpression && call.methodIdentifier?.name == "println"
-          },
-          expected = "when → println()",
-        )
-      },
+        canThrow = { _, _ -> false },
+        useGraph = { graph, start ->
+          checkGraphPath(
+              graph,
+              start,
+              targetNode = { call -> call is UCallExpression && call.methodIdentifier?.name == "println" },
+              expected = "when → println()",
+          )
+        },
     )
   }
 
   @Test
   fun checkKotlinWhenStatementWithoutSubject() {
     checkAstGraph(
-      kotlin(
-          """
+        kotlin(
+                """
           fun target(list: List<String>) {
             when {
               list is ArrayDeque ||
@@ -2026,9 +2010,9 @@ class ControlFlowGraphTest {
             println("after")
           }
           """
-        )
-        .indented(),
-      """
+            )
+            .indented(),
+        """
                     Block:           ╭─ { when { list …ntln("after") }
                    Switch:         ╭─╰→ when { list is…hing else") } }
           SwitchEntryBody: ╭→  ╭→  │ ╭─ list is ArrayD…ntln("array") }
@@ -2057,23 +2041,23 @@ class ControlFlowGraphTest {
                  FuncCall:   ╰→╰→╰→╰→╭─ println("after")
                                      ╰→ *exit*
       """,
-      canThrow = { _, _ -> false },
+        canThrow = { _, _ -> false },
     )
   }
 
   @Test
   fun checkKotlinShortCircuitEvaluation() {
     checkAstGraph(
-      kotlin(
-          """
+        kotlin(
+                """
           package test.pkg
           fun target(list1: List<String>, list2: List<String>) {
             val x = list1.isEmpty() || list2.contains("1")
           }
           """
-        )
-        .indented(),
-      """
+            )
+            .indented(),
+        """
                     Block:     ╭─ { val x = list…contains("1") }
                    Binary:   ╭─╰→ list1.isEmpty(…2.contains("1")
       QualifiedExpression:   ╰→╭─ list1.isEmpty()
@@ -2084,7 +2068,7 @@ class ControlFlowGraphTest {
              Declarations:   ╭─╰→ val x = list1.…2.contains("1")
                              ╰→   *exit*
       """,
-      canThrow = { _, _ -> false },
+        canThrow = { _, _ -> false },
     )
   }
 
@@ -2093,8 +2077,8 @@ class ControlFlowGraphTest {
     // Bug: we have an extra arrow from reversed() directly to toString here
     // which isn't possible at runtime.
     checkAstGraph(
-      kotlin(
-          """
+        kotlin(
+                """
           package test.pkg
           fun target(list: List<String>) {
               outer()?.middle()?.inner()?.ref
@@ -2102,9 +2086,9 @@ class ControlFlowGraphTest {
 
           }
           """
-        )
-        .indented(),
-      """
+            )
+            .indented(),
+        """
                      Block:       ╭─ { outer()?.mid…?.ref after() }
       SafeQuali…Expression:     ╭─╰→ outer()?.middl…)?.inner()?.ref
       SafeQuali…Expression:     ╰→╭─ outer()?.middle()?.inner()
@@ -2115,7 +2099,7 @@ class ControlFlowGraphTest {
                   FuncCall: ╰→╰→╭─╰→ after()
                                 ╰→   *exit*
       """,
-      canThrow = { _, _ -> false },
+        canThrow = { _, _ -> false },
     )
   }
 
@@ -2124,8 +2108,8 @@ class ControlFlowGraphTest {
     // Checks that we avoid reporting method calls that should be safe (only accessing simple
     // members)
     val testFile: TestFile =
-      kotlin(
-          """
+        kotlin(
+                """
           package test.pkg
 
           import java.io.FileNotFoundException
@@ -2173,12 +2157,12 @@ class ControlFlowGraphTest {
               throw FileNotFoundException()
           }
           """
-        )
-        .indented()
+            )
+            .indented()
 
     checkAstGraph(
-      testFile,
-      """
+        testFile,
+        """
          Block:   ╭─ { empty() simp…2() unsafe3() }
       FuncCall: ╭─╰→ empty()
       FuncCall: ╰→╭─ simple1(1,2)
@@ -2191,14 +2175,14 @@ class ControlFlowGraphTest {
       FuncCall: ╭─╰→ unsafe3()                       ┆ ┆─╮ Exception
                 ╰→   *exit*                         ←╯←╯←╯
       """,
-      strict = false,
+        strict = false,
     )
 
     // Strict mode: no longer trusts the throws clauses of functions,
     // and defaults to Throwable instead of Exception.
     checkAstGraph(
-      testFile,
-      """
+        testFile,
+        """
          Block:   ╭─ { empty() simp…2() unsafe3() }
       FuncCall: ╭─╰→ empty()
       FuncCall: ╰→╭─ simple1(1,2)
@@ -2211,15 +2195,15 @@ class ControlFlowGraphTest {
       FuncCall: ╭─╰→ unsafe3()                       ┆ ┆─╮ Exception
                 ╰→   *exit*                         ←╯←╯←╯
       """,
-      strict = true,
+        strict = true,
     )
   }
 
   @Test
   fun checkErrorAndTodo1() {
     checkAstGraph(
-      kotlin(
-          """
+        kotlin(
+                """
           package test.pkg
           fun target(list: List<String>, condition: Boolean) {
               if (condition) {
@@ -2233,9 +2217,9 @@ class ControlFlowGraphTest {
               }
           }
           """
-        )
-        .indented(),
-      """
+            )
+            .indented(),
+        """
            Block:     ╭─ { if (conditio…n("Exit") } } }
               If: ╭─╭─╰→ if (condition)…ion("Exit") } }
       Then Block: │ ╰→╭─ { error("Exit") }
@@ -2249,15 +2233,15 @@ class ControlFlowGraphTest {
            Throw:   ╰→   throw RuntimeException("Exit")  ┆ ┆─╮ RuntimeException
                          *exit*                         ←╯←╯←╯
       """,
-      canThrow = { _, _ -> false },
+        canThrow = { _, _ -> false },
     )
   }
 
   @Test
   fun checkErrorAndTodo2() {
     checkAstGraph(
-      kotlin(
-          """
+        kotlin(
+                """
           package test.pkg
           fun target(condition: Boolean) {
               try {
@@ -2269,9 +2253,9 @@ class ControlFlowGraphTest {
               next()
           }
           """
-        )
-        .indented(),
-      """
+            )
+            .indented(),
+        """
             Block:     ╭─ { try { if (co…n) { } next() }
               Try:   ╭─╰→ try { if (cond… Exception) { }
         Try Block:   ╰→╭─ { if (conditio…ror("Exit") } }
@@ -2283,24 +2267,24 @@ class ControlFlowGraphTest {
          FuncCall: ╰→╰→╭─ next()
                        ╰→ *exit*
       """,
-      canThrow = { _, _ -> false },
+        canThrow = { _, _ -> false },
     )
   }
 
   @Test
   fun checkElvis1() {
     checkAstGraph(
-      kotlin(
-          """
+        kotlin(
+                """
           package test.pkg
           fun target(createList: ()->List<String>?) {
               val list = createList()
                   ?: emptyList()
           }
           """
-        )
-        .indented(),
-      """
+            )
+            .indented(),
+        """
                 Block:     ╭─ { val list = c…: emptyList() }
       ElvisExpression:   ╭─╰→ createList() ?: emptyList()
              FuncCall:   ╰→╭─ createList()
@@ -2313,16 +2297,16 @@ class ControlFlowGraphTest {
          Declarations:   ╭─╰→ val list = cre… ?: emptyList()
                          ╰→   *exit*
       """,
-      canThrow = { _, _ -> false },
-      dfsOrder = true,
+        canThrow = { _, _ -> false },
+        dfsOrder = true,
     )
   }
 
   @Test
   fun checkElvis2() {
     checkAstGraph(
-      kotlin(
-          """
+        kotlin(
+                """
           package test.pkg
           fun target(a: List<String>?) {
               val list = a
@@ -2330,9 +2314,9 @@ class ControlFlowGraphTest {
                   ?: emptyList()
           }
           """
-        )
-        .indented(),
-      """
+            )
+            .indented(),
+        """
                 Block:     ╭─ { val list = a…: emptyList() }
       ElvisExpression:   ╭─╰→ a ?: mutableLi… ?: emptyList()
       ElvisExpression:   ╰→╭─ a ?: mutableListOf()
@@ -2350,25 +2334,25 @@ class ControlFlowGraphTest {
          Declarations:   ╰→╭─ val list = a ?… ?: emptyList()
                            ╰→ *exit*
       """,
-      canThrow = { _, _ -> false },
-      dfsOrder = true,
+        canThrow = { _, _ -> false },
+        dfsOrder = true,
     )
   }
 
   @Test
   fun checkKotlinSubstitutionStrings() {
     checkAstGraph(
-      kotlin(
-          "" +
-            "" +
-            "package test.pkg\n" +
-            "import android.os.PowerManager.WakeLock\n" +
-            "fun target(lock: WakeLock) {\n" +
-            "    val x = \"Acquired: \${lock.acquire()}. Released: \${lock.release()}\"\n" +
-            "}\n"
-        )
-        .indented(),
-      """
+        kotlin(
+                "" +
+                    "" +
+                    "package test.pkg\n" +
+                    "import android.os.PowerManager.WakeLock\n" +
+                    "fun target(lock: WakeLock) {\n" +
+                    "    val x = \"Acquired: \${lock.acquire()}. Released: \${lock.release()}\"\n" +
+                    "}\n"
+            )
+            .indented(),
+        """
                     Block:   ╭─ { val x = "Acq…k.release()}" }
       QualifiedExpression: ╭─╰→ lock.acquire()
                  FuncCall: ╰→╭─ acquire()
@@ -2379,24 +2363,24 @@ class ControlFlowGraphTest {
              Declarations: ╭─╰→ val x = "Acqui…ock.release()}"
                            ╰→   *exit*
       """,
-      canThrow = { _, _ -> false },
+        canThrow = { _, _ -> false },
     )
   }
 
   @Test
   fun checkJavaTernaryExpression() {
     checkAstGraph(
-      java(
-          """
+        java(
+                """
           public class Test {
             public void target() {
               boolean x = equals(5) ? foo() : bar();
             }
           }
           """
-        )
-        .indented(),
-      """
+            )
+            .indented(),
+        """
           CodeBlock:     ╭─ { boolean x = …oo() : bar(); }
           TernaryIf:   ╭─╰→ equals(5) ? foo() : bar()
                Call: ╭─╰→╭─ equals(5)
@@ -2406,7 +2390,7 @@ class ControlFlowGraphTest {
        Declarations: ╰→  ╭─ var x: boolean…oo()) : (bar())
                          ╰→ *exit*
       """,
-      canThrow = { _, _ -> false },
+        canThrow = { _, _ -> false },
     )
   }
 
@@ -2414,8 +2398,8 @@ class ControlFlowGraphTest {
   fun checkReturnNodes() {
     // From TraceSectionDetectorTest.testNestedLogic
     checkAstGraph(
-      kotlin(
-          """
+        kotlin(
+                """
           package test.pkg
 
           import android.os.Trace
@@ -2438,9 +2422,9 @@ class ControlFlowGraphTest {
 
           fun blockingCall() { }
           """
-        )
-        .indented(),
-      """
+            )
+            .indented(),
+        """
                     Block:       ╭─ { try { Trace.…ndSection() } }
                       Try:     ╭─╰→ try { Trace.be….endSection() }
                 Try Block:     ╰→╭─ { Trace.beginS…ndSection() } }
@@ -2464,7 +2448,7 @@ class ControlFlowGraphTest {
                  FuncCall:     ╰→╭─ endSection()                   ─╮ finally
                                  ╰→ *exit*                         ←╯
       """,
-      canThrow = { _, _ -> false },
+        canThrow = { _, _ -> false },
     )
   }
 
@@ -2472,8 +2456,8 @@ class ControlFlowGraphTest {
   fun checkReturnCatch() {
     // Make sure the return target here doesn't jump across a finally-tag
     checkAstGraph(
-      java(
-          """
+        java(
+                """
           import java.io.ByteArrayOutputStream;
           import java.io.File;
           import java.io.FileOutputStream;
@@ -2493,9 +2477,9 @@ class ControlFlowGraphTest {
               }
           }
           """
-        )
-        .indented(),
-      """
+            )
+            .indented(),
+        """
                 CodeBlock:     ╭─ { FileOutputSt… } } after(); }
             LocalVariable:   ╭─╰→ FileOutputStream fo = null;
              Declarations:   ╰→╭─ var fo: java.i…utStream = null
@@ -2523,8 +2507,8 @@ class ControlFlowGraphTest {
   fun checkLabeledBreakViaFinally() {
     // Make sure a labeled break jumps via intermediate finally statements
     checkAstGraph(
-      java(
-          """
+        java(
+                """
           class Test {
             public static void target(boolean condition) {
               myloop1:
@@ -2551,9 +2535,9 @@ class ControlFlowGraphTest {
             }
           }
           """
-        )
-        .indented(),
-      """
+            )
+            .indented(),
+        """
           CodeBlock:             ╭─ { myloop1: whi… } } after(); }
             Labeled:           ╭─╰→ myloop1: while… { here2(); } }
               While: ╭→      ╭─╰→╭─ while (true) {… { here2(); } }
@@ -2589,8 +2573,8 @@ class ControlFlowGraphTest {
   @Test
   fun checkLabeledExpression() {
     checkAstGraph(
-      java(
-          """
+        java(
+                """
           class Test {
             public static void target(boolean condition) {
               myloop1:
@@ -2600,9 +2584,9 @@ class ControlFlowGraphTest {
             }
           }
           """
-        )
-        .indented(),
-      """
+            )
+            .indented(),
+        """
       CodeBlock:       ╭─ { myloop1: whi…) { test(); } }
         Labeled:     ╭─╰→ myloop1: while…ue) { test(); }
           While: ╭→╭─╰→╭─ while (true) { test(); }
@@ -2617,8 +2601,8 @@ class ControlFlowGraphTest {
   fun checkTryFinallyWithoutCatch() {
     // From TraceSectionDetectorTest.testWrongLoop
     checkAstGraph(
-      kotlin(
-          """
+        kotlin(
+                """
           package test.pkg
 
           import android.os.Trace
@@ -2638,9 +2622,9 @@ class ControlFlowGraphTest {
 
           fun blockingCall() { }
           """
-        )
-        .indented(),
-      """
+            )
+            .indented(),
+        """
                     Block:       ╭─ { Trace.beginS….endSection() }
       QualifiedExpression:     ╭─╰→ Trace.beginSection("wrong")
                  FuncCall:     ╰→╭─ beginSection("wrong")
@@ -2658,15 +2642,15 @@ class ControlFlowGraphTest {
                  FuncCall:     ╭─╰→ endSection()                    ┆
                                ╰→   *exit*                         ←╯
       """,
-      canThrow = { _, method -> method.name == "blockingCall" },
+        canThrow = { _, method -> method.name == "blockingCall" },
     )
   }
 
   @Test
   fun checkKotlinScopingFunctions() {
     checkAstGraph(
-      kotlin(
-          """
+        kotlin(
+                """
           fun target(list: MutableList<String>) {
             list.let {
               println(it)
@@ -2683,9 +2667,9 @@ class ControlFlowGraphTest {
             next()
           }
           """
-        )
-        .indented(),
-      """
+            )
+            .indented(),
+        """
                      Block:     ╭─ { list.let { p…(it) } next() }
        QualifiedExpression:   ╭─╰→ list.let { println(it) }
                   FuncCall:   ╰→╭─ let { println(it) }
@@ -2713,10 +2697,7 @@ class ControlFlowGraphTest {
                   FuncCall: ╰→╰→╭─ next()
                                 ╰→ *exit*
       """,
-      canThrow = { _, method ->
-        if (method.name == "println" || method.name == "clear" || method.name == "next") false
-        else null
-      },
+        canThrow = { _, method -> if (method.name == "println" || method.name == "clear" || method.name == "next") false else null },
     )
   }
 
@@ -2729,8 +2710,8 @@ class ControlFlowGraphTest {
     // where in the below code, the implicit return element from the first lambda is
     // considered equal to the implicit return from the second.)
     checkAstGraph(
-      kotlin(
-          """
+        kotlin(
+                """
           fun target(list: MutableList<String>) {
             list.let {
               println(it)
@@ -2741,9 +2722,9 @@ class ControlFlowGraphTest {
             next()
           }
           """
-        )
-        .indented(),
-      """
+            )
+            .indented(),
+        """
                     Block:   ╭─ { list.let { p…(it) } next() }
       QualifiedExpression: ╭─╰→ list.let { println(it) }
                  FuncCall: ╰→╭─ let { println(it) }
@@ -2760,28 +2741,27 @@ class ControlFlowGraphTest {
                  FuncCall: ╭─╰→ next()
                            ╰→   *exit*
       """,
-      canThrow = { _, method ->
-        val name = method.name
-        if (name == "println" || name == "clear" || name == "next" || name == "print") false
-        else null
-      },
+        canThrow = { _, method ->
+          val name = method.name
+          if (name == "println" || name == "clear" || name == "next" || name == "print") false else null
+        },
     )
   }
 
   @Test
   fun checkKotlinMethodReferences() {
     checkAstGraph(
-      kotlin(
-          """
+        kotlin(
+                """
           fun target(list: MutableList<String>) {
             list.let(::println)
             list?.let(::print)
             next()
           }
           """
-        )
-        .indented(),
-      """
+            )
+            .indented(),
+        """
                      Block:     ╭─ { list.let(::p…print) next() }
        QualifiedExpression:   ╭─╰→ list.let(::println)
                   FuncCall:   ╰→╭─ let(::println)
@@ -2792,15 +2772,15 @@ class ControlFlowGraphTest {
                   FuncCall: ╰→╭─╰→ next()
                               ╰→   *exit*
       """,
-      canThrow = { _, _ -> false },
+        canThrow = { _, _ -> false },
     )
   }
 
   @Test
   fun checkJavaLambdas() {
     checkAstGraph(
-      java(
-          """
+        java(
+                """
           import java.util.List;
           public class Test {
             public void target(List<String> list) {
@@ -2808,9 +2788,9 @@ class ControlFlowGraphTest {
             }
           }
           """
-        )
-        .indented(),
-      """
+            )
+            .indented(),
+        """
                 CodeBlock:       ╭─ { list.stream(…ntains("?")); }
       QualifiedExpression:     ╭─╰→ list.stream().….contains("?"))
       QualifiedExpression:     ╰→╭─ list.stream()
@@ -2823,29 +2803,29 @@ class ControlFlowGraphTest {
           Implicit Return: ╰─│   ╰→ return s.contains("?")
                              ╰→     *exit*
       """,
-      canThrow = { _, _ -> false },
-      dfsOrder = true,
+        canThrow = { _, _ -> false },
+        dfsOrder = true,
     )
   }
 
   @Test
   fun checkKotlinLambdas() {
     val testFile =
-      kotlin(
-          """
+        kotlin(
+                """
           fun target(list: List<String>) {
             var i = 0
             val foo = list.filter { it.contains("?") }
             next()
           }
           """
-        )
-        .indented()
+            )
+            .indented()
 
     // No lambda connections
     checkAstGraph(
-      testFile,
-      """
+        testFile,
+        """
                     Block:   ╭─ { var i = 0 va…"?") } next() }
             LocalVariable: ╭─╰→ var i = 0
              Declarations: ╰→╭─ var i = 0
@@ -2856,14 +2836,14 @@ class ControlFlowGraphTest {
                  FuncCall: ╭─╰→ next()
                            ╰→   *exit*
       """,
-      callLambdaParameters = false,
-      canThrow = { _, _ -> false },
+        callLambdaParameters = false,
+        canThrow = { _, _ -> false },
     )
 
     // Connect lambdas:
     checkAstGraph(
-      testFile,
-      """
+        testFile,
+        """
                     Block:         ╭─ { var i = 0 va…"?") } next() }
             LocalVariable:       ╭─╰→ var i = 0
              Declarations:       ╰→╭─ var i = 0
@@ -2879,16 +2859,16 @@ class ControlFlowGraphTest {
                  FuncCall:       ╰→╭─ next()
                                    ╰→ *exit*
       """,
-      callLambdaParameters = true,
-      canThrow = { _, _ -> false },
+        callLambdaParameters = true,
+        canThrow = { _, _ -> false },
     )
   }
 
   @Test
   fun checkKotlinLambdasLabeledReturns() {
     checkAstGraph(
-      kotlin(
-          """
+        kotlin(
+                """
           fun target(list: List<String>) {
             val foo = list.filter {
               if (it.length == 0) return@filter true
@@ -2898,9 +2878,9 @@ class ControlFlowGraphTest {
             next()
           }
           """
-        )
-        .indented(),
-      """
+            )
+            .indented(),
+        """
                     Block:           ╭─ { val foo = li…"?") } next() }
             LocalVariable:     ╭→  ╭─│  val foo = list…contains("?") }
              Declarations:     │ ╭─╰→│  val foo = list…contains("?") }
@@ -2922,23 +2902,23 @@ class ControlFlowGraphTest {
                  FuncCall:       ╰→│ ╭─ next()
                                    ╰→╰→ *exit*
       """,
-      canThrow = { _, _ -> false },
+        canThrow = { _, _ -> false },
     )
   }
 
   @Test
   fun checkKotlinMultipleLambdas() {
     checkAstGraph(
-      kotlin(
-          """
+        kotlin(
+                """
           fun target(list: List<String>) {
             val foo = foo({ i-> firstLambda() }, { j-> secondLambda(j) }) { k -> thirdLambda(k) }
             next()
           }
           """
-        )
-        .indented(),
-      """
+            )
+            .indented(),
+        """
                 Block:               ╭─ { val foo = fo…a(k) } next() }
              FuncCall: ╭→╭→╭→╭─╭─╭─╭─╰→ foo({ i-> firs…hirdLambda(k) }
                Lambda: │ │ │ │ │ │ ╰→╭─ { i-> firstLambda() }
@@ -2958,22 +2938,22 @@ class ControlFlowGraphTest {
              FuncCall:             ╰→╭─ next()
                                      ╰→ *exit*
       """,
-      canThrow = { _, _ -> false },
-      dfsOrder = true,
+        canThrow = { _, _ -> false },
+        dfsOrder = true,
     )
 
     // In strict mode, lambdas are not connected
     checkAstGraph(
-      kotlin(
-          """
+        kotlin(
+                """
           fun target(list: List<String>) {
             val foo = foo({ i-> firstLambda() }, { j-> secondLambda(j) }) { k -> thirdLambda(k) }
             next()
           }
           """
-        )
-        .indented(),
-      """
+            )
+            .indented(),
+        """
               Block:   ╭─ { val foo = fo…a(k) } next() }
            FuncCall: ╭─╰→ foo({ i-> firs…hirdLambda(k) }
       LocalVariable: ╰→╭─ val foo = foo(…hirdLambda(k) }
@@ -2981,9 +2961,9 @@ class ControlFlowGraphTest {
            FuncCall: ╰→╭─ next()
                        ╰→ *exit*
       """,
-      canThrow = { _, _ -> false },
-      // Strict mode: don't connect lambdas
-      strict = true,
+        canThrow = { _, _ -> false },
+        // Strict mode: don't connect lambdas
+        strict = true,
     )
   }
 
@@ -2991,17 +2971,17 @@ class ControlFlowGraphTest {
   fun checkLambdaVariable() {
     // Make sure we don't treat this as visited on its own
     checkAstGraph(
-      kotlin(
-          """
+        kotlin(
+                """
           fun target(i: Int) {
             val y = { s: Int -> println(s) }
           }
           """
-        )
-        .indented(),
-      // Two clusters: the method execution, and the lambda block (which
-      // is not reachable)
-      """
+            )
+            .indented(),
+        // Two clusters: the method execution, and the lambda block (which
+        // is not reachable)
+        """
                 Block:   ╭─ { val y = { s:… println(s) } }
         LocalVariable: ╭─╰→ val y = { s: I…-> println(s) }
          Declarations: ╰→╭─ val y = { s: I…-> println(s) }
@@ -3012,15 +2992,15 @@ class ControlFlowGraphTest {
              FuncCall: ╰→╭─ println(s)
       Implicit Return:   ╰→ return println(s)
       """,
-      canThrow = { _, _ -> false },
+        canThrow = { _, _ -> false },
     )
   }
 
   @Test
   fun checkLocalFunctions() {
     checkAstGraph(
-      kotlin(
-          """
+        kotlin(
+                """
           fun target(i: Int) {
             fun localFun() {
               if (i == 0) {
@@ -3036,9 +3016,9 @@ class ControlFlowGraphTest {
           }
           fun nonLocalFun() { }
           """
-        )
-        .indented(),
-      """
+            )
+            .indented(),
+        """
                     Block:         ╭─ { fun localFun…un() } next() }
             LocalFunction:       ╭─╰→ fun localFun()…ntln("hello") }
              Declarations:       ╰→╭─ fun localFun()…ntln("hello") }
@@ -3057,16 +3037,16 @@ class ControlFlowGraphTest {
                  FuncCall: ╰─╰→    │  println("hello")
                                    ╰→ *exit*
       """,
-      canThrow = { _, _ -> false },
-      dfsOrder = true,
+        canThrow = { _, _ -> false },
+        dfsOrder = true,
     )
   }
 
   @Test
   fun checkKotlinLocalLambdaInvocation() {
     checkAstGraph(
-      kotlin(
-          """
+        kotlin(
+                """
           fun target(i: Int) {
             val y = { s: Int -> println(s) }
             val z = { a: Int, b: Int, c: Int -> print(a+b+c) }
@@ -3075,9 +3055,9 @@ class ControlFlowGraphTest {
             next()
           }
           """
-        )
-        .indented(),
-      """
+            )
+            .indented(),
+        """
                 Block:   ╭─ { val y = { s:…1,2,3) next() }
         LocalVariable: ╭─╰→ val y = { s: I…-> println(s) }
          Declarations: ╰→╭─ val y = { s: I…-> println(s) }
@@ -3098,17 +3078,17 @@ class ControlFlowGraphTest {
              FuncCall: ╭─╰→ next()
                        ╰→   *exit*
       """,
-      canThrow = { _, _ -> false },
-      callLambdaParameters = false,
-      dfsOrder = true,
+        canThrow = { _, _ -> false },
+        callLambdaParameters = false,
+        dfsOrder = true,
     )
   }
 
   @Test
   fun checkJavaLocalLambdaInvocation() {
     checkAstGraph(
-      java(
-          """
+        java(
+                """
           import java.util.function.Predicate;
           class Test {
             public void target() {
@@ -3119,9 +3099,9 @@ class ControlFlowGraphTest {
             }
           }
           """
-        )
-        .indented(),
-      """
+            )
+            .indented(),
+        """
                 CodeBlock:   ╭─ { Runnable run…Even.test(4); }
             LocalVariable: ╭─╰→ Runnable runna…om a lambda!");
              Declarations: ╰→╭─ var runnable: …a lambda!") } }
@@ -3144,19 +3124,19 @@ class ControlFlowGraphTest {
           Implicit Return: ╭─╰→ return number % 2 === 0
                            ╰→   *exit*
       """,
-      canThrow = { _, _ -> false },
-      // Here we have direct invocation of lambdas, so the
-      // call graph should unconditionally add these edges on its own:
-      callLambdaParameters = false,
-      dfsOrder = true,
+        canThrow = { _, _ -> false },
+        // Here we have direct invocation of lambdas, so the
+        // call graph should unconditionally add these edges on its own:
+        callLambdaParameters = false,
+        dfsOrder = true,
     )
   }
 
   @Test
   fun checkJavaAnonymousInnerClassInvocation() {
     checkAstGraph(
-      java(
-          """
+        java(
+                """
           class Test {
             public void target() {
               Runnable runnable = new Runnable() {
@@ -3169,9 +3149,9 @@ class ControlFlowGraphTest {
             }
           }
           """
-        )
-        .indented(),
-      """
+            )
+            .indented(),
+        """
                 CodeBlock:   ╭─ { Runnable run…nnable.run(); }
             LocalVariable: ╭─╰→ Runnable runna… class!"); } };
              Declarations: ╰→╭─ var runnable: …r class!"); } }
@@ -3184,17 +3164,17 @@ class ControlFlowGraphTest {
                      Call: ╭─╰→ System.out.pri… inner class!")
                            ╰→   *exit*
       """,
-      canThrow = { _, _ -> false },
-      callLambdaParameters = false,
-      dfsOrder = true,
+        canThrow = { _, _ -> false },
+        callLambdaParameters = false,
+        dfsOrder = true,
     )
   }
 
   @Test
   fun checkLocalCallableReferenceInvocation() {
     checkAstGraph(
-      kotlin(
-          """
+        kotlin(
+                """
           fun target(i: Int) {
             fun localFun() {
               println("hello")
@@ -3204,9 +3184,9 @@ class ControlFlowGraphTest {
             next()
           }
           """
-        )
-        .indented(),
-      """
+            )
+            .indented(),
+        """
                     Block:       ╭─ { fun localFun…un x() next() }
             LocalFunction:     ╭─╰→ fun localFun()…ntln("hello") }
              Declarations:     ╰→╭─ fun localFun()…ntln("hello") }
@@ -3220,15 +3200,15 @@ class ControlFlowGraphTest {
                  FuncCall:     ╰→╭─ next()
                                  ╰→ *exit*
       """,
-      canThrow = { _, _ -> false },
+        canThrow = { _, _ -> false },
     )
   }
 
   @Test
   fun checkJavaSynchronized() {
     checkAstGraph(
-      java(
-          """
+        java(
+                """
           public class Test {
             public void target() {
                 synchronized (getLock()) {
@@ -3238,9 +3218,9 @@ class ControlFlowGraphTest {
             }
           }
           """
-        )
-        .indented(),
-      """
+            )
+            .indented(),
+        """
          CodeBlock:   ╭─ { synchronized…); } after(); }
       Synchronized: ╭─╰→ synchronized (…) { synced(); }
               Call: ╰→╭─ getLock()
@@ -3248,15 +3228,15 @@ class ControlFlowGraphTest {
               Call: ╰→╭─ after()
                       ╰→ *exit*
       """,
-      canThrow = { _, _ -> false },
+        canThrow = { _, _ -> false },
     )
   }
 
   @Test
   fun checkCompose() {
     val testFile =
-      kotlin(
-          """
+        kotlin(
+                """
           package androidx.compose.runtime
           annotation class Composable
 
@@ -3280,12 +3260,12 @@ class ControlFlowGraphTest {
              }
           }
           """
-        )
-        .indented()
+            )
+            .indented()
 
     checkAstGraph(
-      testFile,
-      """
+        testFile,
+        """
                 Block:       ╭─ { MyApplicatio…lo " + i) } } }
              FuncCall:     ╭─╰→ MyApplicationT…tln("Click") })
              FuncCall:     ╰→╭─ MyApplicationT…ello " + i) } }
@@ -3298,14 +3278,14 @@ class ControlFlowGraphTest {
                Binary: ╰─╰→  │  "Hello " + i
                              ╰→ *exit*
       """,
-      canThrow = { _, _ -> false },
-      callLambdaParameters = false,
+        canThrow = { _, _ -> false },
+        callLambdaParameters = false,
     )
 
     // With lambda call connections we'll also include the onClick handler
     checkAstGraph(
-      testFile,
-      """
+        testFile,
+        """
                 Block:       ╭─ { MyApplicatio…lo " + i) } } }
              FuncCall: ╭→╭─╭─╰→ MyApplicationT…tln("Click") })
                Lambda: │ │ ╰→╭─ { println("Click") }
@@ -3322,118 +3302,118 @@ class ControlFlowGraphTest {
                Binary: ╰─╰→  │  "Hello " + i
                              ╰→ *exit*
       """,
-      canThrow = { _, _ -> false },
-      callLambdaParameters = true,
+        canThrow = { _, _ -> false },
+        callLambdaParameters = true,
     )
   }
 
   @Test
   fun testByteCode() {
     val testFile: TestFile =
-      compiled(
-        "bin/classes",
-        java(
-          "" +
-            "package test.pkg;\n" +
-            "\n" +
-            "import android.annotation.SuppressLint;\n" +
-            "import android.app.Activity;\n" +
-            "import android.os.PowerManager;\n" +
-            "import android.os.PowerManager.WakeLock;;\n" +
-            "\n" +
-            "public class WakelockActivity6 extends Activity {\n" +
-            "    void wrongFlow1() {\n" +
-            "        PowerManager manager = (PowerManager) getSystemService(POWER_SERVICE);\n" +
-            "        PowerManager.WakeLock lock =\n" +
-            "                manager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, \"Test\");\n" +
-            "        lock.acquire();\n" +
-            "        if (getTaskId() == 50) {\n" +
-            "            randomCall();\n" +
-            "        } else {\n" +
-            "            lock.release(); // Wrong\n" +
-            "        }\n" +
-            "    }\n" +
-            "\n" +
-            "    void wrongFlow2(PowerManager.WakeLock lock) {\n" +
-            "        lock.acquire();\n" +
-            "        if (getTaskId() == 50) {\n" +
-            "            randomCall();\n" +
-            "        } else {\n" +
-            "            lock.release(); // Wrong\n" +
-            "        }\n" +
-            "    }\n" +
-            "\n" +
-            "    void okFlow1(WakeLock lock) {\n" +
-            "        lock.acquire();\n" +
-            "        try {\n" +
-            "            randomCall();\n" +
-            "        } catch (Exception e) {\n" +
-            "            e.printStackTrace();\n" +
-            "        } finally {\n" +
-            "            lock.release(); // OK\n" +
-            "        }\n" +
-            "    }\n" +
-            "\n" +
-            "    public void checkNullGuard(WakeLock lock) {\n" +
-            "        lock.acquire();\n" +
-            "        if (lock != null) {\n" +
-            "            lock.release(); // OK\n" +
-            "        }\n" +
-            "    }\n" +
-            "\n" +
-            "    @SuppressLint(\"Wakelock\")\n" +
-            "    public void checkDisabled1(PowerManager.WakeLock lock) {\n" +
-            "        lock.acquire();\n" +
-            "        randomCall();\n" +
-            "        lock.release(); // Wrong, but disabled\n" +
-            "    }\n" +
-            "\n" +
-            "    void wrongFlow3(WakeLock lock) {\n" +
-            "        int id = getTaskId();\n" +
-            "        lock.acquire();\n" +
-            "        if (id < 50) {\n" +
-            "            System.out.println(1);\n" +
-            "        } else {\n" +
-            "            System.out.println(2);\n" +
-            "        }\n" +
-            "        lock.release(); // Wrong\n" +
-            "    }\n" +
-            "\n" +
-            "    static void randomCall() {\n" +
-            "        System.out.println(\"test\");\n" +
-            "    }\n" +
-            "}\n"
-        ),
-        0x6a6b5888,
-        "test/pkg/WakelockActivity6.class:" +
-          "H4sIAAAAAAAAAIVVXVcTVxTdExImGYavIFiRKqChIUFGQaUaUWkQjYaPGpZ9" +
-          "6NMwuSuOGWbSmQnob+if6OqLz/Yh7epD26c+9DfZru57IQHUtcys3HPvuefu" +
-          "vc+5J5N//vv9DwAreG5gDEUdC2lcM5DFog4rjesGUrhhYBJL0rksh5tyeUvH" +
-          "bQMmVjL4GncM3EUpjXvSruq4r+OBhv57ru/G9zX05edfaEiWg7rQMFx1fbHV" +
-          "3t8T4a6959FjHIaB39jwgsMbGgZrse00N+2W2tTx8PT+kob0d3ZTVAOnqcGs" +
-          "+L4Iy54dRSLSkMtXbb8eBm7dCiJrJzgU4abt2w0RXu2eKUkdetBUXDrWNAw5" +
-          "L4XT3Gp73uO2Hda7jnU3kvR1Crr4vO3H7r6o+Adu5NK55vtBbMdu4JN0psdp" +
-          "99xWrd1qhSKKmGlc0pA6sL22OJbuKeknKS1zERIj2C/bnsdFLWiHjthwZWUm" +
-          "uifWnNg9cOM3txdf2Qe2iXMY13C+S+0Efiz82CpL+zomY0tmb+IblE+FfVAV" +
-          "3siuiGIT63hkYgPjJh7jiYm8nFUkwZgkszzbb1iPXjuiJZMz8RTjOp6ZqGJT" +
-          "x5aJbewQKlZQ2/hWw6ScW61mw/pIvoZzvXq1WlbXr2H6c1d3Rs3uyzA4PGqe" +
-          "kYaIa2+iWOzXRHjgOnTN5asnobU4dP1Gaf6Ua3vvlXDkxQz44vAEfyVf+dS5" +
-          "z/YUO8p2fmi7IakzVLNrR81KXXV9hXuh8IQdycZvETFW7b0b2lLoyCk6lQIP" +
-          "BW3e3/iREDewdo7OhMLeL3VLcNZNCgXs+byFfEV2+PinCvACM/ztjkF+0tBk" +
-          "C3Gc4OpLWo02VfgV2jtO2DMc+5Uzze8XvdAW+vgAhUK2r4PkX0hVi8lsfwf6" +
-          "5kIH6UIHmZGln5D5DcZb6HQNSLyEwptVWAafAQzxzZHFIDGHcBnDyGEU8xR3" +
-          "gREmEv8ipyOlY1JyXcSlY/anREpIPcWPuYpnuCb41pJjkqtB6h/jG+s8phR+" +
-          "EokxiXu5h/sjbVIqlLiEk1hvMSFTGjyaG1vSXvvzHbNPQlf6pZ3kqSGF3mVe" +
-          "ZHYSO8ly68xrAHOMmGWOVxiXY8wco3OMmGPEV0rRAPq2dJjPdEzLos/0hN2l" +
-          "lQlLFeni3x9mmVWqCxyLrO0CNS0qvD5oJk/OEiehcK4f45inEjy56COYJY7L" +
-          "lHyTcm5RrExMw1V+c99DiygXlNtVtkc8WcScvIZVCTs1svQzBn/BULKDYVaM" +
-          "sxRnZxVfIgH4h5HCHWSY3jBKVLyKaTwg1UOlXkfiPS5o/Uwp32u8nNIPZAib" +
-          "Helg9ES+obbKDF/nbF5xFdjUcocvI3JNYfR/L6FM7+cGAAA=",
-      )
+        compiled(
+            "bin/classes",
+            java(
+                "" +
+                    "package test.pkg;\n" +
+                    "\n" +
+                    "import android.annotation.SuppressLint;\n" +
+                    "import android.app.Activity;\n" +
+                    "import android.os.PowerManager;\n" +
+                    "import android.os.PowerManager.WakeLock;;\n" +
+                    "\n" +
+                    "public class WakelockActivity6 extends Activity {\n" +
+                    "    void wrongFlow1() {\n" +
+                    "        PowerManager manager = (PowerManager) getSystemService(POWER_SERVICE);\n" +
+                    "        PowerManager.WakeLock lock =\n" +
+                    "                manager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, \"Test\");\n" +
+                    "        lock.acquire();\n" +
+                    "        if (getTaskId() == 50) {\n" +
+                    "            randomCall();\n" +
+                    "        } else {\n" +
+                    "            lock.release(); // Wrong\n" +
+                    "        }\n" +
+                    "    }\n" +
+                    "\n" +
+                    "    void wrongFlow2(PowerManager.WakeLock lock) {\n" +
+                    "        lock.acquire();\n" +
+                    "        if (getTaskId() == 50) {\n" +
+                    "            randomCall();\n" +
+                    "        } else {\n" +
+                    "            lock.release(); // Wrong\n" +
+                    "        }\n" +
+                    "    }\n" +
+                    "\n" +
+                    "    void okFlow1(WakeLock lock) {\n" +
+                    "        lock.acquire();\n" +
+                    "        try {\n" +
+                    "            randomCall();\n" +
+                    "        } catch (Exception e) {\n" +
+                    "            e.printStackTrace();\n" +
+                    "        } finally {\n" +
+                    "            lock.release(); // OK\n" +
+                    "        }\n" +
+                    "    }\n" +
+                    "\n" +
+                    "    public void checkNullGuard(WakeLock lock) {\n" +
+                    "        lock.acquire();\n" +
+                    "        if (lock != null) {\n" +
+                    "            lock.release(); // OK\n" +
+                    "        }\n" +
+                    "    }\n" +
+                    "\n" +
+                    "    @SuppressLint(\"Wakelock\")\n" +
+                    "    public void checkDisabled1(PowerManager.WakeLock lock) {\n" +
+                    "        lock.acquire();\n" +
+                    "        randomCall();\n" +
+                    "        lock.release(); // Wrong, but disabled\n" +
+                    "    }\n" +
+                    "\n" +
+                    "    void wrongFlow3(WakeLock lock) {\n" +
+                    "        int id = getTaskId();\n" +
+                    "        lock.acquire();\n" +
+                    "        if (id < 50) {\n" +
+                    "            System.out.println(1);\n" +
+                    "        } else {\n" +
+                    "            System.out.println(2);\n" +
+                    "        }\n" +
+                    "        lock.release(); // Wrong\n" +
+                    "    }\n" +
+                    "\n" +
+                    "    static void randomCall() {\n" +
+                    "        System.out.println(\"test\");\n" +
+                    "    }\n" +
+                    "}\n"
+            ),
+            0x6a6b5888,
+            "test/pkg/WakelockActivity6.class:" +
+                "H4sIAAAAAAAAAIVVXVcTVxTdExImGYavIFiRKqChIUFGQaUaUWkQjYaPGpZ9" +
+                "6NMwuSuOGWbSmQnob+if6OqLz/Yh7epD26c+9DfZru57IQHUtcys3HPvuefu" +
+                "vc+5J5N//vv9DwAreG5gDEUdC2lcM5DFog4rjesGUrhhYBJL0rksh5tyeUvH" +
+                "bQMmVjL4GncM3EUpjXvSruq4r+OBhv57ru/G9zX05edfaEiWg7rQMFx1fbHV" +
+                "3t8T4a6959FjHIaB39jwgsMbGgZrse00N+2W2tTx8PT+kob0d3ZTVAOnqcGs" +
+                "+L4Iy54dRSLSkMtXbb8eBm7dCiJrJzgU4abt2w0RXu2eKUkdetBUXDrWNAw5" +
+                "L4XT3Gp73uO2Hda7jnU3kvR1Crr4vO3H7r6o+Adu5NK55vtBbMdu4JN0psdp" +
+                "99xWrd1qhSKKmGlc0pA6sL22OJbuKeknKS1zERIj2C/bnsdFLWiHjthwZWUm" +
+                "uifWnNg9cOM3txdf2Qe2iXMY13C+S+0Efiz82CpL+zomY0tmb+IblE+FfVAV" +
+                "3siuiGIT63hkYgPjJh7jiYm8nFUkwZgkszzbb1iPXjuiJZMz8RTjOp6ZqGJT" +
+                "x5aJbewQKlZQ2/hWw6ScW61mw/pIvoZzvXq1WlbXr2H6c1d3Rs3uyzA4PGqe" +
+                "kYaIa2+iWOzXRHjgOnTN5asnobU4dP1Gaf6Ua3vvlXDkxQz44vAEfyVf+dS5" +
+                "z/YUO8p2fmi7IakzVLNrR81KXXV9hXuh8IQdycZvETFW7b0b2lLoyCk6lQIP" +
+                "BW3e3/iREDewdo7OhMLeL3VLcNZNCgXs+byFfEV2+PinCvACM/ztjkF+0tBk" +
+                "C3Gc4OpLWo02VfgV2jtO2DMc+5Uzze8XvdAW+vgAhUK2r4PkX0hVi8lsfwf6" +
+                "5kIH6UIHmZGln5D5DcZb6HQNSLyEwptVWAafAQzxzZHFIDGHcBnDyGEU8xR3" +
+                "gREmEv8ipyOlY1JyXcSlY/anREpIPcWPuYpnuCb41pJjkqtB6h/jG+s8phR+" +
+                "EokxiXu5h/sjbVIqlLiEk1hvMSFTGjyaG1vSXvvzHbNPQlf6pZ3kqSGF3mVe" +
+                "ZHYSO8ly68xrAHOMmGWOVxiXY8wco3OMmGPEV0rRAPq2dJjPdEzLos/0hN2l" +
+                "lQlLFeni3x9mmVWqCxyLrO0CNS0qvD5oJk/OEiehcK4f45inEjy56COYJY7L" +
+                "lHyTcm5RrExMw1V+c99DiygXlNtVtkc8WcScvIZVCTs1svQzBn/BULKDYVaM" +
+                "sxRnZxVfIgH4h5HCHWSY3jBKVLyKaTwg1UOlXkfiPS5o/Uwp32u8nNIPZAib" +
+                "Helg9ES+obbKDF/nbF5xFdjUcocvI3JNYfR/L6FM7+cGAAA=",
+        )
 
     checkCompiledGraph(
-      testFile as BytecodeTestFile,
-      """
+        testFile as BytecodeTestFile,
+        """
             ╭─ LABEL1
           ╭─╰→ LINE 10
           ╰→╭─ ALOAD: Var 0
@@ -3473,9 +3453,9 @@ class ControlFlowGraphTest {
         ╰→  ╭─ LINE 19
           ╭─╰→ F_NEW (FrameNode)
           ╰→   RETURN (InsnNode)
-      """
-        .trimIndent(),
-      methodName = "wrongFlow1",
+        """
+            .trimIndent(),
+        methodName = "wrongFlow1",
     )
   }
 
@@ -3484,9 +3464,9 @@ class ControlFlowGraphTest {
   // --------------------------------------------------------------------------
 
   private fun checkCompiledGraph(
-    testFile: BytecodeTestFile,
-    expected: String,
-    methodName: String = "target",
+      testFile: BytecodeTestFile,
+      expected: String,
+      methodName: String = "target",
   ) {
     fun getOpcodeString(opcode: Int): String? {
       try {
@@ -3505,9 +3485,9 @@ class ControlFlowGraphTest {
     }
 
     fun AbstractInsnNode.describe(
-      method: MethodNode? = null,
-      source: String? = null,
-      labelKeys: Map<Label, String>? = null,
+        method: MethodNode? = null,
+        source: String? = null,
+        labelKeys: Map<Label, String>? = null,
     ): String {
       val opcode = getOpcodeString(opcode) ?: "OPCODE $opcode"
       return when (this) {
@@ -3570,17 +3550,15 @@ class ControlFlowGraphTest {
 
           val graph = ControlFlowGraph.create(classNode, method)
           val actual =
-            graph
-              .prettyPrintGraph(
-                method.instructions.get(0),
-                nodeTypeString = { node ->
-                  node.instruction.describe(method, labelKeys = labelKeys)
-                },
-                sourceString = { null },
-                method.instructions.mapNotNull { graph.getNode(it) },
-                filter = { true },
-              )
-              .trimEnd()
+              graph
+                  .prettyPrintGraph(
+                      method.instructions.get(0),
+                      nodeTypeString = { node -> node.instruction.describe(method, labelKeys = labelKeys) },
+                      sourceString = { null },
+                      method.instructions.mapNotNull { graph.getNode(it) },
+                      filter = { true },
+                  )
+                  .trimEnd()
 
           val cleanExpected = expected.trimIndent().trimEnd()
           if (cleanExpected != actual) {
@@ -3598,98 +3576,98 @@ class ControlFlowGraphTest {
   }
 
   private fun checkAstGraph(
-    testFile: TestFile,
-    expected: String,
-    printGraph:
-      (
-        JavaContext, ControlFlowGraph<UElement>, UMethod, List<ControlFlowGraph.Node<UElement>>,
-      ) -> String? =
-      { _, _, _, _ ->
-        null
-      },
-    canThrow: ((UElement, PsiMethod) -> Boolean?)? = null,
-    checkBranchPaths: ((conditional: UExpression) -> ControlFlowGraph.FollowBranch)? = null,
-    strict: Boolean = false,
-    callLambdaParameters: Boolean = !strict,
-    methodName: String = "target",
-    expectedDotGraph: String? = null,
-    useGraph: ((ControlFlowGraph<UElement>, UExpression) -> Unit)? = null,
-    dfsOrder: Boolean = false,
+      testFile: TestFile,
+      expected: String,
+      printGraph:
+          (
+              JavaContext,
+              ControlFlowGraph<UElement>,
+              UMethod,
+              List<ControlFlowGraph.Node<UElement>>,
+          ) -> String? =
+          { _, _, _, _ ->
+            null
+          },
+      canThrow: ((UElement, PsiMethod) -> Boolean?)? = null,
+      checkBranchPaths: ((conditional: UExpression) -> ControlFlowGraph.FollowBranch)? = null,
+      strict: Boolean = false,
+      callLambdaParameters: Boolean = !strict,
+      methodName: String = "target",
+      expectedDotGraph: String? = null,
+      useGraph: ((ControlFlowGraph<UElement>, UExpression) -> Unit)? = null,
+      dfsOrder: Boolean = false,
   ) {
     val (context, disposable) =
-      parseFirst(
-        temporaryFolder = temporaryFolder,
-        sdkHome = TestUtils.getSdk().toFile(),
-        testFiles = arrayOf(testFile),
-      )
+        parseFirst(
+            temporaryFolder = temporaryFolder,
+            sdkHome = TestUtils.getSdk().toFile(),
+            testFiles = arrayOf(testFile),
+        )
 
     fun JavaContext.findTarget(): UMethod {
       var method: UMethod? = null
       uastFile?.accept(
-        object : AbstractUastVisitor() {
-          override fun visitMethod(node: UMethod): Boolean {
-            if (node.name == methodName) {
-              method = node
+          object : AbstractUastVisitor() {
+            override fun visitMethod(node: UMethod): Boolean {
+              if (node.name == methodName) {
+                method = node
+              }
+              return super.visitMethod(node)
             }
-            return super.visitMethod(node)
           }
-        }
       )
       return method ?: error("Couldn't find method $methodName in ${testFile.contents}")
     }
 
     val renderNode: (ControlFlowGraph.Node<UElement>) -> String = { node ->
-      if (node.isExit()) "exit"
-      else ("${node.typeString()}\n${node.sourceString().trimMiddle(30)}").trim()
+      if (node.isExit()) "exit" else ("${node.typeString()}\n${node.sourceString().trimMiddle(30)}").trim()
     }
-    val renderEdge:
-      (ControlFlowGraph.Node<UElement>, ControlFlowGraph.Edge<UElement>, Int) -> String =
-      { from, edge, index ->
-        if (edge.label != null) {
-          edge.label!!
-        } else if (from.isLinear()) {
-          "then"
-        } else {
-          "s$index"
-        }
+    val renderEdge: (ControlFlowGraph.Node<UElement>, ControlFlowGraph.Edge<UElement>, Int) -> String = { from, edge, index ->
+      if (edge.label != null) {
+        edge.label!!
+      } else if (from.isLinear()) {
+        "then"
+      } else {
+        "s$index"
       }
+    }
     val method = context.findTarget()
     val graph =
-      ControlFlowGraph.create(
-        method,
-        builder =
-          object :
-            ControlFlowGraph.Companion.Builder(
-              strict = strict,
-              trackCallThrows = true,
-              callLambdaParameters = callLambdaParameters,
-            ) {
-            override fun checkBranchPaths(conditional: UExpression): ControlFlowGraph.FollowBranch {
-              return checkBranchPaths?.invoke(conditional) ?: super.checkBranchPaths(conditional)
-            }
+        ControlFlowGraph.create(
+            method,
+            builder =
+                object :
+                    ControlFlowGraph.Companion.Builder(
+                        strict = strict,
+                        trackCallThrows = true,
+                        callLambdaParameters = callLambdaParameters,
+                    ) {
+                  override fun checkBranchPaths(conditional: UExpression): ControlFlowGraph.FollowBranch {
+                    return checkBranchPaths?.invoke(conditional) ?: super.checkBranchPaths(conditional)
+                  }
 
-            override fun canThrow(reference: UElement, method: PsiMethod): Boolean {
-              return canThrow?.invoke(reference, method) ?: super.canThrow(reference, method)
-            }
-          },
-      )
+                  override fun canThrow(reference: UElement, method: PsiMethod): Boolean {
+                    return canThrow?.invoke(reference, method) ?: super.canThrow(reference, method)
+                  }
+                },
+        )
 
     val start = method.uastBody!!
 
     val clusters = getClusters(graph, method)
 
     val rendered =
-      clusters.joinToString("\n") { (entry, list) ->
-        val instructions = getInstructionOrder(graph, list, entry, method, dfsOrder)
+        clusters.joinToString("\n") { (entry, list) ->
+          val instructions = getInstructionOrder(graph, list, entry, method, dfsOrder)
 
-        printGraph.invoke(context, graph, method, instructions)
-          ?: graph.prettyPrintGraph(
-            entry.instruction,
-            nodeTypeString = { node -> if (node.isExit()) "" else node.typeString() },
-            sourceString = { node -> if (node.isExit()) "*exit*" else node.sourceString() },
-            instructions,
-          )
-      }
+          printGraph.invoke(context, graph, method, instructions)
+              ?: graph.prettyPrintGraph(
+                  entry.instruction,
+                  nodeTypeString = { node -> if (node.isExit()) "" else node.typeString() },
+                  sourceString = { node -> if (node.isExit()) "*exit*" else node.sourceString() },
+                  instructions,
+              )
+        }
 
     val cleanExpected = expected.trimIndent().trimEnd()
     val actual = rendered.trimIndent().trimEnd()
@@ -3720,12 +3698,8 @@ class ControlFlowGraphTest {
                   if (nextMethod != -1 && nextMethod < startOffset) {
                     error("Unexpectedly start was in next method")
                   }
-                  val newStringContents =
-                    actual.replace("\$", "\${\"\$\"}").split("\n").joinToString("\n") {
-                      "      $it"
-                    }
-                  val newSource =
-                    text.substring(0, startOffset) + newStringContents + text.substring(endOffset)
+                  val newStringContents = actual.replace("\$", "\${\"\$\"}").split("\n").joinToString("\n") { "      $it" }
+                  val newSource = text.substring(0, startOffset) + newStringContents + text.substring(endOffset)
                   sourceFile.writeText(newSource)
                 }
               }
@@ -3741,12 +3715,8 @@ class ControlFlowGraphTest {
 
     if (expectedDotGraph != null) {
       assertEquals(
-        expectedDotGraph.trimIndent().trimEnd(),
-        graph
-          .toDot(start, renderNode = renderNode, renderEdge = renderEdge)
-          .split("\n")
-          .joinToString("\n") { it.trimEnd() }
-          .trimEnd(),
+          expectedDotGraph.trimIndent().trimEnd(),
+          graph.toDot(start, renderNode = renderNode, renderEdge = renderEdge).split("\n").joinToString("\n") { it.trimEnd() }.trimEnd(),
       )
     }
 
@@ -3756,31 +3726,31 @@ class ControlFlowGraphTest {
   }
 
   private fun checkGraphPath(
-    graph: ControlFlowGraph<UElement>,
-    start: UExpression,
-    targetNode: (UElement) -> Boolean,
-    expected: String,
+      graph: ControlFlowGraph<UElement>,
+      start: UExpression,
+      targetNode: (UElement) -> Boolean,
+      expected: String,
   ) {
     var foundPath: List<ControlFlowGraph.Edge<UElement>> = emptyList()
 
     val startNode = graph.getNode(start)!!
     graph.dfs(
-      ControlFlowGraph.BoolDomain,
-      object : ControlFlowGraph.DfsRequest<UElement, Boolean>(startNode) {
-        override fun visitNode(
-          node: ControlFlowGraph.Node<UElement>,
-          path: List<ControlFlowGraph.Edge<UElement>>,
-          status: Boolean,
-        ): Boolean {
-          val instruction = node.instruction
-          return if (targetNode(instruction)) {
-            foundPath = path
-            true
-          } else false
-        }
+        ControlFlowGraph.BoolDomain,
+        object : ControlFlowGraph.DfsRequest<UElement, Boolean>(startNode) {
+          override fun visitNode(
+              node: ControlFlowGraph.Node<UElement>,
+              path: List<ControlFlowGraph.Edge<UElement>>,
+              status: Boolean,
+          ): Boolean {
+            val instruction = node.instruction
+            return if (targetNode(instruction)) {
+              foundPath = path
+              true
+            } else false
+          }
 
-        override fun isDone(status: Boolean): Boolean = status
-      },
+          override fun isDone(status: Boolean): Boolean = status
+        },
     )
 
     assertEquals(expected, ControlFlowGraph.describePath(foundPath))
@@ -3788,25 +3758,24 @@ class ControlFlowGraphTest {
 
   /** Clusters the graph into entry points and nodes reachable from each entry point */
   private fun getClusters(
-    graph: ControlFlowGraph<UElement>,
-    method: UMethod,
+      graph: ControlFlowGraph<UElement>,
+      method: UMethod,
   ): List<Pair<ControlFlowGraph.Node<UElement>, List<ControlFlowGraph.Node<UElement>>>> {
     val entryPoints = graph.getEntryPoints()
-    val clusters =
-      mutableListOf<Pair<ControlFlowGraph.Node<UElement>, List<ControlFlowGraph.Node<UElement>>>>()
+    val clusters = mutableListOf<Pair<ControlFlowGraph.Node<UElement>, List<ControlFlowGraph.Node<UElement>>>>()
     for (entry in entryPoints) {
       val reaches = mutableListOf<ControlFlowGraph.Node<UElement>>()
       graph.dfs(
-        ControlFlowGraph.UnitDomain,
-        object : ControlFlowGraph.DfsRequest<UElement, Unit>(entry) {
-          override fun visitNode(
-            node: ControlFlowGraph.Node<UElement>,
-            path: List<ControlFlowGraph.Edge<UElement>>,
-            status: Unit,
-          ) {
-            reaches.add(node)
-          }
-        },
+          ControlFlowGraph.UnitDomain,
+          object : ControlFlowGraph.DfsRequest<UElement, Unit>(entry) {
+            override fun visitNode(
+                node: ControlFlowGraph.Node<UElement>,
+                path: List<ControlFlowGraph.Edge<UElement>>,
+                status: Unit,
+            ) {
+              reaches.add(node)
+            }
+          },
       )
       clusters.add(Pair(entry, reaches))
     }
@@ -3815,17 +3784,16 @@ class ControlFlowGraphTest {
   }
 
   /**
-   * Returns the nodes in suitable instruction order. This is generally the program order (unless
-   * [dfsOrder] is set to true, in which it's the depth-first-search traversal order starting from
-   * [start]) but is tweaked a bit to for example generally follow the flow order for instructions
-   * on the same line, etc.
+   * Returns the nodes in suitable instruction order. This is generally the program order (unless [dfsOrder] is set to true, in which it's
+   * the depth-first-search traversal order starting from [start]) but is tweaked a bit to for example generally follow the flow order for
+   * instructions on the same line, etc.
    */
   private fun getInstructionOrder(
-    graph: ControlFlowGraph<UElement>,
-    nodes: List<ControlFlowGraph.Node<UElement>>,
-    start: ControlFlowGraph.Node<UElement>,
-    method: UMethod,
-    dfsOrder: Boolean,
+      graph: ControlFlowGraph<UElement>,
+      nodes: List<ControlFlowGraph.Node<UElement>>,
+      start: ControlFlowGraph.Node<UElement>,
+      method: UMethod,
+      dfsOrder: Boolean,
   ): List<ControlFlowGraph.Node<UElement>> {
     if (dfsOrder) {
       fun dfs(startNode: ControlFlowGraph.Node<UElement>): List<ControlFlowGraph.Node<UElement>> {
@@ -3833,8 +3801,8 @@ class ControlFlowGraphTest {
         val result = mutableListOf<ControlFlowGraph.Node<UElement>>()
 
         fun dfs(
-          node: ControlFlowGraph.Node<UElement>,
-          visited: MutableSet<ControlFlowGraph.Node<UElement>>,
+            node: ControlFlowGraph.Node<UElement>,
+            visited: MutableSet<ControlFlowGraph.Node<UElement>>,
         ) {
           if (!visited.add(node)) {
             return
@@ -3865,29 +3833,27 @@ class ControlFlowGraphTest {
     }
 
     method.accept(
-      object : AbstractUastVisitor() {
-        override fun visitElement(
-          @Suppress("PARAMETER_NAME_CHANGED_ON_OVERRIDE") element: UElement
-        ): Boolean {
-          val node = graph.getNode(element) ?: nodeMap[element]
-          if (node != null) {
-            nodeOrder[node] = next++
-            val segment = (element as? UElementWithLocation) ?: element.sourcePsi?.textRange
-            if (segment != null) {
-              sourceOffsets[node] = segment
-            } else if (element is UReturnExpression && element.returnExpression != null) {
-              // Special workaround for KotlinUImplicitReturnExpression created by
-              // UAST for lambdas:
-              element.returnExpression?.sourcePsi?.textRange?.let { sourceOffsets[node] = it }
-            } else if (element is UDeclarationsExpression && element.declarations.size == 1) {
-              // Special workaround for JavaUDeclarationsExpression created by
-              // UAST; the nested declaration statement has the relevant source offset.
-              element.declarations[0].sourcePsi?.textRange?.let { sourceOffsets[node] = it }
+        object : AbstractUastVisitor() {
+          override fun visitElement(@Suppress("PARAMETER_NAME_CHANGED_ON_OVERRIDE") element: UElement): Boolean {
+            val node = graph.getNode(element) ?: nodeMap[element]
+            if (node != null) {
+              nodeOrder[node] = next++
+              val segment = (element as? UElementWithLocation) ?: element.sourcePsi?.textRange
+              if (segment != null) {
+                sourceOffsets[node] = segment
+              } else if (element is UReturnExpression && element.returnExpression != null) {
+                // Special workaround for KotlinUImplicitReturnExpression created by
+                // UAST for lambdas:
+                element.returnExpression?.sourcePsi?.textRange?.let { sourceOffsets[node] = it }
+              } else if (element is UDeclarationsExpression && element.declarations.size == 1) {
+                // Special workaround for JavaUDeclarationsExpression created by
+                // UAST; the nested declaration statement has the relevant source offset.
+                element.declarations[0].sourcePsi?.textRange?.let { sourceOffsets[node] = it }
+              }
             }
+            return super.visitElement(element)
           }
-          return super.visitElement(element)
         }
-      }
     )
     // Any unexpected elements
     for (node in nodes) {
@@ -3901,8 +3867,8 @@ class ControlFlowGraphTest {
     /** Are these two nodes fully on the same source code line? */
     val source = method.sourcePsi!!.containingFile.text
     fun sameLine(
-      o1: ControlFlowGraph.Node<UElement>,
-      o2: ControlFlowGraph.Node<UElement>,
+        o1: ControlFlowGraph.Node<UElement>,
+        o2: ControlFlowGraph.Node<UElement>,
     ): Boolean {
       val source1 = sourceOffsets[o1]
       val source2 = sourceOffsets[o2]
@@ -3921,51 +3887,51 @@ class ControlFlowGraphTest {
 
     val instructionOrder: MutableList<ControlFlowGraph.Node<UElement>> = nodes.toMutableList()
     Collections.sort(
-      instructionOrder,
-      object : Comparator<ControlFlowGraph.Node<UElement>> {
-        override fun compare(
-          o1: ControlFlowGraph.Node<UElement>,
-          o2: ControlFlowGraph.Node<UElement>,
-        ): Int {
-          val segment1 = sourceOffsets[o1]
-          val segment2 = sourceOffsets[o2]
-          if (segment1 != null && segment2 != null) {
-            if (sameLine(o1, o2) || segment1 == segment2) {
-              // For nearby nodes (on the same line), bias towards the flow direction.
-              // With this, we'll convert the code "var i = 0; randomCall()" from
-              //               Block:     ╭─ { var i = 0 randomCall() i++ }
-              //       Declarations: ╭→╭─│  var i = 0
-              //      LocalVariable: ╰─│ ╰→ var i = 0
-              //           FuncCall:   ╰→   randomCall()
-              // into
-              //              Block:   ╭─ { var i = 0 randomCall() i++ }
-              //      LocalVariable: ╭─╰→ var i = 0
-              //       Declarations: ╰→╭─ var i = 0
-              //           FuncCall:   ╰→ randomCall()
-              // (in other words, we've reordered the Declarations and LocalVariable
-              // nodes; even though Declarations comes first in UAST iteration, the graph
-              // flow is more natural this way.
-              val forward = o1.flowsTo(o2)
-              val backward = o2.flowsTo(o1)
-              if (forward && !backward) {
-                return -1
-              } else if (backward && !forward) {
-                return 1
+        instructionOrder,
+        object : Comparator<ControlFlowGraph.Node<UElement>> {
+          override fun compare(
+              o1: ControlFlowGraph.Node<UElement>,
+              o2: ControlFlowGraph.Node<UElement>,
+          ): Int {
+            val segment1 = sourceOffsets[o1]
+            val segment2 = sourceOffsets[o2]
+            if (segment1 != null && segment2 != null) {
+              if (sameLine(o1, o2) || segment1 == segment2) {
+                // For nearby nodes (on the same line), bias towards the flow direction.
+                // With this, we'll convert the code "var i = 0; randomCall()" from
+                //               Block:     ╭─ { var i = 0 randomCall() i++ }
+                //       Declarations: ╭→╭─│  var i = 0
+                //      LocalVariable: ╰─│ ╰→ var i = 0
+                //           FuncCall:   ╰→   randomCall()
+                // into
+                //              Block:   ╭─ { var i = 0 randomCall() i++ }
+                //      LocalVariable: ╭─╰→ var i = 0
+                //       Declarations: ╰→╭─ var i = 0
+                //           FuncCall:   ╰→ randomCall()
+                // (in other words, we've reordered the Declarations and LocalVariable
+                // nodes; even though Declarations comes first in UAST iteration, the graph
+                // flow is more natural this way.
+                val forward = o1.flowsTo(o2)
+                val backward = o2.flowsTo(o1)
+                if (forward && !backward) {
+                  return -1
+                } else if (backward && !forward) {
+                  return 1
+                }
+              }
+
+              val startDelta = segment1.startOffset - segment2.startOffset
+              if (startDelta != 0) {
+                return startDelta
+              }
+              val endDelta = segment2.endOffset - segment1.endOffset
+              if (endDelta != 0) {
+                return endDelta
               }
             }
-
-            val startDelta = segment1.startOffset - segment2.startOffset
-            if (startDelta != 0) {
-              return startDelta
-            }
-            val endDelta = segment2.endOffset - segment1.endOffset
-            if (endDelta != 0) {
-              return endDelta
-            }
+            return nodeOrder[o1]!! - nodeOrder[o2]!!
           }
-          return nodeOrder[o1]!! - nodeOrder[o2]!!
-        }
-      },
+        },
     )
 
     return instructionOrder
@@ -3974,57 +3940,54 @@ class ControlFlowGraphTest {
   // Test the DFS methods to print out all exit paths here -- both with and
   // without followExceptionalFlow enabled.
   fun checkPaths(
-    graph: ControlFlowGraph<UElement>,
-    start: UExpression,
-    expected: String,
-    followExceptionalFlow: Boolean,
+      graph: ControlFlowGraph<UElement>,
+      start: UExpression,
+      expected: String,
+      followExceptionalFlow: Boolean,
   ) {
     val matches = mutableListOf<List<ControlFlowGraph.Edge<UElement>>>()
 
     val startNode = graph.getNode(start)!!
     graph.dfs(
-      ControlFlowGraph.UnitDomain,
-      object : ControlFlowGraph.DfsRequest<UElement, Unit>(startNode) {
-        override fun visitNode(
-          node: ControlFlowGraph.Node<UElement>,
-          path: List<ControlFlowGraph.Edge<UElement>>,
-          status: Unit,
-        ) {
-          if (node.isExit()) matches.add(path)
-          node.visit = 0
-        }
+        ControlFlowGraph.UnitDomain,
+        object : ControlFlowGraph.DfsRequest<UElement, Unit>(startNode) {
+          override fun visitNode(
+              node: ControlFlowGraph.Node<UElement>,
+              path: List<ControlFlowGraph.Edge<UElement>>,
+              status: Unit,
+          ) {
+            if (node.isExit()) matches.add(path)
+            node.visit = 0
+          }
 
-        override val followExceptionalFlow: Boolean = followExceptionalFlow
+          override val followExceptionalFlow: Boolean = followExceptionalFlow
 
-        override fun consumesException(edge: ControlFlowGraph.Edge<UElement>): Boolean {
-          val instruction = edge.to.instruction
-          val parent = instruction.uastParent
-          return parent is UTryExpression && parent.catchClauses.any { it == instruction }
-        }
-      },
+          override fun consumesException(edge: ControlFlowGraph.Edge<UElement>): Boolean {
+            val instruction = edge.to.instruction
+            val parent = instruction.uastParent
+            return parent is UTryExpression && parent.catchClauses.any { it == instruction }
+          }
+        },
     )
 
     assertEquals(
-      expected.trimIndent().trim(),
-      matches.joinToString("\n") { ControlFlowGraph.describePath(it) }.trim(),
+        expected.trimIndent().trim(),
+        matches.joinToString("\n") { ControlFlowGraph.describePath(it) }.trim(),
     )
   }
 }
 
 /** On a Mac or Linux, renders the graph to PNG and opens it. */
 fun <T : Any> ControlFlowGraph<T>.show(
-  start: T? = null,
-  end: T? = null,
-  reuseFile: Boolean = false,
-  defaultName: String = "testcase",
-  // Can use "sfdp", "neato", "circo", "osage", "patchwork", "twopi", etc here to
-  // use different graphviz algorithms.
-  algorithm: String = "dot",
-  renderNode: (ControlFlowGraph.Node<T>) -> String = { node -> node.instruction.toString() },
-  renderEdge: (ControlFlowGraph.Node<T>, ControlFlowGraph.Edge<T>, Int) -> String =
-    { _, edge, index ->
-      edge.label ?: "s${index}"
-    },
+    start: T? = null,
+    end: T? = null,
+    reuseFile: Boolean = false,
+    defaultName: String = "testcase",
+    // Can use "sfdp", "neato", "circo", "osage", "patchwork", "twopi", etc here to
+    // use different graphviz algorithms.
+    algorithm: String = "dot",
+    renderNode: (ControlFlowGraph.Node<T>) -> String = { node -> node.instruction.toString() },
+    renderEdge: (ControlFlowGraph.Node<T>, ControlFlowGraph.Edge<T>, Int) -> String = { _, edge, index -> edge.label ?: "s${index}" },
 ) {
   val dotPath = "/opt/homebrew/bin/dot"
   if (!File(dotPath).isFile) {
@@ -4048,9 +4011,7 @@ fun <T : Any> ControlFlowGraph<T>.show(
 
   val dot = toDot(start, end, renderNode = renderNode, renderEdge = renderEdge)
   dotFile.writeText(dot)
-  Runtime.getRuntime()
-    .exec("$dotPath -K$algorithm -Tpng -o${pngFile.path} ${dotFile.path}")
-    .waitFor()
+  Runtime.getRuntime().exec("$dotPath -K$algorithm -Tpng -o${pngFile.path} ${dotFile.path}").waitFor()
   Runtime.getRuntime().exec("/usr/bin/open ${pngFile.path}").waitFor()
   dotFile.delete()
 }
@@ -4073,10 +4034,7 @@ fun ControlFlowGraph.Node<UElement>.typeString(): String {
     "" -> {
       // Anonymous inner class
       val inner = element.javaClass.name.substringAfterLast('.')
-      if (
-        inner.startsWith("JavaUSwitchEntry\$body\$") ||
-          inner.startsWith("KotlinUSwitchEntry\$body\$")
-      ) {
+      if (inner.startsWith("JavaUSwitchEntry\$body\$") || inner.startsWith("KotlinUSwitchEntry\$body\$")) {
         return "SwitchEntryBody"
       } else if (inner.startsWith("ElvisExpressionKt\$createNotEqWithNullExpression\$")) {
         return "ElvisNullCheck"
@@ -4096,38 +4054,38 @@ fun ControlFlowGraph.Node<UElement>.typeString(): String {
     "KotlinLocalFunctionULambdaExpression" -> return "LocalFunctionLambda"
   }
   val type =
-    simpleName
-      .removePrefix("Kotlin")
-      .removePrefix("Java")
-      .removePrefix("Custom")
-      .removePrefix("U")
-      .replace("Reference", "Ref")
-      .removeSuffix("Expression")
-      .replace("Expression", "Ex")
-      .replace("Function", "Func")
-      .replace("Qualified", "Qlf")
-      .let {
-        when (it) {
-          "AnnotatedLocalVariable" -> "LocalVariable"
-          "FuncCallEx" -> "FuncCall"
-          "DeclarationsEx" -> "Declaration"
-          else -> it
-        }
-      }
+      simpleName
+          .removePrefix("Kotlin")
+          .removePrefix("Java")
+          .removePrefix("Custom")
+          .removePrefix("U")
+          .replace("Reference", "Ref")
+          .removeSuffix("Expression")
+          .replace("Expression", "Ex")
+          .replace("Function", "Func")
+          .replace("Qualified", "Qlf")
+          .let {
+            when (it) {
+              "AnnotatedLocalVariable" -> "LocalVariable"
+              "FuncCallEx" -> "FuncCall"
+              "DeclarationsEx" -> "Declaration"
+              else -> it
+            }
+          }
 
   if (type == "Block") {
     when (val parent = element.uastParent) {
       is UTryExpression ->
-        when (element) {
-          parent.finallyClause -> return "Finally Block"
-          parent.tryClause -> return "Try Block"
-          else -> return "Catch Block"
-        }
+          when (element) {
+            parent.finallyClause -> return "Finally Block"
+            parent.tryClause -> return "Try Block"
+            else -> return "Catch Block"
+          }
       is UIfExpression ->
-        when (element) {
-          parent.thenExpression -> return "Then Block"
-          parent.elseExpression -> return "Else Block"
-        }
+          when (element) {
+            parent.thenExpression -> return "Then Block"
+            parent.elseExpression -> return "Else Block"
+          }
     }
   }
 
@@ -4139,32 +4097,32 @@ fun ControlFlowGraph.Node<UElement>.sourceString(): String {
   return if (!this.isExit()) {
     val sourcePsi = instruction.sourcePsi
     val text =
-      if (sourcePsi == null) {
-        val source = instruction.asSourceString()
-        // Example: var var116517f9: java.util.List<? extends java.lang.String> =
-        // list?.reversed()?.asReversed()
-        if (source.startsWith("var var") && source.contains("=")) {
-          // safe call expression
-          "var ＄temp =" + source.substringAfter("=")
-        } else if (source.startsWith("var") && !source.startsWith("var ") && source.contains(" ")) {
-          // elvis expression
-          "＄temp ".substringAfter(" ")
-        } else if (source.startsWith("if (var")) {
-          // Example: if (var3feb8ee7 != null) var3feb8ee7 else mutableListOf()
-          val start = "if (var".length
-          var end = start + 1
-          // See psi/UastKotlinPsiVariable.kt
-          // name = "var" + Integer.toHexString(declaration.getHashCode()),
-          while (end < source.length && source[end].isLetterOrDigit()) {
-            end++
+        if (sourcePsi == null) {
+          val source = instruction.asSourceString()
+          // Example: var var116517f9: java.util.List<? extends java.lang.String> =
+          // list?.reversed()?.asReversed()
+          if (source.startsWith("var var") && source.contains("=")) {
+            // safe call expression
+            "var ＄temp =" + source.substringAfter("=")
+          } else if (source.startsWith("var") && !source.startsWith("var ") && source.contains(" ")) {
+            // elvis expression
+            "＄temp ".substringAfter(" ")
+          } else if (source.startsWith("if (var")) {
+            // Example: if (var3feb8ee7 != null) var3feb8ee7 else mutableListOf()
+            val start = "if (var".length
+            var end = start + 1
+            // See psi/UastKotlinPsiVariable.kt
+            // name = "var" + Integer.toHexString(declaration.getHashCode()),
+            while (end < source.length && source[end].isLetterOrDigit()) {
+              end++
+            }
+            return source.replace(source.substring(start, end), "＄temp")
+          } else {
+            instruction.asSourceString()
           }
-          return source.replace(source.substring(start, end), "＄temp")
         } else {
-          instruction.asSourceString()
+          sourcePsi.text
         }
-      } else {
-        sourcePsi.text
-      }
     text.replace(Regex("\\s+"), " ").replace("\n", "\\n").ifBlank { "<synthetic>" }
   } else {
     "*exit*"
@@ -4174,16 +4132,16 @@ fun ControlFlowGraph.Node<UElement>.sourceString(): String {
 /**
  * Print out the flow control graph in ASCII.
  *
- * This isn't as nice as a dot-representation, but the goal is to have it in a pretty compact yet
- * readable format such that it can be used in unit tests (to more directly test the operation of
- * the control flow graph construction than testing it indirectly via detector behaviors).
+ * This isn't as nice as a dot-representation, but the goal is to have it in a pretty compact yet readable format such that it can be used
+ * in unit tests (to more directly test the operation of the control flow graph construction than testing it indirectly via detector
+ * behaviors).
  */
 fun <T : Any> ControlFlowGraph<T>.prettyPrintGraph(
-  start: T,
-  nodeTypeString: (ControlFlowGraph.Node<T>) -> String,
-  sourceString: (ControlFlowGraph.Node<T>) -> String?,
-  nodes: List<ControlFlowGraph.Node<T>> = getAllNodes().toList(),
-  filter: (ControlFlowGraph.Node<T>) -> Boolean = { true },
+    start: T,
+    nodeTypeString: (ControlFlowGraph.Node<T>) -> String,
+    sourceString: (ControlFlowGraph.Node<T>) -> String?,
+    nodes: List<ControlFlowGraph.Node<T>> = getAllNodes().toList(),
+    filter: (ControlFlowGraph.Node<T>) -> Boolean = { true },
 ): String {
   val sb = StringBuilder()
   val ids = LinkedHashMap<ControlFlowGraph.Node<T>, String>()
@@ -4211,8 +4169,7 @@ fun <T : Any> ControlFlowGraph<T>.prettyPrintGraph(
 
   // Compute edge data
   val entries = ids.entries
-  val sortedNodes: List<MutableMap.MutableEntry<ControlFlowGraph.Node<T>, String>> =
-    entries.sortedBy { ids[it.key]!! }
+  val sortedNodes: List<MutableMap.MutableEntry<ControlFlowGraph.Node<T>, String>> = entries.sortedBy { ids[it.key]!! }
 
   fun indexOf(target: ControlFlowGraph.Node<T>): Int {
     for (i in sortedNodes.indices) {
@@ -4292,24 +4249,23 @@ fun <T : Any> ControlFlowGraph<T>.prettyPrintGraph(
 private class Arrows(val size: Int) {
   private val spacing = 2 // Distance between each arrow column
   private val padding = 30 // extra space for labels etc
-  private val display: Array<StringBuilder> =
-    Array(size) { StringBuilder(" ".repeat(spacing * size + padding)) }
+  private val display: Array<StringBuilder> = Array(size) { StringBuilder(" ".repeat(spacing * size + padding)) }
 
   fun drawEdge(
-    fromIndex: Int,
-    toIndex: Int,
-    forward: Boolean = true,
-    dashed: Boolean = false,
-    rhs: Boolean = true,
+      fromIndex: Int,
+      toIndex: Int,
+      forward: Boolean = true,
+      dashed: Boolean = false,
+      rhs: Boolean = true,
   ) {
     if (fromIndex > toIndex) {
       // Swap from/to such that we always draw downwards, but flip arrow directions too
       drawEdge(
-        fromIndex = toIndex,
-        toIndex = fromIndex,
-        forward = !forward,
-        dashed = dashed,
-        rhs = rhs,
+          fromIndex = toIndex,
+          toIndex = fromIndex,
+          forward = !forward,
+          dashed = dashed,
+          rhs = rhs,
       )
       return
     }

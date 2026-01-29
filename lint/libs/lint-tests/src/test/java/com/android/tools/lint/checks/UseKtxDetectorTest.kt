@@ -34,9 +34,9 @@ class UseKtxDetectorTest : AbstractCheckTest() {
 
   fun testObtainStyledAttributes() {
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
             package test.pkg
 
             import android.app.Activity
@@ -101,11 +101,11 @@ class UseKtxDetectorTest : AbstractCheckTest() {
                 }
             }
             """
-          )
-          .indented(),
-        kotlin(
-            "src/test/pkg/Test2.kt",
-            """
+                )
+                .indented(),
+            kotlin(
+                    "src/test/pkg/Test2.kt",
+                    """
             package test.pkg
 
             import android.content.Context
@@ -145,13 +145,13 @@ class UseKtxDetectorTest : AbstractCheckTest() {
                 }
             }
             """,
-          )
-          .indented(),
-      )
-      .skipTestModes(TestMode.PARENTHESIZED)
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+        )
+        .skipTestModes(TestMode.PARENTHESIZED)
+        .run()
+        .expect(
+            """
         src/test/pkg/Test.kt:14: Warning: Use the KTX extension function Context.withStyledAttributes instead? [UseKtx]
                 val styled = getContext().obtainStyledAttributes(style, styleable) // WARN 1
                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -166,9 +166,9 @@ class UseKtxDetectorTest : AbstractCheckTest() {
                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         0 errors, 4 warnings
         """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
         Autofix for src/test/pkg/Test.kt line 14: Replace with the withStyledAttributes extension function:
         @@ -7,0 +8 @@
         +import androidx.core.content.withStyledAttributes
@@ -228,15 +228,15 @@ class UseKtxDetectorTest : AbstractCheckTest() {
         +            labelView.text = label
         +        }
         """
-      )
+        )
   }
 
   fun test443237701_obtainStyle() {
     // Regression test for b/443237701
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
             package test.pkg
 
             import android.content.Context
@@ -269,20 +269,20 @@ class UseKtxDetectorTest : AbstractCheckTest() {
                 }
             }
             """
-          )
-          .indented()
-      )
-      .skipTestModes(TestMode.PARENTHESIZED)
-      .run()
-      .expectClean()
+                )
+                .indented()
+        )
+        .skipTestModes(TestMode.PARENTHESIZED)
+        .run()
+        .expectClean()
   }
 
   fun test442989234_sharedPrefs() {
     // Regression test for 442989234
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
             package test.pkg
 
             import android.content.SharedPreferences
@@ -294,21 +294,21 @@ class UseKtxDetectorTest : AbstractCheckTest() {
                 }
             }
             """
-          )
-          .indented()
-      )
-      .skipTestModes(TestMode.PARENTHESIZED)
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .skipTestModes(TestMode.PARENTHESIZED)
+        .run()
+        .expect(
+            """
         src/test/pkg/test.kt:6: Warning: Use the KTX extension function SharedPreferences.edit instead? [UseKtx]
             with(sharedPreferences.edit()) {
                  ~~~~~~~~~~~~~~~~~~~~~~~~
         0 errors, 1 warning
         """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
         Autofix for src/test/pkg/test.kt line 6: Replace with the edit extension function:
         @@ -3,0 +4 @@
         +import androidx.core.content.edit
@@ -318,16 +318,16 @@ class UseKtxDetectorTest : AbstractCheckTest() {
         @@ -8 +8,0 @@
         -        apply()
         """
-      )
+        )
   }
 
   fun testObtainStyledAttributesWithScopingFunctions() {
     // TODO: Other methods that have the contract
     //   callsInPlace(block, InvocationKind.EXACTLY_ONCE)
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
             @file:Suppress("unused", "UnusedVariable")
 
             package test.pkg
@@ -423,15 +423,15 @@ class UseKtxDetectorTest : AbstractCheckTest() {
                 }
             }
             """
-          )
-          .indented()
-      )
-      // Detector deliberately skips some unlikely scenarios because implementing the
-      // fix wasn't worth the trouble
-      .skipTestModes(TestMode.PARENTHESIZED)
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        // Detector deliberately skips some unlikely scenarios because implementing the
+        // fix wasn't worth the trouble
+        .skipTestModes(TestMode.PARENTHESIZED)
+        .run()
+        .expect(
+            """
         src/test/pkg/test.kt:8: Warning: Use the KTX extension function Context.withStyledAttributes instead? [UseKtx]
             context.obtainStyledAttributes(style, attr).apply { // WARN 1
             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -458,11 +458,11 @@ class UseKtxDetectorTest : AbstractCheckTest() {
                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         0 errors, 8 warnings
         """
-      )
-      .verifyFixes()
-      .window(1)
-      .expectFixDiffs(
-        """
+        )
+        .verifyFixes()
+        .window(1)
+        .expectFixDiffs(
+            """
         Autofix for src/test/pkg/test.kt line 8: Replace with the withStyledAttributes extension function:
         @@ -5,8 +5,9 @@
          import android.content.res.TypedArray
@@ -581,14 +581,14 @@ class UseKtxDetectorTest : AbstractCheckTest() {
         +   })}
          }
         """
-      )
+        )
   }
 
   fun testObtainStyledAttributesWithImportSettings() {
     val stub =
-      kotlin(
-          "src/androidx/core/content/Context.kt",
-          """
+        kotlin(
+                "src/androidx/core/content/Context.kt",
+                """
           package androidx.core.content
           import android.content.Context
           import android.content.res.TypedArray
@@ -604,12 +604,12 @@ class UseKtxDetectorTest : AbstractCheckTest() {
               obtainStyledAttributes(resourceId, attrs).apply(block).recycle()
           }
           """,
-        )
-        .indented()
+            )
+            .indented()
 
     val source =
-      kotlin(
-          """
+        kotlin(
+                """
           package test.pkg
 
           import android.app.Activity
@@ -623,8 +623,8 @@ class UseKtxDetectorTest : AbstractCheckTest() {
               }.recycle()
           }
           """
-        )
-        .indented()
+            )
+            .indented()
 
     // Without the class on the class-path:
 
@@ -633,27 +633,27 @@ class UseKtxDetectorTest : AbstractCheckTest() {
     // *With* the class on the classpath
 
     lint()
-      .files(source, stub)
-      .configureOption(UseKtxDetector.REQUIRE_LIBRARY, true)
-      // The detector deliberately doesn't offer these replacements for some
-      // niche parentheses scenarios
-      .skipTestModes(TestMode.PARENTHESIZED)
-      .run()
-      .expect(
-        """
+        .files(source, stub)
+        .configureOption(UseKtxDetector.REQUIRE_LIBRARY, true)
+        // The detector deliberately doesn't offer these replacements for some
+        // niche parentheses scenarios
+        .skipTestModes(TestMode.PARENTHESIZED)
+        .run()
+        .expect(
+            """
         src/test/pkg/test.kt:9: Warning: Use the KTX extension function Context.withStyledAttributes instead? [UseKtx]
             context.obtainStyledAttributes(style, attr).apply { // WARN 1
             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         0 errors, 1 warnings
         """
-      )
+        )
   }
 
   fun testObtainStyledAttributesOverloads() {
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
             package test.pkg
 
             import android.content.Context
@@ -681,15 +681,15 @@ class UseKtxDetectorTest : AbstractCheckTest() {
                 }.recycle()
             }
             """
-          )
-          .indented()
-      )
-      // The detector deliberately doesn't offer these replacements for some
-      // niche parentheses scenarios
-      .skipTestModes(TestMode.PARENTHESIZED)
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        // The detector deliberately doesn't offer these replacements for some
+        // niche parentheses scenarios
+        .skipTestModes(TestMode.PARENTHESIZED)
+        .run()
+        .expect(
+            """
         src/test/pkg/test.kt:7: Warning: Use the KTX extension function Context.withStyledAttributes instead? [UseKtx]
             context.obtainStyledAttributes(style, attrs).apply { // WARN 1
             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -704,11 +704,11 @@ class UseKtxDetectorTest : AbstractCheckTest() {
             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         0 errors, 4 warnings
         """
-      )
-      .verifyFixes()
-      .window(1)
-      .expectFixDiffs(
-        """
+        )
+        .verifyFixes()
+        .window(1)
+        .expectFixDiffs(
+            """
         Autofix for src/test/pkg/test.kt line 7: Replace with the withStyledAttributes extension function:
         @@ -4,7 +4,8 @@
          import android.util.AttributeSet
@@ -761,14 +761,14 @@ class UseKtxDetectorTest : AbstractCheckTest() {
         +    }
          }
         """
-      )
+        )
   }
 
   fun testSharedPreferences() {
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
             package test.pkg
 
             import android.content.SharedPreferences
@@ -802,13 +802,13 @@ class UseKtxDetectorTest : AbstractCheckTest() {
               prefs.edit().putString(FAVORITES_SETTINGS_KEY, value).apply() // WARN 5
             }
             """
-          )
-          .indented()
-      )
-      .skipTestModes(TestMode.PARENTHESIZED)
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .skipTestModes(TestMode.PARENTHESIZED)
+        .run()
+        .expect(
+            """
         src/test/pkg/test.kt:6: Warning: Use the KTX extension function SharedPreferences.edit instead? [UseKtx]
             sharedPreferences.edit() // WARN 1
             ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -826,9 +826,9 @@ class UseKtxDetectorTest : AbstractCheckTest() {
           ~~~~~~~~~~~~
         0 errors, 5 warnings
         """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
         Autofix for src/test/pkg/test.kt line 6: Replace with the edit extension function:
         @@ -3,0 +4 @@
         +import androidx.core.content.edit
@@ -876,14 +876,14 @@ class UseKtxDetectorTest : AbstractCheckTest() {
         -  prefs.edit().putString(FAVORITES_SETTINGS_KEY, value).apply() // WARN 5
         +  prefs.edit {putString(FAVORITES_SETTINGS_KEY, value)} // WARN 5
         """
-      )
+        )
   }
 
   fun testCanvas() {
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
             package test.pkg
 
             import android.graphics.Canvas
@@ -1025,12 +1025,12 @@ class UseKtxDetectorTest : AbstractCheckTest() {
                 canvas.restore()
             }
             """
-          )
-          .indented()
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .run()
+        .expect(
+            """
         src/test/pkg/test.kt:13: Warning: Use the KTX extension function Canvas.withTranslation instead? [UseKtx]
             canvas.save() // WARN 1
             ~~~~~~~~~~~~~
@@ -1072,9 +1072,9 @@ class UseKtxDetectorTest : AbstractCheckTest() {
             ~~~~~~~~~~~~~
         0 errors, 13 warnings
         """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
         Autofix for src/test/pkg/test.kt line 13: Replace with the withTranslation extension function:
         @@ -9,0 +10 @@
         +import androidx.core.graphics.withTranslation
@@ -1220,15 +1220,15 @@ class UseKtxDetectorTest : AbstractCheckTest() {
         -    canvas.drawCircle(10f, 10f, 10f, paint)
         -    canvas.restore()
         """
-      )
+        )
   }
 
   fun testCanvasConditionalClose() {
     // Don't suggest closing method if not on the same level as the open
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
             package test.pkg
 
             import android.graphics.Rect
@@ -1251,19 +1251,19 @@ class UseKtxDetectorTest : AbstractCheckTest() {
                 }
             }
             """
-          )
-          .indented()
-      )
-      .run()
-      .expectClean()
+                )
+                .indented()
+        )
+        .run()
+        .expectClean()
   }
 
   fun testCanvasComments() {
     // Make sure we attach the comments to the right elements
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
             package test.pkg
 
             import android.graphics.Rect
@@ -1307,20 +1307,20 @@ class UseKtxDetectorTest : AbstractCheckTest() {
             private fun AndroidCanvas.drawDebugOverlay() {
             }
             """
-          )
-          .indented()
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .run()
+        .expect(
+            """
         src/test/pkg/test.kt:18: Warning: Use the KTX extension function Canvas.withTranslation instead? [UseKtx]
             canvas.save() // WARN 1
             ~~~~~~~~~~~~~
         0 errors, 1 warnings
         """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
         Autofix for src/test/pkg/test.kt line 18: Replace with the withTranslation extension function:
         @@ -5,0 +6 @@
         +import androidx.core.graphics.withTranslation
@@ -1355,14 +1355,14 @@ class UseKtxDetectorTest : AbstractCheckTest() {
         @@ -35 +34,0 @@
         -    canvas.restore()
         """
-      )
+        )
   }
 
   fun testSqlDatabase() {
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
             package test.pkg
 
             import android.content.Context
@@ -1425,10 +1425,10 @@ class UseKtxDetectorTest : AbstractCheckTest() {
 
             private fun create(database: SQLiteDatabase): Boolean = false
             """
-          )
-          .indented(),
-        kotlin(
-            """
+                )
+                .indented(),
+            kotlin(
+                    """
             package test.pkg
 
             import android.database.sqlite.SQLiteDatabase
@@ -1455,12 +1455,12 @@ class UseKtxDetectorTest : AbstractCheckTest() {
                 db.endTransaction()
             }
             """
-          )
-          .indented(),
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+        )
+        .run()
+        .expect(
+            """
         src/test/pkg/SqlTest.kt:15: Warning: Use the KTX extension function SQLiteDatabase.transaction instead? [UseKtx]
                 database.beginTransaction() // WARN 1
                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1472,9 +1472,9 @@ class UseKtxDetectorTest : AbstractCheckTest() {
             ~~~~~~~~~~~~~~~~~~~~~
         0 errors, 3 warnings
         """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
         Autofix for src/test/pkg/SqlTest.kt line 15: Replace with the transaction extension function:
         @@ -4,0 +5 @@
         +import androidx.core.database.sqlite.transaction
@@ -1562,14 +1562,14 @@ class UseKtxDetectorTest : AbstractCheckTest() {
         +        version = 61
         +    }
         """
-      )
+        )
   }
 
   fun testDocumentationExampleUseKtx() {
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
             package test.pkg
             import android.text.TextUtils
 
@@ -1577,20 +1577,20 @@ class UseKtxDetectorTest : AbstractCheckTest() {
               val html = TextUtils.htmlEncode("Is x > y ?")
             }
             """
-          )
-          .indented()
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .run()
+        .expect(
+            """
         src/test/pkg/test.kt:5: Warning: Use the KTX extension function String.htmlEncode instead? [UseKtx]
           val html = TextUtils.htmlEncode("Is x > y ?")
                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         0 errors, 1 warnings
         """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
         Autofix for src/test/pkg/test.kt line 5: Replace with the htmlEncode extension function:
         @@ -2,0 +3 @@
         +import androidx.core.text.htmlEncode
@@ -1598,14 +1598,14 @@ class UseKtxDetectorTest : AbstractCheckTest() {
         -  val html = TextUtils.htmlEncode("Is x > y ?")
         +  val html = "Is x > y ?".htmlEncode()
         """
-      )
+        )
   }
 
   fun testHtmlCompat() {
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
             package test.pkg
             import android.text.Html.TO_HTML_PARAGRAPH_LINES_CONSECUTIVE.*
             import android.text.Spanned
@@ -1617,10 +1617,10 @@ class UseKtxDetectorTest : AbstractCheckTest() {
                 val html2 = HtmlCompat.toHtml(spanned, TO_HTML_PARAGRAPH_LINES_INDIVIDUAL)
             }
             """
-          )
-          .indented(),
-        java(
-            """
+                )
+                .indented(),
+            java(
+                    """
             // Stub
             /* HIDE-FROM-DOCUMENTATION */
             package androidx.core.text;
@@ -1631,12 +1631,12 @@ class UseKtxDetectorTest : AbstractCheckTest() {
               public static String toHtml(Spanned text, int options) { return null; }
             }
             """
-          )
-          .indented(),
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+        )
+        .run()
+        .expect(
+            """
         src/test/pkg/test.kt:8: Warning: Use the KTX extension function Spanned.toHtml instead? [UseKtx]
             val html1 = HtmlCompat.toHtml(spanned, TO_HTML_PARAGRAPH_LINES_CONSECUTIVE)
                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1645,9 +1645,9 @@ class UseKtxDetectorTest : AbstractCheckTest() {
                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         0 errors, 2 warnings
         """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
         Autofix for src/test/pkg/test.kt line 8: Replace with the toHtml extension function:
         @@ -5,0 +6 @@
         +import androidx.core.text.toHtml
@@ -1661,16 +1661,16 @@ class UseKtxDetectorTest : AbstractCheckTest() {
         -    val html2 = HtmlCompat.toHtml(spanned, TO_HTML_PARAGRAPH_LINES_INDIVIDUAL)
         +    val html2 = spanned.toHtml(TO_HTML_PARAGRAPH_LINES_INDIVIDUAL)
         """
-      )
+        )
   }
 
   fun testAlreadyImported() {
     // Make sure that if we have already imported the method, that
     // symbol isn't taken as a conflict
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
             package test.pkg
 
             import android.content.Context
@@ -1691,11 +1691,11 @@ class UseKtxDetectorTest : AbstractCheckTest() {
                 }.recycle()
             }
             """
-          )
-          .indented(),
-        // Stub
-        kotlin(
-            """
+                )
+                .indented(),
+            // Stub
+            kotlin(
+                    """
             // HIDE-FROM-DOCUMENTATION
             package androidx.core.content
 
@@ -1714,30 +1714,30 @@ class UseKtxDetectorTest : AbstractCheckTest() {
                 obtainStyledAttributes(resourceId, attrs).apply(block).recycle()
             }
           """
-          )
-          .indented(),
-      )
-      // The detector deliberately doesn't offer these replacements for some
-      // niche parentheses scenarios
-      .skipTestModes(TestMode.PARENTHESIZED)
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+        )
+        // The detector deliberately doesn't offer these replacements for some
+        // niche parentheses scenarios
+        .skipTestModes(TestMode.PARENTHESIZED)
+        .run()
+        .expect(
+            """
         src/test/pkg/test.kt:16: Warning: Use the KTX extension function Context.withStyledAttributes instead? [UseKtx]
             context.obtainStyledAttributes(attrs).apply { // WARN 1
             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         0 errors, 1 warnings
         """
-      )
+        )
   }
 
   fun testConflictingImport() {
     // Make sure that stdlib functions which are not in implicitly imported packages
     // include explicit imports in the quickfix
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
             package test.pkg
 
             import android.app.Activity
@@ -1766,26 +1766,26 @@ class UseKtxDetectorTest : AbstractCheckTest() {
                 }
             }
             """
-          )
-          .indented(),
-        kotlin(
-            """
+                )
+                .indented(),
+            kotlin(
+                    """
             package some.pkg
             fun isReadable(s: String) = s.length > 3
             fun link() { }
           """
-          )
-          .indented(),
-      )
-      .run()
-      .expectClean()
+                )
+                .indented(),
+        )
+        .run()
+        .expectClean()
   }
 
   fun testConflictingImport3() {
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
             package test.pkg
 
             import android.view.View
@@ -1798,19 +1798,19 @@ class UseKtxDetectorTest : AbstractCheckTest() {
             fun View.isInvisible() = visibility == View.INVISIBLE
             fun View.isHidden() = visibility == View.GONE
             """
-          )
-          .indented()
-      )
-      .allowDuplicates()
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .allowDuplicates()
+        .run()
+        .expect(
+            """
         src/test/pkg/test.kt:11: Warning: Use the KTX extension property View.isGone instead? [UseKtx]
         fun View.isHidden() = visibility == View.GONE
                               ~~~~~~~~~~~~~~~~~~~~~~~
         0 errors, 1 warnings
         """
-      )
+        )
   }
 
   fun testContainsIdentifier() {
@@ -1832,9 +1832,9 @@ class UseKtxDetectorTest : AbstractCheckTest() {
     // the conflicting-symbol checker doesn't conclude we already
     // have a conflicting "toUri" definition that prevents the import)
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
             package test.pkg
 
             import androidx.core.net.toUri
@@ -1844,41 +1844,41 @@ class UseKtxDetectorTest : AbstractCheckTest() {
                 android.net.Uri.parse(url)
             }
             """
-          )
-          .indented(),
-        // AndroidX stub
-        kotlin(
-          """
+                )
+                .indented(),
+            // AndroidX stub
+            kotlin(
+                """
           package androidx.core.net
           import android.net.Uri
           inline fun String.toUri(): Uri = Uri.parse(this)
           """
-        ),
-      )
-      .run()
-      .expect(
-        """
+            ),
+        )
+        .run()
+        .expect(
+            """
         src/test/pkg/test.kt:7: Warning: Use the KTX extension function String.toUri instead? [UseKtx]
             android.net.Uri.parse(url)
             ~~~~~~~~~~~~~~~~~~~~~~~~~~
         0 errors, 1 warnings
         """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
         Autofix for src/test/pkg/test.kt line 7: Replace with the toUri extension function:
         @@ -7 +7 @@
         -    android.net.Uri.parse(url)
         +    url.toUri()
         """
-      )
+        )
   }
 
   fun testTextUtils() {
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
             package test.pkg
             import android.text.TextUtils
 
@@ -1889,12 +1889,12 @@ class UseKtxDetectorTest : AbstractCheckTest() {
               TextUtils.isDigitsOnly(html).not()
             }
             """
-          )
-          .indented()
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .run()
+        .expect(
+            """
         src/test/pkg/test.kt:5: Warning: Use the KTX extension function String.htmlEncode instead? [UseKtx]
           val html = TextUtils.htmlEncode("Is x > y ?")
                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1909,9 +1909,9 @@ class UseKtxDetectorTest : AbstractCheckTest() {
           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         0 errors, 4 warnings
         """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
         Autofix for src/test/pkg/test.kt line 5: Replace with the htmlEncode extension function:
         @@ -2,0 +3 @@
         +import androidx.core.text.htmlEncode
@@ -1937,14 +1937,14 @@ class UseKtxDetectorTest : AbstractCheckTest() {
         -  TextUtils.isDigitsOnly(html).not()
         +  html.isDigitsOnly().not()
         """
-      )
+        )
   }
 
   fun testStaticImport() {
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
             package test.pkg
             import android.text.TextUtils.getTrimmedLength
 
@@ -1952,20 +1952,20 @@ class UseKtxDetectorTest : AbstractCheckTest() {
               val length = getTrimmedLength("123")
             }
             """
-          )
-          .indented()
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .run()
+        .expect(
+            """
         src/test/pkg/test.kt:5: Warning: Use the KTX extension function CharSequence.trimmedLength instead? [UseKtx]
           val length = getTrimmedLength("123")
                        ~~~~~~~~~~~~~~~~~~~~~~~
         0 errors, 1 warnings
         """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
         Autofix for src/test/pkg/test.kt line 5: Replace with the trimmedLength extension function:
         @@ -2,0 +3 @@
         +import androidx.core.text.trimmedLength
@@ -1973,14 +1973,14 @@ class UseKtxDetectorTest : AbstractCheckTest() {
         -  val length = getTrimmedLength("123")
         +  val length = "123".trimmedLength()
         """
-      )
+        )
   }
 
   fun testHtml() {
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
             package test.pkg
             import androidx.core.text.HtmlCompat
             import androidx.core.text.HtmlCompat.FROM_HTML_MODE_LEGACY
@@ -1995,11 +1995,11 @@ class UseKtxDetectorTest : AbstractCheckTest() {
                 HtmlCompat.fromHtml("<html>", FROM_HTML_MODE_LEGACY, null, null) // WARN 5
             }
             """
-          )
-          .indented(),
-        // AndroidX stub
-        kotlin(
-            """
+                )
+                .indented(),
+            // AndroidX stub
+            kotlin(
+                    """
             // HIDE-FROM-DOCUMENTATION
             @file:Suppress("UseKtx") // Stub, don't flag code below
             package androidx.core.text
@@ -2013,10 +2013,10 @@ class UseKtxDetectorTest : AbstractCheckTest() {
                 tagHandler: Html.TagHandler? = null
             ): Spanned = HtmlCompat.fromHtml(this, flags, imageGetter, tagHandler)
             """
-          )
-          .indented(),
-        java(
-            """
+                )
+                .indented(),
+            java(
+                    """
             // HIDE-FROM-DOCUMENTATION
             package androidx.core.text;
             import android.text.Html;
@@ -2038,12 +2038,12 @@ class UseKtxDetectorTest : AbstractCheckTest() {
               }
             }
             """
-          )
-          .indented(),
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+        )
+        .run()
+        .expect(
+            """
         src/test/pkg/test.kt:8: Warning: Use the KTX extension function String.parseAsHtml instead? [UseKtx]
             HtmlCompat.fromHtml("<html>", HtmlCompat.FROM_HTML_MODE_COMPACT, imageGetter, tagHandler) // WARN 1
             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -2061,9 +2061,9 @@ class UseKtxDetectorTest : AbstractCheckTest() {
             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         0 errors, 5 warnings
         """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
         Autofix for src/test/pkg/test.kt line 8: Replace with the parseAsHtml extension function:
         @@ -5,0 +6 @@
         +import androidx.core.text.parseAsHtml
@@ -2095,14 +2095,14 @@ class UseKtxDetectorTest : AbstractCheckTest() {
         -    HtmlCompat.fromHtml("<html>", FROM_HTML_MODE_LEGACY, null, null) // WARN 5
         +    "<html>".parseAsHtml() // WARN 5
         """
-      )
+        )
   }
 
   fun testParensNeeded() {
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
             package test.pkg
 
             import android.content.Intent
@@ -2112,20 +2112,20 @@ class UseKtxDetectorTest : AbstractCheckTest() {
                 return setData((Uri.parse("custom://" + System.currentTimeMillis())))
             }
             """
-          )
-          .indented()
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .run()
+        .expect(
+            """
         src/test/pkg/test.kt:7: Warning: Use the KTX extension function String.toUri instead? [UseKtx]
             return setData((Uri.parse("custom://" + System.currentTimeMillis())))
                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         0 errors, 1 warnings
         """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
         Autofix for src/test/pkg/test.kt line 7: Replace with the toUri extension function:
         @@ -4,0 +5 @@
         +import androidx.core.net.toUri
@@ -2133,14 +2133,14 @@ class UseKtxDetectorTest : AbstractCheckTest() {
         -    return setData((Uri.parse("custom://" + System.currentTimeMillis())))
         +    return setData((("custom://" + System.currentTimeMillis()).toUri()))
         """
-      )
+        )
   }
 
   fun testBitmap() {
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
             package test.pkg
 
             import android.graphics.Bitmap
@@ -2160,20 +2160,20 @@ class UseKtxDetectorTest : AbstractCheckTest() {
                 }
             }
             """
-          )
-          .indented()
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .run()
+        .expect(
+            """
         src/test/pkg/test.kt:11: Warning: Use the KTX extension function Bitmap.scale instead? [UseKtx]
                 scaledVideoBitmap = Bitmap.createScaledBitmap(
                                     ^
         0 errors, 1 warnings
         """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
         Autofix for src/test/pkg/test.kt line 11: Replace with the scale extension function:
         @@ -3,0 +4 @@
         +import androidx.core.graphics.scale
@@ -2186,14 +2186,14 @@ class UseKtxDetectorTest : AbstractCheckTest() {
         -        )
         +        scaledVideoBitmap = videoBitmap.scale((videoBitmap.width / originalScale).toInt(), (videoBitmap.height / originalScale).toInt())
         """
-      )
+        )
   }
 
   fun testBinaryExpressions() {
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
             @file:Suppress("UnusedEquals")
 
             package test.pkg
@@ -2217,10 +2217,10 @@ class UseKtxDetectorTest : AbstractCheckTest() {
                 val arraySize = array.size() == 5 // WARN 9: switch to property syntax
             }
             """
-          )
-          .indented(),
-        kotlin(
-            """
+                )
+                .indented(),
+            kotlin(
+                    """
             package test.pkg
             import android.view.View
             import android.view.ViewGroup
@@ -2235,12 +2235,12 @@ class UseKtxDetectorTest : AbstractCheckTest() {
                 val count2 = group.childCount // WARN 15 -- but not yet working
             }
             """
-          )
-          .indented(),
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+        )
+        .run()
+        .expect(
+            """
         src/test/pkg/test.kt:9: Warning: Use the KTX extension function SparseArray.containsValue instead? [UseKtx]
             array.indexOfValue("test") >= 0 // WARN 1: expect array.containsValue("test")
             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -2285,9 +2285,9 @@ class UseKtxDetectorTest : AbstractCheckTest() {
                            ~~~~~~~~~~~~~~~~~~~~~
         0 errors, 14 warnings
         """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
         Autofix for src/test/pkg/test.kt line 9: Replace with the containsValue extension function:
         @@ -6,0 +7 @@
         +import androidx.core.util.containsValue
@@ -2373,14 +2373,14 @@ class UseKtxDetectorTest : AbstractCheckTest() {
         -    val notEmpty = group.childCount != 0 // WARN 14
         +    val notEmpty = group.isNotEmpty() // WARN 14
         """
-      )
+        )
   }
 
   fun testArrays() {
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
             @file:Suppress("UnusedEquals")
 
             package test.pkg
@@ -2431,12 +2431,12 @@ class UseKtxDetectorTest : AbstractCheckTest() {
                 longArray.indexOfValue("Test") >= 0 // WARN 19
             }
             """
-          )
-          .indented()
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .run()
+        .expect(
+            """
         src/test/pkg/test.kt:14: Warning: Use the KTX extension property SparseLongArray.size instead? [UseKtx]
             longArray.size() // WARN 1
             ~~~~~~~~~~~~~~~~
@@ -2496,9 +2496,9 @@ class UseKtxDetectorTest : AbstractCheckTest() {
             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         0 errors, 19 warnings
         """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
         Autofix for src/test/pkg/test.kt line 14: Replace with the size extension property:
         @@ -9,0 +10 @@
         +import androidx.core.util.size
@@ -2614,14 +2614,14 @@ class UseKtxDetectorTest : AbstractCheckTest() {
         -    longArray.indexOfValue("Test") >= 0 // WARN 19
         +    longArray.containsValue("Test") // WARN 19
         """
-      )
+        )
   }
 
   fun testProperties() {
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
             package test.pkg
 
             import android.text.TextUtils
@@ -2635,12 +2635,12 @@ class UseKtxDetectorTest : AbstractCheckTest() {
                 val dir = getLayoutDirectionFromLocale(Locale.getDefault()) // WARN 2
             }
             """
-          )
-          .indented()
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .run()
+        .expect(
+            """
         src/test/pkg/test.kt:9: Warning: Use the KTX extension property Locale.layoutDirection instead? [UseKtx]
             if (TextUtils.getLayoutDirectionFromLocale(Locale.getDefault()) == View.LAYOUT_DIRECTION_LTR) { // WARN 1
                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -2649,9 +2649,9 @@ class UseKtxDetectorTest : AbstractCheckTest() {
                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         0 errors, 2 warnings
         """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
         Autofix for src/test/pkg/test.kt line 9: Replace with the layoutDirection extension property:
         @@ -5,0 +6 @@
         +import androidx.core.text.layoutDirection
@@ -2665,15 +2665,15 @@ class UseKtxDetectorTest : AbstractCheckTest() {
         -    val dir = getLayoutDirectionFromLocale(Locale.getDefault()) // WARN 2
         +    val dir = Locale.getDefault().layoutDirection // WARN 2
         """
-      )
+        )
   }
 
   fun testSizeProperty() {
     lint()
-      .files(
-        kotlin(
-            "src/test/pkg/test3.kt",
-            """
+        .files(
+            kotlin(
+                    "src/test/pkg/test3.kt",
+                    """
             package test.pkg
 
             import android.util.SparseArray
@@ -2685,20 +2685,20 @@ class UseKtxDetectorTest : AbstractCheckTest() {
                 }
             }
             """,
-          )
-          .indented()
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .run()
+        .expect(
+            """
         src/test/pkg/test3.kt:7: Warning: Use the KTX extension property SparseArray.size instead? [UseKtx]
             for (index in 0 until values.size()) {
                                   ~~~~~~~~~~~~~
         0 errors, 1 warnings
         """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
         Autofix for src/test/pkg/test3.kt line 7: Replace with the size extension property:
         @@ -4,0 +5 @@
         +import androidx.core.util.size
@@ -2706,14 +2706,14 @@ class UseKtxDetectorTest : AbstractCheckTest() {
         -    for (index in 0 until values.size()) {
         +    for (index in 0 until values.size) {
         """
-      )
+        )
   }
 
   fun testNonExtensionFunctions() {
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
             package test.pkg
 
             import android.graphics.Bitmap
@@ -2725,20 +2725,20 @@ class UseKtxDetectorTest : AbstractCheckTest() {
                 }
             }
             """
-          )
-          .indented()
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .run()
+        .expect(
+            """
         src/test/pkg/BitmapTest.kt:8: Warning: Use the KTX function createBitmap instead? [UseKtx]
                 this.bitmapBuffer = Bitmap.createBitmap(measuredWidth, measuredHeight, Bitmap.Config.ARGB_8888)
                                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         0 errors, 1 warnings
         """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
         Autofix for src/test/pkg/BitmapTest.kt line 8: Replace with the createBitmap function:
         @@ -3,0 +4 @@
         +import androidx.core.graphics.createBitmap
@@ -2746,14 +2746,14 @@ class UseKtxDetectorTest : AbstractCheckTest() {
         -        this.bitmapBuffer = Bitmap.createBitmap(measuredWidth, measuredHeight, Bitmap.Config.ARGB_8888)
         +        this.bitmapBuffer = createBitmap(measuredWidth, measuredHeight)
         """
-      )
+        )
   }
 
   fun testRemoveDefaultsOptionOff() {
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
             package test.pkg
 
             import android.graphics.Bitmap
@@ -2765,21 +2765,21 @@ class UseKtxDetectorTest : AbstractCheckTest() {
                 }
             }
             """
-          )
-          .indented()
-      )
-      .configureOption(UseKtxDetector.REMOVE_DEFAULTS, false)
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .configureOption(UseKtxDetector.REMOVE_DEFAULTS, false)
+        .run()
+        .expect(
+            """
         src/test/pkg/BitmapTest.kt:8: Warning: Use the KTX function createBitmap instead? [UseKtx]
                 this.bitmapBuffer = Bitmap.createBitmap(measuredWidth, measuredHeight, Bitmap.Config.ARGB_8888)
                                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         0 errors, 1 warnings
         """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
         Autofix for src/test/pkg/BitmapTest.kt line 8: Replace with the createBitmap function:
         @@ -3,0 +4 @@
         +import androidx.core.graphics.createBitmap
@@ -2787,13 +2787,13 @@ class UseKtxDetectorTest : AbstractCheckTest() {
         -        this.bitmapBuffer = Bitmap.createBitmap(measuredWidth, measuredHeight, Bitmap.Config.ARGB_8888)
         +        this.bitmapBuffer = createBitmap(measuredWidth, measuredHeight, Bitmap.Config.ARGB_8888)
         """
-      )
+        )
 
     // Also check option on (the default)
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
             package test.pkg
 
             import android.graphics.Bitmap
@@ -2805,21 +2805,21 @@ class UseKtxDetectorTest : AbstractCheckTest() {
                 }
             }
             """
-          )
-          .indented()
-      )
-      .configureOption(UseKtxDetector.REMOVE_DEFAULTS, true)
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .configureOption(UseKtxDetector.REMOVE_DEFAULTS, true)
+        .run()
+        .expect(
+            """
         src/test/pkg/BitmapTest.kt:8: Warning: Use the KTX function createBitmap instead? [UseKtx]
                 this.bitmapBuffer = Bitmap.createBitmap(measuredWidth, measuredHeight, Bitmap.Config.ARGB_8888)
                                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         0 errors, 1 warnings
         """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
         Autofix for src/test/pkg/BitmapTest.kt line 8: Replace with the createBitmap function:
         @@ -3,0 +4 @@
         +import androidx.core.graphics.createBitmap
@@ -2827,14 +2827,14 @@ class UseKtxDetectorTest : AbstractCheckTest() {
         -        this.bitmapBuffer = Bitmap.createBitmap(measuredWidth, measuredHeight, Bitmap.Config.ARGB_8888)
         +        this.bitmapBuffer = createBitmap(measuredWidth, measuredHeight)
         """
-      )
+        )
   }
 
   fun testViewInvisible() {
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
             package test.pkg
             import android.view.View
 
@@ -2858,12 +2858,12 @@ class UseKtxDetectorTest : AbstractCheckTest() {
                 }
             }
             """
-          )
-          .indented()
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .run()
+        .expect(
+            """
         src/test/pkg/test.kt:5: Warning: Use the KTX extension property View.isVisible instead? [UseKtx]
             if (view.visibility == View.VISIBLE) { // WARN 1
                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -2875,9 +2875,9 @@ class UseKtxDetectorTest : AbstractCheckTest() {
                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         0 errors, 3 warnings
         """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
         Autofix for src/test/pkg/test.kt line 5: Replace with the isVisible extension property:
         @@ -2,0 +3 @@
         +import androidx.core.view.isVisible
@@ -2897,14 +2897,14 @@ class UseKtxDetectorTest : AbstractCheckTest() {
         -    } else if (view.visibility == View.GONE) { // WARN 3
         +    } else if (view.isGone) { // WARN 3
         """
-      )
+        )
   }
 
   fun testInfix() {
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
             package test.pkg
 
             import android.util.Range
@@ -2914,20 +2914,20 @@ class UseKtxDetectorTest : AbstractCheckTest() {
                 val anded = range1.intersect(range2) // WARN 1
             }
             """
-          )
-          .indented()
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .run()
+        .expect(
+            """
         src/test/pkg/test.kt:7: Warning: Use the KTX extension function Range.and instead? [UseKtx]
             val anded = range1.intersect(range2) // WARN 1
                         ~~~~~~~~~~~~~~~~~~~~~~~~
         0 errors, 1 warnings
         """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
         Autofix for src/test/pkg/test.kt line 7: Replace with the and extension function:
         @@ -3,0 +4 @@
         +import androidx.core.util.and
@@ -2935,14 +2935,14 @@ class UseKtxDetectorTest : AbstractCheckTest() {
         -    val anded = range1.intersect(range2) // WARN 1
         +    val anded = range1 and range2 // WARN 1
         """
-      )
+        )
   }
 
   fun testArraySyntax() {
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
             package test.pkg
 
             import android.graphics.Bitmap
@@ -2964,12 +2964,12 @@ class UseKtxDetectorTest : AbstractCheckTest() {
                 //val item = menu[0]
             }
             """
-          )
-          .indented()
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .run()
+        .expect(
+            """
         src/test/pkg/test.kt:10: Warning: Use the KTX extension function Bitmap.get instead? [UseKtx]
                     val pixel = bitmap.getPixel(x, y) // WARN 1
                                 ~~~~~~~~~~~~~~~~~~~~~
@@ -2981,9 +2981,9 @@ class UseKtxDetectorTest : AbstractCheckTest() {
                        ~~~~~~~~~~~~~~~
         0 errors, 3 warnings
         """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
         Autofix for src/test/pkg/test.kt line 10: Replace with the get extension function:
         @@ -4,0 +5 @@
         +import androidx.core.graphics.get
@@ -3003,14 +3003,14 @@ class UseKtxDetectorTest : AbstractCheckTest() {
         -    val item = menu.getItem(0) // WARN 3
         +    val item = menu[0] // WARN 3
         """
-      )
+        )
   }
 
   fun testColorProperties() {
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
             package test.pkg
 
             import android.graphics.Color
@@ -3025,12 +3025,12 @@ class UseKtxDetectorTest : AbstractCheckTest() {
                 Color.toArgb(colorLong) // WARN 6
             }
             """
-          )
-          .indented()
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .run()
+        .expect(
+            """
         src/test/pkg/test.kt:6: Warning: Use the KTX extension function String.toColorInt instead? [UseKtx]
             val color: Int = Color.parseColor("#000000") // WARN 1
                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -3051,9 +3051,9 @@ class UseKtxDetectorTest : AbstractCheckTest() {
             ~~~~~~~~~~~~~~~~~~~~~~~
         0 errors, 6 warnings
         """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
         Autofix for src/test/pkg/test.kt line 6: Replace with the toColorInt extension function:
         @@ -3,0 +4 @@
         +import androidx.core.graphics.toColorInt
@@ -3091,14 +3091,14 @@ class UseKtxDetectorTest : AbstractCheckTest() {
         -    Color.toArgb(colorLong) // WARN 6
         +    colorLong.toColorInt() // WARN 6
         """
-      )
+        )
   }
 
   fun testToDrawable() {
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
             package test.pkg
 
             import android.content.Context
@@ -3111,12 +3111,12 @@ class UseKtxDetectorTest : AbstractCheckTest() {
                 val colorDrawable = ColorDrawable(color) // WARN 2
             }
             """
-          )
-          .indented()
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .run()
+        .expect(
+            """
         src/test/pkg/test.kt:9: Warning: Use the KTX extension function Bitmap.toDrawable instead? [UseKtx]
             val bitmapDrawable = BitmapDrawable(context.resources, bitmap) // WARN 1
                                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -3125,9 +3125,9 @@ class UseKtxDetectorTest : AbstractCheckTest() {
                                 ~~~~~~~~~~~~~~~~~~~~
         0 errors, 2 warnings
         """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
         Autofix for src/test/pkg/test.kt line 9: Replace with the toDrawable extension function:
         @@ -6,0 +7 @@
         +import androidx.core.graphics.drawable.toDrawable
@@ -3141,15 +3141,15 @@ class UseKtxDetectorTest : AbstractCheckTest() {
         -    val colorDrawable = ColorDrawable(color) // WARN 2
         +    val colorDrawable = color.toDrawable() // WARN 2
         """
-      )
+        )
   }
 
   fun testFindNavController() {
     // Here we have a static method in a class that we're replacing with an instance method
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
             package test.pkg
 
             import android.app.Activity
@@ -3159,11 +3159,11 @@ class UseKtxDetectorTest : AbstractCheckTest() {
                 Navigation.findNavController(activity, viewId)
             }
             """
-          )
-          .indented(),
-        kotlin(
-          // Stub
-          """
+                )
+                .indented(),
+            kotlin(
+                // Stub
+                """
           // HIDE-FROM-DOCUMENTATION
           package androidx.navigation
 
@@ -3175,22 +3175,22 @@ class UseKtxDetectorTest : AbstractCheckTest() {
           }
           class NavController
           """
-        ),
-      )
-      // We check for exact method signatures, and this test mode can
-      // change the test signatures (by adding extra parameters) in stub methods.
-      .skipTestModes(TestMode.JVM_OVERLOADS)
-      .run()
-      .expect(
-        """
+            ),
+        )
+        // We check for exact method signatures, and this test mode can
+        // change the test signatures (by adding extra parameters) in stub methods.
+        .skipTestModes(TestMode.JVM_OVERLOADS)
+        .run()
+        .expect(
+            """
         src/test/pkg/test.kt:7: Warning: Use the KTX extension function Activity.findNavController instead? [UseKtx]
             Navigation.findNavController(activity, viewId)
             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         0 errors, 1 warnings
         """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
         Autofix for src/test/pkg/test.kt line 7: Replace with the findNavController extension function:
         @@ -4,0 +5 @@
         +import androidx.navigation.findNavController
@@ -3198,7 +3198,7 @@ class UseKtxDetectorTest : AbstractCheckTest() {
         -    Navigation.findNavController(activity, viewId)
         +    activity.findNavController(viewId)
         """
-      )
+        )
   }
 
   fun testEqualsIgnoringWhitespace() {

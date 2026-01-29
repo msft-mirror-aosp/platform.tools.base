@@ -23,9 +23,9 @@ import com.android.tools.lint.detector.api.Detector
 class KotlinNullnessAnnotationDetectorTest : AbstractCheckTest() {
   override fun lint(): TestLintTask {
     return super.lint()
-      // Our warning messages are picking up specific strings from the type expressions, which means
-      // the test results would vary for type aliases
-      .skipTestModes(TestMode.TYPE_ALIAS)
+        // Our warning messages are picking up specific strings from the type expressions, which means
+        // the test results would vary for type aliases
+        .skipTestModes(TestMode.TYPE_ALIAS)
   }
 
   override fun getDetector(): Detector {
@@ -34,9 +34,9 @@ class KotlinNullnessAnnotationDetectorTest : AbstractCheckTest() {
 
   fun testDocumentationExample() {
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
                 package test.pkg
                 import androidx.annotation.NonNull
                 import androidx.annotation.Nullable
@@ -53,13 +53,13 @@ class KotlinNullnessAnnotationDetectorTest : AbstractCheckTest() {
                 // which is totally misleading; the annotation is wrong.
                 fun testError(@NonNull number: Number?) { }
                 """
-          )
-          .indented(),
-        SUPPORT_ANNOTATIONS_JAR,
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            SUPPORT_ANNOTATIONS_JAR,
+        )
+        .run()
+        .expect(
+            """
             src/test/pkg/test.kt:11: Error: Do not use @Nullable in Kotlin; the nullability is determined by the Kotlin type String not ending with ? which declares it not nullable, contradicting the annotation [KotlinNullnessAnnotation]
             fun testError(@Nullable string: String) { }
                           ~~~~~~~~~
@@ -71,9 +71,9 @@ class KotlinNullnessAnnotationDetectorTest : AbstractCheckTest() {
                             ~~~~~~~~
             2 errors, 1 warnings
             """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
             Fix for src/test/pkg/test.kt line 11: Delete `@Nullable`:
             @@ -11 +11 @@
             -fun testError(@Nullable string: String) { }
@@ -87,14 +87,14 @@ class KotlinNullnessAnnotationDetectorTest : AbstractCheckTest() {
             -fun testWarning(@NonNull string: String) { }
             +fun testWarning(string: String) { }
             """
-      )
+        )
   }
 
   fun testAll() {
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
                 package test.pkg
 
                 import androidx.annotation.NonNull
@@ -136,11 +136,11 @@ class KotlinNullnessAnnotationDetectorTest : AbstractCheckTest() {
                     override fun test(param: String?): String? = null
                 }
                 """
-          )
-          .indented(),
-        java(
-            // Nothing should be flagged in Java
-            """
+                )
+                .indented(),
+            java(
+                    // Nothing should be flagged in Java
+                    """
                 package test.pkg;
 
                 import androidx.annotation.Nullable;
@@ -150,13 +150,13 @@ class KotlinNullnessAnnotationDetectorTest : AbstractCheckTest() {
                     public void test(@NonNull Number n) { }  // OK
                 }
                 """
-          )
-          .indented(),
-        SUPPORT_ANNOTATIONS_JAR,
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            SUPPORT_ANNOTATIONS_JAR,
+        )
+        .run()
+        .expect(
+            """
             src/test/pkg/Test1.kt:15: Error: Do not use @Nullable in Kotlin; the nullability is determined by the Kotlin type String not ending with ? which declares it not nullable, contradicting the annotation [KotlinNullnessAnnotation]
                 @Nullable a: String,        // ERROR 1
                 ~~~~~~~~~
@@ -201,9 +201,9 @@ class KotlinNullnessAnnotationDetectorTest : AbstractCheckTest() {
                 ~~~~~~~~~
             10 errors, 4 warnings
             """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
             Fix for src/test/pkg/Test1.kt line 15: Delete `@Nullable`:
             @@ -15 +15 @@
             -    @Nullable a: String,        // ERROR 1
@@ -261,40 +261,40 @@ class KotlinNullnessAnnotationDetectorTest : AbstractCheckTest() {
             -    @Nullable d: List<String>?  // WARN 4
             +    d: List<String>?  // WARN 4
             """
-      )
+        )
   }
 
   fun testFullyQualifiedNames() {
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
                 package test.pkg
                 import androidx.annotation.NonNull
                 fun testWarning(@androidx.annotation.NonNull a: String) { } // ERROR
                 """
-          )
-          .indented(),
-        SUPPORT_ANNOTATIONS_JAR,
-      )
-      .testModes(TestMode.DEFAULT)
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            SUPPORT_ANNOTATIONS_JAR,
+        )
+        .testModes(TestMode.DEFAULT)
+        .run()
+        .expect(
+            """
             src/test/pkg/test.kt:3: Warning: Do not use @NonNull in Kotlin; the nullability is already implied by the Kotlin type String not ending with ? [KotlinNullnessAnnotation]
             fun testWarning(@androidx.annotation.NonNull a: String) { } // ERROR
                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             0 errors, 1 warnings
             """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
             Autofix for src/test/pkg/test.kt line 3: Delete `@NonNull`:
             @@ -3 +3 @@
             -fun testWarning(@androidx.annotation.NonNull a: String) { } // ERROR
             +fun testWarning(a: String) { } // ERROR
             """
-      )
+        )
   }
 
   fun testJetBrainsAnnotations() {
@@ -302,9 +302,9 @@ class KotlinNullnessAnnotationDetectorTest : AbstractCheckTest() {
     // the
     // builtin JetBrains ones.
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
                 package test.pkg
                 import org.jetbrains.annotations.Nullable
                 import org.jetbrains.annotations.NotNull
@@ -313,27 +313,27 @@ class KotlinNullnessAnnotationDetectorTest : AbstractCheckTest() {
                     @NotNull string2: String?   // ERROR 2
                     ) { }
                 """
-          )
-          .indented(),
-        // Stubs
-        java(
-            """
+                )
+                .indented(),
+            // Stubs
+            java(
+                    """
                 package org.jetbrains.annotations;
                 public @interface Nullable { }
                 """
-          )
-          .indented(),
-        java(
-            """
+                )
+                .indented(),
+            java(
+                    """
                 package org.jetbrains.annotations;
                 public @interface NotNull { }
                 """
-          )
-          .indented(),
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+        )
+        .run()
+        .expect(
+            """
             src/test/pkg/test.kt:5: Error: Do not use @Nullable in Kotlin; the nullability is determined by the Kotlin type String not ending with ? which declares it not nullable, contradicting the annotation [KotlinNullnessAnnotation]
                 @Nullable string: String,   // ERROR 1
                 ~~~~~~~~~
@@ -342,7 +342,7 @@ class KotlinNullnessAnnotationDetectorTest : AbstractCheckTest() {
                 ~~~~~~~~
             2 errors, 0 warnings
             """
-      )
+        )
   }
 
   fun testJavaxAnnotations() {
@@ -350,9 +350,9 @@ class KotlinNullnessAnnotationDetectorTest : AbstractCheckTest() {
     // might be used by frameworks; for now we're only flagging contradictory annotations,
     // not redundant ones
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
                 package test.pkg
                 import javax.annotation.Nullable
                 import javax.annotation.Nonnull
@@ -363,29 +363,29 @@ class KotlinNullnessAnnotationDetectorTest : AbstractCheckTest() {
                     @Nonnull string4: String?    // ERROR 2
                     ) { }
                 """
-          )
-          .indented(),
-        // Stubs
-        java(
-            """
+                )
+                .indented(),
+            // Stubs
+            java(
+                    """
                 /* HIDE-FROM-DOCUMENTATION */
                 package javax.annotation;
                 public @interface Nullable { }
                 """
-          )
-          .indented(),
-        java(
-            """
+                )
+                .indented(),
+            java(
+                    """
                 /* HIDE-FROM-DOCUMENTATION */
                 package javax.annotation;
                 public @interface Nonnull { }
                 """
-          )
-          .indented(),
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+        )
+        .run()
+        .expect(
+            """
             src/test/pkg/test.kt:7: Error: Do not use @Nullable in Kotlin; the nullability is determined by the Kotlin type String not ending with ? which declares it not nullable, contradicting the annotation [KotlinNullnessAnnotation]
                 @Nullable string3: String,   // ERROR 1
                 ~~~~~~~~~
@@ -394,6 +394,6 @@ class KotlinNullnessAnnotationDetectorTest : AbstractCheckTest() {
                 ~~~~~~~~
             2 errors, 0 warnings
             """
-      )
+        )
   }
 }

@@ -52,10 +52,10 @@ import org.jetbrains.kotlin.name.Name
 import org.jetbrains.kotlin.psi.KtClassOrObject
 
 internal class KlibLightFakeFacadeClass(
-  callableSymbol: KaCallableSymbol,
-  val kaModule: KaModule,
-  val psiManager: PsiManager,
-  val fakeContainingFile: PsiFile?,
+    callableSymbol: KaCallableSymbol,
+    val kaModule: KaModule,
+    val psiManager: PsiManager,
+    val fakeContainingFile: PsiFile?,
 ) : SymbolLightClassBase(kaModule, psiManager) {
 
   val callableSymbolPointer = callableSymbol.createPointer()
@@ -71,10 +71,10 @@ internal class KlibLightFakeFacadeClass(
 
   override fun equals(other: Any?): Boolean {
     return this === other ||
-      other is KlibLightFakeFacadeClass &&
-        kaModule == other.kaModule &&
-        psiManager == other.psiManager &&
-        compareSymbolPointers(callableSymbolPointer, other.callableSymbolPointer)
+        other is KlibLightFakeFacadeClass &&
+            kaModule == other.kaModule &&
+            psiManager == other.psiManager &&
+            compareSymbolPointers(callableSymbolPointer, other.callableSymbolPointer)
   }
 
   // TODO: This is not good, but perhaps it doesn't matter.
@@ -85,23 +85,22 @@ internal class KlibLightFakeFacadeClass(
   //  Could we just return null? Should we just return this, assuming we would
   //  normally cache the copy anyway?
   override fun copy(): KlibLightFakeFacadeClass =
-    callableSymbolPointer.withSymbol(kaModule) { callableSymbol ->
-      KlibLightFakeFacadeClass(callableSymbol, kaModule, psiManager, containingFile)
-    }
+      callableSymbolPointer.withSymbol(kaModule) { callableSymbol ->
+        KlibLightFakeFacadeClass(callableSymbol, kaModule, psiManager, containingFile)
+      }
 
-  override fun toString(): String =
-    "${KlibLightFakeFacadeClass::class.java.simpleName}:${callableSymbolPointer}"
+  override fun toString(): String = "${KlibLightFakeFacadeClass::class.java.simpleName}:${callableSymbolPointer}"
 
   private val _classId: ClassId?
     get() =
-      callableSymbolPointer.withSymbol(kaModule) { callableSymbol ->
-        val callableId = callableSymbol.callableId ?: return@withSymbol null
+        callableSymbolPointer.withSymbol(kaModule) { callableSymbol ->
+          val callableId = callableSymbol.callableId ?: return@withSymbol null
 
-        // TODO: I am guessing we might need to process/escape the callable name
-        //  before simply using it as a class name. But I am unsure exactly what
-        //  is allowed, given that this doesn't really exist.
-        ClassId(callableId.packageName, Name.identifier("Facade$${callableId.callableName}"))
-      }
+          // TODO: I am guessing we might need to process/escape the callable name
+          //  before simply using it as a class name. But I am unsure exactly what
+          //  is allowed, given that this doesn't really exist.
+          ClassId(callableId.packageName, Name.identifier("Facade$${callableId.callableName}"))
+        }
 
   override fun getQualifiedName(): String? = _classId?.asFqNameString()
 
@@ -115,41 +114,37 @@ internal class KlibLightFakeFacadeClass(
   // TODO: Cache this, and more?
   override fun getExtendsList(): PsiReferenceList {
     val list =
-      KotlinSuperTypeListBuilder(
-        this,
-        kotlinOrigin = null,
-        manager = psiManager,
-        language = language,
-        role = PsiReferenceList.Role.EXTENDS_LIST,
-      )
+        KotlinSuperTypeListBuilder(
+            this,
+            kotlinOrigin = null,
+            manager = psiManager,
+            language = language,
+            role = PsiReferenceList.Role.EXTENDS_LIST,
+        )
     superClass?.let { list.addReference(it) }
     return list
   }
 
   override fun getImplementsList(): PsiReferenceList =
-    KotlinSuperTypeListBuilder(
-      this,
-      kotlinOrigin = null,
-      manager = psiManager,
-      language = language,
-      role = PsiReferenceList.Role.IMPLEMENTS_LIST,
-    )
+      KotlinSuperTypeListBuilder(
+          this,
+          kotlinOrigin = null,
+          manager = psiManager,
+          language = language,
+          role = PsiReferenceList.Role.IMPLEMENTS_LIST,
+      )
 
   override fun getSuperClass(): PsiClass? {
-    return JavaPsiFacade.getInstance(project)
-      .findClass(CommonClassNames.JAVA_LANG_OBJECT, resolveScope)
+    return JavaPsiFacade.getInstance(project).findClass(CommonClassNames.JAVA_LANG_OBJECT, resolveScope)
   }
 
   override fun getInterfaces(): Array<out PsiClass> = PsiClass.EMPTY_ARRAY
 
-  override fun getSupers(): Array<out PsiClass> =
-    superClass?.let { arrayOf(it) } ?: PsiClass.EMPTY_ARRAY
+  override fun getSupers(): Array<out PsiClass> = superClass?.let { arrayOf(it) } ?: PsiClass.EMPTY_ARRAY
 
-  override fun getSuperTypes(): Array<out PsiClassType> =
-    arrayOf(PsiType.getJavaLangObject(manager, resolveScope))
+  override fun getSuperTypes(): Array<out PsiClassType> = arrayOf(PsiType.getJavaLangObject(manager, resolveScope))
 
-  override fun getNameIdentifier(): PsiIdentifier? =
-    _classId?.shortClassName?.identifier?.let { KtLightIdentifier(this, null, it) }
+  override fun getNameIdentifier(): PsiIdentifier? = _classId?.shortClassName?.identifier?.let { KtLightIdentifier(this, null, it) }
 
   override fun getScope(): PsiElement? = containingFile
 
@@ -162,16 +157,15 @@ internal class KlibLightFakeFacadeClass(
   @OptIn(KaImplementationDetail::class)
   private val _modifierList: PsiModifierList by lazyPub {
     SymbolLightClassModifierList(
-      containingDeclaration = this,
-      modifiersBox = InitializedModifiersBox(PsiModifier.PUBLIC, PsiModifier.FINAL),
-      annotationsBox = EmptyAnnotationsBox,
+        containingDeclaration = this,
+        modifiersBox = InitializedModifiersBox(PsiModifier.PUBLIC, PsiModifier.FINAL),
+        annotationsBox = EmptyAnnotationsBox,
     )
   }
 
   override fun getModifierList(): PsiModifierList = _modifierList
 
-  override fun hasModifierProperty(name: @NonNls String) =
-    name == PsiModifier.PUBLIC || name == PsiModifier.FINAL
+  override fun hasModifierProperty(name: @NonNls String) = name == PsiModifier.PUBLIC || name == PsiModifier.FINAL
 
   override fun isDeprecated() = false
 

@@ -63,8 +63,7 @@ class ProjectDescription : Comparable<ProjectDescription> {
   }
 
   /**
-   * Names the project; most useful in multi-project tests where the project name will be part of
-   * the error output
+   * Names the project; most useful in multi-project tests where the project name will be part of the error output
    *
    * @param name the name for the project
    * @return this for constructor chaining
@@ -93,8 +92,8 @@ class ProjectDescription : Comparable<ProjectDescription> {
    */
   @JvmOverloads
   fun dependsOn(
-    library: ProjectDescription,
-    kind: DependencyKind = DependencyKind.Regular,
+      library: ProjectDescription,
+      kind: DependencyKind = DependencyKind.Regular,
   ): ProjectDescription {
     if (library !in dependsOn) {
       dependsOn[library] = kind
@@ -123,8 +122,8 @@ class ProjectDescription : Comparable<ProjectDescription> {
   }
 
   /**
-   * Adds the given dependency graph (the output of the Gradle dependency task) to be constructed
-   * when mocking a Gradle model for this project.
+   * Adds the given dependency graph (the output of the Gradle dependency task) to be constructed when mocking a Gradle model for this
+   * project.
    *
    * To generate this, run for example
    *
@@ -153,10 +152,7 @@ class ProjectDescription : Comparable<ProjectDescription> {
     return this
   }
 
-  /**
-   * Places this project in a subdirectory (determined by the project name) of the given [parent]
-   * project.
-   */
+  /** Places this project in a subdirectory (determined by the project name) of the given [parent] project. */
   fun under(parent: ProjectDescription): ProjectDescription {
     this.under = parent
     return this
@@ -174,11 +170,9 @@ class ProjectDescription : Comparable<ProjectDescription> {
   }
 
   /**
-   * Marks this project as reportable (the default) or non-reportable. Lint projects are usually
-   * reportable, but if they depend on libraries (such as appcompat) those dependencies are marked
-   * as non-reportable. Lint will still analyze those projects (for example, an unused resource
-   * analysis should list resources pulled in from these libraries) but issues found within those
-   * libraries will not be reported.
+   * Marks this project as reportable (the default) or non-reportable. Lint projects are usually reportable, but if they depend on libraries
+   * (such as appcompat) those dependencies are marked as non-reportable. Lint will still analyze those projects (for example, an unused
+   * resource analysis should list resources pulled in from these libraries) but issues found within those libraries will not be reported.
    *
    * @param report whether we should report issues for this project
    * @return this for constructor chaining
@@ -189,9 +183,8 @@ class ProjectDescription : Comparable<ProjectDescription> {
   }
 
   /**
-   * Checks that all the files in this project are unique. This catches cases where you've
-   * accidentally specified a target more than once (where only the last will be used by lint since
-   * it will overwrite any earlier occurrences.)
+   * Checks that all the files in this project are unique. This catches cases where you've accidentally specified a target more than once
+   * (where only the last will be used by lint since it will overwrite any earlier occurrences.)
    */
   fun ensureUnique() {
     val targets = mutableSetOf<String>()
@@ -202,8 +195,8 @@ class ProjectDescription : Comparable<ProjectDescription> {
       val added = targets.add(file.targetRelativePath)
       if (!added) {
         if (
-          (file.targetRelativePath.endsWith("/test.kt") || file.targetRelativePath == "test.kt") &&
-            ClassName(file.contents, DOT_KT).className == null
+            (file.targetRelativePath.endsWith("/test.kt") || file.targetRelativePath == "test.kt") &&
+                ClassName(file.contents, DOT_KT).className == null
         ) {
           // Just a default name assigned to a Kotlin compilation unit with no class: pick a new
           // unique name
@@ -220,14 +213,13 @@ class ProjectDescription : Comparable<ProjectDescription> {
         }
 
         fail(
-          "${file.targetRelativePath} is specified multiple times; files must be unique (in older versions, lint tests would just clobber the earlier files of the same name)"
+            "${file.targetRelativePath} is specified multiple times; files must be unique (in older versions, lint tests would just clobber the earlier files of the same name)"
         )
       }
     }
   }
 
-  override fun toString(): String =
-    "$type:${if (name.isNotBlank()) name else ProjectDescription::class.java.simpleName}"
+  override fun toString(): String = "$type:${if (name.isNotBlank()) name else ProjectDescription::class.java.simpleName}"
 
   /** Returns true if this project is nested under (see [under]) the given project. */
   fun isUnder(desc: ProjectDescription): Boolean {
@@ -236,8 +228,8 @@ class ProjectDescription : Comparable<ProjectDescription> {
   }
 
   /**
-   * Compare by dependency order such that dependencies are always listed before their dependents,
-   * and order unrelated projects alphabetically.
+   * Compare by dependency order such that dependencies are always listed before their dependents, and order unrelated projects
+   * alphabetically.
    */
   override fun compareTo(other: ProjectDescription): Int {
     return if (this.dependsOn.contains(other)) {
@@ -276,9 +268,9 @@ class ProjectDescription : Comparable<ProjectDescription> {
     }
 
     fun TestLintTask.populateProjectDirectory(
-      project: ProjectDescription,
-      projectDir: File,
-      vararg testFiles: TestFile,
+        project: ProjectDescription,
+        projectDir: File,
+        vararg testFiles: TestFile,
     ) {
       if (!projectDir.exists()) {
         val ok = projectDir.mkdirs()
@@ -299,32 +291,32 @@ class ProjectDescription : Comparable<ProjectDescription> {
 
       if (!allowClassNameClashes) {
         val files =
-          testFiles
-            .filter { it.targetPath.endsWith(DOT_JAVA) || it.targetPath.endsWith(DOT_KT) }
-            .mapNotNull { testFile ->
-              val className = ClassName(testFile.contents)
-              val name = className.className ?: className.jvmName
-              if (name != null) {
-                val prefix = className.packageName?.let { "$it." } ?: ""
-                val parent = testFile.targetRelativePath.substringBeforeLast('/')
-                val path = "$parent: $prefix$name"
-                Pair(path, testFile)
-              } else {
-                null
-              }
-            }
-            .groupBy { it.first }
+            testFiles
+                .filter { it.targetPath.endsWith(DOT_JAVA) || it.targetPath.endsWith(DOT_KT) }
+                .mapNotNull { testFile ->
+                  val className = ClassName(testFile.contents)
+                  val name = className.className ?: className.jvmName
+                  if (name != null) {
+                    val prefix = className.packageName?.let { "$it." } ?: ""
+                    val parent = testFile.targetRelativePath.substringBeforeLast('/')
+                    val path = "$parent: $prefix$name"
+                    Pair(path, testFile)
+                  } else {
+                    null
+                  }
+                }
+                .groupBy { it.first }
         for ((className, locations) in files) {
           if (locations.size > 1) {
             fail(
-              "Found more than one Java or Kotlin class in the same " +
-                "package that have the same class name (" +
-                className.substringAfterLast(": ").replace("/", ".") +
-                "), this can lead to subtle errors (and in a real project, would result in " +
-                "duplicate class compilation warnings). This scenario often happens when you're " +
-                "creating a Kotlin specific test from a Java example, and end up with both versions " +
-                "in the same folder. To address this, rename one of the classes, or put it into its " +
-                "own package, or set `allowClassNameClashes(true)` on the test lint task."
+                "Found more than one Java or Kotlin class in the same " +
+                    "package that have the same class name (" +
+                    className.substringAfterLast(": ").replace("/", ".") +
+                    "), this can lead to subtle errors (and in a real project, would result in " +
+                    "duplicate class compilation warnings). This scenario often happens when you're " +
+                    "creating a Kotlin specific test from a Java example, and end up with both versions " +
+                    "in the same folder. To address this, rename one of the classes, or put it into its " +
+                    "own package, or set `allowClassNameClashes(true)` on the test lint task."
             )
           }
         }
@@ -354,15 +346,13 @@ class ProjectDescription : Comparable<ProjectDescription> {
           continue
         } else if (fp is StubClassFile) {
           fp.task = this
-          if (
-            !allowKotlinClassStubs && fp.stubSources.any { it.targetRelativePath.endsWith(DOT_KT) }
-          ) {
+          if (!allowKotlinClassStubs && fp.stubSources.any { it.targetRelativePath.endsWith(DOT_KT) }) {
             error(
-              "You cannot use Kotlin in a binaryStub or mavenLibrary unless you also turn on\n" +
-                "`lint().allowKotlinClassStubs(true)`. Kotlin stubs work in general, but module\n" +
-                "metadata is still missing, which means that if your test relies on this metadata\n" +
-                "(for example to call package level functions from Kotlin, or to access things like\n" +
-                "default values or inline methods), that will not work."
+                "You cannot use Kotlin in a binaryStub or mavenLibrary unless you also turn on\n" +
+                    "`lint().allowKotlinClassStubs(true)`. Kotlin stubs work in general, but module\n" +
+                    "metadata is still missing, which means that if your test relies on this metadata\n" +
+                    "(for example to call package level functions from Kotlin, or to access things like\n" +
+                    "default values or inline methods), that will not work."
             )
           }
         }
@@ -381,9 +371,7 @@ class ProjectDescription : Comparable<ProjectDescription> {
           if (ignoreUnknownGradleConstructs) {
             mocker = mocker.withLogger(NullLogger())
           }
-          project.dependencyGraph?.let { dependencyGraph ->
-            mocker = mocker.withDependencyGraph(dependencyGraph)
-          }
+          project.dependencyGraph?.let { dependencyGraph -> mocker = mocker.withDependencyGraph(dependencyGraph) }
           projectMocks[projectDir] = mocker
           mocker.primary = project.primary
           try {
@@ -396,11 +384,11 @@ class ProjectDescription : Comparable<ProjectDescription> {
         classpath.createFile(projectDir)
       }
       val manifest: File =
-        if (haveGradle) {
-          File(projectDir, "src/main/AndroidManifest.xml")
-        } else {
-          File(projectDir, ANDROID_MANIFEST_XML)
-        }
+          if (haveGradle) {
+            File(projectDir, "src/main/AndroidManifest.xml")
+          } else {
+            File(projectDir, ANDROID_MANIFEST_XML)
+          }
       if (project.type !== Type.JAVA) {
         addManifestFileIfNecessary(manifest)
       }
@@ -424,9 +412,7 @@ class ProjectDescription : Comparable<ProjectDescription> {
 
       if (configuredOptions != null) {
         if (testFiles.any { it.targetRelativePath == "lint.xml" }) {
-          fail(
-            "Cannot combine lint.xml with `configureOption`; add options as <option> elements in your custom lint.xml instead"
-          )
+          fail("Cannot combine lint.xml with `configureOption`; add options as <option> elements in your custom lint.xml instead")
         }
         val sb = StringBuilder()
         sb.append("<lint>\n")
@@ -466,10 +452,7 @@ class ProjectDescription : Comparable<ProjectDescription> {
       }
     }
 
-    /**
-     * All Android projects must have a manifest file; this one creates it if the test file didn't
-     * add an explicit one.
-     */
+    /** All Android projects must have a manifest file; this one creates it if the test file didn't add an explicit one. */
     private fun addManifestFileIfNecessary(manifest: File) {
       // Ensure that there is at least a manifest file there to make it a valid project
       // as far as Lint is concerned:
@@ -480,15 +463,15 @@ class ProjectDescription : Comparable<ProjectDescription> {
           Assert.assertTrue("Couldn't create directory $parentFile", ok)
         }
         manifest.writeText(
-          """
-                    <?xml version="1.0" encoding="utf-8"?>
-                    <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-                        package="lint.test.pkg"
-                        android:versionCode="1"
-                        android:versionName="1.0" >
-                    </manifest>
-                    """
-            .trimIndent()
+            """
+            <?xml version="1.0" encoding="utf-8"?>
+            <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+                package="lint.test.pkg"
+                android:versionCode="1"
+                android:versionName="1.0" >
+            </manifest>
+            """
+                .trimIndent()
         )
       }
     }

@@ -119,9 +119,8 @@ private const val ATTR_COMPUTE_SOURCE_ROOTS = "compute_source_roots"
 private const val ATTR_KOTLIN_PLATFORMS = "kotlinPlatforms"
 
 /**
- * Compute a list of lint [Project] instances from the given XML descriptor files. Each descriptor
- * is considered completely separate from the other (e.g. you can't have library definitions in one
- * referenced from another descriptor.)
+ * Compute a list of lint [Project] instances from the given XML descriptor files. Each descriptor is considered completely separate from
+ * the other (e.g. you can't have library definitions in one referenced from another descriptor.)
  */
 fun computeMetadata(client: LintClient, descriptor: File): ProjectMetadata {
   val initializer = ProjectInitializer(client, descriptor, descriptor.parentFile ?: descriptor)
@@ -129,57 +128,54 @@ fun computeMetadata(client: LintClient, descriptor: File): ProjectMetadata {
 }
 
 /**
- * Result data passed from parsing a project metadata XML file - returns the set of projects, any
- * SDK or cache directories configured within the file, etc.
+ * Result data passed from parsing a project metadata XML file - returns the set of projects, any SDK or cache directories configured within
+ * the file, etc.
  */
 data class ProjectMetadata(
-  /** List of projects. Will be empty if there was an error in the configuration. */
-  val projects: List<Project> = emptyList(),
-  /** A baseline file to apply, if any. */
-  val baseline: File? = null,
-  /** The SDK to use, if overriding the default. */
-  val sdk: File? = null,
-  /** The JDK to use, if overriding the default. */
-  val jdk: File? = null,
-  /** The cache directory to use, if overriding the default. */
-  val cache: File? = null,
-  /** A map from module to a merged manifest for that module, if any. */
-  val mergedManifests: Map<Project, File?> = emptyMap(),
-  /** A map from module to a baseline to apply to that module, if any. */
-  val moduleBaselines: Map<Project, File?> = emptyMap(),
-  /** List of custom check JAR files to apply everywhere. */
-  val globalLintChecks: List<File> = emptyList(),
-  /** A map from module to a list of custom rule JAR files to apply, if any. */
-  val lintChecks: Map<Project, List<File>> = emptyMap(),
-  /** list of boot classpath jars to use for non-Android projects */
-  val jdkBootClasspath: List<File> = emptyList(),
-  /** Target platforms we're analyzing. */
-  val platforms: EnumSet<Platform>? = null,
-  /** Set of external annotations.zip files or external annotation directories. */
-  val externalAnnotations: List<File> = emptyList(),
-  /**
-   * If true, the project metadata being passed in only represents a small subset of the real
-   * project sources, so only lint checks which can be run without full project context should be
-   * attempted. This is what happens for "on-the-fly" checks running in the IDE.
-   */
-  val incomplete: Boolean = false,
-  /**
-   * A client name to use instead of the default; this is written into baseline files, can be
-   * queried by detectors from [LintClient] etc.
-   */
-  val clientName: String? = null,
+    /** List of projects. Will be empty if there was an error in the configuration. */
+    val projects: List<Project> = emptyList(),
+    /** A baseline file to apply, if any. */
+    val baseline: File? = null,
+    /** The SDK to use, if overriding the default. */
+    val sdk: File? = null,
+    /** The JDK to use, if overriding the default. */
+    val jdk: File? = null,
+    /** The cache directory to use, if overriding the default. */
+    val cache: File? = null,
+    /** A map from module to a merged manifest for that module, if any. */
+    val mergedManifests: Map<Project, File?> = emptyMap(),
+    /** A map from module to a baseline to apply to that module, if any. */
+    val moduleBaselines: Map<Project, File?> = emptyMap(),
+    /** List of custom check JAR files to apply everywhere. */
+    val globalLintChecks: List<File> = emptyList(),
+    /** A map from module to a list of custom rule JAR files to apply, if any. */
+    val lintChecks: Map<Project, List<File>> = emptyMap(),
+    /** list of boot classpath jars to use for non-Android projects */
+    val jdkBootClasspath: List<File> = emptyList(),
+    /** Target platforms we're analyzing. */
+    val platforms: EnumSet<Platform>? = null,
+    /** Set of external annotations.zip files or external annotation directories. */
+    val externalAnnotations: List<File> = emptyList(),
+    /**
+     * If true, the project metadata being passed in only represents a small subset of the real project sources, so only lint checks which
+     * can be run without full project context should be attempted. This is what happens for "on-the-fly" checks running in the IDE.
+     */
+    val incomplete: Boolean = false,
+    /**
+     * A client name to use instead of the default; this is written into baseline files, can be queried by detectors from [LintClient] etc.
+     */
+    val clientName: String? = null,
 )
 
 /**
  * Class which handles initialization of a project hierarchy from a config XML file.
  *
- * Note: This code uses both the term "projects" and "modules". That's because lint internally uses
- * the term "project" for what Studio (and these XML config files) refers to as a "module".
+ * Note: This code uses both the term "projects" and "modules". That's because lint internally uses the term "project" for what Studio (and
+ * these XML config files) refers to as a "module".
  *
  * @param client the lint handler
  * @param file the XML description file
- * @param root the root project directory (relative paths in the config file are considered relative
- *   to this directory)
+ * @param root the root project directory (relative paths in the config file are considered relative to this directory)
  */
 private class ProjectInitializer(val client: LintClient, val file: File, var root: File) {
 
@@ -193,8 +189,7 @@ private class ProjectInitializer(val client: LintClient, val file: File, var roo
   private val globalKlibs = mutableMapOf<File, DependencyKind>()
 
   /** map from module instance to names of modules it depends on, along with dependency kinds */
-  private val dependencies: Multimap<ManualProject, Pair<String, DependencyKind>> =
-    ArrayListMultimap.create()
+  private val dependencies: Multimap<ManualProject, Pair<String, DependencyKind>> = ArrayListMultimap.create()
 
   /** map from module to the merged manifest to use, if any */
   private val mergedManifests = mutableMapOf<Project, File?>()
@@ -208,10 +203,7 @@ private class ProjectInitializer(val client: LintClient, val file: File, var roo
   /** map from module to a baseline to use for a given module, if any */
   private val baselines = mutableMapOf<Project, File?>()
 
-  /**
-   * map from aar or jar file to wrapper module name (which in turn can be looked up in
-   * [dependencies])
-   */
+  /** map from aar or jar file to wrapper module name (which in turn can be looked up in [dependencies]) */
   private val jarAarMap = mutableMapOf<File, String>()
 
   /** Map from module name to resource visibility lookup. */
@@ -250,16 +242,16 @@ private class ProjectInitializer(val client: LintClient, val file: File, var roo
     // the project.xml folder itself. (In case it's not a full path, e.g.
     // just "project.xml", get the current directory instead.)
     val location =
-      when {
-        node != null -> client.xmlParser.getLocation(file, node)
-        else -> Location.create(file)
-      }
+        when {
+          node != null -> client.xmlParser.getLocation(file, node)
+          else -> Location.create(file)
+        }
     LintClient.report(
-      client = client,
-      issue = IssueRegistry.LINT_ERROR,
-      message = message,
-      location = location,
-      file = file,
+        client = client,
+        issue = IssueRegistry.LINT_ERROR,
+        message = message,
+        location = location,
+        file = file,
     )
   }
 
@@ -392,20 +384,20 @@ private class ProjectInitializer(val client: LintClient, val file: File, var roo
     computeResourceVisibility()
 
     return ProjectMetadata(
-      projects = sortedModules,
-      sdk = sdk,
-      jdk = jdk,
-      baseline = baseline,
-      globalLintChecks = globalLintChecks,
-      lintChecks = lintChecks,
-      externalAnnotations = externalAnnotations,
-      cache = cache,
-      moduleBaselines = baselines,
-      mergedManifests = mergedManifests,
-      incomplete = incomplete,
-      jdkBootClasspath = jdkBootClasspath,
-      platforms = if (android) Platform.ANDROID_SET else Platform.JDK_SET,
-      clientName = client,
+        projects = sortedModules,
+        sdk = sdk,
+        jdk = jdk,
+        baseline = baseline,
+        globalLintChecks = globalLintChecks,
+        lintChecks = lintChecks,
+        externalAnnotations = externalAnnotations,
+        cache = cache,
+        moduleBaselines = baselines,
+        mergedManifests = mergedManifests,
+        incomplete = incomplete,
+        jdkBootClasspath = jdkBootClasspath,
+        platforms = if (android) Platform.ANDROID_SET else Platform.JDK_SET,
+        clientName = client,
     )
   }
 
@@ -437,8 +429,7 @@ private class ProjectInitializer(val client: LintClient, val file: File, var roo
             val fieldName = option.uppercase(Locale.ROOT)
             val cls = Desugaring::class.java
 
-            @Suppress("UNCHECKED_CAST")
-            val v = cls.getField(fieldName).get(null) as? EnumSet<Desugaring> ?: continue
+            @Suppress("UNCHECKED_CAST") val v = cls.getField(fieldName).get(null) as? EnumSet<Desugaring> ?: continue
             if (desugaring == null) {
               desugaring = EnumSet.noneOf(Desugaring::class.java)
             }
@@ -465,12 +456,12 @@ private class ProjectInitializer(val client: LintClient, val file: File, var roo
         continue
       } else {
         val visibilityLookup =
-          if (aarDeps.size == 1) {
-            aarDeps[0]
-          } else {
-            // Must create a composite
-            ResourceVisibilityLookup.create(aarDeps)
-          }
+            if (aarDeps.size == 1) {
+              aarDeps[0]
+            } else {
+              // Must create a composite
+              ResourceVisibilityLookup.create(aarDeps)
+            }
         module.setResourceVisibility(visibilityLookup)
       }
     }
@@ -484,13 +475,13 @@ private class ProjectInitializer(val client: LintClient, val file: File, var roo
     val separatorIndex = moduleName.lastIndexOf(separator)
     val index = moduleName.indexOf(':', separatorIndex + 1)
     val dir =
-      if (separatorIndex != -1 && index != -1) {
-        File(moduleName.substring(0, moduleName.indexOf(':', separatorIndex)))
-      } else if (index != -1 && index < moduleName.length - 1) {
-        File(root, moduleName.substring(index + 1))
-      } else {
-        File(root, moduleName)
-      }
+        if (separatorIndex != -1 && index != -1) {
+          File(moduleName.substring(0, moduleName.indexOf(':', separatorIndex)))
+        } else if (index != -1 && index < moduleName.length - 1) {
+          File(root, moduleName.substring(index + 1))
+        } else {
+          File(root, moduleName)
+        }
 
     // Make sure it's unique to this module
     if (moduleDirectories.add(dir)) {
@@ -516,94 +507,94 @@ private class ProjectInitializer(val client: LintClient, val file: File, var roo
     val kotlinPlatforms: String? = moduleElement.getAttribute(ATTR_KOTLIN_PLATFORMS)
 
     val isTest: Boolean? =
-      when (moduleElement.getAttribute(ATTR_TEST)) {
-        VALUE_TRUE -> true
-        VALUE_FALSE -> false
-        else -> {
-          if (moduleElement.hasAttribute(ATTR_TEST)) {
-            reportError(
-              "Invalid test attribute value (should be \"true\" or \"false\")",
-              moduleElement,
-            )
+        when (moduleElement.getAttribute(ATTR_TEST)) {
+          VALUE_TRUE -> true
+          VALUE_FALSE -> false
+          else -> {
+            if (moduleElement.hasAttribute(ATTR_TEST)) {
+              reportError(
+                  "Invalid test attribute value (should be \"true\" or \"false\")",
+                  moduleElement,
+              )
+            }
+            null
           }
-          null
         }
-      }
 
     if (android) {
       this.android = true
     }
 
     val javaLanguageLevel =
-      moduleElement.getAttribute(ATTR_JAVA_LEVEL).let { level ->
-        if (level.isNotBlank()) {
-          val languageLevel =
-            LanguageLevel.parse(level)
-              ?: run {
-                reportError("Invalid Java language level \"$level\"", moduleElement)
-                null
-              }
-          languageLevel
-        } else {
-          null
-        }
-      }
-
-    val kotlinLanguageLevel =
-      moduleElement.getAttribute(ATTR_KOTLIN_LEVEL).let { level ->
-        if (level.isNotBlank()) {
-          val languageLevel =
-            LanguageVersion.fromVersionString(level)
-              ?: run {
-                reportError("Invalid Kotlin language level \"$level\"", moduleElement)
-                null
-              }
-          if (languageLevel != null) {
-            LanguageVersionSettingsImpl(
-              languageLevel,
-              ApiVersion.createByLanguageVersion(languageLevel),
-            )
+        moduleElement.getAttribute(ATTR_JAVA_LEVEL).let { level ->
+          if (level.isNotBlank()) {
+            val languageLevel =
+                LanguageLevel.parse(level)
+                    ?: run {
+                      reportError("Invalid Java language level \"$level\"", moduleElement)
+                      null
+                    }
+            languageLevel
           } else {
             null
           }
-        } else {
-          null
         }
-      }
+
+    val kotlinLanguageLevel =
+        moduleElement.getAttribute(ATTR_KOTLIN_LEVEL).let { level ->
+          if (level.isNotBlank()) {
+            val languageLevel =
+                LanguageVersion.fromVersionString(level)
+                    ?: run {
+                      reportError("Invalid Kotlin language level \"$level\"", moduleElement)
+                      null
+                    }
+            if (languageLevel != null) {
+              LanguageVersionSettingsImpl(
+                  languageLevel,
+                  ApiVersion.createByLanguageVersion(languageLevel),
+              )
+            } else {
+              null
+            }
+          } else {
+            null
+          }
+        }
 
     val dir = pickDirectory(name).let { if (it.isDirectory) it else root }
 
     val partialResultsDir: File? =
-      if (moduleElement.hasAttribute(ATTR_PARTIAL_RESULTS_DIR)) {
-        getFile(moduleElement.getAttribute(ATTR_PARTIAL_RESULTS_DIR), moduleElement, dir)
-      } else {
-        null
-      }
+        if (moduleElement.hasAttribute(ATTR_PARTIAL_RESULTS_DIR)) {
+          getFile(moduleElement.getAttribute(ATTR_PARTIAL_RESULTS_DIR), moduleElement, dir)
+        } else {
+          null
+        }
 
     val generatedSources = mutableListOf<File>()
     val testSources = mutableListOf<File>()
 
     val model =
-      if (moduleElement.hasAttribute(ATTR_MODEL)) {
-        LintModelSerialization.readModule(getFile(moduleElement, dir, ATTR_MODEL, false))
-      } else {
-        null
-      }
+        if (moduleElement.hasAttribute(ATTR_MODEL)) {
+          LintModelSerialization.readModule(getFile(moduleElement, dir, ATTR_MODEL, false))
+        } else {
+          null
+        }
 
     val module =
-      ManualProject(
-        client,
-        dir,
-        name,
-        library,
-        android,
-        partialResultsDir,
-        testSources,
-        generatedSources,
-        model?.defaultVariant(),
-        kotlinPlatforms,
-        isTest,
-      )
+        ManualProject(
+            client,
+            dir,
+            name,
+            library,
+            android,
+            partialResultsDir,
+            testSources,
+            generatedSources,
+            model?.defaultVariant(),
+            kotlinPlatforms,
+            isTest,
+        )
     modules[name] = module
 
     val sources = mutableListOf<File>()
@@ -767,11 +758,11 @@ private class ProjectInitializer(val client: LintClient, val file: File, var roo
       if (expanded.path.isEmpty()) {
         // Expand into temp dir
         val cacheDir =
-          if (cache != null) {
-            File(cache, "aars")
-          } else {
-            client.getCacheDir("aars", true)
-          }
+            if (cache != null) {
+              File(cache, "aars")
+            } else {
+              client.getCacheDir("aars", true)
+            }
         val target = File(cacheDir, name)
         if (!target.isDirectory) {
           unpackZipFile(aarFile, target)
@@ -786,15 +777,14 @@ private class ProjectInitializer(val client: LintClient, val file: File, var roo
     }
 
     val partialResultsDir: File? =
-      if (element.hasAttribute(ATTR_PARTIAL_RESULTS_DIR)) {
-        getFile(element.getAttribute(ATTR_PARTIAL_RESULTS_DIR), element, dir)
-      } else {
-        null
-      }
+        if (element.hasAttribute(ATTR_PARTIAL_RESULTS_DIR)) {
+          getFile(element.getAttribute(ATTR_PARTIAL_RESULTS_DIR), element, dir)
+        } else {
+          null
+        }
 
     // Create module wrapper
-    val project =
-      ManualProject(client, expanded, name, true, true, partialResultsDir, emptyList(), emptyList())
+    val project = ManualProject(client, expanded, name, true, true, partialResultsDir, emptyList(), emptyList())
     project.reportIssues = false
     val manifest = File(expanded, ANDROID_MANIFEST_XML)
     if (manifest.isFile) {
@@ -809,9 +799,7 @@ private class ProjectInitializer(val client: LintClient, val file: File, var roo
     val jarList = mutableListOf<File>()
     val jarsDir = File(expanded, FD_JARS)
     if (jarsDir.isDirectory) {
-      jarsDir.listFiles()?.let {
-        jarList.addAll(it.filter { file -> file.name.endsWith(DOT_JAR) }.toList())
-      }
+      jarsDir.listFiles()?.let { jarList.addAll(it.filter { file -> file.name.endsWith(DOT_JAR) }.toList()) }
     }
     val classesJar = File(expanded, "classes.jar")
     if (classesJar.isFile) {
@@ -843,15 +831,14 @@ private class ProjectInitializer(val client: LintClient, val file: File, var roo
     val name = jarFile.name
 
     val partialResultsDir: File? =
-      if (element.hasAttribute(ATTR_PARTIAL_RESULTS_DIR)) {
-        getFile(element.getAttribute(ATTR_PARTIAL_RESULTS_DIR), element, dir)
-      } else {
-        null
-      }
+        if (element.hasAttribute(ATTR_PARTIAL_RESULTS_DIR)) {
+          getFile(element.getAttribute(ATTR_PARTIAL_RESULTS_DIR), element, dir)
+        } else {
+          null
+        }
 
     // Create module wrapper
-    val project =
-      ManualProject(client, jarFile, name, true, false, partialResultsDir, emptyList(), emptyList())
+    val project = ManualProject(client, jarFile, name, true, false, partialResultsDir, emptyList(), emptyList())
     project.reportIssues = false
     project.setClasspath(listOf(jarFile), false)
     jarAarMap[jarFile] = name
@@ -864,16 +851,14 @@ private class ProjectInitializer(val client: LintClient, val file: File, var roo
     forEachZippedFile(zip) { zipFile, zipEntry ->
       val targetFile = File(dir, zipEntry.name)
       Files.createParentDirs(targetFile)
-      Files.asByteSink(targetFile).openBufferedStream().use {
-        ByteStreams.copy(zipFile.getInputStream(zipEntry), it)
-      }
+      Files.asByteSink(targetFile).openBufferedStream().use { ByteStreams.copy(zipFile.getInputStream(zipEntry), it) }
     }
   }
 
   private fun computeUniqueSourceRoots(
-    type: String,
-    typeSources: MutableList<File>,
-    sourceRoots: MutableList<File>,
+      type: String,
+      typeSources: MutableList<File>,
+      sourceRoots: MutableList<File>,
   ): List<File> {
     when {
       typeSources.isEmpty() -> return emptyList()
@@ -884,9 +869,9 @@ private class ProjectInitializer(val client: LintClient, val file: File, var roo
         for (root in typeSourceRoots) {
           if (sourceRoots.contains(root)) {
             reportError(
-              "${type.usLocaleCapitalize()} sources cannot be in the same " +
-                "source root as production files; " +
-                "source root $root is also a $type root"
+                "${type.usLocaleCapitalize()} sources cannot be in the same " +
+                    "source root as production files; " +
+                    "source root $root is also a $type root"
             )
             break
           }
@@ -932,30 +917,29 @@ private class ProjectInitializer(val client: LintClient, val file: File, var roo
   }
 
   private fun getDependencyKind(node: Element): DependencyKind =
-    when (val kindText = node.getAttribute(ATTR_KIND)) {
-      "dependsOn" -> DependencyKind.DependsOn
-      "regular",
-      "" -> DependencyKind.Regular
-      else ->
-        DependencyKind.Regular.also {
-          client.log(
-            Severity.WARNING,
-            null,
-            "Unexpected dependency kind '$kindText' parsed as 'regular'",
-          )
-        }
-    }
+      when (val kindText = node.getAttribute(ATTR_KIND)) {
+        "dependsOn" -> DependencyKind.DependsOn
+        "regular",
+        "" -> DependencyKind.Regular
+        else ->
+            DependencyKind.Regular.also {
+              client.log(
+                  Severity.WARNING,
+                  null,
+                  "Unexpected dependency kind '$kindText' parsed as 'regular'",
+              )
+            }
+      }
 
   /**
-   * Given an element that is expected to have a "file" attribute (or "dir" or "jar"), produces a
-   * full path to the file. If [attribute] is specified, only the specific file attribute name is
-   * checked.
+   * Given an element that is expected to have a "file" attribute (or "dir" or "jar"), produces a full path to the file. If [attribute] is
+   * specified, only the specific file attribute name is checked.
    */
   private fun getFile(
-    element: Element,
-    dir: File,
-    attribute: String? = null,
-    required: Boolean = false,
+      element: Element,
+      dir: File,
+      attribute: String? = null,
+      required: Boolean = false,
   ): File {
     var path: String
     if (attribute != null) {
@@ -998,24 +982,20 @@ private class ProjectInitializer(val client: LintClient, val file: File, var roo
 
     if (!source.exists()) {
       val relativePath =
-        if (SdkConstants.currentPlatform() == SdkConstants.PLATFORM_WINDOWS)
-          dir.canonicalPath.replace(separator, "\\\\")
-        else dir.canonicalPath
+          if (SdkConstants.currentPlatform() == SdkConstants.PLATFORM_WINDOWS) dir.canonicalPath.replace(separator, "\\\\")
+          else dir.canonicalPath
       reportError(
-        "$path ${
+          "$path ${
                 if (!File(path).isAbsolute) "(relative to " +
                     relativePath + ") " else ""
                 }does not exist",
-        element,
+          element,
       )
     }
     return source
   }
 
-  /**
-   * If given a full path to a Java or Kotlin source file, produces the path to the source root if
-   * possible.
-   */
+  /** If given a full path to a Java or Kotlin source file, produces the path to the source root if possible. */
   private fun findRoot(file: File): File? {
     val path = file.path
     if (path.endsWith(DOT_JAVA) || path.endsWith(DOT_KT)) {
@@ -1024,18 +1004,18 @@ private class ProjectInitializer(val client: LintClient, val file: File, var roo
       val packageStart = max(0, parent.path.length - pkg.length)
       if (!pathMatchesPackage(pkg, path, packageStart)) {
         val actual =
-          if (path.startsWith(root.path)) {
-            val s = path.substring(root.path.length)
-            val end = max(0, s.length - pkg.length)
-            s.substring(end)
-          } else {
-            path.substring(packageStart)
-          }
+            if (path.startsWith(root.path)) {
+              val s = path.substring(root.path.length)
+              val end = max(0, s.length - pkg.length)
+              s.substring(end)
+            } else {
+              path.substring(packageStart)
+            }
         val expected = "$separator${pkg.replace('.', separatorChar)}$separator${file.name}"
         client.log(
-          Severity.INFORMATIONAL,
-          null,
-          "The source file ${file.name} does not appear to be in the right project location; its package implies ...$expected but it was found in ...$actual",
+            Severity.INFORMATIONAL,
+            null,
+            "The source file ${file.name} does not appear to be in the right project location; its package implies ...$expected but it was found in ...$actual",
         )
         return null
       }
@@ -1046,7 +1026,7 @@ private class ProjectInitializer(val client: LintClient, val file: File, var roo
   }
 
   private fun pathMatchesPackage(pkg: String, path: String, packageStart: Int): Boolean =
-    pkg.indices.all { i -> pkg[i] == path[i + packageStart] || pkg[i] == '.' }
+      pkg.indices.all { i -> pkg[i] == path[i + packageStart] || pkg[i] == '.' }
 
   private fun findPackage(file: File): String? {
     return findPackage(file.readText(), file)
@@ -1094,18 +1074,18 @@ fun findPackage(source: String, file: File): String? {
         }
       }
       STATE_SLASH ->
-        when (c) {
-          '/' -> {
-            state = STATE_LINE_COMMENT
+          when (c) {
+            '/' -> {
+              state = STATE_LINE_COMMENT
+            }
+            '*' -> {
+              state = STATE_BLOCK_COMMENT
+              blockCommentDepth++
+            }
+            else -> {
+              state = STATE_INIT
+            }
           }
-          '*' -> {
-            state = STATE_BLOCK_COMMENT
-            blockCommentDepth++
-          }
-          else -> {
-            state = STATE_INIT
-          }
-        }
       STATE_LINE_COMMENT -> if (c == '\n') state = STATE_INIT
       STATE_BLOCK_COMMENT -> {
         when {
@@ -1118,11 +1098,11 @@ fun findPackage(source: String, file: File): String? {
           c == '/' -> {
             blockCommentDepth--
             state =
-              if (blockCommentDepth == 0) {
-                STATE_INIT
-              } else {
-                STATE_BLOCK_COMMENT
-              }
+                if (blockCommentDepth == 0) {
+                  STATE_INIT
+                } else {
+                  STATE_BLOCK_COMMENT
+                }
           }
           c != '*' -> {
             state = STATE_BLOCK_COMMENT
@@ -1145,21 +1125,20 @@ fun findPackage(source: String, file: File): String? {
 }
 
 /**
- * A special subclass of lint's [Project] class which can be manually configured with custom source
- * locations, custom library types, etc.
+ * A special subclass of lint's [Project] class which can be manually configured with custom source locations, custom library types, etc.
  */
 internal class ManualProject(
-  client: LintClient,
-  dir: File,
-  name: String,
-  library: Boolean,
-  private val android: Boolean,
-  partialResultsDir: File?,
-  private val testFiles: List<File>,
-  private val generatedFiles: List<File>,
-  private val variant: LintModelVariant? = null,
-  val kotlinPlatforms: String? = null,
-  private val isTest: Boolean? = null,
+    client: LintClient,
+    dir: File,
+    name: String,
+    library: Boolean,
+    private val android: Boolean,
+    partialResultsDir: File?,
+    private val testFiles: List<File>,
+    private val generatedFiles: List<File>,
+    private val variant: LintModelVariant? = null,
+    val kotlinPlatforms: String? = null,
+    private val isTest: Boolean? = null,
 ) : Project(client, dir, dir, partialResultsDir) {
 
   init {
@@ -1192,11 +1171,11 @@ internal class ManualProject(
   override fun toString(): String = "Project [name=$name]"
 
   override fun equals(other: Any?): Boolean =
-    // Normally Project.equals checks directory equality, but we can't
-    // do that here since we don't have guarantees that the directories
-    // won't overlap (and furthermore we don't actually have the directory
-    // locations of each module)
-    this === other || other is ManualProject && name == other.name
+      // Normally Project.equals checks directory equality, but we can't
+      // do that here since we don't have guarantees that the directories
+      // won't overlap (and furthermore we don't actually have the directory
+      // locations of each module)
+      this === other || other is ManualProject && name == other.name
 
   override fun hashCode(): Int = name.hashCode()
 
@@ -1235,9 +1214,8 @@ internal class ManualProject(
   }
 
   /**
-   * Adds the given files to the set of filtered files for this project. With a filter applied, lint
-   * won't look at all sources in for example the source or resource roots, it will limit itself to
-   * these specific files.
+   * Adds the given files to the set of filtered files for this project. With a filter applied, lint won't look at all sources in for
+   * example the source or resource roots, it will limit itself to these specific files.
    */
   private fun addFilteredFiles(sources: List<File>) {
     if (sources.isNotEmpty()) {
@@ -1259,16 +1237,15 @@ internal class ManualProject(
 
   /** Sets the global class path for this module. */
   fun setClasspath(allClasses: List<File>, useForAnalysis: Boolean) =
-    if (useForAnalysis) {
-      this.javaClassFolders = allClasses
-    } else {
-      this.javaLibraries = allClasses
-    }
+      if (useForAnalysis) {
+        this.javaClassFolders = allClasses
+      } else {
+        this.javaLibraries = allClasses
+      }
 
   fun setCompileSdkVersion(buildApi: String) {
     if (buildApi.isNotEmpty()) {
-      buildTargetHash =
-        if (Character.isDigit(buildApi[0])) PLATFORM_HASH_PREFIX + buildApi else buildApi
+      buildTargetHash = if (Character.isDigit(buildApi[0])) PLATFORM_HASH_PREFIX + buildApi else buildApi
       val version = AndroidTargetHash.getPlatformVersion(buildApi)
       if (version != null) {
         buildSdk = version.featureLevel
@@ -1341,12 +1318,12 @@ internal class ManualProject(
     }
 
     return UastParser.UastSourceList(
-      client.getUastParser(this),
-      contexts,
-      testContexts,
-      emptyList(),
-      generatedContexts,
-      gradleKtsContexts,
+        client.getUastParser(this),
+        contexts,
+        testContexts,
+        emptyList(),
+        generatedContexts,
+        gradleKtsContexts,
     )
   }
 
@@ -1360,9 +1337,9 @@ internal class ManualProject(
   fun initializeSdkLevelInfo(mergedManifest: File?, manifest: File?) {
     if (dom != null) {
       client.log(
-        Severity.WARNING,
-        IllegalStateException("Tried to initialize project SDK level info more than once"),
-        null,
+          Severity.WARNING,
+          IllegalStateException("Tried to initialize project SDK level info more than once"),
+          null,
       )
       return
     }
@@ -1386,6 +1363,4 @@ internal class ManualProject(
 }
 
 private fun forEachZippedFile(file: File, step: (ZipFile, ZipEntry) -> Unit) =
-  ZipFile(file).use { zipFile ->
-    zipFile.entries().asSequence().filterNot(ZipEntry::isDirectory).forEach { step(zipFile, it) }
-  }
+    ZipFile(file).use { zipFile -> zipFile.entries().asSequence().filterNot(ZipEntry::isDirectory).forEach { step(zipFile, it) } }

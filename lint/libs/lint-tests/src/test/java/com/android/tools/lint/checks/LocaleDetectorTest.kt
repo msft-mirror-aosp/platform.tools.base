@@ -27,7 +27,7 @@ class LocaleDetectorTest : AbstractCheckTest() {
 
   fun testBasic() {
     val expected =
-      """
+        """
       src/test/pkg/LocaleTest.java:11: Warning: Implicitly using the default locale is a common source of bugs: Use toUpperCase(Locale) instead. For strings meant to be internal use Locale.ROOT, otherwise Locale.getDefault(). [DefaultLocale]
               System.out.println("WRONG".toUpperCase());
                                          ~~~~~~~~~~~
@@ -59,10 +59,10 @@ class LocaleDetectorTest : AbstractCheckTest() {
       """
 
     lint()
-      .files(
-        java(
-            "src/test/pkg/LocaleTest.java",
-            """
+        .files(
+            java(
+                    "src/test/pkg/LocaleTest.java",
+                    """
             package test.pkg;
 
             import java.text.*;
@@ -101,18 +101,18 @@ class LocaleDetectorTest : AbstractCheckTest() {
                 }
             }
             """,
-          )
-          .indented()
-      )
-      .run()
-      .expect(expected)
+                )
+                .indented()
+        )
+        .run()
+        .expect(expected)
   }
 
   fun testBasicKotlin() {
     // Like the previous test, but ported to Kotlin.
     // Regression test for 120109333.
     val expected =
-      """
+        """
       src/test/pkg/LocaleTest.kt:13: Warning: Implicitly using the default locale is a common source of bugs: Use toUpperCase(Locale) instead. For strings meant to be internal use Locale.ROOT, otherwise Locale.getDefault(). [DefaultLocale]
               println("WRONG".toUpperCase())
                               ~~~~~~~~~~~
@@ -147,9 +147,9 @@ class LocaleDetectorTest : AbstractCheckTest() {
       """
 
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
             package test.pkg
 
             import android.annotation.SuppressLint
@@ -196,16 +196,16 @@ class LocaleDetectorTest : AbstractCheckTest() {
                 }
             }
             """
-          )
-          .indented()
-      )
-      .run()
-      .expect(expected)
+                )
+                .indented()
+        )
+        .run()
+        .expect(expected)
   }
 
   fun testStudio() {
     val expected =
-      """
+        """
             src/test/pkg/LocaleTest.java:8: Warning: Implicitly using the default locale is a common source of bugs: Use String.format(Locale, ...) instead [DefaultLocale]
                     String.format("WRONG: %f", 1.0f); // Implies locale
                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -213,10 +213,10 @@ class LocaleDetectorTest : AbstractCheckTest() {
             """
 
     lint()
-      .files(
-        java(
-            "src/test/pkg/LocaleTest.java",
-            """
+        .files(
+            java(
+                    "src/test/pkg/LocaleTest.java",
+                    """
                     package test.pkg;
 
                     @SuppressWarnings({"ResultOfMethodCallIgnored", "MalformedFormatString", "MethodMayBeStatic", "ResultOfObjectAllocationIgnored", "SimpleDateFormatWithoutLocale", "StringToUpperCaseOrToLowerCaseWithoutLocale", "ClassNameDiffersFromFileName"})
@@ -228,17 +228,17 @@ class LocaleDetectorTest : AbstractCheckTest() {
                         }
                     }
                     """,
-          )
-          .indented()
-      )
-      .clientFactory { TestLintClient(LintClient.CLIENT_STUDIO) }
-      .run()
-      .expect(expected)
+                )
+                .indented()
+        )
+        .clientFactory { TestLintClient(LintClient.CLIENT_STUDIO) }
+        .run()
+        .expect(expected)
   }
 
   fun testKotlinCapitalize() {
     val expected =
-      """
+        """
             src/test/pkg/LocaleTest.kt:2: Warning: Implicitly using the default locale is a common source of bugs: Use capitalize(Locale) instead. For strings meant to be internal use Locale.ROOT, otherwise Locale.getDefault(). [DefaultLocale]
                 "wrong".capitalize()
                         ~~~~~~~~~~
@@ -255,7 +255,7 @@ class LocaleDetectorTest : AbstractCheckTest() {
             """
 
     val expectedFixDiffs =
-      """
+        """
             Fix for src/test/pkg/LocaleTest.kt line 2: Replace with `capitalize(Locale.ROOT)`:
             @@ -0,0 +1 @@
             +import java.util.Locale
@@ -307,10 +307,10 @@ class LocaleDetectorTest : AbstractCheckTest() {
         """
 
     lint()
-      .files(
-        kotlin(
-            "src/test/pkg/LocaleTest.kt",
-            """
+        .files(
+            kotlin(
+                    "src/test/pkg/LocaleTest.kt",
+                    """
                     fun useMethods() {
                         "wrong".capitalize()
                         "ok".capitalize(Locale.US)
@@ -322,15 +322,15 @@ class LocaleDetectorTest : AbstractCheckTest() {
                         "ok".toLowerCase(Locale.US)
                     }
                     """,
-          )
-          .indented()
-      )
-      .run()
-      .expect(expected)
-      .expectFixDiffs(expectedFixDiffs)
-      // Also confirm that we support the previous style of imports and shortening
-      .expectFixDiffs(
-        """
+                )
+                .indented()
+        )
+        .run()
+        .expect(expected)
+        .expectFixDiffs(expectedFixDiffs)
+        // Also confirm that we support the previous style of imports and shortening
+        .expectFixDiffs(
+            """
         Fix for src/test/pkg/LocaleTest.kt line 2: Replace with `capitalize(Locale.ROOT)`:
         @@ -0,0 +1 @@
         +import java.util.Locale
@@ -380,15 +380,15 @@ class LocaleDetectorTest : AbstractCheckTest() {
         -    "WRONG".toLowerCase()
         +    "WRONG".toLowerCase(Locale.getDefault())
         """
-      )
+        )
   }
 
   fun testIgnoreLoggingWithoutLocale() {
     lint()
-      .files(
-        java(
-            "src/test/pkg/LogTest.java",
-            """
+        .files(
+            java(
+                    "src/test/pkg/LogTest.java",
+                    """
                 package test.pkg;
 
                 import android.util.Log;
@@ -406,10 +406,10 @@ class LocaleDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """,
-          )
-          .indented(),
-        kotlin(
-            """
+                )
+                .indented(),
+            kotlin(
+                    """
                 package test.pkg
 
                 import android.util.Log
@@ -433,11 +433,11 @@ class LocaleDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-          )
-          .indented(),
-      )
-      .run()
-      .expectClean()
+                )
+                .indented(),
+        )
+        .run()
+        .expectClean()
   }
 
   fun testIgnoreLoggingWithinThrow() {
@@ -445,10 +445,10 @@ class LocaleDetectorTest : AbstractCheckTest() {
     // 63859789: Can DefaultLocale Inspection be disabled for Exception messages and even Log
 
     lint()
-      .files(
-        java(
-            "src/test/pkg/LogTest.java",
-            """
+        .files(
+            java(
+                    "src/test/pkg/LogTest.java",
+                    """
                 package test.pkg;
 
                 import android.util.Log;
@@ -461,17 +461,17 @@ class LocaleDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """,
-          )
-          .indented()
-      )
-      .run()
-      .expectClean()
+                )
+                .indented()
+        )
+        .run()
+        .expectClean()
   }
 
   fun testFinalLocaleField() {
     // Regression test for https://issuetracker.google.com/73981396
     val expected =
-      """
+        """
             src/test/pkg/MainActivity.kt:10: Warning: Assigning Locale.getDefault() to a final static field is suspicious; this code will not work correctly if the user changes locale while the app is running [ConstantLocale]
                     val PROBLEMATIC_DESCRIPTION_DATE_FORMAT = SimpleDateFormat("MMM dd", Locale.getDefault())
                                                                                          ~~~~~~~~~~~~~~~~~~~
@@ -485,9 +485,9 @@ class LocaleDetectorTest : AbstractCheckTest() {
             """
 
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
                 package test.pkg;
 
                 import java.util.Locale;
@@ -503,10 +503,10 @@ class LocaleDetectorTest : AbstractCheckTest() {
                     static final Locale errorLocale = Locale.getDefault();
                 }
                 """
-          )
-          .indented(),
-        kotlin(
-            """
+                )
+                .indented(),
+            kotlin(
+                    """
                     package test.pkg
 
                     import java.util.Locale
@@ -528,11 +528,11 @@ class LocaleDetectorTest : AbstractCheckTest() {
                         }
                     }
                 """
-          )
-          .indented(),
-        // From https://issuetracker.google.com/73981396
-        kotlin(
-            """
+                )
+                .indented(),
+            // From https://issuetracker.google.com/73981396
+            kotlin(
+                    """
                 package test.pkg
 
                 import android.app.Activity
@@ -557,19 +557,19 @@ class LocaleDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-          )
-          .indented(),
-      )
-      .run()
-      .expect(expected)
+                )
+                .indented(),
+        )
+        .run()
+        .expect(expected)
   }
 
   fun testNonFields() {
     // Regression test for https://issuetracker.google.com/122769438
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
                 package test.pkg;
                 import java.util.Locale;
                 public enum JavaEnum {
@@ -580,10 +580,10 @@ class LocaleDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-          )
-          .indented(),
-        kotlin(
-          """
+                )
+                .indented(),
+            kotlin(
+                """
                 package test.pkg
                 import java.util.Locale
                 enum class KotlinEnum {
@@ -601,9 +601,9 @@ class LocaleDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-        ),
-      )
-      .run()
-      .expectClean()
+            ),
+        )
+        .run()
+        .expectClean()
   }
 }

@@ -56,25 +56,24 @@ enum class SourceSetType {
 /**
  * A [Context] used when checking Java files.
  *
- * @constructor Constructs a [JavaContext] for running lint on the given file, with the given scope,
- *   in the given project reporting errors to the given client.
+ * @constructor Constructs a [JavaContext] for running lint on the given file, with the given scope, in the given project reporting errors
+ *   to the given client.
  */
 open class JavaContext(
-  /** the driver running through the checks */
-  driver: LintDriver,
+    /** the driver running through the checks */
+    driver: LintDriver,
 
-  /** the project to run lint on which contains the given file */
-  project: Project,
+    /** the project to run lint on which contains the given file */
+    project: Project,
 
-  /**
-   * The main project if this project is a library project, or null if this is not a library
-   * project. The main project is the root project of all library projects, not necessarily the
-   * directly including project.
-   */
-  main: Project?,
+    /**
+     * The main project if this project is a library project, or null if this is not a library project. The main project is the root project
+     * of all library projects, not necessarily the directly including project.
+     */
+    main: Project?,
 
-  /** the file to be analyzed */
-  file: File,
+    /** the file to be analyzed */
+    file: File,
 ) : Context(driver, project, main, file) {
 
   /** The parse tree, when using PSI. */
@@ -94,8 +93,7 @@ open class JavaContext(
   var sourceSetType: SourceSetType = SourceSetType.INVALID
 
   /**
-   * Returns a location for the given node range (from the starting offset of the first node to the
-   * ending offset of the second node).
+   * Returns a location for the given node range (from the starting offset of the first node to the ending offset of the second node).
    *
    * @param from the AST node to get a starting location from
    * @param fromDelta Offset delta to apply to the starting offset
@@ -104,22 +102,21 @@ open class JavaContext(
    * @return a location for the given node
    */
   fun getRangeLocation(from: PsiElement, fromDelta: Int, to: PsiElement, toDelta: Int): Location =
-    uastParser.getRangeLocation(this, from, fromDelta, to, toDelta)
+      uastParser.getRangeLocation(this, from, fromDelta, to, toDelta)
 
   fun getRangeLocation(from: UElement, fromDelta: Int, to: UElement, toDelta: Int): Location =
-    uastParser.getRangeLocation(this, from, fromDelta, to, toDelta)
+      uastParser.getRangeLocation(this, from, fromDelta, to, toDelta)
 
   // Disambiguate since UDeclarations implement both PsiElement and UElement
   fun getRangeLocation(
-    from: UDeclaration,
-    fromDelta: Int,
-    to: UDeclaration,
-    toDelta: Int,
+      from: UDeclaration,
+      fromDelta: Int,
+      to: UDeclaration,
+      toDelta: Int,
   ): Location = uastParser.getRangeLocation(this, from as UElement, fromDelta, to, toDelta)
 
   /**
-   * Returns a location for the given node range (from the starting offset of the first node to the
-   * ending offset of the second node).
+   * Returns a location for the given node range (from the starting offset of the first node to the ending offset of the second node).
    *
    * @param from the AST node to get a starting location from
    * @param fromDelta Offset delta to apply to the starting offset
@@ -128,15 +125,15 @@ open class JavaContext(
    */
   @Suppress("unused", "unused")
   fun getRangeLocation(from: PsiElement, fromDelta: Int, length: Int): Location =
-    uastParser.getRangeLocation(this, from, fromDelta, fromDelta + length)
+      uastParser.getRangeLocation(this, from, fromDelta, fromDelta + length)
 
   fun getRangeLocation(from: UElement, fromDelta: Int, length: Int): Location =
-    uastParser.getRangeLocation(this, from, fromDelta, fromDelta + length)
+      uastParser.getRangeLocation(this, from, fromDelta, fromDelta + length)
 
   /**
-   * Returns a [Location] for the given element. This attempts to pick a shorter location range than
-   * the entire element; for a class or method for example, it picks the name element (if found).
-   * For statement constructs such as a `switch` statement it will highlight the keyword, etc.
+   * Returns a [Location] for the given element. This attempts to pick a shorter location range than the entire element; for a class or
+   * method for example, it picks the name element (if found). For statement constructs such as a `switch` statement it will highlight the
+   * keyword, etc.
    *
    * @param element the AST element to create a location for
    * @return a location for the given element
@@ -152,9 +149,9 @@ open class JavaContext(
   }
 
   /**
-   * Returns a [Location] for the given element. This attempts to pick a shorter location range than
-   * the entire element; for a class or method for example, it picks the name element (if found).
-   * For statement constructs such as a `switch` statement it will highlight the keyword, etc.
+   * Returns a [Location] for the given element. This attempts to pick a shorter location range than the entire element; for a class or
+   * method for example, it picks the name element (if found). For statement constructs such as a `switch` statement it will highlight the
+   * keyword, etc.
    *
    * @param element the AST element to create a location for
    * @return a location for the given element
@@ -168,12 +165,12 @@ open class JavaContext(
   }
 
   /**
-   * Returns a [Location] for the given element. This attempts to pick a shorter location range than
-   * the entire element; for a class or method for example, it picks the name element (if found).
-   * For statement constructs such as a `switch` statement it will highlight the keyword, etc.
+   * Returns a [Location] for the given element. This attempts to pick a shorter location range than the entire element; for a class or
+   * method for example, it picks the name element (if found). For statement constructs such as a `switch` statement it will highlight the
+   * keyword, etc.
    *
-   * [UClass] is both a [PsiElement] and a [UElement] so this method is here to make calling
-   * getNameLocation(UClass) easier without having to make an explicit cast.
+   * [UClass] is both a [PsiElement] and a [UElement] so this method is here to make calling getNameLocation(UClass) easier without having
+   * to make an explicit cast.
    *
    * @param cls the AST class element to create a location for
    * @return a location for the given element
@@ -208,9 +205,9 @@ open class JavaContext(
    * @return a location
    */
   fun getCallLocation(
-    call: UCallExpression,
-    includeReceiver: Boolean,
-    includeArguments: Boolean,
+      call: UCallExpression,
+      includeReceiver: Boolean,
+      includeArguments: Boolean,
   ): Location = uastParser.getCallLocation(this, call, includeReceiver, includeArguments)
 
   val evaluator: JavaEvaluator
@@ -233,8 +230,7 @@ open class JavaContext(
     }
 
   /**
-   * Sets the compilation result. Not intended for client usage; the lint infrastructure will set
-   * this when a context has been processed
+   * Sets the compilation result. Not intended for client usage; the lint infrastructure will set this when a context has been processed
    *
    * @param javaFile the parse tree
    */
@@ -243,108 +239,104 @@ open class JavaContext(
   }
 
   /**
-   * Reports an issue applicable to a given AST node. The AST node is used as the scope to check for
-   * suppress lint annotations.
+   * Reports an issue applicable to a given AST node. The AST node is used as the scope to check for suppress lint annotations.
    *
    * @param issue the issue to report
-   * @param scope the AST node scope the error applies to. The lint infrastructure will check
-   *   whether there are suppress annotations on this node (or its enclosing nodes) and if so
-   *   suppress the warning without involving the client.
+   * @param scope the AST node scope the error applies to. The lint infrastructure will check whether there are suppress annotations on this
+   *   node (or its enclosing nodes) and if so suppress the warning without involving the client.
    * @param location the location of the issue, or null if not known
    * @param message the message for this warning
    * @param quickfixData optional data to pass to the IDE for use by a quickfix.
    */
   @JvmOverloads
   fun report(
-    issue: Issue,
-    scope: PsiElement?,
-    location: Location,
-    message: String,
-    quickfixData: LintFix? = null,
+      issue: Issue,
+      scope: PsiElement?,
+      location: Location,
+      message: String,
+      quickfixData: LintFix? = null,
   ) {
     val incident = Incident(issue, message, location, scope, quickfixData)
     driver.client.report(this, incident)
   }
 
   /**
-   * Reports an issue applicable to a given AST node. The AST node is used as the scope to check for
-   * suppress lint annotations.
+   * Reports an issue applicable to a given AST node. The AST node is used as the scope to check for suppress lint annotations.
    *
    * @param issue the issue to report
-   * @param scope the AST node scope the error applies to. The lint infrastructure will check
-   *   whether there are suppress annotations on this node (or its enclosing nodes) and if so
-   *   suppress the warning without involving the client.
+   * @param scope the AST node scope the error applies to. The lint infrastructure will check whether there are suppress annotations on this
+   *   node (or its enclosing nodes) and if so suppress the warning without involving the client.
    * @param location the location of the issue, or null if not known
    * @param message the message for this warning
    * @param quickfixData optional data to pass to the IDE for use by a quickfix.
    */
   @JvmOverloads
   fun report(
-    issue: Issue,
-    scope: UElement?,
-    location: Location,
-    message: String,
-    quickfixData: LintFix? = null,
+      issue: Issue,
+      scope: UElement?,
+      location: Location,
+      message: String,
+      quickfixData: LintFix? = null,
   ) {
     val incident = Incident(issue, message, location, scope, quickfixData)
     driver.client.report(this, incident)
   }
 
   /**
-   * [UClass] is both a [PsiElement] and a [UElement] so this method is here to make calling
-   * report(..., UClass, ...) easier without having to make an explicit cast.
+   * [UClass] is both a [PsiElement] and a [UElement] so this method is here to make calling report(..., UClass, ...) easier without having
+   * to make an explicit cast.
    */
   fun report(issue: Issue, scopeClass: UClass?, location: Location, message: String) =
-    report(issue, scopeClass as UElement?, location, message)
+      report(issue, scopeClass as UElement?, location, message)
 
   /**
-   * [UClass] is both a [PsiElement] and a [UElement] so this method is here to make calling
-   * report(..., UClass, ...) easier without having to make an explicit cast.
+   * [UClass] is both a [PsiElement] and a [UElement] so this method is here to make calling report(..., UClass, ...) easier without having
+   * to make an explicit cast.
    */
   fun report(
-    issue: Issue,
-    scopeClass: UClass?,
-    location: Location,
-    message: String,
-    quickfixData: LintFix?,
+      issue: Issue,
+      scopeClass: UClass?,
+      location: Location,
+      message: String,
+      quickfixData: LintFix?,
   ) = report(issue, scopeClass as UElement?, location, message, quickfixData)
 
   /**
-   * [UMethod] is both a [PsiElement] and a [UElement] so this method is here to make calling
-   * report(..., UMethod, ...) easier without having to make an explicit cast.
+   * [UMethod] is both a [PsiElement] and a [UElement] so this method is here to make calling report(..., UMethod, ...) easier without
+   * having to make an explicit cast.
    */
   fun report(issue: Issue, scopeClass: UMethod?, location: Location, message: String) =
-    report(issue, scopeClass as UElement?, location, message)
+      report(issue, scopeClass as UElement?, location, message)
 
   /**
-   * [UMethod] is both a [PsiElement] and a [UElement] so this method is here to make calling
-   * report(..., UMethod, ...) easier without having to make an explicit cast.
+   * [UMethod] is both a [PsiElement] and a [UElement] so this method is here to make calling report(..., UMethod, ...) easier without
+   * having to make an explicit cast.
    */
   fun report(
-    issue: Issue,
-    scopeClass: UMethod?,
-    location: Location,
-    message: String,
-    quickfixData: LintFix?,
+      issue: Issue,
+      scopeClass: UMethod?,
+      location: Location,
+      message: String,
+      quickfixData: LintFix?,
   ) = report(issue, scopeClass as UElement?, location, message, quickfixData)
 
   /**
-   * [UField] is both a [PsiElement] and a [UElement] so this method is here to make calling
-   * report(..., UField, ...) easier without having to make an explicit cast.
+   * [UField] is both a [PsiElement] and a [UElement] so this method is here to make calling report(..., UField, ...) easier without having
+   * to make an explicit cast.
    */
   fun report(issue: Issue, scopeClass: UField?, location: Location, message: String) =
-    report(issue, scopeClass as UElement?, location, message)
+      report(issue, scopeClass as UElement?, location, message)
 
   /**
-   * [UField] is both a [PsiElement] and a [UElement] so this method is here to make calling
-   * report(..., UField, ...) easier without having to make an explicit cast.
+   * [UField] is both a [PsiElement] and a [UElement] so this method is here to make calling report(..., UField, ...) easier without having
+   * to make an explicit cast.
    */
   fun report(
-    issue: Issue,
-    scopeClass: UField?,
-    location: Location,
-    message: String,
-    quickfixData: LintFix?,
+      issue: Issue,
+      scopeClass: UField?,
+      location: Location,
+      message: String,
+      quickfixData: LintFix?,
   ) = report(issue, scopeClass as UElement?, location, message, quickfixData)
 
   override val suppressCommentPrefix: String?
@@ -382,9 +374,9 @@ open class JavaContext(
 
   @Suppress("DEPRECATION", "UnstableApiUsage")
   @Deprecated(
-    "Use UastFacade instead",
-    ReplaceWith("org.jetbrains.uast.UastFacade"),
-    DeprecationLevel.HIDDEN,
+      "Use UastFacade instead",
+      ReplaceWith("org.jetbrains.uast.UastFacade"),
+      DeprecationLevel.HIDDEN,
   )
   val uastContext: UastContext
     get() = uastFile?.getUastContext()!!
@@ -397,11 +389,11 @@ open class JavaContext(
     // TODO: Move to LintUtils etc
     @JvmStatic
     fun getMethodName(call: UElement): String? =
-      when (call) {
-        is UEnumConstant -> call.nameFromSource
-        is UCallExpression -> call.methodName ?: call.classReference?.resolvedName
-        else -> null
-      }
+        when (call) {
+          is UEnumConstant -> call.nameFromSource
+          is UCallExpression -> call.methodName ?: call.classReference?.resolvedName
+          else -> null
+        }
 
     /**
      * Searches for a name node corresponding to the given node

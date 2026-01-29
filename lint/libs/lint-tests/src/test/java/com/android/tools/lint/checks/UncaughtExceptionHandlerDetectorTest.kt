@@ -23,9 +23,9 @@ class UncaughtExceptionHandlerDetectorTest : AbstractCheckTest() {
 
   fun testDocumentationExample() {
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
             package com.example.app
 
             import android.util.Log
@@ -37,25 +37,25 @@ class UncaughtExceptionHandlerDetectorTest : AbstractCheckTest() {
                 }
             }
             """
-          )
-          .indented()
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .run()
+        .expect(
+            """
         src/com/example/app/test.kt:7: Warning: Must call getDefaultUncaughtExceptionHandler() to get the existing handler, and call existingHandler.uncaughtException(thread, throwable) from your new handler [DefaultUncaughtExceptionDelegation]
             setDefaultUncaughtExceptionHandler { thread, throwable ->
             ^
         0 errors, 1 warning
         """
-      )
+        )
   }
 
   fun testJustSet() {
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
             package com.example.app
 
             import android.util.Log
@@ -67,10 +67,10 @@ class UncaughtExceptionHandlerDetectorTest : AbstractCheckTest() {
                 }
             }
             """
-          )
-          .indented(),
-        java(
-            """
+                )
+                .indented(),
+            java(
+                    """
             package com.example.app;
 
             import static java.lang.Thread.setDefaultUncaughtExceptionHandler;
@@ -83,12 +83,12 @@ class UncaughtExceptionHandlerDetectorTest : AbstractCheckTest() {
                 }
             }
             """
-          )
-          .indented(),
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+        )
+        .run()
+        .expect(
+            """
         src/com/example/app/Foo.java:9: Warning: Must call getDefaultUncaughtExceptionHandler() to get the existing handler, and call existingHandler.uncaughtException(thread, throwable) from your new handler [DefaultUncaughtExceptionDelegation]
                 setDefaultUncaughtExceptionHandler((thread, throwable) -> Log.e("Foo", "Uncaught exception"));
                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -97,14 +97,14 @@ class UncaughtExceptionHandlerDetectorTest : AbstractCheckTest() {
             ^
         0 errors, 2 warnings
         """
-      )
+        )
   }
 
   fun testGood() {
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
             package com.example.app
 
             import android.util.Log
@@ -119,10 +119,10 @@ class UncaughtExceptionHandlerDetectorTest : AbstractCheckTest() {
                 }
             }
             """
-          )
-          .indented(),
-        java(
-            """
+                )
+                .indented(),
+            java(
+                    """
           package com.example.myapplication39;
 
           import static java.lang.Thread.getDefaultUncaughtExceptionHandler;
@@ -144,10 +144,10 @@ class UncaughtExceptionHandlerDetectorTest : AbstractCheckTest() {
               }
           }
           """
-          )
-          .indented(),
-      )
-      .run()
-      .expectClean()
+                )
+                .indented(),
+        )
+        .run()
+        .expectClean()
   }
 }

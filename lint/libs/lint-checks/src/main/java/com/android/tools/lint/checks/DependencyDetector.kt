@@ -43,14 +43,12 @@ import java.io.File
  *
  * NOTE: currently only supports AARs
  */
-abstract class DependencyDetector<T : DependencyDetector.DependencyIssue> :
-  Detector(), GradleScanner, TomlScanner {
+abstract class DependencyDetector<T : DependencyDetector.DependencyIssue> : Detector(), GradleScanner, TomlScanner {
   /**
-   * Incidents found by looking at transitive dependencies; we'll look at Gradle and TOML version
-   * declaration to see if they're in this collection such that we can associate the error with a
-   * user source file; for the ones we can't find (if they for example belong to a transitive
-   * dependency that you don't reference directly in a source file) we'll just report them after the
-   * fact in [afterCheckRootProject] pointing to the broken .so file itself as the error location.
+   * Incidents found by looking at transitive dependencies; we'll look at Gradle and TOML version declaration to see if they're in this
+   * collection such that we can associate the error with a user source file; for the ones we can't find (if they for example belong to a
+   * transitive dependency that you don't reference directly in a source file) we'll just report them after the fact in
+   * [afterCheckRootProject] pointing to the broken .so file itself as the error location.
    */
   private var reportCoordinates: MutableMap<LintModelMavenName, Incident>? = null
 
@@ -58,10 +56,7 @@ abstract class DependencyDetector<T : DependencyDetector.DependencyIssue> :
     abstract fun toLintIncident(): Incident
   }
 
-  /**
-   * Return true from this function to enable skipping dependency analysis for known-safe
-   * groups/libraries/versions for performance.
-   */
+  /** Return true from this function to enable skipping dependency analysis for known-safe groups/libraries/versions for performance. */
   abstract fun isDependencyKnownSafe(group: String, artifact: String, version: String): Boolean
 
   /** Declare a cache in a companion object and provide it via this method. */
@@ -99,9 +94,7 @@ abstract class DependencyDetector<T : DependencyDetector.DependencyIssue> :
     // version catalogs, and if it matches, we'll report the error there (and
     // remove it from this list). Any unreported errors at the end are reported
     // from afterCheckRootProject.
-    val targetList =
-      reportCoordinates
-        ?: mutableMapOf<LintModelMavenName, Incident>().also { reportCoordinates = it }
+    val targetList = reportCoordinates ?: mutableMapOf<LintModelMavenName, Incident>().also { reportCoordinates = it }
     targetList[coordinate] = incident
   }
 
@@ -156,14 +149,14 @@ abstract class DependencyDetector<T : DependencyDetector.DependencyIssue> :
   }
 
   override fun checkDslPropertyAssignment(
-    context: GradleContext,
-    property: String,
-    value: String,
-    parent: String,
-    parentParent: String?,
-    propertyCookie: Any,
-    valueCookie: Any,
-    statementCookie: Any,
+      context: GradleContext,
+      property: String,
+      value: String,
+      parent: String,
+      parentParent: String?,
+      propertyCookie: Any,
+      valueCookie: Any,
+      statementCookie: Any,
   ) {
     val targets = reportCoordinates
     if (!context.driver.isIsolated() && targets == null) {
@@ -177,9 +170,7 @@ abstract class DependencyDetector<T : DependencyDetector.DependencyIssue> :
         val artifactId = dependency.name
         if (targets == null) {
           // isolated: check in IDE dependencies
-          checkArtifactReference(context, groupId, dependency.name) {
-            context.getLocation(valueCookie)
-          }
+          checkArtifactReference(context, groupId, dependency.name) { context.getLocation(valueCookie) }
         } else {
           for ((coordinate, incident) in targets) {
             if (coordinate.groupId == groupId && coordinate.artifactId == artifactId) {
@@ -232,10 +223,10 @@ abstract class DependencyDetector<T : DependencyDetector.DependencyIssue> :
   }
 
   private fun checkArtifactReference(
-    context: Context,
-    groupId: String?,
-    artifactId: String,
-    locationProvider: () -> Location,
+      context: Context,
+      groupId: String?,
+      artifactId: String,
+      locationProvider: () -> Location,
   ) {
     groupId ?: return
 
@@ -252,17 +243,10 @@ abstract class DependencyDetector<T : DependencyDetector.DependencyIssue> :
     }
   }
 
-  abstract fun getIncidentsFromAndroidLibrary(
-    library: LintModelAndroidLibrary
-  ): List<DependencyIssue>
+  abstract fun getIncidentsFromAndroidLibrary(library: LintModelAndroidLibrary): List<DependencyIssue>
 
-  /**
-   * Given a [library] definition, returns a list of [DependencyIssue]s found in the library, using
-   * the cache if running from Studio.
-   */
-  private fun getIncidentsFromAndroidLibraryCached(
-    library: LintModelAndroidLibrary
-  ): List<DependencyIssue> {
+  /** Given a [library] definition, returns a list of [DependencyIssue]s found in the library, using the cache if running from Studio. */
+  private fun getIncidentsFromAndroidLibraryCached(library: LintModelAndroidLibrary): List<DependencyIssue> {
     val coordinate: LintModelMavenName = library.resolvedCoordinates
 
     val group = coordinate.groupId

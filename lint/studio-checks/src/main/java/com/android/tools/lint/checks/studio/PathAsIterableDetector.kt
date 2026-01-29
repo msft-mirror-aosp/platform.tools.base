@@ -31,16 +31,15 @@ import org.jetbrains.uast.UElement
 class PathAsIterableDetector : Detector(), SourceCodeScanner {
 
   companion object Issues {
-    private val IMPLEMENTATION =
-      Implementation(PathAsIterableDetector::class.java, Scope.JAVA_FILE_SCOPE)
+    private val IMPLEMENTATION = Implementation(PathAsIterableDetector::class.java, Scope.JAVA_FILE_SCOPE)
 
     @JvmField
     val ISSUE =
-      Issue.create(
-        id = "PathAsIterable",
-        briefDescription = "Accidentally Using Path as Iterable",
-        explanation =
-          """
+        Issue.create(
+            id = "PathAsIterable",
+            briefDescription = "Accidentally Using Path as Iterable",
+            explanation =
+                """
                 `Path` implements `Iterable`, so some methods will process a path by \
                 iterating through each path segment. This is sometimes not what you want \
                 or expect, and has led to serious bugs in the past, such as b/196713590 \
@@ -48,11 +47,11 @@ class PathAsIterableDetector : Detector(), SourceCodeScanner {
                 constructor method which has an iterable form, which proceeded to add each \
                 path instead of a list with a single element in it).
                 """,
-        category = CORRECTNESS,
-        severity = Severity.ERROR,
-        platforms = STUDIO_PLATFORMS,
-        implementation = IMPLEMENTATION,
-      )
+            category = CORRECTNESS,
+            severity = Severity.ERROR,
+            platforms = STUDIO_PLATFORMS,
+            implementation = IMPLEMENTATION,
+        )
   }
 
   override fun getApplicableUastTypes(): List<Class<out UElement>> {
@@ -71,10 +70,10 @@ class PathAsIterableDetector : Detector(), SourceCodeScanner {
             val parameterType = parameter.type
             if (parameterType.canonicalText.startsWith("java.lang.Iterable<")) {
               context.report(
-                ISSUE,
-                argument,
-                context.getLocation(argument),
-                "Using `Path` in an `Iterable` context: make sure this is doing what you expect and suppress this warning if so",
+                  ISSUE,
+                  argument,
+                  context.getLocation(argument),
+                  "Using `Path` in an `Iterable` context: make sure this is doing what you expect and suppress this warning if so",
               )
             }
           }

@@ -34,27 +34,27 @@ class WatchFaceFormatUtilsTest {
   @Test
   fun `test hasWatchFaceFormatVersionProperty`() {
     val applicationWithWFFVersionProperty =
-      XmlUtils.parseDocument(
-          // language=XML
-          """
+        XmlUtils.parseDocument(
+                // language=XML
+                """
       <application xmlns:android="http://schemas.android.com/apk/res/android">
         <property android:name='$WATCH_FACE_FORMAT_VERSION_PROPERTY' android:value='1' />
       </application>
     """,
-          true,
-        )
-        .documentElement
+                true,
+            )
+            .documentElement
 
     val applicationWithout =
-      XmlUtils.parseDocument(
-          // language=XML
-          """
+        XmlUtils.parseDocument(
+                // language=XML
+                """
       <application>
       </application>
     """,
-          true,
-        )
-        .documentElement
+                true,
+            )
+            .documentElement
 
     assertThat(hasWatchFaceFormatVersionProperty(applicationWithWFFVersionProperty)).isTrue()
     assertThat(hasWatchFaceFormatVersionProperty(applicationWithout)).isFalse()
@@ -69,8 +69,8 @@ class WatchFaceFormatUtilsTest {
     nonDWFResourceFile.parentFile.mkdirs()
     nonDWFResourceFile.createNewFile()
     nonDWFResourceFile.writeText(
-      // language=XML
-      """
+        // language=XML
+        """
         <resource>
         </resource>
       """
@@ -81,8 +81,8 @@ class WatchFaceFormatUtilsTest {
     val declarativeWatchFaceFile = File(projectFolder, "res/raw/watch_face.xml").absoluteFile
     declarativeWatchFaceFile.createNewFile()
     declarativeWatchFaceFile.writeText(
-      // language=XML
-      """
+        // language=XML
+        """
         <WatchFace>
         </WatchFace>
       """

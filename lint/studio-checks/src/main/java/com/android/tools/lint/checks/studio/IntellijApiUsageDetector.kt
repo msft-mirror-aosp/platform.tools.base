@@ -40,13 +40,12 @@ import org.jetbrains.uast.UExpression
 import org.jetbrains.uast.USimpleNameReferenceExpression
 
 /**
- * Searches for usages of scheduled-for-removal IntelliJ APIs, for the purpose of migrating to newer
- * APIs before the next platform merge.
+ * Searches for usages of scheduled-for-removal IntelliJ APIs, for the purpose of migrating to newer APIs before the next platform merge.
  */
 class IntellijApiUsageDetector : Detector(), SourceCodeScanner {
 
   override fun applicableAnnotations(): List<String> =
-    listOf("java.lang.Deprecated", "org.jetbrains.annotations.ApiStatus.ScheduledForRemoval")
+      listOf("java.lang.Deprecated", "org.jetbrains.annotations.ApiStatus.ScheduledForRemoval")
 
   // Deprecation annotations should generally not be inherited from a super class / super method.
   // Example: a new API might extend a deprecated interface for backwards compatibility.
@@ -69,10 +68,10 @@ class IntellijApiUsageDetector : Detector(), SourceCodeScanner {
   }
 
   override fun visitAnnotationUsage(
-    context: JavaContext,
-    element: UElement,
-    annotationInfo: AnnotationInfo,
-    usageInfo: AnnotationUsageInfo,
+      context: JavaContext,
+      element: UElement,
+      annotationInfo: AnnotationInfo,
+      usageInfo: AnnotationUsageInfo,
   ) {
     if (!isDeprecatedForRemoval(annotationInfo.annotation)) {
       return
@@ -88,51 +87,48 @@ class IntellijApiUsageDetector : Detector(), SourceCodeScanner {
       return
     }
     val symbolName =
-      when {
-        element is USimpleNameReferenceExpression -> element.identifier
-        referenced is PsiNamedElement -> referenced.name ?: return
-        else -> return
-      }
+        when {
+          element is USimpleNameReferenceExpression -> element.identifier
+          referenced is PsiNamedElement -> referenced.name ?: return
+          else -> return
+        }
     val annotationDisplayName =
-      when (annotationInfo.qualifiedName) {
-        "java.lang.Deprecated" -> "`@Deprecated(forRemoval=true)`"
-        else -> "`@${annotationInfo.qualifiedName.substringAfterLast('.')}`"
-      }
+        when (annotationInfo.qualifiedName) {
+          "java.lang.Deprecated" -> "`@Deprecated(forRemoval=true)`"
+          else -> "`@${annotationInfo.qualifiedName.substringAfterLast('.')}`"
+        }
     val origin = annotationInfo.origin
     val toBlame =
-      when {
-        origin == AnnotationOrigin.CLASS && referenced is PsiMethod && referenced.isConstructor -> {
-          "`$symbolName`"
-        }
-        origin == AnnotationOrigin.METHOD &&
-          referenced is PsiMethod &&
-          referenced.isConstructor -> {
-          "This constructor for `$symbolName`"
-        }
-        origin == AnnotationOrigin.FILE -> {
-          "The file containing `$symbolName`"
-        }
-        origin == AnnotationOrigin.OUTER_CLASS ||
-          origin == AnnotationOrigin.CLASS && referenced !is PsiClass -> {
-          val containingClass = (annotationInfo.annotated as? PsiNamedElement)?.name
-          if (containingClass != null) {
-            "Containing class `$containingClass`"
-          } else {
-            "The class containing `$symbolName`"
+        when {
+          origin == AnnotationOrigin.CLASS && referenced is PsiMethod && referenced.isConstructor -> {
+            "`$symbolName`"
+          }
+          origin == AnnotationOrigin.METHOD && referenced is PsiMethod && referenced.isConstructor -> {
+            "This constructor for `$symbolName`"
+          }
+          origin == AnnotationOrigin.FILE -> {
+            "The file containing `$symbolName`"
+          }
+          origin == AnnotationOrigin.OUTER_CLASS || origin == AnnotationOrigin.CLASS && referenced !is PsiClass -> {
+            val containingClass = (annotationInfo.annotated as? PsiNamedElement)?.name
+            if (containingClass != null) {
+              "Containing class `$containingClass`"
+            } else {
+              "The class containing `$symbolName`"
+            }
+          }
+          origin == AnnotationOrigin.PACKAGE && referenced !is PsiPackage -> {
+            "The package containing `$symbolName`"
+          }
+          else -> {
+            "`$symbolName`"
           }
         }
-        origin == AnnotationOrigin.PACKAGE && referenced !is PsiPackage -> {
-          "The package containing `$symbolName`"
-        }
-        else -> {
-          "`$symbolName`"
-        }
-      }
     context.report(
-      SCHEDULED_FOR_REMOVAL,
-      element,
-      context.getNameLocation(element),
-      "$toBlame is $annotationDisplayName",
+        SCHEDULED_FOR_REMOVAL,
+        element,
+        context.getNameLocation(element),
+        "$toBlame is $annotationDisplayName",
     )
   }
 
@@ -155,9 +151,9 @@ class IntellijApiUsageDetector : Detector(), SourceCodeScanner {
   }
 
   private fun isOverrideOfNonDeprecatedMethod(
-    context: JavaContext,
-    anno: AnnotationInfo,
-    declaration: PsiElement?,
+      context: JavaContext,
+      anno: AnnotationInfo,
+      declaration: PsiElement?,
   ): Boolean {
     // If a class is marked for removal, then it'll be deleted soon. However, clients will still
     // be able to call methods that remain in the supertypes. This scenario comes up sometimes
@@ -186,25 +182,24 @@ class IntellijApiUsageDetector : Detector(), SourceCodeScanner {
   }
 
   companion object {
-    private val IMPLEMENTATION =
-      Implementation(IntellijApiUsageDetector::class.java, Scope.JAVA_FILE_SCOPE)
+    private val IMPLEMENTATION = Implementation(IntellijApiUsageDetector::class.java, Scope.JAVA_FILE_SCOPE)
 
     @JvmField
     val SCHEDULED_FOR_REMOVAL =
-      Issue.create(
-        id = "ScheduledForRemoval",
-        briefDescription = "Using APIs scheduled for removal",
-        explanation =
-          """
+        Issue.create(
+            id = "ScheduledForRemoval",
+            briefDescription = "Using APIs scheduled for removal",
+            explanation =
+                """
           APIs marked with `@Deprecated(forRemoval)` or `@ScheduledForRemoval` will likely be removed \
           in an upcoming IntelliJ Platform update. Usages should be removed now to reduce friction \
           during the next platform merge.
           """,
-        category = CORRECTNESS,
-        severity = Severity.WARNING,
-        platforms = STUDIO_PLATFORMS,
-        implementation = IMPLEMENTATION,
-        enabledByDefault = false,
-      )
+            category = CORRECTNESS,
+            severity = Severity.WARNING,
+            platforms = STUDIO_PLATFORMS,
+            implementation = IMPLEMENTATION,
+            enabledByDefault = false,
+        )
   }
 }

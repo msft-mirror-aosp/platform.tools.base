@@ -20,18 +20,18 @@ import java.io.File
 import org.jetbrains.uast.UFile
 
 /**
- * An individual [TestMode] which performs a pre-computed set of edits on a set of source files.
- * These are merged from multiple individual modes.
+ * An individual [TestMode] which performs a pre-computed set of edits on a set of source files. These are merged from multiple individual
+ * modes.
  */
 internal class MergedSourceTransformationTestMode(
-  internal val modes: List<TestMode>,
-  internal val edits: MutableMap<File, Pair<String, MutableList<Edit>>>,
+    internal val modes: List<TestMode>,
+    internal val edits: MutableMap<File, Pair<String, MutableList<Edit>>>,
 ) :
-  UastSourceTransformationTestMode(
-    "Merged Source code transformations",
-    "TestMode.SOURCE_CODE_TRANSFORMATIONS",
-    "source-transformations",
-  ) {
+    UastSourceTransformationTestMode(
+        "Merged Source code transformations",
+        "TestMode.SOURCE_CODE_TRANSFORMATIONS",
+        "source-transformations",
+    ) {
   override val description: String
     get() = modes.joinToString { it.description }
 
@@ -58,20 +58,20 @@ internal class MergedSourceTransformationTestMode(
   }
 
   override fun processTestFiles(
-    testContext: TestModeContext,
-    projectDir: File,
-    sdkHome: File?,
-    changeCallback: (JavaContext, String) -> Unit,
+      testContext: TestModeContext,
+      projectDir: File,
+      sdkHome: File?,
+      changeCallback: (JavaContext, String) -> Unit,
   ): Boolean {
     initializeSources(testContext)
     return true
   }
 
   override fun transform(
-    source: String,
-    context: JavaContext,
-    root: UFile,
-    clientData: MutableMap<String, Any>,
+      source: String,
+      context: JavaContext,
+      root: UFile,
+      clientData: MutableMap<String, Any>,
   ): MutableList<Edit> {
     // This should never be called since we override [processTestFiles]
     // to perform composite editing

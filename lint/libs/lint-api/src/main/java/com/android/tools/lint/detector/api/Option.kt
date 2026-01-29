@@ -19,22 +19,19 @@ import com.android.tools.lint.client.api.Configuration
 import com.android.utils.SdkUtils.wrap
 import java.io.File
 
-/**
- * Represents an option associated with a given [Issue] that can be configured in a `lint.xml` file.
- */
+/** Represents an option associated with a given [Issue] that can be configured in a `lint.xml` file. */
 sealed class Option(
-  /** The name of the option, referenced in the `lint.xml` file */
-  val name: String,
+    /** The name of the option, referenced in the `lint.xml` file */
+    val name: String,
 
-  /**
-   * A brief (1 line) explanation of what this option represents, such as "Whether to include
-   * deprecated members" or "Maximum number of views to allow". Should be capitalized but not end
-   * with punctuation like a period. The string should be in format [TextFormat.RAW].
-   */
-  private val description: String,
+    /**
+     * A brief (1 line) explanation of what this option represents, such as "Whether to include deprecated members" or "Maximum number of
+     * views to allow". Should be capitalized but not end with punctuation like a period. The string should be in format [TextFormat.RAW].
+     */
+    private val description: String,
 
-  /** Optional longer explanation of the option, formatted as [TextFormat.RAW]. */
-  private val explanation: String? = null,
+    /** Optional longer explanation of the option, formatted as [TextFormat.RAW]. */
+    private val explanation: String? = null,
 ) {
   /** Looks up the configured value for this option */
   abstract fun getValue(configuration: Configuration): Any?
@@ -100,7 +97,7 @@ sealed class Option(
       sb.append("\n")
       sb.append("To configure this option, use a `lint.xml` file with an <option> like this:\n\n")
       sb.append(
-        """
+          """
                 ```xml
                 <lint>
                     <issue id="${issue.id}">
@@ -109,7 +106,7 @@ sealed class Option(
                 </lint>
                 ```
                 """
-          .trimIndent()
+              .trimIndent()
       )
     }
     return TextFormat.RAW.convertTo(sb.toString(), format)
@@ -122,18 +119,16 @@ sealed class Option(
 
   protected fun ensureRegistered() {
     if (!this::issue.isInitialized) {
-      error(
-        "Option $name has not been registered with an associated `Issue`; see `Issue.options()`"
-      )
+      error("Option $name has not been registered with an associated `Issue`; see `Issue.options()`")
     }
   }
 
   companion object {
     /** Describes a list of options */
     fun describe(
-      options: List<Option>,
-      format: TextFormat = TextFormat.RAW,
-      includeExample: Boolean = true,
+        options: List<Option>,
+        format: TextFormat = TextFormat.RAW,
+        includeExample: Boolean = true,
     ): String {
       if (options.isNotEmpty()) {
         val sb = StringBuilder()
@@ -151,17 +146,17 @@ sealed class Option(
 
 /** An [Option] of String type. For path strings, be sure to use [FileOption]. */
 class StringOption(
-  /** Option name. See [Option.name]. */
-  name: String,
+    /** Option name. See [Option.name]. */
+    name: String,
 
-  /** Short option description. See [Option.description] */
-  description: String,
+    /** Short option description. See [Option.description] */
+    description: String,
 
-  /** The default value, if any. */
-  val defaultValue: String? = null,
+    /** The default value, if any. */
+    val defaultValue: String? = null,
 
-  /** Longer explanation. See [Option.explanation] */
-  explanation: String? = null,
+    /** Longer explanation. See [Option.explanation] */
+    explanation: String? = null,
 ) : Option(name, description, explanation) {
   /** Looks up the configured value for this option in the given configuration. */
   override fun getValue(configuration: Configuration): String? {
@@ -169,8 +164,7 @@ class StringOption(
     return configuration.getOption(this) as String? ?: defaultValue
   }
 
-  override fun getValue(context: Context): String? =
-    getValue(context.findConfiguration(context.file))
+  override fun getValue(context: Context): String? = getValue(context.findConfiguration(context.file))
 
   override fun defaultAsString(): String? {
     return defaultValue?.let { "\"$it\"" }
@@ -179,17 +173,17 @@ class StringOption(
 
 /** A Boolean [Option] */
 class BooleanOption(
-  /** Option name. See [Option.name]. */
-  name: String,
+    /** Option name. See [Option.name]. */
+    name: String,
 
-  /** Short option description. See [Option.description] */
-  description: String,
+    /** Short option description. See [Option.description] */
+    description: String,
 
-  /** The default value, if any. */
-  var defaultValue: Boolean = false,
+    /** The default value, if any. */
+    var defaultValue: Boolean = false,
 
-  /** Longer explanation. See [Option.explanation] */
-  explanation: String? = null,
+    /** Longer explanation. See [Option.explanation] */
+    explanation: String? = null,
 ) : Option(name, description, explanation) {
   override fun getValue(configuration: Configuration): Boolean {
     ensureRegistered()
@@ -208,23 +202,23 @@ class BooleanOption(
 
 /** A integer [Option] */
 class IntOption(
-  /** Option name. See [Option.name]. */
-  name: String,
+    /** Option name. See [Option.name]. */
+    name: String,
 
-  /** Short option description. See [Option.description] */
-  description: String,
+    /** Short option description. See [Option.description] */
+    description: String,
 
-  /** The default value, if any. */
-  val defaultValue: Int,
+    /** The default value, if any. */
+    val defaultValue: Int,
 
-  /** Longer explanation. See [Option.explanation] */
-  explanation: String? = null,
+    /** Longer explanation. See [Option.explanation] */
+    explanation: String? = null,
 
-  /** Minimum allowed value, inclusive */
-  val min: Int = Integer.MIN_VALUE,
+    /** Minimum allowed value, inclusive */
+    val min: Int = Integer.MIN_VALUE,
 
-  /** Maximum allowed value, exclusive */
-  val max: Int = Integer.MAX_VALUE,
+    /** Maximum allowed value, exclusive */
+    val max: Int = Integer.MAX_VALUE,
 ) : Option(name, description, explanation) {
   override fun getValue(configuration: Configuration): Int {
     ensureRegistered()
@@ -253,23 +247,23 @@ class IntOption(
 
 /** A floating point [Option] */
 class FloatOption(
-  /** Option name. See [Option.name]. */
-  name: String,
+    /** Option name. See [Option.name]. */
+    name: String,
 
-  /** Short option description. See [Option.description] */
-  description: String,
+    /** Short option description. See [Option.description] */
+    description: String,
 
-  /** The default value, if any. */
-  val defaultValue: Float,
+    /** The default value, if any. */
+    val defaultValue: Float,
 
-  /** Longer explanation. See [Option.explanation] */
-  explanation: String? = null,
+    /** Longer explanation. See [Option.explanation] */
+    explanation: String? = null,
 
-  /** Minimum allowed value, inclusive */
-  val min: Float = Float.MIN_VALUE,
+    /** Minimum allowed value, inclusive */
+    val min: Float = Float.MIN_VALUE,
 
-  /** Maximum allowed value, exclusive */
-  val max: Float = Float.MAX_VALUE,
+    /** Maximum allowed value, exclusive */
+    val max: Float = Float.MAX_VALUE,
 ) : Option(name, description, explanation) {
   override fun getValue(configuration: Configuration): Float {
     ensureRegistered()
@@ -298,17 +292,17 @@ class FloatOption(
 
 /** An [Option] representing a path */
 class FileOption(
-  /** Option name. See [Option.name]. */
-  name: String,
+    /** Option name. See [Option.name]. */
+    name: String,
 
-  /** Short option description. See [Option.description] */
-  description: String,
+    /** Short option description. See [Option.description] */
+    description: String,
 
-  /** The default value, if any. */
-  val defaultValue: File? = null,
+    /** The default value, if any. */
+    val defaultValue: File? = null,
 
-  /** Longer explanation. See [Option.explanation] */
-  explanation: String? = null,
+    /** Longer explanation. See [Option.explanation] */
+    explanation: String? = null,
 ) : Option(name, description, explanation) {
   override fun getValue(configuration: Configuration): File? {
     ensureRegistered()

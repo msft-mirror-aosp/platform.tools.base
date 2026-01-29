@@ -41,15 +41,14 @@ class TerminologyDetectorTest {
     val w8 = "\u0077\u0068\u0069\u0074\u0065\u004c\u0069\u0073\u0074"
     val w9 = "\u0077\u0068\u0069\u0074\u0065-\u006c\u0069\u0073\u0074"
     val w10 = "\u0057\u0068\u0069\u0074\u0065\u004c\u0069\u0073\u0074"
-    val w11 =
-      "\u0063\u0068\u0061\u0072\u0061\u0063\u0074\u0065\u0072\u0073\u0057\u0068\u0069\u0074\u0065\u006c\u0069\u0073\u0074"
+    val w11 = "\u0063\u0068\u0061\u0072\u0061\u0063\u0074\u0065\u0072\u0073\u0057\u0068\u0069\u0074\u0065\u006c\u0069\u0073\u0074"
     val w12 = "\u0057\u0068\u0069\u0074\u0065\u006c\u0069\u0073\u0074"
     // </unicode>
 
     studioLint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
                     package test.pkg;
 
                     @SuppressWarnings({
@@ -72,11 +71,11 @@ class TerminologyDetectorTest {
                         }
                    }
                    """
-          )
-          .indented(),
-        kotlin(
-            "test/test.kt",
-            """
+                )
+                .indented(),
+            kotlin(
+                    "test/test.kt",
+                    """
                       // Random $w4 comment
                       /** This is $w4 */
                       fun test() {
@@ -85,15 +84,15 @@ class TerminologyDetectorTest {
                       }
                       private var hasHitLimit = false
                     """,
-          )
-          .indented(),
-        source("src/main/resources/cts/${w2}_devices.json", "something"),
-        source("src/main/resources/something", "device $w2:"),
-      )
-      .issues(TerminologyDetector.ISSUE)
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            source("src/main/resources/cts/${w2}_devices.json", "something"),
+            source("src/main/resources/something", "device $w2:"),
+        )
+        .issues(TerminologyDetector.ISSUE)
+        .run()
+        .expect(
+            """
                 src/test/pkg/Test.java:9: Error: Avoid using "$w8"; consider something like "include"; see https://developers.google.com/style/word-list [WrongTerminology]
                      public int $w1 = 0;
                                 ~~~~~~~~~
@@ -130,7 +129,7 @@ class TerminologyDetectorTest {
                 src/main/resources/cts/${w2}_devices.json: Error: Avoid using "$w2" in filename; consider something like "include"; see https://developers.google.com/style/word-list [WrongTerminology]
                 12 errors, 0 warnings
                 """
-      )
+        )
   }
 
   // To update the replacement list, add @Test to this method and run it. It will emit the
@@ -139,59 +138,58 @@ class TerminologyDetectorTest {
   @Suppress("ConstantConditionIf", "unused")
   fun createStateMachine() {
     data class Recommendation(
-      val replace: String,
-      val with: String,
-      val words: Boolean = true,
-      val alias1: String? = null,
-      val alias2: String? = null,
-      val alias3: String? = null,
+        val replace: String,
+        val with: String,
+        val words: Boolean = true,
+        val alias1: String? = null,
+        val alias2: String? = null,
+        val alias3: String? = null,
     ) {
       fun getNames(): List<String> = listOfNotNull(replace, alias1, alias2, alias3)
     }
 
     // <unicode>
     val recommendations =
-      listOf(
-        Recommendation(
-          replace = "\u0062\u006c\u0061\u0063\u006b\u006c\u0069\u0073\u0074",
-          alias1 = "\u0062\u006c\u0061\u0063\u006b-\u006c\u0069\u0073\u0074",
-          with = "\u0065\u0078\u0063\u006c\u0075\u0064\u0065",
-          words = false,
-        ),
-        Recommendation(
-          replace = "\u0077\u0068\u0069\u0074\u0065\u006c\u0069\u0073\u0074",
-          alias1 = "\u0077\u0068\u0069\u0074\u0065-\u006c\u0069\u0073\u0074",
-          with = "\u0069\u006e\u0063\u006c\u0075\u0064\u0065",
-          words = false,
-        ),
-        Recommendation(
-          replace =
-            "\u0067\u0072\u0061\u006e\u0064\u0066\u0061\u0074\u0068\u0065\u0072\u0065\u0064",
-          with = "\u0062\u0061\u0073\u0065\u006c\u0069\u006e\u0065",
-        ),
-        Recommendation(
-          replace = "\u0073\u006c\u0061\u0076\u0065",
-          with = "\u0073\u0065\u0063\u006f\u006e\u0064\u0061\u0072\u0079",
-          words = true,
-        ),
-        Recommendation(replace = "\u0066\u0075\u0063\u006b", with = "?", words = true),
-        Recommendation(
-          replace = "\u0066\u0075\u0063\u006b\u0069\u006e\u0067",
-          with = "?",
-          words = true,
-        ),
-        Recommendation(replace = "\u0066*\u0063\u006b", with = "?", words = true),
-        Recommendation(replace = "\u0066*\u0063\u006b\u0069\u006e\u0067", with = "?", words = true),
-        Recommendation(replace = "\u0073\u0068\u0069\u0074", with = "?", words = true),
-        /*
-        // Consider:
-        Recommendation(
-            replace = "\u0064\u0075\u006d\u006d\u0079",
-            with = "\u0070\u006c\u0061\u0063\u0065\u0068\u006f\u006c\u0064\u0065\u0072",
-            words = true
+        listOf(
+            Recommendation(
+                replace = "\u0062\u006c\u0061\u0063\u006b\u006c\u0069\u0073\u0074",
+                alias1 = "\u0062\u006c\u0061\u0063\u006b-\u006c\u0069\u0073\u0074",
+                with = "\u0065\u0078\u0063\u006c\u0075\u0064\u0065",
+                words = false,
+            ),
+            Recommendation(
+                replace = "\u0077\u0068\u0069\u0074\u0065\u006c\u0069\u0073\u0074",
+                alias1 = "\u0077\u0068\u0069\u0074\u0065-\u006c\u0069\u0073\u0074",
+                with = "\u0069\u006e\u0063\u006c\u0075\u0064\u0065",
+                words = false,
+            ),
+            Recommendation(
+                replace = "\u0067\u0072\u0061\u006e\u0064\u0066\u0061\u0074\u0068\u0065\u0072\u0065\u0064",
+                with = "\u0062\u0061\u0073\u0065\u006c\u0069\u006e\u0065",
+            ),
+            Recommendation(
+                replace = "\u0073\u006c\u0061\u0076\u0065",
+                with = "\u0073\u0065\u0063\u006f\u006e\u0064\u0061\u0072\u0079",
+                words = true,
+            ),
+            Recommendation(replace = "\u0066\u0075\u0063\u006b", with = "?", words = true),
+            Recommendation(
+                replace = "\u0066\u0075\u0063\u006b\u0069\u006e\u0067",
+                with = "?",
+                words = true,
+            ),
+            Recommendation(replace = "\u0066*\u0063\u006b", with = "?", words = true),
+            Recommendation(replace = "\u0066*\u0063\u006b\u0069\u006e\u0067", with = "?", words = true),
+            Recommendation(replace = "\u0073\u0068\u0069\u0074", with = "?", words = true),
+            /*
+            // Consider:
+            Recommendation(
+                replace = "\u0064\u0075\u006d\u006d\u0079",
+                with = "\u0070\u006c\u0061\u0063\u0065\u0068\u006f\u006c\u0064\u0065\u0072",
+                words = true
+            )
+            */
         )
-        */
-      )
     // </unicode>
 
     // If you're trying to figure out how this works, try turning on readable state names:
@@ -200,12 +198,7 @@ class TerminologyDetectorTest {
 
     val stringWriter = StringWriter()
     val printer = PrintWriter(stringWriter)
-    val names =
-      recommendations
-        .map { it.getNames() }
-        .flatten()
-        .sortedWith(compareBy({ it.length }, { it }))
-        .toSet()
+    val names = recommendations.map { it.getNames() }.flatten().sortedWith(compareBy({ it.length }, { it })).toSet()
 
     val replacements: MutableMap<String, String> = mutableMapOf()
     recommendations.forEach { recommendation ->
@@ -222,8 +215,7 @@ class TerminologyDetectorTest {
     }
 
     fun String.mustEscapeIdentifier(): Boolean {
-      return isNotEmpty() &&
-        (!this[0].isJavaIdentifierStart() || this.any { !it.isJavaIdentifierPart() })
+      return isNotEmpty() && (!this[0].isJavaIdentifierStart() || this.any { !it.isJavaIdentifierPart() })
     }
 
     val prefixSet: MutableSet<String> = HashSet()
@@ -241,27 +233,27 @@ class TerminologyDetectorTest {
     val stateMap: MutableMap<String, String> = HashMap()
     for (prefix in prefixes) {
       stateMap[prefix] =
-        if (prefix.isEmpty()) {
-          when {
-            readableStateNames -> "STATE_INIT"
-            stateVariables -> "init"
-            else -> (++stateNameNumber).toString()
-          }
-        } else {
-          when {
-            readableStateNames -> {
-              val escape = prefix.mustEscapeIdentifier()
-              val surround = if (escape) "`" else ""
-              surround + "STATE_" + prefix.uppercase(Locale.ROOT) + surround
+          if (prefix.isEmpty()) {
+            when {
+              readableStateNames -> "STATE_INIT"
+              stateVariables -> "init"
+              else -> (++stateNameNumber).toString()
             }
-            stateVariables -> "state${++stateNameNumber}"
-            else -> (++stateNameNumber).toString()
+          } else {
+            when {
+              readableStateNames -> {
+                val escape = prefix.mustEscapeIdentifier()
+                val surround = if (escape) "`" else ""
+                surround + "STATE_" + prefix.uppercase(Locale.ROOT) + surround
+              }
+              stateVariables -> "state${++stateNameNumber}"
+              else -> (++stateNameNumber).toString()
+            }
           }
-        }
     }
 
     printer.println(
-      """        // <editor-fold defaultstate="collapsed" desc="Generated state machine">
+        """        // <editor-fold defaultstate="collapsed" desc="Generated state machine">
         // @formatter:off"""
     )
     var stateNumber = 0
@@ -281,7 +273,7 @@ class TerminologyDetectorTest {
       }
     }
     printer.println(
-      """        var state = ${stateMap[""]}
+        """        var state = ${stateMap[""]}
         var begin = 0
         var i = 0
         while (i < source.length) {
@@ -315,7 +307,7 @@ class TerminologyDetectorTest {
             val words = recommendation.words
             val from = if (words) "begin" else "i - " + prefix.length
             printer.println(
-              """{
+                """{
                             report(context, element, source, $from, i, "$replacement", $words)
                             ${stateMap[""]}
                         }"""
@@ -328,7 +320,7 @@ class TerminologyDetectorTest {
 
       if (statePrefix.isEmpty()) {
         printer.println(
-          """                        else -> ${stateMap[""]}
+            """                        else -> ${stateMap[""]}
                     }
                 }"""
         )
@@ -342,14 +334,14 @@ class TerminologyDetectorTest {
           }
         }
         printer.println(
-          """                        else -> { i--; ${stateMap[next] } }
+            """                        else -> { i--; ${stateMap[next] } }
                     }
                 }"""
         )
       }
     }
     printer.print(
-      """            }
+        """            }
         }
         // @formatter:on
         // </editor-fold>"""
@@ -358,20 +350,17 @@ class TerminologyDetectorTest {
     val generated = stringWriter.toString()
 
     if (
-      replace(
-        path =
-          "tools/base/lint/studio-checks/src/main/java/com/android/tools/lint/checks/studio/TerminologyDetector.kt",
-        startMarker = "// <editor-fold",
-        endMarker = "// </editor-fold>",
-        replacementFunction = { generated.trim() },
-      )
+        replace(
+            path = "tools/base/lint/studio-checks/src/main/java/com/android/tools/lint/checks/studio/TerminologyDetector.kt",
+            startMarker = "// <editor-fold",
+            endMarker = "// </editor-fold>",
+            replacementFunction = { generated.trim() },
+        )
     ) {
       return
     }
 
-    println(
-      "Generated code; insert into TerminologyDetector, or set \$ADT_SOURCE_TREE to have it written directly:\n"
-    )
+    println("Generated code; insert into TerminologyDetector, or set \$ADT_SOURCE_TREE to have it written directly:\n")
     println(generated)
   }
 
@@ -381,35 +370,34 @@ class TerminologyDetectorTest {
   fun unicodeify() {
     // Inserts unicode in the string regions between the <\u0075nicode> markers
     replace(
-      path =
-        "tools/base/lint/studio-checks/src/test/java/com/android/tools/lint/checks/studio/TerminologyDetectorTest.kt",
-      startMarker = "<\u0075nicode>",
-      endMarker = "</\u0075nicode>",
-      replacementFunction = { source ->
-        val sb = StringBuilder()
-        var escaped = false
-        var string = false
-        for (c in source) {
-          if (c == '\\') {
-            escaped = !escaped
-            sb.append(c)
-          } else if (c == '"') {
-            // This is simplistic but even works for raw strings because there's
-            // an odd number of double quotes
-            string = !string
-            sb.append(c)
-          } else if (string && !escaped && c.isLetter()) {
-            sb.append("\\u")
-            sb.append(Character.forDigit(c.toInt() shr 12, 16))
-            sb.append(Character.forDigit(c.toInt() shr 8 and 0x0f, 16))
-            sb.append(Character.forDigit(c.toInt() shr 4 and 0x0f, 16))
-            sb.append(Character.forDigit(c.toInt() and 0x0f, 16))
-          } else {
-            sb.append(c)
+        path = "tools/base/lint/studio-checks/src/test/java/com/android/tools/lint/checks/studio/TerminologyDetectorTest.kt",
+        startMarker = "<\u0075nicode>",
+        endMarker = "</\u0075nicode>",
+        replacementFunction = { source ->
+          val sb = StringBuilder()
+          var escaped = false
+          var string = false
+          for (c in source) {
+            if (c == '\\') {
+              escaped = !escaped
+              sb.append(c)
+            } else if (c == '"') {
+              // This is simplistic but even works for raw strings because there's
+              // an odd number of double quotes
+              string = !string
+              sb.append(c)
+            } else if (string && !escaped && c.isLetter()) {
+              sb.append("\\u")
+              sb.append(Character.forDigit(c.toInt() shr 12, 16))
+              sb.append(Character.forDigit(c.toInt() shr 8 and 0x0f, 16))
+              sb.append(Character.forDigit(c.toInt() shr 4 and 0x0f, 16))
+              sb.append(Character.forDigit(c.toInt() and 0x0f, 16))
+            } else {
+              sb.append(c)
+            }
           }
-        }
-        sb.toString()
-      },
+          sb.toString()
+        },
     )
   }
 
@@ -419,42 +407,41 @@ class TerminologyDetectorTest {
   fun unidecodeify() {
     // Inserts unicode in the string regions between the <\u0075nicode> markers
     replace(
-      path =
-        "tools/base/lint/studio-checks/src/test/java/com/android/tools/lint/checks/studio/TerminologyDetectorTest.kt",
-      startMarker = "<\u0075nicode>",
-      endMarker = "</\u0075nicode>",
-      replacementFunction = { source ->
-        val sb = StringBuilder()
-        var escaped = false
-        var i = 0
-        while (i < source.length) {
-          val c = source[i]
-          if (c == '\\' && source[i + 1] == 'u') {
-            val unicode = source.substring(i + 2, i + 6)
-            val hex: Int = unicode.toInt(16)
-            sb.append(hex.toChar())
-            i += 6
-            continue
-          } else if (c == '\\') {
-            escaped = !escaped
-            sb.append(c)
-          } else {
-            sb.append(c)
+        path = "tools/base/lint/studio-checks/src/test/java/com/android/tools/lint/checks/studio/TerminologyDetectorTest.kt",
+        startMarker = "<\u0075nicode>",
+        endMarker = "</\u0075nicode>",
+        replacementFunction = { source ->
+          val sb = StringBuilder()
+          var escaped = false
+          var i = 0
+          while (i < source.length) {
+            val c = source[i]
+            if (c == '\\' && source[i + 1] == 'u') {
+              val unicode = source.substring(i + 2, i + 6)
+              val hex: Int = unicode.toInt(16)
+              sb.append(hex.toChar())
+              i += 6
+              continue
+            } else if (c == '\\') {
+              escaped = !escaped
+              sb.append(c)
+            } else {
+              sb.append(c)
+            }
+            i++
           }
-          i++
-        }
-        sb.toString()
-      },
+          sb.toString()
+        },
     )
   }
 
   /** Replaces source ranges in the source tree. */
   @Suppress("SameParameterValue")
   private fun replace(
-    path: String,
-    startMarker: String,
-    endMarker: String,
-    replacementFunction: (String) -> String,
+      path: String,
+      startMarker: String,
+      endMarker: String,
+      replacementFunction: (String) -> String,
   ): Boolean {
     // Set $ADT_SOURCE_TREE to point to your git repository root; if done, then
     // this will replace the updated source into the source file in place

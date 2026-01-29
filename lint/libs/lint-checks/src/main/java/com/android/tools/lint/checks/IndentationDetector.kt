@@ -51,20 +51,19 @@ import org.jetbrains.uast.skipParenthesizedExprDown
 import org.jetbrains.uast.util.isAssignment
 
 /**
- * Looks for likely mistakes suggested by indentation. This isn't common if the codebase is using
- * formatting tools, but can be useful when you're editing in the IDE and haven't yet formatted.
+ * Looks for likely mistakes suggested by indentation. This isn't common if the codebase is using formatting tools, but can be useful when
+ * you're editing in the IDE and haven't yet formatted.
  */
 class IndentationDetector : Detector(), SourceCodeScanner {
   companion object Issues {
-    private val IMPLEMENTATION =
-      Implementation(IndentationDetector::class.java, Scope.JAVA_FILE_SCOPE)
+    private val IMPLEMENTATION = Implementation(IndentationDetector::class.java, Scope.JAVA_FILE_SCOPE)
 
     val ALWAYS_RUN_OPTION =
-      BooleanOption(
-        "always-run",
-        "Whether this check should be included while editing",
-        false,
-        """
+        BooleanOption(
+            "always-run",
+            "Whether this check should be included while editing",
+            false,
+            """
                 While you're editing, it's common to have a temporary situation where \
                 you have suspicious indentation scenarios -- e.g. you start typing an \
                 `if` statement on the line above something you want to make conditional, and \
@@ -74,15 +73,15 @@ class IndentationDetector : Detector(), SourceCodeScanner {
                 it looks like the file has not been recently edited. With this option, you \
                 can turn it on in all cases.
                 """,
-      )
+        )
 
     @JvmField
     val ISSUE =
-      Issue.create(
-          id = "SuspiciousIndentation",
-          briefDescription = "Suspicious indentation",
-          explanation =
-            """
+        Issue.create(
+                id = "SuspiciousIndentation",
+                briefDescription = "Suspicious indentation",
+                explanation =
+                    """
                 This check looks for cases where the indentation suggests a grouping that isn't actually \
                 there in the code. A common example of this would be something like
                 ```kotlin
@@ -93,13 +92,13 @@ class IndentationDetector : Detector(), SourceCodeScanner {
                 Here, the `column = 0` line will be executed every single time, not just if the condition \
                 is true.
                 """,
-          category = Category.CORRECTNESS,
-          priority = 6,
-          severity = Severity.ERROR,
-          implementation = IMPLEMENTATION,
-        )
-        .setAliases(listOf("SuspiciousIndentAfterControlStatement"))
-        .setOptions(listOf(ALWAYS_RUN_OPTION))
+                category = Category.CORRECTNESS,
+                priority = 6,
+                severity = Severity.ERROR,
+                implementation = IMPLEMENTATION,
+            )
+            .setAliases(listOf("SuspiciousIndentAfterControlStatement"))
+            .setOptions(listOf(ALWAYS_RUN_OPTION))
   }
 
   override fun getApplicableUastTypes(): List<Class<out UElement>> {
@@ -111,10 +110,10 @@ class IndentationDetector : Detector(), SourceCodeScanner {
     // https://issuetracker.google.com/230626781
     // and the documentation for [IN_EDITOR_OPTION].
     if (
-      LintClient.isStudio &&
-        !ALWAYS_RUN_OPTION.getValue(context) &&
-        Scope.checkSingleFile(context.driver.scope) &&
-        context.client.isEdited(context.file, true)
+        LintClient.isStudio &&
+            !ALWAYS_RUN_OPTION.getValue(context) &&
+            Scope.checkSingleFile(context.driver.scope) &&
+            context.client.isEdited(context.file, true)
     ) {
       // See if it looks like the file has not been modified
       return null
@@ -147,33 +146,31 @@ class IndentationDetector : Detector(), SourceCodeScanner {
         }
         val indent = startOffset - lineStart
         val body =
-          when (statement) {
-            is UIfExpression -> {
-              // TODO: Instead, visit BOTH of these
-              val elseExpression = statement.elseExpression
-              if (elseExpression != null && elseExpression !is UastEmptyExpression) elseExpression
-              else statement.thenExpression
+            when (statement) {
+              is UIfExpression -> {
+                // TODO: Instead, visit BOTH of these
+                val elseExpression = statement.elseExpression
+                if (elseExpression != null && elseExpression !is UastEmptyExpression) elseExpression else statement.thenExpression
+              }
+              is ULoopExpression -> statement.body
+              else -> null
             }
-            is ULoopExpression -> statement.body
-            else -> null
-          }
         if (
-          body != null &&
-            body !is UBlockExpression &&
-            body.sourcePsi != null &&
-            // Sometimes code will align if/else's like this:
-            //   if something
-            //   else //noinspection blah blah blah
-            //   if something-else
-            // and here the last if is really relative to the else, but we're okay in this scenario
-            (statement !is UIfExpression || body !is UIfExpression) &&
-            // If we have something like
-            //   if something
-            //   return true
-            //   return false
-            // while not great, it's obvious that the first return isn't unconditional
-            (body !is UJumpExpression ||
-              i < expressions.size - 1 && expressions[i + 1] !is UJumpExpression)
+            body != null &&
+                body !is UBlockExpression &&
+                body.sourcePsi != null &&
+                // Sometimes code will align if/else's like this:
+                //   if something
+                //   else //noinspection blah blah blah
+                //   if something-else
+                // and here the last if is really relative to the else, but we're okay in this scenario
+                (statement !is UIfExpression || body !is UIfExpression) &&
+                // If we have something like
+                //   if something
+                //   return true
+                //   return false
+                // while not great, it's obvious that the first return isn't unconditional
+                (body !is UJumpExpression || i < expressions.size - 1 && expressions[i + 1] !is UJumpExpression)
         ) {
           val nestedStart = body.sourcePsi!!.startOffset
           val nestedLineStart = findLineBeginBackwards(nestedStart)
@@ -182,10 +179,10 @@ class IndentationDetector : Detector(), SourceCodeScanner {
             val secondary = getLineLocation(sourcePsi)
             val location = getLineLocation(body).withSecondary(secondary, "Previous statement here")
             context.report(
-              ISSUE,
-              node,
-              location,
-              "Suspicious indentation: This is conditionally executed; expected it to be indented",
+                ISSUE,
+                node,
+                location,
+                "Suspicious indentation: This is conditionally executed; expected it to be indented",
             )
           }
         }
@@ -200,39 +197,33 @@ class IndentationDetector : Detector(), SourceCodeScanner {
           // !=0: some debug logging conventions place single line debug statements in column 0,
           // so it's normal for non-debugging code to follow and to be indented relative to it
           val prevExpression = expressions[i - 1]
-          if (
-            !hasBenignPredecessor(expressions, i) && !conditionCommentedOut(lineStart, prevIndent)
-          ) {
+          if (!hasBenignPredecessor(expressions, i) && !conditionCommentedOut(lineStart, prevIndent)) {
             val secondary = getLineLocation(prevExpression)
-            val location =
-              getLineLocation(statement).withSecondary(secondary, "Previous statement here")
+            val location = getLineLocation(statement).withSecondary(secondary, "Previous statement here")
             val prevSummary = describeElement(prevExpression)
-            val controlExpression =
-              expressions[i - 1].skipParenthesizedExprDown().isControlExpression()
+            val controlExpression = expressions[i - 1].skipParenthesizedExprDown().isControlExpression()
             val nestedUnder = if (controlExpression) "nested under" else "continuing"
-            val message =
-              "Suspicious indentation: This is indented but is not $nestedUnder the previous expression (`$prevSummary`...)"
+            val message = "Suspicious indentation: This is indented but is not $nestedUnder the previous expression (`$prevSummary`...)"
             context.report(ISSUE, node, location, message)
             return
           }
         } else if (indent <= prevIndent) {
           val delta = getIndentationDeltaOffset(prevStart, lineStart, indent)
           if (delta != -1) {
-            val prevLineLoc =
-              Location.create(context.file, contents, prevStart + delta, prevStart + indent)
+            val prevLineLoc = Location.create(context.file, contents, prevStart + delta, prevStart + indent)
             val location =
-              Location.create(context.file, contents, lineStart + delta, lineStart + indent)
-                .withSecondary(prevLineLoc, "Previous line indentation here")
+                Location.create(context.file, contents, lineStart + delta, lineStart + indent)
+                    .withSecondary(prevLineLoc, "Previous line indentation here")
             val prevChar = contents[prevStart + delta].describe()
             val currChar = contents[lineStart + delta].describe()
             val incident =
-              Incident(
-                  ISSUE,
-                  node,
-                  location,
-                  "The indentation string here is different from on the previous line (`$prevChar` vs `$currChar`)",
-                )
-                .overrideSeverity(Severity.WARNING)
+                Incident(
+                        ISSUE,
+                        node,
+                        location,
+                        "The indentation string here is different from on the previous line (`$prevChar` vs `$currChar`)",
+                    )
+                    .overrideSeverity(Severity.WARNING)
             context.report(incident)
             return
           }
@@ -258,10 +249,7 @@ class IndentationDetector : Detector(), SourceCodeScanner {
       return false
     }
 
-    /**
-     * Pick out the source code from the beginning of an element, attempting to break at a symbol
-     * instead of mid-word.
-     */
+    /** Pick out the source code from the beginning of an element, attempting to break at a symbol instead of mid-word. */
     private fun describeElement(expression: UExpression): String {
       val min = 10
       val max = 20
@@ -281,19 +269,15 @@ class IndentationDetector : Detector(), SourceCodeScanner {
     }
 
     /** Is this a control expression where a non-indented next element is potentially confusing? */
-    private fun UElement.isControlExpression(): Boolean =
-      this is UIfExpression || this is ULoopExpression && this !is UDoWhileExpression
+    private fun UElement.isControlExpression(): Boolean = this is UIfExpression || this is ULoopExpression && this !is UDoWhileExpression
 
-    private fun UElement.isClosedWithBraces(): Boolean =
-      this.sourcePsi?.text?.endsWith("}") ?: false
+    private fun UElement.isClosedWithBraces(): Boolean = this.sourcePsi?.text?.endsWith("}") ?: false
 
     /**
-     * Given a list of expressions, and a pointer (well, index) pointing to a specific expression in
-     * that list of siblings, returns true if the previous sibling is "benign if indented
-     * differently", in other words that it's unlikely that even if these siblings have different
-     * indentations, users would look at the code and be confused about whether the second one
-     * depends on the first one. For a simple example, if there's an explicit close brace, that
-     * makes it clear.
+     * Given a list of expressions, and a pointer (well, index) pointing to a specific expression in that list of siblings, returns true if
+     * the previous sibling is "benign if indented differently", in other words that it's unlikely that even if these siblings have
+     * different indentations, users would look at the code and be confused about whether the second one depends on the first one. For a
+     * simple example, if there's an explicit close brace, that makes it clear.
      */
     private fun hasBenignPredecessor(expressions: List<UExpression>, index: Int): Boolean {
       assert(index > 0)
@@ -304,9 +288,8 @@ class IndentationDetector : Detector(), SourceCodeScanner {
       if (prev is UDeclarationsExpression || prev.isAssignment()) {
         val curr = expressions[index]
         if (
-          curr.isAssignment() ||
-            curr is UPrefixExpression &&
-              (curr.operator == UastPrefixOperator.INC || curr.operator == UastPrefixOperator.DEC)
+            curr.isAssignment() ||
+                curr is UPrefixExpression && (curr.operator == UastPrefixOperator.INC || curr.operator == UastPrefixOperator.DEC)
         ) {
           return true
         }
@@ -332,10 +315,7 @@ class IndentationDetector : Detector(), SourceCodeScanner {
       }
     }
 
-    /**
-     * Returns the location for the given node, taking the shortest span of the whole node and its
-     * first line
-     */
+    /** Returns the location for the given node, taking the shortest span of the whole node and its first line */
     private fun getLineLocation(node: UElement): Location {
       return getLineLocation(node.sourcePsi!!)
     }
@@ -358,8 +338,8 @@ class IndentationDetector : Detector(), SourceCodeScanner {
     }
 
     /**
-     * From the given offset, return the offset of the first character on the same line, unless
-     * there is some other text earlier on the line (in that case return -1)
+     * From the given offset, return the offset of the first character on the same line, unless there is some other text earlier on the line
+     * (in that case return -1)
      */
     private fun findLineBeginBackwards(offset: Int): Int {
       if (offset > contents.length) {
@@ -388,9 +368,9 @@ class IndentationDetector : Detector(), SourceCodeScanner {
     }
 
     private fun getIndentationDeltaOffset(
-      prevLineOffset: Int,
-      currLineOffset: Int,
-      indentationLength: Int,
+        prevLineOffset: Int,
+        currLineOffset: Int,
+        indentationLength: Int,
     ): Int {
       for (i in 0 until indentationLength) {
         if (contents[prevLineOffset + i] != contents[currLineOffset + i]) {

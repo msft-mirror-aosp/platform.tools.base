@@ -25,10 +25,7 @@ import com.android.tools.lint.detector.api.Severity
 import com.android.tools.lint.detector.api.XmlContext
 import org.w3c.dom.Element
 
-/**
- * Check which looks for potential errors in declarations of BottomAppBar, such as having the wrong
- * parent.
- */
+/** Check which looks for potential errors in declarations of BottomAppBar, such as having the wrong parent. */
 class BottomAppBarDetector : LayoutDetector() {
   override fun getApplicableElements(): Collection<String> {
     return listOf(OLD_BOTTOM_APP_BAR, NEW_BOTTOM_APP_BAR)
@@ -38,39 +35,38 @@ class BottomAppBarDetector : LayoutDetector() {
     val parentLayout = element.parentNode?.nodeName
     if (parentLayout != OLD_COORDINATOR_LAYOUT && parentLayout != NEW_COORDINATOR_LAYOUT) {
       val coordinatorLayout =
-        if (element.tagName == OLD_BOTTOM_APP_BAR) {
-          OLD_COORDINATOR_LAYOUT
-        } else {
-          NEW_COORDINATOR_LAYOUT
-        }
+          if (element.tagName == OLD_BOTTOM_APP_BAR) {
+            OLD_COORDINATOR_LAYOUT
+          } else {
+            NEW_COORDINATOR_LAYOUT
+          }
       context.report(
-        ISSUE,
-        element,
-        context.getNameLocation(element),
-        "This `BottomAppBar` must be wrapped in a `CoordinatorLayout` (`$coordinatorLayout`)",
+          ISSUE,
+          element,
+          context.getNameLocation(element),
+          "This `BottomAppBar` must be wrapped in a `CoordinatorLayout` (`$coordinatorLayout`)",
       )
     }
   }
 
   companion object {
-    private val IMPLEMENTATION =
-      Implementation(BottomAppBarDetector::class.java, Scope.RESOURCE_FILE_SCOPE)
+    private val IMPLEMENTATION = Implementation(BottomAppBarDetector::class.java, Scope.RESOURCE_FILE_SCOPE)
 
     /** Wrong parent etc. */
     @JvmField
     val ISSUE =
-      Issue.create(
-        id = "BottomAppBar",
-        briefDescription = "BottomAppBar Problems",
-        explanation =
-          """
+        Issue.create(
+            id = "BottomAppBar",
+            briefDescription = "BottomAppBar Problems",
+            explanation =
+                """
             The `BottomAppBar` widget must be placed within a `CoordinatorLayout`.
             """,
-        category = Category.CORRECTNESS,
-        priority = 9,
-        severity = Severity.ERROR,
-        implementation = IMPLEMENTATION,
-      )
+            category = Category.CORRECTNESS,
+            priority = 9,
+            severity = Severity.ERROR,
+            implementation = IMPLEMENTATION,
+        )
 
     private const val OLD_BOTTOM_APP_BAR = "android.support.design.bottomappbar.BottomAppBar"
     private const val NEW_BOTTOM_APP_BAR = "com.google.android.material.bottomappbar.BottomAppBar"

@@ -34,22 +34,21 @@ import org.jetbrains.uast.UReferenceExpression
 import org.jetbrains.uast.tryResolve
 
 /**
- * Looks for places where you accidentally pass a path in as a regular expression; this will fail on
- * Windows where the path separator is \, an escape.
+ * Looks for places where you accidentally pass a path in as a regular expression; this will fail on Windows where the path separator is \,
+ * an escape.
  */
 class RegexpPathDetector : Detector(), SourceCodeScanner {
 
   companion object Issues {
-    private val IMPLEMENTATION =
-      Implementation(RegexpPathDetector::class.java, Scope.JAVA_FILE_SCOPE)
+    private val IMPLEMENTATION = Implementation(RegexpPathDetector::class.java, Scope.JAVA_FILE_SCOPE)
 
     @JvmField
     val ISSUE =
-      Issue.create(
-        id = "RegexPath",
-        briefDescription = "Using Path as Regular Expression",
-        explanation =
-          """
+        Issue.create(
+            id = "RegexPath",
+            briefDescription = "Using Path as Regular Expression",
+            explanation =
+                """
                 Be careful when passing in a path into a method which expects \
                 a regular expression. Your code may work on Linux or OSX, but on \
                 Windows the file separator is a back slash, which in a regular \
@@ -57,22 +56,22 @@ class RegexpPathDetector : Detector(), SourceCodeScanner {
 
                 For more info, see `go/files-howto`.
             """,
-        category = CROSS_PLATFORM,
-        priority = 6,
-        severity = Severity.ERROR,
-        platforms = STUDIO_PLATFORMS,
-        implementation = IMPLEMENTATION,
-      )
+            category = CROSS_PLATFORM,
+            priority = 6,
+            severity = Severity.ERROR,
+            platforms = STUDIO_PLATFORMS,
+            implementation = IMPLEMENTATION,
+        )
   }
 
   override fun getApplicableMethodNames(): List<String>? =
-    //  Common APIs which take regular expressions:
-    //    Pattern.compile(regex, ...)
-    //    String.split(regex, ...)
-    //    String.replaceAll(regex, ...)
-    //    String.replaceFirst(String regex, ...)
-    // TODO: kotlin.text.Regex constructor!
-    listOf("compile", "split", "replaceAll", "replaceFirst")
+      //  Common APIs which take regular expressions:
+      //    Pattern.compile(regex, ...)
+      //    String.split(regex, ...)
+      //    String.replaceAll(regex, ...)
+      //    String.replaceFirst(String regex, ...)
+      // TODO: kotlin.text.Regex constructor!
+      listOf("compile", "split", "replaceAll", "replaceFirst")
 
   override fun visitMethodCall(context: JavaContext, node: UCallExpression, method: PsiMethod) {
     val evaluator = context.evaluator
@@ -99,12 +98,12 @@ class RegexpPathDetector : Detector(), SourceCodeScanner {
     val arg = node.valueArguments.firstOrNull() ?: return
     if (isPath(arg)) {
       context.report(
-        ISSUE,
-        node,
-        context.getLocation(node),
-        "Passing a path to a parameter which expects a regular expression " +
-          "is dangerous; on Windows path separators will look like escapes. " +
-          "Wrap path with `Pattern.quote`.",
+          ISSUE,
+          node,
+          context.getLocation(node),
+          "Passing a path to a parameter which expects a regular expression " +
+              "is dangerous; on Windows path separators will look like escapes. " +
+              "Wrap path with `Pattern.quote`.",
       )
     }
   }
@@ -136,19 +135,19 @@ class RegexpPathDetector : Detector(), SourceCodeScanner {
     } else if (resolved is PsiVariable) {
       // TODO: See if it's initialized
       val lastAssignment =
-        UastLintUtils.findLastAssignment(resolved, arg)
-          ?: run {
-            // TODO: look at initializer
-            return false
-          }
+          UastLintUtils.findLastAssignment(resolved, arg)
+              ?: run {
+                // TODO: look at initializer
+                return false
+              }
 
       if (lastAssignment is UCallExpression && lastAssignment.methodName == "getPath") {
         return true
       }
       if (
-        lastAssignment is UQualifiedReferenceExpression &&
-          lastAssignment.selector is UCallExpression &&
-          (lastAssignment.selector as UCallExpression).methodName == "getPath"
+          lastAssignment is UQualifiedReferenceExpression &&
+              lastAssignment.selector is UCallExpression &&
+              (lastAssignment.selector as UCallExpression).methodName == "getPath"
       ) {
         return true
       }

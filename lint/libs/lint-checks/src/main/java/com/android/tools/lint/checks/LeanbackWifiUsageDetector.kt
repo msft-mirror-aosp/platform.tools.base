@@ -65,23 +65,21 @@ class LeanbackWifiUsageDetector : Detector(), XmlScanner {
     }
 
     val wifiFeatureNodeRequired =
-      wifiFeatureNode?.let { wifiNode ->
-        wifiNode.getAttributeNS(ANDROID_URI, ATTR_REQUIRED) != VALUE_FALSE
-      } ?: false
+        wifiFeatureNode?.let { wifiNode -> wifiNode.getAttributeNS(ANDROID_URI, ATTR_REQUIRED) != VALUE_FALSE } ?: false
 
     if (wifiFeatureNode != null) {
       if (wifiFeatureNodeRequired) {
         context.report(
-          ISSUE,
-          context.getLocation(wifiFeatureNode),
-          "Requiring `android.hardware.wifi` limits app availability on TVs that support only Ethernet",
+            ISSUE,
+            context.getLocation(wifiFeatureNode),
+            "Requiring `android.hardware.wifi` limits app availability on TVs that support only Ethernet",
         )
       }
     } else if (wifiPermissionsNode != null) {
       context.report(
-        ISSUE,
-        context.getLocation(wifiPermissionsNode),
-        "Requiring Wifi permissions limits app availability on TVs that support only Ethernet",
+          ISSUE,
+          context.getLocation(wifiPermissionsNode),
+          "Requiring Wifi permissions limits app availability on TVs that support only Ethernet",
       )
     }
   }
@@ -101,11 +99,11 @@ class LeanbackWifiUsageDetector : Detector(), XmlScanner {
 
     @JvmField
     val ISSUE =
-      Issue.create(
-        id = "LeanbackUsesWifi",
-        briefDescription = "Using android.hardware.wifi on TV",
-        explanation =
-          """
+        Issue.create(
+            id = "LeanbackUsesWifi",
+            briefDescription = "Using android.hardware.wifi on TV",
+            explanation =
+                """
                 WiFi is not required for Android TV and many devices connect to the internet via \
                 alternative methods e.g. Ethernet.
 
@@ -117,12 +115,11 @@ class LeanbackWifiUsageDetector : Detector(), XmlScanner {
                 `NetworkCapabilities#NET_CAPABILITY_NOT_METERED` and \
                 `NetworkCapabilities#NET_CAPABILITY_NOT_ROAMING.`
                 """,
-        category = Category.CORRECTNESS,
-        priority = 5,
-        severity = Severity.WARNING,
-        implementation =
-          Implementation(LeanbackWifiUsageDetector::class.java, Scope.MANIFEST_SCOPE),
-        androidSpecific = true,
-      )
+            category = Category.CORRECTNESS,
+            priority = 5,
+            severity = Severity.WARNING,
+            implementation = Implementation(LeanbackWifiUsageDetector::class.java, Scope.MANIFEST_SCOPE),
+            androidSpecific = true,
+        )
   }
 }

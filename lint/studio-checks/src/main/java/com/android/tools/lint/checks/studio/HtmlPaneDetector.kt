@@ -44,32 +44,31 @@ class HtmlPaneDetector : Detector(), SourceCodeScanner {
 
     @JvmField
     val ISSUE =
-      Issue.create(
-        id = "HtmlPaneColors",
-        briefDescription = "Incorrect HTML JEditorPane",
-        explanation =
-          """
+        Issue.create(
+            id = "HtmlPaneColors",
+            briefDescription = "Incorrect HTML JEditorPane",
+            explanation =
+                """
                 If you construct `JEditorPane` and just set the content type \
                 to `text/html` (either into the constructor or via an explicit setter), \
                 the UI may not use correct colors in all themes. Instead you should \
                 make sure you use the HTML Editor kit, or better yet, directly \
                 use `SwingHelper#createHtmlViewer`.
                 """,
-        category = CORRECTNESS,
-        severity = Severity.ERROR,
-        platforms = STUDIO_PLATFORMS,
-        implementation = IMPLEMENTATION,
-        moreInfo = "https://issuetracker.google.com/157600808",
-      )
+            category = CORRECTNESS,
+            severity = Severity.ERROR,
+            platforms = STUDIO_PLATFORMS,
+            implementation = IMPLEMENTATION,
+            moreInfo = "https://issuetracker.google.com/157600808",
+        )
   }
 
-  override fun getApplicableConstructorTypes(): List<String>? =
-    listOf("javax.swing.JEditorPane", "javax.swing.JTextPane")
+  override fun getApplicableConstructorTypes(): List<String>? = listOf("javax.swing.JEditorPane", "javax.swing.JTextPane")
 
   override fun visitConstructor(
-    context: JavaContext,
-    node: UCallExpression,
-    constructor: PsiMethod,
+      context: JavaContext,
+      node: UCallExpression,
+      constructor: PsiMethod,
   ) {
     val arguments = node.valueArguments
     if (arguments.size == 2) {
@@ -88,20 +87,20 @@ class HtmlPaneDetector : Detector(), SourceCodeScanner {
   }
 
   private fun checkContentTypeWithoutEditorKit(
-    context: JavaContext,
-    contentTypeParameter: UExpression,
-    locationElement: UElement,
+      context: JavaContext,
+      contentTypeParameter: UExpression,
+      locationElement: UElement,
   ) {
     val contentType = ConstantEvaluator.evaluate(context, contentTypeParameter)
     if (contentType == "text/html" && !setsEditorKit(contentTypeParameter)) {
       context.report(
-        ISSUE,
-        contentTypeParameter,
-        context.getLocation(locationElement),
-        "Constructing an HTML JEditorPane directly can lead to subtle theming " +
-          "bugs; either set the editor kit directly " +
-          "(`setEditorKit(UIUtil.getHTMLEditorKit())`) or better yet use " +
-          "`SwingHelper.createHtmlViewer`",
+          ISSUE,
+          contentTypeParameter,
+          context.getLocation(locationElement),
+          "Constructing an HTML JEditorPane directly can lead to subtle theming " +
+              "bugs; either set the editor kit directly " +
+              "(`setEditorKit(UIUtil.getHTMLEditorKit())`) or better yet use " +
+              "`SwingHelper.createHtmlViewer`",
       )
     }
   }

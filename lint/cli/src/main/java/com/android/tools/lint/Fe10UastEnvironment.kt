@@ -105,17 +105,16 @@ import org.jetbrains.uast.kotlin.internal.UastAnalysisHandlerExtension
 /**
  * This class is FE1.0 version of [UastEnvironment].
  *
- * After FIR (Frontend IR) is developed, the old frontend is retroactively named as FE1.0. So is
- * Kotlin UAST based on it.
+ * After FIR (Frontend IR) is developed, the old frontend is retroactively named as FE1.0. So is Kotlin UAST based on it.
  */
 class Fe10UastEnvironment
 private constructor(
-  // Luckily, the Kotlin compiler already has the machinery for creating an IntelliJ
-  // application environment (because Kotlin uses IntelliJ to parse Java). So most of
-  // the work here is delegated to the Kotlin compiler.
-  private val kotlinCompilerEnv: KotlinCoreEnvironment,
-  override val projectDisposable: Disposable,
-  override val isKMP: Boolean,
+    // Luckily, the Kotlin compiler already has the machinery for creating an IntelliJ
+    // application environment (because Kotlin uses IntelliJ to parse Java). So most of
+    // the work here is delegated to the Kotlin compiler.
+    private val kotlinCompilerEnv: KotlinCoreEnvironment,
+    override val projectDisposable: Disposable,
+    override val isKMP: Boolean,
 ) : UastEnvironment {
   override val coreAppEnv: CoreApplicationEnvironment
     get() = kotlinCompilerEnv.projectEnvironment.environment
@@ -128,9 +127,7 @@ private constructor(
 
   private val klibs = mutableListOf<KotlinLibrary>()
 
-  class Configuration
-  private constructor(override val kotlinCompilerConfig: CompilerConfiguration) :
-    UastEnvironment.Configuration {
+  class Configuration private constructor(override val kotlinCompilerConfig: CompilerConfiguration) : UastEnvironment.Configuration {
     override var javaLanguageLevel: LanguageLevel? = null
 
     // klibs indexed by paths to avoid duplicates
@@ -141,25 +138,22 @@ private constructor(
 
     // Legacy merging behavior for Fe 1.0
     override fun addModules(
-      modules: List<UastEnvironment.Module>,
-      bootClassPaths: Iterable<File>?,
+        modules: List<UastEnvironment.Module>,
+        bootClassPaths: Iterable<File>?,
     ) {
       this.modules.addAll(modules)
       bootClassPaths?.let(this.classPaths::addAll)
 
       kotlinLanguageLevel =
-        modules.map(UastEnvironment.Module::kotlinLanguageLevel).reduce { r, t ->
-          // TODO: How to accumulate `analysisFlags` and `specificFeatures` ?
-          LanguageVersionSettingsImpl(
-            r.languageVersion.coerceAtLeast(t.languageVersion),
-            r.apiVersion.coerceAtLeast(t.apiVersion),
-          )
-        }
-      UastEnvironment.Configuration.mergeRoots(modules, bootClassPaths).let { (sources, classPaths)
-        ->
-        val allKlibPaths =
-          modules.flatMap { it.klibs.keys.map(File::getAbsolutePath) } +
-            kotlinCompilerConfig.getKlibPaths()
+          modules.map(UastEnvironment.Module::kotlinLanguageLevel).reduce { r, t ->
+            // TODO: How to accumulate `analysisFlags` and `specificFeatures` ?
+            LanguageVersionSettingsImpl(
+                r.languageVersion.coerceAtLeast(t.languageVersion),
+                r.apiVersion.coerceAtLeast(t.apiVersion),
+            )
+          }
+      UastEnvironment.Configuration.mergeRoots(modules, bootClassPaths).let { (sources, classPaths) ->
+        val allKlibPaths = modules.flatMap { it.klibs.keys.map(File::getAbsolutePath) } + kotlinCompilerConfig.getKlibPaths()
         for (p in allKlibPaths) {
           klibs.computeIfAbsent(p, ::kotlinLibrary)
         }
@@ -170,17 +164,15 @@ private constructor(
 
     companion object {
       @JvmStatic
-      fun create(enableKotlinScripting: Boolean): Configuration =
-        Configuration(createKotlinCompilerConfig(enableKotlinScripting))
+      fun create(enableKotlinScripting: Boolean): Configuration = Configuration(createKotlinCompilerConfig(enableKotlinScripting))
     }
   }
 
   /**
    * Analyzes the given files so that PSI/UAST resolve works correctly.
    *
-   * For now, only Kotlin files need to be analyzed upfront; Java code is resolved lazily. However,
-   * this method must still be called for Java-only projects in order to properly initialize the PSI
-   * machinery.
+   * For now, only Kotlin files need to be analyzed upfront; Java code is resolved lazily. However, this method must still be called for
+   * Java-only projects in order to properly initialize the PSI machinery.
    *
    * Calling this function multiple times clears previous analysis results.
    */
@@ -213,12 +205,12 @@ private constructor(
     //  partial compilation by giving the Kotlin compiler access to the compiled output
     //  of the module being analyzed. See KotlinToJVMBytecodeCompiler for an example.
     TopDownAnalyzerFacadeForJVM.analyzeFilesWithJavaIntegration(
-      ideaProject,
-      ktPsiFiles,
-      CliBindingTraceForLint(ideaProject),
-      kotlinCompilerConfig,
-      kotlinCompilerEnv::createPackagePartProvider,
-      klibList = klibs,
+        ideaProject,
+        ktPsiFiles,
+        CliBindingTraceForLint(ideaProject),
+        kotlinCompilerConfig,
+        kotlinCompilerEnv::createPackagePartProvider,
+        klibList = klibs,
     )
 
     perfManager?.notifyPhaseFinished(PhaseType.Analysis)
@@ -239,9 +231,7 @@ private constructor(
     fun create(config: Configuration): Fe10UastEnvironment {
       val parentDisposable = Disposer.newDisposable("Fe10UastEnvironment.create")
       val kotlinEnv = createKotlinCompilerEnv(parentDisposable, config)
-      return Fe10UastEnvironment(kotlinEnv, parentDisposable, config.isKMP).apply {
-        klibs.addAll(config.klibs.values)
-      }
+      return Fe10UastEnvironment(kotlinEnv, parentDisposable, config.isKMP).apply { klibs.addAll(config.klibs.values) }
     }
   }
 }
@@ -254,8 +244,8 @@ private fun createKotlinCompilerConfig(enableKotlinScripting: Boolean): Compiler
   if (enableKotlinScripting) {
     @Suppress("DEPRECATION_ERROR") // Keep using until K1 is deleted entirely.
     config.add(
-      org.jetbrains.kotlin.compiler.plugin.ComponentRegistrar.PLUGIN_COMPONENT_REGISTRARS,
-      ScriptingCompilerConfigurationComponentRegistrar(),
+        org.jetbrains.kotlin.compiler.plugin.ComponentRegistrar.PLUGIN_COMPONENT_REGISTRARS,
+        ScriptingCompilerConfigurationComponentRegistrar(),
     )
   }
 
@@ -263,15 +253,15 @@ private fun createKotlinCompilerConfig(enableKotlinScripting: Boolean): Compiler
 }
 
 private fun createKotlinCompilerEnv(
-  parentDisposable: Disposable,
-  config: Fe10UastEnvironment.Configuration,
+    parentDisposable: Disposable,
+    config: Fe10UastEnvironment.Configuration,
 ): KotlinCoreEnvironment {
   val env =
-    KotlinCoreEnvironment.createForProduction(
-      parentDisposable,
-      config.kotlinCompilerConfig,
-      JVM_CONFIG_FILES,
-    )
+      KotlinCoreEnvironment.createForProduction(
+          parentDisposable,
+          config.kotlinCompilerConfig,
+          JVM_CONFIG_FILES,
+      )
   appLock.withLock { configureFe10ApplicationEnvironment(env.projectEnvironment.environment) }
   configureFe10ProjectEnvironment(env.projectEnvironment, config)
 
@@ -279,15 +269,15 @@ private fun createKotlinCompilerEnv(
 }
 
 private fun configureFe10ProjectEnvironment(
-  env: KotlinCoreProjectEnvironment,
-  config: Fe10UastEnvironment.Configuration,
+    env: KotlinCoreProjectEnvironment,
+    config: Fe10UastEnvironment.Configuration,
 ) {
   val project = env.project
   // UAST support.
   AnalysisHandlerExtension.registerExtension(project, UastAnalysisHandlerExtension())
   project.registerService(
-    KotlinUastResolveProviderService::class.java,
-    CliKotlinUastResolveProviderService::class.java,
+      KotlinUastResolveProviderService::class.java,
+      CliKotlinUastResolveProviderService::class.java,
   )
 
   configureProjectEnvironment(project, config)
@@ -297,8 +287,8 @@ private fun configureFe10ProjectEnvironment(
 
 @OptIn(KaImplementationDetail::class)
 private fun configureAnalysisApiServices(
-  env: KotlinCoreProjectEnvironment,
-  config: Fe10UastEnvironment.Configuration,
+    env: KotlinCoreProjectEnvironment,
+    config: Fe10UastEnvironment.Configuration,
 ) {
   val project = env.project
   AnalysisApiFe10ServiceRegistrar.registerProjectServices(project)
@@ -307,18 +297,18 @@ private fun configureAnalysisApiServices(
   // Analysis API Base, i.e., base services for FE1.0 and FIR
   // But, for FIR, AA session builder already register these
   project.registerService(
-    KotlinModificationTrackerFactory::class.java,
-    KotlinStandaloneModificationTrackerFactory::class.java,
+      KotlinModificationTrackerFactory::class.java,
+      KotlinStandaloneModificationTrackerFactory::class.java,
   )
 
   project.registerService(
-    KotlinLifetimeTokenFactory::class.java,
-    KotlinAlwaysAccessibleLifetimeTokenFactory::class.java,
+      KotlinLifetimeTokenFactory::class.java,
+      KotlinAlwaysAccessibleLifetimeTokenFactory::class.java,
   )
 
   project.registerService(
-    SmartTypePointerManager::class.java,
-    SmartTypePointerManagerImpl::class.java,
+      SmartTypePointerManager::class.java,
+      SmartTypePointerManagerImpl::class.java,
   )
   project.registerService(SmartPointerManager::class.java, SmartPointerManagerImpl::class.java)
 
@@ -327,58 +317,54 @@ private fun configureAnalysisApiServices(
   // (due to the unisolated test modes, see b/410029606).
   // Using it as a delegate resolver causes the stack overflow as it will call
   // [KaBaseJavaModuleResolver.getAnnotationsForModuleOwnerOfClass] recursively.
-  var delegateJavaModuleResolver =
-    project.getService(JavaModuleResolver::class.java) as? CliJavaModuleResolver
+  var delegateJavaModuleResolver = project.getService(JavaModuleResolver::class.java) as? CliJavaModuleResolver
   if (delegateJavaModuleResolver == null) {
-    val javaFileManager =
-      project.getService(JavaFileManager::class.java) as KotlinCliJavaFileManagerImpl
+    val javaFileManager = project.getService(JavaFileManager::class.java) as KotlinCliJavaFileManagerImpl
     val javaModuleFinder = CliJavaModuleFinder(null, null, javaFileManager, project, null)
     val javaModuleGraph = JavaModuleGraph(javaModuleFinder)
     delegateJavaModuleResolver =
-      CliJavaModuleResolver(
-        javaModuleGraph,
-        emptyList(),
-        javaModuleFinder.systemModules.toList(),
-        project,
-      )
+        CliJavaModuleResolver(
+            javaModuleGraph,
+            emptyList(),
+            javaModuleFinder.systemModules.toList(),
+            project,
+        )
   }
   project.registerService(
-    KotlinJavaModuleAccessibilityChecker::class.java,
-    KotlinStandaloneJavaModuleAccessibilityChecker(delegateJavaModuleResolver),
+      KotlinJavaModuleAccessibilityChecker::class.java,
+      KotlinStandaloneJavaModuleAccessibilityChecker(delegateJavaModuleResolver),
   )
   project.registerService(
-    KotlinJavaModuleAnnotationsProvider::class.java,
-    KotlinStandaloneJavaModuleAnnotationsProvider(delegateJavaModuleResolver),
+      KotlinJavaModuleAnnotationsProvider::class.java,
+      KotlinStandaloneJavaModuleAnnotationsProvider(delegateJavaModuleResolver),
   )
 
   val projectStructureProvider =
-    KtModuleProviderBuilder(env.environment, project)
-      .apply(configureAnalysisApiProjectStructure(config))
-      .build()
+      KtModuleProviderBuilder(env.environment, project).apply(configureAnalysisApiProjectStructure(config)).build()
   val ktFiles = projectStructureProvider.allSourceFiles.filterIsInstance<KtFile>()
 
   project.registerService(
-    KotlinAnnotationsResolverFactory::class.java,
-    KotlinStandaloneAnnotationsResolverFactory(project, ktFiles),
+      KotlinAnnotationsResolverFactory::class.java,
+      KotlinStandaloneAnnotationsResolverFactory(project, ktFiles),
   )
 
   project.registerService(KotlinProjectStructureProvider::class.java, projectStructureProvider)
 
   project.registerService(
-    KotlinDeclarationProviderFactory::class.java,
-    KotlinStandaloneDeclarationProviderFactory(project, env.environment, ktFiles),
+      KotlinDeclarationProviderFactory::class.java,
+      KotlinStandaloneDeclarationProviderFactory(project, env.environment, ktFiles),
   )
   project.registerService(
-    KotlinDeclarationProviderMerger::class.java,
-    KotlinStandaloneDeclarationProviderMerger::class.java,
+      KotlinDeclarationProviderMerger::class.java,
+      KotlinStandaloneDeclarationProviderMerger::class.java,
   )
   project.registerService(
-    KotlinPackageProviderMerger::class.java,
-    KotlinStandalonePackageProviderMerger::class.java,
+      KotlinPackageProviderMerger::class.java,
+      KotlinStandalonePackageProviderMerger::class.java,
   )
   project.registerService(
-    KotlinPackageProviderFactory::class.java,
-    KotlinStandalonePackageProviderFactory(project, ktFiles),
+      KotlinPackageProviderFactory::class.java,
+      KotlinStandalonePackageProviderFactory(project, ktFiles),
   )
 }
 
@@ -388,24 +374,24 @@ private fun configureFe10ApplicationEnvironment(appEnv: CoreApplicationEnvironme
     it.addExtension(UastLanguagePlugin.EP, KotlinUastLanguagePlugin())
 
     it.application.registerService(
-      BaseKotlinUastResolveProviderService::class.java,
-      CliKotlinUastResolveProviderService::class.java,
+        BaseKotlinUastResolveProviderService::class.java,
+        CliKotlinUastResolveProviderService::class.java,
     )
 
     KotlinCoreEnvironment.underApplicationLock {
       if (it.application.getServiceIfCreated(BuiltinsVirtualFileProvider::class.java) == null) {
         it.application.registerService(
-          BuiltinsVirtualFileProvider::class.java,
-          BuiltinsVirtualFileProviderCliImpl::class.java,
+            BuiltinsVirtualFileProvider::class.java,
+            BuiltinsVirtualFileProviderCliImpl::class.java,
         )
         it.application.registerService(ClsKotlinBinaryClassCache::class.java)
         it.application.registerService(
-          FileAttributeService::class.java,
-          DummyFileAttributeService::class.java,
+            FileAttributeService::class.java,
+            DummyFileAttributeService::class.java,
         )
         it.application.registerService(
-          KotlinAnalysisPermissionOptions::class.java,
-          KotlinStandaloneAnalysisPermissionOptions::class.java,
+            KotlinAnalysisPermissionOptions::class.java,
+            KotlinStandaloneAnalysisPermissionOptions::class.java,
         )
       }
       AnalysisApiFe10ServiceRegistrar.registerApplicationServices(it.application)
@@ -442,18 +428,18 @@ private object AnalysisApiFe10ServiceRegistrar : AnalysisApiSimpleServiceRegistr
   override fun registerApplicationServices(application: MockApplication) {
     PluginStructureProvider.registerApplicationServices(application, PLUGIN_RELATIVE_PATH)
     application.registerService(
-      KtFe10ReferenceResolutionHelper::class.java,
-      DummyKtFe10ReferenceResolutionHelper,
+        KtFe10ReferenceResolutionHelper::class.java,
+        DummyKtFe10ReferenceResolutionHelper,
     )
     val applicationArea = application.extensionArea
     if (!applicationArea.hasExtensionPoint(ClassTypePointerFactory.EP_NAME)) {
       CoreApplicationEnvironment.registerApplicationExtensionPoint(
-        ClassTypePointerFactory.EP_NAME,
-        ClassTypePointerFactory::class.java,
+          ClassTypePointerFactory.EP_NAME,
+          ClassTypePointerFactory::class.java,
       )
       applicationArea
-        .getExtensionPoint(ClassTypePointerFactory.EP_NAME)
-        .registerExtension(PsiClassReferenceTypePointerFactory(), application)
+          .getExtensionPoint(ClassTypePointerFactory.EP_NAME)
+          .registerExtension(PsiClassReferenceTypePointerFactory(), application)
     }
   }
 

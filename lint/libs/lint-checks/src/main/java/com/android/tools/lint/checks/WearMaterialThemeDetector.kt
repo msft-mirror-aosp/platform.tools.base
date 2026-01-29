@@ -30,23 +30,22 @@ import org.jetbrains.uast.UImportStatement
 class WearMaterialThemeDetector : WearDetector(), SourceCodeScanner {
 
   companion object {
-    val IMPLEMENTATION =
-      Implementation(WearMaterialThemeDetector::class.java, Scope.JAVA_FILE_SCOPE)
+    val IMPLEMENTATION = Implementation(WearMaterialThemeDetector::class.java, Scope.JAVA_FILE_SCOPE)
 
     val ISSUE =
-      Issue.create(
-        id = "WearMaterialTheme",
-        briefDescription = "Using not non-Wear `MaterialTheme` in a Wear OS project",
-        explanation =
-          """
+        Issue.create(
+            id = "WearMaterialTheme",
+            briefDescription = "Using not non-Wear `MaterialTheme` in a Wear OS project",
+            explanation =
+                """
         Wear projects should use `androidx.wear.compose.material.MaterialTheme` instead of `androidx.compose.material.MaterialTheme`
       """,
-        category = Category.CORRECTNESS,
-        priority = 6,
-        severity = Severity.ERROR,
-        implementation = IMPLEMENTATION,
-        androidSpecific = true,
-      )
+            category = Category.CORRECTNESS,
+            priority = 6,
+            severity = Severity.ERROR,
+            implementation = IMPLEMENTATION,
+            androidSpecific = true,
+        )
   }
 
   override fun getApplicableUastTypes(): List<Class<out UElement?>> {
@@ -65,10 +64,10 @@ class WearMaterialThemeDetector : WearDetector(), SourceCodeScanner {
 
         val location = context.getLocation(statement)
         context.report(
-          ISSUE,
-          statement,
-          location,
-          "Don't use `androidx.compose.material.MaterialTheme` in a Wear OS project; use `androidx.wear.compose.material.MaterialTheme` instead",
+            ISSUE,
+            statement,
+            location,
+            "Don't use `androidx.compose.material.MaterialTheme` in a Wear OS project; use `androidx.wear.compose.material.MaterialTheme` instead",
         )
       }
     }

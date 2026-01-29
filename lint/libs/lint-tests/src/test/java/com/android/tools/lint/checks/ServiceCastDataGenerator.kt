@@ -32,29 +32,22 @@ import org.jetbrains.uast.UMethod
 import org.junit.rules.TemporaryFolder
 
 /**
- * This code helps update the big when statement in ServiceCastDetector to figure out the correct
- * set of valid input fields for Context.getSystemService, and the corresponding valid classes the
- * system service can be cast to for the given name.
+ * This code helps update the big when statement in ServiceCastDetector to figure out the correct set of valid input fields for
+ * Context.getSystemService, and the corresponding valid classes the system service can be cast to for the given name.
  *
- * In theory, this should be easy; the `@ServiceName` typedef in Context is supposed to contain the
- * set of valid names. And so should the javadoc on that method. But in practice, these are not
- * always updated correctly. Therefore, we collect information from a number of sources, and then we
- * cross-reference these.
+ * In theory, this should be easy; the `@ServiceName` typedef in Context is supposed to contain the set of valid names. And so should the
+ * javadoc on that method. But in practice, these are not always updated correctly. Therefore, we collect information from a number of
+ * sources, and then we cross-reference these.
  *
- * This function needs to be pointed both to the `Context.java` class in the framework (for the
- * correct release branch that the data should reflect, e.g. the most recently released SDK branch),
- * as well as the ServiceCastDetector source file itself.
+ * This function needs to be pointed both to the `Context.java` class in the framework (for the correct release branch that the data should
+ * reflect, e.g. the most recently released SDK branch), as well as the ServiceCastDetector source file itself.
  */
 fun main() {
-  val serviceCast =
-    "tools/base/lint/libs/lint-checks/src/main/java/com/android/tools/lint/checks/ServiceCastDetector.kt"
+  val serviceCast = "tools/base/lint/libs/lint-checks/src/main/java/com/android/tools/lint/checks/ServiceCastDetector.kt"
   val viewDetectorFile = resolveWorkspacePath(serviceCast).toFile()
   val contextFile =
-    File("${System.getenv("ANDROID_SDK_HOME")}/sources/android-35/android/content/Context.java")
-      .let { if (it.isFile) it else null }
-      ?: File(
-        "${System.getenv("ANDROID_BUILD_TOP")}/frameworks/base/core/java/android/content/Context.java"
-      )
+      File("${System.getenv("ANDROID_SDK_HOME")}/sources/android-35/android/content/Context.java").let { if (it.isFile) it else null }
+          ?: File("${System.getenv("ANDROID_BUILD_TOP")}/frameworks/base/core/java/android/content/Context.java")
   val extractor = ServiceCastDataGenerator(viewDetectorFile, contextFile)
   extractor.analyze()
 }
@@ -79,10 +72,10 @@ class ServiceCastDataGenerator(private val viewDetectorFile: File, contextSource
     temporaryFolder.create()
 
     val (context, contextDisposable) =
-      parseFirst(
-        temporaryFolder = temporaryFolder,
-        testFiles = arrayOf(java(contextSourceFile.readText())),
-      )
+        parseFirst(
+            temporaryFolder = temporaryFolder,
+            testFiles = arrayOf(java(contextSourceFile.readText())),
+        )
     this.context = context
 
     extractCurrentCasts()
@@ -95,29 +88,26 @@ class ServiceCastDataGenerator(private val viewDetectorFile: File, contextSource
   }
 
   fun analyze() {
-    val allNames =
-      (currentMap.keys + docFields.keys + extractedMap.keys + typedefList + seeMap.keys)
-        .toSortedSet()
+    val allNames = (currentMap.keys + docFields.keys + extractedMap.keys + typedefList + seeMap.keys).toSortedSet()
 
     val description =
-      """
-      There are a number of different clues to the names which are supported by getSystemService.
-      Unfortunately when system service are added, not all the expected places are updated correctly
-      (e.g. javadoc, the ServiceName typedef, etc), so we're collecting data from different sources.
+        """
+        There are a number of different clues to the names which are supported by getSystemService.
+        Unfortunately when system service are added, not all the expected places are updated correctly
+        (e.g. javadoc, the ServiceName typedef, etc), so we're collecting data from different sources.
 
-      Legend:
-      Today: Service name already in ServiceCastDetector today
-      Field: There is a field in Context which looks like a service name
-      Typedef: The @ServiceName typedef explicitly lists this field
-      MethodDoc: The name is mentioned in the dt/dd definition javadoc for getSystemService
-      See: The name is mentioned in the @see pairs at the bottom of the javadoc for getSystemService
-      """
-        .trimIndent()
+        Legend:
+        Today: Service name already in ServiceCastDetector today
+        Field: There is a field in Context which looks like a service name
+        Typedef: The @ServiceName typedef explicitly lists this field
+        MethodDoc: The name is mentioned in the dt/dd definition javadoc for getSystemService
+        See: The name is mentioned in the @see pairs at the bottom of the javadoc for getSystemService
+        """
+            .trimIndent()
     println(description)
 
     val format = "%-35s %-10s %-10s %-10s %-10s %-10s"
-    val header =
-      String.format(format, "Key", "Today", "Field", "MethodDoc", "See", "Typedef").trimEnd()
+    val header = String.format(format, "Key", "Today", "Field", "MethodDoc", "See", "Typedef").trimEnd()
     val separator = "-".repeat(header.length)
     println(header)
     println(separator)
@@ -136,18 +126,15 @@ class ServiceCastDataGenerator(private val viewDetectorFile: File, contextSource
     // system service), or in the javadoc for getSystemService (either as a
     // definition list or as a @see), but filtered by actual fields appearing
     // in the jar
-    val newNames =
-      (docFields.keys + extractedMap.keys + typedefList + seeMap.keys).toSortedSet().filter {
-        docFields.contains(it)
-      }
+    val newNames = (docFields.keys + extractedMap.keys + typedefList + seeMap.keys).toSortedSet().filter { docFields.contains(it) }
 
     // Make sure they're all covered
     val currentKeys = currentMap.keys.sorted()
     for (currentKey in currentKeys) {
       if (!newNames.contains(currentKey)) {
         println(
-          "Warning: Key `$currentKey` is in our current service cast map but is missing " +
-            "from the newly extracted data; has it been deleted?"
+            "Warning: Key `$currentKey` is in our current service cast map but is missing " +
+                "from the newly extracted data; has it been deleted?"
         )
       }
     }
@@ -168,9 +155,7 @@ class ServiceCastDataGenerator(private val viewDetectorFile: File, contextSource
       } else if (name == "WALLPAPER_SERVICE") {
         serviceMap[name] = "android.app.WallpaperManager"
       } else if (values.size != 1) {
-        println(
-          "Warning 2: Unexpected extracted service map for key `$name`: Expected exactly one value, but found `$values`"
-        )
+        println("Warning 2: Unexpected extracted service map for key `$name`: Expected exactly one value, but found `$values`")
       } else {
         serviceMap[name] = values.single()
       }
@@ -186,9 +171,7 @@ class ServiceCastDataGenerator(private val viewDetectorFile: File, contextSource
     switchString.append("when (value) {\n")
     for ((name, service) in serviceMap) {
       if (name == "CLIPBOARD_SERVICE") {
-        switchString.append(
-          "        // also allow @Deprecated android.content.ClipboardManager, see isClipboard\n"
-        )
+        switchString.append("        // also allow @Deprecated android.content.ClipboardManager, see isClipboard\n")
       }
       switchString.append("        \"$name\" -> \"$service\"\n")
     }
@@ -204,18 +187,14 @@ class ServiceCastDataGenerator(private val viewDetectorFile: File, contextSource
     viewDetectorFile.writeText(replaced)
     println("Updated the switch table in $viewDetectorFile")
 
-    println(
-      "\n\nAdd the following names to the @ServiceName typedef in the platform Context.java class:"
-    )
+    println("\n\nAdd the following names to the @ServiceName typedef in the platform Context.java class:")
     for ((name, _) in serviceMap) {
       if (!typedefList.contains(name) && !hiddenTypedefList.contains(name)) {
         println("            $name,")
       }
     }
 
-    println(
-      "\n\nUnhide the following fields from the existing @ServiceName in the platform Context.java class:"
-    )
+    println("\n\nUnhide the following fields from the existing @ServiceName in the platform Context.java class:")
     for ((name, _) in serviceMap) {
       if (!typedefList.contains(name) && hiddenTypedefList.contains(name)) {
         println("            //@hide: $name,")
@@ -253,18 +232,18 @@ class ServiceCastDataGenerator(private val viewDetectorFile: File, contextSource
   }
 
   /**
-   * Extracts the key=>value pairs from the javadoc on the getSystemService method. It defines it in
-   * two ways: first as a `<dt>`/`<dd>` definition list, and then also as pairs of `@see` tags.
+   * Extracts the key=>value pairs from the javadoc on the getSystemService method. It defines it in two ways: first as a `<dt>`/`<dd>`
+   * definition list, and then also as pairs of `@see` tags.
    */
   private fun extractFromDoc() {
     // Find the javadoc for the getSystemService(String) method in Context and extract its doc.
     val getContextMethod =
-      context.uastFile!!.classes[0].uastDeclarations.single {
-        it is UMethod &&
-          it.name == "getSystemService" &&
-          it.uastParameters.size == 1 &&
-          it.uastParameters.single().typeFromPsi?.canonicalText == "java.lang.String"
-      }
+        context.uastFile!!.classes[0].uastDeclarations.single {
+          it is UMethod &&
+              it.name == "getSystemService" &&
+              it.uastParameters.size == 1 &&
+              it.uastParameters.single().typeFromPsi?.canonicalText == "java.lang.String"
+        }
     val doc = (getContextMethod.sourcePsi as PsiMethod).docComment
     val s = doc?.text ?: error("Couldn't find method doc")
     var i = 0
@@ -304,11 +283,7 @@ class ServiceCastDataGenerator(private val viewDetectorFile: File, contextSource
     }
 
     // Check @see maps
-    val lines =
-      s.lines()
-        .map { it.trim() }
-        .filter { it.startsWith("* @see ") }
-        .map { it.removePrefix("* @see ").trim() }
+    val lines = s.lines().map { it.trim() }.filter { it.startsWith("* @see ") }.map { it.removePrefix("* @see ").trim() }
     var prev = ""
     for (line in lines) {
       if (prev.startsWith("#") && !line.startsWith("#")) {
@@ -318,15 +293,10 @@ class ServiceCastDataGenerator(private val viewDetectorFile: File, contextSource
     }
   }
 
-  /**
-   * Extract the allowed constant names from the `@ServiceName` typedef definition in the Context
-   * class.
-   */
+  /** Extract the allowed constant names from the `@ServiceName` typedef definition in the Context class. */
   private fun extractFromTypeDef() {
-    val serviceName =
-      context.uastFile!!.classes[0].innerClasses.single { it.nameFromSource == "ServiceName" }
-    val typeDefAnnotation =
-      serviceName.uAnnotations.single { it.qualifiedName?.endsWith("StringDef") == true }
+    val serviceName = context.uastFile!!.classes[0].innerClasses.single { it.nameFromSource == "ServiceName" }
+    val typeDefAnnotation = serviceName.uAnnotations.single { it.qualifiedName?.endsWith("StringDef") == true }
     val typeDef = typeDefAnnotation.sourcePsi?.text ?: error("Missing annotation")
     val names = typedefList
     val lines = typeDef.lines()
@@ -347,8 +317,8 @@ class ServiceCastDataGenerator(private val viewDetectorFile: File, contextSource
   }
 
   /**
-   * Extracts the key=>value pairs from all the String field declaration fields in Context.java
-   * where the comment talks about this string being a key for getSystemService.
+   * Extracts the key=>value pairs from all the String field declaration fields in Context.java where the comment talks about this string
+   * being a key for getSystemService.
    */
   private fun extractFromFields() {
     val imports = context.uastFile!!.imports
@@ -359,10 +329,7 @@ class ServiceCastDataGenerator(private val viewDetectorFile: File, contextSource
       if (docText.contains("@hide")) {
         continue
       }
-      if (
-        !docText.contains("@see #getSystemService(String)") &&
-          !docText.contains("Use with {@link #getSystemService(String)}")
-      ) {
+      if (!docText.contains("@see #getSystemService(String)") && !docText.contains("Use with {@link #getSystemService(String)}")) {
         continue
       }
       val name = field.nameFromSource
@@ -373,13 +340,7 @@ class ServiceCastDataGenerator(private val viewDetectorFile: File, contextSource
       for (tag in inline) {
         if (tag.name == "link") {
           val text = tag.text
-          val value =
-            text
-              .replace("*", "")
-              .substringAfter("@link")
-              .trimStart()
-              .substringBeforeLast("}")
-              .substringBefore(" ")
+          val value = text.replace("*", "").substringAfter("@link").trimStart().substringBeforeLast("}").substringBefore(" ")
           if (value.startsWith("#getSystemService")) {
             // Usual intro description ("Use with {@link #getSystemService(String)} to retrieve a
             // ...")
@@ -389,14 +350,12 @@ class ServiceCastDataGenerator(private val viewDetectorFile: File, contextSource
               if (!value.contains(".")) {
                 val suffix = ".$serviceClass"
                 val imported =
-                  imports.firstOrNull {
-                    val imp = it.importReference
-                    imp?.sourcePsi?.text?.endsWith(suffix) == true
-                  }
+                    imports.firstOrNull {
+                      val imp = it.importReference
+                      imp?.sourcePsi?.text?.endsWith(suffix) == true
+                    }
                 if (imported != null) {
-                  serviceClass =
-                    imported.importReference?.sourcePsi?.text
-                      ?: error("Unexpectedly couldn't get fully qualified name")
+                  serviceClass = imported.importReference?.sourcePsi?.text ?: error("Unexpectedly couldn't get fully qualified name")
                 } else {
                   error("Unable to resolve the import for $value for field $name")
                 }
@@ -407,13 +366,7 @@ class ServiceCastDataGenerator(private val viewDetectorFile: File, contextSource
       }
 
       if (serviceClass == null) {
-        val text =
-          docText
-            .removePrefix("/**")
-            .removeSuffix("*/")
-            .lines()
-            .joinToString(" ") { it.trim().removePrefix("* ") }
-            .trim()
+        val text = docText.removePrefix("/**").removeSuffix("*/").lines().joinToString(" ") { it.trim().removePrefix("* ") }.trim()
         val prefix = "Use with {@link #getSystemService(String)} to retrieve a "
         if (text.startsWith(prefix)) {
           var e = prefix.length

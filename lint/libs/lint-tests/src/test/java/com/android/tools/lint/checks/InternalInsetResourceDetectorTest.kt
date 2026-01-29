@@ -23,7 +23,7 @@ class InternalInsetResourceDetectorTest : AbstractCheckTest() {
 
   fun testDocumentationExample() {
     val expected =
-      """
+        """
         src/test/pkg/test.kt:6: Warning: Using internal inset dimension resource status_bar_height is not supported [InternalInsetResource]
             getIdentifier("status_bar_height", "dimen", "android")
             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -31,9 +31,9 @@ class InternalInsetResourceDetectorTest : AbstractCheckTest() {
         """
 
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
                 package test.pkg
 
                 import android.content.res.Resources
@@ -41,16 +41,16 @@ class InternalInsetResourceDetectorTest : AbstractCheckTest() {
                 fun Resources.getStatusBarHeightIdentifier(): Int =
                     getIdentifier("status_bar_height", "dimen", "android")
                 """
-          )
-          .indented()
-      )
-      .run()
-      .expect(expected)
+                )
+                .indented()
+        )
+        .run()
+        .expect(expected)
   }
 
   fun testJava() {
     val expected =
-      """
+        """
         src/test/pkg/IncorrectInsetHelper.java:7: Warning: Using internal inset dimension resource status_bar_height is not supported [InternalInsetResource]
                 return resources.getIdentifier("status_bar_height", "dimen", "android");
                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -73,9 +73,9 @@ class InternalInsetResourceDetectorTest : AbstractCheckTest() {
         """
 
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
                 package test.pkg;
 
                 import android.content.res.Resources;
@@ -106,16 +106,16 @@ class InternalInsetResourceDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-          )
-          .indented()
-      )
-      .run()
-      .expect(expected)
+                )
+                .indented()
+        )
+        .run()
+        .expect(expected)
   }
 
   fun testKotlin() {
     val expected =
-      """
+        """
         src/test/pkg/test.kt:6: Warning: Using internal inset dimension resource status_bar_height is not supported [InternalInsetResource]
             getIdentifier("status_bar_height", "dimen", "android")
             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -138,9 +138,9 @@ class InternalInsetResourceDetectorTest : AbstractCheckTest() {
         """
 
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
                 package test.pkg
 
                 import android.content.res.Resources
@@ -163,18 +163,18 @@ class InternalInsetResourceDetectorTest : AbstractCheckTest() {
                 fun Resources.getNavigationBarWidthIdentifier(): Int =
                     getIdentifier("navigation_bar_width", "dimen", "android")
                 """
-          )
-          .indented()
-      )
-      .run()
-      .expect(expected)
+                )
+                .indented()
+        )
+        .run()
+        .expect(expected)
   }
 
   fun testCleanJava() {
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
                 package test.pkg;
 
                 import android.content.res.Resources;
@@ -193,18 +193,18 @@ class InternalInsetResourceDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-          )
-          .indented()
-      )
-      .run()
-      .expectClean()
+                )
+                .indented()
+        )
+        .run()
+        .expectClean()
   }
 
   fun testCleanKotlin() {
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
                 package test.pkg
 
                 import android.content.res.Resources
@@ -218,10 +218,10 @@ class InternalInsetResourceDetectorTest : AbstractCheckTest() {
                 fun Resources.getOtherPackage(): Int =
                     getIdentifier("status_bar_height", "dimen", "notandroid")
                 """
-          )
-          .indented()
-      )
-      .run()
-      .expectClean()
+                )
+                .indented()
+        )
+        .run()
+        .expectClean()
   }
 }

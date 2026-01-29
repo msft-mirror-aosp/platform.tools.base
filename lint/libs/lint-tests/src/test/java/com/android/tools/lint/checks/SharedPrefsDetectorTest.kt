@@ -24,9 +24,9 @@ class SharedPrefsDetectorTest : AbstractCheckTest() {
 
   fun testGetStringSet() {
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
                 package test.pkg
 
                 import android.content.SharedPreferences
@@ -44,13 +44,13 @@ class SharedPrefsDetectorTest : AbstractCheckTest() {
                     t.add("ok")
                 }
                 """
-          )
-          .indented(),
-        SUPPORT_ANNOTATIONS_JAR,
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            SUPPORT_ANNOTATIONS_JAR,
+        )
+        .run()
+        .expect(
+            """
             src/test/pkg/test.kt:11: Warning: Do not modify the set returned by SharedPreferences.getStringSet()` [MutatingSharedPrefs]
                 s.removeIf { it.length < 3 }
                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -59,16 +59,16 @@ class SharedPrefsDetectorTest : AbstractCheckTest() {
                 ~~~~~~~~~~~~~~
             0 errors, 2 warnings
             """
-      )
+        )
   }
 
   fun testElvisOperator() {
     // Fix bug in data flow analyzer which was not handling the elvis operator in this
     // unit test correctly
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
                 package test.pkg
 
                 import android.content.SharedPreferences
@@ -81,28 +81,28 @@ class SharedPrefsDetectorTest : AbstractCheckTest() {
                     s.add("error")
                 }
                 """
-          )
-          .indented(),
-        SUPPORT_ANNOTATIONS_JAR,
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            SUPPORT_ANNOTATIONS_JAR,
+        )
+        .run()
+        .expect(
+            """
             src/test/pkg/test.kt:10: Warning: Do not modify the set returned by SharedPreferences.getStringSet()` [MutatingSharedPrefs]
                 s.add("error")
                 ~~~~~~~~~~~~~~
             0 errors, 1 warnings
             """
-      )
+        )
   }
 
   fun test187437289() {
     // Regression test for
     // 187437289: MutatingSharedPrefs false positive
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
                 package com.example.myapplication
 
                 class SharedPrefsTest {
@@ -116,18 +116,18 @@ class SharedPrefsDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-          )
-          .indented()
-      )
-      .run()
-      .expectClean()
+                )
+                .indented()
+        )
+        .run()
+        .expectClean()
   }
 
   fun testReassigned() {
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
                 package test.pkg;
 
                 import android.content.SharedPreferences;
@@ -160,20 +160,20 @@ class SharedPrefsDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-          )
-          .indented()
-      )
-      .run()
-      .expectClean()
+                )
+                .indented()
+        )
+        .run()
+        .expectClean()
   }
 
   fun testReassignedStillBroken() {
     // Test for a couple more scenarios with reassignment which we're not handling
     // correctly yet
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
                 package test.pkg;
 
                 import android.content.SharedPreferences;
@@ -211,13 +211,13 @@ class SharedPrefsDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-          )
-          .indented()
-      )
-      .skipTestModes(TestMode.BODY_REMOVAL)
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .skipTestModes(TestMode.BODY_REMOVAL)
+        .run()
+        .expect(
+            """
             src/test/pkg/SharedPrefsEditTest.java:19: Warning: Do not modify the set returned by SharedPreferences.getStringSet()` [MutatingSharedPrefs]
                             roleNames.add(roleName); // OK (but not yet analyzed correctly)
                             ~~~~~~~~~~~~~~~~~~~~~~~
@@ -226,6 +226,6 @@ class SharedPrefsDetectorTest : AbstractCheckTest() {
                             ~~~~~~~~~~~~~~~~~~~~~~~
             0 errors, 2 warnings
             """
-      )
+        )
   }
 }

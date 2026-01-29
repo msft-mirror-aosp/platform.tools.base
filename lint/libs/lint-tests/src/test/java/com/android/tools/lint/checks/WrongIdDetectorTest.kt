@@ -25,10 +25,10 @@ class WrongIdDetectorTest : AbstractCheckTest() {
 
   fun testBasic() {
     lint()
-      .files(mLayout1, mLayout2, mIds)
-      .run()
-      .expect(
-        """
+        .files(mLayout1, mLayout2, mIds)
+        .run()
+        .expect(
+            """
             res/layout/layout1.xml:14: Error: The id "button5" is not defined anywhere. Did you mean one of {button1, button2, button3, button4} ? [UnknownId]
                     android:layout_alignBottom="@+id/button5"
                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -43,12 +43,12 @@ class WrongIdDetectorTest : AbstractCheckTest() {
                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             3 errors, 1 warnings
             """
-      )
+        )
   }
 
   fun testSingleFile() {
     val expected =
-      """
+        """
             res/layout/layout1.xml:14: Error: The id "button5" is not defined anywhere. Did you mean one of {button1, button2, button3, button4} ? [UnknownId]
                     android:layout_alignBottom="@+id/button5"
                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -76,21 +76,21 @@ class WrongIdDetectorTest : AbstractCheckTest() {
 
   fun testNewIdPrefix() {
     lint()
-      .files(
-        xml(
-            "res/layout/default_item_badges.xml",
-            """
+        .files(
+            xml(
+                    "res/layout/default_item_badges.xml",
+                    """
 
                 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
                     android:id="@+id/video_badges"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content" />
                 """,
-          )
-          .indented(),
-        xml(
-            "res/layout/detailed_item.xml",
-            """
+                )
+                .indented(),
+            xml(
+                    "res/layout/detailed_item.xml",
+                    """
 
                 <RelativeLayout
                     xmlns:android="http://schemas.android.com/apk/res/android"
@@ -104,26 +104,26 @@ class WrongIdDetectorTest : AbstractCheckTest() {
 
                 </RelativeLayout>
                 """,
-          )
-          .indented(),
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+        )
+        .run()
+        .expect(
+            """
             res/layout/detailed_item.xml:10: Error: @id/video_badges is not a sibling in the same RelativeLayout [NotSibling]
                     android:layout_below="@id/video_badges" />
                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             1 errors, 0 warnings
             """
-      )
+        )
   }
 
   fun testSiblings() {
     lint()
-      .files(
-        xml(
-            "res/layout/siblings.xml",
-            """
+        .files(
+            xml(
+                    "res/layout/siblings.xml",
+                    """
 
                 <!--
                   ~ Copyright (C) 2013 The Android Open Source Project
@@ -192,12 +192,12 @@ class WrongIdDetectorTest : AbstractCheckTest() {
 
                 </RelativeLayout>
                 """,
-          )
-          .indented()
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .run()
+        .expect(
+            """
             res/layout/siblings.xml:55: Error: @id/button5 is not a sibling in the same RelativeLayout [NotSibling]
                     android:layout_alignTop="@id/button5"
                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -212,15 +212,15 @@ class WrongIdDetectorTest : AbstractCheckTest() {
                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             4 errors, 0 warnings
             """
-      )
+        )
   }
 
   fun testSiblingsInConstraintLayout() {
     lint()
-      .files(
-        xml(
-            "res/layout/constraint.xml",
-            """
+        .files(
+            xml(
+                    "res/layout/constraint.xml",
+                    """
 
                 <android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
                     xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -250,27 +250,27 @@ class WrongIdDetectorTest : AbstractCheckTest() {
 
                 </android.support.constraint.ConstraintLayout>
                 """,
-          )
-          .indented()
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .run()
+        .expect(
+            """
             res/layout/constraint.xml:12: Error: @+id/button5 is not a sibling in the same ConstraintLayout [NotSibling]
                     app:layout_constraintRight_toRightOf="@+id/button5"
                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             1 errors, 0 warnings
             """
-      )
+        )
   }
 
   fun testInvalidIds1() {
     // See https://code.google.com/p/android/issues/detail?id=56029
     lint()
-      .files(
-        xml(
-            "res/layout/invalid_ids.xml",
-            """
+        .files(
+            xml(
+                    "res/layout/invalid_ids.xml",
+                    """
 
                 <!--
                   ~ Copyright (C) 2013 The Android Open Source Project
@@ -321,12 +321,12 @@ class WrongIdDetectorTest : AbstractCheckTest() {
 
                 </RelativeLayout>
                 """,
-          )
-          .indented()
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .run()
+        .expect(
+            """
             res/layout/invalid_ids.xml:23: Error: ID definitions must be of the form @+id/name; try using @+id/menu_Reload [InvalidId]
                     android:id="@+menu/Reload"
                     ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -341,13 +341,13 @@ class WrongIdDetectorTest : AbstractCheckTest() {
                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             4 errors, 0 warnings
             """
-      )
+        )
   }
 
   fun testInvalidIds2() {
     // https://code.google.com/p/android/issues/detail?id=65244
     val expected =
-      """
+        """
             res/layout/invalid_ids2.xml:8: Error: ID definitions must be of the form @+id/name; try using @+id/btn_skip [InvalidId]
                     android:id="@+id/btn/skip"
                     ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -357,10 +357,10 @@ class WrongIdDetectorTest : AbstractCheckTest() {
             2 errors, 0 warnings
             """
     lint()
-      .files(
-        xml(
-            "res/layout/invalid_ids2.xml",
-            """
+        .files(
+            xml(
+                    "res/layout/invalid_ids2.xml",
+                    """
 
                 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
                     xmlns:tools="http://schemas.android.com/tools"
@@ -383,21 +383,21 @@ class WrongIdDetectorTest : AbstractCheckTest() {
 
                 </RelativeLayout>
                 """,
-          )
-          .indented()
-      )
-      .run()
-      .expect(expected)
+                )
+                .indented()
+        )
+        .run()
+        .expect(expected)
   }
 
   fun testMissingNamespace() {
     // Regression test for https://code.google.com/p/android/issues/detail?id=227687
     // Make sure we properly handle a missing namespace
     lint()
-      .files(
-        xml(
-            "res/layout/layout3.xml",
-            """
+        .files(
+            xml(
+                    "res/layout/layout3.xml",
+                    """
                 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
                     xmlns:tools="http://schemas.android.com/tools" android:layout_width="match_parent"
                     android:layout_height="match_parent" android:id="@+id/tv_portfolio_title">
@@ -409,21 +409,21 @@ class WrongIdDetectorTest : AbstractCheckTest() {
                         layout_below="@+id/tv_portfolio_title"/>
                 </RelativeLayout>
             """,
-          )
-          .indented()
-      )
-      .run()
-      .expectClean()
+                )
+                .indented()
+        )
+        .run()
+        .expectClean()
   }
 
   fun testSelfReference() {
     // Make sure we highlight direct references to self
     // Regression test for https://code.google.com/p/android/issues/detail?id=136103
     lint()
-      .files(
-        xml(
-            "res/layout/layout3.xml",
-            """
+        .files(
+            xml(
+                    "res/layout/layout3.xml",
+                    """
                 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
                     xmlns:tools="http://schemas.android.com/tools" android:layout_width="match_parent"
                     android:layout_height="match_parent" android:paddingLeft="@dimen/activity_horizontal_margin">
@@ -435,26 +435,26 @@ class WrongIdDetectorTest : AbstractCheckTest() {
                         android:layout_below="@+id/tv_portfolio_title"/>
                 </RelativeLayout>
                 """,
-          )
-          .indented()
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .run()
+        .expect(
+            """
             res/layout/layout3.xml:9: Error: Cannot be relative to self: id=tv_portfolio_title, layout_below=tv_portfolio_title [NotSibling]
                     android:layout_below="@+id/tv_portfolio_title"/>
                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             1 errors, 0 warnings
             """
-      )
+        )
   }
 
   fun testPercent() {
     lint()
-      .files(
-        xml(
-            "res/layout/test.xml",
-            """
+        .files(
+            xml(
+                    "res/layout/test.xml",
+                    """
                 <android.support.percent.PercentRelativeLayout      xmlns:android="http://schemas.android.com/apk/res/android"     xmlns:app="http://schemas.android.com/apk/res-auto"
                      android:layout_width="match_parent"
                      android:layout_height="match_parent">
@@ -477,45 +477,45 @@ class WrongIdDetectorTest : AbstractCheckTest() {
 
                 </android.support.percent.PercentRelativeLayout>
                 """,
-          )
-          .indented()
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .run()
+        .expect(
+            """
             res/layout/test.xml:18: Error: The id "textView1" is not defined anywhere. Did you mean textview1 ? [UnknownId]
                         android:layout_below="@id/textView1"
                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             1 errors, 0 warnings
             """
-      )
+        )
   }
 
   fun testAndroidFramework() {
     lint()
-      .files(
-        xml(
-            "res/layout/test.xml",
-            """
+        .files(
+            xml(
+                    "res/layout/test.xml",
+                    """
                 <RelativeLayout
                     xmlns:android="http://schemas.android.com/apk/res/android"
                     android:id="@*android:id/parentPanel"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent" />
                 """,
-          )
-          .indented()
-      )
-      .run()
-      .expectClean()
+                )
+                .indented()
+        )
+        .run()
+        .expectClean()
   }
 
   fun testConstraintLayoutCycle() {
     lint()
-      .files(
-        xml(
-            "res/layout/constraint.xml",
-            """
+        .files(
+            xml(
+                    "res/layout/constraint.xml",
+                    """
 
                 <android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
                     xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -542,12 +542,12 @@ class WrongIdDetectorTest : AbstractCheckTest() {
                         android:id="@+id/button5" />
                 </android.support.constraint.ConstraintLayout>
                 """,
-          )
-          .indented()
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .run()
+        .expect(
+            """
             res/layout/constraint.xml:21: Error: The id "typo" is not defined anywhere. [UnknownId]
                     app:layout_constraintRight_toLeftOf="@+id/typo"
                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -556,7 +556,7 @@ class WrongIdDetectorTest : AbstractCheckTest() {
                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             2 errors, 0 warnings
             """
-      )
+        )
   }
 
   fun testConstraintReferencedIds() {
@@ -567,11 +567,11 @@ class WrongIdDetectorTest : AbstractCheckTest() {
     //   my_id1 is a sibling but defined in a values file
     //   my_id0 is not a sibling and defined in a values file
     lint()
-      .files(
-        mIds,
-        xml(
-            "res/layout/layout3.xml",
-            """
+        .files(
+            mIds,
+            xml(
+                    "res/layout/layout3.xml",
+                    """
 
                 <android.support.constraint.ConstraintLayout     xmlns:android="http://schemas.android.com/apk/res/android"
                     xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -628,12 +628,12 @@ class WrongIdDetectorTest : AbstractCheckTest() {
                     </LinearLayout>
                 </android.support.constraint.ConstraintLayout>
                 """,
-          )
-          .indented(),
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+        )
+        .run()
+        .expect(
+            """
             res/layout/layout3.xml:13: Error: The id "text2" is not defined anywhere. Did you mean one of {text1, text3} ? [UnknownId]
                     app:constraint_referenced_ids="text1,text2,text3,my_id0,my_id1" />
                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -645,16 +645,16 @@ class WrongIdDetectorTest : AbstractCheckTest() {
                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             3 errors, 0 warnings
             """
-      )
+        )
   }
 
   fun testConstraintReferencedIdsMissingValuesFile() {
     // Validate id lists in <Barrier> elements
     lint()
-      .files(
-        xml(
-            "res/layout/layout3.xml",
-            """
+        .files(
+            xml(
+                    "res/layout/layout3.xml",
+                    """
 
                 <android.support.constraint.ConstraintLayout     xmlns:android="http://schemas.android.com/apk/res/android"
                     xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -711,12 +711,12 @@ class WrongIdDetectorTest : AbstractCheckTest() {
                     </LinearLayout>
                 </android.support.constraint.ConstraintLayout>
                 """,
-          )
-          .indented()
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .run()
+        .expect(
+            """
             res/layout/layout3.xml:13: Error: The id "my_id0" is not defined anywhere. [UnknownId]
                     app:constraint_referenced_ids="text1,text2,text3,my_id0,my_id1" />
                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -731,15 +731,15 @@ class WrongIdDetectorTest : AbstractCheckTest() {
                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             4 errors, 0 warnings
             """
-      )
+        )
   }
 
   fun testIncludes() {
     lint()
-      .files(
-        xml(
-            "res/layout/layout4.xml",
-            """
+        .files(
+            xml(
+                    "res/layout/layout4.xml",
+                    """
                 <RelativeLayout
                     xmlns:android="http://schemas.android.com/apk/res/android"
                     xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -759,11 +759,11 @@ class WrongIdDetectorTest : AbstractCheckTest() {
                     <include layout="@layout/included2"/>
                 </RelativeLayout>
                 """,
-          )
-          .indented(),
-        xml(
-            "res/layout/included1.xml",
-            """
+                )
+                .indented(),
+            xml(
+                    "res/layout/included1.xml",
+                    """
                 <LinearLayout
                     xmlns:android="http://schemas.android.com/apk/res/android"
                     xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -772,11 +772,11 @@ class WrongIdDetectorTest : AbstractCheckTest() {
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"/>
                 """,
-          )
-          .indented(),
-        xml(
-            "res/layout/included2.xml",
-            """
+                )
+                .indented(),
+            xml(
+                    "res/layout/included2.xml",
+                    """
                 <merge
                     xmlns:android="http://schemas.android.com/apk/res/android"
                     xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -792,20 +792,20 @@ class WrongIdDetectorTest : AbstractCheckTest() {
                     />
                 </merge>
                 """,
-          )
-          .indented(),
-      )
-      .incremental("res/layout/layout4.xml")
-      .run()
-      .expectClean()
+                )
+                .indented(),
+        )
+        .incremental("res/layout/layout4.xml")
+        .run()
+        .expectClean()
   }
 
   fun testUnknownIncludes() {
     lint()
-      .files(
-        xml(
-            "res/layout/layout4.xml",
-            """
+        .files(
+            xml(
+                    "res/layout/layout4.xml",
+                    """
                 <RelativeLayout
                     xmlns:android="http://schemas.android.com/apk/res/android"
                     xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -825,20 +825,20 @@ class WrongIdDetectorTest : AbstractCheckTest() {
                     <include layout="@layout/included2"/>
                 </RelativeLayout>
                 """,
-          )
-          .indented()
-      )
-      .run()
-      .expectClean()
+                )
+                .indented()
+        )
+        .run()
+        .expectClean()
   }
 
   fun testNotId() {
     // Regression test for 258954161: not showing error on view id
     lint()
-      .files(
-        xml(
-            "res/layout/layout4.xml",
-            """
+        .files(
+            xml(
+                    "res/layout/layout4.xml",
+                    """
                 <RelativeLayout
                     xmlns:android="http://schemas.android.com/apk/res/android"
                     android:layout_width="match_parent"
@@ -852,28 +852,28 @@ class WrongIdDetectorTest : AbstractCheckTest() {
                     <TabWidget android:id="@android:id/tabs"/> <!-- OK -->
                 </RelativeLayout>
                 """,
-          )
-          .indented(),
-        rClass("test.pkg", "@drawable/ic_launcher"),
-        xml(
-          "res/values/strings.xml",
-          """
+                )
+                .indented(),
+            rClass("test.pkg", "@drawable/ic_launcher"),
+            xml(
+                "res/values/strings.xml",
+                """
                     <resources
                       xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
                       <string name="test">"Test<xliff:g id="APPLICATION_NAME">%s</xliff:g>Test"</string>
                     </resources>
                 """,
-        ),
-      )
-      .run()
-      .expect(
-        """
+            ),
+        )
+        .run()
+        .expect(
+            """
             res/layout/layout4.xml:10: Error: Invalid id; ID definitions must be of the form @+id/name; did you mean @+id/ic_launcher? [InvalidId]
                     android:id="@drawable/ic_launcher" /> <!-- ERROR -->
                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             1 errors, 0 warnings
             """
-      )
+        )
   }
 
   fun testDatabinding() {
@@ -881,10 +881,10 @@ class WrongIdDetectorTest : AbstractCheckTest() {
     // ID's using databinding, e.g. @{uxContent.id}, aren't incorrect
     // and so should be skipped by WrongIdDetector.
     lint()
-      .files(
-        xml(
-            "res/layout/layout.xml",
-            """
+        .files(
+            xml(
+                    "res/layout/layout.xml",
+                    """
                 <?xml version="1.0" encoding="utf-8"?>
                 <layout xmlns:android="http://schemas.android.com/apk/res/android"
                     xmlns:app="http://schemas.android.com/apk/res-auto">
@@ -901,18 +901,18 @@ class WrongIdDetectorTest : AbstractCheckTest() {
                         app:id="@{uxContent.id}"/>
                 </layout>
                 """,
-          )
-          .indented()
-      )
-      .run()
-      .expectClean()
+                )
+                .indented()
+        )
+        .run()
+        .expectClean()
   }
 
   // Sample code
   private val mIds =
-    xml(
-        "res/values/ids.xml",
-        """
+      xml(
+              "res/values/ids.xml",
+              """
 
             <resources>
 
@@ -921,14 +921,14 @@ class WrongIdDetectorTest : AbstractCheckTest() {
 
             </resources>
             """,
-      )
-      .indented()
+          )
+          .indented()
 
   // Sample code
   private val mIgnorelayout1 =
-    xml(
-        "res/layout/layout1.xml",
-        """
+      xml(
+              "res/layout/layout1.xml",
+              """
 
             <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
                 xmlns:tools="http://schemas.android.com/tools"
@@ -977,14 +977,14 @@ class WrongIdDetectorTest : AbstractCheckTest() {
 
             </RelativeLayout>
             """,
-      )
-      .indented()
+          )
+          .indented()
 
   // Sample code
   private val mLayout1 =
-    xml(
-        "res/layout/layout1.xml",
-        """
+      xml(
+              "res/layout/layout1.xml",
+              """
 
         <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
             android:id="@+id/RelativeLayout1"
@@ -1031,14 +1031,14 @@ class WrongIdDetectorTest : AbstractCheckTest() {
 
         </RelativeLayout>
         """,
-      )
-      .indented()
+          )
+          .indented()
 
   // Sample code
   private val mLayout2 =
-    xml(
-        "res/layout/layout2.xml",
-        """
+      xml(
+              "res/layout/layout2.xml",
+              """
         <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
@@ -1052,6 +1052,6 @@ class WrongIdDetectorTest : AbstractCheckTest() {
 
         </LinearLayout>
         """,
-      )
-      .indented()
+          )
+          .indented()
 }

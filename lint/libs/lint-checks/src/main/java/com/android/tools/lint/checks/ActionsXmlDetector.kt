@@ -51,8 +51,8 @@ import org.w3c.dom.Document
 import org.w3c.dom.Element
 
 /**
- * Check which makes sure that an actions.xml file is correct. See XmltreeActionsSchemaParser in the
- * dev tools codebase to check behavior enforced in the dev console.
+ * Check which makes sure that an actions.xml file is correct. See XmltreeActionsSchemaParser in the dev tools codebase to check behavior
+ * enforced in the dev console.
  */
 class ActionsXmlDetector : ResourceXmlDetector() {
   private var foundProblem = false
@@ -127,18 +127,18 @@ class ActionsXmlDetector : ResourceXmlDetector() {
   }
 
   private fun createIncident(
-    actions: Element,
-    context: XmlContext,
-    actionResourceName: String,
+      actions: Element,
+      context: XmlContext,
+      actionResourceName: String,
   ): Incident {
     return Incident(
-      ISSUE,
-      actions,
-      context.getElementLocation(actions),
-      "This action resource should be registered in the manifest under the " +
-        "`<application>` tag as " +
-        "`<meta-data android:name=\"com.google.android.actions\" " +
-        "android:resource=\"@xml/$actionResourceName\" />`",
+        ISSUE,
+        actions,
+        context.getElementLocation(actions),
+        "This action resource should be registered in the manifest under the " +
+            "`<application>` tag as " +
+            "`<meta-data android:name=\"com.google.android.actions\" " +
+            "android:resource=\"@xml/$actionResourceName\" />`",
     )
   }
 
@@ -159,22 +159,22 @@ class ActionsXmlDetector : ResourceXmlDetector() {
       locales.split(",").forEach { locale ->
         val bcp = BCP_47_PREFIX + locale.trim().replace("-", "+")
         LocaleQualifier.getQualifier(bcp)
-          ?: run {
-            val loc = context.getValueLocation(localeNode)
-            var start = loc.start ?: return
-            // Adjust offset to attribute value
-            start = DefaultPosition(start.line, start.column + index, start.offset + index)
-            val end =
-              DefaultPosition(
-                start.line,
-                start.column + locale.length,
-                start.offset + locale.length,
-              )
-            val location = Location.create(context.file, start, end)
-            val message = "Invalid BCP-47 locale qualifier `$locale`"
-            report(context, actions, location, message)
-            return
-          }
+            ?: run {
+              val loc = context.getValueLocation(localeNode)
+              var start = loc.start ?: return
+              // Adjust offset to attribute value
+              start = DefaultPosition(start.line, start.column + index, start.offset + index)
+              val end =
+                  DefaultPosition(
+                      start.line,
+                      start.column + locale.length,
+                      start.offset + locale.length,
+                  )
+              val location = Location.create(context.file, start, end)
+              val message = "Invalid BCP-47 locale qualifier `$locale`"
+              report(context, actions, location, message)
+              return
+            }
         index += locale.length + 1
       }
     }
@@ -223,25 +223,24 @@ class ActionsXmlDetector : ResourceXmlDetector() {
     if (!atLeastOneFulfillment) {
       if (!atLeastOneEntitySetReference) {
         report(
-          context,
-          action,
-          context.getElementLocation(action),
-          "`<action>` must declare a `<fulfillment>` or a `<parameter>` with an `<entity-set-reference>`",
+            context,
+            action,
+            context.getElementLocation(action),
+            "`<action>` must declare a `<fulfillment>` or a `<parameter>` with an `<entity-set-reference>`",
         )
       }
     } else if (!foundNonRequiredTemplate) {
       report(
-        context,
-        action,
-        context.getElementLocation(action),
-        "At least one <fulfillment> `$ATTR_URL_TEMPLATE` must not be required",
+          context,
+          action,
+          context.getElementLocation(action),
+          "At least one <fulfillment> `$ATTR_URL_TEMPLATE` must not be required",
       )
     }
   }
 
   /**
-   * Returns whether the template on this template requires parameters; this is true if the template
-   * has one or more required parameters.
+   * Returns whether the template on this template requires parameters; this is true if the template has one or more required parameters.
    */
   private fun templateRequiresParameters(fulfillment: Element): Boolean {
     for (child in fulfillment) {
@@ -257,9 +256,9 @@ class ActionsXmlDetector : ResourceXmlDetector() {
   }
 
   private fun checkParameter(
-    context: XmlContext,
-    parameter: Element,
-    parameterNames: MutableSet<String>,
+      context: XmlContext,
+      parameter: Element,
+      parameterNames: MutableSet<String>,
   ): Boolean {
     checkParent(context, parameter) ?: return false
 
@@ -271,13 +270,13 @@ class ActionsXmlDetector : ResourceXmlDetector() {
     // Make sure name is unique
     val name = checkRequiredAttribute(context, parameter, ATTR_NAME) ?: return false
     checkNotAlreadyPresent(
-      name,
-      ATTR_NAME,
-      parameterNames,
-      context,
-      parameter,
-      TAG_ACTION,
-      TAG_PARAMETER,
+        name,
+        ATTR_NAME,
+        parameterNames,
+        context,
+        parameter,
+        TAG_ACTION,
+        TAG_PARAMETER,
     )
 
     var hasEntitySetReference = false
@@ -303,9 +302,7 @@ class ActionsXmlDetector : ResourceXmlDetector() {
 
   private fun checkFulfillment(context: XmlContext, fulfillment: Element) {
     checkParent(context, fulfillment) ?: return
-    val urlTemplate =
-      checkRequiredAttribute(context, fulfillment, ATTR_URL_TEMPLATE, allowReference = false)
-        ?: return
+    val urlTemplate = checkRequiredAttribute(context, fulfillment, ATTR_URL_TEMPLATE, allowReference = false) ?: return
 
     val templateParameters = getUriTemplateParameters(urlTemplate)
 
@@ -322,17 +319,17 @@ class ActionsXmlDetector : ResourceXmlDetector() {
         TAG_PARAMETER_MAPPING -> {
           val parameter = checkParameterMapping(context, child, intentParameterNames, urlParameters)
           if (
-            parameter != null &&
-              !templateParameters.contains(parameter) &&
-              !parameter.startsWith(PREFIX_RESOURCE_REF) &&
-              // special built-in parameter
-              parameter != VAR_URL
+              parameter != null &&
+                  !templateParameters.contains(parameter) &&
+                  !parameter.startsWith(PREFIX_RESOURCE_REF) &&
+                  // special built-in parameter
+                  parameter != VAR_URL
           ) {
             report(
-              context,
-              child,
-              context.getElementLocation(child),
-              "The parameter `$parameter` is not present in the `$ATTR_URL_TEMPLATE`",
+                context,
+                child,
+                context.getElementLocation(child),
+                "The parameter `$parameter` is not present in the `$ATTR_URL_TEMPLATE`",
             )
           }
         }
@@ -345,12 +342,12 @@ class ActionsXmlDetector : ResourceXmlDetector() {
     // See if we should have a built-in "url" parameter: this happens if there
     // is at least one parameter with an entity reference
     if (
-      templateParameters.contains(VAR_URL) &&
-        !urlParameters.contains(VAR_URL) &&
-        // See if any parameter in the action defines an entity reference. We can't just
-        // keep track of this during iteration and pass it in here, we have to search up
-        // from here since the parameter can be defined before or after the fulfillment tag.
-        hasEntitySetReference(fulfillment.parentNode as Element)
+        templateParameters.contains(VAR_URL) &&
+            !urlParameters.contains(VAR_URL) &&
+            // See if any parameter in the action defines an entity reference. We can't just
+            // keep track of this during iteration and pass it in here, we have to search up
+            // from here since the parameter can be defined before or after the fulfillment tag.
+            hasEntitySetReference(fulfillment.parentNode as Element)
     ) {
       urlParameters.add(VAR_URL)
     }
@@ -358,23 +355,19 @@ class ActionsXmlDetector : ResourceXmlDetector() {
     // Make sure the parameters are fully mapped
     val missing = Sets.difference(templateParameters, urlParameters)
     if (missing.isNotEmpty()) {
-      val attributeLocation =
-        context.getValueLocation(fulfillment.getAttributeNode(ATTR_URL_TEMPLATE))
+      val attributeLocation = context.getValueLocation(fulfillment.getAttributeNode(ATTR_URL_TEMPLATE))
       val message =
-        if (missing.size == 1) {
-          "The parameter ${missing.first()} is not defined as a `<$TAG_PARAMETER_MAPPING>` element below"
-        } else {
-          "The parameters ${missing.joinToString(separator = " and ") { it }
+          if (missing.size == 1) {
+            "The parameter ${missing.first()} is not defined as a `<$TAG_PARAMETER_MAPPING>` element below"
+          } else {
+            "The parameters ${missing.joinToString(separator = " and ") { it }
                     } are not defined as `<$TAG_PARAMETER_MAPPING>` elements below"
-        }
+          }
       report(context, fulfillment, attributeLocation, message)
     }
   }
 
-  /**
-   * Returns true if the given action tag defines at least one entity reference in one of its
-   * parameters.
-   */
+  /** Returns true if the given action tag defines at least one entity reference in one of its parameters. */
   private fun hasEntitySetReference(action: Element): Boolean {
     assert(action.tagName == TAG_ACTION)
 
@@ -390,63 +383,58 @@ class ActionsXmlDetector : ResourceXmlDetector() {
   }
 
   /**
-   * Checks parameter mapping parameter and returns the url parameter name (or null if not declared
-   * or any other validation error was found)
+   * Checks parameter mapping parameter and returns the url parameter name (or null if not declared or any other validation error was found)
    */
   private fun checkParameterMapping(
-    context: XmlContext,
-    parameterMapping: Element,
-    intentParams: MutableSet<String>,
-    urlParameters: MutableSet<String>,
+      context: XmlContext,
+      parameterMapping: Element,
+      intentParams: MutableSet<String>,
+      urlParameters: MutableSet<String>,
   ): String? {
     val intentParameter =
-      checkRequiredAttribute(
-        context,
-        parameterMapping,
-        ATTR_INTENT_PARAMETER,
-        allowReference = false,
-      ) ?: return null
+        checkRequiredAttribute(
+            context,
+            parameterMapping,
+            ATTR_INTENT_PARAMETER,
+            allowReference = false,
+        ) ?: return null
 
     checkParent(context, parameterMapping) ?: return null
 
-    val urlParameter =
-      checkRequiredAttribute(context, parameterMapping, ATTR_URL_PARAMETER, allowReference = false)
-        ?: return null
+    val urlParameter = checkRequiredAttribute(context, parameterMapping, ATTR_URL_PARAMETER, allowReference = false) ?: return null
     urlParameters.add(urlParameter)
 
     checkNotAlreadyPresent(
-      intentParameter,
-      ATTR_INTENT_PARAMETER,
-      intentParams,
-      context,
-      parameterMapping,
-      TAG_FULFILLMENT,
-      TAG_PARAMETER_MAPPING,
+        intentParameter,
+        ATTR_INTENT_PARAMETER,
+        intentParams,
+        context,
+        parameterMapping,
+        TAG_FULFILLMENT,
+        TAG_PARAMETER_MAPPING,
     ) ?: return null
 
     return urlParameter
   }
 
   /**
-   * Checks that this element has the expected parent; this catches cases where you cut & paste
-   * fragments into the wrong place.
+   * Checks that this element has the expected parent; this catches cases where you cut & paste fragments into the wrong place.
    *
-   * Returns null if a problem was found, otherwise true. Using null here allows callers to use
-   * Kotlin's elvis operator to quickly bail if an error was found (since we don't want to add
-   * multiple errors once one has been found.
+   * Returns null if a problem was found, otherwise true. Using null here allows callers to use Kotlin's elvis operator to quickly bail if
+   * an error was found (since we don't want to add multiple errors once one has been found.
    */
   private fun checkParent(context: XmlContext, element: Element): Boolean? {
     val tag = element.tagName
     val expectedParent =
-      when (tag) {
-        TAG_ACTION -> TAG_ACTIONS
-        TAG_ACTION_DISPLAY -> TAG_ACTION
-        TAG_PARAMETER,
-        TAG_FULFILLMENT -> TAG_ACTION
-        TAG_PARAMETER_MAPPING -> TAG_FULFILLMENT
-        TAG_ENTITY_SET_REFERENCE -> TAG_PARAMETER
-        else -> return true
-      }
+        when (tag) {
+          TAG_ACTION -> TAG_ACTIONS
+          TAG_ACTION_DISPLAY -> TAG_ACTION
+          TAG_PARAMETER,
+          TAG_FULFILLMENT -> TAG_ACTION
+          TAG_PARAMETER_MAPPING -> TAG_FULFILLMENT
+          TAG_ENTITY_SET_REFERENCE -> TAG_PARAMETER
+          else -> return true
+        }
     val actualParent = element.parentNode?.nodeName ?: return true
 
     if (expectedParent != actualParent) {
@@ -462,34 +450,34 @@ class ActionsXmlDetector : ResourceXmlDetector() {
 
   private fun wrongParent(context: XmlContext, element: Element, expected: String) {
     report(
-      context,
-      element,
-      context.getNameLocation(element),
-      "`<${element.tagName}>` must be inside `<$expected>`",
+        context,
+        element,
+        context.getNameLocation(element),
+        "`<${element.tagName}>` must be inside `<$expected>`",
     )
   }
 
   private fun nestingNotAllowed(context: XmlContext, element: Element) {
     report(
-      context,
-      element,
-      context.getNameLocation(element),
-      "Nesting `<${element.tagName}>` is not allowed",
+        context,
+        element,
+        context.getNameLocation(element),
+        "Nesting `<${element.tagName}>` is not allowed",
     )
   }
 
   /**
-   * Checks that the given name is not already in the given names set; if so reports a duplicate
-   * error. Returns null or true for the same reason as documented in [checkParent].
+   * Checks that the given name is not already in the given names set; if so reports a duplicate error. Returns null or true for the same
+   * reason as documented in [checkParent].
    */
   private fun checkNotAlreadyPresent(
-    name: String?,
-    nameAttribute: String,
-    parameterNames: MutableSet<String>,
-    context: XmlContext,
-    parameter: Element,
-    parentTag: String,
-    nameTag: String,
+      name: String?,
+      nameAttribute: String,
+      parameterNames: MutableSet<String>,
+      context: XmlContext,
+      parameter: Element,
+      parentTag: String,
+      nameTag: String,
   ): Boolean? {
     name ?: return true
 
@@ -508,10 +496,10 @@ class ActionsXmlDetector : ResourceXmlDetector() {
       }
 
       report(
-        context,
-        parameter,
-        location,
-        "`<$parentTag>` contains two `<$nameTag>` elements with the same $nameAttribute, `$name`",
+          context,
+          parameter,
+          location,
+          "`<$parentTag>` contains two `<$nameTag>` elements with the same $nameAttribute, `$name`",
       )
       return null
     }
@@ -519,25 +507,24 @@ class ActionsXmlDetector : ResourceXmlDetector() {
   }
 
   /**
-   * Checks that the given attribute is present on the element. Optionally allows allows to
-   * allow/disallow blank values, and resource references. Returns null or the actual resource value
-   * found for the same reason as documented in [checkParent].
+   * Checks that the given attribute is present on the element. Optionally allows allows to allow/disallow blank values, and resource
+   * references. Returns null or the actual resource value found for the same reason as documented in [checkParent].
    */
   private fun checkRequiredAttribute(
-    context: XmlContext,
-    element: Element,
-    attribute: String,
-    allowBlank: Boolean = false,
-    allowReference: Boolean = true,
+      context: XmlContext,
+      element: Element,
+      attribute: String,
+      allowBlank: Boolean = false,
+      allowReference: Boolean = true,
   ): String? {
     val value = element.getAttribute(attribute)
     if (value != null && (allowBlank || !value.isBlank())) {
       if (!allowReference && value.startsWith(PREFIX_RESOURCE_REF)) {
         report(
-          context,
-          element,
-          context.getLocation(element.getAttributeNode(attribute)),
-          "`$attribute` must be a value, not a reference",
+            context,
+            element,
+            context.getLocation(element.getAttributeNode(attribute)),
+            "`$attribute` must be a value, not a reference",
         )
       }
 
@@ -545,21 +532,21 @@ class ActionsXmlDetector : ResourceXmlDetector() {
     }
     val fix = LintFix.create().set().todo(null, attribute).build()
     report(
-      context,
-      element,
-      context.getElementLocation(element),
-      "Missing required attribute `$attribute`",
-      fix,
+        context,
+        element,
+        context.getElementLocation(element),
+        "Missing required attribute `$attribute`",
+        fix,
     )
     return null
   }
 
   private fun report(
-    context: XmlContext,
-    element: Element,
-    location: Location,
-    message: String,
-    fix: LintFix? = null,
+      context: XmlContext,
+      element: Element,
+      location: Location,
+      message: String,
+      fix: LintFix? = null,
   ) {
     foundProblem = true
     context.report(Incident(ISSUE, element, location, message, fix))
@@ -569,17 +556,17 @@ class ActionsXmlDetector : ResourceXmlDetector() {
     /** Validation of `<actions>` XML elements. */
     @JvmField
     val ISSUE =
-      Issue.create(
-        id = "ValidActionsXml",
-        briefDescription = "Invalid Action Descriptor",
-        explanation = "Ensures that an actions XML file is properly formed",
-        category = Category.CORRECTNESS,
-        priority = 5,
-        severity = Severity.FATAL,
-        implementation = Implementation(ActionsXmlDetector::class.java, Scope.RESOURCE_FILE_SCOPE),
-        // Disabled by default for now because the grammar is actively evolving: b/132733887
-        enabledByDefault = false,
-      )
+        Issue.create(
+            id = "ValidActionsXml",
+            briefDescription = "Invalid Action Descriptor",
+            explanation = "Ensures that an actions XML file is properly formed",
+            category = Category.CORRECTNESS,
+            priority = 5,
+            severity = Severity.FATAL,
+            implementation = Implementation(ActionsXmlDetector::class.java, Scope.RESOURCE_FILE_SCOPE),
+            // Disabled by default for now because the grammar is actively evolving: b/132733887
+            enabledByDefault = false,
+        )
 
     private const val KEY_ID = "id"
     private const val TAG_ACTIONS = "actions"
@@ -617,9 +604,8 @@ class ActionsXmlDetector : ResourceXmlDetector() {
     }
 
     /**
-     * Adds in any variables found in the { } section of the URL template. This is handling the
-     * range from [from] inclusive to [to] inclusive in string [s] assuming the content is an
-     * "expression" according to RFC 6570.
+     * Adds in any variables found in the { } section of the URL template. This is handling the range from [from] inclusive to [to]
+     * inclusive in string [s] assuming the content is an "expression" according to RFC 6570.
      */
     private fun addVariables(variables: MutableSet<String>, s: String, from: Int, to: Int) {
       if (from > to - 2) { // empty
@@ -634,21 +620,21 @@ class ActionsXmlDetector : ResourceXmlDetector() {
       //    op-reserve    =  "=" / "," / "!" / "@" / "|"
       @Suppress("MoveVariableDeclarationIntoWhen") val operator = s[from + 1]
       val hasOperator =
-        when (operator) {
-          '+',
-          '#' -> true // op-level2
-          '.',
-          '/',
-          ';',
-          '?',
-          '&' -> true // op-level3
-          '=',
-          ',',
-          '!',
-          '@',
-          '|' -> true // op-reserve
-          else -> false
-        }
+          when (operator) {
+            '+',
+            '#' -> true // op-level2
+            '.',
+            '/',
+            ';',
+            '?',
+            '&' -> true // op-level3
+            '=',
+            ',',
+            '!',
+            '@',
+            '|' -> true // op-reserve
+            else -> false
+          }
       var offset = from + if (hasOperator) 2 else 1
       while (offset < to) {
         // Find end of varspec

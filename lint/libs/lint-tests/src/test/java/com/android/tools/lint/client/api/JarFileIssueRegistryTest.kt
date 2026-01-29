@@ -44,8 +44,7 @@ class JarFileIssueRegistryTest : AbstractCheckTest() {
     val loggedWarnings = StringWriter()
     val client = createClient(loggedWarnings)
     getSingleRegistry(client, File("bogus"))
-    assertThat(loggedWarnings.toString())
-      .contains("Could not load custom lint check jar file bogus")
+    assertThat(loggedWarnings.toString()).contains("Could not load custom lint check jar file bogus")
   }
 
   fun testCached() {
@@ -75,13 +74,13 @@ class JarFileIssueRegistryTest : AbstractCheckTest() {
     assertTrue(applicableCallNames!!.contains("getActionBar"))
 
     assertEquals(
-      "Custom lint rule jar " +
-        file2.path +
-        " does not contain a valid " +
-        "registry manifest key (Lint-Registry-v2).\n" +
-        "Either the custom jar is invalid, or it uses an outdated API not " +
-        "supported this lint client\n",
-      loggedWarnings.toString(),
+        "Custom lint rule jar " +
+            file2.path +
+            " does not contain a valid " +
+            "registry manifest key (Lint-Registry-v2).\n" +
+            "Either the custom jar is invalid, or it uses an outdated API not " +
+            "supported this lint client\n",
+        loggedWarnings.toString(),
     )
 
     // Make sure we handle up to date checks properly too
@@ -113,246 +112,246 @@ class JarFileIssueRegistryTest : AbstractCheckTest() {
   fun testLintJarPriority() {
     // Add "Lint-Revision: 1" to the jar manifest created with CustomRuleTest.LINT_JAR_BASE64_GZIP.
     val lintJarRevision1 =
-      "" +
-        "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" +
-        "YyzPgw8AAA=="
+        "" +
+            "H4sIAAAAAAAA/51XeTTUbRse+5J9iWyFaCxDtjLG0ry2NNbReBOSxsiYLFnK" +
+            "WraI7GMGI8KIiOxLYiIiOzG2kCVbjLWQrc+7nfetr7fzne8+5/7j+Z3run73" +
+            "8zz3c859mcJoaJkBAEZGQJ6OLgxwGNSAP4LpMI10L0JBBsZ68jQA00Mgz+En" +
+            "RkBDQOHlD3HVUdaHK+fD5AEI/Q00ghob6OmaX5Qz0kNcZALQ5LWLO/6WXt5H" +
+            "AFS0bqP0AFpzWyrAhlFHuyEMJNfLCgNJd3V0l8FP9ytNzKy3dsj0sl4w6paV" +
+            "k8rvBymVws93wKTaug17ZeRAwDfy0r0ySoPtVNJvPWSBbl3doPOya7Jyckb3" +
+            "0EGppngmFVzSg6Qjv1f64y0xHqadi727K9r+zx39GMfxD5yHl5ubq7vnT/Hc" +
+            "P8DfOvtTCv+PKTfQLv/9qzr+CC6Lw+uYOjx/+Z/woG5u2q7ObnaeOihPFNLT" +
+            "1V0OecPOwwP36+7dvgHer/kloGGzE4wCp++JAUUjaBTuleJDEwRa7JbXAe0G" +
+            "hEor0xuvOeMlxFt9luq8iiqJVlUuMp5jA3VDIc4SFGpM5ru2AZex3TX2T3eH" +
+            "Yv3SZCDNHLleewbZft0ac6MeL+f8lut8F18W1dJPiOxhWzwZx3pCVKOPidDH" +
+            "1gLMAyUyTkxEAawCuYMfXOMoS+Y+fTyY/Yjo9loDh2Yoe/gqp39idIBhfQud" +
+            "/y/1p+jUJSfMqTVBE0rqmu0smnwnQ1pSGriX1rIDu5XWLKlMmLapMXfM6vuo" +
+            "SScn2qnTOVd5qWx5V1WouplVT03UBs7R+tvUb0D9ad6zTFl5B7VUhWyzkQSz" +
+            "vPzlQ1emgwOPF2+x++zdb4kFb2MjFRMmesBxJetm5I4RfHp0DR6laqZ9dszR" +
+            "wqMiCjNsVpGhj40x7/dVLYCknzdpmlr4sNrTVHIpMkTZ7XIaghjmNJsViVl0" +
+            "iCknTOEXqvMXYvL1zKaLoQYtcN4XDZOahNvYX9KNs8Nic7kiX/kbRUnysqX+" +
+            "eh+r/Tgegon6JPE2ov+qOxAvGQvKa2qND01I5ycGTZZEHOjIaiRkBdVzjvWP" +
+            "EYUERiB64O0pC3zwZa2M1BFTBa28YbTX256hywVRTlH5lV07qMzutAFh+j5F" +
+            "HeMS0+IbZ9X8XJlyL2VyVK3TkSkyNHoARnAngpmAnykuqiPKhWp4KTqLmruj" +
+            "54+duWutEiWqUmRGywVeL5arqeEU7hFOKg+JTFdCVDmaZ/tZAIUsUx4SO4BK" +
+            "hSiHZAybfPkgr82oqXB46UenDZfuQNRc1sAHtEB6nyQxHxtbU5mDSwxjHEWo" +
+            "0KvcHmkbyExQFu4zRzJNo/djCESJ9RQ4oxBbgcaNytUZRvCS7xaCw2P9irLQ" +
+            "cj5StwkXFY62SsMQxcpnDTsltbHuhu1lFcGZDk/I2dVODg6mIG/Z7Lrw7XyI" +
+            "VGePQ15BGMyiqqqow7WlsYkkfozYsR13jZcSNVCkJF1VkOHEVzZX/FgAJgEp" +
+            "sybF3L8jNLdmzqnV+ECI4JoWo60/hmqA2vd3VdegRMzzXqTPFrcHQ+VPWQl1" +
+            "athZgVPXjaSJNUSTj2HLcm6OdT5AdKn6O5+0N0WIxbE1Nt/yhaGRlKzZamRN" +
+            "SsXsjkqRu7c1V8n9JO9a2Sma+ZmeK0gzp0yOQtpugTLlR/cfIQ106C1FknSt" +
+            "G+S9a8WmENa8Cg3qzvaC0FYDcptVLe79SXmq4sa8J0XBjeMEgaevShbHyMcc" +
+            "JKIvsrqpLlnkFGbF4x7ESFaN172L9xILz3FAYS64aJzb57r9tFphScG2SaVW" +
+            "copxmW8NtnehqWhNTSEtL6KaTVqaxKLE60CHPvNJEI7k1RHc9E9PXkmFJGfG" +
+            "fC1Hppg5WJiiGR6U+oqPJ5y4bgkOYQqdaVKgiOEAODcLFYfPx9Qs9Z48yvmM" +
+            "SAZfklt2Fme7aSlSBvK10JuZmaxqyVHB4rs9R9FGkpL2FwTCNNFPN19dkaxE" +
+            "Bx4IyxS1PrZpjOcryFpK7Entt68Enz6O2Fa4nYOaQ2hXGnYuxOfKWg3Mkv0b" +
+            "ejbbcp3icuumL1aEmJMldJE27oQYmRRExhJlvdTOUilmLqlz5c2zmU61OVAl" +
+            "jyNf7PtIbxrX9e20+++nQSNXFmt4ik9vEBbyZQEidznW9PciKMfuzq7xcd59" +
+            "/V51VItSc28ZaNnlFIboWXpW+k7ujG6rF/jLbpu3XkTgiP9geepZnT3hrycG" +
+            "Brm7oqNnVy/33/YTJCWYGbma87ouSA6/w5ZoVxOXiQ+Tzyo/FIhi7fd7fZkE" +
+            "UH6v2oisLJTrKaAi27WAKcGUWJbRy9c1VJ7RFXoJn/uQLH1F5aFVTALqpWfi" +
+            "ku2iFKzCMHGp7LNl2PgBWV7LU4fTQ92v5j7u8BxNvIwC1IAwFbgx5wtasio3" +
+            "ZsyMxrxgGTjeqCJrof/F4VS0MuSFsuKBB7+rLWUi1kjtWaHDqOAgoQZYskS4" +
+            "B/uVRpqTrZt8207GZmjwTHsb78B1k4Q7AeMv8u/VYjuP9Y2h1WadTqTaF+Q/" +
+            "fTjteWZGNpWtpHnbTRp3Pzd8fqo78ykp1XZ4R5jfy+Nz76a9n76k1lEYq0R4" +
+            "zCCkrxRlUvdCO+wWVHpj+1wUCbmDpYlgktD0DyaZn7HgdX8lO8sbTXa3UokU" +
+            "afdzmldYXSSMi9OvSSEx45NfiwQM8mGlObInB+lRATwvF7bzyrLxWvaC5Bu3" +
+            "ekorssGom/OFzzH9K+yQBW6SoJBvvXjHsjqgcgroa7AJqHDVDtwpydc02Uci" +
+            "AoJ21vLvxO0EIPY5PnMj9vXW35QsgjXewxJCPs3OU2Ktm52T1HEnNbQ/0Y9M" +
+            "aENEsvGX4K92T59zZQvhl4bMS0NWQVmTryMD6rFeFsM70pWNqtDLHZsnDYYv" +
+            "WXlMCPhPs8LPHdsyqFVcTqJFqZ+gw928wiw1Hdz/xDrI++muI263snQXm24c" +
+            "ac/89jHH86c83nEfBhtJSb39FPbdx16wS3dF3jUeyDhqxhqlwYY4NuWh10Jc" +
+            "D1YosKTkj83LgMFOWJBbYHm36Ennj7PyV3WmZILfpWSYcEkHH5VUBdLJBHca" +
+            "FsOYEbRWyVdD+i8dXYVXp7JvuGbYjHx8GQZpFnxVfsdW9dyR8QGQp9w1v+tD" +
+            "VaGQRuqqUGFZbVYRWnMdfg4fb7Fu+izj5DdlqU/6oK0xHLpqUhQGYG84kFxH" +
+            "q61lmXaivpkRiMsg5AiNJL6ma2tBKq/TQrdYqLZkGzbV9ebbHXiKpkXZp/SZ" +
+            "SLrK2PIkRv1z+AaHQrP1Nz6F4aeXS2bVRJrFeSQwGpFb5jE+1ijb84lhNN6E" +
+            "gElTavZJqYdZR016A7PY9wXVY1ttttkr36YeEBYG+6HmfbfhYOziG1Dq0g2d" +
+            "hKTiDaE90gNOdNLgKE/8stNsUvGuuvd7um0Bx2yy4DBf/GYi/S297Eo4xkPH" +
+            "Sb6CIAZnwKQ1BnRYNikx6Wd3ta2Ov3VLZl0hTm5wiMMH1/dY+WTAPhxcGko8" +
+            "7nhmZ+bUOG0Z0TG6NEVPgvtp7fOCoZbpPaWOM3S+6dB4RQWGpHXTpunk19hE" +
+            "nGC/5qIdA3uuZKjAWa1zZ0+6CFYFaVpnIKSfP4rE72+eN0O/9NwSY1NmOHpz" +
+            "FTGqJPeF7+a84rgH3daFLdDkKmzoTquM7tFPavII0BBVSrBzJo+xj0pio0lt" +
+            "dCDFeKyan/Hg+LcjmmI20iWJCgDYOJzvlP+XEc3Aw8MLBUddR3t4uvv8OafB" +
+            "bWCCUB4NokGlwVmyXqFzn3xDeDadPnRVNCtxKLgYqFy4gu0sjjF0wI9ZNtx9" +
+            "TAJqbtPsmb19kTqUmPO4mn1r/Llf10PI9dnlg9mj9ZKa/abNv/A+uJQ/SYfX" +
+            "qP20GplZWhjlDmEpK9zk1M7DMCTYyZnqidg3kgxJD0g5xuLFmT36YmZffEdl" +
+            "nyNxigUMr1i4ntKrd04NScY8crlZGDX9aLoaE17itosmtLoqwvNgXWos5PMx" +
+            "vjqu5SMNEaq86h4XNgJPgDNyxcSt8XEdyzxXIYyUOK0nahgvNS6h86e0r3PL" +
+            "XXt9JKiLjWKxOCzLNPMrzmRsb/ci5nloLLM6e1GA8lpzo9XxldV0O8pNBvuJ" +
+            "r8ny/RfgOypjob0HRU3j2zdYZvavrLTwhZnEFgfZoafsBp2MACjWL7YmuIhy" +
+            "z4EPA4oFlXouGDuxO0NaolevfwwrDuaqe7KXStVuQ9wOtXioSLQ+8Ka7Zbb3" +
+            "DF7A0yntxLPPCTDJoyZ7qYtfNB7nx9bBOqyRm3vsNV8FxwT75pg71D+n8yGm" +
+            "T5nCqKh5aP7dI/1lGShQwD8d0280EZp/c0z8v5MOGwaQHST1T9o3/onuD//0" +
+            "nXf6WUGM3xTU949O/BmL4xvW7g/692ds7m/YMlQ/7P6fCfB/I3DlxwK/P5/v" +
+            "Vb53Rn9FdhD+Jyr/4pO+F//+Tf8tDj7y/71wUxgd/R+3xAiAHaqKsf62+g+W" +
+            "YyzPgw8AAA=="
 
     // Add "Lint-Revision: 2" to the jar manifest created with CustomRuleTest.LINT_JAR_BASE64_GZIP.
     val lintJarRevision2 =
-      "" +
-        "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" +
-        "Tv8HrPpUgIQPAAA="
+        "" +
+            "H4sIAAAAAAAA/51XeTTU/fcf+5J9iWyFaDBDtsJYmseWxjoaT0LSGIzJkqGs" +
+            "ZcuWJcY6IoyIyL4kJiKykxlbyJItxlrI1s/zPN/v+T716+l8z/eec/94f859" +
+            "vd73/bn3nnNfpjAaWmYAgJERUKCjCwMcGTXgL2M6ciPdy1CwgbGeHA3A9CiQ" +
+            "5+gTI0DybvFVpU/8nTZHJ5cj5wEI/SfQCGpsoKdrflnWSA9xmQlA49gl7vSH" +
+            "e3kfA1DRuo/RA2jNbakAm0ZdnYYwsGw/Kwws3dPVWwE/S1KcnN1o75LpZ71k" +
+            "1AuSlSokgRXL4Re7YFIdvYb9MrJg4Fs56X4ZxaFOKul3WBDQvacXfBG0DpKV" +
+            "NbqPDko3TWaSJ0ekPEg59meqP38T45Hbudp7uKHt//Wkn8dx/C0O6+Xu7ubh" +
+            "+ct47p/E3z7/Swj/zyE30a7//6oG/kgui6N6TB8VQO4XOKi7u7abi7udpw7K" +
+            "E4X0dPOQRd60w2KTft+7NzDI+62wDDxidopR4Ox9MaBoJI38/fLk0ASBNruV" +
+            "DUCnAb7ayvTmG854CfF2n+UGr5JqglWNq4zn+GDDcIiLBIUak/2+Y9B1fG+d" +
+            "/fO94Ti/DBlIK0e+175Brl+vxvwY9tW830qD79Krknr6SZF9XJsn43hfiErM" +
+            "CRH6uHqAeaBE1qnJaIBVIHfwgxscFancZ08Gsx8T3Vlv4tAMZQ9f4/RPjAkw" +
+            "bGyj8/+t8QyduuSkObUmeFJRXbOTRZPvdEhbWhP38npuYK/iuiWVCdMONeau" +
+            "WeMANfH0ZCd1JucaL5Ut75oyVS+zypnJ+sB5Wn+bxk2oP80Hlmkr76C2mpAd" +
+            "NqJgjpe/XOjqTHDgydJtdp/9iLY41R1clELCZJ/qw7INM3LXaHJmTF0ySsVM" +
+            "+/y4kwW2KhozYlaVpY+LNSf5qhRBMi+atEwvflzraym7EhWi5H41A0EIc57L" +
+            "icIsOcRW4qeTF2sLF2ML9cxmSqEGbXDel01Tmvg7uN8yjXPD4vK5ol77G0VL" +
+            "8rKl/x6B034SD8FEf5Z4F0m67gFMlowDF7S0x4cmZPITgqbKIg91QBoJOUGN" +
+            "nOOkcYKQwChET3Vn2iI5+KpWVvqoqbxWwQja613f8NWiaOfowuqeXVR2b8ag" +
+            "MP2Ago5xmWnpzfNqfm5M+VeyOWo26MgUGRo9AKNqN4IZnzxbWtJAkA3V8FJw" +
+            "ETX3QC+cOHfPWjlaVLnEjJZLdaNUtq6OU7hPOKUyJCpTEVHjZJ7rZwEUskx7" +
+            "ROgCKhajHFIxbHKVQ7w2Y6bC4eWfnDddewNR8zmDH9ECmQOShEJcXF11XlJi" +
+            "GOMYQple+c5ox2B2gpLwgDmSaQZ9EIsnSGykwRmF2Io0blavzTKqLvtuIziw" +
+            "G9eUhFYKkbotSdHhaKsMDEGscs6wW1Ib52HYWVEVnO3wlJxb6+zgYAr2BuU2" +
+            "hO8UQqS6+xwKisJgFjU1JV1ubc0tRPEThK6dhzd4KdGDJYrSNUVZznwV86VP" +
+            "BGASkAprYmzEXaH5dXNOreYHQni3jFht/XFUE9Se1FNbhxIxL3iZOVfaGQyV" +
+            "O2Ml1K1hZ6WavmEkTagjmHwKW5F1d2rwAaLL1d/7ZLwtQSyNr7P5Vi4Oj6bl" +
+            "zNUi69Kq5naVSzy8rbnKIlK860HTNAuzfdeQZs7ZHMW0vQIVSo8jHiMNdOgt" +
+            "RVJ0rZvkvOvFphHWvPJN6i72gtB2A3KHVX3Sh9NyVKXNBU9Lgpsn8ALPXpct" +
+            "jZNPOEjEXGZ1V1m2yCvOiU96ECtZM9HwPt5LLDzPAYW55Kpx4YDrzrNa+WV5" +
+            "2xbleslpxhW+ddj+pZaSdTX5jILIWjZpaSKLIq8DHfrcZ0E4kldHcMs/M3U1" +
+            "HZKaHfutEplm5mBhimZ4UO4rPpFwytFSNYQpdLZFniKWBEhyt1B2+HJCzVLv" +
+            "6eO8L4hU1SuyKy7ibLcsRSrAvhZ6s7NTNW15yrjkXs8xtJGkpP0lgTBN9LOt" +
+            "19ckq9GBh8IyJe1PbJrj+YpylhP70kn21apnTyJ25O/koeYR2tWG3Yvx+SCr" +
+            "wTmyf1PfVke+88P8hpnLVSHmZAldpI0HPlYmDZG1TNkot7NUjJ1P6V59+3y2" +
+            "W20eXM3jxBf3Icqbxm1jJyPiwwx49NpSHU/p2U38YiEIIHKPY11/P5Jy4t7c" +
+            "Oh/nvTcfVMa0KHX3V4CWPc5hiL7l5+XvZc/ptnupft3r8NaLDBz1H6pMP6+z" +
+            "L/zt1OAQd09MzNzaVdIdP0FigpmRmzmv26LkyHtcmXYtYYXwKPW80iOBaFaS" +
+            "35urRIDSB5VmZHWxbF8RFdmuTZUSTIljGbvqqKH8nK7YS/jCx1Tpa8qPrGIT" +
+            "UK88E5dtl6RgVYaJyxVfLMMmDslyWp46nFh1v7qIpKP/aOJlFKAGhCnDjTlf" +
+            "0pJVuDHjZjTmRSvAiWZlkIX+V4czMUqQl0oKh1h+N1vKZJyR2vNihzHBIXwd" +
+            "sGwZfx/2O400J1sv+Y6djM3w0LnODt5BR5OEuwETLwvv1+O6TwyMo9XmnE+l" +
+            "2xcVPns043luFpTOVta64y6dFJEfvjDdm/2MmG47sivM74X90r9l76cvqXUc" +
+            "xioRHjsEGShHmTS81A67DZXe3LkQTUTu4mgimSQ0/YOJ5ucseD1eg+Z4Y8ge" +
+            "VspRIp1+zgvya0v4CXH6dSkkZmLqW4mAQSGsPA90eogeFcDzanGnoCI3Wcte" +
+            "kHzzdl95Va4q6tZC8QsMaZUdsshNFBTybRTvWlEHVE8DfQ22AFVu2oG7ZYWa" +
+            "JgdIREDQ7nrh3Ye7AYgDji/ciAO9jbdlS6oaH2AJIZ/nFihx1q0uKepJpzW0" +
+            "P9OPTmpDRHKTr8Bf75294MYWwi8NWZCGrIFzpt5EBTTivCxGdqWrm1WgV7u2" +
+            "ThuMXLHCTgr4z7DCL5zYNqhXWEmhRamfoku6dY1ZaiaY9NQ6yPvZnlPSXnX5" +
+            "Hi7TOMqe+d0TjhfPeLwffhxqJqb0kyjse0+8YFfuibxvPpRx0owzyoANc2zJ" +
+            "QW+EuB2uUmApqZ9aVwBD3bAg98DKXtHTLp/m5K7rTMsEv0/LMuGSDj4uqQKk" +
+            "kwnuNiyFMSNorVKvh5CuHF+D16azb7pl2Yx+ehUGaRV8XXnXVuXCsYlBsKfs" +
+            "DT/H4ZpQSDN1TagwSJtVhNZch5/Dx1uslz7HOPVtRfrTAWh7LIeumhSFAdgf" +
+            "DiQ30GprWWacamxlBCZl4fOERhPf0HW0IZU2aKHbLFTboKYtdb2FTgeekhlR" +
+            "9ml9JqKuEq4yhVH/QnKTQ7HZxluf4vCzK2VzaiKt4jwSGI2obfNYH2uU7cXE" +
+            "MBpvfMCUKTX7lNSjnOMm/YE57AeC6nHtNjvs1e/SD/GLQySo+cAduCpu6S04" +
+            "ffmmTkJK6abQPvEBJzplaIwnfsV5LqV0T937A92OgFMuWXCEL34rkf62Xm41" +
+            "HIPVcZarwovBGTAZzQFdli2KTPq5PR1rE+/cU1lXCVObHOLwoY19Vj4ZVR8O" +
+            "Lg1FHo9kZhfm9IfaMqLjdBkKnniPs9oXBUMtM/vKnWbpfDOh8QryDCkbpi0z" +
+            "qW9wiUmCJM0lOwb2fMlQgfNaF86fdhWsCdK0zkJIv3gclXywddEM/cpzW4xN" +
+            "ieH4rTXEmKLsV75bCwoTWLrtS9vgqTXY8N12Gd3jn9XkEOBhqrRgl2weYx/l" +
+            "xGaT+phAivF4LT/j4cnvVzSFXKRrChUAsHm03yn9NyuaARbrhYKjHNFYTw+f" +
+            "f+1pcBuYIJRHg2BQbXCerFfsMiDXFJ5Lpw9dE81JHA4uBSoVr+K6S2MNHZLH" +
+            "LZvuPSECNXdo9s3evUwfTsx7Usu+PfHCr+cRxHFu5XDueKOkJsm09TfeB1cK" +
+            "p+iSNeo/r0VllxdHe0BYKoq3OLULMAwJdrKmeiL2zURD4gNinrF4aXafvpjZ" +
+            "V98x0AtkkkIRw2sWrmf06t3Tw5Kxj11vFUfPPJ6pxYSXue+h8e1uCvACWI8a" +
+            "C/lirK+OW+VoU6QKrzr20mbgKdWsfDFx6+SHXSs81yGMlIdaT9UwXmpcQhfP" +
+            "aDtyy954cyyoh41isTQCYpr9PclkfH/vMuZFaByzOntJgNJ6a7PVydW1TDvK" +
+            "LQb7yW+pcqRL8F3l8dD+w5KWiZ2bLLMH11bb+MJM4kqD7NDTdkPORgAU61db" +
+            "k6TISs/Bj4MKRdV6rhg7sbvDWqLXHT+FlQZzNTzdT6fqtCHshFo8UiBYH3rT" +
+            "3Tbbfw4v4umWduY54ASYFFCTvdTFLxtP8OMaYF3WyK199rpvguOCA/PMXepf" +
+            "MvkQM2dMYVTUPDT/LJL+LRkoUMDfJdMfMBGaf5JM/H+CjhoGkBsk9XfYdwKK" +
+            "7i8B9YN4+lVCjN8lRPpbJ/4KxfEdav8n/fsrNPd3aBDVT7v/VwT83xHY/pzg" +
+            "z/H5keVHZfRvyw1K+QXLP+ikH8l/nOn/kKsd+98m3BRGR/9XlRgBsCNWcdY/" +
+            "Tv8HrPpUgIQPAAA="
 
     // Add "Lint-Revision: 3" to the jar manifest created with
     // CustomRuleTest.LINT_JAR_SERVICE_REGISTRY_BASE64_GZIP.
     val lintJarRevision3 =
-      "" +
-        "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" +
-        "GPd2/wEQZrQ94RIAAA=="
+        "" +
+            "H4sIAAAAAAAA/52XeThUfRvHxzK2x75EBoVI1myFsU22NHaNh1BpzGQMRjOU" +
+            "tWzZsmQZNCJbtsjYJZSIbFF2IUu2GGshWy9P7/U+ekvPcs51X7/rd/743Pfv" +
+            "Pud8r/trBKWgpAPsXTmaWlDAvosGwAOwcbLFYlC2UrDztACKx8Y9Fnvh6vYb" +
+            "gIzSeZAKQGl6iQxgdCCBeR8B5+rsjMG6/EsS209I10//SxjXz2EOKKe/Lo/9" +
+            "j8bsEWUy4E7xZADACjkAIPcLIsTZWQPj6GzjoovDuSJMEFdROBesuyTcwQaH" +
+            "+1U2vIk1FARhV0nXLdM93a2d79gpVRuUAdSBLPKnxfb5EUXk8hdi2ogResi4" +
+            "IYvaWw9rRFTXKbaM3z5N7IvNfFjBtDb8xPP1ffDVyfmdyUPPhVW7jBrOcNwx" +
+            "zx0FxqlUfVoMTS3KD8OC6YvzV1k0ctDU0TaSRtp8tnU1ejV3ajINBImpHToC" +
+            "xl88BsWfwPEyedQv6FkfUSm3jfUJRzxwupYfNv5gvAIdVOi8iSI0YWRMcqCv" +
+            "lei7z0Z4aGJKBmpDFDiUcedWfI4qpmQJCFrF3W2dZ78MpiHdVctWQrsqsfKc" +
+            "Pa5xlU3yysvffF8zksxm+8VpJ37HGw5tbZ5HPwmIpFNmKvCWW2qoszyysJhs" +
+            "Q7pGbTvyNUGq65zJhvxQwJudgvrhdQf6ie2LC42cgYaRRF8b1JhNr70+AMHw" +
+            "5ZIhPqTEpedDj0xembYT2kbgZp8a/+WrHwOJfqzV2VuJZC3W6esBZvdl0q12" +
+            "3IDXjbcem+Sxt4nas2+zAAxzyLtdlQXPGwxzxVRDW63gq1tMlV9BQ6DOKbpW" +
+            "5c/JnLDx499/BNVcIaxmtADA2O4jqb/zEWgiXBBwFwz2b7z/3zdvdfZwfM0t" +
+            "lOg3PkrDffK2gAh/CIX07aK4gGjuRpv5ZUCLLqHM0sjhJUuUkGCT+1y1a0FZ" +
+            "umW5k5jLUE91n7+jEIkcnfquucdpaHOJ6dOtvkjPJDFwA3OW65Zuhme7ytQg" +
+            "7tmU53y1x+yzgiqqEb6tmEYXmqEOf4Xww3xUkVUAUx+hlKMjYQBLHza/O1eY" +
+            "ixPYTh7xY/qNf32pllk1gClokcUrNtxb73kj0OvM8+NAZeERU3JViRFZZdUW" +
+            "elXOY/6N92rZ5pYyfNpllyzIDGnXydE3jZ93ktccG2khT2ZZ5CC7xLEoT9ZO" +
+            "p3B8pMpnitLL+vkKxIviPf2YpZtvY7n/OmMNKM3VSypgYdzP5whxjcl9K7gx" +
+            "UnE9JlQmeqRD8W7hsnF360BccnhlHELBWOP0kJ0ZrjQM3W9cmqITE2Ha5aGQ" +
+            "B04+a1g/NvNhsaO+0DzUX875QhIsPdB+Mi0UPYuMKCGMxc1U5M5E5GobjxMh" +
+            "uo0mHE9rR1UJN2LOJBtkBEZmsYa+8NIPE+ZgTPw9OEbjYRQYHfZJ6G1I12Ws" +
+            "SJxwpEROfVNUQHQyV7rvaGHIjqa4SnSa73OWoa6hdB7uAbC24vqYWZzfBbWU" +
+            "xAEjabWcfpTr246+C3lh9mG5Za83EKntST28VJ0ymgaFRkSH00qeGNos81Tm" +
+            "8mVgN0mMQhtAo9gGoyPETRALqtMlA1RcZRz5TbGo6cOnblnJh/HLFxhTsiou" +
+            "EyUrK1l4O3jjS/xDk2Vh5XamGZ5mIjwW9+6nt4rI5iOQCWhGqZJeDutBI96g" +
+            "oo/2K07tPoiptJ4PKO7kTuH03JjIyrJMfGwgzSBMnkr+xkBzT2q0HG+nKZx2" +
+            "HLUdQUgXWr5nQsPDmKfiULY4QaM457EGY8YtX5Tjmc+Fa9Xjw4JQlknodIGS" +
+            "Sb02YY0YrF5LcalfKjK7O6PCHok0knATz6gOWs8Fn2jrQObkBULNyssLWjGN" +
+            "dfU1gofTW9fvXuEghfUUyIqW56XYcxZPER9yQ4XAxVY1EcE3eaaWTFnU6u7w" +
+            "EDBJERo6Q4haiG3X64pKBJ9pztPkSWKLH0TquCVPm4qNpWLisr5oemW64cfA" +
+            "eUlnu2p3EVSR8jv3pFcFsNmhJUaPkpm+gXtpkxXwynulkxvyBVg3K9bC4Hi3" +
+            "KvExiumJjotwY/tU5nzKdu5iuQfBD+C6mlQWfPFaVrVSblUCYzArDulaZUdb" +
+            "EKRJt7vZsgr//pgUGbEuJ7vAr26YwP3oReHsUPdhpFD4eQZnhTmzzPy0KPyd" +
+            "COHy4ep3Ua4CQZlIBPqck4r6NuuNRxXSc9KX6uWrhMdo5jmXoFvn6guWlKST" +
+            "ckIqGEVFa+hlOZBA1KlPIBM4hyZo1Ss5YSERnJAa8bUEfs8YaWaEor5T5CE4" +
+            "HH30qoWiP23ARL00SQAPwDubySM/H1ay0M5+kPkZlqBoLjnvKMh4zYKvWMLD" +
+            "THtiYrS8MVM+Jq7dZRClLyxse447UBX1aPXFReEylM8Or1hB00PruijOvLS5" +
+            "2I7ELtsyxZNHYOvSNzIRUzCNMr22magsccueyW6v2o7V5iz7u1nV4+dL/U27" +
+            "hbTg1lhChNg9WMocabnIxkI2Yiq+beHV44k2pSmJMnY7zsj3oW4UmOX1pOD3" +
+            "4xIDF2cr2YknVwgzueIAvlvMSzpbIaTDtyaXOFluvXyvMKhGqrw9L2Lx2j4Q" +
+            "1jH3uOid5CmtJlfFL5vNbtohPgNevSWJpzW3eL8e7ellex0ePrl4oeuGJ6gm" +
+            "2lgfY8qBmRHufxdTqFGRPp9+P+G03H3uMIYuz5cXagBy7xXq4GX5kh15ZN02" +
+            "jYokP1Ik/eCFqyryj4H5rrzqHxJEL8rft4yIRjxziZ27NHsCWqoXO1f82SJw" +
+            "eKdbSs1FkwWn7FkZjN/to6GrvreSCFTexIDlKWW3Aht6yJjCNG9eZLhOXtxM" +
+            "5wvyeLgc+KmczA6OC3OJNBKpr/Q4HzkI6iVUihTOEW5Df6cQZWFs775hI2bd" +
+            "13uqpZmj56ph9E3v4ae5t6ti2g53DqGUJu2PJtrm5T66P+5yakI8kbGwYd1Z" +
+            "FB+cFTQ91p76qCbxUv8GL5cr7vObVVtPHWG1Q1AGoaCIXnBnEcKw+qlG4HWI" +
+            "6Mq6elgNfCOGIoRWSNXLr8b0lBkH9oX4JEd4N9ZSPpSvxdN+WnpxljAsSLV0" +
+            "Ao4eHv1awK2bCy3KFD/WS4XwZn82s55TnBGnZgvqdrjeUVSaoYi4Np3/BN21" +
+            "wASeYasB8Xg8F2ydVwaUjYl46K4CSjEaPhuFuaqG23CYt+/GUu7NuxvesG3m" +
+            "z2ywbe3lV4WziirvodH+nyanSZFWDY7xyvhjKhqfqAZGNMB8GXHmJi82T6pj" +
+            "GP25RMHTouBFibTRl6Hez2Nczfo3RMvqFCAXWleP6fabW+JGuL3GGUzUD6/p" +
+            "VsnMx1MilI8C8dcu0p0Y9+vKtvJ1e7Rph98sK9qMSTYItaV7+5D5ySN2t7sf" +
+            "eutq4t90kZg2H7pCzW/xvavbEbNTjdRPgvYxr0pBrvhjdhZI0PiEjw3zgN42" +
+            "qK+zT0k7/zHHj5NSlzXHxPze3UsxZBX1OySsIAIU82vTI0LpYJSWCZf9u8wP" +
+            "LZpUJDKtYFKsBz4+CwQ3gF6U3LykoP7bcI+Ei+QVz6t95QHgOvLyAF5xDQY+" +
+            "SlNNLmZ3N4F2qjSDhFfFidmdkKYIZi2lEyRqkTdBIt3VlBpqFklHnzfQiOBT" +
+            "CJk8A7Evgc2NcLllSsgaPdmaeO2qsvZ0C5K9YJyfaUyHtkZLLqYknkZHPa4W" +
+            "mW+8/Mo9P+jkfOGkEl+DILsQWiV0zTTC3Qpx6WxsIIUbwXvUiJxp9MT9tEOG" +
+            "b3zSmLZBypFN1utMZW8TdwgzvV0Q084bJooxs68kEuccNKPjiSs8WzV3WFDx" +
+            "vYPsUfP2k/HETWW398B1bruMblA/Z9RqLNV17YwyEzRO016qlCBgQo1OqvNu" +
+            "taiXpdXJeN28OPzWOYFhIX10hVnQpHd5i4FTTNGdmVVFlh0bR+dIl3hXQ4x/" +
+            "CJgk40LAntQ4CwqwSO4ospsAeiRDomSkqeOXjerHE17GxOJBXaqzNtRMWcIB" +
+            "3KfV1E8fcwKV+6papcBEnzwIjdtePWuMeuayJsAoR33o2iJsUFbyC+e1aZlh" +
+            "HHDt3JrE6CK072aTmNahT0pSMIk+snt+jqnsBu7ysXWGVeE+JIOhCi6anSN/" +
+            "uoJTuS8u7HcFtLvjm77WeYiEroH2Nxtgd0PV7tpuHGgD9HYRVUxtwyd2d2K7" +
+            "wb4foQ8x0NXWMj0vqa/9By1yl1TyI21Fv7VFDyoh+YYBKiH6urW92ORkl+zI" +
+            "xHJTq9gbhnMSLQHBh1ewS9j9fgag/r2fYd2fFofAXkfBEbhvR1g822OxFwce" +
+            "YY8F6X/oHbK7698NyE9ZcIyj5H9HW0kXDMYBJ7k31e7OsCjE7mLjjJL8ztz8" +
+            "KjW+TYXuhTp7/ZJqFheRGOUIBBdKX55giJtjPoJU61vrufvuaTRbXztmhzoM" +
+            "14xPwIbpZR5fZw8cBTRcAR3SPR8EXqPlWBXQLGXBF2fDMNGdiOk8JK2B5Ykn" +
+            "hM371o2Tjx8OYsWHG454zCNnfalJ2Yv86vRlzZrm2p8wZyzb8zUv2yGimkBf" +
+            "t7+SG0HJyPkoDrK+XP+zsCTI3vqnEQZ+m9h/6OjBNObvaGf20f40xf+cyvYd" +
+            "Newn1D8M8j8Hc30H7v85+L9m+Vf0g6wy1/8yZfiKkR1M/7Vx/nuZv/dn+zOf" +
+            "pPgbmf/frf11M39Ulf3NXKAH7NcY4DeN+cUZflSYbziyP84gwwA4QG+A3/Tm" +
+            "F4X+KCL7C83ZT94nKcBv//UvKv5RUPZX/Pmn3H8sLweVAaTaS0W3e7/dfb1f" +
+            "GPd2/wEQZrQ94RIAAA=="
 
     val invalidLintJar = "invalidLintJar"
 
@@ -415,8 +414,8 @@ class JarFileIssueRegistryTest : AbstractCheckTest() {
     assertNotNull(vendor)
     assertEquals("android.support.v7.lint.appcompat", vendor.identifier)
     assertEquals(
-      "Android Open Source Project (android.support.v7.lint.appcompat)",
-      vendor.vendorName,
+        "Android Open Source Project (android.support.v7.lint.appcompat)",
+        vendor.vendorName,
     )
     assertEquals("https://issuetracker.google.com/issues/new?component=192731", vendor.feedbackUrl)
   }
@@ -441,10 +440,10 @@ class JarFileIssueRegistryTest : AbstractCheckTest() {
       }
 
       override fun log(
-        severity: Severity,
-        exception: Throwable?,
-        format: String?,
-        vararg args: Any,
+          severity: Severity,
+          exception: Throwable?,
+          format: String?,
+          vararg args: Any,
       ) {
         if (format != null) {
           loggedWarnings.append(String.format(format, *args) + '\n')
@@ -464,20 +463,20 @@ class JarFileIssueRegistryTest : AbstractCheckTest() {
     val root = Files.createTempDirectory("lintjar").toFile()
 
     lint()
-      .files(
-        *lintApiStubs,
-        bytecode(
-          "lint.jar",
-          source(
-            "META-INF/services/com.android.tools.lint.client.api.IssueRegistry",
-            "test.pkg.MyIssueRegistry",
-          ),
-          0x70522285,
-        ),
-        bytecode(
-          "lint.jar",
-          kotlin(
-              """
+        .files(
+            *lintApiStubs,
+            bytecode(
+                "lint.jar",
+                source(
+                    "META-INF/services/com.android.tools.lint.client.api.IssueRegistry",
+                    "test.pkg.MyIssueRegistry",
+                ),
+                0x70522285,
+            ),
+            bytecode(
+                "lint.jar",
+                kotlin(
+                        """
                     package test.pkg
                     import com.android.tools.lint.client.api.*
                     import com.android.tools.lint.detector.api.*
@@ -493,10 +492,10 @@ class JarFileIssueRegistryTest : AbstractCheckTest() {
                         )
                     }
                     """
-            )
-            .indented(),
-          0x4f058bc1,
-          """
+                    )
+                    .indented(),
+                0x4f058bc1,
+                """
                     test/pkg/MyIssueRegistry.class:
                     H4sIAAAAAAAAAJ1UW08bRxT+Zn1bb0xYHELAhMYkbWKckDX0HhNSAkm7qqEV
                     pFYrnhZ76o693kU7Y1f0iV/RH1D1sQ+tVJSqlSqUx/yoqmfXSwEDEunDzplz
@@ -521,36 +520,36 @@ class JarFileIssueRegistryTest : AbstractCheckTest() {
                     RrJNvkUi++42Ejbes/G+jQ/w4ZH2kY2P8Yi2qG6DSSzh8TbyEqMSyxKzEqbE
                     Exlarkmkov0nElkJQ2JC4oZEQWJa4qbEzL/b/KBivgcAAA==
                     """,
-          """
+                """
                     META-INF/main.kotlin_module:
                     H4sIAAAAAAAAAGNgYGBmYGBgBGIWIGYCYgYuYy7F5PxcvcS8lKL8zBS9kvz8
                     nGK9nMy8Er3knMxUIJVYkCnE5wxmxxeXlCYVe5coMWgxAAANsEImTQAAAA==
                     """,
-        ),
-      )
-      .testModes(TestMode.DEFAULT)
-      .createProjects(root)
+            ),
+        )
+        .testModes(TestMode.DEFAULT)
+        .createProjects(root)
 
     val lintJar = File(root, "app/lint.jar")
     assertTrue(lintJar.exists())
 
     lint()
-      .files(
-        source( // instead of xml: not valid XML below
-            "res/values/strings.xml",
-            """
+        .files(
+            source( // instead of xml: not valid XML below
+                    "res/values/strings.xml",
+                    """
                 <?xml version="1.0" encoding="utf-8"?>
                 <resources/>
                 """,
-          )
-          .indented()
-      )
-      .clientFactory { createGlobalLintJarClient(lintJar) }
-      .testModes(TestMode.DEFAULT)
-      .allowObsoleteLintChecks(false)
-      .issueIds("MyIssueId")
-      .run()
-      .expectClean()
+                )
+                .indented()
+        )
+        .clientFactory { createGlobalLintJarClient(lintJar) }
+        .testModes(TestMode.DEFAULT)
+        .allowObsoleteLintChecks(false)
+        .issueIds("MyIssueId")
+        .run()
+        .expectClean()
   }
 
   @Suppress("NullableProblems", "ConstantConditions")
@@ -561,20 +560,20 @@ class JarFileIssueRegistryTest : AbstractCheckTest() {
     val root = Files.createTempDirectory("lintjar").toFile()
 
     lint()
-      .files(
-        *lintApiStubs,
-        bytecode(
-          "lint.jar",
-          source(
-            "META-INF/services/com.android.tools.lint.client.api.IssueRegistry",
-            "androidx.annotation.experimental.lint.ExperimentalIssueRegistry",
-          ),
-          0x7ca072f0,
-        ),
-        bytecode(
-          "lint.jar",
-          java(
-              """
+        .files(
+            *lintApiStubs,
+            bytecode(
+                "lint.jar",
+                source(
+                    "META-INF/services/com.android.tools.lint.client.api.IssueRegistry",
+                    "androidx.annotation.experimental.lint.ExperimentalIssueRegistry",
+                ),
+                0x7ca072f0,
+            ),
+            bytecode(
+                "lint.jar",
+                java(
+                        """
                     package androidx.annotation.experimental.lint;
                     import com.android.tools.lint.client.api.*;
                     import com.android.tools.lint.detector.api.*;
@@ -586,10 +585,10 @@ class JarFileIssueRegistryTest : AbstractCheckTest() {
                         @Override public List<Issue> getIssues() { return Collections.emptyList(); }
                     }
                     """
-            )
-            .indented(),
-          0xb1bcd1d5,
-          """
+                    )
+                    .indented(),
+                0xb1bcd1d5,
+                """
                 androidx/annotation/experimental/lint/ExperimentalIssueRegistry.class:
                 H4sIAAAAAAAAAHWQv07DMBDGP/dfmlAoFMoESGwtAx4ZWpWhAgkpYqCI3U2s
                 ysixq8RB7VvBBGLgAXgoxCVUKgLVw9k+/e777u7z6/0DwAUOA9TQDrCLPQ8d
@@ -600,64 +599,64 @@ class JarFileIssueRegistryTest : AbstractCheckTest() {
                 FFVafnEqYEXHFD36HdPN6K6fvYK90IOhSbFRJpsUfQRUUqBHK7T2hsrzH9LH
                 Vindot92+dr5BoPJPOP3AQAA
                 """,
-        ),
-      )
-      .testModes(TestMode.DEFAULT)
-      .createProjects(root)
+            ),
+        )
+        .testModes(TestMode.DEFAULT)
+        .createProjects(root)
 
     val lintJar = File(root, "app/lint.jar")
     assertTrue(lintJar.exists())
 
     lint()
-      .files(
-        source( // instead of xml: not valid XML below
-            "res/values/strings.xml",
-            """
+        .files(
+            source( // instead of xml: not valid XML below
+                    "res/values/strings.xml",
+                    """
                 <?xml version="1.0" encoding="utf-8"?>
                 <resources/>
                 """,
-          )
-          .indented()
-      )
-      .clientFactory { createGlobalLintJarClient(lintJar) }
-      .testModes(TestMode.DEFAULT)
-      .allowObsoleteLintChecks(false)
-      .issueIds("MyIssueId")
-      .run()
-      .expectClean()
+                )
+                .indented()
+        )
+        .clientFactory { createGlobalLintJarClient(lintJar) }
+        .testModes(TestMode.DEFAULT)
+        .allowObsoleteLintChecks(false)
+        .issueIds("MyIssueId")
+        .run()
+        .expectClean()
   }
 
   fun testInvalidPackaging() {
     val root = Files.createTempDirectory("lintjar").toFile()
 
     lint()
-      .files(
-        *lintApiStubs,
-        bytecode(
-          "lint.jar",
-          source(
-            "META-INF/services/com.android.tools.lint.client.api.IssueRegistry",
-            "test.pkg.MyIssueRegistry",
-          ),
-          0x70522285,
-        ),
-        bytecode(
-          "lint.jar",
-          kotlin(
-              """
+        .files(
+            *lintApiStubs,
+            bytecode(
+                "lint.jar",
+                source(
+                    "META-INF/services/com.android.tools.lint.client.api.IssueRegistry",
+                    "test.pkg.MyIssueRegistry",
+                ),
+                0x70522285,
+            ),
+            bytecode(
+                "lint.jar",
+                kotlin(
+                        """
                     package com.android.something
                     class InReservedPackage {
                     }
                     """
-            )
-            .indented(),
-          0x711b4bf6,
-          """
+                    )
+                    .indented(),
+                0x711b4bf6,
+                """
                 META-INF/main.kotlin_module:
                 H4sIAAAAAAAAAGNgYGBmYGBgBGJWKM3AZcylmJyfq5eYl1KUn5miV5Kfn1Os
                 l5OZV6KXnJOZCqQSCzKF+JzB7PjiktKkYu8SJQYtBgDDO/ZuTQAAAA==
                 """,
-          """
+                """
                 com/android/something/InReservedPackage.class:
                 H4sIAAAAAAAAAI2RPUsDQRCG39mYi55R43f8wNaPwlOxUwQVhED8QCWN1eZu
                 0TW5XbjdBMv8Fv+BlWAhwdIfJc6ddjZu8TDvO8PM7O7n19s7gH2sEtZjm0bS
@@ -669,11 +668,11 @@ class JarFileIssueRegistryTest : AbstractCheckTest() {
                 TwHGEBbecsEFrBTfRhjnXPUOpQYmGphkYipHrYFpzNyBHGYxx3mH0GHeIfgG
                 eDuJRfMBAAA=
                 """,
-        ),
-        bytecode(
-          "lint.jar",
-          kotlin(
-              """
+            ),
+            bytecode(
+                "lint.jar",
+                kotlin(
+                        """
                     package test.pkg
                     import com.android.tools.lint.client.api.*
                     import com.android.tools.lint.detector.api.*
@@ -688,15 +687,15 @@ class JarFileIssueRegistryTest : AbstractCheckTest() {
                         )
                     }
                     """
-            )
-            .indented(),
-          0x6017198f,
-          """
+                    )
+                    .indented(),
+                0x6017198f,
+                """
                 META-INF/main.kotlin_module:
                 H4sIAAAAAAAAAGNgYGBmYGBgBGJWKM3AZcylmJyfq5eYl1KUn5miV5Kfn1Os
                 l5OZV6KXnJOZCqQSCzKF+JzB7PjiktKkYu8SJQYtBgDDO/ZuTQAAAA==
                 """,
-          """
+                """
                 test/pkg/MyIssueRegistry.class:
                 H4sIAAAAAAAAAKVVTW8bRRh+Zm2v147bbNwSXLfAltDguGnHCd91mpKmQrLq
                 pFVSLFBOG3twJ17vWjtji3DKnTs/gDMHkIiKQEJRj/wo1Hdsl6ROK0I57Lzz
@@ -720,30 +719,30 @@ class JarFileIssueRegistryTest : AbstractCheckTest() {
                 s4q7BHeIepPk+A4SNVRqWKITy+b4oEb/to9IQOFjfLIDV+GawqcKtsIFhc8U
                 FhTKCtPD+y2FeYWcgqdwVeG6wuIzYkwLpiEHAAA=
                 """,
-        ),
-      )
-      .testModes(TestMode.DEFAULT)
-      .createProjects(root)
+            ),
+        )
+        .testModes(TestMode.DEFAULT)
+        .createProjects(root)
 
     val lintJar = File(root, "app/lint.jar")
     assertTrue(lintJar.exists())
 
     lint()
-      .files(
-        source(
-            "res/values/strings.xml",
-            """
+        .files(
+            source(
+                    "res/values/strings.xml",
+                    """
                 <resources/>
                 """,
-          )
-          .indented()
-      )
-      .clientFactory { createGlobalLintJarClient(lintJar) }
-      .testModes(TestMode.DEFAULT)
-      .allowObsoleteLintChecks(false)
-      .issueIds("MyIssueId")
-      .run()
-      .expectClean()
+                )
+                .indented()
+        )
+        .clientFactory { createGlobalLintJarClient(lintJar) }
+        .testModes(TestMode.DEFAULT)
+        .allowObsoleteLintChecks(false)
+        .issueIds("MyIssueId")
+        .run()
+        .expectClean()
   }
 
   fun testNewerLintBroken() {
@@ -753,20 +752,20 @@ class JarFileIssueRegistryTest : AbstractCheckTest() {
     val root = Files.createTempDirectory("lintjar").toFile()
 
     lint()
-      .files(
-        *lintApiStubs,
-        bytecode(
-          "lint.jar",
-          source(
-            "META-INF/services/com.android.tools.lint.client.api.IssueRegistry",
-            "test.pkg.MyIssueRegistry",
-          ),
-          0x70522285,
-        ),
-        bytecode(
-          "lint.jar",
-          kotlin(
-              """
+        .files(
+            *lintApiStubs,
+            bytecode(
+                "lint.jar",
+                source(
+                    "META-INF/services/com.android.tools.lint.client.api.IssueRegistry",
+                    "test.pkg.MyIssueRegistry",
+                ),
+                0x70522285,
+            ),
+            bytecode(
+                "lint.jar",
+                kotlin(
+                        """
                     package test.pkg
                     import com.android.tools.lint.client.api.*
                     import com.android.tools.lint.detector.api.*
@@ -790,16 +789,16 @@ class JarFileIssueRegistryTest : AbstractCheckTest() {
                             )
                         )
                     """
-            )
-            .indented(),
-          0x402ebf07,
-          """
+                    )
+                    .indented(),
+                0x402ebf07,
+                """
                 META-INF/main.kotlin_module:
                 H4sIAAAAAAAA/2NgYGBmYGBgBGJ2KM3AZcylmJyfq5eYl1KUn5miV5Kfn1Os
                 l5OZV6KXnJOZCqQSCzKF+JzB7PjiktKkYu8SLlkujpLU4hK9gux0IUHfSs/i
                 4tLUoNT0zOKSokrvEiUGLQYAcc+hwWwAAAA=
                 """,
-          """
+                """
                 test/pkg/MyDetector.class:
                 H4sIAAAAAAAA/5VRy04CMRQ9HWDQEeWhKL72agwF405j4iMmJIMLNWxYFabB
                 BpiSaTGy41v8A1cmLgxx6UcZ74wkbtzYpCf3nHt7X/38ensHcIwdhlUrjeWj
@@ -811,7 +810,7 @@ class JarFileIssueRegistryTest : AbstractCheckTest() {
                 gwqhm4gFbBLmfgKwCC/xbyW4ju3kVxmWyJdrI9XAcgMrhMjHUGigiFIbzGAV
                 a+Q38AzKBu43siYapRICAAA=
                 """,
-          """
+                """
                 test/pkg/MyIssueRegistry.class:
                 H4sIAAAAAAAA/6VVW28bRRT+Zn1bu26yNikkTkPd1rS2m2ad9AZ1mpImFEzt
                 BCXFAuVpY0/NxOvdaGdsUR5QfgU/APHIA0hErUBCUR/5UYizXoekdiwoPOyc
@@ -837,7 +836,7 @@ class JarFileIssueRegistryTest : AbstractCheckTest() {
                 lMQZxqdL0FDtr49RI2qR9APSu7+DUAXlCpZpxQN/WangIT7cAZNYxaMdpCUW
                 JNYkohIzEusStyRuS1zo7z+SMCVKEnMSdyQKEkWJuxL3/gKjcYhbRAgAAA==
                 """,
-          """
+                """
                 test/pkg/MyIssueRegistryKt.class:
                 H4sIAAAAAAAA/51UW08TQRT+TlvoxQqlKkJFvFVtVVxA8FY0wQJxtaKxplF5
                 INPt2Axsd5vdKbFvxFf/hb9A8UGjiSE8+mv8BcaztRGiPhRmkzlnzn7n23PZ
@@ -857,19 +856,19 @@ class JarFileIssueRegistryTest : AbstractCheckTest() {
                 wvwQDQ3+oM+49BGJD3/YBhDULc3+R3lPc3SFIA7cwBzLKUZd4YgmVhA2cdWE
                 wTsmTX4xbeIaZlZAPmZxfQUhH1EfsV8QdIFtHAYAAA==
                 """,
-        ),
-        bytecode(
-          "lint.jar",
-          kotlin(
-              """
+            ),
+            bytecode(
+                "lint.jar",
+                kotlin(
+                        """
                 package test.pkg
                 class Helper : com.android.tools.lint.detector.api.DeletedInterface {
                 }
                 """
-            )
-            .indented(),
-          0x8bb07491,
-          """
+                    )
+                    .indented(),
+                0x8bb07491,
+                """
                     test/pkg/Helper.class:
                     H4sIAAAAAAAAAJ1Qy04bMRQ9nrxgSJvwDqUUlsACQ4TY8JCgCHWkAFKpsmHl
                     zBgwmdjR2GGdb+EPWCGxQBHLfhTieiibLpHlY59zr61zz9/Xp2cATaww1Jy0
@@ -881,38 +880,38 @@ class JarFileIssueRegistryTest : AbstractCheckTest() {
                     AWVE2fmBaVFohIvEeM6B0vojwgefAr4TlnMxwBJh9b0BE3Tz2o8cv2GZzn2q
                     faHa10sUItQi1CNMYuqDTUeYwSxdMXcJZjGPBpUsqhYLFmNv+k/OETwCAAA=
                     """,
-        ),
-      )
-      .testModes(TestMode.DEFAULT)
-      .createProjects(root)
+            ),
+        )
+        .testModes(TestMode.DEFAULT)
+        .createProjects(root)
 
     val lintJar = File(root, "app/lint.jar")
     assertTrue(lintJar.exists())
 
     lint()
-      .files(
-        source( // instead of xml: not valid XML below
-            "res/values/strings.xml",
-            """
+        .files(
+            source( // instead of xml: not valid XML below
+                    "res/values/strings.xml",
+                    """
                 <?xml version="1.0" encoding="utf-8"?>
                 <resources/>
                 """,
-          )
-          .indented()
-      )
-      .clientFactory { createGlobalLintJarClient(lintJar) }
-      .testModes(TestMode.DEFAULT)
-      .allowObsoleteLintChecks(false)
-      .issueIds("MyIssueId")
-      .run()
-      // Note how the "This affects the following lint checks"
-      // list is empty below; that's because we're passing in
-      // an issue registry which doesn't actually have any valid
-      // issues for it. This won't be the case in a real issue registry.
-      // Actually listing the issue id's is tested in a different
-      // test below (search for "This affects".)
-      .expectContains(
-        """
+                )
+                .indented()
+        )
+        .clientFactory { createGlobalLintJarClient(lintJar) }
+        .testModes(TestMode.DEFAULT)
+        .allowObsoleteLintChecks(false)
+        .issueIds("MyIssueId")
+        .run()
+        // Note how the "This affects the following lint checks"
+        // list is empty below; that's because we're passing in
+        // an issue registry which doesn't actually have any valid
+        // issues for it. This won't be the case in a real issue registry.
+        // Actually listing the issue id's is tested in a different
+        // test below (search for "This affects".)
+        .expectContains(
+            """
                 lint.jar: Warning: Requires newer lint; these checks will be skipped!
 
                 Lint found an issue registry (test.pkg.MyIssueRegistry)
@@ -934,7 +933,7 @@ class JarFileIssueRegistryTest : AbstractCheckTest() {
                 Version of Lint API this lint check is using is 10000.
                 The Lint API version currently running is $CURRENT_API (${describeApi(CURRENT_API)}). [ObsoleteLintCustomCheck]
                 0 errors, 1 warnings"""
-      )
+        )
 
     // Also make sure we can handle issue registries without a manifest: b/280305856.
     // We'll just rewrite the above lint.jar file and filter out the manifest file.
@@ -957,51 +956,51 @@ class JarFileIssueRegistryTest : AbstractCheckTest() {
     zos.close()
 
     lint()
-      .files(
-        source( // instead of xml: not valid XML below
-            "res/values/strings.xml",
-            """
+        .files(
+            source( // instead of xml: not valid XML below
+                    "res/values/strings.xml",
+                    """
                 <?xml version="1.0" encoding="utf-8"?>
                 <resources/>
                 """,
-          )
-          .indented()
-      )
-      .clientFactory { createGlobalLintJarClient(lintJarWithoutManifest) }
-      .testModes(TestMode.DEFAULT)
-      .allowObsoleteLintChecks(false)
-      .issueIds("MyIssueId")
-      .run()
-      .expectContains("Lint found an issue registry (test.pkg.MyIssueRegistry)")
+                )
+                .indented()
+        )
+        .clientFactory { createGlobalLintJarClient(lintJarWithoutManifest) }
+        .testModes(TestMode.DEFAULT)
+        .allowObsoleteLintChecks(false)
+        .issueIds("MyIssueId")
+        .run()
+        .expectContains("Lint found an issue registry (test.pkg.MyIssueRegistry)")
 
     val dir = File(root, "test2")
     lint()
-      .files(
-        source( // instead of xml: not valid XML below
-            "res/values/strings.xml",
-            """
+        .files(
+            source( // instead of xml: not valid XML below
+                    "res/values/strings.xml",
+                    """
             <?xml version="1.0" encoding="utf-8"?>
             <resources/>
             """,
-          )
-          .indented()
-      )
-      .createProjects(dir)
+                )
+                .indented()
+        )
+        .createProjects(dir)
 
     MainTest.checkDriver(
-      "No issues found.",
-      "",
-      LintCliFlags.ERRNO_SUCCESS,
-      arrayOf(
-        "--lint-rule-jars",
-        lintJar.path,
-        dir.path,
-        "--XskipJarVerification",
-        "--disable",
-        "_TestIssueId",
-      ),
-      null,
-      null,
+        "No issues found.",
+        "",
+        LintCliFlags.ERRNO_SUCCESS,
+        arrayOf(
+            "--lint-rule-jars",
+            lintJar.path,
+            dir.path,
+            "--XskipJarVerification",
+            "--disable",
+            "_TestIssueId",
+        ),
+        null,
+        null,
     )
   }
 
@@ -1014,2792 +1013,2792 @@ class JarFileIssueRegistryTest : AbstractCheckTest() {
     val root = Files.createTempDirectory("lintjar-current").toFile()
 
     lint()
-      .files(
-        jar(
-          "lint.jar",
-          source(
-            "META-INF/services/com.android.tools.lint.client.api.IssueRegistry",
-            "androidx.fragment.lint.FragmentIssueRegistry",
-          ),
-          bytes(
-            "androidx/fragment/lint/FragmentIssueRegistry.class",
-            byteArrayOf(
-              /*
-              This class file was created using the following sources, and
-              then afterwards identifying the byte which sets the API level
-              and then dynamically referencing CURRENT_API instead such that
-              this test continues to use the same API level whenever that version
-              changes.
-                  *lintApiStubs,
-                  kotlin(
-                      """
-                      // Just a stub
-                      package org.jetbrains.uast
-                      open class UClass
-                      """
-                  ).indented(),
-                  kotlin(
-                      """
-                      // Just a stub
-                      package org.jetbrains.uast.kotlin
-                      import org.jetbrains.kotlin.psi.KtClassOrObject
-                      import org.jetbrains.uast.UClass
-                      class KotlinUClass : UClass() {
-                          val ktClass: KtClassOrObject
-                              get() = TODO()
-                      }
-                      """
-                  ).indented(),
-                  kotlin(
-                      """
-                      // Just a stub
-                      package org.jetbrains.kotlin.psi
-                      class KtClassOrObject
-                      """
-                  ).indented(),
-                  bytecode(
-                      "lint.jar",
-                      source(
-                          "META-INF/services/com.android.tools.lint.client.api.IssueRegistry",
-                          "androidx.fragment.lint.FragmentIssueRegistry"
-                      ),
-                      0x6be562c7
-                  ),
-                  bytecode(
-                      "lint.jar",
-                      kotlin(
-                          """
-                          package androidx.fragment.lint
-                          import com.android.tools.lint.client.api.*
-                          import com.android.tools.lint.detector.api.*
-                          import java.util.EnumSet
-                          import org.jetbrains.uast.kotlin.KotlinUClass
-                          import org.jetbrains.uast.UClass
+        .files(
+            jar(
+                "lint.jar",
+                source(
+                    "META-INF/services/com.android.tools.lint.client.api.IssueRegistry",
+                    "androidx.fragment.lint.FragmentIssueRegistry",
+                ),
+                bytes(
+                    "androidx/fragment/lint/FragmentIssueRegistry.class",
+                    byteArrayOf(
+                        /*
+                        This class file was created using the following sources, and
+                        then afterwards identifying the byte which sets the API level
+                        and then dynamically referencing CURRENT_API instead such that
+                        this test continues to use the same API level whenever that version
+                        changes.
+                            *lintApiStubs,
+                            kotlin(
+                                """
+                                // Just a stub
+                                package org.jetbrains.uast
+                                open class UClass
+                                """
+                            ).indented(),
+                            kotlin(
+                                """
+                                // Just a stub
+                                package org.jetbrains.uast.kotlin
+                                import org.jetbrains.kotlin.psi.KtClassOrObject
+                                import org.jetbrains.uast.UClass
+                                class KotlinUClass : UClass() {
+                                    val ktClass: KtClassOrObject
+                                        get() = TODO()
+                                }
+                                """
+                            ).indented(),
+                            kotlin(
+                                """
+                                // Just a stub
+                                package org.jetbrains.kotlin.psi
+                                class KtClassOrObject
+                                """
+                            ).indented(),
+                            bytecode(
+                                "lint.jar",
+                                source(
+                                    "META-INF/services/com.android.tools.lint.client.api.IssueRegistry",
+                                    "androidx.fragment.lint.FragmentIssueRegistry"
+                                ),
+                                0x6be562c7
+                            ),
+                            bytecode(
+                                "lint.jar",
+                                kotlin(
+                                    """
+                                    package androidx.fragment.lint
+                                    import com.android.tools.lint.client.api.*
+                                    import com.android.tools.lint.detector.api.*
+                                    import java.util.EnumSet
+                                    import org.jetbrains.uast.kotlin.KotlinUClass
+                                    import org.jetbrains.uast.UClass
 
-                          class FragmentIssueRegistry : IssueRegistry() {
-                              override val issues: List<Issue> = emptyList()
-                              //override val api: Int = $CURRENT_API
-                              override val api: Int = 0x12345678
-                              override val minApi: Int = 10
-                              override val vendor: Vendor = Vendor(
-                                  vendorName = "Android Open Source Project: Lint Unit Tests",
-                                  contact = "/dev/null"
-                              )
-                              fun visitClass(node: UClass) {
-                                  val ktClass = (node as? KotlinUClass)?.ktClass
-                              }
-                          }
-                          """
-                      ).indented(),
+                                    class FragmentIssueRegistry : IssueRegistry() {
+                                        override val issues: List<Issue> = emptyList()
+                                        //override val api: Int = $CURRENT_API
+                                        override val api: Int = 0x12345678
+                                        override val minApi: Int = 10
+                                        override val vendor: Vendor = Vendor(
+                                            vendorName = "Android Open Source Project: Lint Unit Tests",
+                                            contact = "/dev/null"
+                                        )
+                                        fun visitClass(node: UClass) {
+                                            val ktClass = (node as? KotlinUClass)?.ktClass
+                                        }
+                                    }
+                                    """
+                                ).indented(),
 
-               */
-              -54,
-              -2,
-              -70,
-              -66,
-              0,
-              0,
-              0,
-              52,
-              0,
-              95,
-              1,
-              0,
-              44,
-              97,
-              110,
-              100,
-              114,
-              111,
-              105,
-              100,
-              120,
-              47,
-              102,
-              114,
-              97,
-              103,
-              109,
-              101,
-              110,
-              116,
-              47,
-              108,
-              105,
-              110,
-              116,
-              47,
-              70,
-              114,
-              97,
-              103,
-              109,
-              101,
-              110,
-              116,
-              73,
-              115,
-              115,
-              117,
-              101,
-              82,
-              101,
-              103,
-              105,
-              115,
-              116,
-              114,
-              121,
-              7,
-              0,
-              1,
-              1,
-              0,
-              47,
-              99,
-              111,
-              109,
-              47,
-              97,
-              110,
-              100,
-              114,
-              111,
-              105,
-              100,
-              47,
-              116,
-              111,
-              111,
-              108,
-              115,
-              47,
-              108,
-              105,
-              110,
-              116,
-              47,
-              99,
-              108,
-              105,
-              101,
-              110,
-              116,
-              47,
-              97,
-              112,
-              105,
-              47,
-              73,
-              115,
-              115,
-              117,
-              101,
-              82,
-              101,
-              103,
-              105,
-              115,
-              116,
-              114,
-              121,
-              7,
-              0,
-              3,
-              1,
-              0,
-              6,
-              60,
-              105,
-              110,
-              105,
-              116,
-              62,
-              1,
-              0,
-              3,
-              40,
-              41,
-              86,
-              12,
-              0,
-              5,
-              0,
-              6,
-              10,
-              0,
-              4,
-              0,
-              7,
-              1,
-              0,
-              32,
-              107,
-              111,
-              116,
-              108,
-              105,
-              110,
-              47,
-              99,
-              111,
-              108,
-              108,
-              101,
-              99,
-              116,
-              105,
-              111,
-              110,
-              115,
-              47,
-              67,
-              111,
-              108,
-              108,
-              101,
-              99,
-              116,
-              105,
-              111,
-              110,
-              115,
-              75,
-              116,
-              7,
-              0,
-              9,
-              1,
-              0,
-              9,
-              101,
-              109,
-              112,
-              116,
-              121,
-              76,
-              105,
-              115,
-              116,
-              1,
-              0,
-              18,
-              40,
-              41,
-              76,
-              106,
-              97,
-              118,
-              97,
-              47,
-              117,
-              116,
-              105,
-              108,
-              47,
-              76,
-              105,
-              115,
-              116,
-              59,
-              12,
-              0,
-              11,
-              0,
-              12,
-              10,
-              0,
-              10,
-              0,
-              13,
-              1,
-              0,
-              6,
-              105,
-              115,
-              115,
-              117,
-              101,
-              115,
-              1,
-              0,
-              16,
-              76,
-              106,
-              97,
-              118,
-              97,
-              47,
-              117,
-              116,
-              105,
-              108,
-              47,
-              76,
-              105,
-              115,
-              116,
-              59,
-              12,
-              0,
-              15,
-              0,
-              16,
-              9,
-              0,
-              2,
-              0,
-              17,
-              3,
-              0,
-              0,
-              0,
-              CURRENT_API.toByte(),
-              1,
-              0,
-              3,
-              97,
-              112,
-              105,
-              1,
-              0,
-              1,
-              73,
-              12,
-              0,
-              20,
-              0,
-              21,
-              9,
-              0,
-              2,
-              0,
-              22,
-              1,
-              0,
-              6,
-              109,
-              105,
-              110,
-              65,
-              112,
-              105,
-              12,
-              0,
-              24,
-              0,
-              21,
-              9,
-              0,
-              2,
-              0,
-              25,
-              1,
-              0,
-              40,
-              99,
-              111,
-              109,
-              47,
-              97,
-              110,
-              100,
-              114,
-              111,
-              105,
-              100,
-              47,
-              116,
-              111,
-              111,
-              108,
-              115,
-              47,
-              108,
-              105,
-              110,
-              116,
-              47,
-              99,
-              108,
-              105,
-              101,
-              110,
-              116,
-              47,
-              97,
-              112,
-              105,
-              47,
-              86,
-              101,
-              110,
-              100,
-              111,
-              114,
-              7,
-              0,
-              27,
-              1,
-              0,
-              44,
-              65,
-              110,
-              100,
-              114,
-              111,
-              105,
-              100,
-              32,
-              79,
-              112,
-              101,
-              110,
-              32,
-              83,
-              111,
-              117,
-              114,
-              99,
-              101,
-              32,
-              80,
-              114,
-              111,
-              106,
-              101,
-              99,
-              116,
-              58,
-              32,
-              76,
-              105,
-              110,
-              116,
-              32,
-              85,
-              110,
-              105,
-              116,
-              32,
-              84,
-              101,
-              115,
-              116,
-              115,
-              8,
-              0,
-              29,
-              1,
-              0,
-              9,
-              47,
-              100,
-              101,
-              118,
-              47,
-              110,
-              117,
-              108,
-              108,
-              8,
-              0,
-              31,
-              1,
-              0,
-              122,
-              40,
-              76,
-              106,
-              97,
-              118,
-              97,
-              47,
-              108,
-              97,
-              110,
-              103,
-              47,
-              83,
-              116,
-              114,
-              105,
-              110,
-              103,
-              59,
-              76,
-              106,
-              97,
-              118,
-              97,
-              47,
-              108,
-              97,
-              110,
-              103,
-              47,
-              83,
-              116,
-              114,
-              105,
-              110,
-              103,
-              59,
-              76,
-              106,
-              97,
-              118,
-              97,
-              47,
-              108,
-              97,
-              110,
-              103,
-              47,
-              83,
-              116,
-              114,
-              105,
-              110,
-              103,
-              59,
-              76,
-              106,
-              97,
-              118,
-              97,
-              47,
-              108,
-              97,
-              110,
-              103,
-              47,
-              83,
-              116,
-              114,
-              105,
-              110,
-              103,
-              59,
-              73,
-              76,
-              107,
-              111,
-              116,
-              108,
-              105,
-              110,
-              47,
-              106,
-              118,
-              109,
-              47,
-              105,
-              110,
-              116,
-              101,
-              114,
-              110,
-              97,
-              108,
-              47,
-              68,
-              101,
-              102,
-              97,
-              117,
-              108,
-              116,
-              67,
-              111,
-              110,
-              115,
-              116,
-              114,
-              117,
-              99,
-              116,
-              111,
-              114,
-              77,
-              97,
-              114,
-              107,
-              101,
-              114,
-              59,
-              41,
-              86,
-              12,
-              0,
-              5,
-              0,
-              33,
-              10,
-              0,
-              28,
-              0,
-              34,
-              1,
-              0,
-              6,
-              118,
-              101,
-              110,
-              100,
-              111,
-              114,
-              1,
-              0,
-              42,
-              76,
-              99,
-              111,
-              109,
-              47,
-              97,
-              110,
-              100,
-              114,
-              111,
-              105,
-              100,
-              47,
-              116,
-              111,
-              111,
-              108,
-              115,
-              47,
-              108,
-              105,
-              110,
-              116,
-              47,
-              99,
-              108,
-              105,
-              101,
-              110,
-              116,
-              47,
-              97,
-              112,
-              105,
-              47,
-              86,
-              101,
-              110,
-              100,
-              111,
-              114,
-              59,
-              12,
-              0,
-              36,
-              0,
-              37,
-              9,
-              0,
-              2,
-              0,
-              38,
-              1,
-              0,
-              4,
-              116,
-              104,
-              105,
-              115,
-              1,
-              0,
-              46,
-              76,
-              97,
-              110,
-              100,
-              114,
-              111,
-              105,
-              100,
-              120,
-              47,
-              102,
-              114,
-              97,
-              103,
-              109,
-              101,
-              110,
-              116,
-              47,
-              108,
-              105,
-              110,
-              116,
-              47,
-              70,
-              114,
-              97,
-              103,
-              109,
-              101,
-              110,
-              116,
-              73,
-              115,
-              115,
-              117,
-              101,
-              82,
-              101,
-              103,
-              105,
-              115,
-              116,
-              114,
-              121,
-              59,
-              1,
-              0,
-              9,
-              103,
-              101,
-              116,
-              73,
-              115,
-              115,
-              117,
-              101,
-              115,
-              1,
-              0,
-              63,
-              40,
-              41,
-              76,
-              106,
-              97,
-              118,
-              97,
-              47,
-              117,
-              116,
-              105,
-              108,
-              47,
-              76,
-              105,
-              115,
-              116,
-              60,
-              76,
-              99,
-              111,
-              109,
-              47,
-              97,
-              110,
-              100,
-              114,
-              111,
-              105,
-              100,
-              47,
-              116,
-              111,
-              111,
-              108,
-              115,
-              47,
-              108,
-              105,
-              110,
-              116,
-              47,
-              100,
-              101,
-              116,
-              101,
-              99,
-              116,
-              111,
-              114,
-              47,
-              97,
-              112,
-              105,
-              47,
-              73,
-              115,
-              115,
-              117,
-              101,
-              59,
-              62,
-              59,
-              1,
-              0,
-              35,
-              76,
-              111,
-              114,
-              103,
-              47,
-              106,
-              101,
-              116,
-              98,
-              114,
-              97,
-              105,
-              110,
-              115,
-              47,
-              97,
-              110,
-              110,
-              111,
-              116,
-              97,
-              116,
-              105,
-              111,
-              110,
-              115,
-              47,
-              78,
-              111,
-              116,
-              78,
-              117,
-              108,
-              108,
-              59,
-              1,
-              0,
-              6,
-              103,
-              101,
-              116,
-              65,
-              112,
-              105,
-              1,
-              0,
-              3,
-              40,
-              41,
-              73,
-              1,
-              0,
-              9,
-              103,
-              101,
-              116,
-              77,
-              105,
-              110,
-              65,
-              112,
-              105,
-              1,
-              0,
-              9,
-              103,
-              101,
-              116,
-              86,
-              101,
-              110,
-              100,
-              111,
-              114,
-              1,
-              0,
-              44,
-              40,
-              41,
-              76,
-              99,
-              111,
-              109,
-              47,
-              97,
-              110,
-              100,
-              114,
-              111,
-              105,
-              100,
-              47,
-              116,
-              111,
-              111,
-              108,
-              115,
-              47,
-              108,
-              105,
-              110,
-              116,
-              47,
-              99,
-              108,
-              105,
-              101,
-              110,
-              116,
-              47,
-              97,
-              112,
-              105,
-              47,
-              86,
-              101,
-              110,
-              100,
-              111,
-              114,
-              59,
-              1,
-              0,
-              10,
-              118,
-              105,
-              115,
-              105,
-              116,
-              67,
-              108,
-              97,
-              115,
-              115,
-              1,
-              0,
-              30,
-              40,
-              76,
-              111,
-              114,
-              103,
-              47,
-              106,
-              101,
-              116,
-              98,
-              114,
-              97,
-              105,
-              110,
-              115,
-              47,
-              117,
-              97,
-              115,
-              116,
-              47,
-              85,
-              67,
-              108,
-              97,
-              115,
-              115,
-              59,
-              41,
-              86,
-              1,
-              0,
-              4,
-              110,
-              111,
-              100,
-              101,
-              8,
-              0,
-              52,
-              1,
-              0,
-              30,
-              107,
-              111,
-              116,
-              108,
-              105,
-              110,
-              47,
-              106,
-              118,
-              109,
-              47,
-              105,
-              110,
-              116,
-              101,
-              114,
-              110,
-              97,
-              108,
-              47,
-              73,
-              110,
-              116,
-              114,
-              105,
-              110,
-              115,
-              105,
-              99,
-              115,
-              7,
-              0,
-              54,
-              1,
-              0,
-              21,
-              99,
-              104,
-              101,
-              99,
-              107,
-              78,
-              111,
-              116,
-              78,
-              117,
-              108,
-              108,
-              80,
-              97,
-              114,
-              97,
-              109,
-              101,
-              116,
-              101,
-              114,
-              1,
-              0,
-              39,
-              40,
-              76,
-              106,
-              97,
-              118,
-              97,
-              47,
-              108,
-              97,
-              110,
-              103,
-              47,
-              79,
-              98,
-              106,
-              101,
-              99,
-              116,
-              59,
-              76,
-              106,
-              97,
-              118,
-              97,
-              47,
-              108,
-              97,
-              110,
-              103,
-              47,
-              83,
-              116,
-              114,
-              105,
-              110,
-              103,
-              59,
-              41,
-              86,
-              12,
-              0,
-              56,
-              0,
-              57,
-              10,
-              0,
-              55,
-              0,
-              58,
-              1,
-              0,
-              38,
-              111,
-              114,
-              103,
-              47,
-              106,
-              101,
-              116,
-              98,
-              114,
-              97,
-              105,
-              110,
-              115,
-              47,
-              117,
-              97,
-              115,
-              116,
-              47,
-              107,
-              111,
-              116,
-              108,
-              105,
-              110,
-              47,
-              75,
-              111,
-              116,
-              108,
-              105,
-              110,
-              85,
-              67,
-              108,
-              97,
-              115,
-              115,
-              7,
-              0,
-              60,
-              1,
-              0,
-              10,
-              103,
-              101,
-              116,
-              75,
-              116,
-              67,
-              108,
-              97,
-              115,
-              115,
-              1,
-              0,
-              44,
-              40,
-              41,
-              76,
-              111,
-              114,
-              103,
-              47,
-              106,
-              101,
-              116,
-              98,
-              114,
-              97,
-              105,
-              110,
-              115,
-              47,
-              107,
-              111,
-              116,
-              108,
-              105,
-              110,
-              47,
-              112,
-              115,
-              105,
-              47,
-              75,
-              116,
-              67,
-              108,
-              97,
-              115,
-              115,
-              79,
-              114,
-              79,
-              98,
-              106,
-              101,
-              99,
-              116,
-              59,
-              12,
-              0,
-              62,
-              0,
-              63,
-              10,
-              0,
-              61,
-              0,
-              64,
-              1,
-              0,
-              7,
-              107,
-              116,
-              67,
-              108,
-              97,
-              115,
-              115,
-              1,
-              0,
-              42,
-              76,
-              111,
-              114,
-              103,
-              47,
-              106,
-              101,
-              116,
-              98,
-              114,
-              97,
-              105,
-              110,
-              115,
-              47,
-              107,
-              111,
-              116,
-              108,
-              105,
-              110,
-              47,
-              112,
-              115,
-              105,
-              47,
-              75,
-              116,
-              67,
-              108,
-              97,
-              115,
-              115,
-              79,
-              114,
-              79,
-              98,
-              106,
-              101,
-              99,
-              116,
-              59,
-              1,
-              0,
-              27,
-              76,
-              111,
-              114,
-              103,
-              47,
-              106,
-              101,
-              116,
-              98,
-              114,
-              97,
-              105,
-              110,
-              115,
-              47,
-              117,
-              97,
-              115,
-              116,
-              47,
-              85,
-              67,
-              108,
-              97,
-              115,
-              115,
-              59,
-              1,
-              0,
-              40,
-              111,
-              114,
-              103,
-              47,
-              106,
-              101,
-              116,
-              98,
-              114,
-              97,
-              105,
-              110,
-              115,
-              47,
-              107,
-              111,
-              116,
-              108,
-              105,
-              110,
-              47,
-              112,
-              115,
-              105,
-              47,
-              75,
-              116,
-              67,
-              108,
-              97,
-              115,
-              115,
-              79,
-              114,
-              79,
-              98,
-              106,
-              101,
-              99,
-              116,
-              7,
-              0,
-              69,
-              1,
-              0,
-              61,
-              76,
-              106,
-              97,
-              118,
-              97,
-              47,
-              117,
-              116,
-              105,
-              108,
-              47,
-              76,
-              105,
-              115,
-              116,
-              60,
-              76,
-              99,
-              111,
-              109,
-              47,
-              97,
-              110,
-              100,
-              114,
-              111,
-              105,
-              100,
-              47,
-              116,
-              111,
-              111,
-              108,
-              115,
-              47,
-              108,
-              105,
-              110,
-              116,
-              47,
-              100,
-              101,
-              116,
-              101,
-              99,
-              116,
-              111,
-              114,
-              47,
-              97,
-              112,
-              105,
-              47,
-              73,
-              115,
-              115,
-              117,
-              101,
-              59,
-              62,
-              59,
-              1,
-              0,
-              17,
-              76,
-              107,
-              111,
-              116,
-              108,
-              105,
-              110,
-              47,
-              77,
-              101,
-              116,
-              97,
-              100,
-              97,
-              116,
-              97,
-              59,
-              1,
-              0,
-              2,
-              109,
-              118,
-              3,
-              0,
-              0,
-              0,
-              1,
-              3,
-              0,
-              0,
-              0,
-              7,
-              1,
-              0,
-              1,
-              107,
-              1,
-              0,
-              2,
-              120,
-              105,
-              3,
-              0,
-              0,
-              0,
-              48,
-              1,
-              0,
-              2,
-              100,
-              49,
-              1,
-              0,
-              -65,
-              -64,
-              -128,
-              50,
-              10,
-              2,
-              24,
-              2,
-              10,
-              2,
-              24,
-              2,
-              10,
-              2,
-              8,
-              2,
-              10,
-              2,
-              16,
-              8,
-              10,
-              2,
-              8,
-              3,
-              10,
-              2,
-              16,
-              32,
-              10,
-              2,
-              24,
-              2,
-              10,
-              2,
-              8,
-              5,
-              10,
-              2,
-              24,
-              2,
-              10,
-              2,
-              8,
-              3,
-              10,
-              2,
-              16,
-              2,
-              10,
-              -64,
-              -128,
-              10,
-              2,
-              24,
-              2,
-              24,
-              -64,
-              -128,
-              50,
-              2,
-              48,
-              1,
-              66,
-              5,
-              -62,
-              -94,
-              6,
-              2,
-              16,
-              2,
-              74,
-              14,
-              16,
-              18,
-              26,
-              2,
-              48,
-              19,
-              50,
-              6,
-              16,
-              20,
-              26,
-              2,
-              48,
-              21,
-              82,
-              20,
-              16,
-              3,
-              26,
-              2,
-              48,
-              4,
-              88,
-              -62,
-              -106,
-              68,
-              -62,
-              -94,
-              6,
-              8,
-              10,
-              -64,
-              -128,
-              26,
-              4,
-              8,
-              5,
-              16,
-              6,
-              82,
-              26,
-              16,
-              7,
-              26,
-              8,
-              18,
-              4,
-              18,
-              2,
-              48,
-              9,
-              48,
-              8,
-              88,
-              -62,
-              -106,
-              4,
-              -62,
-              -94,
-              6,
-              8,
-              10,
-              -64,
-              -128,
-              26,
-              4,
-              8,
-              10,
-              16,
-              11,
-              82,
-              20,
-              16,
-              12,
-              26,
-              2,
-              48,
-              4,
-              88,
-              -62,
-              -106,
-              68,
-              -62,
-              -94,
-              6,
-              8,
-              10,
-              -64,
-              -128,
-              26,
-              4,
-              8,
-              13,
-              16,
-              6,
-              82,
-              20,
-              16,
-              14,
-              26,
-              2,
-              48,
-              15,
-              88,
-              -62,
-              -106,
-              4,
-              -62,
-              -94,
-              6,
-              8,
-              10,
-              -64,
-              -128,
-              26,
-              4,
-              8,
-              16,
-              16,
-              17,
-              1,
-              0,
-              2,
-              100,
-              50,
-              1,
-              0,
-              49,
-              76,
-              99,
-              111,
-              109,
-              47,
-              97,
-              110,
-              100,
-              114,
-              111,
-              105,
-              100,
-              47,
-              116,
-              111,
-              111,
-              108,
-              115,
-              47,
-              108,
-              105,
-              110,
-              116,
-              47,
-              99,
-              108,
-              105,
-              101,
-              110,
-              116,
-              47,
-              97,
-              112,
-              105,
-              47,
-              73,
-              115,
-              115,
-              117,
-              101,
-              82,
-              101,
-              103,
-              105,
-              115,
-              116,
-              114,
-              121,
-              59,
-              1,
-              0,
-              0,
-              1,
-              0,
-              43,
-              76,
-              99,
-              111,
-              109,
-              47,
-              97,
-              110,
-              100,
-              114,
-              111,
-              105,
-              100,
-              47,
-              116,
-              111,
-              111,
-              108,
-              115,
-              47,
-              108,
-              105,
-              110,
-              116,
-              47,
-              100,
-              101,
-              116,
-              101,
-              99,
-              116,
-              111,
-              114,
-              47,
-              97,
-              112,
-              105,
-              47,
-              73,
-              115,
-              115,
-              117,
-              101,
-              59,
-              1,
-              0,
-              24,
-              70,
-              114,
-              97,
-              103,
-              109,
-              101,
-              110,
-              116,
-              73,
-              115,
-              115,
-              117,
-              101,
-              82,
-              101,
-              103,
-              105,
-              115,
-              116,
-              114,
-              121,
-              46,
-              107,
-              116,
-              1,
-              0,
-              9,
-              83,
-              105,
-              103,
-              110,
-              97,
-              116,
-              117,
-              114,
-              101,
-              1,
-              0,
-              27,
-              82,
-              117,
-              110,
-              116,
-              105,
-              109,
-              101,
-              73,
-              110,
-              118,
-              105,
-              115,
-              105,
-              98,
-              108,
-              101,
-              65,
-              110,
-              110,
-              111,
-              116,
-              97,
-              116,
-              105,
-              111,
-              110,
-              115,
-              1,
-              0,
-              4,
-              67,
-              111,
-              100,
-              101,
-              1,
-              0,
-              15,
-              76,
-              105,
-              110,
-              101,
-              78,
-              117,
-              109,
-              98,
-              101,
-              114,
-              84,
-              97,
-              98,
-              108,
-              101,
-              1,
-              0,
-              18,
-              76,
-              111,
-              99,
-              97,
-              108,
-              86,
-              97,
-              114,
-              105,
-              97,
-              98,
-              108,
-              101,
-              84,
-              97,
-              98,
-              108,
-              101,
-              1,
-              0,
-              13,
-              83,
-              116,
-              97,
-              99,
-              107,
-              77,
-              97,
-              112,
-              84,
-              97,
-              98,
-              108,
-              101,
-              1,
-              0,
-              36,
-              82,
-              117,
-              110,
-              116,
-              105,
-              109,
-              101,
-              73,
-              110,
-              118,
-              105,
-              115,
-              105,
-              98,
-              108,
-              101,
-              80,
-              97,
-              114,
-              97,
-              109,
-              101,
-              116,
-              101,
-              114,
-              65,
-              110,
-              110,
-              111,
-              116,
-              97,
-              116,
-              105,
-              111,
-              110,
-              115,
-              1,
-              0,
-              10,
-              83,
-              111,
-              117,
-              114,
-              99,
-              101,
-              70,
-              105,
-              108,
-              101,
-              1,
-              0,
-              25,
-              82,
-              117,
-              110,
-              116,
-              105,
-              109,
-              101,
-              86,
-              105,
-              115,
-              105,
-              98,
-              108,
-              101,
-              65,
-              110,
-              110,
-              111,
-              116,
-              97,
-              116,
-              105,
-              111,
-              110,
-              115,
-              0,
-              49,
-              0,
-              2,
-              0,
-              4,
-              0,
-              0,
-              0,
-              4,
-              0,
-              18,
-              0,
-              15,
-              0,
-              16,
-              0,
-              2,
-              0,
-              86,
-              0,
-              0,
-              0,
-              2,
-              0,
-              71,
-              0,
-              87,
-              0,
-              0,
-              0,
-              6,
-              0,
-              1,
-              0,
-              44,
-              0,
-              0,
-              0,
-              18,
-              0,
-              20,
-              0,
-              21,
-              0,
-              0,
-              0,
-              18,
-              0,
-              24,
-              0,
-              21,
-              0,
-              0,
-              0,
-              18,
-              0,
-              36,
-              0,
-              37,
-              0,
-              1,
-              0,
-              87,
-              0,
-              0,
-              0,
-              6,
-              0,
-              1,
-              0,
-              44,
-              0,
-              0,
-              0,
-              6,
-              0,
-              1,
-              0,
-              5,
-              0,
-              6,
-              0,
-              1,
-              0,
-              88,
-              0,
-              0,
-              0,
-              122,
-              0,
-              9,
-              0,
-              1,
-              0,
-              0,
-              0,
-              44,
-              42,
-              -73,
-              0,
-              8,
-              42,
-              -72,
-              0,
-              14,
-              -75,
-              0,
-              18,
-              42,
-              18,
-              19,
-              -75,
-              0,
-              23,
-              42,
-              16,
-              10,
-              -75,
-              0,
-              26,
-              42,
-              -69,
-              0,
-              28,
-              89,
-              18,
-              30,
-              1,
-              1,
-              18,
-              32,
-              16,
-              6,
-              1,
-              -73,
-              0,
-              35,
-              -75,
-              0,
-              39,
-              -79,
-              0,
-              0,
-              0,
-              2,
-              0,
-              89,
-              0,
-              0,
-              0,
-              42,
-              0,
-              10,
-              0,
-              0,
-              0,
-              8,
-              0,
-              4,
-              0,
-              9,
-              0,
-              11,
-              0,
-              11,
-              0,
-              17,
-              0,
-              12,
-              0,
-              23,
-              0,
-              13,
-              0,
-              28,
-              0,
-              14,
-              0,
-              30,
-              0,
-              13,
-              0,
-              32,
-              0,
-              15,
-              0,
-              34,
-              0,
-              13,
-              0,
-              43,
-              0,
-              8,
-              0,
-              90,
-              0,
-              0,
-              0,
-              12,
-              0,
-              1,
-              0,
-              0,
-              0,
-              44,
-              0,
-              40,
-              0,
-              41,
-              0,
-              0,
-              0,
-              1,
-              0,
-              42,
-              0,
-              12,
-              0,
-              3,
-              0,
-              88,
-              0,
-              0,
-              0,
-              47,
-              0,
-              1,
-              0,
-              1,
-              0,
-              0,
-              0,
-              5,
-              42,
-              -76,
-              0,
-              18,
-              -80,
-              0,
-              0,
-              0,
-              2,
-              0,
-              89,
-              0,
-              0,
-              0,
-              6,
-              0,
-              1,
-              0,
-              0,
-              0,
-              9,
-              0,
-              90,
-              0,
-              0,
-              0,
-              12,
-              0,
-              1,
-              0,
-              0,
-              0,
-              5,
-              0,
-              40,
-              0,
-              41,
-              0,
-              0,
-              0,
-              86,
-              0,
-              0,
-              0,
-              2,
-              0,
-              43,
-              0,
-              87,
-              0,
-              0,
-              0,
-              6,
-              0,
-              1,
-              0,
-              44,
-              0,
-              0,
-              0,
-              1,
-              0,
-              45,
-              0,
-              46,
-              0,
-              1,
-              0,
-              88,
-              0,
-              0,
-              0,
-              47,
-              0,
-              1,
-              0,
-              1,
-              0,
-              0,
-              0,
-              5,
-              42,
-              -76,
-              0,
-              23,
-              -84,
-              0,
-              0,
-              0,
-              2,
-              0,
-              89,
-              0,
-              0,
-              0,
-              6,
-              0,
-              1,
-              0,
-              0,
-              0,
-              11,
-              0,
-              90,
-              0,
-              0,
-              0,
-              12,
-              0,
-              1,
-              0,
-              0,
-              0,
-              5,
-              0,
-              40,
-              0,
-              41,
-              0,
-              0,
-              0,
-              1,
-              0,
-              47,
-              0,
-              46,
-              0,
-              1,
-              0,
-              88,
-              0,
-              0,
-              0,
-              47,
-              0,
-              1,
-              0,
-              1,
-              0,
-              0,
-              0,
-              5,
-              42,
-              -76,
-              0,
-              26,
-              -84,
-              0,
-              0,
-              0,
-              2,
-              0,
-              89,
-              0,
-              0,
-              0,
-              6,
-              0,
-              1,
-              0,
-              0,
-              0,
-              12,
-              0,
-              90,
-              0,
-              0,
-              0,
-              12,
-              0,
-              1,
-              0,
-              0,
-              0,
-              5,
-              0,
-              40,
-              0,
-              41,
-              0,
-              0,
-              0,
-              1,
-              0,
-              48,
-              0,
-              49,
-              0,
-              2,
-              0,
-              88,
-              0,
-              0,
-              0,
-              47,
-              0,
-              1,
-              0,
-              1,
-              0,
-              0,
-              0,
-              5,
-              42,
-              -76,
-              0,
-              39,
-              -80,
-              0,
-              0,
-              0,
-              2,
-              0,
-              89,
-              0,
-              0,
-              0,
-              6,
-              0,
-              1,
-              0,
-              0,
-              0,
-              13,
-              0,
-              90,
-              0,
-              0,
-              0,
-              12,
-              0,
-              1,
-              0,
-              0,
-              0,
-              5,
-              0,
-              40,
-              0,
-              41,
-              0,
-              0,
-              0,
-              87,
-              0,
-              0,
-              0,
-              6,
-              0,
-              1,
-              0,
-              44,
-              0,
-              0,
-              0,
-              17,
-              0,
-              50,
-              0,
-              51,
-              0,
-              2,
-              0,
-              88,
-              0,
-              0,
-              0,
-              122,
-              0,
-              2,
-              0,
-              3,
-              0,
-              0,
-              0,
-              35,
-              43,
-              18,
-              53,
-              -72,
-              0,
-              59,
-              43,
-              -63,
-              0,
-              61,
-              -103,
-              0,
-              10,
-              43,
-              -64,
-              0,
-              61,
-              -89,
-              0,
-              4,
-              1,
-              89,
-              -58,
-              0,
-              9,
-              -74,
-              0,
-              65,
-              -89,
-              0,
-              5,
-              87,
-              1,
-              77,
-              -79,
-              0,
-              0,
-              0,
-              3,
-              0,
-              91,
-              0,
-              0,
-              0,
-              15,
-              0,
-              4,
-              20,
-              64,
-              7,
-              0,
-              61,
-              73,
-              7,
-              0,
-              61,
-              65,
-              7,
-              0,
-              70,
-              0,
-              89,
-              0,
-              0,
-              0,
-              10,
-              0,
-              2,
-              0,
-              6,
-              0,
-              18,
-              0,
-              34,
-              0,
-              19,
-              0,
-              90,
-              0,
-              0,
-              0,
-              32,
-              0,
-              3,
-              0,
-              34,
-              0,
-              1,
-              0,
-              66,
-              0,
-              67,
-              0,
-              2,
-              0,
-              0,
-              0,
-              35,
-              0,
-              40,
-              0,
-              41,
-              0,
-              0,
-              0,
-              0,
-              0,
-              35,
-              0,
-              52,
-              0,
-              68,
-              0,
-              1,
-              0,
-              92,
-              0,
-              0,
-              0,
-              7,
-              1,
-              0,
-              1,
-              0,
-              44,
-              0,
-              0,
-              0,
-              2,
-              0,
-              93,
-              0,
-              0,
-              0,
-              2,
-              0,
-              85,
-              0,
-              94,
-              0,
-              0,
-              0,
-              109,
-              0,
-              1,
-              0,
-              72,
-              0,
-              5,
-              0,
-              73,
-              91,
-              0,
-              3,
-              73,
-              0,
-              74,
-              73,
-              0,
-              75,
-              73,
-              0,
-              74,
-              0,
-              76,
-              73,
-              0,
-              74,
-              0,
-              77,
-              73,
-              0,
-              78,
-              0,
-              79,
-              91,
-              0,
-              1,
-              115,
-              0,
-              80,
-              0,
-              81,
-              91,
-              0,
-              22,
-              115,
-              0,
-              41,
-              115,
-              0,
-              82,
-              115,
-              0,
-              6,
-              115,
-              0,
-              20,
-              115,
-              0,
-              83,
-              115,
-              0,
-              45,
-              115,
-              0,
-              46,
-              115,
-              0,
-              15,
-              115,
-              0,
-              83,
-              115,
-              0,
-              84,
-              115,
-              0,
-              42,
-              115,
-              0,
-              12,
-              115,
-              0,
-              24,
-              115,
-              0,
-              47,
-              115,
-              0,
-              36,
-              115,
-              0,
-              37,
-              115,
-              0,
-              48,
-              115,
-              0,
-              49,
-              115,
-              0,
-              50,
-              115,
-              0,
-              83,
-              115,
-              0,
-              52,
-              115,
-              0,
-              68,
-            ),
-          ),
+                         */
+                        -54,
+                        -2,
+                        -70,
+                        -66,
+                        0,
+                        0,
+                        0,
+                        52,
+                        0,
+                        95,
+                        1,
+                        0,
+                        44,
+                        97,
+                        110,
+                        100,
+                        114,
+                        111,
+                        105,
+                        100,
+                        120,
+                        47,
+                        102,
+                        114,
+                        97,
+                        103,
+                        109,
+                        101,
+                        110,
+                        116,
+                        47,
+                        108,
+                        105,
+                        110,
+                        116,
+                        47,
+                        70,
+                        114,
+                        97,
+                        103,
+                        109,
+                        101,
+                        110,
+                        116,
+                        73,
+                        115,
+                        115,
+                        117,
+                        101,
+                        82,
+                        101,
+                        103,
+                        105,
+                        115,
+                        116,
+                        114,
+                        121,
+                        7,
+                        0,
+                        1,
+                        1,
+                        0,
+                        47,
+                        99,
+                        111,
+                        109,
+                        47,
+                        97,
+                        110,
+                        100,
+                        114,
+                        111,
+                        105,
+                        100,
+                        47,
+                        116,
+                        111,
+                        111,
+                        108,
+                        115,
+                        47,
+                        108,
+                        105,
+                        110,
+                        116,
+                        47,
+                        99,
+                        108,
+                        105,
+                        101,
+                        110,
+                        116,
+                        47,
+                        97,
+                        112,
+                        105,
+                        47,
+                        73,
+                        115,
+                        115,
+                        117,
+                        101,
+                        82,
+                        101,
+                        103,
+                        105,
+                        115,
+                        116,
+                        114,
+                        121,
+                        7,
+                        0,
+                        3,
+                        1,
+                        0,
+                        6,
+                        60,
+                        105,
+                        110,
+                        105,
+                        116,
+                        62,
+                        1,
+                        0,
+                        3,
+                        40,
+                        41,
+                        86,
+                        12,
+                        0,
+                        5,
+                        0,
+                        6,
+                        10,
+                        0,
+                        4,
+                        0,
+                        7,
+                        1,
+                        0,
+                        32,
+                        107,
+                        111,
+                        116,
+                        108,
+                        105,
+                        110,
+                        47,
+                        99,
+                        111,
+                        108,
+                        108,
+                        101,
+                        99,
+                        116,
+                        105,
+                        111,
+                        110,
+                        115,
+                        47,
+                        67,
+                        111,
+                        108,
+                        108,
+                        101,
+                        99,
+                        116,
+                        105,
+                        111,
+                        110,
+                        115,
+                        75,
+                        116,
+                        7,
+                        0,
+                        9,
+                        1,
+                        0,
+                        9,
+                        101,
+                        109,
+                        112,
+                        116,
+                        121,
+                        76,
+                        105,
+                        115,
+                        116,
+                        1,
+                        0,
+                        18,
+                        40,
+                        41,
+                        76,
+                        106,
+                        97,
+                        118,
+                        97,
+                        47,
+                        117,
+                        116,
+                        105,
+                        108,
+                        47,
+                        76,
+                        105,
+                        115,
+                        116,
+                        59,
+                        12,
+                        0,
+                        11,
+                        0,
+                        12,
+                        10,
+                        0,
+                        10,
+                        0,
+                        13,
+                        1,
+                        0,
+                        6,
+                        105,
+                        115,
+                        115,
+                        117,
+                        101,
+                        115,
+                        1,
+                        0,
+                        16,
+                        76,
+                        106,
+                        97,
+                        118,
+                        97,
+                        47,
+                        117,
+                        116,
+                        105,
+                        108,
+                        47,
+                        76,
+                        105,
+                        115,
+                        116,
+                        59,
+                        12,
+                        0,
+                        15,
+                        0,
+                        16,
+                        9,
+                        0,
+                        2,
+                        0,
+                        17,
+                        3,
+                        0,
+                        0,
+                        0,
+                        CURRENT_API.toByte(),
+                        1,
+                        0,
+                        3,
+                        97,
+                        112,
+                        105,
+                        1,
+                        0,
+                        1,
+                        73,
+                        12,
+                        0,
+                        20,
+                        0,
+                        21,
+                        9,
+                        0,
+                        2,
+                        0,
+                        22,
+                        1,
+                        0,
+                        6,
+                        109,
+                        105,
+                        110,
+                        65,
+                        112,
+                        105,
+                        12,
+                        0,
+                        24,
+                        0,
+                        21,
+                        9,
+                        0,
+                        2,
+                        0,
+                        25,
+                        1,
+                        0,
+                        40,
+                        99,
+                        111,
+                        109,
+                        47,
+                        97,
+                        110,
+                        100,
+                        114,
+                        111,
+                        105,
+                        100,
+                        47,
+                        116,
+                        111,
+                        111,
+                        108,
+                        115,
+                        47,
+                        108,
+                        105,
+                        110,
+                        116,
+                        47,
+                        99,
+                        108,
+                        105,
+                        101,
+                        110,
+                        116,
+                        47,
+                        97,
+                        112,
+                        105,
+                        47,
+                        86,
+                        101,
+                        110,
+                        100,
+                        111,
+                        114,
+                        7,
+                        0,
+                        27,
+                        1,
+                        0,
+                        44,
+                        65,
+                        110,
+                        100,
+                        114,
+                        111,
+                        105,
+                        100,
+                        32,
+                        79,
+                        112,
+                        101,
+                        110,
+                        32,
+                        83,
+                        111,
+                        117,
+                        114,
+                        99,
+                        101,
+                        32,
+                        80,
+                        114,
+                        111,
+                        106,
+                        101,
+                        99,
+                        116,
+                        58,
+                        32,
+                        76,
+                        105,
+                        110,
+                        116,
+                        32,
+                        85,
+                        110,
+                        105,
+                        116,
+                        32,
+                        84,
+                        101,
+                        115,
+                        116,
+                        115,
+                        8,
+                        0,
+                        29,
+                        1,
+                        0,
+                        9,
+                        47,
+                        100,
+                        101,
+                        118,
+                        47,
+                        110,
+                        117,
+                        108,
+                        108,
+                        8,
+                        0,
+                        31,
+                        1,
+                        0,
+                        122,
+                        40,
+                        76,
+                        106,
+                        97,
+                        118,
+                        97,
+                        47,
+                        108,
+                        97,
+                        110,
+                        103,
+                        47,
+                        83,
+                        116,
+                        114,
+                        105,
+                        110,
+                        103,
+                        59,
+                        76,
+                        106,
+                        97,
+                        118,
+                        97,
+                        47,
+                        108,
+                        97,
+                        110,
+                        103,
+                        47,
+                        83,
+                        116,
+                        114,
+                        105,
+                        110,
+                        103,
+                        59,
+                        76,
+                        106,
+                        97,
+                        118,
+                        97,
+                        47,
+                        108,
+                        97,
+                        110,
+                        103,
+                        47,
+                        83,
+                        116,
+                        114,
+                        105,
+                        110,
+                        103,
+                        59,
+                        76,
+                        106,
+                        97,
+                        118,
+                        97,
+                        47,
+                        108,
+                        97,
+                        110,
+                        103,
+                        47,
+                        83,
+                        116,
+                        114,
+                        105,
+                        110,
+                        103,
+                        59,
+                        73,
+                        76,
+                        107,
+                        111,
+                        116,
+                        108,
+                        105,
+                        110,
+                        47,
+                        106,
+                        118,
+                        109,
+                        47,
+                        105,
+                        110,
+                        116,
+                        101,
+                        114,
+                        110,
+                        97,
+                        108,
+                        47,
+                        68,
+                        101,
+                        102,
+                        97,
+                        117,
+                        108,
+                        116,
+                        67,
+                        111,
+                        110,
+                        115,
+                        116,
+                        114,
+                        117,
+                        99,
+                        116,
+                        111,
+                        114,
+                        77,
+                        97,
+                        114,
+                        107,
+                        101,
+                        114,
+                        59,
+                        41,
+                        86,
+                        12,
+                        0,
+                        5,
+                        0,
+                        33,
+                        10,
+                        0,
+                        28,
+                        0,
+                        34,
+                        1,
+                        0,
+                        6,
+                        118,
+                        101,
+                        110,
+                        100,
+                        111,
+                        114,
+                        1,
+                        0,
+                        42,
+                        76,
+                        99,
+                        111,
+                        109,
+                        47,
+                        97,
+                        110,
+                        100,
+                        114,
+                        111,
+                        105,
+                        100,
+                        47,
+                        116,
+                        111,
+                        111,
+                        108,
+                        115,
+                        47,
+                        108,
+                        105,
+                        110,
+                        116,
+                        47,
+                        99,
+                        108,
+                        105,
+                        101,
+                        110,
+                        116,
+                        47,
+                        97,
+                        112,
+                        105,
+                        47,
+                        86,
+                        101,
+                        110,
+                        100,
+                        111,
+                        114,
+                        59,
+                        12,
+                        0,
+                        36,
+                        0,
+                        37,
+                        9,
+                        0,
+                        2,
+                        0,
+                        38,
+                        1,
+                        0,
+                        4,
+                        116,
+                        104,
+                        105,
+                        115,
+                        1,
+                        0,
+                        46,
+                        76,
+                        97,
+                        110,
+                        100,
+                        114,
+                        111,
+                        105,
+                        100,
+                        120,
+                        47,
+                        102,
+                        114,
+                        97,
+                        103,
+                        109,
+                        101,
+                        110,
+                        116,
+                        47,
+                        108,
+                        105,
+                        110,
+                        116,
+                        47,
+                        70,
+                        114,
+                        97,
+                        103,
+                        109,
+                        101,
+                        110,
+                        116,
+                        73,
+                        115,
+                        115,
+                        117,
+                        101,
+                        82,
+                        101,
+                        103,
+                        105,
+                        115,
+                        116,
+                        114,
+                        121,
+                        59,
+                        1,
+                        0,
+                        9,
+                        103,
+                        101,
+                        116,
+                        73,
+                        115,
+                        115,
+                        117,
+                        101,
+                        115,
+                        1,
+                        0,
+                        63,
+                        40,
+                        41,
+                        76,
+                        106,
+                        97,
+                        118,
+                        97,
+                        47,
+                        117,
+                        116,
+                        105,
+                        108,
+                        47,
+                        76,
+                        105,
+                        115,
+                        116,
+                        60,
+                        76,
+                        99,
+                        111,
+                        109,
+                        47,
+                        97,
+                        110,
+                        100,
+                        114,
+                        111,
+                        105,
+                        100,
+                        47,
+                        116,
+                        111,
+                        111,
+                        108,
+                        115,
+                        47,
+                        108,
+                        105,
+                        110,
+                        116,
+                        47,
+                        100,
+                        101,
+                        116,
+                        101,
+                        99,
+                        116,
+                        111,
+                        114,
+                        47,
+                        97,
+                        112,
+                        105,
+                        47,
+                        73,
+                        115,
+                        115,
+                        117,
+                        101,
+                        59,
+                        62,
+                        59,
+                        1,
+                        0,
+                        35,
+                        76,
+                        111,
+                        114,
+                        103,
+                        47,
+                        106,
+                        101,
+                        116,
+                        98,
+                        114,
+                        97,
+                        105,
+                        110,
+                        115,
+                        47,
+                        97,
+                        110,
+                        110,
+                        111,
+                        116,
+                        97,
+                        116,
+                        105,
+                        111,
+                        110,
+                        115,
+                        47,
+                        78,
+                        111,
+                        116,
+                        78,
+                        117,
+                        108,
+                        108,
+                        59,
+                        1,
+                        0,
+                        6,
+                        103,
+                        101,
+                        116,
+                        65,
+                        112,
+                        105,
+                        1,
+                        0,
+                        3,
+                        40,
+                        41,
+                        73,
+                        1,
+                        0,
+                        9,
+                        103,
+                        101,
+                        116,
+                        77,
+                        105,
+                        110,
+                        65,
+                        112,
+                        105,
+                        1,
+                        0,
+                        9,
+                        103,
+                        101,
+                        116,
+                        86,
+                        101,
+                        110,
+                        100,
+                        111,
+                        114,
+                        1,
+                        0,
+                        44,
+                        40,
+                        41,
+                        76,
+                        99,
+                        111,
+                        109,
+                        47,
+                        97,
+                        110,
+                        100,
+                        114,
+                        111,
+                        105,
+                        100,
+                        47,
+                        116,
+                        111,
+                        111,
+                        108,
+                        115,
+                        47,
+                        108,
+                        105,
+                        110,
+                        116,
+                        47,
+                        99,
+                        108,
+                        105,
+                        101,
+                        110,
+                        116,
+                        47,
+                        97,
+                        112,
+                        105,
+                        47,
+                        86,
+                        101,
+                        110,
+                        100,
+                        111,
+                        114,
+                        59,
+                        1,
+                        0,
+                        10,
+                        118,
+                        105,
+                        115,
+                        105,
+                        116,
+                        67,
+                        108,
+                        97,
+                        115,
+                        115,
+                        1,
+                        0,
+                        30,
+                        40,
+                        76,
+                        111,
+                        114,
+                        103,
+                        47,
+                        106,
+                        101,
+                        116,
+                        98,
+                        114,
+                        97,
+                        105,
+                        110,
+                        115,
+                        47,
+                        117,
+                        97,
+                        115,
+                        116,
+                        47,
+                        85,
+                        67,
+                        108,
+                        97,
+                        115,
+                        115,
+                        59,
+                        41,
+                        86,
+                        1,
+                        0,
+                        4,
+                        110,
+                        111,
+                        100,
+                        101,
+                        8,
+                        0,
+                        52,
+                        1,
+                        0,
+                        30,
+                        107,
+                        111,
+                        116,
+                        108,
+                        105,
+                        110,
+                        47,
+                        106,
+                        118,
+                        109,
+                        47,
+                        105,
+                        110,
+                        116,
+                        101,
+                        114,
+                        110,
+                        97,
+                        108,
+                        47,
+                        73,
+                        110,
+                        116,
+                        114,
+                        105,
+                        110,
+                        115,
+                        105,
+                        99,
+                        115,
+                        7,
+                        0,
+                        54,
+                        1,
+                        0,
+                        21,
+                        99,
+                        104,
+                        101,
+                        99,
+                        107,
+                        78,
+                        111,
+                        116,
+                        78,
+                        117,
+                        108,
+                        108,
+                        80,
+                        97,
+                        114,
+                        97,
+                        109,
+                        101,
+                        116,
+                        101,
+                        114,
+                        1,
+                        0,
+                        39,
+                        40,
+                        76,
+                        106,
+                        97,
+                        118,
+                        97,
+                        47,
+                        108,
+                        97,
+                        110,
+                        103,
+                        47,
+                        79,
+                        98,
+                        106,
+                        101,
+                        99,
+                        116,
+                        59,
+                        76,
+                        106,
+                        97,
+                        118,
+                        97,
+                        47,
+                        108,
+                        97,
+                        110,
+                        103,
+                        47,
+                        83,
+                        116,
+                        114,
+                        105,
+                        110,
+                        103,
+                        59,
+                        41,
+                        86,
+                        12,
+                        0,
+                        56,
+                        0,
+                        57,
+                        10,
+                        0,
+                        55,
+                        0,
+                        58,
+                        1,
+                        0,
+                        38,
+                        111,
+                        114,
+                        103,
+                        47,
+                        106,
+                        101,
+                        116,
+                        98,
+                        114,
+                        97,
+                        105,
+                        110,
+                        115,
+                        47,
+                        117,
+                        97,
+                        115,
+                        116,
+                        47,
+                        107,
+                        111,
+                        116,
+                        108,
+                        105,
+                        110,
+                        47,
+                        75,
+                        111,
+                        116,
+                        108,
+                        105,
+                        110,
+                        85,
+                        67,
+                        108,
+                        97,
+                        115,
+                        115,
+                        7,
+                        0,
+                        60,
+                        1,
+                        0,
+                        10,
+                        103,
+                        101,
+                        116,
+                        75,
+                        116,
+                        67,
+                        108,
+                        97,
+                        115,
+                        115,
+                        1,
+                        0,
+                        44,
+                        40,
+                        41,
+                        76,
+                        111,
+                        114,
+                        103,
+                        47,
+                        106,
+                        101,
+                        116,
+                        98,
+                        114,
+                        97,
+                        105,
+                        110,
+                        115,
+                        47,
+                        107,
+                        111,
+                        116,
+                        108,
+                        105,
+                        110,
+                        47,
+                        112,
+                        115,
+                        105,
+                        47,
+                        75,
+                        116,
+                        67,
+                        108,
+                        97,
+                        115,
+                        115,
+                        79,
+                        114,
+                        79,
+                        98,
+                        106,
+                        101,
+                        99,
+                        116,
+                        59,
+                        12,
+                        0,
+                        62,
+                        0,
+                        63,
+                        10,
+                        0,
+                        61,
+                        0,
+                        64,
+                        1,
+                        0,
+                        7,
+                        107,
+                        116,
+                        67,
+                        108,
+                        97,
+                        115,
+                        115,
+                        1,
+                        0,
+                        42,
+                        76,
+                        111,
+                        114,
+                        103,
+                        47,
+                        106,
+                        101,
+                        116,
+                        98,
+                        114,
+                        97,
+                        105,
+                        110,
+                        115,
+                        47,
+                        107,
+                        111,
+                        116,
+                        108,
+                        105,
+                        110,
+                        47,
+                        112,
+                        115,
+                        105,
+                        47,
+                        75,
+                        116,
+                        67,
+                        108,
+                        97,
+                        115,
+                        115,
+                        79,
+                        114,
+                        79,
+                        98,
+                        106,
+                        101,
+                        99,
+                        116,
+                        59,
+                        1,
+                        0,
+                        27,
+                        76,
+                        111,
+                        114,
+                        103,
+                        47,
+                        106,
+                        101,
+                        116,
+                        98,
+                        114,
+                        97,
+                        105,
+                        110,
+                        115,
+                        47,
+                        117,
+                        97,
+                        115,
+                        116,
+                        47,
+                        85,
+                        67,
+                        108,
+                        97,
+                        115,
+                        115,
+                        59,
+                        1,
+                        0,
+                        40,
+                        111,
+                        114,
+                        103,
+                        47,
+                        106,
+                        101,
+                        116,
+                        98,
+                        114,
+                        97,
+                        105,
+                        110,
+                        115,
+                        47,
+                        107,
+                        111,
+                        116,
+                        108,
+                        105,
+                        110,
+                        47,
+                        112,
+                        115,
+                        105,
+                        47,
+                        75,
+                        116,
+                        67,
+                        108,
+                        97,
+                        115,
+                        115,
+                        79,
+                        114,
+                        79,
+                        98,
+                        106,
+                        101,
+                        99,
+                        116,
+                        7,
+                        0,
+                        69,
+                        1,
+                        0,
+                        61,
+                        76,
+                        106,
+                        97,
+                        118,
+                        97,
+                        47,
+                        117,
+                        116,
+                        105,
+                        108,
+                        47,
+                        76,
+                        105,
+                        115,
+                        116,
+                        60,
+                        76,
+                        99,
+                        111,
+                        109,
+                        47,
+                        97,
+                        110,
+                        100,
+                        114,
+                        111,
+                        105,
+                        100,
+                        47,
+                        116,
+                        111,
+                        111,
+                        108,
+                        115,
+                        47,
+                        108,
+                        105,
+                        110,
+                        116,
+                        47,
+                        100,
+                        101,
+                        116,
+                        101,
+                        99,
+                        116,
+                        111,
+                        114,
+                        47,
+                        97,
+                        112,
+                        105,
+                        47,
+                        73,
+                        115,
+                        115,
+                        117,
+                        101,
+                        59,
+                        62,
+                        59,
+                        1,
+                        0,
+                        17,
+                        76,
+                        107,
+                        111,
+                        116,
+                        108,
+                        105,
+                        110,
+                        47,
+                        77,
+                        101,
+                        116,
+                        97,
+                        100,
+                        97,
+                        116,
+                        97,
+                        59,
+                        1,
+                        0,
+                        2,
+                        109,
+                        118,
+                        3,
+                        0,
+                        0,
+                        0,
+                        1,
+                        3,
+                        0,
+                        0,
+                        0,
+                        7,
+                        1,
+                        0,
+                        1,
+                        107,
+                        1,
+                        0,
+                        2,
+                        120,
+                        105,
+                        3,
+                        0,
+                        0,
+                        0,
+                        48,
+                        1,
+                        0,
+                        2,
+                        100,
+                        49,
+                        1,
+                        0,
+                        -65,
+                        -64,
+                        -128,
+                        50,
+                        10,
+                        2,
+                        24,
+                        2,
+                        10,
+                        2,
+                        24,
+                        2,
+                        10,
+                        2,
+                        8,
+                        2,
+                        10,
+                        2,
+                        16,
+                        8,
+                        10,
+                        2,
+                        8,
+                        3,
+                        10,
+                        2,
+                        16,
+                        32,
+                        10,
+                        2,
+                        24,
+                        2,
+                        10,
+                        2,
+                        8,
+                        5,
+                        10,
+                        2,
+                        24,
+                        2,
+                        10,
+                        2,
+                        8,
+                        3,
+                        10,
+                        2,
+                        16,
+                        2,
+                        10,
+                        -64,
+                        -128,
+                        10,
+                        2,
+                        24,
+                        2,
+                        24,
+                        -64,
+                        -128,
+                        50,
+                        2,
+                        48,
+                        1,
+                        66,
+                        5,
+                        -62,
+                        -94,
+                        6,
+                        2,
+                        16,
+                        2,
+                        74,
+                        14,
+                        16,
+                        18,
+                        26,
+                        2,
+                        48,
+                        19,
+                        50,
+                        6,
+                        16,
+                        20,
+                        26,
+                        2,
+                        48,
+                        21,
+                        82,
+                        20,
+                        16,
+                        3,
+                        26,
+                        2,
+                        48,
+                        4,
+                        88,
+                        -62,
+                        -106,
+                        68,
+                        -62,
+                        -94,
+                        6,
+                        8,
+                        10,
+                        -64,
+                        -128,
+                        26,
+                        4,
+                        8,
+                        5,
+                        16,
+                        6,
+                        82,
+                        26,
+                        16,
+                        7,
+                        26,
+                        8,
+                        18,
+                        4,
+                        18,
+                        2,
+                        48,
+                        9,
+                        48,
+                        8,
+                        88,
+                        -62,
+                        -106,
+                        4,
+                        -62,
+                        -94,
+                        6,
+                        8,
+                        10,
+                        -64,
+                        -128,
+                        26,
+                        4,
+                        8,
+                        10,
+                        16,
+                        11,
+                        82,
+                        20,
+                        16,
+                        12,
+                        26,
+                        2,
+                        48,
+                        4,
+                        88,
+                        -62,
+                        -106,
+                        68,
+                        -62,
+                        -94,
+                        6,
+                        8,
+                        10,
+                        -64,
+                        -128,
+                        26,
+                        4,
+                        8,
+                        13,
+                        16,
+                        6,
+                        82,
+                        20,
+                        16,
+                        14,
+                        26,
+                        2,
+                        48,
+                        15,
+                        88,
+                        -62,
+                        -106,
+                        4,
+                        -62,
+                        -94,
+                        6,
+                        8,
+                        10,
+                        -64,
+                        -128,
+                        26,
+                        4,
+                        8,
+                        16,
+                        16,
+                        17,
+                        1,
+                        0,
+                        2,
+                        100,
+                        50,
+                        1,
+                        0,
+                        49,
+                        76,
+                        99,
+                        111,
+                        109,
+                        47,
+                        97,
+                        110,
+                        100,
+                        114,
+                        111,
+                        105,
+                        100,
+                        47,
+                        116,
+                        111,
+                        111,
+                        108,
+                        115,
+                        47,
+                        108,
+                        105,
+                        110,
+                        116,
+                        47,
+                        99,
+                        108,
+                        105,
+                        101,
+                        110,
+                        116,
+                        47,
+                        97,
+                        112,
+                        105,
+                        47,
+                        73,
+                        115,
+                        115,
+                        117,
+                        101,
+                        82,
+                        101,
+                        103,
+                        105,
+                        115,
+                        116,
+                        114,
+                        121,
+                        59,
+                        1,
+                        0,
+                        0,
+                        1,
+                        0,
+                        43,
+                        76,
+                        99,
+                        111,
+                        109,
+                        47,
+                        97,
+                        110,
+                        100,
+                        114,
+                        111,
+                        105,
+                        100,
+                        47,
+                        116,
+                        111,
+                        111,
+                        108,
+                        115,
+                        47,
+                        108,
+                        105,
+                        110,
+                        116,
+                        47,
+                        100,
+                        101,
+                        116,
+                        101,
+                        99,
+                        116,
+                        111,
+                        114,
+                        47,
+                        97,
+                        112,
+                        105,
+                        47,
+                        73,
+                        115,
+                        115,
+                        117,
+                        101,
+                        59,
+                        1,
+                        0,
+                        24,
+                        70,
+                        114,
+                        97,
+                        103,
+                        109,
+                        101,
+                        110,
+                        116,
+                        73,
+                        115,
+                        115,
+                        117,
+                        101,
+                        82,
+                        101,
+                        103,
+                        105,
+                        115,
+                        116,
+                        114,
+                        121,
+                        46,
+                        107,
+                        116,
+                        1,
+                        0,
+                        9,
+                        83,
+                        105,
+                        103,
+                        110,
+                        97,
+                        116,
+                        117,
+                        114,
+                        101,
+                        1,
+                        0,
+                        27,
+                        82,
+                        117,
+                        110,
+                        116,
+                        105,
+                        109,
+                        101,
+                        73,
+                        110,
+                        118,
+                        105,
+                        115,
+                        105,
+                        98,
+                        108,
+                        101,
+                        65,
+                        110,
+                        110,
+                        111,
+                        116,
+                        97,
+                        116,
+                        105,
+                        111,
+                        110,
+                        115,
+                        1,
+                        0,
+                        4,
+                        67,
+                        111,
+                        100,
+                        101,
+                        1,
+                        0,
+                        15,
+                        76,
+                        105,
+                        110,
+                        101,
+                        78,
+                        117,
+                        109,
+                        98,
+                        101,
+                        114,
+                        84,
+                        97,
+                        98,
+                        108,
+                        101,
+                        1,
+                        0,
+                        18,
+                        76,
+                        111,
+                        99,
+                        97,
+                        108,
+                        86,
+                        97,
+                        114,
+                        105,
+                        97,
+                        98,
+                        108,
+                        101,
+                        84,
+                        97,
+                        98,
+                        108,
+                        101,
+                        1,
+                        0,
+                        13,
+                        83,
+                        116,
+                        97,
+                        99,
+                        107,
+                        77,
+                        97,
+                        112,
+                        84,
+                        97,
+                        98,
+                        108,
+                        101,
+                        1,
+                        0,
+                        36,
+                        82,
+                        117,
+                        110,
+                        116,
+                        105,
+                        109,
+                        101,
+                        73,
+                        110,
+                        118,
+                        105,
+                        115,
+                        105,
+                        98,
+                        108,
+                        101,
+                        80,
+                        97,
+                        114,
+                        97,
+                        109,
+                        101,
+                        116,
+                        101,
+                        114,
+                        65,
+                        110,
+                        110,
+                        111,
+                        116,
+                        97,
+                        116,
+                        105,
+                        111,
+                        110,
+                        115,
+                        1,
+                        0,
+                        10,
+                        83,
+                        111,
+                        117,
+                        114,
+                        99,
+                        101,
+                        70,
+                        105,
+                        108,
+                        101,
+                        1,
+                        0,
+                        25,
+                        82,
+                        117,
+                        110,
+                        116,
+                        105,
+                        109,
+                        101,
+                        86,
+                        105,
+                        115,
+                        105,
+                        98,
+                        108,
+                        101,
+                        65,
+                        110,
+                        110,
+                        111,
+                        116,
+                        97,
+                        116,
+                        105,
+                        111,
+                        110,
+                        115,
+                        0,
+                        49,
+                        0,
+                        2,
+                        0,
+                        4,
+                        0,
+                        0,
+                        0,
+                        4,
+                        0,
+                        18,
+                        0,
+                        15,
+                        0,
+                        16,
+                        0,
+                        2,
+                        0,
+                        86,
+                        0,
+                        0,
+                        0,
+                        2,
+                        0,
+                        71,
+                        0,
+                        87,
+                        0,
+                        0,
+                        0,
+                        6,
+                        0,
+                        1,
+                        0,
+                        44,
+                        0,
+                        0,
+                        0,
+                        18,
+                        0,
+                        20,
+                        0,
+                        21,
+                        0,
+                        0,
+                        0,
+                        18,
+                        0,
+                        24,
+                        0,
+                        21,
+                        0,
+                        0,
+                        0,
+                        18,
+                        0,
+                        36,
+                        0,
+                        37,
+                        0,
+                        1,
+                        0,
+                        87,
+                        0,
+                        0,
+                        0,
+                        6,
+                        0,
+                        1,
+                        0,
+                        44,
+                        0,
+                        0,
+                        0,
+                        6,
+                        0,
+                        1,
+                        0,
+                        5,
+                        0,
+                        6,
+                        0,
+                        1,
+                        0,
+                        88,
+                        0,
+                        0,
+                        0,
+                        122,
+                        0,
+                        9,
+                        0,
+                        1,
+                        0,
+                        0,
+                        0,
+                        44,
+                        42,
+                        -73,
+                        0,
+                        8,
+                        42,
+                        -72,
+                        0,
+                        14,
+                        -75,
+                        0,
+                        18,
+                        42,
+                        18,
+                        19,
+                        -75,
+                        0,
+                        23,
+                        42,
+                        16,
+                        10,
+                        -75,
+                        0,
+                        26,
+                        42,
+                        -69,
+                        0,
+                        28,
+                        89,
+                        18,
+                        30,
+                        1,
+                        1,
+                        18,
+                        32,
+                        16,
+                        6,
+                        1,
+                        -73,
+                        0,
+                        35,
+                        -75,
+                        0,
+                        39,
+                        -79,
+                        0,
+                        0,
+                        0,
+                        2,
+                        0,
+                        89,
+                        0,
+                        0,
+                        0,
+                        42,
+                        0,
+                        10,
+                        0,
+                        0,
+                        0,
+                        8,
+                        0,
+                        4,
+                        0,
+                        9,
+                        0,
+                        11,
+                        0,
+                        11,
+                        0,
+                        17,
+                        0,
+                        12,
+                        0,
+                        23,
+                        0,
+                        13,
+                        0,
+                        28,
+                        0,
+                        14,
+                        0,
+                        30,
+                        0,
+                        13,
+                        0,
+                        32,
+                        0,
+                        15,
+                        0,
+                        34,
+                        0,
+                        13,
+                        0,
+                        43,
+                        0,
+                        8,
+                        0,
+                        90,
+                        0,
+                        0,
+                        0,
+                        12,
+                        0,
+                        1,
+                        0,
+                        0,
+                        0,
+                        44,
+                        0,
+                        40,
+                        0,
+                        41,
+                        0,
+                        0,
+                        0,
+                        1,
+                        0,
+                        42,
+                        0,
+                        12,
+                        0,
+                        3,
+                        0,
+                        88,
+                        0,
+                        0,
+                        0,
+                        47,
+                        0,
+                        1,
+                        0,
+                        1,
+                        0,
+                        0,
+                        0,
+                        5,
+                        42,
+                        -76,
+                        0,
+                        18,
+                        -80,
+                        0,
+                        0,
+                        0,
+                        2,
+                        0,
+                        89,
+                        0,
+                        0,
+                        0,
+                        6,
+                        0,
+                        1,
+                        0,
+                        0,
+                        0,
+                        9,
+                        0,
+                        90,
+                        0,
+                        0,
+                        0,
+                        12,
+                        0,
+                        1,
+                        0,
+                        0,
+                        0,
+                        5,
+                        0,
+                        40,
+                        0,
+                        41,
+                        0,
+                        0,
+                        0,
+                        86,
+                        0,
+                        0,
+                        0,
+                        2,
+                        0,
+                        43,
+                        0,
+                        87,
+                        0,
+                        0,
+                        0,
+                        6,
+                        0,
+                        1,
+                        0,
+                        44,
+                        0,
+                        0,
+                        0,
+                        1,
+                        0,
+                        45,
+                        0,
+                        46,
+                        0,
+                        1,
+                        0,
+                        88,
+                        0,
+                        0,
+                        0,
+                        47,
+                        0,
+                        1,
+                        0,
+                        1,
+                        0,
+                        0,
+                        0,
+                        5,
+                        42,
+                        -76,
+                        0,
+                        23,
+                        -84,
+                        0,
+                        0,
+                        0,
+                        2,
+                        0,
+                        89,
+                        0,
+                        0,
+                        0,
+                        6,
+                        0,
+                        1,
+                        0,
+                        0,
+                        0,
+                        11,
+                        0,
+                        90,
+                        0,
+                        0,
+                        0,
+                        12,
+                        0,
+                        1,
+                        0,
+                        0,
+                        0,
+                        5,
+                        0,
+                        40,
+                        0,
+                        41,
+                        0,
+                        0,
+                        0,
+                        1,
+                        0,
+                        47,
+                        0,
+                        46,
+                        0,
+                        1,
+                        0,
+                        88,
+                        0,
+                        0,
+                        0,
+                        47,
+                        0,
+                        1,
+                        0,
+                        1,
+                        0,
+                        0,
+                        0,
+                        5,
+                        42,
+                        -76,
+                        0,
+                        26,
+                        -84,
+                        0,
+                        0,
+                        0,
+                        2,
+                        0,
+                        89,
+                        0,
+                        0,
+                        0,
+                        6,
+                        0,
+                        1,
+                        0,
+                        0,
+                        0,
+                        12,
+                        0,
+                        90,
+                        0,
+                        0,
+                        0,
+                        12,
+                        0,
+                        1,
+                        0,
+                        0,
+                        0,
+                        5,
+                        0,
+                        40,
+                        0,
+                        41,
+                        0,
+                        0,
+                        0,
+                        1,
+                        0,
+                        48,
+                        0,
+                        49,
+                        0,
+                        2,
+                        0,
+                        88,
+                        0,
+                        0,
+                        0,
+                        47,
+                        0,
+                        1,
+                        0,
+                        1,
+                        0,
+                        0,
+                        0,
+                        5,
+                        42,
+                        -76,
+                        0,
+                        39,
+                        -80,
+                        0,
+                        0,
+                        0,
+                        2,
+                        0,
+                        89,
+                        0,
+                        0,
+                        0,
+                        6,
+                        0,
+                        1,
+                        0,
+                        0,
+                        0,
+                        13,
+                        0,
+                        90,
+                        0,
+                        0,
+                        0,
+                        12,
+                        0,
+                        1,
+                        0,
+                        0,
+                        0,
+                        5,
+                        0,
+                        40,
+                        0,
+                        41,
+                        0,
+                        0,
+                        0,
+                        87,
+                        0,
+                        0,
+                        0,
+                        6,
+                        0,
+                        1,
+                        0,
+                        44,
+                        0,
+                        0,
+                        0,
+                        17,
+                        0,
+                        50,
+                        0,
+                        51,
+                        0,
+                        2,
+                        0,
+                        88,
+                        0,
+                        0,
+                        0,
+                        122,
+                        0,
+                        2,
+                        0,
+                        3,
+                        0,
+                        0,
+                        0,
+                        35,
+                        43,
+                        18,
+                        53,
+                        -72,
+                        0,
+                        59,
+                        43,
+                        -63,
+                        0,
+                        61,
+                        -103,
+                        0,
+                        10,
+                        43,
+                        -64,
+                        0,
+                        61,
+                        -89,
+                        0,
+                        4,
+                        1,
+                        89,
+                        -58,
+                        0,
+                        9,
+                        -74,
+                        0,
+                        65,
+                        -89,
+                        0,
+                        5,
+                        87,
+                        1,
+                        77,
+                        -79,
+                        0,
+                        0,
+                        0,
+                        3,
+                        0,
+                        91,
+                        0,
+                        0,
+                        0,
+                        15,
+                        0,
+                        4,
+                        20,
+                        64,
+                        7,
+                        0,
+                        61,
+                        73,
+                        7,
+                        0,
+                        61,
+                        65,
+                        7,
+                        0,
+                        70,
+                        0,
+                        89,
+                        0,
+                        0,
+                        0,
+                        10,
+                        0,
+                        2,
+                        0,
+                        6,
+                        0,
+                        18,
+                        0,
+                        34,
+                        0,
+                        19,
+                        0,
+                        90,
+                        0,
+                        0,
+                        0,
+                        32,
+                        0,
+                        3,
+                        0,
+                        34,
+                        0,
+                        1,
+                        0,
+                        66,
+                        0,
+                        67,
+                        0,
+                        2,
+                        0,
+                        0,
+                        0,
+                        35,
+                        0,
+                        40,
+                        0,
+                        41,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        35,
+                        0,
+                        52,
+                        0,
+                        68,
+                        0,
+                        1,
+                        0,
+                        92,
+                        0,
+                        0,
+                        0,
+                        7,
+                        1,
+                        0,
+                        1,
+                        0,
+                        44,
+                        0,
+                        0,
+                        0,
+                        2,
+                        0,
+                        93,
+                        0,
+                        0,
+                        0,
+                        2,
+                        0,
+                        85,
+                        0,
+                        94,
+                        0,
+                        0,
+                        0,
+                        109,
+                        0,
+                        1,
+                        0,
+                        72,
+                        0,
+                        5,
+                        0,
+                        73,
+                        91,
+                        0,
+                        3,
+                        73,
+                        0,
+                        74,
+                        73,
+                        0,
+                        75,
+                        73,
+                        0,
+                        74,
+                        0,
+                        76,
+                        73,
+                        0,
+                        74,
+                        0,
+                        77,
+                        73,
+                        0,
+                        78,
+                        0,
+                        79,
+                        91,
+                        0,
+                        1,
+                        115,
+                        0,
+                        80,
+                        0,
+                        81,
+                        91,
+                        0,
+                        22,
+                        115,
+                        0,
+                        41,
+                        115,
+                        0,
+                        82,
+                        115,
+                        0,
+                        6,
+                        115,
+                        0,
+                        20,
+                        115,
+                        0,
+                        83,
+                        115,
+                        0,
+                        45,
+                        115,
+                        0,
+                        46,
+                        115,
+                        0,
+                        15,
+                        115,
+                        0,
+                        83,
+                        115,
+                        0,
+                        84,
+                        115,
+                        0,
+                        42,
+                        115,
+                        0,
+                        12,
+                        115,
+                        0,
+                        24,
+                        115,
+                        0,
+                        47,
+                        115,
+                        0,
+                        36,
+                        115,
+                        0,
+                        37,
+                        115,
+                        0,
+                        48,
+                        115,
+                        0,
+                        49,
+                        115,
+                        0,
+                        50,
+                        115,
+                        0,
+                        83,
+                        115,
+                        0,
+                        52,
+                        115,
+                        0,
+                        68,
+                    ),
+                ),
+            )
         )
-      )
-      .testModes(TestMode.DEFAULT)
-      .createProjects(root)
+        .testModes(TestMode.DEFAULT)
+        .createProjects(root)
 
     val lintJar = File(root, "app/lint.jar")
     assertTrue(lintJar.exists())
 
     lint()
-      .files(
-        source( // instead of xml: not valid XML below
-            "res/values/strings.xml",
-            """
+        .files(
+            source( // instead of xml: not valid XML below
+                    "res/values/strings.xml",
+                    """
                 <?xml version="1.0" encoding="utf-8"?>
                 <resources/>
                 """,
-          )
-          .indented()
-      )
-      .clientFactory { createGlobalLintJarClient(lintJar, LintClient.CLIENT_GRADLE) }
-      .testModes(TestMode.DEFAULT)
-      .allowObsoleteLintChecks(false)
-      .issueIds("MyIssueId")
-      .run()
-      // Note how the "This affects the following lint checks"
-      // list is empty below; that's because we're passing in
-      // an issue registry which doesn't actually have any valid
-      // issues for it. This won't be the case in a real issue registry.
-      // Actually listing the issue id's is tested in a different
-      // test below (search for "This affects".)
-      .expectContains(
-        """
+                )
+                .indented()
+        )
+        .clientFactory { createGlobalLintJarClient(lintJar, LintClient.CLIENT_GRADLE) }
+        .testModes(TestMode.DEFAULT)
+        .allowObsoleteLintChecks(false)
+        .issueIds("MyIssueId")
+        .run()
+        // Note how the "This affects the following lint checks"
+        // list is empty below; that's because we're passing in
+        // an issue registry which doesn't actually have any valid
+        // issues for it. This won't be the case in a real issue registry.
+        // Actually listing the issue id's is tested in a different
+        // test below (search for "This affects".)
+        .expectContains(
+            """
                 Lint found an issue registry (androidx.fragment.lint.FragmentIssueRegistry)
                 which contains some references to invalid API:
                 org.jetbrains.uast.kotlin.KotlinUClass#getKtClass(): org.jetbrains.kotlin.psi.KtClassOrObject
@@ -3818,36 +3817,36 @@ class JarFileIssueRegistryTest : AbstractCheckTest() {
                 (or later) to your build.gradle dependency block. [ObsoleteLintCustomCheck]
                 0 errors, 1 warnings
                 """
-      )
+        )
   }
 
   fun testIncompatibleRegistry() {
     val root = Files.createTempDirectory("lintjar").toFile()
 
     lint()
-      .files(
-        *lintApiStubs,
-        bytecode(
-          "lint.jar",
-          source(
-            "META-INF/services/com.android.tools.lint.client.api.IssueRegistry",
-            "test.pkg.MyIssueRegistry",
-          ),
-          0x70522285,
-        ),
-        bytecode(
-          "lint.jar",
-          kotlin(
-              """
+        .files(
+            *lintApiStubs,
+            bytecode(
+                "lint.jar",
+                source(
+                    "META-INF/services/com.android.tools.lint.client.api.IssueRegistry",
+                    "test.pkg.MyIssueRegistry",
+                ),
+                0x70522285,
+            ),
+            bytecode(
+                "lint.jar",
+                kotlin(
+                        """
                     package test.pkg
                     import com.android.tools.lint.detector.api.*
                     class Incompatible1 : DeletedInterface {
                     }
                     """
-            )
-            .indented(),
-          0x3a35c31e,
-          """
+                    )
+                    .indented(),
+                0x3a35c31e,
+                """
                     test/pkg/Incompatible1.class:
                     H4sIAAAAAAAAAJ1QTW8TMRSct5uPsgSaFkhToJQj7aFuIsSFD6kFIa20gFRQ
                     Lj05u6a42djR2sk5v4V/wAmJA4p67I+qeN7CAYkTWnnsmXn2vnmXVz9+Ahji
@@ -3860,11 +3859,11 @@ class JarFileIssueRegistryTest : AbstractCheckTest() {
                     8B/VeB+7vL9k7xZ7t08Rp1hPORI2sPmH3UlxF/f4iN4pyGELfbYcOg7bDmu/
                     ANjxTV9RAgAA
                     """,
-        ),
-        bytecode(
-          "lint.jar",
-          kotlin(
-              """
+            ),
+            bytecode(
+                "lint.jar",
+                kotlin(
+                        """
                     package test.pkg
                     import com.android.tools.lint.client.api.*
                     import com.android.tools.lint.detector.api.*
@@ -3902,10 +3901,10 @@ class JarFileIssueRegistryTest : AbstractCheckTest() {
                         )
                     }
                     """
-            )
-            .indented(),
-          0xe2369de6,
-          """
+                    )
+                    .indented(),
+                0xe2369de6,
+                """
                 test/pkg/MyDetector.class:
                 H4sIAAAAAAAAAJ1W6VLbVhT+rgDLFg5xTEIgK00gMSGxDFmaxjQtIRBEDaSY
                 kFLapsIWRqDFlWQKXem+L8/QJ2hIJ2GamQ7Tn32FvkZ/d3qubHZPR854fJej
@@ -3941,7 +3940,7 @@ class JarFileIssueRegistryTest : AbstractCheckTest() {
                 14g+RjDHZ1Cn4K6CVxVMILu5m1RwD1O0xP0ZMJeOT88g6uKMi9ddzLgYdiG6
                 eMNFk4uzLt500eliyEXqP03yDqIoDgAA
                 """,
-          """
+                """
                 test/pkg/MyDetector＄Companion.class:
                 H4sIAAAAAAAAAJVSTU8UQRB93bNfjIsM4AegiB+ooAkNnDQYEl00mWTBBHRj
                 wsH07rbY7Ew3me4l8bYn/R/+A08mHsyGoz/KWDMsciEmXqq63qtX1VXdv37/
@@ -3957,7 +3956,7 @@ class JarFileIssueRegistryTest : AbstractCheckTest() {
                 YVFgAbcxiweF/g4ekm8QPkG50T6CGJMxpmJM48pZdDWmutfpiJl9MEfiuX2U
                 HUKHGw4Vh5sO838A/VBd0VIDAAA=
                 """,
-          """
+                """
                 test/pkg/MyIssueRegistry.class:
                 H4sIAAAAAAAAAJ1UXU8bVxA9d/3tGFgMIWCS4IQ0MU6aBfodk6QEknYbAxUk
                 qBVPC964C+tdtPfaEn3iV/QHVH3sQ1sVpWqlCuUxP6rqWXspYINE+rB37p2Z
@@ -3983,24 +3982,24 @@ class JarFileIssueRegistryTest : AbstractCheckTest() {
                 bCBmomJizsRDPDo6PTbxOea5xZMNCIkFLG4gLzEg8VTihoQu8UyGmiGJRHt/
                 RyIjkZUYkbgiUZAYl7gqce1fPTVL2woIAAA=
                 """,
-          """
+                """
                 META-INF/main.kotlin_module:
                 H4sIAAAAAAAAAGNgYGBmYGBgBGIWIGYCYgYuYy7F5PxcvcS8lKL8zBS9kvz8
                 nGK9nMy8Er3knMxUIJVYkCnE5wxmxxeXlCYVe5coMWgxAAANsEImTQAAAA==
                 """,
-        ),
-      )
-      .testModes(TestMode.DEFAULT)
-      .createProjects(root)
+            ),
+        )
+        .testModes(TestMode.DEFAULT)
+        .createProjects(root)
 
     val lintJar = File(root, "app/lint.jar")
     assertTrue(lintJar.exists())
 
     lint()
-      .files(
-        source( // instead of xml: not valid XML below
-            "res/values/strings.xml",
-            """
+        .files(
+            source( // instead of xml: not valid XML below
+                    "res/values/strings.xml",
+                    """
                 <?xml version="1.0" encoding="utf-8"?>
                 <resources>
                     <string name="app_name">LibraryProject</string>
@@ -4013,28 +4012,28 @@ class JarFileIssueRegistryTest : AbstractCheckTest() {
 
                 </resources>
                 """,
-          )
-          .indented(),
-        // Reference <MyIssueId> from a lint.xml file; this would normally result
-        // in an UnknownIssueId error, but since it's referenced from a rejected
-        // issue registry, we want to make sure we *don't* flag this
-        xml(
-            "lint.xml",
-            """
+                )
+                .indented(),
+            // Reference <MyIssueId> from a lint.xml file; this would normally result
+            // in an UnknownIssueId error, but since it's referenced from a rejected
+            // issue registry, we want to make sure we *don't* flag this
+            xml(
+                    "lint.xml",
+                    """
                 <lint>
                     <issue id="MyIssueId" severity="error" />
                 </lint>
                 """,
-          )
-          .indented(),
-      )
-      .clientFactory { createGlobalLintJarClient(lintJar) }
-      .testModes(TestMode.DEFAULT)
-      .allowObsoleteLintChecks(false)
-      .issueIds("MyIssueId")
-      .run()
-      .expectContains(
-        """
+                )
+                .indented(),
+        )
+        .clientFactory { createGlobalLintJarClient(lintJar) }
+        .testModes(TestMode.DEFAULT)
+        .allowObsoleteLintChecks(false)
+        .issueIds("MyIssueId")
+        .run()
+        .expectContains(
+            """
                 lint.jar: Warning: Library lint checks out of date;
                 these checks will be skipped!
 
@@ -4058,24 +4057,24 @@ class JarFileIssueRegistryTest : AbstractCheckTest() {
                 Version of Lint API this lint check is using is 9.
                 The Lint API version currently running is $CURRENT_API (${describeApi(CURRENT_API)}). [ObsoleteLintCustomCheck]
                 0 errors, 1 warnings"""
-      )
-      .expectMatches(
-        """
+        )
+        .expectMatches(
+            """
                 .*/app/lint\Q.jar: Warning: Library lint checks out of date;
                 these checks will be skipped!
 
                 Lint found an issue registry (test.pkg.MyIssueRegistry)
                 which was compiled against an older version of lint
                 than this one.\E"""
-      )
+        )
   }
 
   companion object {
     val lintApiStubs =
-      arrayOf<TestFile>(
-        kotlin(
-          "src/detector_stubs.kt",
-          """
+        arrayOf<TestFile>(
+            kotlin(
+                "src/detector_stubs.kt",
+                """
           @file:Suppress("unused", "UNUSED_PARAMETER", "PackageDirectoryMismatch")
           package com.android.tools.lint.detector.api
           import com.android.tools.lint.client.api.*
@@ -4228,10 +4227,10 @@ class JarFileIssueRegistryTest : AbstractCheckTest() {
               fun visitMethodCall(context: JavaContext, node: UCallExpression, method: PsiMethod)
           }
           """,
-        ),
-        kotlin(
-            "src/client_stubs.kt",
-            """
+            ),
+            kotlin(
+                    "src/client_stubs.kt",
+                    """
             @file:Suppress("unused")
             package com.android.tools.lint.client.api
             import com.android.tools.lint.detector.api.*
@@ -4254,13 +4253,13 @@ class JarFileIssueRegistryTest : AbstractCheckTest() {
                 open fun sameMessage(issue: Issue, new: String, old: String): Boolean = false
             }
             """,
-          )
-          .indented(),
-        // The following classes are classes or methods or fields which don't
-        // exist. This is so that we can compile our custom lint jars with APIs
-        // that look like lint APIs but aren't found by the verifier
-        kotlin(
-            """
+                )
+                .indented(),
+            // The following classes are classes or methods or fields which don't
+            // exist. This is so that we can compile our custom lint jars with APIs
+            // that look like lint APIs but aren't found by the verifier
+            kotlin(
+                    """
             package com.android.tools.lint.detector.api
             interface DeletedInterface
             enum class TextFormat {
@@ -4269,53 +4268,49 @@ class JarFileIssueRegistryTest : AbstractCheckTest() {
                 @JvmField val deleted = 42
             }
             """
-          )
-          .indented(),
-        kotlin(
-            """
+                )
+                .indented(),
+            kotlin(
+                    """
             package org.jetbrains.uast
             open class UElement
             class UCallExpression : UElement()
             """
-          )
-          .indented(),
-        kotlin(
-            """
+                )
+                .indented(),
+            kotlin(
+                    """
             package com.intellij.psi
             class PsiMethod
             """
-          )
-          .indented(),
-      )
+                )
+                .indented(),
+        )
   }
 }
 
 fun createGlobalLintJarClient(
-  lintJar: File,
-  clientName: String? = null,
-  log: ((String) -> Unit)? = null,
+    lintJar: File,
+    clientName: String? = null,
+    log: ((String) -> Unit)? = null,
 ) =
-  object :
-    com.android.tools.lint.checks.infrastructure.TestLintClient(clientName ?: CLIENT_UNIT_TESTS) {
-    override fun findGlobalRuleJars(driver: LintDriver?, warnDeprecated: Boolean): List<File> =
-      listOf(lintJar)
+    object : com.android.tools.lint.checks.infrastructure.TestLintClient(clientName ?: CLIENT_UNIT_TESTS) {
+      override fun findGlobalRuleJars(driver: LintDriver?, warnDeprecated: Boolean): List<File> = listOf(lintJar)
 
-    override fun findRuleJars(project: Project): List<File> = emptyList()
+      override fun findRuleJars(project: Project): List<File> = emptyList()
 
-    override fun log(exception: Throwable?, format: String?, vararg args: Any) {
-      log?.invoke(String.format(format ?: "", *args)) ?: super.log(exception, format, *args)
+      override fun log(exception: Throwable?, format: String?, vararg args: Any) {
+        log?.invoke(String.format(format ?: "", *args)) ?: super.log(exception, format, *args)
+      }
+
+      override fun log(severity: Severity, exception: Throwable?, format: String?, vararg args: Any) {
+        log?.invoke(String.format(format ?: "", *args)) ?: super.log(severity, exception, format, *args)
+      }
     }
-
-    override fun log(severity: Severity, exception: Throwable?, format: String?, vararg args: Any) {
-      log?.invoke(String.format(format ?: "", *args))
-        ?: super.log(severity, exception, format, *args)
-    }
-  }
 
 fun createProjectLintJarClient(lintJar: File) =
-  object : com.android.tools.lint.checks.infrastructure.TestLintClient() {
-    override fun findGlobalRuleJars(driver: LintDriver?, warnDeprecated: Boolean): List<File> =
-      emptyList()
+    object : com.android.tools.lint.checks.infrastructure.TestLintClient() {
+      override fun findGlobalRuleJars(driver: LintDriver?, warnDeprecated: Boolean): List<File> = emptyList()
 
-    override fun findRuleJars(project: Project): List<File> = listOf(lintJar)
-  }
+      override fun findRuleJars(project: Project): List<File> = listOf(lintJar)
+    }

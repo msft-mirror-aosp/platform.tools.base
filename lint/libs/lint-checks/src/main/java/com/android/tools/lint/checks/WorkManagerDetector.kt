@@ -41,27 +41,26 @@ import org.jetbrains.uast.tryResolve
 /** Some lint checks around WorkManager usage. */
 class WorkManagerDetector : Detector(), SourceCodeScanner {
   companion object {
-    private val IMPLEMENTATION =
-      Implementation(WorkManagerDetector::class.java, Scope.JAVA_FILE_SCOPE)
+    private val IMPLEMENTATION = Implementation(WorkManagerDetector::class.java, Scope.JAVA_FILE_SCOPE)
 
     /** Problems with enqueueing work manager continuations. */
     @JvmField
     val ISSUE =
-      Issue.create(
-        id = "EnqueueWork",
-        briefDescription = "WorkManager Enqueue",
-        explanation =
-          """
+        Issue.create(
+            id = "EnqueueWork",
+            briefDescription = "WorkManager Enqueue",
+            explanation =
+                """
                 `WorkContinuations` cannot be enqueued automatically.  You must call `enqueue()` \
                 on a `WorkContinuation` to have it and its parent continuations enqueued inside \
                 `WorkManager`.
             """,
-        category = Category.CORRECTNESS,
-        priority = 6,
-        severity = Severity.WARNING,
-        androidSpecific = true,
-        implementation = IMPLEMENTATION,
-      )
+            category = Category.CORRECTNESS,
+            priority = 6,
+            severity = Severity.WARNING,
+            androidSpecific = true,
+            implementation = IMPLEMENTATION,
+        )
 
     private const val CLASS_WORK_MANAGER = "androidx.work.WorkManager"
     private const val CLASS_WORK_CONTINUATION = "androidx.work.WorkContinuation"
@@ -80,11 +79,7 @@ class WorkManagerDetector : Detector(), SourceCodeScanner {
 
   private fun isEnqueueCall(call: UCallExpression): Boolean {
     val methodName = getMethodName(call)
-    if (
-      methodName == METHOD_ENQUEUE ||
-        methodName == METHOD_ENQUEUE_SYNC ||
-        methodName == METHOD_ENQUEUE_UNIQUE
-    ) {
+    if (methodName == METHOD_ENQUEUE || methodName == METHOD_ENQUEUE_SYNC || methodName == METHOD_ENQUEUE_UNIQUE) {
       // TODO: check that it's called on the WorkContinuation?
       return true
     } else if (methodName == METHOD_THEN || methodName == METHOD_COMBINE) {
@@ -97,8 +92,8 @@ class WorkManagerDetector : Detector(), SourceCodeScanner {
 
   override fun visitMethodCall(context: JavaContext, node: UCallExpression, method: PsiMethod) {
     if (
-      !context.evaluator.isMemberInClass(method, CLASS_WORK_MANAGER) &&
-        !context.evaluator.isMemberInClass(method, CLASS_WORK_CONTINUATION)
+        !context.evaluator.isMemberInClass(method, CLASS_WORK_MANAGER) &&
+            !context.evaluator.isMemberInClass(method, CLASS_WORK_CONTINUATION)
     ) {
       return
     }
@@ -112,59 +107,56 @@ class WorkManagerDetector : Detector(), SourceCodeScanner {
     var enqueued = false
 
     val visitor =
-      object : DataFlowAnalyzer(listOf(node)) {
-        override fun receiver(call: UCallExpression) {
-          if (isEnqueueCall(call)) {
-            enqueued = true
-          }
-        }
-
-        override fun argument(call: UCallExpression, reference: UElement) {
-          val methodName = getMethodName(call)
-          if (methodName == METHOD_COMBINE) {
-            enqueued = true
-          } else {
-            // Used in a list etc: start to track the list
-            val parent = skipParenthesizedExprUp(call.uastParent)
-            if (parent is UQualifiedReferenceExpression) {
-              val listVariable = parent.receiver.skipParenthesizedExprDown().tryResolve()
-              if (listVariable is PsiLocalVariable) {
-                references.add(listVariable)
-              } else {
-                // List factory method?
-                val parentParent = skipParenthesizedExprUp(parent.uastParent)
-                if (parentParent is ULocalVariable) {
-                  addVariableReference(parentParent)
-                }
-              }
-            } else if (parent is ULocalVariable) {
-              // Some direct list construction call, such as listOf() in Kotlin
-              addVariableReference(parent)
+        object : DataFlowAnalyzer(listOf(node)) {
+          override fun receiver(call: UCallExpression) {
+            if (isEnqueueCall(call)) {
+              enqueued = true
             }
           }
-        }
 
-        override fun returnsSelf(call: UCallExpression): Boolean {
-          val methodName = getMethodName(call)
-          if (methodName == "synchronous") {
-            return true
+          override fun argument(call: UCallExpression, reference: UElement) {
+            val methodName = getMethodName(call)
+            if (methodName == METHOD_COMBINE) {
+              enqueued = true
+            } else {
+              // Used in a list etc: start to track the list
+              val parent = skipParenthesizedExprUp(call.uastParent)
+              if (parent is UQualifiedReferenceExpression) {
+                val listVariable = parent.receiver.skipParenthesizedExprDown().tryResolve()
+                if (listVariable is PsiLocalVariable) {
+                  references.add(listVariable)
+                } else {
+                  // List factory method?
+                  val parentParent = skipParenthesizedExprUp(parent.uastParent)
+                  if (parentParent is ULocalVariable) {
+                    addVariableReference(parentParent)
+                  }
+                }
+              } else if (parent is ULocalVariable) {
+                // Some direct list construction call, such as listOf() in Kotlin
+                addVariableReference(parent)
+              }
+            }
           }
-          return super.returnsSelf(call)
+
+          override fun returnsSelf(call: UCallExpression): Boolean {
+            val methodName = getMethodName(call)
+            if (methodName == "synchronous") {
+              return true
+            }
+            return super.returnsSelf(call)
+          }
         }
-      }
     surrounding.accept(visitor)
 
     if (!enqueued && !(visitor.failedResolve && surrounding.anyCall(::isEnqueueCall))) {
-      val name =
-        (skipParenthesizedExprUp(skipParenthesizedExprUp(node.uastParent)?.uastParent)
-            as? ULocalVariable)
-          ?.nameFromSource
+      val name = (skipParenthesizedExprUp(skipParenthesizedExprUp(node.uastParent)?.uastParent) as? ULocalVariable)?.nameFromSource
       val nameString = if (name != null) "`$name` " else ""
       context.report(
-        ISSUE,
-        node,
-        context.getLocation(node),
-        "WorkContinuation ${nameString}not enqueued: did you forget to call `enqueue()`?",
+          ISSUE,
+          node,
+          context.getLocation(node),
+          "WorkContinuation ${nameString}not enqueued: did you forget to call `enqueue()`?",
       )
     }
   }

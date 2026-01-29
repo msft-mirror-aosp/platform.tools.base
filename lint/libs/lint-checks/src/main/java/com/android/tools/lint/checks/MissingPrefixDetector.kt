@@ -55,59 +55,56 @@ import org.w3c.dom.Attr
 import org.w3c.dom.Element
 import org.w3c.dom.Node
 
-/**
- * Detects layout attributes on builtin Android widgets that do not specify a prefix but probably
- * should.
- */
+/** Detects layout attributes on builtin Android widgets that do not specify a prefix but probably should. */
 class MissingPrefixDetector : LayoutDetector() {
   companion object Issues {
     /** Attributes missing the android: prefix. */
     @JvmField
     val MISSING_NAMESPACE =
-      Issue.create(
-        id = "MissingPrefix",
-        briefDescription = "Missing Android XML namespace",
-        explanation =
-          """
+        Issue.create(
+            id = "MissingPrefix",
+            briefDescription = "Missing Android XML namespace",
+            explanation =
+                """
             Most Android views have attributes in the Android namespace. When referencing these attributes \
             you **must** include the namespace prefix, or your attribute will be interpreted by `aapt` as \
             just a custom attribute.
 
             Similarly, in manifest files, nearly all attributes should be in the `android:` namespace.""",
-        category = Category.CORRECTNESS,
-        priority = 6,
-        severity = Severity.ERROR,
-        implementation =
-          Implementation(
-            MissingPrefixDetector::class.java,
-            Scope.MANIFEST_AND_RESOURCE_SCOPE,
-            Scope.MANIFEST_SCOPE,
-            Scope.RESOURCE_FILE_SCOPE,
-          ),
-      )
+            category = Category.CORRECTNESS,
+            priority = 6,
+            severity = Severity.ERROR,
+            implementation =
+                Implementation(
+                    MissingPrefixDetector::class.java,
+                    Scope.MANIFEST_AND_RESOURCE_SCOPE,
+                    Scope.MANIFEST_SCOPE,
+                    Scope.RESOURCE_FILE_SCOPE,
+                ),
+        )
   }
 
   override fun appliesTo(folderType: ResourceFolderType): Boolean =
-    folderType == LAYOUT ||
-      folderType == MENU ||
-      folderType == DRAWABLE ||
-      folderType == ANIM ||
-      folderType == ANIMATOR ||
-      folderType == COLOR ||
-      folderType == INTERPOLATOR
+      folderType == LAYOUT ||
+          folderType == MENU ||
+          folderType == DRAWABLE ||
+          folderType == ANIM ||
+          folderType == ANIMATOR ||
+          folderType == COLOR ||
+          folderType == INTERPOLATOR
 
   override fun getApplicableAttributes(): Collection<String> = ALL
 
   private fun isNoPrefixAttribute(attribute: String): Boolean =
-    when (attribute) {
-      ATTR_CLASS,
-      ATTR_STYLE,
-      ATTR_LAYOUT,
-      ATTR_PACKAGE,
-      ATTR_CORE_APP,
-      "split" -> true
-      else -> false
-    }
+      when (attribute) {
+        ATTR_CLASS,
+        ATTR_STYLE,
+        ATTR_LAYOUT,
+        ATTR_PACKAGE,
+        ATTR_CORE_APP,
+        "split" -> true
+        else -> false
+      }
 
   override fun visitAttribute(context: XmlContext, attribute: Attr) {
     val uri = attribute.namespaceURI
@@ -147,19 +144,19 @@ class MissingPrefixDetector : LayoutDetector() {
       }
 
       context.report(
-        MISSING_NAMESPACE,
-        attribute,
-        context.getLocation(attribute),
-        "Attribute is missing the Android namespace prefix",
+          MISSING_NAMESPACE,
+          attribute,
+          context.getLocation(attribute),
+          "Attribute is missing the Android namespace prefix",
       )
     } else if (
-      ANDROID_URI != uri &&
-        TOOLS_URI != uri &&
-        context.resourceFolderType == LAYOUT &&
-        !isCustomView(attribute.ownerElement) &&
-        !isFragment(attribute.ownerElement) &&
-        !attribute.localName.startsWith(ATTR_LAYOUT_RESOURCE_PREFIX) &&
-        attribute.ownerElement.parentNode.nodeType == Node.ELEMENT_NODE
+        ANDROID_URI != uri &&
+            TOOLS_URI != uri &&
+            context.resourceFolderType == LAYOUT &&
+            !isCustomView(attribute.ownerElement) &&
+            !isFragment(attribute.ownerElement) &&
+            !attribute.localName.startsWith(ATTR_LAYOUT_RESOURCE_PREFIX) &&
+            attribute.ownerElement.parentNode.nodeType == Node.ELEMENT_NODE
     ) {
       // A namespace declaration?
       val prefix = attribute.prefix
@@ -174,13 +171,13 @@ class MissingPrefixDetector : LayoutDetector() {
           val item = attributes.item(i)
           if (name == item.nodeName && attribute.value == item.nodeValue) {
             context.report(
-              NamespaceDetector.UNUSED,
-              attribute,
-              context.getLocation(attribute),
-              String.format(
-                "Unused namespace declaration %1\$s; already " + "declared on the root element",
-                name,
-              ),
+                NamespaceDetector.UNUSED,
+                attribute,
+                context.getLocation(attribute),
+                String.format(
+                    "Unused namespace declaration %1\$s; already " + "declared on the root element",
+                    name,
+                ),
             )
           }
           i++
@@ -199,9 +196,9 @@ class MissingPrefixDetector : LayoutDetector() {
         // Appcompat now encourages decorating standard views (like ImageView and
         // ImageButton) with srcCompat in the app namespace
         if (
-          attribute.localName == ATTR_SRC_COMPAT ||
-            // Now handled by appcompat
-            attribute.localName == ATTR_FONT_FAMILY
+            attribute.localName == ATTR_SRC_COMPAT ||
+                // Now handled by appcompat
+                attribute.localName == ATTR_FONT_FAMILY
         ) {
           return
         }
@@ -226,8 +223,6 @@ class MissingPrefixDetector : LayoutDetector() {
     }
 
     return tag.indexOf('.') != -1 &&
-      (!tag.startsWith(ANDROID_PKG_PREFIX) ||
-        tag.startsWith(ANDROID_SUPPORT_PKG_PREFIX) ||
-        tag.startsWith(ANDROIDX_PKG_PREFIX))
+        (!tag.startsWith(ANDROID_PKG_PREFIX) || tag.startsWith(ANDROID_SUPPORT_PKG_PREFIX) || tag.startsWith(ANDROIDX_PKG_PREFIX))
   }
 }

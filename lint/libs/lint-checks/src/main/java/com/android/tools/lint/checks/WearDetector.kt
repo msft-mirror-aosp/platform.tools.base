@@ -23,10 +23,8 @@ import com.android.xml.AndroidManifest
 import org.w3c.dom.Element
 
 private fun isWearFeature(element: Element) =
-  element.tagName == SdkConstants.TAG_USES_FEATURE &&
-    element
-      .getAttributeNS(SdkConstants.ANDROID_URI, AndroidManifest.ATTRIBUTE_NAME)
-      .equals(FEATURE_WATCH)
+    element.tagName == SdkConstants.TAG_USES_FEATURE &&
+        element.getAttributeNS(SdkConstants.ANDROID_URI, AndroidManifest.ATTRIBUTE_NAME).equals(FEATURE_WATCH)
 
 private const val FEATURE_WATCH = "android.hardware.type.watch"
 
@@ -41,10 +39,10 @@ open class WearDetector : Detector() {
 
   companion object {
     fun isWearProject(context: Context) =
-      containsWearFeature(
-        if (context.isGlobalAnalysis()) context.mainProject.mergedManifest?.documentElement
-        else context.project.mergedManifest?.documentElement
-      )
+        containsWearFeature(
+            if (context.isGlobalAnalysis()) context.mainProject.mergedManifest?.documentElement
+            else context.project.mergedManifest?.documentElement
+        )
 
     fun containsWearFeature(manifest: Element?): Boolean {
       if (manifest == null) {

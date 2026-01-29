@@ -20,9 +20,8 @@ import java.util.WeakHashMap
 import org.jetbrains.annotations.TestOnly
 
 /**
- * A pool for re-using equal instances of objects. For two instances of [T] interned by the *same*
- * pool, their logical equality coincides with referential equality. The pool does not retain an
- * instance if there is no other reference to it.
+ * A pool for re-using equal instances of objects. For two instances of [T] interned by the *same* pool, their logical equality coincides
+ * with referential equality. The pool does not retain an instance if there is no other reference to it.
  */
 class InterningPool<T : Any> {
   private val instances = WeakHashMap<T, WeakReference<T>>()
@@ -31,10 +30,10 @@ class InterningPool<T : Any> {
 
   @Synchronized
   fun intern(instance: T): T =
-    when (val priorInstance = instances[instance]?.get()) {
-      null -> instance.also { instances[instance] = WeakReference(instance) }
-      else -> priorInstance
-    }
+      when (val priorInstance = instances[instance]?.get()) {
+        null -> instance.also { instances[instance] = WeakReference(instance) }
+        else -> priorInstance
+      }
 
   companion object {
     /** Interns a [String] without retaining it if no live object does otherwise */

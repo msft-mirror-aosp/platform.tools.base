@@ -25,11 +25,11 @@ class PendingIntentMutableFlagDetectorTest : AbstractCheckTest() {
 
   fun testNoFlag() {
     lint()
-      .projects(
-        project(
-          manifest().targetSdk(31),
-          java(
-              """
+        .projects(
+            project(
+                manifest().targetSdk(31),
+                java(
+                        """
                 package test.pkg;
 
                 import android.app.PendingIntent;
@@ -42,13 +42,13 @@ class PendingIntentMutableFlagDetectorTest : AbstractCheckTest() {
                 }
 
                 """
+                    )
+                    .indented(),
             )
-            .indented(),
         )
-      )
-      .run()
-      .expect(
-        """
+        .run()
+        .expect(
+            """
                 src/test/pkg/PendingIntentTest.java:7: Error: Missing PendingIntent mutability flag [UnspecifiedImmutableFlag]
                         PendingIntent.getActivity(null, 0, null, 0);
                                                                  ~
@@ -57,9 +57,9 @@ class PendingIntentMutableFlagDetectorTest : AbstractCheckTest() {
                                                                    ~
                 2 errors, 0 warnings
             """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
                 Fix for src/test/pkg/PendingIntentTest.java line 7: Add FLAG_IMMUTABLE (preferred):
                 @@ -7 +7 @@
                 -        PendingIntent.getActivity(null, 0, null, 0);
@@ -77,16 +77,16 @@ class PendingIntentMutableFlagDetectorTest : AbstractCheckTest() {
                 -        PendingIntent.getActivities(null, 0, null, 0);
                 +        PendingIntent.getActivities(null, 0, null, PendingIntent.FLAG_MUTABLE);
                 """
-      )
+        )
   }
 
   fun testNoImmutableFlag() {
     lint()
-      .projects(
-        project(
-          manifest().targetSdk(31),
-          java(
-              """
+        .projects(
+            project(
+                manifest().targetSdk(31),
+                java(
+                        """
                 package test.pkg;
 
                 import android.app.PendingIntent;
@@ -99,13 +99,13 @@ class PendingIntentMutableFlagDetectorTest : AbstractCheckTest() {
                 }
 
                 """
+                    )
+                    .indented(),
             )
-            .indented(),
         )
-      )
-      .run()
-      .expect(
-        """
+        .run()
+        .expect(
+            """
             src/test/pkg/PendingIntentTest.java:7: Error: Missing PendingIntent mutability flag [UnspecifiedImmutableFlag]
                     PendingIntent.getActivity(null, 0, null, PendingIntent.FLAG_CANCEL_CURRENT);
                                                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -114,9 +114,9 @@ class PendingIntentMutableFlagDetectorTest : AbstractCheckTest() {
                                                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             2 errors, 0 warnings
             """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
                 Fix for src/test/pkg/PendingIntentTest.java line 7: Add FLAG_IMMUTABLE (preferred):
                 @@ -7 +7 @@
                 -        PendingIntent.getActivity(null, 0, null, PendingIntent.FLAG_CANCEL_CURRENT);
@@ -134,16 +134,16 @@ class PendingIntentMutableFlagDetectorTest : AbstractCheckTest() {
                 -        PendingIntent.getActivities(null, 0, null, PendingIntent.FLAG_NO_CREATE);
                 +        PendingIntent.getActivities(null, 0, null, PendingIntent.FLAG_NO_CREATE | PendingIntent.FLAG_MUTABLE);
                 """
-      )
+        )
   }
 
   fun testNoImmutableFlagKotlin() {
     lint()
-      .projects(
-        project(
-          manifest().targetSdk(31),
-          kotlin(
-              """
+        .projects(
+            project(
+                manifest().targetSdk(31),
+                kotlin(
+                        """
                 package test.pkg;
 
                 import android.app.PendingIntent;
@@ -156,13 +156,13 @@ class PendingIntentMutableFlagDetectorTest : AbstractCheckTest() {
                 }
 
                 """
+                    )
+                    .indented(),
             )
-            .indented(),
         )
-      )
-      .run()
-      .expect(
-        """
+        .run()
+        .expect(
+            """
             src/test/pkg/PendingIntentTest.kt:7: Error: Missing PendingIntent mutability flag [UnspecifiedImmutableFlag]
                     PendingIntent.getActivity(null, 0, null, PendingIntent.FLAG_CANCEL_CURRENT)
                                                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -171,9 +171,9 @@ class PendingIntentMutableFlagDetectorTest : AbstractCheckTest() {
                                                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             2 errors, 0 warnings
             """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
                 Fix for src/test/pkg/PendingIntentTest.kt line 7: Add FLAG_IMMUTABLE (preferred):
                 @@ -7 +7 @@
                 -        PendingIntent.getActivity(null, 0, null, PendingIntent.FLAG_CANCEL_CURRENT)
@@ -191,16 +191,16 @@ class PendingIntentMutableFlagDetectorTest : AbstractCheckTest() {
                 -        PendingIntent.getActivities(null, 0, null, PendingIntent.FLAG_NO_CREATE)
                 +        PendingIntent.getActivities(null, 0, null, PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_MUTABLE)
                 """
-      )
+        )
   }
 
   fun testImmutableFlag() {
     lint()
-      .projects(
-        project(
-          manifest().targetSdk(31),
-          java(
-              """
+        .projects(
+            project(
+                manifest().targetSdk(31),
+                java(
+                        """
                 package test.pkg;
 
                 import android.app.PendingIntent;
@@ -214,21 +214,21 @@ class PendingIntentMutableFlagDetectorTest : AbstractCheckTest() {
                 }
 
                 """
+                    )
+                    .indented(),
             )
-            .indented(),
         )
-      )
-      .run()
-      .expectClean()
+        .run()
+        .expectClean()
   }
 
   fun testImmutableFlagKotlin() {
     lint()
-      .projects(
-        project(
-          manifest().targetSdk(31),
-          kotlin(
-              """
+        .projects(
+            project(
+                manifest().targetSdk(31),
+                kotlin(
+                        """
                 package test.pkg
 
                 import android.app.PendingIntent
@@ -242,21 +242,21 @@ class PendingIntentMutableFlagDetectorTest : AbstractCheckTest() {
                 }
 
                 """
+                    )
+                    .indented(),
             )
-            .indented(),
         )
-      )
-      .run()
-      .expectClean()
+        .run()
+        .expectClean()
   }
 
   fun testMutableFlag() {
     lint()
-      .projects(
-        project(
-          manifest().targetSdk(31),
-          java(
-              """
+        .projects(
+            project(
+                manifest().targetSdk(31),
+                java(
+                        """
                 package test.pkg;
 
                 import android.app.PendingIntent;
@@ -270,22 +270,22 @@ class PendingIntentMutableFlagDetectorTest : AbstractCheckTest() {
                 }
 
                 """
+                    )
+                    .indented(),
             )
-            .indented(),
         )
-      )
-      .run()
-      .expectClean()
+        .run()
+        .expectClean()
   }
 
   fun testFlagsVariable() {
     // Regression test for https://issuetracker.google.com/197179112
     lint()
-      .projects(
-        project(
-          manifest().targetSdk(31),
-          java(
-              """
+        .projects(
+            project(
+                manifest().targetSdk(31),
+                java(
+                        """
                 package test.pkg;
 
                 import android.app.PendingIntent;
@@ -303,22 +303,22 @@ class PendingIntentMutableFlagDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
+                    )
+                    .indented(),
             )
-            .indented(),
         )
-      )
-      .run()
-      .expectClean()
+        .run()
+        .expectClean()
   }
 
   fun testFlagsVariableKt() {
     // Regression test for https://issuetracker.google.com/197179112
     lint()
-      .projects(
-        project(
-          manifest().targetSdk(31),
-          kotlin(
-              """
+        .projects(
+            project(
+                manifest().targetSdk(31),
+                kotlin(
+                        """
                 package test.pkg
 
                 import android.app.PendingIntent
@@ -336,21 +336,21 @@ class PendingIntentMutableFlagDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
+                    )
+                    .indented(),
             )
-            .indented(),
         )
-      )
-      .run()
-      .expectClean()
+        .run()
+        .expectClean()
   }
 
   fun testFlagsVariableTernary() {
     lint()
-      .projects(
-        project(
-          manifest().targetSdk(31),
-          java(
-              """
+        .projects(
+            project(
+                manifest().targetSdk(31),
+                java(
+                        """
                 package test.pkg;
 
                 import android.app.PendingIntent;
@@ -372,21 +372,21 @@ class PendingIntentMutableFlagDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
+                    )
+                    .indented(),
             )
-            .indented(),
         )
-      )
-      .run()
-      .expectClean()
+        .run()
+        .expectClean()
   }
 
   fun testFlagsHelperFunction() {
     lint()
-      .projects(
-        project(
-          manifest().targetSdk(31),
-          java(
-              """
+        .projects(
+            project(
+                manifest().targetSdk(31),
+                java(
+                        """
                 package test.pkg;
 
                 import android.app.PendingIntent;
@@ -406,21 +406,21 @@ class PendingIntentMutableFlagDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
+                    )
+                    .indented(),
             )
-            .indented(),
         )
-      )
-      .run()
-      .expectClean()
+        .run()
+        .expectClean()
   }
 
   fun testFlagsArgument() {
     lint()
-      .projects(
-        project(
-          manifest().targetSdk(31),
-          java(
-              """
+        .projects(
+            project(
+                manifest().targetSdk(31),
+                java(
+                        """
                 package test.pkg;
 
                 import android.app.PendingIntent;
@@ -438,21 +438,21 @@ class PendingIntentMutableFlagDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
+                    )
+                    .indented(),
             )
-            .indented(),
         )
-      )
-      .run()
-      .expectClean()
+        .run()
+        .expectClean()
   }
 
   fun testTargetSdkBelowThirtyOneIsWarning() {
     lint()
-      .projects(
-        project(
-          manifest().targetSdk(30),
-          java(
-              """
+        .projects(
+            project(
+                manifest().targetSdk(30),
+                java(
+                        """
                 package test.pkg;
 
                 import android.app.PendingIntent;
@@ -464,22 +464,22 @@ class PendingIntentMutableFlagDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
+                    )
+                    .indented(),
             )
-            .indented(),
         )
-      )
-      .run()
-      .expectErrorCount(0)
-      .expectWarningCount(2)
+        .run()
+        .expectErrorCount(0)
+        .expectWarningCount(2)
   }
 
   fun testTargetSdkBelowTwentyThreeIsClean() {
     lint()
-      .projects(
-        project(
-          manifest().targetSdk(22),
-          java(
-              """
+        .projects(
+            project(
+                manifest().targetSdk(22),
+                java(
+                        """
                 package test.pkg;
 
                 import android.app.PendingIntent;
@@ -491,11 +491,11 @@ class PendingIntentMutableFlagDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
+                    )
+                    .indented(),
             )
-            .indented(),
         )
-      )
-      .run()
-      .expectClean()
+        .run()
+        .expectClean()
   }
 }

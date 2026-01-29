@@ -55,18 +55,15 @@ import org.xmlpull.v1.XmlPullParser
 import org.xmlpull.v1.XmlPullParserException
 
 /**
- * Detector for finding layout inflation paired with a find/require view by id looking for an id not
- * in that layout.
+ * Detector for finding layout inflation paired with a find/require view by id looking for an id not in that layout.
  *
- * TODO: Instead of just making sure that the id is found in at least *one* of the overridden
- *   layouts, make sure that it's present in *all* the layouts (and if not, list which ones it's
- *   missing from). If the view is looked up via `requireViewById`, this is an unconditional error.
- *   Otherwise, see whether we're null checking the result.
+ * TODO: Instead of just making sure that the id is found in at least *one* of the overridden layouts, make sure that it's present in *all*
+ *   the layouts (and if not, list which ones it's missing from). If the view is looked up via `requireViewById`, this is an unconditional
+ *   error. Otherwise, see whether we're null checking the result.
  */
 class MissingInflatedIdDetector : Detector(), SourceCodeScanner {
 
-  override fun getApplicableMethodNames(): List<String> =
-    listOf(FIND_VIEW_BY_ID, REQUIRE_VIEW_BY_ID)
+  override fun getApplicableMethodNames(): List<String> = listOf(FIND_VIEW_BY_ID, REQUIRE_VIEW_BY_ID)
 
   override fun visitMethodCall(context: JavaContext, node: UCallExpression, method: PsiMethod) {
     val layout = findLayout(context, node)?.name ?: return
@@ -74,8 +71,8 @@ class MissingInflatedIdDetector : Detector(), SourceCodeScanner {
 
     val globalAnalysis = context.isGlobalAnalysis()
     val resources =
-      if (globalAnalysis) context.client.getResources(context.mainProject, LOCAL_DEPENDENCIES)
-      else context.client.getResources(context.project, PROJECT_ONLY)
+        if (globalAnalysis) context.client.getResources(context.mainProject, LOCAL_DEPENDENCIES)
+        else context.client.getResources(context.project, PROJECT_ONLY)
     val items = resources.getResources(ResourceNamespace.TODO(), ResourceType.LAYOUT, layout)
 
     if (items.isNotEmpty()) {
@@ -100,17 +97,16 @@ class MissingInflatedIdDetector : Detector(), SourceCodeScanner {
     }
 
     val map =
-      map().apply {
-        put(KEY_LAYOUT, layout)
-        put(KEY_ID, id)
-      }
+        map().apply {
+          put(KEY_LAYOUT, layout)
+          put(KEY_ID, id)
+        }
     context.report(createIncident(context, node, layout, id), map)
   }
 
   /**
-   * Checks whether **all** the [layouts] are missing the given [id]. (It's okay for some of the
-   * layouts to miss it; e.g. a portrait orientation layout could intentionally be skipping a
-   * widget.)
+   * Checks whether **all** the [layouts] are missing the given [id]. (It's okay for some of the layouts to miss it; e.g. a portrait
+   * orientation layout could intentionally be skipping a widget.)
    */
   private fun layoutMissingId(context: Context, layouts: List<ResourceItem>, id: String): Boolean {
     return layouts.isNotEmpty() && layouts.none { definesId(context, it.source, id) }
@@ -126,10 +122,10 @@ class MissingInflatedIdDetector : Detector(), SourceCodeScanner {
   }
 
   private fun createIncident(
-    context: JavaContext,
-    node: UCallExpression,
-    layout: String,
-    id: String,
+      context: JavaContext,
+      node: UCallExpression,
+      layout: String,
+      id: String,
   ): Incident {
     val message = "`@layout/$layout` does not contain a declaration with id `$id`"
     val idArgument = node.valueArguments.first()
@@ -138,10 +134,9 @@ class MissingInflatedIdDetector : Detector(), SourceCodeScanner {
   }
 
   /**
-   * From a `findByViewId` call, try to locate the layout resource it is inflating from. E.g. in an
-   * activity, if we simply call `findViewById(id)`, it's probably a preeeding `setContentView`
-   * call; if it's something like `root.findViewById`, see if we can find inflation of the root
-   * view.
+   * From a `findByViewId` call, try to locate the layout resource it is inflating from. E.g. in an activity, if we simply call
+   * `findViewById(id)`, it's probably a preeeding `setContentView` call; if it's something like `root.findViewById`, see if we can find
+   * inflation of the root view.
    */
   private fun findLayout(context: JavaContext, call: UCallExpression): ResourceUrl? {
     val receiver = call.receiver?.skipParenthesizedExprDown()
@@ -163,32 +158,27 @@ class MissingInflatedIdDetector : Detector(), SourceCodeScanner {
   }
 
   /**
-   * For a call like `inflate(R.layout.foo, null)` or `setContentView(R.layout.foo)`, returns
-   * `@layout/foo`. Deliberately ignores resources like `android.R.id.some_id` since we don't want
-   * to initialize the resource repository for all the framework resources.
+   * For a call like `inflate(R.layout.foo, null)` or `setContentView(R.layout.foo)`, returns `@layout/foo`. Deliberately ignores resources
+   * like `android.R.id.some_id` since we don't want to initialize the resource repository for all the framework resources.
    */
   private fun getFirstArgAsResource(
-    setContentView: UCallExpression,
-    context: JavaContext,
+      setContentView: UCallExpression,
+      context: JavaContext,
   ): ResourceUrl? {
-    val resourceArgument =
-      setContentView.valueArguments.firstOrNull()?.skipParenthesizedExprDown() ?: return null
+    val resourceArgument = setContentView.valueArguments.firstOrNull()?.skipParenthesizedExprDown() ?: return null
     val url = ResourceEvaluator.getResource(context.evaluator, resourceArgument) ?: return null
     return if (!url.isFramework) url else null
   }
 
-  /**
-   * Returns true if the given layout [file] contains a definition of the given [targetId], **and**
-   * does not contain an `<include>` tag.
-   */
+  /** Returns true if the given layout [file] contains a definition of the given [targetId], **and** does not contain an `<include>` tag. */
   private fun definesId(context: Context, file: PathString?, targetId: String): Boolean {
     file ?: return true
     val parser =
-      try {
-        context.client.createXmlPullParser(file) ?: return true
-      } catch (ignore: IOException) {
-        return true
-      }
+        try {
+          context.client.createXmlPullParser(file) ?: return true
+        } catch (ignore: IOException) {
+          return true
+        }
     try {
       while (true) {
         val event = parser.next()
@@ -216,26 +206,26 @@ class MissingInflatedIdDetector : Detector(), SourceCodeScanner {
   companion object {
     @JvmField
     val ISSUE =
-      Issue.create(
-        id = "MissingInflatedId",
-        briefDescription = "ID not found in inflated resource",
-        explanation =
-          """
+        Issue.create(
+            id = "MissingInflatedId",
+            briefDescription = "ID not found in inflated resource",
+            explanation =
+                """
           Checks calls to layout inflation and makes sure that the referenced ids \
           are found in the corresponding layout (or at least one of them, if the \
           layout has multiple configurations.)
           """,
-        category = Category.CORRECTNESS,
-        priority = 5,
-        severity = Severity.ERROR,
-        androidSpecific = true,
-        implementation =
-          Implementation(
-            MissingInflatedIdDetector::class.java,
-            EnumSet.of(Scope.ALL_RESOURCE_FILES, Scope.ALL_JAVA_FILES),
-            Scope.JAVA_FILE_SCOPE,
-          ),
-      )
+            category = Category.CORRECTNESS,
+            priority = 5,
+            severity = Severity.ERROR,
+            androidSpecific = true,
+            implementation =
+                Implementation(
+                    MissingInflatedIdDetector::class.java,
+                    EnumSet.of(Scope.ALL_RESOURCE_FILES, Scope.ALL_JAVA_FILES),
+                    Scope.JAVA_FILE_SCOPE,
+                ),
+        )
 
     private const val KEY_LAYOUT = "layout"
     private const val KEY_ID = "id"

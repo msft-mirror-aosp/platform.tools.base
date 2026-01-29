@@ -21,9 +21,9 @@ import com.android.tools.lint.detector.api.Detector
 class RecyclerViewDetectorTest : AbstractCheckTest() {
 
   private val recyclerViewStub =
-    java(
-        "src/android/support/v7/widget/RecyclerView.java",
-        """
+      java(
+              "src/android/support/v7/widget/RecyclerView.java",
+              """
             /* HIDE-FROM-DOCUMENTATION */
             package android.support.v7.widget;
 
@@ -51,12 +51,12 @@ class RecyclerViewDetectorTest : AbstractCheckTest() {
                 }
             }
             """,
-      )
-      .indented()
+          )
+          .indented()
 
   fun testFixedPosition() {
     val expected =
-      """
+        """
             src/test/pkg/RecyclerViewTest.java:69: Error: Do not treat position as fixed; only use immediately and call holder.getAdapterPosition() to look it up later [RecyclerView]
                     public void onBindViewHolder(ViewHolder holder, int position) {
                                                                     ~~~~~~~~~~~~
@@ -72,9 +72,9 @@ class RecyclerViewDetectorTest : AbstractCheckTest() {
             4 errors, 0 warnings
             """
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
                 package test.pkg;
 
                 import android.support.v7.widget.RecyclerView;
@@ -195,17 +195,17 @@ class RecyclerViewDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-          )
-          .indented(),
-        recyclerViewStub,
-      )
-      .run()
-      .expect(expected)
+                )
+                .indented(),
+            recyclerViewStub,
+        )
+        .run()
+        .expect(expected)
   }
 
   fun testExecuteBindings() {
     val expected =
-      """
+        """
             src/test/pkg/RecyclerViewTest2.java:32: Error: You must call holder.dataBinder.executePendingBindings() before the onBind method exits, otherwise, the DataBinding library will update the UI in the next animation frame causing a delayed update & potential jumps if the item resizes. [PendingBindings]
                         holder.dataBinder.someMethod(); // ERROR - no pending call
                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -224,9 +224,9 @@ class RecyclerViewDetectorTest : AbstractCheckTest() {
             5 errors, 0 warnings
             """
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
                 package test.pkg;
 
                 import android.support.v7.widget.RecyclerView;
@@ -397,26 +397,26 @@ class RecyclerViewDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-          )
-          .indented(),
-        recyclerViewStub,
-      )
-      .run()
-      .expect(expected)
+                )
+                .indented(),
+            recyclerViewStub,
+        )
+        .run()
+        .expect(expected)
   }
 
   fun testClearAllData() {
     val expected =
-      """
+        """
             src/test/pkg/RecyclerViewTest.java:24: Warning: It will always be more efficient to use more specific change events if you can. Rely on notifyDataSetChanged as a last resort. [NotifyDataSetChanged]
                         notifyDataSetChanged();
                         ~~~~~~~~~~~~~~~~~~~~~~
             0 errors, 1 warnings
             """
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
                 package test.pkg;
 
                 import android.support.v7.widget.RecyclerView;
@@ -448,20 +448,20 @@ class RecyclerViewDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-          )
-          .indented(),
-        recyclerViewStub,
-      )
-      .run()
-      .expect(expected)
+                )
+                .indented(),
+            recyclerViewStub,
+        )
+        .run()
+        .expect(expected)
   }
 
   fun testSurfaceTexture() {
     // Regression test for b/224618492
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
                 package test.pkg
 
                 import android.graphics.SurfaceTexture
@@ -484,11 +484,11 @@ class RecyclerViewDetectorTest : AbstractCheckTest() {
                     surfaceTexture3.release()
                 }
                 """
-          )
-          .indented()
-      )
-      .run()
-      .expectClean()
+                )
+                .indented()
+        )
+        .run()
+        .expectClean()
   }
 
   override fun getDetector(): Detector {

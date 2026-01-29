@@ -52,8 +52,8 @@ class UseCompoundDrawableDetector : LayoutDetector() {
     }
 
     if (
-      (first.tagName == IMAGE_VIEW && second.tagName == TEXT_VIEW && canCombineImage(first)) ||
-        (second.tagName == IMAGE_VIEW && first.tagName == TEXT_VIEW && canCombineImage(second))
+        (first.tagName == IMAGE_VIEW && second.tagName == TEXT_VIEW && canCombineImage(first)) ||
+            (second.tagName == IMAGE_VIEW && first.tagName == TEXT_VIEW && canCombineImage(second))
     ) {
       // If the layout has a background, ignore since it would disappear from
       // the TextView
@@ -62,11 +62,10 @@ class UseCompoundDrawableDetector : LayoutDetector() {
       }
 
       context.report(
-        ISSUE,
-        element,
-        context.getElementLocation(element),
-        "This tag and its children can be replaced by one `<TextView/>` and " +
-          "a compound drawable",
+          ISSUE,
+          element,
+          context.getElementLocation(element),
+          "This tag and its children can be replaced by one `<TextView/>` and " + "a compound drawable",
       )
     }
   }
@@ -75,11 +74,11 @@ class UseCompoundDrawableDetector : LayoutDetector() {
     /** The main issue discovered by this detector. */
     @JvmField
     val ISSUE =
-      Issue.create(
-        id = "UseCompoundDrawables",
-        briefDescription = "Node can be replaced by a `TextView` with compound drawables",
-        explanation =
-          """
+        Issue.create(
+            id = "UseCompoundDrawables",
+            briefDescription = "Node can be replaced by a `TextView` with compound drawables",
+            explanation =
+                """
                 A `LinearLayout` which contains an `ImageView` and a `TextView` can be more \
                 efficiently handled as a compound drawable (a single TextView, using the \
                 `drawableTop`, `drawableLeft`, `drawableRight` and/or `drawableBottom` \
@@ -90,19 +89,18 @@ class UseCompoundDrawableDetector : LayoutDetector() {
 
                 There's a lint quickfix to perform this conversion in the Eclipse plugin.
                 """,
-        category = Category.PERFORMANCE,
-        priority = 6,
-        severity = Severity.WARNING,
-        androidSpecific = true,
-        implementation =
-          Implementation(UseCompoundDrawableDetector::class.java, Scope.RESOURCE_FILE_SCOPE),
-      )
+            category = Category.PERFORMANCE,
+            priority = 6,
+            severity = Severity.WARNING,
+            androidSpecific = true,
+            implementation = Implementation(UseCompoundDrawableDetector::class.java, Scope.RESOURCE_FILE_SCOPE),
+        )
 
     private fun canCombineImage(image: Element): Boolean {
       if (
-        image.hasAttributeNS(ANDROID_URI, ATTR_LAYOUT_WEIGHT) ||
-          image.hasAttributeNS(ANDROID_URI, ATTR_CLICKABLE) ||
-          image.hasAttributeNS(ANDROID_URI, ATTR_FOCUSABLE)
+          image.hasAttributeNS(ANDROID_URI, ATTR_LAYOUT_WEIGHT) ||
+              image.hasAttributeNS(ANDROID_URI, ATTR_CLICKABLE) ||
+              image.hasAttributeNS(ANDROID_URI, ATTR_FOCUSABLE)
       ) {
         return false
       }

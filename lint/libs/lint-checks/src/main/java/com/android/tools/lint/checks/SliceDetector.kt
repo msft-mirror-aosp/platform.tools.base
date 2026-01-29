@@ -71,20 +71,20 @@ class SliceDetector : Detector(), SourceCodeScanner {
     /** Problems with slice registration and construction. */
     @JvmField
     val ISSUE =
-      Issue.create(
-        id = "Slices",
-        briefDescription = "Slices",
-        explanation =
-          """
+        Issue.create(
+            id = "Slices",
+            briefDescription = "Slices",
+            explanation =
+                """
             This check analyzes usages of the Slices API and offers suggestions based \
             on best practices.
             """,
-        category = Category.CORRECTNESS,
-        priority = 6,
-        severity = Severity.WARNING,
-        androidSpecific = true,
-        implementation = IMPLEMENTATION,
-      )
+            category = Category.CORRECTNESS,
+            priority = 6,
+            severity = Severity.WARNING,
+            androidSpecific = true,
+            implementation = IMPLEMENTATION,
+        )
 
     private const val ICON_CLASS = "android.graphics.drawable.Icon"
     private const val ICON_COMPAT_CLASS_1 = "androidx.core.graphics.drawable.IconCompat"
@@ -94,14 +94,11 @@ class SliceDetector : Detector(), SourceCodeScanner {
     private const val SLICE_PROVIDER_CLASS_2 = "android.app.slice.SliceProvider"
     private const val SLICE_ACTION_CLASS = "androidx.slice.builders.SliceAction"
     private const val LIST_BUILDER_CLASS = "androidx.slice.builders.ListBuilder"
-    private const val LIST_INPUT_RANGE_BUILDER_CLASS =
-      "androidx.slice.builders.ListBuilder.InputRangeBuilder"
+    private const val LIST_INPUT_RANGE_BUILDER_CLASS = "androidx.slice.builders.ListBuilder.InputRangeBuilder"
     private const val LIST_RANGE_BUILDER_CLASS = "androidx.slice.builders.ListBuilder.RangeBuilder"
-    private const val LIST_HEADER_BUILDER_CLASS =
-      "androidx.slice.builders.ListBuilder.HeaderBuilder"
+    private const val LIST_HEADER_BUILDER_CLASS = "androidx.slice.builders.ListBuilder.HeaderBuilder"
     private const val GRID_ROW_BUILDER_CLASS = "androidx.slice.builders.GridRowBuilder"
-    private const val GRID_ROW_CELL_BUILDER_CLASS =
-      "androidx.slice.builders.GridRowBuilder.CellBuilder"
+    private const val GRID_ROW_CELL_BUILDER_CLASS = "androidx.slice.builders.GridRowBuilder.CellBuilder"
     private const val ROW_BUILDER_CLASS = "androidx.slice.builders.ListBuilder.RowBuilder"
 
     private const val CATEGORY_SLICE = "android.app.slice.category.SLICE"
@@ -136,10 +133,7 @@ class SliceDetector : Detector(), SourceCodeScanner {
   override fun visitClass(context: JavaContext, declaration: UClass) {
     val sliceProvider = declaration.qualifiedName ?: return
 
-    val onMapMethod =
-      declaration.methods.firstOrNull {
-        it.name == "onMapIntentToUri" && it.uastParameters.size == 1
-      }
+    val onMapMethod = declaration.methods.firstOrNull { it.name == "onMapIntentToUri" && it.uastParameters.size == 1 }
 
     if (onMapMethod != null) {
       if (context.driver.isSuppressed(context, ISSUE, onMapMethod as UAnnotated)) {
@@ -186,10 +180,10 @@ class SliceDetector : Detector(), SourceCodeScanner {
   }
 
   private fun checkManifest(
-    context: Context,
-    sliceProvider: String,
-    onMapMethodLocation: Location?,
-    declarationLocation: Location,
+      context: Context,
+      sliceProvider: String,
+      onMapMethodLocation: Location?,
+      declarationLocation: Location,
   ) {
     // Make sure slice provider is registered correctly in the manifest
     // Make sure this actions resource is registered in the manifest
@@ -238,16 +232,14 @@ class SliceDetector : Detector(), SourceCodeScanner {
 
       if (!foundCategory) {
         val location =
-          context.client
-            .findManifestSourceLocation(intentFilter)
-            ?.withSecondary(declarationLocation, "SliceProvider declaration")
+            context.client.findManifestSourceLocation(intentFilter)?.withSecondary(declarationLocation, "SliceProvider declaration")
         if (location != null) {
           context.report(
-            ISSUE,
-            location,
-            "All `SliceProvider` filters require category slice to be set: " +
-              " <category android:name=\"android.app.slice.category.SLICE\" />",
-            null,
+              ISSUE,
+              location,
+              "All `SliceProvider` filters require category slice to be set: " +
+                  " <category android:name=\"android.app.slice.category.SLICE\" />",
+              null,
           )
         }
       }
@@ -260,41 +252,38 @@ class SliceDetector : Detector(), SourceCodeScanner {
 
     if (onMapMethodLocation != null && firstCategory == null) {
       context.report(
-        ISSUE,
-        onMapMethodLocation,
-        "Define intent filters in your manifest on your " +
-          "`<provider android:name=\"$sliceProvider\">`; otherwise " +
-          "`onMapIntentToUri` will not be called",
+          ISSUE,
+          onMapMethodLocation,
+          "Define intent filters in your manifest on your " +
+              "`<provider android:name=\"$sliceProvider\">`; otherwise " +
+              "`onMapIntentToUri` will not be called",
       )
     } else if (firstCategory != null && onMapMethodLocation == null) {
-      context.client.findManifestSourceLocation(firstCategory)?.let {
-        declarationLocation.secondary = it
-      }
+      context.client.findManifestSourceLocation(firstCategory)?.let { declarationLocation.secondary = it }
       context.report(
-        ISSUE,
-        declarationLocation,
-        "Implement `SliceProvider#onMapIntentToUri` to handle the intents " +
-          "defined on your slice `<provider>` in your manifest",
+          ISSUE,
+          declarationLocation,
+          "Implement `SliceProvider#onMapIntentToUri` to handle the intents " + "defined on your slice `<provider>` in your manifest",
       )
     }
   }
 
   override fun getApplicableConstructorTypes(): List<String> {
     return listOf(
-      LIST_BUILDER_CLASS,
-      ROW_BUILDER_CLASS,
-      GRID_ROW_BUILDER_CLASS,
-      GRID_ROW_CELL_BUILDER_CLASS,
-      LIST_HEADER_BUILDER_CLASS,
-      LIST_INPUT_RANGE_BUILDER_CLASS,
-      LIST_RANGE_BUILDER_CLASS,
+        LIST_BUILDER_CLASS,
+        ROW_BUILDER_CLASS,
+        GRID_ROW_BUILDER_CLASS,
+        GRID_ROW_CELL_BUILDER_CLASS,
+        LIST_HEADER_BUILDER_CLASS,
+        LIST_INPUT_RANGE_BUILDER_CLASS,
+        LIST_RANGE_BUILDER_CLASS,
     )
   }
 
   override fun visitConstructor(
-    context: JavaContext,
-    node: UCallExpression,
-    constructor: PsiMethod,
+      context: JavaContext,
+      node: UCallExpression,
+      constructor: PsiMethod,
   ) {
     val method = node.getParentOfType(UMethod::class.java, true) ?: return
     val name = constructor.containingClass?.qualifiedName ?: return
@@ -308,17 +297,17 @@ class SliceDetector : Detector(), SourceCodeScanner {
   }
 
   private fun checkListBuilder(
-    context: JavaContext,
-    listBuilder: UCallExpression,
-    method: UMethod,
+      context: JavaContext,
+      listBuilder: UCallExpression,
+      method: UMethod,
   ) {
     val rows = findRows(listBuilder, method)
     if (rows.isEmpty()) {
       context.report(
-        ISSUE,
-        listBuilder,
-        context.getLocation(listBuilder),
-        "A slice should have at least one row added to it",
+          ISSUE,
+          listBuilder,
+          context.getLocation(listBuilder),
+          "A slice should have at least one row added to it",
       )
       return
     }
@@ -341,20 +330,20 @@ class SliceDetector : Detector(), SourceCodeScanner {
 
     var primaryAction = false
     method.accept(
-      object : DataFlowAnalyzer(rows, initialReferences) {
-        override fun receiver(call: UCallExpression) {
-          if (call.methodName == "setPrimaryAction") {
-            primaryAction = true
+        object : DataFlowAnalyzer(rows, initialReferences) {
+          override fun receiver(call: UCallExpression) {
+            if (call.methodName == "setPrimaryAction") {
+              primaryAction = true
+            }
           }
         }
-      }
     )
     if (!primaryAction) {
       context.report(
-        ISSUE,
-        listBuilder,
-        context.getLocation(listBuilder),
-        "A slice should have a primary action set on one of its rows",
+          ISSUE,
+          listBuilder,
+          context.getLocation(listBuilder),
+          "A slice should have a primary action set on one of its rows",
       )
       return
     }
@@ -363,59 +352,55 @@ class SliceDetector : Detector(), SourceCodeScanner {
     var rowCount = 0
     val endActionItems = mutableListOf<UExpression>()
     method.accept(
-      object : DataFlowAnalyzer(listOf(listBuilder)) {
-        override fun receiver(call: UCallExpression) {
-          val methodName = call.methodName
-          if (call.methodName == "setPrimaryAction") {
-            primaryAction = true
-          } else if (methodName == "addAction") {
-            val arguments = call.valueArguments
-            if (arguments.isEmpty()) {
-              return
-            }
-            val first = arguments[0].skipParenthesizedExprDown()
-            val type = first?.getExpressionType()?.canonicalText
-            if (type == SLICE_ACTION_CLASS) {
-              endActionItems.add(first)
-            }
-          } else if (WARN_ABOUT_TOO_MANY_ROWS && (isAddRowMethod(methodName))) {
-            rowCount++
-            if (rowCount == 5) {
-              context.report(
-                ISSUE,
-                listBuilder,
-                context.getLocation(call),
-                "Consider setting a see more action if more than 4 rows " +
-                  "added to `ListBuilder`. Depending on where the slice is " +
-                  "being displayed, all rows of content may not be visible, " +
-                  "consider adding an intent to an activity with the rest " +
-                  "of the content.",
-              )
+        object : DataFlowAnalyzer(listOf(listBuilder)) {
+          override fun receiver(call: UCallExpression) {
+            val methodName = call.methodName
+            if (call.methodName == "setPrimaryAction") {
+              primaryAction = true
+            } else if (methodName == "addAction") {
+              val arguments = call.valueArguments
+              if (arguments.isEmpty()) {
+                return
+              }
+              val first = arguments[0].skipParenthesizedExprDown()
+              val type = first?.getExpressionType()?.canonicalText
+              if (type == SLICE_ACTION_CLASS) {
+                endActionItems.add(first)
+              }
+            } else if (WARN_ABOUT_TOO_MANY_ROWS && (isAddRowMethod(methodName))) {
+              rowCount++
+              if (rowCount == 5) {
+                context.report(
+                    ISSUE,
+                    listBuilder,
+                    context.getLocation(call),
+                    "Consider setting a see more action if more than 4 rows " +
+                        "added to `ListBuilder`. Depending on where the slice is " +
+                        "being displayed, all rows of content may not be visible, " +
+                        "consider adding an intent to an activity with the rest " +
+                        "of the content.",
+                )
+              }
             }
           }
         }
-      }
     )
 
     ensureSingleToggleType(
-      endActionItems,
-      context,
-      "A mixture of slice actions and icons are not supported on a list, " +
-        "add either actions or icons but not both",
+        endActionItems,
+        context,
+        "A mixture of slice actions and icons are not supported on a list, " + "add either actions or icons but not both",
     )
   }
 
   private fun isAddRowMethod(methodName: String?): Boolean {
-    return methodName == "addRow" ||
-      methodName == "addInputRange" ||
-      methodName == "addRange" ||
-      methodName == "addGridRow"
+    return methodName == "addRow" || methodName == "addInputRange" || methodName == "addRange" || methodName == "addGridRow"
   }
 
   private fun ensureSingleToggleType(
-    endActionItems: MutableList<UExpression>,
-    context: JavaContext,
-    message: String,
+      endActionItems: MutableList<UExpression>,
+      context: JavaContext,
+      message: String,
   ) {
     if (endActionItems.size >= 2) {
       var custom: UExpression? = null
@@ -430,10 +415,7 @@ class SliceDetector : Detector(), SourceCodeScanner {
         }
 
         if (custom != null && default != null) {
-          val location =
-            context
-              .getLocation(custom)
-              .withSecondary(context.getLocation(default), "Conflicting action type here")
+          val location = context.getLocation(custom).withSecondary(context.getLocation(default), "Conflicting action type here")
           context.report(ISSUE, custom, location, message)
           break
         }
@@ -441,64 +423,61 @@ class SliceDetector : Detector(), SourceCodeScanner {
     }
   }
 
-  /**
-   * Given a list builder construction, returns all the row builder constructor calls initialized
-   * with that list builder.
-   */
+  /** Given a list builder construction, returns all the row builder constructor calls initialized with that list builder. */
   private fun findRows(node: UCallExpression, method: UMethod): List<UCallExpression> {
     val rows = mutableListOf<UCallExpression>()
     method.accept(
-      object : DataFlowAnalyzer(listOf(node)) {
-        override fun argument(call: UCallExpression, reference: UElement) {
-          if (call.isConstructorCall()) {
-            val qualifiedName = call.resolve()?.containingClass?.qualifiedName ?: return
-            when (qualifiedName) {
-              LIST_INPUT_RANGE_BUILDER_CLASS,
-              LIST_RANGE_BUILDER_CLASS,
-              LIST_HEADER_BUILDER_CLASS,
-              GRID_ROW_BUILDER_CLASS,
-              GRID_ROW_CELL_BUILDER_CLASS, // Not sure about this one
-              ROW_BUILDER_CLASS -> {
-                rows.add(call)
+        object : DataFlowAnalyzer(listOf(node)) {
+          override fun argument(call: UCallExpression, reference: UElement) {
+            if (call.isConstructorCall()) {
+              val qualifiedName = call.resolve()?.containingClass?.qualifiedName ?: return
+              when (qualifiedName) {
+                LIST_INPUT_RANGE_BUILDER_CLASS,
+                LIST_RANGE_BUILDER_CLASS,
+                LIST_HEADER_BUILDER_CLASS,
+                GRID_ROW_BUILDER_CLASS,
+                GRID_ROW_CELL_BUILDER_CLASS, // Not sure about this one
+                ROW_BUILDER_CLASS -> {
+                  rows.add(call)
+                }
               }
             }
           }
-        }
 
-        override fun receiver(call: UCallExpression) {
-          if (isBuildConsumer(call)) {
-            rows.add(call)
-          }
+          override fun receiver(call: UCallExpression) {
+            if (isBuildConsumer(call)) {
+              rows.add(call)
+            }
 
-          if (isAddRowMethod(getMethodName(call))) {
-            call.valueArguments.firstOrNull()?.let {
-              val arg = it.skipParenthesizedExprDown()
-              if (arg is UCallExpression) {
-                argument(arg, arg)
-              } else if (arg is UQualifiedReferenceExpression) {
-                var curr: UElement = arg
-                while (true) {
-                  if (curr is UQualifiedReferenceExpression) {
-                    val selector = curr.selector
-                    if (selector.isConstructorCall()) {
-                      argument(selector as UCallExpression, selector)
+            if (isAddRowMethod(getMethodName(call))) {
+              call.valueArguments.firstOrNull()?.let {
+                val arg = it.skipParenthesizedExprDown()
+                if (arg is UCallExpression) {
+                  argument(arg, arg)
+                } else if (arg is UQualifiedReferenceExpression) {
+                  var curr: UElement = arg
+                  while (true) {
+                    if (curr is UQualifiedReferenceExpression) {
+                      val selector = curr.selector
+                      if (selector.isConstructorCall()) {
+                        argument(selector as UCallExpression, selector)
+                        break
+                      }
+                      curr = curr.receiver.skipParenthesizedExprDown() ?: break
+                    } else if (curr is UPostfixExpression && curr.operator.text == "!!") {
+                      curr = curr.operand.skipParenthesizedExprDown() ?: break
+                    } else if (curr is UCallExpression) {
+                      argument(curr, curr)
+                      break
+                    } else {
                       break
                     }
-                    curr = curr.receiver.skipParenthesizedExprDown() ?: break
-                  } else if (curr is UPostfixExpression && curr.operator.text == "!!") {
-                    curr = curr.operand.skipParenthesizedExprDown() ?: break
-                  } else if (curr is UCallExpression) {
-                    argument(curr, curr)
-                    break
-                  } else {
-                    break
                   }
                 }
               }
             }
           }
         }
-      }
     )
 
     return rows
@@ -546,20 +525,20 @@ class SliceDetector : Detector(), SourceCodeScanner {
   }
 
   private fun checkHasContent(
-    qualifiedName: String,
-    context: JavaContext,
-    node: UCallExpression,
-    method: UMethod,
+      qualifiedName: String,
+      context: JavaContext,
+      node: UCallExpression,
+      method: UMethod,
   ) {
     val analyzer =
-      object : TargetMethodDataFlowAnalyzer(listOf(node)) {
-        override fun isTargetMethodName(name: String): Boolean {
-          return isContentMethod(name)
-        }
+        object : TargetMethodDataFlowAnalyzer(listOf(node)) {
+          override fun isTargetMethodName(name: String): Boolean {
+            return isContentMethod(name)
+          }
 
-        // Only filtering by name
-        override fun isTargetMethod(name: String, method: PsiMethod?): Boolean = true
-      }
+          // Only filtering by name
+          override fun isTargetMethod(name: String, method: PsiMethod?): Boolean = true
+        }
 
     if (method.isMissingTarget(analyzer, allowEscape = true)) {
       val name = qualifiedName.substring(qualifiedName.lastIndexOf('.') + 1)
@@ -574,75 +553,64 @@ class SliceDetector : Detector(), SourceCodeScanner {
     var endIconItem: UCallExpression? = null
     var hasContent = false
     method.accept(
-      object : DataFlowAnalyzer(listOf(node)) {
-        override fun receiver(call: UCallExpression) {
-          val methodName = call.methodName ?: return
-          if ((methodName == "addEndItem" || methodName == "setTitleItem")) {
-            hasContent = true
-            val arguments = call.valueArguments
-            if (arguments.isEmpty()) {
-              return
+        object : DataFlowAnalyzer(listOf(node)) {
+          override fun receiver(call: UCallExpression) {
+            val methodName = call.methodName ?: return
+            if ((methodName == "addEndItem" || methodName == "setTitleItem")) {
+              hasContent = true
+              val arguments = call.valueArguments
+              if (arguments.isEmpty()) {
+                return
+              }
+              val first = arguments[0].skipParenthesizedExprDown()
+              val type = first?.getExpressionType()?.canonicalText
+              if (arguments.size == 1 && type == TYPE_LONG) {
+                if (timestamp != null) {
+                  val location = context.getLocation(call).withSecondary(context.getLocation(timestamp!!), "Earlier timestamp here")
+                  context.report(
+                      ISSUE,
+                      call,
+                      location,
+                      "`RowBuilder` can only have one timestamp added to it, " + "remove one of your timestamps",
+                  )
+                } else {
+                  timestamp = call
+                }
+              } else if (type == SLICE_ACTION_CLASS) {
+                if (endIconItem != null) {
+                  val location = context.getLocation(call).withSecondary(context.getLocation(endIconItem!!), "Earlier icon here")
+                  context.report(
+                      ISSUE,
+                      call,
+                      location,
+                      "`RowBuilder` cannot have a mixture of icons and slice " + "actions added to the end items",
+                  )
+                }
+                endActionItem = call
+                endActionItems.add(first)
+              } else if (type == ICON_CLASS || type == ICON_COMPAT_CLASS_1 || type == ICON_COMPAT_CLASS_2) {
+                if (endActionItem != null) {
+                  val location =
+                      context
+                          .getLocation(call)
+                          .withSecondary(
+                              context.getLocation(endActionItem!!),
+                              "Earlier slice action here",
+                          )
+                  context.report(
+                      ISSUE,
+                      call,
+                      location,
+                      "`RowBuilder` cannot have a mixture of icons and slice " + "actions added to the end items",
+                  )
+                }
+                endIconItem = call
+              }
+            } else if (isContentMethod(methodName)) {
+              hasContent = true
             }
-            val first = arguments[0].skipParenthesizedExprDown()
-            val type = first?.getExpressionType()?.canonicalText
-            if (arguments.size == 1 && type == TYPE_LONG) {
-              if (timestamp != null) {
-                val location =
-                  context
-                    .getLocation(call)
-                    .withSecondary(context.getLocation(timestamp!!), "Earlier timestamp here")
-                context.report(
-                  ISSUE,
-                  call,
-                  location,
-                  "`RowBuilder` can only have one timestamp added to it, " +
-                    "remove one of your timestamps",
-                )
-              } else {
-                timestamp = call
-              }
-            } else if (type == SLICE_ACTION_CLASS) {
-              if (endIconItem != null) {
-                val location =
-                  context
-                    .getLocation(call)
-                    .withSecondary(context.getLocation(endIconItem!!), "Earlier icon here")
-                context.report(
-                  ISSUE,
-                  call,
-                  location,
-                  "`RowBuilder` cannot have a mixture of icons and slice " +
-                    "actions added to the end items",
-                )
-              }
-              endActionItem = call
-              endActionItems.add(first)
-            } else if (
-              type == ICON_CLASS || type == ICON_COMPAT_CLASS_1 || type == ICON_COMPAT_CLASS_2
-            ) {
-              if (endActionItem != null) {
-                val location =
-                  context
-                    .getLocation(call)
-                    .withSecondary(
-                      context.getLocation(endActionItem!!),
-                      "Earlier slice action here",
-                    )
-                context.report(
-                  ISSUE,
-                  call,
-                  location,
-                  "`RowBuilder` cannot have a mixture of icons and slice " +
-                    "actions added to the end items",
-                )
-              }
-              endIconItem = call
-            }
-          } else if (isContentMethod(methodName)) {
-            hasContent = true
           }
         }
-      }
     )
 
     val message = "`RowBuilder` should not have a mixture of default and custom toggles"
@@ -655,10 +623,10 @@ class SliceDetector : Detector(), SourceCodeScanner {
 
   private fun warnMissingContent(builder: String, context: JavaContext, node: UCallExpression) {
     context.report(
-      ISSUE,
-      node,
-      context.getLocation(node),
-      "`$builder` should have a piece of content added to it",
+        ISSUE,
+        node,
+        context.getLocation(node),
+        "`$builder` should have a piece of content added to it",
     )
   }
 
@@ -677,9 +645,7 @@ class SliceDetector : Detector(), SourceCodeScanner {
           val initializer = resolved.uastInitializer?.skipParenthesizedExprDown() ?: return null
           return findSliceActionConstructor(initializer)
         } else if (resolved is PsiLocalVariable) {
-          val initializer =
-            UastLintUtils.findLastAssignment(resolved, node)?.skipParenthesizedExprDown()
-              ?: return null
+          val initializer = UastLintUtils.findLastAssignment(resolved, node)?.skipParenthesizedExprDown() ?: return null
           return findSliceActionConstructor(initializer)
         }
       }

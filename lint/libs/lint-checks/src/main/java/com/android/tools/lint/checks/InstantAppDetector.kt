@@ -31,21 +31,17 @@ import org.jetbrains.uast.UCallExpression
  *
  * Context: Instant Apps support will be removed by Google Play in December 2025.
  *
- * `showInstallPrompt` is from `com.google.android.gms:play-services-instantapps`. This will be
- * marked as deprecated, but that relies on users upgrading the library version.
+ * `showInstallPrompt` is from `com.google.android.gms:play-services-instantapps`. This will be marked as deprecated, but that relies on
+ * users upgrading the library version.
  *
- * There are already various other warnings (lint warning for the dependency, build warning, text in
- * Studio UIs), so this lint check just focuses on a specific API call. Note that not all instant
- * apps will actually call `showInstallPrompt`.
+ * There are already various other warnings (lint warning for the dependency, build warning, text in Studio UIs), so this lint check just
+ * focuses on a specific API call. Note that not all instant apps will actually call `showInstallPrompt`.
  */
 class InstantAppDetector : Detector(), SourceCodeScanner {
   override fun getApplicableMethodNames() = listOf("showInstallPrompt")
 
   override fun visitMethodCall(context: JavaContext, node: UCallExpression, method: PsiMethod) {
-    if (
-      !context.evaluator.isMemberInClass(method, "com.google.android.gms.instantapps.InstantApps")
-    )
-      return
+    if (!context.evaluator.isMemberInClass(method, "com.google.android.gms.instantapps.InstantApps")) return
 
     val annotation = context.evaluator.getAnnotation(method, "java.lang.Deprecated")
     if (annotation != null) {
@@ -55,33 +51,32 @@ class InstantAppDetector : Detector(), SourceCodeScanner {
     }
 
     context.report(
-      ISSUE,
-      node,
-      context.getLocation(node),
-      "Instant Apps support will be removed by Google Play in December 2025",
+        ISSUE,
+        node,
+        context.getLocation(node),
+        "Instant Apps support will be removed by Google Play in December 2025",
     )
   }
 
   companion object {
-    private val IMPLEMENTATION =
-      Implementation(InstantAppDetector::class.java, Scope.JAVA_FILE_SCOPE)
+    private val IMPLEMENTATION = Implementation(InstantAppDetector::class.java, Scope.JAVA_FILE_SCOPE)
 
     @JvmField
     val ISSUE =
-      Issue.create(
-        id = "InstantAppCall",
-        briefDescription = "Instant App call",
-        explanation =
-          """
+        Issue.create(
+            id = "InstantAppCall",
+            briefDescription = "Instant App call",
+            explanation =
+                """
           Instant Apps support will be removed by Google Play in December 2025. \
           Publishing and all Google Play Instant APIs will no longer work. \
           Tooling support will be removed in Android Studio Otter Feature Drop.
           """,
-        category = Category.CORRECTNESS,
-        priority = 5,
-        severity = Severity.WARNING,
-        implementation = IMPLEMENTATION,
-        androidSpecific = true,
-      )
+            category = Category.CORRECTNESS,
+            priority = 5,
+            severity = Severity.WARNING,
+            implementation = IMPLEMENTATION,
+            androidSpecific = true,
+        )
   }
 }

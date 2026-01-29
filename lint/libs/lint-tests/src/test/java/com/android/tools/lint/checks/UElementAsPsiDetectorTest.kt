@@ -26,9 +26,9 @@ class UElementAsPsiDetectorTest : AbstractCheckTest() {
 
   fun testDocumentationExample() {
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
                     /* Copyright (C) 2025 The Android Open Source Project */
                     package test.pkg;
                     import com.intellij.psi.PsiClass;
@@ -80,10 +80,10 @@ class UElementAsPsiDetectorTest : AbstractCheckTest() {
                         }
                     }
           """
-          )
-          .indented(),
-        kotlin(
-            """
+                )
+                .indented(),
+            kotlin(
+                    """
                     /* Copyright (C) 2025 The Android Open Source Project */
                     package test.pkg
                     import com.intellij.psi.PsiClass
@@ -146,13 +146,13 @@ class UElementAsPsiDetectorTest : AbstractCheckTest() {
                         }
                     }
           """
-          )
-          .indented(),
-        *getLintClassPath(),
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            *getLintClassPath(),
+        )
+        .run()
+        .expect(
+            """
 src/test/pkg/MyJavaLintDetector.java:37: Warning: Do not use UElement as PsiElement [UElementAsPsi]
         method.getContainingClass(); // ERROR 1
         ~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -179,14 +179,14 @@ src/test/pkg/MyKotlinLintDetector.kt:34: Warning: Do not use UElement as PsiElem
                                     ~~~~~~
 0 errors, 8 warnings
         """
-      )
+        )
   }
 
   fun testArgumentPass() {
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
             package pkg.j;
 
             import org.jetbrains.uast.UClass;
@@ -201,10 +201,10 @@ src/test/pkg/MyKotlinLintDetector.kt:34: Warning: Do not use UElement as PsiElem
                 }
             }
           """
-          )
-          .indented(),
-        kotlin(
-            """
+                )
+                .indented(),
+            kotlin(
+                    """
             package pkg.k
 
             import org.jetbrains.uast.UClass
@@ -216,13 +216,13 @@ src/test/pkg/MyKotlinLintDetector.kt:34: Warning: Do not use UElement as PsiElem
 
             fun processPsiClass(psiClass: PsiClass) { }
           """
-          )
-          .indented(),
-        *getLintClassPath(),
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            *getLintClassPath(),
+        )
+        .run()
+        .expect(
+            """
 src/pkg/j/JClass.java:8: Warning: Do not use UElement as PsiElement [UElementAsPsi]
         processPsiClass(uClass); // ERROR 1
                         ~~~~~~
@@ -231,14 +231,14 @@ src/pkg/k/test.kt:7: Warning: Do not use UElement as PsiElement [UElementAsPsi]
                   ~~~~~~
 0 errors, 2 warnings
         """
-      )
+        )
   }
 
   fun testAssignment() {
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
             package pkg.j;
 
             import org.jetbrains.uast.UClass;
@@ -253,10 +253,10 @@ src/pkg/k/test.kt:7: Warning: Do not use UElement as PsiElement [UElementAsPsi]
                 }
             }
           """
-          )
-          .indented(),
-        kotlin(
-            """
+                )
+                .indented(),
+            kotlin(
+                    """
             package pkg.k
 
             import org.jetbrains.uast.UClass
@@ -271,13 +271,13 @@ src/pkg/k/test.kt:7: Warning: Do not use UElement as PsiElement [UElementAsPsi]
               }
             }
           """
-          )
-          .indented(),
-        *getLintClassPath(),
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            *getLintClassPath(),
+        )
+        .run()
+        .expect(
+            """
 src/pkg/j/JClass.java:10: Warning: Do not use UElement as PsiElement [UElementAsPsi]
         psiClass = uClass; // ERROR 1
                    ~~~~~~
@@ -292,14 +292,14 @@ src/pkg/k/Klass.kt:11: Warning: Do not use UElement as PsiElement [UElementAsPsi
                           ~~~~~~
 0 errors, 4 warnings
         """
-      )
+        )
   }
 
   fun testCast() {
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
             package pkg.j;
 
             import org.jetbrains.uast.UElement;
@@ -317,10 +317,10 @@ src/pkg/k/Klass.kt:11: Warning: Do not use UElement as PsiElement [UElementAsPsi
                 }
             }
           """
-          )
-          .indented(),
-        kotlin(
-            """
+                )
+                .indented(),
+            kotlin(
+                    """
             package pkg.k
 
             import org.jetbrains.uast.UElement
@@ -339,13 +339,13 @@ src/pkg/k/Klass.kt:11: Warning: Do not use UElement as PsiElement [UElementAsPsi
               val anotherPsi = uElement as? PsiClass // ERROR 5
             }
           """
-          )
-          .indented(),
-        *getLintClassPath(),
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            *getLintClassPath(),
+        )
+        .run()
+        .expect(
+            """
 src/pkg/j/JClass.java:9: Warning: Do not use UElement as PsiElement [UElementAsPsi]
         if (uElement instanceof PsiClass) { // ERROR 1
             ~~~~~~~~
@@ -357,14 +357,14 @@ src/pkg/k/test.kt:16: Warning: Do not use UElement as PsiElement [UElementAsPsi]
                    ~~~~~~~~
 0 errors, 3 warnings
         """
-      )
+        )
   }
 
   fun testCallParent() {
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
             package pkg.j;
 
             import org.jetbrains.uast.UClass;
@@ -389,10 +389,10 @@ src/pkg/k/test.kt:16: Warning: Do not use UElement as PsiElement [UElementAsPsi]
                 }
             }
           """
-          )
-          .indented(),
-        kotlin(
-            """
+                )
+                .indented(),
+            kotlin(
+                    """
             package pkg.k
 
             import org.jetbrains.uast.UClass
@@ -414,13 +414,13 @@ src/pkg/k/test.kt:16: Warning: Do not use UElement as PsiElement [UElementAsPsi]
               val parent = uMethod.getContainingClass() // ERROR 6
             }
           """
-          )
-          .indented(),
-        *getLintClassPath(),
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            *getLintClassPath(),
+        )
+        .run()
+        .expect(
+            """
 src/pkg/j/UClassImpl.java:15: Warning: Do not use UElement as PsiElement [UElementAsPsi]
         uClass.getParent(); // ERROR 1
         ~~~~~~~~~~~~~~~~~~
@@ -441,14 +441,14 @@ src/pkg/k/UClassImpl.kt:19: Warning: Do not use UElement as PsiElement [UElement
                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 0 errors, 6 warnings
         """
-      )
+        )
   }
 
   fun testArrays() {
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
             package pkg.j;
 
             import org.jetbrains.uast.UClass;
@@ -462,10 +462,10 @@ src/pkg/k/UClassImpl.kt:19: Warning: Do not use UElement as PsiElement [UElement
                 }
             }
           """
-          )
-          .indented(),
-        kotlin(
-            """
+                )
+                .indented(),
+            kotlin(
+                    """
             package pkg.k
 
             import org.jetbrains.uast.UClass
@@ -479,13 +479,13 @@ src/pkg/k/UClassImpl.kt:19: Warning: Do not use UElement as PsiElement [UElement
               val classes: Array<PsiClass> = getClasses() // ERROR 2
             }
           """
-          )
-          .indented(),
-        *getLintClassPath(),
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            *getLintClassPath(),
+        )
+        .run()
+        .expect(
+            """
 src/pkg/j/JClass.java:10: Warning: Do not use UElement as PsiElement [UElementAsPsi]
         PsiClass[] classes = getClasses(); // ERROR 1
                              ~~~~~~~~~~~~
@@ -494,14 +494,14 @@ src/pkg/k/test.kt:11: Warning: Do not use UElement as PsiElement [UElementAsPsi]
                                  ~~~~~~~~~~~~
 0 errors, 2 warnings
         """
-      )
+        )
   }
 
   fun testReturn() {
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
             package pkg.j;
 
             import org.jetbrains.uast.UClass;
@@ -513,10 +513,10 @@ src/pkg/k/test.kt:11: Warning: Do not use UElement as PsiElement [UElementAsPsi]
                 }
             }
           """
-          )
-          .indented(),
-        kotlin(
-            """
+                )
+                .indented(),
+            kotlin(
+                    """
             package pkg.k
 
             import org.jetbrains.uast.UClass
@@ -526,13 +526,13 @@ src/pkg/k/test.kt:11: Warning: Do not use UElement as PsiElement [UElementAsPsi]
               return uClass // ERROR 2
             }
           """
-          )
-          .indented(),
-        *getLintClassPath(),
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            *getLintClassPath(),
+        )
+        .run()
+        .expect(
+            """
 src/pkg/j/JClass.java:8: Warning: Do not use UElement as PsiElement [UElementAsPsi]
         return uClass; // ERROR 1
                ~~~~~~
@@ -541,14 +541,14 @@ src/pkg/k/test.kt:7: Warning: Do not use UElement as PsiElement [UElementAsPsi]
          ~~~~~~
 0 errors, 2 warnings
         """
-      )
+        )
   }
 
   fun testNestedMethods() {
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
             package pkg.j;
 
             import org.jetbrains.uast.UClass;
@@ -572,10 +572,10 @@ src/pkg/k/test.kt:7: Warning: Do not use UElement as PsiElement [UElementAsPsi]
               }
             }
           """
-          )
-          .indented(),
-        kotlin(
-            """
+                )
+                .indented(),
+            kotlin(
+                    """
             package pkg.k
 
             import org.jetbrains.uast.UClass
@@ -591,13 +591,13 @@ src/pkg/k/test.kt:7: Warning: Do not use UElement as PsiElement [UElementAsPsi]
               }
             }
           """
-          )
-          .indented(),
-        *getLintClassPath(),
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            *getLintClassPath(),
+        )
+        .run()
+        .expect(
+            """
 src/pkg/j/JClass.java:14: Warning: Do not use UElement as PsiElement [UElementAsPsi]
                 uClass.getParent(); // ERROR 1
                 ~~~~~~~~~~~~~~~~~~
@@ -606,14 +606,14 @@ src/pkg/k/test.kt:10: Warning: Do not use UElement as PsiElement [UElementAsPsi]
         ~~~~~~~~~~~~~~~~~~
 0 errors, 2 warnings
         """
-      )
+        )
   }
 
   fun testModifierListOwner() {
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
             import org.jetbrains.uast.UClass
             import com.intellij.psi.PsiModifierListOwner
             import com.intellij.psi.PsiClass
@@ -630,32 +630,32 @@ src/pkg/k/test.kt:10: Warning: Do not use UElement as PsiElement [UElementAsPsi]
               hasModifier(psiClass)
             }
           """
-          )
-          .indented(),
-        *getLintClassPath(),
-      )
-      .run()
-      .expectClean()
+                )
+                .indented(),
+            *getLintClassPath(),
+        )
+        .run()
+        .expectClean()
   }
 
   fun testHasAnnotationOnUDeclaration() {
     // http://yaqs/2860404788426702848
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
             import org.jetbrains.uast.UDeclaration
 
             // UDeclaration overrides hasAnnotation
             fun UDeclaration.hasInjectAnnotation() =
               hasAnnotation("javax.inject.Inject") || this.hasAnnotation("com.google.apps.framework.request.Rpc")
           """
-          )
-          .indented(),
-        *getLintClassPath(),
-      )
-      .run()
-      .expectClean()
+                )
+                .indented(),
+            *getLintClassPath(),
+        )
+        .run()
+        .expectClean()
   }
 
   fun testContractLambda() {
@@ -665,9 +665,9 @@ src/pkg/k/test.kt:10: Warning: Do not use UElement as PsiElement [UElementAsPsi]
       return
     }
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
             import kotlin.contracts.ExperimentalContracts
             import kotlin.contracts.InvocationKind
             import kotlin.contracts.contract
@@ -700,10 +700,10 @@ src/pkg/k/test.kt:10: Warning: Do not use UElement as PsiElement [UElementAsPsi]
               }
             }
           """
-          )
-          .indented()
-      )
-      .run()
-      .expectClean()
+                )
+                .indented()
+        )
+        .run()
+        .expectClean()
   }
 }

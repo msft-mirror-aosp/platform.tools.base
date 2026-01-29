@@ -45,28 +45,28 @@ import org.junit.Test
 
 class LintDetectorDetectorTest {
   private val issues =
-    arrayOf(
-      ID,
-      USE_UAST,
-      PSI_COMPARE,
-      TRIM_INDENT,
-      USE_KOTLIN,
-      CHECK_URL,
-      TEXT_FORMAT,
-      EXISTING_LINT_CONSTANTS,
-      UNEXPECTED_DOMAIN,
-      DOLLAR_STRINGS,
-      MISSING_VENDOR,
-      MISSING_DOC_EXAMPLE,
-    )
+      arrayOf(
+          ID,
+          USE_UAST,
+          PSI_COMPARE,
+          TRIM_INDENT,
+          USE_KOTLIN,
+          CHECK_URL,
+          TEXT_FORMAT,
+          EXISTING_LINT_CONSTANTS,
+          UNEXPECTED_DOMAIN,
+          DOLLAR_STRINGS,
+          MISSING_VENDOR,
+          MISSING_DOC_EXAMPLE,
+      )
 
   @Test
   @Suppress("LintImplDollarEscapes")
   fun testProblems() {
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
                     /* Copyright (C) 2020 The Android Open Source Project */
                     package test.pkg;
                     import com.intellij.psi.PsiClass;
@@ -148,10 +148,10 @@ class LintDetectorDetectorTest {
                         }
                     }
                 """
-          )
-          .indented(),
-        kotlin(
-            """
+                )
+                .indented(),
+            kotlin(
+                    """
                     /* Copyright (C) 2020 The Android Open Source Project */
                     package test.pkg
                     import com.intellij.psi.PsiCallExpression
@@ -249,10 +249,10 @@ class LintDetectorDetectorTest {
                         }
                     }
                     """
-          )
-          .indented(),
-        kotlin(
-            """
+                )
+                .indented(),
+            kotlin(
+                    """
                     package test.pkg
                     import com.android.tools.lint.client.api.IssueRegistry
                     class MyIssueRegistry : IssueRegistry() {
@@ -262,10 +262,10 @@ class LintDetectorDetectorTest {
                         )
                     }
                     """
-          )
-          .indented(),
-        kotlin(
-            """
+                )
+                .indented(),
+            kotlin(
+                    """
                     package test.pkg
                     import com.android.tools.lint.client.api.IssueRegistry
                     import com.android.tools.lint.client.api.Vendor
@@ -278,10 +278,10 @@ class LintDetectorDetectorTest {
                         )
                     }
                     """
-          )
-          .indented(),
-        kotlin(
-            """
+                )
+                .indented(),
+            kotlin(
+                    """
                     package test.pkg
                     import com.android.tools.lint.client.api.IssueRegistry
                     import com.android.tools.lint.client.api.Vendor
@@ -293,10 +293,10 @@ class LintDetectorDetectorTest {
                         )
                     }
                     """
-          )
-          .indented(),
-        kotlin(
-            """
+                )
+                .indented(),
+            kotlin(
+                    """
                         // Copyright (C) 2021 The Android Open Source Project
                         package test.pkg
                         import com.android.tools.lint.checks.infrastructure.LintDetectorTest
@@ -348,15 +348,15 @@ class LintDetectorDetectorTest {
                             }
                         }
                     """
-          )
-          .indented(),
-        *getLintClassPath(),
-      )
-      .issues(*issues)
-      .allowMissingSdk()
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            *getLintClassPath(),
+        )
+        .issues(*issues)
+        .allowMissingSdk()
+        .run()
+        .expect(
+            """
                 src/test/pkg/MyKotlinLintDetectorTest.kt:10: Warning: Expected to also find a documentation example test (testDocumentationExample) which shows a simple, typical scenario which triggers the test, and which will be extracted into lint's per-issue documentation pages [LintDocExample]
                     fun testBasic() {
                     ^
@@ -494,9 +494,9 @@ class LintDetectorDetectorTest {
                       ~~~~~~~~~~~~~~~
                 28 errors, 17 warnings
                 """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
                 Autofix for src/test/pkg/MyJavaLintDetector.java line 70: Surround with backtics:
                 @@ -70 +70
                 -             "Wrong use of LinearLayout.");
@@ -534,7 +534,7 @@ class LintDetectorDetectorTest {
                 -                     ""${'"'}.trimIndent(),
                 +                     ""${'"'}.,
                 """
-      )
+        )
   }
 
   @Test
@@ -544,11 +544,11 @@ class LintDetectorDetectorTest {
     // wrappers, so this is just for convenience when developing the rules
     val root = TestUtils.getWorkspaceRoot().toFile()
     val srcFiles =
-      getTestSources(root, "tools/base/lint/libs/lint-checks/src/main/java") +
-        getTestSources(root, "tools/base/lint/libs/lint-tests/src/main/java") +
-        getTestSources(root, "tools/base/lint/libs/lint-tests/src/test/java") +
-        getTestSources(root, "tools/base/lint/studio-checks/src/main/java") +
-        getTestSources(root, "tools/base/lint/studio-checks/src/test/java")
+        getTestSources(root, "tools/base/lint/libs/lint-checks/src/main/java") +
+            getTestSources(root, "tools/base/lint/libs/lint-tests/src/main/java") +
+            getTestSources(root, "tools/base/lint/libs/lint-tests/src/test/java") +
+            getTestSources(root, "tools/base/lint/studio-checks/src/main/java") +
+            getTestSources(root, "tools/base/lint/studio-checks/src/test/java")
     if (srcFiles.isEmpty()) {
       // This test doesn't work in Bazel; we don't ship all the source files of lint
       // as a dependency. Note however than in Bazel we actually run the lint checks
@@ -558,34 +558,34 @@ class LintDetectorDetectorTest {
 
     val libs = mutableListOf<File>()
     findFromRuntimeClassPath { file ->
-        val name = file.name
-        val path = file.path
-        name.endsWith(DOT_JAR) ||
-          (!path.endsWith("android.sdktools.base.lint.checks-base") &&
-            !path.endsWith("android.sdktools.base.lint.studio-checks") &&
-            !path.contains("lint-tests"))
-      }
-      .forEach { libs.add(it) }
+          val name = file.name
+          val path = file.path
+          name.endsWith(DOT_JAR) ||
+              (!path.endsWith("android.sdktools.base.lint.checks-base") &&
+                  !path.endsWith("android.sdktools.base.lint.studio-checks") &&
+                  !path.contains("lint-tests"))
+        }
+        .forEach { libs.add(it) }
 
     // Symlink to all the jars on the classpath and insert a src/ link
     lint()
-      .issues(*(issues.filter { it != PSI_COMPARE }.toTypedArray()))
-      .files(
-        gradle("// placeholder"), // such that it's seen as a project by lint
-        *srcFiles.toTypedArray(),
-        *libs
-          .mapIndexed { index, file ->
-            // Include unique index at the end to prevent conflicts
-            LibraryReferenceTestFile("libs/${file.name}_$index", file)
-          }
-          .toTypedArray(),
-      )
-      .testModes(TestMode.DEFAULT)
-      .allowMissingSdk()
-      .allowCompilationErrors()
-      .allowDuplicates()
-      .run()
-      .expectClean()
+        .issues(*(issues.filter { it != PSI_COMPARE }.toTypedArray()))
+        .files(
+            gradle("// placeholder"), // such that it's seen as a project by lint
+            *srcFiles.toTypedArray(),
+            *libs
+                .mapIndexed { index, file ->
+                  // Include unique index at the end to prevent conflicts
+                  LibraryReferenceTestFile("libs/${file.name}_$index", file)
+                }
+                .toTypedArray(),
+        )
+        .testModes(TestMode.DEFAULT)
+        .allowMissingSdk()
+        .allowCompilationErrors()
+        .allowDuplicates()
+        .run()
+        .expectClean()
   }
 
   private fun getTestSources(root: File, relative: String): List<TestFile> {
@@ -595,26 +595,25 @@ class LintDetectorDetectorTest {
       return emptyList()
     }
     val srcPath = src.path
-    return src
-      .walkTopDown()
-      .mapNotNull {
-        if (it.isFile) {
-          val target = "src/main/java/" + it.path.substring(srcPath.length + 1).portablePath()
-          val contents = it.readText()
-          source(target, contents)
-        } else {
-          null
+    return src.walkTopDown()
+        .mapNotNull {
+          if (it.isFile) {
+            val target = "src/main/java/" + it.path.substring(srcPath.length + 1).portablePath()
+            val contents = it.readText()
+            source(target, contents)
+          } else {
+            null
+          }
         }
-      }
-      .toList()
+        .toList()
   }
 
   @Test
   fun testExtensionReceiverType() {
     lint()
-      .files(
-        kotlin(
-          """
+        .files(
+            kotlin(
+                """
             import com.android.tools.lint.detector.api.Detector
             import com.intellij.psi.PsiField
 
@@ -626,21 +625,21 @@ class LintDetectorDetectorTest {
               }
             }
           """
-        ),
-        *getLintClassPath(),
-      )
-      .issues(*issues)
-      .allowMissingSdk()
-      .run()
-      .expectClean()
+            ),
+            *getLintClassPath(),
+        )
+        .issues(*issues)
+        .allowMissingSdk()
+        .run()
+        .expectClean()
   }
 
   @Test
   fun testContainingClass_b288737678() {
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
             import com.android.tools.lint.client.api.JavaEvaluator
             import com.android.tools.lint.detector.api.Detector
             import org.jetbrains.uast.UExpression
@@ -653,20 +652,20 @@ class LintDetectorDetectorTest {
               }
             }
           """
-          )
-          .indented(),
-        *getLintClassPath(),
-      )
-      .issues(*issues)
-      .allowMissingSdk()
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            *getLintClassPath(),
+        )
+        .issues(*issues)
+        .allowMissingSdk()
+        .run()
+        .expect(
+            """
           src/Foo.kt:8: Error: Don't call PsiMember#getContainingClass(); you should use UAST instead and call getContainingUClass() [LintImplUseUast]
               val callerClass = node.getContainingUMethod()?.containingClass ?: return false
                                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
           1 errors, 0 warnings
         """
-      )
+        )
   }
 }

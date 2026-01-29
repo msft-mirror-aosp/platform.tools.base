@@ -42,20 +42,20 @@ class IntentDetector : Detector(), SourceCodeScanner {
     /** The main issue discovered by this detector. */
     @JvmField
     val ISSUE =
-      Issue.create(
-        id = "IntentReset",
-        briefDescription = "Suspicious mix of `setType` and `setData`",
-        explanation =
-          """
+        Issue.create(
+            id = "IntentReset",
+            briefDescription = "Suspicious mix of `setType` and `setData`",
+            explanation =
+                """
                 Intent provides the following APIs: `setData(Uri)` and `setType(String)`. \
                 Unfortunately, setting one clears the other. If you want to set both, you \
                 should call `setDataAndType(Uri, String)` instead.""",
-        category = Category.CORRECTNESS,
-        priority = 6,
-        severity = Severity.WARNING,
-        androidSpecific = true,
-        implementation = Implementation(IntentDetector::class.java, Scope.JAVA_FILE_SCOPE),
-      )
+            category = Category.CORRECTNESS,
+            priority = 6,
+            severity = Severity.WARNING,
+            androidSpecific = true,
+            implementation = Implementation(IntentDetector::class.java, Scope.JAVA_FILE_SCOPE),
+        )
 
     private const val INTENT_CLASS = "android.content.Intent"
     private const val ANDROID_NET_URI = "android.net.Uri"
@@ -68,9 +68,9 @@ class IntentDetector : Detector(), SourceCodeScanner {
   }
 
   override fun visitConstructor(
-    context: JavaContext,
-    node: UCallExpression,
-    constructor: PsiMethod,
+      context: JavaContext,
+      node: UCallExpression,
+      constructor: PsiMethod,
   ) {
     var seenInConstructor = false
     var seenData: UElement? = null
@@ -80,10 +80,7 @@ class IntentDetector : Detector(), SourceCodeScanner {
     for (topArgument in node.valueArguments) {
       val argument = topArgument.skipParenthesizedExprDown() ?: continue
       val type = argument.getExpressionType() ?: continue
-      if (
-        type.canonicalText == ANDROID_NET_URI &&
-          !(argument is ULiteralExpression && argument.isNull)
-      ) {
+      if (type.canonicalText == ANDROID_NET_URI && !(argument is ULiteralExpression && argument.isNull)) {
         seenInConstructor = true
         seenData = argument
         break
@@ -92,77 +89,76 @@ class IntentDetector : Detector(), SourceCodeScanner {
 
     val method = node.getParentOfType(UMethod::class.java) ?: return
     val analyzer =
-      object : DataFlowAnalyzer(listOf(node)) {
-        override fun receiver(call: UCallExpression) {
-          val args = call.valueArguments
-          if (args.size != 1) {
-            return
-          }
-          val arg = args[0].skipParenthesizedExprDown()
-          if (arg is ULiteralExpression && arg.isNull) {
-            return
-          }
-
-          val name = call.methodName
-          when (name) {
-            SET_DATA -> seenData = call
-            SET_TYPE -> seenType = call
-            else -> return
-          }
-
-          seenData ?: return
-          seenType ?: return
-
-          val dataParent = findParent(seenData)
-          val typeParent = findParent(seenType)
-
-          // If it is not obvious that both "set" calls were made in the same block (approximately)
-          // then we return early to avoid false-positives. But if the data was set in the
-          // constructor then we can skip this check, because the constructor must have been
-          // executed.
-          if (!seenInConstructor) {
-            //noinspection LintImplPsiEquals
-            if (dataParent != typeParent) {
+        object : DataFlowAnalyzer(listOf(node)) {
+          override fun receiver(call: UCallExpression) {
+            val args = call.valueArguments
+            if (args.size != 1) {
               return
-            } else if (dataParent is UIfExpression) {
-              // Make sure they're both inside the same then clause or same else clause
-              val parent = dataParent.thenExpression
-              if (parent != null && seenData!!.isBelow(parent) != seenType!!.isBelow(parent)) {
+            }
+            val arg = args[0].skipParenthesizedExprDown()
+            if (arg is ULiteralExpression && arg.isNull) {
+              return
+            }
+
+            val name = call.methodName
+            when (name) {
+              SET_DATA -> seenData = call
+              SET_TYPE -> seenType = call
+              else -> return
+            }
+
+            seenData ?: return
+            seenType ?: return
+
+            val dataParent = findParent(seenData)
+            val typeParent = findParent(seenType)
+
+            // If it is not obvious that both "set" calls were made in the same block (approximately)
+            // then we return early to avoid false-positives. But if the data was set in the
+            // constructor then we can skip this check, because the constructor must have been
+            // executed.
+            if (!seenInConstructor) {
+              //noinspection LintImplPsiEquals
+              if (dataParent != typeParent) {
                 return
+              } else if (dataParent is UIfExpression) {
+                // Make sure they're both inside the same then clause or same else clause
+                val parent = dataParent.thenExpression
+                if (parent != null && seenData!!.isBelow(parent) != seenType!!.isBelow(parent)) {
+                  return
+                }
               }
             }
+
+            val prev = if (name == SET_DATA) seenType else seenData
+            val prevDesc =
+                if (seenInConstructor) {
+                  "setting URI in `Intent` constructor"
+                } else {
+                  "calling `${(prev as? UCallExpression)?.methodName}`"
+                }
+            val data = if (name == SET_DATA) "type" else "data"
+            val location =
+                context
+                    .getCallLocation(call, includeReceiver = false, includeArguments = true)
+                    .withSecondary(context.getLocation(prev), "Originally set here")
+            val message = "Calling `$name` after $prevDesc will clear the $data: Call `setDataAndType` instead?"
+            context.report(ISSUE, call, location, message, null)
+            seenData = null
+            seenType = null
           }
 
-          val prev = if (name == SET_DATA) seenType else seenData
-          val prevDesc =
-            if (seenInConstructor) {
-              "setting URI in `Intent` constructor"
-            } else {
-              "calling `${(prev as? UCallExpression)?.methodName}`"
-            }
-          val data = if (name == SET_DATA) "type" else "data"
-          val location =
-            context
-              .getCallLocation(call, includeReceiver = false, includeArguments = true)
-              .withSecondary(context.getLocation(prev), "Originally set here")
-          val message =
-            "Calling `$name` after $prevDesc will clear the $data: Call `setDataAndType` instead?"
-          context.report(ISSUE, call, location, message, null)
-          seenData = null
-          seenType = null
+          private fun findParent(call: UElement?): UElement? {
+            call ?: return null
+            return call.getParentOfType(
+                strict = true,
+                UMethod::class.java,
+                UBlockExpression::class.java,
+                UIfExpression::class.java,
+                USwitchClauseExpression::class.java,
+            )
+          }
         }
-
-        private fun findParent(call: UElement?): UElement? {
-          call ?: return null
-          return call.getParentOfType(
-            strict = true,
-            UMethod::class.java,
-            UBlockExpression::class.java,
-            UIfExpression::class.java,
-            USwitchClauseExpression::class.java,
-          )
-        }
-      }
     method.accept(analyzer)
   }
 }

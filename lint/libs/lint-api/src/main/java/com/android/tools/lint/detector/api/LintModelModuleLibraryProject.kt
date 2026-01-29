@@ -32,10 +32,10 @@ import java.io.IOException
 
 /** Lint project wrapping a library. */
 open class LintModelModuleLibraryProject(
-  client: LintClient,
-  dir: File,
-  referenceDir: File,
-  val dependency: LintModelDependency?,
+    client: LintClient,
+    dir: File,
+    referenceDir: File,
+    val dependency: LintModelDependency?,
 ) : Project(client, dir, referenceDir) {
 
   init {
@@ -84,11 +84,11 @@ open class LintModelModuleLibraryProject(
 
 /** Lint project wrapping a Java library (jar) */
 open class LintModelModuleJavaLibraryProject(
-  client: LintClient,
-  dir: File,
-  referenceDir: File,
-  dependency: LintModelDependency?,
-  private val javaLibrary: LintModelJavaLibrary,
+    client: LintClient,
+    dir: File,
+    referenceDir: File,
+    dependency: LintModelDependency?,
+    private val javaLibrary: LintModelJavaLibrary,
 ) : LintModelModuleLibraryProject(client, dir, referenceDir, dependency) {
 
   override fun getJavaLibraries(includeProvided: Boolean): List<File> {
@@ -109,11 +109,11 @@ open class LintModelModuleJavaLibraryProject(
 
 /** Lint project wrapping an Android library (AAR) */
 open class LintModelModuleAndroidLibraryProject(
-  client: LintClient,
-  dir: File,
-  referenceDir: File,
-  dependency: LintModelDependency?,
-  private val androidLibrary: LintModelAndroidLibrary,
+    client: LintClient,
+    dir: File,
+    referenceDir: File,
+    dependency: LintModelDependency?,
+    private val androidLibrary: LintModelAndroidLibrary,
 ) : LintModelModuleLibraryProject(client, dir, referenceDir, dependency) {
   init {
     androidLibrary.manifest.let { manifest ->
@@ -144,11 +144,11 @@ open class LintModelModuleAndroidLibraryProject(
     if (manifestFiles == null) {
       val manifest = androidLibrary.manifest
       manifestFiles =
-        if (manifest.exists()) {
-          listOf(manifest)
-        } else {
-          emptyList()
-        }
+          if (manifest.exists()) {
+            listOf(manifest)
+          } else {
+            emptyList()
+          }
     }
     return manifestFiles
   }
@@ -157,11 +157,11 @@ open class LintModelModuleAndroidLibraryProject(
     if (proguardFiles == null) {
       val proguardRules = androidLibrary.proguardRules
       proguardFiles =
-        if (proguardRules.exists()) {
-          listOf(proguardRules)
-        } else {
-          emptyList()
-        }
+          if (proguardRules.exists()) {
+            listOf(proguardRules)
+          } else {
+            emptyList()
+          }
     }
     return proguardFiles
   }
@@ -170,11 +170,11 @@ open class LintModelModuleAndroidLibraryProject(
     if (resourceFolders == null) {
       val folder = androidLibrary.resFolder
       resourceFolders =
-        if (folder.exists()) {
-          listOf(folder)
-        } else {
-          emptyList()
-        }
+          if (folder.exists()) {
+            listOf(folder)
+          } else {
+            emptyList()
+          }
     }
     return resourceFolders
   }
@@ -183,11 +183,11 @@ open class LintModelModuleAndroidLibraryProject(
     if (assetFolders == null) {
       val folder = androidLibrary.assetsFolder
       assetFolders =
-        if (folder.exists()) {
-          listOf(folder)
-        } else {
-          emptyList()
-        }
+          if (folder.exists()) {
+            listOf(folder)
+          } else {
+            emptyList()
+          }
     }
     return assetFolders
   }
@@ -198,15 +198,15 @@ open class LintModelModuleAndroidLibraryProject(
     }
 
     return javaLibraries
-      ?: run {
-        val list = ArrayList<File>(androidLibrary.jarFiles.size)
-        for (file in androidLibrary.jarFiles) {
-          if (file.exists()) list.add(file)
-        }
+        ?: run {
+          val list = ArrayList<File>(androidLibrary.jarFiles.size)
+          for (file in androidLibrary.jarFiles) {
+            if (file.exists()) list.add(file)
+          }
 
-        javaLibraries = list
-        list
-      }
+          javaLibraries = list
+          list
+        }
   }
 
   fun LintModelDependency.hasDependency(name: String): Boolean {
@@ -230,16 +230,16 @@ open class LintModelModuleAndroidLibraryProject(
       ANDROIDX_APPCOMPAT_LIB_ARTIFACT -> {
         if (appCompat == null) {
           appCompat =
-            dependency?.hasDependency(ANDROIDX_APPCOMPAT_LIB_ARTIFACT) == true ||
-              dependency?.hasDependency(APPCOMPAT_LIB_ARTIFACT) == true
+              dependency?.hasDependency(ANDROIDX_APPCOMPAT_LIB_ARTIFACT) == true ||
+                  dependency?.hasDependency(APPCOMPAT_LIB_ARTIFACT) == true
         }
         appCompat
       }
       ANDROIDX_LEANBACK_ARTIFACT -> {
         if (leanback == null) {
           leanback =
-            dependency?.hasDependency(ANDROIDX_LEANBACK_ARTIFACT) == true ||
-              dependency?.hasDependency(SdkConstants.LEANBACK_V17_ARTIFACT) == true
+              dependency?.hasDependency(ANDROIDX_LEANBACK_ARTIFACT) == true ||
+                  dependency?.hasDependency(SdkConstants.LEANBACK_V17_ARTIFACT) == true
         }
         leanback
       }

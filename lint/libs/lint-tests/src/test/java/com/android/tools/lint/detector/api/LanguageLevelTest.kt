@@ -31,19 +31,19 @@ class LanguageLevelTest : AbstractCheckTest() {
   fun testJava() {
     // Regression test for b/283693337
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
             record Person(String name, int age) {
             }
             """
-          )
-          .indented()
-      )
-      .javaLanguageLevel("16")
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .javaLanguageLevel("16")
+        .run()
+        .expect(
+            """
           src/Person.java:1: Warning: Java record augmented member found [_TestIssueId]
           record Person(String name, int age) {
           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -58,7 +58,7 @@ class LanguageLevelTest : AbstractCheckTest() {
                        ~~~~~~~~~~~~~~~~~~~~~~
           0 errors, 4 warnings
           """
-      )
+        )
   }
 
   fun testJavaInvalid() {
@@ -69,19 +69,19 @@ class LanguageLevelTest : AbstractCheckTest() {
     }
 
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
           record Person(String name, int age) {
           }
           """
-          )
-          .indented()
-      )
-      .javaLanguageLevel("11")
-      .allowCompilationErrors()
-      .run()
-      .expectClean()
+                )
+                .indented()
+        )
+        .javaLanguageLevel("11")
+        .allowCompilationErrors()
+        .run()
+        .expectClean()
   }
 
   fun testKotlin() {
@@ -89,9 +89,9 @@ class LanguageLevelTest : AbstractCheckTest() {
     // but even though the code is using invalid code at that language level, Kotlin
     // doesn't seem to throw exceptions.
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
             typealias MyAlias = List<String>
             sealed interface Animal {
                 fun makeSound()
@@ -102,12 +102,12 @@ class LanguageLevelTest : AbstractCheckTest() {
                 }
             }
             """
-          )
-          .indented()
-      )
-      .kotlinLanguageLevel("1.0")
-      .run()
-      .expectClean()
+                )
+                .indented()
+        )
+        .kotlinLanguageLevel("1.0")
+        .run()
+        .expectClean()
   }
 
   override fun getDetector(): Detector = TestDetector()
@@ -125,16 +125,16 @@ class LanguageLevelTest : AbstractCheckTest() {
           val psiFile = node.sourcePsi
           if (psiFile is PsiJavaFile) {
             psiFile.accept(
-              object : JavaRecursiveElementVisitor() {
-                override fun visitRecordHeader(recordHeader: PsiRecordHeader) {
-                  context.report(
-                    TEST_ISSUE,
-                    recordHeader,
-                    context.getLocation(recordHeader),
-                    "Java record found",
-                  )
+                object : JavaRecursiveElementVisitor() {
+                  override fun visitRecordHeader(recordHeader: PsiRecordHeader) {
+                    context.report(
+                        TEST_ISSUE,
+                        recordHeader,
+                        context.getLocation(recordHeader),
+                        "Java record found",
+                    )
+                  }
                 }
-              }
             )
           }
         }
@@ -143,10 +143,10 @@ class LanguageLevelTest : AbstractCheckTest() {
           val psi = node.javaPsi
           if (psi.containingClass?.isRecord != true) return
           context.report(
-            TEST_ISSUE,
-            psi,
-            context.getLocation(psi),
-            "Java record augmented member found",
+              TEST_ISSUE,
+              psi,
+              context.getLocation(psi),
+              "Java record augmented member found",
           )
         }
       }
@@ -155,14 +155,14 @@ class LanguageLevelTest : AbstractCheckTest() {
 
   companion object {
     val TEST_ISSUE =
-      Issue.create(
-        "_TestIssueId",
-        "Not applicable",
-        "Not applicable",
-        Category.CORRECTNESS,
-        5,
-        Severity.WARNING,
-        Implementation(TestDetector::class.java, Scope.JAVA_FILE_SCOPE),
-      )
+        Issue.create(
+            "_TestIssueId",
+            "Not applicable",
+            "Not applicable",
+            Category.CORRECTNESS,
+            5,
+            Severity.WARNING,
+            Implementation(TestDetector::class.java, Scope.JAVA_FILE_SCOPE),
+        )
   }
 }

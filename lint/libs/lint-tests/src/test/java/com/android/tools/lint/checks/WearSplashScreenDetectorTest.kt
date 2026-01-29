@@ -24,16 +24,16 @@ class WearSplashScreenDetectorTest : AbstractCheckTest() {
 
   fun testDocumentationExample() {
     lint()
-      .files(activityThemeManifestApi30)
-      .run()
-      .expect(
-        """
+        .files(activityThemeManifestApi30)
+        .run()
+        .expect(
+            """
         AndroidManifest.xml:17: Warning: Applications using splash screens are strongly recommended to use the 'androidx.core:core-splashscreen' library [WearSplashScreen]
                 <activity android:name=".SplashActivity"
                 ^
         0 errors, 1 warnings
         """
-      )
+        )
 
     // API > 30 will generate splash screens so we do not want the user to add the splashscreen
     // library.
@@ -45,16 +45,12 @@ class WearSplashScreenDetectorTest : AbstractCheckTest() {
   }
 
   private fun manifestWithActivityTheme(minSdk: Int) =
-    manifest(
-      activityThemeManifestApi30
-        .getContents()!!
-        .replace("minSdkVersion=\"30\"", "minSdkVersion=\"$minSdk\"")
-    )
+      manifest(activityThemeManifestApi30.getContents()!!.replace("minSdkVersion=\"30\"", "minSdkVersion=\"$minSdk\""))
 
   private val activityThemeManifestApi30: TestFile =
-    manifest(
-      // language=xml
-      """
+      manifest(
+          // language=xml
+          """
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android"
               package="test.pkg">
@@ -81,28 +77,28 @@ class WearSplashScreenDetectorTest : AbstractCheckTest() {
                   </activity>
               </application>
           </manifest>
-        """
-        .trimIndent()
-    )
+          """
+              .trimIndent()
+      )
 
   private val gradleFileWithSplashLibrary =
-    gradle(
-      """
-        apply plugin: 'com.android.application'
+      gradle(
+          """
+          apply plugin: 'com.android.application'
 
-        android {
-            compileSdkVersion 30
+          android {
+              compileSdkVersion 30
 
-            defaultConfig {
-                minSdkVersion 30
-                targetSdkVersion 32
-            }
-        }
+              defaultConfig {
+                  minSdkVersion 30
+                  targetSdkVersion 32
+              }
+          }
 
-        dependencies {
-            compile 'androidx.core:core-splashscreen:+'
-        }
-        """
-        .trimIndent()
-    )
+          dependencies {
+              compile 'androidx.core:core-splashscreen:+'
+          }
+          """
+              .trimIndent()
+      )
 }

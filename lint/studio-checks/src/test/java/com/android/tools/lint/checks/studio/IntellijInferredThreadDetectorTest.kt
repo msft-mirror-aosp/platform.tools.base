@@ -29,10 +29,10 @@ class IntellijInferredThreadDetectorTest {
   @Test
   fun testConditionNarrowingCurrentThread_379742474() {
     studioLint()
-      .setUp()
-      .files(
-        kt(
-            """
+        .setUp()
+        .files(
+            kt(
+                    """
                     package test.pkg
                     import com.android.annotations.concurrency.AnyThread
                     import com.android.annotations.concurrency.Slow
@@ -51,12 +51,12 @@ class IntellijInferredThreadDetectorTest {
                     @UiThread fun execOnPooledThread(task: @WorkerThread () -> Unit) { }
                     @WorkerThread fun doHeavyWork() { }
                 """
-          )
-          .indented(),
-        *annotationDefinitions,
-      )
-      .run()
-      .expectClean()
+                )
+                .indented(),
+            *annotationDefinitions,
+        )
+        .run()
+        .expectClean()
   }
 
   /* Old tests from [IntellijThreadDetectorTest] */
@@ -64,10 +64,10 @@ class IntellijInferredThreadDetectorTest {
   @Test
   fun testIncompatibleMethods() {
     studioLint()
-      .setUp()
-      .files(
-        java(
-            """
+        .setUp()
+        .files(
+            java(
+                    """
                     package test.pkg;
                     import com.android.annotations.concurrency.AnyThread;
                     import com.android.annotations.concurrency.Slow;
@@ -121,10 +121,10 @@ class IntellijInferredThreadDetectorTest {
                         }
                     }
                 """
-          )
-          .indented(),
-        java(
-            """
+                )
+                .indented(),
+            java(
+                    """
                     package test.pkg;
                     import com.android.annotations.concurrency.UiThread;
 
@@ -134,13 +134,13 @@ class IntellijInferredThreadDetectorTest {
                         }
                     }
                 """
-          )
-          .indented(),
-        *annotationDefinitions,
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            *annotationDefinitions,
+        )
+        .run()
+        .expect(
+            """
           src/test/pkg/Test.java:10: Error: Call must be from @UiThread, but context is allowing @{Slow,WorkerThread} [WrongThread]
         uiThread(); // WARN
         ~~~~~~~~~~
@@ -167,16 +167,16 @@ src/test/pkg/Test.java:43: Error: Call must be from @UiThread, but context is al
         ~~~~~~~~~~
 8 errors, 0 warnings
                 """
-      )
+        )
   }
 
   @Test
   fun testImplicit() {
     studioLint()
-      .setUp()
-      .files(
-        java(
-            """
+        .setUp()
+        .files(
+            java(
+                    """
                     package test.pkg;
                     import com.intellij.openapi.application.Application;
                     import com.android.annotations.concurrency.Slow;
@@ -298,10 +298,10 @@ src/test/pkg/Test.java:43: Error: Call must be from @UiThread, but context is al
                         }
                     }
                 """
-          )
-          .indented(),
-        java(
-            """
+                )
+                .indented(),
+            java(
+                    """
                     // Stub until test infrastructure passes the right class path for non-Android
                     // modules.
                     package com.intellij.openapi.application;
@@ -319,10 +319,10 @@ src/test/pkg/Test.java:43: Error: Call must be from @UiThread, but context is al
                         public void runWriteAction(@NotNull @UiThread Runnable run) { run.run(); }
                     }
                 """
-          )
-          .indented(),
-        java(
-            """
+                )
+                .indented(),
+            java(
+                    """
                     package org.jetbrains.annotations;
 
                     @Documented
@@ -330,18 +330,18 @@ src/test/pkg/Test.java:43: Error: Call must be from @UiThread, but context is al
                     @Target({ElementType.METHOD, ElementType.FIELD, ElementType.PARAMETER, ElementType.LOCAL_VARIABLE})
                     public @interface NotNull {}
                 """
-          )
-          .indented(),
-        java(
-            """
+                )
+                .indented(),
+            java(
+                    """
                     package com.intellij.openapi.actionSystem;
 
                     public class AnActionEvent {}
                 """
-          )
-          .indented(),
-        java(
-          """
+                )
+                .indented(),
+            java(
+                """
                     package com.intellij.openapi.actionSystem;
 
                     public class AnAction {
@@ -350,26 +350,26 @@ src/test/pkg/Test.java:43: Error: Call must be from @UiThread, but context is al
                         }
                     }
                 """
-        ),
-        jar(
-          "annotations.zip",
-          xml(
-              "com/intellij/openapi/application/annotations.xml",
-              """
+            ),
+            jar(
+                "annotations.zip",
+                xml(
+                        "com/intellij/openapi/application/annotations.xml",
+                        """
                         <root>
                             <item name='com.intellij.openapi.application.Application void externallyAnnotated(java.lang.Runnable) 0'>
                                 <annotation name='com.android.annotations.concurrency.UiThread' />
                             </item>
                         </root>
                         """,
-            )
-            .indented(),
-        ),
-        *annotationDefinitions,
-      )
-      .run()
-      .expect(
-        """
+                    )
+                    .indented(),
+            ),
+            *annotationDefinitions,
+        )
+        .run()
+        .expect(
+            """
         src/test/pkg/Test.java:35: Warning: Statement must run from @UiThread, incompatible with earlier code that must run from @{Slow,WorkerThread} [UnsatisfiableThreadConstraint]
             uiMethod(); // OK
             ~~~~~~~~~~
@@ -450,19 +450,19 @@ src/test/pkg/Test.java:118: Error: Call must be from @{Slow,WorkerThread}, but a
                                          ~~~~~~~~~~~~~~~~~~
 19 errors, 7 warnings
                 """
-      )
+        )
   }
 
   private fun TestLintTask.setUp() =
-    issues(
-      IntellijInferredThreadDetector.THREAD,
-      IntellijInferredThreadDetector.UNSATISFIABLE_CONSTRAINT,
-    )
+      issues(
+          IntellijInferredThreadDetector.THREAD,
+          IntellijInferredThreadDetector.UNSATISFIABLE_CONSTRAINT,
+      )
 
   private val annotationDefinitions =
-    arrayOf(
-      java(
-          """
+      arrayOf(
+          java(
+                  """
                     package com.android.annotations.concurrency;
 
                     import java.lang.annotation.Documented;
@@ -476,10 +476,10 @@ src/test/pkg/Test.java:118: Error: Call must be from @{Slow,WorkerThread}, but a
                     @Target(ElementType.METHOD)
                     public @interface Slow {}
                 """
-        )
-        .indented(),
-      java(
-          """
+              )
+              .indented(),
+          java(
+                  """
                     package com.android.annotations.concurrency;
 
                     import java.lang.annotation.Documented;
@@ -493,10 +493,10 @@ src/test/pkg/Test.java:118: Error: Call must be from @{Slow,WorkerThread}, but a
                     @Target(ElementType.METHOD)
                     public @interface UiThread {}
                 """
-        )
-        .indented(),
-      java(
-          """
+              )
+              .indented(),
+          java(
+                  """
                     package com.android.annotations.concurrency;
 
                     import java.lang.annotation.Documented;
@@ -510,10 +510,10 @@ src/test/pkg/Test.java:118: Error: Call must be from @{Slow,WorkerThread}, but a
                     @Target({ElementType.METHOD, ElementType.CONSTRUCTOR})
                     public @interface AnyThread {}
                 """
-        )
-        .indented(),
-      java(
-          """
+              )
+              .indented(),
+          java(
+                  """
                     package com.android.annotations.concurrency;
 
                     import java.lang.annotation.Documented;
@@ -527,17 +527,17 @@ src/test/pkg/Test.java:118: Error: Call must be from @{Slow,WorkerThread}, but a
                     @Target({ElementType.METHOD, ElementType.CONSTRUCTOR, ElementType.TYPE})
                     public @interface WorkerThread {}
                 """
-        )
-        .indented(),
-    )
+              )
+              .indented(),
+      )
 
   @Test
   fun testBaseAssumptions() {
     studioLint()
-      .setUp()
-      .files(
-        java(
-            """
+        .setUp()
+        .files(
+            java(
+                    """
                     package test.pkg;
                     import com.android.annotations.concurrency.AnyThread;
                     import com.android.annotations.concurrency.Slow;
@@ -558,55 +558,55 @@ src/test/pkg/Test.java:118: Error: Call must be from @{Slow,WorkerThread}, but a
                         }
                     }
                 """
-          )
-          .indented(),
-        java(
-            """
+                )
+                .indented(),
+            java(
+                    """
             package com.intellij.openapi.application;
 
             public class Application {
                 public void invokeLater(Runnable run) { }
             }
           """
-          )
-          .indented(),
-        java(
-            """
-            package java.util.function;
+                )
+                .indented(),
+            java(
+                    """
+                    package java.util.function;
 
-            public interface Consumer<T> {
-                void accept(T t);
-            }
-          """
-              .trimIndent()
-          )
-          .indented(),
-        java(
-            """
-            package java.util.stream;
-            import java.util.function.Consumer;
+                    public interface Consumer<T> {
+                        void accept(T t);
+                    }
+                    """
+                        .trimIndent()
+                )
+                .indented(),
+            java(
+                    """
+                    package java.util.stream;
+                    import java.util.function.Consumer;
 
-            public interface Stream<T> {
-                void forEach(Consumer<? super T> action);
-            }
-          """
-              .trimIndent()
-          )
-          .indented(),
-        *annotationDefinitions,
-      )
-      .run()
-      .expect(
-        """
-          src/test/pkg/Test.java:12: Error: Argument at x₀ must allow calling run() from @UiThread, but that call is requiring @{Slow,WorkerThread}. [WrongThread]
-                  app.invokeLater(() -> slow());
-                      ~~~~~~~~~~~~~~~~~~~~~~~~~
-          src/test/pkg/Test.java:17: Error: Call must be from @{Slow,WorkerThread}, but context is allowing @UiThread [WrongThread]
-                  s.forEach((x) -> slow());
-                    ~~~~~~~~~~~~~~~~~~~~~~
-          2 errors
-        """
-          .trimIndent()
-      )
+                    public interface Stream<T> {
+                        void forEach(Consumer<? super T> action);
+                    }
+                    """
+                        .trimIndent()
+                )
+                .indented(),
+            *annotationDefinitions,
+        )
+        .run()
+        .expect(
+            """
+            src/test/pkg/Test.java:12: Error: Argument at x₀ must allow calling run() from @UiThread, but that call is requiring @{Slow,WorkerThread}. [WrongThread]
+                    app.invokeLater(() -> slow());
+                        ~~~~~~~~~~~~~~~~~~~~~~~~~
+            src/test/pkg/Test.java:17: Error: Call must be from @{Slow,WorkerThread}, but context is allowing @UiThread [WrongThread]
+                    s.forEach((x) -> slow());
+                      ~~~~~~~~~~~~~~~~~~~~~~
+            2 errors
+            """
+                .trimIndent()
+        )
   }
 }

@@ -61,13 +61,11 @@ import org.w3c.dom.Document
 /**
  * Ensures that the comparator for the given comparable [list], the comparison is transitive.
  *
- * (Note: This is inefficient (n^3) so is only meant for tests to do some basic validation of
- * comparison operators. As an example, the ApiClassTest takes 100 randomly chosen elements from the
- * large list and checks those, with a different seed each time.)
+ * (Note: This is inefficient (n^3) so is only meant for tests to do some basic validation of comparison operators. As an example, the
+ * ApiClassTest takes 100 randomly chosen elements from the large list and checks those, with a different seed each time.)
  *
- * TODO: See
- *   https://r8-review.googlesource.com/c/r8/+/60142/1/src/main/java/com/android/tools/r8/utils/ListUtils.java#225
- *   for an O(n^2) implementation
+ * TODO: See https://r8-review.googlesource.com/c/r8/+/60142/1/src/main/java/com/android/tools/r8/utils/ListUtils.java#225 for an O(n^2)
+ *   implementation
  */
 fun <T : Comparable<T>> checkTransitiveComparator(list: List<T>) {
   // TODO: Consider caching the comparisons of all the pairs in the list
@@ -98,9 +96,7 @@ fun <T : Comparable<T>> checkTransitiveComparator(list: List<T>) {
           }
         } else if (a == b) {
           if (c != 0) {
-            fail(
-              "\nEquality not transitive: Not true that x == y and y == z, then x = y for x = $x, y = $y, z = $z\n"
-            )
+            fail("\nEquality not transitive: Not true that x == y and y == z, then x = y for x = $x, y = $y, z = $z\n")
           }
         } else if (a != 0) {
           if (c != a) {
@@ -113,9 +109,7 @@ fun <T : Comparable<T>> checkTransitiveComparator(list: List<T>) {
           }
         } else if (b != 0) {
           if (c != b) {
-            fail(
-              "\nEither\n  x == y && y < z => x < z\nor\n  x == y && y > z => x > z\nis not true for x = $x, y = $y, z = $z"
-            )
+            fail("\nEither\n  x == y && y < z => x < z\nor\n  x == y && y > z => x > z\nis not true for x = $x, y = $y, z = $z")
             if (!(x == y && y < z && x < z)) {
               fail("Not true that when x == y and y < z, then x < z for x = $x, y = $y, z = $z\n")
             } else {
@@ -142,10 +136,10 @@ fun <T> checkTransitiveComparator(list: List<T>, comparator: Comparator<T>) {
 }
 
 private class JavaTestContext(
-  driver: LintDriver,
-  project: Project,
-  private val javaSource: String,
-  file: File,
+    driver: LintDriver,
+    project: Project,
+    private val javaSource: String,
+    file: File,
 ) : JavaContext(driver, project, null, file) {
 
   override fun getContents(): String {
@@ -154,12 +148,12 @@ private class JavaTestContext(
 }
 
 private class XmlTestContext(
-  driver: LintDriver,
-  project: Project,
-  private val xmlSource: String,
-  file: File,
-  type: ResourceFolderType,
-  document: Document,
+    driver: LintDriver,
+    project: Project,
+    private val xmlSource: String,
+    file: File,
+    type: ResourceFolderType,
+    document: Document,
 ) : XmlContext(driver, project, null, file, type, xmlSource, document) {
   override fun getContents(): String {
     return xmlSource
@@ -181,79 +175,79 @@ fun createXmlContext(@Language("XML") xml: String, relativePath: File): XmlConte
 }
 
 private fun createTestProjectForFiles(
-  dir: File,
-  sourcesMap: Map<File, String>,
-  libs: List<File> = emptyList(),
-  library: Boolean = false,
-  android: Boolean = true,
-  javaLanguageLevel: LanguageLevel? = null,
-  kotlinLanguageLevel: LanguageVersionSettings? = null,
-  sdkHome: File? = null,
+    dir: File,
+    sourcesMap: Map<File, String>,
+    libs: List<File> = emptyList(),
+    library: Boolean = false,
+    android: Boolean = true,
+    javaLanguageLevel: LanguageLevel? = null,
+    kotlinLanguageLevel: LanguageVersionSettings? = null,
+    sdkHome: File? = null,
 ): Project {
   val includeKotlinStdlib = dir.walkBottomUp().any { it.path.endsWith(DOT_KT) }
   val client =
-    object : LintCliClient(CLIENT_UNIT_TESTS) {
-      override fun readFile(file: File): CharSequence {
-        return sourcesMap[file] ?: super.readFile(file)
-      }
-
-      override fun getCompileTarget(project: Project): IAndroidTarget? {
-        val targets = getTargets()
-        for (i in targets.indices.reversed()) {
-          val target = targets[i]
-          if (target.isPlatform) {
-            return target
-          }
+      object : LintCliClient(CLIENT_UNIT_TESTS) {
+        override fun readFile(file: File): CharSequence {
+          return sourcesMap[file] ?: super.readFile(file)
         }
 
-        return super.getCompileTarget(project)
-      }
-
-      override fun getSdkHome(): File? {
-        return sdkHome
-      }
-
-      override fun getJavaLanguageLevel(project: Project): LanguageLevel {
-        if (javaLanguageLevel != null) {
-          return javaLanguageLevel
-        }
-        return super.getJavaLanguageLevel(project)
-      }
-
-      override fun getKotlinLanguageLevel(project: Project): LanguageVersionSettings {
-        if (kotlinLanguageLevel != null) {
-          return kotlinLanguageLevel
-        }
-        return super.getKotlinLanguageLevel(project)
-      }
-
-      override fun getJavaLibraries(project: Project, includeProvided: Boolean): List<File> {
-        val kotlinStdlib = if (includeKotlinStdlib) findKotlinStdlibPath() else emptyList()
-        return super.getJavaLibraries(project, includeProvided) + libs + kotlinStdlib
-      }
-
-      override fun getJavaSourceFolders(project: Project): List<File> {
-        // Include the top-level dir as a source root, so Java references are resolved.
-        return super.getJavaSourceFolders(project) + dir
-      }
-
-      override fun createProject(dir: File, referenceDir: File): Project {
-        val clone = super.createProject(dir, referenceDir)
-        val p =
-          object : TestLintClient.TestProject(this, dir, referenceDir, null, null) {
-            override fun isLibrary(): Boolean {
-              return library
-            }
-
-            override fun isAndroidProject(): Boolean {
-              return android
+        override fun getCompileTarget(project: Project): IAndroidTarget? {
+          val targets = getTargets()
+          for (i in targets.indices.reversed()) {
+            val target = targets[i]
+            if (target.isPlatform) {
+              return target
             }
           }
-        clone.buildTargetHash?.let { p.buildTargetHash = it }
-        clone.ideaProject?.let { p.ideaProject = it }
-        return p
+
+          return super.getCompileTarget(project)
+        }
+
+        override fun getSdkHome(): File? {
+          return sdkHome
+        }
+
+        override fun getJavaLanguageLevel(project: Project): LanguageLevel {
+          if (javaLanguageLevel != null) {
+            return javaLanguageLevel
+          }
+          return super.getJavaLanguageLevel(project)
+        }
+
+        override fun getKotlinLanguageLevel(project: Project): LanguageVersionSettings {
+          if (kotlinLanguageLevel != null) {
+            return kotlinLanguageLevel
+          }
+          return super.getKotlinLanguageLevel(project)
+        }
+
+        override fun getJavaLibraries(project: Project, includeProvided: Boolean): List<File> {
+          val kotlinStdlib = if (includeKotlinStdlib) findKotlinStdlibPath() else emptyList()
+          return super.getJavaLibraries(project, includeProvided) + libs + kotlinStdlib
+        }
+
+        override fun getJavaSourceFolders(project: Project): List<File> {
+          // Include the top-level dir as a source root, so Java references are resolved.
+          return super.getJavaSourceFolders(project) + dir
+        }
+
+        override fun createProject(dir: File, referenceDir: File): Project {
+          val clone = super.createProject(dir, referenceDir)
+          val p =
+              object : TestLintClient.TestProject(this, dir, referenceDir, null, null) {
+                override fun isLibrary(): Boolean {
+                  return library
+                }
+
+                override fun isAndroidProject(): Boolean {
+                  return android
+                }
+              }
+          clone.buildTargetHash?.let { p.buildTargetHash = it }
+          clone.ideaProject?.let { p.ideaProject = it }
+          return p
+        }
       }
-    }
 
   val project = client.getProject(dir, dir)
   client.initializeProjects(null, listOf(project))
@@ -261,38 +255,36 @@ private fun createTestProjectForFiles(
 }
 
 fun parseFirst(
-  javaLanguageLevel: LanguageLevel? = null,
-  kotlinLanguageLevel: LanguageVersionSettings? = null,
-  library: Boolean = false,
-  android: Boolean = true,
-  temporaryFolder: TemporaryFolder,
-  sdkHome: File? = null,
-  vararg testFiles: TestFile = emptyArray(),
+    javaLanguageLevel: LanguageLevel? = null,
+    kotlinLanguageLevel: LanguageVersionSettings? = null,
+    library: Boolean = false,
+    android: Boolean = true,
+    temporaryFolder: TemporaryFolder,
+    sdkHome: File? = null,
+    vararg testFiles: TestFile = emptyArray(),
 ): Pair<JavaContext, Disposable> {
   val (contexts, disposable) =
-    parse(
-      javaLanguageLevel,
-      kotlinLanguageLevel,
-      library,
-      sdkHome,
-      android,
-      temporaryFolder,
-      *testFiles,
-    )
-  val first =
-    contexts.firstOrNull { it.file.path.portablePath().endsWith(testFiles[0].targetRelativePath) }
-      ?: contexts.first()
+      parse(
+          javaLanguageLevel,
+          kotlinLanguageLevel,
+          library,
+          sdkHome,
+          android,
+          temporaryFolder,
+          *testFiles,
+      )
+  val first = contexts.firstOrNull { it.file.path.portablePath().endsWith(testFiles[0].targetRelativePath) } ?: contexts.first()
   return Pair(first, disposable)
 }
 
 fun parse(
-  javaLanguageLevel: LanguageLevel? = null,
-  kotlinLanguageLevel: LanguageVersionSettings? = null,
-  library: Boolean = false,
-  sdkHome: File? = null,
-  android: Boolean = sdkHome != null,
-  temporaryFolder: TemporaryFolder,
-  vararg testFiles: TestFile,
+    javaLanguageLevel: LanguageLevel? = null,
+    kotlinLanguageLevel: LanguageVersionSettings? = null,
+    library: Boolean = false,
+    sdkHome: File? = null,
+    android: Boolean = sdkHome != null,
+    temporaryFolder: TemporaryFolder,
+    vararg testFiles: TestFile,
 ): Pair<List<JavaContext>, Disposable> {
   val dir = temporaryFolder.newFolder()
   val projects = TestLintTask().files(*testFiles).createProjects(dir)
@@ -300,26 +292,26 @@ fun parse(
 }
 
 fun parse(
-  dir: File,
-  javaLanguageLevel: LanguageLevel? = null,
-  kotlinLanguageLevel: LanguageVersionSettings? = null,
-  library: Boolean = false,
-  sdkHome: File? = null,
-  android: Boolean = sdkHome != null,
-  sourceOverride: Map<File, String> = emptyMap(),
-  extraLibs: List<File> = emptyList(),
+    dir: File,
+    javaLanguageLevel: LanguageLevel? = null,
+    kotlinLanguageLevel: LanguageVersionSettings? = null,
+    library: Boolean = false,
+    sdkHome: File? = null,
+    android: Boolean = sdkHome != null,
+    sourceOverride: Map<File, String> = emptyMap(),
+    extraLibs: List<File> = emptyList(),
 ): Pair<List<JavaContext>, Disposable> {
   val project =
-    createTestProjectForFiles(
-      dir,
-      sourceOverride,
-      extraLibs,
-      library,
-      android,
-      javaLanguageLevel,
-      kotlinLanguageLevel,
-      sdkHome,
-    )
+      createTestProjectForFiles(
+          dir,
+          sourceOverride,
+          extraLibs,
+          library,
+          android,
+          javaLanguageLevel,
+          kotlinLanguageLevel,
+          sdkHome,
+      )
   val client = project.client as LintCliClient
   val request = LintRequest(client, sourceOverride.keys.toList())
   val driver = LintDriver(TestIssueRegistry(), client, request)
@@ -328,19 +320,17 @@ fun parse(
   val uastParser = client.getUastParser(project)
   TestCase.assertNotNull(uastParser)
   val contexts =
-    dir
-      .walk()
-      .mapNotNull { file ->
-        if (file.path.endsWith(DOT_KT) || file.path.endsWith(DOT_JAVA)) {
-          val context: JavaContext =
-            JavaTestContext(driver, project, sourceOverride[file] ?: file.readText(), file)
-          context.uastParser = uastParser
-          context
-        } else {
-          null
-        }
-      }
-      .toList()
+      dir.walk()
+          .mapNotNull { file ->
+            if (file.path.endsWith(DOT_KT) || file.path.endsWith(DOT_JAVA)) {
+              val context: JavaContext = JavaTestContext(driver, project, sourceOverride[file] ?: file.readText(), file)
+              context.uastParser = uastParser
+              context
+            } else {
+              null
+            }
+          }
+          .toList()
   uastParser.prepare(contexts)
   contexts.forEach { context ->
     val uFile = uastParser.parse(context)
@@ -354,19 +344,18 @@ fun parse(
 }
 
 fun List<TestFile>.use(
-  temporaryFolder: TemporaryFolder? = null,
-  sdkHome: File? = null,
-  block: (JavaContext) -> Unit,
+    temporaryFolder: TemporaryFolder? = null,
+    sdkHome: File? = null,
+    block: (JavaContext) -> Unit,
 ) {
   var dir: Path? = null
   val folder =
-    temporaryFolder
-      ?: run {
-        dir = Files.createTempDirectory("lint-test")
-        TemporaryFolder(dir?.toFile()).apply { create() }
-      }
-  val (context, disposable) =
-    parseFirst(null, null, false, sdkHome != null, folder, sdkHome, *this.toTypedArray())
+      temporaryFolder
+          ?: run {
+            dir = Files.createTempDirectory("lint-test")
+            TemporaryFolder(dir?.toFile()).apply { create() }
+          }
+  val (context, disposable) = parseFirst(null, null, false, sdkHome != null, folder, sdkHome, *this.toTypedArray())
   try {
     block(context)
   } finally {
@@ -376,12 +365,10 @@ fun List<TestFile>.use(
 }
 
 /**
- * Converts a String produced on Windows (possibly containing CRLF line separators, containing paths
- * using Windows file and path separators and so on) to the corresponding Unix style string. Unless
- * [indiscriminate] is set to true, this method will attempt to be smart in a few cases such that it
- * understands from context whether a semicolon (for example) is likely to be used in an XML snippet
- * as an entity terminator instead of a path separator, whether a \\ is likely to be used in a path
- * as opposed to a string escape, and so on.
+ * Converts a String produced on Windows (possibly containing CRLF line separators, containing paths using Windows file and path separators
+ * and so on) to the corresponding Unix style string. Unless [indiscriminate] is set to true, this method will attempt to be smart in a few
+ * cases such that it understands from context whether a semicolon (for example) is likely to be used in an XML snippet as an entity
+ * terminator instead of a path separator, whether a \\ is likely to be used in a path as opposed to a string escape, and so on.
  */
 @JvmOverloads
 fun String.dos2unix(indiscriminate: Boolean = false): String {
@@ -397,11 +384,11 @@ fun String.dos2unix(indiscriminate: Boolean = false): String {
       '\r' -> continue
       '\\' -> sb.append('/')
       ';' ->
-        if (isLikelyPathSeparator(this, i)) {
-          sb.append(':')
-        } else {
-          sb.append(';')
-        }
+          if (isLikelyPathSeparator(this, i)) {
+            sb.append(':')
+          } else {
+            sb.append(';')
+          }
       else -> sb.append(c)
     }
   }
@@ -420,9 +407,9 @@ fun String.portablePath(): String {
 }
 
 /**
- * Given the location of a semicolon in a String, guess whether the semicolon represents a path
- * separator, as in "src\main\java;src\main\kotlin", as opposed to something else such as "this is
- * &quot;some text&quot;" or semicolon usage in an error message text.
+ * Given the location of a semicolon in a String, guess whether the semicolon represents a path separator, as in
+ * "src\main\java;src\main\kotlin", as opposed to something else such as "this is &quot;some text&quot;" or semicolon usage in an error
+ * message text.
  */
 private fun isLikelyPathSeparator(s: String, index: Int): Boolean {
   if (index == 0) {
@@ -436,10 +423,10 @@ private fun isLikelyPathSeparator(s: String, index: Int): Boolean {
   if (index < s.length - 1) {
     val next = s[index + 1]
     if (
-      next.isWhitespace() ||
-        next == '"' ||
-        // background: url(data:image/png:base64,...
-        next == 'b' && s.regionMatches(index + 1, "base64", 0, 6)
+        next.isWhitespace() ||
+            next == '"' ||
+            // background: url(data:image/png:base64,...
+            next == 'b' && s.regionMatches(index + 1, "base64", 0, 6)
     ) {
       return false
     }
@@ -450,9 +437,7 @@ private fun isLikelyPathSeparator(s: String, index: Int): Boolean {
     val c = s[j]
     if (c == '&') {
       return false
-    } else if (
-      !c.isLetterOrDigit() && c != '#'
-    ) { // entities can look like &quot; or &xA; or &#9029;
+    } else if (!c.isLetterOrDigit() && c != '#') { // entities can look like &quot; or &xA; or &#9029;
       break
     }
   }
@@ -461,18 +446,16 @@ private fun isLikelyPathSeparator(s: String, index: Int): Boolean {
 }
 
 /**
- * Runs lint on a tree of sources. This will recursively look for Java and Kotlin files
- * (configurable via the [accept] parameter, and optionally filtered out via the [ignore] parameter
- * which omits dot directories and paths mentioning "test" by default), batch them into groups of at
- * most [bucketSize] files, and then run lint on those files (where the lint task which configures
- * the issues to analyze etc is constructed via the [lintFactory] lambda parameter), and finally
- * asserts that the output is as [expected].
+ * Runs lint on a tree of sources. This will recursively look for Java and Kotlin files (configurable via the [accept] parameter, and
+ * optionally filtered out via the [ignore] parameter which omits dot directories and paths mentioning "test" by default), batch them into
+ * groups of at most [bucketSize] files, and then run lint on those files (where the lint task which configures the issues to analyze etc is
+ * constructed via the [lintFactory] lambda parameter), and finally asserts that the output is as [expected].
  *
- * This is used to search larger project trees for false positives, where you don't have some easy
- * other way to run your lint check on those project trees.
+ * This is used to search larger project trees for false positives, where you don't have some easy other way to run your lint check on those
+ * project trees.
  *
- * For example, to run lint on a new check called `MyDetector` in the directory tree `/my/src` to
- * see what it finds, from `MyDetectorTest` I can use
+ * For example, to run lint on a new check called `MyDetector` in the directory tree `/my/src` to see what it finds, from `MyDetectorTest` I
+ * can use
  *
  * ```
  * runOnSources(
@@ -481,39 +464,35 @@ private fun isLikelyPathSeparator(s: String, index: Int): Boolean {
  * )
  * ```
  *
- * (Consider passing `verbose = true` too to get progress printed along the way if it's a large
- * source tree.)
+ * (Consider passing `verbose = true` too to get progress printed along the way if it's a large source tree.)
  */
 @Suppress("LintDocExample")
 fun runOnSources(
-  dir: File,
-  lintFactory: () -> TestLintTask,
-  expected: String = "",
-  accept: (File) -> Boolean = {
-    it.isFile &&
-      (it.path.endsWith(DOT_KT) ||
-        it.path.endsWith(DOT_JAVA) &&
-          !it.path.endsWith("module-info.java") &&
-          !it.endsWith("package-info.java"))
-  },
-  ignore: (File) -> Boolean = {
-    val path = it.path.portablePath()
-    path.contains("/.") || path.contains("/test")
-  },
-  bucketSize: Int = 500,
-  absolutePaths: Boolean = currentPlatform() != PLATFORM_WINDOWS,
-  testModes: List<TestMode> = listOf(TestMode.DEFAULT),
-  verbose: Boolean = false,
-  expectFixDiffs: String? = null,
-  applyFixes: ((Incident, List<LintFix>) -> LintFix?)? = null,
+    dir: File,
+    lintFactory: () -> TestLintTask,
+    expected: String = "",
+    accept: (File) -> Boolean = {
+      it.isFile &&
+          (it.path.endsWith(DOT_KT) ||
+              it.path.endsWith(DOT_JAVA) && !it.path.endsWith("module-info.java") && !it.endsWith("package-info.java"))
+    },
+    ignore: (File) -> Boolean = {
+      val path = it.path.portablePath()
+      path.contains("/.") || path.contains("/test")
+    },
+    bucketSize: Int = 500,
+    absolutePaths: Boolean = currentPlatform() != PLATFORM_WINDOWS,
+    testModes: List<TestMode> = listOf(TestMode.DEFAULT),
+    verbose: Boolean = false,
+    expectFixDiffs: String? = null,
+    applyFixes: ((Incident, List<LintFix>) -> LintFix?)? = null,
 ) {
   if (applyFixes != null && !absolutePaths) {
     error("applyFixes = true requires absolutePaths = true")
   }
   val seen = HashSet<String>()
   val root = dir.canonicalFile
-  val sourceFiles =
-    root.walkTopDown().filter { !ignore(it) && accept(it) }.sortedBy { it.path }.toList()
+  val sourceFiles = root.walkTopDown().filter { !ignore(it) && accept(it) }.sortedBy { it.path }.toList()
   val sb = StringBuilder()
   val fixSb = StringBuilder()
   val buckets = sourceFiles.size / bucketSize
@@ -521,40 +500,39 @@ fun runOnSources(
     val from = i * bucketSize
     val to = min(sourceFiles.size, (i + 1) * bucketSize)
     val files =
-      sourceFiles.subList(from, to).mapNotNull {
-        val source = it.readText()
-        val path = it.path
-        var keep = true
-        if (path.endsWith(DOT_KT) || path.endsWith(DOT_JAVA)) {
-          try {
-            val className = ClassName(source, path.substring(path.lastIndexOf('.')))
-            if (className.className != null) {
-              val key = className.packageName + className.className
-              if (!seen.add(key)) {
-                keep = false
+        sourceFiles.subList(from, to).mapNotNull {
+          val source = it.readText()
+          val path = it.path
+          var keep = true
+          if (path.endsWith(DOT_KT) || path.endsWith(DOT_JAVA)) {
+            try {
+              val className = ClassName(source, path.substring(path.lastIndexOf('.')))
+              if (className.className != null) {
+                val key = className.packageName + className.className
+                if (!seen.add(key)) {
+                  keep = false
+                }
               }
+            } catch (e: Throwable) {
+              keep = false
             }
-          } catch (e: Throwable) {
-            keep = false
+          }
+          if (keep) {
+            val srcPath =
+                if (absolutePaths) "src/$path"
+                else
+                    path.removePrefix(root.path).removePrefix(File.separator).portablePath().let { path ->
+                      // Make sure we place relative paths within src/, otherwise they won't be
+                      // treated as Kotlin/Java sources in the test project!
+                      if (!path.startsWith("src/")) "src/$path" else path
+                    }
+
+            if (srcPath.endsWith(DOT_KT)) kotlin(srcPath, source)
+            else if (srcPath.endsWith(DOT_JAVA)) java(srcPath, source) else if (srcPath.endsWith(DOT_XML)) xml(srcPath, source) else null
+          } else {
+            null
           }
         }
-        if (keep) {
-          val srcPath =
-            if (absolutePaths) "src/$path"
-            else
-              path.removePrefix(root.path).removePrefix(File.separator).portablePath().let { path ->
-                // Make sure we place relative paths within src/, otherwise they won't be
-                // treated as Kotlin/Java sources in the test project!
-                if (!path.startsWith("src/")) "src/$path" else path
-              }
-
-          if (srcPath.endsWith(DOT_KT)) kotlin(srcPath, source)
-          else if (srcPath.endsWith(DOT_JAVA)) java(srcPath, source)
-          else if (srcPath.endsWith(DOT_XML)) xml(srcPath, source) else null
-        } else {
-          null
-        }
-      }
     if (files.isEmpty()) {
       break
     }
@@ -563,56 +541,56 @@ fun runOnSources(
     try {
       if (verbose) {
         println(
-          "Analyzing ${files.size} files, first file is ${files[0].targetRelativePath.removePrefix("src/")}, " +
-            "last is ${files[files.size - 1].targetRelativePath.removePrefix("src/")}"
+            "Analyzing ${files.size} files, first file is ${files[0].targetRelativePath.removePrefix("src/")}, " +
+                "last is ${files[files.size - 1].targetRelativePath.removePrefix("src/")}"
         )
       }
       result =
-        lintFactory()
-          .files(*(files.toTypedArray()))
-          .testModes(*testModes.toTypedArray())
-          .allowCompilationErrors()
-          .allowAbsolutePathsInMessages(absolutePaths)
-          .run()
+          lintFactory()
+              .files(*(files.toTypedArray()))
+              .testModes(*testModes.toTypedArray())
+              .allowCompilationErrors()
+              .allowAbsolutePathsInMessages(absolutePaths)
+              .run()
 
       result.expect(
-        "",
-        transformer = { report ->
-          if (report != "No warnings.") {
-            val cleaned =
-              if (absolutePaths) {
-                report.removePrefix("src").replace("\nsrc", "\n")
-              } else {
-                report.replace(root.path, "").replace(root.path.portablePath(), "")
+          "",
+          transformer = { report ->
+            if (report != "No warnings.") {
+              val cleaned =
+                  if (absolutePaths) {
+                    report.removePrefix("src").replace("\nsrc", "\n")
+                  } else {
+                    report.replace(root.path, "").replace(root.path.portablePath(), "")
+                  }
+              sb.append(cleaned).append("\n")
+              if (verbose) {
+                println("Partial:\n$cleaned\n")
               }
-            sb.append(cleaned).append("\n")
-            if (verbose) {
-              println("Partial:\n$cleaned\n")
             }
-          }
-          "" // such that we pass and continue
-        },
+            "" // such that we pass and continue
+          },
       )
 
       if (expectFixDiffs != null) {
         result
-          .verifyFixes(TestMode.DEFAULT)
-          .expectFixDiffs(
-            expected,
-            transformer = { report ->
-              val cleaned =
-                if (absolutePaths) {
-                  report.removePrefix("src").replace("\nsrc", "\n")
-                } else {
-                  report.replace(root.path, "").replace(root.path.portablePath(), "")
-                }
-              fixSb.append(cleaned).append("\n")
-              if (verbose) {
-                println("Partial:\n$cleaned\n")
-              }
-              "" // such that we pass and continue
-            },
-          )
+            .verifyFixes(TestMode.DEFAULT)
+            .expectFixDiffs(
+                expected,
+                transformer = { report ->
+                  val cleaned =
+                      if (absolutePaths) {
+                        report.removePrefix("src").replace("\nsrc", "\n")
+                      } else {
+                        report.replace(root.path, "").replace(root.path.portablePath(), "")
+                      }
+                  fixSb.append(cleaned).append("\n")
+                  if (verbose) {
+                    println("Partial:\n$cleaned\n")
+                  }
+                  "" // such that we pass and continue
+                },
+            )
       }
     } catch (ignore: Throwable) {
       // Gracefully handle parsing errors in some batches
@@ -624,9 +602,7 @@ fun runOnSources(
 
     if (applyFixes != null && result != null) {
       result.applyFixes(applyFixes) { project, file, bytes ->
-        val realFile =
-          if (project != null) File(file.path.removePrefix(project.dir.path).removePrefix("/src"))
-          else file
+        val realFile = if (project != null) File(file.path.removePrefix(project.dir.path).removePrefix("/src")) else file
         if (bytes == null) {
           realFile.delete()
         } else {

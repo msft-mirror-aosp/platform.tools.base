@@ -57,26 +57,25 @@ import org.jetbrains.uast.resolveToUElementOfType
  */
 class UElementAsPsiDetector : Detector(), SourceCodeScanner {
   companion object {
-    private val IMPLEMENTATION =
-      Implementation(UElementAsPsiDetector::class.java, Scope.JAVA_FILE_SCOPE)
+    private val IMPLEMENTATION = Implementation(UElementAsPsiDetector::class.java, Scope.JAVA_FILE_SCOPE)
 
     @JvmField
     val ISSUE =
-      Issue.create(
-        id = "UElementAsPsi",
-        briefDescription = "Avoid using UElement as PsiElement",
-        explanation =
-          """
+        Issue.create(
+            id = "UElementAsPsi",
+            briefDescription = "Avoid using UElement as PsiElement",
+            explanation =
+                """
             Avoid using UAST element as PSI element. \
             If you need to utilize PSI APIs, retrieve the underlying `javaPsi` explicitly. \
             If you need to analyze language-specific information, access `sourcePsi`.
           """,
-        category = CUSTOM_LINT_CHECKS,
-        priority = 4,
-        severity = Severity.WARNING,
-        implementation = IMPLEMENTATION,
-        platforms = JDK_SET,
-      )
+            category = CUSTOM_LINT_CHECKS,
+            priority = 4,
+            severity = Severity.WARNING,
+            implementation = IMPLEMENTATION,
+            platforms = JDK_SET,
+        )
 
     private const val MSG = "Do not use `UElement` as `PsiElement`"
 
@@ -84,32 +83,32 @@ class UElementAsPsiDetector : Detector(), SourceCodeScanner {
     private const val NOT_PSI_ELEMENT = -1
 
     private val ALLOWED_REDEFINITION =
-      setOf<String?>(
-        UDeclaration::class.java.name,
-        UClass::class.java.name,
-        UMethod::class.java.name,
-        UVariable::class.java.name,
-        UClassInitializer::class.java.name,
-      )
+        setOf<String?>(
+            UDeclaration::class.java.name,
+            UClass::class.java.name,
+            UMethod::class.java.name,
+            UVariable::class.java.name,
+            UClassInitializer::class.java.name,
+        )
 
     private val ALLOWED_PSI_TYPE =
-      setOf<String?>(
-        // Kotlin modifiers (e.g., inline, suspend, etc.) are quite unique.
-        // You may end up with passing common interface and then behave differently.
-        // One example is [JavaEvaluator#hasModifier], all of its usages in the evaluator,
-        // followed by all the usages in the detectors that check modifiers.
-        PsiModifierListOwner::class.java.name
-      )
+        setOf<String?>(
+            // Kotlin modifiers (e.g., inline, suspend, etc.) are quite unique.
+            // You may end up with passing common interface and then behave differently.
+            // One example is [JavaEvaluator#hasModifier], all of its usages in the evaluator,
+            // followed by all the usages in the detectors that check modifiers.
+            PsiModifierListOwner::class.java.name
+        )
   }
 
   override fun getApplicableUastTypes(): List<Class<out UElement>> =
-    listOf(
-      UBinaryExpression::class.java,
-      UBinaryExpressionWithType::class.java,
-      UCallExpression::class.java,
-      UVariable::class.java,
-      UReturnExpression::class.java,
-    )
+      listOf(
+          UBinaryExpression::class.java,
+          UBinaryExpressionWithType::class.java,
+          UCallExpression::class.java,
+          UVariable::class.java,
+          UReturnExpression::class.java,
+      )
 
   private var uElementType: PsiType = PsiTypes.voidType()
   private var psiElementType: PsiType = PsiTypes.voidType()
@@ -132,134 +131,111 @@ class UElementAsPsiDetector : Detector(), SourceCodeScanner {
   }
 
   override fun createUastHandler(context: JavaContext): UElementHandler =
-    object : UElementHandler() {
-      override fun visitBinaryExpression(node: UBinaryExpression) {
-        if (node.operator != UastBinaryOperator.ASSIGN) return
-        if (
-          getDimIfUElementType(node.rightOperand.getExpressionType()) ==
-            getDimIfPsiElementType(node.leftOperand.getExpressionType())
-        ) {
-          reportUsage(node.rightOperand)
+      object : UElementHandler() {
+        override fun visitBinaryExpression(node: UBinaryExpression) {
+          if (node.operator != UastBinaryOperator.ASSIGN) return
+          if (getDimIfUElementType(node.rightOperand.getExpressionType()) == getDimIfPsiElementType(node.leftOperand.getExpressionType())) {
+            reportUsage(node.rightOperand)
+          }
         }
-      }
 
-      override fun visitBinaryExpressionWithType(node: UBinaryExpressionWithType) {
-        if (
-          getDimIfUElementType(node.operand.getExpressionType()) ==
-            getDimIfPsiElementType(node.typeReference?.type)
-        ) {
-          reportUsage(node.operand)
+        override fun visitBinaryExpressionWithType(node: UBinaryExpressionWithType) {
+          if (getDimIfUElementType(node.operand.getExpressionType()) == getDimIfPsiElementType(node.typeReference?.type)) {
+            reportUsage(node.operand)
+          }
         }
-      }
 
-      override fun visitCallExpression(node: UCallExpression) {
-        checkReceiver(node)
-        checkArguments(node)
-      }
-
-      private fun checkReceiver(node: UCallExpression) {
-        if (getDimIfUElementType(node.receiverType) == NOT_UELEMENT) return
-        val psiMethod = node.resolve() ?: return
-        val containingClass = psiMethod.containingClass ?: return
-        if (containingClass.qualifiedName in ALLOWED_REDEFINITION) return
-        val superMethods = psiMethod.findSuperMethods()
-        if (
-          (isPsiElementClass(containingClass) ||
-            superMethods.any { isPsiElementClass(it.containingClass) }) &&
-            superMethods.none { it.containingClass?.qualifiedName in ALLOWED_REDEFINITION }
-        ) {
-          reportUsage(node)
-          return
+        override fun visitCallExpression(node: UCallExpression) {
+          checkReceiver(node)
+          checkArguments(node)
         }
-        val uMethod = node.resolveToUElementOfType<UMethod>() ?: return
-        val receiverType = uMethod.getReceiverType() ?: return
-        if (
-          !isAssignable(uElementType, receiverType) && isAssignable(psiElementType, receiverType)
-        ) {
-          reportUsage(node.receiver)
-        }
-      }
 
-      private fun UMethod.getReceiverType(): PsiType? {
-        val receiver = this.uastParameters.firstOrNull() ?: return null
-        return receiver.typeReference?.type
-      }
-
-      private fun checkArguments(node: UCallExpression) {
-        for (valueArgument in node.valueArguments) {
-          val param = node.getParameterForArgument(valueArgument)
+        private fun checkReceiver(node: UCallExpression) {
+          if (getDimIfUElementType(node.receiverType) == NOT_UELEMENT) return
+          val psiMethod = node.resolve() ?: return
+          val containingClass = psiMethod.containingClass ?: return
+          if (containingClass.qualifiedName in ALLOWED_REDEFINITION) return
+          val superMethods = psiMethod.findSuperMethods()
           if (
-            getDimIfPsiElementType(param?.type) ==
-              getDimIfUElementType(valueArgument.getExpressionType())
+              (isPsiElementClass(containingClass) || superMethods.any { isPsiElementClass(it.containingClass) }) &&
+                  superMethods.none { it.containingClass?.qualifiedName in ALLOWED_REDEFINITION }
           ) {
-            reportUsage(valueArgument)
+            reportUsage(node)
+            return
+          }
+          val uMethod = node.resolveToUElementOfType<UMethod>() ?: return
+          val receiverType = uMethod.getReceiverType() ?: return
+          if (!isAssignable(uElementType, receiverType) && isAssignable(psiElementType, receiverType)) {
+            reportUsage(node.receiver)
           }
         }
-      }
 
-      override fun visitVariable(node: UVariable) {
-        if (
-          getDimIfUElementType(node.uastInitializer?.getExpressionType()) ==
-            getDimIfPsiElementType(node.typeReference?.type)
-        ) {
-          reportUsage(node.uastInitializer)
+        private fun UMethod.getReceiverType(): PsiType? {
+          val receiver = this.uastParameters.firstOrNull() ?: return null
+          return receiver.typeReference?.type
         }
-      }
 
-      override fun visitReturnExpression(node: UReturnExpression) {
-        val expected =
-          when (val jt = node.jumpTarget) {
-            is UMethod -> jt.returnType
-            is ULambdaExpression -> jt.getExpressionType()
-            else -> return
+        private fun checkArguments(node: UCallExpression) {
+          for (valueArgument in node.valueArguments) {
+            val param = node.getParameterForArgument(valueArgument)
+            if (getDimIfPsiElementType(param?.type) == getDimIfUElementType(valueArgument.getExpressionType())) {
+              reportUsage(valueArgument)
+            }
           }
-        if (
-          getDimIfUElementType(node.returnExpression?.getExpressionType()) ==
-            getDimIfPsiElementType(expected)
-        ) {
-          reportUsage(node.returnExpression)
+        }
+
+        override fun visitVariable(node: UVariable) {
+          if (getDimIfUElementType(node.uastInitializer?.getExpressionType()) == getDimIfPsiElementType(node.typeReference?.type)) {
+            reportUsage(node.uastInitializer)
+          }
+        }
+
+        override fun visitReturnExpression(node: UReturnExpression) {
+          val expected =
+              when (val jt = node.jumpTarget) {
+                is UMethod -> jt.returnType
+                is ULambdaExpression -> jt.getExpressionType()
+                else -> return
+              }
+          if (getDimIfUElementType(node.returnExpression?.getExpressionType()) == getDimIfPsiElementType(expected)) {
+            reportUsage(node.returnExpression)
+          }
+        }
+
+        private fun getDimIfPsiElementType(type: PsiType?): Int {
+          val dim = type?.arrayDimensions ?: return NOT_PSI_ELEMENT
+          val componentType = type.deepComponentType
+          if (componentType.canonicalText in ALLOWED_PSI_TYPE) {
+            return NOT_PSI_ELEMENT
+          }
+          return if (
+              !isNullType(type) && isAssignable(psiElementType, componentType) && getDimIfUElementType(componentType) == NOT_UELEMENT
+          )
+              dim
+          else NOT_PSI_ELEMENT
+        }
+
+        private fun getDimIfUElementType(type: PsiType?): Int {
+          val dim = type?.arrayDimensions ?: return NOT_UELEMENT
+          val componentType = type.deepComponentType
+          if (componentType.canonicalText in ALLOWED_PSI_TYPE) {
+            return NOT_UELEMENT
+          }
+          return if (!isNullType(type) && isAssignable(uElementType, componentType)) dim else NOT_UELEMENT
+        }
+
+        private fun isPsiElementClass(cls: PsiClass?): Boolean {
+          if (cls == null) return false
+          val qualifiedName = cls.qualifiedName ?: return false
+          return getDimIfPsiElementType(PsiType.getTypeByName(qualifiedName, cls.project, cls.resolveScope)) != NOT_PSI_ELEMENT
+        }
+
+        private fun reportUsage(node: UElement?) {
+          val sourcePsi = node?.sourcePsi ?: return
+          if (!reportedElements.add(sourcePsi)) {
+            return
+          }
+          context.report(ISSUE, node, context.getLocation(node), MSG)
         }
       }
-
-      private fun getDimIfPsiElementType(type: PsiType?): Int {
-        val dim = type?.arrayDimensions ?: return NOT_PSI_ELEMENT
-        val componentType = type.deepComponentType
-        if (componentType.canonicalText in ALLOWED_PSI_TYPE) {
-          return NOT_PSI_ELEMENT
-        }
-        return if (
-          !isNullType(type) &&
-            isAssignable(psiElementType, componentType) &&
-            getDimIfUElementType(componentType) == NOT_UELEMENT
-        )
-          dim
-        else NOT_PSI_ELEMENT
-      }
-
-      private fun getDimIfUElementType(type: PsiType?): Int {
-        val dim = type?.arrayDimensions ?: return NOT_UELEMENT
-        val componentType = type.deepComponentType
-        if (componentType.canonicalText in ALLOWED_PSI_TYPE) {
-          return NOT_UELEMENT
-        }
-        return if (!isNullType(type) && isAssignable(uElementType, componentType)) dim
-        else NOT_UELEMENT
-      }
-
-      private fun isPsiElementClass(cls: PsiClass?): Boolean {
-        if (cls == null) return false
-        val qualifiedName = cls.qualifiedName ?: return false
-        return getDimIfPsiElementType(
-          PsiType.getTypeByName(qualifiedName, cls.project, cls.resolveScope)
-        ) != NOT_PSI_ELEMENT
-      }
-
-      private fun reportUsage(node: UElement?) {
-        val sourcePsi = node?.sourcePsi ?: return
-        if (!reportedElements.add(sourcePsi)) {
-          return
-        }
-        context.report(ISSUE, node, context.getLocation(node), MSG)
-      }
-    }
 }

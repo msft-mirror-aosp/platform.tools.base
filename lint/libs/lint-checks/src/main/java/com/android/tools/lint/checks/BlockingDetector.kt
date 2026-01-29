@@ -47,142 +47,130 @@ class BlockingDetector : JoinEffectDetector<BlockingDetector.Status>(statusLatti
   override val effectEncoder = Encoder.enum<Status>()
 
   override fun report(context: Context, error: Error<Status>) =
-    when (error) {
-      is Error.ExceedingAnnotation -> {
-        val callLabel =
-          when ((error.site.tryResolveUDeclaration() as? UMethod)?.isKtProperty()) {
-            true -> "Property call"
-            else -> "Call"
-          }
-        val message = "$callLabel blocks in a context not allowed to block"
-        context.report(mainIssue, context.locationOf(error.site), message)
-      }
-      is Error.FailingConstraint -> {
-        val call = error.site
-        val paramToArg =
-          when (val method = (call as? UCallExpression)?.resolveToUElement()) {
-            is UMethod -> {
-              val params = method.uastParameters
-              val receiver = call.receiver
-              buildMap {
-                if (receiver != null) put("this", receiver)
-                for ((x, v) in params zip call.valueArguments) {
-                  put((x.javaPsi as PsiParameter).name, v)
-                }
+      when (error) {
+        is Error.ExceedingAnnotation -> {
+          val callLabel =
+              when ((error.site.tryResolveUDeclaration() as? UMethod)?.isKtProperty()) {
+                true -> "Property call"
+                else -> "Call"
               }
-            }
-            else -> mapOf()
-          }
-        when (val constraints = error.constraints) {
-          null ->
-            context.report(
-              mainIssue,
-              context.locationOf(call),
-              "Call fails non-blocking requirements on arguments",
-            )
-          else -> {
-            assert(constraints.isNotEmpty())
-            val concreteReasons =
-              constraints.mapNotNull { failure ->
-                when (val arg = paramToArg[failure.invocation.chain.first]) {
-                  null -> null
-                  else -> arg to failure
-                }
-              }
-            when {
-              concreteReasons.isEmpty() -> {
-                val message =
-                  constraints.joinToString(" ") { (symCall, _, _) ->
-                    val (param, chain) = symCall.chain
-                    when {
-                      chain.size == 1 && chain.first().name == "invoke" ->
-                        "Argument at `$param` must not block, but does."
-                      else ->
-                        "Argument at `$param`'s calling `${chain.joinToString(".") {"${it.name}()"}}` must not block, but does."
+          val message = "$callLabel blocks in a context not allowed to block"
+          context.report(mainIssue, context.locationOf(error.site), message)
+        }
+        is Error.FailingConstraint -> {
+          val call = error.site
+          val paramToArg =
+              when (val method = (call as? UCallExpression)?.resolveToUElement()) {
+                is UMethod -> {
+                  val params = method.uastParameters
+                  val receiver = call.receiver
+                  buildMap {
+                    if (receiver != null) put("this", receiver)
+                    for ((x, v) in params zip call.valueArguments) {
+                      put((x.javaPsi as PsiParameter).name, v)
                     }
                   }
-                context.report(mainIssue, context.locationOf(call), message)
-              }
-              // If have concrete locations, report some, sloppily skipping some others (e.g. the
-              // receiver) for now.
-              else ->
-                for ((arg, failure) in concreteReasons) {
-                  val (symCall, _, _) = failure
-                  val (_, chain) = symCall.chain
-                  // Friendlier message for special cases
-                  val message =
-                    when {
-                      chain.size == 1 && chain.first().name == "invoke" ->
-                        "Argument must not block, but does"
-                      else ->
-                        "Argument's calling `${chain.joinToString(".") {"${it.name}()"}}` must not block, but does"
-                    }
-                  context.report(mainIssue, context.locationOf(arg), message)
                 }
-            }
-          }
-        }
-      }
-      is Error.ConflictingAnnotations -> {
-        val (self, bases) = error
-        val baseAnnotations =
-          bases.groupBy(keySelector = { it.annotated }, valueTransform = { it.origin as? UMethod })
-
-        fun <T> Iterable<T>.join(size: Int, format: (T) -> String): String = buildString {
-          for ((i, elem) in this@join.withIndex()) {
-            val sep =
+                else -> mapOf()
+              }
+          when (val constraints = error.constraints) {
+            null ->
+                context.report(
+                    mainIssue,
+                    context.locationOf(call),
+                    "Call fails non-blocking requirements on arguments",
+                )
+            else -> {
+              assert(constraints.isNotEmpty())
+              val concreteReasons =
+                  constraints.mapNotNull { failure ->
+                    when (val arg = paramToArg[failure.invocation.chain.first]) {
+                      null -> null
+                      else -> arg to failure
+                    }
+                  }
               when {
-                i == 0 -> ""
-                size > 1 && i == size - 1 -> ", and "
-                else -> ","
-              }
-            append("$sep${format(elem)}")
-          }
-        }
-
-        fun originStr(origins: List<UMethod?>): String {
-          val originStrs =
-            origins.mapNotNullTo(mutableListOf()) {
-              when (val baseName = it?.getContainingUClass()?.javaPsi?.name) {
-                null -> null
-                else -> "super method `$baseName.${it.name}(…)`"
+                concreteReasons.isEmpty() -> {
+                  val message =
+                      constraints.joinToString(" ") { (symCall, _, _) ->
+                        val (param, chain) = symCall.chain
+                        when {
+                          chain.size == 1 && chain.first().name == "invoke" -> "Argument at `$param` must not block, but does."
+                          else -> "Argument at `$param`'s calling `${chain.joinToString(".") {"${it.name}()"}}` must not block, but does."
+                        }
+                      }
+                  context.report(mainIssue, context.locationOf(call), message)
+                }
+                // If have concrete locations, report some, sloppily skipping some others (e.g. the
+                // receiver) for now.
+                else ->
+                    for ((arg, failure) in concreteReasons) {
+                      val (symCall, _, _) = failure
+                      val (_, chain) = symCall.chain
+                      // Friendlier message for special cases
+                      val message =
+                          when {
+                            chain.size == 1 && chain.first().name == "invoke" -> "Argument must not block, but does"
+                            else -> "Argument's calling `${chain.joinToString(".") {"${it.name}()"}}` must not block, but does"
+                          }
+                      context.report(mainIssue, context.locationOf(arg), message)
+                    }
               }
             }
-          if (null in origins) originStrs.add("a super method")
-          return originStrs.join(originStrs.size) { it }
+          }
         }
+        is Error.ConflictingAnnotations -> {
+          val (self, bases) = error
+          val baseAnnotations = bases.groupBy(keySelector = { it.annotated }, valueTransform = { it.origin as? UMethod })
 
-        val baseStr =
-          baseAnnotations.entries.join(baseAnnotations.size) { (ann, origins) ->
-            "$ann (from ${originStr(origins)})"
+          fun <T> Iterable<T>.join(size: Int, format: (T) -> String): String = buildString {
+            for ((i, elem) in this@join.withIndex()) {
+              val sep =
+                  when {
+                    i == 0 -> ""
+                    size > 1 && i == size - 1 -> ", and "
+                    else -> ","
+                  }
+              append("$sep${format(elem)}")
+            }
           }
 
-        context.report(
-          mainIssue,
-          context.locationOf(self.origin),
-          "${self.annotated} restricts $baseStr",
-        )
-      }
-      is Error.ConflictingInference -> {
-        val baseStr =
-          when (
-            val baseName =
-              (error.conflictingBase.origin as? UMethod)?.getContainingUClass()?.javaPsi?.name
-          ) {
-            null -> "a super method"
-            else -> "super method `$baseName.${error.conflictingBase.origin.name}(…)`"
+          fun originStr(origins: List<UMethod?>): String {
+            val originStrs =
+                origins.mapNotNullTo(mutableListOf()) {
+                  when (val baseName = it?.getContainingUClass()?.javaPsi?.name) {
+                    null -> null
+                    else -> "super method `$baseName.${it.name}(…)`"
+                  }
+                }
+            if (null in origins) originStrs.add("a super method")
+            return originStrs.join(originStrs.size) { it }
           }
 
-        val message = "Call must not block, as required by $baseStr"
-        context.report(mainIssue, context.locationOf(error.site), message)
-      }
-      // Reaching `⊤` is not an error for this problem
-      is Error.IntroducingTop,
-      is Error.CallingTop -> {}
-    }
+          val baseStr = baseAnnotations.entries.join(baseAnnotations.size) { (ann, origins) -> "$ann (from ${originStr(origins)})" }
 
-  private fun Context.locationOf(site: UElement) =
-    client.getUastParser(project).createLocation(site)
+          context.report(
+              mainIssue,
+              context.locationOf(self.origin),
+              "${self.annotated} restricts $baseStr",
+          )
+        }
+        is Error.ConflictingInference -> {
+          val baseStr =
+              when (val baseName = (error.conflictingBase.origin as? UMethod)?.getContainingUClass()?.javaPsi?.name) {
+                null -> "a super method"
+                else -> "super method `$baseName.${error.conflictingBase.origin.name}(…)`"
+              }
+
+          val message = "Call must not block, as required by $baseStr"
+          context.report(mainIssue, context.locationOf(error.site), message)
+        }
+        // Reaching `⊤` is not an error for this problem
+        is Error.IntroducingTop,
+        is Error.CallingTop -> {}
+      }
+
+  private fun Context.locationOf(site: UElement) = client.getUastParser(project).createLocation(site)
 
   override fun parseAnnotations(annotations: List<UAnnotation>): Status? {
     val anns = annotations.mapNotNull(::parse).distinct()
@@ -202,29 +190,28 @@ class BlockingDetector : JoinEffectDetector<BlockingDetector.Status>(statusLatti
   }
 
   override fun parseMethodImmediateAnnotations(evaluator: JavaEvaluator, method: UMethod) =
-    parseAnnotations(evaluator.getAnnotations(method.javaPsi, false))
+      parseAnnotations(evaluator.getAnnotations(method.javaPsi, false))
 
   override fun resolveAnnotations(
-    context: JavaContext,
-    targetAnn: EffectAnnotation.Explicit<Status>,
-    baseAnns: List<EffectAnnotation.Explicit<Status>>,
+      context: JavaContext,
+      targetAnn: EffectAnnotation.Explicit<Status>,
+      baseAnns: List<EffectAnnotation.Explicit<Status>>,
   ): EffectAnnotation.Explicit<Status> =
-    targetAnn.also {
-      val conflicts =
-        baseAnns.filter { !(statusLattice.precede(targetAnn.annotated, it.annotated)) }
-      if (conflicts.isNotEmpty()) {
-        report(context, Error.ConflictingAnnotations(targetAnn, conflicts))
+      targetAnn.also {
+        val conflicts = baseAnns.filter { !(statusLattice.precede(targetAnn.annotated, it.annotated)) }
+        if (conflicts.isNotEmpty()) {
+          report(context, Error.ConflictingAnnotations(targetAnn, conflicts))
+        }
       }
-    }
 
   override fun inheritAnnotations(
-    evaluator: JavaEvaluator,
-    baseAnns: List<EffectAnnotation.Explicit<Status>>,
+      evaluator: JavaEvaluator,
+      baseAnns: List<EffectAnnotation.Explicit<Status>>,
   ): EffectAnnotation.Implicit<Status> =
-    when {
-      baseAnns.isEmpty() -> EffectAnnotation.None
-      else -> EffectAnnotation.Implicit(baseAnns)
-    }
+      when {
+        baseAnns.isEmpty() -> EffectAnnotation.None
+        else -> EffectAnnotation.Implicit(baseAnns)
+      }
 
   enum class Status {
     DefinitelyNonBlocking,
@@ -244,35 +231,35 @@ class BlockingDetector : JoinEffectDetector<BlockingDetector.Status>(statusLatti
     // DefinitelyNonBlocking ⊑ MaybeBlocking ⊑ Unsat
     // Technically we only care about the first 2 values.
     val statusLattice =
-      object : Lattice<Status> {
-        override val bottom = Status.DefinitelyNonBlocking
-        override val top = Status.Unsat
+        object : Lattice<Status> {
+          override val bottom = Status.DefinitelyNonBlocking
+          override val top = Status.Unsat
 
-        override fun precede(first: Status, second: Status) = first <= second
+          override fun precede(first: Status, second: Status) = first <= second
 
-        override fun joinOf(first: Status, second: Status) = maxOf(first, second)
+          override fun joinOf(first: Status, second: Status) = maxOf(first, second)
 
-        override fun meetOf(first: Status, second: Status) = minOf(first, second)
-      }
+          override fun meetOf(first: Status, second: Status) = minOf(first, second)
+        }
 
     private val Impl = Implementation(BlockingDetector::class.java, Scope.JAVA_FILE_SCOPE)
 
     @JvmField
     val ISSUE =
-      Issue.create(
-        id = "BlockingMethod",
-        briefDescription = "Blocking Method",
-        explanation =
-          """
+        Issue.create(
+            id = "BlockingMethod",
+            briefDescription = "Blocking Method",
+            explanation =
+                """
           Ensures that blocking methods are not called from those that expect no blocking.
           """,
-        category = Category.CORRECTNESS,
-        priority = 6,
-        severity = Severity.ERROR,
-        enabledByDefault = false,
-        androidSpecific = false,
-        implementation = Impl,
-      )
+            category = Category.CORRECTNESS,
+            priority = 6,
+            severity = Severity.ERROR,
+            enabledByDefault = false,
+            androidSpecific = false,
+            implementation = Impl,
+        )
 
     val assumptions = statusLattice.build { assumeCommonJavaAndKotlinSignatures() }
   }

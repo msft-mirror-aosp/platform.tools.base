@@ -23,15 +23,15 @@ class CredentialManagerSignInWithGoogleDetectorTest : AbstractCheckTest() {
 
   fun testDocumentationExample() {
     lint()
-      .projects(
-        STUB_LIBRARY,
-        project()
-          .type(ProjectDescription.Type.APP)
-          .name("app")
-          .dependsOn(STUB_LIBRARY)
-          .files(
-            kotlin(
-                """
+        .projects(
+            STUB_LIBRARY,
+            project()
+                .type(ProjectDescription.Type.APP)
+                .name("app")
+                .dependsOn(STUB_LIBRARY)
+                .files(
+                    kotlin(
+                            """
                 package com.example.app
 
                 import androidx.credentials.GetCredentialResponse
@@ -55,34 +55,34 @@ class CredentialManagerSignInWithGoogleDetectorTest : AbstractCheckTest() {
                     fun bar() { TODO() }
                 }
                 """
-              )
-              .indented()
-          ),
-      )
-      .run()
-      .expect(
-        """
+                        )
+                        .indented()
+                ),
+        )
+        .run()
+        .expect(
+            """
         src/com/example/app/Foo.kt:9: Warning: Use of :googleid classes without use of GoogleIdTokenCredential.createFrom [CredentialManagerSignInWithGoogle]
                 val googleIdOption = GetGoogleIdOption.Builder().build()
                                      ~~~~~~~~~~~~~~~~~
         0 errors, 1 warning
         """
-      )
+        )
   }
 
   fun testClean() {
     // Same as above, except we have added the missing code.
     @Suppress("KotlinConstantConditions")
     lint()
-      .projects(
-        STUB_LIBRARY,
-        project()
-          .type(ProjectDescription.Type.APP)
-          .name("app")
-          .dependsOn(STUB_LIBRARY)
-          .files(
-            kotlin(
-                """
+        .projects(
+            STUB_LIBRARY,
+            project()
+                .type(ProjectDescription.Type.APP)
+                .name("app")
+                .dependsOn(STUB_LIBRARY)
+                .files(
+                    kotlin(
+                            """
                 package com.example.app
 
                 import androidx.credentials.CustomCredential
@@ -113,12 +113,12 @@ class CredentialManagerSignInWithGoogleDetectorTest : AbstractCheckTest() {
                     fun bar() { TODO() }
                 }
                 """
-              )
-              .indented()
-          ),
-      )
-      .run()
-      .expectClean()
+                        )
+                        .indented()
+                ),
+        )
+        .run()
+        .expectClean()
   }
 
   fun testCleanJava() {
@@ -129,15 +129,15 @@ class CredentialManagerSignInWithGoogleDetectorTest : AbstractCheckTest() {
     // generated in the Kotlin source stub library.
     @Suppress("ConstantValue")
     lint()
-      .projects(
-        STUB_LIBRARY,
-        project()
-          .type(ProjectDescription.Type.APP)
-          .name("app")
-          .dependsOn(STUB_LIBRARY)
-          .files(
-            java(
-                """
+        .projects(
+            STUB_LIBRARY,
+            project()
+                .type(ProjectDescription.Type.APP)
+                .name("app")
+                .dependsOn(STUB_LIBRARY)
+                .files(
+                    java(
+                            """
                 package com.example.app;
 
                 import androidx.credentials.Credential;
@@ -166,27 +166,27 @@ class CredentialManagerSignInWithGoogleDetectorTest : AbstractCheckTest() {
                     public void bar() {}
                 }
                 """
-              )
-              .indented()
-          ),
-      )
-      .run()
-      .expectClean()
+                        )
+                        .indented()
+                ),
+        )
+        .run()
+        .expectClean()
   }
 
   @Suppress("KotlinConstantConditions")
   fun testCleanWithStaticImport() {
     // Similar to testClean, except we import things directly.
     lint()
-      .projects(
-        STUB_LIBRARY,
-        project()
-          .type(ProjectDescription.Type.APP)
-          .name("app")
-          .dependsOn(STUB_LIBRARY)
-          .files(
-            kotlin(
-                """
+        .projects(
+            STUB_LIBRARY,
+            project()
+                .type(ProjectDescription.Type.APP)
+                .name("app")
+                .dependsOn(STUB_LIBRARY)
+                .files(
+                    kotlin(
+                            """
                 package com.example.app
 
                 import androidx.credentials.CustomCredential
@@ -218,27 +218,27 @@ class CredentialManagerSignInWithGoogleDetectorTest : AbstractCheckTest() {
                     fun bar() { TODO() }
                 }
                 """
-              )
-              .indented()
-          ),
-      )
-      .run()
-      .expectClean()
+                        )
+                        .indented()
+                ),
+        )
+        .run()
+        .expectClean()
   }
 
   fun testCleanAlias() {
     // Similar to testClean, except we use an import alias.
     @Suppress("KotlinConstantConditions")
     lint()
-      .projects(
-        STUB_LIBRARY,
-        project()
-          .type(ProjectDescription.Type.APP)
-          .name("app")
-          .dependsOn(STUB_LIBRARY)
-          .files(
-            kotlin(
-                """
+        .projects(
+            STUB_LIBRARY,
+            project()
+                .type(ProjectDescription.Type.APP)
+                .name("app")
+                .dependsOn(STUB_LIBRARY)
+                .files(
+                    kotlin(
+                            """
                 package com.example.app
 
                 import androidx.credentials.CustomCredential
@@ -270,26 +270,26 @@ class CredentialManagerSignInWithGoogleDetectorTest : AbstractCheckTest() {
                     fun bar() { TODO() }
                 }
                 """
-              )
-              .indented()
-          ),
-      )
-      .run()
-      .expectClean()
+                        )
+                        .indented()
+                ),
+        )
+        .run()
+        .expectClean()
   }
 
   fun testSignInWithGoogleClass() {
     // Same as testDocumentationExample, but with GetSignInWithGoogleOption.
     lint()
-      .projects(
-        STUB_LIBRARY,
-        project()
-          .type(ProjectDescription.Type.APP)
-          .name("app")
-          .dependsOn(STUB_LIBRARY)
-          .files(
-            kotlin(
-                """
+        .projects(
+            STUB_LIBRARY,
+            project()
+                .type(ProjectDescription.Type.APP)
+                .name("app")
+                .dependsOn(STUB_LIBRARY)
+                .files(
+                    kotlin(
+                            """
                 package com.example.app
 
                 import androidx.credentials.GetCredentialResponse
@@ -313,33 +313,33 @@ class CredentialManagerSignInWithGoogleDetectorTest : AbstractCheckTest() {
                     fun bar() { TODO() }
                 }
                 """
-              )
-              .indented()
-          ),
-      )
-      .run()
-      .expect(
-        """
+                        )
+                        .indented()
+                ),
+        )
+        .run()
+        .expect(
+            """
         src/com/example/app/Foo.kt:9: Warning: Use of :googleid classes without use of GoogleIdTokenCredential.createFrom [CredentialManagerSignInWithGoogle]
                 val googleIdOption = GetSignInWithGoogleOption.Builder().build()
                                      ~~~~~~~~~~~~~~~~~~~~~~~~~
         0 errors, 1 warning
         """
-      )
+        )
   }
 
   fun testSignInWithGoogleClassImportAlias() {
     // Similar to above, but with an import alias.
     lint()
-      .projects(
-        STUB_LIBRARY,
-        project()
-          .type(ProjectDescription.Type.APP)
-          .name("app")
-          .dependsOn(STUB_LIBRARY)
-          .files(
-            kotlin(
-                """
+        .projects(
+            STUB_LIBRARY,
+            project()
+                .type(ProjectDescription.Type.APP)
+                .name("app")
+                .dependsOn(STUB_LIBRARY)
+                .files(
+                    kotlin(
+                            """
                 package com.example.app
 
                 import androidx.credentials.GetCredentialResponse
@@ -363,34 +363,34 @@ class CredentialManagerSignInWithGoogleDetectorTest : AbstractCheckTest() {
                     fun bar() { TODO() }
                 }
                 """
-              )
-              .indented()
-          ),
-      )
-      .run()
-      .expect(
-        """
+                        )
+                        .indented()
+                ),
+        )
+        .run()
+        .expect(
+            """
         src/com/example/app/Foo.kt:9: Warning: Use of :googleid classes without use of GoogleIdTokenCredential.createFrom [CredentialManagerSignInWithGoogle]
                 val googleIdOption = Gsiwgo.Builder().build()
                                      ~~~~~~
         0 errors, 1 warning
         """
-      )
+        )
   }
 
   @Suppress("KotlinConstantConditions")
   fun testCleanMultiModule() {
     // The code that handles the response is in a library module.
     lint()
-      .projects(
-        STUB_LIBRARY,
-        project()
-          .type(ProjectDescription.Type.LIBRARY)
-          .name("lib")
-          .dependsOn(STUB_LIBRARY)
-          .files(
-            kotlin(
-                """
+        .projects(
+            STUB_LIBRARY,
+            project()
+                .type(ProjectDescription.Type.LIBRARY)
+                .name("lib")
+                .dependsOn(STUB_LIBRARY)
+                .files(
+                    kotlin(
+                            """
                 package com.example.lib
 
                 import androidx.credentials.CustomCredential
@@ -417,17 +417,17 @@ class CredentialManagerSignInWithGoogleDetectorTest : AbstractCheckTest() {
                     fun bar() { TODO() }
                 }
                 """
-              )
-              .indented()
-          ),
-        project()
-          .type(ProjectDescription.Type.APP)
-          .name("app")
-          .dependsOn(STUB_LIBRARY)
-          .dependsOn("lib")
-          .files(
-            kotlin(
-                """
+                        )
+                        .indented()
+                ),
+            project()
+                .type(ProjectDescription.Type.APP)
+                .name("app")
+                .dependsOn(STUB_LIBRARY)
+                .dependsOn("lib")
+                .files(
+                    kotlin(
+                            """
                 package com.example.app
 
                 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
@@ -438,27 +438,27 @@ class CredentialManagerSignInWithGoogleDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-              )
-              .indented()
-          ),
-      )
-      .run()
-      .expectClean()
+                        )
+                        .indented()
+                ),
+        )
+        .run()
+        .expectClean()
   }
 
   fun testBadMultiModule() {
     // The code that references the Google ID classes is in a library module;
     // the warning should still be reported when we reach the app module.
     lint()
-      .projects(
-        STUB_LIBRARY,
-        project()
-          .type(ProjectDescription.Type.LIBRARY)
-          .name("lib")
-          .dependsOn(STUB_LIBRARY)
-          .files(
-            kotlin(
-                """
+        .projects(
+            STUB_LIBRARY,
+            project()
+                .type(ProjectDescription.Type.LIBRARY)
+                .name("lib")
+                .dependsOn(STUB_LIBRARY)
+                .files(
+                    kotlin(
+                            """
                 package com.example.lib
 
                 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
@@ -469,53 +469,53 @@ class CredentialManagerSignInWithGoogleDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-              )
-              .indented()
-          ),
-        project()
-          .type(ProjectDescription.Type.APP)
-          .name("app")
-          .dependsOn(STUB_LIBRARY)
-          .dependsOn("lib")
-          .files(
-            kotlin(
-                """
+                        )
+                        .indented()
+                ),
+            project()
+                .type(ProjectDescription.Type.APP)
+                .name("app")
+                .dependsOn(STUB_LIBRARY)
+                .dependsOn("lib")
+                .files(
+                    kotlin(
+                            """
                 package com.example.app
 
                 class Foo {
                     fun foo() {}
                 }
                 """
-              )
-              .indented()
-          ),
-      )
-      .run()
-      .expect(
-        """
+                        )
+                        .indented()
+                ),
+        )
+        .run()
+        .expect(
+            """
         ../lib/src/com/example/lib/Bar.kt:7: Warning: Use of :googleid classes without use of GoogleIdTokenCredential.createFrom [CredentialManagerSignInWithGoogle]
                 val googleIdOption = GetGoogleIdOption.Builder().build()
                                      ~~~~~~~~~~~~~~~~~
         0 errors, 1 warning
         """
-      )
+        )
   }
 
   fun testSameMessage() {
     CredentialManagerSignInWithGoogleDetector()
-      .sameMessage(
-        CredentialManagerSignInWithGoogleDetector.ISSUE,
-        "Use of `:googleid` classes without use of `GoogleIdTokenCredential.createFrom`",
-        "Use of `:googleid` classes without use of `GoogleIdTokenCredential`",
-      )
+        .sameMessage(
+            CredentialManagerSignInWithGoogleDetector.ISSUE,
+            "Use of `:googleid` classes without use of `GoogleIdTokenCredential.createFrom`",
+            "Use of `:googleid` classes without use of `GoogleIdTokenCredential`",
+        )
   }
 }
 
 private val STUB_LIBRARY =
-  ProjectDescription()
-    .files(
-      TestFiles.kotlin(
-          """
+    ProjectDescription()
+        .files(
+            TestFiles.kotlin(
+                    """
           package com.google.android.libraries.identity.googleid
 
           /*HIDE-FROM-DOCUMENTATION*/
@@ -542,10 +542,10 @@ private val STUB_LIBRARY =
             class Builder
           }
           """
-        )
-        .indented(),
-      TestFiles.kotlin(
-          """
+                )
+                .indented(),
+            TestFiles.kotlin(
+                    """
           package androidx.credentials
 
           /*HIDE-FROM-DOCUMENTATION*/
@@ -573,8 +573,8 @@ private val STUB_LIBRARY =
             }
           }
           """
+                )
+                .indented(),
         )
-        .indented(),
-    )
-    .type(ProjectDescription.Type.LIBRARY)
-    .name("StubLib")
+        .type(ProjectDescription.Type.LIBRARY)
+        .name("StubLib")

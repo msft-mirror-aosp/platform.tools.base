@@ -47,11 +47,11 @@ class LintTestTaskTest {
     // Some of the flags values end up in LintDriver, so we can test this by checking LintDriver
     // properties.
     lint()
-      .configureOptions { flags -> flags.isCheckTestSources = true }
-      .allowMissingSdk()
-      .files(
-        kotlin(
-            """
+        .configureOptions { flags -> flags.isCheckTestSources = true }
+        .allowMissingSdk()
+        .files(
+            kotlin(
+                    """
             fun foo() {
                 hello()
             }
@@ -59,19 +59,19 @@ class LintTestTaskTest {
             fun hello() {
             }
             """
-          )
-          .indented()
-      )
-      .issues(MyCheckFlagsDetector.ISSUE)
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .issues(MyCheckFlagsDetector.ISSUE)
+        .run()
+        .expect(
+            """
         src/test.kt:2: Warning: true [_MyCheckFlagsDetectorIssue]
             hello()
             ~~~~~~~
         0 errors, 1 warnings
 """
-      )
+        )
   }
 
   @Test
@@ -80,84 +80,84 @@ class LintTestTaskTest {
     // Replica of [LintTestTaskTest.checkFlagsAcrossTestModes]
     // but with initial configurations for K1 / K2
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
             fun foo() {
                 hello()
             }
             fun hello() {
             }
             """
-          )
-          .indented()
-      )
-      .sdkHome(TestUtils.getSdk().toFile())
-      .issues(MyCheckFlagsDetector.ISSUE)
-      .multi()
-      // Perform multiple setups but a single verify task; this is used
-      // when the output is supposed to be the same
-      .run(
-        { configureOptions { flags -> flags.setUseK2Uast(false) } },
-        { configureOptions { flags -> flags.setUseK2Uast(true) } },
-      ) {
-        expect(
-          // Can also use index-> here
-          """
+                )
+                .indented()
+        )
+        .sdkHome(TestUtils.getSdk().toFile())
+        .issues(MyCheckFlagsDetector.ISSUE)
+        .multi()
+        // Perform multiple setups but a single verify task; this is used
+        // when the output is supposed to be the same
+        .run(
+            { configureOptions { flags -> flags.setUseK2Uast(false) } },
+            { configureOptions { flags -> flags.setUseK2Uast(true) } },
+        ) {
+          expect(
+              // Can also use index-> here
+              """
           src/test.kt:2: Warning: false [_MyCheckFlagsDetectorIssue]
               hello()
               ~~~~~~~
           0 errors, 1 warnings
           """
-        )
-      }
+          )
+        }
 
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
             fun foo() {
                 hello()
             }
             fun hello() {
             }
             """
-          )
-          .indented()
-      )
-      .sdkHome(TestUtils.getSdk().toFile())
-      .issues(MyCheckFlagsDetector.ISSUE)
-      .multi()
-      // Perform different setups with individual verify steps for each setup;
-      // this is done when you expect different results under different configurations
-      .run(
-        Step(
-          setup = { configureOptions { flags -> flags.isCheckTestSources = false } },
-          verify = {
-            expect(
-              """
+                )
+                .indented()
+        )
+        .sdkHome(TestUtils.getSdk().toFile())
+        .issues(MyCheckFlagsDetector.ISSUE)
+        .multi()
+        // Perform different setups with individual verify steps for each setup;
+        // this is done when you expect different results under different configurations
+        .run(
+            Step(
+                setup = { configureOptions { flags -> flags.isCheckTestSources = false } },
+                verify = {
+                  expect(
+                      """
               src/test.kt:2: Warning: false [_MyCheckFlagsDetectorIssue]
                   hello()
                   ~~~~~~~
               0 errors, 1 warnings
               """
-            )
-          },
-        ),
-        Step(
-          setup = { configureOptions { flags -> flags.isCheckTestSources = true } },
-          verify = {
-            expect(
-              """
+                  )
+                },
+            ),
+            Step(
+                setup = { configureOptions { flags -> flags.isCheckTestSources = true } },
+                verify = {
+                  expect(
+                      """
               src/test.kt:2: Warning: true [_MyCheckFlagsDetectorIssue]
                   hello()
                   ~~~~~~~
               0 errors, 1 warnings
               """
-            )
-          },
-        ),
-      )
+                  )
+                },
+            ),
+        )
   }
 
   class MyCheckFlagsDetector : Detector(), SourceCodeScanner {
@@ -168,8 +168,7 @@ class LintTestTaskTest {
     }
 
     override fun afterCheckFile(context: Context) {
-      assertThat(methodImplNames)
-        .containsAnyIn(listOf("KtUltraLightMethodForSourceDeclaration", "SymbolLightSimpleMethod"))
+      assertThat(methodImplNames).containsAnyIn(listOf("KtUltraLightMethodForSourceDeclaration", "SymbolLightSimpleMethod"))
       super.afterCheckFile(context)
     }
 
@@ -180,15 +179,15 @@ class LintTestTaskTest {
 
     companion object {
       val ISSUE =
-        Issue.create(
-          id = "_MyCheckFlagsDetectorIssue",
-          briefDescription = "Not applicable",
-          explanation = "Not applicable",
-          category = Category.CORRECTNESS,
-          priority = 10,
-          severity = Severity.WARNING,
-          implementation = Implementation(MyCheckFlagsDetector::class.java, Scope.JAVA_FILE_SCOPE),
-        )
+          Issue.create(
+              id = "_MyCheckFlagsDetectorIssue",
+              briefDescription = "Not applicable",
+              explanation = "Not applicable",
+              category = Category.CORRECTNESS,
+              priority = 10,
+              severity = Severity.WARNING,
+              implementation = Implementation(MyCheckFlagsDetector::class.java, Scope.JAVA_FILE_SCOPE),
+          )
     }
   }
 }

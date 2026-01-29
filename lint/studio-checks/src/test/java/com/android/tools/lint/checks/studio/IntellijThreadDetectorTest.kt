@@ -27,9 +27,9 @@ class IntellijThreadDetectorTest {
   @Test
   fun testIncompatibleMethods() {
     studioLint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
                     package test.pkg;
                     import com.android.annotations.concurrency.AnyThread;
                     import com.android.annotations.concurrency.Slow;
@@ -83,10 +83,10 @@ class IntellijThreadDetectorTest {
                         }
                     }
                 """
-          )
-          .indented(),
-        java(
-            """
+                )
+                .indented(),
+            java(
+                    """
                     package test.pkg;
                     import com.android.annotations.concurrency.UiThread;
 
@@ -97,10 +97,10 @@ class IntellijThreadDetectorTest {
                         }
                     }
                 """
-          )
-          .indented(),
-        java(
-            """
+                )
+                .indented(),
+            java(
+                    """
                     package com.android.annotations.concurrency;
 
                     import java.lang.annotation.Documented;
@@ -114,10 +114,10 @@ class IntellijThreadDetectorTest {
                     @Target(ElementType.METHOD)
                     public @interface Slow {}
                 """
-          )
-          .indented(),
-        java(
-            """
+                )
+                .indented(),
+            java(
+                    """
                     package com.android.annotations.concurrency;
 
                     import java.lang.annotation.Documented;
@@ -131,10 +131,10 @@ class IntellijThreadDetectorTest {
                     @Target(ElementType.METHOD)
                     public @interface UiThread {}
                 """
-          )
-          .indented(),
-        java(
-            """
+                )
+                .indented(),
+            java(
+                    """
                     package com.android.annotations.concurrency;
 
                     import java.lang.annotation.Documented;
@@ -148,10 +148,10 @@ class IntellijThreadDetectorTest {
                     @Target({ElementType.METHOD, ElementType.CONSTRUCTOR})
                     public @interface AnyThread {}
                 """
-          )
-          .indented(),
-        java(
-            """
+                )
+                .indented(),
+            java(
+                    """
                     package com.android.annotations.concurrency;
 
                     import java.lang.annotation.Documented;
@@ -165,13 +165,13 @@ class IntellijThreadDetectorTest {
                     @Target({ElementType.METHOD, ElementType.CONSTRUCTOR, ElementType.TYPE})
                     public @interface WorkerThread {}
                 """
-          )
-          .indented(),
-      )
-      .issues(IntellijThreadDetector.ISSUE)
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+        )
+        .issues(IntellijThreadDetector.ISSUE)
+        .run()
+        .expect(
+            """
                 src/test/pkg/Test.java:10: Error: Method uiThread must run on the UI thread, yet the currently inferred thread is a worker thread [WrongThread]
                         uiThread(); // WARN
                         ~~~~~~~~~~
@@ -198,15 +198,15 @@ class IntellijThreadDetectorTest {
                         ~~~~~~~~~~
                 8 errors, 0 warnings
                 """
-      )
+        )
   }
 
   @Test
   fun testImplicit() {
     studioLint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
                     package test.pkg;
                     import com.intellij.openapi.application.Application;
                     import com.android.annotations.concurrency.Slow;
@@ -328,10 +328,10 @@ class IntellijThreadDetectorTest {
                         }
                     }
                 """
-          )
-          .indented(),
-        java(
-            """
+                )
+                .indented(),
+            java(
+                    """
                     // Stub until test infrastructure passes the right class path for non-Android
                     // modules.
                     package com.intellij.openapi.application;
@@ -351,10 +351,10 @@ class IntellijThreadDetectorTest {
                         public void runWriteAction(@NotNull @UiThread Runnable run) { run.run(); }
                     }
                 """
-          )
-          .indented(),
-        java(
-            """
+                )
+                .indented(),
+            java(
+                    """
                     package org.jetbrains.annotations;
 
                     @Documented
@@ -362,10 +362,10 @@ class IntellijThreadDetectorTest {
                     @Target({ElementType.METHOD, ElementType.FIELD, ElementType.PARAMETER, ElementType.LOCAL_VARIABLE})
                     public @interface NotNull {}
                 """
-          )
-          .indented(),
-        java(
-            """
+                )
+                .indented(),
+            java(
+                    """
                     package com.android.annotations.concurrency;
 
                     import java.lang.annotation.Documented;
@@ -379,10 +379,10 @@ class IntellijThreadDetectorTest {
                     @Target(ElementType.METHOD)
                     public @interface Slow {}
                 """
-          )
-          .indented(),
-        java(
-            """
+                )
+                .indented(),
+            java(
+                    """
                     package com.android.annotations.concurrency;
 
                     import java.lang.annotation.Documented;
@@ -396,10 +396,10 @@ class IntellijThreadDetectorTest {
                     @Target(ElementType.METHOD)
                     public @interface UiThread {}
                 """
-          )
-          .indented(),
-        java(
-            """
+                )
+                .indented(),
+            java(
+                    """
                     package com.android.annotations.concurrency;
 
                     import java.lang.annotation.Documented;
@@ -413,18 +413,18 @@ class IntellijThreadDetectorTest {
                     @Target({ElementType.METHOD, ElementType.CONSTRUCTOR, ElementType.TYPE})
                     public @interface WorkerThread {}
                 """
-          )
-          .indented(),
-        java(
-            """
+                )
+                .indented(),
+            java(
+                    """
                     package com.intellij.openapi.actionSystem;
 
                     public class AnActionEvent {}
                 """
-          )
-          .indented(),
-        java(
-          """
+                )
+                .indented(),
+            java(
+                """
                     package com.intellij.openapi.actionSystem;
 
                     public class AnAction {
@@ -433,26 +433,26 @@ class IntellijThreadDetectorTest {
                         }
                     }
                 """
-        ),
-        jar(
-          "annotations.zip",
-          xml(
-              "com/intellij/openapi/application/annotations.xml",
-              """
+            ),
+            jar(
+                "annotations.zip",
+                xml(
+                        "com/intellij/openapi/application/annotations.xml",
+                        """
                         <root>
                             <item name='com.intellij.openapi.application.Application void externallyAnnotated(java.lang.Runnable) 0'>
                                 <annotation name='com.android.annotations.concurrency.UiThread' />
                             </item>
                         </root>
                         """,
-            )
-            .indented(),
-        ),
-      )
-      .issues(IntellijThreadDetector.ISSUE)
-      .run()
-      .expect(
-        """
+                    )
+                    .indented(),
+            ),
+        )
+        .issues(IntellijThreadDetector.ISSUE)
+        .run()
+        .expect(
+            """
                 src/test/pkg/Test.java:27: Error: Method slowMethod is slow and thus should run on a worker thread, yet the currently inferred thread is the UI thread [WrongThread]
                                 slowMethod(); // WARN1
                                 ~~~~~~~~~~~~
@@ -530,6 +530,6 @@ class IntellijThreadDetectorTest {
                                                          ~~~~~~~~~~~~~~~~~~
                 25 errors, 0 warnings
                 """
-      )
+        )
   }
 }

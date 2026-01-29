@@ -118,8 +118,7 @@ internal class DefaultSdkInfo : SdkInfo() {
     return false
   }
 
-  private fun implementsInterface(className: String, interfaceName: String): Boolean =
-    interfaceName == getInterface(className)
+  private fun implementsInterface(className: String, interfaceName: String): Boolean = interfaceName == getInterface(className)
 
   // Strip off type parameters, e.g. AdapterView<?> ⇒ AdapterView
   private fun getRawType(type: String?): String? {
@@ -233,9 +232,9 @@ internal class DefaultSdkInfo : SdkInfo() {
   }
 
   private fun getInterface(cls: String): String? =
-    when (cls) {
-      CHECKED_TEXT_VIEW,
-      COMPOUND_BUTTON -> CHECKABLE
-      else -> null
-    }
+      when (cls) {
+        CHECKED_TEXT_VIEW,
+        COMPOUND_BUTTON -> CHECKABLE
+        else -> null
+      }
 }

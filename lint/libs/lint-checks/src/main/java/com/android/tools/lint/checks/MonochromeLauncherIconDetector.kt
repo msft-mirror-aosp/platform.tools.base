@@ -37,16 +37,15 @@ class MonochromeLauncherIconDetector : Detector(), XmlScanner {
 
   companion object {
 
-    private val IMPLEMENTATION =
-      Implementation(MonochromeLauncherIconDetector::class.java, Scope.RESOURCE_FILE_SCOPE)
+    private val IMPLEMENTATION = Implementation(MonochromeLauncherIconDetector::class.java, Scope.RESOURCE_FILE_SCOPE)
 
     @JvmField
     val ISSUE =
-      Issue.create(
-        id = "MonochromeLauncherIcon",
-        briefDescription = "Monochrome icon is not defined",
-        explanation =
-          """
+        Issue.create(
+            id = "MonochromeLauncherIcon",
+            briefDescription = "Monochrome icon is not defined",
+            explanation =
+                """
           The system may use the coloring of the user's chosen wallpaper and theme to tint app \
           icons. \
           Providing a `<monochrome>` layer (which will be used for tinting) for every \
@@ -55,12 +54,12 @@ class MonochromeLauncherIconDetector : Detector(), XmlScanner {
           Devices running earlier Android versions will (with no monochrome layer) show the \
           untinted color icon for your app, which will look inconsistent.
           """,
-        category = Category.ICONS,
-        priority = 6,
-        severity = Severity.WARNING,
-        androidSpecific = true,
-        implementation = IMPLEMENTATION,
-      )
+            category = Category.ICONS,
+            priority = 6,
+            severity = Severity.WARNING,
+            androidSpecific = true,
+            implementation = IMPLEMENTATION,
+        )
   }
 
   override fun appliesTo(folderType: ResourceFolderType): Boolean {
@@ -77,26 +76,20 @@ class MonochromeLauncherIconDetector : Detector(), XmlScanner {
         if (XmlUtils.getFirstSubTagByName(element, "monochrome") != null) return
         val currentIconName = context.file.name.removeSuffix(DOT_XML)
 
-        val applicationTag =
-          context.project.manifestDom?.documentElement?.subtag(TAG_APPLICATION) ?: return
-        val foundIconName =
-          applicationTag
-            .getAttributeNS(SdkConstants.ANDROID_URI, SdkConstants.ATTR_ICON)
-            .substringAfterLast('/')
+        val applicationTag = context.project.manifestDom?.documentElement?.subtag(TAG_APPLICATION) ?: return
+        val foundIconName = applicationTag.getAttributeNS(SdkConstants.ANDROID_URI, SdkConstants.ATTR_ICON).substringAfterLast('/')
         val foundRoundIconName =
-          applicationTag
-            .getAttributeNS(SdkConstants.ANDROID_URI, SdkConstants.ATTR_ROUND_ICON)
-            .substringAfterLast('/')
+            applicationTag.getAttributeNS(SdkConstants.ANDROID_URI, SdkConstants.ATTR_ROUND_ICON).substringAfterLast('/')
 
         if (currentIconName == foundIconName || currentIconName == foundRoundIconName) {
           val iconDescription = if (currentIconName == foundIconName) "icon" else "roundIcon"
           context.report(
-            Incident(
-              ISSUE,
-              scope = element,
-              location = context.getLocation(element),
-              "The application adaptive $iconDescription is missing a monochrome tag",
-            )
+              Incident(
+                  ISSUE,
+                  scope = element,
+                  location = context.getLocation(element),
+                  "The application adaptive $iconDescription is missing a monochrome tag",
+              )
           )
         }
       }

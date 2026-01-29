@@ -29,9 +29,9 @@ class NoOpDetectorTest : AbstractCheckTest() {
 
   fun testDocumentationExample() {
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
                 class Test {
                     fun test(s: String, o: Any) {
                        s === o                // ERROR 1
@@ -40,12 +40,12 @@ class NoOpDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-          )
-          .indented()
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .run()
+        .expect(
+            """
                 src/Test.kt:3: Warning: This reference is unused: s === o [NoOp]
                        s === o                // ERROR 1
                        ~~~~~~~
@@ -57,15 +57,15 @@ class NoOpDetectorTest : AbstractCheckTest() {
                          ~~~~~~
                 0 errors, 3 warnings
                 """
-      )
+        )
   }
 
   @Suppress("RemoveRedundantCallsOfConversionMethods", "DefaultAnnotationParam")
   fun testProblems() {
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
                     package test.pkg
                     class Foo {
                         var a: Int = 1
@@ -113,10 +113,10 @@ class NoOpDetectorTest : AbstractCheckTest() {
                     class Gradle { fun build(): String = "done" }
                     class MyBuilder { fun build(): String = "done"}
                 """
-          )
-          .indented(),
-        java(
-            """
+                )
+                .indented(),
+            java(
+                    """
                     package test.pkg;
                     public class Bar {
                         public String getBar() { return "hello"; }
@@ -137,10 +137,10 @@ class NoOpDetectorTest : AbstractCheckTest() {
                         public int computeRange2() { return 0; }
                     }
                     """
-          )
-          .indented(),
-        kotlin(
-            """
+                )
+                .indented(),
+            kotlin(
+                    """
                     package com.android.tools.idea.imports
                     class MavenClassRegistryManager {
                       companion object {
@@ -156,10 +156,10 @@ class NoOpDetectorTest : AbstractCheckTest() {
                       }
                     }
                     """
-          )
-          .indented(),
-        kotlin(
-            """
+                )
+                .indented(),
+            kotlin(
+                    """
                     package com.android.tools.lint.checks.infrastructure
                     import org.junit.Test
                     class GradleModelMockerTest {
@@ -176,10 +176,10 @@ class NoOpDetectorTest : AbstractCheckTest() {
                         }
                     }
                     """
-          )
-          .indented(),
-        java(
-            """
+                )
+                .indented(),
+            java(
+                    """
                     import java.net.HttpURLConnection;
                     public class TestStreams {
                         public void test(HttpURLConnection urlConnection) throws Exception {
@@ -187,10 +187,10 @@ class NoOpDetectorTest : AbstractCheckTest() {
                         }
                     }
                     """
-          )
-          .indented(),
-        java(
-            """
+                )
+                .indented(),
+            java(
+                    """
                     package com.android.annotations;
                     import java.lang.annotation.Retention;
                     import java.lang.annotation.RetentionPolicy;
@@ -199,20 +199,20 @@ class NoOpDetectorTest : AbstractCheckTest() {
                         Visibility visibility() default Visibility.PRIVATE;
                     }
                     """
-          )
-          .indented(),
-        java(
-            """
+                )
+                .indented(),
+            java(
+                    """
                     package org.junit;
                     public @interface Test {
                         Class<? extends Throwable> expected() default None.class;
                         long timeout() default 0L;
                     }
                     """
-          )
-          .indented(),
-        java(
-            """
+                )
+                .indented(),
+            java(
+                    """
                     package org.jetbrains.annotations;
                     import java.lang.annotation.*;
                     public @interface Contract {
@@ -220,13 +220,13 @@ class NoOpDetectorTest : AbstractCheckTest() {
                       boolean pure() default false;
                     }
                     """
-          )
-          .indented(),
-      )
-      .configureOption(NoOpDetector.ASSUME_PURE_GETTERS, true)
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+        )
+        .configureOption(NoOpDetector.ASSUME_PURE_GETTERS, true)
+        .run()
+        .expect(
+            """
                 src/test/pkg/Foo.kt:9: Warning: This reference is unused: b [NoOp]
                     foo.b // WARN 1
                         ~
@@ -271,15 +271,15 @@ class NoOpDetectorTest : AbstractCheckTest() {
                                                       ~
                 0 errors, 14 warnings
                 """
-      )
+        )
   }
 
   @Suppress("StringOperationCanBeSimplified", "ResultOfMethodCallIgnored")
   fun testStringMethods() {
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
                 class Test {
                     fun test(s: String, o: Any) {
                        o.toString()           // ERROR 1
@@ -289,10 +289,10 @@ class NoOpDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-          )
-          .indented(),
-        java(
-            """
+                )
+                .indented(),
+            java(
+                    """
                     import java.util.Locale;
                     class Test2 {
                         void test(String s) {
@@ -311,12 +311,12 @@ class NoOpDetectorTest : AbstractCheckTest() {
                         }
                     }
                 """
-          )
-          .indented(),
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+        )
+        .run()
+        .expect(
+            """
                 src/Test.kt:3: Warning: This call result is unused: toString [NoOp]
                        o.toString()           // ERROR 1
                        ~~~~~~~~~~~~
@@ -343,15 +343,15 @@ class NoOpDetectorTest : AbstractCheckTest() {
                         ~~~~~~~~~~
                 0 errors, 8 warnings
                 """
-      )
+        )
   }
 
   @Suppress("RemoveRedundantCallsOfConversionMethods")
   fun testBuiltinImmutables() {
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
                 class Test {
                     fun test(s: String, o: Any) {
                         Integer.valueOf("5")                       // ERROR 1
@@ -370,12 +370,12 @@ class NoOpDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-          )
-          .indented()
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .run()
+        .expect(
+            """
                 src/Test.kt:3: Warning: This call result is unused: valueOf [NoOp]
                         Integer.valueOf("5")                       // ERROR 1
                         ~~~~~~~~~~~~~~~~~~~~
@@ -408,14 +408,14 @@ class NoOpDetectorTest : AbstractCheckTest() {
                         ~~~~~~~~
                 0 errors, 10 warnings
                 """
-      )
+        )
   }
 
   fun testLiterals() {
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
                 class Test {
                     fun test(s: String, o: Any) {
                         true
@@ -424,12 +424,12 @@ class NoOpDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-          )
-          .indented()
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .run()
+        .expect(
+            """
                 src/Test.kt:3: Warning: This reference is unused: true [NoOp]
                         true
                         ~~~~
@@ -441,15 +441,15 @@ class NoOpDetectorTest : AbstractCheckTest() {
                          ~~~~
                 0 errors, 3 warnings
                 """
-      )
+        )
   }
 
   @Suppress("SimplifyBooleanWithConstants")
   fun testBinaryOperators() {
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
                 class Test {
                     fun test(s: String, o: Any) {
                        s === o                // ERROR 1
@@ -463,12 +463,12 @@ class NoOpDetectorTest : AbstractCheckTest() {
                     fun pure(): Boolean { return true }
                 }
                 """
-          )
-          .indented()
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .run()
+        .expect(
+            """
                 src/Test.kt:3: Warning: This reference is unused: s === o [NoOp]
                        s === o                // ERROR 1
                        ~~~~~~~
@@ -480,16 +480,16 @@ class NoOpDetectorTest : AbstractCheckTest() {
                        ~~~~~~~~~~~~~~
                 0 errors, 3 warnings
                 """
-      )
+        )
   }
 
   fun testDeliberateThrow1() {
     // Based on the no-op scenario `OtherOperationType.valueOf` call in
     // com.android.manifmerger.XmlElement
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
                 import java.util.Locale;
 
                 public class EnumSideEffect {
@@ -507,20 +507,20 @@ class NoOpDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-          )
-          .indented()
-      )
-      .run()
-      .expectClean()
+                )
+                .indented()
+        )
+        .run()
+        .expectClean()
   }
 
   fun testDeliberateThrow2() {
     // Based on the no-op scenario `OtherOperationType.valueOf` call in
     // com.android.manifmerger.XmlElement
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
                 package org.junit;
 
                 public class Assert {
@@ -529,10 +529,10 @@ class NoOpDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-          )
-          .indented(),
-        kotlin(
-          """
+                )
+                .indented(),
+            kotlin(
+                """
                 import org.junit.Assert
 
                 class Test : Assert() {
@@ -547,17 +547,17 @@ class NoOpDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-        ),
-      )
-      .run()
-      .expectClean()
+            ),
+        )
+        .run()
+        .expectClean()
   }
 
   fun testQualifiedReferences() {
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
                 class Node {
                     lateinit var next: Node
                     override val prev: Node
@@ -571,13 +571,13 @@ class NoOpDetectorTest : AbstractCheckTest() {
                     node.prev                  // OK 1
                 }
                 """
-          )
-          .indented()
-      )
-      .configureOption(NoOpDetector.ASSUME_PURE_GETTERS, true)
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .configureOption(NoOpDetector.ASSUME_PURE_GETTERS, true)
+        .run()
+        .expect(
+            """
                 src/Node.kt:7: Warning: This reference is unused: node [NoOp]
                     node                       // ERROR 1
                     ~~~~
@@ -592,14 +592,14 @@ class NoOpDetectorTest : AbstractCheckTest() {
                                    ~~~~
                 0 errors, 4 warnings
                 """
-      )
+        )
   }
 
   fun testNoGettersWithOptionOff() {
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
                 class Node {
                     lateinit var next: Node
                 }
@@ -607,40 +607,40 @@ class NoOpDetectorTest : AbstractCheckTest() {
                     node.next
                 }
                 """
-          )
-          .indented()
-      )
-      .configureOption(NoOpDetector.ASSUME_PURE_GETTERS, false)
-      .run()
-      .expectClean()
+                )
+                .indented()
+        )
+        .configureOption(NoOpDetector.ASSUME_PURE_GETTERS, false)
+        .run()
+        .expectClean()
   }
 
   fun testPropertyAccessOfJavaMethod() {
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
                 public abstract class Parent {
                     public int getChildCount() {
                         throw new UnsupportedOperationException();
                     }
                 }
                 """
-          )
-          .indented(),
-        kotlin(
-            """
+                )
+                .indented(),
+            kotlin(
+                    """
                 class Child : Parent() {
                     fun expandNode() {
                         childCount
                     }
                 }
                 """
-          )
-          .indented(),
-      )
-      .run()
-      .expectClean()
+                )
+                .indented(),
+        )
+        .run()
+        .expectClean()
   }
 
   @Suppress("RedundantUnitExpression")
@@ -650,9 +650,9 @@ class NoOpDetectorTest : AbstractCheckTest() {
     // consider these deliberate choices to be explicit about the return value rather
     // than redundant constructs.
     lint()
-      .files(
-        kotlin(
-          """
+        .files(
+            kotlin(
+                """
                 package com.example.myapplication
 
                 fun onIssuesChange(parentDisposable: Any?, listener: () -> Unit) {
@@ -666,10 +666,10 @@ class NoOpDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
+            )
         )
-      )
-      .run()
-      .expectClean()
+        .run()
+        .expectClean()
   }
 
   @Suppress("CatchMayIgnoreException")
@@ -677,9 +677,9 @@ class NoOpDetectorTest : AbstractCheckTest() {
     // First, should skip because try/catch.
     // Second, should skip because method throws exceptions!
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
                 import java.io.File
                 import java.lang.RuntimeException
 
@@ -690,53 +690,53 @@ class NoOpDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-          )
-          .indented()
-      )
-      .run()
-      .expectClean()
+                )
+                .indented()
+        )
+        .run()
+        .expectClean()
   }
 
   fun testThrowsException() {
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
                 import java.io.File
                 fun checkCanonicalize(file: File) {
                     // If a method throws exceptions, we may be relying on side effects
                     file.canonicalFile
                 }
                 """
-          )
-          .indented()
-      )
-      .run()
-      .expectClean()
+                )
+                .indented()
+        )
+        .run()
+        .expectClean()
   }
 
   fun testUnresolvedLambda() {
     // Regression test for b/254674801
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
                 fun test() {
                     "test".someFilter { it == 'a' }
                 }
                 """
-          )
-          .indented()
-      )
-      .run()
-      .expectClean()
+                )
+                .indented()
+        )
+        .run()
+        .expectClean()
   }
 
   fun testAtomicIntegers() {
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
                 import java.util.concurrent.atomic.AtomicInteger;
                 import java.util.concurrent.atomic.AtomicLong;
 
@@ -747,19 +747,19 @@ class NoOpDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-          )
-          .indented()
-      )
-      .run()
-      .expectClean()
+                )
+                .indented()
+        )
+        .run()
+        .expectClean()
   }
 
   fun testStaticFieldInitialization() {
     // Regression test for b/232719934
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
                 open class UastBinaryExpressionWithTypeKind(val name: String) {
                     companion object {
                         @JvmField
@@ -773,28 +773,28 @@ class NoOpDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-          )
-          .indented(),
-        java(
-            """
+                )
+                .indented(),
+            java(
+                    """
                 class ApiDetectorJava {
                     static {
                         UastBinaryExpressionWithTypeKind.UNKNOWN.getName(); // trigger UastBinaryExpressionWithTypeKind.<clinit>
                     }
                 }
                 """
-          )
-          .indented(),
-      )
-      .run()
-      .expectClean()
+                )
+                .indented(),
+        )
+        .run()
+        .expectClean()
   }
 
   fun testObjectInitialization() {
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
                 fun connectUiAutomation(init: Boolean) {
                     if (init) {
                         ShellImpl // force initialization
@@ -803,19 +803,19 @@ class NoOpDetectorTest : AbstractCheckTest() {
 
                 private object ShellImpl
                 """
-          )
-          .indented()
-      )
-      .run()
-      .expectClean()
+                )
+                .indented()
+        )
+        .run()
+        .expectClean()
   }
 
   @Suppress("CatchMayIgnoreException")
   fun testTryParse() {
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
                 class TryParse {
                     public void test(String s) {
                         try {
@@ -843,10 +843,10 @@ class NoOpDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-          )
-          .indented(),
-        kotlin(
-          """
+                )
+                .indented(),
+            kotlin(
+                """
                 internal fun parseIntValue(value: String): IntValue? {
                     try {
                         if (value.startsWith("0x")) {
@@ -860,17 +860,17 @@ class NoOpDetectorTest : AbstractCheckTest() {
                     return IntValue(value)
                 }
                 """
-        ),
-      )
-      .run()
-      .expectClean()
+            ),
+        )
+        .run()
+        .expectClean()
   }
 
   fun testMutableStateOf() {
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
                 package androidx.compose.runtime
                 interface State<out T> {
                     val value: T
@@ -881,28 +881,28 @@ class NoOpDetectorTest : AbstractCheckTest() {
                     operator fun component2(): (T) -> Unit
                 }
                 """
-          )
-          .indented(),
-        kotlin(
-            """
+                )
+                .indented(),
+            kotlin(
+                    """
                 import androidx.compose.runtime.MutableState
                 fun test(redrawSignal: MutableState<Unit>) {
                     redrawSignal.value // <-- value read to redraw if needed
                 }
                 """
-          )
-          .indented(),
-      )
-      .run()
-      .expectClean()
+                )
+                .indented(),
+        )
+        .run()
+        .expectClean()
   }
 
   @Suppress("IntroduceWhenSubject")
   fun testElseReturn() {
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
                 fun test(s: String, b: Boolean): Int {
                     when {
                         s == "1" -> return 1
@@ -911,19 +911,19 @@ class NoOpDetectorTest : AbstractCheckTest() {
                     return -1
                 }
                 """
-          )
-          .indented()
-      )
-      .run()
-      .expectClean()
+                )
+                .indented()
+        )
+        .run()
+        .expectClean()
   }
 
   fun testSuper() {
     // Deliberately ignoring explicit super calls
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
                 package test.pkg;
                 public class Parent {
                     public Parent() {
@@ -931,10 +931,10 @@ class NoOpDetectorTest : AbstractCheckTest() {
                     public String getFoo() { return "foo"; }
                 }
                 """
-          )
-          .indented(),
-        java(
-            """
+                )
+                .indented(),
+            java(
+                    """
                 package test.pkg;
                 public class Child extends Parent {
                     public Child() {
@@ -944,18 +944,18 @@ class NoOpDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-          )
-          .indented(),
-      )
-      .run()
-      .expectClean()
+                )
+                .indented(),
+        )
+        .run()
+        .expectClean()
   }
 
   fun testLazyInitialization() {
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
                 import java.util.logging.Level
                 import java.util.logging.Logger
 
@@ -970,18 +970,18 @@ class NoOpDetectorTest : AbstractCheckTest() {
                     initLog
                 }
                 """
-          )
-          .indented()
-      )
-      .run()
-      .expectClean()
+                )
+                .indented()
+        )
+        .run()
+        .expectClean()
   }
 
   fun testStaticMethodInRecord_before16() {
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
             package some.pkg;
 
             import java.lang.annotation.ElementType;
@@ -995,10 +995,10 @@ class NoOpDetectorTest : AbstractCheckTest() {
                 enum Kind { KIND_1, KIND_2 }
             }
           """
-          )
-          .indented(),
-        java(
-            """
+                )
+                .indented(),
+            java(
+                    """
             import some.pkg.MyAnno;
 
             public record MyRecord(@MyAnno String p1, @MyAnno int p2) {
@@ -1007,46 +1007,46 @@ class NoOpDetectorTest : AbstractCheckTest() {
                 }
             }
           """
-          )
-          .indented(),
-      )
-      .allowCompilationErrors()
-      .javaLanguageLevel(LanguageLevel.JDK_15)
-      .run()
-      .apply {
-        if (useFirUast()) {
-          // K2 gracefully(?) parses Java record?!
-          expectClean()
-        } else {
-          // On the other hand, in K1, broken at PSI level:
-          /*
-          { // MyRecord body as the enclosing block
-          public static var create: MyRecord
-          (String)
-          p1
-          var p2: int
-          {
-            return MyRecord(p1, p2)
-          }
-          } // end of MyRecord body
-          */
-          expect(
-            """
+                )
+                .indented(),
+        )
+        .allowCompilationErrors()
+        .javaLanguageLevel(LanguageLevel.JDK_15)
+        .run()
+        .apply {
+          if (useFirUast()) {
+            // K2 gracefully(?) parses Java record?!
+            expectClean()
+          } else {
+            // On the other hand, in K1, broken at PSI level:
+            /*
+            { // MyRecord body as the enclosing block
+            public static var create: MyRecord
+            (String)
+            p1
+            var p2: int
+            {
+              return MyRecord(p1, p2)
+            }
+            } // end of MyRecord body
+            */
+            expect(
+                """
 src/MyRecord.java:4: Warning: This reference is unused: p1 [NoOp]
     public static MyRecord create(String p1, int p2) {
                                          ~~
 0 errors, 1 warnings
         """
-          )
+            )
+          }
         }
-      }
   }
 
   fun testStaticMethodInRecord() {
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
             package some.pkg;
 
             import java.lang.annotation.ElementType;
@@ -1060,10 +1060,10 @@ src/MyRecord.java:4: Warning: This reference is unused: p1 [NoOp]
                 enum Kind { KIND_1, KIND_2 }
             }
           """
-          )
-          .indented(),
-        java(
-            """
+                )
+                .indented(),
+            java(
+                    """
             import some.pkg.MyAnno;
 
             public record MyRecord(@MyAnno String p1, @MyAnno int p2) {
@@ -1072,20 +1072,20 @@ src/MyRecord.java:4: Warning: This reference is unused: p1 [NoOp]
                 }
             }
           """
-          )
-          .indented(),
-      )
-      .javaLanguageLevel(LanguageLevel.JDK_16)
-      .run()
-      .expectClean()
+                )
+                .indented(),
+        )
+        .javaLanguageLevel(LanguageLevel.JDK_16)
+        .run()
+        .expectClean()
   }
 
   fun testNonCustomOperatorResolution() {
     // b/459808143
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
             interface State {
               val property: Property
             }
@@ -1111,17 +1111,17 @@ src/MyRecord.java:4: Warning: This reference is unused: p1 [NoOp]
                   it.property.p2 != null
                 }
           """
-          )
-          .indented()
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .run()
+        .expect(
+            """
 src/State.kt:22: Warning: This reference is unused: it.property.p1 != null [NoOp]
       it.property.p1 != null
       ~~~~~~~~~~~~~~~~~~~~~~
 0 errors, 1 warning
         """
-      )
+        )
   }
 }

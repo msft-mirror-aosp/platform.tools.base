@@ -54,10 +54,10 @@ class DiffUtilDetector : Detector(), SourceCodeScanner {
 
   override fun applicableSuperClasses(): List<String> {
     return listOf(
-      "android.support.v7.util.DiffUtil.ItemCallback",
-      "androidx.recyclerview.widget.DiffUtil.ItemCallback",
-      "android.support.v17.leanback.widget.DiffCallback",
-      "androidx.leanback.widget.DiffCallback",
+        "android.support.v7.util.DiffUtil.ItemCallback",
+        "androidx.recyclerview.widget.DiffUtil.ItemCallback",
+        "android.support.v17.leanback.widget.DiffCallback",
+        "androidx.leanback.widget.DiffCallback",
     )
   }
 
@@ -72,17 +72,17 @@ class DiffUtilDetector : Detector(), SourceCodeScanner {
 
   private fun checkMethod(context: JavaContext, declaration: UMethod) {
     declaration.accept(
-      object : AbstractUastVisitor() {
-        override fun visitBinaryExpression(node: UBinaryExpression): Boolean {
-          checkExpression(context, node)
-          return super.visitBinaryExpression(node)
-        }
+        object : AbstractUastVisitor() {
+          override fun visitBinaryExpression(node: UBinaryExpression): Boolean {
+            checkExpression(context, node)
+            return super.visitBinaryExpression(node)
+          }
 
-        override fun visitCallExpression(node: UCallExpression): Boolean {
-          checkCall(context, node)
-          return super.visitCallExpression(node)
+          override fun visitCallExpression(node: UCallExpression): Boolean {
+            checkCall(context, node)
+            return super.visitCallExpression(node)
+          }
         }
-      }
     )
   }
 
@@ -121,8 +121,7 @@ class DiffUtilDetector : Detector(), SourceCodeScanner {
 
   private fun isSealedOrData(context: JavaContext, cls: PsiClass?): Boolean {
     if (cls == null) return false
-    return isKotlin(cls.language) &&
-      (context.evaluator.isSealed(cls) || context.evaluator.isData(cls))
+    return isKotlin(cls.language) && (context.evaluator.isSealed(cls) || context.evaluator.isData(cls))
   }
 
   private fun defaultEquals(context: JavaContext, type: PsiClassType?): Boolean {
@@ -168,11 +167,10 @@ class DiffUtilDetector : Detector(), SourceCodeScanner {
   }
 
   /**
-   * Is this .equals() call within another if check which checks instanceof on a more specific type
-   * than we're calling equals on? If so, does that more specific type define its own equals?
+   * Is this .equals() call within another if check which checks instanceof on a more specific type than we're calling equals on? If so,
+   * does that more specific type define its own equals?
    *
-   * Also handle an implicit check via short circuit evaluation; e.g. something like "return a is A
-   * && b is B && a.equals(b)".
+   * Also handle an implicit check via short circuit evaluation; e.g. something like "return a is A && b is B && a.equals(b)".
    */
   private fun withinCastWithEquals(context: JavaContext, node: UExpression): Boolean {
     var parent = skipParenthesizedExprUp(node.uastParent)
@@ -180,11 +178,11 @@ class DiffUtilDetector : Detector(), SourceCodeScanner {
       parent = skipParenthesizedExprUp(parent.uastParent)
     }
     val target: PsiElement? =
-      when (node) {
-        is UCallExpression -> node.receiver?.tryResolve()
-        is UBinaryExpression -> node.leftOperand.tryResolve()
-        else -> null
-      }
+        when (node) {
+          is UCallExpression -> node.receiver?.tryResolve()
+          is UBinaryExpression -> node.leftOperand.tryResolve()
+          else -> null
+        }
 
     if (parent is UPolyadicExpression && parent.operator == UastBinaryOperator.LOGICAL_AND) {
       val operands = parent.operands
@@ -198,16 +196,15 @@ class DiffUtilDetector : Detector(), SourceCodeScanner {
       }
     }
     val ifStatement =
-      node.getParentOfType<UElement>(UIfExpression::class.java, false, UMethod::class.java)
-        as? UIfExpression ?: return false
+        node.getParentOfType<UElement>(UIfExpression::class.java, false, UMethod::class.java) as? UIfExpression ?: return false
     val condition = ifStatement.condition
     return isCastWithEquals(context, condition, target)
   }
 
   private fun isCastWithEquals(
-    context: JavaContext,
-    node: UExpression,
-    target: PsiElement?,
+      context: JavaContext,
+      node: UExpression,
+      target: PsiElement?,
   ): Boolean {
     when {
       node is UBinaryExpressionWithType -> {
@@ -236,10 +233,7 @@ class DiffUtilDetector : Detector(), SourceCodeScanner {
   }
 
   private fun checkExpression(context: JavaContext, node: UBinaryExpression) {
-    if (
-      node.operator == UastBinaryOperator.IDENTITY_EQUALS ||
-        node.operator == UastBinaryOperator.EQUALS
-    ) {
+    if (node.operator == UastBinaryOperator.IDENTITY_EQUALS || node.operator == UastBinaryOperator.EQUALS) {
       val left = node.leftOperand.getExpressionType() ?: return
       val right = node.rightOperand.getExpressionType() ?: return
       if (left is PsiClassType && right is PsiClassType) {
@@ -249,19 +243,15 @@ class DiffUtilDetector : Detector(), SourceCodeScanner {
               return
             }
 
-            val message =
-              "Suspicious equality check: `equals()` is not implemented in ${left.className}"
-            val location =
-              node.operatorIdentifier?.let { context.getLocation(it) } ?: context.getLocation(node)
+            val message = "Suspicious equality check: `equals()` is not implemented in ${left.className}"
+            val location = node.operatorIdentifier?.let { context.getLocation(it) } ?: context.getLocation(node)
             context.report(ISSUE, node, location, message)
           }
         } else {
           val message =
-            if (isKotlin(node.lang))
-              "Suspicious equality check: Did you mean `==` instead of `===` ?"
-            else "Suspicious equality check: Did you mean `.equals()` instead of `==` ?"
-          val location =
-            node.operatorIdentifier?.let { context.getLocation(it) } ?: context.getLocation(node)
+              if (isKotlin(node.lang)) "Suspicious equality check: Did you mean `==` instead of `===` ?"
+              else "Suspicious equality check: Did you mean `.equals()` instead of `==` ?"
+          val location = node.operatorIdentifier?.let { context.getLocation(it) } ?: context.getLocation(node)
           context.report(ISSUE, node, location, message)
         }
       }
@@ -273,22 +263,22 @@ class DiffUtilDetector : Detector(), SourceCodeScanner {
 
     @JvmField
     val ISSUE =
-      Issue.create(
-        id = "DiffUtilEquals",
-        briefDescription = "Suspicious DiffUtil Equality",
-        explanation =
-          """
+        Issue.create(
+            id = "DiffUtilEquals",
+            briefDescription = "Suspicious DiffUtil Equality",
+            explanation =
+                """
                 `areContentsTheSame` is used by `DiffUtil` to produce diffs. If the \
                 method is implemented incorrectly, such as using identity equals \
                 instead of equals, or calling equals on a class that has not implemented \
                 it, weird visual artifacts can occur.
                 """,
-        category = Category.CORRECTNESS,
-        priority = 4,
-        androidSpecific = true,
-        moreInfo = "https://issuetracker.google.com/116789824",
-        severity = Severity.ERROR,
-        implementation = IMPLEMENTATION,
-      )
+            category = Category.CORRECTNESS,
+            priority = 4,
+            androidSpecific = true,
+            moreInfo = "https://issuetracker.google.com/116789824",
+            severity = Severity.ERROR,
+            implementation = IMPLEMENTATION,
+        )
   }
 }

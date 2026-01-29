@@ -23,52 +23,52 @@ class WearBackNavigationDetectorTest : AbstractCheckTest() {
 
   fun testDocumentationExample() {
     lint()
-      .files(manifestWithActivityTheme, themeFile)
-      .run()
-      .expect(
-        """
-              res/values/styles.xml:10: Warning: Disabling swipe-to-dismiss is generally not recommended for Wear applications [WearBackNavigation]
-                     <item name="android:windowSwipeToDismiss">false</item>
-                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-              0 errors, 1 warnings
+        .files(manifestWithActivityTheme, themeFile)
+        .run()
+        .expect(
             """
-          .trimIndent()
-      )
-      .expectFixDiffs(
-        """
-        Autofix for res/values/styles.xml line 10: Delete `android:windowSwipeToDismiss` from theme:
-        @@ -10 +10
-        -        <item name="android:windowSwipeToDismiss">false</item>
-      """
-          .trimIndent()
-      )
+            res/values/styles.xml:10: Warning: Disabling swipe-to-dismiss is generally not recommended for Wear applications [WearBackNavigation]
+                   <item name="android:windowSwipeToDismiss">false</item>
+                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            0 errors, 1 warnings
+            """
+                .trimIndent()
+        )
+        .expectFixDiffs(
+            """
+            Autofix for res/values/styles.xml line 10: Delete `android:windowSwipeToDismiss` from theme:
+            @@ -10 +10
+            -        <item name="android:windowSwipeToDismiss">false</item>
+            """
+                .trimIndent()
+        )
   }
 
   private val themeFile =
-    xml(
-      "res/values/styles.xml",
-      """
-          <resources>
+      xml(
+          "res/values/styles.xml",
+          """
+           <resources>
 
-            <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">
-                <item name="colorPrimary">@color/colorPrimary</item>
-                <item name="colorAccent">@color/colorAccent</item>
-                <item name="android:windowSwipeToDismiss">true</item>
-            </style>
+             <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">
+                 <item name="colorPrimary">@color/colorPrimary</item>
+                 <item name="colorAccent">@color/colorAccent</item>
+                 <item name="android:windowSwipeToDismiss">true</item>
+             </style>
 
-            <style name="SubTheme" parent="AppTheme">
-                <item name="android:windowSwipeToDismiss">false</item>
-            </style>
+             <style name="SubTheme" parent="AppTheme">
+                 <item name="android:windowSwipeToDismiss">false</item>
+             </style>
 
-         </resources>
-        """
-        .trimIndent(),
-    )
+          </resources>
+          """
+              .trimIndent(),
+      )
 
   private val manifestWithActivityTheme =
-    manifest(
-      // language=xml
-      """
+      manifest(
+          // language=xml
+          """
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android"
               package="test.pkg">
@@ -81,7 +81,7 @@ class WearBackNavigationDetectorTest : AbstractCheckTest() {
                       android:theme="@style/AppTheme" />
               </application>
           </manifest>
-        """
-        .trimIndent()
-    )
+          """
+              .trimIndent()
+      )
 }

@@ -28,9 +28,9 @@ class ForbiddenStudioCallDetectorTest {
   @Test
   fun testStringIntern() {
     studioLint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
                     package test.pkg;
 
                     @SuppressWarnings({
@@ -55,13 +55,13 @@ class ForbiddenStudioCallDetectorTest {
                         }
                     }
                    """
-          )
-          .indented()
-      )
-      .issues(ForbiddenStudioCallDetector.INTERN)
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .issues(ForbiddenStudioCallDetector.INTERN)
+        .run()
+        .expect(
+            """
                 src/test/pkg/Test.java:13: Error: Do not intern strings; if reusing strings is truly necessary build a local cache [NoInterning]
                         String s2 = "foo".intern(); // ERROR
                                           ~~~~~~~~
@@ -70,15 +70,15 @@ class ForbiddenStudioCallDetectorTest {
                                       ~~~~~~~~
                 2 errors, 0 warnings
                 """
-      )
+        )
   }
 
   @Test
   fun testFilesCopy() {
     studioLint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
                     package test.pkg;
                     import java.io.IOException;
                     import java.io.InputStream;
@@ -91,27 +91,27 @@ class ForbiddenStudioCallDetectorTest {
                         }
                     }
                     """
-          )
-          .indented()
-      )
-      .issues(ForbiddenStudioCallDetector.FILES_COPY)
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .issues(ForbiddenStudioCallDetector.FILES_COPY)
+        .run()
+        .expect(
+            """
                 src/test/pkg/Test.java:9: Error: Do not use java.nio.file.Files.copy(Path, Path). Instead, use FileUtils.copyFile(Path, Path) or Kotlin's File#copyTo(File) [NoNioFilesCopy]
                         Files.copy(p1, p2); // ERROR
                               ~~~~~~~~~~~~
                 1 errors, 0 warnings
                 """
-      )
+        )
   }
 
   @Test
   fun testWhen() {
     studioLint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
                     package test.pkg
                     import org.mockito.Mockito
                     import org.mockito.stubbing.OngoingStubbing
@@ -122,10 +122,10 @@ class ForbiddenStudioCallDetectorTest {
                     }
                     fun `when`(arg: OngoingStubbing<String>) {}
                     """
-          )
-          .indented(),
-        java(
-            """
+                )
+                .indented(),
+            java(
+                    """
                     package test.pkg;
                     import org.mockito.Mockito;
                     import org.mockito.stubbing.OngoingStubbing;
@@ -136,11 +136,11 @@ class ForbiddenStudioCallDetectorTest {
                         }
                     }
                     """
-          )
-          .indented(),
-        // Stubs
-        java(
-            """
+                )
+                .indented(),
+            // Stubs
+            java(
+                    """
                     package org.mockito;
                     import org.mockito.stubbing.OngoingStubbing;
                     public class Mockito {
@@ -149,29 +149,29 @@ class ForbiddenStudioCallDetectorTest {
                         }
                     }
                     """
-          )
-          .indented(),
-        java(
-            """
+                )
+                .indented(),
+            java(
+                    """
                     package org.mockito.stubbing;
                     public interface OngoingStubbing<T> {
                     }
                     """
-          )
-          .indented(),
-      )
-      .issues(ForbiddenStudioCallDetector.MOCKITO_WHEN)
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+        )
+        .issues(ForbiddenStudioCallDetector.MOCKITO_WHEN)
+        .run()
+        .expect(
+            """
                 src/test/pkg/test.kt:7: Error: Do not use Mockito.when from Kotlin; use org.mockito.kotlin.whenever instead [MockitoWhen]
                     Mockito.`when`(args) // WARN
                             ~~~~~~~~~~~~
                 1 errors, 0 warnings
                 """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
                 Fix for src/test/pkg/test.kt line 7: Use `whenever`:
                 @@ -2 +2
                 + import org.mockito.kotlin.whenever
@@ -179,15 +179,15 @@ class ForbiddenStudioCallDetectorTest {
                 -     Mockito.`when`(args) // WARN
                 +     whenever(args) // WARN
                 """
-      )
+        )
   }
 
   @Test
   fun testAddToStdlibStarImport() {
     studioLint()
-      .files(
-        kotlin(
-          """
+        .files(
+            kotlin(
+                """
                     package test.pkg
                     import org.jetbrains.kotlin.utils.addToStdlib.*
 
@@ -205,13 +205,13 @@ class ForbiddenStudioCallDetectorTest {
                       return occurrences.sumByLong { it + 1 } // ERROR 3
                     }
                     """
-        ),
-        addToStdlibStub,
-      )
-      .issues(ForbiddenStudioCallDetector.ADD_TO_STDLIB_USAGE)
-      .run()
-      .expect(
-        """
+            ),
+            addToStdlibStub,
+        )
+        .issues(ForbiddenStudioCallDetector.ADD_TO_STDLIB_USAGE)
+        .run()
+        .expect(
+            """
                 src/test/pkg/test.kt:7: Warning: Avoid using methods from the unstable addToStdlib package [AddToStdlibUsage]
                                       return items.firstIsInstanceOrNull() // ERROR 1
                                                    ~~~~~~~~~~~~~~~~~~~~~~~
@@ -223,15 +223,15 @@ class ForbiddenStudioCallDetectorTest {
                                                          ~~~~~~~~~~~~~~~~~~~~
                 0 errors, 3 warnings
                 """
-      )
+        )
   }
 
   @Test
   fun testAddDependencyCheck() {
     studioLint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
                     package test.pkg
                     import com.android.tools.idea.gradle.dsl.api.dependencies.DependenciesModel
                     import com.android.tools.idea.gradle.dsl.api.settings.PluginsModel
@@ -248,10 +248,10 @@ class ForbiddenStudioCallDetectorTest {
                        model.applyPlugin("some.plugin")
                     }
                     """
-          )
-          .indented(),
-        java(
-            """
+                )
+                .indented(),
+            java(
+                    """
                    package com.android.tools.idea.gradle.dsl.api.dependencies;
                    import com.android.tools.idea.gradle.dsl.api.ext.ReferenceTo;
                    import com.android.tools.idea.gradle.dsl.api.dependencies.ArtifactDependencySpec;
@@ -274,24 +274,24 @@ class ForbiddenStudioCallDetectorTest {
                       void addPlatformArtifact(String configurationName, ArtifactDependencySpec dependency, boolean enforced);
                     }
                     """
-          )
-          .indented(),
-        java(
-            """
+                )
+                .indented(),
+            java(
+                    """
           package com.android.tools.idea.gradle.dsl.api.ext;
           public final class ReferenceTo { }
         """
-          )
-          .indented(),
-        java(
-            """
+                )
+                .indented(),
+            java(
+                    """
           package com.android.tools.idea.gradle.dsl.api.dependencies;
           public interface ArtifactDependencySpec { }
         """
-          )
-          .indented(),
-        java(
-            """
+                )
+                .indented(),
+            java(
+                    """
           package com.android.tools.idea.gradle.dsl.api.settings;
           public interface PluginsModel {
             PluginModel applyPlugin(@NotNull String plugin);
@@ -299,13 +299,13 @@ class ForbiddenStudioCallDetectorTest {
             PluginModel applyPlugin(@NotNull String plugin, @Nullable String version, @Nullable Boolean apply);
           }
         """
-          )
-          .indented(),
-      )
-      .issues(ForbiddenStudioCallDetector.ADD_DEPENDENCY)
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+        )
+        .issues(ForbiddenStudioCallDetector.ADD_DEPENDENCY)
+        .run()
+        .expect(
+            """
                 src/test/pkg/test.kt:6: Error: Do not use addArtifact or addPlatformArtifact, prefer DependenciesHelper [AddDependencyUsage]
                    model.addArtifact("api", "com.example:example:1.0", listOf())
                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -317,15 +317,15 @@ class ForbiddenStudioCallDetectorTest {
                          ~~~~~~~~~~~~~~~~~~~~~~~~~~
                 3 errors, 0 warnings
                 """
-      )
+        )
   }
 
   @Test
   fun testAddToStdlibMultipleImports() {
     studioLint()
-      .files(
-        kotlin(
-          """
+        .files(
+            kotlin(
+                """
                     package test.pkg
                     import org.jetbrains.kotlin.utils.addToStdlib.safeAs
                     import org.jetbrains.kotlin.utils.addToStdlib.sumByLong
@@ -340,13 +340,13 @@ class ForbiddenStudioCallDetectorTest {
                     }
 
 """
-        ),
-        addToStdlibStub,
-      )
-      .issues(ForbiddenStudioCallDetector.ADD_TO_STDLIB_USAGE)
-      .run()
-      .expect(
-        """
+            ),
+            addToStdlibStub,
+        )
+        .issues(ForbiddenStudioCallDetector.ADD_TO_STDLIB_USAGE)
+        .run()
+        .expect(
+            """
                 src/test/pkg/test.kt:7: Warning: Avoid using methods from the unstable addToStdlib package [AddToStdlibUsage]
                                       return occurrences.sumByLong { it + 1 }  // ERROR 4
                                                          ~~~~~~~~~~~~~~~~~~~~
@@ -355,28 +355,28 @@ class ForbiddenStudioCallDetectorTest {
                                                            ~~~~~~~~~~~~~
                 0 errors, 2 warnings
                 """
-      )
+        )
   }
 
   @Test
   fun testAvoidJsInline() {
     studioLint()
-      .files(
-        kotlin(
-          """
+        .files(
+            kotlin(
+                """
           package test.pkg
           import org.jetbrains.kotlin.js.descriptorUtils.nameIfStandardType
           import org.jetbrains.kotlin.js.translate.utils.finalElement
           import org.jetbrains.kotlin.js.inline.util.toIdentitySet
           import org.jetbrains.kotlin.js.translate.declaration.hasCustomSetter
           """
+            )
         )
-      )
-      .issues(ForbiddenStudioCallDetector.KOTLIN_JS_PACKAGE)
-      .allowCompilationErrors()
-      .run()
-      .expect(
-        """
+        .issues(ForbiddenStudioCallDetector.KOTLIN_JS_PACKAGE)
+        .allowCompilationErrors()
+        .run()
+        .expect(
+            """
         src/test/pkg/test.kt:3: Warning: Avoid using methods from the kotlin.js package [KotlinJsUsage]
                   import org.jetbrains.kotlin.js.descriptorUtils.nameIfStandardType
                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -391,13 +391,13 @@ class ForbiddenStudioCallDetectorTest {
                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         0 errors, 4 warnings
         """
-      )
+        )
   }
 
   private val addToStdlibStub: TestFile =
-    kotlin(
-        "org/jetbrains/kotlin/utils/addToStdlib.kt",
-        """
+      kotlin(
+              "org/jetbrains/kotlin/utils/addToStdlib.kt",
+              """
                 package org.jetbrains.kotlin.utils.addToStdlib
 
                 import java.util.*
@@ -411,15 +411,15 @@ class ForbiddenStudioCallDetectorTest {
                 inline fun <reified T : Any> Any?.safeAs(): T?
 
                 """,
-      )
-      .within("src")
+          )
+          .within("src")
 
   @Test
   fun testIsEap() {
     studioLint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
                     package test.pkg;
                     import com.intellij.openapi.application.ApplicationManager;
 
@@ -429,10 +429,10 @@ class ForbiddenStudioCallDetectorTest {
                         }
                     }
                     """
-          )
-          .indented(),
-        java(
-            """
+                )
+                .indented(),
+            java(
+                    """
           package com.intellij.openapi.application;
           class ApplicationManager {
             public static Application getApplication() {
@@ -440,36 +440,36 @@ class ForbiddenStudioCallDetectorTest {
             }
           }
         """
-          )
-          .indented(),
-        java(
-            """
+                )
+                .indented(),
+            java(
+                    """
           package com.intellij.openapi.application;
           interface Application {
             boolean isEAP();
           }
         """
-          )
-          .indented(),
-      )
-      .issues(ForbiddenStudioCallDetector.IS_EAP)
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+        )
+        .issues(ForbiddenStudioCallDetector.IS_EAP)
+        .run()
+        .expect(
+            """
           src/test/pkg/Test.java:6: Error: Do not use com.intellij.openapi.application.Application.isEap. Application.isEap depends on the underlying intellij platform prebuilt, rather than the version of Studio released. Instead, consider using a StudioFlag.` [ApplicationManagerIsEap]
                   return ApplicationManager.getApplication().isEAP(); // ERROR
                                                              ~~~~~~~
           1 errors, 0 warnings
           """
-      )
+        )
   }
 
   @Test
   fun testDisposableDispose() {
     studioLint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
                     package test.pkg
 
                     import com.intellij.openapi.Disposable
@@ -499,22 +499,22 @@ class ForbiddenStudioCallDetectorTest {
                         fun otherDispose(value: Int) {}
                     }
                     """
-          )
-          .indented(),
-        // Stub for Disposable
-        java(
-            """
+                )
+                .indented(),
+            // Stub for Disposable
+            java(
+                    """
                     package com.intellij.openapi;
 
                     public interface Disposable {
                         void dispose();
                     }
                     """
-          )
-          .indented(),
-        // Stub for Disposer
-        java(
-            """
+                )
+                .indented(),
+            // Stub for Disposer
+            java(
+                    """
                     package com.intellij.openapi.util;
 
                     import com.intellij.openapi.Disposable;
@@ -531,13 +531,13 @@ class ForbiddenStudioCallDetectorTest {
                         }
                     }
                     """
-          )
-          .indented(),
-      )
-      .issues(ForbiddenStudioCallDetector.DISPOSE_DIRECTLY)
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+        )
+        .issues(ForbiddenStudioCallDetector.DISPOSE_DIRECTLY)
+        .run()
+        .expect(
+            """
                 src/com/intellij/openapi/util/Disposer.java:8: Error: Do not call Disposable.dispose() directly, use Disposer.dispose() instead [DisposeDirectly]
                         disposable.dispose();
                                    ~~~~~~~~~
@@ -546,6 +546,6 @@ class ForbiddenStudioCallDetectorTest {
                                    ~~~~~~~~~
                 2 errors, 0 warnings
                 """
-      )
+        )
   }
 }

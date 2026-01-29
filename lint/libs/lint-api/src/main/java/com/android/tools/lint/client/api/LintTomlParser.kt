@@ -22,9 +22,9 @@ import java.io.File
 /** Lint parser for TOML files. */
 open class LintTomlParser {
   fun parse(
-    file: File,
-    contents: CharSequence,
-    onProblem: ((Severity, Location, String) -> Unit)? = null,
+      file: File,
+      contents: CharSequence,
+      onProblem: ((Severity, Location, String) -> Unit)? = null,
   ): LintTomlDocument {
     return DefaultLintTomlParser(file, contents, onProblem).getDocument()
   }
@@ -35,10 +35,9 @@ interface LintTomlDocument {
   /**
    * Returns the underlying file this document is based on.
    *
-   * Note that the file contents may not match the document sources; when running in the IDE for
-   * example, we'll be parsing the current editor contents, not the most recently saved document. As
-   * always, use [LintClient.readFile] to access file content; files are only treated as path
-   * references.
+   * Note that the file contents may not match the document sources; when running in the IDE for example, we'll be parsing the current
+   * editor contents, not the most recently saved document. As always, use [LintClient.readFile] to access file content; files are only
+   * treated as path references.
    */
   fun getFile(): File
 
@@ -51,10 +50,7 @@ interface LintTomlDocument {
   /** Looks up the corresponding value by dotted path. */
   fun getValue(key: List<String>): LintTomlValue?
 
-  /**
-   * Looks up the corresponding value by a path; this is just a convenience function for looking up
-   * using a flattened string.
-   */
+  /** Looks up the corresponding value by a path; this is just a convenience function for looking up using a flattened string. */
   fun getValue(key: String): LintTomlValue?
 
   /** Runs the given [visitor] on this document. */
@@ -68,10 +64,7 @@ interface LintTomlValue {
   /** The document this value belongs to. */
   fun getDocument(): LintTomlDocument
 
-  /**
-   * The associated key, if applicable. (This is only the local key in the parent map, not the full
-   * key; see [getFullKey] for that.
-   */
+  /** The associated key, if applicable. (This is only the local key in the parent map, not the full key; see [getFullKey] for that. */
   fun getKey(): String? = null
 
   /**
@@ -81,15 +74,13 @@ interface LintTomlValue {
    *
    *     delay = 1_000
    *
-   * this will return java.lang.Integer(1000). Similarly, if called on a String value, you get the
-   * actual String (without the surrounding quotes, with escapes applied, etc.)
+   * this will return java.lang.Integer(1000). Similarly, if called on a String value, you get the actual String (without the surrounding
+   * quotes, with escapes applied, etc.)
    *
-   * If it cannot produce the correct value, it will return the source text of the value instead.
-   * Note also that this method isn't performing full TOML validation, so while for example TOML
-   * does not allow leading zeroes in integers, lint will still return the intended integer.
-   * Generally, the idea is for lint to try to be able to run on partially broken source since the
-   * user may be editing it, and we want to be able to offer guidance, sometimes to help the user
-   * make the code valid.
+   * If it cannot produce the correct value, it will return the source text of the value instead. Note also that this method isn't
+   * performing full TOML validation, so while for example TOML does not allow leading zeroes in integers, lint will still return the
+   * intended integer. Generally, the idea is for lint to try to be able to run on partially broken source since the user may be editing it,
+   * and we want to be able to offer guidance, sometimes to help the user make the code valid.
    */
   fun getActualValue(): Any? = null
 
@@ -99,10 +90,7 @@ interface LintTomlValue {
   /** Gets the next sibling value in the parent map or array */
   fun next(): LintTomlValue?
 
-  /**
-   * Returns the start offset of the value. Note that for a key=value pair, this is for the value
-   * portion.
-   */
+  /** Returns the start offset of the value. Note that for a key=value pair, this is for the value portion. */
   fun getStartOffset(): Int
 
   /** Returns the end offset of the value. */
@@ -150,9 +138,6 @@ interface LintTomlMapValue : LintTomlValue {
 
 /** Represents a literal value. */
 interface LintTomlLiteralValue : LintTomlValue {
-  /**
-   * Maps from a TOML source literal (such as `"foo"`) to the corresponding value (such as new
-   * String("foo"))
-   */
+  /** Maps from a TOML source literal (such as `"foo"`) to the corresponding value (such as new String("foo")) */
   override fun getActualValue(): Any?
 }

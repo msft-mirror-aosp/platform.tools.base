@@ -26,16 +26,15 @@ import java.io.IOException
 import org.jetbrains.annotations.VisibleForTesting
 
 /**
- * TOML version catalog files, and other Gradle files in the root project, aren't actually part of
- * the Gradle projects lint is asked to analyze.
+ * TOML version catalog files, and other Gradle files in the root project, aren't actually part of the Gradle projects lint is asked to
+ * analyze.
  *
- * Initially, we just had projects pull in version catalog files from `../gradle/`, but that meant
- * that we'd potentially end up repeating analysis (and reporting) on the same files over and over,
- * from each project. We should only do this once. For now, we're assigning the responsibility to
- * the first module alphabetically in the root directory.
+ * Initially, we just had projects pull in version catalog files from `../gradle/`, but that meant that we'd potentially end up repeating
+ * analysis (and reporting) on the same files over and over, from each project. We should only do this once. For now, we're assigning the
+ * responsibility to the first module alphabetically in the root directory.
  *
- * (We're also asked to analyze this same folder multiple times, for each source set type, so we
- * only return true for the main artifact type.)
+ * (We're also asked to analyze this same folder multiple times, for each source set type, so we only return true for the main artifact
+ * type.)
  */
 fun Project.isDesignatedGradleRootHolder(client: LintClient): Boolean {
   // In AGP we'll be invoked for each artifact (main, test, androidTest, testFixtures)
@@ -67,9 +66,9 @@ fun Project.isDesignatedGradleRootHolder(client: LintClient): Boolean {
   if (moduleDirs != null) {
     for (moduleDir in moduleDirs) {
       if (
-        File(moduleDir, SdkConstants.FN_BUILD_GRADLE).exists() ||
-          File(moduleDir, SdkConstants.FN_BUILD_GRADLE_KTS).exists() ||
-          File(moduleDir, SdkConstants.FN_BUILD_GRADLE_DECLARATIVE).exists()
+          File(moduleDir, SdkConstants.FN_BUILD_GRADLE).exists() ||
+              File(moduleDir, SdkConstants.FN_BUILD_GRADLE_KTS).exists() ||
+              File(moduleDir, SdkConstants.FN_BUILD_GRADLE_DECLARATIVE).exists()
       ) {
         return dir.path.equals(moduleDir.path, ignoreCase = true)
       }
@@ -88,9 +87,9 @@ private fun findFirstIncludedModulePath(root: File): String? {
   for (file in rootFiles) {
     val name = file.name
     if (
-      name == SdkConstants.FN_SETTINGS_GRADLE ||
-        name == SdkConstants.FN_SETTINGS_GRADLE_KTS ||
-        name == SdkConstants.FN_SETTINGS_GRADLE_DECLARATIVE
+        name == SdkConstants.FN_SETTINGS_GRADLE ||
+            name == SdkConstants.FN_SETTINGS_GRADLE_KTS ||
+            name == SdkConstants.FN_SETTINGS_GRADLE_DECLARATIVE
     ) {
       if (file.isFile) {
         try {
@@ -112,5 +111,4 @@ fun findFirstIncludedModulePath(settings: String): String? {
   return path
 }
 
-private val regex =
-  Regex("""^\s*include\s*\(?\s*(('(:[^']+)')|("(:[^"]+)"))""", RegexOption.MULTILINE)
+private val regex = Regex("""^\s*include\s*\(?\s*(('(:[^']+)')|("(:[^"]+)"))""", RegexOption.MULTILINE)

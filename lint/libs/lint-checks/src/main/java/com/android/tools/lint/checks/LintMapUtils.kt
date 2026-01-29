@@ -27,8 +27,8 @@ fun LintMap.getOrPutLintMap(key: String): LintMap {
 }
 
 /**
- * Returns a Sequence of [Location], assuming the [LintMap] contains key-value pairs, where each key
- * is some arbitrary String (often "0", "1", "2", etc.) and each value is a [Location].
+ * Returns a Sequence of [Location], assuming the [LintMap] contains key-value pairs, where each key is some arbitrary String (often "0",
+ * "1", "2", etc.) and each value is a [Location].
  */
 fun LintMap.asLocationSequence() = sequence {
   for (key in this@asLocationSequence) {
@@ -37,8 +37,8 @@ fun LintMap.asLocationSequence() = sequence {
 }
 
 /**
- * Appends a location to the [LintMap], assuming the [LintMap] contains key-value pairs, where each
- * key is "0", "1", "2", etc. and each value is a [Location].
+ * Appends a location to the [LintMap], assuming the [LintMap] contains key-value pairs, where each key is "0", "1", "2", etc. and each
+ * value is a [Location].
  */
 fun LintMap.appendLocation(location: Location): LintMap {
   this.put("${this.size}", location)

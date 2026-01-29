@@ -26,9 +26,9 @@ class SliceDetectorTest : AbstractCheckTest() {
 
   fun testAtLeastOneRow() {
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
                 package test.pkg;
 
                 import android.app.PendingIntent;
@@ -92,13 +92,13 @@ class SliceDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-          )
-          .indented(),
-        *stubs,
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            *stubs,
+        )
+        .run()
+        .expect(
+            """
             src/test/pkg/SliceTest.java:33: Warning: A slice should have at least one row added to it [Slices]
                     Slice slice = new ListBuilder(context, uri, ttl).build();
                                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -107,14 +107,14 @@ class SliceDetectorTest : AbstractCheckTest() {
                                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             0 errors, 2 warnings
             """
-      )
+        )
   }
 
   fun testAllRowsShouldHaveContent() {
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
                 package test.pkg;
 
                 import android.app.PendingIntent;
@@ -181,13 +181,13 @@ class SliceDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-          )
-          .indented(),
-        *stubs,
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            *stubs,
+        )
+        .run()
+        .expect(
+            """
             src/test/pkg/SliceTest.java:31: Warning: A slice should have a primary action set on one of its rows [Slices]
                     ListBuilder lb = new ListBuilder(context, uri, ttl);
                                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -202,14 +202,14 @@ class SliceDetectorTest : AbstractCheckTest() {
                                        ~~~~~~~~~~~~~~~~~~~~~
             0 errors, 4 warnings
             """
-      )
+        )
   }
 
   fun testListBuilderShouldAlwaysHavePrimaryActionSet() {
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
                 package test.pkg;
 
                 import android.app.PendingIntent;
@@ -265,26 +265,26 @@ class SliceDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-          )
-          .indented(),
-        *stubs,
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            *stubs,
+        )
+        .run()
+        .expect(
+            """
             src/test/pkg/SliceTest.java:35: Warning: A slice should have a primary action set on one of its rows [Slices]
                     ListBuilder lb = new ListBuilder(context, uri, ttl);
                                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             0 errors, 1 warnings
             """
-      )
+        )
   }
 
   fun testKotlin() {
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
                 @file:Suppress("unused")
 
                 package test.pkg
@@ -354,13 +354,13 @@ class SliceDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-          )
-          .indented(),
-        *stubs,
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            *stubs,
+        )
+        .run()
+        .expect(
+            """
             src/test/pkg/SliceTest.kt:27: Warning: RowBuilder cannot have a mixture of icons and slice actions added to the end items [Slices]
                     rowBuilder.addEndItem(sliceAction2)
                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -378,14 +378,14 @@ class SliceDetectorTest : AbstractCheckTest() {
                                           ~~~~~~~~~~~~
             0 errors, 3 warnings
             """
-      )
+        )
   }
 
   fun testRowBuilderCannotHaveMultipleTimeStamps() {
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
                 package test.pkg;
 
                 import android.app.PendingIntent;
@@ -417,13 +417,13 @@ class SliceDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-          )
-          .indented(),
-        *stubs,
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            *stubs,
+        )
+        .run()
+        .expect(
+            """
             src/test/pkg/SliceTest.java:27: Warning: RowBuilder can only have one timestamp added to it, remove one of your timestamps [Slices]
                     rb.addEndItem(timestamp2);
                     ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -432,14 +432,14 @@ class SliceDetectorTest : AbstractCheckTest() {
                     ~~~~~~~~~~~~~~~~~~~~~~~~~~
             0 errors, 1 warnings
             """
-      )
+        )
   }
 
   fun testRowBuilderShouldNotHaveMixtureOfActionsAndIcons() {
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
                 package test.pkg;
 
                 import android.app.PendingIntent;
@@ -498,13 +498,13 @@ class SliceDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-          )
-          .indented(),
-        *stubs,
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            *stubs,
+        )
+        .run()
+        .expect(
+            """
             src/test/pkg/SliceTest.java:32: Warning: RowBuilder cannot have a mixture of icons and slice actions added to the end items [Slices]
                     rb.addEndItem(sliceAction2);
                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -519,14 +519,14 @@ class SliceDetectorTest : AbstractCheckTest() {
                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             0 errors, 2 warnings
             """
-      )
+        )
   }
 
   fun testRowBuilderShouldNotMixDefaultAndCustom() {
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
                 package test.pkg;
 
                 import android.app.PendingIntent;
@@ -573,13 +573,13 @@ class SliceDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-          )
-          .indented(),
-        *stubs,
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            *stubs,
+        )
+        .run()
+        .expect(
+            """
             src/test/pkg/SliceTest.java:42: Warning: RowBuilder should not have a mixture of default and custom toggles [Slices]
                     rb.addEndItem(defaultToggle);
                                   ~~~~~~~~~~~~~
@@ -588,14 +588,14 @@ class SliceDetectorTest : AbstractCheckTest() {
                                   ~~~~~~~~~~~~
             0 errors, 1 warnings
             """
-      )
+        )
   }
 
   fun testRowBuilderShouldNotMix2() {
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
                 package test.pkg;
 
                 import android.app.PendingIntent;
@@ -638,19 +638,19 @@ class SliceDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-          )
-          .indented(),
-        *stubs,
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            *stubs,
+        )
+        .run()
+        .expect(
+            """
             src/test/pkg/SliceTest.java:37: Warning: A slice should have at least one row added to it [Slices]
                     ListBuilder lb = new ListBuilder(context, uri, ttl);
                                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             0 errors, 1 warnings
             """
-      )
+        )
   }
 
   fun testSeeMoreAction() {
@@ -660,9 +660,9 @@ class SliceDetectorTest : AbstractCheckTest() {
     }
 
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
                 package test.pkg;
 
                 import android.app.PendingIntent;
@@ -726,26 +726,26 @@ class SliceDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-          )
-          .indented(),
-        *stubs,
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            *stubs,
+        )
+        .run()
+        .expect(
+            """
             src/test/pkg/SliceTest.java:55: Warning: Consider setting a see more action if more than 4 rows added to ListBuilder. Depending on where the slice is being displayed, all rows of content may not be visible, consider adding an intent to an activity with the rest of the content [Slices]
                     lb.addRow(rb5);
                     ~~~~~~~~~~~~~~
             0 errors, 1 warnings
             """
-      )
+        )
   }
 
   fun testCorrectManifestDeclaration() {
     lint()
-      .files(
-        manifest(
-            """
+        .files(
+            manifest(
+                    """
                     <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                         package="test.pkg">
                         <application>
@@ -759,10 +759,10 @@ class SliceDetectorTest : AbstractCheckTest() {
                         </application>
                     </manifest>
                 """
-          )
-          .indented(),
-        java(
-            """
+                )
+                .indented(),
+            java(
+                    """
                 package test.pkg;
 
                 import android.content.Intent;
@@ -776,20 +776,20 @@ class SliceDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-          )
-          .indented(),
-        *stubs,
-      )
-      .run()
-      .expectClean()
+                )
+                .indented(),
+            *stubs,
+        )
+        .run()
+        .expectClean()
   }
 
   fun testConsumer1() {
     // RowBuilders are constructed inside consumer methods on builder
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
                     package test.pkg;
                     import android.app.PendingIntent;
                     import android.content.Context;
@@ -882,19 +882,19 @@ class SliceDetectorTest : AbstractCheckTest() {
                         }
                     }
                 """
-          )
-          .indented(),
-        *stubs,
-      )
-      .run()
-      .expectClean()
+                )
+                .indented(),
+            *stubs,
+        )
+        .run()
+        .expectClean()
   }
 
   fun testSliceProviderMissingCategory() {
     lint()
-      .files(
-        manifest(
-            """
+        .files(
+            manifest(
+                    """
                     <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                         package="test.pkg">
                         <application>
@@ -907,23 +907,23 @@ class SliceDetectorTest : AbstractCheckTest() {
                         </application>
                     </manifest>
                 """
-          )
-          .indented(),
-        java(
-            """
+                )
+                .indented(),
+            java(
+                    """
                 package test.pkg;
 
                 @SuppressWarnings("ClassNameDiffersFromFileName")
                 public class MyProvider extends DefaultSliceProvider {
                 }
                 """
-          )
-          .indented(),
-        *stubs,
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            *stubs,
+        )
+        .run()
+        .expect(
+            """
             AndroidManifest.xml:6: Warning: All SliceProvider filters require category slice to be set:  <category android:name="android.app.slice.category.SLICE" /> [Slices]
                         <intent-filter>
                         ^
@@ -932,14 +932,14 @@ class SliceDetectorTest : AbstractCheckTest() {
                          ~~~~~~~~~~
             0 errors, 1 warnings
             """
-      )
+        )
   }
 
   fun testMissingOnMapDeclaration() {
     lint()
-      .files(
-        manifest(
-            """
+        .files(
+            manifest(
+                    """
                     <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                         package="test.pkg">
                         <application>
@@ -953,23 +953,23 @@ class SliceDetectorTest : AbstractCheckTest() {
                         </application>
                     </manifest>
                 """
-          )
-          .indented(),
-        java(
-            """
+                )
+                .indented(),
+            java(
+                    """
                 package test.pkg;
 
                 @SuppressWarnings("ClassNameDiffersFromFileName")
                 public class MyProvider extends DefaultSliceProvider {
                 }
                 """
-          )
-          .indented(),
-        *stubs,
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            *stubs,
+        )
+        .run()
+        .expect(
+            """
             src/test/pkg/MyProvider.java:4: Warning: Implement SliceProvider#onMapIntentToUri to handle the intents defined on your slice <provider> in your manifest [Slices]
             public class MyProvider extends DefaultSliceProvider {
                          ~~~~~~~~~~
@@ -978,14 +978,14 @@ class SliceDetectorTest : AbstractCheckTest() {
                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             0 errors, 1 warnings
             """
-      )
+        )
   }
 
   fun testMissingOnIntentFilterDeclaration() {
     lint()
-      .files(
-        manifest(
-            """
+        .files(
+            manifest(
+                    """
                     <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                         package="test.pkg">
                         <application>
@@ -995,10 +995,10 @@ class SliceDetectorTest : AbstractCheckTest() {
                         </application>
                     </manifest>
                 """
-          )
-          .indented(),
-        java(
-            """
+                )
+                .indented(),
+            java(
+                    """
                 package test.pkg;
 
                 import android.content.Intent;
@@ -1012,28 +1012,28 @@ class SliceDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-          )
-          .indented(),
-        *stubs,
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            *stubs,
+        )
+        .run()
+        .expect(
+            """
             src/test/pkg/MyProvider.java:9: Warning: Define intent filters in your manifest on your <provider android:name="test.pkg.MyProvider">; otherwise onMapIntentToUri will not be called [Slices]
                 public Uri onMapIntentToUri(Intent intent) {
                            ~~~~~~~~~~~~~~~~
             0 errors, 1 warnings
             """
-      )
+        )
   }
 
   fun test79784005_part1() {
     // Regression test for
     // 79784005: "at least one item in row" Lint check false positive in Kotlin when using apply
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
                 package test.pkg
 
                 import android.content.Context
@@ -1071,21 +1071,21 @@ class SliceDetectorTest : AbstractCheckTest() {
                             .setPrimaryAction(primary))
                 }.build()
                 """
-          )
-          .indented(),
-        *stubs,
-      )
-      .run()
-      .expectClean()
+                )
+                .indented(),
+            *stubs,
+        )
+        .run()
+        .expectClean()
   }
 
   fun test79784005_part2() {
     // Regression test for comment #2 of
     // 79784005: "at least one item in row" Lint check false positive in Kotlin when using apply
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
                 package test.pkg;
 
                 import android.content.Context;
@@ -1119,19 +1119,19 @@ class SliceDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-          )
-          .indented(),
-        *stubs,
-      )
-      .run()
-      .expectClean()
+                )
+                .indented(),
+            *stubs,
+        )
+        .run()
+        .expectClean()
   }
 
   // Stubs:
 
   private val listBuilder: TestFile =
-    java(
-        """
+      java(
+              """
             package androidx.slice.builders;
             import android.app.PendingIntent;
             import android.content.Context;
@@ -1228,12 +1228,12 @@ class SliceDetectorTest : AbstractCheckTest() {
                 }
             }
         """
-      )
-      .indented()
+          )
+          .indented()
 
   private val gridRowBuilder: TestFile =
-    java(
-        """
+      java(
+              """
             package androidx.slice.builders;
             import android.app.PendingIntent;
             import android.net.Uri;
@@ -1266,12 +1266,12 @@ class SliceDetectorTest : AbstractCheckTest() {
                 }
             }
         """
-      )
-      .indented()
+          )
+          .indented()
 
   private val sliceAction: TestFile =
-    java(
-        """
+      java(
+              """
             package androidx.slice.builders;
             import android.app.PendingIntent;
 
@@ -1296,12 +1296,12 @@ class SliceDetectorTest : AbstractCheckTest() {
                 }
             }
         """
-      )
-      .indented()
+          )
+          .indented()
 
   private val sliceHints: TestFile =
-    java(
-        """
+      java(
+              """
         package androidx.slice.builders;
 
         @SuppressWarnings("all") // stubs
@@ -1313,12 +1313,12 @@ class SliceDetectorTest : AbstractCheckTest() {
             public static final long INFINITY = -1;
         }
         """
-      )
-      .indented()
+          )
+          .indented()
 
   private val iconCompat: TestFile =
-    java(
-        """
+      java(
+              """
             package androidx.core.graphics.drawable;
             import android.content.Context;
             import android.graphics.Bitmap;
@@ -1332,12 +1332,12 @@ class SliceDetectorTest : AbstractCheckTest() {
                 }
             }
         """
-      )
-      .indented()
+          )
+          .indented()
 
   private val sliceProvider: TestFile =
-    java(
-        """
+      java(
+              """
             package androidx.slice;
             import android.content.ContentProvider;
             import android.content.Intent;
@@ -1354,12 +1354,12 @@ class SliceDetectorTest : AbstractCheckTest() {
                 }
             }
         """
-      )
-      .indented()
+          )
+          .indented()
 
   private val defaultSliceProvider: TestFile =
-    java(
-        """
+      java(
+              """
             package test.pkg;
             import android.content.ContentValues;
             import android.database.Cursor;
@@ -1399,42 +1399,42 @@ class SliceDetectorTest : AbstractCheckTest() {
                 }
             }
         """
-      )
-      .indented()
+          )
+          .indented()
 
   private val consumer: TestFile =
-    java(
-        """
+      java(
+              """
             package androidx.core.util;
             @SuppressWarnings("all") // stubs
             public interface Consumer<T> {
                 void accept(T t);
             }
         """
-      )
-      .indented()
+          )
+          .indented()
 
   private val slice: TestFile =
-    java(
-        """
+      java(
+              """
             package androidx.slice;
             @SuppressWarnings("all") // stubs
             public class Slice {
             }
         """
-      )
-      .indented()
+          )
+          .indented()
 
   private val stubs =
-    arrayOf(
-      listBuilder,
-      gridRowBuilder,
-      sliceAction,
-      sliceHints,
-      sliceProvider,
-      defaultSliceProvider,
-      consumer,
-      slice,
-      iconCompat,
-    )
+      arrayOf(
+          listBuilder,
+          gridRowBuilder,
+          sliceAction,
+          sliceHints,
+          sliceProvider,
+          defaultSliceProvider,
+          consumer,
+          slice,
+          iconCompat,
+      )
 }

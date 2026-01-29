@@ -71,29 +71,28 @@ import org.w3c.dom.Element
 /** Looks for issues around ObjectAnimator usages. */
 class ObjectAnimatorDetector : Detector(), SourceCodeScanner, XmlScanner {
   /**
-   * Multiple properties might all point back to the same setter; we don't want to highlight these
-   * more than once (duplicate warnings etc) so keep track of them here.
+   * Multiple properties might all point back to the same setter; we don't want to highlight these more than once (duplicate warnings etc)
+   * so keep track of them here.
    */
   private var mAlreadyWarned: MutableSet<Any?>? = null
 
   override fun getApplicableMethodNames(): List<String> {
     return listOf(
-      "ofInt",
-      "ofArgb",
-      "ofFloat",
-      "ofMultiInt",
-      "ofMultiFloat",
-      "ofObject",
-      "ofPropertyValuesHolder",
+        "ofInt",
+        "ofArgb",
+        "ofFloat",
+        "ofMultiInt",
+        "ofMultiFloat",
+        "ofObject",
+        "ofPropertyValuesHolder",
     )
   }
 
   override fun visitMethodCall(context: JavaContext, node: UCallExpression, method: PsiMethod) {
     val evaluator = context.evaluator
     if (
-      !evaluator.isMemberInClass(method, "android.animation.ObjectAnimator") &&
-        !(method.name == "ofPropertyValuesHolder" &&
-          evaluator.isMemberInClass(method, "android.animation.ValueAnimator"))
+        !evaluator.isMemberInClass(method, "android.animation.ObjectAnimator") &&
+            !(method.name == "ofPropertyValuesHolder" && evaluator.isMemberInClass(method, "android.animation.ValueAnimator"))
     ) {
       return
     }
@@ -125,9 +124,9 @@ class ObjectAnimatorDetector : Detector(), SourceCodeScanner, XmlScanner {
   }
 
   private fun checkPropertyValueHolders(
-    context: JavaContext,
-    targetClass: PsiClass,
-    expressions: List<UExpression>,
+      context: JavaContext,
+      targetClass: PsiClass,
+      expressions: List<UExpression>,
   ) {
     for (i in 1 until expressions.size) { // expressions[0] is the target class
       val arg = expressions[i]
@@ -145,10 +144,10 @@ class ObjectAnimatorDetector : Detector(), SourceCodeScanner, XmlScanner {
   }
 
   private fun checkProperty(
-    context: JavaContext,
-    propertyNameExpression: UExpression,
-    targetClass: PsiClass,
-    expectedType: String,
+      context: JavaContext,
+      propertyNameExpression: UExpression,
+      targetClass: PsiClass,
+      expectedType: String,
   ) {
     val property = ConstantEvaluator.evaluate(context, propertyNameExpression) as? String ?: return
     val qualifiedName = targetClass.qualifiedName ?: return
@@ -175,56 +174,55 @@ class ObjectAnimatorDetector : Detector(), SourceCodeScanner, XmlScanner {
     }
     if (bestMethod == null) {
       report(
-        context,
-        BROKEN_PROPERTY,
-        propertyNameExpression,
-        null,
-        "Could not find property setter method `$methodName` on `$qualifiedName`",
-        null,
+          context,
+          BROKEN_PROPERTY,
+          propertyNameExpression,
+          null,
+          "Could not find property setter method `$methodName` on `$qualifiedName`",
+          null,
       )
       return
     }
     if (!isExactMatch) {
       report(
-        context,
-        BROKEN_PROPERTY,
-        propertyNameExpression,
-        bestMethod,
-        "The setter for this property does not match the " +
-          "expected signature (`public void $methodName($expectedType arg`)",
-        null,
+          context,
+          BROKEN_PROPERTY,
+          propertyNameExpression,
+          bestMethod,
+          "The setter for this property does not match the " + "expected signature (`public void $methodName($expectedType arg`)",
+          null,
       )
     } else if (context.evaluator.isStatic(bestMethod)) {
       report(
-        context,
-        BROKEN_PROPERTY,
-        propertyNameExpression,
-        bestMethod,
-        "The setter for this property ($qualifiedName.$methodName) should not be static",
-        null,
+          context,
+          BROKEN_PROPERTY,
+          propertyNameExpression,
+          bestMethod,
+          "The setter for this property ($qualifiedName.$methodName) should not be static",
+          null,
       )
     } else {
 
       val className = bestMethod.containingClass?.qualifiedName
       if (className != null) {
         val handled1 =
-          KeepRuleDetector.checkMethodUsage(
-            context,
-            propertyNameExpression,
-            null,
-            className,
-            methodName,
-            null,
-          )
+            KeepRuleDetector.checkMethodUsage(
+                context,
+                propertyNameExpression,
+                null,
+                className,
+                methodName,
+                null,
+            )
         val handled2 =
-          KeepRuleDetector.checkMethodUsage(
-            context,
-            propertyNameExpression,
-            null,
-            className,
-            getMethodName("get", property),
-            null,
-          )
+            KeepRuleDetector.checkMethodUsage(
+                context,
+                propertyNameExpression,
+                null,
+                className,
+                getMethodName("get", property),
+                null,
+            )
         if (handled1 || handled2) {
           return
         }
@@ -245,28 +243,27 @@ class ObjectAnimatorDetector : Detector(), SourceCodeScanner, XmlScanner {
       if (!isShrinking(context)) {
         return
       }
-      val fix =
-        fix().annotate(KEEP_ANNOTATION.newName(), context = context, element = bestMethod).build()
+      val fix = fix().annotate(KEEP_ANNOTATION.newName(), context = context, element = bestMethod).build()
       report(
-        context,
-        MISSING_KEEP,
-        propertyNameExpression,
-        bestMethod,
-        "This method is accessed from an ObjectAnimator so it should be " +
-          "annotated with `@Keep` to ensure that it is not discarded or renamed " +
-          "in release builds",
-        fix,
+          context,
+          MISSING_KEEP,
+          propertyNameExpression,
+          bestMethod,
+          "This method is accessed from an ObjectAnimator so it should be " +
+              "annotated with `@Keep` to ensure that it is not discarded or renamed " +
+              "in release builds",
+          fix,
       )
     }
   }
 
   private fun report(
-    context: JavaContext,
-    issue: Issue,
-    propertyNameExpression: UExpression,
-    method: PsiMethod?,
-    originalMessage: String,
-    fix: LintFix?,
+      context: JavaContext,
+      issue: Issue,
+      propertyNameExpression: UExpression,
+      method: PsiMethod?,
+      originalMessage: String,
+      fix: LintFix?,
   ) {
     var message = originalMessage
     val reportOnMethod = issue === MISSING_KEEP && method != null
@@ -278,12 +275,12 @@ class ObjectAnimatorDetector : Detector(), SourceCodeScanner, XmlScanner {
 
     val locationNode: Any = if (reportOnMethod && method != null) method else propertyNameExpression
     val alreadyWarned =
-      mAlreadyWarned
-        ?: run {
-          val set: MutableSet<Any?> = Sets.newIdentityHashSet()
-          mAlreadyWarned = set
-          set
-        }
+        mAlreadyWarned
+            ?: run {
+              val set: MutableSet<Any?> = Sets.newIdentityHashSet()
+              mAlreadyWarned = set
+              set
+            }
     if (alreadyWarned.contains(locationNode)) {
       return
     }
@@ -293,14 +290,14 @@ class ObjectAnimatorDetector : Detector(), SourceCodeScanner, XmlScanner {
     if (method != null && method !is PsiCompiledElement) {
       val nameIdentifier = method.nameIdentifier
       methodLocation =
-        if (nameIdentifier != null)
-          context.getRangeLocation(
-            nameIdentifier,
-            fromDelta = 0,
-            to = method.parameterList,
-            toDelta = 0,
-          )
-        else context.getNameLocation(method)
+          if (nameIdentifier != null)
+              context.getRangeLocation(
+                  nameIdentifier,
+                  fromDelta = 0,
+                  to = method.parameterList,
+                  toDelta = 0,
+              )
+          else context.getNameLocation(method)
     }
     var location: Location
     if (reportOnMethod && methodLocation != null && method != null) {
@@ -318,9 +315,9 @@ class ObjectAnimatorDetector : Detector(), SourceCodeScanner, XmlScanner {
       } else {
         assert(issue === MISSING_KEEP)
         val secondaryMessage =
-          "The method referenced here (${method.name}) has " +
-            "not been annotated with `@Keep` which means it could be " +
-            "discarded or renamed in release builds"
+            "The method referenced here (${method.name}) has " +
+                "not been annotated with `@Keep` which means it could be " +
+                "discarded or renamed in release builds"
 
         // If on the other hand we're in a separate compilation unit, we should
         // draw attention to the problem
@@ -406,11 +403,11 @@ class ObjectAnimatorDetector : Detector(), SourceCodeScanner, XmlScanner {
         while (lastAssignment is USimpleNameReferenceExpression) {
           val el = lastAssignment.resolve()
           lastAssignment =
-            if (el is PsiLocalVariable) {
-              UastLintUtils.findLastAssignment(el, lastAssignment)
-            } else {
-              break
-            }
+              if (el is PsiLocalVariable) {
+                UastLintUtils.findLastAssignment(el, lastAssignment)
+              } else {
+                break
+              }
         }
         if (lastAssignment is UCallExpression) {
           val callExpression = lastAssignment
@@ -432,21 +429,18 @@ class ObjectAnimatorDetector : Detector(), SourceCodeScanner, XmlScanner {
   }
 
   private fun isHolderConstructionMethod(
-    context: JavaContext,
-    callExpression: UCallExpression,
+      context: JavaContext,
+      callExpression: UCallExpression,
   ): Boolean {
     val referenceName = getMethodName(callExpression)
     if (
-      referenceName != null &&
-        referenceName.startsWith("of") &&
-        // This will require more indirection; see unit test
-        referenceName != "ofKeyframe"
+        referenceName != null &&
+            referenceName.startsWith("of") &&
+            // This will require more indirection; see unit test
+            referenceName != "ofKeyframe"
     ) {
       val resolved = callExpression.resolve()
-      if (
-        resolved != null &&
-          context.evaluator.isMemberInClass(resolved, "android.animation.PropertyValuesHolder")
-      ) {
+      if (resolved != null && context.evaluator.isMemberInClass(resolved, "android.animation.PropertyValuesHolder")) {
         return true
       }
     }
@@ -467,8 +461,8 @@ class ObjectAnimatorDetector : Detector(), SourceCodeScanner, XmlScanner {
 
   // Copy of PropertyValuesHolder#getMethodName - copy to ensure lint & platform agree
   private fun getMethodName(
-    @Suppress("SameParameterValue") prefix: String,
-    propertyName: String?,
+      @Suppress("SameParameterValue") prefix: String,
+      propertyName: String?,
   ): String {
     if (propertyName == null || propertyName.isEmpty()) {
       // shouldn't get here
@@ -525,12 +519,12 @@ class ObjectAnimatorDetector : Detector(), SourceCodeScanner, XmlScanner {
         val id = stripIdPrefix(view.getAttributeNS(ANDROID_URI, ATTR_ID))
         if (id.isNotEmpty()) {
           val list =
-            sceneIds
-              ?: run {
-                val list = ArrayList<SceneReference>()
-                sceneIds = list
-                list
-              }
+              sceneIds
+                  ?: run {
+                    val list = ArrayList<SceneReference>()
+                    sceneIds = list
+                    list
+                  }
           list += SceneReference(view.tagName, id, sceneName)
         }
       }
@@ -582,36 +576,36 @@ class ObjectAnimatorDetector : Detector(), SourceCodeScanner, XmlScanner {
 
               val location = context.getValueLocation(attribute)
               val javaContext =
-                JavaContext(
-                  context.driver,
-                  context.project,
-                  context.project,
-                  VfsUtilCore.virtualToIoFile(targetClass.containingFile.virtualFile),
-                )
+                  JavaContext(
+                      context.driver,
+                      context.project,
+                      context.project,
+                      VfsUtilCore.virtualToIoFile(targetClass.containingFile.virtualFile),
+                  )
               location.withSecondary(
-                uastParser.getLocation(javaContext, m),
-                "" +
-                  "This method is accessed via reflection from a " +
-                  "MotionScene ($sceneName) so it should be " +
-                  "annotated with `@Keep` to ensure that it is not " +
-                  "discarded or renamed in release builds",
-                selfExplanatory = true,
+                  uastParser.getLocation(javaContext, m),
+                  "" +
+                      "This method is accessed via reflection from a " +
+                      "MotionScene ($sceneName) so it should be " +
+                      "annotated with `@Keep` to ensure that it is not " +
+                      "discarded or renamed in release builds",
+                  selfExplanatory = true,
               )
               // TODO: Add a quickfix here (which should be trivial except
               // that the lint fix verifier does not handle fixes in different
               // files.)
               val incident =
-                Incident(
-                  MISSING_KEEP,
-                  element,
-                  location,
-                  "" +
-                    "This attribute references a method or property in " +
-                    "custom view $viewClass which is not annotated with " +
-                    "`@Keep`; it should be annotated with `@Keep` to " +
-                    "ensure that it is not discarded or renamed in " +
-                    "release builds",
-                )
+                  Incident(
+                      MISSING_KEEP,
+                      element,
+                      location,
+                      "" +
+                          "This attribute references a method or property in " +
+                          "custom view $viewClass which is not annotated with " +
+                          "`@Keep`; it should be annotated with `@Keep` to " +
+                          "ensure that it is not discarded or renamed in " +
+                          "release builds",
+                  )
               context.report(incident, map())
             }
           }
@@ -630,20 +624,20 @@ class ObjectAnimatorDetector : Detector(), SourceCodeScanner, XmlScanner {
     val KEEP_ANNOTATION = AndroidxName.of(SUPPORT_ANNOTATIONS_PREFIX, "Keep")
 
     private val IMPLEMENTATION =
-      Implementation(
-        ObjectAnimatorDetector::class.java,
-        Scope.JAVA_AND_RESOURCE_FILES,
-        Scope.JAVA_FILE_SCOPE,
-      )
+        Implementation(
+            ObjectAnimatorDetector::class.java,
+            Scope.JAVA_AND_RESOURCE_FILES,
+            Scope.JAVA_FILE_SCOPE,
+        )
 
     /** Missing @Keep. */
     @JvmField
     val MISSING_KEEP =
-      Issue.create(
-        id = "AnimatorKeep",
-        briefDescription = "Missing @Keep for Animated Properties",
-        explanation =
-          """
+        Issue.create(
+            id = "AnimatorKeep",
+            briefDescription = "Missing @Keep for Animated Properties",
+            explanation =
+                """
                     When you use property animators, properties can be accessed via reflection. \
                     Those methods should be annotated with @Keep to ensure that during release \
                     builds, the methods are not potentially treated as unused and removed, or \
@@ -652,30 +646,30 @@ class ObjectAnimatorDetector : Detector(), SourceCodeScanner, XmlScanner {
                     This check will also flag other potential reflection problems it encounters, \
                     such as a missing property, wrong argument types, etc.
                     """,
-        category = Category.PERFORMANCE,
-        priority = 4,
-        severity = Severity.WARNING,
-        androidSpecific = true,
-        implementation = IMPLEMENTATION,
-      )
+            category = Category.PERFORMANCE,
+            priority = 4,
+            severity = Severity.WARNING,
+            androidSpecific = true,
+            implementation = IMPLEMENTATION,
+        )
 
     /** Incorrect ObjectAnimator binding. */
     @JvmField
     val BROKEN_PROPERTY =
-      Issue.create(
-        id = "ObjectAnimatorBinding",
-        briefDescription = "Incorrect ObjectAnimator Property",
-        explanation =
-          """
+        Issue.create(
+            id = "ObjectAnimatorBinding",
+            briefDescription = "Incorrect ObjectAnimator Property",
+            explanation =
+                """
                     This check cross references properties referenced by String from \
                     `ObjectAnimator` and `PropertyValuesHolder` method calls and ensures that \
                     the corresponding setter methods exist and have the right signatures.
                     """,
-        category = Category.CORRECTNESS,
-        priority = 4,
-        severity = Severity.ERROR,
-        androidSpecific = true,
-        implementation = IMPLEMENTATION,
-      )
+            category = Category.CORRECTNESS,
+            priority = 4,
+            severity = Severity.ERROR,
+            androidSpecific = true,
+            implementation = IMPLEMENTATION,
+        )
   }
 }

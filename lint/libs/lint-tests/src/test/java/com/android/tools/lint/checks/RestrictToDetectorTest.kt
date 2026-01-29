@@ -31,9 +31,9 @@ class RestrictToDetectorTest : AbstractCheckTest() {
 
   fun testDocumentationExampleVisibleForTesting() {
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
             import androidx.annotation.VisibleForTesting
 
             class ProductionCode {
@@ -46,49 +46,49 @@ class RestrictToDetectorTest : AbstractCheckTest() {
                 }
             }
             """
-          )
-          .indented(),
-        kotlin(
-            """
+                )
+                .indented(),
+            kotlin(
+                    """
             class Code {
                 fun test() {
                     ProductionCode().initialize() // Not allowed; this method is intended to be private
                 }
             }
             """
-          )
-          .indented(),
-        SUPPORT_ANNOTATIONS_JAR,
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            SUPPORT_ANNOTATIONS_JAR,
+        )
+        .run()
+        .expect(
+            """
         src/Code.kt:3: Warning: This method should only be accessed from tests or within private scope [VisibleForTests]
                 ProductionCode().initialize() // Not allowed; this method is intended to be private
                                  ~~~~~~~~~~
         0 errors, 1 warnings
         """
-      )
+        )
   }
 
   fun testVisibleForTestingOnSealedDataClass() {
     // https://youtrack.jetbrains.com/issue/KT-72722
     val copyPsi =
-      if (useFirUast()) {
-        """
+        if (useFirUast()) {
+          """
             src/pkg2/Bar.kt:7: Warning: This declaration implicitly references Foo, which should only be accessed from tests or within package private scope [VisibleForTests]
               data class Bar2(val id: Long, val p2: Foo): Bar()
                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~"""
-      } else {
-        """
+        } else {
+          """
             src/pkg2/Bar.kt:7: Warning: This declaration implicitly references Foo, which should only be accessed from tests or within package private scope [VisibleForTests]
               data class Bar2(val id: Long, val p2: Foo): Bar()
               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"""
-      }
+        }
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
             package pkg1
 
             import org.jetbrains.annotations.VisibleForTesting
@@ -108,10 +108,10 @@ class RestrictToDetectorTest : AbstractCheckTest() {
               ) : Foo()
             }
           """
-          )
-          .indented(),
-        kotlin(
-            """
+                )
+                .indented(),
+            kotlin(
+                    """
             package pkg2
 
             import pkg1.Foo
@@ -121,31 +121,31 @@ class RestrictToDetectorTest : AbstractCheckTest() {
               data class Bar2(val id: Long, val p2: Foo): Bar()
             }
           """
-          )
-          .indented(),
-        intellijVisibleForTestingAnnotation,
-      )
-      // data class's constructor, copy, toString, and component2 will have
-      // type reference to @VisibleForTesting Foo in a different package.
-      .allowDuplicates()
-      .run()
-      // In particular, compiler-generated data class's copy will trigger
-      // implicit reference (as long as it is sorted out that way).
-      .expect(
-        """
+                )
+                .indented(),
+            intellijVisibleForTestingAnnotation,
+        )
+        // data class's constructor, copy, toString, and component2 will have
+        // type reference to @VisibleForTesting Foo in a different package.
+        .allowDuplicates()
+        .run()
+        // In particular, compiler-generated data class's copy will trigger
+        // implicit reference (as long as it is sorted out that way).
+        .expect(
+            """
             src/pkg2/Bar.kt:7: Warning: This class should only be accessed from tests or within package private scope [VisibleForTests]
               data class Bar2(val id: Long, val p2: Foo): Bar()
                                                     ~~~$copyPsi
             0 errors, 2 warnings
         """
-      )
+        )
   }
 
   fun testVisibleForTestingOnEnum() {
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
                 import com.google.common.annotations.VisibleForTesting
 
                 class ProductionCode {
@@ -161,22 +161,22 @@ class RestrictToDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-          )
-          .indented(),
-        kotlin(
-          """
+                )
+                .indented(),
+            kotlin(
+                """
                 class Code {
                     fun test() {
                         ProductionCode.COLOR.values().map { it.name to it.ordinal } // Not allowed
                     }
                 }
                 """
-        ),
-        guavaVisibleForTestingAnnotation,
-      )
-      .run()
-      .expect(
-        """
+            ),
+            guavaVisibleForTestingAnnotation,
+        )
+        .run()
+        .expect(
+            """
             src/Code.kt:4: Warning: This declaration implicitly references COLOR, which should only be accessed from tests or within private scope [VisibleForTests]
                                     ProductionCode.COLOR.values().map { it.name to it.ordinal } // Not allowed
                                                                       ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -185,13 +185,13 @@ class RestrictToDetectorTest : AbstractCheckTest() {
                                                          ~~~~~~
             0 errors, 2 warnings
             """
-      )
+        )
   }
 
   fun testDocumentationExampleRestrictedApi() {
     // Tests restricted to a particular subclass
     val expected =
-      """
+        """
             src/test/pkg/RestrictToSubclassTest.java:26: Error: Class1.onSomething can only be called from subclasses [RestrictedApi]
                         cls.onSomething();         // ERROR: Not from subclass
                             ~~~~~~~~~~~
@@ -202,9 +202,9 @@ class RestrictToDetectorTest : AbstractCheckTest() {
             """
 
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
                     package test.pkg;
 
                     import androidx.annotation.RestrictTo;
@@ -236,20 +236,20 @@ class RestrictToDetectorTest : AbstractCheckTest() {
                         }
                     }
                     """
-          )
-          .indented(),
-        SUPPORT_ANNOTATIONS_JAR,
-      )
-      .run()
-      .expect(expected)
+                )
+                .indented(),
+            SUPPORT_ANNOTATIONS_JAR,
+        )
+        .run()
+        .expect(expected)
   }
 
   fun testRestrictToGroupId() {
     val project =
-      project()
-        .files(
-          java(
-              """
+        project()
+            .files(
+                java(
+                        """
                 package test.pkg;
                 import library.pkg.internal.InternalClass;
                 import library.pkg.Library;
@@ -270,11 +270,11 @@ class RestrictToDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-            )
-            .indented(),
-          java(
-              "src/test/java/test/pkg/UnitTestLibrary.java",
-              """
+                    )
+                    .indented(),
+                java(
+                        "src/test/java/test/pkg/UnitTestLibrary.java",
+                        """
                 package test.pkg;
                 import library.pkg.PrivateClass;
 
@@ -285,27 +285,27 @@ class RestrictToDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """,
-            )
-            .indented(),
-          library,
-          gradle(
-              """
+                    )
+                    .indented(),
+                library,
+                gradle(
+                        """
                 apply plugin: 'com.android.application'
 
                 dependencies {
                     compile 'my.group.id:mylib:25.0.0-SNAPSHOT'
                 }
                 """
+                    )
+                    .indented(),
+                SUPPORT_ANNOTATIONS_JAR,
             )
-            .indented(),
-          SUPPORT_ANNOTATIONS_JAR,
-        )
     lint()
-      .projects(project)
-      .testModes(TestMode.DEFAULT)
-      .run()
-      .expect(
-        """
+        .projects(project)
+        .testModes(TestMode.DEFAULT)
+        .run()
+        .expect(
+            """
             src/main/java/test/pkg/TestLibrary.java:10: Error: Library.privateMethod can only be called from within the same library group (referenced groupId=my.group.id from groupId=<unknown>) [RestrictedApi]
                     Library.privateMethod(); // ERROR
                             ~~~~~~~~~~~~~
@@ -317,16 +317,16 @@ class RestrictToDetectorTest : AbstractCheckTest() {
                                   ~~~~~~
             3 errors, 0 warnings
             """
-      )
+        )
   }
 
   fun testMissingRequiredAttributesForHidden() {
     lint()
-      .issues(RestrictionsDetector.ISSUE)
-      .files(
-        xml(
-            "res/xml/app_restrictions.xml",
-            """
+        .issues(RestrictionsDetector.ISSUE)
+        .files(
+            xml(
+                    "res/xml/app_restrictions.xml",
+                    """
                 <restrictions xmlns:android="http://schemas.android.com/apk/res/android">
                     <restriction
                         android:description="@string/description_number"
@@ -335,27 +335,27 @@ class RestrictToDetectorTest : AbstractCheckTest() {
                         android:title="@string/title_number"/>
                 </restrictions>
                 """,
-          )
-          .indented()
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .run()
+        .expect(
+            """
             res/xml/app_restrictions.xml:2: Error: Missing required attribute android:defaultValue [ValidRestrictions]
                 <restriction
                  ~~~~~~~~~~~
             1 errors, 0 warnings
             """
-      )
+        )
   }
 
   fun testRestrictToLibrary() {
     // 120087311: Enforce RestrictTo(LIBRARY) when the API is defined in another project
     val library =
-      project()
-        .files(
-          java(
-              """
+        project()
+            .files(
+                java(
+                        """
                 package com.example.mylibrary;
 
                 import androidx.annotation.RestrictTo;
@@ -389,10 +389,10 @@ class RestrictToDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-            )
-            .indented(),
-          java(
-              """
+                    )
+                    .indented(),
+                java(
+                        """
                 package test.pkg;
 
                 import com.example.mylibrary.LibraryCode;
@@ -409,18 +409,18 @@ class RestrictToDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
+                    )
+                    .indented(),
+                SUPPORT_ANNOTATIONS_JAR,
             )
-            .indented(),
-          SUPPORT_ANNOTATIONS_JAR,
-        )
-        .name("lib")
-        .type(ProjectDescription.Type.LIBRARY)
+            .name("lib")
+            .type(ProjectDescription.Type.LIBRARY)
 
     val app =
-      project()
-        .files(
-          kotlin(
-              """
+        project()
+            .files(
+                kotlin(
+                        """
                 package com.example.myapplication
 
                 import com.example.mylibrary.LibraryCode
@@ -434,18 +434,18 @@ class RestrictToDetectorTest : AbstractCheckTest() {
                     val f3 = LibraryCode.FIELD3
                 }
                 """
+                    )
+                    .indented(),
+                SUPPORT_ANNOTATIONS_JAR,
             )
-            .indented(),
-          SUPPORT_ANNOTATIONS_JAR,
-        )
-        .dependsOn(library)
-        .name("app")
+            .dependsOn(library)
+            .name("app")
 
     lint()
-      .projects(library, app)
-      .run()
-      .expect(
-        """
+        .projects(library, app)
+        .run()
+        .expect(
+            """
             src/com/example/myapplication/test.kt:7: Error: LibraryCode.method2 can only be called from within the same library (lib) [RestrictedApi]
                 LibraryCode.method2()
                             ~~~~~~~
@@ -454,15 +454,15 @@ class RestrictToDetectorTest : AbstractCheckTest() {
                                      ~~~~~~
             2 errors, 0 warnings
             """
-      )
+        )
   }
 
   fun testHierarchy() {
     val project =
-      project()
-        .files(
-          java(
-              """
+        project()
+            .files(
+                java(
+                        """
                 package test.pkg;
                 import library.pkg.PrivateClass;
 
@@ -474,10 +474,10 @@ class RestrictToDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-            )
-            .indented(),
-          java(
-              """
+                    )
+                    .indented(),
+                java(
+                        """
                 package test.pkg;
                 import library.pkg.PrivateClass;
 
@@ -485,10 +485,10 @@ class RestrictToDetectorTest : AbstractCheckTest() {
                 public class TestLibrary2 extends PrivateClass {
                 }
                 """
-            )
-            .indented(),
-          java(
-              """
+                    )
+                    .indented(),
+                java(
+                        """
                 package test.pkg;
 
                 @SuppressWarnings("ClassNameDiffersFromFileName")
@@ -498,10 +498,10 @@ class RestrictToDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-            )
-            .indented(),
-          java(
-              """
+                    )
+                    .indented(),
+                java(
+                        """
                 package test.pkg;
 
                 @SuppressWarnings("ClassNameDiffersFromFileName")
@@ -511,26 +511,26 @@ class RestrictToDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-            )
-            .indented(),
-          library,
-          gradle(
-              """
+                    )
+                    .indented(),
+                library,
+                gradle(
+                        """
                 apply plugin: 'com.android.application'
 
                 dependencies {
                     compile 'my.group.id:mylib:25.0.0-SNAPSHOT'
                 }
                 """
+                    )
+                    .indented(),
+                SUPPORT_ANNOTATIONS_JAR,
             )
-            .indented(),
-          SUPPORT_ANNOTATIONS_JAR,
-        )
     lint()
-      .projects(project)
-      .run()
-      .expect(
-        """
+        .projects(project)
+        .run()
+        .expect(
+            """
             src/main/java/test/pkg/Inheriting2.java:6: Error: PrivateClass.method can only be called from within the same library group (referenced groupId=my.group.id from groupId=<unknown>) [RestrictedApi]
                     method(); // ERROR - not overridden, pointing into library
                     ~~~~~~
@@ -545,23 +545,23 @@ class RestrictToDetectorTest : AbstractCheckTest() {
                                               ~~~~~~~~~~~~
             4 errors, 0 warnings
             """
-      )
+        )
   }
 
   // sample code with warnings
   @Suppress("InfiniteRecursion")
   fun testRestrictToTests() {
     val expected =
-      """
+        """
             src/test/pkg/ProductionCode.java:9: Error: ProductionCode.testHelper2 can only be called from tests [RestrictedApi]
                     testHelper2(); // ERROR
                     ~~~~~~~~~~~
             1 errors, 0 warnings
             """
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
                 package test.pkg;
                 import androidx.annotation.RestrictTo;
                 import androidx.annotation.VisibleForTesting;
@@ -586,12 +586,12 @@ class RestrictToDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-          )
-          .indented(),
-        // test/ prefix makes it a test folder entry:
-        java(
-            "test/test/pkg/UnitTest.java",
-            """
+                )
+                .indented(),
+            // test/ prefix makes it a test folder entry:
+            java(
+                    "test/test/pkg/UnitTest.java",
+                    """
                 package test.pkg;
                 @SuppressWarnings({"ClassNameDiffersFromFileName", "MethodMayBeStatic"})
                 public class UnitTest {
@@ -603,17 +603,17 @@ class RestrictToDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """,
-          )
-          .indented(),
-        SUPPORT_ANNOTATIONS_JAR,
-      )
-      .run()
-      .expect(expected)
+                )
+                .indented(),
+            SUPPORT_ANNOTATIONS_JAR,
+        )
+        .run()
+        .expect(expected)
   }
 
   fun testVisibleForTesting() {
     val expected =
-      """
+        """
             src/test/otherpkg/OtherPkg.java:11: Error: ProductionCode.testHelper6 can only be called from tests [RestrictedApi]
                     new ProductionCode().testHelper6(); // ERROR
                                          ~~~~~~~~~~~
@@ -632,9 +632,9 @@ class RestrictToDetectorTest : AbstractCheckTest() {
             2 errors, 3 warnings
             """
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
                 package test.pkg;
                 import androidx.annotation.VisibleForTesting;
 
@@ -667,10 +667,10 @@ class RestrictToDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-          )
-          .indented(),
-        java(
-            """
+                )
+                .indented(),
+            java(
+                    """
                 package test.otherpkg;
                 import androidx.annotation.VisibleForTesting;
                 import test.pkg.ProductionCode;
@@ -686,12 +686,12 @@ class RestrictToDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-          )
-          .indented(),
-        // test/ prefix makes it a test folder entry:
-        java(
-            "test/test/pkg/UnitTest.java",
-            """
+                )
+                .indented(),
+            // test/ prefix makes it a test folder entry:
+            java(
+                    "test/test/pkg/UnitTest.java",
+                    """
                 package test.pkg;
                 @SuppressWarnings({"ClassNameDiffersFromFileName", "MethodMayBeStatic"})
                 public class UnitTest {
@@ -704,19 +704,19 @@ class RestrictToDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """,
-          )
-          .indented(),
-        SUPPORT_ANNOTATIONS_JAR,
-      )
-      .run()
-      .expect(expected)
+                )
+                .indented(),
+            SUPPORT_ANNOTATIONS_JAR,
+        )
+        .run()
+        .expect(expected)
   }
 
   fun testVisibleForTestingIncrementally() {
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
                 package test.pkg;
                 import androidx.annotation.VisibleForTesting;
 
@@ -727,12 +727,12 @@ class RestrictToDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-          )
-          .indented(),
-        // test/ prefix makes it a test folder entry:
-        java(
-            "test/test/pkg/UnitTest.java",
-            """
+                )
+                .indented(),
+            // test/ prefix makes it a test folder entry:
+            java(
+                    "test/test/pkg/UnitTest.java",
+                    """
                 package test.pkg;
                 @SuppressWarnings({"ClassNameDiffersFromFileName", "MethodMayBeStatic"})
                 public class UnitTest {
@@ -742,20 +742,20 @@ class RestrictToDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """,
-          )
-          .indented(),
-        SUPPORT_ANNOTATIONS_JAR,
-      )
-      .incremental("test/test/pkg/UnitTest.java")
-      .run()
-      .expectClean()
+                )
+                .indented(),
+            SUPPORT_ANNOTATIONS_JAR,
+        )
+        .incremental("test/test/pkg/UnitTest.java")
+        .run()
+        .expectClean()
   }
 
   fun testVisibleForTestingSameCompilationUnit() {
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
                 package test.pkg;
                 import androidx.annotation.VisibleForTesting;
 
@@ -774,22 +774,22 @@ class RestrictToDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-          )
-          .indented(),
-        SUPPORT_ANNOTATIONS_JAR,
-      )
-      .run()
-      .expectClean()
+                )
+                .indented(),
+            SUPPORT_ANNOTATIONS_JAR,
+        )
+        .run()
+        .expectClean()
   }
 
   fun testCrossPackage() {
     // Regression test for http://b/190113936 AGP 7 VisibleForTests Lint check bug
     lint()
-      .files(
-        bytecode(
-          "libs/library.jar",
-          java(
-              """
+        .files(
+            bytecode(
+                "libs/library.jar",
+                java(
+                        """
                     package com.example;
 
                     import androidx.annotation.VisibleForTesting;
@@ -799,10 +799,10 @@ class RestrictToDetectorTest : AbstractCheckTest() {
                       public void foo() { }
                     }
                     """
-            )
-            .indented(),
-          0xd5543545,
-          """
+                    )
+                    .indented(),
+                0xd5543545,
+                """
                 com/example/Foo.class:
                 H4sIAAAAAAAAAGVOTUvDQBScZ9qkTaut3kQ8ePLjYI4eLIIIgUJR0NL7Jlnr
                 lmSfJJvav+VJ8OAP8EeJLxF68bAzb2dn3s73z+cXgCschPAwCjAOsE/wJ8Ya
@@ -812,10 +812,10 @@ class RestrictToDetectorTest : AbstractCheckTest() {
                 27EwCXcvPkDvMhACQb8VA8He1nrYvuK/rSc7++3mEAPhgahDObtT7P0CP54v
                 9VcBAAA=
                 """,
-        ),
-        manifest(),
-        java(
-            """
+            ),
+            manifest(),
+            java(
+                    """
                 package com.example;
 
                 public class Bar {
@@ -824,19 +824,19 @@ class RestrictToDetectorTest : AbstractCheckTest() {
                   }
                 }
                 """
-          )
-          .indented(),
-        SUPPORT_ANNOTATIONS_JAR,
-      )
-      .run()
-      .expectClean()
+                )
+                .indented(),
+            SUPPORT_ANNOTATIONS_JAR,
+        )
+        .run()
+        .expectClean()
   }
 
   fun testVisibleForTestingEqualsOperator() {
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
                 package test.pkg
 
                 fun test(testRoot: TestRoot?, other: TestRoot) {
@@ -851,10 +851,10 @@ class RestrictToDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-          )
-          .indented(),
-        kotlin(
-            """
+                )
+                .indented(),
+            kotlin(
+                    """
                 package test.pkg
 
                 import androidx.annotation.VisibleForTesting
@@ -866,13 +866,13 @@ class RestrictToDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-          )
-          .indented(),
-        SUPPORT_ANNOTATIONS_JAR,
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            SUPPORT_ANNOTATIONS_JAR,
+        )
+        .run()
+        .expect(
+            """
         src/test/pkg/test.kt:3: Warning: This class should only be accessed from tests or within private scope [VisibleForTests]
         fun test(testRoot: TestRoot?, other: TestRoot) {
                            ~~~~~~~~~
@@ -884,7 +884,7 @@ class RestrictToDetectorTest : AbstractCheckTest() {
                          ~~
         0 errors, 3 warnings
         """
-      )
+        )
   }
 
   fun testVisibleForTestingInGoogle3() {
@@ -892,7 +892,7 @@ class RestrictToDetectorTest : AbstractCheckTest() {
     //   117544702: com.google.common.annotations.VisibleForTesting.productionVisibility
     //              is not recognized
     val expected =
-      """
+        """
             src/test/otherpkg/OtherPkg.java:11: Error: ProductionCode.testHelper6 can only be called from tests [RestrictedApi]
                     new ProductionCode().testHelper6(); // ERROR
                                          ~~~~~~~~~~~
@@ -911,9 +911,9 @@ class RestrictToDetectorTest : AbstractCheckTest() {
             2 errors, 3 warnings
             """
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
                 package test.pkg;
                 import com.google.common.annotations.VisibleForTesting;
 
@@ -946,10 +946,10 @@ class RestrictToDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-          )
-          .indented(),
-        java(
-            """
+                )
+                .indented(),
+            java(
+                    """
                 package test.otherpkg;
                 import androidx.annotation.VisibleForTesting;
                 import test.pkg.ProductionCode;
@@ -965,12 +965,12 @@ class RestrictToDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-          )
-          .indented(),
-        // test/ prefix makes it a test folder entry:
-        java(
-            "test/test/pkg/UnitTest.java",
-            """
+                )
+                .indented(),
+            // test/ prefix makes it a test folder entry:
+            java(
+                    "test/test/pkg/UnitTest.java",
+                    """
                 package test.pkg;
                 @SuppressWarnings({"ClassNameDiffersFromFileName", "MethodMayBeStatic"})
                 public class UnitTest {
@@ -983,14 +983,14 @@ class RestrictToDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """,
-          )
-          .indented(),
-        SUPPORT_ANNOTATIONS_JAR,
-        // From Guava; also Apache licensed
-        guavaVisibleForTestingAnnotation,
-      )
-      .run()
-      .expect(expected)
+                )
+                .indented(),
+            SUPPORT_ANNOTATIONS_JAR,
+            // From Guava; also Apache licensed
+            guavaVisibleForTestingAnnotation,
+        )
+        .run()
+        .expect(expected)
   }
 
   fun testVisibleForTestingInAndroid() {
@@ -998,7 +998,7 @@ class RestrictToDetectorTest : AbstractCheckTest() {
     //   247885568: com.android.internal.annotations.VisibleForTesting's visibility property
     //              is not recognized
     val expected =
-      """
+        """
             src/production/otherpkg/OtherPkg.java:7: Warning: This method should only be accessed from tests or within protected scope [VisibleForTests]
                     new ProductionCode().testHelper3(); // ERROR
                                          ~~~~~~~~~~~
@@ -1014,9 +1014,9 @@ class RestrictToDetectorTest : AbstractCheckTest() {
             0 errors, 4 warnings
             """
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
                 package production.pkg;
                 import com.android.internal.annotations.VisibleForTesting;
 
@@ -1035,10 +1035,10 @@ class RestrictToDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-          )
-          .indented(),
-        java(
-            """
+                )
+                .indented(),
+            java(
+                    """
                 package production.pkg;
                 import production.pkg.ProductionCode;
 
@@ -1051,10 +1051,10 @@ class RestrictToDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-          )
-          .indented(),
-        java(
-            """
+                )
+                .indented(),
+            java(
+                    """
                 package production.otherpkg;
                 import production.pkg.ProductionCode;
 
@@ -1067,12 +1067,12 @@ class RestrictToDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-          )
-          .indented(),
-        // test/ prefix makes it a test folder entry:
-        java(
-            "test/test/pkg/UnitTest.java",
-            """
+                )
+                .indented(),
+            // test/ prefix makes it a test folder entry:
+            java(
+                    "test/test/pkg/UnitTest.java",
+                    """
                 package test.pkg;
                 @SuppressWarnings({"ClassNameDiffersFromFileName", "MethodMayBeStatic"})
                 public class UnitTest {
@@ -1083,12 +1083,12 @@ class RestrictToDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """,
-          )
-          .indented(),
-        androidVisibleForTestingAnnotation,
-      )
-      .run()
-      .expect(expected)
+                )
+                .indented(),
+            androidVisibleForTestingAnnotation,
+        )
+        .run()
+        .expect(expected)
   }
 
   fun testRestrictedInheritedAnnotation() {
@@ -1097,127 +1097,127 @@ class RestrictToDetectorTest : AbstractCheckTest() {
     // inherit annotations from the base classes of AppCompatActivity and treat
     // those as @RestrictTo on the whole AppCompatActivity class itself.
     lint()
-      .files(
-        /*
-        Compiled version of these two classes:
-            package test.pkg;
-            import androidx.annotation.RestrictTo;
-            @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-            public class RestrictedParent {
-            }
-        and
-            package test.pkg;
-            public class Parent extends RestrictedParent {
-                public void myMethod() {
+        .files(
+            /*
+            Compiled version of these two classes:
+                package test.pkg;
+                import androidx.annotation.RestrictTo;
+                @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+                public class RestrictedParent {
                 }
-            }
-         */
-        base64gzip(
-          "libs/exploded-aar/my.group.id/mylib/25.0.0-SNAPSHOT/jars/classes.jar",
-          "" +
-            "H4sIAAAAAAAAAAvwZmYRYeDg4GB4VzvRkwEJcDKwMPi6hjjqevq56f87xcDA" +
-            "zBDgzc4BkmKCKgnAqVkEiOGafR39PN1cg0P0fN0++5457eOtq3eR11tX69yZ" +
-            "85uDDK4YP3hapOflq+Ppe7F0FQtnxAvJI9JSUi/Flj5boia2XCujYuk0C1HV" +
-            "tGei2iKvRV8+zf5U9LGIEeyWNZtvhngBbfJCcYspmlvkgbgktbhEvyA7XT8I" +
-            "yCjKTC5JTQlILErNK9FLzkksLp4aGOvN5Chi+/j6tMxZqal2rK7xV+y+RLio" +
-            "iRyatGmWgO2RHdY3blgp7978b/28JrlfjH9XvMh66Cxwg6fY/tze73Mknz3+" +
-            "/Fb2gOaqSJXAbRvyEpsVi/WmmojznPzbrOe8al3twYCCJULbP25QP8T3nrVl" +
-            "iszbjwtOO1uerD8wpXKSoPNVQyWjby925u8WablkfCj/Y4BG8bEJua8tvhzZ" +
-            "OsdnSr35HJ4fM4RbpbWV2xctPGY0ySUu2Es6b0mYyobnBU/bo36VifS7WZmY" +
-            "zZ+aPknWN+mlIX9S4kKnxNuXlSedMZ0ilGj7IFCl43WF3bq5L00Mn809NjW6" +
-            "+L18/p1nsdrtIpd4ptrLnwmYs+cE345Xt8/ec6g4dkjs8EX7EMmy56+OmQl9" +
-            "mT75aMblsyfSNDYvt5xgV8NavVCBsTsnjSttg4PZ97sNrikn1TeavD2l6L/P" +
-            "Y2uqVSu7QWPomoUuGdMmKJltLIr8yQSKpPpfEa8iGBkYfJjwRZIociQhR01q" +
-            "n7//IQeBo/cv1AesjsiX2cmp9u1B4OOjLcGmbpzfl949oFRytszwY3Kl0cMD" +
-            "7B+cJZetzex5l3hvj/nn0+euf8/jf8BVyMGuzviL0Y/zX6/WlL2qFs8XSx7c" +
-            "e3mnypfg0BPtb9P0zoacuT5nzlIr4dczDVZ9sl+YPX2VypGVU5f6xsWLnVxs" +
-            "sGnD9ZZ3z/7G3Vp6jvPh5nuzfPxCWmVMpadrf1RT2vHhx2Z7k8QLav53JKZG" +
-            "zjQ35rn48PPq64yhNuHzYw95rbn3Q/hLYD/zujpZqxdFvbNYvwhs+qSpWxNY" +
-            "/Yd9b7zC1oSQfFl5cErewhTw/BEwCIIYQYHEyCTCgJqvYDkOlClRAUoWRdeK" +
-            "nEFEULTZ4sigyCaA4gg59uRRTDhJOFuhG4bsS1EUw/KYcER/gDcrG0gBCxDy" +
-            "ArVNZgbxABAMMsu2BAAA",
-        ),
-        java(
-          "" +
-            "package test.pkg;\n" +
-            "\n" +
-            "public class Cls extends Parent {\n" +
-            "    @Override\n" +
-            "    public void myMethod() {\n" +
-            "        super.myMethod();\n" +
-            "    }\n" +
-            "}\n"
-        ),
-        gradle(
-          "" +
-            "apply plugin: 'com.android.application'\n" +
-            "\n" +
-            "dependencies {\n" +
-            "    compile 'my.group.id:mylib:25.0.0-SNAPSHOT'\n" +
-            "}"
-        ),
-        SUPPORT_ANNOTATIONS_JAR,
-      )
-      .run()
-      .expectClean()
+            and
+                package test.pkg;
+                public class Parent extends RestrictedParent {
+                    public void myMethod() {
+                    }
+                }
+             */
+            base64gzip(
+                "libs/exploded-aar/my.group.id/mylib/25.0.0-SNAPSHOT/jars/classes.jar",
+                "" +
+                    "H4sIAAAAAAAAAAvwZmYRYeDg4GB4VzvRkwEJcDKwMPi6hjjqevq56f87xcDA" +
+                    "zBDgzc4BkmKCKgnAqVkEiOGafR39PN1cg0P0fN0++5457eOtq3eR11tX69yZ" +
+                    "85uDDK4YP3hapOflq+Ppe7F0FQtnxAvJI9JSUi/Flj5boia2XCujYuk0C1HV" +
+                    "tGei2iKvRV8+zf5U9LGIEeyWNZtvhngBbfJCcYspmlvkgbgktbhEvyA7XT8I" +
+                    "yCjKTC5JTQlILErNK9FLzkksLp4aGOvN5Chi+/j6tMxZqal2rK7xV+y+RLio" +
+                    "iRyatGmWgO2RHdY3blgp7978b/28JrlfjH9XvMh66Cxwg6fY/tze73Mknz3+" +
+                    "/Fb2gOaqSJXAbRvyEpsVi/WmmojznPzbrOe8al3twYCCJULbP25QP8T3nrVl" +
+                    "iszbjwtOO1uerD8wpXKSoPNVQyWjby925u8WablkfCj/Y4BG8bEJua8tvhzZ" +
+                    "OsdnSr35HJ4fM4RbpbWV2xctPGY0ySUu2Es6b0mYyobnBU/bo36VifS7WZmY" +
+                    "zZ+aPknWN+mlIX9S4kKnxNuXlSedMZ0ilGj7IFCl43WF3bq5L00Mn809NjW6" +
+                    "+L18/p1nsdrtIpd4ptrLnwmYs+cE345Xt8/ec6g4dkjs8EX7EMmy56+OmQl9" +
+                    "mT75aMblsyfSNDYvt5xgV8NavVCBsTsnjSttg4PZ97sNrikn1TeavD2l6L/P" +
+                    "Y2uqVSu7QWPomoUuGdMmKJltLIr8yQSKpPpfEa8iGBkYfJjwRZIociQhR01q" +
+                    "n7//IQeBo/cv1AesjsiX2cmp9u1B4OOjLcGmbpzfl949oFRytszwY3Kl0cMD" +
+                    "7B+cJZetzex5l3hvj/nn0+euf8/jf8BVyMGuzviL0Y/zX6/WlL2qFs8XSx7c" +
+                    "e3mnypfg0BPtb9P0zoacuT5nzlIr4dczDVZ9sl+YPX2VypGVU5f6xsWLnVxs" +
+                    "sGnD9ZZ3z/7G3Vp6jvPh5nuzfPxCWmVMpadrf1RT2vHhx2Z7k8QLav53JKZG" +
+                    "zjQ35rn48PPq64yhNuHzYw95rbn3Q/hLYD/zujpZqxdFvbNYvwhs+qSpWxNY" +
+                    "/Yd9b7zC1oSQfFl5cErewhTw/BEwCIIYQYHEyCTCgJqvYDkOlClRAUoWRdeK" +
+                    "nEFEULTZ4sigyCaA4gg59uRRTDhJOFuhG4bsS1EUw/KYcER/gDcrG0gBCxDy" +
+                    "ArVNZgbxABAMMsu2BAAA",
+            ),
+            java(
+                "" +
+                    "package test.pkg;\n" +
+                    "\n" +
+                    "public class Cls extends Parent {\n" +
+                    "    @Override\n" +
+                    "    public void myMethod() {\n" +
+                    "        super.myMethod();\n" +
+                    "    }\n" +
+                    "}\n"
+            ),
+            gradle(
+                "" +
+                    "apply plugin: 'com.android.application'\n" +
+                    "\n" +
+                    "dependencies {\n" +
+                    "    compile 'my.group.id:mylib:25.0.0-SNAPSHOT'\n" +
+                    "}"
+            ),
+            SUPPORT_ANNOTATIONS_JAR,
+        )
+        .run()
+        .expectClean()
   }
 
   fun testPrivateVisibilityWithDefaultConstructor() {
     // Regression test for https://code.google.com/p/android/issues/detail?id=235661
     lint()
-      .files(
-        java(
-          "" +
-            "package test.pkg;\n" +
-            "\n" +
-            "import androidx.annotation.VisibleForTesting;\n" +
-            "\n" +
-            "public class LintBugExample {\n" +
-            "    public static Object demonstrateBug() {\n" +
-            "        return new InnerClass();\n" +
-            "    }\n" +
-            "\n" +
-            "    @VisibleForTesting\n" +
-            "    static class InnerClass {\n" +
-            "    }\n" +
-            "}"
-        ),
-        SUPPORT_ANNOTATIONS_JAR,
-      )
-      .run()
-      .expectClean()
+        .files(
+            java(
+                "" +
+                    "package test.pkg;\n" +
+                    "\n" +
+                    "import androidx.annotation.VisibleForTesting;\n" +
+                    "\n" +
+                    "public class LintBugExample {\n" +
+                    "    public static Object demonstrateBug() {\n" +
+                    "        return new InnerClass();\n" +
+                    "    }\n" +
+                    "\n" +
+                    "    @VisibleForTesting\n" +
+                    "    static class InnerClass {\n" +
+                    "    }\n" +
+                    "}"
+            ),
+            SUPPORT_ANNOTATIONS_JAR,
+        )
+        .run()
+        .expectClean()
   }
 
   fun testKotlinVisibility() {
     // Regression test for https://issuetracker.google.com/67489310
     // Handle Kotlin compilation unit visibility (files, internal ,etc)
     lint()
-      .files(
-        kotlin(
-          "" +
-            "package test.pkg\n" +
-            "\n" +
-            "import androidx.annotation.VisibleForTesting\n" +
-            "\n" +
-            "fun foo() {\n" +
-            "    AndroidOSVersionChecker()\n" +
-            "}\n" +
-            "\n" +
-            "@VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)\n" +
-            "internal class AndroidOSVersionChecker2 {\n" +
-            "}"
-        ),
-        SUPPORT_ANNOTATIONS_JAR,
-      )
-      .run()
-      .expectClean()
+        .files(
+            kotlin(
+                "" +
+                    "package test.pkg\n" +
+                    "\n" +
+                    "import androidx.annotation.VisibleForTesting\n" +
+                    "\n" +
+                    "fun foo() {\n" +
+                    "    AndroidOSVersionChecker()\n" +
+                    "}\n" +
+                    "\n" +
+                    "@VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)\n" +
+                    "internal class AndroidOSVersionChecker2 {\n" +
+                    "}"
+            ),
+            SUPPORT_ANNOTATIONS_JAR,
+        )
+        .run()
+        .expectClean()
   }
 
   fun testVisibleForTestingInternalKotlin() {
     lint()
-      .files(
-        kotlin(
-          """
+        .files(
+            kotlin(
+                """
                 package test.pkg
 
                 import android.os.Bundle
@@ -1259,46 +1259,46 @@ class RestrictToDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-        ),
-        SUPPORT_ANNOTATIONS_JAR,
-      )
-      .run()
-      .expectClean()
+            ),
+            SUPPORT_ANNOTATIONS_JAR,
+        )
+        .run()
+        .expectClean()
   }
 
   fun testRestrictedClassOrInterfaceUsage() {
     lint()
-      .files(
-        kotlin(
-          """
+        .files(
+            kotlin(
+                """
                 package test.pkg
 
                 class MyClass : RestrictedClass()
                 """
-        ),
-        java(
-            """
+            ),
+            java(
+                    """
                 package test.pkg;
 
                 @SuppressWarnings("ClassNameDiffersFromFileName")
                 public class MyJavaClass extends RestrictedClass implements RestrictedInterface {
                 }
                 """
-          )
-          .indented(),
-        java(
-            "src/androidTest/java/test/pkg/MyTestJavaClass.java",
-            """
+                )
+                .indented(),
+            java(
+                    "src/androidTest/java/test/pkg/MyTestJavaClass.java",
+                    """
                   package test.pkg;
 
                   @SuppressWarnings("ClassNameDiffersFromFileName")
                   public class MyTestJavaClass extends RestrictedClass {
                   }
                   """,
-          )
-          .indented(),
-        kotlin(
-            """
+                )
+                .indented(),
+            kotlin(
+                    """
                 package test.pkg
 
                 import androidx.annotation.RestrictTo
@@ -1306,10 +1306,10 @@ class RestrictToDetectorTest : AbstractCheckTest() {
                 @RestrictTo(RestrictTo.Scope.TESTS)
                 open class RestrictedClass
                 """
-          )
-          .indented(),
-        kotlin(
-            """
+                )
+                .indented(),
+            kotlin(
+                    """
                 package test.pkg
 
                 import androidx.annotation.RestrictTo
@@ -1317,24 +1317,24 @@ class RestrictToDetectorTest : AbstractCheckTest() {
                 @RestrictTo(RestrictTo.Scope.TESTS)
                 interface RestrictedInterface
                 """
-          )
-          .indented(),
-        gradle(
-            """
+                )
+                .indented(),
+            gradle(
+                    """
                 android {
                     lintOptions {
                         checkTestSources = true
                     }
                 }
                 """
-          )
-          .indented(),
-        SUPPORT_ANNOTATIONS_JAR,
-      )
-      .skipTestModes(TestMode.TYPE_ALIAS)
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            SUPPORT_ANNOTATIONS_JAR,
+        )
+        .skipTestModes(TestMode.TYPE_ALIAS)
+        .run()
+        .expect(
+            """
             src/main/kotlin/test/pkg/MyClass.kt:4: Error: RestrictedClass can only be called from tests [RestrictedApi]
                             class MyClass : RestrictedClass()
                                             ~~~~~~~~~~~~~~~
@@ -1346,23 +1346,23 @@ class RestrictToDetectorTest : AbstractCheckTest() {
                                                                         ~~~~~~~~~~~~~~~~~~~
             3 errors, 0 warnings
             """
-      )
+        )
   }
 
   fun testPackagePrivateFromKotlin() {
     lint()
-      .files(
-        kotlin(
-          """
+        .files(
+            kotlin(
+                """
                 package test.pkg
                 import androidx.annotation.VisibleForTesting
                 @VisibleForTesting(otherwise = VisibleForTesting.PACKAGE_PRIVATE)
                 class RunnerFactoryKotlin {
                 }
                 """
-        ),
-        java(
-          """
+            ),
+            java(
+                """
                 package test.pkg;
                 public class NotWorkingEngineJava {
                     public void test() {
@@ -1370,9 +1370,9 @@ class RestrictToDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-        ),
-        kotlin(
-          """
+            ),
+            kotlin(
+                """
                 package test.pkg
                 class NotWorkingEngineKotlin {
                     fun test() {
@@ -1380,11 +1380,11 @@ class RestrictToDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-        ),
-        SUPPORT_ANNOTATIONS_JAR,
-      )
-      .run()
-      .expectClean()
+            ),
+            SUPPORT_ANNOTATIONS_JAR,
+        )
+        .run()
+        .expectClean()
   }
 
   fun test123545341() {
@@ -1393,9 +1393,9 @@ class RestrictToDetectorTest : AbstractCheckTest() {
     // (Note that that test asks for the following not to be an error, but this is
     // deliberate and we're testing the enforcement here)
     lint()
-      .files(
-        java(
-          """
+        .files(
+            java(
+                """
                 package test.pkg;
 
                 import androidx.annotation.RestrictTo;
@@ -1416,12 +1416,12 @@ class RestrictToDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-        ),
-        SUPPORT_ANNOTATIONS_JAR,
-      )
-      .run()
-      .expect(
-        """
+            ),
+            SUPPORT_ANNOTATIONS_JAR,
+        )
+        .run()
+        .expect(
+            """
             src/test/pkg/Outer.java:8: Error: Inner can only be accessed from tests [RestrictedApi]
                                 private Inner innerInstance;
                                         ~~~~~
@@ -1430,7 +1430,7 @@ class RestrictToDetectorTest : AbstractCheckTest() {
                                                   ~~~~~~
             2 errors, 0 warnings
             """
-      )
+        )
   }
 
   @Suppress("RedundantGetter", "RedundantSetter")
@@ -1439,9 +1439,9 @@ class RestrictToDetectorTest : AbstractCheckTest() {
     // 140642032: Kotlin class property annotated with VisibleForTesting not generating
     // error/warning when called from other Kotlin code
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
                 package test.pkg
 
                 import androidx.annotation.VisibleForTesting
@@ -1486,10 +1486,10 @@ class RestrictToDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-          )
-          .indented(),
-        java(
-            """
+                )
+                .indented(),
+            java(
+                    """
                 package test.pkg;
                 public class FooCaller {
                     public void method() {
@@ -1511,13 +1511,13 @@ class RestrictToDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-          )
-          .indented(),
-        SUPPORT_ANNOTATIONS_JAR,
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            SUPPORT_ANNOTATIONS_JAR,
+        )
+        .run()
+        .expect(
+            """
             src/test/pkg/Foo.kt:29: Error: Foo.getHiddenProp can only be called from tests [RestrictedApi]
                     f.hiddenProp
                       ~~~~~~~~~~
@@ -1550,16 +1550,16 @@ class RestrictToDetectorTest : AbstractCheckTest() {
                       ~~~~~~~~~~~~~
             10 errors, 0 warnings
             """
-      )
+        )
   }
 
   fun test148905488() {
     // Regression test for https://issuetracker.google.com/148905488
     // Referencing a @VisibleForTesting-annotated property in Kotlin does not cause a Lint error
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
                 package test.pkg
 
                 import androidx.annotation.VisibleForTesting
@@ -1575,10 +1575,10 @@ class RestrictToDetectorTest : AbstractCheckTest() {
                     internal var currentNamespace2: String? = null
                 }
                 """
-          )
-          .indented(),
-        kotlin(
-            """
+                )
+                .indented(),
+            kotlin(
+                    """
                 package test.pkg
 
                 class MyActivity {
@@ -1589,13 +1589,13 @@ class RestrictToDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-          )
-          .indented(),
-        SUPPORT_ANNOTATIONS_JAR,
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            SUPPORT_ANNOTATIONS_JAR,
+        )
+        .run()
+        .expect(
+            """
             src/test/pkg/MyActivity.kt:6: Warning: This method should only be accessed from tests or within private scope [VisibleForTests]
                     val foo = myViewModel.currentNamespace.orEmpty()
                                           ~~~~~~~~~~~~~~~~
@@ -1604,16 +1604,16 @@ class RestrictToDetectorTest : AbstractCheckTest() {
                                           ~~~~~~~~~~~~~~~~~
             0 errors, 2 warnings
             """
-      )
+        )
   }
 
   fun test169255669() {
     // Regression test for 169255669: ClassCastException in RestrictToDetector.
     @Suppress("ConvertSecondaryConstructorToPrimary")
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
                 package test.pkg
 
                 import androidx.annotation.RestrictTo
@@ -1626,28 +1626,28 @@ class RestrictToDetectorTest : AbstractCheckTest() {
                 @RestrictTo(RestrictTo.Scope.SUBCLASSES)
                 val foo = Foo()
                 """
-          )
-          .indented(),
-        SUPPORT_ANNOTATIONS_JAR,
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            SUPPORT_ANNOTATIONS_JAR,
+        )
+        .run()
+        .expect(
+            """
             src/test/pkg/Foo.kt:11: Error: Foo can only be called from subclasses [RestrictedApi]
             val foo = Foo()
                       ~~~
             1 errors, 0 warnings
             """
-      )
+        )
   }
 
   fun test169610406() {
     // 169610406: Strange warning from RestrictToDetector for Kotlin property
     //            initialized by constructor call
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
                 package test.pkg
 
                 import androidx.annotation.RestrictTo
@@ -1673,10 +1673,10 @@ class RestrictToDetectorTest : AbstractCheckTest() {
                     var foo4: Foo? = Foo()
                 }
               """
-          )
-          .indented(),
-        kotlin(
-            """
+                )
+                .indented(),
+            kotlin(
+                    """
                 package test.pkg
                 class Sub : Bar() {
                     fun test() {
@@ -1701,13 +1701,13 @@ class RestrictToDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-          )
-          .indented(),
-        SUPPORT_ANNOTATIONS_JAR,
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            SUPPORT_ANNOTATIONS_JAR,
+        )
+        .run()
+        .expect(
+            """
             src/test/pkg/Sub.kt:13: Error: Bar.getFoo1 can only be called from subclasses [RestrictedApi]
                     val test = bar.foo1  // WARN 1
                                    ~~~~
@@ -1722,64 +1722,64 @@ class RestrictToDetectorTest : AbstractCheckTest() {
                                 ~~~~
             4 errors, 0 warnings
             """
-      )
+        )
   }
 
   fun testAssignment() {
     // Make sure we flag @VisibleForTesting assignment mismatches
     lint()
-      .files(
-        java(
+        .files(
+            java(
+                    "" +
+                        "package test.pkg;\n" +
+                        "\n" +
+                        "import java.io.File;\n" +
+                        "\n" +
+                        "@SuppressWarnings({\"FieldCanBeLocal\", \"unused\"})\n" +
+                        "public class LegacyLocalRepoLoader {\n" +
+                        "    private final LocalSdk mLocalSdk;\n" +
+                        "\n" +
+                        "    public LegacyLocalRepoLoader(File root, String fop) {\n" +
+                        "        mLocalSdk = new LocalSdk(fop);\n" +
+                        "    }\n" +
+                        "}"
+                )
+                .indented(),
+            java(
+                    "" +
+                        "package test.pkg;\n" +
+                        "import androidx.annotation.VisibleForTesting;\n" +
+                        "@Deprecated\n" +
+                        "public class LocalSdk {\n" +
+                        "    private final String mFileOp;\n" +
+                        "    @VisibleForTesting\n" +
+                        "    public LocalSdk(String fileOp) {\n" +
+                        "        mFileOp = fileOp;\n" +
+                        "    }\n" +
+                        "}\n" +
+                        ""
+                )
+                .indented(),
+            SUPPORT_ANNOTATIONS_JAR,
+        )
+        .run()
+        .expect(
             "" +
-              "package test.pkg;\n" +
-              "\n" +
-              "import java.io.File;\n" +
-              "\n" +
-              "@SuppressWarnings({\"FieldCanBeLocal\", \"unused\"})\n" +
-              "public class LegacyLocalRepoLoader {\n" +
-              "    private final LocalSdk mLocalSdk;\n" +
-              "\n" +
-              "    public LegacyLocalRepoLoader(File root, String fop) {\n" +
-              "        mLocalSdk = new LocalSdk(fop);\n" +
-              "    }\n" +
-              "}"
-          )
-          .indented(),
-        java(
-            "" +
-              "package test.pkg;\n" +
-              "import androidx.annotation.VisibleForTesting;\n" +
-              "@Deprecated\n" +
-              "public class LocalSdk {\n" +
-              "    private final String mFileOp;\n" +
-              "    @VisibleForTesting\n" +
-              "    public LocalSdk(String fileOp) {\n" +
-              "        mFileOp = fileOp;\n" +
-              "    }\n" +
-              "}\n" +
-              ""
-          )
-          .indented(),
-        SUPPORT_ANNOTATIONS_JAR,
-      )
-      .run()
-      .expect(
-        "" +
-          "src/test/pkg/LegacyLocalRepoLoader.java:10: Warning: This method should only be accessed from tests or within private scope [VisibleForTests]\n" +
-          "        mLocalSdk = new LocalSdk(fop);\n" +
-          "                    ~~~~~~~~~~~~~~~~~\n" +
-          "0 errors, 1 warnings"
-      )
+                "src/test/pkg/LegacyLocalRepoLoader.java:10: Warning: This method should only be accessed from tests or within private scope [VisibleForTests]\n" +
+                "        mLocalSdk = new LocalSdk(fop);\n" +
+                "                    ~~~~~~~~~~~~~~~~~\n" +
+                "0 errors, 1 warnings"
+        )
   }
 
   companion object {
     val library: TestFile =
-      mavenLibrary(
-        "my.group.id:mylib:25.0.0-SNAPSHOT",
-        stubSources =
-          listOf(
-            java(
-                """
+        mavenLibrary(
+            "my.group.id:mylib:25.0.0-SNAPSHOT",
+            stubSources =
+                listOf(
+                    java(
+                            """
                         package library.pkg;
 
                         import androidx.annotation.RestrictTo;
@@ -1793,10 +1793,10 @@ class RestrictToDetectorTest : AbstractCheckTest() {
                             }
                         }
                         """
-              )
-              .indented(),
-            java(
-                """
+                        )
+                        .indented(),
+                    java(
+                            """
                         package library.pkg;
 
                         import androidx.annotation.RestrictTo;
@@ -1807,10 +1807,10 @@ class RestrictToDetectorTest : AbstractCheckTest() {
                             }
                         }
                         """
-              )
-              .indented(),
-            java(
-                """
+                        )
+                        .indented(),
+                    java(
+                            """
                         package library.pkg.internal;
 
                         public class InternalClass {
@@ -1818,28 +1818,28 @@ class RestrictToDetectorTest : AbstractCheckTest() {
                             }
                         }
                         """
-              )
-              .indented(),
-            java(
-                """
+                        )
+                        .indented(),
+                    java(
+                            """
                         @RestrictTo(RestrictTo.Scope.GROUP_ID)
                         package library.pkg.internal;
 
                         import androidx.annotation.RestrictTo;
                         """
-              )
-              .indented(),
-          ),
-        compileOnly = listOf(SUPPORT_ANNOTATIONS_JAR),
-      )
+                        )
+                        .indented(),
+                ),
+            compileOnly = listOf(SUPPORT_ANNOTATIONS_JAR),
+        )
   }
 
   fun testRestrictToLibraryViaGradleModel() {
     val library =
-      project()
-        .files(
-          java(
-              """
+        project()
+            .files(
+                java(
+                        """
                 package com.example.mylibrary;
 
                 import androidx.annotation.RestrictTo;
@@ -1880,10 +1880,10 @@ class RestrictToDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-            )
-            .indented(),
-          java(
-              """
+                    )
+                    .indented(),
+                java(
+                        """
                 package test.pkg;
 
                 import com.example.mylibrary.LibraryCode;
@@ -1902,25 +1902,25 @@ class RestrictToDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-            )
-            .indented(),
-          gradle(
-              """
+                    )
+                    .indented(),
+                gradle(
+                        """
                     apply plugin: 'com.android.library'
                     group=test.pkg.library
                     """
+                    )
+                    .indented(),
+                SUPPORT_ANNOTATIONS_JAR,
             )
-            .indented(),
-          SUPPORT_ANNOTATIONS_JAR,
-        )
-        .name("lib1")
+            .name("lib1")
 
     // Add library3 to test case when group doesn't contain any dots.
     val library3 =
-      project()
-        .files(
-          java(
-              """
+        project()
+            .files(
+                java(
+                        """
                 package com.example.dotless;
 
                 import androidx.annotation.RestrictTo;
@@ -1931,24 +1931,24 @@ class RestrictToDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-            )
-            .indented(),
-          gradle(
-              """
+                    )
+                    .indented(),
+                gradle(
+                        """
                     apply plugin: 'com.android.library'
                     group=dotless
                     """
+                    )
+                    .indented(),
+                SUPPORT_ANNOTATIONS_JAR,
             )
-            .indented(),
-          SUPPORT_ANNOTATIONS_JAR,
-        )
-        .name("lib3")
+            .name("lib3")
 
     val library2 =
-      project()
-        .files(
-          kotlin(
-              """
+        project()
+            .files(
+                kotlin(
+                        """
                 package com.example.myapplication
 
                 import com.example.mylibrary.LibraryCode
@@ -1966,19 +1966,19 @@ class RestrictToDetectorTest : AbstractCheckTest() {
                     DotlessCode.method() // ERROR
                 }
                 """
-            )
-            .indented(),
-          gradle(
-              """
+                    )
+                    .indented(),
+                gradle(
+                        """
                     apply plugin: 'com.android.library'
                     group=other.app
                     """
+                    )
+                    .indented(),
             )
-            .indented(),
-        )
-        .name("lib2")
-        .dependsOn(library)
-        .dependsOn(library3)
+            .name("lib2")
+            .dependsOn(library)
+            .dependsOn(library3)
 
     // Make sure projects are placed correctly on disk: to do this, record
     // project locations with a special client, then after the lint run make
@@ -2005,12 +2005,12 @@ class RestrictToDetectorTest : AbstractCheckTest() {
     assertEquals("LIBRARY:lib1", library.toString())
 
     lint()
-      .projects(library, library2, library3)
-      .reportFrom(library2)
-      .clientFactory(factory)
-      .run()
-      .expect(
-        """
+        .projects(library, library2, library3)
+        .reportFrom(library2)
+        .clientFactory(factory)
+        .run()
+        .expect(
+            """
                 src/main/kotlin/com/example/myapplication/test.kt:8: Error: LibraryCode.method2 can only be called from within the same library (test.pkg.library:test_project-lib1) [RestrictedApi]
                     LibraryCode.method2() // ERROR
                                 ~~~~~~~
@@ -2034,7 +2034,7 @@ class RestrictToDetectorTest : AbstractCheckTest() {
                                 ~~~~~~
                 7 errors, 0 warnings
                 """
-      )
+        )
 
     // Make sure project directories are laid out correctly
     assertTrue(libDir2!!.parentFile.path == libDir1!!.path)
@@ -2043,9 +2043,9 @@ class RestrictToDetectorTest : AbstractCheckTest() {
 
   fun test183961872() {
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
                 package test.pkg;
 
                 import com.google.common.annotations.VisibleForTesting;
@@ -2068,21 +2068,21 @@ class RestrictToDetectorTest : AbstractCheckTest() {
                     private static class JobWriteFailure { }
                 }
                 """
-          )
-          .indented(),
-        guavaVisibleForTestingAnnotation,
-      )
-      .allowDuplicates()
-      .run()
-      .expectClean()
+                )
+                .indented(),
+            guavaVisibleForTestingAnnotation,
+        )
+        .allowDuplicates()
+        .run()
+        .expectClean()
   }
 
   fun test197123294() {
     // 197123294: Lint is complaining about the wrong method when using += notation
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
                 package test.pkg
 
                 class Navigator<D>
@@ -2099,10 +2099,10 @@ class RestrictToDetectorTest : AbstractCheckTest() {
                     navController.navigatorProvider += bottomSheetNavigator
                 }
                 """
-          )
-          .indented(),
-        java(
-          """
+                )
+                .indented(),
+            java(
+                """
                 package test.pkg;
 
                 import androidx.annotation.VisibleForTesting;
@@ -2117,11 +2117,11 @@ class RestrictToDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-        ),
-        SUPPORT_ANNOTATIONS_JAR,
-      )
-      .run()
-      .expectClean()
+            ),
+            SUPPORT_ANNOTATIONS_JAR,
+        )
+        .run()
+        .expectClean()
   }
 
   fun testNonAssignmentLhs() {
@@ -2129,9 +2129,9 @@ class RestrictToDetectorTest : AbstractCheckTest() {
     // (The "to" infix function for example is a UastBinaryExpression in the AST so
     // was getting picked up in the first version of the filter for 197123294.)
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
                 package test.pkg
 
                 import test.pkg.AbstractAaptOutputParser.AAPT_TOOL_NAME
@@ -2142,10 +2142,10 @@ class RestrictToDetectorTest : AbstractCheckTest() {
                     "D8" to BuildErrorMessage.ErrorType.D8
                 )
                 """
-          )
-          .indented(),
-        java(
-            """
+                )
+                .indented(),
+            java(
+                    """
                 package test.pkg;
                 public class BuildErrorMessage {
                     public enum ErrorType {
@@ -2155,10 +2155,10 @@ class RestrictToDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-          )
-          .indented(),
-        java(
-            """
+                )
+                .indented(),
+            java(
+                    """
                 package test.pkg;
                 import androidx.annotation.VisibleForTesting;
                 @VisibleForTesting
@@ -2166,19 +2166,19 @@ class RestrictToDetectorTest : AbstractCheckTest() {
                     public static final String AAPT_TOOL_NAME = "AAPT";
                 }
                 """
-          )
-          .indented(),
-        SUPPORT_ANNOTATIONS_JAR,
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            SUPPORT_ANNOTATIONS_JAR,
+        )
+        .run()
+        .expect(
+            """
             src/test/pkg/test.kt:7: Warning: This method should only be accessed from tests or within private scope [VisibleForTests]
                 AAPT_TOOL_NAME to BuildErrorMessage.ErrorType.AAPT,
                 ~~~~~~~~~~~~~~
             0 errors, 1 warnings
             """
-      )
+        )
   }
 
   fun testVisibleForTestingOnConstructorProperty() {
@@ -2186,9 +2186,9 @@ class RestrictToDetectorTest : AbstractCheckTest() {
     // parameters in this way so now we just make sure we don't complain
     // here.
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
                 package test.pkg
 
                 import androidx.annotation.VisibleForTesting
@@ -2198,10 +2198,10 @@ class RestrictToDetectorTest : AbstractCheckTest() {
                 class TestClass3(@get:VisibleForTesting val parameter: String)
                 class TestClass4(@param:VisibleForTesting val parameter: String)
                 """
-          )
-          .indented(),
-        kotlin(
-            """
+                )
+                .indented(),
+            kotlin(
+                    """
                 package test.pkg
                 fun test(foo: String) {
                     TestClass1(foo) // OK 1
@@ -2210,21 +2210,21 @@ class RestrictToDetectorTest : AbstractCheckTest() {
                     TestClass4(foo) // OK 4
                 }
                 """
-          )
-          .indented(),
-        SUPPORT_ANNOTATIONS_JAR,
-      )
-      .run()
-      .expectClean()
+                )
+                .indented(),
+            SUPPORT_ANNOTATIONS_JAR,
+        )
+        .run()
+        .expectClean()
   }
 
   fun testVisibleForTestingOnClassProperty() {
     // Like testVisibleForTestingOnConstructorProperty but where the property
     // is a class member instead of a constructor one
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
                 package test.pkg
 
                 import androidx.annotation.VisibleForTesting
@@ -2235,10 +2235,10 @@ class RestrictToDetectorTest : AbstractCheckTest() {
                 class TestClass8 { @set:VisibleForTesting var property: String = "" }
                 class TestClass9 { @property:VisibleForTesting var property: String = "" }
                 """
-          )
-          .indented(),
-        kotlin(
-            """
+                )
+                .indented(),
+            kotlin(
+                    """
                 package test.pkg
                 fun test(foo: String) {
                     val t5 = TestClass5().property // WARN 1
@@ -2253,13 +2253,13 @@ class RestrictToDetectorTest : AbstractCheckTest() {
                     TestClass9().property = "" // WARN 6
                 }
                 """
-          )
-          .indented(),
-        SUPPORT_ANNOTATIONS_JAR,
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            SUPPORT_ANNOTATIONS_JAR,
+        )
+        .run()
+        .expect(
+            """
             src/test/pkg/test.kt:3: Warning: This method should only be accessed from tests or within private scope [VisibleForTests]
                 val t5 = TestClass5().property // WARN 1
                                       ~~~~~~~~
@@ -2280,7 +2280,7 @@ class RestrictToDetectorTest : AbstractCheckTest() {
                              ~~~~~~~~
             0 errors, 6 warnings
             """
-      )
+        )
   }
 
   @Suppress("TestFunctionName")
@@ -2289,9 +2289,9 @@ class RestrictToDetectorTest : AbstractCheckTest() {
     // Compose Previews already imply that it's test code (this code will be compiled out of the
     // APK.)
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
             import androidx.compose.runtime.Composable
             import androidx.compose.ui.tooling.preview.Preview
 
@@ -2332,44 +2332,44 @@ class RestrictToDetectorTest : AbstractCheckTest() {
               StyledText()
             }
             """
-          )
-          .indented(),
-        kotlin(
-            """
+                )
+                .indented(),
+            kotlin(
+                    """
             import androidx.annotation.VisibleForTesting
 
             @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
             fun testApi()
             """
-          )
-          .indented(),
-        // Stubs:
-        kotlin(
-            """
+                )
+                .indented(),
+            // Stubs:
+            kotlin(
+                    """
             package androidx.compose.runtime // Stub: HIDE-FROM-DOCUMENTATION
             annotation class Composable
             """
-          )
-          .indented(),
-        kotlin(
-            """
+                )
+                .indented(),
+            kotlin(
+                    """
             package androidx.compose.ui.tooling.preview // Stub: HIDE-FROM-DOCUMENTATION
             annotation class Preview
             """
-          )
-          .indented(),
-        kotlin(
-            """
+                )
+                .indented(),
+            kotlin(
+                    """
             package androidx.compose.desktop.ui.tooling.preview // Stub: HIDE-FROM-DOCUMENTATION
             annotation class Preview
             """
-          )
-          .indented(),
-        SUPPORT_ANNOTATIONS_JAR,
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            SUPPORT_ANNOTATIONS_JAR,
+        )
+        .run()
+        .expect(
+            """
         src/DevicePreviews.kt:5: Warning: This method should only be accessed from tests or within private scope [VisibleForTests]
           testApi() // ERROR 1
           ~~~~~~~
@@ -2378,14 +2378,14 @@ class RestrictToDetectorTest : AbstractCheckTest() {
           ~~~~~~~
         0 errors, 2 warnings
         """
-      )
+        )
   }
 
   fun testSingleAnnotationHandling() {
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
                 package test.pkg
 
                 import androidx.annotation.VisibleForTesting
@@ -2396,10 +2396,10 @@ class RestrictToDetectorTest : AbstractCheckTest() {
                         protected set
                 }
                 """
-          )
-          .indented(),
-        java(
-            """
+                )
+                .indented(),
+            java(
+                    """
                 package test.pkg;
 
                 public class Bar extends Foo {
@@ -2409,14 +2409,14 @@ class RestrictToDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-          )
-          .indented(),
-        SUPPORT_ANNOTATIONS_JAR,
-      )
-      .testModes(TestMode.DEFAULT)
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            SUPPORT_ANNOTATIONS_JAR,
+        )
+        .testModes(TestMode.DEFAULT)
+        .run()
+        .expect(
+            """
             src/test/pkg/Bar.java:5: Warning: This method should only be accessed from tests or within private scope [VisibleForTests]
                     int count = getUpdateCount() + 1;
                                 ~~~~~~~~~~~~~~
@@ -2425,12 +2425,12 @@ class RestrictToDetectorTest : AbstractCheckTest() {
                     ~~~~~~~~~~~~~~
             0 errors, 2 warnings
             """
-      )
+        )
   }
 
   private val guavaVisibleForTestingAnnotation: TestFile =
-    java(
-        """
+      java(
+              """
         package com.google.common.annotations;
         @SuppressWarnings("ClassNameDiffersFromFileName")
         public @interface VisibleForTesting {
@@ -2443,22 +2443,22 @@ class RestrictToDetectorTest : AbstractCheckTest() {
           Visibility productionVisibility() default Visibility.PRIVATE;
         }
         """
-      )
-      .indented()
+          )
+          .indented()
 
   private val intellijVisibleForTestingAnnotation: TestFile =
-    java(
-        """
+      java(
+              """
         package org.jetbrains.annotations;
         @SuppressWarnings("ClassNameDiffersFromFileName")
         public @interface VisibleForTesting { }
         """
-      )
-      .indented()
+          )
+          .indented()
 
   private val androidVisibleForTestingAnnotation: TestFile =
-    java(
-        """
+      java(
+              """
         package com.android.internal.annotations;
         import java.lang.annotation.Retention;
         import java.lang.annotation.RetentionPolicy;
@@ -2472,8 +2472,8 @@ class RestrictToDetectorTest : AbstractCheckTest() {
             Visibility visibility() default Visibility.PRIVATE;
         }
         """
-      )
-      .indented()
+          )
+          .indented()
 
   fun testLibraryGroupPrefixMatches() {
     assertTrue(sameLibraryGroupPrefix("foo", "foo"))
@@ -2490,9 +2490,9 @@ class RestrictToDetectorTest : AbstractCheckTest() {
   fun testParameterAnnotation() {
     // https://www.reddit.com/r/androiddev/comments/sckryz/android_studio_bumblebee_202111_stable/hv0o4ii/
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
                 package test.pkg
 
                 import androidx.annotation.VisibleForTesting
@@ -2503,29 +2503,29 @@ class RestrictToDetectorTest : AbstractCheckTest() {
                     @VisibleForTesting val arg1: Thing1,
                     @VisibleForTesting var arg2: Thing2? = null)
                 """
-          )
-          .indented(),
-        kotlin(
-            """
+                )
+                .indented(),
+            kotlin(
+                    """
                 package test.pkg
                 fun test() {
                     MyClass(Thing1(), Thing2()) // OK
                 }
                 """
-          )
-          .indented(),
-        SUPPORT_ANNOTATIONS_JAR,
-      )
-      .run()
-      .expectClean()
+                )
+                .indented(),
+            SUPPORT_ANNOTATIONS_JAR,
+        )
+        .run()
+        .expectClean()
   }
 
   fun testTestOnly() {
     // Regression test for b/243197340
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
                 import androidx.annotation.VisibleForTesting
 
                 class ProductionCode {
@@ -2538,10 +2538,10 @@ class RestrictToDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-          )
-          .indented(),
-        kotlin(
-          """
+                )
+                .indented(),
+            kotlin(
+                """
                 import org.jetbrains.annotations.TestOnly
                 class Code {
                     @TestOnly
@@ -2550,28 +2550,28 @@ class RestrictToDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-        ),
-        java(
-            """
+            ),
+            java(
+                    """
                 package org.jetbrains.annotations;
                 import java.lang.annotation.*;
                 @Target({ElementType.METHOD, ElementType.CONSTRUCTOR, ElementType.FIELD, ElementType.TYPE})
                 public @interface TestOnly { }
                 """
-          )
-          .indented(),
-        SUPPORT_ANNOTATIONS_JAR,
-      )
-      .run()
-      .expectClean()
+                )
+                .indented(),
+            SUPPORT_ANNOTATIONS_JAR,
+        )
+        .run()
+        .expectClean()
   }
 
   fun test278573413() {
     // Regression test for b/278573413.
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
           package test.pkg
 
           import library.pkg.PrivateKotlinClass
@@ -2580,14 +2580,14 @@ class RestrictToDetectorTest : AbstractCheckTest() {
             override fun method() {}
           }
           """
-          )
-          .indented(),
-        mavenLibrary(
-          "my.group.id:myklib:25.0.0-SNAPSHOT",
-          stubSources =
-            listOf(
-              kotlin(
-                  """
+                )
+                .indented(),
+            mavenLibrary(
+                "my.group.id:myklib:25.0.0-SNAPSHOT",
+                stubSources =
+                    listOf(
+                        kotlin(
+                                """
               package library.pkg
 
               import androidx.annotation.RestrictTo
@@ -2597,27 +2597,27 @@ class RestrictToDetectorTest : AbstractCheckTest() {
                   open fun method() {}
               }
               """
-                )
-                .indented()
+                            )
+                            .indented()
+                    ),
+                compileOnly = listOf(SUPPORT_ANNOTATIONS_JAR),
             ),
-          compileOnly = listOf(SUPPORT_ANNOTATIONS_JAR),
-        ),
-        gradle(
-            """
+            gradle(
+                    """
                 apply plugin: 'com.android.application'
 
                 dependencies {
                     compile 'my.group.id:myklib:25.0.0-SNAPSHOT'
                 }
                 """
-          )
-          .indented(),
-        SUPPORT_ANNOTATIONS_JAR,
-      )
-      .allowKotlinClassStubs(true)
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            SUPPORT_ANNOTATIONS_JAR,
+        )
+        .allowKotlinClassStubs(true)
+        .run()
+        .expect(
+            """
         src/main/kotlin/test/pkg/Test.kt:5: Error: PrivateKotlinClass can only be accessed from within the same library group (referenced groupId=my.group.id from groupId=<unknown>) [RestrictedApi]
         class Test : PrivateKotlinClass {
                      ~~~~~~~~~~~~~~~~~~
@@ -2626,15 +2626,15 @@ class RestrictToDetectorTest : AbstractCheckTest() {
                        ~~~~~~
         2 errors, 0 warnings
         """
-      )
+        )
   }
 
   fun testCastWithVisibleForTestingType() {
     // Regression test for b/286595849 and b/287350230
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
                 package pkg
 
                 import androidx.annotation.VisibleForTesting
@@ -2645,10 +2645,10 @@ class RestrictToDetectorTest : AbstractCheckTest() {
                   fun internalMethod(): Int = 1
                 }
                 """
-          )
-          .indented(),
-        kotlin(
-          """
+                )
+                .indented(),
+            kotlin(
+                """
                 package pkg
 
                 class Code {
@@ -2657,9 +2657,9 @@ class RestrictToDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-        ),
-        java(
-            """
+            ),
+            java(
+                    """
             package pkg;
 
             class CodeJava {
@@ -2668,13 +2668,13 @@ class RestrictToDetectorTest : AbstractCheckTest() {
               }
             }
           """
-          )
-          .indented(),
-        SUPPORT_ANNOTATIONS_JAR,
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            SUPPORT_ANNOTATIONS_JAR,
+        )
+        .run()
+        .expect(
+            """
             src/pkg/Code.kt:6: Warning: This class should only be accessed from tests or within private scope [VisibleForTests]
                                   val x = clazz as? InternalClass
                                                     ~~~~~~~~~~~~~
@@ -2686,15 +2686,15 @@ class RestrictToDetectorTest : AbstractCheckTest() {
                          ~~~~~~~~~~~~~
             0 errors, 3 warnings
             """
-      )
+        )
   }
 
   fun testIntelliJAnnotation() {
     // Regression test for b/287350230
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
                 package pkg1
                 import org.jetbrains.annotations.VisibleForTesting
 
@@ -2708,10 +2708,10 @@ class RestrictToDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-          )
-          .indented(),
-        kotlin(
-          """
+                )
+                .indented(),
+            kotlin(
+                """
                 package pkg1
                 class Code {
                     fun test() {
@@ -2719,9 +2719,9 @@ class RestrictToDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-        ),
-        kotlin(
-            """
+            ),
+            kotlin(
+                    """
             package pkg2
             import pkg1.ProductionCode
 
@@ -2731,18 +2731,18 @@ class RestrictToDetectorTest : AbstractCheckTest() {
               }
             }
           """
-          )
-          .indented(),
-        intellijVisibleForTestingAnnotation,
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+            intellijVisibleForTestingAnnotation,
+        )
+        .run()
+        .expect(
+            """
             src/pkg2/Code.kt:6: Warning: This method should only be accessed from tests or within package private scope [VisibleForTests]
                 ProductionCode().initialize() // Not OK
                                  ~~~~~~~~~~
             0 errors, 1 warnings
             """
-      )
+        )
   }
 }

@@ -24,66 +24,66 @@ class InvalidImeActionIdDetectorTest : AbstractCheckTest() {
 
   fun testNoWarnings() {
     lint()
-      .files(
-        xml(
-            "res/layout/namespace.xml",
-            """
+        .files(
+            xml(
+                    "res/layout/namespace.xml",
+                    """
                 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical">
                     <EditText android:layout_width="match_parent" android:layout_height="wrap_content" android:imeActionId="6"/>
                 </LinearLayout>
                 """,
-          )
-          .indented()
-      )
-      .run()
-      .expectClean()
+                )
+                .indented()
+        )
+        .run()
+        .expectClean()
   }
 
   fun testInvalidResourceType() {
     lint()
-      .files(
-        xml(
-            "res/layout/namespace.xml",
-            """
+        .files(
+            xml(
+                    "res/layout/namespace.xml",
+                    """
                 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical">
                     <EditText android:layout_width="match_parent" android:layout_height="wrap_content" android:imeActionId="@+id/login"/>
                 </LinearLayout>
                 """,
-          )
-          .indented()
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .run()
+        .expect(
+            """
             res/layout/namespace.xml:2: Error: Invalid resource type, expected integer value [InvalidImeActionId]
                 <EditText android:layout_width="match_parent" android:layout_height="wrap_content" android:imeActionId="@+id/login"/>
                                                                                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             1 errors, 0 warnings
             """
-      )
+        )
   }
 
   fun testInvalidResourceValue() {
     lint()
-      .files(
-        xml(
-            "res/layout/namespace.xml",
-            """
+        .files(
+            xml(
+                    "res/layout/namespace.xml",
+                    """
                 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical">
                     <EditText android:layout_width="match_parent" android:layout_height="wrap_content" android:imeActionId="mmm"/>
                 </LinearLayout>
                 """,
-          )
-          .indented()
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .run()
+        .expect(
+            """
             res/layout/namespace.xml:2: Error: "mmm" is not an integer [InvalidImeActionId]
                 <EditText android:layout_width="match_parent" android:layout_height="wrap_content" android:imeActionId="mmm"/>
                                                                                                    ~~~~~~~~~~~~~~~~~~~~~~~~~
             1 errors, 0 warnings
             """
-      )
+        )
   }
 }

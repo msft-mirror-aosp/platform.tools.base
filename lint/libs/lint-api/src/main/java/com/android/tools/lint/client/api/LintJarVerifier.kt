@@ -44,48 +44,40 @@ import org.objectweb.asm.Opcodes
 import org.objectweb.asm.Opcodes.ASM9
 import org.objectweb.asm.Type
 
-/**
- * Given a lint jar file, checks to see if the jar file looks compatible with the current version of
- * lint.
- */
+/** Given a lint jar file, checks to see if the jar file looks compatible with the current version of lint. */
 class LintJarVerifier(
-  private val client: LintClient,
-  private val jarFile: File,
-  bytes: ByteArray,
-  private val skip: Boolean = false,
+    private val client: LintClient,
+    private val jarFile: File,
+    bytes: ByteArray,
+    private val skip: Boolean = false,
 ) : ClassVisitor(ASM9) {
   constructor(
-    client: LintClient,
-    jarFile: File,
-    skip: Boolean = false,
+      client: LintClient,
+      jarFile: File,
+      skip: Boolean = false,
   ) : this(client, jarFile, jarFile.readBytes(), skip)
 
-  /**
-   * Is the class with the given [internal] class name part of an API we want to check for validity?
-   */
+  /** Is the class with the given [internal] class name part of an API we want to check for validity? */
   private fun isRelevantApi(internal: String): Boolean {
     val relevant =
-      internal.startsWith("com/android/") ||
-        // Imported APIs
-        internal.startsWith("org/jetbrains/uast") ||
-        internal.startsWith("org/jetbrains/kotlin") ||
-        internal.startsWith("com/intellij")
+        internal.startsWith("com/android/") ||
+            // Imported APIs
+            internal.startsWith("org/jetbrains/uast") ||
+            internal.startsWith("org/jetbrains/kotlin") ||
+            internal.startsWith("com/intellij")
     // Libraries unlikely to change: org.w3c.dom, org.objectweb.asm, org.xmlpull, etc.
 
     return relevant && !bundledClasses.contains(internal)
   }
 
-  /**
-   * Returns true if the lintJar does not contain any classes referencing lint APIs that are not
-   * valid in the current class loader.
-   */
+  /** Returns true if the lintJar does not contain any classes referencing lint APIs that are not valid in the current class loader. */
   fun isCompatible(): Boolean {
     return incompatibleReference == null
   }
 
   /**
-   * Returns whether the invalid reference was not accessible rather than not available. This method
-   * is only relevant if [isCompatible] returned false.
+   * Returns whether the invalid reference was not accessible rather than not available. This method is only relevant if [isCompatible]
+   * returned false.
    */
   fun isInaccessible(): Boolean {
     return inaccessible
@@ -204,8 +196,8 @@ class LintJarVerifier(
   }
 
   /**
-   * Whether the verifier found references to old dialects of the Kotlin Analysis API or and the jar
-   * file could benefit from [LintJarApiMigration].
+   * Whether the verifier found references to old dialects of the Kotlin Analysis API or and the jar file could benefit from
+   * [LintJarApiMigration].
    */
   fun needsApiMigration(): Boolean = apiMigrationNeeded
 
@@ -230,27 +222,27 @@ class LintJarVerifier(
   private var inaccessible = false
 
   private val methodVisitor =
-    object : MethodVisitor(ASM9) {
-      override fun visitMethodInsn(
-        opcode: Int,
-        owner: String,
-        name: String,
-        descriptor: String,
-        isInterface: Boolean,
-      ) {
-        checkMethod(owner, name, descriptor)
-        super.visitMethodInsn(opcode, owner, name, descriptor, isInterface)
-      }
+      object : MethodVisitor(ASM9) {
+        override fun visitMethodInsn(
+            opcode: Int,
+            owner: String,
+            name: String,
+            descriptor: String,
+            isInterface: Boolean,
+        ) {
+          checkMethod(owner, name, descriptor)
+          super.visitMethodInsn(opcode, owner, name, descriptor, isInterface)
+        }
 
-      override fun visitFieldInsn(opcode: Int, owner: String, name: String, descriptor: String?) {
-        checkField(owner, name)
-        super.visitFieldInsn(opcode, owner, name, descriptor)
+        override fun visitFieldInsn(opcode: Int, owner: String, name: String, descriptor: String?) {
+          checkField(owner, name)
+          super.visitFieldInsn(opcode, owner, name, descriptor)
+        }
       }
-    }
 
   /**
-   * Checks that the class for the given [internal] name is valid: relevant and exists in the
-   * current class node. If not, this method sets the [incompatibleReference] property.
+   * Checks that the class for the given [internal] name is valid: relevant and exists in the current class node. If not, this method sets
+   * the [incompatibleReference] property.
    */
   private fun checkClass(internal: String) {
     if (isRelevantApi(internal)) {
@@ -276,15 +268,14 @@ class LintJarVerifier(
   /** The super class of the current class */
   private var currentSuperClass: String? = null
   /**
-   * A class loader for the current jar file (initialized lazily if needed; we only do this if we
-   * have to check whether a call to a protected API method is valid.
+   * A class loader for the current jar file (initialized lazily if needed; we only do this if we have to check whether a call to a
+   * protected API method is valid.
    */
   private var classLoader: ClassLoader? = null
 
   /**
-   * Checks that the method for the given containing class [owner] and method [name] is valid:
-   * relevant and exists in the current class node. If not, this method sets the
-   * [incompatibleReference] property.
+   * Checks that the method for the given containing class [owner] and method [name] is valid: relevant and exists in the current class
+   * node. If not, this method sets the [incompatibleReference] property.
    */
   private fun checkMethod(owner: String, name: String, descriptor: String) {
     if (isRelevantApi(owner)) {
@@ -299,9 +290,8 @@ class LintJarVerifier(
   }
 
   /**
-   * Checks that the field for the given containing class [owner] and field [name] is valid:
-   * relevant and exists in the current class node. If not, this method sets the
-   * [incompatibleReference] property.
+   * Checks that the field for the given containing class [owner] and field [name] is valid: relevant and exists in the current class node.
+   * If not, this method sets the [incompatibleReference] property.
    */
   private fun checkField(owner: String, name: String) {
     if (isRelevantApi(owner)) {
@@ -329,32 +319,22 @@ class LintJarVerifier(
     val currentClassFile = currentClassFile
     val currentClass = currentClass
     incompatibleReferencer =
-      if (
-        currentMethod == null ||
-          currentMethod == CONSTRUCTOR_NAME ||
-          currentMethod == CLASS_CONSTRUCTOR
-      ) {
-        currentClass
-      } else if (
-        currentClassFile != null && currentClass != null && currentClassFile.contains(currentClass)
-      ) {
-        "${currentClass}.${currentMethod}"
-      } else {
-        currentClassFile + ":${currentClass}.${currentMethod}"
-      }
+        if (currentMethod == null || currentMethod == CONSTRUCTOR_NAME || currentMethod == CLASS_CONSTRUCTOR) {
+          currentClass
+        } else if (currentClassFile != null && currentClass != null && currentClassFile.contains(currentClass)) {
+          "${currentClass}.${currentMethod}"
+        } else {
+          currentClassFile + ":${currentClass}.${currentMethod}"
+        }
   }
 
   /**
-   * Given a call into a method or field in class [owner], where the field or method has access
-   * level [modifiers], with a reference coming from [currentClass], checks whether the access is
-   * valid (e.g. the API is public, or protected if we're coming from a subclass). If not, it throws
-   * an exception.
+   * Given a call into a method or field in class [owner], where the field or method has access level [modifiers], with a reference coming
+   * from [currentClass], checks whether the access is valid (e.g. the API is public, or protected if we're coming from a subclass). If not,
+   * it throws an exception.
    */
   private fun checkModifiers(owner: String, modifiers: Int) {
-    if (
-      (modifiers and Opcodes.ACC_PUBLIC) != 0 ||
-        (modifiers and Opcodes.ACC_PROTECTED) != 0 && isCalledFromSubClass(owner)
-    ) {
+    if ((modifiers and Opcodes.ACC_PUBLIC) != 0 || (modifiers and Opcodes.ACC_PROTECTED) != 0 && isCalledFromSubClass(owner)) {
       return
     }
     inaccessible = true
@@ -369,11 +349,7 @@ class LintJarVerifier(
     // Not from a direct subclass; let's check whether it's indirect. This is slower; we have to use
     // reflection etc. Thankfully this is rare.
     return try {
-      val loader =
-        classLoader
-          ?: client.createUrlClassLoader(listOf(jarFile), this.javaClass.classLoader).also {
-            classLoader = it
-          }
+      val loader = classLoader ?: client.createUrlClassLoader(listOf(jarFile), this.javaClass.classLoader).also { classLoader = it }
       val currentClass = currentClass ?: return false
       val cls = Class.forName(currentClass.replace('/', '.'), false, loader)
       return isSubClass(cls, owner.replace('/', '.'), loader)
@@ -408,9 +384,8 @@ class LintJarVerifier(
   }
 
   /**
-   * Returns the [Method] or [Constructor] referenced by the given containing class internal name,
-   * [owner], the method name [name], and internal method descriptor. Will throw an exception if the
-   * method or constructor does not exist.
+   * Returns the [Method] or [Constructor] referenced by the given containing class internal name, [owner], the method name [name], and
+   * internal method descriptor. Will throw an exception if the method or constructor does not exist.
    */
   private fun getMethod(owner: String, name: String, descriptor: String): Executable {
     // Initially I thought I should cache this but it turns out
@@ -419,8 +394,7 @@ class LintJarVerifier(
     // analyzed in around one second -- e.g. 7.5ms per jar.
     val clz = getClass(owner)
 
-    val argumentTypes =
-      Type.getArgumentTypes(descriptor).map { type -> type.toTypeClass() }.toTypedArray()
+    val argumentTypes = Type.getArgumentTypes(descriptor).map { type -> type.toTypeClass() }.toTypedArray()
 
     return if (name == CONSTRUCTOR_NAME) {
       try {
@@ -438,8 +412,8 @@ class LintJarVerifier(
   }
 
   /**
-   * Returns the [Field] referenced by the given containing class internal name, [owner], and the
-   * field name. Will throw an exception if the field does not exist.
+   * Returns the [Field] referenced by the given containing class internal name, [owner], and the field name. Will throw an exception if the
+   * field does not exist.
    */
   private fun getField(owner: String, name: String): Field {
     val clz = getClass(owner)
@@ -451,12 +425,12 @@ class LintJarVerifier(
   }
 
   override fun visit(
-    version: Int,
-    access: Int,
-    name: String,
-    signature: String?,
-    superName: String?,
-    interfaces: Array<out String>?,
+      version: Int,
+      access: Int,
+      name: String,
+      signature: String?,
+      superName: String?,
+      interfaces: Array<out String>?,
   ) {
     currentClass = name
     currentSuperClass = superName
@@ -466,11 +440,11 @@ class LintJarVerifier(
   }
 
   override fun visitMethod(
-    access: Int,
-    name: String?,
-    descriptor: String?,
-    signature: String?,
-    exceptions: Array<out String>?,
+      access: Int,
+      name: String?,
+      descriptor: String?,
+      signature: String?,
+      exceptions: Array<out String>?,
   ): MethodVisitor {
     currentMethod = name
     return methodVisitor
@@ -486,8 +460,8 @@ class LintJarVerifier(
 }
 
 /**
- * Given an ASM type compute the corresponding java.lang.Class. I really thought ASM would have this
- * functionality, and perhaps it does, but I could not find it.
+ * Given an ASM type compute the corresponding java.lang.Class. I really thought ASM would have this functionality, and perhaps it does, but
+ * I could not find it.
  */
 fun Type.toTypeClass(): Class<out Any> {
   return when (descriptor) {
@@ -503,8 +477,7 @@ fun Type.toTypeClass(): Class<out Any> {
     else -> {
       when {
         descriptor.startsWith("L") -> Class.forName(className, false, javaClass.classLoader)
-        descriptor.startsWith("[") ->
-          java.lang.reflect.Array.newInstance(elementType.toTypeClass(), 0)::class.java
+        descriptor.startsWith("[") -> java.lang.reflect.Array.newInstance(elementType.toTypeClass(), 0)::class.java
         else -> error("Unexpected internal type $descriptor")
       }
     }

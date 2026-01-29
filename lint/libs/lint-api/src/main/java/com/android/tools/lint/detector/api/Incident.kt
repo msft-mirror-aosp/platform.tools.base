@@ -29,38 +29,33 @@ import org.jetbrains.uast.UMethod
 import org.w3c.dom.Node
 
 /**
- * A [Incident] represents a specific error or warning that has been found and reported. The client
- * stores these as they are reported into a list of warnings such that it can sort them all before
- * presenting them all at the end.
+ * A [Incident] represents a specific error or warning that has been found and reported. The client stores these as they are reported into a
+ * list of warnings such that it can sort them all before presenting them all at the end.
  */
 class Incident(
-  /** The [Issue] corresponding to the incident. */
-  var issue: Issue,
+    /** The [Issue] corresponding to the incident. */
+    var issue: Issue,
 
-  /**
-   * The message to display to the user. This message should typically include the details of the
-   * specific incident instead of just being a generic message, to make the errors more useful when
-   * there are multiple errors in the same file. For example, instead of just saying "Duplicate
-   * resource name", say "Duplicate resource name my_string".
-   *
-   * (Note that the message should be in [TextFormat.RAW] format.)
-   */
-  var message: String,
+    /**
+     * The message to display to the user. This message should typically include the details of the specific incident instead of just being
+     * a generic message, to make the errors more useful when there are multiple errors in the same file. For example, instead of just
+     * saying "Duplicate resource name", say "Duplicate resource name my_string".
+     *
+     * (Note that the message should be in [TextFormat.RAW] format.)
+     */
+    var message: String,
 
-  /**
-   * The primary location of the error. Secondary locations can be linked from the primary location.
-   */
-  var location: Location,
+    /** The primary location of the error. Secondary locations can be linked from the primary location. */
+    var location: Location,
 
-  /**
-   * The scope element of the error. This is used by lint to search the AST (or XML doc etc) for
-   * suppress annotations or comments. In a Kotlin or Java file, this would be the nearest
-   * [UElement] or [PsiElement]; in an XML document it's the [Node], etc.
-   */
-  var scope: Any? = location.source,
+    /**
+     * The scope element of the error. This is used by lint to search the AST (or XML doc etc) for suppress annotations or comments. In a
+     * Kotlin or Java file, this would be the nearest [UElement] or [PsiElement]; in an XML document it's the [Node], etc.
+     */
+    var scope: Any? = location.source,
 
-  /** A quickfix descriptor, if any, capable of addressing this issue. */
-  var fix: LintFix? = null,
+    /** A quickfix descriptor, if any, capable of addressing this issue. */
+    var fix: LintFix? = null,
 ) : Comparable<Incident> {
 
   // This class has a large number of secondary constructors in order to make it
@@ -68,69 +63,69 @@ class Incident(
 
   /** Secondary constructor for convenience from Java where default arguments are not available. */
   constructor(
-    issue: Issue,
-    message: String,
-    location: Location,
+      issue: Issue,
+      message: String,
+      location: Location,
   ) : this(issue, message, location, null, null)
 
   /** Secondary constructor for convenience from Java where default arguments are not available. */
   constructor(
-    issue: Issue,
-    message: String,
-    location: Location,
-    fix: LintFix?,
+      issue: Issue,
+      message: String,
+      location: Location,
+      fix: LintFix?,
   ) : this(issue, message, location, null, fix)
 
   /**
-   * Secondary constructor which mirrors the old [Context.report] signature parameter orders to make
-   * it easy to migrate code: just put new Incident() around argument list.
+   * Secondary constructor which mirrors the old [Context.report] signature parameter orders to make it easy to migrate code: just put new
+   * Incident() around argument list.
    */
   constructor(
-    issue: Issue,
-    location: Location,
-    message: String,
+      issue: Issue,
+      location: Location,
+      message: String,
   ) : this(issue, message, location, null, null)
 
   /**
-   * Secondary constructor which mirrors the old [Context.report] signature parameter orders to make
-   * it easy to migrate code: just put new Incident() around argument list.
+   * Secondary constructor which mirrors the old [Context.report] signature parameter orders to make it easy to migrate code: just put new
+   * Incident() around argument list.
    */
   constructor(
-    issue: Issue,
-    location: Location,
-    message: String,
-    fix: LintFix?,
+      issue: Issue,
+      location: Location,
+      message: String,
+      fix: LintFix?,
   ) : this(issue, message, location, null, fix)
 
   /**
-   * Secondary constructor which mirrors the old [Context.report] signature parameter orders to make
-   * it easy to migrate code: just put new Incident() around argument list.
+   * Secondary constructor which mirrors the old [Context.report] signature parameter orders to make it easy to migrate code: just put new
+   * Incident() around argument list.
    */
   constructor(
-    issue: Issue,
-    scope: Any,
-    location: Location,
-    message: String,
+      issue: Issue,
+      scope: Any,
+      location: Location,
+      message: String,
   ) : this(issue, message, location, scope, null)
 
   /**
-   * Secondary constructor which mirrors the old [Context.report] signature parameter orders to make
-   * it easy to migrate code: just put new Incident() around argument list.
+   * Secondary constructor which mirrors the old [Context.report] signature parameter orders to make it easy to migrate code: just put new
+   * Incident() around argument list.
    */
   constructor(
-    issue: Issue,
-    scope: Any,
-    location: Location,
-    message: String,
-    fix: LintFix?,
+      issue: Issue,
+      scope: Any,
+      location: Location,
+      message: String,
+      fix: LintFix?,
   ) : this(issue, message, location, scope, fix)
 
   /** The associated [Project] */
   var project: Project? = null
 
   /**
-   * The display path for this error, which is typically relative to the project's reference dir,
-   * but if project is null, it can also be displayed relative to the given root directory.
+   * The display path for this error, which is typically relative to the project's reference dir, but if project is null, it can also be
+   * displayed relative to the given root directory.
    */
   fun getDisplayPath(): String {
     return project?.getDisplayPath(file) ?: file.path
@@ -141,9 +136,8 @@ class Incident(
     get() = location.file
 
   /**
-   * The starting number of the issue, or -1 if there is no line number (e.g. if it is not in a text
-   * file, such as an icon, or if it is not accurately known, as is the case for certain errors in
-   * build.gradle files.)
+   * The starting number of the issue, or -1 if there is no line number (e.g. if it is not in a text file, such as an icon, or if it is not
+   * accurately known, as is the case for certain errors in build.gradle files.)
    */
   val line: Int
     get() = location.start?.line ?: -1
@@ -153,16 +147,15 @@ class Incident(
     get() = location.start?.offset ?: -1
 
   /**
-   * The ending offset of the text range for this incident, or the same as the [startOffset] if
-   * there's no range, just a known starting point.
+   * The ending offset of the text range for this incident, or the same as the [startOffset] if there's no range, just a known starting
+   * point.
    */
   val endOffset: Int
     get() = location.end?.offset ?: startOffset
 
   /**
-   * The severity of the incident. This should typically **not** be set by detectors; it should be
-   * computed from the [Configuration] hierarchy by lint itself, such that users can configure lint
-   * severities via lint.xml files, build.gradle.kts, and so on.
+   * The severity of the incident. This should typically **not** be set by detectors; it should be computed from the [Configuration]
+   * hierarchy by lint itself, such that users can configure lint severities via lint.xml files, build.gradle.kts, and so on.
    */
   var severity: Severity = issue.defaultSeverity
 
@@ -170,10 +163,9 @@ class Incident(
   var wasAutoFixed = false
 
   /**
-   * Additional details if this incident is reported in a multiple variants scenario, such as
-   * running the "lint" target with the Android Gradle plugin, which will run it repeatedly for each
-   * variant and then accumulate information here about which variants the incident is found in and
-   * which ones it is not found in.
+   * Additional details if this incident is reported in a multiple variants scenario, such as running the "lint" target with the Android
+   * Gradle plugin, which will run it repeatedly for each variant and then accumulate information here about which variants the incident is
+   * found in and which ones it is not found in.
    */
   var applicableVariants: ApplicableVariants? = null
 
@@ -183,8 +175,8 @@ class Incident(
   // Constructor chaining builders
 
   /**
-   * Associated context. This is ONLY used for the chained construction of incidents, allowing
-   * convenient location lookup and reporting; it's not persisted across lint invocations etc.
+   * Associated context. This is ONLY used for the chained construction of incidents, allowing convenient location lookup and reporting;
+   * it's not persisted across lint invocations etc.
    */
   @Transient internal var context: Context? = null
 
@@ -213,10 +205,9 @@ class Incident(
   }
 
   /**
-   * Sets the [severity] property to a specific severity. This overrides the default severity for
-   * this issue for this specific instance only, but note that this will only be respected if the
-   * issue severity is not configured specifically (for example by Gradle DSL flags like `error
-   * 'MyIssue'` or `warningsAsErrors true`.)
+   * Sets the [severity] property to a specific severity. This overrides the default severity for this issue for this specific instance
+   * only, but note that this will only be respected if the issue severity is not configured specifically (for example by Gradle DSL flags
+   * like `error 'MyIssue'` or `warningsAsErrors true`.)
    */
   fun overrideSeverity(severity: Severity): Incident {
     this.severity = severity
@@ -225,46 +216,39 @@ class Incident(
 
   /** Sets the [location] and [scope] properties. */
   fun at(scope: Any): Incident {
-    val context =
-      this.context ?: error("This method can only be used when the Incident(context) is used")
+    val context = this.context ?: error("This method can only be used when the Incident(context) is used")
     this.scope = scope
     location =
-      when (scope) {
-        is UElement -> {
-          val javaContext =
-            context as? JavaContext ?: error("Associated context must be a JavaContext")
-          if (scope is UClass || scope is UMethod) {
-            javaContext.getNameLocation(scope)
-          } else {
+        when (scope) {
+          is UElement -> {
+            val javaContext = context as? JavaContext ?: error("Associated context must be a JavaContext")
+            if (scope is UClass || scope is UMethod) {
+              javaContext.getNameLocation(scope)
+            } else {
+              javaContext.getLocation(scope)
+            }
+          }
+          is PsiElement -> {
+            val javaContext = context as? JavaContext ?: error("Associated context must be a JavaContext")
+            if (scope is PsiClass || scope is PsiMethod) {
+              javaContext.getNameLocation(scope)
+            } else {
+              javaContext.getLocation(scope)
+            }
             javaContext.getLocation(scope)
           }
-        }
-        is PsiElement -> {
-          val javaContext =
-            context as? JavaContext ?: error("Associated context must be a JavaContext")
-          if (scope is PsiClass || scope is PsiMethod) {
-            javaContext.getNameLocation(scope)
-          } else {
-            javaContext.getLocation(scope)
+          is Node -> {
+            val xmlContext = context as? XmlContext ?: error("Associated context must be a JavaContext")
+            xmlContext.getLocation(scope)
           }
-          javaContext.getLocation(scope)
-        }
-        is Node -> {
-          val xmlContext =
-            context as? XmlContext ?: error("Associated context must be a JavaContext")
-          xmlContext.getLocation(scope)
-        }
-        else -> {
-          if (context is GradleContext) {
-            context.getLocation(scope)
-          } else {
-            error(
-              "Could not compute a location for scope element $scope; " +
-                "if necessary use one of the Context.getLocation methods"
-            )
+          else -> {
+            if (context is GradleContext) {
+              context.getLocation(scope)
+            } else {
+              error("Could not compute a location for scope element $scope; " + "if necessary use one of the Context.getLocation methods")
+            }
           }
         }
-      }
     return this
   }
 
@@ -310,8 +294,7 @@ class Incident(
    *       .report()
    */
   fun report() {
-    val context =
-      this.context ?: error("This method can only be used when the Incident(context) is used")
+    val context = this.context ?: error("This method can only be used when the Incident(context) is used")
     context.report(this)
   }
 
@@ -327,24 +310,23 @@ class Incident(
     val secondary2 = other.location.secondary
     val secondFile1 = secondary1?.file
     val secondFile2 = secondary2?.file
-    val nullableIntComparator: Comparator<Int> =
-      Comparator.nullsLast<Int?>(Comparator.naturalOrder())
+    val nullableIntComparator: Comparator<Int> = Comparator.nullsLast<Int?>(Comparator.naturalOrder())
     return ComparisonChain.start()
-      .compare(issue.category, other.issue.category)
-      .compare(issue.priority, other.issue.priority, Comparator.reverseOrder())
-      .compare(issue.id, other.issue.id)
-      .compare(other.severity, severity) // deliberately reversed: want higher severity first
-      .compare(fileName1, fileName2, Comparator.nullsLast(Comparator.naturalOrder()))
-      .compare(line, other.line)
-      .compare(message, other.message)
-      .compare(file, other.file, Comparator.nullsLast(Comparator.naturalOrder()))
-      // This handles the case where you have a huge XML document without newlines,
-      // such that all the errors end up on the same line.
-      .compare(col1, col2, nullableIntComparator)
-      .compare(secondFile1, secondFile2, Comparator.nullsLast(Comparator.naturalOrder()))
-      .compare(location.end?.line, other.location.end?.line, nullableIntComparator)
-      .compare(location.end?.column, other.location.end?.column, nullableIntComparator)
-      .result()
+        .compare(issue.category, other.issue.category)
+        .compare(issue.priority, other.issue.priority, Comparator.reverseOrder())
+        .compare(issue.id, other.issue.id)
+        .compare(other.severity, severity) // deliberately reversed: want higher severity first
+        .compare(fileName1, fileName2, Comparator.nullsLast(Comparator.naturalOrder()))
+        .compare(line, other.line)
+        .compare(message, other.message)
+        .compare(file, other.file, Comparator.nullsLast(Comparator.naturalOrder()))
+        // This handles the case where you have a huge XML document without newlines,
+        // such that all the errors end up on the same line.
+        .compare(col1, col2, nullableIntComparator)
+        .compare(secondFile1, secondFile2, Comparator.nullsLast(Comparator.naturalOrder()))
+        .compare(location.end?.line, other.location.end?.line, nullableIntComparator)
+        .compare(location.end?.column, other.location.end?.column, nullableIntComparator)
+        .result()
   }
 
   override fun equals(other: Any?): Boolean {
@@ -370,8 +352,8 @@ class Incident(
 
 /** Information about which particular variants an [Incident] applies to. */
 class ApplicableVariants(
-  /** The set of variant names that this incident applies to. */
-  private val applicableVariants: Set<String>
+    /** The set of variant names that this incident applies to. */
+    private val applicableVariants: Set<String>
 ) {
   /** Whether this incident is specific to a subset of the applicable variants. */
   val variantSpecific: Boolean
@@ -392,10 +374,7 @@ class ApplicableVariants(
     names.add(variantName)
   }
 
-  /**
-   * Returns true if this incident is included in more of the applicable variants than those it does
-   * not apply to.
-   */
+  /** Returns true if this incident is included in more of the applicable variants than those it does not apply to. */
   fun includesMoreThanExcludes(): Boolean {
     assert(variantSpecific)
     val variantCount = variants.size
@@ -433,39 +412,35 @@ fun Incident(context: Context, issue: Issue): Incident {
 }
 
 /**
- * Creates a copy of this [Incident] which can be stored for a longer duration; this is intended for
- * example when holding on to incidents for quick fixes, to be written to baselines, etc -- where we
- * copy everything needed for those purposes, but not state such as [Incident.scope] pointers which
- * can hold on to massive amounts of memory, [Incident.clientProperties], and so on.
+ * Creates a copy of this [Incident] which can be stored for a longer duration; this is intended for example when holding on to incidents
+ * for quick fixes, to be written to baselines, etc -- where we copy everything needed for those purposes, but not state such as
+ * [Incident.scope] pointers which can hold on to massive amounts of memory, [Incident.clientProperties], and so on.
  */
 fun Incident.copySafe(): Incident {
   val location = location.copySafe()
   return Incident(
-      issue = issue,
-      message = message,
-      location = location.copySafe(),
-      scope = null,
-      fix = fix,
-    )
-    .also {
-      it.severity = severity
-      it.applicableVariants = applicableVariants
-      it.fix?.clearUnsafe()
-      // Deliberately not copying clientProperties, project and scope
-    }
+          issue = issue,
+          message = message,
+          location = location.copySafe(),
+          scope = null,
+          fix = fix,
+      )
+      .also {
+        it.severity = severity
+        it.applicableVariants = applicableVariants
+        it.fix?.clearUnsafe()
+        // Deliberately not copying clientProperties, project and scope
+      }
 }
 
-/**
- * This method copies out the actual positions, messages and linked locations, but omits
- * [Location.clientData] and [Location.source].
- */
+/** This method copies out the actual positions, messages and linked locations, but omits [Location.clientData] and [Location.source]. */
 private fun Location.copySafe(): Location {
   val location =
-    if (start != null && end != null) {
-      Location.create(file, start, end)
-    } else {
-      Location.create(file)
-    }
+      if (start != null && end != null) {
+        Location.create(file, start, end)
+      } else {
+        Location.create(file)
+      }
   location.message = message
   location.setSelfExplanatory(this.isSelfExplanatory())
   secondary?.let { location.secondary = it.copySafe() }

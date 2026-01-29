@@ -24,10 +24,10 @@ class ArraySizeDetectorTest : AbstractCheckTest() {
 
   fun testArraySizes() {
     lint()
-      .files(mArrays, mArrays2, mArrays3, mArrays4, mStrings)
-      .run()
-      .expect(
-        """
+        .files(mArrays, mArrays2, mArrays3, mArrays4, mStrings)
+        .run()
+        .expect(
+            """
             res/values/arrays.xml:3: Warning: Array security_questions has an inconsistent number of items (3 in values-nl-rNL/arrays.xml, 4 in values-cs/arrays.xml) [InconsistentArrays]
                 <string-array name="security_questions">
                 ^
@@ -48,17 +48,17 @@ class ArraySizeDetectorTest : AbstractCheckTest() {
                 ^
             0 errors, 2 warnings
             """
-      )
+        )
   }
 
   fun testArraySizesIncremental() {
     // Like testArraySizes, but while incrementally editing res/values/arrays.xml
     lint()
-      .files(mArrays, mArrays2, mArrays3, mArrays4, mStrings)
-      .incremental(mArrays.targetPath)
-      .run()
-      .expect(
-        """
+        .files(mArrays, mArrays2, mArrays3, mArrays4, mStrings)
+        .incremental(mArrays.targetPath)
+        .run()
+        .expect(
+            """
         res/values/arrays.xml:3: Warning: Array security_questions has an inconsistent number of items (4 in values/arrays.xml, 3 in values-nl-rNL/arrays.xml) [InconsistentArrays]
             <string-array name="security_questions">
             ^
@@ -67,31 +67,31 @@ class ArraySizeDetectorTest : AbstractCheckTest() {
             ^
         0 errors, 2 warnings
         """
-      )
+        )
   }
 
   fun testArraySizesIncremental2() {
     // Like testArraySizes, but while incrementally editing res/values-nl-rNL/arrays.xml
     lint()
-      .files(mArrays, mArrays2, mArrays3, mArrays4, mStrings)
-      .incremental(mArrays4.targetPath)
-      .run()
-      .expect(
-        """
+        .files(mArrays, mArrays2, mArrays3, mArrays4, mStrings)
+        .incremental(mArrays4.targetPath)
+        .run()
+        .expect(
+            """
         res/values-nl-rNL/arrays.xml:3: Warning: Array security_questions has an inconsistent number of items (3 in values-nl-rNL/arrays.xml, 4 in values/arrays.xml) [InconsistentArrays]
           <string-array name="security_questions">
           ^
         0 errors, 1 warnings
         """
-      )
+        )
   }
 
   fun testMultipleArrays() {
     lint()
-      .files(
-        xml(
-            "res/values-it/stringarrays.xml",
-            """
+        .files(
+            xml(
+                    "res/values-it/stringarrays.xml",
+                    """
                 <resources>
                     <string-array name="track_type_desc">
                         <item>Pendenza</item>
@@ -104,11 +104,11 @@ class ArraySizeDetectorTest : AbstractCheckTest() {
                     </string-array>
                 </resources>
                 """,
-          )
-          .indented(),
-        xml(
-            "res/values/stringarrays.xml",
-            """
+                )
+                .indented(),
+            xml(
+                    "res/values/stringarrays.xml",
+                    """
                 <resources>
                     <string-array name="map_density_desc">
                         <item>Automatic (readable map on HD displays)</item>
@@ -122,12 +122,12 @@ class ArraySizeDetectorTest : AbstractCheckTest() {
                     </string-array>
                 </resources>
                 """,
-          )
-          .indented(),
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+        )
+        .run()
+        .expect(
+            """
             res/values/stringarrays.xml:2: Warning: Array map_density_desc has an inconsistent number of items (5 in values/stringarrays.xml, 1 in values-it/stringarrays.xml) [InconsistentArrays]
                 <string-array name="map_density_desc">
                 ^
@@ -136,15 +136,15 @@ class ArraySizeDetectorTest : AbstractCheckTest() {
                 ^
             0 errors, 1 warnings
             """
-      )
+        )
   }
 
   fun testArraySizesSuppressed() {
     lint()
-      .files(
-        xml(
-            "res/values/arrays.xml",
-            """
+        .files(
+            xml(
+                    "res/values/arrays.xml",
+                    """
                 <resources>
                     <!-- Choices for Locations in SetupWizard's Set Time and Data Activity -->
                     <string-array name="security_questions">
@@ -163,11 +163,11 @@ class ArraySizeDetectorTest : AbstractCheckTest() {
                     </array>
                 </resources>
                 """,
-          )
-          .indented(),
-        xml(
-            "res/values-land/arrays.xml",
-            """
+                )
+                .indented(),
+            xml(
+                    "res/values-land/arrays.xml",
+                    """
                 <resources xmlns:tools="http://schemas.android.com/tools">
                     <array name="signal_strength" tools:ignore="InconsistentArrays">
                         <item>@drawable/ic_setups_signal_0</item>
@@ -179,19 +179,19 @@ class ArraySizeDetectorTest : AbstractCheckTest() {
                     </array>
                 </resources>
                 """,
-          )
-          .indented(),
-      )
-      .run()
-      .expectClean()
+                )
+                .indented(),
+        )
+        .run()
+        .expectClean()
   }
 
   fun testArraySizesWithRepository() {
     lint()
-      .files(
-        xml(
-            "res/values/arrays.xml",
-            """
+        .files(
+            xml(
+                    "res/values/arrays.xml",
+                    """
                 <resources>
                     <!-- Choices for Locations in SetupWizard's Set Time and Data Activity -->
                     <string-array name="security_questions">
@@ -210,11 +210,11 @@ class ArraySizeDetectorTest : AbstractCheckTest() {
                     </array>
                 </resources>
                 """,
-          )
-          .indented(),
-        xml(
-            "res/values-cs/arrays.xml",
-            """
+                )
+                .indented(),
+            xml(
+                    "res/values-cs/arrays.xml",
+                    """
                 <resources xmlns:android="http://schemas.android.com/apk/res/android"
                     xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
                   <string-array name="security_questions">
@@ -225,11 +225,11 @@ class ArraySizeDetectorTest : AbstractCheckTest() {
                   </string-array>
                 </resources>
                 """,
-          )
-          .indented(),
-        xml(
-            "res/values-land/arrays.xml",
-            """
+                )
+                .indented(),
+            xml(
+                    "res/values-land/arrays.xml",
+                    """
                 <resources>
                     <array name="signal_strength">
                         <item>@drawable/ic_setups_signal_0</item>
@@ -241,11 +241,11 @@ class ArraySizeDetectorTest : AbstractCheckTest() {
                     </array>
                 </resources>
                 """,
-          )
-          .indented(),
-        xml(
-            "res/values-nl-rNL/arrays.xml",
-            """
+                )
+                .indented(),
+            xml(
+                    "res/values-nl-rNL/arrays.xml",
+                    """
                 <resources xmlns:android="http://schemas.android.com/apk/res/android"
                     xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
                   <string-array name="security_questions">
@@ -255,11 +255,11 @@ class ArraySizeDetectorTest : AbstractCheckTest() {
                   </string-array>
                 </resources>
                 """,
-          )
-          .indented(),
-        xml(
-            "res/values-es/strings.xml",
-            """
+                )
+                .indented(),
+            xml(
+                    "res/values-es/strings.xml",
+                    """
 
                 <resources xmlns:android="http://schemas.android.com/apk/res/android"
                     xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
@@ -279,12 +279,12 @@ class ArraySizeDetectorTest : AbstractCheckTest() {
                   </string-array>
                 </resources>
                 """,
-          )
-          .indented(),
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+        )
+        .run()
+        .expect(
+            """
                 res/values/arrays.xml:3: Warning: Array security_questions has an inconsistent number of items (3 in values-nl-rNL/arrays.xml, 4 in values-cs/arrays.xml) [InconsistentArrays]
                     <string-array name="security_questions">
                     ^
@@ -305,14 +305,14 @@ class ArraySizeDetectorTest : AbstractCheckTest() {
                     ^
                 0 errors, 2 warnings
                 """
-      )
+        )
   }
 
   // Sample code
   private val mArrays =
-    xml(
-        "res/values/arrays.xml",
-        """
+      xml(
+              "res/values/arrays.xml",
+              """
         <resources>
             <!-- Choices for Locations in SetupWizard's Set Time and Data Activity -->
             <string-array name="security_questions">
@@ -332,14 +332,14 @@ class ArraySizeDetectorTest : AbstractCheckTest() {
         </resources>
 
         """,
-      )
-      .indented()
+          )
+          .indented()
 
   // Sample code
   private val mArrays2 =
-    xml(
-        "res/values-cs/arrays.xml",
-        """
+      xml(
+              "res/values-cs/arrays.xml",
+              """
         <resources xmlns:android="http://schemas.android.com/apk/res/android"
             xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
           <string-array name="security_questions">
@@ -350,14 +350,14 @@ class ArraySizeDetectorTest : AbstractCheckTest() {
           </string-array>
         </resources>
         """,
-      )
-      .indented()
+          )
+          .indented()
 
   // Sample code
   private val mArrays3 =
-    xml(
-        "res/values-land/arrays.xml",
-        """
+      xml(
+              "res/values-land/arrays.xml",
+              """
         <resources>
             <array name="signal_strength">
                 <item>@drawable/ic_setups_signal_0</item>
@@ -370,14 +370,14 @@ class ArraySizeDetectorTest : AbstractCheckTest() {
         </resources>
 
         """,
-      )
-      .indented()
+          )
+          .indented()
 
   // Sample code
   private val mArrays4 =
-    xml(
-        "res/values-nl-rNL/arrays.xml",
-        """
+      xml(
+              "res/values-nl-rNL/arrays.xml",
+              """
         <resources xmlns:android="http://schemas.android.com/apk/res/android"
             xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
           <string-array name="security_questions">
@@ -387,14 +387,14 @@ class ArraySizeDetectorTest : AbstractCheckTest() {
           </string-array>
         </resources>
         """,
-      )
-      .indented()
+          )
+          .indented()
 
   // Sample code
   private val mStrings =
-    xml(
-        "res/values-es/strings.xml",
-        """
+      xml(
+              "res/values-es/strings.xml",
+              """
 
         <resources xmlns:android="http://schemas.android.com/apk/res/android"
             xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
@@ -414,6 +414,6 @@ class ArraySizeDetectorTest : AbstractCheckTest() {
           </string-array>
         </resources>
         """,
-      )
-      .indented()
+          )
+          .indented()
 }

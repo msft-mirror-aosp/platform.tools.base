@@ -56,12 +56,11 @@ class FineLocationDetector : Detector(), XmlScanner {
     }
     if (fineElement != null && coarseElement == null) {
       context.report(
-        Incident(
-          ISSUE,
-          context.getLocation(fineElement),
-          "If you need access to FINE location, you must request both " +
-            "`ACCESS_FINE_LOCATION` and `ACCESS_COARSE_LOCATION`",
-        )
+          Incident(
+              ISSUE,
+              context.getLocation(fineElement),
+              "If you need access to FINE location, you must request both " + "`ACCESS_FINE_LOCATION` and `ACCESS_COARSE_LOCATION`",
+          )
       )
     }
   }
@@ -77,21 +76,21 @@ class FineLocationDetector : Detector(), XmlScanner {
 
     @JvmField
     val ISSUE =
-      Issue.create(
-        id = "CoarseFineLocation",
-        //noinspection LintImplTextFormat
-        briefDescription = "Cannot use `ACCESS_FINE_LOCATION` without `ACCESS_COARSE_LOCATION`",
-        explanation =
-          """
+        Issue.create(
+            id = "CoarseFineLocation",
+            //noinspection LintImplTextFormat
+            briefDescription = "Cannot use `ACCESS_FINE_LOCATION` without `ACCESS_COARSE_LOCATION`",
+            explanation =
+                """
                 If your app requires access to FINE location, on Android 12 and higher you must \
                 now request both FINE and COARSE. Users will have the option to grant only COARSE \
                 location. Ensure your app can work with just COARSE location.
             """,
-        category = Category.CORRECTNESS,
-        priority = 5,
-        severity = Severity.ERROR,
-        implementation = Implementation(FineLocationDetector::class.java, Scope.MANIFEST_SCOPE),
-        androidSpecific = true,
-      )
+            category = Category.CORRECTNESS,
+            priority = 5,
+            severity = Severity.ERROR,
+            implementation = Implementation(FineLocationDetector::class.java, Scope.MANIFEST_SCOPE),
+            androidSpecific = true,
+        )
   }
 }

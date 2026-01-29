@@ -24,10 +24,10 @@ class NfcTechListDetectorTest : AbstractCheckTest() {
 
   fun test() {
     lint()
-      .files(
-        xml(
-            "res/xml/nfc_tech_list_formatted.xml",
-            """
+        .files(
+            xml(
+                    "res/xml/nfc_tech_list_formatted.xml",
+                    """
                 <resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2" >
 
                     <!-- capture anything using NfcF -->
@@ -51,12 +51,12 @@ class NfcTechListDetectorTest : AbstractCheckTest() {
 
                 </resources>
                 """,
-          )
-          .indented()
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .run()
+        .expect(
+            """
             res/xml/nfc_tech_list_formatted.xml:6: Error: There should not be any whitespace inside <tech> elements [NfcTechWhitespace]
             android.nfc.tech.NfcA
             ~~~~~~~~~~~~~~~~~~~~~
@@ -68,16 +68,16 @@ class NfcTechListDetectorTest : AbstractCheckTest() {
             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             3 errors, 0 warnings
             """
-      )
+        )
   }
 
   fun testOk() {
     //noinspection all // Sample code
     lint()
-      .files(
-        xml(
-            "res/xml/nfc_tech_list.xml",
-            """
+        .files(
+            xml(
+                    "res/xml/nfc_tech_list.xml",
+                    """
                  <resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
                      <!-- capture anything using NfcF -->
                      <tech-list>
@@ -93,10 +93,10 @@ class NfcTechListDetectorTest : AbstractCheckTest() {
                      </tech-list>
                  </resources>
                 """,
-          )
-          .indented()
-      )
-      .run()
-      .expectClean()
+                )
+                .indented()
+        )
+        .run()
+        .expectClean()
   }
 }

@@ -22,6 +22,6 @@ interface LintModelBuildFeatures {
 }
 
 class DefaultLintModelBuildFeatures(
-  override val viewBinding: Boolean,
-  override val coreLibraryDesugaringEnabled: Boolean,
+    override val viewBinding: Boolean,
+    override val coreLibraryDesugaringEnabled: Boolean,
 ) : LintModelBuildFeatures

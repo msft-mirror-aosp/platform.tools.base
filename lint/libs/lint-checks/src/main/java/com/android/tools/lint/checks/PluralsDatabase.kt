@@ -25,16 +25,14 @@ import java.util.Arrays
 import java.util.EnumSet
 
 abstract class PluralsDatabase(
-  private val languageCodes: Array<String>,
-  private val languageFlags: IntArray,
-  internal val apiLevel: Int,
+    private val languageCodes: Array<String>,
+    private val languageFlags: IntArray,
+    internal val apiLevel: Int,
 ) {
   private val plurals = mutableMapOf<String, EnumSet<Quantity>>()
 
   init {
-    check(languageCodes.size == languageFlags.size) {
-      "Language code list and flag list have different lengths"
-    }
+    check(languageCodes.size == languageFlags.size) { "Language code list and flag list have different lengths" }
   }
 
   fun getRelevant(language: String): EnumSet<Quantity>? {
@@ -139,12 +137,12 @@ abstract class PluralsDatabase(
     const val FLAG_MULTIPLE_TWO = 1 shl 7
 
     private val datasets =
-      mapOf(
-        VersionCodes.R to CLDR36Database,
-        VersionCodes.S to CLDR38Database,
-        VersionCodes.S_V2 to CLDR38Database,
-        VersionCodes.TIRAMISU to CLDR41Database,
-      )
+        mapOf(
+            VersionCodes.R to CLDR36Database,
+            VersionCodes.S to CLDR38Database,
+            VersionCodes.S_V2 to CLDR38Database,
+            VersionCodes.TIRAMISU to CLDR41Database,
+        )
 
     val OLDEST
       get() = CLDR36Database

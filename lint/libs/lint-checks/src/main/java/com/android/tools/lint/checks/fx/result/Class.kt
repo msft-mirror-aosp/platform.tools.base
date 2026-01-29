@@ -31,12 +31,10 @@ import kotlinx.collections.immutable.persistentMapOf
 /**
  * A [ClassId] identifies a class.
  *
- * Most classes have fully qualified named. Anonymous classes also have an explicit internal
- * representation of their "names", which are the source file location. We also conflate Java and
- * Kotlin's counterparts for the same classes.
+ * Most classes have fully qualified named. Anonymous classes also have an explicit internal representation of their "names", which are the
+ * source file location. We also conflate Java and Kotlin's counterparts for the same classes.
  *
- * Users of [ClassId] are expected to create instances through an appropriate overloading of
- * [ClassId.of].
+ * Users of [ClassId] are expected to create instances through an appropriate overloading of [ClassId.of].
  */
 sealed interface ClassId {
   val fqn: String?
@@ -51,10 +49,10 @@ sealed interface ClassId {
 
     override fun toString(): String {
       val untilBracket =
-        when (val i = fqn.indexOf('<')) {
-          -1 -> fqn
-          else -> fqn.substring(0, i)
-        }
+          when (val i = fqn.indexOf('<')) {
+            -1 -> fqn
+            else -> fqn.substring(0, i)
+          }
       return when (val j = untilBracket.lastIndexOf('.')) {
         -1 -> fqn
         else -> fqn.substring(j + 1, fqn.length)
@@ -74,16 +72,14 @@ sealed interface ClassId {
 
     abstract fun offsetString(): String
 
-    private val str by
-      lazy(LazyThreadSafetyMode.NONE) { "⸨Anon@$${File(path).name}:${offsetString()}⸩" }
+    private val str by lazy(LazyThreadSafetyMode.NONE) { "⸨Anon@$${File(path).name}:${offsetString()}⸩" }
 
     final override fun toString() = str
 
     // TODO: This may not be worth it. The `Precise` class exists just so we have user-friendly
     //  information in the class's pretty printing. It's creation is heavyweight, and sometimes
     //  we don't have the information, so resort to `Imprecise`.
-    data class Precise(override val path: String, val line: Int, val col1: Int, val col2: Int) :
-      Anon() {
+    data class Precise(override val path: String, val line: Int, val col1: Int, val col2: Int) : Anon() {
       override fun offsetString() = if (line == -1) "?" else "$line:$col1-$col2"
     }
 
@@ -110,8 +106,8 @@ sealed interface ClassId {
   }
 
   /**
-   * Imaginary class that's like [base], but is guarded by [guard]. The [guard] is treated opaquely,
-   * but should have well-defined equality to be part of the identifier.
+   * Imaginary class that's like [base], but is guarded by [guard]. The [guard] is treated opaquely, but should have well-defined equality
+   * to be part of the identifier.
    */
   data class Guarded internal constructor(val guard: Any, val base: ClassId) : ClassId {
     override fun toString() = "$guard ◁ $base"
@@ -141,10 +137,10 @@ sealed interface ClassId {
 
     fun asContainingClassAndInnermostMethod(): Pair<ClassId, MethodId> {
       val parentClassId =
-        when {
-          path.size == 1 -> root
-          else -> Local(root, path.subList(0, path.size - 1))
-        }
+          when {
+            path.size == 1 -> root
+            else -> Local(root, path.subList(0, path.size - 1))
+          }
       return parentClassId to path.last()
     }
 
@@ -154,16 +150,16 @@ sealed interface ClassId {
   companion object {
 
     fun of(ref: PsiClass): ClassId =
-      when (val fqn = ref.qualifiedName) {
-        null -> Anon(ref)
-        else -> of(fqn)
-      }
+        when (val fqn = ref.qualifiedName) {
+          null -> Anon(ref)
+          else -> of(fqn)
+        }
 
     fun of(fqn: String): ClassId = Common.entries.find { fqn in it.aliases } ?: Named.of(fqn)
 
     /**
-     * Generate a [ClassId] specific to [base] and a [guard]. The [guard]'s type isn't tracked, but
-     * it should be a "tag" with well-defined equality, reflecting the guard's value.
+     * Generate a [ClassId] specific to [base] and a [guard]. The [guard]'s type isn't tracked, but it should be a "tag" with well-defined
+     * equality, reflecting the guard's value.
      */
     internal fun of(guard: Any, base: PsiClass): ClassId = Guarded(guard, of(base.qualifiedName!!))
 
@@ -177,26 +173,26 @@ sealed interface ClassId {
     val Array: ClassId = Common.Array
 
     fun encoder(guardEncoder: Encoder<Any>, methodIdEncoder: Encoder<MethodId>): Encoder<ClassId> =
-      Encoder.fix { self ->
-        val int = Encoder.int
-        val str = Encoder.internedString
-        Encoder.sum(
-          case<_, Named>(str.adapt(Named::fqn, ::Named)),
-          case<_, Anon.Precise>(Encoder.product(Anon::Precise, str, int, int, int)),
-          case<_, Anon.Imprecise>(Encoder.product(Anon::Imprecise, str, int)),
-          case<_, Common>(Encoder.enum()),
-          case<_, Guarded>(Encoder.product(ClassId::Guarded, guardEncoder, self)),
-          case<_, Local>(Encoder.product(ClassId::Local, self, methodIdEncoder.zeroOrMore())),
-        )
-      }
+        Encoder.fix { self ->
+          val int = Encoder.int
+          val str = Encoder.internedString
+          Encoder.sum(
+              case<_, Named>(str.adapt(Named::fqn, ::Named)),
+              case<_, Anon.Precise>(Encoder.product(Anon::Precise, str, int, int, int)),
+              case<_, Anon.Imprecise>(Encoder.product(Anon::Imprecise, str, int)),
+              case<_, Common>(Encoder.enum()),
+              case<_, Guarded>(Encoder.product(ClassId::Guarded, guardEncoder, self)),
+              case<_, Local>(Encoder.product(ClassId::Local, self, methodIdEncoder.zeroOrMore())),
+          )
+        }
   }
 }
 
 /**
  * A [ClassBody] represents a class's definition as far as the analysis is concerned.
  *
- * We take the "closure-converted" view of the program. If the class is nested within other classes
- * and methods, its [initEnvironment] accumulates all from that class's lexical scope.
+ * We take the "closure-converted" view of the program. If the class is nested within other classes and methods, its [initEnvironment]
+ * accumulates all from that class's lexical scope.
  *
  * In the following example:
  *
@@ -215,15 +211,14 @@ sealed interface ClassId {
  *  }
  *  ```
  *
- * class `C`'s [initEnvironment] is `[X, Y, Z, T; a: X, b: Int, c: Z, v: T]`. Notice that `d` is
- * missing even though it's captured. This is ok-ish, because it's in an "existential" position, and
- * the purpose of [initEnvironment] is to map the fields to more precise instantiated type
- * parameters instead of resorting to the underlying type system.
+ * class `C`'s [initEnvironment] is `[X, Y, Z, T; a: X, b: Int, c: Z, v: T]`. Notice that `d` is missing even though it's captured. This is
+ * ok-ish, because it's in an "existential" position, and the purpose of [initEnvironment] is to map the fields to more precise instantiated
+ * type parameters instead of resorting to the underlying type system.
  */
 internal data class ClassBody<out FX>(
-  val supers: List<ClassId>,
-  val methods: PersistentMap<MethodId, MethodBody<FX>>,
-  val initEnvironment: Env<Nothing>,
+    val supers: List<ClassId>,
+    val methods: PersistentMap<MethodId, MethodBody<FX>>,
+    val initEnvironment: Env<Nothing>,
 ) {
   companion object {
     val empty = ClassBody<Nothing>(listOf(), persistentMapOf(), Env.empty)

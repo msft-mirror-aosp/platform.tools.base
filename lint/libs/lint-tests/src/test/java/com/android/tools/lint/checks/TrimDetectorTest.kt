@@ -25,9 +25,9 @@ class TrimDetectorTest : AbstractCheckTest() {
 
   fun testDocumentationExample() {
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
             fun test(s: String) {
                 s.trim() // OK
                 s.trim() { it <= ' ' } // HINT 1
@@ -40,12 +40,12 @@ class TrimDetectorTest : AbstractCheckTest() {
                 val to = s.trim { it <= ' ' }.substring(2)
             }
             """
-          )
-          .indented()
-      )
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .run()
+        .expect(
+            """
         src/test.kt:3: Hint: The lambda argument ({ it <= ' ' }) is unnecessary [TrimLambda]
             s.trim() { it <= ' ' } // HINT 1
                      ~~~~~~~~~~~~~
@@ -69,9 +69,9 @@ class TrimDetectorTest : AbstractCheckTest() {
                             ~~~~~~~~~~~~~
         0 errors, 0 warnings, 7 hints
         """
-      )
-      .expectFixDiffs(
-        """
+        )
+        .expectFixDiffs(
+            """
         Autofix for src/test.kt line 3: Remove lambda:
         @@ -3 +3 @@
         -    s.trim() { it <= ' ' } // HINT 1
@@ -101,6 +101,6 @@ class TrimDetectorTest : AbstractCheckTest() {
         -    val to = s.trim { it <= ' ' }.substring(2)
         +    val to = s.trim().substring(2)
         """
-      )
+        )
   }
 }

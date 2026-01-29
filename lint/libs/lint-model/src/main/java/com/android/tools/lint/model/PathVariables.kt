@@ -19,10 +19,7 @@ package com.android.tools.lint.model
 import java.io.File
 import java.io.IOException
 
-/**
- * A set of variable definitions and methods to convert between files and paths using these
- * variables.
- */
+/** A set of variable definitions and methods to convert between files and paths using these variables. */
 class PathVariables {
   private data class PathVariable(val name: String, val dir: File) {
     override fun toString(): String {
@@ -60,64 +57,49 @@ class PathVariables {
   }
 
   /**
-   * For a given [file], produce a path with variables which applies the path variable mapping and
-   * root file. If [relativeTo] is specified, it will also consider that as a potential root to make
-   * the path relative to (without a path variable). This allows some paths to have a local "root"
-   * (this is for example useful for libraries where all the various files (classes, lint jar, etc)
-   * are relative to the library root.). If [unix] is true, it will always use / as the path
-   * separator.
+   * For a given [file], produce a path with variables which applies the path variable mapping and root file. If [relativeTo] is specified,
+   * it will also consider that as a potential root to make the path relative to (without a path variable). This allows some paths to have a
+   * local "root" (this is for example useful for libraries where all the various files (classes, lint jar, etc) are relative to the library
+   * root.). If [unix] is true, it will always use / as the path separator.
    */
-  fun toPathString(file: File, relativeTo: File? = null, unix: Boolean = false): String =
-    toPathString(file.path, relativeTo?.path, unix)
+  fun toPathString(file: File, relativeTo: File? = null, unix: Boolean = false): String = toPathString(file.path, relativeTo?.path, unix)
 
-  /**
-   * Like [toPathString], but if the file is not inside any path variable's directory, returns null
-   * instead of the absolute path.
-   */
+  /** Like [toPathString], but if the file is not inside any path variable's directory, returns null instead of the absolute path. */
   fun toPathStringIfMatched(file: File, relativeTo: File? = null, unix: Boolean = false): String? =
-    toPathStringIfMatched(file.path, relativeTo?.path, unix)
+      toPathStringIfMatched(file.path, relativeTo?.path, unix)
 
-  /**
-   * For a given file's full path, produces a path with variables which applies to path variable
-   * mapping.
-   */
+  /** For a given file's full path, produces a path with variables which applies to path variable mapping. */
   fun toPathString(fullPath: String, relativeTo: String? = null, unix: Boolean = false): String {
-    return toPathStringIfMatched(fullPath, relativeTo, unix)
-      ?: fullPath.let { if (unix) it.replace('\\', '/') else it }
+    return toPathStringIfMatched(fullPath, relativeTo, unix) ?: fullPath.let { if (unix) it.replace('\\', '/') else it }
   }
 
   /**
-   * For a given file's full path, produces a path with variables which applies to path variable
-   * mapping, unless none of the path variables match; in that case, it will return null.
+   * For a given file's full path, produces a path with variables which applies to path variable mapping, unless none of the path variables
+   * match; in that case, it will return null.
    */
   fun toPathStringIfMatched(
-    fullPath: String,
-    relativeTo: String? = null,
-    unix: Boolean = false,
+      fullPath: String,
+      relativeTo: String? = null,
+      unix: Boolean = false,
   ): String? {
     for ((prefix, root) in pathVariables) {
       if (fullPath.startsWith(root.path)) {
         if (fullPath == root.path) {
           return "\$${prefix.removeSuffix(CANONICALIZED)}"
-        } else if (
-          fullPath.length > root.path.length && fullPath[root.path.length] == File.separatorChar
-        ) {
+        } else if (fullPath.length > root.path.length && fullPath[root.path.length] == File.separatorChar) {
           val relative = fullPath.substring(root.path.length)
-          return "\$${prefix.removeSuffix(CANONICALIZED)}$relative"
-            .let { if (unix) it.replace('\\', '/') else it }
+          return "\$${prefix.removeSuffix(CANONICALIZED)}$relative".let { if (unix) it.replace('\\', '/') else it }
         }
       }
     }
 
     if (
-      relativeTo != null &&
-        fullPath.startsWith(relativeTo) &&
-        fullPath.length > relativeTo.length &&
-        fullPath[relativeTo.length] == File.separatorChar
+        relativeTo != null &&
+            fullPath.startsWith(relativeTo) &&
+            fullPath.length > relativeTo.length &&
+            fullPath[relativeTo.length] == File.separatorChar
     ) {
-      return fullPath.substring(relativeTo.length + 1).let {
-        if (unix) it.replace('\\', '/') else it
-      }
+      return fullPath.substring(relativeTo.length + 1).let { if (unix) it.replace('\\', '/') else it }
     }
 
     return null
@@ -125,9 +107,9 @@ class PathVariables {
 
   /** Reverses the path string computed by [toPathString] */
   fun fromPathString(
-    path: String,
-    relativeTo: File? = null,
-    allowMissingPathVariable: Boolean = false,
+      path: String,
+      relativeTo: File? = null,
+      allowMissingPathVariable: Boolean = false,
   ): File {
     if (path.startsWith("$")) {
       val hasBraces = path.length > 1 && path[1] == '{'
@@ -136,23 +118,23 @@ class PathVariables {
         if ((hasBraces && path[i - 1] == '}') || (!hasBraces && !c.isJavaIdentifierPart())) {
           val varName = path.substring(1, i)
           val dir =
-            pathVariables.firstOrNull { it.name == varName }?.dir
-              ?: if (allowMissingPathVariable) {
-                File("\$$varName")
-              } else {
-                error("Path variable \$$varName referenced in $path not provided to serialization")
-              }
+              pathVariables.firstOrNull { it.name == varName }?.dir
+                  ?: if (allowMissingPathVariable) {
+                    File("\$$varName")
+                  } else {
+                    error("Path variable \$$varName referenced in $path not provided to serialization")
+                  }
           val relativeStart = if (c == '/' || c == '\\') i + 1 else i
           return File(dir, path.substring(relativeStart))
         }
       }
       val name = path.substring(1)
       return pathVariables.firstOrNull { it.name == name }?.dir
-        ?: if (allowMissingPathVariable) {
-          File("\$$name")
-        } else {
-          error("Path variable \$$name referenced in $path not provided to serialization")
-        }
+          ?: if (allowMissingPathVariable) {
+            File("\$$name")
+          } else {
+            error("Path variable \$$name referenced in $path not provided to serialization")
+          }
     }
 
     val file = File(path)
@@ -182,10 +164,9 @@ class PathVariables {
   }
 
   /**
-   * Computes the canonical path for all the path variables and (if different from their current
-   * paths) adds these as an additional set of path variables. This isn't done implicitly when you
-   * add each variable because we want all the canonical paths to have lower priority than other
-   * variables.
+   * Computes the canonical path for all the path variables and (if different from their current paths) adds these as an additional set of
+   * path variables. This isn't done implicitly when you add each variable because we want all the canonical paths to have lower priority
+   * than other variables.
    */
   fun normalize() {
     if (pathVariables.isEmpty()) {
@@ -226,27 +207,26 @@ class PathVariables {
     private const val CANONICALIZED = "_canonical"
 
     /**
-     * Returns true if the given [path] is a *private* path variable (which should not show up in
-     * user visible files, such as baselines or report files)
+     * Returns true if the given [path] is a *private* path variable (which should not show up in user visible files, such as baselines or
+     * report files)
      */
     fun isPrivatePathVariable(path: String): Boolean = !path.startsWith("{")
 
     /**
-     * Sort variables such that sub directories are listed before their parents, all canonicalized
-     * variables are listed last, and other than that, alphabetical order.
+     * Sort variables such that sub directories are listed before their parents, all canonicalized variables are listed last, and other than
+     * that, alphabetical order.
      */
     private val PATH_COMPARATOR: Comparator<PathVariable> =
-      compareBy(
-        { it.name.endsWith(CANONICALIZED) },
-        { -it.dir.path.length },
-        { it.dir.path },
-        { it.name },
-      )
+        compareBy(
+            { it.name.endsWith(CANONICALIZED) },
+            { -it.dir.path.length },
+            { it.dir.path },
+            { it.name },
+        )
 
     /**
-     * Parses a path variable descriptor and returns a corresponding [PathVariables] object. The
-     * format of the string is a semi-colon separated list of name=path pairs, such as
-     * HOME=/Users/demo;GRADLE_USER=/Users/demo/.gradle;
+     * Parses a path variable descriptor and returns a corresponding [PathVariables] object. The format of the string is a semi-colon
+     * separated list of name=path pairs, such as HOME=/Users/demo;GRADLE_USER=/Users/demo/.gradle;
      *
      * If the string contains multiple pairs with the same name, the first pair takes precedence.
      */
@@ -276,20 +256,20 @@ class PathVariables {
     private fun checkPathVariableName(name: String) {
       when {
         name.startsWith('{') ->
-          if (!name.endsWith('}') && !name.endsWith("}$CANONICALIZED")) {
-            error("Invalid path variable name $name, missing ending \"}\".")
-          }
+            if (!name.endsWith('}') && !name.endsWith("}$CANONICALIZED")) {
+              error("Invalid path variable name $name, missing ending \"}\".")
+            }
         name.asSequence().any { !it.isJavaIdentifierPart() } ->
-          error(
-            "Invalid path variable name $name. Contains illegal character \"" +
-              "${name.asSequence().first { !it.isJavaIdentifierPart() }}\"."
-          )
+            error(
+                "Invalid path variable name $name. Contains illegal character \"" +
+                    "${name.asSequence().first { !it.isJavaIdentifierPart() }}\"."
+            )
       }
     }
 
     /**
-     * Returns true if the given [path] appears to use a path variable, e.g. `$VAR/foo/bar` does,
-     * `${VAR}/foo/bar` does, and `/foo/bar` does not.
+     * Returns true if the given [path] appears to use a path variable, e.g. `$VAR/foo/bar` does, `${VAR}/foo/bar` does, and `/foo/bar` does
+     * not.
      */
     fun startsWithVariable(path: String, variable: String): Boolean {
       if (path.startsWith("$")) {

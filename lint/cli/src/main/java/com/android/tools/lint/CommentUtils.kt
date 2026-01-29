@@ -35,9 +35,9 @@ fun stripComments(source: String, extension: String, stripLineComments: Boolean 
 
 @Suppress("LocalVariableName")
 private fun stripJavaLikeComments(
-  source: String,
-  extension: String,
-  stripLineComments: Boolean = true,
+    source: String,
+    extension: String,
+    stripLineComments: Boolean = true,
 ): String {
   val sb = StringBuilder(source.length)
   var state = 0
@@ -111,18 +111,18 @@ private fun stripJavaLikeComments(
       }
       BLOCK_COMMENT_ASTERISK -> {
         state =
-          when (c) {
-            '/' -> {
-              blockCommentDepth--
-              if (blockCommentDepth == 0) {
-                INIT
-              } else {
-                BLOCK_COMMENT
+            when (c) {
+              '/' -> {
+                blockCommentDepth--
+                if (blockCommentDepth == 0) {
+                  INIT
+                } else {
+                  BLOCK_COMMENT
+                }
               }
+              '*' -> BLOCK_COMMENT_ASTERISK
+              else -> BLOCK_COMMENT
             }
-            '*' -> BLOCK_COMMENT_ASTERISK
-            else -> BLOCK_COMMENT
-          }
       }
       BLOCK_COMMENT_SLASH -> {
         if (c == '*' && (extension == DOT_KT || extension == DOT_KTS)) {

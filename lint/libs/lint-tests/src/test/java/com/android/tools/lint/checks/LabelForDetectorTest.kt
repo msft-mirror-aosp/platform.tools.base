@@ -32,7 +32,7 @@ class LabelForDetectorTest : AbstractCheckTest() {
 
   fun testWithEmptyHint() {
     val expected =
-      """
+        """
             res/layout/labelfororhint_empty_hint.xml:11: Warning: Empty android:hint attribute [LabelFor]
                         android:hint=""
                         ~~~~~~~~~~~~~~~
@@ -45,10 +45,10 @@ class LabelForDetectorTest : AbstractCheckTest() {
             0 errors, 3 warnings
             """
     lint()
-      .files(
-        xml(
-            "res/layout/labelfororhint_empty_hint.xml",
-            """
+        .files(
+            xml(
+                    "res/layout/labelfororhint_empty_hint.xml",
+                    """
                 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
                               android:layout_width="match_parent"
                               android:layout_height="match_parent"
@@ -81,11 +81,11 @@ class LabelForDetectorTest : AbstractCheckTest() {
                             android:text="MultiAutoCompleteTextView"/>
                 </LinearLayout>
                 """,
-          )
-          .indented()
-      )
-      .run()
-      .expect(expected)
+                )
+                .indented()
+        )
+        .run()
+        .expect(expected)
   }
 
   fun testWithLabelFor() {
@@ -94,7 +94,7 @@ class LabelForDetectorTest : AbstractCheckTest() {
 
   fun testWithLabelForBelow17() {
     val expected =
-      """
+        """
             res/layout/labelfororhint_with_labelfor.xml:14: Warning: Missing accessibility label: where minSdk < 17, you should provide an android:hint [LabelFor]
                 <EditText
                  ~~~~~~~~
@@ -111,7 +111,7 @@ class LabelForDetectorTest : AbstractCheckTest() {
 
   fun testWithNoHintAndNoLabelFor() {
     val expected =
-      """
+        """
             res/layout/labelfororhint_no_hint_and_no_labelfor.xml:5: Warning: Missing accessibility label: provide either a view with an android:labelFor that references this view or provide an android:hint [LabelFor]
                 <EditText
                  ~~~~~~~~
@@ -128,7 +128,7 @@ class LabelForDetectorTest : AbstractCheckTest() {
 
   fun testWithNoHintAndNoLabelForBelow17() {
     val expected =
-      """
+        """
             res/layout/labelfororhint_no_hint_and_no_labelfor.xml:5: Warning: Missing accessibility label: where minSdk < 17, you should provide an android:hint [LabelFor]
                 <EditText
                  ~~~~~~~~
@@ -145,7 +145,7 @@ class LabelForDetectorTest : AbstractCheckTest() {
 
   fun testWithHintAndLabelFor() {
     val expected =
-      """
+        """
             res/layout/labelfororhint_with_hint_and_labelfor.xml:14: Warning: Missing accessibility label: provide either a view with an android:labelFor that references this view or provide an android:hint, but not both [LabelFor]
                 <EditText
                  ~~~~~~~~
@@ -166,7 +166,7 @@ class LabelForDetectorTest : AbstractCheckTest() {
 
   fun testWithLabelForNoTextNoContentDescription() {
     val expected =
-      """
+        """
             res/layout/labelfororhint_no_text_no_contentdescription.xml:9: Warning: Missing accessibility label: when using android:labelFor, you must also define an android:text or an android:contentDescription [LabelFor]
                         android:labelFor="@+id/editText1"
                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -179,11 +179,11 @@ class LabelForDetectorTest : AbstractCheckTest() {
             0 errors, 3 warnings
             """
     lint()
-      .files(
-        manifest().minSdk(17),
-        xml(
-            "res/layout/labelfororhint_no_text_no_contentdescription.xml",
-            """
+        .files(
+            manifest().minSdk(17),
+            xml(
+                    "res/layout/labelfororhint_no_text_no_contentdescription.xml",
+                    """
                 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
                               android:layout_width="match_parent"
                               android:layout_height="match_parent"
@@ -233,15 +233,15 @@ class LabelForDetectorTest : AbstractCheckTest() {
                             android:text="MultiAutoCompleteTextView"/>
                 </LinearLayout>
                 """,
-          )
-          .indented(),
-      )
-      .run()
-      .expect(expected)
-      .verifyFixes()
-      .window(2)
-      .expectFixDiffs(
-        """
+                )
+                .indented(),
+        )
+        .run()
+        .expect(expected)
+        .verifyFixes()
+        .window(2)
+        .expectFixDiffs(
+            """
                 Fix for res/layout/labelfororhint_no_text_no_contentdescription.xml line 9: Set text:
                 @@ -10,4 +10,5 @@
                          android:layout_height="wrap_content"
@@ -282,12 +282,12 @@ class LabelForDetectorTest : AbstractCheckTest() {
                          android:labelFor="@+id/multiAutoCompleteTextView1"
                          android:textAppearance="?android:attr/textAppearanceMedium" />
                 """
-      )
+        )
   }
 
   fun testWithLabelForEmptyText() {
     val expected =
-      """
+        """
             res/layout/labelfororhint_empty_text.xml:10: Warning: Missing accessibility label: when using android:labelFor, you must also define an android:text or an android:contentDescription [LabelFor]
                         android:labelFor="@+id/editText1"
                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -300,11 +300,11 @@ class LabelForDetectorTest : AbstractCheckTest() {
             0 errors, 3 warnings
             """
     lint()
-      .files(
-        manifest().minSdk(17),
-        xml(
-            "res/layout/labelfororhint_empty_text.xml",
-            """
+        .files(
+            manifest().minSdk(17),
+            xml(
+                    "res/layout/labelfororhint_empty_text.xml",
+                    """
                 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
                               android:layout_width="match_parent"
                               android:layout_height="match_parent"
@@ -358,16 +358,16 @@ class LabelForDetectorTest : AbstractCheckTest() {
                             android:text="MultiAutoCompleteTextView"/>
                 </LinearLayout>
                 """,
-          )
-          .indented(),
-      )
-      .run()
-      .expect(expected)
+                )
+                .indented(),
+        )
+        .run()
+        .expect(expected)
   }
 
   fun testWithLabelForEmptyContentDescription() {
     val expected =
-      """
+        """
             res/layout/labelfororhint_empty_contentdescription.xml:9: Warning: Missing accessibility label: when using android:labelFor, you must also define an android:text or an android:contentDescription [LabelFor]
                         android:labelFor="@+id/editText1"
                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -380,11 +380,11 @@ class LabelForDetectorTest : AbstractCheckTest() {
             0 errors, 3 warnings
             """
     lint()
-      .files(
-        manifest().minSdk(17),
-        xml(
-            "res/layout/labelfororhint_empty_contentdescription.xml",
-            """
+        .files(
+            manifest().minSdk(17),
+            xml(
+                    "res/layout/labelfororhint_empty_contentdescription.xml",
+                    """
                 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
                               android:layout_width="match_parent"
                               android:layout_height="match_parent"
@@ -437,20 +437,20 @@ class LabelForDetectorTest : AbstractCheckTest() {
                             android:text="MultiAutoCompleteTextView"/>
                 </LinearLayout>
                 """,
-          )
-          .indented(),
-      )
-      .run()
-      .expect(expected)
+                )
+                .indented(),
+        )
+        .run()
+        .expect(expected)
   }
 
   fun testWithLabelForNoTextWithContentDescription() {
     lint()
-      .files(
-        manifest().minSdk(17),
-        xml(
-            "res/layout/labelfororhint_with_contentdescription.xml",
-            """
+        .files(
+            manifest().minSdk(17),
+            xml(
+                    "res/layout/labelfororhint_with_contentdescription.xml",
+                    """
                 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
                               android:layout_width="match_parent"
                               android:layout_height="match_parent"
@@ -503,21 +503,21 @@ class LabelForDetectorTest : AbstractCheckTest() {
                             android:text="MultiAutoCompleteTextView"/>
                 </LinearLayout>
                 """,
-          )
-          .indented(),
-      )
-      .run()
-      .expectClean()
+                )
+                .indented(),
+        )
+        .run()
+        .expectClean()
   }
 
   fun testLabelForCustomViews() {
     // Regression test for issue 78661918
     lint()
-      .files(
-        manifest().minSdk(17),
-        xml(
-            "res/layout/main.xml",
-            """
+        .files(
+            manifest().minSdk(17),
+            xml(
+                    "res/layout/main.xml",
+                    """
                 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
                               android:layout_width="match_parent"
                               android:layout_height="match_parent"
@@ -535,16 +535,16 @@ class LabelForDetectorTest : AbstractCheckTest() {
                                   android:inputType="textUri"
                                   android:enabled="false"/></LinearLayout>
                 """,
-          )
-          .indented(),
-      )
-      .run()
-      .expectClean()
+                )
+                .indented(),
+        )
+        .run()
+        .expectClean()
   }
 
   fun test183705436() {
     val expected =
-      """
+        """
             res/layout/file2.xml:9: Warning: Missing accessibility label: when using android:labelFor, you must also define an android:text or an android:contentDescription [LabelFor]
                         android:labelFor="@+id/editText1"
                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -554,10 +554,10 @@ class LabelForDetectorTest : AbstractCheckTest() {
             0 errors, 2 warnings
             """
     lint()
-      .files(
-        xml(
-            "res/layout/file1.xml",
-            """
+        .files(
+            xml(
+                    "res/layout/file1.xml",
+                    """
                 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
                               android:layout_width="match_parent"
                               android:layout_height="match_parent"
@@ -571,11 +571,11 @@ class LabelForDetectorTest : AbstractCheckTest() {
                             android:hint="My hint"/>
                 </LinearLayout>
                 """,
-          )
-          .indented(),
-        xml(
-            "res/layout/file2.xml",
-            """
+                )
+                .indented(),
+            xml(
+                    "res/layout/file2.xml",
+                    """
                 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
                               android:layout_width="match_parent"
                               android:layout_height="match_parent"
@@ -597,17 +597,17 @@ class LabelForDetectorTest : AbstractCheckTest() {
                     </EditText>
                 </LinearLayout>
                 """,
-          )
-          .indented(),
-      )
-      .run()
-      .expect(expected)
+                )
+                .indented(),
+        )
+        .run()
+        .expect(expected)
   }
 
   private val withHint =
-    xml(
-        "res/layout/labelfororhint_with_hint.xml",
-        """
+      xml(
+              "res/layout/labelfororhint_with_hint.xml",
+              """
         <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
                       android:layout_width="match_parent"
                       android:layout_height="match_parent"
@@ -640,13 +640,13 @@ class LabelForDetectorTest : AbstractCheckTest() {
                     android:text="MultiAutoCompleteTextView"/>
         </LinearLayout>
         """,
-      )
-      .indented()
+          )
+          .indented()
 
   private val withLabelFor =
-    xml(
-        "res/layout/labelfororhint_with_labelfor.xml",
-        """
+      xml(
+              "res/layout/labelfororhint_with_labelfor.xml",
+              """
         <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
                       android:layout_width="match_parent"
                       android:layout_height="match_parent"
@@ -700,13 +700,13 @@ class LabelForDetectorTest : AbstractCheckTest() {
                     android:text="MultiAutoCompleteTextView"/>
         </LinearLayout>
         """,
-      )
-      .indented()
+          )
+          .indented()
 
   private val noHintNoLabelFor =
-    xml(
-        "res/layout/labelfororhint_no_hint_and_no_labelfor.xml",
-        """
+      xml(
+              "res/layout/labelfororhint_no_hint_and_no_labelfor.xml",
+              """
         <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
                       android:layout_width="match_parent"
                       android:layout_height="match_parent"
@@ -735,13 +735,13 @@ class LabelForDetectorTest : AbstractCheckTest() {
                     android:text="MultiAutoCompleteTextView"/>
         </LinearLayout>
         """,
-      )
-      .indented()
+          )
+          .indented()
 
   private val hintAndLabelFor =
-    xml(
-        "res/layout/labelfororhint_with_hint_and_labelfor.xml",
-        """
+      xml(
+              "res/layout/labelfororhint_with_hint_and_labelfor.xml",
+              """
         <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
                       android:layout_width="match_parent"
                       android:layout_height="match_parent"
@@ -798,6 +798,6 @@ class LabelForDetectorTest : AbstractCheckTest() {
                     android:text="MultiAutoCompleteTextView"/>
         </LinearLayout>
         """,
-      )
-      .indented()
+          )
+          .indented()
 }

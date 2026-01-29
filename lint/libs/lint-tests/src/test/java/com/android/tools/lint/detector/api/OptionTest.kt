@@ -35,170 +35,167 @@ import org.junit.Test
 class OptionTest {
   companion object {
     private val booleanOption =
-      BooleanOption(
-        "ignore-deprecated",
-        "Whether to ignore classes and members that have been annotated with `@Deprecated`",
-        false,
-        """
+        BooleanOption(
+            "ignore-deprecated",
+            "Whether to ignore classes and members that have been annotated with `@Deprecated`",
+            false,
+            """
                 Normally this lint check will flag all unannotated elements, but by \
                 setting this option to `true` it will skip any deprecated elements.
                 """,
-      )
-    private val stringOption =
-      StringOption("namePrefix", "Prefix to prepend to suggested names", "my")
+        )
+    private val stringOption = StringOption("namePrefix", "Prefix to prepend to suggested names", "my")
     private val stringOptionNoDefault = StringOption("suffix", "Suggested name suffix")
-    private val intOption =
-      IntOption("maxCount", "Maximum number of elements", 20, min = 10, max = 50)
+    private val intOption = IntOption("maxCount", "Maximum number of elements", 20, min = 10, max = 50)
     private val floatOption = FloatOption("duration", "Expected duration", 1.5f, max = 15f)
-    private val fileOption =
-      FileOption("exclude", "File listing names to be excluded", File("path/default-excludes.txt"))
+    private val fileOption = FileOption("exclude", "File listing names to be excluded", File("path/default-excludes.txt"))
 
     @Suppress("unused") // registration has side effect of initializing options
     private val issue =
-      Issue.create(
-          id = "_TestIssue",
-          briefDescription = "Sample issue associated with tested option",
-          explanation = "Not applicable",
-          category = Category.TESTING,
-          priority = 10,
-          severity = Severity.WARNING,
-          implementation = Implementation(TestOptionDetector::class.java, Scope.JAVA_FILE_SCOPE),
-        )
-        .setOptions(
-          listOf(
-            booleanOption,
-            stringOption,
-            stringOptionNoDefault,
-            intOption,
-            floatOption,
-            fileOption,
-          )
-        )
+        Issue.create(
+                id = "_TestIssue",
+                briefDescription = "Sample issue associated with tested option",
+                explanation = "Not applicable",
+                category = Category.TESTING,
+                priority = 10,
+                severity = Severity.WARNING,
+                implementation = Implementation(TestOptionDetector::class.java, Scope.JAVA_FILE_SCOPE),
+            )
+            .setOptions(
+                listOf(
+                    booleanOption,
+                    stringOption,
+                    stringOptionNoDefault,
+                    intOption,
+                    floatOption,
+                    fileOption,
+                )
+            )
   }
 
   @Test
   fun testDescribe() {
     assertEquals(
-      """
-            namePrefix (default is "my"): Prefix to prepend to suggested names.
-            """
-        .trimIndent(),
-      stringOption.describe(TextFormat.TEXT, includeExample = false).trim(),
+        """
+        namePrefix (default is "my"): Prefix to prepend to suggested names.
+        """
+            .trimIndent(),
+        stringOption.describe(TextFormat.TEXT, includeExample = false).trim(),
     )
 
     assertEquals(
-      """
-            **suffix**: Suggested name suffix.
-            """
-        .trimIndent(),
-      stringOptionNoDefault.describe(TextFormat.RAW, includeExample = false).trim(),
+        """
+        **suffix**: Suggested name suffix.
+        """
+            .trimIndent(),
+        stringOptionNoDefault.describe(TextFormat.RAW, includeExample = false).trim(),
     )
 
     assertEquals(
-      """
-            **exclude** (default is `path/default-excludes.txt`):
-            File listing names to be excluded.
-            """
-        .trimIndent(),
-      fileOption.describe(TextFormat.RAW, includeExample = false).trim().replace('\\', '/'),
+        """
+        **exclude** (default is `path/default-excludes.txt`):
+        File listing names to be excluded.
+        """
+            .trimIndent(),
+        fileOption.describe(TextFormat.RAW, includeExample = false).trim().replace('\\', '/'),
     )
 
     assertEquals(
-      """
-            maxCount (default is 20): Maximum number of elements.
-            Must be at least 10 and less than 50.
-            """
-        .trimIndent(),
-      intOption.describe(TextFormat.TEXT, includeExample = false).trim().replace('\\', '/'),
+        """
+        maxCount (default is 20): Maximum number of elements.
+        Must be at least 10 and less than 50.
+        """
+            .trimIndent(),
+        intOption.describe(TextFormat.TEXT, includeExample = false).trim().replace('\\', '/'),
     )
 
     assertEquals(
-      """
-            duration (default is 1.5): Expected duration.
-            Must be less than 15.0.
-            """
-        .trimIndent(),
-      floatOption.describe(TextFormat.TEXT, includeExample = false).trim().replace('\\', '/'),
+        """
+        duration (default is 1.5): Expected duration.
+        Must be less than 15.0.
+        """
+            .trimIndent(),
+        floatOption.describe(TextFormat.TEXT, includeExample = false).trim().replace('\\', '/'),
     )
 
     assertEquals(
-      """
-            ignore-deprecated (default is false):
-            Whether to ignore classes and members that have been annotated with @Deprecated.
+        """
+        ignore-deprecated (default is false):
+        Whether to ignore classes and members that have been annotated with @Deprecated.
 
-            Normally this lint check will flag all unannotated elements, but by
-            setting this option to true it will skip any deprecated elements.
+        Normally this lint check will flag all unannotated elements, but by
+        setting this option to true it will skip any deprecated elements.
 
-            To configure this option, use a lint.xml file with an <option> like this:
+        To configure this option, use a lint.xml file with an <option> like this:
 
-            <lint>
-                <issue id="_TestIssue">
-                    <option name="ignore-deprecated" value="false" />
-                </issue>
-            </lint>
-            """
-        .trimIndent(),
-      booleanOption.describe(TextFormat.TEXT).trim(),
+        <lint>
+            <issue id="_TestIssue">
+                <option name="ignore-deprecated" value="false" />
+            </issue>
+        </lint>
+        """
+            .trimIndent(),
+        booleanOption.describe(TextFormat.TEXT).trim(),
     )
 
     assertEquals(
-      """
-            <b>ignore-deprecated</b> (default is false):<br/>
-            Whether to ignore classes and members that have been annotated with <code>@Deprecated</code>.<br/>
-            <br/>
-            Normally this lint check will flag all unannotated elements, but by setting this option to <code>true</code> it will skip any deprecated elements.<br/>
-            <br/>
-            To configure this option, use a <code>lint.xml</code> file with an &lt;option> like this:<br/>
+        """
+        <b>ignore-deprecated</b> (default is false):<br/>
+        Whether to ignore classes and members that have been annotated with <code>@Deprecated</code>.<br/>
+        <br/>
+        Normally this lint check will flag all unannotated elements, but by setting this option to <code>true</code> it will skip any deprecated elements.<br/>
+        <br/>
+        To configure this option, use a <code>lint.xml</code> file with an &lt;option> like this:<br/>
 
-            <pre>
-            &lt;lint>
-                &lt;issue id="_TestIssue">
-                    &lt;option name="ignore-deprecated" value="false" />
-                &lt;/issue>
-            &lt;/lint>
-            </pre>
-            """
-        .trimIndent(),
-      booleanOption.describe(TextFormat.HTML).trim(),
+        <pre>
+        &lt;lint>
+            &lt;issue id="_TestIssue">
+                &lt;option name="ignore-deprecated" value="false" />
+            &lt;/issue>
+        &lt;/lint>
+        </pre>
+        """
+            .trimIndent(),
+        booleanOption.describe(TextFormat.HTML).trim(),
     )
   }
 
   @Test
   fun testDescribeList() {
     assertEquals(
-      """
-            Available options:<br/>
-            <br/>
-            <b>maxCount</b> (default is 20): Maximum number of elements.<br/>
-            Must be at least 10 and less than 50.<br/>
-            <br/>
-            To configure this option, use a <code>lint.xml</code> file with an &lt;option> like this:<br/>
+        """
+        Available options:<br/>
+        <br/>
+        <b>maxCount</b> (default is 20): Maximum number of elements.<br/>
+        Must be at least 10 and less than 50.<br/>
+        <br/>
+        To configure this option, use a <code>lint.xml</code> file with an &lt;option> like this:<br/>
 
-            <pre>
-            &lt;lint>
-                &lt;issue id="_TestIssue">
-                    &lt;option name="maxCount" value="20" />
-                &lt;/issue>
-            &lt;/lint>
-            </pre>
-            <br/>
-            <b>ignore-deprecated</b> (default is false):<br/>
-            Whether to ignore classes and members that have been annotated with <code>@Deprecated</code>.<br/>
-            <br/>
-            Normally this lint check will flag all unannotated elements, but by setting this option to <code>true</code> it will skip any deprecated elements.<br/>
-            <br/>
-            To configure this option, use a <code>lint.xml</code> file with an &lt;option> like this:<br/>
+        <pre>
+        &lt;lint>
+            &lt;issue id="_TestIssue">
+                &lt;option name="maxCount" value="20" />
+            &lt;/issue>
+        &lt;/lint>
+        </pre>
+        <br/>
+        <b>ignore-deprecated</b> (default is false):<br/>
+        Whether to ignore classes and members that have been annotated with <code>@Deprecated</code>.<br/>
+        <br/>
+        Normally this lint check will flag all unannotated elements, but by setting this option to <code>true</code> it will skip any deprecated elements.<br/>
+        <br/>
+        To configure this option, use a <code>lint.xml</code> file with an &lt;option> like this:<br/>
 
-            <pre>
-            &lt;lint>
-                &lt;issue id="_TestIssue">
-                    &lt;option name="ignore-deprecated" value="false" />
-                &lt;/issue>
-            &lt;/lint>
-            </pre>
-            """
-        .trimIndent(),
-      Option.describe(listOf(intOption, booleanOption), TextFormat.HTML).trim(),
+        <pre>
+        &lt;lint>
+            &lt;issue id="_TestIssue">
+                &lt;option name="ignore-deprecated" value="false" />
+            &lt;/issue>
+        &lt;/lint>
+        </pre>
+        """
+            .trimIndent(),
+        Option.describe(listOf(intOption, booleanOption), TextFormat.HTML).trim(),
     )
   }
 
@@ -220,8 +217,8 @@ class OptionTest {
   @Test
   fun testDetectorOption() {
     val testSource =
-      kotlin(
-        """
+        kotlin(
+            """
                 fun test() {
                     val array = arrayOf(
                         "ignore-deprecated",
@@ -233,15 +230,15 @@ class OptionTest {
                     )
                 }
                 """
-      )
+        )
 
     // Check that all the default values are returned when nothing is configured
     lint()
-      .files(testSource)
-      .issues(issue)
-      .run()
-      .expect(
-        """
+        .files(testSource)
+        .issues(issue)
+        .run()
+        .expect(
+            """
             src/test.kt:4: Warning: Option ignore-deprecated has value false (default) [_TestIssue]
                                     "ignore-deprecated",
                                      ~~~~~~~~~~~~~~~~~
@@ -262,21 +259,21 @@ class OptionTest {
                                      ~~~~~~~
             0 errors, 6 warnings
             """
-      )
+        )
 
     // Check that configured values are used
     lint()
-      .files(testSource)
-      .issues(issue)
-      .configureOption(stringOption, "some string")
-      .configureOption(booleanOption, true)
-      .configureOption(stringOptionNoDefault, "some other string")
-      .configureOption(intOption, 42)
-      .configureOption(floatOption, 5.0f)
-      .configureOption(fileOption, File("something.txt"))
-      .run()
-      .expect(
-        """
+        .files(testSource)
+        .issues(issue)
+        .configureOption(stringOption, "some string")
+        .configureOption(booleanOption, true)
+        .configureOption(stringOptionNoDefault, "some other string")
+        .configureOption(intOption, 42)
+        .configureOption(floatOption, 5.0f)
+        .configureOption(fileOption, File("something.txt"))
+        .run()
+        .expect(
+            """
                 src/test.kt:4: Warning: Option ignore-deprecated has value true (default is false) [_TestIssue]
                                         "ignore-deprecated",
                                          ~~~~~~~~~~~~~~~~~
@@ -297,28 +294,28 @@ class OptionTest {
                                          ~~~~~~~
                 0 errors, 6 warnings
                 """
-      )
+        )
   }
 
   @Test
   fun testValidateRange() {
     val testSource =
-      kotlin(
-        """
+        kotlin(
+            """
                 @Suppress("_TestIssue")
                 fun test() {
                     val array = arrayOf( "maxCount", "duration" )
                 }
                 """
-      )
+        )
 
     // Check that configured values are used
     lint()
-      .files(
-        testSource,
-        xml(
-            "lint.xml",
-            """
+        .files(
+            testSource,
+            xml(
+                    "lint.xml",
+                    """
                     <lint>
                         <issue id="_TestIssue">
                             <option name="maxCount" value="0" />
@@ -326,13 +323,13 @@ class OptionTest {
                         </issue>
                     </lint>
                     """,
-          )
-          .indented(),
-      )
-      .issues(issue)
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+        )
+        .issues(issue)
+        .run()
+        .expect(
+            """
             lint.xml:3: Error: maxCount: Must be at least 10 and less than 50 [LintError]
                     <option name="maxCount" value="0" />
                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -341,14 +338,14 @@ class OptionTest {
                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             2 errors, 0 warnings
             """
-      )
+        )
   }
 
   @Test
   fun testValidateValues() {
     val testSource =
-      kotlin(
-        """
+        kotlin(
+            """
                 package test.pkg
                 @Suppress("_TestIssue")
                 fun test() {
@@ -359,15 +356,15 @@ class OptionTest {
                     )
                 }
                 """
-      )
+        )
 
     // Check that configured values are used
     lint()
-      .files(
-        testSource,
-        xml(
-            "src/test/pkg/lint.xml",
-            """
+        .files(
+            testSource,
+            xml(
+                    "src/test/pkg/lint.xml",
+                    """
                 <lint>
                     <issue id="TooManyViews">
                         <option name="maxCount" value="20" />
@@ -377,11 +374,11 @@ class OptionTest {
                     </issue>
                 </lint>
                 """,
-          )
-          .indented(),
-        xml(
-            "lint.xml",
-            """
+                )
+                .indented(),
+            xml(
+                    "lint.xml",
+                    """
                     <lint>
                         <issue id="_TestIssue">
                             <option name="suffix" />
@@ -391,13 +388,13 @@ class OptionTest {
                         </issue>
                     </lint>
                     """,
-          )
-          .indented(),
-      )
-      .issues(issue)
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+        )
+        .issues(issue)
+        .run()
+        .expect(
+            """
             lint.xml:5: Error: maxCount must be an integer (was true) [LintError]
                     <option name="maxCount" value="true" />
                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -415,7 +412,7 @@ class OptionTest {
                     ^
             3 errors, 2 warnings
             """
-      )
+        )
   }
 
   @Test
@@ -423,23 +420,17 @@ class OptionTest {
     // Check that the lint task complains if you try to mix and match lint.xml and configureOption
     val lintXml = xml("lint.xml", "<lint/>")
     try {
-      lint()
-        .files(kotlin(""), lintXml)
-        .issues(issue)
-        .configureOption(stringOption, "some string")
-        .run()
-        .expectClean()
+      lint().files(kotlin(""), lintXml).issues(issue).configureOption(stringOption, "some string").run().expectClean()
       fail("Expected combining configureOption and lint.xml to fail the test")
     } catch (e: Throwable) {
       assertEquals(
-        "Cannot combine lint.xml with `configureOption`; add options as <option> elements in your custom lint.xml instead",
-        e.message,
+          "Cannot combine lint.xml with `configureOption`; add options as <option> elements in your custom lint.xml instead",
+          e.message,
       )
     }
   }
 
-  private fun lint() =
-    TestLintTask.lint().sdkHome(TestUtils.getSdk().toFile()).testModes(TestMode.DEFAULT)
+  private fun lint() = TestLintTask.lint().sdkHome(TestUtils.getSdk().toFile()).testModes(TestMode.DEFAULT)
 
   // Detector which reproduces problem in issue https://issuetracker.google.com/116838536
   class TestOptionDetector : Detector(), SourceCodeScanner {
@@ -447,42 +438,41 @@ class OptionTest {
       LintXmlConfiguration.warnedOptions = null
     }
 
-    override fun getApplicableUastTypes(): List<Class<out UElement>> =
-      listOf(ULiteralExpression::class.java)
+    override fun getApplicableUastTypes(): List<Class<out UElement>> = listOf(ULiteralExpression::class.java)
 
     override fun createUastHandler(context: JavaContext): UElementHandler =
-      object : UElementHandler() {
-        override fun visitLiteralExpression(node: ULiteralExpression) {
-          val string = node.evaluateString()
-          for (option in issue.getOptions()) {
-            if (option.name == string) {
-              val value = getValue(option)
-              val default = getDefault(option)
-              val description = if (value == default) "default" else "default is $default"
-              val message = "Option $string has value $value ($description)"
-              context.report(issue, context.getLocation(node), message)
+        object : UElementHandler() {
+          override fun visitLiteralExpression(node: ULiteralExpression) {
+            val string = node.evaluateString()
+            for (option in issue.getOptions()) {
+              if (option.name == string) {
+                val value = getValue(option)
+                val default = getDefault(option)
+                val description = if (value == default) "default" else "default is $default"
+                val message = "Option $string has value $value ($description)"
+                context.report(issue, context.getLocation(node), message)
+              }
             }
           }
-        }
 
-        private fun getDefault(option: Option): String? {
-          val default = option.defaultAsString() ?: return null
-          if (default == "null") {
-            return null
+          private fun getDefault(option: Option): String? {
+            val default = option.defaultAsString() ?: return null
+            if (default == "null") {
+              return null
+            }
+            if (option is FileOption) {
+              return default.portablePath()
+            }
+            return default.removePrefix("\"").removeSuffix("\"")
           }
-          if (option is FileOption) {
-            return default.portablePath()
-          }
-          return default.removePrefix("\"").removeSuffix("\"")
-        }
 
-        private fun getValue(option: Option): String? {
-          val value = option.getValue(context) ?: return null
-          if (value is File) {
-            return context.project.getDisplayPath(value)
+          private fun getValue(option: Option): String? {
+            val value = option.getValue(context) ?: return null
+            if (value is File) {
+              return context.project.getDisplayPath(value)
+            }
+            return value.toString()
           }
-          return value.toString()
         }
-      }
   }
 }

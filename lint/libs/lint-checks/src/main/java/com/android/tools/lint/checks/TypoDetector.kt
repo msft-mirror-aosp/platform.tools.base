@@ -41,19 +41,16 @@ import org.w3c.dom.Node
  *
  * TODO:
  * * Add check of Java String literals too!
- * * Add support for **additional** languages. The typo detector is now multilingual and looks for
- *   typos-*locale*.txt files to use. However, we need to seed it with additional typo databases. I
- *   did some searching and came up with some alternatives. Here's the strategy I used: Used Google
- *   Translate to translate "Wikipedia Common Misspellings", and then I went to google.no, google.fr
- *   etc searching with that translation, and came up with what looks like wikipedia language local
- *   lists of typos. This is how I found the Norwegian one for example:
- *   http://no.wikipedia.org/wiki/Wikipedia:Liste_over_alminnelige_stavefeil/Maskinform
+ * * Add support for **additional** languages. The typo detector is now multilingual and looks for typos-*locale*.txt files to use. However,
+ *   we need to seed it with additional typo databases. I did some searching and came up with some alternatives. Here's the strategy I used:
+ *   Used Google Translate to translate "Wikipedia Common Misspellings", and then I went to google.no, google.fr etc searching with that
+ *   translation, and came up with what looks like wikipedia language local lists of typos. This is how I found the Norwegian one for
+ *   example: http://no.wikipedia.org/wiki/Wikipedia:Liste_over_alminnelige_stavefeil/Maskinform
  *
  *   Here are some additional possibilities not yet processed:
- * * French: http://fr.wikipedia.org/wiki/Wikip%C3%A9dia:Liste_de_fautes_d'orthographe_courantes
- *   (couldn't find a machine-readable version there?)
- * * Swedish: http://sv.wikipedia.org/wiki/Wikipedia:Lista_%C3%B6ver_vanliga_spr%C3%A5kfel (couldn't
- *   find a machine-readable version there?)
+ * * French: http://fr.wikipedia.org/wiki/Wikip%C3%A9dia:Liste_de_fautes_d'orthographe_courantes (couldn't find a machine-readable version
+ *   there?)
+ * * Swedish: http://sv.wikipedia.org/wiki/Wikipedia:Lista_%C3%B6ver_vanliga_spr%C3%A5kfel (couldn't find a machine-readable version there?)
  * * Consider also digesting files like http://sv.wikipedia.org/wiki/Wikipedia:AutoWikiBrowser/Typos
  *   http://en.wikipedia.org/wiki/Wikipedia:AutoWikiBrowser/User_manual
  */
@@ -68,10 +65,7 @@ class TypoDetector : ResourceXmlDetector() {
     return folderType == ResourceFolderType.VALUES
   }
 
-  /**
-   * Look up the locale and region from the given parent folder name and store it in [language] and
-   * [region]
-   */
+  /** Look up the locale and region from the given parent folder name and store it in [language] and [region] */
   private fun initLocale(context: XmlContext) {
     val locale = getLocale(context)
     if (locale?.hasLanguage() == true) {
@@ -186,11 +180,11 @@ class TypoDetector : ResourceXmlDetector() {
   }
 
   private fun checkForExclamation(
-    context: XmlContext,
-    node: Node,
-    text: String,
-    index: Int,
-    begin: Int,
+      context: XmlContext,
+      node: Node,
+      text: String,
+      index: Int,
+      begin: Int,
   ) {
     // Peek ahead: if we find punctuation or lower case letter don't flag it
     var problem = true
@@ -217,33 +211,26 @@ class TypoDetector : ResourceXmlDetector() {
     if (problem && found1) {
       val actual = text.substring(begin, end)
       val intended = actual.replace('1', '!')
-      val fix =
-        fix()
-          .name("Replace with \"$intended\"")
-          .replace()
-          .text(actual)
-          .with(intended)
-          .range(context.getLocation(node))
-          .build()
+      val fix = fix().name("Replace with \"$intended\"").replace().text(actual).with(intended).range(context.getLocation(node)).build()
       context.report(
-        ISSUE,
-        node,
-        context.getLocation(node, begin, end),
-        "Did you mean \"$intended\" instead of \"$actual\"?",
-        fix,
+          ISSUE,
+          node,
+          context.getLocation(node, begin, end),
+          "Did you mean \"$intended\" instead of \"$actual\"?",
+          fix,
       )
     }
   }
 
   private fun checkRepeatedWords(
-    context: XmlContext,
-    element: Element,
-    node: Node,
-    text: String,
-    lastWordBegin: Int,
-    lastWordEnd: Int,
-    begin: Int,
-    end: Int,
+      context: XmlContext,
+      element: Element,
+      node: Node,
+      text: String,
+      lastWordBegin: Int,
+      lastWordEnd: Int,
+      begin: Int,
+      end: Int,
   ) {
     if (lastWordBegin != -1 && end - begin == lastWordEnd - lastWordBegin && end - begin > 1) {
       // See whether we have a repeated word
@@ -265,14 +252,14 @@ class TypoDetector : ResourceXmlDetector() {
   }
 
   private fun checkUtf8Text(
-    context: XmlContext,
-    element: Element,
-    node: Node,
-    utf8Text: ByteArray,
-    byteStart: Int,
-    byteEnd: Int,
-    text: String,
-    charStart: Int,
+      context: XmlContext,
+      element: Element,
+      node: Node,
+      utf8Text: ByteArray,
+      byteStart: Int,
+      byteEnd: Int,
+      text: String,
+      charStart: Int,
   ) {
     var charStart = charStart
     var lastWordBegin = -1
@@ -332,14 +319,14 @@ class TypoDetector : ResourceXmlDetector() {
         reportTypo(context, node, text, charStart, replacements)
       }
       checkRepeatedWords(
-        context,
-        element,
-        node,
-        text,
-        lastWordBegin,
-        lastWordEnd,
-        charStart,
-        charEnd,
+          context,
+          element,
+          node,
+          text,
+          lastWordBegin,
+          lastWordEnd,
+          charStart,
+          charEnd,
       )
       lastWordBegin = charStart
       lastWordEnd = charEnd
@@ -349,11 +336,11 @@ class TypoDetector : ResourceXmlDetector() {
 
   /** Report the typo found at the given offset and suggest the given replacements */
   private fun reportTypo(
-    context: XmlContext,
-    node: Node,
-    text: String,
-    begin: Int,
-    replacements: List<String>,
+      context: XmlContext,
+      node: Node,
+      text: String,
+      begin: Int,
+      replacements: List<String>,
   ) {
     if (replacements.size < 2) {
       return
@@ -380,34 +367,32 @@ class TypoDetector : ResourceXmlDetector() {
         replacement = replacement.usLocaleCapitalize()
       }
       sb.append(replacement)
-      fixBuilder.add(
-        fix().name("Replace with \"$replacement\"").replace().text(word).with(replacement).build()
-      )
+      fixBuilder.add(fix().name("Replace with \"$replacement\"").replace().text(word).with(replacement).build())
       sb.append('"')
       i++
     }
     val fix = fixBuilder.build()
     message =
-      if (first != null && first.equals(word, ignoreCase = true)) {
-        if (first == word) {
-          return
+        if (first != null && first.equals(word, ignoreCase = true)) {
+          if (first == word) {
+            return
+          }
+          "\"$word\" is usually capitalized as \"$first\""
+        } else {
+          "\"$word\" is a common misspelling; did you mean $sb?"
         }
-        "\"$word\" is usually capitalized as \"$first\""
-      } else {
-        "\"$word\" is a common misspelling; did you mean $sb?"
-      }
     val end = begin + word.length
     context.report(ISSUE, node, context.getLocation(node, begin, end), message, fix)
   }
 
   /** Reports a repeated word */
   private fun reportRepeatedWord(
-    context: XmlContext,
-    node: Node,
-    text: String,
-    lastWordBegin: Int,
-    begin: Int,
-    end: Int,
+      context: XmlContext,
+      node: Node,
+      text: String,
+      lastWordBegin: Int,
+      begin: Int,
+      end: Int,
   ) {
     val word = text.substring(begin, end)
     if (isAllowed(word)) {
@@ -415,13 +400,13 @@ class TypoDetector : ResourceXmlDetector() {
     }
     val message = "Repeated word \"$word\" in message: possible typo"
     val replace =
-      if (lastWordBegin > 1 && text[lastWordBegin - 1] == ' ') {
-        " $word"
-      } else if (end < text.length - 1 && text[end] == ' ') {
-        "$word "
-      } else {
-        word
-      }
+        if (lastWordBegin > 1 && text[lastWordBegin - 1] == ' ') {
+          " $word"
+        } else if (end < text.length - 1 && text[end] == ' ') {
+          "$word "
+        } else {
+          word
+        }
     val fix = fix().name("Delete repeated word").replace().text(replace).with("").build()
     val location = context.getLocation(node, lastWordBegin, end)
     context.report(ISSUE, node, location, message, fix)
@@ -430,18 +415,18 @@ class TypoDetector : ResourceXmlDetector() {
   companion object {
     @JvmField
     val ISSUE =
-      create(
-        id = "Typos",
-        briefDescription = "Spelling error",
-        explanation =
-          """
+        create(
+            id = "Typos",
+            briefDescription = "Spelling error",
+            explanation =
+                """
                 This check looks through the string definitions, and if it finds any words \
                 that look like likely misspellings, they are flagged.""",
-        category = Category.MESSAGES,
-        priority = 7,
-        severity = Severity.WARNING,
-        implementation = Implementation(TypoDetector::class.java, RESOURCE_FILE_SCOPE),
-      )
+            category = Category.MESSAGES,
+            priority = 7,
+            severity = Severity.WARNING,
+            implementation = Implementation(TypoDetector::class.java, RESOURCE_FILE_SCOPE),
+        )
 
     private fun onlySpace(text: String, fromInclusive: Int, toExclusive: Int): Boolean {
       for (i in fromInclusive until toExclusive) {

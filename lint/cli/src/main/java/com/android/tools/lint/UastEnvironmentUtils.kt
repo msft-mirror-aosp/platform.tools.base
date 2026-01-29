@@ -143,26 +143,26 @@ internal fun createCommonKotlinCompilerConfig(): CompilerConfiguration {
 /** Returns a new [LanguageVersionSettings] with KMP enabled. */
 fun LanguageVersionSettings.withKMPEnabled(): LanguageVersionSettings {
   return LanguageVersionSettingsImpl(
-    this.languageVersion,
-    this.apiVersion,
-    emptyMap(),
-    mapOf(LanguageFeature.MultiPlatformProjects to LanguageFeature.State.ENABLED),
+      this.languageVersion,
+      this.apiVersion,
+      emptyMap(),
+      mapOf(LanguageFeature.MultiPlatformProjects to LanguageFeature.State.ENABLED),
   )
 }
 
 @OptIn(KaImplementationDetail::class)
 internal fun configureProjectEnvironment(
-  project: MockProject,
-  config: UastEnvironment.Configuration,
+    project: MockProject,
+    config: UastEnvironment.Configuration,
 ) {
   // Annotation support.
   project.registerService(
-    ExternalAnnotationsManager::class.java,
-    LintExternalAnnotationsManager::class.java,
+      ExternalAnnotationsManager::class.java,
+      LintExternalAnnotationsManager::class.java,
   )
   project.registerService(
-    InferredAnnotationsManager::class.java,
-    LintInferredAnnotationsManager::class.java,
+      InferredAnnotationsManager::class.java,
+      LintInferredAnnotationsManager::class.java,
   )
 
   // Java language level.
@@ -183,24 +183,22 @@ internal fun configureProjectEnvironment(
 
   // KotlinResolutionScopeEnlarger
   PluginStructureProvider.registerProjectExtensionPoints(
-    project,
-    "/META-INF/analysis-api/analysis-api-platform-interface.xml",
+      project,
+      "/META-INF/analysis-api/analysis-api-platform-interface.xml",
   )
 }
 
 @OptIn(KaImplementationDetail::class, KaExperimentalApi::class)
-internal fun configureAnalysisApiProjectStructure(
-  config: UastEnvironment.Configuration
-): KtModuleProviderBuilder.() -> Unit = {
+internal fun configureAnalysisApiProjectStructure(config: UastEnvironment.Configuration): KtModuleProviderBuilder.() -> Unit = {
   val isKMP = config.isKMP
   // The platform of the module provider, not individual modules
   platform = if (isKMP) CommonPlatforms.defaultCommonPlatform else JvmPlatforms.defaultJvmPlatform
 
   val uastEnvModuleByProject = config.modules.associateBy(UastEnvironment.Module::project)
   val uastEnvModuleOrder = // We need to start from the leaves of the dependency
-    GraphUtils.reverseTopologicalSort(uastEnvModuleByProject.keys) {
-      uastEnvModuleByProject[it]!!.directDependencies.map { (depProject, _) -> depProject }
-    }
+      GraphUtils.reverseTopologicalSort(uastEnvModuleByProject.keys) {
+        uastEnvModuleByProject[it]!!.directDependencies.map { (depProject, _) -> depProject }
+      }
   val builtKtModuleByProject = hashMapOf<Project, KaModule>() // incrementally added below
   val configKlibPaths = config.kotlinCompilerConfig.getKlibPaths().map(Path::of)
 
@@ -220,13 +218,13 @@ internal fun configureAnalysisApiProjectStructure(
     }
 
     val classPaths =
-      if (mPlatform.has<JvmPlatform>()) {
-          // Include boot classpath in [config.classPaths], except for non-JVM modules
-          m.classpathRoots + config.classPaths
-        } else {
-          m.classpathRoots
-        }
-        .toPathCollection()
+        if (mPlatform.has<JvmPlatform>()) {
+              // Include boot classpath in [config.classPaths], except for non-JVM modules
+              m.classpathRoots + config.classPaths
+            } else {
+              m.classpathRoots
+            }
+            .toPathCollection()
 
     fun KtModuleBuilder.addModuleDependencies(moduleName: String) {
       if (classPaths.isNotEmpty()) {
@@ -245,17 +243,16 @@ internal fun configureAnalysisApiProjectStructure(
         m.jdkHome?.let { jdkHome ->
           val jdkHomePath = jdkHome.toPath()
           addRegularDependency(
-            buildKtSdkModule {
-              platform = mPlatform
-              addBinaryRoots(LibraryUtils.findClassesFromJdkHome(jdkHomePath, isJre = true))
-              libraryName = "JDK for $moduleName"
-            }
+              buildKtSdkModule {
+                platform = mPlatform
+                addBinaryRoots(LibraryUtils.findClassesFromJdkHome(jdkHomePath, isJre = true))
+                libraryName = "JDK for $moduleName"
+              }
           )
         }
       }
 
-      val (moduleKlibPathsRegular, moduleKlibPathsDependsOn) =
-        m.klibs.keys.partition { m.klibs[it] == Project.DependencyKind.Regular }
+      val (moduleKlibPathsRegular, moduleKlibPathsDependsOn) = m.klibs.keys.partition { m.klibs[it] == Project.DependencyKind.Regular }
 
       fun buildKlibModule(klibs: PathCollection, name: String) = buildKtLibraryModule {
         platform = mPlatform
@@ -270,86 +267,80 @@ internal fun configureAnalysisApiProjectStructure(
 
       if (moduleKlibPathsDependsOn.isNotEmpty()) {
         addDependsOnDependency(
-          buildKlibModule(
-            moduleKlibPathsDependsOn.toPathCollection(),
-            "dependsOn klibs for $moduleName",
-          )
+            buildKlibModule(
+                moduleKlibPathsDependsOn.toPathCollection(),
+                "dependsOn klibs for $moduleName",
+            )
         )
       }
     }
 
-    val (scripts, nonScripts) =
-      sourceFilePaths.partition(coreApplicationEnvironment.localFileSystem, VirtualFile::isKts)
+    val (scripts, nonScripts) = sourceFilePaths.partition(coreApplicationEnvironment.localFileSystem, VirtualFile::isKts)
 
     val fs = StandardFileSystems.local()
     val psiManager = PsiManager.getInstance(project)
     val ktsFiles =
-      scripts.physicalFiles.mapNotNull { physicalFilePath ->
-        val virtualFile =
-          fs.findFileByPath(physicalFilePath.absolutePathString()) ?: return@mapNotNull null
-        psiManager.findFile(virtualFile) as? KtFile
-      } + scripts.virtualFiles.mapNotNull { psiManager.findFile(it) as? KtFile }
+        scripts.physicalFiles.mapNotNull { physicalFilePath ->
+          val virtualFile = fs.findFileByPath(physicalFilePath.absolutePathString()) ?: return@mapNotNull null
+          psiManager.findFile(virtualFile) as? KtFile
+        } + scripts.virtualFiles.mapNotNull { psiManager.findFile(it) as? KtFile }
 
     for (kts in ktsFiles) {
       addModule(
-        buildKtScriptModule {
-          platform = mPlatform
-          file = kts
-          addModuleDependencies("Script " + kts.name)
-        }
+          buildKtScriptModule {
+            platform = mPlatform
+            file = kts
+            addModuleDependencies("Script " + kts.name)
+          }
       )
     }
 
     val ktModule =
-      when {
-        m.sourceRoots.isNotEmpty() -> {
-          buildKtSourceModule {
-            languageVersionSettings =
-              if (isKMP) m.kotlinLanguageLevel.withKMPEnabled() else m.kotlinLanguageLevel
-            addModuleDependencies(m.name)
-            platform = mPlatform
-            moduleName = m.name
+        when {
+          m.sourceRoots.isNotEmpty() -> {
+            buildKtSourceModule {
+              languageVersionSettings = if (isKMP) m.kotlinLanguageLevel.withKMPEnabled() else m.kotlinLanguageLevel
+              addModuleDependencies(m.name)
+              platform = mPlatform
+              moduleName = m.name
 
-            for ((depProj, depKind) in m.directDependencies) {
-              if (depProj in projectsWithNoSource) {
-                // [Project] w/o source files has been skipped.
-                continue
-              }
-              builtKtModuleByProject[depProj]?.let { depKtModule ->
-                when (depKind) {
-                  Project.DependencyKind.Regular -> addRegularDependency(depKtModule)
-                  Project.DependencyKind.DependsOn -> addDependsOnDependency(depKtModule)
+              for ((depProj, depKind) in m.directDependencies) {
+                if (depProj in projectsWithNoSource) {
+                  // [Project] w/o source files has been skipped.
+                  continue
                 }
+                builtKtModuleByProject[depProj]?.let { depKtModule ->
+                  when (depKind) {
+                    Project.DependencyKind.Regular -> addRegularDependency(depKtModule)
+                    Project.DependencyKind.DependsOn -> addDependsOnDependency(depKtModule)
+                  }
+                } ?: System.err.println("Dependency named `${depProj.name}` (pkg: `${depProj.`package`}`) ignored because module not found")
               }
-                ?: System.err.println(
-                  "Dependency named `${depProj.name}` (pkg: `${depProj.`package`}`) ignored because module not found"
-                )
-            }
 
-            addSourcePaths(nonScripts)
-          }
-        }
-        m.classpathRoots.isNotEmpty() -> {
-          buildKtLibraryModule {
-            platform = mPlatform
-            val paths = m.classpathRoots.toPathCollection()
-            addBinaryPaths(paths)
-            libraryName = m.name
-            if (!paths.hasVirtual()) {
-              contentScope =
-                LibraryRootsSearchScope(
-                  StandaloneProjectFactory.getVirtualFilesForLibraryRoots(
-                    paths.physicalDirectories + paths.physicalFiles,
-                    coreApplicationEnvironment,
-                  )
-                )
+              addSourcePaths(nonScripts)
             }
-            // Otherwise, use upstream file-based library search scope
-            // by not setting `contentScope`.
           }
+          m.classpathRoots.isNotEmpty() -> {
+            buildKtLibraryModule {
+              platform = mPlatform
+              val paths = m.classpathRoots.toPathCollection()
+              addBinaryPaths(paths)
+              libraryName = m.name
+              if (!paths.hasVirtual()) {
+                contentScope =
+                    LibraryRootsSearchScope(
+                        StandaloneProjectFactory.getVirtualFilesForLibraryRoots(
+                            paths.physicalDirectories + paths.physicalFiles,
+                            coreApplicationEnvironment,
+                        )
+                    )
+              }
+              // Otherwise, use upstream file-based library search scope
+              // by not setting `contentScope`.
+            }
+          }
+          else -> continue
         }
-        else -> continue
-      }
 
     addModule(ktModule)
     builtKtModuleByProject[proj] = ktModule
@@ -364,15 +355,15 @@ private class SimpleTrie(paths: List<String>) {
   val root = TrieNode()
 
   private val m =
-    mutableMapOf<Pair<TrieNode, String>, TrieNode>().apply {
-      paths.forEach { path ->
-        var p = root
-        for (d in path.trim('/').split('/')) {
-          p = getOrPut(Pair(p, d)) { TrieNode() }
+      mutableMapOf<Pair<TrieNode, String>, TrieNode>().apply {
+        paths.forEach { path ->
+          var p = root
+          for (d in path.trim('/').split('/')) {
+            p = getOrPut(Pair(p, d)) { TrieNode() }
+          }
+          p.isTerminal = true
         }
-        p.isTerminal = true
       }
-    }
 
   fun contains(s: String): Boolean {
     var p = root
@@ -402,8 +393,8 @@ internal val appLock = ReentrantLock()
 private var appConfigured = false
 
 internal fun configureApplicationEnvironment(
-  appEnv: CoreApplicationEnvironment,
-  configurator: (CoreApplicationEnvironment) -> Unit,
+    appEnv: CoreApplicationEnvironment,
+    configurator: (CoreApplicationEnvironment) -> Unit,
 ) {
   check(appLock.isHeldByCurrentThread)
 
@@ -418,16 +409,16 @@ internal fun configureApplicationEnvironment(
 
   // The Kotlin compiler does not use UAST, so we must configure it ourselves.
   CoreApplicationEnvironment.registerApplicationExtensionPoint(
-    UastLanguagePlugin.EP,
-    UastLanguagePlugin::class.java,
+      UastLanguagePlugin.EP,
+      UastLanguagePlugin::class.java,
   )
   CoreApplicationEnvironment.registerApplicationExtensionPoint(
-    UEvaluatorExtension.EXTENSION_POINT_NAME,
-    UEvaluatorExtension::class.java,
+      UEvaluatorExtension.EXTENSION_POINT_NAME,
+      UEvaluatorExtension::class.java,
   )
   CoreApplicationEnvironment.registerApplicationDynamicExtensionPoint(
-    PsiAugmentProvider.EP_NAME.toString(),
-    PsiAugmentProvider::class.java,
+      PsiAugmentProvider.EP_NAME.toString(),
+      PsiAugmentProvider::class.java,
   )
 
   // https://youtrack.jetbrains.com/issue/IJPL-175398
@@ -444,24 +435,24 @@ internal fun configureApplicationEnvironment(
   // These extensions points seem to be needed too, probably because Lint
   // triggers different IntelliJ code paths than the Kotlin compiler does.
   CoreApplicationEnvironment.registerApplicationExtensionPoint(
-    CustomExceptionHandler.KEY,
-    CustomExceptionHandler::class.java,
+      CustomExceptionHandler.KEY,
+      CustomExceptionHandler::class.java,
   )
   CoreApplicationEnvironment.registerApplicationExtensionPoint(
-    DiagnosticSuppressor.EP_NAME,
-    DiagnosticSuppressor::class.java,
+      DiagnosticSuppressor.EP_NAME,
+      DiagnosticSuppressor::class.java,
   )
   CoreApplicationEnvironment.registerApplicationExtensionPoint(
-    LanguageFeatureProvider.EXTENSION_POINT_NAME,
-    LanguageFeatureProvider::class.java,
+      LanguageFeatureProvider.EXTENSION_POINT_NAME,
+      LanguageFeatureProvider::class.java,
   )
 
   appEnv.registerFileType(KlibMetaFileType, KLIB_METADATA_FILE_EXTENSION)
   appEnv.registerFileType(DeclarativeFileType.INSTANCE, "dcl")
   appEnv.addExplicitExtension(
-    LanguageASTFactory.INSTANCE,
-    DeclarativeLanguage.INSTANCE,
-    DeclarativeASTFactory(),
+      LanguageASTFactory.INSTANCE,
+      DeclarativeLanguage.INSTANCE,
+      DeclarativeASTFactory(),
   )
   appEnv.registerParserDefinition(DeclarativeParserDefinition())
 
@@ -485,25 +476,25 @@ internal fun registerCommonElementTypeConverters(application: MockApplication) {
     return
   }
   val pluginDescriptor =
-    DefaultPluginDescriptor(
-      // Technically, this common element type converter is registered as
-      // com.intellij.platform.syntax.psi, and to avoid any conflicts,
-      // we are using our own ID here.
-      PluginId.getId("com.android.tools.lint"),
-      application::class.java.classLoader,
-    )
+      DefaultPluginDescriptor(
+          // Technically, this common element type converter is registered as
+          // com.intellij.platform.syntax.psi, and to avoid any conflicts,
+          // we are using our own ID here.
+          PluginId.getId("com.android.tools.lint"),
+          application::class.java.classLoader,
+      )
   extensionArea.registerFakeBeanPoint<ElementTypeConverterFactory>(name, pluginDescriptor)
   val languagePlugin: LanguageExtensionPoint<ElementTypeConverterFactory> =
-    LanguageExtensionPoint("any", CommonElementTypeConverterFactory())
+      LanguageExtensionPoint("any", CommonElementTypeConverterFactory())
   languagePlugin.pluginDescriptor = pluginDescriptor
   addExtension(extensionArea, ElementTypeConverters.instance, languagePlugin)
 }
 
 // From com.intellij.testFramework.ExtensionTestUtil
 private fun <T, BEAN_TYPE : KeyedLazyInstance<T>, KeyT> addExtension(
-  area: ExtensionsAreaImpl,
-  collector: KeyedExtensionCollector<T, KeyT>,
-  bean: BEAN_TYPE,
+    area: ExtensionsAreaImpl,
+    collector: KeyedExtensionCollector<T, KeyT>,
+    bean: BEAN_TYPE,
 ) {
   val point = area.getExtensionPoint<BEAN_TYPE>(collector.name)
   @Suppress("DEPRECATION") point.registerExtension(bean)
@@ -515,14 +506,14 @@ internal fun reRegisterProgressManager(application: MockApplication) {
   // remove it first.
   application.picoContainer.unregisterComponent(ProgressManager::class.java.name)
   application.registerService(
-    ProgressManager::class.java,
-    object : CoreProgressManager() {
-      override fun doCheckCanceled() {
-        // Do nothing
-      }
+      ProgressManager::class.java,
+      object : CoreProgressManager() {
+        override fun doCheckCanceled() {
+          // Do nothing
+        }
 
-      override fun isInNonCancelableSection() = true
-    },
+        override fun isInNonCancelableSection() = true
+      },
   )
 }
 

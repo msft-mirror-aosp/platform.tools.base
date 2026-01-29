@@ -52,10 +52,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 
-/**
- * Most of the evaluator is tested indirectly via all the lint unit tests; this covers some
- * additional specific scenarios.
- */
+/** Most of the evaluator is tested indirectly via all the lint unit tests; this covers some additional specific scenarios. */
 class DefaultJavaEvaluatorTest {
   @get:Rule val temporaryFolder = TemporaryFolder()
 
@@ -63,30 +60,30 @@ class DefaultJavaEvaluatorTest {
   @Test
   fun lookUpAnnotationsOnUastModifierLists() {
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
                     package foo;
                     @SuppressWarnings("ClassNameDiffersFromFileName")
                     public class MyTest {
                         public void myTest(@Override int something) { }
                     }"""
-          )
-          .indented()
-      )
-      .sdkHome(TestUtils.getSdk().toFile())
-      .issues(TestAnnotationLookupDetector.ISSUE)
-      .run()
-      .expectClean()
+                )
+                .indented()
+        )
+        .sdkHome(TestUtils.getSdk().toFile())
+        .issues(TestAnnotationLookupDetector.ISSUE)
+        .run()
+        .expectClean()
   }
 
   @Test
   fun testCallAssignmentRanges() {
     @Suppress("RemoveRedundantCallsOfConversionMethods")
     lint()
-      .files(
-        java(
-            """
+        .files(
+            java(
+                    """
                 package foo;
                 public class Bean {
                     public String getFoo() { return ""; }
@@ -94,10 +91,10 @@ class DefaultJavaEvaluatorTest {
                     }
                 }
                 """
-          )
-          .indented(),
-        kotlin(
-            """
+                )
+                .indented(),
+            kotlin(
+                    """
                 package foo
                 fun test(s: String) {
                     val bean = Bean()
@@ -109,14 +106,14 @@ class DefaultJavaEvaluatorTest {
                     bean.foo = s
                 }
                 """
-          )
-          .indented(),
-      )
-      .sdkHome(TestUtils.getSdk().toFile())
-      .issues(TestAnnotationLookupDetector.ISSUE)
-      .run()
-      .expect(
-        """
+                )
+                .indented(),
+        )
+        .sdkHome(TestUtils.getSdk().toFile())
+        .issues(TestAnnotationLookupDetector.ISSUE)
+        .run()
+        .expect(
+            """
                 src/foo/test.kt:4: Warning: Error with arguments but no receiver [_Order]
                     bean.setFoo("value")
                          ~~~~~~~~~~~~~~~
@@ -173,38 +170,38 @@ class DefaultJavaEvaluatorTest {
                     ~~~~~~~~
                 0 errors, 18 warnings
                 """
-      )
+        )
   }
 
   @Test
   fun testStatic() {
     val (contexts, disposable) =
-      parse(
-        temporaryFolder = temporaryFolder,
-        sdkHome = TestUtils.getSdk().toFile(),
-        testFiles =
-          arrayOf(
-            java(
-                """
+        parse(
+            temporaryFolder = temporaryFolder,
+            sdkHome = TestUtils.getSdk().toFile(),
+            testFiles =
+                arrayOf(
+                    java(
+                            """
                     package foo;
                     public class Foo {
                         public static String staticMethodJava() { return ""; }
                         public String instanceMethodJava() { return ""; }
                     }
                     """
-              )
-              .indented(),
-            kotlin(
-                """
+                        )
+                        .indented(),
+                    kotlin(
+                            """
                     @file:JvmName("Tedt")
                     package foo
                     fun staticMethodTopLevel() {
                     }
                     """
-              )
-              .indented(),
-            kotlin(
-                """
+                        )
+                        .indented(),
+                    kotlin(
+                            """
                     package foo
                     class Bar {
                         fun instanceMethodKotlin(): String { return "" }
@@ -215,30 +212,30 @@ class DefaultJavaEvaluatorTest {
                         }
                     }
                     """
-              )
-              .indented(),
-          ),
-      )
+                        )
+                        .indented(),
+                ),
+        )
 
     var methodCount = 0
     for (context in contexts) {
       val file = context.uastFile ?: continue
       file.accept(
-        object : AbstractUastVisitor() {
-          override fun visitMethod(node: UMethod): Boolean {
-            methodCount++
-            if (node.isConstructor) {
-              assertFalse(context.evaluator.isStatic(node.javaPsi))
-            } else {
-              val name = node.name
-              assertTrue(name, name.startsWith("instance") || name.startsWith("static"))
-              val expectStatic = name.startsWith("static")
-              val isStatic = context.evaluator.isStatic(node.javaPsi)
-              assertEquals("Incorrect isStatic value for method $name", expectStatic, isStatic)
+          object : AbstractUastVisitor() {
+            override fun visitMethod(node: UMethod): Boolean {
+              methodCount++
+              if (node.isConstructor) {
+                assertFalse(context.evaluator.isStatic(node.javaPsi))
+              } else {
+                val name = node.name
+                assertTrue(name, name.startsWith("instance") || name.startsWith("static"))
+                val expectStatic = name.startsWith("static")
+                val isStatic = context.evaluator.isStatic(node.javaPsi)
+                assertEquals("Incorrect isStatic value for method $name", expectStatic, isStatic)
+              }
+              return super.visitMethod(node)
             }
-            return super.visitMethod(node)
           }
-        }
       )
     }
     assertEquals(9, methodCount)
@@ -248,19 +245,19 @@ class DefaultJavaEvaluatorTest {
   class TestAnnotationLookupDetector : Detector(), SourceCodeScanner {
     companion object Issues {
       val ISSUE =
-        Issue.create(
-          "_Order",
-          "Sample test detector summary",
-          "Sample test detector explanation",
-          Category.CORRECTNESS,
-          6,
-          Severity.WARNING,
-          Implementation(TestAnnotationLookupDetector::class.java, Scope.JAVA_FILE_SCOPE),
-        )
+          Issue.create(
+              "_Order",
+              "Sample test detector summary",
+              "Sample test detector explanation",
+              Category.CORRECTNESS,
+              6,
+              Severity.WARNING,
+              Implementation(TestAnnotationLookupDetector::class.java, Scope.JAVA_FILE_SCOPE),
+          )
     }
 
     override fun getApplicableUastTypes(): List<Class<out UElement>> =
-      listOf(UMethod::class.java, UVariable::class.java, UCallExpression::class.java)
+        listOf(UMethod::class.java, UVariable::class.java, UCallExpression::class.java)
 
     class AnnotationOrderVisitor(private val context: JavaContext) : UElementHandler() {
       override fun visitVariable(node: UVariable) {
@@ -276,22 +273,22 @@ class DefaultJavaEvaluatorTest {
         val methodName = node.methodName ?: node.methodIdentifier?.name
         if (methodName == "setFoo") {
           context.report(
-            ISSUE,
-            node,
-            context.getCallLocation(node, false, true),
-            "Error with arguments but no receiver",
+              ISSUE,
+              node,
+              context.getCallLocation(node, false, true),
+              "Error with arguments but no receiver",
           )
           context.report(
-            ISSUE,
-            node,
-            context.getCallLocation(node, true, true),
-            "Error with receiver and arguments",
+              ISSUE,
+              node,
+              context.getCallLocation(node, true, true),
+              "Error with receiver and arguments",
           )
           context.report(
-            ISSUE,
-            node,
-            context.getCallLocation(node, true, false),
-            "Error with receiver and no arguments",
+              ISSUE,
+              node,
+              context.getCallLocation(node, true, false),
+              "Error with receiver and no arguments",
           )
         }
       }
@@ -302,14 +299,10 @@ class DefaultJavaEvaluatorTest {
         context.evaluator.findAnnotationInHierarchy(modifierListOwner, "org.foo.bar")
         context.evaluator.findAnnotation(modifierListOwner, "org.foo.bar")
         context.evaluator.getAnnotation(modifierListOwner, "org.foo.bar")
-        context.evaluator.getAllAnnotations(modifierListOwner, true).mapNotNull {
-          it.qualifiedName?.split(".")?.lastOrNull()
-        }
+        context.evaluator.getAllAnnotations(modifierListOwner, true).mapNotNull { it.qualifiedName?.split(".")?.lastOrNull() }
         // This detector doesn't actually report anything; the regression test
         // ensures that the above calls don't crash
-        context.evaluator.getAnnotations(modifierListOwner, true).mapNotNull {
-          it.qualifiedName?.split(".")?.lastOrNull()
-        }
+        context.evaluator.getAnnotations(modifierListOwner, true).mapNotNull { it.qualifiedName?.split(".")?.lastOrNull() }
       }
     }
 
@@ -322,28 +315,28 @@ class DefaultJavaEvaluatorTest {
   fun testFieldPosition() {
     // Regression test for https://groups.google.com/g/lint-dev/c/yWcp7gv83_8
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
                     package test.pkg
                     class FakeDetectorProofKT {
                         val myTestString = ""
                     }
                 """
-          )
-          .indented()
-      )
-      .sdkHome(TestUtils.getSdk().toFile())
-      .issues(RangeTestDetector.ISSUE)
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .sdkHome(TestUtils.getSdk().toFile())
+        .issues(RangeTestDetector.ISSUE)
+        .run()
+        .expect(
+            """
                 src/test/pkg/FakeDetectorProofKT.kt:3: Error: Fake issue [_MyFakeIssueId]
                     val myTestString = ""
                     ~~~~~~~~~~~~~~~~~~~~~
                 1 errors, 0 warnings
                 """
-      )
+        )
   }
 
   @Suppress("UnstableApiUsage")
@@ -368,15 +361,15 @@ class DefaultJavaEvaluatorTest {
     companion object {
       @JvmField
       val ISSUE =
-        Issue.create(
-          "_MyFakeIssueId",
-          "Fake issue description",
-          "Fake issue explanation",
-          Category.CORRECTNESS,
-          6,
-          Severity.ERROR,
-          Implementation(RangeTestDetector::class.java, Scope.JAVA_FILE_SCOPE),
-        )
+          Issue.create(
+              "_MyFakeIssueId",
+              "Fake issue description",
+              "Fake issue explanation",
+              Category.CORRECTNESS,
+              6,
+              Severity.ERROR,
+              Implementation(RangeTestDetector::class.java, Scope.JAVA_FILE_SCOPE),
+          )
     }
   }
 
@@ -384,9 +377,9 @@ class DefaultJavaEvaluatorTest {
   fun test200186871() {
     // Regression test for http://b/200186871
     lint()
-      .files(
-        kotlin(
-            """
+        .files(
+            kotlin(
+                    """
                 package test.pkg
 
                 object Test {
@@ -404,23 +397,23 @@ class DefaultJavaEvaluatorTest {
                     fun foo() {}
                 }
                 """
-          )
-          .indented()
-      )
-      .sdkHome(TestUtils.getSdk().toFile())
-      // We're looking for a specific signature here, and we've altered it with this
-      // test mode
-      .skipTestModes(TestMode.JVM_OVERLOADS)
-      .issues(MethodMatchesDetector.ISSUE)
-      .run()
-      .expect(
-        """
+                )
+                .indented()
+        )
+        .sdkHome(TestUtils.getSdk().toFile())
+        // We're looking for a specific signature here, and we've altered it with this
+        // test mode
+        .skipTestModes(TestMode.JVM_OVERLOADS)
+        .issues(MethodMatchesDetector.ISSUE)
+        .run()
+        .expect(
+            """
                 src/test/pkg/Test.kt:11: Error: Found reference to test.pkg.TargetClass.foo [_FakeIssueId]
                     fun foo() {}
                         ~~~
                 1 errors, 0 warnings
                 """
-      )
+        )
   }
 
   @Suppress("RedundantSuspendModifier")
@@ -428,8 +421,8 @@ class DefaultJavaEvaluatorTest {
   fun testIsSuspend() {
     // Regression test for b/274945683
     listOf(
-        kotlin(
-            """
+            kotlin(
+                    """
             package test.pkg
             suspend fun test() {
                 isNotSuspend1()
@@ -438,13 +431,13 @@ class DefaultJavaEvaluatorTest {
                 isSuspend3(0)
             }
             """
-          )
-          .indented(),
-        bytecode(
-          "libs/lib.jar",
-          kotlin(
-              "src/test/pkg/suspends.kt",
-              """
+                )
+                .indented(),
+            bytecode(
+                "libs/lib.jar",
+                kotlin(
+                        "src/test/pkg/suspends.kt",
+                        """
               package test.pkg
 
               fun isNotSuspend1(): Int = 0
@@ -452,15 +445,15 @@ class DefaultJavaEvaluatorTest {
               suspend fun isSuspend2(): Int = 0
               suspend fun isSuspend3(int: Int): List<String> = emptyList()
               """,
-            )
-            .indented(),
-          0x14f5ac5d,
-          """
+                    )
+                    .indented(),
+                0x14f5ac5d,
+                """
           META-INF/main.kotlin_module:
           H4sIAAAAAAAA/2NgYGBmYGBgBGIOBijgkuPiKEktLtEryE4X4gouLS5IzUsp
           9i4RYgsBinqXKDFoMQAATQJerzgAAAA=
           """,
-          """
+                """
           test/pkg/SuspendsKt.class:
           H4sIAAAAAAAA/51TS08TURT+7kyfw6s8RFtAUEBbFaa8FAWNiBpHazUW2eBm
           WibNhekMmbkluCMm+kNcuzCuiAtDcOePMp47DFLKy9i095ye853vvO799fv7
@@ -481,38 +474,38 @@ class DefaultJavaEvaluatorTest {
           HgvIe/f9GMW1cEQyDQvTXD6WJqkEs2oJ3HPBOY15kgWyXqcqsytQDeQM3DBw
           E7cMjGHcoDbzK2ByF5MrdIsQ9THlIx6cCR89PvoDnb6jPgb+ADtWbP14BgAA
           """,
-        ),
-      )
-      .use(temporaryFolder, TestUtils.getSdk().toFile()) { context ->
-        val evaluator = context.evaluator
-        context.uastFile?.accept(
-          object : AbstractUastVisitor() {
-            override fun visitCallExpression(node: UCallExpression): Boolean {
-              val method = node.resolve()
-              assertNotNull("Couldn't resolve ${node.sourcePsi?.text}")
-              checkResolve(method!!)
-              return super.visitCallExpression(node)
-            }
-
-            private fun checkResolve(method: PsiMethod) {
-              val name = method.name
-              if (name.startsWith("isSuspend")) {
-                assertTrue("Expected $name to return isSuspend=true", evaluator.isSuspend(method))
-              } else if (name.startsWith("isNotSuspend")) {
-                assertFalse("Expected $name to return isSuspend=false", evaluator.isSuspend(method))
-              }
-            }
-          }
+            ),
         )
-      }
+        .use(temporaryFolder, TestUtils.getSdk().toFile()) { context ->
+          val evaluator = context.evaluator
+          context.uastFile?.accept(
+              object : AbstractUastVisitor() {
+                override fun visitCallExpression(node: UCallExpression): Boolean {
+                  val method = node.resolve()
+                  assertNotNull("Couldn't resolve ${node.sourcePsi?.text}")
+                  checkResolve(method!!)
+                  return super.visitCallExpression(node)
+                }
+
+                private fun checkResolve(method: PsiMethod) {
+                  val name = method.name
+                  if (name.startsWith("isSuspend")) {
+                    assertTrue("Expected $name to return isSuspend=true", evaluator.isSuspend(method))
+                  } else if (name.startsWith("isNotSuspend")) {
+                    assertFalse("Expected $name to return isSuspend=false", evaluator.isSuspend(method))
+                  }
+                }
+              }
+          )
+        }
   }
 
   @Test
   fun testGetMethodDescriptor() {
     val sb = StringBuilder()
     listOf(
-        java(
-            """
+            java(
+                    """
             import java.util.List;
             class Test {
               void test() { }
@@ -524,75 +517,73 @@ class DefaultJavaEvaluatorTest {
               }
             }
             """
-          )
-          .indented()
-      )
-      .use(temporaryFolder, TestUtils.getSdk().toFile()) { context ->
-        val evaluator = context.evaluator
-        context.uastFile?.accept(
-          object : AbstractUastVisitor() {
-            private fun addMethod(node: PsiMethod) {
-              val text = node.text
-              sb.append(text.substringBefore('{').trim()).append(":\n")
-              sb.append("simple: ")
-              sb
-                .append(
-                  evaluator.getMethodDescription(
-                    method = node,
-                    includeName = false,
-                    includeReturn = false,
-                  )
                 )
-                .append("\n")
-              sb.append("full:   ")
-              sb
-                .append(
-                  evaluator.getMethodDescription(
-                    method = node,
-                    includeName = true,
-                    includeReturn = true,
-                  )
-                )
-                .append("\n\n")
-            }
-
-            override fun visitMethod(node: UMethod): Boolean {
-              addMethod(node.javaPsi)
-              return super.visitMethod(node)
-            }
-
-            override fun visitCallExpression(node: UCallExpression): Boolean {
-              node.resolve()?.let { addMethod(it) }
-              return super.visitCallExpression(node)
-            }
-          }
+                .indented()
         )
-      }
+        .use(temporaryFolder, TestUtils.getSdk().toFile()) { context ->
+          val evaluator = context.evaluator
+          context.uastFile?.accept(
+              object : AbstractUastVisitor() {
+                private fun addMethod(node: PsiMethod) {
+                  val text = node.text
+                  sb.append(text.substringBefore('{').trim()).append(":\n")
+                  sb.append("simple: ")
+                  sb.append(
+                          evaluator.getMethodDescription(
+                              method = node,
+                              includeName = false,
+                              includeReturn = false,
+                          )
+                      )
+                      .append("\n")
+                  sb.append("full:   ")
+                  sb.append(
+                          evaluator.getMethodDescription(
+                              method = node,
+                              includeName = true,
+                              includeReturn = true,
+                          )
+                      )
+                      .append("\n\n")
+                }
+
+                override fun visitMethod(node: UMethod): Boolean {
+                  addMethod(node.javaPsi)
+                  return super.visitMethod(node)
+                }
+
+                override fun visitCallExpression(node: UCallExpression): Boolean {
+                  node.resolve()?.let { addMethod(it) }
+                  return super.visitCallExpression(node)
+                }
+              }
+          )
+        }
     assertEquals(
-      """
-            void test():
-            simple: ()
-            full:   test()V
+        """
+        void test():
+        simple: ()
+        full:   test()V
 
-            int test(int a, int[] b, int[][] c, boolean d, float e, double f, long g, short h, char z):
-            simple: (I[I[[IZFDJSC)
-            full:   test(I[I[[IZFDJSC)I
+        int test(int a, int[] b, int[][] c, boolean d, float e, double f, long g, short h, char z):
+        simple: (I[I[[IZFDJSC)
+        full:   test(I[I[[IZFDJSC)I
 
-            List<char[]> test2(List<List<String>> list):
-            simple: (Ljava.util.List;)
-            full:   test2(Ljava.util.List;)Ljava.util.List;
+        List<char[]> test2(List<List<String>> list):
+        simple: (Ljava.util.List;)
+        full:   test2(Ljava.util.List;)Ljava.util.List;
 
-            Inner(int i):
-            simple: (LTest;I)
-            full:   <init>(LTest;I)V
+        Inner(int i):
+        simple: (LTest;I)
+        full:   <init>(LTest;I)V
 
-            void inner():
-            simple: ()
-            full:   inner()V
-            """
-        .trimIndent()
-        .trim(),
-      sb.toString().trim(),
+        void inner():
+        simple: ()
+        full:   inner()V
+        """
+            .trimIndent()
+            .trim(),
+        sb.toString().trim(),
     )
   }
 
@@ -603,9 +594,9 @@ class DefaultJavaEvaluatorTest {
     override fun visitMethodCall(context: JavaContext, node: UCallExpression, method: PsiMethod) {
       if (context.evaluator.methodMatches(method, "test.pkg.TargetClass", false)) {
         context.report(
-          ISSUE,
-          context.getNameLocation(method),
-          "Found reference to `test.pkg.TargetClass.foo`",
+            ISSUE,
+            context.getNameLocation(method),
+            "Found reference to `test.pkg.TargetClass.foo`",
         )
       }
     }
@@ -613,15 +604,15 @@ class DefaultJavaEvaluatorTest {
     companion object {
       @JvmField
       val ISSUE =
-        Issue.create(
-          "_FakeIssueId",
-          "Fake description",
-          "Fake explanation",
-          Category.CORRECTNESS,
-          6,
-          Severity.ERROR,
-          Implementation(MethodMatchesDetector::class.java, Scope.JAVA_FILE_SCOPE),
-        )
+          Issue.create(
+              "_FakeIssueId",
+              "Fake description",
+              "Fake explanation",
+              Category.CORRECTNESS,
+              6,
+              Severity.ERROR,
+              Implementation(MethodMatchesDetector::class.java, Scope.JAVA_FILE_SCOPE),
+          )
     }
   }
 }

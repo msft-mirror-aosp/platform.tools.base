@@ -26,25 +26,23 @@ class PrettyPaths {
     /**
      * Given a file, return a representation of its path according to the given preferences.
      *
-     * @param useUnixPaths should all paths be converted to Unix paths (file separator / instead of
-     *   \ on Windows) ?
+     * @param useUnixPaths should all paths be converted to Unix paths (file separator / instead of \ on Windows) ?
      * @param tryPathVariables should we try to match path strings with path variables?
-     * @param preferRelativePathOverPathVariables for paths outside the project, should we prefer
-     *   the project path over the absolute path with path variables?
+     * @param preferRelativePathOverPathVariables for paths outside the project, should we prefer the project path over the absolute path
+     *   with path variables?
      * @param allowParentRelativePaths should we use paths starting with ../ ?
-     * @param preferRelativeOverAbsolute should relative paths be used instead of absolute paths,
-     *   when path variables aren't used?
+     * @param preferRelativeOverAbsolute should relative paths be used instead of absolute paths, when path variables aren't used?
      */
     fun getPath(
-      file: File,
-      project: Project?,
-      client: LintClient,
-      useUnixPaths: Boolean,
-      tryPathVariables: Boolean,
-      pathVariables: PathVariables = client.pathVariables,
-      preferRelativePathOverPathVariables: Boolean,
-      allowParentRelativePaths: Boolean,
-      preferRelativeOverAbsolute: Boolean,
+        file: File,
+        project: Project?,
+        client: LintClient,
+        useUnixPaths: Boolean,
+        tryPathVariables: Boolean,
+        pathVariables: PathVariables = client.pathVariables,
+        preferRelativePathOverPathVariables: Boolean,
+        allowParentRelativePaths: Boolean,
+        preferRelativeOverAbsolute: Boolean,
     ): String {
       var path: String? = null
 
