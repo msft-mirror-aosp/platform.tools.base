@@ -20,19 +20,18 @@ import java.nio.ByteBuffer
 /**
  * What problem is this edict/journal non-sense solving? Well, let me explain.
  *
- * SCache works like a collaborative look-aside cache. Upon receiving a cmd or an event, it returns
- * two list of packets, one to send upstream, the other to send downstream. These are the EDICTs.
+ * SCache works like a collaborative look-aside cache. Upon receiving a cmd or an event, it returns two list of packets, one to send
+ * upstream, the other to send downstream. These are the EDICTs.
  *
- * What if you have a jwpd tracing library? Can you not simply trace the outputs of scache? No, you
- * can't. I does not work upon cache hit. e.g.:
+ * What if you have a jwpd tracing library? Can you not simply trace the outputs of scache? No, you can't. I does not work upon cache hit.
+ * e.g.:
  *
- * 1 cmd arrives to scache 2 scache already speculated on this cmd. This is a cache hit. It returns
- * an empty upstream list and the speculatively cached response in the downstream list. 3 If we were
- * to send the two lists to a tracer, we would have a reply without a cmd (since scache prevented it
- * from being sent).
+ * 1 cmd arrives to scache 2 scache already speculated on this cmd. This is a cache hit. It returns an empty upstream list and the
+ * speculatively cached response in the downstream list. 3 If we were to send the two lists to a tracer, we would have a reply without a cmd
+ * (since scache prevented it from being sent).
  *
- * This is what the Journal list is. It is meant to be consumed by JDWP tracer library. It gives a
- * cohesive view of the JDWP traffic, not what actually transited on the wire.
+ * This is what the Journal list is. It is meant to be consumed by JDWP tracer library. It gives a cohesive view of the JDWP traffic, not
+ * what actually transited on the wire.
  */
 class SCacheResponse {
 

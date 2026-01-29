@@ -94,22 +94,15 @@ class SCacheTest {
     // Receive an allClassesWithGenerics reply
     val class1 = AllClassesWithGenericsReply.Class(0, stringClass.id, stringClass.signature, "", 0)
     val class2 = AllClassesWithGenericsReply.Class(0, vectorClass.id, vectorClass.signature, "", 0)
-    scache.onDownstreamPacket(
-      AllClassesWithGenericsReply(listOf(class1, class2)).toPacket(id.get(), idSizes)
-    )
+    scache.onDownstreamPacket(AllClassesWithGenericsReply(listOf(class1, class2)).toPacket(id.get(), idSizes))
 
     // Fake a Frame cmd
     scache.onUpstreamPacket(FramesCmd(0, 0, 0).toPacket(id.get(), idSizes))
     val frame0 = FramesReply.Frame(0, Location(0, stringClass.id, 0, 0))
     val frame1 = FramesReply.Frame(0, Location(0, vectorClass.id, 0, 0))
     val frames = listOf(frame0, frame1)
-    val frameSpeculators =
-      scache.onDownstreamPacket(FramesReply(frames).toPacket(id.getLast(), idSizes))
-    Assert.assertEquals(
-      "Not speculating on all frames",
-      frameSpeculators.edict.upstreamList.size,
-      16,
-    )
+    val frameSpeculators = scache.onDownstreamPacket(FramesReply(frames).toPacket(id.getLast(), idSizes))
+    Assert.assertEquals("Not speculating on all frames", frameSpeculators.edict.upstreamList.size, 16)
 
     // Find the SourceFile speculation
     var syntheticIDs = mutableListOf<Int>()
@@ -168,13 +161,8 @@ class SCacheTest {
     val frame0 = FramesReply.Frame(0, Location(0, stringClass.id, 0, 0))
     val frame1 = FramesReply.Frame(0, Location(0, vectorClass.id, 0, 0))
     val frames = listOf(frame0, frame1)
-    val frameSpeculators =
-      scache.onDownstreamPacket(FramesReply(frames).toPacket(id.getLast(), idSizes))
-    Assert.assertEquals(
-      "Not speculating on all frames",
-      frameSpeculators.edict.upstreamList.size,
-      16,
-    )
+    val frameSpeculators = scache.onDownstreamPacket(FramesReply(frames).toPacket(id.getLast(), idSizes))
+    Assert.assertEquals("Not speculating on all frames", frameSpeculators.edict.upstreamList.size, 16)
 
     // Find the SourceFile speculation
     var syntheticIDs = mutableListOf<Int>()
@@ -221,28 +209,10 @@ class SCacheTest {
     val vectorClass = DebuggedClass(16, "java/lang/Vector")
 
     // Load the classes via CLASS_PREPARE
-    val cpS =
-      CompositeCmd.EventClassPrepare(
-        EventKind.CLASS_PREPARE,
-        0,
-        0,
-        0,
-        stringClass.id,
-        stringClass.signature,
-        0,
-      )
+    val cpS = CompositeCmd.EventClassPrepare(EventKind.CLASS_PREPARE, 0, 0, 0, stringClass.id, stringClass.signature, 0)
     scache.onDownstreamPacket(CompositeCmd(0, listOf(cpS)).toPacket(id.get(), idSizes))
 
-    val cpV =
-      CompositeCmd.EventClassPrepare(
-        EventKind.CLASS_PREPARE,
-        0,
-        0,
-        0,
-        vectorClass.id,
-        vectorClass.signature,
-        0,
-      )
+    val cpV = CompositeCmd.EventClassPrepare(EventKind.CLASS_PREPARE, 0, 0, 0, vectorClass.id, vectorClass.signature, 0)
     scache.onDownstreamPacket(CompositeCmd(0, listOf(cpV)).toPacket(id.get(), idSizes))
 
     // Fake a Frame cmd
@@ -250,13 +220,8 @@ class SCacheTest {
     val frame0 = FramesReply.Frame(0, Location(0, stringClass.id, 0, 0))
     val frame1 = FramesReply.Frame(0, Location(0, vectorClass.id, 0, 0))
     val frames = listOf(frame0, frame1)
-    val frameSpeculators =
-      scache.onDownstreamPacket(FramesReply(frames).toPacket(id.getLast(), idSizes))
-    Assert.assertEquals(
-      "Not speculating on all frames",
-      frameSpeculators.edict.upstreamList.size,
-      16,
-    )
+    val frameSpeculators = scache.onDownstreamPacket(FramesReply(frames).toPacket(id.getLast(), idSizes))
+    Assert.assertEquals("Not speculating on all frames", frameSpeculators.edict.upstreamList.size, 16)
 
     // Find the SourceFile speculation
     var syntheticIDs = mutableListOf<Int>()
@@ -307,13 +272,8 @@ class SCacheTest {
     val frame0 = FramesReply.Frame(0, Location(0, stringClass.id, 0, 0))
     val frame1 = FramesReply.Frame(0, Location(0, vectorClass.id, 0, 0))
     val frames = listOf(frame0, frame1)
-    val frameSpeculators =
-      scache.onDownstreamPacket(FramesReply(frames).toPacket(id.getLast(), idSizes))
-    Assert.assertEquals(
-      "Not speculating on all frames",
-      frameSpeculators.edict.upstreamList.size,
-      16,
-    )
+    val frameSpeculators = scache.onDownstreamPacket(FramesReply(frames).toPacket(id.getLast(), idSizes))
+    Assert.assertEquals("Not speculating on all frames", frameSpeculators.edict.upstreamList.size, 16)
 
     // Find the SourceFile speculation
     var syntheticIDs = mutableListOf<Int>()
@@ -378,14 +338,9 @@ class SCacheTest {
     scache.onUpstreamPacket(FramesCmd(0, 0, 0).toPacket(id.get(), idSizes))
     val frame0 = FramesReply.Frame(0, Location(0, stringClass.id, 0, 0))
     val frames = listOf(frame0)
-    val frameSpeculators =
-      scache.onDownstreamPacket(FramesReply(frames).toPacket(id.getLast(), idSizes))
+    val frameSpeculators = scache.onDownstreamPacket(FramesReply(frames).toPacket(id.getLast(), idSizes))
 
     // Scache should not have speculated
-    Assert.assertEquals(
-      "Not speculating on all frames",
-      1,
-      frameSpeculators.edict.downstreamList.size,
-    )
+    Assert.assertEquals("Not speculating on all frames", 1, frameSpeculators.edict.downstreamList.size)
   }
 }

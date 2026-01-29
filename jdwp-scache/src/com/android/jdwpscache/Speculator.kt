@@ -53,15 +53,12 @@ internal class Speculator(triggerManager: TriggerManager, val logger: SCacheLogg
    */
   private val syntheticCmds = mutableMapOf<Int, CmdKey>()
 
-  /**
-   * Cache of the synthetic replies. Before being returned, they need to be retagged (with the ID of
-   * the cmd issued by the debugger).
-   */
+  /** Cache of the synthetic replies. Before being returned, they need to be retagged (with the ID of the cmd issued by the debugger). */
   private val cache = mutableMapOf<CmdKey, ByteBuffer>()
 
   /**
-   * When a cmd arrives, we need to parse it to extract its key and check if we already have a
-   * synthesized reply for it. All keyables parsers are here.
+   * When a cmd arrives, we need to parse it to extract its key and check if we already have a synthesized reply for it. All keyables
+   * parsers are here.
    */
   private var keyableParsers: MutableMap<Int, Parser> = HashMap()
 
@@ -70,8 +67,8 @@ internal class Speculator(triggerManager: TriggerManager, val logger: SCacheLogg
   private var cacheHit = 0
 
   /**
-   * The keeper of all class info we have. The primary purpose is to be able to invalidate the cache
-   * when a class is unloaded. We must let this object know when:
+   * The keeper of all class info we have. The primary purpose is to be able to invalidate the cache when a class is unloaded. We must let
+   * this object know when:
    * - We speculate on a class attribute (so we add the speculated key to its list)
    * - A class is prepared (so we associate signature with referenceID)
    * - A class is unloaded (so we evict all speculated reply using the signature)
@@ -112,17 +109,12 @@ internal class Speculator(triggerManager: TriggerManager, val logger: SCacheLogg
 
     keyableParsers[packCmd(CmdSet.ClassType.id, ClassType.Superclass.id)] = SuperClassCmd::parse
     keyableParsers[packCmd(CmdSet.Method.id, Method.LineTable.id)] = LineTableCmd::parse
-    keyableParsers[packCmd(CmdSet.ReferenceType.id, ReferenceType.SourceFile.id)] =
-      SourceFileCmd::parse
-    keyableParsers[packCmd(CmdSet.ReferenceType.id, ReferenceType.Interfaces.id)] =
-      InterfacesCmd::parse
-    keyableParsers[packCmd(CmdSet.ReferenceType.id, ReferenceType.MethodsWithGeneric.id)] =
-      MethodsWithGenericsCmd::parse
-    keyableParsers[packCmd(CmdSet.ReferenceType.id, ReferenceType.SourceDebugExtension.id)] =
-      SourceDebugExtensionCmd::parse
+    keyableParsers[packCmd(CmdSet.ReferenceType.id, ReferenceType.SourceFile.id)] = SourceFileCmd::parse
+    keyableParsers[packCmd(CmdSet.ReferenceType.id, ReferenceType.Interfaces.id)] = InterfacesCmd::parse
+    keyableParsers[packCmd(CmdSet.ReferenceType.id, ReferenceType.MethodsWithGeneric.id)] = MethodsWithGenericsCmd::parse
+    keyableParsers[packCmd(CmdSet.ReferenceType.id, ReferenceType.SourceDebugExtension.id)] = SourceDebugExtensionCmd::parse
     keyableParsers[packCmd(CmdSet.Method.id, Method.IsObsolete.id)] = IsObsoleteCmd::parse
-    keyableParsers[packCmd(CmdSet.Method.id, Method.VariableTableWithGeneric.id)] =
-      VariableTableWithGenericCmd::parse
+    keyableParsers[packCmd(CmdSet.Method.id, Method.VariableTableWithGeneric.id)] = VariableTableWithGenericCmd::parse
   }
 
   private fun speculateClassInfo(classID: Long, command: Cmd, response: SCacheResponse) {
@@ -163,11 +155,7 @@ internal class Speculator(triggerManager: TriggerManager, val logger: SCacheLogg
       speculateClassInfo(loc.classID, IsObsoleteCmd(loc.classID, loc.methodID), response)
       speculateClassInfo(loc.classID, SourceDebugExtensionCmd(loc.classID), response)
       speculateClassInfo(loc.classID, InterfacesCmd(loc.classID), response)
-      speculateClassInfo(
-        loc.classID,
-        VariableTableWithGenericCmd(loc.classID, loc.methodID),
-        response,
-      )
+      speculateClassInfo(loc.classID, VariableTableWithGenericCmd(loc.classID, loc.methodID), response)
       speculateClassInfo(loc.classID, MethodsWithGenericsCmd(loc.classID), response)
 
       count++
