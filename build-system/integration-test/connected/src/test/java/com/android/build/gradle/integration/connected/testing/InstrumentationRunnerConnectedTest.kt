@@ -39,7 +39,6 @@ class InstrumentationRunnerConnectedTest {
     @get:Rule
     val project = builder()
             .fromTestProject("separateTestModule")
-            .addGradleProperties("${BooleanOption.USE_ANDROID_X.propertyName}=true")
             .create()
 
     @Before

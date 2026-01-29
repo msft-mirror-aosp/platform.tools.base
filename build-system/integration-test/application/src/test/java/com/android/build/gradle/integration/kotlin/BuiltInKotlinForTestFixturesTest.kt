@@ -111,7 +111,6 @@ class BuiltInKotlinForTestFixturesTest(private val builtInKotlin: Boolean) {
         }
 
         build.executor
-            .with(BooleanOption.USE_ANDROID_X, true)
             .run(":lib:assembleDebugTestFixtures")
 
         build.androidLibrary().assertAar(AarSelector.DEBUG.forTestFixtures()) {

@@ -47,7 +47,6 @@ public class RenderscriptNdkTest {
             GradleTestProject.builder()
                     .fromTestProject("renderscriptNdk")
                     .setSideBySideNdkVersion(NDK_WITH_RENDERSCRIPT_VERSION)
-                    .addGradleProperties(BooleanOption.USE_ANDROID_X.getPropertyName() + "=true")
                     .addGradleProperties(
                             BooleanOption.PRIVACY_SANDBOX_SDK_SUPPORT.getPropertyName() + "=false")
                     .create();

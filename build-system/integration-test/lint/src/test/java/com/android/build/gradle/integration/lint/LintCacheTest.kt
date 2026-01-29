@@ -27,7 +27,6 @@ class LintCacheTest {
     @get:Rule
     val project: GradleTestProject = GradleTestProject.builder()
             .fromTestProject("lintDeps")
-            .addGradleProperties("${BooleanOption.USE_ANDROID_X.propertyName}=true")
             .addGradleProperties("${BooleanOption.PRIVACY_SANDBOX_SDK_SUPPORT.propertyName}=false")
             .withHeap("1001M")
             .create()

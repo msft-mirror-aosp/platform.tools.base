@@ -32,7 +32,6 @@ class AndroidLintAnalysisTaskTest {
     val lintKotlinProject: GradleTestProject =
         GradleTestProject.builder()
             .fromTestProject("lintKotlin")
-            .addGradleProperties("${BooleanOption.USE_ANDROID_X.propertyName}=true")
             .create()
 
     @Test

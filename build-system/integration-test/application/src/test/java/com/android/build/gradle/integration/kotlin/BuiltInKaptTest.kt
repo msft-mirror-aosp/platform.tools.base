@@ -349,7 +349,7 @@ class BuiltInKaptTest {
 
         project.executor()
             .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
-            .with(BooleanOption.USE_ANDROID_X, true).run("app:assembleDebug")
+            .run("app:assembleDebug")
     }
 
     @Test

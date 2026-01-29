@@ -100,7 +100,6 @@ class BuiltInKotlinForScreenshotTestTest(private val builtInKotlin: Boolean) {
         }
 
         build.executor
-            .with(BooleanOption.USE_ANDROID_X, true)
             .run(":lib:compileDebugScreenshotTestKotlin")
 
         val screenshotTestClassFile =

@@ -35,7 +35,6 @@ class ResourceSplitTestModuleConnectedTest {
     @get:Rule
     val project: GradleTestProject = GradleTestProject.builder()
         .fromTestProject("separateTestModule")
-        .addGradleProperties("${BooleanOption.USE_ANDROID_X.propertyName}=true")
         .create()
 
     @Before

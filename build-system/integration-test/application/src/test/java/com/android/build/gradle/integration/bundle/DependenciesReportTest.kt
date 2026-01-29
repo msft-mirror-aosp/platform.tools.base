@@ -65,7 +65,6 @@ class DependenciesReportTest {
 
     @Test
     fun testDependenciesFile() {
-        project.addUseAndroidXProperty()
         // test that androidx.core.core is only using 1.0.1 which will be the resolved version.
 
         // Run twice to verify configuration cache compatibility

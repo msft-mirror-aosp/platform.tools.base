@@ -191,7 +191,6 @@ class FusedLibraryMergeResourcesTaskTest(private val publicationOnlyMode: Boolea
             }
             gradleProperties {
                 add(BooleanOption.FUSED_LIBRARY_PUBLICATION_ONLY_MODE, publicationOnlyMode)
-                add(BooleanOption.USE_ANDROID_X, true)
             }
         }
 

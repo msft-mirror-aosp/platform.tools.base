@@ -159,7 +159,6 @@ class JetifierTest(private val withKotlin: Boolean, private val withBuiltInKotli
 
         // Build the project with Jetifier enabled and AndroidX enabled
         project.executor()
-            .with(BooleanOption.USE_ANDROID_X, true)
             .with(BooleanOption.ENABLE_JETIFIER, true)
             .with(BooleanOption.ENFORCE_UNIQUE_PACKAGE_NAMES, false)
             // Legacy API only used with Kotlin.
@@ -214,7 +213,6 @@ class JetifierTest(private val withKotlin: Boolean, private val withBuiltInKotli
 
         // Build the project with Jetifier enabled and AndroidX enabled
         project.executor()
-            .with(BooleanOption.USE_ANDROID_X, true)
             .with(BooleanOption.ENABLE_JETIFIER, true)
             .with(BooleanOption.ENFORCE_UNIQUE_PACKAGE_NAMES, false)
             .run("assembleDebug")
@@ -246,7 +244,6 @@ class JetifierTest(private val withKotlin: Boolean, private val withBuiltInKotli
 
         // We created doNotJetifyLib such that Jetifier would fail to jetify it.
         project.executor()
-            .with(BooleanOption.USE_ANDROID_X, true)
             .with(BooleanOption.ENABLE_JETIFIER, true)
             // Test project depends on vector drawable libraries that violate unique namespacing.
             .with(BooleanOption.ENFORCE_UNIQUE_PACKAGE_NAMES, false)
@@ -262,7 +259,6 @@ class JetifierTest(private val withKotlin: Boolean, private val withBuiltInKotli
             """android.jetifier.ignorelist = doNot.*\\.jar, foo"""
         )
         project.executor()
-            .with(BooleanOption.USE_ANDROID_X, true)
             .with(BooleanOption.ENABLE_JETIFIER, true)
             // Test project depends on vector drawable libraries that violate unique namespacing.
             .with(BooleanOption.ENFORCE_UNIQUE_PACKAGE_NAMES, false)
@@ -286,7 +282,6 @@ class JetifierTest(private val withKotlin: Boolean, private val withBuiltInKotli
 
         // Jetifier should be able to convert libWithSignatures
         project.executor()
-            .with(BooleanOption.USE_ANDROID_X, true)
             .with(BooleanOption.ENABLE_JETIFIER, true)
             .with(BooleanOption.ENFORCE_UNIQUE_PACKAGE_NAMES, false)
             .run("assembleDebug")
@@ -310,7 +305,6 @@ class JetifierTest(private val withKotlin: Boolean, private val withBuiltInKotli
         )
 
         val result = project.executor()
-                .with(BooleanOption.USE_ANDROID_X, true)
                 .with(BooleanOption.ENABLE_JETIFIER, true)
                 .expectFailure()
                 .run("assembleDebug")

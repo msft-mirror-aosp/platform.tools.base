@@ -222,7 +222,6 @@ class MergeGeneratedProguardFilesTest(
                             .subproject(":lib", lib)
                             .build()
             )
-                    .addGradleProperties("${BooleanOption.USE_ANDROID_X.propertyName}=true")
                     .create()
 
     @get:Rule

@@ -39,7 +39,6 @@ class VariantDependencyTest : ModelComparator() {
     @get:Rule
     val project = GradleTestProject.builder()
         .fromTestApp(HelloWorldApp.noBuildFile())
-        .addGradleProperties("${BooleanOption.USE_ANDROID_X.propertyName}=true")
         .disableBuiltInKotlin()
         .withHeap("2048m")
         .create()

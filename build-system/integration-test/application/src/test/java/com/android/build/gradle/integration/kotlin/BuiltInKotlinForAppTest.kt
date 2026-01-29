@@ -376,7 +376,6 @@ class BuiltInKotlinForAppTest(private val useLatestKgpVersion: Boolean) {
 
         // Test that kotlin compilation completes successfully
         build.executor
-            .with(BooleanOption.USE_ANDROID_X, true)
             .run(":app:compileDebugKotlin")
     }
 

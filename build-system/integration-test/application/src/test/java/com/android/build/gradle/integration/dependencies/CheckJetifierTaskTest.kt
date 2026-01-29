@@ -106,7 +106,6 @@ class CheckJetifierTaskTest {
 
     private fun runCheckJetifier() {
         project.executor()
-            .with(BooleanOption.USE_ANDROID_X, true)
             .with(BooleanOption.ENABLE_JETIFIER, true)
             .with(StringOption.IDE_CHECK_JETIFIER_RESULT_FILE, resultFile.path)
             .run("checkJetifier")

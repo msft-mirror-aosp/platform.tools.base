@@ -32,7 +32,6 @@ class TestFixturesProjectLintModelIntegrationTest(private val lintAnalysisPerCom
     @get:Rule
     val project: GradleTestProject =
         GradleTestProject.builder().fromTestProject("testFixturesApp")
-            .addGradleProperties("${BooleanOption.USE_ANDROID_X.propertyName}=true")
             .addGradleProperties("${BooleanOption.R8_PROGUARD_ANDROID_TXT_DISALLOWED.propertyName}=true")
             .disableBuiltInKotlin()
             .create()

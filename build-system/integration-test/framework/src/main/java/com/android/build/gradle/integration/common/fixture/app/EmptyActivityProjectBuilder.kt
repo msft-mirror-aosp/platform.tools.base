@@ -106,7 +106,6 @@ class EmptyActivityProjectBuilder {
         }
 
         rootProjectBuilder
-            .addGradleProperties(BooleanOption.USE_ANDROID_X.propertyName + "=true")
             .addGradleProperties(BooleanOption.ENABLE_JETIFIER.propertyName + "=true")
             .addGradleProperty(BooleanOption.BUILT_IN_KOTLIN, builtInKotlin)
 

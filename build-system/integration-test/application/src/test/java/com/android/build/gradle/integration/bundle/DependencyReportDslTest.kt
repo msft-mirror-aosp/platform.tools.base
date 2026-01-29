@@ -66,7 +66,6 @@ class DependenciesReportDslTest {
 
     @Test
     fun testDependenciesFileUnspecifiedDsl() {
-        project.addUseAndroidXProperty()
         project.executor().run(":app:bundleRelease")
         val bundle = project.locateBundleFileViaModel("release", ":app")
         assertThat(bundle).exists()
@@ -95,7 +94,6 @@ class DependenciesReportDslTest {
             """
         )
 
-        project.addUseAndroidXProperty()
         project.executor().run(":app:bundleRelease")
         val bundle = project.locateBundleFileViaModel("release", ":app")
         assertThat(bundle).exists()
@@ -124,7 +122,6 @@ class DependenciesReportDslTest {
             """
         )
 
-        project.addUseAndroidXProperty()
         project.executor().run(":app:bundleRelease")
         val bundle = project.locateBundleFileViaModel("release", ":app").toPath()
         ZipSubject.assertThat(bundle) {

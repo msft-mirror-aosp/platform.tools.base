@@ -206,7 +206,6 @@ class WearTileScreenshotTest {
     private fun GradleBuild.sstExecutor(): GradleTaskExecutor =
         executor
             .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
-            .with(BooleanOption.USE_ANDROID_X, true)
             .withLoggingLevel(LoggingLevel.LIFECYCLE)
 
     private fun updateReferenceImage(

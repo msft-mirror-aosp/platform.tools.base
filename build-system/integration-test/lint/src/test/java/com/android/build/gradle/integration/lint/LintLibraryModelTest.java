@@ -48,8 +48,6 @@ public class LintLibraryModelTest {
                     .fromTestProject("lintLibraryModel")
                     .addGradleProperties(
                             BooleanOption.PRIVACY_SANDBOX_SDK_SUPPORT.getPropertyName() + "=false")
-                    .addGradleProperties(
-                            BooleanOption.USE_ANDROID_X.getPropertyName() + "=true")
                     .create();
 
     private static final String APPLY_THE_PLUGIN_TO_JAVA_LIBRARY_PROJECT = "Apply the 'com.android.lint' plugin to java library project";

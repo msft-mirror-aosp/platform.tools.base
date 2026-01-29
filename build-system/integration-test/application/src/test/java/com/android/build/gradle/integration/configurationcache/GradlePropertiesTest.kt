@@ -43,16 +43,13 @@ class GradlePropertiesTest {
     fun testAccessingChangedGradlePropertiesAtConfiguration() {
         // AndroidX must be enabled when Jetifier is enabled
         executor()
-            .with(BooleanOption.USE_ANDROID_X, true)
             .with(BooleanOption.ENABLE_JETIFIER, true)
             .run("assembleDebug")
         var result = executor()
-            .with(BooleanOption.USE_ANDROID_X, true)
             .with(BooleanOption.ENABLE_JETIFIER, true)
             .run("assembleDebug")
         result.assertConfigurationCacheHit()
         result = executor()
-            .with(BooleanOption.USE_ANDROID_X, true)
             .with(BooleanOption.ENABLE_JETIFIER, false)
             .run("assembleDebug")
         result.assertOutputContains(

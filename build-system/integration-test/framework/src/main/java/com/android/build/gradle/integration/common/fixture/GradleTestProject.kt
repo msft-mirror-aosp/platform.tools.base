@@ -40,10 +40,6 @@ import com.android.build.gradle.integration.common.utils.getVariantByName
 import com.android.build.gradle.internal.TaskManager
 import com.android.build.gradle.internal.plugins.VersionCheckPlugin
 import com.android.build.gradle.options.BooleanOption
-import com.android.build.gradle.options.BooleanOption.DEFAULT_TARGET_SDK_TO_COMPILE_SDK_IF_UNSET
-import com.android.build.gradle.options.BooleanOption.ENABLE_APP_COMPILE_TIME_R_CLASS
-import com.android.build.gradle.options.BooleanOption.ENABLE_LEGACY_VARIANT_API
-import com.android.build.gradle.options.BooleanOption.USE_NEW_DSL
 import com.android.builder.core.ToolsRevisionUtils
 import com.android.builder.model.v2.ide.SyncIssue
 import com.android.sdklib.internal.project.ProjectProperties
@@ -1580,17 +1576,6 @@ buildCache {
 
         gradlePropertiesFile.appendText(
             gradleProperties.joinToString(separator = System.lineSeparator(), prefix = System.lineSeparator(), postfix = System.lineSeparator())
-        )
-    }
-
-    /**
-     * Adds `android.useAndroidX=true` to the gradle.properties file (for projects that use AndroidX
-     * dependencies, see bug 130286699).
-     */
-    fun addUseAndroidXProperty() {
-        TestFileUtils.appendToFile(
-            gradlePropertiesFile,
-            BooleanOption.USE_ANDROID_X.propertyName + "=true"
         )
     }
 

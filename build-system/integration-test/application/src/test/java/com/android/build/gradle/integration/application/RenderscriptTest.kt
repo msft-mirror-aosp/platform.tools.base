@@ -27,7 +27,6 @@ class RenderscriptTest {
     @get:Rule
     var project = GradleTestProject.builder()
             .fromTestProject("BasicRenderScript")
-            .addGradleProperties("${BooleanOption.USE_ANDROID_X.propertyName}=true")
             .create()
 
     @Test

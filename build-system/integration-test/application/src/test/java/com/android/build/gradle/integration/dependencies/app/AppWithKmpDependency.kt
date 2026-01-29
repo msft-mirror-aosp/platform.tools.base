@@ -40,9 +40,6 @@ class AppWithKmpDependency : ModelComparator() {
                     implementation("androidx.lifecycle:lifecycle-runtime:2.8.0-alpha02")
                 }
             }
-            gradleProperties {
-                add(BooleanOption.USE_ANDROID_X, true)
-            }
         }
 
     @Test

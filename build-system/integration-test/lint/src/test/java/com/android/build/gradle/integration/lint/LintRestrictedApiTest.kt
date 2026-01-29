@@ -173,5 +173,5 @@ class LintRestrictedApiTest(private val checkDependencies: Boolean) {
     }
 
     private fun getExecutor(): GradleTaskExecutor =
-        project.executor().with(BooleanOption.USE_ANDROID_X, true)
+        project.executor()
 }

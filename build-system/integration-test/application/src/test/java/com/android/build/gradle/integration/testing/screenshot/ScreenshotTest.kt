@@ -328,7 +328,6 @@ class ScreenshotTest {
     private fun GradleBuild.sstExecutor(): GradleTaskExecutor =
         executor
             .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
-            .with(BooleanOption.USE_ANDROID_X, true)
             .withLoggingLevel(LoggingLevel.LIFECYCLE)
 
     @Test

@@ -131,7 +131,6 @@ class DataBindingKmpTest {
                 )
             }
             gradleProperties {
-                add(BooleanOption.USE_ANDROID_X, true)
                 add(BooleanOption.BUILT_IN_KOTLIN, false)
                 add(BooleanOption.USE_NEW_DSL, false)
             }

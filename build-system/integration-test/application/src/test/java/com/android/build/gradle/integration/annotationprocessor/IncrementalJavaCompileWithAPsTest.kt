@@ -107,7 +107,6 @@ class IncrementalJavaCompileWithAPsTest(
     @get:Rule
     val project = GradleTestProject.builder().fromTestApp(setUpTestProject())
         .withKotlinGradlePlugin(withKapt && !withBuiltInKotlin)
-        .addGradleProperties("${BooleanOption.USE_ANDROID_X.propertyName}=true")
         .apply {
             if (!withBuiltInKotlin) {
                 addGradleProperty(BooleanOption.USE_NEW_DSL, false)

@@ -66,9 +66,6 @@ class KmpManagedDeviceTest {
         }
         pluginCallbacks += KmpCallback::class.java
       }
-      gradleProperties {
-        add(BooleanOption.USE_ANDROID_X, true)
-      }
     }
 
   private val executor: GradleTaskExecutor

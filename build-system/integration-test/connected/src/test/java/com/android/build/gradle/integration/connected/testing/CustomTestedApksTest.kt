@@ -190,7 +190,6 @@ class CustomTestedApksTest {
 
     @Before
     fun setUp() {
-        project.addUseAndroidXProperty()
         // fail fast if no response
         project.addAdbTimeout()
         // run the uninstall tasks in order to (1) make sure nothing is installed at the beginning

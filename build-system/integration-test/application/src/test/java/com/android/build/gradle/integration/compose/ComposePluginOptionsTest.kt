@@ -62,9 +62,6 @@ class ComposePluginOptionsTest {
             )
             pluginCallbacks += PrintKotlinCompileInfoCallback::class.java
         }
-        gradleProperties {
-            add(BooleanOption.USE_ANDROID_X, true)
-        }
     }
 
     class PrintKotlinCompileInfoCallback: GenericCallback {

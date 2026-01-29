@@ -29,7 +29,6 @@ class LintWithAnalyticsEnabledTest {
     val project: GradleTestProject =
         GradleTestProject.builder()
             .fromTestProject("lintKotlin")
-            .addGradleProperties("${BooleanOption.USE_ANDROID_X.propertyName}=true")
             .create()
 
     @Before

@@ -85,7 +85,6 @@ class JourneysConnectedTest {
     private val executor: GradleTaskExecutor
         get() = rule.build.executor
             .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
-            .with(BooleanOption.USE_ANDROID_X, true)
             .withLoggingLevel(LoggingLevel.INFO)
 
     private fun AndroidProjectDefinition<ApplicationExtension>.setupProject() {

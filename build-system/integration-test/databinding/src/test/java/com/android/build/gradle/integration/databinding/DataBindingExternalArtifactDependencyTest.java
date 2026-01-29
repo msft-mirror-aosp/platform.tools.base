@@ -50,7 +50,6 @@ public class DataBindingExternalArtifactDependencyTest {
     @Rule public TemporaryFolder mavenRepo = new TemporaryFolder();
 
     public DataBindingExternalArtifactDependencyTest(boolean useNonTransitiveR) {
-        String useX = BooleanOption.USE_ANDROID_X.getPropertyName() + "=" + Boolean.TRUE;
         String enableJetifier =
                 BooleanOption.ENABLE_JETIFIER.getPropertyName() + "=" + Boolean.TRUE;
         this.useNonTransitiveR = useNonTransitiveR;
@@ -58,12 +57,10 @@ public class DataBindingExternalArtifactDependencyTest {
         library =
                 GradleTestProject.builder()
                         .fromDataBindingIntegrationTest("IndependentLibrary", true)
-                        .addGradleProperties(useX)
                         .create();
         app =
                 GradleTestProject.builder()
                         .fromDataBindingIntegrationTest("MultiModuleTestApp", true)
-                        .addGradleProperties(useX)
                         .addGradleProperties(enableJetifier)
                         .create();
     }

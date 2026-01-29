@@ -154,7 +154,6 @@ class DataBindingIncrementalityTest {
 
     @get:Rule
     val project = GradleTestProject.builder().fromTestApp(setUpTestProject())
-        .addGradleProperties("${USE_ANDROID_X.propertyName}=true")
         .create()
 
     private fun setUpTestProject(): TestProject {

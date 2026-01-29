@@ -26,9 +26,6 @@ import org.junit.Test
 class LinkApplicationAndroidResourcesTaskTest {
     @get:Rule
     val rule = GradleRule.from {
-        gradleProperties {
-            add(BooleanOption.USE_ANDROID_X, true)
-        }
         androidApplication(":app") {
             android {
                 namespace = "com.example.app"

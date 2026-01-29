@@ -98,7 +98,6 @@ class DependencyWithoutFileWithDependenciesTest: ModelComparator() {
         rule.build.executor.run(":bar:publish")
         val result = rule.build
             .modelBuilder
-            .with(BooleanOption.USE_ANDROID_X, true)
             .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
             .fetchModels(variantName = "debug")
         //todo fix me

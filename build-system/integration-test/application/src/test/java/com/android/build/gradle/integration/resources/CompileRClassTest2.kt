@@ -84,7 +84,6 @@ class CompileRClassTest2 {
 
     @get:Rule
     val project = GradleTestProject.builder().fromTestApp(testApp)
-        .addGradleProperties("${BooleanOption.USE_ANDROID_X.propertyName}=true")
         .create()
 
     @Test

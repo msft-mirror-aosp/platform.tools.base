@@ -40,7 +40,6 @@ public class RsSupportModeTest {
                     .setWithCmakeDirInLocalProp(true)
                     .setSideBySideNdkVersion(DEFAULT_NDK_SIDE_BY_SIDE_VERSION)
                     .addGradleProperties(BooleanOption.PRIVACY_SANDBOX_SDK_SUPPORT.getPropertyName() + "=false")
-                    .addGradleProperties(BooleanOption.USE_ANDROID_X.getPropertyName() + "=true")
                     .create();
 
     @Test
