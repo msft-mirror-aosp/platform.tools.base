@@ -26,7 +26,7 @@ import org.gradle.api.file.Directory
 
 abstract class AbstractTestSuiteSourceSet(
   protected val sourceSetName: String,
-  protected val variantServices: VariantServices,
+  variantServices: VariantServices,
   val userAddedSourceSets: Collection<Directory>,
   val javaEnabled: Boolean,
   val kotlinEnabled: Boolean,
@@ -35,7 +35,7 @@ abstract class AbstractTestSuiteSourceSet(
 
   val defaultTopLevelFolder = File(variantServices.projectInfo.projectDirectory.asFile, "src/$sourceSetName")
 
-  protected fun createJavaSources() =
+  protected fun createJavaSources(variantServices: VariantServices) =
     FlatSourceDirectoriesForJavaImpl(sourceSetName, variantServices, null).also {
       it.addSource(
         FileBasedDirectoryEntryImpl(
@@ -59,7 +59,7 @@ abstract class AbstractTestSuiteSourceSet(
       }
     }
 
-  protected fun createKotlinSources() =
+  protected fun createKotlinSources(variantServices: VariantServices) =
     FlatSourceDirectoriesImpl(sourceSetName, variantServices, null).also {
       it.addSource(
         FileBasedDirectoryEntryImpl(

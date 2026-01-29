@@ -36,9 +36,9 @@ class TestApkTestSuiteSourceSet(
 
   override val manifestFile = File(variantServices.projectInfo.projectDirectory.asFile, "src/$sourceSetName/$FN_ANDROID_MANIFEST_XML")
 
-  override val java: FlatSourceDirectoriesImpl? = if (javaEnabled) createJavaSources() else null
+  override val java: FlatSourceDirectoriesImpl? = if (javaEnabled) createJavaSources(variantServices) else null
 
-  override val kotlin: FlatSourceDirectoriesImpl? = if (kotlinEnabled) createKotlinSources() else null
+  override val kotlin: FlatSourceDirectoriesImpl? = if (kotlinEnabled) createKotlinSources(variantServices) else null
 
   override val resources: FlatSourceDirectoriesImpl = resourcesSourcesFolder
 }
