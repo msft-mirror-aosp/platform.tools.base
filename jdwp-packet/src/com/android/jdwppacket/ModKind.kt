@@ -33,7 +33,6 @@ enum class ModKind(val id: Int) {
 
     private val map = ModKind.values().associateBy(ModKind::id)
 
-    @JvmStatic
-    fun fromID(value: Int) = map[value] ?: throw IllegalStateException("No ModKind for $value")
+    @JvmStatic fun fromID(value: Int) = map[value] ?: throw IllegalStateException("No ModKind for $value")
   }
 }

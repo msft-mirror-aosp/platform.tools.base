@@ -20,12 +20,7 @@ import com.android.jdwppacket.Reply
 import com.android.jdwppacket.Writer
 
 data class AllClassesReply(val classes: List<Class>) : Reply() {
-  data class Class(
-    val refTypeTag: Byte,
-    val referenceTypeID: Long,
-    val signature: String,
-    val status: Int,
-  ) {
+  data class Class(val refTypeTag: Byte, val referenceTypeID: Long, val signature: String, val status: Int) {
 
     fun write(writer: Writer) {
       writer.putByte(refTypeTag)

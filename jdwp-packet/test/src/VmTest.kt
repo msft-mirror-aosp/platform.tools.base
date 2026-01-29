@@ -47,16 +47,7 @@ class VmTest {
 
   @Test
   fun testAllClassWithGenericReply() {
-    val classes =
-      listOf(
-        AllClassesWithGenericsReply.Class(
-          Byte.MAX_VALUE,
-          Long.MAX_VALUE,
-          "foo",
-          "bar",
-          Int.MAX_VALUE,
-        )
-      )
+    val classes = listOf(AllClassesWithGenericsReply.Class(Byte.MAX_VALUE, Long.MAX_VALUE, "foo", "bar", Int.MAX_VALUE))
     val packet = AllClassesWithGenericsReply(classes)
     assertJDWPObjectAndWireEquals(packet, AllClassesWithGenericsReply::parse)
   }
@@ -69,8 +60,7 @@ class VmTest {
 
   @Test
   fun testAllClassesReply() {
-    val classes =
-      listOf(AllClassesReply.Class(Byte.MAX_VALUE, Long.MAX_VALUE, "foo", Int.MAX_VALUE))
+    val classes = listOf(AllClassesReply.Class(Byte.MAX_VALUE, Long.MAX_VALUE, "foo", Int.MAX_VALUE))
     val packet = AllClassesReply(classes)
     assertJDWPObjectAndWireEquals(packet, AllClassesReply::parse)
   }

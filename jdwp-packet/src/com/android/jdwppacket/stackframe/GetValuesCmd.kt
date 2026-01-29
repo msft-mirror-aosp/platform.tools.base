@@ -20,8 +20,7 @@ import com.android.jdwppacket.MessageReader
 import com.android.jdwppacket.StackFrame
 import com.android.jdwppacket.Writer
 
-data class GetValuesCmd(val threadID: Long, val frameID: Long, val slots: List<Slot>) :
-  Cmd(StackFrame.GetValues) {
+data class GetValuesCmd(val threadID: Long, val frameID: Long, val slots: List<Slot>) : Cmd(StackFrame.GetValues) {
   data class Slot(val slot: Int, val sibByte: Byte) {
     fun write(writer: Writer) {
       writer.putInt(slot)

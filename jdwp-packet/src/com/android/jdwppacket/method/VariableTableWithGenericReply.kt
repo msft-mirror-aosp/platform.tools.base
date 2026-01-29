@@ -48,14 +48,7 @@ data class VariableTableWithGenericReply(val argCnt: Int, val slots: List<Slot>)
       val numSlots = reader.getInt()
       val slots =
         List(numSlots) {
-          Slot(
-            reader.getLong(),
-            reader.getString(),
-            reader.getString(),
-            reader.getString(),
-            reader.getInt(),
-            reader.getInt(),
-          )
+          Slot(reader.getLong(), reader.getString(), reader.getString(), reader.getString(), reader.getInt(), reader.getInt())
         }
       return VariableTableWithGenericReply(argCnt, slots)
     }

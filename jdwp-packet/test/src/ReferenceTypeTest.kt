@@ -52,10 +52,7 @@ class ReferenceTypeTest {
 
   @Test
   fun testMethodsWithGenericReply() {
-    val methods =
-      listOf(
-        MethodsWithGenericsReply.Method(Long.MAX_VALUE, "foo", "bar", "baz", Integer.MAX_VALUE)
-      )
+    val methods = listOf(MethodsWithGenericsReply.Method(Long.MAX_VALUE, "foo", "bar", "baz", Integer.MAX_VALUE))
     val packet = MethodsWithGenericsReply(methods)
     assertJDWPObjectAndWireEquals(packet, MethodsWithGenericsReply::parse)
   }

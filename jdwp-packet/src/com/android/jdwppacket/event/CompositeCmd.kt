@@ -25,8 +25,7 @@ import com.android.jdwppacket.Writer
 import com.android.jdwppacket.getTagValue
 import com.android.jdwppacket.putTaggedValue
 
-data class CompositeCmd(val suspendPolicy: Byte, val events: List<Event>) :
-  Cmd(com.android.jdwppacket.Event.Composite) {
+data class CompositeCmd(val suspendPolicy: Byte, val events: List<Event>) : Cmd(com.android.jdwppacket.Event.Composite) {
 
   interface Event {
     val kind: EventKind
@@ -43,18 +42,11 @@ data class CompositeCmd(val suspendPolicy: Byte, val events: List<Event>) :
     val status: Int,
   ) : Event
 
-  data class EventClassUnload(
-    override val kind: EventKind = EventKind.CLASS_UNLOAD,
-    override val requestID: Int,
-    val signature: String,
-  ) : Event
+  data class EventClassUnload(override val kind: EventKind = EventKind.CLASS_UNLOAD, override val requestID: Int, val signature: String) :
+    Event
 
-  data class EventThreadLocation(
-    override val kind: EventKind,
-    override val requestID: Int,
-    val threadID: Long,
-    val location: Location,
-  ) : Event
+  data class EventThreadLocation(override val kind: EventKind, override val requestID: Int, val threadID: Long, val location: Location) :
+    Event
 
   data class EventMethodExitReturnValue(
     override val kind: EventKind,
@@ -99,11 +91,7 @@ data class CompositeCmd(val suspendPolicy: Byte, val events: List<Event>) :
     val catchLocation: Location,
   ) : Event
 
-  data class EventLifeCycle(
-    override val kind: EventKind,
-    override val requestID: Int,
-    val threadID: Long,
-  ) : Event
+  data class EventLifeCycle(override val kind: EventKind, override val requestID: Int, val threadID: Long) : Event
 
   data class EventFieldAccess(
     override val kind: EventKind,
@@ -147,43 +135,18 @@ data class CompositeCmd(val suspendPolicy: Byte, val events: List<Event>) :
           EventKind.BREAKPOINT,
           EventKind.METHOD_ENTRY,
           EventKind.METHOD_EXIT -> {
-            events.add(
-              EventThreadLocation(kind, requestID, reader.getThreadID(), reader.getLocation())
-            )
+            events.add(EventThreadLocation(kind, requestID, reader.getThreadID(), reader.getLocation()))
           }
           EventKind.METHOD_EXIT_WITH_RETURN_VALUE -> {
-            events.add(
-              EventMethodExitReturnValue(
-                kind,
-                requestID,
-                reader.getThreadID(),
-                reader.getLocation(),
-                reader.getTagValue(),
-              )
-            )
+            events.add(EventMethodExitReturnValue(kind, requestID, reader.getThreadID(), reader.getLocation(), reader.getTagValue()))
           }
           EventKind.MONITOR_CONTENDED_ENTER,
           EventKind.MONITOR_CONTENDED_ENTERED -> {
-            events.add(
-              EventMonitorContended(
-                kind,
-                requestID,
-                reader.getThreadID(),
-                reader.getTaggedObjectID(),
-                reader.getLocation(),
-              )
-            )
+            events.add(EventMonitorContended(kind, requestID, reader.getThreadID(), reader.getTaggedObjectID(), reader.getLocation()))
           }
           EventKind.MONITOR_WAIT -> {
             events.add(
-              EventMonitorWait(
-                kind,
-                requestID,
-                reader.getThreadID(),
-                reader.getTaggedObjectID(),
-                reader.getLocation(),
-                reader.getLong(),
-              )
+              EventMonitorWait(kind, requestID, reader.getThreadID(), reader.getTaggedObjectID(), reader.getLocation(), reader.getLong())
             )
           }
           EventKind.MONITOR_WAITED -> {
@@ -200,14 +163,7 @@ data class CompositeCmd(val suspendPolicy: Byte, val events: List<Event>) :
           }
           EventKind.EXCEPTION -> {
             events.add(
-              EventException(
-                kind,
-                requestID,
-                reader.getThreadID(),
-                reader.getLocation(),
-                reader.getTaggedObjectID(),
-                reader.getLocation(),
-              )
+              EventException(kind, requestID, reader.getThreadID(), reader.getLocation(), reader.getTaggedObjectID(), reader.getLocation())
             )
           }
           EventKind.VM_START,
@@ -221,17 +177,7 @@ data class CompositeCmd(val suspendPolicy: Byte, val events: List<Event>) :
             val referenceTypeID = reader.getReferenceTypeID()
             val signature = reader.getString()
             val status = reader.getInt()
-            events.add(
-              EventClassPrepare(
-                kind,
-                requestID,
-                threadID,
-                typeTag,
-                referenceTypeID,
-                signature,
-                status,
-              )
-            )
+            events.add(EventClassPrepare(kind, requestID, threadID, typeTag, referenceTypeID, signature, status))
           }
           EventKind.CLASS_UNLOAD -> {
             val signature = reader.getString() // signature

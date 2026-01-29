@@ -30,13 +30,7 @@ data class IDSizesReply(
 
   constructor(
     idSizes: IDSizes
-  ) : this(
-    idSizes.fieldIDSize,
-    idSizes.methodIDSize,
-    idSizes.objectIDSize,
-    idSizes.referenceTypeIDSize,
-    idSizes.frameIDSize,
-  )
+  ) : this(idSizes.fieldIDSize, idSizes.methodIDSize, idSizes.objectIDSize, idSizes.referenceTypeIDSize, idSizes.frameIDSize)
 
   companion object {
 

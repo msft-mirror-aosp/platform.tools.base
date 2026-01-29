@@ -38,11 +38,7 @@ data class SetCmd(val kind: EventKind, val suspendPolicy: Byte, val modifiers: L
 
   class ModifierLocationOnly(val location: Location) : Modifier(ModKind.LOCATION_ONLY)
 
-  class ModifierExceptionOnly(
-    val exceptionOrNull: Long,
-    val caught: Boolean,
-    val uncaught: Boolean,
-  ) : Modifier(ModKind.EXCEPTION_ONLY)
+  class ModifierExceptionOnly(val exceptionOrNull: Long, val caught: Boolean, val uncaught: Boolean) : Modifier(ModKind.EXCEPTION_ONLY)
 
   class ModifierFieldOnly(val declaring: Long, val fieldID: Long) : Modifier(ModKind.FIELD_ONLY)
 
@@ -73,14 +69,8 @@ data class SetCmd(val kind: EventKind, val suspendPolicy: Byte, val modifiers: L
             ModKind.CLASS_MATCH -> ModifierClassMatch(reader.getString())
             ModKind.CLASS_EXCLUDE -> ModifierClassExclude(reader.getString())
             ModKind.LOCATION_ONLY -> ModifierLocationOnly(reader.getLocation())
-            ModKind.EXCEPTION_ONLY ->
-              ModifierExceptionOnly(
-                reader.getReferenceTypeID(),
-                reader.getBoolean(),
-                reader.getBoolean(),
-              )
-            ModKind.FIELD_ONLY ->
-              ModifierFieldOnly(reader.getReferenceTypeID(), reader.getFieldID())
+            ModKind.EXCEPTION_ONLY -> ModifierExceptionOnly(reader.getReferenceTypeID(), reader.getBoolean(), reader.getBoolean())
+            ModKind.FIELD_ONLY -> ModifierFieldOnly(reader.getReferenceTypeID(), reader.getFieldID())
             ModKind.STEP -> ModifierStep(reader.getThreadID(), reader.getInt(), reader.getInt())
             ModKind.INSTANCE_ONLY -> ModifierInstanceOnly(reader.getObjectID())
             ModKind.SOURCE_NAME_MATCH -> ModifierSourceNameMatch(reader.getString())

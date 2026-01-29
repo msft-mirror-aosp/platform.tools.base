@@ -24,8 +24,6 @@ enum class SuspendPolicy(val id: Int) {
 
     private val map = SuspendPolicy.values().associateBy(SuspendPolicy::id)
 
-    @JvmStatic
-    fun fromID(value: Int) =
-      map[value] ?: throw IllegalStateException("No SuspendPolicy for $value")
+    @JvmStatic fun fromID(value: Int) = map[value] ?: throw IllegalStateException("No SuspendPolicy for $value")
   }
 }

@@ -16,8 +16,7 @@
 
 package com.android.jdwppacket
 
-data class VariableTableWithGenericCmd(val refType: Long, val methodID: Long) :
-  Cmd(Method.VariableTableWithGeneric) {
+data class VariableTableWithGenericCmd(val refType: Long, val methodID: Long) : Cmd(Method.VariableTableWithGeneric) {
 
   override fun paramsKey(): String {
     return "$refType-$methodID"

@@ -29,11 +29,5 @@ class IDSizes(
 
   constructor(
     idSizes: IDSizesReply
-  ) : this(
-    idSizes.fieldIDSize,
-    idSizes.methodIDSize,
-    idSizes.objectIDSize,
-    idSizes.referenceTypeIDSize,
-    idSizes.frameIDSize,
-  )
+  ) : this(idSizes.fieldIDSize, idSizes.methodIDSize, idSizes.objectIDSize, idSizes.referenceTypeIDSize, idSizes.frameIDSize)
 }
