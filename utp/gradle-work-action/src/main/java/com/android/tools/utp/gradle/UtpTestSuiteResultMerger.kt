@@ -21,77 +21,72 @@ import com.google.testing.platform.proto.api.core.TestStatusProto.TestStatus
 import com.google.testing.platform.proto.api.core.TestSuiteResultProto
 import com.google.testing.platform.proto.api.core.TestSuiteResultProto.TestSuiteResult
 
-/**
- * Merges multiple test suite results into a single test suite result proto message.
- */
+/** Merges multiple test suite results into a single test suite result proto message. */
 class UtpTestSuiteResultMerger {
-    private val builder: TestSuiteResult.Builder = TestSuiteResult.newBuilder()
+  private val builder: TestSuiteResult.Builder = TestSuiteResult.newBuilder()
 
-    /**
-     * Returns the merged test suite result.
-     */
-    val result: TestSuiteResult
-        get() = builder.build()
+  /** Returns the merged test suite result. */
+  val result: TestSuiteResult
+    get() = builder.build()
 
-    /**
-     * Merges a given test suite result.
-     */
-    fun merge(testSuiteResult: TestSuiteResult) {
-        mergeTestSuiteMetaData(testSuiteResult.testSuiteMetaData)
-        mergeTestStatus(testSuiteResult.testStatus)
-        builder.addAllTestResult(testSuiteResult.testResultList)
-        mergePlatformError(testSuiteResult.platformError)
-        builder.addAllOutputArtifact(testSuiteResult.outputArtifactList)
-        builder.addAllIssue(testSuiteResult.issueList)
+  /** Merges a given test suite result. */
+  fun merge(testSuiteResult: TestSuiteResult) {
+    mergeTestSuiteMetaData(testSuiteResult.testSuiteMetaData)
+    mergeTestStatus(testSuiteResult.testStatus)
+    builder.addAllTestResult(testSuiteResult.testResultList)
+    mergePlatformError(testSuiteResult.platformError)
+    builder.addAllOutputArtifact(testSuiteResult.outputArtifactList)
+    builder.addAllIssue(testSuiteResult.issueList)
+  }
+
+  private fun mergePlatformError(platformError: PlatformErrorProto.PlatformError) {
+    if (platformError.errorsCount > 0) {
+      builder.platformErrorBuilder.addAllErrors(platformError.errorsList)
     }
+  }
 
-    private fun mergePlatformError(platformError: PlatformErrorProto.PlatformError) {
-        if (platformError.errorsCount > 0) {
-           builder.platformErrorBuilder.addAllErrors(platformError.errorsList)
+  private fun mergeTestSuiteMetaData(metadata: TestSuiteResultProto.TestSuiteMetaData) {
+    metadata.testSuiteName.let {
+      if (it.isNotBlank()) {
+        builder.testSuiteMetaDataBuilder.testSuiteName = it
+      }
+    }
+    builder.testSuiteMetaDataBuilder.scheduledTestCaseCount += metadata.scheduledTestCaseCount
+  }
+
+  private fun mergeTestStatus(testStatus: TestStatus) {
+    builder.testStatus =
+      when (builder.testStatus) {
+        TestStatus.TEST_STATUS_UNSPECIFIED,
+        TestStatus.UNRECOGNIZED,
+        TestStatus.SKIPPED,
+        TestStatus.IGNORED,
+        TestStatus.IN_PROGRESS,
+        TestStatus.STARTED -> {
+          testStatus
         }
-    }
-
-    private fun mergeTestSuiteMetaData(metadata: TestSuiteResultProto.TestSuiteMetaData) {
-        metadata.testSuiteName.let {
-            if (it.isNotBlank()) {
-                builder.testSuiteMetaDataBuilder.testSuiteName = it
-            }
-        }
-        builder.testSuiteMetaDataBuilder.scheduledTestCaseCount += metadata.scheduledTestCaseCount
-    }
-
-    private fun mergeTestStatus(testStatus: TestStatus) {
-        builder.testStatus = when(builder.testStatus) {
+        TestStatus.PASSED -> {
+          when (testStatus) {
             TestStatus.TEST_STATUS_UNSPECIFIED,
             TestStatus.UNRECOGNIZED,
             TestStatus.SKIPPED,
             TestStatus.IGNORED,
-            TestStatus.IN_PROGRESS,
             TestStatus.STARTED -> {
-                testStatus
+              builder.testStatus
             }
-            TestStatus.PASSED -> {
-                when(testStatus) {
-                    TestStatus.TEST_STATUS_UNSPECIFIED,
-                    TestStatus.UNRECOGNIZED,
-                    TestStatus.SKIPPED,
-                    TestStatus.IGNORED,
-                    TestStatus.STARTED-> {
-                        builder.testStatus
-                    }
-                    else -> {
-                        testStatus
-                    }
-                }
+            else -> {
+              testStatus
             }
-            TestStatus.FAILED -> {
-                builder.testStatus
-            }
-            TestStatus.ERROR,
-            TestStatus.ABORTED,
-            TestStatus.CANCELLED -> {
-                testStatus
-            }
+          }
         }
-    }
+        TestStatus.FAILED -> {
+          builder.testStatus
+        }
+        TestStatus.ERROR,
+        TestStatus.ABORTED,
+        TestStatus.CANCELLED -> {
+          testStatus
+        }
+      }
+  }
 }

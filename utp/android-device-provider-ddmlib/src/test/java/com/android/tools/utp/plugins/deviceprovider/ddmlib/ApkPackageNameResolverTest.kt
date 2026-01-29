@@ -24,61 +24,54 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.mockito.Mock
-import org.mockito.Mockito.`when`
 import org.mockito.Mockito.any
 import org.mockito.Mockito.anyMap
 import org.mockito.Mockito.isNull
+import org.mockito.Mockito.`when`
 import org.mockito.junit.MockitoJUnit
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.quality.Strictness
 
-/**
- * Unit tests for [ApkPackageNameResolver].
- */
+/** Unit tests for [ApkPackageNameResolver]. */
 class ApkPackageNameResolverTest {
-    @get:Rule val mockitoJUnitRule = MockitoJUnit.rule().strictness(Strictness.STRICT_STUBS)
+  @get:Rule val mockitoJUnitRule = MockitoJUnit.rule().strictness(Strictness.STRICT_STUBS)
 
-    @Mock
-    private lateinit var mockSubprocessComponent: SubprocessComponent
-    @Mock
-    private lateinit var mockSubprocess: Subprocess
+  @Mock private lateinit var mockSubprocessComponent: SubprocessComponent
+  @Mock private lateinit var mockSubprocess: Subprocess
 
-    @Before
-    fun setUpMocks() {
-        `when`(mockSubprocessComponent.subprocess()).thenReturn(mockSubprocess)
+  @Before
+  fun setUpMocks() {
+    `when`(mockSubprocessComponent.subprocess()).thenReturn(mockSubprocess)
+  }
+
+  private fun getPackageNameFromApk(aaptOutput: String): String? {
+    `when`(mockSubprocess.executeAsync(eq(listOf("aaptPath", "dump", "badging", "apkPath")), anyMap(), any(), isNull())).then {
+      val stdoutProcessor: (String) -> Unit = it.getArgument(2)
+      stdoutProcessor(aaptOutput)
+      mock<Handle>()
     }
+    val resolver = ApkPackageNameResolver("aaptPath", mockSubprocessComponent)
+    return resolver.getPackageNameFromApk("apkPath")
+  }
 
-    private fun getPackageNameFromApk(
-        aaptOutput: String
-    ): String? {
-        `when`(mockSubprocess.executeAsync(
-            eq(listOf("aaptPath", "dump", "badging", "apkPath")),
-            anyMap(),
-            any(),
-            isNull()
-        )).then {
-            val stdoutProcessor: (String) -> Unit = it.getArgument(2)
-            stdoutProcessor(aaptOutput)
-            mock<Handle>()
-        }
-        val resolver = ApkPackageNameResolver("aaptPath", mockSubprocessComponent)
-        return resolver.getPackageNameFromApk("apkPath")
-    }
+  @Test
+  fun packageNameFound() {
+    val packageName =
+      getPackageNameFromApk(
+        """
+        package: name='com.example.myapplication' versionCode='1' versionName='1.0' compileSdkVersion='30' compileSdkVersionCodename='11'
+        """
+          .trimIndent()
+      )
 
-    @Test
-    fun packageNameFound() {
-        val packageName = getPackageNameFromApk("""
-            package: name='com.example.myapplication' versionCode='1' versionName='1.0' compileSdkVersion='30' compileSdkVersionCodename='11'
-        """.trimIndent())
+    assertThat(packageName).isEqualTo("com.example.myapplication")
+  }
 
-        assertThat(packageName).isEqualTo("com.example.myapplication")
-    }
+  @Test
+  fun packageNameNotFound() {
+    val packageName = getPackageNameFromApk("")
 
-    @Test
-    fun packageNameNotFound() {
-        val packageName = getPackageNameFromApk("")
-
-        assertThat(packageName).isNull()
-    }
+    assertThat(packageName).isNull()
+  }
 }

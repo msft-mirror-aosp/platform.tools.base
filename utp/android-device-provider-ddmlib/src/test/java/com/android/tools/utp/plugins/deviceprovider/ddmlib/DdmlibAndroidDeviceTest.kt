@@ -34,94 +34,104 @@ import org.mockito.junit.MockitoJUnit
 import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
 
-/**
- * Unit tests for [DdmlibAndroidDevice].
- */
+/** Unit tests for [DdmlibAndroidDevice]. */
 class DdmlibAndroidDeviceTest {
 
-    @get:Rule val mockitoJUnitRule = MockitoJUnit.rule()
+  @get:Rule val mockitoJUnitRule = MockitoJUnit.rule()
 
-    @Mock
-    private lateinit var mockIDevice: IDevice
-    @Mock
-    private lateinit var mockAvdData: AvdData
+  @Mock private lateinit var mockIDevice: IDevice
+  @Mock private lateinit var mockAvdData: AvdData
 
-    @Before
-    fun setUpMocks() {
-        `when`(mockIDevice.avdData).thenReturn(Futures.immediateFuture(mockAvdData))
-        `when`(mockAvdData.name).thenReturn("mockAvdName")
+  @Before
+  fun setUpMocks() {
+    `when`(mockIDevice.avdData).thenReturn(Futures.immediateFuture(mockAvdData))
+    `when`(mockAvdData.name).thenReturn("mockAvdName")
+  }
+
+  @Test
+  fun physicalDevice() {
+    `when`(mockIDevice.isEmulator).thenReturn(false)
+
+    val device = DdmlibAndroidDevice(mockIDevice)
+
+    assertThat(device.type).isEqualTo(Device.DeviceType.PHYSICAL)
+  }
+
+  @Test
+  fun virtualDevice() {
+    `when`(mockIDevice.isEmulator).thenReturn(true)
+
+    val device = DdmlibAndroidDevice(mockIDevice)
+
+    assertThat(device.type).isEqualTo(Device.DeviceType.VIRTUAL)
+    assertThat(device.properties.avdName).isEqualTo("mockAvdName")
+  }
+
+  @Test
+  fun serial() {
+    `when`(mockIDevice.serialNumber).thenReturn("serial-1234")
+
+    val device = DdmlibAndroidDevice(mockIDevice)
+
+    assertThat(device.serial).isEqualTo("serial-1234")
+  }
+
+  @Test
+  fun properties() {
+    fun MultiLineReceiver.addOutput(message: String) {
+      val bytes = message.toByteArray()
+      addOutput(bytes, 0, bytes.size)
+      flush()
     }
-
-    @Test
-    fun physicalDevice() {
-        `when`(mockIDevice.isEmulator).thenReturn(false)
-
-        val device = DdmlibAndroidDevice(mockIDevice)
-
-        assertThat(device.type).isEqualTo(Device.DeviceType.PHYSICAL)
+    `when`(mockIDevice.executeShellCommand(eq("printenv"), any())).then {
+      it
+        .getArgument<MultiLineReceiver>(1)
+        .addOutput(
+          """
+          _=/system/bin/printenv
+          ANDROID_DATA=/data
+          DOWNLOAD_CACHE=/data/cache
+          """
+            .trimIndent()
+        )
     }
-
-    @Test
-    fun virtualDevice() {
-        `when`(mockIDevice.isEmulator).thenReturn(true)
-
-        val device = DdmlibAndroidDevice(mockIDevice)
-
-        assertThat(device.type).isEqualTo(Device.DeviceType.VIRTUAL)
-        assertThat(device.properties.avdName).isEqualTo("mockAvdName")
-    }
-
-    @Test
-    fun serial() {
-        `when`(mockIDevice.serialNumber).thenReturn("serial-1234")
-
-        val device = DdmlibAndroidDevice(mockIDevice)
-
-        assertThat(device.serial).isEqualTo("serial-1234")
-    }
-
-    @Test
-    fun properties() {
-        fun MultiLineReceiver.addOutput(message: String) {
-            val bytes = message.toByteArray()
-            addOutput(bytes, 0, bytes.size)
-            flush()
-        }
-        `when`(mockIDevice.executeShellCommand(eq("printenv"), any())).then {
-            it.getArgument<MultiLineReceiver>(1).addOutput("""
-                _=/system/bin/printenv
-                ANDROID_DATA=/data
-                DOWNLOAD_CACHE=/data/cache
-            """.trimIndent())
-        }
-        `when`(mockIDevice.executeShellCommand(eq("getprop"), any())).then {
-            it.getArgument<MultiLineReceiver>(1).addOutput("""
-                [dalvik.vm.appimageformat]: [lz4]
-                [dalvik.vm.dex2oat-Xms]: [64m]
-                [dalvik.vm.dex2oat-Xmx]: [512m]
-            """.trimIndent())
-        }
-
-        val device = DdmlibAndroidDevice(mockIDevice)
-
-        assertThat(device.properties.map).containsExactly(
-                "_", "/system/bin/printenv",
-                "ANDROID_DATA", "/data",
-                "DOWNLOAD_CACHE", "/data/cache",
-                "dalvik.vm.appimageformat", "lz4",
-                "dalvik.vm.dex2oat-Xms", "64m",
-                "dalvik.vm.dex2oat-Xmx", "512m",
+    `when`(mockIDevice.executeShellCommand(eq("getprop"), any())).then {
+      it
+        .getArgument<MultiLineReceiver>(1)
+        .addOutput(
+          """
+          [dalvik.vm.appimageformat]: [lz4]
+          [dalvik.vm.dex2oat-Xms]: [64m]
+          [dalvik.vm.dex2oat-Xmx]: [512m]
+          """
+            .trimIndent()
         )
     }
 
-    @Test
-    fun testInstallPackages() {
-        doNothing(). `when`(mockIDevice).installPackages(
-            Mockito.anyList(),
-            Mockito.anyBoolean(),
-            Mockito.anyList())
-        val device = DdmlibAndroidDevice(mockIDevice)
-        device.installPackages(listOf(), true, listOf())
-        verify(mockIDevice).installPackages(listOf(), true, listOf())
-    }
+    val device = DdmlibAndroidDevice(mockIDevice)
+
+    assertThat(device.properties.map)
+      .containsExactly(
+        "_",
+        "/system/bin/printenv",
+        "ANDROID_DATA",
+        "/data",
+        "DOWNLOAD_CACHE",
+        "/data/cache",
+        "dalvik.vm.appimageformat",
+        "lz4",
+        "dalvik.vm.dex2oat-Xms",
+        "64m",
+        "dalvik.vm.dex2oat-Xmx",
+        "512m",
+      )
+  }
+
+  @Test
+  fun testInstallPackages() {
+    doNothing().`when`(mockIDevice).installPackages(Mockito.anyList(), Mockito.anyBoolean(), Mockito.anyList())
+    val device = DdmlibAndroidDevice(mockIDevice)
+    device.installPackages(listOf(), true, listOf())
+    verify(mockIDevice).installPackages(listOf(), true, listOf())
+  }
 }

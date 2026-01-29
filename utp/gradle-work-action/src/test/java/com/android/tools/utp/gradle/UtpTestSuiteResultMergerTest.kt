@@ -22,81 +22,94 @@ import com.google.testing.platform.proto.api.core.TestStatusProto.TestStatus
 import com.google.testing.platform.proto.api.core.TestSuiteResultProto.TestSuiteResult
 import org.junit.Test
 
-/**
- * Unit tests for [UtpTestSuiteResultMerger].
- */
+/** Unit tests for [UtpTestSuiteResultMerger]. */
 class UtpTestSuiteResultMergerTest {
-    private fun merge(vararg results: TestSuiteResult): TestSuiteResult {
-        val merger = UtpTestSuiteResultMerger()
-        results.forEach(merger::merge)
-        return merger.result
-    }
+  private fun merge(vararg results: TestSuiteResult): TestSuiteResult {
+    val merger = UtpTestSuiteResultMerger()
+    results.forEach(merger::merge)
+    return merger.result
+  }
 
-    private val passedResult = TextFormat.parse("""
-            test_suite_meta_data {
-              scheduled_test_case_count: 1
-            }
-            test_status: PASSED
-            test_result {
-              test_case {
-                test_class: "ExamplePassedInstrumentedTest"
-                test_package: "com.example.application"
-                test_method: "useAppContext"
-              }
-              test_status: PASSED
-            }
-        """.trimIndent(), TestSuiteResult::class.java)
+  private val passedResult =
+    TextFormat.parse(
+      """
+      test_suite_meta_data {
+        scheduled_test_case_count: 1
+      }
+      test_status: PASSED
+      test_result {
+        test_case {
+          test_class: "ExamplePassedInstrumentedTest"
+          test_package: "com.example.application"
+          test_method: "useAppContext"
+        }
+        test_status: PASSED
+      }
+      """
+        .trimIndent(),
+      TestSuiteResult::class.java,
+    )
 
-    private val skippedResult = TextFormat.parse("""
-            test_suite_meta_data {
-              scheduled_test_case_count: 1
-            }
-            test_status: SKIPPED
-            test_result {
-              test_case {
-                test_class: "ExampleSkippedInstrumentedTest"
-                test_package: "com.example.application"
-                test_method: "useAppContext"
-              }
-              test_status: SKIPPED
-            }
-        """.trimIndent(), TestSuiteResult::class.java)
+  private val skippedResult =
+    TextFormat.parse(
+      """
+      test_suite_meta_data {
+        scheduled_test_case_count: 1
+      }
+      test_status: SKIPPED
+      test_result {
+        test_case {
+          test_class: "ExampleSkippedInstrumentedTest"
+          test_package: "com.example.application"
+          test_method: "useAppContext"
+        }
+        test_status: SKIPPED
+      }
+      """
+        .trimIndent(),
+      TestSuiteResult::class.java,
+    )
 
-    private val failedResult = TextFormat.parse("""
-            test_suite_meta_data {
-              scheduled_test_case_count: 1
-            }
-            test_status: FAILED
-            test_result {
-              test_case {
-                test_class: "ExampleFailedInstrumentedTest"
-                test_package: "com.example.application"
-                test_method: "useAppContext"
-              }
-              test_status: FAILED
-            }
-        """.trimIndent(), TestSuiteResult::class.java)
+  private val failedResult =
+    TextFormat.parse(
+      """
+      test_suite_meta_data {
+        scheduled_test_case_count: 1
+      }
+      test_status: FAILED
+      test_result {
+        test_case {
+          test_class: "ExampleFailedInstrumentedTest"
+          test_package: "com.example.application"
+          test_method: "useAppContext"
+        }
+        test_status: FAILED
+      }
+      """
+        .trimIndent(),
+      TestSuiteResult::class.java,
+    )
 
-    @Test
-    fun mergeZeroResults() {
-        assertThat(merge()).isEqualTo(TestSuiteResult.getDefaultInstance())
-    }
+  @Test
+  fun mergeZeroResults() {
+    assertThat(merge()).isEqualTo(TestSuiteResult.getDefaultInstance())
+  }
 
-    @Test
-    fun mergePassedAndFailedResults() {
-        val mergedResult = merge(passedResult, failedResult)
+  @Test
+  fun mergePassedAndFailedResults() {
+    val mergedResult = merge(passedResult, failedResult)
 
-        assertThat(mergedResult.testStatus).isEqualTo(TestStatus.FAILED)
-        assertThat(mergedResult.testSuiteMetaData.scheduledTestCaseCount).isEqualTo(2)
-        assertThat(mergedResult.testResultList).hasSize(2)
-    }
+    assertThat(mergedResult.testStatus).isEqualTo(TestStatus.FAILED)
+    assertThat(mergedResult.testSuiteMetaData.scheduledTestCaseCount).isEqualTo(2)
+    assertThat(mergedResult.testResultList).hasSize(2)
+  }
 
-    @Test
-    fun mergePassedAndSkippedResults() {
-        val mergedResult = merge(passedResult, skippedResult)
+  @Test
+  fun mergePassedAndSkippedResults() {
+    val mergedResult = merge(passedResult, skippedResult)
 
-        assertThat(mergedResult.testStatus).isEqualTo(TestStatus.PASSED)
-        assertThat(mergedResult.testSuiteMetaData.scheduledTestCaseCount).isEqualTo(2)
-        assertThat(mergedResult.testResultList).hasSize(2)
-    }
+    assertThat(mergedResult.testStatus).isEqualTo(TestStatus.PASSED)
+    assertThat(mergedResult.testSuiteMetaData.scheduledTestCaseCount).isEqualTo(2)
+    assertThat(mergedResult.testResultList).hasSize(2)
+  }
 }

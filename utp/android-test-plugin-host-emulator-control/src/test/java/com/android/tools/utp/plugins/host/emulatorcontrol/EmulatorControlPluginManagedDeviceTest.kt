@@ -32,6 +32,12 @@ import com.google.testing.platform.proto.api.core.TestStatusProto.TestStatus
 import com.google.testing.platform.proto.api.core.TestSuiteResultProto.TestSuiteResult
 import com.google.testing.platform.runtime.android.device.AndroidDevice
 import com.google.testing.platform.runtime.android.device.AndroidDeviceProperties
+import java.io.File
+import java.nio.charset.StandardCharsets
+import java.nio.file.Files
+import java.nio.file.StandardOpenOption
+import java.util.UUID
+import java.util.concurrent.TimeUnit
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -44,199 +50,183 @@ import org.mockito.Mockito.verify
 import org.mockito.Mockito.`when`
 import org.mockito.MockitoAnnotations.openMocks
 import org.mockito.kotlin.any
-import java.io.File
-import java.nio.charset.StandardCharsets
-import java.nio.file.Files
-import java.nio.file.StandardOpenOption
-import java.util.UUID
-import java.util.concurrent.TimeUnit
 
-/**
- * Unit tests for [EmulatorAccess]
- */
+/** Unit tests for [EmulatorAccess] */
 @RunWith(JUnit4::class)
 class EmulatorControlPluginManagedDeviceTest {
 
-    private val appPackage = "dummyAppPackage"
+  private val appPackage = "dummyAppPackage"
 
-    @get:Rule
-    var tempFolder = TemporaryFolder()
+  @get:Rule var tempFolder = TemporaryFolder()
 
-    @Mock
-    private lateinit var mockDeviceController: DeviceController
+  @Mock private lateinit var mockDeviceController: DeviceController
 
-    @Mock
-    private lateinit var mockEvents: com.google.testing.platform.api.event.Events
+  @Mock private lateinit var mockEvents: com.google.testing.platform.api.event.Events
 
-    private lateinit var mockContext: Context
+  private lateinit var mockContext: Context
 
-    @Mock
-    private lateinit var mockTestCase: TestCase
+  @Mock private lateinit var mockTestCase: TestCase
 
-    private lateinit var emulatorControlPlugin: EmulatorControlPlugin
-    private lateinit var emulatorControlPluginConfig: EmulatorControlPluginProto.EmulatorControlPlugin
-    private lateinit var config: PluginConfigImpl
-    private lateinit var testResult: TestResult
-    private lateinit var failingTestResult: TestResult
-    private lateinit var testSuiteResult: TestSuiteResult
-    private val grpcPort = 8554
-    private lateinit var jwkFolder: File
-    private fun buildemulatorControlConfig(
-        configGrpcPort: Int = grpcPort,
-        jwtToken: String = "abc",
-        clientPrivateKeyFilePath: String = "",
-        clientCaFilePath: String = "",
-        trustedCa: String = "",
-        tlsPrefix: String = "/data/data/abc",
-        jwkPath: String = ""
-    ): EmulatorControlPluginProto.EmulatorControlPlugin {
-        return EmulatorControlPluginProto.EmulatorControlPlugin.newBuilder().apply {
-            emulatorGrpcPort = 0
-            token = ""
-            emulatorClientPrivateKeyFilePath = clientPrivateKeyFilePath
-            emulatorClientCaFilePath = clientCaFilePath
-            trustedCollectionRootPath = trustedCa
-            tlsCfgPrefix = tlsPrefix
-            jwkFile = ""
-        }.build()
+  private lateinit var emulatorControlPlugin: EmulatorControlPlugin
+  private lateinit var emulatorControlPluginConfig: EmulatorControlPluginProto.EmulatorControlPlugin
+  private lateinit var config: PluginConfigImpl
+  private lateinit var testResult: TestResult
+  private lateinit var failingTestResult: TestResult
+  private lateinit var testSuiteResult: TestSuiteResult
+  private val grpcPort = 8554
+  private lateinit var jwkFolder: File
+
+  private fun buildemulatorControlConfig(
+    configGrpcPort: Int = grpcPort,
+    jwtToken: String = "abc",
+    clientPrivateKeyFilePath: String = "",
+    clientCaFilePath: String = "",
+    trustedCa: String = "",
+    tlsPrefix: String = "/data/data/abc",
+    jwkPath: String = "",
+  ): EmulatorControlPluginProto.EmulatorControlPlugin {
+    return EmulatorControlPluginProto.EmulatorControlPlugin.newBuilder()
+      .apply {
+        emulatorGrpcPort = 0
+        token = ""
+        emulatorClientPrivateKeyFilePath = clientPrivateKeyFilePath
+        emulatorClientCaFilePath = clientCaFilePath
+        trustedCollectionRootPath = trustedCa
+        tlsCfgPrefix = tlsPrefix
+        jwkFile = ""
+      }
+      .build()
+  }
+
+  fun fakeContext(config: PluginConfigImpl) =
+    object : Context {
+      override fun get(key: String): kotlin.Any? =
+        when (key) {
+          Context.CONFIG_KEY -> config
+          Context.EVENTS_KEY -> mockEvents
+          else -> null
+        }
     }
 
-    fun fakeContext(config: PluginConfigImpl) =
-        object : Context {
-            override fun get(key: String): kotlin.Any? =
-                when (key) {
-                    Context.CONFIG_KEY -> config
-                    Context.EVENTS_KEY -> mockEvents
-                    else -> null
-                }
-        }
+  private fun buildConfig(emulatorControlPluginConfig: EmulatorControlPluginProto.EmulatorControlPlugin): PluginConfigImpl {
+    return PluginConfigImpl(
+      environmentProto = Environment.newBuilder().apply { outputDirBuilder.path = tempFolder.root.path }.build(),
+      testSetupProto = SetupProto.TestSetup.getDefaultInstance(),
+      androidSdkProto = AndroidSdkProto.AndroidSdk.getDefaultInstance(),
+      configProto = Any.pack(emulatorControlPluginConfig),
+    )
+  }
 
-    private fun buildConfig(emulatorControlPluginConfig: EmulatorControlPluginProto.EmulatorControlPlugin): PluginConfigImpl {
-        return PluginConfigImpl(
-            environmentProto = Environment.newBuilder().apply {
-                outputDirBuilder.path = tempFolder.root.path
-            }.build(),
-            testSetupProto = SetupProto.TestSetup.getDefaultInstance(),
-            androidSdkProto = AndroidSdkProto.AndroidSdk.getDefaultInstance(),
-            configProto = Any.pack(emulatorControlPluginConfig)
+  @Before
+  fun setup() {
+    openMocks(this)
+    `when`(mockDeviceController.getDevice())
+      .thenReturn(
+        AndroidDevice(
+          serial = "emulator-5554",
+          type = Device.DeviceType.VIRTUAL,
+          port = 5555,
+          emulatorPort = 5554,
+          serverPort = 5037,
+          properties = AndroidDeviceProperties(),
         )
+      )
+
+    jwkFolder = tempFolder.newFolder("jwks")
+    // First we write a "fake" discover file
+    // That indicate we have security features enabled
+    val discoveryDirectory = computeRegistrationDirectoryContainer()!!.resolve("avd/running/")
+    if (!discoveryDirectory.toFile().exists()) {
+      discoveryDirectory.toFile().mkdirs()
     }
-
-    @Before
-    fun setup() {
-        openMocks(this)
-        `when`(mockDeviceController.getDevice()).thenReturn(
-            AndroidDevice(
-                serial = "emulator-5554",
-                type = Device.DeviceType.VIRTUAL,
-                port = 5555,
-                emulatorPort = 5554,
-                serverPort = 5037,
-                properties = AndroidDeviceProperties()
-            )
-        )
-
-        jwkFolder = tempFolder.newFolder("jwks")
-        // First we write a "fake" discover file
-        // That indicate we have security features enabled
-        val discoveryDirectory = computeRegistrationDirectoryContainer()!!.resolve("avd/running/")
-        if (!discoveryDirectory.toFile().exists()) {
-            discoveryDirectory.toFile().mkdirs()
-        }
-        val filePath = discoveryDirectory.resolve("pid_123.ini")
-        val content = """
+    val filePath = discoveryDirectory.resolve("pid_123.ini")
+    val content =
+      """
             port.serial=5554
             grpc.port=1234
             grpc.jwks=${jwkFolder}
             grpc.allowlist=/unused/access.json
-        """.trimIndent()
-        Files.writeString(filePath, content, StandardCharsets.UTF_8, StandardOpenOption.CREATE)
+        """
+        .trimIndent()
+    Files.writeString(filePath, content, StandardCharsets.UTF_8, StandardOpenOption.CREATE)
 
-        emulatorControlPluginConfig = buildemulatorControlConfig(0)
-        config = buildConfig(emulatorControlPluginConfig)
-        mockContext = fakeContext(config)
-        //`when`(mockEvents.send(anyString(), any<ByteArray>())).thenReturn(Unit)
+    emulatorControlPluginConfig = buildemulatorControlConfig(0)
+    config = buildConfig(emulatorControlPluginConfig)
+    mockContext = fakeContext(config)
+    // `when`(mockEvents.send(anyString(), any<ByteArray>())).thenReturn(Unit)
 
-        testResult = TestResult.getDefaultInstance()
-        failingTestResult = TestResult.newBuilder().setTestStatus(
-            TestStatus.FAILED
-        ).build()
-        testSuiteResult = TestSuiteResult.getDefaultInstance()
-        emulatorControlPlugin = EmulatorControlPlugin()
-    }
+    testResult = TestResult.getDefaultInstance()
+    failingTestResult = TestResult.newBuilder().setTestStatus(TestStatus.FAILED).build()
+    testSuiteResult = TestSuiteResult.getDefaultInstance()
+    emulatorControlPlugin = EmulatorControlPlugin()
+  }
 
-    @Test
-    fun configure_ok() {
-        emulatorControlPlugin.configure(mockContext)
-        assertThat(emulatorControlPlugin.emulatorControlPluginConfig).isEqualTo(
-            emulatorControlPluginConfig
-        )
-    }
+  @Test
+  fun configure_ok() {
+    emulatorControlPlugin.configure(mockContext)
+    assertThat(emulatorControlPlugin.emulatorControlPluginConfig).isEqualTo(emulatorControlPluginConfig)
+  }
 
-    @Test
-    fun beforeAll_pushes_secrets_when_present() {
-        val fakeClientCa = tempFolder.root.path + File.separator + UUID.randomUUID().toString()
-        File(fakeClientCa).bufferedWriter().use { out -> out.write("fake-cert") }
-        val localEmulatorControlPluginConfig =
-            buildemulatorControlConfig(clientCaFilePath = fakeClientCa)
-        val localConfig = buildConfig(localEmulatorControlPluginConfig)
-        mockContext = fakeContext(localConfig)
-        emulatorControlPlugin.configure(mockContext)
-        emulatorControlPlugin.beforeAll(mockDeviceController)
+  @Test
+  fun beforeAll_pushes_secrets_when_present() {
+    val fakeClientCa = tempFolder.root.path + File.separator + UUID.randomUUID().toString()
+    File(fakeClientCa).bufferedWriter().use { out -> out.write("fake-cert") }
+    val localEmulatorControlPluginConfig = buildemulatorControlConfig(clientCaFilePath = fakeClientCa)
+    val localConfig = buildConfig(localEmulatorControlPluginConfig)
+    mockContext = fakeContext(localConfig)
+    emulatorControlPlugin.configure(mockContext)
+    emulatorControlPlugin.beforeAll(mockDeviceController)
 
-        // Only one secret was present, so only one secret was pushed.
-        verify(mockDeviceController).push(any()).times(1)
-    }
+    // Only one secret was present, so only one secret was pushed.
+    verify(mockDeviceController).push(any()).times(1)
+  }
 
-    @Test
-    fun beforeEach_touches_jwk() {
-        val localEmulatorControlPluginConfig = buildemulatorControlConfig()
-        val localConfig = buildConfig(localEmulatorControlPluginConfig)
-        mockContext = fakeContext(localConfig)
-        emulatorControlPlugin.configure(mockContext)
-        emulatorControlPlugin.beforeAll(mockDeviceController)
-        val jwk = jwkFolder.listFiles().first()
-        val modified = jwk.lastModified()
+  @Test
+  fun beforeEach_touches_jwk() {
+    val localEmulatorControlPluginConfig = buildemulatorControlConfig()
+    val localConfig = buildConfig(localEmulatorControlPluginConfig)
+    mockContext = fakeContext(localConfig)
+    emulatorControlPlugin.configure(mockContext)
+    emulatorControlPlugin.beforeAll(mockDeviceController)
+    val jwk = jwkFolder.listFiles().first()
+    val modified = jwk.lastModified()
 
-        // Wait a bit so we are sure we have a different timestamp.
-        TimeUnit.MILLISECONDS.sleep(10)
-        emulatorControlPlugin.beforeEach(mockTestCase, mockDeviceController)
+    // Wait a bit so we are sure we have a different timestamp.
+    TimeUnit.MILLISECONDS.sleep(10)
+    emulatorControlPlugin.beforeEach(mockTestCase, mockDeviceController)
 
-        // The fakejwk's timestamp should have been updated.
-        assertThat(jwk.lastModified()).isGreaterThan(modified)
-    }
+    // The fakejwk's timestamp should have been updated.
+    assertThat(jwk.lastModified()).isGreaterThan(modified)
+  }
 
-    @Test
-    fun afterAll_cleans_up_jwk() {
-        val localEmulatorControlPluginConfig = buildemulatorControlConfig(
-        )
-        val localConfig = buildConfig(localEmulatorControlPluginConfig)
-        mockContext = fakeContext(localConfig)
-        emulatorControlPlugin.configure(mockContext)
-        emulatorControlPlugin.beforeAll(mockDeviceController)
-        emulatorControlPlugin.afterAll(testSuiteResult, mockDeviceController)
+  @Test
+  fun afterAll_cleans_up_jwk() {
+    val localEmulatorControlPluginConfig = buildemulatorControlConfig()
+    val localConfig = buildConfig(localEmulatorControlPluginConfig)
+    mockContext = fakeContext(localConfig)
+    emulatorControlPlugin.configure(mockContext)
+    emulatorControlPlugin.beforeAll(mockDeviceController)
+    emulatorControlPlugin.afterAll(testSuiteResult, mockDeviceController)
 
-        // The fake jwk should have been deleted from disk, so our folder is empty
-        assertThat(jwkFolder.listFiles()).isEmpty()
-    }
+    // The fake jwk should have been deleted from disk, so our folder is empty
+    assertThat(jwkFolder.listFiles()).isEmpty()
+  }
 
-    @Test
-    fun afterAll_cleans_up_pushed_files() {
-        val fakeJwk = tempFolder.root.path + File.separator + UUID.randomUUID().toString()
-        File(fakeJwk).bufferedWriter().use { out -> out.write("fake-cert") }
+  @Test
+  fun afterAll_cleans_up_pushed_files() {
+    val fakeJwk = tempFolder.root.path + File.separator + UUID.randomUUID().toString()
+    File(fakeJwk).bufferedWriter().use { out -> out.write("fake-cert") }
 
-        assert(File(fakeJwk).exists())
-        val localEmulatorControlPluginConfig = buildemulatorControlConfig(
-            jwkPath = fakeJwk
-        )
-        val localConfig = buildConfig(localEmulatorControlPluginConfig)
-        mockContext = fakeContext(localConfig)
-        emulatorControlPlugin.configure(mockContext)
-        emulatorControlPlugin.afterAll(testSuiteResult, mockDeviceController)
+    assert(File(fakeJwk).exists())
+    val localEmulatorControlPluginConfig = buildemulatorControlConfig(jwkPath = fakeJwk)
+    val localConfig = buildConfig(localEmulatorControlPluginConfig)
+    mockContext = fakeContext(localConfig)
+    emulatorControlPlugin.configure(mockContext)
+    emulatorControlPlugin.afterAll(testSuiteResult, mockDeviceController)
 
-        // The fake certificates should have been deleted from disk.
-        // i.e. listOf<String>("shell", "rm", "/data/data/abc.cer", "/data/data/abc.cer",
-        //         "/data/data/abc.ca")
-        verify(mockDeviceController).execute(any(), isNull())
-    }
+    // The fake certificates should have been deleted from disk.
+    // i.e. listOf<String>("shell", "rm", "/data/data/abc.cer", "/data/data/abc.cer",
+    //         "/data/data/abc.ca")
+    verify(mockDeviceController).execute(any(), isNull())
+  }
 }

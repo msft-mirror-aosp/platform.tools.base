@@ -18,43 +18,37 @@ package com.android.tools.utp.plugins.deviceprovider.ddmlib
 
 import com.android.ddmlib.AndroidDebugBridge
 import com.android.ddmlib.IDevice
+import kotlin.math.min
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
-import kotlin.math.min
 
-/**
- * A device finder using a given [AndroidDebugBridge].
- */
+/** A device finder using a given [AndroidDebugBridge]. */
 class DdmlibAndroidDeviceFinder(private val adb: AndroidDebugBridge) {
-    companion object {
-        private const val DEFAULT_FIND_DEVICE_MAX_RETRY = 5
-        private const val DEFAULT_FIND_DEVICE_INITIAL_BACKOFF_SECONDS = 1L
-        private const val DEFAULT_FIND_DEVICE_MAX_BACKOFF_SECONDS = 30L
-        private const val DEFAULT_FIND_DEVICE_EXP_BACKOFF_BASE = 2L
-    }
+  companion object {
+    private const val DEFAULT_FIND_DEVICE_MAX_RETRY = 5
+    private const val DEFAULT_FIND_DEVICE_INITIAL_BACKOFF_SECONDS = 1L
+    private const val DEFAULT_FIND_DEVICE_MAX_BACKOFF_SECONDS = 30L
+    private const val DEFAULT_FIND_DEVICE_EXP_BACKOFF_BASE = 2L
+  }
 
-    /**
-     * Finds a device with a given [serial].
-     */
-    fun findDevice(
-            serial: String,
-            maxRetry: Int = DEFAULT_FIND_DEVICE_MAX_RETRY,
-            initialBackoffSeconds: Long = DEFAULT_FIND_DEVICE_INITIAL_BACKOFF_SECONDS,
-            maxBackoffSeconds: Long = DEFAULT_FIND_DEVICE_MAX_BACKOFF_SECONDS,
-            expBackoffBase: Long = DEFAULT_FIND_DEVICE_EXP_BACKOFF_BASE
-    ): IDevice? {
-        var backoffSeconds = min(initialBackoffSeconds, maxBackoffSeconds)
-        repeat(maxRetry) {
-            adb.devices.firstOrNull {
-                it.serialNumber == serial
-            }?.let {
-                return it
-            }
-            runBlocking {
-                delay(backoffSeconds * 1000)
-            }
-            backoffSeconds = min(backoffSeconds * expBackoffBase, maxBackoffSeconds)
+  /** Finds a device with a given [serial]. */
+  fun findDevice(
+    serial: String,
+    maxRetry: Int = DEFAULT_FIND_DEVICE_MAX_RETRY,
+    initialBackoffSeconds: Long = DEFAULT_FIND_DEVICE_INITIAL_BACKOFF_SECONDS,
+    maxBackoffSeconds: Long = DEFAULT_FIND_DEVICE_MAX_BACKOFF_SECONDS,
+    expBackoffBase: Long = DEFAULT_FIND_DEVICE_EXP_BACKOFF_BASE,
+  ): IDevice? {
+    var backoffSeconds = min(initialBackoffSeconds, maxBackoffSeconds)
+    repeat(maxRetry) {
+      adb.devices
+        .firstOrNull { it.serialNumber == serial }
+        ?.let {
+          return it
         }
-        return null
+      runBlocking { delay(backoffSeconds * 1000) }
+      backoffSeconds = min(backoffSeconds * expBackoffBase, maxBackoffSeconds)
     }
+    return null
+  }
 }

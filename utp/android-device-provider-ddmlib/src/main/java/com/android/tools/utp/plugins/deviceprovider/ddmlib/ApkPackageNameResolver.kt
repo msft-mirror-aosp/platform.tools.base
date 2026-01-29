@@ -18,31 +18,27 @@ package com.android.tools.utp.plugins.deviceprovider.ddmlib
 
 import com.google.testing.platform.lib.process.inject.SubprocessComponent
 
-/**
- * Resolves package names from APK file.
- */
-class ApkPackageNameResolver(
-    private val aaptPath: String,
-    private val subprocessComponent: SubprocessComponent) {
+/** Resolves package names from APK file. */
+class ApkPackageNameResolver(private val aaptPath: String, private val subprocessComponent: SubprocessComponent) {
 
-    companion object {
-        val packageNameRegex = "package:\\sname='(\\S*)'.*$".toRegex()
-    }
+  companion object {
+    val packageNameRegex = "package:\\sname='(\\S*)'.*$".toRegex()
+  }
 
-    /**
-     * Returns the package name of the given APK file. Returns null if it fails
-     * to resolve package name.
-     */
-    fun getPackageNameFromApk(apkPath: String): String? {
-        var packageName: String? = null
-        subprocessComponent.subprocess().executeAsync(
-            args = listOf(aaptPath, "dump", "badging", apkPath),
-            stdoutProcessor = {
-                if (packageNameRegex.matches(it)) {
-                    packageName = packageNameRegex.find(it)?.groupValues?.get(1)
-                }
-            }
-        ).waitFor()
-        return packageName
-    }
+  /** Returns the package name of the given APK file. Returns null if it fails to resolve package name. */
+  fun getPackageNameFromApk(apkPath: String): String? {
+    var packageName: String? = null
+    subprocessComponent
+      .subprocess()
+      .executeAsync(
+        args = listOf(aaptPath, "dump", "badging", apkPath),
+        stdoutProcessor = {
+          if (packageNameRegex.matches(it)) {
+            packageName = packageNameRegex.find(it)?.groupValues?.get(1)
+          }
+        },
+      )
+      .waitFor()
+    return packageName
+  }
 }

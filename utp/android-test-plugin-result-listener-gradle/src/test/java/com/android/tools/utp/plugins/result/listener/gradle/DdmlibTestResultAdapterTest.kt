@@ -26,98 +26,93 @@ import com.google.testing.platform.proto.api.core.TestSuiteResultProto.TestSuite
 import org.junit.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
-import org.mockito.kotlin.mock
 import org.mockito.kotlin.inOrder
+import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 
-/**
- * Unit tests for [DdmlibTestResultAdapter].
- */
+/** Unit tests for [DdmlibTestResultAdapter]. */
 class DdmlibTestResultAdapterTest {
-    private val mockDdmlibListener: XmlTestRunListener = mock()
+  private val mockDdmlibListener: XmlTestRunListener = mock()
 
-    private val adapter = DdmlibTestResultAdapter("runName", mockDdmlibListener)
+  private val adapter = DdmlibTestResultAdapter("runName", mockDdmlibListener)
 
-    @Test
-    fun testPassed() {
-        val resultProto = createResultProto("""
-            test_suite_meta_data {
-              scheduled_test_case_count: 1
-            }
-            test_result {
-              test_case {
-                test_class: "ExampleInstrumentedTest"
-                test_package: "com.example.application"
-                test_method: "useAppContext"
-              }
-              test_status: PASSED
-            }
-        """.trimIndent())
-
-        replayTestEvent(resultProto)
-
-        inOrder(mockDdmlibListener).apply {
-            verify(mockDdmlibListener).testRunStarted(eq("runName"), eq(1))
-            verify(mockDdmlibListener).testStarted(eq(TestIdentifier(
-                "com.example.application.ExampleInstrumentedTest",
-                "useAppContext")))
-            verify(mockDdmlibListener, never()).testFailed(any(), any())
-            verify(mockDdmlibListener).testEnded(
-                eq(TestIdentifier(
-                    "com.example.application.ExampleInstrumentedTest",
-                    "useAppContext")),
-                eq(mapOf()))
-            verify(mockDdmlibListener, never()).testRunFailed(any())
-            verify(mockDdmlibListener).testRunEnded(any(), eq(mapOf()))
-            verifyNoMoreInteractions()
+  @Test
+  fun testPassed() {
+    val resultProto =
+      createResultProto(
+        """
+        test_suite_meta_data {
+          scheduled_test_case_count: 1
         }
-    }
-
-    @Test
-    fun testFailed() {
-        val resultProto = createResultProto("""
-            test_suite_meta_data {
-              scheduled_test_case_count: 1
-            }
-            test_result {
-              test_case {
-                test_class: "ExampleInstrumentedTest"
-                test_package: "com.example.application"
-                test_method: "useAppContext"
-              }
-              test_status: FAILED
-              error {
-                stack_trace: "example error stacktrace"
-              }
-            }
-        """.trimIndent())
-
-        replayTestEvent(resultProto)
-
-        inOrder(mockDdmlibListener).apply {
-            verify(mockDdmlibListener).testRunStarted(eq("runName"), eq(1))
-            verify(mockDdmlibListener).testStarted(eq(TestIdentifier(
-                "com.example.application.ExampleInstrumentedTest",
-                "useAppContext")))
-            verify(mockDdmlibListener).testFailed(
-                eq(TestIdentifier(
-                    "com.example.application.ExampleInstrumentedTest",
-                    "useAppContext")),
-                eq("example error stacktrace"))
-            verify(mockDdmlibListener).testEnded(
-                eq(TestIdentifier(
-                    "com.example.application.ExampleInstrumentedTest",
-                    "useAppContext")),
-                eq(mapOf()))
-            verify(mockDdmlibListener).testRunFailed(eq("There was 1 failure(s)."))
-            verify(mockDdmlibListener).testRunEnded(any(), eq(mapOf()))
-            verifyNoMoreInteractions()
+        test_result {
+          test_case {
+            test_class: "ExampleInstrumentedTest"
+            test_package: "com.example.application"
+            test_method: "useAppContext"
+          }
+          test_status: PASSED
         }
-    }
+        """
+          .trimIndent()
+      )
 
-    @Test
-    fun testFailedByPlatformError() {
-        val resultProto = createResultProto("""
+    replayTestEvent(resultProto)
+
+    inOrder(mockDdmlibListener).apply {
+      verify(mockDdmlibListener).testRunStarted(eq("runName"), eq(1))
+      verify(mockDdmlibListener).testStarted(eq(TestIdentifier("com.example.application.ExampleInstrumentedTest", "useAppContext")))
+      verify(mockDdmlibListener, never()).testFailed(any(), any())
+      verify(mockDdmlibListener)
+        .testEnded(eq(TestIdentifier("com.example.application.ExampleInstrumentedTest", "useAppContext")), eq(mapOf()))
+      verify(mockDdmlibListener, never()).testRunFailed(any())
+      verify(mockDdmlibListener).testRunEnded(any(), eq(mapOf()))
+      verifyNoMoreInteractions()
+    }
+  }
+
+  @Test
+  fun testFailed() {
+    val resultProto =
+      createResultProto(
+        """
+        test_suite_meta_data {
+          scheduled_test_case_count: 1
+        }
+        test_result {
+          test_case {
+            test_class: "ExampleInstrumentedTest"
+            test_package: "com.example.application"
+            test_method: "useAppContext"
+          }
+          test_status: FAILED
+          error {
+            stack_trace: "example error stacktrace"
+          }
+        }
+        """
+          .trimIndent()
+      )
+
+    replayTestEvent(resultProto)
+
+    inOrder(mockDdmlibListener).apply {
+      verify(mockDdmlibListener).testRunStarted(eq("runName"), eq(1))
+      verify(mockDdmlibListener).testStarted(eq(TestIdentifier("com.example.application.ExampleInstrumentedTest", "useAppContext")))
+      verify(mockDdmlibListener)
+        .testFailed(eq(TestIdentifier("com.example.application.ExampleInstrumentedTest", "useAppContext")), eq("example error stacktrace"))
+      verify(mockDdmlibListener)
+        .testEnded(eq(TestIdentifier("com.example.application.ExampleInstrumentedTest", "useAppContext")), eq(mapOf()))
+      verify(mockDdmlibListener).testRunFailed(eq("There was 1 failure(s)."))
+      verify(mockDdmlibListener).testRunEnded(any(), eq(mapOf()))
+      verifyNoMoreInteractions()
+    }
+  }
+
+  @Test
+  fun testFailedByPlatformError() {
+    val resultProto =
+      createResultProto(
+        """
             test_status: ERROR
             platform_error {
               errors {
@@ -137,22 +132,26 @@ class DdmlibTestResultAdapterTest {
                 }
               }
             }
-        """)
+        """
+      )
 
-        replayTestEvent(resultProto)
+    replayTestEvent(resultProto)
 
-        inOrder(mockDdmlibListener).apply {
-            verify(mockDdmlibListener).addSystemError(eq(
-                "Failed trying to provide device controller.\n" +
-                        "Gradle was unable to attach one or more devices to the adb server.\n\n"))
-            verify(mockDdmlibListener).testRunEnded(any(), eq(mapOf()))
-            verifyNoMoreInteractions()
-        }
+    inOrder(mockDdmlibListener).apply {
+      verify(mockDdmlibListener)
+        .addSystemError(
+          eq("Failed trying to provide device controller.\n" + "Gradle was unable to attach one or more devices to the adb server.\n\n")
+        )
+      verify(mockDdmlibListener).testRunEnded(any(), eq(mapOf()))
+      verifyNoMoreInteractions()
     }
+  }
 
-    @Test
-    fun testFailedByProcessCrash() {
-        val resultProto = createResultProto("""
+  @Test
+  fun testFailedByProcessCrash() {
+    val resultProto =
+      createResultProto(
+        """
             test_status: FAILED
             issue {
               namespace {
@@ -163,21 +162,23 @@ class DdmlibTestResultAdapterTest {
               name: "INSTRUMENTATION_FAILED"
               message: "Test run failed to complete. Instrumentation run failed due to Process crashed."
             }
-        """)
+        """
+      )
 
-        replayTestEvent(resultProto)
+    replayTestEvent(resultProto)
 
-        inOrder(mockDdmlibListener).apply {
-            verify(mockDdmlibListener).addSystemError(eq(
-                "Test run failed to complete. Instrumentation run failed due to Process crashed.\n"))
-            verify(mockDdmlibListener).testRunEnded(any(), eq(mapOf()))
-            verifyNoMoreInteractions()
-        }
+    inOrder(mockDdmlibListener).apply {
+      verify(mockDdmlibListener).addSystemError(eq("Test run failed to complete. Instrumentation run failed due to Process crashed.\n"))
+      verify(mockDdmlibListener).testRunEnded(any(), eq(mapOf()))
+      verifyNoMoreInteractions()
     }
+  }
 
-    @Test
-    fun getPlatformErrorMessageShouldReturnErrorMessage() {
-        val resultProto = createResultProto("""
+  @Test
+  fun getPlatformErrorMessageShouldReturnErrorMessage() {
+    val resultProto =
+      createResultProto(
+        """
             test_status: ERROR
             platform_error {
               errors {
@@ -199,19 +200,26 @@ class DdmlibTestResultAdapterTest {
                 }
               }
             }
-        """)
+        """
+      )
 
-        assertThat(getPlatformErrorMessage(resultProto)).contains("""
-            Failed trying to provide device controller.
-            Gradle was unable to attach one or more devices to the adb server.
-            stacktrace line1
-            stacktrace line2
-            """.trimIndent())
-    }
+    assertThat(getPlatformErrorMessage(resultProto))
+      .contains(
+        """
+        Failed trying to provide device controller.
+        Gradle was unable to attach one or more devices to the adb server.
+        stacktrace line1
+        stacktrace line2
+        """
+          .trimIndent()
+      )
+  }
 
-    @Test
-    fun getPlatformErrorMessageShouldReturnErrorMessageEvenIfErrorMessageIsMissingInProto() {
-        val resultProto = createResultProto("""
+  @Test
+  fun getPlatformErrorMessageShouldReturnErrorMessageEvenIfErrorMessageIsMissingInProto() {
+    val resultProto =
+      createResultProto(
+        """
             test_status: ERROR
             platform_error {
               errors {
@@ -232,46 +240,67 @@ class DdmlibTestResultAdapterTest {
                 }
               }
             }
-        """)
+        """
+      )
 
-        assertThat(getPlatformErrorMessage(resultProto)).contains("""
-            Failed trying to provide device controller.
-            Unknown platform error occurred when running the UTP test suite. Please check logs for details.
-            stacktrace line1
-            stacktrace line2
-            """.trimIndent())
-    }
+    assertThat(getPlatformErrorMessage(resultProto))
+      .contains(
+        """
+        Failed trying to provide device controller.
+        Unknown platform error occurred when running the UTP test suite. Please check logs for details.
+        stacktrace line1
+        stacktrace line2
+        """
+          .trimIndent()
+      )
+  }
 
-    private fun replayTestEvent(testSuiteResult: TestSuiteResult) {
-        adapter.onTestResultEvent(TestResultEvent.newBuilder().apply {
-            testSuiteStartedBuilder.apply {
-                deviceId = "mockDeviceSerialNumber"
-                testSuiteMetadata = Any.pack(testSuiteResult.testSuiteMetaData)
-            }
-        }.build())
-        testSuiteResult.testResultList.forEach { testResult ->
-            adapter.onTestResultEvent(TestResultEvent.newBuilder().apply {
-                testCaseStartedBuilder.apply {
-                    deviceId = "mockDeviceSerialNumber"
-                    testCase = Any.pack(testResult.testCase)
-                }
-            }.build())
-            adapter.onTestResultEvent(TestResultEvent.newBuilder().apply {
-                testCaseFinishedBuilder.apply {
-                    deviceId = "mockDeviceSerialNumber"
-                    testCaseResult = Any.pack(testResult)
-                }
-            }.build())
+  private fun replayTestEvent(testSuiteResult: TestSuiteResult) {
+    adapter.onTestResultEvent(
+      TestResultEvent.newBuilder()
+        .apply {
+          testSuiteStartedBuilder.apply {
+            deviceId = "mockDeviceSerialNumber"
+            testSuiteMetadata = Any.pack(testSuiteResult.testSuiteMetaData)
+          }
         }
-        adapter.onTestResultEvent(TestResultEvent.newBuilder().apply {
-            testSuiteFinishedBuilder.apply {
-                deviceId = "mockDeviceSerialNumber"
-                this.testSuiteResult = Any.pack(testSuiteResult)
+        .build()
+    )
+    testSuiteResult.testResultList.forEach { testResult ->
+      adapter.onTestResultEvent(
+        TestResultEvent.newBuilder()
+          .apply {
+            testCaseStartedBuilder.apply {
+              deviceId = "mockDeviceSerialNumber"
+              testCase = Any.pack(testResult.testCase)
             }
-        }.build())
+          }
+          .build()
+      )
+      adapter.onTestResultEvent(
+        TestResultEvent.newBuilder()
+          .apply {
+            testCaseFinishedBuilder.apply {
+              deviceId = "mockDeviceSerialNumber"
+              testCaseResult = Any.pack(testResult)
+            }
+          }
+          .build()
+      )
     }
+    adapter.onTestResultEvent(
+      TestResultEvent.newBuilder()
+        .apply {
+          testSuiteFinishedBuilder.apply {
+            deviceId = "mockDeviceSerialNumber"
+            this.testSuiteResult = Any.pack(testSuiteResult)
+          }
+        }
+        .build()
+    )
+  }
 
-    private fun createResultProto(asciiProto: String): TestSuiteResult {
-        return TextFormat.parse(asciiProto, TestSuiteResult::class.java)
-    }
+  private fun createResultProto(asciiProto: String): TestSuiteResult {
+    return TextFormat.parse(asciiProto, TestSuiteResult::class.java)
+  }
 }

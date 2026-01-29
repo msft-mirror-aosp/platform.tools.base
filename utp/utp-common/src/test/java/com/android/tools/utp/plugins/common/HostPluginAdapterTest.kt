@@ -28,51 +28,43 @@ import org.mockito.Mockito.verify
 
 class HostPluginAdapterTest {
 
-    class TestHostPlugin : HostPluginAdapter() {
-        override fun configure(context: Context) = Unit
+  class TestHostPlugin : HostPluginAdapter() {
+    override fun configure(context: Context) = Unit
 
-        override fun beforeEach(
-                testCase: TestCaseProto.TestCase?,
-                deviceController: DeviceController
-        ) = Unit
+    override fun beforeEach(testCase: TestCaseProto.TestCase?, deviceController: DeviceController) = Unit
 
-        override fun beforeAll(deviceController: DeviceController) = Unit
+    override fun beforeAll(deviceController: DeviceController) = Unit
 
-        override fun afterEachWithReturn(
-                testResult: TestResult,
-                deviceController: DeviceController,
-                cancelled: Boolean
-        ): TestResult {
-            deviceController.getDevice()
-            return testResult
-        }
-
-        override fun afterAllWithReturn(
-                testSuiteResult: TestSuiteResult,
-                deviceController: DeviceController,
-                cancelled: Boolean
-        ): TestSuiteResult {
-            deviceController.getDevice()
-            return testSuiteResult
-        }
-
-        override fun canRun(): Boolean = true
+    override fun afterEachWithReturn(testResult: TestResult, deviceController: DeviceController, cancelled: Boolean): TestResult {
+      deviceController.getDevice()
+      return testResult
     }
 
-    private val mockPlugin = TestHostPlugin()
-
-    private val mockTestResult = TestResult.newBuilder().build()
-
-    private val mockTestSuiteResult = TestSuiteResult.newBuilder().build()
-
-    private val mockDeviceController= mock(DeviceController::class.java)
-
-    @Test
-    fun testFunWithReturnIsCalled() {
-        mockPlugin.afterEach(mockTestResult, mockDeviceController)
-        verify(mockDeviceController, times(1)).getDevice()
-        mockPlugin.afterAll(mockTestSuiteResult, mockDeviceController)
-        verify(mockDeviceController, times(2)).getDevice()
+    override fun afterAllWithReturn(
+      testSuiteResult: TestSuiteResult,
+      deviceController: DeviceController,
+      cancelled: Boolean,
+    ): TestSuiteResult {
+      deviceController.getDevice()
+      return testSuiteResult
     }
+
+    override fun canRun(): Boolean = true
+  }
+
+  private val mockPlugin = TestHostPlugin()
+
+  private val mockTestResult = TestResult.newBuilder().build()
+
+  private val mockTestSuiteResult = TestSuiteResult.newBuilder().build()
+
+  private val mockDeviceController = mock(DeviceController::class.java)
+
+  @Test
+  fun testFunWithReturnIsCalled() {
+    mockPlugin.afterEach(mockTestResult, mockDeviceController)
+    verify(mockDeviceController, times(1)).getDevice()
+    mockPlugin.afterAll(mockTestSuiteResult, mockDeviceController)
+    verify(mockDeviceController, times(2)).getDevice()
+  }
 }
-
