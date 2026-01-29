@@ -527,6 +527,7 @@ DATA = [
     "com.android.fused-library:com.android.fused-library.gradle.plugin:pom:8.13.0",
     "com.android.fused-library:com.android.fused-library.gradle.plugin:pom:8.9.0",
     "com.android.fused-library:com.android.fused-library.gradle.plugin:pom:9.0.0-beta01",
+    "com.android.kotlin.multiplatform.library:com.android.kotlin.multiplatform.library.gradle.plugin:pom:9.0.0-beta01",
     "com.android.library:com.android.library.gradle.plugin:pom:7.2.0",
     "com.android.library:com.android.library.gradle.plugin:pom:7.4.0",  # Dependency of architecture-samples
     "com.android.library:com.android.library.gradle.plugin:pom:7.4.1",
@@ -1279,6 +1280,7 @@ DATA = [
     "org.jetbrains.kotlin:kotlin-test-junit:2.3.20-Beta1",  # Used by AGP tests
     "org.jetbrains.kotlin.multiplatform:org.jetbrains.kotlin.multiplatform.gradle.plugin:pom:1.8.21",
     "org.jetbrains.kotlin.multiplatform:org.jetbrains.kotlin.multiplatform.gradle.plugin:pom:1.9.23",
+    "org.jetbrains.kotlin.multiplatform:org.jetbrains.kotlin.multiplatform.gradle.plugin:pom:2.1.20",  # Used by gradle-recipes
     "org.jetbrains.kotlin.multiplatform:org.jetbrains.kotlin.multiplatform.gradle.plugin:pom:2.2.10",  # Used by AGP privacy-sandbox tests
     "org.jetbrains.kotlin.multiplatform:org.jetbrains.kotlin.multiplatform.gradle.plugin:pom:2.3.20-Beta1",  # Used by AGP tests
     "org.jetbrains.kotlin.plugin.compose:org.jetbrains.kotlin.plugin.compose.gradle.plugin:pom:2.0.21",

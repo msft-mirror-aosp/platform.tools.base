@@ -9,6 +9,7 @@ maven_repository(
         "@maven//:com.android.databinding.adapters_9.0.0-beta01",
         "@maven//:com.android.databinding.viewbinding_9.0.0-beta01",
         "@maven//:com.android.fused-library.com.android.fused-library.gradle.plugin_9.0.0-beta01",
+        "@maven//:com.android.kotlin.multiplatform.library.com.android.kotlin.multiplatform.library.gradle.plugin_9.0.0-beta01",
         "@maven//:com.android.library.com.android.library.gradle.plugin_9.0.0-beta01",
         "@maven//:com.android.tools.build.aapt2_9.0.0-beta01-14304508",
         "@maven//:com.android.tools.build.gradle_9.0.0-beta01",

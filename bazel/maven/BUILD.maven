@@ -44904,6 +44904,17 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "com.android.kotlin.multiplatform.library.com.android.kotlin.multiplatform.library.gradle.plugin_9.0.0-beta01",
+    pom = "repository/com/android/kotlin/multiplatform/library/com.android.kotlin.multiplatform.library.gradle.plugin/9.0.0-beta01/com.android.kotlin.multiplatform.library.gradle.plugin-9.0.0-beta01.pom",
+    repo_root_path = "repository",
+    repo_path = "com/android/kotlin/multiplatform/library/com.android.kotlin.multiplatform.library.gradle.plugin/9.0.0-beta01",
+    deps = [
+        "com.android.tools.build.gradle_9.0.0-beta01",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "com.android.library.com.android.library.gradle.plugin_7.2.0",
     pom = "repository/com/android/library/com.android.library.gradle.plugin/7.2.0/com.android.library.gradle.plugin-7.2.0.pom",
     repo_root_path = "repository",
@@ -82097,6 +82108,17 @@ maven_artifact(
     repo_path = "org/jetbrains/kotlin/multiplatform/org.jetbrains.kotlin.multiplatform.gradle.plugin/1.9.23",
     deps = [
         "org.jetbrains.kotlin.kotlin-gradle-plugin_1.9.23",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.jetbrains.kotlin.multiplatform.org.jetbrains.kotlin.multiplatform.gradle.plugin_2.1.20",
+    pom = "repository/org/jetbrains/kotlin/multiplatform/org.jetbrains.kotlin.multiplatform.gradle.plugin/2.1.20/org.jetbrains.kotlin.multiplatform.gradle.plugin-2.1.20.pom",
+    repo_root_path = "repository",
+    repo_path = "org/jetbrains/kotlin/multiplatform/org.jetbrains.kotlin.multiplatform.gradle.plugin/2.1.20",
+    deps = [
+        "org.jetbrains.kotlin.kotlin-gradle-plugin_2.1.20",
     ],
     visibility = ["//visibility:public"],
 )

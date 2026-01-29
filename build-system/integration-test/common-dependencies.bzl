@@ -41,6 +41,7 @@ KGP_2_1_20 = [
     "@maven//:org.jetbrains.kotlin.kapt.org.jetbrains.kotlin.kapt.gradle.plugin_2.1.20",
     "@maven//:org.jetbrains.kotlin.android.org.jetbrains.kotlin.android.gradle.plugin_2.1.20",
     "@maven//:org.jetbrains.kotlin.jvm.org.jetbrains.kotlin.jvm.gradle.plugin_2.1.20",
+    "@maven//:org.jetbrains.kotlin.multiplatform.org.jetbrains.kotlin.multiplatform.gradle.plugin_2.1.20",
     "@maven//:org.jetbrains.kotlin.kotlin-android-extensions-runtime_2.1.20",
     "@maven//:org.jetbrains.kotlin.kotlin-build-tools-impl_2.1.20",
     "@maven//:org.jetbrains.kotlin.kotlin-compiler_2.1.20",
