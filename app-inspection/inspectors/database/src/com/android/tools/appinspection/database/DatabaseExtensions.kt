@@ -23,9 +23,8 @@ import android.database.sqlite.SQLiteDatabase
 /**
  * Attempts to call [SQLiteDatabase.acquireReference] on the provided object.
  *
- * @return true if the operation was successful; false if unsuccessful because the database was
- *   already closed; otherwise re-throws the exception thrown by
- *   [ ][SQLiteDatabase.acquireReference].
+ * @return true if the operation was successful; false if unsuccessful because the database was already closed; otherwise re-throws the
+ *   exception thrown by [ ][SQLiteDatabase.acquireReference].
  */
 fun Database.tryAcquireReference(): Boolean {
   if (!isOpen()) {
@@ -44,10 +43,9 @@ fun Database.tryAcquireReference(): Boolean {
 }
 
 /**
- * Note that this is best-effort as relies on Exception message parsing, which could break in the
- * future. Use in the context where false negatives (more likely) and false positives (less likely
- * due to the specificity of the message) are tolerable, e.g. to assign error codes where if it
- * fails we will just send an 'unknown' error.
+ * Note that this is best-effort as relies on Exception message parsing, which could break in the future. Use in the context where false
+ * negatives (more likely) and false positives (less likely due to the specificity of the message) are tolerable, e.g. to assign error codes
+ * where if it fails we will just send an 'unknown' error.
  */
 fun Throwable.isAttemptAtUsingClosedDatabase(): Boolean {
   val message = this.message ?: return false

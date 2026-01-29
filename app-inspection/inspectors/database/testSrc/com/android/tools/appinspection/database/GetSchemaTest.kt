@@ -36,18 +36,12 @@ import org.robolectric.annotation.SQLiteMode
 import org.robolectric.junit.rules.CloseGuardRule
 
 @RunWith(RobolectricTestRunner::class)
-@Config(
-  manifest = Config.NONE,
-  minSdk = Build.VERSION_CODES.O,
-  maxSdk = Build.VERSION_CODES.UPSIDE_DOWN_CAKE,
-)
+@Config(manifest = Config.NONE, minSdk = Build.VERSION_CODES.O, maxSdk = Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
 @SQLiteMode(SQLiteMode.Mode.NATIVE)
 class GetSchemaTest {
   private val testEnvironment = SqliteInspectorTestEnvironment()
 
-  @get:Rule
-  val rule: RuleChain =
-    RuleChain.outerRule(CloseGuardRule()).around(testEnvironment).around(LogPrinterRule())
+  @get:Rule val rule: RuleChain = RuleChain.outerRule(CloseGuardRule()).around(testEnvironment).around(LogPrinterRule())
 
   @Test
   fun test_get_schema_complex_tables() {
@@ -55,14 +49,7 @@ class GetSchemaTest {
       listOf(
         DatabaseModel(
           "db1",
-          Table(
-            "table1",
-            Column("t", "TEXT"),
-            Column("nu", "NUMERIC"),
-            Column("i", "INTEGER"),
-            Column("r", "REAL"),
-            Column("b", "BLOB"),
-          ),
+          Table("table1", Column("t", "TEXT"), Column("nu", "NUMERIC"), Column("i", "INTEGER"), Column("r", "REAL"), Column("b", "BLOB")),
           Table("table2", Column("id", "INTEGER"), Column("name", "TEXT")),
           Table("table3a", Column("c1", "INT"), Column("c2", "INT", primaryKey = 1)),
           Table(
@@ -93,11 +80,10 @@ class GetSchemaTest {
       ),
       onDatabaseCreated = { db ->
         // compound-unique-constraint-indices
-        listOf(
-            "create index index6_12 on 'table6' ('c1', 'c2uuu')",
-            "create index index6_23 on 'table6' ('c2uuu', 'c3')",
-          )
-          .forEach { query -> db.execSQL(query, emptyArray()) }
+        listOf("create index index6_12 on 'table6' ('c1', 'c2uuu')", "create index index6_23 on 'table6' ('c2uuu', 'c3')").forEach { query
+          ->
+          db.execSQL(query, emptyArray())
+        }
 
         // sanity check: verifies if the above index adding operations succeeded
         val indexCountTable6 =
@@ -135,12 +121,7 @@ class GetSchemaTest {
           "db1",
           Table("t1", c1, c2),
           Table("t2", c1, c2, c3),
-          Table(
-            "v1",
-            listOf(c1, c2),
-            isView = true,
-            viewQuery = "select t1.c1, t2.c2 from t1 inner join t2 on t1.c1 = t2.c2",
-          ),
+          Table("v1", listOf(c1, c2), isView = true, viewQuery = "select t1.c1, t2.c2 from t1 inner join t2 on t1.c1 = t2.c2"),
         )
       )
     )
@@ -181,8 +162,7 @@ class GetSchemaTest {
     testEnvironment.sendCommand(createGetSchemaCommand(databaseId)).let { response ->
       assertThat(response.hasErrorOccurred()).isEqualTo(true)
       val error = response.errorOccurred.content
-      assertThat(error.message)
-        .contains("Unable to perform an operation on database (id=$databaseId).")
+      assertThat(error.message).contains("Unable to perform an operation on database (id=$databaseId).")
       assertThat(error.message).contains("The database may have already been closed.")
       assertThat(error.recoverability.isRecoverable).isEqualTo(true)
       assertThat(error.errorCodeValue).isEqualTo(ERROR_NO_OPEN_DATABASE_WITH_REQUESTED_ID_VALUE)
@@ -214,20 +194,14 @@ class GetSchemaTest {
     assertThat(response.getSchema.isForcedConnection).isTrue()
   }
 
-  private fun test_get_schema(
-    alreadyOpenDatabases: List<DatabaseModel>,
-    onDatabaseCreated: (SQLiteDatabase) -> Unit = {},
-  ) = runBlocking {
+  private fun test_get_schema(alreadyOpenDatabases: List<DatabaseModel>, onDatabaseCreated: (SQLiteDatabase) -> Unit = {}) = runBlocking {
     assertThat(alreadyOpenDatabases).isNotEmpty() // sanity check
 
     testEnvironment.registerAlreadyOpenDatabases(
-      alreadyOpenDatabases.map {
-        testEnvironment.openDatabase(it).also { db -> onDatabaseCreated(db) }
-      }
+      alreadyOpenDatabases.map { testEnvironment.openDatabase(it).also { db -> onDatabaseCreated(db) } }
     )
     testEnvironment.sendCommand(createTrackDatabasesCommand())
-    val databaseConnections =
-      alreadyOpenDatabases.indices.map { testEnvironment.receiveEvent().databaseOpened }
+    val databaseConnections = alreadyOpenDatabases.indices.map { testEnvironment.receiveEvent().databaseOpened }
 
     val schemas =
       databaseConnections
@@ -254,8 +228,7 @@ class GetSchemaTest {
           val expectedColumns = expectedTable.columns.sortedBy { it.name }
           val actualColumns = actualTable.columnsList.sortedBy { it.name }
 
-          expectedColumns.adjustForSinglePrimaryKey().zipSameSize(actualColumns).forEach {
-            (expectedColumn, actualColumnProto) ->
+          expectedColumns.adjustForSinglePrimaryKey().zipSameSize(actualColumns).forEach { (expectedColumn, actualColumnProto) ->
             val actualColumn =
               Column(
                 name = actualColumnProto.name,
@@ -272,8 +245,7 @@ class GetSchemaTest {
 
   // The sole primary key in a table is by definition unique
   private fun List<Column>.adjustForSinglePrimaryKey(): List<Column> =
-    if (this.count { it.isPrimaryKey } > 1) this
-    else this.map { if (it.isPrimaryKey) it.copy(isUnique = true) else it }
+    if (this.count { it.isPrimaryKey } > 1) this else this.map { if (it.isPrimaryKey) it.copy(isUnique = true) else it }
 
   /** Same as [List.zip] but ensures both lists are the same size. */
   private fun <A, B> List<A>.zipSameSize(other: List<B>): List<Pair<A, B>> {

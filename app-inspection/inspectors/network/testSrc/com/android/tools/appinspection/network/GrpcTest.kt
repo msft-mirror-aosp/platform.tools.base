@@ -54,14 +54,10 @@ private val EXPECTED_EVENT_TYPES =
 class GrpcTest {
 
   private val serverName = InProcessServerBuilder.generateName()
-  private val server =
-    InProcessServerBuilder.forName(serverName).directExecutor().addService(GreeterService()).build()
+  private val server = InProcessServerBuilder.forName(serverName).directExecutor().addService(GreeterService()).build()
   private val fakeConnection = FakeConnection()
   private val channel =
-    InProcessChannelBuilder.forName(serverName)
-      .directExecutor()
-      .intercept(GrpcInterceptor { GrpcTracker(fakeConnection) })
-      .build()
+    InProcessChannelBuilder.forName(serverName).directExecutor().intercept(GrpcInterceptor { GrpcTracker(fakeConnection) }).build()
   private val stub = GreeterGrpc.newBlockingStub(channel)
 
   private class GreeterService : GreeterGrpc.GreeterImplBase() {
@@ -93,26 +89,26 @@ class GrpcTest {
     assertThat(fakeConnection.grpcData.map { it.toDebugString() })
       .containsExactly(
         """
-          grpc_call_started {
-            service: "greeter.Greeter"
-            method: "SayHello"
-            request_headers {
-              key: "grpc-accept-encoding"
-              values: "gzip"
-            }
-            request_headers {
-              key: "user-agent"
-              values: "grpc-java-inprocess"
-            }
-            trace: "com.android.tools.appinspection.network.GrpcTest.testEventContent(GrpcTest.kt)"
+        grpc_call_started {
+          service: "greeter.Greeter"
+          method: "SayHello"
+          request_headers {
+            key: "grpc-accept-encoding"
+            values: "gzip"
           }
+          request_headers {
+            key: "user-agent"
+            values: "grpc-java-inprocess"
+          }
+          trace: "com.android.tools.appinspection.network.GrpcTest.testEventContent(GrpcTest.kt)"
+        }
         """
           .trimIndent(),
         """
-          grpc_thread {
-            thread_id: 1
-            thread_name: "main"
-          }
+        grpc_thread {
+          thread_id: 1
+          thread_name: "main"
+        }
         """
           .trimIndent(),
         """
@@ -126,42 +122,42 @@ class GrpcTest {
         """
           .trimIndent(),
         """
-          grpc_message_sent {
-            payload {
-              bytes: "\n\003Foo"
-              type: "com.google.grpc.test.HelloRequest"
-              text: "# proto-message: HelloRequest\n\nname: \"Foo\"\n"
-            }
+        grpc_message_sent {
+          payload {
+            bytes: "\n\003Foo"
+            type: "com.google.grpc.test.HelloRequest"
+            text: "# proto-message: HelloRequest\n\nname: \"Foo\"\n"
           }
+        }
         """
           .trimIndent(),
         """
-          grpc_response_headers {
-            response_headers {
-              key: "grpc-encoding"
-              values: "identity"
-            }
-            response_headers {
-              key: "grpc-accept-encoding"
-              values: "gzip"
-            }
+        grpc_response_headers {
+          response_headers {
+            key: "grpc-encoding"
+            values: "identity"
           }
+          response_headers {
+            key: "grpc-accept-encoding"
+            values: "gzip"
+          }
+        }
         """
           .trimIndent(),
         """
-          grpc_message_received {
-            payload {
-              bytes: "\n\tHello Foo"
-              type: "com.google.grpc.test.HelloResponse"
-              text: "# proto-message: HelloResponse\n\nmessage: \"Hello Foo\"\n"
-            }
+        grpc_message_received {
+          payload {
+            bytes: "\n\tHello Foo"
+            type: "com.google.grpc.test.HelloResponse"
+            text: "# proto-message: HelloResponse\n\nmessage: \"Hello Foo\"\n"
           }
+        }
         """
           .trimIndent(),
         """
-          grpc_call_ended {
-            status: "OK"
-          }
+        grpc_call_ended {
+          status: "OK"
+        }
         """
           .trimIndent(),
       )
@@ -174,8 +170,7 @@ class GrpcTest {
 
     val events = fakeConnection.grpcData.groupBy({ it.connectionId }) { it.unionCase }
 
-    assertThat(events)
-      .containsExactlyEntriesIn(mapOf(0L to EXPECTED_EVENT_TYPES, 1L to EXPECTED_EVENT_TYPES))
+    assertThat(events).containsExactlyEntriesIn(mapOf(0L to EXPECTED_EVENT_TYPES, 1L to EXPECTED_EVENT_TYPES))
   }
 
   private fun GrpcEvent.toDebugString(): String {
@@ -190,17 +185,11 @@ class GrpcTest {
   }
 
   private fun GrpcEvent.cleanupGrpcCallStarted(): GrpcEvent {
-    val trace =
-      grpcCallStarted.trace
-        .lines()
-        .first { it.contains(this@GrpcTest::class.java.name) }
-        .replace(":\\d+\\)".toRegex(), ")")
+    val trace = grpcCallStarted.trace.lines().first { it.contains(this@GrpcTest::class.java.name) }.replace(":\\d+\\)".toRegex(), ")")
     return toBuilder().setGrpcCallStarted(grpcCallStarted.toBuilder().setTrace(trace)).build()
   }
 
   private fun GrpcEvent.cleanupGrpcStreamCreated(): GrpcEvent {
-    return toBuilder()
-      .setGrpcStreamCreated(grpcStreamCreated.toBuilder().setAddress(serverName))
-      .build()
+    return toBuilder().setGrpcStreamCreated(grpcStreamCreated.toBuilder().setAddress(serverName)).build()
   }
 }

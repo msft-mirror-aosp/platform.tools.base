@@ -23,11 +23,8 @@ private const val SQLDELIGHT_QUERY_CLASS_NAME = "com.squareup.sqldelight.Query"
 private const val SQLDELIGHT_NOTIFY_METHOD_NAME = "notifyDataChanged"
 
 internal class SqlDelightInvalidation
-private constructor(
-  private val artTooling: ArtTooling,
-  private val queryClass: Class<*>,
-  private val notifyDataChangeMethod: Method,
-) : Invalidation {
+private constructor(private val artTooling: ArtTooling, private val queryClass: Class<*>, private val notifyDataChangeMethod: Method) :
+  Invalidation {
   override fun triggerInvalidations() {
     // invalidating all queries because we can't say which ones were actually affected.
     artTooling.findInstances(queryClass).forEach {
@@ -48,10 +45,7 @@ private constructor(
         val notifyMethod = queryClass.getMethod(SQLDELIGHT_NOTIFY_METHOD_NAME)
         return SqlDelightInvalidation(artTooling, queryClass, notifyMethod)
       } catch (e: ClassNotFoundException) {
-        Log.v(
-          HIDDEN_TAG,
-          "SqlDelight not found. Either app is not using it or Proguard has renamed it.",
-        )
+        Log.v(HIDDEN_TAG, "SqlDelight not found. Either app is not using it or Proguard has renamed it.")
         return Invalidation.NOOP
       } catch (e: Throwable) {
         Log.w(TAG, "Error setting up SqlDelight invalidation", e)

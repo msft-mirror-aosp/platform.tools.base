@@ -43,30 +43,19 @@ import org.robolectric.annotation.SQLiteMode
 import org.robolectric.junit.rules.CloseGuardRule
 
 @RunWith(RobolectricTestRunner::class)
-@Config(
-  manifest = Config.NONE,
-  minSdk = Build.VERSION_CODES.O,
-  maxSdk = Build.VERSION_CODES.UPSIDE_DOWN_CAKE,
-)
+@Config(manifest = Config.NONE, minSdk = Build.VERSION_CODES.O, maxSdk = Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
 @SQLiteMode(SQLiteMode.Mode.NATIVE)
 class TrackDatabasesTest {
   private val testEnvironment = SqliteInspectorTestEnvironment()
   private val temporaryFolder = TemporaryFolder()
 
   @get:Rule
-  val rule: RuleChain =
-    RuleChain.outerRule(CloseGuardRule())
-      .around(testEnvironment)
-      .around(temporaryFolder)
-      .around(LogPrinterRule())
+  val rule: RuleChain = RuleChain.outerRule(CloseGuardRule()).around(testEnvironment).around(temporaryFolder).around(LogPrinterRule())
 
   @Test
   fun test_track_databases(): Unit = runBlocking {
     val alreadyOpenDatabases =
-      listOf(
-        testEnvironment.openDatabase(DatabaseModel("db1")),
-        testEnvironment.openDatabase(DatabaseModel("db2")),
-      )
+      listOf(testEnvironment.openDatabase(DatabaseModel("db1")), testEnvironment.openDatabase(DatabaseModel("db2")))
 
     testEnvironment.registerAlreadyOpenDatabases(alreadyOpenDatabases)
 
@@ -79,9 +68,7 @@ class TrackDatabasesTest {
       val actual = expected.indices.map { testEnvironment.receiveEvent().databaseOpened }
       testEnvironment.assertNoQueuedEvents()
       assertThat(actual.map { it.databaseId }.distinct()).hasSize(expected.size)
-      expected.forEachIndexed { ix, _ ->
-        assertThat(actual[ix].path).isEqualTo(expected[ix].displayName)
-      }
+      expected.forEachIndexed { ix, _ -> assertThat(actual[ix].path).isEqualTo(expected[ix].displayName) }
     }
 
     // evaluate registered hooks
@@ -105,8 +92,7 @@ class TrackDatabasesTest {
       }
     }
 
-    val hookEntries =
-      testEnvironment.getRegisteredHooks().filter { possibleSignatures.contains(it.originMethod) }
+    val hookEntries = testEnvironment.getRegisteredHooks().filter { possibleSignatures.contains(it.originMethod) }
     val exitHooks = hookEntries.filterIsInstance<Hook.ExitHook>()
     assertThat(exitHooks.map { it.originMethod }).containsExactlyElementsIn(exitHookSignatures)
     exitHooks.forEachIndexed { ix, entry ->
@@ -117,9 +103,7 @@ class TrackDatabasesTest {
       // verify that executing the registered hook will result in tracking events
       testEnvironment.assertNoQueuedEvents()
       val database = testEnvironment.openDatabase(DatabaseModel("db3_$ix"))
-      testEnvironment.receiveEvent().let { event ->
-        assertThat(event.databaseOpened.path).isEqualTo(database.displayName)
-      }
+      testEnvironment.receiveEvent().let { event -> assertThat(event.databaseOpened.path).isEqualTo(database.displayName) }
     }
     val entryHooks = hookEntries.filterIsInstance<Hook.EntryHook>()
     assertThat(entryHooks.map { it.originMethod }).containsExactlyElementsIn(entryHookSignatures)
@@ -432,8 +416,7 @@ class TrackDatabasesTest {
     // given
     val db1 = testEnvironment.openDatabase(DatabaseModel(null))
     val db2 = testEnvironment.openDatabase(DatabaseModel(null))
-    fun queryTableCount(db: SQLiteDatabase): Long =
-      db.compileStatement("select count(*) from sqlite_master").simpleQueryForLong()
+    fun queryTableCount(db: SQLiteDatabase): Long = db.compileStatement("select count(*) from sqlite_master").simpleQueryForLong()
     assertThat(queryTableCount(db1)).isEqualTo(1) // android_metadata sole table
     assertThat(queryTableCount(db2)).isEqualTo(1) // android_metadata sole table
     assertThat(db1.path).isEqualTo(db2.path)
@@ -495,9 +478,8 @@ class TrackDatabasesTest {
   }
 
   /**
-   * #dbRef -- the number of references as seen by the SQLiteDatabase object #kpoRef=0 -- the number
-   * of references acquired by KeepOpen objects #usrRef=1 -- the 'balance' of references the user
-   * owns
+   * #dbRef -- the number of references as seen by the SQLiteDatabase object #kpoRef=0 -- the number of references acquired by KeepOpen
+   * objects #usrRef=1 -- the 'balance' of references the user owns
    */
   @Test
   fun test_keep_open_keeps_count() = runBlocking {
@@ -542,9 +524,8 @@ class TrackDatabasesTest {
   }
 
   /**
-   * #dbRef -- the number of references as seen by the SQLiteDatabase object #kpoRef=0 -- the number
-   * of references acquired by KeepOpen objects #usrRef=1 -- the 'balance' of references the user
-   * owns
+   * #dbRef -- the number of references as seen by the SQLiteDatabase object #kpoRef=0 -- the number of references acquired by KeepOpen
+   * objects #usrRef=1 -- the 'balance' of references the user owns
    */
   @Test
   fun test_keep_open_off_on_off() = runBlocking {
@@ -606,10 +587,7 @@ class TrackDatabasesTest {
   @Test
   fun test_already_open_androidx_databases(): Unit = runBlocking {
     val open =
-      listOf(
-        testEnvironment.openAndroidXDatabase(DatabaseModel("db1")),
-        testEnvironment.openAndroidXDatabase(DatabaseModel("db2")),
-      )
+      listOf(testEnvironment.openAndroidXDatabase(DatabaseModel("db1")), testEnvironment.openAndroidXDatabase(DatabaseModel("db2")))
     testEnvironment.registerAlreadyOpenDatabases(open)
 
     testEnvironment.sendCommand(createTrackDatabasesCommand()).let { response ->
@@ -628,7 +606,8 @@ class TrackDatabasesTest {
     val field = clazz.declaredFields.first { it.name == fieldName }
     field.isAccessible = true
     val result = field.get(target)
-    @Suppress("UNCHECKED_CAST") return result as T
+    @Suppress("UNCHECKED_CAST")
+    return result as T
   }
 
   private fun assertNoQueuedEvents() {
@@ -646,8 +625,7 @@ class TrackDatabasesTest {
     }
   }
 
-  private suspend fun receiveOpenedEventId(database: SQLiteDatabase): Int =
-    receiveOpenedEventId(database.displayName)
+  private suspend fun receiveOpenedEventId(database: SQLiteDatabase): Int = receiveOpenedEventId(database.displayName)
 
   private suspend fun receiveOpenedEventId(displayName: String, isForced: Boolean = false): Int =
     testEnvironment.receiveEvent().let {
@@ -664,8 +642,7 @@ class TrackDatabasesTest {
       it.databaseClosed.databaseId
     }
 
-  private suspend fun receiveClosedEventId(database: SQLiteDatabase): Int =
-    receiveClosedEventId(database.displayName)
+  private suspend fun receiveClosedEventId(database: SQLiteDatabase): Int = receiveClosedEventId(database.displayName)
 
   private suspend fun receiveOpenedEvent(id: Int, path: String) =
     testEnvironment.receiveEvent().let {

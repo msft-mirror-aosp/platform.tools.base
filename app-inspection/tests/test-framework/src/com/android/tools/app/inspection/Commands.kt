@@ -27,11 +27,8 @@ import com.android.tools.app.inspection.AppInspection.LibraryCompatibility
 import com.android.tools.app.inspection.AppInspection.RawCommand
 import com.android.tools.idea.protobuf.ByteString
 
-fun createLibraryInspector(
-  inspectorId: String,
-  dexPath: String,
-  minLibrary: ArtifactCoordinate,
-): AppInspectionCommand = createLibraryInspector(inspectorId, dexPath, minLibrary, emptyList())
+fun createLibraryInspector(inspectorId: String, dexPath: String, minLibrary: ArtifactCoordinate): AppInspectionCommand =
+  createLibraryInspector(inspectorId, dexPath, minLibrary, emptyList())
 
 @JvmOverloads
 fun createLibraryInspector(
@@ -43,21 +40,14 @@ fun createLibraryInspector(
   val metadata =
     LaunchMetadata.newBuilder()
       .setMinLibrary(
-        LibraryCompatibility.newBuilder()
-          .setCoordinate(minLibrary)
-          .addAllExpectedLibraryClassNames(expectedLibraryClassNames)
-          .build()
+        LibraryCompatibility.newBuilder().setCoordinate(minLibrary).addAllExpectedLibraryClassNames(expectedLibraryClassNames).build()
       )
       .build()
   return createInspector(inspectorId, dexPath, metadata)
 }
 
 @JvmOverloads
-fun createInspector(
-  inspectorId: String,
-  dexPath: String,
-  launchMetadata: LaunchMetadata? = null,
-): AppInspectionCommand =
+fun createInspector(inspectorId: String, dexPath: String, launchMetadata: LaunchMetadata? = null): AppInspectionCommand =
   appInspectionCommand(inspectorId) {
     createInspectorCommand =
       CreateInspectorCommand.newBuilder()
@@ -69,20 +59,12 @@ fun createInspector(
   }
 
 fun disposeInspector(inspectorId: String): AppInspectionCommand =
-  appInspectionCommand(inspectorId) {
-    disposeInspectorCommand = DisposeInspectorCommand.getDefaultInstance()
-  }
+  appInspectionCommand(inspectorId) { disposeInspectorCommand = DisposeInspectorCommand.getDefaultInstance() }
 
 fun rawCommandInspector(inspectorId: String, commandData: ByteArray): AppInspectionCommand =
-  appInspectionCommand(inspectorId) {
-    rawInspectorCommand =
-      RawCommand.newBuilder().setContent(ByteString.copyFrom(commandData)).build()
-  }
+  appInspectionCommand(inspectorId) { rawInspectorCommand = RawCommand.newBuilder().setContent(ByteString.copyFrom(commandData)).build() }
 
-private fun appInspectionCommand(
-  inspectorId: String,
-  initializer: AppInspectionCommand.Builder.() -> Unit,
-): AppInspectionCommand =
+private fun appInspectionCommand(inspectorId: String, initializer: AppInspectionCommand.Builder.() -> Unit): AppInspectionCommand =
   AppInspectionCommand.newBuilder()
     .apply {
       this.inspectorId = inspectorId

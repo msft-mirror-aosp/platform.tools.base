@@ -35,12 +35,10 @@ import org.junit.runner.Description
 import org.junit.runners.model.Statement
 
 /**
- * A JUnit rule for wrapping useful app-inspection gRPC operations, spinning up a separate thread to
- * manage host / device communication.
+ * A JUnit rule for wrapping useful app-inspection gRPC operations, spinning up a separate thread to manage host / device communication.
  *
- * While running, it polls the transport framework for events, which should be received after calls
- * to [.sendCommand]. You can fetch those events using [ ][.sendCommandAndGetResponse] instead, or
- * by calling [ ][.consumeCollectedEvent].
+ * While running, it polls the transport framework for events, which should be received after calls to [.sendCommand]. You can fetch those
+ * events using [ ][.sendCommandAndGetResponse] instead, or by calling [ ][.consumeCollectedEvent].
  *
  * The thread will be spun down when the rule itself tears down.
  */
@@ -110,9 +108,8 @@ class AppInspectionRule(activityClass: String, sdkLevel: SdkLevel) : ExternalRes
   /**
    * Assert that the expected text is logged to the console.
    *
-   * It's preferred using this over
-   * [ ][com.android.tools.fakeandroid.FakeAndroidDriver.waitForInput] because this method also
-   * includes a timeout for early aborting if things went wrong.
+   * It's preferred using this over [ ][com.android.tools.fakeandroid.FakeAndroidDriver.waitForInput] because this method also includes a
+   * timeout for early aborting if things went wrong.
    */
   fun assertInput(expected: String) {
     assertThat(transportRule.androidDriver.waitForInput(expected, TIMEOUT_MS.toLong())).isTrue()
@@ -184,8 +181,8 @@ class AppInspectionRule(activityClass: String, sdkLevel: SdkLevel) : ExternalRes
 
   companion object {
     /**
-     * All asynchronous operations are expected to only take sub seconds, so we choose a relatively
-     * small but still generous timeout. If a callback doesn't complete during it, we fail the test.
+     * All asynchronous operations are expected to only take sub seconds, so we choose a relatively small but still generous timeout. If a
+     * callback doesn't complete during it, we fail the test.
      */
     private const val TIMEOUT_MS = 10 * 1000
 

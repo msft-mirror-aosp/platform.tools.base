@@ -20,30 +20,26 @@ import androidx.inspection.ArtTooling
 import java.lang.reflect.Field
 import java.lang.reflect.Method
 
-private const val DRIVER_CLASSNAME: String =
-  "app.cash.sqldelight.driver.android.AndroidSqliteDriver"
+private const val DRIVER_CLASSNAME: String = "app.cash.sqldelight.driver.android.AndroidSqliteDriver"
 private const val NOTIFY_METHOD: String = "notifyListeners"
 private const val LISTENERS_FIELD: String = "listeners"
 
 /**
  * An [Invalidation] for the SqlDelight 2 library.
  *
- * SqlDelight 2 invalidation API uses an internal "queryKey" to associate queries with listeners.
- * The key is created by the generated code and is typically just the affected table name but can in
- * theory be anything. In fact, a user can register a listener directly using
- * SqlDriver#addListener() and provide their own queryKeys. This will work as long as the user also
- * manages notification using SqlDriver#notifyListeners().
+ * SqlDelight 2 invalidation API uses an internal "queryKey" to associate queries with listeners. The key is created by the generated code
+ * and is typically just the affected table name but can in theory be anything. In fact, a user can register a listener directly using
+ * SqlDriver#addListener() and provide their own queryKeys. This will work as long as the user also manages notification using
+ * SqlDriver#notifyListeners().
  *
  * The public API that notifies listeners requires this queryKey:
  * <pre>
  * override fun notifyListeners(vararg queryKeys: String)
  * </pre> *
  *
- * There is no public API that works without it and there is no public API that lists the current
- * listeners or queryKey's.
+ * There is no public API that works without it and there is no public API that lists the current listeners or queryKey's.
  *
- * Because of this, we need to access the private field AndroidSqliteDriver#listeners and extract
- * the registered queryKeys.
+ * Because of this, we need to access the private field AndroidSqliteDriver#listeners and extract the registered queryKeys.
  */
 internal class SqlDelight2Invalidation
 private constructor(
@@ -56,9 +52,7 @@ private constructor(
     artTooling.findInstances(driverClass).forEach { driver ->
       try {
         val listeners = driver.getListeners()
-        synchronized(listeners) {
-          notifyListenersMethod.invoke(driver, listeners.keys.toTypedArray<String>() as Any)
-        }
+        synchronized(listeners) { notifyListenersMethod.invoke(driver, listeners.keys.toTypedArray<String>() as Any) }
       } catch (e: Exception) {
         Log.w(TAG, "Error invalidating SqlDriver", e)
       }
@@ -71,21 +65,12 @@ private constructor(
       try {
         val classLoader = SqlDelight2Invalidation::class.java.classLoader
         val driverClass = classLoader.loadClass(DRIVER_CLASSNAME)
-        val notifyListenersMethod =
-          driverClass.getDeclaredMethod(NOTIFY_METHOD, Array<String>::class.java)
+        val notifyListenersMethod = driverClass.getDeclaredMethod(NOTIFY_METHOD, Array<String>::class.java)
         val listenersField = driverClass.getDeclaredField(LISTENERS_FIELD)
         listenersField.isAccessible = true
-        return SqlDelight2Invalidation(
-          artTooling,
-          driverClass,
-          notifyListenersMethod,
-          listenersField,
-        )
+        return SqlDelight2Invalidation(artTooling, driverClass, notifyListenersMethod, listenersField)
       } catch (e: ClassNotFoundException) {
-        Log.v(
-          HIDDEN_TAG,
-          "SqlDelight 2 not found. Either app is not using it or Proguard has renamed it.",
-        )
+        Log.v(HIDDEN_TAG, "SqlDelight 2 not found. Either app is not using it or Proguard has renamed it.")
         return Invalidation.NOOP
       } catch (e: Throwable) {
         Log.w(TAG, "Error setting up SqlDelight 2 invalidation", e)
@@ -94,6 +79,5 @@ private constructor(
     }
   }
 
-  @Suppress("UNCHECKED_CAST")
-  private fun Any.getListeners(): Map<String, Any> = listenersField.get(this) as Map<String, Any>
+  @Suppress("UNCHECKED_CAST") private fun Any.getListeners(): Map<String, Any> = listenersField.get(this) as Map<String, Any>
 }

@@ -37,10 +37,7 @@ object BackgroundTaskUtil {
    * @param taskId a unique id across different background events.
    * @param setMetaData a unit function that adds information to the event builder.
    */
-  fun Connection.sendBackgroundTaskEvent(
-    taskId: Long,
-    setMetaData: BackgroundTaskEvent.Builder.() -> Unit,
-  ) {
+  fun Connection.sendBackgroundTaskEvent(taskId: Long, setMetaData: BackgroundTaskEvent.Builder.() -> Unit) {
     val eventBuilder =
       Event.newBuilder().apply {
         this.backgroundTaskEventBuilder.apply {

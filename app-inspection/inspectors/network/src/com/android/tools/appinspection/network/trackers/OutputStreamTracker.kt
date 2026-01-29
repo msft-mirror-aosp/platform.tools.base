@@ -20,10 +20,7 @@ import com.android.tools.appinspection.network.reporters.StreamReporter
 import java.io.OutputStream
 
 /** Wraps an OutputStream to enable the network inspector capturing of request body */
-internal class OutputStreamTracker(
-  private val myWrapped: OutputStream,
-  private val reporter: StreamReporter,
-) : OutputStream() {
+internal class OutputStreamTracker(private val myWrapped: OutputStream, private val reporter: StreamReporter) : OutputStream() {
 
   override fun close() {
     myWrapped.close()

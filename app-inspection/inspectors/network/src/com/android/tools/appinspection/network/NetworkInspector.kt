@@ -71,40 +71,20 @@ internal class NetworkInspector(
   /**
    * A list of gRPC specific hooks.
    *
-   * TODO(b/313873107): Find a safe way to register gRPC hooks. Note that we only hook
-   *   `AndroidChannelBuilder.forTarget()` because the implementation of `forAddress` calls
-   *   `forTarget` and would result in double registration.
+   * TODO(b/313873107): Find a safe way to register gRPC hooks. Note that we only hook `AndroidChannelBuilder.forTarget()` because the
+   *   implementation of `forAddress` calls `forTarget` and would result in double registration.
    */
   private val grpcHooks =
     listOf(
-      GrpcHook(
-        "io.grpc.ManagedChannelBuilder",
-        "forAddress(Ljava/lang/String;I)Lio/grpc/ManagedChannelBuilder;",
-      ),
-      GrpcHook(
-        "io.grpc.ManagedChannelBuilder",
-        "forTarget(Ljava/lang/String;)Lio/grpc/ManagedChannelBuilder;",
-      ),
-      GrpcHook(
-        "io.grpc.android.AndroidChannelBuilder",
-        "forAddress(Ljava/lang/String;I)Lio/grpc/android/AndroidChannelBuilder;",
-      ),
-      GrpcHook(
-        "io.grpc.android.AndroidChannelBuilder",
-        "forTarget(Ljava/lang/String;)Lio/grpc/android/AndroidChannelBuilder;",
-      ),
-      GrpcHook(
-        "io.grpc.okhttp.OkHttpChannelBuilder",
-        "forAddress(Ljava/lang/String;I)Lio/grpc/okhttp/OkHttpChannelBuilder;",
-      ),
-      GrpcHook(
-        "io.grpc.okhttp.OkHttpChannelBuilder",
-        "forTarget(Ljava/lang/String;)Lio/grpc/okhttp/OkHttpChannelBuilder;",
-      ),
+      GrpcHook("io.grpc.ManagedChannelBuilder", "forAddress(Ljava/lang/String;I)Lio/grpc/ManagedChannelBuilder;"),
+      GrpcHook("io.grpc.ManagedChannelBuilder", "forTarget(Ljava/lang/String;)Lio/grpc/ManagedChannelBuilder;"),
+      GrpcHook("io.grpc.android.AndroidChannelBuilder", "forAddress(Ljava/lang/String;I)Lio/grpc/android/AndroidChannelBuilder;"),
+      GrpcHook("io.grpc.android.AndroidChannelBuilder", "forTarget(Ljava/lang/String;)Lio/grpc/android/AndroidChannelBuilder;"),
+      GrpcHook("io.grpc.okhttp.OkHttpChannelBuilder", "forAddress(Ljava/lang/String;I)Lio/grpc/okhttp/OkHttpChannelBuilder;"),
+      GrpcHook("io.grpc.okhttp.OkHttpChannelBuilder", "forTarget(Ljava/lang/String;)Lio/grpc/okhttp/OkHttpChannelBuilder;"),
     )
 
-  private val scope =
-    CoroutineScope(SupervisorJob() + environment.executors().primary().asCoroutineDispatcher())
+  private val scope = CoroutineScope(SupervisorJob() + environment.executors().primary().asCoroutineDispatcher())
 
   private val trackerService = HttpTrackerFactoryImpl(connection)
   private var isStarted = false
@@ -116,8 +96,8 @@ internal class NetworkInspector(
   private val artTooling = environment.artTooling()
 
   /**
-   * When hooking channel builders, keep track of depth of chained calls, so we only install the
-   * hook once. For example, `AndroidChannelBuilder` delegates to `OkHttpChannelBuilder`.
+   * When hooking channel builders, keep track of depth of chained calls, so we only install the hook once. For example,
+   * `AndroidChannelBuilder` delegates to `OkHttpChannelBuilder`.
    */
   private var hookDepth by threadLocal { 0 }
 
@@ -129,10 +109,7 @@ internal class NetworkInspector(
           Logger.error("Inspector already started")
           callback.reply(
             NetworkInspectorProtocol.Response.newBuilder()
-              .setStartInspectionResponse(
-                NetworkInspectorProtocol.StartInspectionResponse.newBuilder()
-                  .setAlreadyStarted(true)
-              )
+              .setStartInspectionResponse(NetworkInspectorProtocol.StartInspectionResponse.newBuilder().setAlreadyStarted(true))
               .build()
               .toByteArray()
           )
@@ -191,14 +168,9 @@ internal class NetworkInspector(
   private fun startSpeedCollection(): Boolean {
     // The app can have multiple Application instances. In that case, we use the first non-null
     // uid, which is most likely from the Application created by Android.
-    val uid =
-      artTooling.findInstances(Application::class.java).firstNotNullOfOrNull {
-        runCatching { it.applicationInfo?.uid }.getOrNull()
-      }
+    val uid = artTooling.findInstances(Application::class.java).firstNotNullOfOrNull { runCatching { it.applicationInfo?.uid }.getOrNull() }
     if (uid == null) {
-      Logger.error(
-        "Failed to find application instance. Collection of network speed is not available."
-      )
+      Logger.error("Failed to find application instance. Collection of network speed is not available.")
       return false
     }
     scope.launch {
@@ -241,9 +213,7 @@ internal class NetworkInspector(
   private fun sendSpeedEvent(timestamp: Long, rxSpeed: Long, txSpeed: Long) {
     connection.sendEvent(
       NetworkInspectorProtocol.Event.newBuilder()
-        .setSpeedEvent(
-          NetworkInspectorProtocol.SpeedEvent.newBuilder().setRxSpeed(rxSpeed).setTxSpeed(txSpeed)
-        )
+        .setSpeedEvent(NetworkInspectorProtocol.SpeedEvent.newBuilder().setRxSpeed(rxSpeed).setTxSpeed(txSpeed))
         .setTimestamp(timestamp)
         .build()
         .toByteArray()
@@ -259,9 +229,7 @@ internal class NetworkInspector(
     artTooling.registerExitHook(
       URL::class.java,
       "openConnection()Ljava/net/URLConnection;",
-      ArtTooling.ExitHook<URLConnection> { urlConnection ->
-        wrapURLConnection(urlConnection, trackerService, interceptionService)
-      },
+      ArtTooling.ExitHook<URLConnection> { urlConnection -> wrapURLConnection(urlConnection, trackerService, interceptionService) },
     )
     Logger.debugHidden("Instrumented ${URL::class.qualifiedName}")
     return true
@@ -316,9 +284,7 @@ internal class NetworkInspector(
     }
     if (!instrumented) {
       // Only log if both OkHttp 2 and 3 were not detected
-      Logger.debug(
-        "Did not instrument OkHttpClient. App does not use OKHttp or class is omitted by app reduce"
-      )
+      Logger.debug("Did not instrument OkHttpClient. App does not use OKHttp or class is omitted by app reduce")
     }
     return instrumented
   }
@@ -330,9 +296,7 @@ internal class NetworkInspector(
       instrumentGrpcChannelBuilder(grpcInterceptor)
       return true
     } catch (e: NoClassDefFoundError) {
-      Logger.debug(
-        "Did not instrument 'ManagedChannelBuilder'. App does not use gRPC or class is omitted by app reduce"
-      )
+      Logger.debug("Did not instrument 'ManagedChannelBuilder'. App does not use gRPC or class is omitted by app reduce")
       return false
     }
   }
@@ -340,12 +304,11 @@ internal class NetworkInspector(
   /**
    * Instruments pre-existing channels
    *
-   * The gRPC interception API acts on the `ManagedChannel` builder, not the `ManagedChannel`
-   * itself. By the time this is executed, the app could have already created channels, and we are
-   * too late to instrument them using the API.
+   * The gRPC interception API acts on the `ManagedChannel` builder, not the `ManagedChannel` itself. By the time this is executed, the app
+   * could have already created channels, and we are too late to instrument them using the API.
    *
-   * Therefore, we find all existing instances on `ManagedChannel` and try to instrument them
-   * manually using internal implementation details by reflection.
+   * Therefore, we find all existing instances on `ManagedChannel` and try to instrument them manually using internal implementation details
+   * by reflection.
    *
    * This is known to be brittle but there doesn't seem to be a robust way of doing this.
    */
@@ -397,10 +360,7 @@ internal class NetworkInspector(
     scope.cancel("Network Inspector has been disposed.")
   }
 
-  private class InterceptingGrpcChannel(
-    private val delegate: Channel,
-    private val interceptor: GrpcInterceptor,
-  ) : Channel() {
+  private class InterceptingGrpcChannel(private val delegate: Channel, private val interceptor: GrpcInterceptor) : Channel() {
 
     override fun <Req : Any, Res : Any> newCall(
       methodDescriptor: MethodDescriptor<Req, Res>,
@@ -416,14 +376,7 @@ internal class NetworkInspector(
     override fun toString() = "$className#${method.substringBefore('(')}"
   }
 
-  private data class InspectorState(
-    val speedDataCollectionStarted: Boolean,
-    val instrumentationState: InstrumentationState,
-  )
+  private data class InspectorState(val speedDataCollectionStarted: Boolean, val instrumentationState: InstrumentationState)
 
-  @VisibleForTesting
-  internal data class InstrumentationState(
-    val okhttpHooksRegistered: Boolean,
-    val grpcHooksRegistered: Boolean,
-  )
+  @VisibleForTesting internal data class InstrumentationState(val okhttpHooksRegistered: Boolean, val grpcHooksRegistered: Boolean)
 }

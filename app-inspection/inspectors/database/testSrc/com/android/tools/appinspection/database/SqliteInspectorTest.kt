@@ -44,11 +44,7 @@ import org.robolectric.annotation.Config
 import org.robolectric.annotation.SQLiteMode
 
 @RunWith(RobolectricTestRunner::class)
-@Config(
-  manifest = Config.NONE,
-  minSdk = Build.VERSION_CODES.O,
-  maxSdk = Build.VERSION_CODES.UPSIDE_DOWN_CAKE,
-)
+@Config(manifest = Config.NONE, minSdk = Build.VERSION_CODES.O, maxSdk = Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
 @SQLiteMode(SQLiteMode.Mode.NATIVE)
 class SqliteInspectorTest {
   private val connection = object : Connection() {}
@@ -58,9 +54,7 @@ class SqliteInspectorTest {
   @Test
   fun noAndroidX(): Unit = runBlocking {
     val inspector = TestInspectorFactory(coroutineContext).createInspector(connection, environment)
-    environment
-      .artTooling()
-      .registerInvalidClasses("androidx.sqlite.driver.bundled.BundledSQLiteDriver")
+    environment.artTooling().registerInvalidClasses("androidx.sqlite.driver.bundled.BundledSQLiteDriver")
 
     inspector.onReceiveCommand(trackDatabasesCommand(), callback)
 
@@ -94,10 +88,7 @@ class SqliteInspectorTest {
   fun withAndroidXDrivers_implicitConnection(): Unit = runBlocking {
     val inspector = TestInspectorFactory(coroutineContext).createInspector(connection, environment)
 
-    inspector.onReceiveCommand(
-      trackDatabasesCommand("com.android.tools.appinspection.database.ValidDriver", ""),
-      callback,
-    )
+    inspector.onReceiveCommand(trackDatabasesCommand("com.android.tools.appinspection.database.ValidDriver", ""), callback)
 
     assertThat(callback.responses)
       .containsExactly(
@@ -114,38 +105,20 @@ class SqliteInspectorTest {
   fun withAndroidXDrivers_invalidDriver_noClass(): Unit = runBlocking {
     val inspector = TestInspectorFactory(coroutineContext).createInspector(connection, environment)
 
-    inspector.onReceiveCommand(
-      trackDatabasesCommand(
-        "InvalidDriver",
-        "com.android.tools.appinspection.database.ValidConnection",
-      ),
-      callback,
-    )
+    inspector.onReceiveCommand(trackDatabasesCommand("InvalidDriver", "com.android.tools.appinspection.database.ValidConnection"), callback)
 
     assertThat(callback.responses).containsExactly(trackDatabasesResponse())
-    assertThat(getLogLines())
-      .containsExactly(
-        "WARN: SqliteInspector: Can't load class 'InvalidDriver' (ClassNotFoundException)"
-      )
+    assertThat(getLogLines()).containsExactly("WARN: SqliteInspector: Can't load class 'InvalidDriver' (ClassNotFoundException)")
   }
 
   @Test
   fun withAndroidXDrivers_invalidConnection_noClass(): Unit = runBlocking {
     val inspector = TestInspectorFactory(coroutineContext).createInspector(connection, environment)
 
-    inspector.onReceiveCommand(
-      trackDatabasesCommand(
-        "com.android.tools.appinspection.database.ValidDriver",
-        "invalidConnection",
-      ),
-      callback,
-    )
+    inspector.onReceiveCommand(trackDatabasesCommand("com.android.tools.appinspection.database.ValidDriver", "invalidConnection"), callback)
 
     assertThat(callback.responses).containsExactly(trackDatabasesResponse())
-    assertThat(getLogLines())
-      .containsExactly(
-        "WARN: SqliteInspector: Can't load class 'invalidConnection' (ClassNotFoundException)"
-      )
+    assertThat(getLogLines()).containsExactly("WARN: SqliteInspector: Can't load class 'invalidConnection' (ClassNotFoundException)")
   }
 
   @Test
@@ -153,37 +126,22 @@ class SqliteInspectorTest {
     val inspector = TestInspectorFactory(coroutineContext).createInspector(connection, environment)
 
     inspector.onReceiveCommand(
-      trackDatabasesCommand(
-        "java.lang.String",
-        "com.android.tools.appinspection.database.ValidConnection",
-      ),
+      trackDatabasesCommand("java.lang.String", "com.android.tools.appinspection.database.ValidConnection"),
       callback,
     )
 
     assertThat(callback.responses).containsExactly(trackDatabasesResponse())
-    assertThat(getLogLines())
-      .containsExactly(
-        "WARN: SqliteInspector: Can't load class 'java.lang.String' (ClassCastException)"
-      )
+    assertThat(getLogLines()).containsExactly("WARN: SqliteInspector: Can't load class 'java.lang.String' (ClassCastException)")
   }
 
   @Test
   fun withAndroidXDrivers_invalidConnection_notDriver(): Unit = runBlocking {
     val inspector = TestInspectorFactory(coroutineContext).createInspector(connection, environment)
 
-    inspector.onReceiveCommand(
-      trackDatabasesCommand(
-        "com.android.tools.appinspection.database.ValidDriver",
-        "java.lang.String",
-      ),
-      callback,
-    )
+    inspector.onReceiveCommand(trackDatabasesCommand("com.android.tools.appinspection.database.ValidDriver", "java.lang.String"), callback)
 
     assertThat(callback.responses).containsExactly(trackDatabasesResponse())
-    assertThat(getLogLines())
-      .containsExactly(
-        "WARN: SqliteInspector: Can't load class 'java.lang.String' (ClassCastException)"
-      )
+    assertThat(getLogLines()).containsExactly("WARN: SqliteInspector: Can't load class 'java.lang.String' (ClassCastException)")
   }
 
   class CommandCallback : Inspector.CommandCallback {
@@ -213,16 +171,11 @@ class SqliteInspectorTest {
       }
   }
 
-  private fun trackDatabasesCommand(
-    driverClassName: String? = null,
-    connectionClassName: String? = null,
-  ): ByteArray {
+  private fun trackDatabasesCommand(driverClassName: String? = null, connectionClassName: String? = null): ByteArray {
     val builder = TrackDatabasesCommand.newBuilder()
     if (driverClassName != null) {
       builder.addAdditionalDrivers(
-        AdditionalDriver.newBuilder()
-          .setDriverClass(driverClassName)
-          .setConnectionClass(connectionClassName ?: "")
+        AdditionalDriver.newBuilder().setDriverClass(driverClassName).setConnectionClass(connectionClassName ?: "")
       )
     }
     return Command.newBuilder().setTrackDatabases(builder).build().toByteArray()
@@ -246,16 +199,11 @@ private class ValidConnection : SQLiteConnection {
   }
 }
 
-private fun trackDatabasesResponse(
-  driverClassName: String? = null,
-  connectionClassName: String? = null,
-): Response? {
+private fun trackDatabasesResponse(driverClassName: String? = null, connectionClassName: String? = null): Response? {
   val builder = TrackDatabasesResponse.newBuilder()
   if (driverClassName != null && connectionClassName != null) {
     builder.addTrackedAdditionalDrivers(
-      AdditionalDriver.newBuilder()
-        .setDriverClass(driverClassName)
-        .setConnectionClass(connectionClassName)
+      AdditionalDriver.newBuilder().setDriverClass(driverClassName).setConnectionClass(connectionClassName)
     )
   }
   return Response.newBuilder().setTrackDatabases(builder).build()

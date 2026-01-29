@@ -60,18 +60,12 @@ import org.robolectric.annotation.SQLiteMode
 import org.robolectric.junit.rules.CloseGuardRule
 
 @RunWith(RobolectricTestRunner::class)
-@Config(
-  manifest = Config.NONE,
-  minSdk = Build.VERSION_CODES.O,
-  maxSdk = Build.VERSION_CODES.UPSIDE_DOWN_CAKE,
-)
+@Config(manifest = Config.NONE, minSdk = Build.VERSION_CODES.O, maxSdk = Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
 @SQLiteMode(SQLiteMode.Mode.NATIVE)
 class DatabaseLockingTest {
   private val testEnvironment = SqliteInspectorTestEnvironment()
 
-  @get:Rule
-  val rule: RuleChain =
-    RuleChain.outerRule(CloseGuardRule()).around(testEnvironment).around(LogPrinterRule())
+  @get:Rule val rule: RuleChain = RuleChain.outerRule(CloseGuardRule()).around(testEnvironment).around(LogPrinterRule())
 
   private val database = DatabaseModel("db1", Table("t1", listOf(Column("c1", "int"))))
   private val table = database.tables.single()
@@ -131,8 +125,7 @@ class DatabaseLockingTest {
   fun test_lockIdsUniquePerDb() = runBlocking {
     val dbs = listOf("db1", "db2", "db3").map { testEnvironment.openDatabase(DatabaseModel(it)) }
     val dbIds = testEnvironment.inspectDatabases(dbs)
-    val lockIds =
-      dbIds.map { testEnvironment.sendCommand(acquireLockCommand(it)).acquireDatabaseLock.lockId }
+    val lockIds = dbIds.map { testEnvironment.sendCommand(acquireLockCommand(it)).acquireDatabaseLock.lockId }
     assertThat(lockIds.toSet()).hasSize(dbIds.size)
     assertThat(lockIds.minOrNull() ?: 0).isGreaterThan(0)
 
@@ -152,10 +145,8 @@ class DatabaseLockingTest {
           testEnvironment.sendCommand(acquireLockCommand(databaseId)).let { response ->
             // verify expected error response
             assertThat(response.oneOfCase).isEqualTo(ERROR_OCCURRED)
-            assertThat(response.errorOccurred.content.message)
-              .matches(".*trying to lock .*database .*TimeoutException.*".toPattern())
-            assertThat(response.errorOccurred.content.errorCode)
-              .isEqualTo(ERROR_ISSUE_WITH_LOCKING_DATABASE)
+            assertThat(response.errorOccurred.content.message).matches(".*trying to lock .*database .*TimeoutException.*".toPattern())
+            assertThat(response.errorOccurred.content.errorCode).isEqualTo(ERROR_ISSUE_WITH_LOCKING_DATABASE)
           }
         } finally {
           instance.endTransaction()
@@ -174,10 +165,8 @@ class DatabaseLockingTest {
     testEnvironment.sendCommand(acquireLockCommand(databaseId)).let { response ->
       // verify expected error response
       assertThat(response.oneOfCase).isEqualTo(ERROR_OCCURRED)
-      assertThat(response.errorOccurred.content.message)
-        .matches(".*database .*already .*closed.*".toPattern())
-      assertThat(response.errorOccurred.content.errorCode)
-        .isEqualTo(ERROR_NO_OPEN_DATABASE_WITH_REQUESTED_ID)
+      assertThat(response.errorOccurred.content.message).matches(".*database .*already .*closed.*".toPattern())
+      assertThat(response.errorOccurred.content.errorCode).isEqualTo(ERROR_NO_OPEN_DATABASE_WITH_REQUESTED_ID)
     }
   }
 
@@ -189,12 +178,8 @@ class DatabaseLockingTest {
       // verify expected error response
       assertThat(response.oneOfCase).isEqualTo(ERROR_OCCURRED)
       assertThat(response.errorOccurred.content.message)
-        .matches(
-          ".*trying to unlock .*database .*no lock with id.* $invalidLockId.*"
-            .toPattern(CASE_INSENSITIVE)
-        )
-      assertThat(response.errorOccurred.content.errorCode)
-        .isEqualTo(ERROR_ISSUE_WITH_LOCKING_DATABASE)
+        .matches(".*trying to unlock .*database .*no lock with id.* $invalidLockId.*".toPattern(CASE_INSENSITIVE))
+      assertThat(response.errorOccurred.content.errorCode).isEqualTo(ERROR_ISSUE_WITH_LOCKING_DATABASE)
     }
   }
 
@@ -205,8 +190,7 @@ class DatabaseLockingTest {
     val databaseId = testEnvironment.inspectDatabase(instance)
 
     // lock the database
-    val lockId =
-      testEnvironment.sendCommand(acquireLockCommand(databaseId)).acquireDatabaseLock.lockId
+    val lockId = testEnvironment.sendCommand(acquireLockCommand(databaseId)).acquireDatabaseLock.lockId
     assertThat(lockId).isGreaterThan(0)
 
     // close the database instance (unsuccessfully)
@@ -214,8 +198,7 @@ class DatabaseLockingTest {
     assertThat(instance.isOpen).isTrue()
 
     // release lock
-    assertThat(testEnvironment.sendCommand(releaseLockCommand(lockId)).oneOfCase)
-      .isEqualTo(RELEASE_DATABASE_LOCK)
+    assertThat(testEnvironment.sendCommand(releaseLockCommand(lockId)).oneOfCase).isEqualTo(RELEASE_DATABASE_LOCK)
 
     // successful close as db closed notification received
     assertThat(instance.isOpen).isFalse()
@@ -227,8 +210,7 @@ class DatabaseLockingTest {
     withLockingTimeoutOverride(500) {
       runBlocking {
         // create and inspect two databases
-        val (db1, db2) =
-          listOf("db1", "db2").map { testEnvironment.openDatabase(DatabaseModel(it, table)) }
+        val (db1, db2) = listOf("db1", "db2").map { testEnvironment.openDatabase(DatabaseModel(it, table)) }
         val (id1, id2) = testEnvironment.inspectDatabases(db1, db2)
 
         // lock the first database (app thread)
@@ -315,9 +297,7 @@ class DatabaseLockingTest {
     assertThat(insertCount.get()).isEqualTo(countWhenLocked)
 
     // release the lock
-    testEnvironment.sendCommand(releaseLockCommand(lockId)).also {
-      assertThat(it.oneOfCase).isEqualTo(RELEASE_DATABASE_LOCK)
-    }
+    testEnvironment.sendCommand(releaseLockCommand(lockId)).also { assertThat(it.oneOfCase).isEqualTo(RELEASE_DATABASE_LOCK) }
 
     // check if the insert task resumed after unlocking
     latch = CountDownLatch(2) // allows for a few insert operations to happen
@@ -327,61 +307,56 @@ class DatabaseLockingTest {
     insertTask.get(2, SECONDS)
   }
 
-  @Test
-  fun test_endToEnd_inspector_lock_query_unlock_walOn() =
-    test_endToEnd_inspector_lock_query_unlock(writeAheadLoggingEnabled = true)
+  @Test fun test_endToEnd_inspector_lock_query_unlock_walOn() = test_endToEnd_inspector_lock_query_unlock(writeAheadLoggingEnabled = true)
 
-  @Test
-  fun test_endToEnd_inspector_lock_query_unlock_walOff() =
-    test_endToEnd_inspector_lock_query_unlock(writeAheadLoggingEnabled = false)
+  @Test fun test_endToEnd_inspector_lock_query_unlock_walOff() = test_endToEnd_inspector_lock_query_unlock(writeAheadLoggingEnabled = false)
 
-  private fun test_endToEnd_inspector_lock_query_unlock(writeAheadLoggingEnabled: Boolean) =
-    runBlocking {
-      // create database
-      val db = testEnvironment.openDatabase(database, writeAheadLoggingEnabled)
-      insertValue(db, value1)
-      assertThat(getValueSum(db)).isEqualTo(value1)
+  private fun test_endToEnd_inspector_lock_query_unlock(writeAheadLoggingEnabled: Boolean) = runBlocking {
+    // create database
+    val db = testEnvironment.openDatabase(database, writeAheadLoggingEnabled)
+    insertValue(db, value1)
+    assertThat(getValueSum(db)).isEqualTo(value1)
 
-      // inspect database
-      val dbId = testEnvironment.inspectDatabase(db)
+    // inspect database
+    val dbId = testEnvironment.inspectDatabase(db)
 
-      // establish a lock
-      val lockId = testEnvironment.sendCommand(acquireLockCommand(dbId)).acquireDatabaseLock.lockId
-      assertThat(lockId).isGreaterThan(0) // check that locking succeeded
+    // establish a lock
+    val lockId = testEnvironment.sendCommand(acquireLockCommand(dbId)).acquireDatabaseLock.lockId
+    assertThat(lockId).isGreaterThan(0) // check that locking succeeded
 
-      // try to insert a value on app thread
-      val appInsertDone = AtomicBoolean(false)
-      val appInsertTask =
-        applicationThread.submit {
-          insertValue(db, value2)
-          appInsertDone.set(true)
-        }
-      assertThat(appInsertDone.get()).isFalse()
-
-      // query schema
-      testEnvironment.sendCommand(MessageFactory.createGetSchemaCommand(dbId)).let {
-        assertThat(it.getSchema.tablesList.map { t -> t.name }).isEqualTo(listOf(table.name))
+    // try to insert a value on app thread
+    val appInsertDone = AtomicBoolean(false)
+    val appInsertTask =
+      applicationThread.submit {
+        insertValue(db, value2)
+        appInsertDone.set(true)
       }
+    assertThat(appInsertDone.get()).isFalse()
 
-      // repeat lock (testing simultaneous locks)
-      testEnvironment.sendCommand(acquireLockCommand(dbId)).let {
-        assertThat(it.acquireDatabaseLock.lockId).isEqualTo(lockId) // the same lock id expected
-      }
-
-      // query table
-      testEnvironment.issueQuery(dbId, "select sum(${column.name}) from ${table.name}").let {
-        assertThat(appInsertDone.get()).isFalse()
-        assertThat(it.rowsList.single().valuesList.single().longValue.toInt()).isEqualTo(value1)
-      }
-
-      // release all locks and verify the app thread insert operation succeeds
-      testEnvironment.sendCommand(releaseLockCommand(lockId))
-      assertThat(appInsertDone.get()).isFalse()
-      testEnvironment.sendCommand(releaseLockCommand(lockId))
-      appInsertTask.get(2, SECONDS)
-      assertThat(appInsertDone.get()).isTrue()
-      assertThat(getValueSum(db)).isEqualTo(value1 + value2)
+    // query schema
+    testEnvironment.sendCommand(MessageFactory.createGetSchemaCommand(dbId)).let {
+      assertThat(it.getSchema.tablesList.map { t -> t.name }).isEqualTo(listOf(table.name))
     }
+
+    // repeat lock (testing simultaneous locks)
+    testEnvironment.sendCommand(acquireLockCommand(dbId)).let {
+      assertThat(it.acquireDatabaseLock.lockId).isEqualTo(lockId) // the same lock id expected
+    }
+
+    // query table
+    testEnvironment.issueQuery(dbId, "select sum(${column.name}) from ${table.name}").let {
+      assertThat(appInsertDone.get()).isFalse()
+      assertThat(it.rowsList.single().valuesList.single().longValue.toInt()).isEqualTo(value1)
+    }
+
+    // release all locks and verify the app thread insert operation succeeds
+    testEnvironment.sendCommand(releaseLockCommand(lockId))
+    assertThat(appInsertDone.get()).isFalse()
+    testEnvironment.sendCommand(releaseLockCommand(lockId))
+    appInsertTask.get(2, SECONDS)
+    assertThat(appInsertDone.get()).isTrue()
+    assertThat(getValueSum(db)).isEqualTo(value1 + value2)
+  }
 
   @Suppress("SameParameterValue")
   private fun withLockingTimeoutOverride(overrideMs: Long, block: () -> Any) {
@@ -395,21 +370,13 @@ class DatabaseLockingTest {
   }
 
   private fun acquireLockCommand(databaseId: Int) =
-    Command.newBuilder()
-      .setAcquireDatabaseLock(AcquireDatabaseLockCommand.newBuilder().setDatabaseId(databaseId))
-      .build()
+    Command.newBuilder().setAcquireDatabaseLock(AcquireDatabaseLockCommand.newBuilder().setDatabaseId(databaseId)).build()
 
   private fun releaseLockCommand(lockId: Int) =
-    Command.newBuilder()
-      .setReleaseDatabaseLock(ReleaseDatabaseLockCommand.newBuilder().setLockId(lockId))
-      .build()
+    Command.newBuilder().setReleaseDatabaseLock(ReleaseDatabaseLockCommand.newBuilder().setLockId(lockId)).build()
 
   private fun getValueSum(instance: SQLiteDatabase): Int =
-    instance
-      .compileStatement("select sum(${column.name}) from ${table.name}")
-      .simpleQueryForLong()
-      .toInt()
+    instance.compileStatement("select sum(${column.name}) from ${table.name}").simpleQueryForLong().toInt()
 
-  private fun insertValue(instance: SQLiteDatabase, value: Int) =
-    instance.execSQL("insert into ${table.name} values ($value)")
+  private fun insertValue(instance: SQLiteDatabase, value: Int) = instance.execSQL("insert into ${table.name} values ($value)")
 }

@@ -28,17 +28,14 @@ private const val SCORE_FORCED = 1
 private const val SCORE_BEST = 2
 
 /**
- * The class keeps track of databases under inspection, and can keep database connections open if
- * such option is enabled.
+ * The class keeps track of databases under inspection, and can keep database connections open if such option is enabled.
  *
  * Signals expected to be provided to the class:
- * * [.notifyDatabaseOpened] - should be called when the inspection code detects a database open
- *   operation.
- * * [.notifyAllDatabaseReferencesReleased] - should be called when the inspection code detects that
- *   the last database connection reference has been released (effectively a connection closed
- *   event).
- * * [.notifyKeepOpenToggle] - should be called when the inspection code detects a request to change
- *   the keep-database-connection-open setting (enabled|disabled).
+ * * [.notifyDatabaseOpened] - should be called when the inspection code detects a database open operation.
+ * * [.notifyAllDatabaseReferencesReleased] - should be called when the inspection code detects that the last database connection reference
+ *   has been released (effectively a connection closed event).
+ * * [.notifyKeepOpenToggle] - should be called when the inspection code detects a request to change the keep-database-connection-open
+ *   setting (enabled|disabled).
  *
  * Callbacks exposed by the class:
  * * Detected a database that is now open, and previously was either closed or not tracked.
@@ -65,17 +62,14 @@ internal class DatabaseRegistry(
 
   // TODO: decide if use weak-references to database objects
   /**
-   * Database connection id -> a list of database references pointing to the same database. The
-   * collection is meant to only contain open connections (eventually consistent after all callbacks
-   * queued behind [lock] are processed).
+   * Database connection id -> a list of database references pointing to the same database. The collection is meant to only contain open
+   * connections (eventually consistent after all callbacks queued behind [lock] are processed).
    */
   @GuardedBy("lock") private val databases = mutableMapOf<Int, MutableSet<Database>>()
 
   // Database connection id -> extra database reference used to facilitate the
   // keep-database-connection-open functionality.
-  @VisibleForTesting
-  @GuardedBy("lock")
-  internal val keepOpenReferences = mutableMapOf<Int, KeepOpenReference>()
+  @VisibleForTesting @GuardedBy("lock") internal val keepOpenReferences = mutableMapOf<Int, KeepOpenReference>()
 
   // Database path -> database connection id - allowing to report a consistent id for all
   // references pointing to the same path.
@@ -86,9 +80,8 @@ internal class DatabaseRegistry(
   /**
    * Should be called when the inspection code detects a database being open operation.
    *
-   * Note that the method should be called before any code has a chance to close the database, so
-   * e.g. in an [androidx.inspection.ArtTooling.ExitHook.onExit] before the return value is
-   * released. Thread-safe.
+   * Note that the method should be called before any code has a chance to close the database, so e.g. in an
+   * [androidx.inspection.ArtTooling.ExitHook.onExit] before the return value is released. Thread-safe.
    */
   fun notifyDatabaseOpened(database: Database) {
     handleDatabaseSignal(database)
@@ -101,26 +94,25 @@ internal class DatabaseRegistry(
        *
        * The below will always succeed as [keepOpenReferences] only contains active references:
        * - we only insert active references into [keepOpenReferences]
-       * - [KeepOpenReference.releaseAllReferences] is the only place where we allow references to
-       *   be released
-       * - [KeepOpenReference.releaseAllReferences] is private and can only be called from this
-       *   class; and before it is called, it must be removed from [keepOpenReferences]
+       * - [KeepOpenReference.releaseAllReferences] is the only place where we allow references to be released
+       * - [KeepOpenReference.releaseAllReferences] is private and can only be called from this class; and before it is called, it must be
+       *   removed from [keepOpenReferences]
        */
       findKeepOpenReference(database)?.acquireReference()
     }
   }
 
   /**
-   * Should be called when the inspection code detects that the last database connection reference
-   * has been released (effectively a connection closed event). Thread-safe.
+   * Should be called when the inspection code detects that the last database connection reference has been released (effectively a
+   * connection closed event). Thread-safe.
    */
   fun notifyAllDatabaseReferencesReleased(database: Database) {
     handleDatabaseSignal(database)
   }
 
   /**
-   * Should be called when the inspection code detects a request to change the
-   * keep-database-connection-open setting (enabled|disabled). Thread-safe.
+   * Should be called when the inspection code detects a request to change the keep-database-connection-open setting (enabled|disabled).
+   * Thread-safe.
    */
   fun notifyKeepOpenToggle(setEnabled: Boolean) {
     synchronized(lock) {
@@ -141,10 +133,7 @@ internal class DatabaseRegistry(
     }
   }
 
-  /**
-   * Should be called at the start of inspection to pre-populate the list of databases with ones on
-   * disk.
-   */
+  /** Should be called at the start of inspection to pre-populate the list of databases with ones on disk. */
   fun notifyOnDiskDatabase(path: String) {
     Log.v(HIDDEN_TAG, "notifyOnDiskDatabase: $path")
     synchronized(lock) {
@@ -204,9 +193,7 @@ internal class DatabaseRegistry(
     }
   }
 
-  /**
-   * Returns a currently active database reference if one is available. Null otherwise. Thread-safe
-   */
+  /** Returns a currently active database reference if one is available. Null otherwise. Thread-safe */
   fun getConnection(id: Int, filter: (Database) -> Boolean = { true }): Database? {
     synchronized(lock) {
       return databases[id]?.filter(filter)?.findBestConnection()
@@ -274,13 +261,7 @@ internal class DatabaseRegistry(
   }
 
   internal fun interface OnDatabaseOpenedCallback {
-    fun onDatabaseOpened(
-      databaseId: Int,
-      path: String,
-      isForced: Boolean,
-      isReadOnly: Boolean,
-      apiClassName: String,
-    )
+    fun onDatabaseOpened(databaseId: Int, path: String, isForced: Boolean, isReadOnly: Boolean, apiClassName: String)
   }
 
   internal fun interface OnDatabaseClosedCallback {
@@ -302,9 +283,8 @@ internal class DatabaseRegistry(
     }
 
     /**
-     * This should only be called after removing the object from
-     * [DatabaseRegistry.keepOpenReferences]. Otherwise, the object will get in its own way or
-     * releasing its references.
+     * This should only be called after removing the object from [DatabaseRegistry.keepOpenReferences]. Otherwise, the object will get in
+     * its own way or releasing its references.
      */
     fun releaseAllReferences() {
       synchronized(lock) {
@@ -320,8 +300,7 @@ internal class DatabaseRegistry(
     }
   }
 
-  private fun findInMemoryReferenceKey(database: Database): Int? =
-    databases.entries.find { (_, items) -> items.contains(database) }?.key
+  private fun findInMemoryReferenceKey(database: Database): Int? = databases.entries.find { (_, items) -> items.contains(database) }?.key
 
   private fun logDatabaseStatus(path: String) {
     if (!Log.isLoggable(HIDDEN_TAG, Log.VERBOSE)) {
@@ -372,13 +351,7 @@ internal class DatabaseRegistry(
   }
 
   private fun OnDatabaseOpenedCallback.onDatabaseOpened(id: Int, database: Database) {
-    onDatabaseOpened(
-      id,
-      database.key,
-      isForcedConnection(database),
-      database.isReadOnly,
-      database.apiClassName,
-    )
+    onDatabaseOpened(id, database.key, isForcedConnection(database), database.isReadOnly, database.apiClassName)
   }
 
   private fun findKeepOpenReference(database: Database): KeepOpenReference? {

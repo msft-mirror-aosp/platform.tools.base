@@ -32,14 +32,9 @@ fun interface HttpTrackerFactory {
   fun trackConnection(url: String, callstack: String): HttpConnectionTracker
 }
 
-class HttpTrackerFactoryImpl(private val inspectorConnection: androidx.inspection.Connection) :
-  HttpTrackerFactory {
+class HttpTrackerFactoryImpl(private val inspectorConnection: androidx.inspection.Connection) : HttpTrackerFactory {
 
   override fun trackConnection(url: String, callstack: String): HttpConnectionTracker {
-    return ConnectionTracker(
-      url,
-      callstack,
-      ConnectionReporter.createConnectionTracker(inspectorConnection),
-    )
+    return ConnectionTracker(url, callstack, ConnectionReporter.createConnectionTracker(inspectorConnection))
   }
 }

@@ -21,11 +21,7 @@ import org.robolectric.junit.rules.CloseGuardRule
 
 /** Tests for [StreamReporter] */
 @RunWith(RobolectricTestRunner::class)
-@Config(
-  manifest = Config.NONE,
-  minSdk = Build.VERSION_CODES.O,
-  maxSdk = Build.VERSION_CODES.UPSIDE_DOWN_CAKE,
-)
+@Config(manifest = Config.NONE, minSdk = Build.VERSION_CODES.O, maxSdk = Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
 class StreamReporterTest {
   @get:Rule val rule: RuleChain = RuleChain.outerRule(CloseGuardRule()).around(LogPrinterRule())
 
@@ -69,8 +65,7 @@ class StreamReporterTest {
     reporter.onStreamClose()
 
     assertThat(reporter.data).isEqualTo("a")
-    assertThat(getLogLines())
-      .containsExactly("ERROR: Network Inspector: Payload size exceeded max size (2)")
+    assertThat(getLogLines()).containsExactly("ERROR: Network Inspector: Payload size exceeded max size (2)")
   }
 
   @Test
@@ -82,8 +77,7 @@ class StreamReporterTest {
     reporter.onStreamClose()
 
     assertThat(reporter.data).isEqualTo("abc")
-    assertThat(getLogLines())
-      .containsExactly("ERROR: Network Inspector: Payload size exceeded max size (6)")
+    assertThat(getLogLines()).containsExactly("ERROR: Network Inspector: Payload size exceeded max size (6)")
   }
 
   @Test
@@ -130,10 +124,8 @@ class StreamReporterTest {
     assertThat(getLogLines()).isEmpty()
   }
 
-  private class FakeBufferHelper(
-    private val throwOnWrite: Boolean = false,
-    private val throwOnToByteString: Boolean = false,
-  ) : BufferHelper {
+  private class FakeBufferHelper(private val throwOnWrite: Boolean = false, private val throwOnToByteString: Boolean = false) :
+    BufferHelper {
 
     override fun write(buffer: ByteString.Output, bytes: ByteArray, offset: Int, len: Int) {
       if (throwOnWrite) {
@@ -156,15 +148,9 @@ class StreamReporterTest {
     bufferHelper: BufferHelper? = null,
   ) = TestStreamReporter(connection, threadReporter, 1, maxBufferSize, bufferHelper)
 
-  private fun inputStreamReporter(
-    connection: Connection,
-    maxBufferSize: Int = 10 * 1024 * 1024,
-    bufferHelper: BufferHelper? = null,
-  ) = InputStreamReporter(connection, 1, threadReporter, maxBufferSize, bufferHelper)
+  private fun inputStreamReporter(connection: Connection, maxBufferSize: Int = 10 * 1024 * 1024, bufferHelper: BufferHelper? = null) =
+    InputStreamReporter(connection, 1, threadReporter, maxBufferSize, bufferHelper)
 
-  private fun outputStreamReporter(
-    connection: Connection,
-    maxBufferSize: Int = 10 * 1024 * 1024,
-    bufferHelper: BufferHelper? = null,
-  ) = OutputStreamReporter(connection, 1, threadReporter, maxBufferSize, bufferHelper)
+  private fun outputStreamReporter(connection: Connection, maxBufferSize: Int = 10 * 1024 * 1024, bufferHelper: BufferHelper? = null) =
+    OutputStreamReporter(connection, 1, threadReporter, maxBufferSize, bufferHelper)
 }

@@ -28,15 +28,11 @@ interface ThreadReporter {
 
   companion object {
 
-    fun createThreadReporter(connection: Connection, connectionId: Long): ThreadReporter =
-      ThreadReporterImpl(connection, connectionId)
+    fun createThreadReporter(connection: Connection, connectionId: Long): ThreadReporter = ThreadReporterImpl(connection, connectionId)
   }
 }
 
-private class ThreadReporterImpl(
-  private val connection: Connection,
-  private val connectionId: Long,
-) : ThreadReporter {
+private class ThreadReporterImpl(private val connection: Connection, private val connectionId: Long) : ThreadReporter {
 
   private var lastThread: Thread? = null
 
@@ -45,11 +41,7 @@ private class ThreadReporterImpl(
     if (thread !== lastThread) {
       connection.sendHttpConnectionEvent(
         NetworkInspectorProtocol.HttpConnectionEvent.newBuilder()
-          .setHttpThread(
-            NetworkInspectorProtocol.ThreadData.newBuilder()
-              .setThreadId(thread.id)
-              .setThreadName(thread.name)
-          )
+          .setHttpThread(NetworkInspectorProtocol.ThreadData.newBuilder().setThreadId(thread.id).setThreadName(thread.name))
           .setConnectionId(connectionId)
       )
       lastThread = thread

@@ -22,11 +22,7 @@ import okhttp3.Request
 import okhttp3.Response
 import okio.Timeout
 
-class FakeCall(
-  private val client: FakeOkHttp3Client,
-  private val request: Request,
-  private val response: Response,
-) : Call {
+class FakeCall(private val client: FakeOkHttp3Client, private val request: Request, private val response: Response) : Call {
 
   override fun clone(): Call {
     throw NotImplementedError("Not yet implemented")

@@ -18,9 +18,4 @@ package com.android.tools.appinspection.backgroundtask
 
 import android.content.Intent
 
-class PendingIntentInfo(
-  val type: PendingIntentType,
-  val requestCode: Int,
-  val intents: List<Intent>,
-  val flags: Int,
-)
+class PendingIntentInfo(val type: PendingIntentType, val requestCode: Int, val intents: List<Intent>, val flags: Int)

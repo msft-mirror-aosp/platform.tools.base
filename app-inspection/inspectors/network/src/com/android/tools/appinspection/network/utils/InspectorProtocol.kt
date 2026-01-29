@@ -19,9 +19,7 @@ package com.android.tools.appinspection.network.utils
 import androidx.inspection.Connection
 import studio.network.inspection.NetworkInspectorProtocol
 
-fun Connection.sendHttpConnectionEvent(
-  builder: NetworkInspectorProtocol.HttpConnectionEvent.Builder
-) {
+fun Connection.sendHttpConnectionEvent(builder: NetworkInspectorProtocol.HttpConnectionEvent.Builder) {
   sendEvent(
     NetworkInspectorProtocol.Event.newBuilder()
       .setHttpConnectionEvent(builder.build())

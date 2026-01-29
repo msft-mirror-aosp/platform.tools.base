@@ -68,10 +68,7 @@ interface AlarmHandler {
 
 private const val TAG = "BackgroundInspector"
 
-class AlarmHandlerImpl(
-  private val connection: Connection,
-  private val intentRegistry: IntentRegistry,
-) : AlarmHandler {
+class AlarmHandlerImpl(private val connection: Connection, private val intentRegistry: IntentRegistry) : AlarmHandler {
 
   private val operationIdMap = ConcurrentHashMap<PendingIntent, Long>()
   private val listenerIdMap = ConcurrentHashMap<OnAlarmListener, Long>()
@@ -97,19 +94,13 @@ class AlarmHandlerImpl(
             return
           }
         }
-      val builder =
-        AlarmSet.newBuilder()
-          .setType(alarmType)
-          .setTriggerMs(triggerMs)
-          .setWindowMs(windowMs)
-          .setIntervalMs(intervalMs)
+      val builder = AlarmSet.newBuilder().setType(alarmType).setTriggerMs(triggerMs).setWindowMs(windowMs).setIntervalMs(intervalMs)
 
       val taskId =
         when {
           operation != null -> builder.setPendingIntent(operation)
           listener != null -> builder.setListener(listener, listenerTag)
-          else ->
-            throw IllegalStateException("Invalid alarm: neither operation or listener is set.")
+          else -> throw IllegalStateException("Invalid alarm: neither operation or listener is set.")
         }
 
       connection.sendBackgroundTaskEvent(taskId) {
@@ -152,10 +143,7 @@ class AlarmHandlerImpl(
   private fun AlarmSet.Builder.setPendingIntent(pendingIntent: PendingIntent): Long {
     val builder = PendingIntentProto.newBuilder()
     try {
-      @Suppress("UsePropertyAccessSyntax")
-      builder
-        .setCreatorPackage(pendingIntent.creatorPackage)
-        .setCreatorUid(pendingIntent.creatorUid)
+      @Suppress("UsePropertyAccessSyntax") builder.setCreatorPackage(pendingIntent.creatorPackage).setCreatorUid(pendingIntent.creatorUid)
     } catch (_: Throwable) {
       // Tests running on Robolectric APIs 31 & 32 crash when accessing PendingIntent getters.
       // Tested on a real device and it did not crash

@@ -28,8 +28,8 @@ import javax.net.ssl.HttpsURLConnection
 import javax.net.ssl.SSLSocketFactory
 
 /**
- * An implementation of [javax.net.ssl.HttpsURLConnection] which delegates the method calls to
- * [TrackedHttpURLConnection], which ensures that the appropriate methods are instrumented.
+ * An implementation of [javax.net.ssl.HttpsURLConnection] which delegates the method calls to [TrackedHttpURLConnection], which ensures
+ * that the appropriate methods are instrumented.
  */
 class HttpsURLConnectionWrapper(
   private val wrappedHttps: HttpsURLConnection,
@@ -38,8 +38,7 @@ class HttpsURLConnectionWrapper(
   interceptionRuleService: InterceptionRuleService,
 ) : HttpsURLConnection(wrappedHttps.url) {
 
-  private val trackedConnection =
-    TrackedHttpURLConnection(wrappedHttps, callstack, trackerFactory, interceptionRuleService)
+  private val trackedConnection = TrackedHttpURLConnection(wrappedHttps, callstack, trackerFactory, interceptionRuleService)
 
   override fun getCipherSuite(): String {
     return wrappedHttps.cipherSuite
@@ -170,8 +169,8 @@ class HttpsURLConnectionWrapper(
   }
 
   /**
-   * Methods of [getHeaderFieldDate], [getHeaderFieldInt] and [getHeaderFieldLong] are derived from
-   * this method and implemented in [HttpsURLConnection].
+   * Methods of [getHeaderFieldDate], [getHeaderFieldInt] and [getHeaderFieldLong] are derived from this method and implemented in
+   * [HttpsURLConnection].
    */
   override fun getHeaderField(name: String?): String? {
     return trackedConnection.getHeaderField(name)
@@ -189,10 +188,7 @@ class HttpsURLConnectionWrapper(
     return trackedConnection.getContent(classes)
   }
 
-  /**
-   * Fields of [responseCode] and [responseMessage] are derived from this method and implemented in
-   * [HttpsURLConnection].
-   */
+  /** Fields of [responseCode] and [responseMessage] are derived from this method and implemented in [HttpsURLConnection]. */
   override fun getInputStream(): InputStream {
     return trackedConnection.inputStream
   }

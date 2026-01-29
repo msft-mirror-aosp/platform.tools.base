@@ -26,19 +26,10 @@ import studio.network.inspection.NetworkInspectorProtocol
 import studio.network.inspection.NetworkInspectorProtocol.HttpConnectionEvent.Header
 import studio.network.inspection.NetworkInspectorProtocol.HttpConnectionEvent.HttpTransport
 
-/**
- * A class that is used to report connection related activity to Studio such as making requests or
- * receiving responses.
- */
+/** A class that is used to report connection related activity to Studio such as making requests or receiving responses. */
 internal interface ConnectionReporter : ThreadReporter {
 
-  fun onRequest(
-    url: String,
-    callstack: String,
-    method: String,
-    headers: Map<String, List<String>>,
-    transport: HttpTransport,
-  )
+  fun onRequest(url: String, callstack: String, method: String, headers: Map<String, List<String>>, transport: HttpTransport)
 
   fun onResponse(responseCode: Int, headers: Map<String?, List<String>>)
 
@@ -52,13 +43,11 @@ internal interface ConnectionReporter : ThreadReporter {
 
   companion object {
 
-    fun createConnectionTracker(connection: Connection): ConnectionReporter =
-      ConnectionReporterImpl(connection)
+    fun createConnectionTracker(connection: Connection): ConnectionReporter = ConnectionReporterImpl(connection)
   }
 }
 
-private class ConnectionReporterImpl(private val connection: Connection) :
-  ConnectionReporter, ThreadReporter {
+private class ConnectionReporterImpl(private val connection: Connection) : ConnectionReporter, ThreadReporter {
 
   private val connectionId = ConnectionIdGenerator.nextId()
   private val threadReporter = ThreadReporter.createThreadReporter(connection, connectionId)
@@ -75,13 +64,7 @@ private class ConnectionReporterImpl(private val connection: Connection) :
     return OutputStreamReporter(connection, connectionId, threadReporter)
   }
 
-  override fun onRequest(
-    url: String,
-    callstack: String,
-    method: String,
-    headers: Map<String, List<String>>,
-    transport: HttpTransport,
-  ) {
+  override fun onRequest(url: String, callstack: String, method: String, headers: Map<String, List<String>>, transport: HttpTransport) {
     connection.sendHttpConnectionEvent(
       NetworkInspectorProtocol.HttpConnectionEvent.newBuilder()
         .setHttpRequestStarted(
@@ -89,11 +72,7 @@ private class ConnectionReporterImpl(private val connection: Connection) :
             .setUrl(url)
             .setTrace(callstack)
             .setMethod(method)
-            .addAllHeaders(
-              headers.entries.map {
-                Header.newBuilder().setKey(it.key).addAllValues(it.value).build()
-              }
-            )
+            .addAllHeaders(headers.entries.map { Header.newBuilder().setKey(it.key).addAllValues(it.value).build() })
             .setTransport(transport)
         )
         .setConnectionId(connectionId)
@@ -106,11 +85,7 @@ private class ConnectionReporterImpl(private val connection: Connection) :
         .setHttpResponseStarted(
           NetworkInspectorProtocol.HttpConnectionEvent.ResponseStarted.newBuilder()
             .setResponseCode(responseCode)
-            .addAllHeaders(
-              headers.entries.map {
-                Header.newBuilder().setKey(it.key ?: "null").addAllValues(it.value).build()
-              }
-            )
+            .addAllHeaders(headers.entries.map { Header.newBuilder().setKey(it.key ?: "null").addAllValues(it.value).build() })
         )
         .setConnectionId(connectionId)
     )
@@ -136,9 +111,7 @@ private class ConnectionReporterImpl(private val connection: Connection) :
   override fun onError(status: String) {
     connection.sendHttpConnectionEvent(
       NetworkInspectorProtocol.HttpConnectionEvent.newBuilder()
-        .setHttpClosed(
-          NetworkInspectorProtocol.HttpConnectionEvent.Closed.newBuilder().setCompleted(false)
-        )
+        .setHttpClosed(NetworkInspectorProtocol.HttpConnectionEvent.Closed.newBuilder().setCompleted(false))
         .setConnectionId(connectionId)
     )
   }

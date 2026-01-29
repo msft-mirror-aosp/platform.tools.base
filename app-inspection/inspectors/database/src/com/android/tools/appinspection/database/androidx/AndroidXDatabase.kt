@@ -49,19 +49,11 @@ internal class AndroidXDatabase(connection: SQLiteConnection, path: String, flag
 
   override fun releaseReference() {}
 
-  override fun execSql(
-    sql: String,
-    selectionArgs: Array<String?>,
-    cancellationSignal: CancellationSignal?,
-  ) {
+  override fun execSql(sql: String, selectionArgs: Array<String?>, cancellationSignal: CancellationSignal?) {
     rawQuery(sql, selectionArgs, cancellationSignal).use { it.moveToNext() }
   }
 
-  override fun rawQuery(
-    sql: String,
-    selectionArgs: Array<String?>,
-    cancellationSignal: CancellationSignal?,
-  ): Cursor {
+  override fun rawQuery(sql: String, selectionArgs: Array<String?>, cancellationSignal: CancellationSignal?): Cursor {
     val statement =
       delegate.prepare(sql).apply {
         selectionArgs.forEachIndexed { i, value ->

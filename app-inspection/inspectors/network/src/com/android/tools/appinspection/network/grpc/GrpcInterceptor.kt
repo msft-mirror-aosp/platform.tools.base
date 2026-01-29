@@ -36,19 +36,14 @@ import java.net.SocketAddress
 private const val UNKNOWN = "unknown"
 
 /** A GRPC [ClientInterceptor] that sends events to the Network Inspector tool. */
-internal class GrpcInterceptor(private val trackerFactory: GrpcTracker.Factory) :
-  ClientInterceptor {
+internal class GrpcInterceptor(private val trackerFactory: GrpcTracker.Factory) : ClientInterceptor {
   override fun <Req : Any, Res : Any> interceptCall(
     method: MethodDescriptor<Req, Res>,
     options: CallOptions,
     next: Channel,
   ): ClientCall<Req, Res> {
     val tracker = trackerFactory.newGrpcTracker()
-    return InterceptingClientCall(
-      tracker,
-      method,
-      next.newCall(method, options.withStreamTracerFactory(StreamTracer.Factory(tracker))),
-    )
+    return InterceptingClientCall(tracker, method, next.newCall(method, options.withStreamTracerFactory(StreamTracer.Factory(tracker))))
   }
 
   private class InterceptingClientCall<Req : Any, Res : Any>(
@@ -59,12 +54,7 @@ internal class GrpcInterceptor(private val trackerFactory: GrpcTracker.Factory) 
     override fun start(responseListener: Listener<Res>, headers: Metadata) {
       val listener = ClientCallListener(tracker, method.responseMarshaller, responseListener)
       super.start(listener, headers)
-      tracker.trackGrpcCallStarted(
-        method.serviceName ?: UNKNOWN,
-        method.bareMethodName ?: UNKNOWN,
-        headers,
-        getStackTrace(1),
-      )
+      tracker.trackGrpcCallStarted(method.serviceName ?: UNKNOWN, method.bareMethodName ?: UNKNOWN, headers, getStackTrace(1))
     }
 
     override fun sendMessage(message: Req) {
@@ -80,8 +70,7 @@ internal class GrpcInterceptor(private val trackerFactory: GrpcTracker.Factory) 
     }
 
     class Factory(private val tracker: GrpcTracker) : ClientStreamTracer.Factory() {
-      override fun newClientStreamTracer(info: StreamInfo, headers: Metadata) =
-        StreamTracer(tracker)
+      override fun newClientStreamTracer(info: StreamInfo, headers: Metadata) = StreamTracer(tracker)
     }
   }
 

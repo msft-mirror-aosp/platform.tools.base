@@ -30,11 +30,10 @@ import java.security.Permission
 import studio.network.inspection.NetworkInspectorProtocol.HttpConnectionEvent.HttpTransport.JAVA_NET
 
 /**
- * Wraps a [HttpURLConnection] instance and delegates the method calls to the wrapped object,
- * injecting calls to report HTTP activity through [HttpConnectionTracker]
+ * Wraps a [HttpURLConnection] instance and delegates the method calls to the wrapped object, injecting calls to report HTTP activity
+ * through [HttpConnectionTracker]
  *
- * [HttpURLConnectionWrapper] and [HttpsURLConnectionWrapper] delegates the heavy lifting of
- * tracking to this class.
+ * [HttpURLConnectionWrapper] and [HttpsURLConnectionWrapper] delegates the heavy lifting of tracking to this class.
  */
 class TrackedHttpURLConnection(
   private val wrapped: HttpURLConnection,
@@ -44,30 +43,26 @@ class TrackedHttpURLConnection(
 ) {
   private data class HeaderEntry(val key: String?, val value: String)
 
-  private val connectionTracker: HttpConnectionTracker =
-    trackerFactory.trackConnection(wrapped.url.toString(), callstack)
+  private val connectionTracker: HttpConnectionTracker = trackerFactory.trackConnection(wrapped.url.toString(), callstack)
   private var connectTracked = false
   @VisibleForTesting var responseTracked = false
 
   /**
-   * The streams are wrappers around the actual output/input streams, so they need to be cleaned up
-   * manually. (calling disconnect won't close them)
+   * The streams are wrappers around the actual output/input streams, so they need to be cleaned up manually. (calling disconnect won't
+   * close them)
    */
   private var trackedRequestStream: OutputStream? = null
   private var trackedResponseStream: InputStream? = null
 
-  /**
-   * The response of the network request modified by any applicable interception rules. This is what
-   * the app gets.
-   */
+  /** The response of the network request modified by any applicable interception rules. This is what the app gets. */
   private lateinit var interceptedResponse: NetworkResponse
   private lateinit var interceptedHeaders: List<HeaderEntry>
 
   /**
    * Calls [HttpConnectionTracker.trackRequest] only if it hasn't been called before.
    *
-   * You should call this method just before [HttpURLConnection.connect] is called, after which
-   * point, [HttpURLConnection] throws exceptions if you try to access the fields we want to track.
+   * You should call this method just before [HttpURLConnection.connect] is called, after which point, [HttpURLConnection] throws exceptions
+   * if you try to access the fields we want to track.
    */
   private fun trackPreConnect() {
     if (!connectTracked) {
@@ -80,12 +75,10 @@ class TrackedHttpURLConnection(
   }
 
   /**
-   * Attempt to force the current connection to connect, swallowing any exception so that we don't
-   * affect the site calling this method.
+   * Attempt to force the current connection to connect, swallowing any exception so that we don't affect the site calling this method.
    *
-   * Calling connect ourselves is useful in case the user calls a HttpURLConnection method which
-   * would otherwise have caused a `connect` to happen as a side effect. In that case, we
-   * preemptively do it ourselves, to make sure that our tracking state machine stays valid.
+   * Calling connect ourselves is useful in case the user calls a HttpURLConnection method which would otherwise have caused a `connect` to
+   * happen as a side effect. In that case, we preemptively do it ourselves, to make sure that our tracking state machine stays valid.
    */
   private fun tryConnect() {
     if (!connectTracked) {
@@ -99,13 +92,12 @@ class TrackedHttpURLConnection(
   }
 
   /**
-   * Calls [HttpConnectionTracker.trackResponseInterception] only if it hasn't been called before.
-   * This should be called to indicate that we received a response and can now start to read its
-   * contents.
+   * Calls [HttpConnectionTracker.trackResponseInterception] only if it hasn't been called before. This should be called to indicate that we
+   * received a response and can now start to read its contents.
    *
-   * IMPORTANT: This method, as a side effect, will cause the request to get sent if it hasn't been
-   * sent already. Therefore, if this method is called too early, it can cause problems if the user
-   * then tries to modify the request afterward, e.g. by updating its body via `getOutputStream`.
+   * IMPORTANT: This method, as a side effect, will cause the request to get sent if it hasn't been sent already. Therefore, if this method
+   * is called too early, it can cause problems if the user then tries to modify the request afterward, e.g. by updating its body via
+   * `getOutputStream`.
    */
   private fun trackResponse() {
     if (!responseTracked) {
@@ -118,15 +110,10 @@ class TrackedHttpURLConnection(
           )
         // Create a list for intercepted headers.
         interceptedHeaders =
-          interceptedResponse.responseHeaders.entries.flatMap { entries ->
-            entries.value.map { HeaderEntry(entries.key, it) }
-          }
+          interceptedResponse.responseHeaders.entries.flatMap { entries -> entries.value.map { HeaderEntry(entries.key, it) } }
         // Don't call our getHeaderFields overrides, as it would call
         // this method recursively.
-        connectionTracker.trackResponseHeaders(
-          interceptedResponse.responseCode,
-          interceptedResponse.responseHeaders,
-        )
+        connectionTracker.trackResponseHeaders(interceptedResponse.responseCode, interceptedResponse.responseHeaders)
         connectionTracker.trackResponseInterception(interceptedResponse.interception)
       } catch (e: IOException) {
         interceptedResponse = NetworkResponse(-1, wrapped.headerFields, e)
@@ -138,13 +125,13 @@ class TrackedHttpURLConnection(
   }
 
   /**
-   * Like [trackResponse] but swallows the exception. This is useful because there are many methods
-   * in [HttpURLConnection] that a user can call which indicate that a request has been completed
-   * (for example, [HttpURLConnection.getResponseCode] which don't, itself, throw an exception).
+   * Like [trackResponse] but swallows the exception. This is useful because there are many methods in [HttpURLConnection] that a user can
+   * call which indicate that a request has been completed (for example, [HttpURLConnection.getResponseCode] which don't, itself, throw an
+   * exception).
    *
-   * IMPORTANT: This method, as a side effect, will cause the request to get sent if it hasn't been
-   * sent already. Therefore, if this method is called too early, it can cause problems if the user
-   * then tries to modify the request afterward, e.g. by updating its body via `getOutputStream`.
+   * IMPORTANT: This method, as a side effect, will cause the request to get sent if it hasn't been sent already. Therefore, if this method
+   * is called too early, it can cause problems if the user then tries to modify the request afterward, e.g. by updating its body via
+   * `getOutputStream`.
    */
   private fun tryTrackResponse() {
     try {
@@ -349,9 +336,7 @@ class TrackedHttpURLConnection(
       trackPreConnect()
       return try {
         trackResponse()
-        connectionTracker.trackResponseBody(interceptedResponse.body).also {
-          trackedResponseStream = it
-        }
+        connectionTracker.trackResponseBody(interceptedResponse.body).also { trackedResponseStream = it }
       } catch (e: IOException) {
         connectionTracker.error(e.toString())
         throw e

@@ -24,16 +24,14 @@ import org.robolectric.shadows.ShadowLog
 import org.robolectric.shadows.ShadowLog.LogItem
 
 /** A [org.junit.rules.TestRule] that prints out logs after running a test. */
-class LogPrinterRule(private val level: Int = Log.WARN, vararg includeTags: String) :
-  ExternalResource() {
+class LogPrinterRule(private val level: Int = Log.WARN, vararg includeTags: String) : ExternalResource() {
   private val includeTags = includeTags.toSet()
 
   override fun after() {
     ShadowLog.getLogs().filter { it.shouldLog() }.forEach { it.print() }
   }
 
-  private fun LogItem.shouldLog() =
-    type >= level && (includeTags.isEmpty() || includeTags.contains(tag))
+  private fun LogItem.shouldLog() = type >= level && (includeTags.isEmpty() || includeTags.contains(tag))
 }
 
 private fun LogItem.print() {
@@ -47,14 +45,6 @@ private fun LogItem.print() {
   }
 }
 
-private val LOG_LEVELS =
-  mapOf(
-    Log.VERBOSE to "V",
-    Log.DEBUG to "D",
-    Log.INFO to "I",
-    Log.WARN to "W",
-    Log.ERROR to "E",
-    Log.ASSERT to "A",
-  )
+private val LOG_LEVELS = mapOf(Log.VERBOSE to "V", Log.DEBUG to "D", Log.INFO to "I", Log.WARN to "W", Log.ERROR to "E", Log.ASSERT to "A")
 
 private fun Int.asLogLevel() = LOG_LEVELS.getValue(this)

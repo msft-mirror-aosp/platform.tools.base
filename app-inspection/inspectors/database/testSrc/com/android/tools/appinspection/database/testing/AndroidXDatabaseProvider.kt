@@ -27,11 +27,7 @@ internal class AndroidXDatabaseProvider(override val path: String) : DatabasePro
 
   override fun getReadOnlyDb(autoClose: Boolean): Database {
     val connection = BundledSQLiteDriver().open(path, SQLITE_OPEN_READWRITE or SQLITE_OPEN_CREATE)
-    return AndroidXDatabase(
-      connection as BundledSQLiteConnection,
-      path,
-      SQLITE_OPEN_READONLY or SQLITE_OPEN_CREATE,
-    )
+    return AndroidXDatabase(connection as BundledSQLiteConnection, path, SQLITE_OPEN_READONLY or SQLITE_OPEN_CREATE)
   }
 
   override fun getReadWriteDb(autoClose: Boolean): Database {

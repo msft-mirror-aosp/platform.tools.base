@@ -21,8 +21,7 @@ import java.io.FilterInputStream
 import java.io.InputStream
 
 /** Wraps an InputStream to enable the network inspector capturing of response body */
-internal class InputStreamTracker(wrapped: InputStream, private val reporter: StreamReporter) :
-  FilterInputStream(wrapped) {
+internal class InputStreamTracker(wrapped: InputStream, private val reporter: StreamReporter) : FilterInputStream(wrapped) {
 
   override fun close() {
     super.close()
