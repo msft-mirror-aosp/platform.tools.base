@@ -24,13 +24,6 @@ import io.grpc.MethodDescriptor
 /** A no-op interceptor. */
 object ForwardingInterceptor : ClientInterceptor {
 
-  override fun <ReqT, RespT> interceptCall(
-    descriptor: MethodDescriptor<ReqT, RespT>,
-    options: CallOptions,
-    channel: Channel,
-  ) =
-    object :
-      ForwardingClientCall.SimpleForwardingClientCall<ReqT, RespT>(
-        channel.newCall(descriptor, options)
-      ) {}
+  override fun <ReqT, RespT> interceptCall(descriptor: MethodDescriptor<ReqT, RespT>, options: CallOptions, channel: Channel) =
+    object : ForwardingClientCall.SimpleForwardingClientCall<ReqT, RespT>(channel.newCall(descriptor, options)) {}
 }

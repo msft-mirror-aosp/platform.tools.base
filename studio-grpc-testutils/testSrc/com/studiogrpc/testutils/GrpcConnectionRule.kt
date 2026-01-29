@@ -32,11 +32,7 @@ class GrpcConnectionRule(val services: List<BindableService>) : NamedExternalRes
 
   override fun before(description: Description) {
     val serverName: String = InProcessServerBuilder.generateName()
-    server =
-      InProcessServerBuilder.forName(serverName)
-        .apply { services.forEach { addService(it) } }
-        .build()
-        .start()
+    server = InProcessServerBuilder.forName(serverName).apply { services.forEach { addService(it) } }.build().start()
 
     channel = InProcessChannelBuilder.forName(serverName).directExecutor().build()
   }
