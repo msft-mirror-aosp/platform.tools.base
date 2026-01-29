@@ -18,9 +18,5 @@ package com.android.backup
 
 fun interface AdbServicesFactory {
 
-  fun createAdbServices(
-    serialNumber: String,
-    listener: BackupProgressListener?,
-    steps: Int,
-  ): AdbServices
+  fun createAdbServices(serialNumber: String, listener: BackupProgressListener?, steps: Int): AdbServices
 }

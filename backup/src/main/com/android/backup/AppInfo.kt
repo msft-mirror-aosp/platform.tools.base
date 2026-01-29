@@ -15,8 +15,4 @@
  */
 package com.android.backup
 
-data class AppInfo(
-  val debuggable: Boolean,
-  val backupEnabled: Boolean,
-  val grantedPermissions: List<String>,
-)
+data class AppInfo(val debuggable: Boolean, val backupEnabled: Boolean, val grantedPermissions: List<String>)

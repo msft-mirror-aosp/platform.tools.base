@@ -84,8 +84,7 @@ abstract class AbstractAdbServices(
         logger.warn("Failed to initialize '$transport`: $out")
         false
       }
-      else ->
-        throw BackupException(TRANSPORT_INIT_FAILED, "Failed to initialize '$transport`: $out")
+      else -> throw BackupException(TRANSPORT_INIT_FAILED, "Failed to initialize '$transport`: $out")
     }
   }
 
@@ -98,10 +97,7 @@ abstract class AbstractAdbServices(
       return
     }
     if (errors.isAppStopped()) {
-      throw BackupException(
-        APP_STOPPED,
-        "Application '$applicationId' is in a stopped state. Please launch the app and try again.",
-      )
+      throw BackupException(APP_STOPPED, "Application '$applicationId' is in a stopped state. Please launch the app and try again.")
     }
     val errorCode = if (initOk) BMGR_ERROR_BACKUP else TRANSPORT_INIT_FAILED
     val message = "Failed to backup '$applicationId`:\n${errors.joinToString("\n") { it.message }}"
@@ -116,12 +112,7 @@ abstract class AbstractAdbServices(
     }
   }
 
-  override suspend fun restore(
-    token: String,
-    applicationId: String,
-    type: BackupType,
-    initOk: Boolean,
-  ) {
+  override suspend fun restore(token: String, applicationId: String, type: BackupType, initOk: Boolean) {
     setBackupType(type)
     val command = "bmgr restore $token $applicationId --monitor-verbose"
     val out = executeCommand(command, RESTORE_FAILED).stdout
@@ -140,31 +131,20 @@ abstract class AbstractAdbServices(
     // The 'am' command reports errors in stderr
     val stdout = out.stdout
     val stderr = out.stderr
-    if (
-      !stderr.contains("Error") &&
-        stdout == "Starting: Intent { act=android.intent.action.VIEW dat=market://details/... }"
-    ) {
+    if (!stderr.contains("Error") && stdout == "Starting: Intent { act=android.intent.action.VIEW dat=market://details/... }") {
       return
     }
     if (stderr.contains("Error: Activity not started, unable to resolve Intent")) {
-      throw BackupException(
-        PLAY_STORE_NOT_INSTALLED,
-        "Failed to update GmsCore. Play Store not installed",
-      )
+      throw BackupException(PLAY_STORE_NOT_INSTALLED, "Failed to update GmsCore. Play Store not installed")
     } else {
-      throw BackupException(
-        UNEXPECTED_ERROR,
-        "Failed to update GmsCore. Unexpected output: '$stdout\n$stderr'",
-      )
+      throw BackupException(UNEXPECTED_ERROR, "Failed to update GmsCore. Unexpected output: '$stdout\n$stderr'")
     }
   }
 
   override suspend fun getForegroundApplicationId(): String {
     val stdout = executeCommand("dumpsys activity activities").stdout
     val lines = stdout.lineSequence()
-    val line =
-      lines.find { it.contains("mFocusedApp=ActivityRecord") }
-        ?: lines.find { it.contains("ResumedActivity: ActivityRecord") }
+    val line = lines.find { it.contains("mFocusedApp=ActivityRecord") } ?: lines.find { it.contains("ResumedActivity: ActivityRecord") }
     if (line == null) {
       logger.warn("Could not detect foreground app. Unexpected output:\n$stdout")
       throw BackupException(UNEXPECTED_ERROR, "Could not detect foreground app. See log for detail")
@@ -196,10 +176,7 @@ abstract class AbstractAdbServices(
 
   private suspend fun verifyGmsCore() {
     reportProgress("Verifying Google services")
-    val lines =
-      executeCommand("dumpsys package com.google.android.gms").stdout.lineSequence().dropWhile {
-        it != "Packages:"
-      }
+    val lines = executeCommand("dumpsys package com.google.android.gms").stdout.lineSequence().dropWhile { it != "Packages:" }
     val versionMatch = lines.firstNotNullOfOrNull { PACKAGE_VERSION_CODE_REGEX.matchEntire(it) }
     if (versionMatch == null) {
       throw BackupException(GMSCORE_NOT_FOUND, "Google Services not found on device")
@@ -225,19 +202,10 @@ abstract class AbstractAdbServices(
     }
   }
 
-  override suspend fun getAppInfo(
-    applicationId: String,
-    withPermissions: Boolean,
-    user: String?,
-  ): AppInfo? {
+  override suspend fun getAppInfo(applicationId: String, withPermissions: Boolean, user: String?): AppInfo? {
     val lines = executeCommand("dumpsys package $applicationId").stdout.lines()
     val flags =
-      lines
-        .find { it.trim().startsWith("pkgFlags=") }
-        ?.substringAfter('[')
-        ?.substringBefore(']')
-        ?.trim()
-        ?.split(' ') ?: return null
+      lines.find { it.trim().startsWith("pkgFlags=") }?.substringAfter('[')?.substringBefore(']')?.trim()?.split(' ') ?: return null
     val allowBackup = flags.contains("ALLOW_BACKUP")
     val debuggable = flags.contains("DEBUGGABLE")
 
@@ -259,8 +227,7 @@ abstract class AbstractAdbServices(
 
   override suspend fun isPlayStoreInstalled(): Boolean {
     try {
-      val output =
-        executeCommand("pm resolve-activity market://details?id=com.android.vending").stdout.trim()
+      val output = executeCommand("pm resolve-activity market://details?id=com.android.vending").stdout.trim()
       return output != "No activity found"
     } catch (e: BackupException) {
       // `pm list packages` can fail if the emulator is not ready yet but might also indicate a
@@ -312,10 +279,7 @@ abstract class AbstractAdbServices(
         }
       }
     } catch (_: TimeoutCancellationException) {
-      throw BackupException(
-        BACKUP_MANAGER_IS_NOT_RUNNING,
-        "Backup manager is not running for user $user",
-      )
+      throw BackupException(BACKUP_MANAGER_IS_NOT_RUNNING, "Backup manager is not running for user $user")
     }
   }
 
@@ -364,8 +328,7 @@ abstract class AbstractAdbServices(
         }
       }
     } catch (_: TimeoutCancellationException) {
-      throw lastException
-        ?: BackupException(TRANSPORT_NOT_SELECTED, "Timed out when setting transport")
+      throw lastException ?: BackupException(TRANSPORT_NOT_SELECTED, "Timed out when setting transport")
     }
   }
 
@@ -380,33 +343,20 @@ abstract class AbstractAdbServices(
         throw BackupException(BACKUP_NOT_SUPPORTED, "Backup is not supported on this device")
       stderr.contains("Backup Manager is not activated") ->
         throw BackupException(BACKUP_NOT_ACTIVATED, "Backup is not activated on this device")
-      else ->
-        throw BackupException(
-          CANNOT_ENABLE_BMGR,
-          "Unexpected output from 'bmgr enabled':\n${output.out}",
-        )
+      else -> throw BackupException(CANNOT_ENABLE_BMGR, "Unexpected output from 'bmgr enabled':\n${output.out}")
     }
   }
 
   override suspend fun setTransport(transport: BackupTransport) {
-    val selectTransportOut =
-      executeCommand("bmgr transport -c ${transport.componentName}", TRANSPORT_NOT_SELECTED)
-        .stdout
-        .trim()
+    val selectTransportOut = executeCommand("bmgr transport -c ${transport.componentName}", TRANSPORT_NOT_SELECTED).stdout.trim()
     if (!selectTransportOut.startsWith(SELECT_TRANSPORT_COMPONENT_SUCCESS)) {
-      throw BackupException(
-        TRANSPORT_NOT_SELECTED,
-        "Unexpected result from 'bmgr transport -c' command: $selectTransportOut",
-      )
+      throw BackupException(TRANSPORT_NOT_SELECTED, "Unexpected result from 'bmgr transport -c' command: $selectTransportOut")
     }
     val listTransportsOut = executeCommand("bmgr list transports", TRANSPORT_NOT_SELECTED).stdout
     val transports = listTransportsOut.lines()
     val currentTransport = transports.find { it.startsWith("  *") }?.dropPrefix("  * ")
     if (currentTransport != transport.className) {
-      throw BackupException(
-        TRANSPORT_NOT_SELECTED,
-        "Requested transport was not set: $listTransportsOut",
-      )
+      throw BackupException(TRANSPORT_NOT_SELECTED, "Requested transport was not set: $listTransportsOut")
     }
   }
 
@@ -443,7 +393,6 @@ abstract class AbstractAdbServices(
 }
 
 /** Get a named group value. Should only throw if the regex is bad. */
-private fun MatchResult.getGroup(name: String) =
-  groups[name]?.value ?: throw BackupException(UNEXPECTED_ERROR, "Group $name not found")
+private fun MatchResult.getGroup(name: String) = groups[name]?.value ?: throw BackupException(UNEXPECTED_ERROR, "Group $name not found")
 
 private fun List<BmgrError>.isAppStopped() = any { it.errorCode == "PACKAGE_STOPPED" }

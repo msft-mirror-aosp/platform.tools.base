@@ -17,8 +17,5 @@
 package com.android.backup
 
 /** An exception caused by a backup/restore operation */
-data class BackupException(
-  val errorCode: ErrorCode,
-  override val message: String,
-  override val cause: Throwable? = null,
-) : RuntimeException(message, cause)
+data class BackupException(val errorCode: ErrorCode, override val message: String, override val cause: Throwable? = null) :
+  RuntimeException(message, cause)

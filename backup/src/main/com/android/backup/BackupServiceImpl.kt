@@ -47,8 +47,7 @@ import kotlin.io.path.outputStream
 import kotlin.io.path.pathString
 import kotlinx.coroutines.withContext
 
-private const val CONTENT_URI =
-  "content://com.google.android.gms.fileprovider/backup_testing_flows/"
+private const val CONTENT_URI = "content://com.google.android.gms.fileprovider/backup_testing_flows/"
 
 internal class BackupServiceImpl(private val factory: AdbServicesFactory) : BackupService {
 
@@ -66,16 +65,10 @@ internal class BackupServiceImpl(private val factory: AdbServicesFactory) : Back
         val user = getCurrentUser()
         val appInfo =
           getAppInfo(applicationId, withPermissions = true, user)
-            ?: throw BackupException(
-              APP_NOT_INSTALLED,
-              "Application '$applicationId' is not installed",
-            )
+            ?: throw BackupException(APP_NOT_INSTALLED, "Application '$applicationId' is not installed")
 
         if (!appInfo.debuggable) {
-          throw BackupException(
-            APP_NOT_DEBUGGABLE,
-            "Application '$applicationId' is not debuggable",
-          )
+          throw BackupException(APP_NOT_DEBUGGABLE, "Application '$applicationId' is not debuggable")
         }
         waitForBackupManager(user)
         // Backup is always handled by the D2D transport
@@ -98,11 +91,7 @@ internal class BackupServiceImpl(private val factory: AdbServicesFactory) : Back
             appInfo.backupEnabled -> Success
             tempFile.hasAuthData() -> WithoutAppData
             else ->
-              BackupException(
-                  BACKUP_NOT_ENABLED,
-                  "No data was generated in backup since allowBackup property is false",
-                )
-                .toBackupResult()
+              BackupException(BACKUP_NOT_ENABLED, "No data was generated in backup since allowBackup property is false").toBackupResult()
           }
         if (result is BackupResult.Error) {
           Files.delete(tempFile)
@@ -117,11 +106,7 @@ internal class BackupServiceImpl(private val factory: AdbServicesFactory) : Back
     }
   }
 
-  override suspend fun restore(
-    serialNumber: String,
-    backupFile: Path,
-    listener: BackupProgressListener?,
-  ): BackupResult {
+  override suspend fun restore(serialNumber: String, backupFile: Path, listener: BackupProgressListener?): BackupResult {
     return try {
       val adbServices = factory.createAdbServices(serialNumber, listener, RESTORE_STEPS)
 
@@ -132,16 +117,10 @@ internal class BackupServiceImpl(private val factory: AdbServicesFactory) : Back
             val applicationId = metadata.applicationId
             val appInfo =
               getAppInfo(applicationId, withPermissions = false)
-                ?: throw BackupException(
-                  APP_NOT_INSTALLED,
-                  "Application '$applicationId' is not installed on the device",
-                )
+                ?: throw BackupException(APP_NOT_INSTALLED, "Application '$applicationId' is not installed on the device")
 
             if (!appInfo.debuggable) {
-              throw BackupException(
-                APP_NOT_DEBUGGABLE,
-                "Application '$applicationId' is not debuggable",
-              )
+              throw BackupException(APP_NOT_DEBUGGABLE, "Application '$applicationId' is not debuggable")
             }
 
             waitForBackupManager(getCurrentUser())
@@ -158,17 +137,11 @@ internal class BackupServiceImpl(private val factory: AdbServicesFactory) : Back
               reportProgress("Restoring $applicationId")
               restore(token, applicationId, metadata.backupType, initOk)
               reportProgress("Restoring $applicationId permissions")
-              zip.getPermissions().forEach { permission ->
-                grantPermission(applicationId, permission)
-              }
+              zip.getPermissions().forEach { permission -> grantPermission(applicationId, permission) }
             }
           }
         } catch (e: IOException) {
-          throw BackupException(
-            INVALID_BACKUP_FILE,
-            "File ${backupFile.pathString} is not a valid backup file",
-            e,
-          )
+          throw BackupException(INVALID_BACKUP_FILE, "File ${backupFile.pathString} is not a valid backup file", e)
         }
         reportProgress("Done")
         Success
@@ -208,12 +181,7 @@ internal class BackupServiceImpl(private val factory: AdbServicesFactory) : Back
     return factory.createAdbServices(serialNumber, null, 1).getDebuggableApps()
   }
 
-  private suspend fun pullBackup(
-    adbServices: AdbServices,
-    metadata: BackupMetadata,
-    permissions: List<String>,
-    backupFile: Path,
-  ) {
+  private suspend fun pullBackup(adbServices: AdbServices, metadata: BackupMetadata, permissions: List<String>, backupFile: Path) {
     ZipOutputStream(backupFile.outputStream()).use { zip ->
       adbServices.pullFileIntoZip(zip, TOKEN_FILE)
       adbServices.pullFileIntoZip(zip, PM_DATA_FILE)
@@ -255,15 +223,10 @@ internal class BackupServiceImpl(private val factory: AdbServicesFactory) : Back
   }
 
   private suspend fun AdbServices.pushFileFromZip(zip: ZipFile, name: String) {
-    withContext(ioContext) {
-      writeContent(zip.getInputStream(zip.getEntry(name)), "$CONTENT_URI$name")
-    }
+    withContext(ioContext) { writeContent(zip.getInputStream(zip.getEntry(name)), "$CONTENT_URI$name") }
   }
 
-  private suspend fun ZipOutputStream.putMetadata(
-    adbServices: AdbServices,
-    metadata: BackupMetadata,
-  ) {
+  private suspend fun ZipOutputStream.putMetadata(adbServices: AdbServices, metadata: BackupMetadata) {
     withContext(adbServices.ioContext) {
       putNextEntry(ZipEntry(METADATA_FILE))
       val properties = Properties()
@@ -273,10 +236,7 @@ internal class BackupServiceImpl(private val factory: AdbServicesFactory) : Back
     }
   }
 
-  private suspend fun ZipOutputStream.putPermissions(
-    adbServices: AdbServices,
-    permissions: List<String>,
-  ) {
+  private suspend fun ZipOutputStream.putPermissions(adbServices: AdbServices, permissions: List<String>) {
     withContext(adbServices.ioContext) {
       putNextEntry(ZipEntry(PERMISSIONS_FILE))
       write(permissions.joinToString("\n") { it }.toByteArray())

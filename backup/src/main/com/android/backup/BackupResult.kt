@@ -28,5 +28,4 @@ sealed class BackupResult {
   data class Error(val errorCode: ErrorCode, val throwable: Throwable) : BackupResult()
 }
 
-internal fun Throwable.toBackupResult() =
-  if (this is BackupException) Error(errorCode, this) else Error(UNEXPECTED_ERROR, this)
+internal fun Throwable.toBackupResult() = if (this is BackupException) Error(errorCode, this) else Error(UNEXPECTED_ERROR, this)

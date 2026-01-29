@@ -20,5 +20,4 @@ import com.android.backup.BackupException
 import com.android.backup.BackupResult.Error
 import com.android.backup.ErrorCode
 
-internal fun ErrorCode.asBackupResult(message: String = "Fake failure") =
-  Error(this, BackupException(this, message))
+internal fun ErrorCode.asBackupResult(message: String = "Fake failure") = Error(this, BackupException(this, message))

@@ -17,8 +17,5 @@ package com.android.backup
 
 enum class BackupTransport(val className: String, val componentName: String = className) {
   CLOUD("com.google.android.gms/.backup.BackupTransportService"),
-  D2D(
-    "com.google.android.gms/.backup.migrate.service.D2dTransport",
-    "com.google.android.gms/.backup.component.D2dTransportService",
-  ),
+  D2D("com.google.android.gms/.backup.migrate.service.D2dTransport", "com.google.android.gms/.backup.component.D2dTransportService"),
 }

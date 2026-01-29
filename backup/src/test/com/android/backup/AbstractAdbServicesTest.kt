@@ -32,49 +32,47 @@ private const val LAUNCH_COMMAND = "am start market://details?id=com.google.andr
 private const val DUMPSYS_ACTIVITY = "dumpsys activity activities"
 const val DUMPSYS_PACKAGE = "dumpsys package com.app"
 private const val GET_CURRENT_USER = "am get-current-user"
-private const val LAUNCH_COMMAND_STDOUT_VALID =
-  "Starting: Intent { act=android.intent.action.VIEW dat=market://details/... }"
-private const val LAUNCH_COMMAND_STDERR_MISSING_STORE =
-  "Error: Activity not started, unable to resolve Intent"
+private const val LAUNCH_COMMAND_STDOUT_VALID = "Starting: Intent { act=android.intent.action.VIEW dat=market://details/... }"
+private const val LAUNCH_COMMAND_STDERR_MISSING_STORE = "Error: Activity not started, unable to resolve Intent"
 
 private val DUMPSYS_ACTIVITY_VALID_1 =
   """
-    ACTIVITY MANAGER SETTINGS (dumpsys activity settings) activity_manager_constants:
-    ...
-      mFocusedApp=ActivityRecord{b47d1f u0 com.app/.MainActivity t224}
-    ...
+  ACTIVITY MANAGER SETTINGS (dumpsys activity settings) activity_manager_constants:
+  ...
+    mFocusedApp=ActivityRecord{b47d1f u0 com.app/.MainActivity t224}
+  ...
   """
     .trimIndent()
 
 private val DUMPSYS_ACTIVITY_VALID_2 =
   """
-    ACTIVITY MANAGER SETTINGS (dumpsys activity settings) activity_manager_constants:
-    ...
-      ResumedActivity: ActivityRecord{cb4266b u0 com.app/.MainActivity} t8}
-    ...
+  ACTIVITY MANAGER SETTINGS (dumpsys activity settings) activity_manager_constants:
+  ...
+    ResumedActivity: ActivityRecord{cb4266b u0 com.app/.MainActivity} t8}
+  ...
   """
     .trimIndent()
 
 val DUMPSYS_PACKAGE_OUT =
   """
-    ...
-    Packages:
-      Package [com.app] (f513cb9):
+  ...
+  Packages:
+    Package [com.app] (f513cb9):
+      ...
+      pkgFlags=[ DEBUGGABLE HAS_CODE ALLOW_CLEAR_USER_DATA TEST_ONLY ALLOW_BACKUP ]
+      User 0: ...
         ...
-        pkgFlags=[ DEBUGGABLE HAS_CODE ALLOW_CLEAR_USER_DATA TEST_ONLY ALLOW_BACKUP ]
-        User 0: ...
-          ...
-          runtime permissions:
-            permission1: granted=false, flags=[ USER_SENSITIVE_WHEN_GRANTED|USER_SENSITIVE_WHEN_DENIED]
-            permission2: granted=true, flags=[ USER_SENSITIVE_WHEN_GRANTED|USER_SENSITIVE_WHEN_DENIED]
-            permission3: granted=true, flags=[ USER_SENSITIVE_WHEN_GRANTED|USER_SENSITIVE_WHEN_DENIED|ONE_TIME]
-        User 10: ...
-          runtime permissions:
-            permission1: granted=true, flags=[ USER_SENSITIVE_WHEN_GRANTED|USER_SENSITIVE_WHEN_DENIED]
-            permission2: granted=false, flags=[ USER_SENSITIVE_WHEN_GRANTED|USER_SENSITIVE_WHEN_DENIED]
-            permission3: granted=true, flags=[ USER_SENSITIVE_WHEN_GRANTED|USER_SENSITIVE_WHEN_DENIED]
+        runtime permissions:
+          permission1: granted=false, flags=[ USER_SENSITIVE_WHEN_GRANTED|USER_SENSITIVE_WHEN_DENIED]
+          permission2: granted=true, flags=[ USER_SENSITIVE_WHEN_GRANTED|USER_SENSITIVE_WHEN_DENIED]
+          permission3: granted=true, flags=[ USER_SENSITIVE_WHEN_GRANTED|USER_SENSITIVE_WHEN_DENIED|ONE_TIME]
+      User 10: ...
+        runtime permissions:
+          permission1: granted=true, flags=[ USER_SENSITIVE_WHEN_GRANTED|USER_SENSITIVE_WHEN_DENIED]
+          permission2: granted=false, flags=[ USER_SENSITIVE_WHEN_GRANTED|USER_SENSITIVE_WHEN_DENIED]
+          permission3: granted=true, flags=[ USER_SENSITIVE_WHEN_GRANTED|USER_SENSITIVE_WHEN_DENIED]
 
-    Queries:
+  Queries:
   """
     .trimIndent()
 
@@ -88,15 +86,12 @@ class AbstractAdbServicesTest {
       Output(
         DUMPSYS_GMSCORE_CMD,
         """
-          If GmsCore is not installed, there will be no line matching "^packages:$"
+        If GmsCore is not installed, there will be no line matching "^packages:$"
         """
           .trimIndent(),
       )
     )
-    val exception =
-      assertThrows(BackupException::class.java) {
-        runBlocking { backupServices.withSetup(BackupTransport.D2D) {} }
-      }
+    val exception = assertThrows(BackupException::class.java) { runBlocking { backupServices.withSetup(BackupTransport.D2D) {} } }
     assertThat(exception.errorCode).isEqualTo(GMSCORE_NOT_FOUND)
   }
 
@@ -107,16 +102,13 @@ class AbstractAdbServicesTest {
       Output(
         DUMPSYS_GMSCORE_CMD,
         """
-          Packages:
-              versionCode=50 minSdk=31 targetSdk=34
+        Packages:
+            versionCode=50 minSdk=31 targetSdk=34
         """
           .trimIndent(),
       )
     )
-    val exception =
-      assertThrows(BackupException::class.java) {
-        runBlocking { backupServices.withSetup(BackupTransport.D2D) {} }
-      }
+    val exception = assertThrows(BackupException::class.java) { runBlocking { backupServices.withSetup(BackupTransport.D2D) {} } }
     assertThat(exception.errorCode).isEqualTo(GMSCORE_IS_TOO_OLD)
   }
 
@@ -131,10 +123,7 @@ class AbstractAdbServicesTest {
     val adbServices = FakeAdbServices("serial", 10)
     adbServices.addCommandOverride(Output(LAUNCH_COMMAND, "unexpected"))
 
-    val exception =
-      assertThrows(BackupException::class.java) {
-        runBlocking { adbServices.sendUpdateGmsIntent() }
-      }
+    val exception = assertThrows(BackupException::class.java) { runBlocking { adbServices.sendUpdateGmsIntent() } }
     assertThat(exception.errorCode).isEqualTo(UNEXPECTED_ERROR)
   }
 
@@ -151,32 +140,22 @@ class AbstractAdbServicesTest {
     val adbServices = FakeAdbServices("serial", 10)
     adbServices.addCommandOverride(Output(LAUNCH_COMMAND, LAUNCH_COMMAND_STDOUT_VALID, "Error"))
 
-    val exception =
-      assertThrows(BackupException::class.java) {
-        runBlocking { adbServices.sendUpdateGmsIntent() }
-      }
+    val exception = assertThrows(BackupException::class.java) { runBlocking { adbServices.sendUpdateGmsIntent() } }
     assertThat(exception.errorCode).isEqualTo(UNEXPECTED_ERROR)
   }
 
   @Test
   fun sendUpdateGmsIntent_missingPlayStore() {
     val adbServices = FakeAdbServices("serial", 10)
-    adbServices.addCommandOverride(
-      Output(LAUNCH_COMMAND, LAUNCH_COMMAND_STDOUT_VALID, LAUNCH_COMMAND_STDERR_MISSING_STORE)
-    )
+    adbServices.addCommandOverride(Output(LAUNCH_COMMAND, LAUNCH_COMMAND_STDOUT_VALID, LAUNCH_COMMAND_STDERR_MISSING_STORE))
 
-    val exception =
-      assertThrows(BackupException::class.java) {
-        runBlocking { adbServices.sendUpdateGmsIntent() }
-      }
+    val exception = assertThrows(BackupException::class.java) { runBlocking { adbServices.sendUpdateGmsIntent() } }
     assertThat(exception.errorCode).isEqualTo(PLAY_STORE_NOT_INSTALLED)
   }
 
   @Test
   fun getForegroundApplicationId_valid1() = runBlocking {
-    val adbServices =
-      FakeAdbServices("serial", 10)
-        .addCommandOverride(Output(DUMPSYS_ACTIVITY, DUMPSYS_ACTIVITY_VALID_1))
+    val adbServices = FakeAdbServices("serial", 10).addCommandOverride(Output(DUMPSYS_ACTIVITY, DUMPSYS_ACTIVITY_VALID_1))
 
     val applicationId = adbServices.getForegroundApplicationId()
 
@@ -185,9 +164,7 @@ class AbstractAdbServicesTest {
 
   @Test
   fun getForegroundApplicationId_valid2() = runBlocking {
-    val adbServices =
-      FakeAdbServices("serial", 10)
-        .addCommandOverride(Output(DUMPSYS_ACTIVITY, DUMPSYS_ACTIVITY_VALID_2))
+    val adbServices = FakeAdbServices("serial", 10).addCommandOverride(Output(DUMPSYS_ACTIVITY, DUMPSYS_ACTIVITY_VALID_2))
 
     val applicationId = adbServices.getForegroundApplicationId()
 
@@ -206,40 +183,25 @@ class AbstractAdbServicesTest {
   fun getAppInfo_notDebuggable() = runBlocking {
     val adbServices =
       FakeAdbServices("serial", 10)
-        .addCommandOverride(
-          Output(
-            DUMPSYS_PACKAGE,
-            "pkgFlags=[ HAS_CODE ALLOW_CLEAR_USER_DATA TEST_ONLY ALLOW_BACKUP ]",
-          )
-        )
+        .addCommandOverride(Output(DUMPSYS_PACKAGE, "pkgFlags=[ HAS_CODE ALLOW_CLEAR_USER_DATA TEST_ONLY ALLOW_BACKUP ]"))
 
     assertThat(adbServices.getAppInfo("com.app", withPermissions = false))
-      .isEqualTo(
-        AppInfo(debuggable = false, backupEnabled = true, grantedPermissions = emptyList())
-      )
+      .isEqualTo(AppInfo(debuggable = false, backupEnabled = true, grantedPermissions = emptyList()))
   }
 
   @Test
   fun getAppInfo_backupDisabled() = runBlocking {
     val adbServices =
       FakeAdbServices("serial", 10)
-        .addCommandOverride(
-          Output(
-            DUMPSYS_PACKAGE,
-            "pkgFlags=[ DEBUGGABLE HAS_CODE ALLOW_CLEAR_USER_DATA TEST_ONLY ]",
-          )
-        )
+        .addCommandOverride(Output(DUMPSYS_PACKAGE, "pkgFlags=[ DEBUGGABLE HAS_CODE ALLOW_CLEAR_USER_DATA TEST_ONLY ]"))
 
     assertThat(adbServices.getAppInfo("com.app", withPermissions = false))
-      .isEqualTo(
-        AppInfo(debuggable = true, backupEnabled = false, grantedPermissions = emptyList())
-      )
+      .isEqualTo(AppInfo(debuggable = true, backupEnabled = false, grantedPermissions = emptyList()))
   }
 
   @Test
   fun getAppInfo_not_installed() = runBlocking {
-    val adbServices =
-      FakeAdbServices("serial", 10).addCommandOverride(Output(DUMPSYS_PACKAGE, "not installed"))
+    val adbServices = FakeAdbServices("serial", 10).addCommandOverride(Output(DUMPSYS_PACKAGE, "not installed"))
 
     assertThat(adbServices.getAppInfo("com.app", withPermissions = true)).isNull()
   }
@@ -251,8 +213,7 @@ class AbstractAdbServicesTest {
         .addCommandOverride(Output(GET_CURRENT_USER, "0"))
         .addCommandOverride(Output(DUMPSYS_PACKAGE, DUMPSYS_PACKAGE_OUT))
 
-    val permissions =
-      adbServices.getAppInfo("com.app", withPermissions = true, user = "0")?.grantedPermissions
+    val permissions = adbServices.getAppInfo("com.app", withPermissions = true, user = "0")?.grantedPermissions
 
     assertThat(permissions).containsExactly("permission2")
   }
@@ -264,8 +225,7 @@ class AbstractAdbServicesTest {
         .addCommandOverride(Output(GET_CURRENT_USER, "10"))
         .addCommandOverride(Output(DUMPSYS_PACKAGE, DUMPSYS_PACKAGE_OUT))
 
-    val permissions =
-      adbServices.getAppInfo("com.app", withPermissions = true, user = "10")?.grantedPermissions
+    val permissions = adbServices.getAppInfo("com.app", withPermissions = true, user = "10")?.grantedPermissions
 
     assertThat(permissions).containsExactly("permission1", "permission3")
   }
@@ -280,9 +240,7 @@ class AbstractAdbServicesTest {
   @Test
   fun isPlayStoreInstalled_not_installed() = runBlocking {
     val adbServices = FakeAdbServices("serial", 10)
-    adbServices.addCommandOverride(
-      Output("pm resolve-activity market://details?id=com.android.vending", "No activity found\n")
-    )
+    adbServices.addCommandOverride(Output("pm resolve-activity market://details?id=com.android.vending", "No activity found\n"))
 
     assertThat(adbServices.isPlayStoreInstalled()).isFalse()
   }

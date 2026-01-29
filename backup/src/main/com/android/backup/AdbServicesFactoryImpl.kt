@@ -18,15 +18,9 @@ package com.android.backup
 import com.android.adblib.AdbSession
 import com.android.tools.environment.Logger
 
-internal class AdbServicesFactoryImpl(
-  private val adbSession: AdbSession,
-  private val logger: Logger,
-  private var minGmsVersion: Int,
-) : AdbServicesFactory {
+internal class AdbServicesFactoryImpl(private val adbSession: AdbSession, private val logger: Logger, private var minGmsVersion: Int) :
+  AdbServicesFactory {
 
-  override fun createAdbServices(
-    serialNumber: String,
-    listener: BackupProgressListener?,
-    steps: Int,
-  ): AdbServices = AdbServicesImpl(adbSession, serialNumber, logger, listener, steps, minGmsVersion)
+  override fun createAdbServices(serialNumber: String, listener: BackupProgressListener?, steps: Int): AdbServices =
+    AdbServicesImpl(adbSession, serialNumber, logger, listener, steps, minGmsVersion)
 }

@@ -36,11 +36,7 @@ interface BackupService {
     listener: BackupProgressListener?,
   ): BackupResult
 
-  suspend fun restore(
-    serialNumber: String,
-    backupFile: Path,
-    listener: BackupProgressListener?,
-  ): BackupResult
+  suspend fun restore(serialNumber: String, backupFile: Path, listener: BackupProgressListener?): BackupResult
 
   suspend fun sendUpdateGmsIntent(serialNumber: String): BackupResult
 
@@ -68,8 +64,7 @@ interface BackupService {
     fun getInstance(adbSession: AdbSession, logger: Logger, minGmsVersion: Int): BackupService =
       BackupServiceImpl(AdbServicesFactoryImpl(adbSession, logger, minGmsVersion))
 
-    fun getInstance(adbServicesFactory: AdbServicesFactory): BackupService =
-      BackupServiceImpl(adbServicesFactory)
+    fun getInstance(adbServicesFactory: AdbServicesFactory): BackupService = BackupServiceImpl(adbServicesFactory)
 
     /**
      * Verifies a backup file is valid and returns the application id of the associated app
@@ -85,19 +80,12 @@ interface BackupService {
           zip.getRestoreToken()
           val filenames = zip.entries().asSequence().mapTo(mutableSetOf()) { it.name }
           if (!filenames.containsAll(listOf(PM_DATA_FILE, TOKEN_FILE, APP_DATA_FILE))) {
-            throw BackupException(
-              INVALID_BACKUP_FILE,
-              "File is not a valid backup file: ${backupFile.pathString} ($filenames)",
-            )
+            throw BackupException(INVALID_BACKUP_FILE, "File is not a valid backup file: ${backupFile.pathString} ($filenames)")
           }
           return metadata
         }
       } catch (e: IOException) {
-        throw BackupException(
-          INVALID_BACKUP_FILE,
-          "File is not a valid backup file: ${backupFile.pathString}",
-          e,
-        )
+        throw BackupException(INVALID_BACKUP_FILE, "File is not a valid backup file: ${backupFile.pathString}", e)
       }
     }
 
@@ -105,11 +93,7 @@ interface BackupService {
       return try {
         BigInteger(getInputStream(getEntry(TOKEN_FILE)).reader().readText()).toString(16)
       } catch (e: Exception) {
-        throw BackupException(
-          INVALID_BACKUP_FILE,
-          "Backup file does not contain a valid token: $name",
-          e,
-        )
+        throw BackupException(INVALID_BACKUP_FILE, "Backup file does not contain a valid token: $name", e)
       }
     }
 
@@ -117,16 +101,9 @@ interface BackupService {
       return try {
         val properties = Properties()
         properties.load(getInputStream(getEntry(METADATA_FILE)))
-        BackupMetadata(
-          properties.getProperty(PROPERTY_APPLICATION_ID),
-          BackupType.valueOf(properties.getProperty(PROPERTY_BACKUP_TYPE)),
-        )
+        BackupMetadata(properties.getProperty(PROPERTY_APPLICATION_ID), BackupType.valueOf(properties.getProperty(PROPERTY_BACKUP_TYPE)))
       } catch (e: Exception) {
-        throw BackupException(
-          INVALID_BACKUP_FILE,
-          "Backup file does not contain metadata: $name",
-          e,
-        )
+        throw BackupException(INVALID_BACKUP_FILE, "Backup file does not contain metadata: $name", e)
       }
     }
 
@@ -135,11 +112,7 @@ interface BackupService {
         try {
           ZipFile(backupFile.toFile())
         } catch (e: Exception) {
-          throw BackupException(
-            INVALID_BACKUP_FILE,
-            "File is not a valid backup file: $backupFile",
-            e,
-          )
+          throw BackupException(INVALID_BACKUP_FILE, "File is not a valid backup file: $backupFile", e)
         }
       return zipFile.use { it.getMetaData() }
     }

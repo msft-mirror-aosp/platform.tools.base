@@ -37,20 +37,10 @@ import org.apache.commons.cli.Option
 private const val USAGE_TITLE = "android-backup [options] <OUTPUT-FILE>"
 
 private val packageNameOption =
-  Option.builder()
-    .option("p")
-    .hasArg()
-    .argName("PACKAGE-NAME")
-    .desc("Backup application identified by PACKAGE-NAME")
-    .build()
+  Option.builder().option("p").hasArg().argName("PACKAGE-NAME").desc("Backup application identified by PACKAGE-NAME").build()
 
 private val backupTypeOption =
-  Option.builder()
-    .option("type")
-    .hasArg()
-    .argName("BACKUP-TYPE")
-    .desc("Type of backup to perform (d2d [default], cloud)")
-    .build()
+  Option.builder().option("type").hasArg().argName("BACKUP-TYPE").desc("Type of backup to perform (d2d [default], cloud)").build()
 
 object AndroidBackup {
   @JvmStatic
@@ -89,8 +79,7 @@ object AndroidBackup {
       val file = commandLine.args.first()
       val listener = commandLine.getBackupProgressListener()
 
-      val result =
-        backupService.backup(serialNumber, applicationId, backupType, Path.of(file), listener)
+      val result = backupService.backup(serialNumber, applicationId, backupType, Path.of(file), listener)
 
       if (result is BackupResult.Error) {
         println("Error: ${result.throwable.message}")

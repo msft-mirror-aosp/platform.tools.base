@@ -30,13 +30,7 @@ object CommandLineOptions {
 
   private val emulator = Option("e", "Target emulator device (error if multiple devices).")
 
-  private val serial: Option =
-    Option.builder()
-      .option("s")
-      .hasArg()
-      .argName("SERIAL")
-      .desc("Target device identified by SERIAL")
-      .build()
+  private val serial: Option = Option.builder().option("s").hasArg().argName("SERIAL").desc("Target device identified by SERIAL").build()
 
   private val transport: Option =
     Option.builder()
@@ -48,21 +42,13 @@ object CommandLineOptions {
       .build()
 
   fun createCommonOptions(): Options =
-    Options()
-      .addOption(help)
-      .addOption(emulator)
-      .addOption(usbDevice)
-      .addOption(serial)
-      .addOption(transport)
-      .addOption(verbose)
+    Options().addOption(help).addOption(emulator).addOption(usbDevice).addOption(serial).addOption(transport).addOption(verbose)
 
   fun CommandLine.getDeviceSelector(): DeviceSelector {
     val deviceSelectorOptions = setOf(usbDevice, emulator, serial, transport)
     val count = options.count { it in deviceSelectorOptions }
     if (count > 1) {
-      throw IllegalArgumentException(
-        "Only one of [${deviceSelectorOptions.joinToString { "-${it.opt}" }}] can be specified"
-      )
+      throw IllegalArgumentException("Only one of [${deviceSelectorOptions.joinToString { "-${it.opt}" }}] can be specified")
     }
     return when {
       hasOption(usbDevice) -> DeviceSelector.usb()

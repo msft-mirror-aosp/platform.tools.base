@@ -54,20 +54,12 @@ class FakeAdbServices(
   totalSteps: Int = 10,
   minGmsVersion: Int = 100,
   private val debuggableApps: List<String> = listOf("com.app"),
-) :
-  AbstractAdbServices(
-    serialNumber,
-    NoopLogger(),
-    FakeProgressListener(),
-    totalSteps,
-    minGmsVersion,
-  ) {
+) : AbstractAdbServices(serialNumber, NoopLogger(), FakeProgressListener(), totalSteps, minGmsVersion) {
 
   override val ioContext = EmptyCoroutineContext
 
   sealed class CommandOverride(val command: String) {
-    class Output(command: String, private val stdout: String, private val stderr: String = "") :
-      CommandOverride(command) {
+    class Output(command: String, private val stdout: String, private val stderr: String = "") : CommandOverride(command) {
 
       override fun handle(errorCode: ErrorCode) = AdbOutput(stdout, stderr)
     }
@@ -217,12 +209,12 @@ class FakeAdbServices(
   private fun handleDumpsysGmsCore(): AdbOutput {
     // Small extract of actual command
     return """
-      Packages:
-        Package [com.google.android.gms] (19e117e):
-          userId=10105
-          versionCode=242335038 minSdk=31 targetSdk=34
-          minExtensionVersions=[]
-          versionName=24.23.35 (190400-646585959)
+    Packages:
+      Package [com.google.android.gms] (19e117e):
+        userId=10105
+        versionCode=242335038 minSdk=31 targetSdk=34
+        minExtensionVersions=[]
+        versionName=24.23.35 (190400-646585959)
     """
       .trimIndent()
       .asStdout()
@@ -245,10 +237,10 @@ class FakeAdbServices(
 
   private fun handleDumpsysActivity(): AdbOutput {
     return """
-      ACTIVITY MANAGER SETTINGS (dumpsys activity settings) activity_manager_constants:
-      ...
-        mFocusedApp=ActivityRecord{b47d1f u0 com.app/.MainActivity t224}
-      ...
+    ACTIVITY MANAGER SETTINGS (dumpsys activity settings) activity_manager_constants:
+    ...
+      mFocusedApp=ActivityRecord{b47d1f u0 com.app/.MainActivity t224}
+    ...
     """
       .trimIndent()
       .asStdout()
@@ -309,13 +301,13 @@ class FakeAdbServices(
 
   private fun handleCheckPlayStore(): AdbOutput {
     return """
-      priority=0 preferredOrder=0 match=0x308000 specificIndex=-1 isDefault=true
-      ActivityInfo:
-        name=com.google.android.finsky.activities.MarketDeepLinkHandlerActivity
-        packageName=com.android.vending
-        enabled=true exported=true directBootAware=false
-        taskAffinity=com.android.vending.inlinedetails targetActivity=null persistableMode=PERSIST_ROOT_ONLY
-        ...
+    priority=0 preferredOrder=0 match=0x308000 specificIndex=-1 isDefault=true
+    ActivityInfo:
+      name=com.google.android.finsky.activities.MarketDeepLinkHandlerActivity
+      packageName=com.android.vending
+      enabled=true exported=true directBootAware=false
+      taskAffinity=com.android.vending.inlinedetails targetActivity=null persistableMode=PERSIST_ROOT_ONLY
+      ...
 
     """
       .trimIndent()
