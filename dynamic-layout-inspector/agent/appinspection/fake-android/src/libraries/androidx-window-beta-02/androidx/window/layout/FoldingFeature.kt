@@ -18,18 +18,19 @@ package androidx.window.layout
 
 interface DisplayFeature
 
-class FoldingFeature(state: String, orientation: String): DisplayFeature {
-    class State(val value: String) {
-        override fun toString(): String {
-            return value
-        }
+class FoldingFeature(state: String, orientation: String) : DisplayFeature {
+  class State(val value: String) {
+    override fun toString(): String {
+      return value
     }
-    class Orientation(val value: String) {
-        override fun toString(): String {
-            return value
-        }
-    }
+  }
 
-    val state = State(state)
-    val orientation = Orientation(orientation)
+  class Orientation(val value: String) {
+    override fun toString(): String {
+      return value
+    }
+  }
+
+  val state = State(state)
+  val orientation = Orientation(orientation)
 }

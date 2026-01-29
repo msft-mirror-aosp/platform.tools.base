@@ -23,28 +23,28 @@ import com.android.tools.layoutinspector.toBytes
 import java.nio.ByteBuffer
 
 fun Bitmap.toByteArray(): ByteArray {
-    val bytes = ByteArray(byteCount + BITMAP_HEADER_SIZE)
+  val bytes = ByteArray(byteCount + BITMAP_HEADER_SIZE)
 
-    width.toBytes(bytes, 0)
-    height.toBytes(bytes, 4)
-    val bitmapType = config.toBitmapType()
-    bytes[8] = bitmapType.byteVal
+  width.toBytes(bytes, 0)
+  height.toBytes(bytes, 4)
+  val bitmapType = config.toBitmapType()
+  bytes[8] = bitmapType.byteVal
 
-    val buf = ByteBuffer.wrap(bytes, BITMAP_HEADER_SIZE, byteCount)
-    this.copyPixelsToBuffer(buf)
-    return bytes
+  val buf = ByteBuffer.wrap(bytes, BITMAP_HEADER_SIZE, byteCount)
+  this.copyPixelsToBuffer(buf)
+  return bytes
 }
 
 fun Bitmap.Config.toBitmapType(): BitmapType =
-    when (this) {
-        Bitmap.Config.ARGB_8888 -> BitmapType.ABGR_8888
-        Bitmap.Config.RGB_565 -> BitmapType.RGB_565
-        else -> throw Exception("Unknown bitmap config $this")
-    }
+  when (this) {
+    Bitmap.Config.ARGB_8888 -> BitmapType.ABGR_8888
+    Bitmap.Config.RGB_565 -> BitmapType.RGB_565
+    else -> throw Exception("Unknown bitmap config $this")
+  }
 
 fun BitmapType.toBitmapConfig(): Bitmap.Config =
-    when (this) {
-        BitmapType.RGB_565 -> Bitmap.Config.RGB_565
-        BitmapType.ABGR_8888 -> Bitmap.Config.ARGB_8888
-        else -> throw Exception("Unknown bitmap type $this")
-    }
+  when (this) {
+    BitmapType.RGB_565 -> Bitmap.Config.RGB_565
+    BitmapType.ABGR_8888 -> Bitmap.Config.ARGB_8888
+    else -> throw Exception("Unknown bitmap type $this")
+  }

@@ -20,11 +20,6 @@ import com.android.tools.idea.layoutinspector.view.inspection.LayoutInspectorVie
 /**
  * Metadata associated with the a property.
  *
- * This data is immutable and cached against types (e.g. View) that have properties associated with
- * them.
+ * This data is immutable and cached against types (e.g. View) that have properties associated with them.
  */
-class PropertyMetadata(
-    val name: String,
-    val attributeId: Int,
-    val type: Property.Type
-)
+class PropertyMetadata(val name: String, val attributeId: Int, val type: Property.Type)

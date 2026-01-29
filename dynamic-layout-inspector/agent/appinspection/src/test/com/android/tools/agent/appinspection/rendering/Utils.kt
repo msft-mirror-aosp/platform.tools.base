@@ -20,53 +20,50 @@ import android.graphics.Rect
 import com.android.tools.idea.layoutinspector.view.inspection.LayoutInspectorViewProtocol
 
 fun buildDrawInstructionsProto(
-    rootId: Long,
-    bounds: List<Rect>,
-    color: Int,
-    strokeThickness: Float,
-    label: Label? = null
+  rootId: Long,
+  bounds: List<Rect>,
+  color: Int,
+  strokeThickness: Float,
+  label: Label? = null,
 ): List<LayoutInspectorViewProtocol.DrawInstruction> {
-    return bounds.map {
-            val rect =
-                LayoutInspectorViewProtocol.Rect.newBuilder()
-                    .apply {
-                        x = it.left
-                        y = it.top
-                        w = it.right - it.left
-                        h = it.bottom - it.top
-                    }
-                    .build()
-
-            LayoutInspectorViewProtocol.DrawInstruction.newBuilder()
-                .apply {
-                    this.rootId = rootId
-                    this.bounds = rect
-                    this.color = color
-                    this.strokeThickness = strokeThickness
-                    if (label != null) {
-                        this.label = LayoutInspectorViewProtocol.Label.newBuilder().apply {
-                            text = label.text
-                            size = label.size
-                        }.build()
-                    }
-                }
-                .build()
+  return bounds.map {
+    val rect =
+      LayoutInspectorViewProtocol.Rect.newBuilder()
+        .apply {
+          x = it.left
+          y = it.top
+          w = it.right - it.left
+          h = it.bottom - it.top
         }
+        .build()
+
+    LayoutInspectorViewProtocol.DrawInstruction.newBuilder()
+      .apply {
+        this.rootId = rootId
+        this.bounds = rect
+        this.color = color
+        this.strokeThickness = strokeThickness
+        if (label != null) {
+          this.label =
+            LayoutInspectorViewProtocol.Label.newBuilder()
+              .apply {
+                text = label.text
+                size = label.size
+              }
+              .build()
+        }
+      }
+      .build()
+  }
 }
 
 fun buildUserInputEventProto(
-    rootId: Long,
-    x: Float,
-    y: Float,
-    type: LayoutInspectorViewProtocol.UserInputEvent.Type
+  rootId: Long,
+  x: Float,
+  y: Float,
+  type: LayoutInspectorViewProtocol.UserInputEvent.Type,
 ): LayoutInspectorViewProtocol.Event {
-    val userInputEvent =
-        LayoutInspectorViewProtocol.UserInputEvent.newBuilder()
-            .setType(type)
-            .setRootId(rootId)
-            .setX(x)
-            .setY(y)
-            .build()
+  val userInputEvent = LayoutInspectorViewProtocol.UserInputEvent.newBuilder().setType(type).setRootId(rootId).setX(x).setY(y).build()
 
-    return LayoutInspectorViewProtocol.Event.newBuilder().setUserInputEvent(userInputEvent).build()
+  return LayoutInspectorViewProtocol.Event.newBuilder().setUserInputEvent(userInputEvent).build()
 }

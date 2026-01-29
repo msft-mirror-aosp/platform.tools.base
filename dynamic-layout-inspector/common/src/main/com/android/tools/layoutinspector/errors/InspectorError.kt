@@ -19,10 +19,8 @@ package com.android.tools.layoutinspector.errors
 import com.android.tools.idea.layoutinspector.view.inspection.LayoutInspectorViewProtocol.ErrorCode
 import java.lang.RuntimeException
 
-fun noHardwareAcceleration() = InspectorError(
-    "Activity must be hardware accelerated for live inspection",
-    ErrorCode.NO_HARDWARE_ACCELERATION
-)
+fun noHardwareAcceleration() =
+  InspectorError("Activity must be hardware accelerated for live inspection", ErrorCode.NO_HARDWARE_ACCELERATION)
 
 val Throwable.errorCode: ErrorCode
   get() = (this as? InspectorError)?.code ?: ErrorCode.UNKNOWN_ERROR_CODE
@@ -32,5 +30,4 @@ val Throwable.errorCode: ErrorCode
  *
  * The error [code] can be used for analytics reporting.
  */
-class InspectorError(message: String, val code: ErrorCode, cause: Exception? = null) :
-    RuntimeException(message, cause)
+class InspectorError(message: String, val code: ErrorCode, cause: Exception? = null) : RuntimeException(message, cause)

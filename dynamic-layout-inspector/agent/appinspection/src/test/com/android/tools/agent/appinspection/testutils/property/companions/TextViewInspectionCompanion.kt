@@ -26,28 +26,26 @@ import com.android.tools.agent.appinspection.testutils.property.EnumPropertyRead
 
 class TextViewInspectionCompanion : InspectionCompanion<TextView> {
 
-    companion object {
-        val OFFSET = ViewInspectionCompanion.OFFSET + ViewInspectionCompanion.NUM_PROPERTIES
-        val NUM_PROPERTIES = Property.values().size
+  companion object {
+    val OFFSET = ViewInspectionCompanion.OFFSET + ViewInspectionCompanion.NUM_PROPERTIES
+    val NUM_PROPERTIES = Property.values().size
 
-        fun addResourceNames(resourceNames: MutableMap<Int, String>) {
-            resourceNames[ATTR_OFFSET + OFFSET] = "android.attr/text"
-        }
+    fun addResourceNames(resourceNames: MutableMap<Int, String>) {
+      resourceNames[ATTR_OFFSET + OFFSET] = "android.attr/text"
     }
+  }
 
-    internal enum class Property {
-        TEXT
-    }
+  internal enum class Property {
+    TEXT
+  }
 
-    override fun mapProperties(propertyMapper: PropertyMapper) {
-        val mapper = EnumPropertyMapper<Property>(propertyMapper, OFFSET)
-        mapper.mapObject(Property.TEXT)
-    }
+  override fun mapProperties(propertyMapper: PropertyMapper) {
+    val mapper = EnumPropertyMapper<Property>(propertyMapper, OFFSET)
+    mapper.mapObject(Property.TEXT)
+  }
 
-    override fun readProperties(
-        textView: TextView, propertyReader: PropertyReader
-    ) {
-        val reader = EnumPropertyReader<Property>(propertyReader, OFFSET)
-        reader.readObject(Property.TEXT, textView.text)
-    }
+  override fun readProperties(textView: TextView, propertyReader: PropertyReader) {
+    val reader = EnumPropertyReader<Property>(propertyReader, OFFSET)
+    reader.readObject(Property.TEXT, textView.text)
+  }
 }

@@ -19,14 +19,14 @@ package com.android.tools.agent.shared
 import android.view.View
 import com.android.tools.idea.layoutinspector.view.inspection.LayoutInspectorViewProtocol
 
-/**
- * Convenience interface built into the main inspector, to make it easier to interact with
- * `FoldObserverImpl` which is built separately.
- */
+/** Convenience interface built into the main inspector, to make it easier to interact with `FoldObserverImpl` which is built separately. */
 interface FoldObserver {
-    val foldState: LayoutInspectorViewProtocol.FoldEvent.FoldState?
-    val orientation: LayoutInspectorViewProtocol.FoldEvent.FoldOrientation?
-    fun startObservingFoldState(rootView: View)
-    fun stopObservingFoldState(rootView: View)
-    fun shutdown()
+  val foldState: LayoutInspectorViewProtocol.FoldEvent.FoldState?
+  val orientation: LayoutInspectorViewProtocol.FoldEvent.FoldOrientation?
+
+  fun startObservingFoldState(rootView: View)
+
+  fun stopObservingFoldState(rootView: View)
+
+  fun shutdown()
 }

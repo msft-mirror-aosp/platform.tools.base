@@ -20,42 +20,42 @@ import androidx.annotation.VisibleForTesting
 import com.android.tools.idea.layoutinspector.view.inspection.LayoutInspectorViewProtocol.StringEntry
 
 /**
- * A class which associates Strings with integers, where duplicate strings all share the same
- * numeric value.
+ * A class which associates Strings with integers, where duplicate strings all share the same numeric value.
  *
- * This class exists to allow us to significantly shrink payloads that get sent to the host, as lots
- * of text is across the layout tree will be the same.
+ * This class exists to allow us to significantly shrink payloads that get sent to the host, as lots of text is across the layout tree will
+ * be the same.
  */
 class StringTable {
 
-    companion object {
-
-        @VisibleForTesting
-        fun fromStringEntries(entries: List<StringEntry>): StringTable {
-            return StringTable().apply {
-                for (entry in entries) {
-                    innerMap[entry.str] = entry.id
-                }
-            }
-        }
-    }
-
-    private val innerMap = mutableMapOf<String, Int>()
+  companion object {
 
     @VisibleForTesting
-    operator fun get(id: Int): String? = innerMap.entries.firstOrNull { it.value == id }?.key
-
-    fun put(str: String): Int {
-        if (str.isEmpty()) return 0
-        return innerMap.computeIfAbsent(str) { innerMap.size + 1 }
-    }
-
-    fun toStringEntries(): List<StringEntry> {
-        return innerMap.entries.map { entry ->
-            StringEntry.newBuilder().apply {
-                str = entry.key
-                id = entry.value
-            }.build()
+    fun fromStringEntries(entries: List<StringEntry>): StringTable {
+      return StringTable().apply {
+        for (entry in entries) {
+          innerMap[entry.str] = entry.id
         }
+      }
     }
+  }
+
+  private val innerMap = mutableMapOf<String, Int>()
+
+  @VisibleForTesting operator fun get(id: Int): String? = innerMap.entries.firstOrNull { it.value == id }?.key
+
+  fun put(str: String): Int {
+    if (str.isEmpty()) return 0
+    return innerMap.computeIfAbsent(str) { innerMap.size + 1 }
+  }
+
+  fun toStringEntries(): List<StringEntry> {
+    return innerMap.entries.map { entry ->
+      StringEntry.newBuilder()
+        .apply {
+          str = entry.key
+          id = entry.value
+        }
+        .build()
+    }
+  }
 }

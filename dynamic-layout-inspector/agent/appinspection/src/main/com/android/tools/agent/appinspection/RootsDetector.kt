@@ -27,140 +27,126 @@ import java.util.concurrent.TimeoutException
 import java.util.concurrent.atomic.AtomicBoolean
 
 /**
- * A class which provides [checkRoots] for detecting root view changes since a previous check.
- * Any time roots or added or removed, this class will generate and send a [WindowRootsEvent] and
- * call the provided [onRootsChanged] callback.
+ * A class which provides [checkRoots] for detecting root view changes since a previous check. Any time roots or added or removed, this
+ * class will generate and send a [WindowRootsEvent] and call the provided [onRootsChanged] callback.
  *
- * While the framework informs us about most screen changes, sometimes a dialog can close
- * without us being informed, so [start] is provided to spin up a background thread that checks
- * occasionally. So even though [checkRoots] can be called directly, we still have a backup to
+ * While the framework informs us about most screen changes, sometimes a dialog can close without us being informed, so [start] is provided
+ * to spin up a background thread that checks occasionally. So even though [checkRoots] can be called directly, we still have a backup to
  * handle updates that the system doesn't tell us about.
  */
 class RootsDetector(
-    private val xrHelper: XrHelper,
-    private val connection: Connection,
-    private val onRootsChanged: (List<Long>, List<Long>, Map<Long, InspectorView>) -> Unit,
-    private val setCheckpoint: (ProgressCheckpoint) -> Unit
+  private val xrHelper: XrHelper,
+  private val connection: Connection,
+  private val onRootsChanged: (List<Long>, List<Long>, Map<Long, InspectorView>) -> Unit,
+  private val setCheckpoint: (ProgressCheckpoint) -> Unit,
 ) {
-    private var quit = AtomicBoolean(false)
-    private var checkRootsThread: Thread? = null
+  private var quit = AtomicBoolean(false)
+  private var checkRootsThread: Thread? = null
 
-    /**
-     * A snapshot of the current list of view root IDs.
-     *
-     * We'll occasionally check against these against the current list of roots, generating an
-     * event if they've ever changed.
-     */
-    var lastRootIds = emptySet<Long>()
+  /**
+   * A snapshot of the current list of view root IDs.
+   *
+   * We'll occasionally check against these against the current list of roots, generating an event if they've ever changed.
+   */
+  var lastRootIds = emptySet<Long>()
 
-    /**
-     * Clear the state of this detector.
-     *
-     * After calling this function, it should be equivalent to this class after it was first
-     * instantiated.
-     */
-    fun reset() {
-        stop()
-        lastRootIds = emptySet()
+  /**
+   * Clear the state of this detector.
+   *
+   * After calling this function, it should be equivalent to this class after it was first instantiated.
+   */
+  fun reset() {
+    stop()
+    lastRootIds = emptySet()
+  }
+
+  /**
+   * Start running a thread which will periodically call [checkRoots].
+   *
+   * If the thread is still running from a previous call to [start], it will be stopped, state cleared, and restarted. There is no need to
+   * call [reset] yourself if calling this method, in other words.
+   */
+  fun start() {
+    reset()
+
+    checkRootsThread =
+      ThreadUtils.newThread {
+          while (!quit.get()) {
+            checkRoots()
+            Thread.sleep(200)
+          }
+        }
+        .also { it.start() }
+  }
+
+  /** Stop the thread if started by [start]. This method blocks until the thread has finished. */
+  fun stop() {
+    checkRootsThread?.let { thread ->
+      quit.set(true)
+      thread.join()
+      quit.set(false)
+      checkRootsThread = null
+    }
+  }
+
+  /**
+   * This method checks to see if any views were added or removed since the last time it was called, sends a [WindowRootsEvent] to the host
+   * to inform the host, and calls [onRootsChanged] with any changes.
+   */
+  @Synchronized
+  fun checkRoots() {
+    val currRoots = getRootViewsOnMainThread()
+    if (quit.get()) {
+      // We're quitting and cancelled the roots request.
+      return
     }
 
-    /**
-     * Start running a thread which will periodically call [checkRoots].
-     *
-     * If the thread is still running from a previous call to [start], it will be stopped,
-     * state cleared, and restarted. There is no need to call [reset] yourself if calling this
-     * method, in other words.
-     */
-    fun start() {
-        reset()
-
-        checkRootsThread = ThreadUtils.newThread {
-            while (!quit.get()) {
-                checkRoots()
-                Thread.sleep(200)
-            }
-        }.also {
-            it.start()
-        }
+    val currRootIds = currRoots.keys
+    if (lastRootIds.size != currRootIds.size || !lastRootIds.containsAll(currRootIds)) {
+      val removed = lastRootIds.filter { !currRootIds.contains(it) }
+      val added = currRootIds.filter { !lastRootIds.contains(it) }
+      lastRootIds = currRootIds.toSet() // make a copy: b/316777257
+      setCheckpoint(ProgressCheckpoint.ROOTS_EVENT_SENT)
+      connection.sendEvent { rootsEvent = WindowRootsEvent.newBuilder().apply { addAllIds(currRootIds) }.build() }
+      onRootsChanged(added, removed, currRoots)
     }
+  }
 
-    /**
-     * Stop the thread if started by [start]. This method blocks until the thread has finished.
-     */
-    fun stop() {
-        checkRootsThread?.let { thread ->
-            quit.set(true)
-            thread.join()
-            quit.set(false)
-            checkRootsThread = null
-        }
+  private fun getRootViewsOnMainThread(): Map<Long, InspectorView> {
+    while (!quit.get()) {
+      try {
+        return ThreadUtils.runOnMainThread { getRootViews(xrHelper).associateBy { it.view.uniqueDrawingId } }
+          .get(100, TimeUnit.MILLISECONDS)
+      } catch (e: TimeoutException) {
+        // Ignore and try again.
+      }
     }
-
-    /**
-     * This method checks to see if any views were added or removed since the last time it was
-     * called, sends a [WindowRootsEvent] to the host to inform the host, and calls
-     * [onRootsChanged] with any changes.
-     */
-    @Synchronized
-    fun checkRoots() {
-        val currRoots = getRootViewsOnMainThread()
-        if (quit.get()) {
-            // We're quitting and cancelled the roots request.
-            return
-        }
-
-        val currRootIds = currRoots.keys
-        if (lastRootIds.size != currRootIds.size || !lastRootIds.containsAll(currRootIds)) {
-            val removed = lastRootIds.filter { !currRootIds.contains(it) }
-            val added = currRootIds.filter { !lastRootIds.contains(it) }
-            lastRootIds = currRootIds.toSet() // make a copy: b/316777257
-            setCheckpoint(ProgressCheckpoint.ROOTS_EVENT_SENT)
-            connection.sendEvent {
-                rootsEvent = WindowRootsEvent.newBuilder().apply {
-                    addAllIds(currRootIds)
-                }.build()
-            }
-            onRootsChanged(added, removed, currRoots)
-        }
-    }
-
-    private fun getRootViewsOnMainThread(): Map<Long, InspectorView> {
-        while (!quit.get()) {
-            try {
-                return ThreadUtils.runOnMainThread {
-                    getRootViews(xrHelper).associateBy { it.view.uniqueDrawingId }
-                }.get(100, TimeUnit.MILLISECONDS)
-            } catch (e: TimeoutException) {
-                // Ignore and try again.
-            }
-        }
-        // We'll only get here if we've already quit
-        return mapOf()
-    }
+    // We'll only get here if we've already quit
+    return mapOf()
+  }
 }
 
 data class InspectorView(val view: View, val isXr: Boolean)
 
 fun getRootViews(xrHelper: XrHelper): List<InspectorView> {
-    val xrViews = xrHelper.getXrViews().map { InspectorView(it, true) }
+  val xrViews = xrHelper.getXrViews().map { InspectorView(it, true) }
 
-    // If there are xr panels, we want to ignore regular android views.
-    // In practice, there are no regular views in an xr app, but the regular view APIs
-    // still return the main panel views as a regular view. So getting views both using
-    // xr and regular view APIs would duplicate the main panel.
-    val androidViews = if (xrViews.isEmpty()) {
+  // If there are xr panels, we want to ignore regular android views.
+  // In practice, there are no regular views in an xr app, but the regular view APIs
+  // still return the main panel views as a regular view. So getting views both using
+  // xr and regular view APIs would duplicate the main panel.
+  val androidViews =
+    if (xrViews.isEmpty()) {
       getAndroidViews().map { InspectorView(it, false) }
     } else {
       emptyList()
     }
 
-    return (xrViews + androidViews)
-        .filter { it.view.visibility == View.VISIBLE && it.view.isAttachedToWindow }
-        .sortedBy { it.view.z }
+  return (xrViews + androidViews).filter { it.view.visibility == View.VISIBLE && it.view.isAttachedToWindow }.sortedBy { it.view.z }
 }
 
 private fun getAndroidViews(): List<View> {
-    ThreadUtils.assertOnMainThread()
-    val views = WindowInspector.getGlobalWindowViews()
-    return views
+  ThreadUtils.assertOnMainThread()
+  val views = WindowInspector.getGlobalWindowViews()
+  return views
 }

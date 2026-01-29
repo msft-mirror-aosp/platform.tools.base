@@ -18,15 +18,13 @@ package com.android.tools.agent.appinspection.testutils.inspection
 
 import org.junit.rules.ExternalResource
 
-/**
- * A simple rule for managing all test classes related to the androidx.inspection framework.
- */
+/** A simple rule for managing all test classes related to the androidx.inspection framework. */
 class InspectorRule : ExternalResource() {
-    val connection = TestConnection()
-    val environment = TestInspectorEnvironment()
-    val commandCallback = TestCommandCallback()
+  val connection = TestConnection()
+  val environment = TestInspectorEnvironment()
+  val commandCallback = TestCommandCallback()
 
-    override fun after() {
-        environment.shutdown()
-    }
+  override fun after() {
+    environment.shutdown()
+  }
 }

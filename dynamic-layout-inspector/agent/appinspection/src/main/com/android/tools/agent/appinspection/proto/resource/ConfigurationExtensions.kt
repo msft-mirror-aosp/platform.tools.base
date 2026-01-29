@@ -16,42 +16,38 @@
 
 package com.android.tools.agent.appinspection.proto.resource
 
+import android.content.res.Configuration as AndroidResConfiguration
+import android.os.Build
 import com.android.tools.agent.appinspection.proto.StringTable
 import com.android.tools.agent.appinspection.proto.convert
 import com.android.tools.idea.layoutinspector.view.inspection.LayoutInspectorViewProtocol.Configuration
-import android.content.res.Configuration as AndroidResConfiguration
-import android.os.Build
 
-fun AndroidResConfiguration.convert(stringTable: StringTable): Configuration =
-    Configuration.newBuilder().apply(this, stringTable).build()
+fun AndroidResConfiguration.convert(stringTable: StringTable): Configuration = Configuration.newBuilder().apply(this, stringTable).build()
 
-private fun Configuration.Builder.apply(
-    config: AndroidResConfiguration,
-    stringTable: StringTable
-): Configuration.Builder {
-    fontScale = config.fontScale
-    countryCode = config.mcc
-    networkCode = config.mnc
-    screenLayout = config.screenLayout
-    colorMode = config.colorMode
-    touchScreen = config.touchscreen
-    keyboard = config.keyboard
-    keyboardHidden = config.keyboardHidden
-    hardKeyboardHidden = config.hardKeyboardHidden
-    navigation = config.navigation
-    navigationHidden = config.navigationHidden
-    uiMode = config.uiMode
-    smallestScreenWidthDp = config.smallestScreenWidthDp
-    density = config.densityDpi
-    orientation = config.orientation
-    screenWidthDp = config.screenWidthDp
-    screenHeightDp = config.screenHeightDp
+private fun Configuration.Builder.apply(config: AndroidResConfiguration, stringTable: StringTable): Configuration.Builder {
+  fontScale = config.fontScale
+  countryCode = config.mcc
+  networkCode = config.mnc
+  screenLayout = config.screenLayout
+  colorMode = config.colorMode
+  touchScreen = config.touchscreen
+  keyboard = config.keyboard
+  keyboardHidden = config.keyboardHidden
+  hardKeyboardHidden = config.hardKeyboardHidden
+  navigation = config.navigation
+  navigationHidden = config.navigationHidden
+  uiMode = config.uiMode
+  smallestScreenWidthDp = config.smallestScreenWidthDp
+  density = config.densityDpi
+  orientation = config.orientation
+  screenWidthDp = config.screenWidthDp
+  screenHeightDp = config.screenHeightDp
 
-    if (!config.locales.isEmpty) {
-        locale = config.locales[0].convert(stringTable)
-    }
-    if (Build.VERSION.SDK_INT >= 34) {
-        grammaticalGender = config.grammaticalGender
-    }
-    return this
+  if (!config.locales.isEmpty) {
+    locale = config.locales[0].convert(stringTable)
+  }
+  if (Build.VERSION.SDK_INT >= 34) {
+    grammaticalGender = config.grammaticalGender
+  }
+  return this
 }

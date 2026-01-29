@@ -26,40 +26,37 @@ import com.android.tools.agent.appinspection.testutils.property.EnumPropertyRead
 
 class ViewGroupLayoutParamsInspectionCompanion : InspectionCompanion<ViewGroup.LayoutParams> {
 
-    companion object {
-        const val OFFSET = 0 // Start index of layout properties
+  companion object {
+    const val OFFSET = 0 // Start index of layout properties
 
-        fun addResourceNames(resourceNames: MutableMap<Int, String>) {
-            resourceNames[ATTR_OFFSET + OFFSET] = "android.attr/layout_width"
-            resourceNames[ATTR_OFFSET + OFFSET + 1] = "android.attr/layout_height"
-        }
+    fun addResourceNames(resourceNames: MutableMap<Int, String>) {
+      resourceNames[ATTR_OFFSET + OFFSET] = "android.attr/layout_width"
+      resourceNames[ATTR_OFFSET + OFFSET + 1] = "android.attr/layout_height"
     }
+  }
 
-    private val sizeMapping: (Int) -> String? = { value: Int ->
-        when (value) {
-            ViewGroup.LayoutParams.MATCH_PARENT -> "match_parent"
-            ViewGroup.LayoutParams.WRAP_CONTENT -> "wrap_content"
-            else -> null
-        }
+  private val sizeMapping: (Int) -> String? = { value: Int ->
+    when (value) {
+      ViewGroup.LayoutParams.MATCH_PARENT -> "match_parent"
+      ViewGroup.LayoutParams.WRAP_CONTENT -> "wrap_content"
+      else -> null
     }
+  }
 
-    private enum class Property {
-        WIDTH,
-        HEIGHT
-    }
+  private enum class Property {
+    WIDTH,
+    HEIGHT,
+  }
 
-    override fun mapProperties(propertyMapper: PropertyMapper) {
-        val mapper = EnumPropertyMapper<Property>(propertyMapper, OFFSET, namePrefix = "layout_")
-        mapper.mapIntEnum(Property.WIDTH, sizeMapping)
-        mapper.mapIntEnum(Property.HEIGHT, sizeMapping)
-    }
+  override fun mapProperties(propertyMapper: PropertyMapper) {
+    val mapper = EnumPropertyMapper<Property>(propertyMapper, OFFSET, namePrefix = "layout_")
+    mapper.mapIntEnum(Property.WIDTH, sizeMapping)
+    mapper.mapIntEnum(Property.HEIGHT, sizeMapping)
+  }
 
-    override fun readProperties(
-        layoutParams: ViewGroup.LayoutParams,
-        propertyReader: PropertyReader
-    ) {
-        val reader = EnumPropertyReader<Property>(propertyReader, OFFSET)
-        reader.readIntEnum(Property.WIDTH, layoutParams.width)
-        reader.readIntEnum(Property.HEIGHT, layoutParams.height)
-    }
+  override fun readProperties(layoutParams: ViewGroup.LayoutParams, propertyReader: PropertyReader) {
+    val reader = EnumPropertyReader<Property>(propertyReader, OFFSET)
+    reader.readIntEnum(Property.WIDTH, layoutParams.width)
+    reader.readIntEnum(Property.HEIGHT, layoutParams.height)
+  }
 }

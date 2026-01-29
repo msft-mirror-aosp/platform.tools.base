@@ -19,94 +19,77 @@ package com.android.tools.agent.appinspection
 import android.view.View
 import com.android.tools.idea.layoutinspector.view.inspection.LayoutInspectorViewProtocol
 import com.android.tools.idea.layoutinspector.view.inspection.LayoutInspectorViewProtocol.Screenshot
-import kotlinx.coroutines.CompletableDeferred
 import java.io.OutputStream
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executor
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.atomic.AtomicReference
+import kotlinx.coroutines.CompletableDeferred
 
 class InspectorState {
 
-    /**
-     * Lock used to guard an instance of [InspectorState].
-     */
-    val lock = Any()
+  /** Lock used to guard an instance of [InspectorState]. */
+  val lock = Any()
 
-    /**
-     * A mapping of root view IDs to screen capture data that should be accessed across multiple threads.
-     */
-    val captureContextMap = mutableMapOf<Long, CaptureContext>()
+  /** A mapping of root view IDs to screen capture data that should be accessed across multiple threads. */
+  val captureContextMap = mutableMapOf<Long, CaptureContext>()
 
-    /**
-     * When true, the inspector will keep generating layout events as the screen changes.
-     * Otherwise, it will only return a single layout snapshot before going back to waiting.
-     */
-    var fetchContinuously: Boolean = false
+  /**
+   * When true, the inspector will keep generating layout events as the screen changes. Otherwise, it will only return a single layout
+   * snapshot before going back to waiting.
+   */
+  var fetchContinuously: Boolean = false
 
-    /**
-     * Settings that determine the format of screenshots taken when doing a layout capture.
-     */
-    var screenshotSettings = ScreenshotSettings(Screenshot.Type.BITMAP)
+  /** Settings that determine the format of screenshots taken when doing a layout capture. */
+  var screenshotSettings = ScreenshotSettings(Screenshot.Type.BITMAP)
 
-    /**
-     * When a snapshot is requested an entry will be added to this map for each window. Then
-     * when content for that window is processed it will be set into the Deferred rather than
-     * sent back as a normal Event.
-     */
-    var snapshotRequests: MutableMap<Long, SnapshotRequest> = ConcurrentHashMap()
+  /**
+   * When a snapshot is requested an entry will be added to this map for each window. Then when content for that window is processed it will
+   * be set into the Deferred rather than sent back as a normal Event.
+   */
+  var snapshotRequests: MutableMap<Long, SnapshotRequest> = ConcurrentHashMap()
 
-    /**
-     * When false, if [ScreenshotSettings.type] is [Screenshot.Type.BITMAP],
-     * the screenshot is not captured and [LayoutEvent#screenshot] is not sent.
-     *
-     * This setting does nothing when [ScreenshotSettings.type] is [Screenshot.Type.SKP].
-     */
-    var enableBitmapScreenshot: Boolean = false
+  /**
+   * When false, if [ScreenshotSettings.type] is [Screenshot.Type.BITMAP], the screenshot is not captured and [LayoutEvent#screenshot] is
+   * not sent.
+   *
+   * This setting does nothing when [ScreenshotSettings.type] is [Screenshot.Type.SKP].
+   */
+  var enableBitmapScreenshot: Boolean = false
 }
 
-/**
- * Context data associated with a capture of a single layout tree.
- */
+/** Context data associated with a capture of a single layout tree. */
 data class CaptureContext(
-    /**
-     * A handle returned by a system that does continuous capturing, which, when closed, tells
-     * the system to stop as soon as possible.
-     */
-    val callbackHandle: AutoCloseable,
-    val screenshotType: Screenshot.Type,
-    val rootView: View,
-    /**
-     * An [Executor] used to execute the code that does the screen capturing.
-     * It runs some code before and after executing the screen capture logic.
-     */
-    val captureExecutor: CaptureExecutor,
-    /**
-     * The output stream on which the screen capture is written.
-     */
-    val captureOutputStream: OutputStream,
-    /**
-     * Executor used during capture
-     */
-    val executorService: ExecutorService,
-    /**
-     * When true, indicates we should stop capturing after the next one
-     */
-    var isLastCapture: Boolean = false,
+  /** A handle returned by a system that does continuous capturing, which, when closed, tells the system to stop as soon as possible. */
+  val callbackHandle: AutoCloseable,
+  val screenshotType: Screenshot.Type,
+  val rootView: View,
+  /**
+   * An [Executor] used to execute the code that does the screen capturing. It runs some code before and after executing the screen capture
+   * logic.
+   */
+  val captureExecutor: CaptureExecutor,
+  /** The output stream on which the screen capture is written. */
+  val captureOutputStream: OutputStream,
+  /** Executor used during capture */
+  val executorService: ExecutorService,
+  /** When true, indicates we should stop capturing after the next one */
+  var isLastCapture: Boolean = false,
 ) {
-    fun shutdown() {
-        callbackHandle.close()
-        executorService.shutdown()
-    }
+  fun shutdown() {
+    callbackHandle.close()
+    executorService.shutdown()
+  }
 }
 
-data class ScreenshotSettings(
-    val type: Screenshot.Type,
-    val scale: Float = 1.0f
-)
+data class ScreenshotSettings(val type: Screenshot.Type, val scale: Float = 1.0f)
 
 class SnapshotRequest(val screenshotType: Screenshot.Type) {
-    enum class State { NEW, PROCESSING }
-    val result = CompletableDeferred<LayoutInspectorViewProtocol.CaptureSnapshotResponse.WindowSnapshot>()
-    val state = AtomicReference(State.NEW)
+  enum class State {
+    NEW,
+    PROCESSING,
+  }
+
+  val result = CompletableDeferred<LayoutInspectorViewProtocol.CaptureSnapshotResponse.WindowSnapshot>()
+  val state = AtomicReference(State.NEW)
 }

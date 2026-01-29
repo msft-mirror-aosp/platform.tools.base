@@ -30,32 +30,20 @@ import com.android.tools.agent.appinspection.testutils.property.companions.ViewG
 import com.android.tools.agent.appinspection.testutils.property.companions.ViewInspectionCompanion
 import org.junit.rules.ExternalResource
 
-/**
- * Simple rule for setting up / clearing global framework state between tests.
- */
+/** Simple rule for setting up / clearing global framework state between tests. */
 class FrameworkStateRule : ExternalResource() {
 
-    public override fun before() {
-        StaticInspectionCompanionProvider.register(View::class.java, ViewInspectionCompanion())
-        StaticInspectionCompanionProvider.register(
-            TextView::class.java,
-            TextViewInspectionCompanion()
-        )
-        StaticInspectionCompanionProvider.register(
-            ViewGroup.LayoutParams::class.java,
-            ViewGroupLayoutParamsInspectionCompanion()
-        )
-        StaticInspectionCompanionProvider.register(Button::class.java, ButtonInspectionCompanion())
-        StaticInspectionCompanionProvider.register(
-            AppCompatButton::class.java,
-            AppCompatButtonInspectionCompanion()
-        )
-    }
+  public override fun before() {
+    StaticInspectionCompanionProvider.register(View::class.java, ViewInspectionCompanion())
+    StaticInspectionCompanionProvider.register(TextView::class.java, TextViewInspectionCompanion())
+    StaticInspectionCompanionProvider.register(ViewGroup.LayoutParams::class.java, ViewGroupLayoutParamsInspectionCompanion())
+    StaticInspectionCompanionProvider.register(Button::class.java, ButtonInspectionCompanion())
+    StaticInspectionCompanionProvider.register(AppCompatButton::class.java, AppCompatButtonInspectionCompanion())
+  }
 
-    public override fun after() {
-        WindowManagerGlobal.getInstance().rootViews.clear()
+  public override fun after() {
+    WindowManagerGlobal.getInstance().rootViews.clear()
 
-        StaticInspectionCompanionProvider.cleanup()
-    }
-
+    StaticInspectionCompanionProvider.cleanup()
+  }
 }

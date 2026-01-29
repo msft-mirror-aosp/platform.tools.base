@@ -26,26 +26,26 @@ import com.android.tools.agent.appinspection.testutils.property.EnumPropertyRead
 
 class ButtonInspectionCompanion : InspectionCompanion<Button> {
 
-    companion object {
-        val OFFSET = TextViewInspectionCompanion.OFFSET + TextViewInspectionCompanion.NUM_PROPERTIES
-        val NUM_PROPERTIES = Property.values().size
+  companion object {
+    val OFFSET = TextViewInspectionCompanion.OFFSET + TextViewInspectionCompanion.NUM_PROPERTIES
+    val NUM_PROPERTIES = Property.values().size
 
-        fun addResourceNames(resourceNames: MutableMap<Int, String>) {
-            resourceNames[ATTR_OFFSET + OFFSET] = "android.attr/backgroundTint"
-        }
+    fun addResourceNames(resourceNames: MutableMap<Int, String>) {
+      resourceNames[ATTR_OFFSET + OFFSET] = "android.attr/backgroundTint"
     }
+  }
 
-    internal enum class Property {
-        BACKGROUND_TINT
-    }
+  internal enum class Property {
+    BACKGROUND_TINT
+  }
 
-    override fun mapProperties(propertyMapper: PropertyMapper) {
-        val mapper = EnumPropertyMapper<Property>(propertyMapper, OFFSET)
-        mapper.mapObject(Property.BACKGROUND_TINT)
-    }
+  override fun mapProperties(propertyMapper: PropertyMapper) {
+    val mapper = EnumPropertyMapper<Property>(propertyMapper, OFFSET)
+    mapper.mapObject(Property.BACKGROUND_TINT)
+  }
 
-    override fun readProperties(button: Button, propertyReader: PropertyReader) {
-        val reader = EnumPropertyReader<Property>(propertyReader, OFFSET)
-        reader.readObject(Property.BACKGROUND_TINT, button.backgroundTint)
-    }
+  override fun readProperties(button: Button, propertyReader: PropertyReader) {
+    val reader = EnumPropertyReader<Property>(propertyReader, OFFSET)
+    reader.readObject(Property.BACKGROUND_TINT, button.backgroundTint)
+  }
 }

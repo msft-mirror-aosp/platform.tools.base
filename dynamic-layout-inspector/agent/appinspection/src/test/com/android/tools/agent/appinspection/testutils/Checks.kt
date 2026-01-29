@@ -14,37 +14,33 @@
  * limitations under the License.
  */
 
-import com.google.common.truth.Truth
 import com.android.tools.idea.layoutinspector.view.inspection.LayoutInspectorViewProtocol
+import com.google.common.truth.Truth
 import java.util.concurrent.ArrayBlockingQueue
 import java.util.concurrent.BlockingQueue
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
 
-fun checkNonProgressEvent(
-    eventQueue: ArrayBlockingQueue<ByteArray>, block: (LayoutInspectorViewProtocol.Event) -> Unit
-) = checkNextEventMatching(
-    eventQueue,
-    { it.specializedCase != LayoutInspectorViewProtocol.Event.SpecializedCase.PROGRESS_EVENT },
-    block)
+fun checkNonProgressEvent(eventQueue: ArrayBlockingQueue<ByteArray>, block: (LayoutInspectorViewProtocol.Event) -> Unit) =
+  checkNextEventMatching(eventQueue, { it.specializedCase != LayoutInspectorViewProtocol.Event.SpecializedCase.PROGRESS_EVENT }, block)
 
 fun checkNextEventMatching(
-    eventQueue: BlockingQueue<ByteArray>,
-    condition: (LayoutInspectorViewProtocol.Event) -> Boolean,
-    block: (LayoutInspectorViewProtocol.Event) -> Unit
+  eventQueue: BlockingQueue<ByteArray>,
+  condition: (LayoutInspectorViewProtocol.Event) -> Boolean,
+  block: (LayoutInspectorViewProtocol.Event) -> Unit,
 ) {
-    val startTime = System.currentTimeMillis()
-    var found = false
-    while (startTime + TimeUnit.SECONDS.toMillis(10) > System.currentTimeMillis()) {
-        val bytes = eventQueue.poll(10, TimeUnit.SECONDS) ?: throw TimeoutException()
-        val event = LayoutInspectorViewProtocol.Event.parseFrom(bytes)
-        if (!condition(event)) {
-            // skip events that don't meet the condition
-            continue
-        }
-        block(event)
-        found = true
-        break
+  val startTime = System.currentTimeMillis()
+  var found = false
+  while (startTime + TimeUnit.SECONDS.toMillis(10) > System.currentTimeMillis()) {
+    val bytes = eventQueue.poll(10, TimeUnit.SECONDS) ?: throw TimeoutException()
+    val event = LayoutInspectorViewProtocol.Event.parseFrom(bytes)
+    if (!condition(event)) {
+      // skip events that don't meet the condition
+      continue
     }
-    Truth.assertThat(found).isTrue()
+    block(event)
+    found = true
+    break
+  }
+  Truth.assertThat(found).isTrue()
 }
