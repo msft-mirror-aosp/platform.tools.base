@@ -17,35 +17,31 @@
 package com.android.tools.journeys.testengine.robo.platform
 
 enum class JourneyFailureReason {
-    UNKNOWN_FAILURE,
-    ADB_INSTALL_FAILED,
-    ADB_FORWARDING_FAILED,
-    ROBO_PORT_EXTRACTION_FAILED,
-    INSTRUMENTATION_FAILED,
-    JOURNEY_READ_FAILED,
-    AUTHENTICATION_FAILED,
-    CRAWLER_TIMED_OUT,
-    APP_TERMINATED,
-    CRAWLER_TERMINATED,
-    CRAWLER_CANCELLED,
-    AGENT_TIMED_OUT,
-    AGENT_RESOURCE_EXHAUSTED,
-    LAUNCH_APP_FAILED
+  UNKNOWN_FAILURE,
+  ADB_INSTALL_FAILED,
+  ADB_FORWARDING_FAILED,
+  ROBO_PORT_EXTRACTION_FAILED,
+  INSTRUMENTATION_FAILED,
+  JOURNEY_READ_FAILED,
+  AUTHENTICATION_FAILED,
+  CRAWLER_TIMED_OUT,
+  APP_TERMINATED,
+  CRAWLER_TERMINATED,
+  CRAWLER_CANCELLED,
+  AGENT_TIMED_OUT,
+  AGENT_RESOURCE_EXHAUSTED,
+  LAUNCH_APP_FAILED,
 }
 
 /**
- * Custom exception type for errors occurring during Journey execution.
- * Includes a specific [reason] to categorize the failure.
+ * Custom exception type for errors occurring during Journey execution. Includes a specific [reason] to categorize the failure.
  *
  * @param message A descriptive message for the error.
  * @param cause The underlying cause of the exception, if any.
  * @param reason The specific categorized reason for the journey failure.
  */
 class JourneyExecutionException(
-    message: String?,
-    cause: Throwable? = null,
-    val reason: JourneyFailureReason = JourneyFailureReason.UNKNOWN_FAILURE
-) : RuntimeException(
-    "${message ?: "Unexpected failure while running the journey"} [Reason=${reason.name}]",
-    cause
-)
+  message: String?,
+  cause: Throwable? = null,
+  val reason: JourneyFailureReason = JourneyFailureReason.UNKNOWN_FAILURE,
+) : RuntimeException("${message ?: "Unexpected failure while running the journey"} [Reason=${reason.name}]", cause)

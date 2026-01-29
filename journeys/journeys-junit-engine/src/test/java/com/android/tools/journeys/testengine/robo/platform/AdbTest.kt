@@ -16,6 +16,8 @@
 
 package com.android.tools.journeys.testengine.robo.platform
 
+import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
 import org.junit.Assert.assertThrows
 import org.junit.Before
 import org.junit.Test
@@ -26,417 +28,287 @@ import org.mockito.Mockito.never
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.`when`
 import org.mockito.kotlin.argumentCaptor
-import kotlin.test.assertEquals
-import kotlin.test.assertNotNull
 
 class AdbTest {
 
-    private lateinit var mockExecutor: ProcessExecutor
-    private lateinit var adb: Adb
+  private lateinit var mockExecutor: ProcessExecutor
+  private lateinit var adb: Adb
 
-    @Before
-    fun setUp() {
-        mockExecutor = mock(ProcessExecutor::class.java)
-        adb = Adb("path/to/adb", mockExecutor)
-    }
+  @Before
+  fun setUp() {
+    mockExecutor = mock(ProcessExecutor::class.java)
+    adb = Adb("path/to/adb", mockExecutor)
+  }
 
-    @Test
-    fun `install success`() {
-        `when`(mockExecutor.execCmdSync(anyList(), anyLong())).thenReturn(
-            ProcessResult(0, "Success", "")
+  @Test
+  fun `install success`() {
+    `when`(mockExecutor.execCmdSync(anyList(), anyLong())).thenReturn(ProcessResult(0, "Success", ""))
+
+    adb.install("device-123", "test.apk")
+
+    verify(mockExecutor).execCmdSync(listOf("path/to/adb", "-s", "device-123", "install", "test.apk"), 300)
+  }
+
+  @Test
+  fun `install success with flags`() {
+    `when`(mockExecutor.execCmdSync(anyList(), anyLong())).thenReturn(ProcessResult(0, "Success", ""))
+
+    adb.install("device-123", "test.apk", listOf("-r", "-d"))
+
+    verify(mockExecutor).execCmdSync(listOf("path/to/adb", "-s", "device-123", "install", "-r", "-d", "test.apk"), 300)
+  }
+
+  @Test
+  fun `install with special characters in path`() {
+    val pathWithSpecialChars = "/path with spaces/and'quotes'/andSpecial$#@* chars/test.apk"
+    `when`(mockExecutor.execCmdSync(anyList(), anyLong())).thenReturn(ProcessResult(0, "Success", ""))
+
+    adb.install("device-123", pathWithSpecialChars)
+
+    val installCaptor = argumentCaptor<List<String>>()
+    verify(mockExecutor).execCmdSync(installCaptor.capture(), anyLong())
+    val expectedCommand = listOf("path/to/adb", "-s", "device-123", "install", pathWithSpecialChars)
+    assertEquals(expectedCommand, installCaptor.firstValue)
+  }
+
+  @Test
+  fun `install failure due to non-zero exit code`() {
+    `when`(mockExecutor.execCmdSync(anyList(), anyLong())).thenReturn(ProcessResult(1, "", "INSTALL_FAILED"))
+
+    val exception = assertThrows(IllegalStateException::class.java) { adb.install("device-123", "test.apk") }
+    assertEquals(
+      "Command `path/to/adb -s device-123 install test.apk` failed (exit code 1) with output:\n------ stderr ------\nINSTALL_FAILED",
+      exception.message,
+    )
+  }
+
+  @Test
+  fun `install failure due to missing 'Success' message`() {
+    `when`(mockExecutor.execCmdSync(anyList(), anyLong())).thenReturn(ProcessResult(0, "Something went wrong", ""))
+
+    val exception = assertThrows(IllegalStateException::class.java) { adb.install("device-123", "test.apk") }
+    assertEquals(
+      "Command `path/to/adb -s device-123 install test.apk` failed (exit code 0) with output:\n------ stdout ------\nSomething went wrong",
+      exception.message,
+    )
+  }
+
+  @Test
+  fun `uninstall app is installed`() {
+    `when`(mockExecutor.execCmdSync(anyList(), anyLong())).thenReturn(ProcessResult(0, "package:/data/app/com.example-1.apk", ""))
+
+    adb.uninstall("device-123", "com.example")
+
+    verify(mockExecutor).execCmdSync(listOf("path/to/adb", "-s", "device-123", "shell", "pm", "path", "com.example"), 30)
+    verify(mockExecutor).execCmdSync(listOf("path/to/adb", "-s", "device-123", "uninstall", "com.example"), 30)
+  }
+
+  @Test
+  fun `uninstall app is not installed`() {
+    `when`(mockExecutor.execCmdSync(anyList(), anyLong())).thenReturn(ProcessResult(0, "", ""))
+
+    adb.uninstall("device-123", "com.example")
+
+    verify(mockExecutor).execCmdSync(listOf("path/to/adb", "-s", "device-123", "shell", "pm", "path", "com.example"), 30)
+    verify(mockExecutor, never()).execCmdSync(listOf("path/to/adb", "-s", "device-123", "uninstall", "com.example"), 30)
+  }
+
+  @Test
+  fun `uninstall failure due to non-zero exit code`() {
+    `when`(mockExecutor.execCmdSync(listOf("path/to/adb", "-s", "device-123", "shell", "pm", "path", "com.example"), 30))
+      .thenReturn(ProcessResult(0, "package:/data/app/com.example-1.apk", ""))
+    `when`(mockExecutor.execCmdSync(listOf("path/to/adb", "-s", "device-123", "uninstall", "com.example"), 30))
+      .thenReturn(ProcessResult(1, "", "DELETE_FAILED_INTERNAL_ERROR"))
+
+    val exception = assertThrows(IllegalStateException::class.java) { adb.uninstall("device-123", "com.example") }
+    assertEquals(
+      "Command `path/to/adb -s device-123 uninstall com.example` failed (exit code 1) with output:\n------ stderr ------\nDELETE_FAILED_INTERNAL_ERROR",
+      exception.message,
+    )
+  }
+
+  @Test
+  fun `getDeviceApiLevel success`() {
+    `when`(mockExecutor.execCmdSync(anyList(), anyLong())).thenReturn(ProcessResult(0, "30", ""))
+
+    assertEquals(30, adb.getDeviceApiLevel("device-123"))
+  }
+
+  @Test
+  fun `getDeviceApiLevel failure non-integer output`() {
+    `when`(mockExecutor.execCmdSync(anyList(), anyLong())).thenReturn(ProcessResult(0, "thirty", ""))
+
+    val exception = assertThrows(IllegalStateException::class.java) { adb.getDeviceApiLevel("device-123") }
+    assertEquals(
+      "Command `path/to/adb -s device-123 shell getprop ro.build.version.sdk` failed (exit code 0) with output:\n------ stdout ------\nthirty",
+      exception.message,
+    )
+  }
+
+  @Test
+  fun `runInstrumentation success with args`() {
+    val mockProcess = mock(Process::class.java)
+    `when`(mockExecutor.execCmdAsync(anyList())).thenReturn(mockProcess)
+
+    val process =
+      adb.runInstrumentation(
+        "device-123",
+        "com.example.test",
+        "androidx.test.runner.AndroidJUnitRunner",
+        mapOf("class" to "com.example.test.MyTestClass", "arg2" to "value1$# 'quote' "),
+      )
+
+    assertNotNull(process)
+    verify(mockExecutor)
+      .execCmdAsync(
+        listOf(
+          "path/to/adb",
+          "-s",
+          "device-123",
+          "shell",
+          "am",
+          "instrument",
+          "-w",
+          "-e",
+          "class",
+          "com.example.test.MyTestClass",
+          "-e",
+          "arg2",
+          "value1$# 'quote' ",
+          "com.example.test/androidx.test.runner.AndroidJUnitRunner",
         )
+      )
+  }
 
-        adb.install("device-123", "test.apk")
+  @Test
+  fun `runInstrumentation success without args`() {
+    val mockProcess = mock(Process::class.java)
+    `when`(mockExecutor.execCmdAsync(anyList())).thenReturn(mockProcess)
 
-        verify(mockExecutor).execCmdSync(
-            listOf("path/to/adb", "-s", "device-123", "install", "test.apk"),
-            300
+    val process = adb.runInstrumentation("device-123", "com.example.test", "androidx.test.runner.AndroidJUnitRunner")
+
+    assertNotNull(process)
+    verify(mockExecutor)
+      .execCmdAsync(
+        listOf(
+          "path/to/adb",
+          "-s",
+          "device-123",
+          "shell",
+          "am",
+          "instrument",
+          "-w",
+          "com.example.test/androidx.test.runner.AndroidJUnitRunner",
         )
-    }
+      )
+  }
 
-    @Test
-    fun `install success with flags`() {
-        `when`(mockExecutor.execCmdSync(anyList(), anyLong())).thenReturn(
-            ProcessResult(0, "Success", "")
-        )
+  @Test
+  fun `runInstrumentation failure`() {
+    `when`(mockExecutor.execCmdAsync(anyList())).thenThrow(IllegalStateException("Command not found"))
 
-        adb.install("device-123", "test.apk", listOf("-r", "-d"))
+    val exception =
+      assertThrows(IllegalStateException::class.java) {
+        adb.runInstrumentation("device-123", "com.example.test", "androidx.test.runner.AndroidJUnitRunner")
+      }
+    assertEquals("Command not found", exception.message)
+  }
 
-        verify(mockExecutor).execCmdSync(
-            listOf("path/to/adb", "-s", "device-123", "install", "-r", "-d", "test.apk"),
-            300
-        )
-    }
+  @Test
+  fun `forward success`() {
+    `when`(mockExecutor.execCmdSync(anyList(), anyLong())).thenReturn(ProcessResult(0, "8080", ""))
 
-    @Test
-    fun `install with special characters in path`() {
-        val pathWithSpecialChars = "/path with spaces/and'quotes'/andSpecial$#@* chars/test.apk"
-        `when`(mockExecutor.execCmdSync(anyList(), anyLong())).thenReturn(
-            ProcessResult(0, "Success", "")
-        )
+    adb.forward("device-123", 8080, 5050)
 
-        adb.install("device-123", pathWithSpecialChars)
+    verify(mockExecutor).execCmdSync(listOf("path/to/adb", "-s", "device-123", "forward", "tcp:8080", "tcp:5050"), 30)
+  }
 
-        val installCaptor = argumentCaptor<List<String>>()
-        verify(mockExecutor).execCmdSync(installCaptor.capture(), anyLong())
-        val expectedCommand =
-            listOf("path/to/adb", "-s", "device-123", "install", pathWithSpecialChars)
-        assertEquals(expectedCommand, installCaptor.firstValue)
-    }
+  @Test
+  fun `forward failure`() {
+    `when`(mockExecutor.execCmdSync(anyList(), anyLong())).thenReturn(ProcessResult(1, "error", ""))
 
-    @Test
-    fun `install failure due to non-zero exit code`() {
-        `when`(mockExecutor.execCmdSync(anyList(), anyLong())).thenReturn(
-            ProcessResult(1, "", "INSTALL_FAILED")
-        )
+    val exception = assertThrows(IllegalStateException::class.java) { adb.forward("device-123", 8080, 5050) }
+    assertEquals(
+      "Command `path/to/adb -s device-123 forward tcp:8080 tcp:5050` failed (exit code 1) with output:\n------ stdout ------\nerror",
+      exception.message,
+    )
+  }
 
-        val exception = assertThrows(IllegalStateException::class.java) {
-            adb.install("device-123", "test.apk")
-        }
-        assertEquals(
-            "Command `path/to/adb -s device-123 install test.apk` failed (exit code 1) with output:\n------ stderr ------\nINSTALL_FAILED",
-            exception.message
-        )
-    }
+  @Test
+  fun `removeForward success when rule exists`() {
+    `when`(mockExecutor.execCmdSync(listOf("path/to/adb", "-s", "device-123", "forward", "--list"), 30))
+      .thenReturn(ProcessResult(0, "device-123 tcp:8080 tcp:5050", ""))
+    `when`(mockExecutor.execCmdSync(listOf("path/to/adb", "-s", "device-123", "forward", "--remove", "tcp:8080"), 30))
+      .thenReturn(ProcessResult(0, "", ""))
 
-    @Test
-    fun `install failure due to missing 'Success' message`() {
-        `when`(mockExecutor.execCmdSync(anyList(), anyLong())).thenReturn(
-            ProcessResult(0, "Something went wrong", "")
-        )
+    adb.removeForward("device-123", 8080)
 
-        val exception = assertThrows(IllegalStateException::class.java) {
-            adb.install("device-123", "test.apk")
-        }
-        assertEquals(
-            "Command `path/to/adb -s device-123 install test.apk` failed (exit code 0) with output:\n------ stdout ------\nSomething went wrong",
-            exception.message
-        )
-    }
+    verify(mockExecutor).execCmdSync(listOf("path/to/adb", "-s", "device-123", "forward", "--list"), 30)
+    verify(mockExecutor).execCmdSync(listOf("path/to/adb", "-s", "device-123", "forward", "--remove", "tcp:8080"), 30)
+  }
 
-    @Test
-    fun `uninstall app is installed`() {
-        `when`(mockExecutor.execCmdSync(anyList(), anyLong())).thenReturn(
-            ProcessResult(0, "package:/data/app/com.example-1.apk", "")
-        )
+  @Test
+  fun `removeForward success when rule does not exist`() {
+    `when`(mockExecutor.execCmdSync(anyList(), anyLong())).thenReturn(ProcessResult(0, "", ""))
 
-        adb.uninstall("device-123", "com.example")
+    adb.removeForward("device-123", 8080)
 
-        verify(mockExecutor).execCmdSync(
-            listOf("path/to/adb", "-s", "device-123", "shell", "pm", "path", "com.example"),
-            30
-        )
-        verify(mockExecutor).execCmdSync(
-            listOf("path/to/adb", "-s", "device-123", "uninstall", "com.example"),
-            30
-        )
-    }
+    verify(mockExecutor).execCmdSync(listOf("path/to/adb", "-s", "device-123", "forward", "--list"), 30)
+    verify(mockExecutor, never()).execCmdSync(listOf("path/to/adb", "-s", "device-123", "forward", "--remove", "tcp:8080"), 30)
+  }
 
-    @Test
-    fun `uninstall app is not installed`() {
-        `when`(mockExecutor.execCmdSync(anyList(), anyLong())).thenReturn(
-            ProcessResult(0, "", "")
-        )
+  @Test
+  fun `removeForward failure due to non-zero exit code`() {
+    `when`(mockExecutor.execCmdSync(listOf("path/to/adb", "-s", "device-123", "forward", "--list"), 30))
+      .thenReturn(ProcessResult(0, "device-123 tcp:8080 tcp:5050", ""))
+    `when`(mockExecutor.execCmdSync(listOf("path/to/adb", "-s", "device-123", "forward", "--remove", "tcp:8080"), 30))
+      .thenReturn(ProcessResult(1, "", "error: something went wrong"))
 
-        adb.uninstall("device-123", "com.example")
+    val exception = assertThrows(IllegalStateException::class.java) { adb.removeForward("device-123", 8080) }
+    verify(mockExecutor).execCmdSync(listOf("path/to/adb", "-s", "device-123", "forward", "--list"), 30)
+    assertEquals(
+      "Command `path/to/adb -s device-123 forward --remove tcp:8080` failed (exit code 1) with output:\n------ stderr ------\nerror: something went wrong",
+      exception.message,
+    )
+  }
 
-        verify(mockExecutor).execCmdSync(
-            listOf("path/to/adb", "-s", "device-123", "shell", "pm", "path", "com.example"),
-            30
-        )
-        verify(mockExecutor, never()).execCmdSync(
-            listOf("path/to/adb", "-s", "device-123", "uninstall", "com.example"),
-            30
-        )
-    }
+  @Test
+  fun `dumpsys success`() {
+    `when`(mockExecutor.execCmdSync(anyList(), anyLong())).thenReturn(ProcessResult(0, "DUMP OF SERVICE...", ""))
 
-    @Test
-    fun `uninstall failure due to non-zero exit code`() {
-        `when`(
-            mockExecutor.execCmdSync(
-                listOf("path/to/adb", "-s", "device-123", "shell", "pm", "path", "com.example"),
-                30
-            )
-        ).thenReturn(
-            ProcessResult(0, "package:/data/app/com.example-1.apk", "")
-        )
-        `when`(
-            mockExecutor.execCmdSync(
-                listOf("path/to/adb", "-s", "device-123", "uninstall", "com.example"),
-                30
-            )
-        ).thenReturn(
-            ProcessResult(1, "", "DELETE_FAILED_INTERNAL_ERROR")
-        )
+    assertEquals("DUMP OF SERVICE...\n", adb.dumpsys("device-123", "activity"))
+  }
 
-        val exception = assertThrows(IllegalStateException::class.java) {
-            adb.uninstall("device-123", "com.example")
-        }
-        assertEquals(
-            "Command `path/to/adb -s device-123 uninstall com.example` failed (exit code 1) with output:\n------ stderr ------\nDELETE_FAILED_INTERNAL_ERROR",
-            exception.message
-        )
-    }
+  @Test
+  fun `dumpsys failure`() {
+    `when`(mockExecutor.execCmdSync(anyList(), anyLong())).thenReturn(ProcessResult(1, "", "Service not found"))
 
-    @Test
-    fun `getDeviceApiLevel success`() {
-        `when`(mockExecutor.execCmdSync(anyList(), anyLong())).thenReturn(
-            ProcessResult(0, "30", "")
-        )
+    val exception = assertThrows(IllegalStateException::class.java) { adb.dumpsys("device-123", "nonexistent.service") }
+    assertEquals(
+      "Command `path/to/adb -s device-123 shell dumpsys activity service nonexistent.service` failed (exit code 1) with output:\n------ stderr ------\nService not found",
+      exception.message,
+    )
+  }
 
-        assertEquals(30, adb.getDeviceApiLevel("device-123"))
-    }
+  @Test
+  fun `setGlobalSettingsValue success`() {
+    `when`(mockExecutor.execCmdSync(anyList(), anyLong())).thenReturn(ProcessResult(0, "", ""))
 
-    @Test
-    fun `getDeviceApiLevel failure non-integer output`() {
-        `when`(mockExecutor.execCmdSync(anyList(), anyLong())).thenReturn(
-            ProcessResult(0, "thirty", "")
-        )
+    adb.setGlobalSettingsValue("device-123", "my_key", "my_value")
 
-        val exception = assertThrows(IllegalStateException::class.java) {
-            adb.getDeviceApiLevel("device-123")
-        }
-        assertEquals(
-            "Command `path/to/adb -s device-123 shell getprop ro.build.version.sdk` failed (exit code 0) with output:\n------ stdout ------\nthirty",
-            exception.message
-        )
-    }
+    verify(mockExecutor)
+      .execCmdSync(listOf("path/to/adb", "-s", "device-123", "shell", "settings", "put", "global", "my_key", "my_value"), 10)
+  }
 
-    @Test
-    fun `runInstrumentation success with args`() {
-        val mockProcess = mock(Process::class.java)
-        `when`(mockExecutor.execCmdAsync(anyList())).thenReturn(mockProcess)
+  @Test
+  fun `setGlobalSettingsValue failure`() {
+    `when`(mockExecutor.execCmdSync(anyList(), anyLong())).thenReturn(ProcessResult(1, "", "Invalid command"))
 
-        val process = adb.runInstrumentation(
-            "device-123",
-            "com.example.test",
-            "androidx.test.runner.AndroidJUnitRunner",
-            mapOf("class" to "com.example.test.MyTestClass", "arg2" to "value1$# 'quote' ")
-        )
-
-        assertNotNull(process)
-        verify(mockExecutor).execCmdAsync(
-            listOf(
-                "path/to/adb",
-                "-s",
-                "device-123",
-                "shell",
-                "am",
-                "instrument",
-                "-w",
-                "-e",
-                "class",
-                "com.example.test.MyTestClass",
-                "-e",
-                "arg2",
-                "value1$# 'quote' ",
-                "com.example.test/androidx.test.runner.AndroidJUnitRunner"
-            )
-        )
-    }
-
-    @Test
-    fun `runInstrumentation success without args`() {
-        val mockProcess = mock(Process::class.java)
-        `when`(mockExecutor.execCmdAsync(anyList())).thenReturn(mockProcess)
-
-        val process = adb.runInstrumentation(
-            "device-123",
-            "com.example.test",
-            "androidx.test.runner.AndroidJUnitRunner"
-        )
-
-        assertNotNull(process)
-        verify(mockExecutor).execCmdAsync(
-            listOf(
-                "path/to/adb",
-                "-s",
-                "device-123",
-                "shell",
-                "am",
-                "instrument",
-                "-w",
-                "com.example.test/androidx.test.runner.AndroidJUnitRunner"
-            )
-        )
-    }
-
-    @Test
-    fun `runInstrumentation failure`() {
-        `when`(mockExecutor.execCmdAsync(anyList())).thenThrow(IllegalStateException("Command not found"))
-
-        val exception = assertThrows(IllegalStateException::class.java) {
-            adb.runInstrumentation(
-                "device-123",
-                "com.example.test",
-                "androidx.test.runner.AndroidJUnitRunner"
-            )
-        }
-        assertEquals("Command not found", exception.message)
-    }
-
-    @Test
-    fun `forward success`() {
-        `when`(mockExecutor.execCmdSync(anyList(), anyLong())).thenReturn(
-            ProcessResult(0, "8080", "")
-        )
-
-        adb.forward("device-123", 8080, 5050)
-
-        verify(mockExecutor).execCmdSync(
-            listOf("path/to/adb", "-s", "device-123", "forward", "tcp:8080", "tcp:5050"),
-            30
-        )
-    }
-
-    @Test
-    fun `forward failure`() {
-        `when`(mockExecutor.execCmdSync(anyList(), anyLong())).thenReturn(
-            ProcessResult(1, "error", "")
-        )
-
-        val exception = assertThrows(IllegalStateException::class.java) {
-            adb.forward("device-123", 8080, 5050)
-        }
-        assertEquals(
-            "Command `path/to/adb -s device-123 forward tcp:8080 tcp:5050` failed (exit code 1) with output:\n------ stdout ------\nerror",
-            exception.message
-        )
-    }
-
-    @Test
-    fun `removeForward success when rule exists`() {
-        `when`(
-            mockExecutor.execCmdSync(
-                listOf("path/to/adb", "-s", "device-123", "forward", "--list"),
-                30
-            )
-        ).thenReturn(ProcessResult(0, "device-123 tcp:8080 tcp:5050", ""))
-        `when`(
-            mockExecutor.execCmdSync(
-                listOf("path/to/adb", "-s", "device-123", "forward", "--remove", "tcp:8080"),
-                30
-            )
-        ).thenReturn(ProcessResult(0, "", ""))
-
-        adb.removeForward("device-123", 8080)
-
-        verify(mockExecutor).execCmdSync(
-            listOf("path/to/adb", "-s", "device-123", "forward", "--list"),
-            30
-        )
-        verify(mockExecutor).execCmdSync(
-            listOf("path/to/adb", "-s", "device-123", "forward", "--remove", "tcp:8080"),
-            30
-        )
-    }
-
-    @Test
-    fun `removeForward success when rule does not exist`() {
-        `when`(mockExecutor.execCmdSync(anyList(), anyLong())).thenReturn(
-            ProcessResult(0, "", "")
-        )
-
-        adb.removeForward("device-123", 8080)
-
-        verify(mockExecutor).execCmdSync(
-            listOf("path/to/adb", "-s", "device-123", "forward", "--list"),
-            30
-        )
-        verify(mockExecutor, never()).execCmdSync(
-            listOf("path/to/adb", "-s", "device-123", "forward", "--remove", "tcp:8080"),
-            30
-        )
-    }
-
-    @Test
-    fun `removeForward failure due to non-zero exit code`() {
-        `when`(
-            mockExecutor.execCmdSync(
-                listOf("path/to/adb", "-s", "device-123", "forward", "--list"),
-                30
-            )
-        ).thenReturn(ProcessResult(0, "device-123 tcp:8080 tcp:5050", ""))
-        `when`(
-            mockExecutor.execCmdSync(
-                listOf("path/to/adb", "-s", "device-123", "forward", "--remove", "tcp:8080"),
-                30
-            )
-        ).thenReturn(ProcessResult(1, "", "error: something went wrong"))
-
-        val exception = assertThrows(IllegalStateException::class.java) {
-            adb.removeForward("device-123", 8080)
-        }
-        verify(mockExecutor).execCmdSync(
-            listOf("path/to/adb", "-s", "device-123", "forward", "--list"),
-            30
-        )
-        assertEquals(
-            "Command `path/to/adb -s device-123 forward --remove tcp:8080` failed (exit code 1) with output:\n------ stderr ------\nerror: something went wrong",
-            exception.message
-        )
-    }
-
-    @Test
-    fun `dumpsys success`() {
-        `when`(mockExecutor.execCmdSync(anyList(), anyLong())).thenReturn(
-            ProcessResult(0, "DUMP OF SERVICE...", "")
-        )
-
-        assertEquals("DUMP OF SERVICE...\n", adb.dumpsys("device-123", "activity"))
-    }
-
-    @Test
-    fun `dumpsys failure`() {
-        `when`(mockExecutor.execCmdSync(anyList(), anyLong())).thenReturn(
-            ProcessResult(1, "", "Service not found")
-        )
-
-        val exception = assertThrows(IllegalStateException::class.java) {
-            adb.dumpsys("device-123", "nonexistent.service")
-        }
-        assertEquals(
-            "Command `path/to/adb -s device-123 shell dumpsys activity service nonexistent.service` failed (exit code 1) with output:\n------ stderr ------\nService not found",
-            exception.message
-        )
-    }
-
-    @Test
-    fun `setGlobalSettingsValue success`() {
-        `when`(mockExecutor.execCmdSync(anyList(), anyLong())).thenReturn(
-            ProcessResult(0, "", "")
-        )
-
-        adb.setGlobalSettingsValue("device-123", "my_key", "my_value")
-
-        verify(mockExecutor).execCmdSync(
-            listOf(
-                "path/to/adb",
-                "-s",
-                "device-123",
-                "shell",
-                "settings",
-                "put",
-                "global",
-                "my_key",
-                "my_value"
-            ),
-            10
-        )
-    }
-
-    @Test
-    fun `setGlobalSettingsValue failure`() {
-        `when`(mockExecutor.execCmdSync(anyList(), anyLong())).thenReturn(
-            ProcessResult(1, "", "Invalid command")
-        )
-
-        val exception = assertThrows(IllegalStateException::class.java) {
-            adb.setGlobalSettingsValue("device-123", "invalid_key", "invalid_value")
-        }
-        assertEquals(
-            "Command `path/to/adb -s device-123 shell settings put global invalid_key invalid_value` failed (exit code 1) with output:\n------ stderr ------\nInvalid command",
-            exception.message
-        )
-    }
+    val exception =
+      assertThrows(IllegalStateException::class.java) { adb.setGlobalSettingsValue("device-123", "invalid_key", "invalid_value") }
+    assertEquals(
+      "Command `path/to/adb -s device-123 shell settings put global invalid_key invalid_value` failed (exit code 1) with output:\n------ stderr ------\nInvalid command",
+      exception.message,
+    )
+  }
 }

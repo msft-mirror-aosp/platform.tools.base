@@ -18,24 +18,20 @@ package com.android.tools.journeys.testengine.adapter
 import com.android.tools.journeys.proto.JourneyRunEvent
 
 /**
- * A default adapter that assumes the incoming bytes are already in the [JourneyRunEvent]
- * format and passes them directly to the consumer.
+ * A default adapter that assumes the incoming bytes are already in the [JourneyRunEvent] format and passes them directly to the consumer.
  *
- * This adapter is intended for use with backends that are designed to produce events
- * in the native format.
+ * This adapter is intended for use with backends that are designed to produce events in the native format.
  *
  * @param config Configuration for the [DefaultResultAdapter].
  */
-class DefaultResultAdapter(
-    private val config: JourneysResultAdapter.JourneysResultAdapterConfig
-) : JourneysResultAdapter {
+class DefaultResultAdapter(private val config: JourneysResultAdapter.JourneysResultAdapterConfig) : JourneysResultAdapter {
 
-    override fun process(rawArtifactBytes: ByteArray) {
-        try {
-            val event = JourneyRunEvent.parseFrom(rawArtifactBytes)
-            config.consumer.onEvent(event)
-        } catch (e: Exception) {
-            println("Error while processing raw artifact bytes: ${e.message}")
-        }
+  override fun process(rawArtifactBytes: ByteArray) {
+    try {
+      val event = JourneyRunEvent.parseFrom(rawArtifactBytes)
+      config.consumer.onEvent(event)
+    } catch (e: Exception) {
+      println("Error while processing raw artifact bytes: ${e.message}")
     }
+  }
 }

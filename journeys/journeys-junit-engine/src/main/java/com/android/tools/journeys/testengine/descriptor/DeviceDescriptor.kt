@@ -22,34 +22,22 @@ import org.junit.platform.engine.support.descriptor.AbstractTestDescriptor
 import org.junit.platform.engine.support.descriptor.ClassSource
 import org.junit.platform.engine.support.hierarchical.Node
 
-class DeviceDescriptor(
-    parentId: UniqueId,
-    private val deviceId: String,
-    private val deviceName: String? = null
-) :
-    AbstractTestDescriptor(
-        parentId.append(SEGMENT_TYPE, deviceId),
-        deviceId,
-        ClassSource.from(deviceId)
-    ),
-    Node<JourneysExecutionContext> {
+class DeviceDescriptor(parentId: UniqueId, private val deviceId: String, private val deviceName: String? = null) :
+  AbstractTestDescriptor(parentId.append(SEGMENT_TYPE, deviceId), deviceId, ClassSource.from(deviceId)), Node<JourneysExecutionContext> {
 
-    companion object {
+  companion object {
 
-        const val SEGMENT_TYPE: String = "deviceId"
-    }
+    const val SEGMENT_TYPE: String = "deviceId"
+  }
 
-    // Enable multi-device execution sequentially.
-    // Concurrent execution cannot be enabled due to:
-    // https://github.com/gradle/gradle/issues/34274.
-    override fun getExecutionMode() = Node.ExecutionMode.SAME_THREAD
+  // Enable multi-device execution sequentially.
+  // Concurrent execution cannot be enabled due to:
+  // https://github.com/gradle/gradle/issues/34274.
+  override fun getExecutionMode() = Node.ExecutionMode.SAME_THREAD
 
-    override fun getType(): Type = Type.CONTAINER
+  override fun getType(): Type = Type.CONTAINER
 
-    override fun execute(
-        context: JourneysExecutionContext,
-        dynamicTestExecutor: Node.DynamicTestExecutor
-    ): JourneysExecutionContext {
-        return context.copy(targetDeviceId = deviceId, targetDeviceName = deviceName)
-    }
+  override fun execute(context: JourneysExecutionContext, dynamicTestExecutor: Node.DynamicTestExecutor): JourneysExecutionContext {
+    return context.copy(targetDeviceId = deviceId, targetDeviceName = deviceName)
+  }
 }

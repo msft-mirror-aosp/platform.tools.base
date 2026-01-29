@@ -18,31 +18,28 @@ package com.android.tools.journeys.testengine.adapter
 import com.android.tools.journeys.testengine.adapter.consumer.JourneyRunEventConsumer
 
 /**
- * An interface for an adapter that processes bytes from a backend and produces
- * JourneyRunEvent(s) via a JourneyRunEventConsumer.
+ * An interface for an adapter that processes bytes from a backend and produces JourneyRunEvent(s) via a JourneyRunEventConsumer.
  *
  * Implementations are initialized with consumer(s) and can be stateful.
  */
 interface JourneysResultAdapter {
 
-    /**
-     * Base configuration for all [JourneysResultAdapter] implementations.
-     *
-     * @property consumer The consumer to emit JourneyRunEvent(s) to.
-     */
-    interface JourneysResultAdapterConfig {
+  /**
+   * Base configuration for all [JourneysResultAdapter] implementations.
+   *
+   * @property consumer The consumer to emit JourneyRunEvent(s) to.
+   */
+  interface JourneysResultAdapterConfig {
 
-        val consumer: JourneyRunEventConsumer
-    }
+    val consumer: JourneyRunEventConsumer
+  }
 
-    /**
-     * Processes a single JourneyArtifact message from the backend.
-     *
-     * The implementation may trigger zero, one, or multiple calls to the
-     * JourneyRunEventConsumer depending on the transformation logic.
-     *
-     * @param rawArtifactBytes A byte array representing one complete message from the
-     * backend stream.
-     */
-    fun process(rawArtifactBytes: ByteArray)
+  /**
+   * Processes a single JourneyArtifact message from the backend.
+   *
+   * The implementation may trigger zero, one, or multiple calls to the JourneyRunEventConsumer depending on the transformation logic.
+   *
+   * @param rawArtifactBytes A byte array representing one complete message from the backend stream.
+   */
+  fun process(rawArtifactBytes: ByteArray)
 }

@@ -15,10 +15,7 @@
  */
 package com.android.tools.journeys.testengine.selector
 
-import org.junit.platform.engine.DiscoverySelector
 import java.io.File
+import org.junit.platform.engine.DiscoverySelector
 
-data class DeviceSpecificDirectorySelector(
-  val deviceSerialId: String,
-  val directory: File
-) : DiscoverySelector
+data class DeviceSpecificDirectorySelector(val deviceSerialId: String, val directory: File) : DiscoverySelector

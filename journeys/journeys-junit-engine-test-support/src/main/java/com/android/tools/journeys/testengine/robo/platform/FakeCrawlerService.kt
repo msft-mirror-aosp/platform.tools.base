@@ -33,186 +33,160 @@ import com.google.protobuf.Empty
 import io.grpc.stub.StreamObserver
 import java.io.IOException
 
-class FakeCrawlerService(
-    private val masterCrawl: Crawl,
-    private val shouldInduceServerError: Boolean
-) : CrawlerServiceGrpc.CrawlerServiceImplBase() {
+class FakeCrawlerService(private val masterCrawl: Crawl, private val shouldInduceServerError: Boolean) :
+  CrawlerServiceGrpc.CrawlerServiceImplBase() {
 
-    override fun echo(request: EchoRequest, responseObserver: StreamObserver<EchoResponse>) {
-        responseObserver.onNext(EchoResponse.getDefaultInstance())
-        responseObserver.onCompleted()
+  override fun echo(request: EchoRequest, responseObserver: StreamObserver<EchoResponse>) {
+    responseObserver.onNext(EchoResponse.getDefaultInstance())
+    responseObserver.onCompleted()
+  }
+
+  override fun echoStream(responseObserver: StreamObserver<EchoResponse>): StreamObserver<EchoRequest> {
+    responseObserver.onNext(EchoResponse.getDefaultInstance())
+    responseObserver.onCompleted()
+    return object : StreamObserver<EchoRequest> {
+      override fun onNext(value: EchoRequest) {}
+
+      override fun onError(t: Throwable) {}
+
+      override fun onCompleted() {}
     }
+  }
 
-    override fun echoStream(responseObserver: StreamObserver<EchoResponse>): StreamObserver<EchoRequest> {
-        responseObserver.onNext(EchoResponse.getDefaultInstance())
-        responseObserver.onCompleted()
-        return object : StreamObserver<EchoRequest> {
-            override fun onNext(value: EchoRequest) {}
-            override fun onError(t: Throwable) {}
-            override fun onCompleted() {}
+  override fun crawl(responseObserver: StreamObserver<CrawlerResponse>): StreamObserver<CrawlerRequest> {
+    return object : StreamObserver<CrawlerRequest> {
+      var finished = false
+
+      override fun onNext(value: CrawlerRequest) {
+        try {
+          if (shouldInduceServerError) {
+            throw VerifyException("Intentionally throwing an error.")
+          }
+
+          when (value.requestCase) {
+            CrawlerRequest.RequestCase.CRAWL_SETUP -> {
+              responseObserver.onNext(CrawlerResponse.newBuilder().setCrawlSetupResponse(CrawlSetupResponse.getDefaultInstance()).build())
+            }
+
+            CrawlerRequest.RequestCase.PLATFORM_RESPONSE -> {
+              if (value.platformResponse.responseCase == RemotePlatformResponse.ResponseCase.RESPONSE_NOT_SET) {
+                throw IllegalStateException("PlatformResponse was not set for test purposes.")
+              }
+
+              streamCrawlUpdates(responseObserver)
+              responseObserver.onNext(
+                CrawlerResponse.newBuilder()
+                  .setPlatformRequest(RemotePlatformRequest.newBuilder().setCrawlOver(Empty.getDefaultInstance()))
+                  .build()
+              )
+              responseObserver.onNext(
+                CrawlerResponse.newBuilder().setCrawlResult(CrawlResult.newBuilder().setOutcome(CrawlResult.Outcome.COMPLETED)).build()
+              )
+              finished = true
+              responseObserver.onCompleted()
+            }
+
+            CrawlerRequest.RequestCase.PLATFORM_UNREACHABLE -> {
+              if (!finished) {
+                responseObserver.onNext(
+                  CrawlerResponse.newBuilder().setCrawlResult(CrawlResult.newBuilder().setOutcome(CrawlResult.Outcome.INCOMPLETE)).build()
+                )
+              }
+            }
+
+            else -> {}
+          }
+        } catch (e: IOException) {
+          throw IllegalStateException(e)
         }
-    }
+      }
 
-    override fun crawl(responseObserver: StreamObserver<CrawlerResponse>): StreamObserver<CrawlerRequest> {
-        return object : StreamObserver<CrawlerRequest> {
-            var finished = false
+      private fun streamCrawlUpdates(responseObserver: StreamObserver<CrawlerResponse>) {
+        // The order of receiving events for a real run is simulated here.
+        // Real events are received as:
+        // 1) Display state for index i from robo_results
+        // 2) Action at index i before it starts from pre_actions
+        // 3) Action at index i after it ends from robo_results
+        for (actionIndex in masterCrawl.actionsList.indices) {
+          val currentAction = masterCrawl.getActions(actionIndex)
+          val currentDisplayState = masterCrawl.displayStatesList.find { it.displayStateId == currentAction.displayStateId }
 
-            override fun onNext(value: CrawlerRequest) {
-                try {
-                    if (shouldInduceServerError) {
-                        throw VerifyException("Intentionally throwing an error.")
-                    }
+          // Send display state.
+          currentDisplayState?.let {
+            val displayStatePartialCrawl =
+              Crawl.newBuilder()
+                .setCrawlIdentifier(masterCrawl.crawlIdentifier)
+                .setAppPackageId(masterCrawl.appPackageId)
+                .addDisplayStates(it)
+                .setCrawlResult(Crawl.CrawlResult.UNDEFINED_CRAWL_RESULT)
+                .build()
+                .toByteString()
+            responseObserver.onNext(
+              CrawlerResponse.newBuilder()
+                .setArtifact(
+                  Artifact.newBuilder()
+                    .setName(RoboConfigConstants.ROBO_RESULTS_FILE_NAME)
+                    .setAppend(true)
+                    .setData(displayStatePartialCrawl)
+                )
+                .build()
+            )
+          }
 
-                    when (value.requestCase) {
-                        CrawlerRequest.RequestCase.CRAWL_SETUP -> {
-                            responseObserver.onNext(
-                                CrawlerResponse.newBuilder()
-                                    .setCrawlSetupResponse(CrawlSetupResponse.getDefaultInstance())
-                                    .build()
-                            )
-                        }
+          // Note that, terminate crawl action is not sent as a pre action.
+          if (currentAction.details?.detailsCase != ActionDetails.DetailsCase.TERMINATE_CRAWL_ACTION) {
+            val preActionPartialCrawl =
+              Crawl.newBuilder()
+                .setCrawlIdentifier(masterCrawl.crawlIdentifier)
+                .setAppPackageId(masterCrawl.appPackageId)
+                .addActions(currentAction.toBuilder().clearEndTime().clearResultDetails().clearExecutionResult())
+                .setCrawlResult(Crawl.CrawlResult.UNDEFINED_CRAWL_RESULT)
+                .build()
+                .toByteString()
 
-                        CrawlerRequest.RequestCase.PLATFORM_RESPONSE -> {
-                            if (value.platformResponse.responseCase == RemotePlatformResponse.ResponseCase.RESPONSE_NOT_SET) {
-                                throw IllegalStateException("PlatformResponse was not set for test purposes.")
-                            }
+            // Send pre action.
+            responseObserver.onNext(
+              CrawlerResponse.newBuilder()
+                .setArtifact(
+                  Artifact.newBuilder()
+                    .setName(RoboConfigConstants.ROBO_PRE_ACTIONS_FILE_NAME)
+                    .setAppend(true)
+                    .setData(preActionPartialCrawl)
+                )
+                .build()
+            )
+          }
 
-                            streamCrawlUpdates(responseObserver)
-                            responseObserver.onNext(
-                                CrawlerResponse.newBuilder()
-                                    .setPlatformRequest(
-                                        RemotePlatformRequest.newBuilder()
-                                            .setCrawlOver(Empty.getDefaultInstance())
-                                    )
-                                    .build()
-                            )
-                            responseObserver.onNext(
-                                CrawlerResponse.newBuilder()
-                                    .setCrawlResult(
-                                        CrawlResult.newBuilder()
-                                            .setOutcome(CrawlResult.Outcome.COMPLETED)
-                                    )
-                                    .build()
-                            )
-                            finished = true
-                            responseObserver.onCompleted()
-                        }
+          val crawlResult =
+            if (actionIndex == masterCrawl.actionsList.indices.last) masterCrawl.crawlResult else Crawl.CrawlResult.UNDEFINED_CRAWL_RESULT
+          val actionPartialCrawl =
+            Crawl.newBuilder()
+              .setCrawlIdentifier(masterCrawl.crawlIdentifier)
+              .setAppPackageId(masterCrawl.appPackageId)
+              .addActions(currentAction)
+              .setCrawlResult(crawlResult)
+              .build()
+              .toByteString()
 
-                        CrawlerRequest.RequestCase.PLATFORM_UNREACHABLE -> {
-                            if (!finished) {
-                                responseObserver.onNext(
-                                    CrawlerResponse.newBuilder()
-                                        .setCrawlResult(
-                                            CrawlResult.newBuilder()
-                                                .setOutcome(CrawlResult.Outcome.INCOMPLETE)
-                                        )
-                                        .build()
-                                )
-                            }
-                        }
-
-                        else -> {
-                        }
-                    }
-                } catch (e: IOException) {
-                    throw IllegalStateException(e)
-                }
-            }
-
-            private fun streamCrawlUpdates(responseObserver: StreamObserver<CrawlerResponse>) {
-                // The order of receiving events for a real run is simulated here.
-                // Real events are received as:
-                // 1) Display state for index i from robo_results
-                // 2) Action at index i before it starts from pre_actions
-                // 3) Action at index i after it ends from robo_results
-                for (actionIndex in masterCrawl.actionsList.indices) {
-                    val currentAction = masterCrawl.getActions(actionIndex)
-                    val currentDisplayState = masterCrawl.displayStatesList.find {
-                        it.displayStateId == currentAction.displayStateId
-                    }
-
-                    // Send display state.
-                    currentDisplayState?.let {
-                        val displayStatePartialCrawl = Crawl.newBuilder()
-                            .setCrawlIdentifier(masterCrawl.crawlIdentifier)
-                            .setAppPackageId(masterCrawl.appPackageId)
-                            .addDisplayStates(it)
-                            .setCrawlResult(Crawl.CrawlResult.UNDEFINED_CRAWL_RESULT)
-                            .build()
-                            .toByteString()
-                        responseObserver.onNext(
-                            CrawlerResponse.newBuilder()
-                                .setArtifact(
-                                    Artifact.newBuilder()
-                                        .setName(RoboConfigConstants.ROBO_RESULTS_FILE_NAME)
-                                        .setAppend(true)
-                                        .setData(displayStatePartialCrawl)
-                                )
-                                .build()
-                        )
-                    }
-
-                    // Note that, terminate crawl action is not sent as a pre action.
-                    if (currentAction.details?.detailsCase != ActionDetails.DetailsCase.TERMINATE_CRAWL_ACTION) {
-                        val preActionPartialCrawl = Crawl.newBuilder()
-                            .setCrawlIdentifier(masterCrawl.crawlIdentifier)
-                            .setAppPackageId(masterCrawl.appPackageId)
-                            .addActions(
-                                currentAction.toBuilder()
-                                    .clearEndTime()
-                                    .clearResultDetails()
-                                    .clearExecutionResult()
-                            )
-                            .setCrawlResult(Crawl.CrawlResult.UNDEFINED_CRAWL_RESULT)
-                            .build()
-                            .toByteString()
-
-                        // Send pre action.
-                        responseObserver.onNext(
-                            CrawlerResponse.newBuilder()
-                                .setArtifact(
-                                    Artifact.newBuilder()
-                                        .setName(RoboConfigConstants.ROBO_PRE_ACTIONS_FILE_NAME)
-                                        .setAppend(true)
-                                        .setData(preActionPartialCrawl)
-                                )
-                                .build()
-                        )
-                    }
-
-                    val crawlResult =
-                        if (actionIndex == masterCrawl.actionsList.indices.last) masterCrawl.crawlResult
-                        else Crawl.CrawlResult.UNDEFINED_CRAWL_RESULT
-                    val actionPartialCrawl = Crawl.newBuilder()
-                        .setCrawlIdentifier(masterCrawl.crawlIdentifier)
-                        .setAppPackageId(masterCrawl.appPackageId)
-                        .addActions(currentAction)
-                        .setCrawlResult(crawlResult)
-                        .build()
-                        .toByteString()
-
-                    // Send action post completion.
-                    responseObserver.onNext(
-                        CrawlerResponse.newBuilder()
-                            .setArtifact(
-                                Artifact.newBuilder()
-                                    .setName(RoboConfigConstants.ROBO_RESULTS_FILE_NAME)
-                                    .setAppend(true)
-                                    .setData(actionPartialCrawl)
-                            )
-                            .build()
-                    )
-                }
-            }
-
-            override fun onError(t: Throwable) {
-                System.err.println("FakeCrawlerService: Error in crawl stream from client: ${t.message}")
-                t.printStackTrace()
-            }
-
-            override fun onCompleted() {
-                println("FakeCrawlerService: Client completed its request stream.")
-            }
+          // Send action post completion.
+          responseObserver.onNext(
+            CrawlerResponse.newBuilder()
+              .setArtifact(
+                Artifact.newBuilder().setName(RoboConfigConstants.ROBO_RESULTS_FILE_NAME).setAppend(true).setData(actionPartialCrawl)
+              )
+              .build()
+          )
         }
+      }
+
+      override fun onError(t: Throwable) {
+        System.err.println("FakeCrawlerService: Error in crawl stream from client: ${t.message}")
+        t.printStackTrace()
+      }
+
+      override fun onCompleted() {
+        println("FakeCrawlerService: Client completed its request stream.")
+      }
     }
+  }
 }
