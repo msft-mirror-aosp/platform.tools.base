@@ -23,24 +23,25 @@ import com.android.tools.module.ViewClass
 /** Stub version of [ModuleDependencies] for standalone rendering. */
 internal class StandaloneModuleDependencies : ModuleDependencies {
 
-    /**
-     * Not used in compose rendering.
-     * TODO(): Fix it to support appcompat in XML layouts.
-     */
-    override fun dependsOn(artifactId: GoogleMavenArtifactId): Boolean = false
+  /**
+   * Not used in compose rendering.
+   *
+   * TODO(): Fix it to support appcompat in XML layouts.
+   */
+  override fun dependsOn(artifactId: GoogleMavenArtifactId): Boolean = false
 
-    override fun dependsOnAndroidx(): Boolean = false
+  override fun dependsOnAndroidx(): Boolean = false
 
-    /**
-     * This is used to know which R-classes to load for [ResourceIdManager]. In the standalone
-     * rendering we load resource ids from the apk, not from R-classes, so this is empty.
-     */
-    override fun getResourcePackageNames(includeExternalLibraries: Boolean): List<String> =
-        emptyList()
+  /**
+   * This is used to know which R-classes to load for [ResourceIdManager]. In the standalone rendering we load resource ids from the apk,
+   * not from R-classes, so this is empty.
+   */
+  override fun getResourcePackageNames(includeExternalLibraries: Boolean): List<String> = emptyList()
 
-    /**
-     * Not used in compose rendering. This is only used for creating a view from a superclass.
-     * TODO(): Fix it to support Custom View/XML layouts or remove from rendering.
-     */
-    override fun findViewClass(fqcn: String): ViewClass? = null
+  /**
+   * Not used in compose rendering. This is only used for creating a view from a superclass.
+   *
+   * TODO(): Fix it to support Custom View/XML layouts or remove from rendering.
+   */
+  override fun findViewClass(fqcn: String): ViewClass? = null
 }

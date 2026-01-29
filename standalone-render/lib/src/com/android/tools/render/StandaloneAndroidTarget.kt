@@ -23,34 +23,57 @@ import com.android.sdklib.OptionalLibrary
 import java.nio.file.Path
 
 /** Stub implementation of [IAndroidTarget]. */
-internal class StandaloneAndroidTarget(
-    private val androidVersion: AndroidVersion
-) : IAndroidTarget {
-    override fun compareTo(other: IAndroidTarget?): Int = 0
-    override fun getLocation(): String = ""
-    override fun getVendor(): String = ""
-    override fun getName(): String = ""
-    override fun getFullName(): String = ""
-    override fun getClasspathName(): String = ""
-    override fun getShortClasspathName(): String = ""
-    override fun getVersion(): AndroidVersion = androidVersion
-    override fun getVersionName(): String  = ""
-    override fun getRevision(): Int = 0
-    override fun isPlatform(): Boolean  = true
-    override fun getParent(): IAndroidTarget? = this
-    override fun getPath(pathId: Int): Path = when (pathId) {
-        else -> throw NotImplementedError()
+internal class StandaloneAndroidTarget(private val androidVersion: AndroidVersion) : IAndroidTarget {
+  override fun compareTo(other: IAndroidTarget?): Int = 0
+
+  override fun getLocation(): String = ""
+
+  override fun getVendor(): String = ""
+
+  override fun getName(): String = ""
+
+  override fun getFullName(): String = ""
+
+  override fun getClasspathName(): String = ""
+
+  override fun getShortClasspathName(): String = ""
+
+  override fun getVersion(): AndroidVersion = androidVersion
+
+  override fun getVersionName(): String = ""
+
+  override fun getRevision(): Int = 0
+
+  override fun isPlatform(): Boolean = true
+
+  override fun getParent(): IAndroidTarget? = this
+
+  override fun getPath(pathId: Int): Path =
+    when (pathId) {
+      else -> throw NotImplementedError()
     }
-    override fun getBuildToolInfo(): BuildToolInfo? = null
-    override fun getBootClasspath(): MutableList<String> = mutableListOf()
-    override fun getOptionalLibraries(): MutableList<OptionalLibrary> = mutableListOf()
-    override fun getAdditionalLibraries(): MutableList<OptionalLibrary> = mutableListOf()
-    override fun hasRenderingLibrary(): Boolean = true
-    override fun getSkins(): List<Path> = emptyList()
-    override fun getDefaultSkin(): Path? = null
-    override fun getPlatformLibraries(): Array<String> = arrayOf()
-    override fun getProperty(name: String?): String = ""
-    override fun getProperties(): MutableMap<String, String> = mutableMapOf()
-    override fun canRunOn(target: IAndroidTarget?): Boolean = true
-    override fun hashString(): String = ""
+
+  override fun getBuildToolInfo(): BuildToolInfo? = null
+
+  override fun getBootClasspath(): MutableList<String> = mutableListOf()
+
+  override fun getOptionalLibraries(): MutableList<OptionalLibrary> = mutableListOf()
+
+  override fun getAdditionalLibraries(): MutableList<OptionalLibrary> = mutableListOf()
+
+  override fun hasRenderingLibrary(): Boolean = true
+
+  override fun getSkins(): List<Path> = emptyList()
+
+  override fun getDefaultSkin(): Path? = null
+
+  override fun getPlatformLibraries(): Array<String> = arrayOf()
+
+  override fun getProperty(name: String?): String = ""
+
+  override fun getProperties(): MutableMap<String, String> = mutableMapOf()
+
+  override fun canRunOn(target: IAndroidTarget?): Boolean = true
+
+  override fun hashString(): String = ""
 }

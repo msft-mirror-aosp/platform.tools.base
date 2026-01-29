@@ -66,278 +66,255 @@ import java.util.TimeZone
 import java.util.concurrent.TimeUnit
 import javax.imageio.ImageIO
 
-/**
- * A renderer that can handle [RenderRequest].
- */
+/** A renderer that can handle [RenderRequest]. */
 class Renderer(
-    fontsPath: String?,
-    resourceApkPath: String?,
-    namespace: String,
-    classPath: List<String>,
-    projectClassPath: List<String>,
-    layoutlibPath: String,
+  fontsPath: String?,
+  resourceApkPath: String?,
+  namespace: String,
+  classPath: List<String>,
+  projectClassPath: List<String>,
+  layoutlibPath: String,
 ) : Closeable {
 
-    private val project: Project = IJFramework.createProject()
-    private val baseConfiguration: Configuration
-    val module: StandaloneRenderModelModule
-    private val renderService: RenderService
+  private val project: Project = IJFramework.createProject()
+  private val baseConfiguration: Configuration
+  val module: StandaloneRenderModelModule
+  private val renderService: RenderService
 
-    init {
-        TimeZone.getDefault()
+  init {
+    TimeZone.getDefault()
 
-        val moduleClassLoaderManager = StandaloneModuleClassLoaderManager(classPath, projectClassPath)
+    val moduleClassLoaderManager = StandaloneModuleClassLoaderManager(classPath, projectClassPath)
 
-        val resourceIdManager = ApkResourceIdManager()
-        resourceApkPath?.let {
-            resourceIdManager.loadApkResources(it)
+    val resourceIdManager = ApkResourceIdManager()
+    resourceApkPath?.let { resourceIdManager.loadApkResources(it) }
+
+    val resourcesRepo =
+      if (resourceApkPath != null) ApkResourceRepository(resourceApkPath, resourceIdManager::findById)
+      else LocalResourceRepository.EmptyRepository<Path>(ResourceNamespace.RES_AUTO)
+
+    val androidVersion = AndroidVersion(33)
+    val androidTarget = StandaloneAndroidTarget(androidVersion)
+    val androidModuleInfo = StandaloneModuleInfo(namespace, androidVersion)
+
+    val androidSdkData = AndroidSdkData.getSdkDataWithoutValidityCheck(File(""))
+
+    val androidPlatform = AndroidPlatform(androidSdkData, androidTarget)
+
+    val resourceRepositoryManager = SingleRepoResourceRepositoryManager(resourcesRepo)
+
+    IJFramework.registerService(ModuleClassLoaderManager::class.java, moduleClassLoaderManager, project)
+
+    IJFramework.registerService(
+      ReadWriteActionSupport::class.java,
+      object : ReadWriteActionSupport {
+        override fun committedDocumentsConstraint(project: Project): ReadConstraint = ReadConstraint.withDocumentsCommitted(project)
+
+        override fun <X, E : Throwable> computeCancellable(action: ThrowableComputable<X, E>): X = ReadAction.compute(action)
+
+        override suspend fun <X> executeReadAction(
+          constraints: List<ReadConstraint>,
+          undispatched: Boolean,
+          blocking: Boolean,
+          action: () -> X,
+        ): X {
+          throw UnsupportedOperationException()
         }
 
-        val resourcesRepo =
-            if (resourceApkPath != null)
-                ApkResourceRepository(resourceApkPath, resourceIdManager::findById)
-            else
-                LocalResourceRepository.EmptyRepository<Path>(ResourceNamespace.RES_AUTO)
+        override suspend fun <X> executeReadAndWriteAction(
+          constraints: Array<out ReadConstraint>,
+          runWriteActionOnEdt: Boolean,
+          undispatched: Boolean,
+          action: ReadAndWriteScope.() -> ReadResult<X>,
+        ): X {
+          throw UnsupportedOperationException()
+        }
 
-        val androidVersion = AndroidVersion(33)
-        val androidTarget = StandaloneAndroidTarget(androidVersion)
-        val androidModuleInfo = StandaloneModuleInfo(namespace, androidVersion)
+        override fun smartModeConstraint(project: Project): ReadConstraint = ReadConstraint.inSmartMode(project)
 
-        val androidSdkData = AndroidSdkData.getSdkDataWithoutValidityCheck(File(""))
+        override suspend fun <T> runWriteAction(action: () -> T): T {
+          throw UnsupportedOperationException()
+        }
+      },
+      project,
+    )
 
-        val androidPlatform = AndroidPlatform(androidSdkData, androidTarget)
+    val environment = StandaloneEnvironmentContext(project, moduleClassLoaderManager, StandaloneFontCacheService(fontsPath))
+    val moduleDependencies = StandaloneModuleDependencies()
+    val moduleKey = ModuleKey()
 
-        val resourceRepositoryManager = SingleRepoResourceRepositoryManager(resourcesRepo)
+    val configModule =
+      StandaloneConfigurationModelModule(
+        resourceRepositoryManager,
+        androidModuleInfo,
+        androidPlatform,
+        moduleKey,
+        moduleDependencies,
+        namespace,
+        environment.layoutlibContext,
+        layoutlibPath,
+      )
 
-        IJFramework.registerService(
-            ModuleClassLoaderManager::class.java, moduleClassLoaderManager, project)
+    val configurationSettings = StandaloneConfigurationSettings(configModule, androidTarget)
 
-        IJFramework.registerService(
-            ReadWriteActionSupport::class.java, object: ReadWriteActionSupport {
-                override fun committedDocumentsConstraint(project: Project): ReadConstraint =
-                    ReadConstraint.withDocumentsCommitted(project)
+    baseConfiguration = Configuration.create(configurationSettings, FolderConfiguration())
 
-                override fun <X, E : Throwable> computeCancellable(action: ThrowableComputable<X, E>): X = ReadAction.compute(action)
+    module =
+      StandaloneRenderModelModule(
+        resourceRepositoryManager,
+        androidModuleInfo,
+        androidPlatform,
+        moduleKey,
+        moduleDependencies,
+        project,
+        namespace,
+        environment,
+        resourceIdManager,
+      )
 
-                override suspend fun <X> executeReadAction(
-                    constraints: List<ReadConstraint>,
-                    undispatched: Boolean,
-                    blocking: Boolean,
-                    action: () -> X
-                ): X {
-                    throw UnsupportedOperationException()
-                }
+    renderService = RenderService {
+      it.apply {
+        disableDecorations()
+        withRenderingMode(SessionParams.RenderingMode.SHRINK)
+        // The security manager was removed in JDK 24. We disable it unconditionally to
+        // support running on newer JDKs.
+        disableSecurityManager()
+      }
+    }
+    Disposer.register(project, renderService)
+  }
 
-                override suspend fun <X> executeReadAndWriteAction(
-                    constraints: Array<out ReadConstraint>,
-                    runWriteActionOnEdt: Boolean,
-                    undispatched: Boolean,
-                    action: ReadAndWriteScope.() -> ReadResult<X>,
-                ): X {
-                    throw UnsupportedOperationException()
-                }
+  /**
+   * Renders a given [PreviewScreenshot] and saves the output as PNG files.
+   *
+   * For a single [PreviewScreenshot] that may have multiple configurations (e.g., different devices or themes), this function generates a
+   * corresponding rendered image for each one.
+   *
+   * @param screenshot The metadata of the Jetpack Compose `@Preview` to render.
+   * @param outputFolderPath The root directory where the resulting PNG images will be saved.
+   * @return A list of [PreviewScreenshotResult]s, each detailing the outcome of a single render operation, including the output path and
+   *   any potential errors.
+   */
+  fun render(screenshot: PreviewScreenshot, outputFolderPath: String): List<PreviewScreenshotResult> {
+    val previewElement = screenshot.toPreviewElement(module)
+    val renderRequest =
+      RenderRequest(configurationModifier = previewElement::applyTo, xmlLayoutsProvider = { previewElement.resolveXmlLayouts() })
 
-                override fun smartModeConstraint(project: Project): ReadConstraint =
-                    ReadConstraint.inSmartMode(project)
-
-                override suspend fun <T> runWriteAction(action: () -> T): T {
-                    throw UnsupportedOperationException()
-                }
-
-            }, project
-        )
-
-        val environment =
-            StandaloneEnvironmentContext(
-                project,
-                moduleClassLoaderManager,
-                StandaloneFontCacheService(fontsPath)
-            )
-        val moduleDependencies = StandaloneModuleDependencies()
-        val moduleKey = ModuleKey()
-
-        val configModule = StandaloneConfigurationModelModule(
-            resourceRepositoryManager,
-            androidModuleInfo,
-            androidPlatform,
-            moduleKey,
-            moduleDependencies,
-            namespace,
-            environment.layoutlibContext,
-            layoutlibPath,
-        )
-
-        val configurationSettings =
-            StandaloneConfigurationSettings(
-                configModule,
-                androidTarget
-            )
-
-        baseConfiguration = Configuration.create(configurationSettings, FolderConfiguration())
-
-        module = StandaloneRenderModelModule(
-            resourceRepositoryManager,
-            androidModuleInfo,
-            androidPlatform,
-            moduleKey,
-            moduleDependencies,
-            project,
-            namespace,
-            environment,
-            resourceIdManager,
-        )
-
-        renderService = RenderService {
-            it.apply {
-                disableDecorations()
-                withRenderingMode(SessionParams.RenderingMode.SHRINK)
-                // The security manager was removed in JDK 24. We disable it unconditionally to
-                // support running on newer JDKs.
-                disableSecurityManager()
+    return render(renderRequest)
+      .withIndex()
+      .map { (index, value) ->
+        val (config, renderResult) = value
+        val previewId = screenshot.previewId
+        val resultId = "${previewId.substringAfterLast(".")}_$index"
+        val imageName = "$resultId.png"
+        val methodFQN = screenshot.methodFQN
+        val relativeImagePath = methodFQN.substringBeforeLast(".").replace(".", File.separator) + File.separator + imageName
+        val screenshotResult =
+          try {
+            val imageRendered = postProcessRenderedImage(config, renderResult)
+            if (imageRendered != null) {
+              val imagePath = Paths.get(outputFolderPath, relativeImagePath)
+              Files.createDirectories(imagePath.parent)
+              val imgFile = imagePath.toFile()
+              imgFile.createNewFile()
+              ImageIO.write(imageRendered, "png", imgFile)
             }
-        }
-        Disposer.register(project, renderService)
+
+            val screenshotError = extractError(renderResult, imageRendered)
+            PreviewScreenshotResult(previewId, methodFQN, relativeImagePath, screenshotError)
+          } catch (t: Throwable) {
+            PreviewScreenshotResult(previewId, methodFQN, relativeImagePath, ScreenshotError(t))
+          }
+        screenshotResult
+      }
+      .toList()
+  }
+
+  fun render(request: RenderRequest): Sequence<Pair<Configuration, RenderResult>> {
+    return request.xmlLayoutsProvider().map {
+      val configuration = baseConfiguration.clone()
+      request.configurationModifier(configuration)
+      configuration to render(configuration, it)
     }
+  }
 
-    /**
-     * Renders a given [PreviewScreenshot] and saves the output as PNG files.
-     *
-     * For a single [PreviewScreenshot] that may have multiple configurations (e.g., different
-     * devices or themes), this function generates a corresponding rendered image for each one.
-     *
-     * @param screenshot The metadata of the Jetpack Compose `@Preview` to render.
-     * @param outputFolderPath The root directory where the resulting PNG images will be saved.
-     * @return A list of [PreviewScreenshotResult]s, each detailing the outcome of a single
-     * render operation, including the output path and any potential errors.
-     */
-    fun render(screenshot: PreviewScreenshot, outputFolderPath: String): List<PreviewScreenshotResult> {
-        val previewElement = screenshot.toPreviewElement(module)
-        val renderRequest = RenderRequest(
-            configurationModifier = previewElement::applyTo,
-            xmlLayoutsProvider = { previewElement.resolveXmlLayouts() }
-        )
+  private fun render(configuration: Configuration, xmlLayout: String): RenderResult {
+    val disposable = Disposer.newCheckedDisposable()
+    val logger = RenderLogger()
+    return try {
+      val renderTask =
+        renderService.taskBuilder(module, configuration, logger).disableImagePool().disableCachingImageFactory().build(disposable).get()
+          ?: return RenderResult.createRenderTaskErrorResult(
+            module,
+            { throw NotImplementedError("PsiFile supplier is not supported") },
+            null,
+            logger,
+          )
 
-        return render(renderRequest).withIndex().map { (index, value) ->
-            val (config, renderResult) = value
-            val previewId = screenshot.previewId
-            val resultId = "${previewId.substringAfterLast(".")}_$index"
-            val imageName = "$resultId.png"
-            val methodFQN = screenshot.methodFQN
-            val relativeImagePath = methodFQN.substringBeforeLast(".")
-                .replace(".", File.separator) + File.separator + imageName
-            val screenshotResult = try {
-                val imageRendered = postProcessRenderedImage(config, renderResult)
-                if (imageRendered != null) {
-                    val imagePath = Paths.get(outputFolderPath, relativeImagePath)
-                    Files.createDirectories(imagePath.parent)
-                    val imgFile = imagePath.toFile()
-                    imgFile.createNewFile()
-                    ImageIO.write(imageRendered, "png", imgFile)
-                }
+      // b/469819154: Release render after use to avoid accumulating heap memory usage.
+      Disposer.register(disposable) { renderTask.releaseRender() }
 
-                val screenshotError = extractError(renderResult, imageRendered)
-                PreviewScreenshotResult(previewId, methodFQN, relativeImagePath, screenshotError)
-            } catch (t: Throwable) {
-                PreviewScreenshotResult(previewId, methodFQN, relativeImagePath, ScreenshotError(t))
-            }
-            screenshotResult
-        }.toList()
+      val xmlFile = RenderXmlFileSnapshot(project, "layout.xml", ResourceFolderType.LAYOUT, xmlLayout)
+
+      renderTask.setXmlFile(xmlFile)
+
+      renderTask.render().get(100, TimeUnit.SECONDS)
+    } catch (t: Throwable) {
+      RenderResult.createRenderTaskErrorResult(module, { throw NotImplementedError("PsiFile supplier is not supported") }, t, logger)
+    } finally {
+      Disposer.dispose(disposable)
     }
+  }
 
-    fun render(request: RenderRequest): Sequence<Pair<Configuration, RenderResult>> {
-        return request.xmlLayoutsProvider().map {
-            val configuration = baseConfiguration.clone()
-            request.configurationModifier(configuration)
-            configuration to render(configuration, it)
-        }
+  private fun postProcessRenderedImage(config: Configuration, renderResult: RenderResult): BufferedImage? {
+    val imageCopy = renderResult.renderedImage.copy
+    if (imageCopy == null && renderResult.renderResult.status != com.android.ide.common.rendering.api.Result.Status.SUCCESS) return null
+
+    val image = imageCopy ?: BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB)
+    val screenShape = config.device?.screenShape(0.0, 0.0, Dimension(image.width, image.height)) ?: return image
+    return resizeImage(image, screenShape)
+  }
+
+  private fun resizeImage(image: BufferedImage, shape: java.awt.Shape): BufferedImage {
+    val newImage = BufferedImage(image.width, image.height, BufferedImage.TYPE_INT_ARGB)
+    val g = newImage.createGraphics()
+    try {
+      g.composite = AlphaComposite.Clear
+      g.fillRect(0, 0, image.width, image.height)
+      g.composite = AlphaComposite.Src
+      g.clip = shape
+      g.drawImage(image, 0, 0, null)
+    } finally {
+      g.dispose()
     }
+    return newImage
+  }
 
-    private fun render(configuration: Configuration, xmlLayout: String): RenderResult {
-        val disposable = Disposer.newCheckedDisposable()
-        val logger = RenderLogger()
-        return try {
-            val renderTask = renderService.taskBuilder(module, configuration, logger)
-                .disableImagePool()
-                .disableCachingImageFactory()
-                .build(disposable).get()
-                    ?: return RenderResult.createRenderTaskErrorResult(
-                        module,
-                        { throw NotImplementedError("PsiFile supplier is not supported") },
-                        null,
-                        logger
-                    )
-
-            // b/469819154: Release render after use to avoid accumulating heap memory usage.
-            Disposer.register(disposable) { renderTask.releaseRender() }
-
-            val xmlFile =
-                RenderXmlFileSnapshot(
-                    project,
-                    "layout.xml",
-                    ResourceFolderType.LAYOUT,
-                    xmlLayout
-                )
-
-            renderTask.setXmlFile(xmlFile)
-
-            renderTask.render().get(100, TimeUnit.SECONDS)
-        } catch (t: Throwable) {
-            RenderResult.createRenderTaskErrorResult(
-                module,
-                { throw NotImplementedError("PsiFile supplier is not supported") },
-                t,
-                logger
-            )
-        } finally {
-            Disposer.dispose(disposable)
-        }
+  private fun extractError(renderResult: RenderResult, imageRendered: BufferedImage?): ScreenshotError? {
+    if (
+      renderResult.renderResult.status == com.android.ide.common.rendering.api.Result.Status.SUCCESS &&
+        !renderResult.logger.hasErrors() &&
+        imageRendered != null
+    ) {
+      return null
     }
+    val errorMessage =
+      when {
+        imageRendered == null && renderResult.renderResult.status == Result.Status.SUCCESS ->
+          "Nothing to render in Preview. Cannot generate image"
+        else -> renderResult.renderResult.errorMessage ?: ""
+      }
+    return ScreenshotError(
+      renderResult.renderResult.status.name,
+      errorMessage,
+      renderResult.renderResult.exception?.stackTraceToString() ?: "",
+      renderResult.logger.messages.map { RenderProblem(it.html, it.throwable?.stackTraceToString()) },
+      renderResult.logger.brokenClasses.map { BrokenClass(it.key, it.value.stackTraceToString()) },
+      renderResult.logger.missingClasses.toList(),
+    )
+  }
 
-    private fun postProcessRenderedImage(config: Configuration, renderResult: RenderResult): BufferedImage? {
-        val imageCopy = renderResult.renderedImage.copy
-        if (imageCopy == null && renderResult.renderResult.status != com.android.ide.common.rendering.api.Result.Status.SUCCESS) return null
-
-        val image = imageCopy ?: BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB)
-        val screenShape = config.device?.screenShape(0.0, 0.0, Dimension(image.width, image.height))
-            ?: return image
-        return resizeImage(image, screenShape)
-    }
-
-    private fun resizeImage(image: BufferedImage, shape: java.awt.Shape): BufferedImage {
-        val newImage = BufferedImage(image.width, image.height, BufferedImage.TYPE_INT_ARGB)
-        val g = newImage.createGraphics()
-        try {
-            g.composite = AlphaComposite.Clear
-            g.fillRect(0, 0, image.width, image.height)
-            g.composite = AlphaComposite.Src
-            g.clip = shape
-            g.drawImage(image, 0, 0, null)
-        } finally {
-            g.dispose()
-        }
-        return newImage
-    }
-
-    private fun extractError(renderResult: RenderResult, imageRendered: BufferedImage?): ScreenshotError? {
-        if (renderResult.renderResult.status == com.android.ide.common.rendering.api.Result.Status.SUCCESS
-            && !renderResult.logger.hasErrors() && imageRendered != null) {
-            return null
-        }
-        val errorMessage = when {
-            imageRendered == null && renderResult.renderResult.status == Result.Status.SUCCESS -> "Nothing to render in Preview. Cannot generate image"
-            else -> renderResult.renderResult.errorMessage ?: ""
-        }
-        return ScreenshotError(
-            renderResult.renderResult.status.name,
-            errorMessage,
-            renderResult.renderResult.exception?.stackTraceToString() ?: "",
-            renderResult.logger.messages.map { RenderProblem(it.html, it.throwable?.stackTraceToString()) },
-            renderResult.logger.brokenClasses.map { BrokenClass(it.key, it.value.stackTraceToString()) },
-            renderResult.logger.missingClasses.toList(),
-        )
-    }
-
-    override fun close() {
-        Disposer.dispose(project)
-    }
+  override fun close() {
+    Disposer.dispose(project)
+  }
 }

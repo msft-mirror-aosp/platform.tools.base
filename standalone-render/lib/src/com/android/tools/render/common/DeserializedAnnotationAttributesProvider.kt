@@ -18,23 +18,20 @@ package com.android.tools.render.common
 
 import com.android.tools.preview.AnnotationAttributesProvider
 
-/**
- * [AnnotationAttributesProvider] for the annotation represented by the mapping between its
- * parameters names and values.
- */
+/** [AnnotationAttributesProvider] for the annotation represented by the mapping between its parameters names and values. */
 class DeserializedAnnotationAttributesProvider(private val params: Map<String, String>) : AnnotationAttributesProvider {
 
-    override fun <T> getAttributeValue(attributeName: String): T? = params[attributeName] as? T
+  override fun <T> getAttributeValue(attributeName: String): T? = params[attributeName] as? T
 
-    override fun getIntAttribute(attributeName: String): Int? = getAttributeValue<String>(attributeName)?.toInt()
+  override fun getIntAttribute(attributeName: String): Int? = getAttributeValue<String>(attributeName)?.toInt()
 
-    override fun getStringAttribute(attributeName: String): String? = getAttributeValue<String>(attributeName)
+  override fun getStringAttribute(attributeName: String): String? = getAttributeValue<String>(attributeName)
 
-    override fun getFloatAttribute(attributeName: String): Float? = getAttributeValue<String>(attributeName)?.toFloat()
+  override fun getFloatAttribute(attributeName: String): Float? = getAttributeValue<String>(attributeName)?.toFloat()
 
-    override fun getBooleanAttribute(attributeName: String): Boolean? = getAttributeValue<String>(attributeName)?.toBoolean()
+  override fun getBooleanAttribute(attributeName: String): Boolean? = getAttributeValue<String>(attributeName)?.toBoolean()
 
-    override fun <T> getDeclaredAttributeValue(attributeName: String): T? = getAttributeValue(attributeName)
+  override fun <T> getDeclaredAttributeValue(attributeName: String): T? = getAttributeValue(attributeName)
 
-    override fun findClassNameValue(name: String): String? = getAttributeValue(name)
+  override fun findClassNameValue(name: String): String? = getAttributeValue(name)
 }

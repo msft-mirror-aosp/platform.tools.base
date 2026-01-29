@@ -19,26 +19,22 @@ package com.android.tools.render.common
 import com.android.tools.preview.AnnotationAttributesProvider
 
 /**
- * [AnnotationAttributesProvider] that returns default values from a given annotation's [Class].
- * This class gets those values by getting the default value of the method associated to
- * the attribute's name.
+ * [AnnotationAttributesProvider] that returns default values from a given annotation's [Class]. This class gets those values by getting the
+ * default value of the method associated to the attribute's name.
  */
-class DefaultAnnotationValuesAnnotationAttributesProvider(
-    private val annotationClass: Class<*>,
-) : AnnotationAttributesProvider {
+class DefaultAnnotationValuesAnnotationAttributesProvider(private val annotationClass: Class<*>) : AnnotationAttributesProvider {
 
-    override fun <T> getAttributeValue(attributeName: String) = annotationClass.getMethod(attributeName).defaultValue as? T
+  override fun <T> getAttributeValue(attributeName: String) = annotationClass.getMethod(attributeName).defaultValue as? T
 
-    override fun getIntAttribute(attributeName: String) = getAttributeValue<Int>(attributeName)
+  override fun getIntAttribute(attributeName: String) = getAttributeValue<Int>(attributeName)
 
-    override fun getStringAttribute(attributeName: String) = getAttributeValue<String>(attributeName)
+  override fun getStringAttribute(attributeName: String) = getAttributeValue<String>(attributeName)
 
-    override fun getFloatAttribute(attributeName: String) = getAttributeValue<Float>(attributeName)
+  override fun getFloatAttribute(attributeName: String) = getAttributeValue<Float>(attributeName)
 
-    override fun getBooleanAttribute(attributeName: String) = getAttributeValue<Boolean>(attributeName)
+  override fun getBooleanAttribute(attributeName: String) = getAttributeValue<Boolean>(attributeName)
 
-    override fun <T> getDeclaredAttributeValue(attributeName: String) = getAttributeValue<T>(attributeName)
+  override fun <T> getDeclaredAttributeValue(attributeName: String) = getAttributeValue<T>(attributeName)
 
-    override fun findClassNameValue(name: String) = getAttributeValue<String?>(name)
-
+  override fun findClassNameValue(name: String) = getAttributeValue<String?>(name)
 }

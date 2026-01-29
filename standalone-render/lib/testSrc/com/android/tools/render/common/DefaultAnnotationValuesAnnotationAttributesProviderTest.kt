@@ -20,21 +20,21 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 
 private annotation class TestAnnotation(
-    val name: String = "default name",
-    val fontScale: Float = 3f,
-    val uiMode: Int = 4,
-    val showSystemUi: Boolean = true,
+  val name: String = "default name",
+  val fontScale: Float = 3f,
+  val uiMode: Int = 4,
+  val showSystemUi: Boolean = true,
 )
 
 class DefaultAnnotationValuesAnnotationAttributesProviderTest {
 
-    @Test
-    fun testAttributesProviderReturnsDefaultValues() {
-        val attributesProvider = DefaultAnnotationValuesAnnotationAttributesProvider(TestAnnotation::class.java)
+  @Test
+  fun testAttributesProviderReturnsDefaultValues() {
+    val attributesProvider = DefaultAnnotationValuesAnnotationAttributesProvider(TestAnnotation::class.java)
 
-        assertEquals("default name", attributesProvider.getStringAttribute("name"))
-        assertEquals(3f, attributesProvider.getFloatAttribute("fontScale"))
-        assertEquals(4, attributesProvider.getIntAttribute("uiMode"))
-        assertEquals(true, attributesProvider.getBooleanAttribute("showSystemUi"))
-    }
+    assertEquals("default name", attributesProvider.getStringAttribute("name"))
+    assertEquals(3f, attributesProvider.getFloatAttribute("fontScale"))
+    assertEquals(4, attributesProvider.getIntAttribute("uiMode"))
+    assertEquals(true, attributesProvider.getBooleanAttribute("showSystemUi"))
+  }
 }

@@ -20,11 +20,9 @@ import com.android.tools.configurations.Configuration
 
 /**
  * Data required to perform rendering by the standalone rendering library:
+ *
  * @param configurationModifier - a way to apply custom [Configuration] for rendering.
- * @param xmlLayoutsProvider - a provider for the xml layouts to render. Generating layouts might
- * require rendering environment, therefore we allow their creation to be postponed.
+ * @param xmlLayoutsProvider - a provider for the xml layouts to render. Generating layouts might require rendering environment, therefore
+ *   we allow their creation to be postponed.
  */
-class RenderRequest(
-    val configurationModifier: Configuration.() -> Unit,
-    val xmlLayoutsProvider: () -> Sequence<String>,
-)
+class RenderRequest(val configurationModifier: Configuration.() -> Unit, val xmlLayoutsProvider: () -> Sequence<String>)

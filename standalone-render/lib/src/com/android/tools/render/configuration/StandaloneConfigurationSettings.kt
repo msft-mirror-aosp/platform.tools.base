@@ -28,38 +28,37 @@ import com.android.tools.configurations.ResourceResolverCache
 import com.android.utils.NullLogger
 import com.google.common.collect.ImmutableList
 
-/**
- * Mostly stub [ConfigurationSettings] essentially used to pass [ConfigurationModelModule] to
- * [Configuration] during creation.
- */
+/** Mostly stub [ConfigurationSettings] essentially used to pass [ConfigurationModelModule] to [Configuration] during creation. */
 internal class StandaloneConfigurationSettings(
-    override val configModule: ConfigurationModelModule,
-    private val androidTarget: IAndroidTarget,
+  override val configModule: ConfigurationModelModule,
+  private val androidTarget: IAndroidTarget,
 ) : ConfigurationSettings {
 
-    private val defaultDevices = DefaultDevices(NullLogger.getLogger()).also { it.init() }
-    private val vendorDevices = VendorDevices(NullLogger.getLogger()).also { it.init() { true } }
-    override val defaultDevice = defaultDevices.getDevice("medium_phone", "Generic")
+  private val defaultDevices = DefaultDevices(NullLogger.getLogger()).also { it.init() }
+  private val vendorDevices = VendorDevices(NullLogger.getLogger()).also { it.init() { true } }
+  override val defaultDevice = defaultDevices.getDevice("medium_phone", "Generic")
 
-    override fun selectDevice(device: Device) { }
-    override var locale: Locale = Locale.ANY
-    override var target: IAndroidTarget? = androidTarget
-    override fun getTarget(minVersion: Int): IAndroidTarget = androidTarget
-    override val stateVersion: Int = 0 // State does not change
-    override val resolverCache: ResourceResolverCache = ResourceResolverCache(this)
-    override val localesInProject: ImmutableList<Locale> = ImmutableList.of()
-    override val devices: ImmutableList<Device> =
-        ImmutableList
-            .builder<Device>()
-            .addAll(defaultDevices.devices!!.values())
-            .addAll(vendorDevices.devices!!.values())
-            .build()
-    override val projectTarget: IAndroidTarget = androidTarget
-    override fun createDeviceForAvd(avd: AvdInfo): Device? = null
+  override fun selectDevice(device: Device) {}
 
-    override val highestApiTarget: IAndroidTarget = androidTarget
-    override val targets: Array<IAndroidTarget> = emptyArray()
-    override fun getDeviceById(id: String): Device? = null
-    override val recentDevices: List<Device> = emptyList()
-    override val avdDevices: List<Device> = emptyList()
+  override var locale: Locale = Locale.ANY
+  override var target: IAndroidTarget? = androidTarget
+
+  override fun getTarget(minVersion: Int): IAndroidTarget = androidTarget
+
+  override val stateVersion: Int = 0 // State does not change
+  override val resolverCache: ResourceResolverCache = ResourceResolverCache(this)
+  override val localesInProject: ImmutableList<Locale> = ImmutableList.of()
+  override val devices: ImmutableList<Device> =
+    ImmutableList.builder<Device>().addAll(defaultDevices.devices!!.values()).addAll(vendorDevices.devices!!.values()).build()
+  override val projectTarget: IAndroidTarget = androidTarget
+
+  override fun createDeviceForAvd(avd: AvdInfo): Device? = null
+
+  override val highestApiTarget: IAndroidTarget = androidTarget
+  override val targets: Array<IAndroidTarget> = emptyArray()
+
+  override fun getDeviceById(id: String): Device? = null
+
+  override val recentDevices: List<Device> = emptyList()
+  override val avdDevices: List<Device> = emptyList()
 }
