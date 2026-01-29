@@ -4,12 +4,12 @@ import com.android.adblib.SystemNanoTimeProvider
 
 class SystemNanoTime : SystemNanoTimeProvider() {
 
-    override fun nanoTime(): Long {
-        return System.nanoTime()
-    }
+  override fun nanoTime(): Long {
+    return System.nanoTime()
+  }
 
-    companion object {
+  companion object {
 
-        var instance = SystemNanoTime()
-    }
+    var instance = SystemNanoTime()
+  }
 }

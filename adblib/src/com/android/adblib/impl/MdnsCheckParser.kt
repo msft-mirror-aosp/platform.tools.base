@@ -21,18 +21,18 @@ import com.android.adblib.utils.AdbProtocolUtils.ADB_NEW_LINE
 
 internal class MdnsCheckParser {
 
-    fun parse(text: CharSequence): MdnsCheckResult {
-        // ADB Host code, Bonjour implementation
-        // https://cs.android.com/android/platform/superproject/+/fbcbf2500b2887952f862fa882741f80464bdbca:packages/modules/adb/client/mdnsresponder_client.cpp;l=564
+  fun parse(text: CharSequence): MdnsCheckResult {
+    // ADB Host code, Bonjour implementation
+    // https://cs.android.com/android/platform/superproject/+/fbcbf2500b2887952f862fa882741f80464bdbca:packages/modules/adb/client/mdnsresponder_client.cpp;l=564
 
-        // ADB Host code, OpenScreen implementation
-        // https://cs.android.com/android/platform/superproject/+/fbcbf2500b2887952f862fa882741f80464bdbca:packages/modules/adb/client/transport_mdns.cpp;drc=fbcbf2500b2887952f862fa882741f80464bdbca;l=278
-        text.split(ADB_NEW_LINE).forEach { line ->
-            if (line.startsWith("mdns daemon version")) {
-                return@parse MdnsCheckResult(MdnsStatus.Enabled, line)
-            }
-        }
-
-        return MdnsCheckResult(MdnsStatus.Disabled, text.toString())
+    // ADB Host code, OpenScreen implementation
+    // https://cs.android.com/android/platform/superproject/+/fbcbf2500b2887952f862fa882741f80464bdbca:packages/modules/adb/client/transport_mdns.cpp;drc=fbcbf2500b2887952f862fa882741f80464bdbca;l=278
+    text.split(ADB_NEW_LINE).forEach { line ->
+      if (line.startsWith("mdns daemon version")) {
+        return@parse MdnsCheckResult(MdnsStatus.Enabled, line)
+      }
     }
+
+    return MdnsCheckResult(MdnsStatus.Disabled, text.toString())
+  }
 }

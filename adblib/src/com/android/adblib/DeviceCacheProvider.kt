@@ -17,17 +17,17 @@ package com.android.adblib
 
 interface DeviceCacheProvider {
 
-    suspend fun getCacheOrNull(device: DeviceSelector): CoroutineScopeCache?
+  suspend fun getCacheOrNull(device: DeviceSelector): CoroutineScopeCache?
 }
 
 /**
- * Attempt to use a `ConnectedDevice`'s device cache if found through `ConnectedDevicesTracker`.
- * Otherwise, always run `block` to produce a new result.
+ * Attempt to use a `ConnectedDevice`'s device cache if found through `ConnectedDevicesTracker`. Otherwise, always run `block` to produce a
+ * new result.
  */
 suspend inline fun <R> DeviceCacheProvider.withDeviceCacheIfAvailable(
-    device: DeviceSelector,
-    cacheKey: CoroutineScopeCache.Key<R>,
-    crossinline block: suspend () -> R
+  device: DeviceSelector,
+  cacheKey: CoroutineScopeCache.Key<R>,
+  crossinline block: suspend () -> R,
 ): R {
-    return getCacheOrNull(device)?.getOrPutSuspending(cacheKey) { block() } ?: block()
+  return getCacheOrNull(device)?.getOrPutSuspending(cacheKey) { block() } ?: block()
 }

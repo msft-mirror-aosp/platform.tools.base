@@ -15,29 +15,23 @@
  */
 package com.android.adblib
 
-/**
- * Representation of a reverse socket connection. See [AdbDeviceServices.reverseForward] and
- * [AdbDeviceServices.reverseListForward].
- */
+/** Representation of a reverse socket connection. See [AdbDeviceServices.reverseForward] and [AdbDeviceServices.reverseListForward]. */
 data class ReverseSocketInfo(
-    /**
-     * Internal name the device uses to identify the underlying transport type.
-     *
-     * See ["UsbFfs"](https://cs.android.com/android/platform/superproject/+/3a52886262ae22477a7d8ffb12adba64daf6aafa:packages/modules/adb/daemon/usb.cpp;l=759)
-     */
-    val transportName: String,
-    /**
-     * The [SocketSpec] corresponding to the server socket connection on the device.
-     */
-    val remote: SocketSpec,
-    /**
-     * The [SocketSpec] corresponding to the socket connection to open on the host machine.
-     */
-    val local: SocketSpec
+  /**
+   * Internal name the device uses to identify the underlying transport type.
+   *
+   * See
+   * ["UsbFfs"](https://cs.android.com/android/platform/superproject/+/3a52886262ae22477a7d8ffb12adba64daf6aafa:packages/modules/adb/daemon/usb.cpp;l=759)
+   */
+  val transportName: String,
+  /** The [SocketSpec] corresponding to the server socket connection on the device. */
+  val remote: SocketSpec,
+  /** The [SocketSpec] corresponding to the socket connection to open on the host machine. */
+  val local: SocketSpec,
 )
 
 /**
- * The representation of the list of [forward socket entries][ReverseSocketInfo] maintained
- * by the ADB host. See [AdbDeviceServices.reverseListForward].
+ * The representation of the list of [forward socket entries][ReverseSocketInfo] maintained by the ADB host. See
+ * [AdbDeviceServices.reverseListForward].
  */
 typealias ReverseSocketList = ListWithErrors<ReverseSocketInfo>

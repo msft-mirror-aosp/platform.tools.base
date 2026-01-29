@@ -18,63 +18,62 @@ package com.android.adblib.impl.channels
 import com.android.adblib.AdbOutputChannel
 import com.android.adblib.AdbSessionHost
 import com.android.adblib.adbLogger
-import kotlinx.coroutines.CancellableContinuation
 import java.nio.ByteBuffer
 import java.nio.channels.AsynchronousFileChannel
 import java.nio.channels.CompletionHandler
 import java.nio.file.Path
 import java.util.concurrent.TimeUnit
+import kotlinx.coroutines.CancellableContinuation
 
-/**
- * Implementation of [AdbOutputChannel] over a [AsynchronousFileChannel]
- */
+/** Implementation of [AdbOutputChannel] over a [AsynchronousFileChannel] */
 internal class AdbOutputFileChannel(
   private val host: AdbSessionHost,
   private val file: Path,
-  private val fileChannel: AsynchronousFileChannel
+  private val fileChannel: AsynchronousFileChannel,
 ) : AdbOutputChannel {
 
-    private val logger = adbLogger(host)
+  private val logger = adbLogger(host)
 
-    private var filePosition = 0L
+  private var filePosition = 0L
 
-    private val channelWriteHandler = object: ChannelWriteHandler(host, fileChannel) {
-        override val supportsTimeout: Boolean
-            get() = false
+  private val channelWriteHandler =
+    object : ChannelWriteHandler(host, fileChannel) {
+      override val supportsTimeout: Boolean
+        get() = false
 
-        override fun asyncWrite(
-            buffer: ByteBuffer,
-            timeout: Long,
-            unit: TimeUnit,
-            continuation: CancellableContinuation<Unit>,
-            completionHandler: CompletionHandler<Int, CancellableContinuation<Unit>>
-        ) {
-            // Note: Timeout is handled by base class because [supportsTimeout] is false
-            fileChannel.write(buffer, filePosition, continuation, completionHandler)
+      override fun asyncWrite(
+        buffer: ByteBuffer,
+        timeout: Long,
+        unit: TimeUnit,
+        continuation: CancellableContinuation<Unit>,
+        completionHandler: CompletionHandler<Int, CancellableContinuation<Unit>>,
+      ) {
+        // Note: Timeout is handled by base class because [supportsTimeout] is false
+        fileChannel.write(buffer, filePosition, continuation, completionHandler)
+      }
+
+      override fun asyncWriteCompleted(byteCount: Int) {
+        if (byteCount > 0) {
+          filePosition += byteCount
         }
-
-        override fun asyncWriteCompleted(byteCount: Int) {
-            if (byteCount > 0) {
-                filePosition += byteCount
-            }
-        }
+      }
     }
 
-    override fun toString(): String {
-        return "AdbOutputFileChannel(\"$file\")"
-    }
+  override fun toString(): String {
+    return "AdbOutputFileChannel(\"$file\")"
+  }
 
-    @Throws(Exception::class)
-    override fun close() {
-        logger.debug { "closing output channel for \"$file\"" }
-        fileChannel.close()
-    }
+  @Throws(Exception::class)
+  override fun close() {
+    logger.debug { "closing output channel for \"$file\"" }
+    fileChannel.close()
+  }
 
-    override suspend fun writeBuffer(buffer: ByteBuffer, timeout: Long, unit: TimeUnit) {
-        channelWriteHandler.writeBuffer(buffer, timeout, unit)
-    }
+  override suspend fun writeBuffer(buffer: ByteBuffer, timeout: Long, unit: TimeUnit) {
+    channelWriteHandler.writeBuffer(buffer, timeout, unit)
+  }
 
-    override suspend fun writeExactly(buffer: ByteBuffer, timeout: Long, unit: TimeUnit) {
-        channelWriteHandler.writeExactly(buffer, timeout, unit)
-    }
+  override suspend fun writeExactly(buffer: ByteBuffer, timeout: Long, unit: TimeUnit) {
+    channelWriteHandler.writeExactly(buffer, timeout, unit)
+  }
 }

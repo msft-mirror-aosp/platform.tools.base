@@ -37,86 +37,71 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.toList
 
-class DevicePropertiesImpl(
-    val deviceServices: AdbDeviceServices,
-    val device: DeviceSelector
-) : DeviceProperties {
+class DevicePropertiesImpl(val deviceServices: AdbDeviceServices, val device: DeviceSelector) : DeviceProperties {
 
-    private val logger = adbLogger(deviceServices.session)
+  private val logger = adbLogger(deviceServices.session)
 
-    private val session: AdbSession
-        get() = deviceServices.session
+  private val session: AdbSession
+    get() = deviceServices.session
 
-    override suspend fun all(): List<DeviceProperty> {
-        val shellV2Supported = runCatching {
-            session.hostServices.availableFeatures(device).contains(AdbFeatures.SHELL_V2)
-        }.getOrElse {
-            it.rethrowCancellation()
-            // Very old devices (and ADB servers) don't support the "features" service
-            logger.info { "Error obtaining device features: $it" }
-            false
+  override suspend fun all(): List<DeviceProperty> {
+    val shellV2Supported =
+      runCatching { session.hostServices.availableFeatures(device).contains(AdbFeatures.SHELL_V2) }
+        .getOrElse {
+          it.rethrowCancellation()
+          // Very old devices (and ADB servers) don't support the "features" service
+          logger.info { "Error obtaining device features: $it" }
+          false
         }
 
-        return if (shellV2Supported) {
-            // Use "shell,v2" if available
-            val lines = deviceServices.shellV2(device, "getprop", LineShellV2Collector())
-                .mapNotNull {
-                    when(it) {
-                        is ShellCommandOutputElement.StdoutLine -> it.contents
-                        is ShellCommandOutputElement.ExitCode -> null
-                        is ShellCommandOutputElement.StderrLine -> null
-                    }
-                }.toList()
-            DevicePropertiesParser().parse(lines.asSequence())
-        } else {
-            // Use "shell"
-            val lines =
-                deviceServices.shell(
-                    device,
-                    "getprop",
-                    LineShellCollector(),
-                    stripCrLf = shellOutputsCrLf()
-                ).toList()
-            return DevicePropertiesParser().parse(lines.asSequence())
-        }
-    }
-
-    override suspend fun allReadonly(): Map<String, String> {
-        return session.deviceCacheProvider.withDeviceCacheIfAvailable(device, allReadonlyKey) {
-            all()
-                .filter { prop -> prop.name.startsWith("ro.") }
-                .associate { it.name to it.value }
-                .toImmutableMap()
-        }
-    }
-
-    override suspend fun api(default: Int): Int {
-        val api = allReadonly()[RO_BUILD_VERSION_SDK]
-        if (api == null) {
-            adbLogger(this.session).info {
-                "Property '$RO_BUILD_VERSION_SDK' not found, returning $default instead"
+    return if (shellV2Supported) {
+      // Use "shell,v2" if available
+      val lines =
+        deviceServices
+          .shellV2(device, "getprop", LineShellV2Collector())
+          .mapNotNull {
+            when (it) {
+              is ShellCommandOutputElement.StdoutLine -> it.contents
+              is ShellCommandOutputElement.ExitCode -> null
+              is ShellCommandOutputElement.StderrLine -> null
             }
-            return default
-        }
-        return try {
-            api.toInt()
-        } catch (e: NumberFormatException) {
-            adbLogger(this.session).info {
-                "Property '$RO_BUILD_VERSION_SDK' (\"$api\") is not a number, returning $default instead"
-            }
-            return default
-        }
+          }
+          .toList()
+      DevicePropertiesParser().parse(lines.asSequence())
+    } else {
+      // Use "shell"
+      val lines = deviceServices.shell(device, "getprop", LineShellCollector(), stripCrLf = shellOutputsCrLf()).toList()
+      return DevicePropertiesParser().parse(lines.asSequence())
     }
+  }
 
-    /** Detects if we are dealing with older shell implementations that use `\r\n` for new lines. */
-    private suspend fun shellOutputsCrLf(): Boolean {
-        return session.deviceCacheProvider.withDeviceCacheIfAvailable(device, shellOutputsCrLfKey) {
-            val text =
-                deviceServices.shell(device, "echo foo", TextShellCollector(), stripCrLf = false)
-                    .first()
-            text.endsWith("\r\n")
-        }
+  override suspend fun allReadonly(): Map<String, String> {
+    return session.deviceCacheProvider.withDeviceCacheIfAvailable(device, allReadonlyKey) {
+      all().filter { prop -> prop.name.startsWith("ro.") }.associate { it.name to it.value }.toImmutableMap()
     }
+  }
+
+  override suspend fun api(default: Int): Int {
+    val api = allReadonly()[RO_BUILD_VERSION_SDK]
+    if (api == null) {
+      adbLogger(this.session).info { "Property '$RO_BUILD_VERSION_SDK' not found, returning $default instead" }
+      return default
+    }
+    return try {
+      api.toInt()
+    } catch (e: NumberFormatException) {
+      adbLogger(this.session).info { "Property '$RO_BUILD_VERSION_SDK' (\"$api\") is not a number, returning $default instead" }
+      return default
+    }
+  }
+
+  /** Detects if we are dealing with older shell implementations that use `\r\n` for new lines. */
+  private suspend fun shellOutputsCrLf(): Boolean {
+    return session.deviceCacheProvider.withDeviceCacheIfAvailable(device, shellOutputsCrLfKey) {
+      val text = deviceServices.shell(device, "echo foo", TextShellCollector(), stripCrLf = false).first()
+      text.endsWith("\r\n")
+    }
+  }
 }
 
 private val allReadonlyKey = CoroutineScopeCache.Key<Map<String, String>>("allReadonly")

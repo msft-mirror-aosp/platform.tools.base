@@ -18,50 +18,43 @@ package com.android.adblib.testingutils
 import com.android.adblib.AdbSession
 import com.android.adblib.AdbSessionHost
 import com.android.adblib.SOCKET_CONNECT_TIMEOUT_MS
-import org.junit.rules.ExternalResource
 import java.time.Duration
+import org.junit.rules.ExternalResource
 
 /**
  * Manages the lifecycle of a FakeAdbServerProvider.
  *
- * @param configure An optional lambda to apply additional customization to the
- * [FakeAdbServerProvider] after the default command handlers have been installed.
+ * @param configure An optional lambda to apply additional customization to the [FakeAdbServerProvider] after the default command handlers
+ *   have been installed.
  */
-open class FakeAdbServerProviderRule(
-    private val configure: (FakeAdbServerProvider.() -> Unit)? = null
-) : ExternalResource() {
+open class FakeAdbServerProviderRule(private val configure: (FakeAdbServerProvider.() -> Unit)? = null) : ExternalResource() {
 
-    lateinit var fakeAdb: FakeAdbServerProvider
-        private set
+  lateinit var fakeAdb: FakeAdbServerProvider
+    private set
 
-    lateinit var host: TestingAdbSessionHost
-        private set
+  lateinit var host: TestingAdbSessionHost
+    private set
 
-    lateinit var adbSession: AdbSession
-        private set
+  lateinit var adbSession: AdbSession
+    private set
 
-    public override fun before() {
-        fakeAdb = FakeAdbServerProvider()
-            .installDefaultCommandHandlers()
-            .apply { configure?.invoke(this) }
-            .build().start()
-        host = TestingAdbSessionHost()
-        adbSession = createTestAdbSession(host)
-    }
+  public override fun before() {
+    fakeAdb = FakeAdbServerProvider().installDefaultCommandHandlers().apply { configure?.invoke(this) }.build().start()
+    host = TestingAdbSessionHost()
+    adbSession = createTestAdbSession(host)
+  }
 
-    override fun after() {
-        adbSession.close()
-        host.close()
-        fakeAdb.close()
-    }
+  override fun after() {
+    adbSession.close()
+    host.close()
+    fakeAdb.close()
+  }
 
-    fun createChannelProvider(): FakeAdbServerProvider.TestingChannelProvider {
-        return fakeAdb.createChannelProvider(host)
-    }
+  fun createChannelProvider(): FakeAdbServerProvider.TestingChannelProvider {
+    return fakeAdb.createChannelProvider(host)
+  }
 
-    fun createTestAdbSession(host: AdbSessionHost): AdbSession {
-        return AdbSession.create(host,
-                                 createChannelProvider(),
-                                 Duration.ofMillis(SOCKET_CONNECT_TIMEOUT_MS))
-    }
+  fun createTestAdbSession(host: AdbSessionHost): AdbSession {
+    return AdbSession.create(host, createChannelProvider(), Duration.ofMillis(SOCKET_CONNECT_TIMEOUT_MS))
+  }
 }

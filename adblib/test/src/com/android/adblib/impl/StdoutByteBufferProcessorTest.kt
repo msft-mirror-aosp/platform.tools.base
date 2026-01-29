@@ -17,179 +17,175 @@ package com.android.adblib.impl
 
 import com.android.adblib.impl.StdoutByteBufferProcessor.DirectProcessor
 import com.android.adblib.impl.StdoutByteBufferProcessor.StripCrLfProcessor
+import java.nio.ByteBuffer
 import org.junit.Assert
 import org.junit.Test
-import java.nio.ByteBuffer
 
 private const val CR = '\r'
 private const val LF = '\n'
 
 class StdoutByteBufferProcessorTest {
-    @Test
-    fun directProcessorDoesNothing() {
-        // Prepare
-        val processor = DirectProcessor()
-        val buffer = ByteBuffer.allocate(10)
+  @Test
+  fun directProcessorDoesNothing() {
+    // Prepare
+    val processor = DirectProcessor()
+    val buffer = ByteBuffer.allocate(10)
 
-        // Act
-        buffer.addChars(listOf('a', 'b', 'c', CR, LF, 'd'))
-        buffer.flip()
-        val buffer1 = processor.convertBuffer(buffer).clone()
-        val buffer2 = processor.convertBufferEnd()?.clone()
+    // Act
+    buffer.addChars(listOf('a', 'b', 'c', CR, LF, 'd'))
+    buffer.flip()
+    val buffer1 = processor.convertBuffer(buffer).clone()
+    val buffer2 = processor.convertBufferEnd()?.clone()
 
-        // Assert
-        Assert.assertEquals(6, buffer1.remaining())
-        buffer1.assertChars(listOf('a', 'b', 'c', CR, LF, 'd'))
-        Assert.assertNull(buffer2)
-    }
+    // Assert
+    Assert.assertEquals(6, buffer1.remaining())
+    buffer1.assertChars(listOf('a', 'b', 'c', CR, LF, 'd'))
+    Assert.assertNull(buffer2)
+  }
 
-    @Test
-    fun stripCrLfProcessorRemovesExtraCrs() {
-        // Prepare
-        val processor = StripCrLfProcessor()
-        val buffer = ByteBuffer.allocate(10)
+  @Test
+  fun stripCrLfProcessorRemovesExtraCrs() {
+    // Prepare
+    val processor = StripCrLfProcessor()
+    val buffer = ByteBuffer.allocate(10)
 
-        // Act
-        buffer.addChars(listOf('a', 'b', 'c', CR, LF, 'd'))
-        buffer.flip()
-        val buffer1 = processor.convertBuffer(buffer).clone()
-        val buffer2 = processor.convertBufferEnd()?.clone()
+    // Act
+    buffer.addChars(listOf('a', 'b', 'c', CR, LF, 'd'))
+    buffer.flip()
+    val buffer1 = processor.convertBuffer(buffer).clone()
+    val buffer2 = processor.convertBufferEnd()?.clone()
 
-        // Assert
-        Assert.assertEquals(5, buffer1.remaining())
-        buffer1.assertChars(listOf('a', 'b', 'c', LF, 'd'))
-        Assert.assertNull(buffer2)
-    }
+    // Assert
+    Assert.assertEquals(5, buffer1.remaining())
+    buffer1.assertChars(listOf('a', 'b', 'c', LF, 'd'))
+    Assert.assertNull(buffer2)
+  }
 
-    @Test
-    fun stripCrLfProcessorDoesNotLoseLastCr() {
-        // Prepare
-        val processor = StripCrLfProcessor()
-        val buffer = ByteBuffer.allocate(6)
+  @Test
+  fun stripCrLfProcessorDoesNotLoseLastCr() {
+    // Prepare
+    val processor = StripCrLfProcessor()
+    val buffer = ByteBuffer.allocate(6)
 
-        // Act
-        buffer.addChars(listOf('a', 'b', 'c', CR, LF, CR))
-        buffer.flip()
-        val buffer1 = processor.convertBuffer(buffer).clone()
-        val buffer2 = processor.convertBufferEnd()?.clone()
+    // Act
+    buffer.addChars(listOf('a', 'b', 'c', CR, LF, CR))
+    buffer.flip()
+    val buffer1 = processor.convertBuffer(buffer).clone()
+    val buffer2 = processor.convertBufferEnd()?.clone()
 
-        // Assert
-        Assert.assertEquals(4, buffer1.remaining())
-        buffer1.assertChars(listOf('a', 'b', 'c', LF))
-        Assert.assertNotNull(buffer2)
-        buffer2!!.assertChars(listOf(CR))
-    }
+    // Assert
+    Assert.assertEquals(4, buffer1.remaining())
+    buffer1.assertChars(listOf('a', 'b', 'c', LF))
+    Assert.assertNotNull(buffer2)
+    buffer2!!.assertChars(listOf(CR))
+  }
 
-    @Test
-    fun stripCrLfProcessorDoesNotLoseLastCrOfIntermediateBuffer() {
-        // Prepare
-        val processor = StripCrLfProcessor()
-        val buffer = ByteBuffer.allocate(6)
+  @Test
+  fun stripCrLfProcessorDoesNotLoseLastCrOfIntermediateBuffer() {
+    // Prepare
+    val processor = StripCrLfProcessor()
+    val buffer = ByteBuffer.allocate(6)
 
-        // Act
-        buffer.addChars(listOf('a', 'b', 'c', CR, LF, CR))
-        buffer.flip()
-        val buffer1 = processor.convertBuffer(buffer).clone()
+    // Act
+    buffer.addChars(listOf('a', 'b', 'c', CR, LF, CR))
+    buffer.flip()
+    val buffer1 = processor.convertBuffer(buffer).clone()
 
-        buffer.clear()
-        buffer.addChars(listOf(LF, 'e', 'f'))
-        buffer.flip()
-        val buffer2 = processor.convertBuffer(buffer).clone()
+    buffer.clear()
+    buffer.addChars(listOf(LF, 'e', 'f'))
+    buffer.flip()
+    val buffer2 = processor.convertBuffer(buffer).clone()
 
-        val buffer3 = processor.convertBufferEnd()?.clone()
+    val buffer3 = processor.convertBufferEnd()?.clone()
 
-        // Assert
-        Assert.assertEquals(4, buffer1.remaining())
-        buffer1.assertChars(listOf('a', 'b', 'c', LF))
+    // Assert
+    Assert.assertEquals(4, buffer1.remaining())
+    buffer1.assertChars(listOf('a', 'b', 'c', LF))
 
-        Assert.assertEquals(3, buffer2.remaining())
-        buffer2.assertChars(listOf(LF, 'e', 'f'))
+    Assert.assertEquals(3, buffer2.remaining())
+    buffer2.assertChars(listOf(LF, 'e', 'f'))
 
-        Assert.assertNull(buffer3)
-    }
+    Assert.assertNull(buffer3)
+  }
 
-    @Test
-    fun stripCrLfProcessorDoesNotLoseLastCrOfIntermediateBuffer2() {
-        // Prepare
-        val processor = StripCrLfProcessor()
-        val buffer = ByteBuffer.allocate(6)
+  @Test
+  fun stripCrLfProcessorDoesNotLoseLastCrOfIntermediateBuffer2() {
+    // Prepare
+    val processor = StripCrLfProcessor()
+    val buffer = ByteBuffer.allocate(6)
 
-        // Act
-        buffer.addChars(listOf('a', 'b', 'c', CR, LF, CR))
-        buffer.flip()
-        val buffer1 = processor.convertBuffer(buffer).clone()
+    // Act
+    buffer.addChars(listOf('a', 'b', 'c', CR, LF, CR))
+    buffer.flip()
+    val buffer1 = processor.convertBuffer(buffer).clone()
 
-        buffer.clear()
-        buffer.addChars(listOf('d', 'e', 'f'))
-        buffer.flip()
-        val buffer2 = processor.convertBuffer(buffer).clone()
+    buffer.clear()
+    buffer.addChars(listOf('d', 'e', 'f'))
+    buffer.flip()
+    val buffer2 = processor.convertBuffer(buffer).clone()
 
-        val buffer3 = processor.convertBufferEnd()?.clone()
+    val buffer3 = processor.convertBufferEnd()?.clone()
 
-        // Assert
-        Assert.assertEquals(4, buffer1.remaining())
-        buffer1.assertChars(listOf('a', 'b', 'c', LF))
+    // Assert
+    Assert.assertEquals(4, buffer1.remaining())
+    buffer1.assertChars(listOf('a', 'b', 'c', LF))
 
-        Assert.assertEquals(4, buffer2.remaining())
-        buffer2.assertChars(listOf(CR, 'd', 'e', 'f'))
+    Assert.assertEquals(4, buffer2.remaining())
+    buffer2.assertChars(listOf(CR, 'd', 'e', 'f'))
 
-        Assert.assertNull(buffer3)
-    }
+    Assert.assertNull(buffer3)
+  }
 
-    @Test
-    fun stripCrLfProcessorCanHandleExtraCharacter() {
-        // Prepare
-        val processor = StripCrLfProcessor()
-        val buffer = ByteBuffer.allocate(6)
+  @Test
+  fun stripCrLfProcessorCanHandleExtraCharacter() {
+    // Prepare
+    val processor = StripCrLfProcessor()
+    val buffer = ByteBuffer.allocate(6)
 
-        // Act
-        buffer.addChars(listOf('a', 'b', 'c', CR, LF, CR))
-        buffer.flip()
-        val buffer1 = processor.convertBuffer(buffer).clone()
+    // Act
+    buffer.addChars(listOf('a', 'b', 'c', CR, LF, CR))
+    buffer.flip()
+    val buffer1 = processor.convertBuffer(buffer).clone()
 
-        buffer.clear()
-        buffer.addChars(listOf('d', 'e', 'f', 'g', 'h', 'i'))
-        buffer.flip()
-        val buffer2 = processor.convertBuffer(buffer).clone()
+    buffer.clear()
+    buffer.addChars(listOf('d', 'e', 'f', 'g', 'h', 'i'))
+    buffer.flip()
+    val buffer2 = processor.convertBuffer(buffer).clone()
 
-        val buffer3 = processor.convertBufferEnd()?.clone()
+    val buffer3 = processor.convertBufferEnd()?.clone()
 
-        // Assert
-        Assert.assertEquals(4, buffer1.remaining())
-        buffer1.assertChars(listOf('a', 'b', 'c', LF))
+    // Assert
+    Assert.assertEquals(4, buffer1.remaining())
+    buffer1.assertChars(listOf('a', 'b', 'c', LF))
 
-        Assert.assertEquals(6, buffer2.remaining())
-        buffer2.assertChars(listOf(CR, 'd', 'e', 'f', 'g', 'h'))
+    Assert.assertEquals(6, buffer2.remaining())
+    buffer2.assertChars(listOf(CR, 'd', 'e', 'f', 'g', 'h'))
 
-        Assert.assertNotNull(buffer3)
-        buffer3!!.assertChars(listOf('i'))
-    }
+    Assert.assertNotNull(buffer3)
+    buffer3!!.assertChars(listOf('i'))
+  }
 
-    private fun ByteBuffer.addChars(list: List<Char>) {
-        list.forEach {
-            put(it.code.toByte())
-        }
-    }
+  private fun ByteBuffer.addChars(list: List<Char>) {
+    list.forEach { put(it.code.toByte()) }
+  }
 
-    private fun ByteBuffer.assertChars(list: List<Char>) {
-        list.forEachIndexed { index, ch ->
-            Assert.assertEquals(ch.code.toByte(), get(index))
-        }
-    }
+  private fun ByteBuffer.assertChars(list: List<Char>) {
+    list.forEachIndexed { index, ch -> Assert.assertEquals(ch.code.toByte(), get(index)) }
+  }
 
-    private fun ByteBuffer.clone(): ByteBuffer {
-        val savedPosition = this.position()
-        val savedLimit = this.limit()
-        this.position(0)
-        this.limit(this.capacity())
+  private fun ByteBuffer.clone(): ByteBuffer {
+    val savedPosition = this.position()
+    val savedLimit = this.limit()
+    this.position(0)
+    this.limit(this.capacity())
 
-        val result = ByteBuffer.allocate(capacity())
-        result.put(this)
-        result.limit(savedLimit)
-        result.position(savedPosition)
+    val result = ByteBuffer.allocate(capacity())
+    result.put(this)
+    result.limit(savedLimit)
+    result.position(savedPosition)
 
-        this.limit(savedLimit)
-        this.position(savedPosition)
-        return result
-    }
+    this.limit(savedLimit)
+    this.position(savedPosition)
+    return result
+  }
 }

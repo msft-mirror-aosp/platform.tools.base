@@ -30,154 +30,144 @@ import com.android.adblib.RemoteFileMode
 import com.android.adblib.SyncProgress
 import com.android.adblib.impl.services.AdbServiceRunner
 import com.android.adblib.utils.closeOnException
+import java.io.IOException
+import java.nio.channels.ClosedChannelException
+import java.nio.file.attribute.FileTime
+import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
-import java.io.IOException
-import java.nio.channels.ClosedChannelException
-import java.nio.file.attribute.FileTime
-import java.util.concurrent.TimeUnit
 
-/**
- * Maximum length (in characters) of a remote path
- */
+/** Maximum length (in characters) of a remote path */
 internal const val REMOTE_PATH_MAX_LENGTH = 1024
 
-/**
- * Implementation of [AdbDeviceSyncServices]
- */
-internal class AdbDeviceSyncServicesImpl private constructor(
-    private val syncConnection: SyncConnection
-) : AdbDeviceSyncServices {
+/** Implementation of [AdbDeviceSyncServices] */
+internal class AdbDeviceSyncServicesImpl private constructor(private val syncConnection: SyncConnection) : AdbDeviceSyncServices {
 
-    private var isClosed: Boolean = false
+  private var isClosed: Boolean = false
 
-    /**
-     * Helper class to handle `QUIT` commands
-     */
-    private val quitHandler = SyncQuitHandler(syncConnection)
+  /** Helper class to handle `QUIT` commands */
+  private val quitHandler = SyncQuitHandler(syncConnection)
 
-    /**
-     * Helper class to handle `SEND` commands
-     */
-    private val sendHandler = SyncSendHandler(syncConnection)
+  /** Helper class to handle `SEND` commands */
+  private val sendHandler = SyncSendHandler(syncConnection)
 
-    /**
-     * Helper class to handle `RECV` commands
-     */
-    private val recvHandler = SyncRecvHandler(syncConnection)
+  /** Helper class to handle `RECV` commands */
+  private val recvHandler = SyncRecvHandler(syncConnection)
 
-    /**
-     * Helper class to handle `STAT` commands
-     */
-    private val statHandler = SyncStatHandler(syncConnection)
+  /** Helper class to handle `STAT` commands */
+  private val statHandler = SyncStatHandler(syncConnection)
 
-    /**
-     * Helper class to handle `STA2` commands
-     */
-    private val statV2Handler = SyncStatV2Handler(syncConnection)
+  /** Helper class to handle `STA2` commands */
+  private val statV2Handler = SyncStatV2Handler(syncConnection)
 
-    /**
-     * Helper class to handle `LIST` commands
-     */
-    private val listHandler = SyncListHandler(syncConnection)
+  /** Helper class to handle `LIST` commands */
+  private val listHandler = SyncListHandler(syncConnection)
 
-    /**
-     * Helper class to handle `LIS2` commands
-     */
-    private val listV2Handler = SyncListV2Handler(syncConnection)
+  /** Helper class to handle `LIS2` commands */
+  private val listV2Handler = SyncListV2Handler(syncConnection)
 
-    override suspend fun shutdown() {
-        checkNotClosed()
-        quitHandler.quit()
-        syncConnection.shutdown()
+  override suspend fun shutdown() {
+    checkNotClosed()
+    quitHandler.quit()
+    syncConnection.shutdown()
+  }
+
+  override fun close() {
+    syncConnection.close()
+    isClosed = true
+  }
+
+  override suspend fun send(
+    sourceChannel: AdbInputChannel,
+    remoteFilePath: String,
+    remoteFileMode: RemoteFileMode,
+    remoteFileTime: FileTime?,
+    progress: SyncProgress?,
+    bufferSize: Int,
+  ) {
+    checkNotClosed()
+    sendHandler.send(sourceChannel, remoteFilePath, remoteFileMode, remoteFileTime, progress, bufferSize)
+  }
+
+  override suspend fun recv(remoteFilePath: String, destinationChannel: AdbOutputChannel, progress: SyncProgress?, bufferSize: Int) {
+    checkNotClosed()
+    recvHandler.recv(remoteFilePath, destinationChannel, progress)
+  }
+
+  override suspend fun stat(remoteFilePath: String): FileStat? {
+    checkNotClosed()
+    return statHandler.stat(remoteFilePath)
+  }
+
+  override suspend fun statV2(remoteFilePath: String, options: StatV2Options): FileStatV2 {
+    checkNotClosed()
+    return if (options.fallbackToStatV1 && !syncConnection.canUseStatV2()) {
+      statHandler.stat(remoteFilePath)?.toFileStatV2() ?: defaultErrorFileStatV2
+    } else {
+      statV2Handler.statV2(remoteFilePath)
     }
+  }
 
-    override fun close() {
-        syncConnection.close()
-        isClosed = true
-    }
-
-    override suspend fun send(
-        sourceChannel: AdbInputChannel,
-        remoteFilePath: String,
-        remoteFileMode: RemoteFileMode,
-        remoteFileTime: FileTime?,
-        progress: SyncProgress?,
-        bufferSize: Int
-    ) {
-        checkNotClosed()
-        sendHandler.send(
-            sourceChannel,
-            remoteFilePath,
-            remoteFileMode,
-            remoteFileTime,
-            progress,
-            bufferSize
-        )
-    }
-
-    override suspend fun recv(
-        remoteFilePath: String,
-        destinationChannel: AdbOutputChannel,
-        progress: SyncProgress?,
-        bufferSize: Int
-    ) {
-        checkNotClosed()
-        recvHandler.recv(remoteFilePath, destinationChannel, progress)
-    }
-
-    override suspend fun stat(remoteFilePath: String) : FileStat? {
-        checkNotClosed()
-        return statHandler.stat(remoteFilePath)
-    }
-
-    override suspend fun statV2(remoteFilePath: String, options: StatV2Options) : FileStatV2 {
-        checkNotClosed()
-        return if (options.fallbackToStatV1 && !syncConnection.canUseStatV2()) {
-            statHandler.stat(remoteFilePath)?.toFileStatV2() ?: defaultErrorFileStatV2
-        } else {
-            statV2Handler.statV2(remoteFilePath)
-        }
-    }
-
-    override fun list(remoteFilePath: String, options: ListOptions): Flow<DirectoryEntry> = flow {
+  override fun list(remoteFilePath: String, options: ListOptions): Flow<DirectoryEntry> =
+    flow {
         checkNotClosed()
         emitAll(listHandler.list(remoteFilePath, options))
-    }.flowOn(syncConnection.session.ioDispatcher)
+      }
+      .flowOn(syncConnection.session.ioDispatcher)
 
-    override fun listV2(remoteFilePath: String, options: ListV2Options): Flow<DirectoryEntryV2> = flow {
+  override fun listV2(remoteFilePath: String, options: ListV2Options): Flow<DirectoryEntryV2> =
+    flow {
         checkNotClosed()
         if (options.fallbackToListV1 && !syncConnection.canUseListV2()) {
-            emitAll(listHandler.list(remoteFilePath, options.toListOptions()).map { entry ->
-                entry.toDirectoryEntryV2()
-            })
+          emitAll(listHandler.list(remoteFilePath, options.toListOptions()).map { entry -> entry.toDirectoryEntryV2() })
         } else {
-            emitAll(listV2Handler.listV2(remoteFilePath, options))
+          emitAll(listV2Handler.listV2(remoteFilePath, options))
         }
-    }.flowOn(syncConnection.session.ioDispatcher)
+      }
+      .flowOn(syncConnection.session.ioDispatcher)
 
-    private fun ListV2Options.toListOptions(): ListOptions {
-        return ListOptions(
-            skipDotEntries = this.skipDotEntries
-        )
+  private fun ListV2Options.toListOptions(): ListOptions {
+    return ListOptions(skipDotEntries = this.skipDotEntries)
+  }
+
+  private fun DirectoryEntry.toDirectoryEntryV2(): DirectoryEntryV2 {
+    return DirectoryEntryV2(fileName = this.fileName, fileStat = this.fileStat.toFileStatV2())
+  }
+
+  private fun FileStat.toFileStatV2() =
+    FileStatV2(
+      errno = 0,
+      mode = remoteFileMode,
+      size = size.toLong(),
+      lastModifiedTime = lastModified,
+      lastAccessTime = zeroFileTime,
+      creationTime = zeroFileTime,
+      dev = 0,
+      inode = 0,
+      nlink = 0,
+      uid = 0,
+      gid = 0,
+    )
+
+  private fun checkNotClosed() {
+    if (isClosed) {
+      throw ClosedChannelException().initCause(IOException("${AdbDeviceSyncServices::class.simpleName} has been closed"))
     }
+  }
 
-    private fun DirectoryEntry.toDirectoryEntryV2(): DirectoryEntryV2 {
-        return DirectoryEntryV2(
-            fileName = this.fileName,
-            fileStat = this.fileStat.toFileStatV2()
-        )
-    }
+  companion object {
+    internal val zeroFileTime = FileTime.from(0, TimeUnit.MILLISECONDS)
 
-    private fun FileStat.toFileStatV2() = FileStatV2(
-        errno = 0,
-        mode = remoteFileMode,
-        size = size.toLong(),
-        lastModifiedTime = lastModified,
+    internal val defaultErrorFileStatV2 =
+      FileStatV2(
+        errno = 2 /* 2 == ENOENT == "No such file or directory" */,
+        mode = RemoteFileMode.fromModeBits(0),
+        size = 0,
+        lastModifiedTime = zeroFileTime,
         lastAccessTime = zeroFileTime,
         creationTime = zeroFileTime,
         dev = 0,
@@ -185,69 +175,44 @@ internal class AdbDeviceSyncServicesImpl private constructor(
         nlink = 0,
         uid = 0,
         gid = 0,
-    )
+      )
 
-    private fun checkNotClosed() {
-        if (isClosed) {
-            throw ClosedChannelException().initCause(IOException("${AdbDeviceSyncServices::class.simpleName} has been closed"))
+    /** Returns a fully initialized instance of [AdbDeviceSyncServices], after successfully starting a `SYNC` session with the ADB host. */
+    suspend fun open(
+      serviceRunner: AdbServiceRunner,
+      device: DeviceSelector,
+      readAheadBufferSize: Int,
+      writeBackBufferSize: Int,
+      timeout: Long,
+      unit: TimeUnit,
+    ): AdbDeviceSyncServices {
+      return withContext(serviceRunner.host.ioDispatcher) {
+        val host = serviceRunner.host
+        val tracker = TimeoutTracker(host.timeProvider, timeout, unit)
+        val workBuffer = serviceRunner.newResizableBuffer()
+        val shortServiceDescription = "sync:"
+        // Switch the channel to the right transport (i.e. device)
+        val channel = serviceRunner.switchToTransport(device, workBuffer, shortServiceDescription, tracker)
+        channel.closeOnException {
+          // Start the "sync" service
+          host.logger.debug { "$shortServiceDescription - sending local service request to ADB daemon, timeout: $tracker" }
+          serviceRunner.sendAdbServiceRequest(channel, workBuffer, shortServiceDescription, tracker)
+          serviceRunner.consumeOkayFailResponse(device, shortServiceDescription, channel, workBuffer, tracker)
+
+          // Now that everything is set up, returns the instance
+          val syncConnection =
+            SyncConnection(
+              device = device,
+              serviceRunner = serviceRunner,
+              workBuffer = workBuffer,
+              deviceChannel = channel,
+              readAheadBufferSize = readAheadBufferSize,
+              writeBackBufferSize = writeBackBufferSize,
+            )
+
+          AdbDeviceSyncServicesImpl(syncConnection)
         }
+      }
     }
-
-    companion object {
-        internal val zeroFileTime = FileTime.from(0, TimeUnit.MILLISECONDS)
-
-        internal val defaultErrorFileStatV2 = FileStatV2(
-            errno = 2 /* 2 == ENOENT == "No such file or directory" */,
-            mode = RemoteFileMode.fromModeBits(0),
-            size = 0,
-            lastModifiedTime = zeroFileTime,
-            lastAccessTime = zeroFileTime,
-            creationTime = zeroFileTime,
-            dev = 0,
-            inode = 0,
-            nlink = 0,
-            uid = 0,
-            gid = 0,
-        )
-
-        /**
-         * Returns a fully initialized instance of [AdbDeviceSyncServices], after successfully
-         * starting a `SYNC` session with the ADB host.
-         */
-        suspend fun open(
-            serviceRunner: AdbServiceRunner,
-            device: DeviceSelector,
-            readAheadBufferSize: Int,
-            writeBackBufferSize: Int,
-            timeout: Long,
-            unit: TimeUnit
-        ): AdbDeviceSyncServices {
-            return withContext(serviceRunner.host.ioDispatcher) {
-                val host = serviceRunner.host
-                val tracker = TimeoutTracker(host.timeProvider, timeout, unit)
-                val workBuffer = serviceRunner.newResizableBuffer()
-                val shortServiceDescription = "sync:"
-                // Switch the channel to the right transport (i.e. device)
-                val channel = serviceRunner.switchToTransport(device, workBuffer, shortServiceDescription, tracker)
-                channel.closeOnException {
-                    // Start the "sync" service
-                    host.logger.debug { "$shortServiceDescription - sending local service request to ADB daemon, timeout: $tracker" }
-                    serviceRunner.sendAdbServiceRequest(channel, workBuffer, shortServiceDescription, tracker)
-                    serviceRunner.consumeOkayFailResponse(device, shortServiceDescription, channel, workBuffer, tracker)
-
-                    // Now that everything is set up, returns the instance
-                    val syncConnection = SyncConnection(
-                        device = device,
-                        serviceRunner = serviceRunner,
-                        workBuffer = workBuffer,
-                        deviceChannel = channel,
-                        readAheadBufferSize = readAheadBufferSize,
-                        writeBackBufferSize = writeBackBufferSize
-                    )
-
-                    AdbDeviceSyncServicesImpl(syncConnection)
-                }
-            }
-        }
-    }
+  }
 }

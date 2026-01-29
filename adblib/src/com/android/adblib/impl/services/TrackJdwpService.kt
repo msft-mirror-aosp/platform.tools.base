@@ -24,50 +24,50 @@ import com.android.adblib.impl.TimeoutTracker
 import com.android.adblib.impl.TimeoutTracker.Companion.INFINITE
 import com.android.adblib.utils.AdbProtocolUtils
 import com.android.adblib.utils.ResizableBuffer
+import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.FlowCollector
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
-import java.util.concurrent.TimeUnit
 
-/**
- * Starts and manages `track-jdwp` service invocations on devices.
- */
+/** Starts and manages `track-jdwp` service invocations on devices. */
 internal class TrackJdwpService(private val serviceRunner: AdbServiceRunner) {
 
-    private val logger = adbLogger(host)
+  private val logger = adbLogger(host)
 
-    private val parser = ProcessIdListParser()
+  private val parser = ProcessIdListParser()
 
-    private val host
-        get() = serviceRunner.host
+  private val host
+    get() = serviceRunner.host
 
-    fun invoke(device: DeviceSelector, timeout: Long, unit: TimeUnit): Flow<ProcessIdList> = flow {
+  fun invoke(device: DeviceSelector, timeout: Long, unit: TimeUnit): Flow<ProcessIdList> =
+    flow {
         val tracker = TimeoutTracker(host.timeProvider, timeout, unit)
         val service = "track-jdwp"
         serviceRunner.runDaemonService(device, service, tracker) { channel, workBuffer ->
-            collectAdbResponses(channel, workBuffer, service, this)
+          collectAdbResponses(channel, workBuffer, service, this)
         }
-    }.flowOn(host.ioDispatcher)
+      }
+      .flowOn(host.ioDispatcher)
 
-    private suspend fun collectAdbResponses(
-        channel: AdbChannel,
-        workBuffer: ResizableBuffer,
-        service: String,
-        flowCollector: FlowCollector<ProcessIdList>
-    ) {
-        while (true) {
-            // Note: We use an infinite timeout here, as the only way to end this request is to close
-            //       the underlying ADB socket channel (or cancel the coroutine). This is by design.
-            logger.debug { "\"${service}\" - waiting for next device tracking message" }
-            val buffer = serviceRunner.readLengthPrefixedData(channel, workBuffer, INFINITE)
+  private suspend fun collectAdbResponses(
+    channel: AdbChannel,
+    workBuffer: ResizableBuffer,
+    service: String,
+    flowCollector: FlowCollector<ProcessIdList>,
+  ) {
+    while (true) {
+      // Note: We use an infinite timeout here, as the only way to end this request is to close
+      //       the underlying ADB socket channel (or cancel the coroutine). This is by design.
+      logger.debug { "\"${service}\" - waiting for next device tracking message" }
+      val buffer = serviceRunner.readLengthPrefixedData(channel, workBuffer, INFINITE)
 
-            // Process list of process IDs and send it to the flow
-            val processIdListString = AdbProtocolUtils.byteBufferToString(buffer)
-            val processIdList = parser.parse(processIdListString)
+      // Process list of process IDs and send it to the flow
+      val processIdListString = AdbProtocolUtils.byteBufferToString(buffer)
+      val processIdList = parser.parse(processIdListString)
 
-            logger.debug { "\"${service}\" - sending list of (${processIdList.size} process ID(s))" }
-            flowCollector.emit(processIdList)
-        }
+      logger.debug { "\"${service}\" - sending list of (${processIdList.size} process ID(s))" }
+      flowCollector.emit(processIdList)
     }
+  }
 }

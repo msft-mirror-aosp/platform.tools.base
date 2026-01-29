@@ -15,80 +15,76 @@
  */
 package com.android.adblib.impl.channels
 
-import com.android.adblib.writeExactly
-import com.android.adblib.testingutils.CloseablesRule
 import com.android.adblib.impl.TimeoutTracker
+import com.android.adblib.testingutils.CloseablesRule
 import com.android.adblib.testingutils.TestingAdbSession
+import com.android.adblib.writeExactly
+import java.nio.ByteBuffer
+import java.nio.file.Files
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
-import java.nio.ByteBuffer
-import java.nio.file.Files
 
 class AdbOutputFileChannelTest {
 
-    @JvmField
-    @Rule
-    val closeables = CloseablesRule()
+  @JvmField @Rule val closeables = CloseablesRule()
 
-    @JvmField
-    @Rule
-    val folder = TemporaryFolder()
+  @JvmField @Rule val folder = TemporaryFolder()
 
-    private fun <T : AutoCloseable> registerCloseable(item: T): T {
-        return closeables.register(item)
+  private fun <T : AutoCloseable> registerCloseable(item: T): T {
+    return closeables.register(item)
+  }
+
+  @Test
+  fun testWriteToCreateNew() {
+    // Prepare
+    val session = registerCloseable(TestingAdbSession())
+    val channelFactory = AdbChannelFactoryImpl(session)
+    val path = folder.newFile("foo-bar.txt").toPath()
+    Files.delete(path) // Delete file, since we are about to create a new one
+
+    // Act
+    val count = runBlocking {
+      channelFactory.createNewFile(path).use {
+        val buffer = ByteBuffer.allocate(10)
+        buffer.putInt(10)
+        buffer.flip()
+        it.writeExactly(buffer, TimeoutTracker.INFINITE)
+        buffer.flip()
+        buffer.remaining()
+      }
     }
 
-    @Test
-    fun testWriteToCreateNew() {
-        // Prepare
-        val session = registerCloseable(TestingAdbSession())
-        val channelFactory = AdbChannelFactoryImpl(session)
-        val path = folder.newFile("foo-bar.txt").toPath()
-        Files.delete(path) // Delete file, since we are about to create a new one
+    // Assert
+    Assert.assertEquals(4, count)
+    Assert.assertTrue(Files.exists(path))
+    Assert.assertEquals(4, Files.size(path))
+  }
 
-        // Act
-        val count = runBlocking {
-            channelFactory.createNewFile(path).use {
-                val buffer = ByteBuffer.allocate(10)
-                buffer.putInt(10)
-                buffer.flip()
-                it.writeExactly(buffer, TimeoutTracker.INFINITE)
-                buffer.flip()
-                buffer.remaining()
-            }
-        }
+  @Test
+  fun testWriteToCreate() {
+    // Prepare
+    val session = registerCloseable(TestingAdbSession())
+    val channelFactory = AdbChannelFactoryImpl(session)
+    val path = folder.newFile("foo-bar.txt").toPath()
 
-        // Assert
-        Assert.assertEquals(4, count)
-        Assert.assertTrue(Files.exists(path))
-        Assert.assertEquals(4, Files.size(path))
+    // Act
+    val count = runBlocking {
+      channelFactory.createFile(path).use {
+        val buffer = ByteBuffer.allocate(10)
+        buffer.putInt(10)
+        buffer.flip()
+        it.writeExactly(buffer, TimeoutTracker.INFINITE)
+        buffer.flip()
+        buffer.remaining()
+      }
     }
 
-    @Test
-    fun testWriteToCreate() {
-        // Prepare
-        val session = registerCloseable(TestingAdbSession())
-        val channelFactory = AdbChannelFactoryImpl(session)
-        val path = folder.newFile("foo-bar.txt").toPath()
-
-        // Act
-        val count = runBlocking {
-            channelFactory.createFile(path).use {
-                val buffer = ByteBuffer.allocate(10)
-                buffer.putInt(10)
-                buffer.flip()
-                it.writeExactly(buffer, TimeoutTracker.INFINITE)
-                buffer.flip()
-                buffer.remaining()
-            }
-        }
-
-        // Assert
-        Assert.assertEquals(4, count)
-        Assert.assertTrue(Files.exists(path))
-        Assert.assertEquals(4, Files.size(path))
-    }
+    // Assert
+    Assert.assertEquals(4, count)
+    Assert.assertTrue(Files.exists(path))
+    Assert.assertEquals(4, Files.size(path))
+  }
 }

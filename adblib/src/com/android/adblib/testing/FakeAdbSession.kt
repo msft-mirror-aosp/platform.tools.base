@@ -27,62 +27,57 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 
-/**
- * A fake implementation of [FakeAdbSession] for tests.
- */
+/** A fake implementation of [FakeAdbSession] for tests. */
 class FakeAdbSession : AdbSession {
 
-    private var isClosed = false
+  private var isClosed = false
 
-    override val parentSession: AdbSession?
-        get() = null
+  override val parentSession: AdbSession?
+    get() = null
 
-    override val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+  override val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
-    override val cache: CoroutineScopeCache = CoroutineScopeCacheImpl(scope, "fake-session")
-        get() {
-            throwIfClosed()
-            return field
-        }
-
-    override fun throwIfClosed() {
-        if (isClosed) {
-            throw ClosedSessionException("ADB session is closed")
-        }
+  override val cache: CoroutineScopeCache = CoroutineScopeCacheImpl(scope, "fake-session")
+    get() {
+      throwIfClosed()
+      return field
     }
 
-    override val hostServices = FakeAdbHostServices(this)
-        get() {
-            throwIfClosed()
-            return field
-        }
+  override fun throwIfClosed() {
+    if (isClosed) {
+      throw ClosedSessionException("ADB session is closed")
+    }
+  }
 
-    override val deviceServices = FakeAdbDeviceServices(this)
-        get() {
-            throwIfClosed()
-            return field
-        }
-
-    override val host: FakeAdbSessionHost = FakeAdbSessionHost()
-
-    override val channelFactory: AdbChannelFactory = AdbChannelFactoryImpl(this)
-        get() {
-            throwIfClosed()
-            return field
-        }
-
-    override fun close() {
-        (cache as CoroutineScopeCacheImpl).close()
-        scope.cancel("adblib session has been cancelled")
-        isClosed = true
+  override val hostServices = FakeAdbHostServices(this)
+    get() {
+      throwIfClosed()
+      return field
     }
 
-    /**
-     * This can be used to ensure that there's no work leftover in [scope], that might potentially
-     * interfere with later tests.
-     */
-    suspend fun closeAndJoin() {
-        close()
-        scope.coroutineContext[Job]?.join()
+  override val deviceServices = FakeAdbDeviceServices(this)
+    get() {
+      throwIfClosed()
+      return field
     }
+
+  override val host: FakeAdbSessionHost = FakeAdbSessionHost()
+
+  override val channelFactory: AdbChannelFactory = AdbChannelFactoryImpl(this)
+    get() {
+      throwIfClosed()
+      return field
+    }
+
+  override fun close() {
+    (cache as CoroutineScopeCacheImpl).close()
+    scope.cancel("adblib session has been cancelled")
+    isClosed = true
+  }
+
+  /** This can be used to ensure that there's no work leftover in [scope], that might potentially interfere with later tests. */
+  suspend fun closeAndJoin() {
+    close()
+    scope.coroutineContext[Job]?.join()
+  }
 }

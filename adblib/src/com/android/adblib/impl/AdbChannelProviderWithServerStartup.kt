@@ -25,41 +25,32 @@ import java.util.concurrent.TimeUnit
 
 internal data class AdbServerChannelConnectOptions(val defaultPort: Int)
 
-/**
- * [AdbServerChannelProvider] that can start the Adb Server if it was not located
- */
+/** [AdbServerChannelProvider] that can start the Adb Server if it was not located */
 internal class AdbChannelProviderWithServerStartup(
-    private val host: AdbSessionHost,
-    private val connectOptions: AdbServerChannelConnectOptions,
-    private val adbServerStartup: AdbServerStartup = AdbServerStartupImpl(host)
+  private val host: AdbSessionHost,
+  private val connectOptions: AdbServerChannelConnectOptions,
+  private val adbServerStartup: AdbServerStartup = AdbServerStartupImpl(host),
 ) : AdbServerChannelProvider {
 
-    override suspend fun createChannel(timeout: Long, unit: TimeUnit): AdbChannel {
-        val tracker = TimeoutTracker(host.timeProvider, timeout, unit)
+  override suspend fun createChannel(timeout: Long, unit: TimeUnit): AdbChannel {
+    val tracker = TimeoutTracker(host.timeProvider, timeout, unit)
 
-        var port = connectOptions.defaultPort
-        try {
-            return delegateCreateChannel(port, tracker)
-        } catch (e: IOException) {
-            host.logger.debug { "Couldn't open ADB connection to ADB server. Will try starting ADB server first." }
-        }
-        tracker.throwIfElapsed()
-        port = adbServerStartup.start(port, tracker.remainingNanos, TimeUnit.NANOSECONDS)
-
-        return delegateCreateChannel(port, tracker)
+    var port = connectOptions.defaultPort
+    try {
+      return delegateCreateChannel(port, tracker)
+    } catch (e: IOException) {
+      host.logger.debug { "Couldn't open ADB connection to ADB server. Will try starting ADB server first." }
     }
+    tracker.throwIfElapsed()
+    port = adbServerStartup.start(port, tracker.remainingNanos, TimeUnit.NANOSECONDS)
 
-    private suspend fun delegateCreateChannel(port: Int, tracker: TimeoutTracker): AdbChannel {
-        val socketAddresses = listOf(
-            InetSocketAddress("127.0.0.1", port),
-            InetSocketAddress("::1", port)
-        )
-        val delegateAdbChannelProvider =
-            AdbChannelProviderConnectAddresses(host) { socketAddresses }
+    return delegateCreateChannel(port, tracker)
+  }
 
-        return delegateAdbChannelProvider.createChannel(
-            tracker.remainingNanos,
-            TimeUnit.NANOSECONDS
-        )
-    }
+  private suspend fun delegateCreateChannel(port: Int, tracker: TimeoutTracker): AdbChannel {
+    val socketAddresses = listOf(InetSocketAddress("127.0.0.1", port), InetSocketAddress("::1", port))
+    val delegateAdbChannelProvider = AdbChannelProviderConnectAddresses(host) { socketAddresses }
+
+    return delegateAdbChannelProvider.createChannel(tracker.remainingNanos, TimeUnit.NANOSECONDS)
+  }
 }

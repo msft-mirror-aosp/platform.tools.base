@@ -38,8 +38,7 @@ class FakeNanoTimeProvider : SystemNanoTimeProvider() {
 
   fun advance(time: Long, unit: TimeUnit) {
     pausedTimeNano =
-      (pausedTimeNano
-        ?: throw IllegalStateException("Time can be manually advanced only in a `paused` state")) +
+      (pausedTimeNano ?: throw IllegalStateException("Time can be manually advanced only in a `paused` state")) +
         TimeUnit.NANOSECONDS.convert(time, unit)
   }
 }

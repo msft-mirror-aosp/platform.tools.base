@@ -19,66 +19,57 @@ import com.android.adblib.AdbInputChannel
 import com.android.adblib.AdbSession
 import com.android.adblib.InputChannelShellOutput
 import com.android.adblib.impl.channels.DEFAULT_CHANNEL_BUFFER_SIZE
+import java.nio.ByteBuffer
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import java.nio.ByteBuffer
 
-internal class InputChannelShellOutputImpl(
-    val session: AdbSession,
-    bufferSize: Int = DEFAULT_CHANNEL_BUFFER_SIZE
-) : InputChannelShellOutput, AutoCloseable {
+internal class InputChannelShellOutputImpl(val session: AdbSession, bufferSize: Int = DEFAULT_CHANNEL_BUFFER_SIZE) :
+  InputChannelShellOutput, AutoCloseable {
 
-    private val exitCodeFlow = MutableStateFlow<Int?>(null)
+  private val exitCodeFlow = MutableStateFlow<Int?>(null)
 
-    private val stdoutChannel = session.channelFactory.createPipedChannel(bufferSize)
+  private val stdoutChannel = session.channelFactory.createPipedChannel(bufferSize)
 
-    private val stdoutOutputPipe
-        get() = stdoutChannel.pipeSource
+  private val stdoutOutputPipe
+    get() = stdoutChannel.pipeSource
 
-    private val stderrChannel = session.channelFactory.createPipedChannel(bufferSize)
+  private val stderrChannel = session.channelFactory.createPipedChannel(bufferSize)
 
-    private val stderrOutputPipe
-        get() = stderrChannel.pipeSource
+  private val stderrOutputPipe
+    get() = stderrChannel.pipeSource
 
-    /**
-     * An [AdbInputChannel] to read the contents of `stdout`. Once the shell command
-     * terminates, [stdout] reaches EOF.
-     */
-    override val stdout: AdbInputChannel
-        get() = stdoutChannel
+  /** An [AdbInputChannel] to read the contents of `stdout`. Once the shell command terminates, [stdout] reaches EOF. */
+  override val stdout: AdbInputChannel
+    get() = stdoutChannel
 
-    /**
-     * An [AdbInputChannel] to read the contents of `stdout`. Once the shell command
-     * terminates, [stdout] reaches EOF.
-     */
-    override val stderr: AdbInputChannel
-        get() = stderrChannel
+  /** An [AdbInputChannel] to read the contents of `stdout`. Once the shell command terminates, [stdout] reaches EOF. */
+  override val stderr: AdbInputChannel
+    get() = stderrChannel
 
-    /**
-     * A [StateFlow] for the exit code of the shell command.
-     * * While the command is still running, the value is `-1`.
-     * * Once the command terminates, the value is set to the actual
-     *   (and final) exit code.
-     */
-    override val exitCode: StateFlow<Int?> = exitCodeFlow.asStateFlow()
+  /**
+   * A [StateFlow] for the exit code of the shell command.
+   * * While the command is still running, the value is `-1`.
+   * * Once the command terminates, the value is set to the actual (and final) exit code.
+   */
+  override val exitCode: StateFlow<Int?> = exitCodeFlow.asStateFlow()
 
-    suspend fun writeStdout(stdout: ByteBuffer) {
-        stdoutOutputPipe.writeExactly(stdout)
-    }
+  suspend fun writeStdout(stdout: ByteBuffer) {
+    stdoutOutputPipe.writeExactly(stdout)
+  }
 
-    suspend fun writeStderr(stderr: ByteBuffer) {
-        stderrOutputPipe.writeExactly(stderr)
-    }
+  suspend fun writeStderr(stderr: ByteBuffer) {
+    stderrOutputPipe.writeExactly(stderr)
+  }
 
-    suspend fun end(exitCode: Int) {
-        stdoutOutputPipe.close()
-        stderrOutputPipe.close()
-        exitCodeFlow.emit(exitCode)
-    }
+  suspend fun end(exitCode: Int) {
+    stdoutOutputPipe.close()
+    stderrOutputPipe.close()
+    exitCodeFlow.emit(exitCode)
+  }
 
-    override fun close() {
-        stdoutOutputPipe.close()
-        stderrOutputPipe.close()
-    }
+  override fun close() {
+    stdoutOutputPipe.close()
+    stderrOutputPipe.close()
+  }
 }

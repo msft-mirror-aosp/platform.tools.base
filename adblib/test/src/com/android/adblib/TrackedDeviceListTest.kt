@@ -21,52 +21,28 @@ import org.junit.Test
 
 class TrackedDeviceListTest {
 
-    @Test
-    fun equals_takesConnectionIdIntoAccount() {
-        val devices: DeviceList = emptyListWithErrors()
-        val list1 = TrackedDeviceList(
-            connectionId = 1,
-            devices = devices,
-            flowStatus = StateFlowStatus.active
-        )
-        val list2 = TrackedDeviceList(
-            connectionId = 2,
-            devices = devices,
-            flowStatus = StateFlowStatus.active
-        )
-        val list3 = TrackedDeviceList(
-            connectionId = 1,
-            devices = devices,
-            flowStatus = StateFlowStatus.active
-        )
+  @Test
+  fun equals_takesConnectionIdIntoAccount() {
+    val devices: DeviceList = emptyListWithErrors()
+    val list1 = TrackedDeviceList(connectionId = 1, devices = devices, flowStatus = StateFlowStatus.active)
+    val list2 = TrackedDeviceList(connectionId = 2, devices = devices, flowStatus = StateFlowStatus.active)
+    val list3 = TrackedDeviceList(connectionId = 1, devices = devices, flowStatus = StateFlowStatus.active)
 
-        assertEquals(list1, list1)
-        assertEquals(list1, list3)
-        assertNotEquals(list1, list2)
-        assertNotEquals(list2, list3)
-    }
+    assertEquals(list1, list1)
+    assertEquals(list1, list3)
+    assertNotEquals(list1, list2)
+    assertNotEquals(list2, list3)
+  }
 
-    @Test
-    fun hashCode_takesConnectionIdIntoAccount() {
-        val devices: DeviceList = emptyListWithErrors()
-        val list1 = TrackedDeviceList(
-            connectionId = 1,
-            devices = devices,
-            flowStatus = StateFlowStatus.active
-        )
-        val list2 = TrackedDeviceList(
-            connectionId = 1,
-            devices = devices,
-            flowStatus = StateFlowStatus.active
-        )
-        val list3 = TrackedDeviceList(
-            connectionId = 2,
-            devices = devices,
-            flowStatus = StateFlowStatus.active
-        )
+  @Test
+  fun hashCode_takesConnectionIdIntoAccount() {
+    val devices: DeviceList = emptyListWithErrors()
+    val list1 = TrackedDeviceList(connectionId = 1, devices = devices, flowStatus = StateFlowStatus.active)
+    val list2 = TrackedDeviceList(connectionId = 1, devices = devices, flowStatus = StateFlowStatus.active)
+    val list3 = TrackedDeviceList(connectionId = 2, devices = devices, flowStatus = StateFlowStatus.active)
 
-        assertEquals(list1.hashCode(), list1.hashCode())
-        assertEquals(list1.hashCode(), list2.hashCode())
-        assertNotEquals(list1.hashCode(), list3.hashCode())
-    }
+    assertEquals(list1.hashCode(), list1.hashCode())
+    assertEquals(list1.hashCode(), list2.hashCode())
+    assertNotEquals(list1.hashCode(), list3.hashCode())
+  }
 }

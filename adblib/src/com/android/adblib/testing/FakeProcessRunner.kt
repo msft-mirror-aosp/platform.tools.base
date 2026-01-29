@@ -17,39 +17,33 @@ package com.android.adblib.testing
 
 import com.android.adblib.ProcessRunner
 import com.android.adblib.ProcessRunner.ProcessResult
-import kotlinx.coroutines.delay
 import java.nio.file.Path
+import kotlinx.coroutines.delay
 
 class FakeProcessRunner() : ProcessRunner {
 
-    var onRunProcessStarted: (suspend () -> Unit)? = null
-    var delayByMs: Long = 0
-    var lastDirectory: String? = null
-    var lastCommand: List<String>? = null
-    val allCommands: MutableList<List<String>> = mutableListOf()
-    var throwOnNextCommand: Throwable? = null
-    var resultToReturn: ProcessResult? = null
+  var onRunProcessStarted: (suspend () -> Unit)? = null
+  var delayByMs: Long = 0
+  var lastDirectory: String? = null
+  var lastCommand: List<String>? = null
+  val allCommands: MutableList<List<String>> = mutableListOf()
+  var throwOnNextCommand: Throwable? = null
+  var resultToReturn: ProcessResult? = null
 
-    override suspend fun runProcess(
-        executable: Path, args: List<String>, envVars: Map<String, String>
-    ): ProcessResult {
-        onRunProcessStarted?.invoke()
-        delay(delayByMs)
-        throwOnNextCommand?.let { throw it }
-        val command = listOf(executable.toString()) + args
-        lastDirectory = executable.parent.toString()
-        lastCommand = command
-        allCommands.add(command)
-        return resultToReturn ?: ProcessResult(
-            stdout = emptyList(),
-            stderr = emptyList(),
-            exitCode = 0
-        )
-    }
+  override suspend fun runProcess(executable: Path, args: List<String>, envVars: Map<String, String>): ProcessResult {
+    onRunProcessStarted?.invoke()
+    delay(delayByMs)
+    throwOnNextCommand?.let { throw it }
+    val command = listOf(executable.toString()) + args
+    lastDirectory = executable.parent.toString()
+    lastCommand = command
+    allCommands.add(command)
+    return resultToReturn ?: ProcessResult(stdout = emptyList(), stderr = emptyList(), exitCode = 0)
+  }
 
-    fun reset() {
-        lastDirectory = null
-        lastCommand = null
-        allCommands.clear()
-    }
+  fun reset() {
+    lastDirectory = null
+    lastCommand = null
+    allCommands.clear()
+  }
 }

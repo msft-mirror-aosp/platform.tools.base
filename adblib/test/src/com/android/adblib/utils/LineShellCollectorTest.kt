@@ -24,104 +24,98 @@ import org.junit.Test
 
 class LineShellCollectorTest {
 
-    @Test
-    fun testNoOutputIsOneLine() {
-        // Prepare
-        val linesCollector = LineShellCollector()
-        val flowCollector = LinesFlowCollector()
+  @Test
+  fun testNoOutputIsOneLine() {
+    // Prepare
+    val linesCollector = LineShellCollector()
+    val flowCollector = LinesFlowCollector()
 
-        // Act
-        collectStrings(linesCollector, flowCollector)
+    // Act
+    collectStrings(linesCollector, flowCollector)
 
-        // Assert
-        Assert.assertEquals(listOf(""), flowCollector.lines)
+    // Assert
+    Assert.assertEquals(listOf(""), flowCollector.lines)
+  }
+
+  @Test
+  fun testEmptyStringIsOneLine() {
+    // Prepare
+    val linesCollector = LineShellCollector()
+    val flowCollector = LinesFlowCollector()
+
+    // Act
+    collectStrings(linesCollector, flowCollector, "")
+
+    // Assert
+    Assert.assertEquals(listOf(""), flowCollector.lines)
+  }
+
+  @Test
+  fun testSingleNewLineIsTwoLine() {
+    // Prepare
+    val linesCollector = LineShellCollector()
+    val flowCollector = LinesFlowCollector()
+
+    // Act
+    collectStrings(linesCollector, flowCollector, "\n")
+
+    // Assert
+    Assert.assertEquals(listOf("", ""), flowCollector.lines)
+  }
+
+  @Test
+  fun testSingleCharacterIsOneLine() {
+    // Prepare
+    val linesCollector = LineShellCollector()
+    val flowCollector = LinesFlowCollector()
+
+    // Act
+    collectStrings(linesCollector, flowCollector, "x")
+
+    // Assert
+    Assert.assertEquals(listOf("x"), flowCollector.lines)
+  }
+
+  @Test
+  fun testTrailingNewLineIsTwoLines() {
+    // Prepare
+    val linesCollector = LineShellCollector()
+    val flowCollector = LinesFlowCollector()
+
+    // Act
+    collectStrings(linesCollector, flowCollector, "x\n")
+
+    // Assert
+    Assert.assertEquals(listOf("x", ""), flowCollector.lines)
+  }
+
+  @Test
+  fun testOverlappingChunksAreMerged() {
+    // Prepare
+    val linesCollector = LineShellCollector(10)
+    val flowCollector = LinesFlowCollector()
+
+    // Act
+    collectStrings(linesCollector, flowCollector, "12345678901234", "56\nab\ncdefg")
+
+    // Assert
+    Assert.assertEquals(listOf("1234567890123456", "ab", "cdefg"), flowCollector.lines)
+  }
+
+  private fun collectStrings(linesCollector: LineShellCollector, flowCollector: FlowCollector<String>, vararg values: String) {
+    runBlocking {
+      linesCollector.start(flowCollector)
+      values.forEach { value -> linesCollector.collect(flowCollector, ByteBufferUtils.stringToByteBuffer(value)) }
+      linesCollector.end(flowCollector)
     }
+  }
 
-    @Test
-    fun testEmptyStringIsOneLine() {
-        // Prepare
-        val linesCollector = LineShellCollector()
-        val flowCollector = LinesFlowCollector()
+  private class LinesFlowCollector : FlowCollector<String> {
 
-        // Act
-        collectStrings(linesCollector, flowCollector, "")
+    val lines = ArrayList<String>()
 
-        // Assert
-        Assert.assertEquals(listOf(""), flowCollector.lines)
+    override suspend fun emit(value: String) {
+      lines.add(value)
     }
-
-    @Test
-    fun testSingleNewLineIsTwoLine() {
-        // Prepare
-        val linesCollector = LineShellCollector()
-        val flowCollector = LinesFlowCollector()
-
-        // Act
-        collectStrings(linesCollector, flowCollector, "\n")
-
-        // Assert
-        Assert.assertEquals(listOf("", ""), flowCollector.lines)
-    }
-
-    @Test
-    fun testSingleCharacterIsOneLine() {
-        // Prepare
-        val linesCollector = LineShellCollector()
-        val flowCollector = LinesFlowCollector()
-
-        // Act
-        collectStrings(linesCollector, flowCollector, "x")
-
-        // Assert
-        Assert.assertEquals(listOf("x"), flowCollector.lines)
-    }
-
-    @Test
-    fun testTrailingNewLineIsTwoLines() {
-        // Prepare
-        val linesCollector = LineShellCollector()
-        val flowCollector = LinesFlowCollector()
-
-        // Act
-        collectStrings(linesCollector, flowCollector, "x\n")
-
-        // Assert
-        Assert.assertEquals(listOf("x", ""), flowCollector.lines)
-    }
-
-    @Test
-    fun testOverlappingChunksAreMerged() {
-        // Prepare
-        val linesCollector = LineShellCollector(10)
-        val flowCollector = LinesFlowCollector()
-
-        // Act
-        collectStrings(linesCollector, flowCollector, "12345678901234", "56\nab\ncdefg")
-
-        // Assert
-        Assert.assertEquals(listOf("1234567890123456", "ab", "cdefg"), flowCollector.lines)
-    }
-
-    private fun collectStrings(
-      linesCollector: LineShellCollector,
-      flowCollector: FlowCollector<String>,
-      vararg values: String
-    ) {
-        runBlocking {
-            linesCollector.start(flowCollector)
-            values.forEach { value ->
-                linesCollector.collect(flowCollector, ByteBufferUtils.stringToByteBuffer(value))
-            }
-            linesCollector.end(flowCollector)
-        }
-    }
-
-    private class LinesFlowCollector : FlowCollector<String> {
-
-        val lines = ArrayList<String>()
-
-        override suspend fun emit(value: String) {
-            lines.add(value)
-        }
-    }
+  }
 }

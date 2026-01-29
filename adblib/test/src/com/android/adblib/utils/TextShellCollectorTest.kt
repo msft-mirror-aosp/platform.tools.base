@@ -25,104 +25,98 @@ import org.junit.Test
 
 class TextShellCollectorTest {
 
-    @Test
-    fun testNoOutputIsEmptyText() {
-        // Prepare
-        val shellCollector = TextShellCollector()
-        val flowCollector = TextFlowCollector()
+  @Test
+  fun testNoOutputIsEmptyText() {
+    // Prepare
+    val shellCollector = TextShellCollector()
+    val flowCollector = TextFlowCollector()
 
-        // Act
-        collectStrings(shellCollector, flowCollector)
+    // Act
+    collectStrings(shellCollector, flowCollector)
 
-        // Assert
-        Assert.assertEquals("", flowCollector.text)
+    // Assert
+    Assert.assertEquals("", flowCollector.text)
+  }
+
+  @Test
+  fun testEmptyStringIsEmptyText() {
+    // Prepare
+    val shellCollector = TextShellCollector()
+    val flowCollector = TextFlowCollector()
+
+    // Act
+    collectStrings(shellCollector, flowCollector, "")
+
+    // Assert
+    Assert.assertEquals("", flowCollector.text)
+  }
+
+  @Test
+  fun testSingleNewLineIsPreserver() {
+    // Prepare
+    val shellCollector = TextShellCollector()
+    val flowCollector = TextFlowCollector()
+
+    // Act
+    collectStrings(shellCollector, flowCollector, "\n")
+
+    // Assert
+    Assert.assertEquals("\n", flowCollector.text)
+  }
+
+  @Test
+  fun testSingleCharacterIsPreserved() {
+    // Prepare
+    val shellCollector = TextShellCollector()
+    val flowCollector = TextFlowCollector()
+
+    // Act
+    collectStrings(shellCollector, flowCollector, "x")
+
+    // Assert
+    Assert.assertEquals("x", flowCollector.text)
+  }
+
+  @Test
+  fun testTrailingNewLineIsPreserved() {
+    // Prepare
+    val shellCollector = TextShellCollector()
+    val flowCollector = TextFlowCollector()
+
+    // Act
+    collectStrings(shellCollector, flowCollector, "x\n")
+
+    // Assert
+    Assert.assertEquals("x\n", flowCollector.text)
+  }
+
+  @Test
+  fun testOverlappingChunksAreMerged() {
+    // Prepare
+    val linesCollector = TextShellCollector(10)
+    val flowCollector = TextFlowCollector()
+
+    // Act
+    collectStrings(linesCollector, flowCollector, "12345678901234", "56\nab\ncdefg")
+
+    // Assert
+    Assert.assertEquals("1234567890123456\nab\ncdefg", flowCollector.text)
+  }
+
+  private fun collectStrings(shellCollector: ShellCollector<String>, flowCollector: FlowCollector<String>, vararg values: String) {
+    runBlocking {
+      shellCollector.start(flowCollector)
+      values.forEach { value -> shellCollector.collect(flowCollector, ByteBufferUtils.stringToByteBuffer(value)) }
+      shellCollector.end(flowCollector)
     }
+  }
 
-    @Test
-    fun testEmptyStringIsEmptyText() {
-        // Prepare
-        val shellCollector = TextShellCollector()
-        val flowCollector = TextFlowCollector()
+  private class TextFlowCollector : FlowCollector<String> {
 
-        // Act
-        collectStrings(shellCollector, flowCollector, "")
+    var text = ""
 
-        // Assert
-        Assert.assertEquals("", flowCollector.text)
+    override suspend fun emit(value: String) {
+      this.text += value
     }
-
-    @Test
-    fun testSingleNewLineIsPreserver() {
-        // Prepare
-        val shellCollector = TextShellCollector()
-        val flowCollector = TextFlowCollector()
-
-        // Act
-        collectStrings(shellCollector, flowCollector, "\n")
-
-        // Assert
-        Assert.assertEquals("\n", flowCollector.text)
-    }
-
-    @Test
-    fun testSingleCharacterIsPreserved() {
-        // Prepare
-        val shellCollector = TextShellCollector()
-        val flowCollector = TextFlowCollector()
-
-        // Act
-        collectStrings(shellCollector, flowCollector, "x")
-
-        // Assert
-        Assert.assertEquals("x", flowCollector.text)
-    }
-
-    @Test
-    fun testTrailingNewLineIsPreserved() {
-        // Prepare
-        val shellCollector = TextShellCollector()
-        val flowCollector = TextFlowCollector()
-
-        // Act
-        collectStrings(shellCollector, flowCollector, "x\n")
-
-        // Assert
-        Assert.assertEquals("x\n", flowCollector.text)
-    }
-
-    @Test
-    fun testOverlappingChunksAreMerged() {
-        // Prepare
-        val linesCollector = TextShellCollector(10)
-        val flowCollector = TextFlowCollector()
-
-        // Act
-        collectStrings(linesCollector, flowCollector, "12345678901234", "56\nab\ncdefg")
-
-        // Assert
-        Assert.assertEquals("1234567890123456\nab\ncdefg", flowCollector.text)
-    }
-
-    private fun collectStrings(
-        shellCollector: ShellCollector<String>,
-        flowCollector: FlowCollector<String>,
-        vararg values: String
-    ) {
-        runBlocking {
-            shellCollector.start(flowCollector)
-            values.forEach { value ->
-                shellCollector.collect(flowCollector, ByteBufferUtils.stringToByteBuffer(value))
-            }
-            shellCollector.end(flowCollector)
-        }
-    }
-
-    private class TextFlowCollector : FlowCollector<String> {
-
-        var text = ""
-
-        override suspend fun emit(value: String) {
-            this.text += value
-        }
-    }
+  }
 }

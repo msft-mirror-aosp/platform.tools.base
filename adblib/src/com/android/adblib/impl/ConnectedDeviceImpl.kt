@@ -25,33 +25,29 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 
-internal class ConnectedDeviceImpl(
-  override val session: AdbSession,
-  deviceInfo: DeviceInfo
-) : ConnectedDevice, AutoCloseable {
+internal class ConnectedDeviceImpl(override val session: AdbSession, deviceInfo: DeviceInfo) : ConnectedDevice, AutoCloseable {
 
-    private val deviceInfoStateFlow = MutableStateFlow(deviceInfo)
+  private val deviceInfoStateFlow = MutableStateFlow(deviceInfo)
 
-    private val cacheImpl =
-        CoroutineScopeCache.create(session.scope, "$session - device-serial='${deviceInfo.serialNumber}'")
+  private val cacheImpl = CoroutineScopeCache.create(session.scope, "$session - device-serial='${deviceInfo.serialNumber}'")
 
-    override val cache: CoroutineScopeCache
-        get() = cacheImpl
+  override val cache: CoroutineScopeCache
+    get() = cacheImpl
 
-    override val deviceInfoFlow = deviceInfoStateFlow.asStateFlow()
+  override val deviceInfoFlow = deviceInfoStateFlow.asStateFlow()
 
-    override fun close() {
-        // Ensure last state we expose is "disconnected"
-        deviceInfoStateFlow.update { it.copy(deviceState = DeviceState.DISCONNECTED) }
-        cacheImpl.close()
-    }
+  override fun close() {
+    // Ensure last state we expose is "disconnected"
+    deviceInfoStateFlow.update { it.copy(deviceState = DeviceState.DISCONNECTED) }
+    cacheImpl.close()
+  }
 
-    override fun toString(): String {
-        return "${ConnectedDevice::class.simpleName}(serial='${deviceInfo.serialNumber}')"
-    }
+  override fun toString(): String {
+    return "${ConnectedDevice::class.simpleName}(serial='${deviceInfo.serialNumber}')"
+  }
 
-    fun updateDeviceInfo(deviceInfo: DeviceInfo) {
-        assert(deviceInfo.serialNumber == deviceInfoStateFlow.value.serialNumber)
-        deviceInfoStateFlow.value = deviceInfo
-    }
+  fun updateDeviceInfo(deviceInfo: DeviceInfo) {
+    assert(deviceInfo.serialNumber == deviceInfoStateFlow.value.serialNumber)
+    deviceInfoStateFlow.value = deviceInfo
+  }
 }

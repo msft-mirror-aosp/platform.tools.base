@@ -17,316 +17,237 @@ import kotlinx.coroutines.flow.StateFlow
 /**
  * Exposes services specific to the ADB Server (or "host") as `suspend` functions
  *
- * The underlying implementation is responsible for creating connections to the ADB server
- * as needed, as well as ensuring resources are released when coroutines complete or
- * are cancelled.
+ * The underlying implementation is responsible for creating connections to the ADB server as needed, as well as ensuring resources are
+ * released when coroutines complete or are cancelled.
  */
 @IsThreadSafe
 interface AdbHostServices {
 
-    /**
-     * The session this [AdbHostServices] instance belongs to.
-     */
-    val session: AdbSession
+  /** The session this [AdbHostServices] instance belongs to. */
+  val session: AdbSession
 
-    /**
-     * Returns the internal version of the ADB server ("host:version" query).
-     *
-     * The internal version is an integer value that is incremented when newer builds of ADB
-     * are incompatible with older ADB clients. This value is somewhat opaque to
-     * public consumers, but this API is provided for completeness.
-     *
-     * Note: See [serverStatus] to obtain more complete information about ADB server.
-     *
-     */
-    suspend fun version(): Int
+  /**
+   * Returns the internal version of the ADB server ("host:version" query).
+   *
+   * The internal version is an integer value that is incremented when newer builds of ADB are incompatible with older ADB clients. This
+   * value is somewhat opaque to public consumers, but this API is provided for completeness.
+   *
+   * Note: See [serverStatus] to obtain more complete information about ADB server.
+   */
+  suspend fun version(): Int
 
-    /**
-     * Returns the list of features supported by the ADB server ("host:host-features" query).
-     *
-     * Note: Not all features supported by the ADB Server may be usable depending on the
-     * list of features supported by a given device (see [AdbHostServices.features]).
-     * Use [AdbHostServices.availableFeatures] to get the list of features supported
-     * by both the ADB server and a given device.
-     *
-     * @see [AdbFeatures]
-     * @see [AdbHostServices.availableFeatures]
-     */
-    suspend fun hostFeatures(): List<String>
+  /**
+   * Returns the list of features supported by the ADB server ("host:host-features" query).
+   *
+   * Note: Not all features supported by the ADB Server may be usable depending on the list of features supported by a given device (see
+   * [AdbHostServices.features]). Use [AdbHostServices.availableFeatures] to get the list of features supported by both the ADB server and a
+   * given device.
+   *
+   * @see [AdbFeatures]
+   * @see [AdbHostServices.availableFeatures]
+   */
+  suspend fun hostFeatures(): List<String>
 
-    /**
-     * Returns the list of devices known to the ADB Server as a [DeviceList] object
-     * ("host:devices" query).
-     *
-     * Use the [format] parameter to specify how much information to collect for each
-     * device ([short][DeviceInfoFormat.SHORT_FORMAT] or [long][DeviceInfoFormat.LONG_FORMAT]
-     * format supported).
-     */
-    suspend fun devices(format: DeviceInfoFormat = DeviceInfoFormat.SHORT_FORMAT): DeviceList
+  /**
+   * Returns the list of devices known to the ADB Server as a [DeviceList] object ("host:devices" query).
+   *
+   * Use the [format] parameter to specify how much information to collect for each device ([short][DeviceInfoFormat.SHORT_FORMAT] or
+   * [long][DeviceInfoFormat.LONG_FORMAT] format supported).
+   */
+  suspend fun devices(format: DeviceInfoFormat = DeviceInfoFormat.SHORT_FORMAT): DeviceList
 
-    /**
-     * Returns a [Flow] that emits a new [DeviceList] everytime a device state change is
-     * detected by the ADB Host ("host:track-devices" query). The flow is active until
-     * an exception is thrown or cancellation is requested by the flow consumer.
-     */
-    fun trackDevices(format: DeviceInfoFormat = DeviceInfoFormat.SHORT_FORMAT): Flow<DeviceList>
+  /**
+   * Returns a [Flow] that emits a new [DeviceList] everytime a device state change is detected by the ADB Host ("host:track-devices"
+   * query). The flow is active until an exception is thrown or cancellation is requested by the flow consumer.
+   */
+  fun trackDevices(format: DeviceInfoFormat = DeviceInfoFormat.SHORT_FORMAT): Flow<DeviceList>
 
-    enum class DeviceInfoFormat {
-        /**
-         * [DeviceInfo.serialNumber] and [DeviceInfo.deviceState] only
-         */
-        SHORT_FORMAT,
+  enum class DeviceInfoFormat {
+    /** [DeviceInfo.serialNumber] and [DeviceInfo.deviceState] only */
+    SHORT_FORMAT,
 
-        /**
-         * [DeviceInfo.serialNumber], [DeviceInfo.deviceState], and additional fields, such as [DeviceInfo.transportId]
-         */
-        LONG_FORMAT,
+    /** [DeviceInfo.serialNumber], [DeviceInfo.deviceState], and additional fields, such as [DeviceInfo.transportId] */
+    LONG_FORMAT,
 
-        /**
-         * Binary protobuf output. See proto/devices.proto for details of the format
-         */
-        BINARY_PROTO_FORMAT,
-    }
+    /** Binary protobuf output. See proto/devices.proto for details of the format */
+    BINARY_PROTO_FORMAT,
+  }
 
-    /**
-     * Kills the running instance of the ADB server ("host:kill" query).
-     */
-    suspend fun kill()
+  /** Kills the running instance of the ADB server ("host:kill" query). */
+  suspend fun kill()
 
-    /**
-     * Checks mDNS is supported on this version of ADB ("host:mdns:check" query).
-     */
-    suspend fun mdnsCheck(): MdnsCheckResult
+  /** Checks mDNS is supported on this version of ADB ("host:mdns:check" query). */
+  suspend fun mdnsCheck(): MdnsCheckResult
 
-    /**
-     * Returns a list of mDNS services known to the ADB server ("host:mdns:services" query).
-     */
-    suspend fun mdnsServices(): MdnsServiceList
+  /** Returns a list of mDNS services known to the ADB server ("host:mdns:services" query). */
+  suspend fun mdnsServices(): MdnsServiceList
 
-    /**
-     *
-     * TODO(b/412571872) remove the adblib warning.
-     * At the time of this writing (May 2025), the underlying ADB Server implementation and protobuf
-     * are not final, so don't rely on this until b/412571872 is fixed.
-     *
-     * Returns a [Flow] that emits a new [MdnsServices] everytime a mdns service change
-     * is detected by the ADB Host ("host:track-mdns-services" query). The flow is active until
-     * an exception is thrown or cancellation is requested by the flow consumer.
-     *
-     * @see [com.android.adblib.AdbFeatures.TRACK_MDNS_SERVICE]
-     */
-    fun trackMdnsServices(): Flow<MdnsServices>
+  /**
+   * Returns a [Flow] that emits a new [MdnsServices] everytime a mdns service change is detected by the ADB Host
+   * ("host:track-mdns-services" query). The flow is active until an exception is thrown or cancellation is requested by the flow consumer.
+   *
+   * @see [com.android.adblib.AdbFeatures.TRACK_MDNS_SERVICE]
+   *
+   * TODO(b/412571872) remove the adblib warning. At the time of this writing (May 2025), the underlying ADB Server implementation and
+   *   protobuf are not final, so don't rely on this until b/412571872 is fixed.
+   */
+  fun trackMdnsServices(): Flow<MdnsServices>
 
-        /**
-     * Pairs this ADB server with a device given its [deviceAddress] and a [pairingCode].
-     */
-    suspend fun pair(deviceAddress: DeviceAddress, pairingCode: String): PairResult
+  /** Pairs this ADB server with a device given its [deviceAddress] and a [pairingCode]. */
+  suspend fun pair(deviceAddress: DeviceAddress, pairingCode: String): PairResult
 
-    /**
-     * Returns the [DeviceState] of the [device] ("<device-prefix>:get-state" query).
-     */
-    suspend fun getState(device: DeviceSelector): DeviceState
+  /** Returns the [DeviceState] of the [device] ("<device-prefix>:get-state" query). */
+  suspend fun getState(device: DeviceSelector): DeviceState
 
-    /**
-     * Returns the serial number of the [device] ("<device-prefix>:get-serialno" query).
-     *
-     * Note: [forceRoundTrip] prevents the implementation from looking at the serial number
-     * value that may already be present in the [DeviceSelector] of [device]. It essentially
-     * ensures a `get-serialno` query is sent to the ADB Server even if the serial number
-     * is known.
-     */
-    suspend fun getSerialNo(device: DeviceSelector, forceRoundTrip: Boolean = false): String
+  /**
+   * Returns the serial number of the [device] ("<device-prefix>:get-serialno" query).
+   *
+   * Note: [forceRoundTrip] prevents the implementation from looking at the serial number value that may already be present in the
+   * [DeviceSelector] of [device]. It essentially ensures a `get-serialno` query is sent to the ADB Server even if the serial number is
+   * known.
+   */
+  suspend fun getSerialNo(device: DeviceSelector, forceRoundTrip: Boolean = false): String
 
-    /**
-     * Returns the `dev-path` of the [device] ("<device-prefix>:get-devpath" query).
-     */
-    suspend fun getDevPath(device: DeviceSelector): String
+  /** Returns the `dev-path` of the [device] ("<device-prefix>:get-devpath" query). */
+  suspend fun getDevPath(device: DeviceSelector): String
 
-    /**
-     * Returns the list of features of the [device] ("<device-prefix>:features" query).
-     * See [AdbFeatures] for a (subset of the) list of possible features.
-     *
-     * Note: Not all features supported by a device may be usable depending on the list
-     * of features supported by ADB server (see [AdbHostServices.hostFeatures]).
-     * Use [AdbHostServices.availableFeatures] to get the list of features supported
-     * by both the device and the ADB server.
-     *
-     * @see [AdbFeatures]
-     * @see [AdbHostServices.availableFeatures]
-     */
-    suspend fun features(device: DeviceSelector): List<String>
+  /**
+   * Returns the list of features of the [device] ("<device-prefix>:features" query). See [AdbFeatures] for a (subset of the) list of
+   * possible features.
+   *
+   * Note: Not all features supported by a device may be usable depending on the list of features supported by ADB server (see
+   * [AdbHostServices.hostFeatures]). Use [AdbHostServices.availableFeatures] to get the list of features supported by both the device and
+   * the ADB server.
+   *
+   * @see [AdbFeatures]
+   * @see [AdbHostServices.availableFeatures]
+   */
+  suspend fun features(device: DeviceSelector): List<String>
 
-    /**
-     * Returns the state of ADB server (see "host:server-status" query). See adb adb_host.proto
-     * and class [ServerStatus] for details.
-     *
-     * Note: This service is only available if [AdbFeatures.SERVER_STATUS] is contained in
-     * the list returned by [hostFeatures]. If not supported an Exception will be thrown.
-     */
-    suspend fun serverStatus(): ServerStatus
+  /**
+   * Returns the state of ADB server (see "host:server-status" query). See adb adb_host.proto and class [ServerStatus] for details.
+   *
+   * Note: This service is only available if [AdbFeatures.SERVER_STATUS] is contained in the list returned by [hostFeatures]. If not
+   * supported an Exception will be thrown.
+   */
+  suspend fun serverStatus(): ServerStatus
 
-    /**
-     * Returns the list of all forward socket connections ("`host:list-forward`" query)
-     * as a [list][ForwardSocketList] of [ForwardSocketInfo].
-     */
-    suspend fun listForward(): ForwardSocketList
+  /**
+   * Returns the list of all forward socket connections ("`host:list-forward`" query) as a [list][ForwardSocketList] of [ForwardSocketInfo].
+   */
+  suspend fun listForward(): ForwardSocketList
 
-    /**
-     * Creates a forward socket connection from [local] to [remote]
-     * ("`<device-prefix>:forward(:norebind)`" query).
-     *
-     * This method tells the ADB server to open a [server socket][SocketSpec] on the local machine,
-     * forwarding all client connections made to that server socket to a
-     * [remote socket][SocketSpec] on the specified [device].
-     *
-     * When invoking this method, the ADB Server does not validate the format of the [remote]
-     * socket specification, nor does it connect to the [device]. A connection to the device
-     * (ADB Daemon) is made only when a client connects to the local server socket. At that point,
-     * if [remote] is invalid, the new client connection is immediately closed.
-     *
-     * This method fails if there is already a forward connection from [local], unless
-     * [rebind] is `true`.
-     *
-     * Returns the ADB Server reply to the request, typically a TCP port number if using
-     * `tcp:0` for [local]
-     */
-    suspend fun forward(
-        device: DeviceSelector,
-        local: SocketSpec,
-        remote: SocketSpec,
-        rebind: Boolean = false
-    ): String?
+  /**
+   * Creates a forward socket connection from [local] to [remote] ("`<device-prefix>:forward(:norebind)`" query).
+   *
+   * This method tells the ADB server to open a [server socket][SocketSpec] on the local machine, forwarding all client connections made to
+   * that server socket to a [remote socket][SocketSpec] on the specified [device].
+   *
+   * When invoking this method, the ADB Server does not validate the format of the [remote] socket specification, nor does it connect to the
+   * [device]. A connection to the device (ADB Daemon) is made only when a client connects to the local server socket. At that point, if
+   * [remote] is invalid, the new client connection is immediately closed.
+   *
+   * This method fails if there is already a forward connection from [local], unless [rebind] is `true`.
+   *
+   * Returns the ADB Server reply to the request, typically a TCP port number if using `tcp:0` for [local]
+   */
+  suspend fun forward(device: DeviceSelector, local: SocketSpec, remote: SocketSpec, rebind: Boolean = false): String?
 
-    /**
-     * Closes a previously created forward socket connection for the given [device]
-     * ("`<device-prefix>:kill-forward`" query).
-     */
-    suspend fun killForward(device: DeviceSelector, local: SocketSpec)
+  /** Closes a previously created forward socket connection for the given [device] ("`<device-prefix>:kill-forward`" query). */
+  suspend fun killForward(device: DeviceSelector, local: SocketSpec)
 
-    /**
-     * Closes all previously created forward socket connections for the given [device].
-     */
-    suspend fun killForwardAll(device: DeviceSelector)
+  /** Closes all previously created forward socket connections for the given [device]. */
+  suspend fun killForwardAll(device: DeviceSelector)
 
-    /**
-     * Connects to the specified device ("host:connect:$deviceAddress").
-     */
-    suspend fun connect(deviceAddress: DeviceAddress)
+  /** Connects to the specified device ("host:connect:$deviceAddress"). */
+  suspend fun connect(deviceAddress: DeviceAddress)
 
-    /**
-     * Disconnects the specified device ("host:disconnect:$deviceAddress").
-     */
-    suspend fun disconnect(deviceAddress: DeviceAddress)
+  /** Disconnects the specified device ("host:disconnect:$deviceAddress"). */
+  suspend fun disconnect(deviceAddress: DeviceAddress)
 
-    /**
-     * Waits for [device] to be in a given [deviceState] using the given [transport] option
-     * ("`<device-prefix>:wait-for-<transport>-<state>`" query).
-     *
-     * From the output of [`adb help`](https://cs.android.com/android/platform/superproject/+/3a52886262ae22477a7d8ffb12adba64daf6aafa:packages/modules/adb/client/commandline.cpp;l=209):
-     *
-     *     wait-for-TRANSPORT-STATE: wait for device to be in a given state
-     *      TRANSPORT: "local" | "usb" | "any"
-     *      STATE: "device" | "recovery" | "rescue" | "sideload" | "bootloader" | "any" | "disconnect"
-     *
-     * **Note**
-     *
-     * The intent of this service is for CLI applications that want to expose a way
-     * to wait for a device to be in a given state before processing to the next command
-     * in a script.
-     *
-     * For other types of applications, it is usually easier to use [AdbHostServices.trackDevices]
-     * and wait on the [StateFlow].
-     */
-    suspend fun waitFor(
-        device: DeviceSelector,
-        deviceState: WaitForState,
-        transport: WaitForTransport = WaitForTransport.ANY
-    )
+  /**
+   * Waits for [device] to be in a given [deviceState] using the given [transport] option ("`<device-prefix>:wait-for-<transport>-<state>`"
+   * query).
+   *
+   * From the output of
+   * [`adb help`](https://cs.android.com/android/platform/superproject/+/3a52886262ae22477a7d8ffb12adba64daf6aafa:packages/modules/adb/client/commandline.cpp;l=209):
+   *
+   *     wait-for-TRANSPORT-STATE: wait for device to be in a given state
+   *      TRANSPORT: "local" | "usb" | "any"
+   *      STATE: "device" | "recovery" | "rescue" | "sideload" | "bootloader" | "any" | "disconnect"
+   *
+   * **Note**
+   *
+   * The intent of this service is for CLI applications that want to expose a way to wait for a device to be in a given state before
+   * processing to the next command in a script.
+   *
+   * For other types of applications, it is usually easier to use [AdbHostServices.trackDevices] and wait on the [StateFlow].
+   */
+  suspend fun waitFor(device: DeviceSelector, deviceState: WaitForState, transport: WaitForTransport = WaitForTransport.ANY)
 }
 
-/**
- * Status of the ADB server
- */
+/** Status of the ADB server */
 data class ServerStatus(
-    /**
-     * The USB backend used by the ADB server.
-     */
-    val usbBackend: UsbBackend = UsbBackend.UNKNOWN,
+  /** The USB backend used by the ADB server. */
+  val usbBackend: UsbBackend = UsbBackend.UNKNOWN,
 
-    /**
-     * Whether the USB backend was forced by the user.
-     */
-    val usbBackendForced: Boolean = false,
+  /** Whether the USB backend was forced by the user. */
+  val usbBackendForced: Boolean = false,
 
-    /**
-     * The mDNS backend used by the ADB server.
-     */
-    val mdnsBackEnd: MdnsBackend = MdnsBackend.UNKNOWN,
+  /** The mDNS backend used by the ADB server. */
+  val mdnsBackEnd: MdnsBackend = MdnsBackend.UNKNOWN,
 
-    /**
-     * Whether the mDNS backend was forced by the user.
-     */
-    val mdnsBackEndForced: Boolean = false,
+  /** Whether the mDNS backend was forced by the user. */
+  val mdnsBackEndForced: Boolean = false,
 
-    /**
-     * The version of the ADB server. Format: "Major"."Minor"."Patch". e.g.: "34.0.1"
-     * This is the first part (before dash) of what is retrieved with `adb --version`
-     */
-    val version: String = UNKNOWN,
+  /**
+   * The version of the ADB server. Format: "Major"."Minor"."Patch". e.g.: "34.0.1" This is the first part (before dash) of what is
+   * retrieved with `adb --version`
+   */
+  val version: String = UNKNOWN,
 
-    /**
-     * The build of the ADB server.
-     * This is the second part (after the dash) of what is retrieved with `adb --version`
-     */
-    val build: String = UNKNOWN,
+  /** The build of the ADB server. This is the second part (after the dash) of what is retrieved with `adb --version` */
+  val build: String = UNKNOWN,
 
-    /**
-     * The path to the log of the ADB server (if enabled).
-     */
-    val absoluteLogPath: String = UNKNOWN,
+  /** The path to the log of the ADB server (if enabled). */
+  val absoluteLogPath: String = UNKNOWN,
 
-    /**
-     * The path to the ADB server executable.
-     */
-    val absoluteExecutablePath: String = UNKNOWN,
+  /** The path to the ADB server executable. */
+  val absoluteExecutablePath: String = UNKNOWN,
 
-    /**
-     * The operating system ADB server is running on.
-     */
-    val os: String = UNKNOWN,
+  /** The operating system ADB server is running on. */
+  val os: String = UNKNOWN,
 
-    /**
-     * The trace level set by ADB_TRACE env variable, e.g. "all".
-     */
-    val traceLevel: String? = null,
+  /** The trace level set by ADB_TRACE env variable, e.g. "all". */
+  val traceLevel: String? = null,
 
-    /**
-     * Whether burst mode is enabled or not. Controlled by ADB_DELAYED_ACK env variable.
-     */
-    val burstMode: Boolean? = null,
+  /** Whether burst mode is enabled or not. Controlled by ADB_DELAYED_ACK env variable. */
+  val burstMode: Boolean? = null,
 
-    /**
-     * Whether mDNS is enabled or not. Controlled by ADB_MDNS env variable.
-     */
-    val mdnsEnabled: Boolean? = null,
+  /** Whether mDNS is enabled or not. Controlled by ADB_MDNS env variable. */
+  val mdnsEnabled: Boolean? = null,
 
-    /**
-     * Path of private adb host key.
-     */
-    val keystorePath: String? = null,
+  /** Path of private adb host key. */
+  val keystorePath: String? = null,
 
-    /**
-     * Path of known hosts file. Contains names of devices that are wirelessly paired.
-     */
-    val knownHostsPath: String? = null,
-
+  /** Path of known hosts file. Contains names of devices that are wirelessly paired. */
+  val knownHostsPath: String? = null,
 ) {
-    enum class UsbBackend{UNKNOWN, LIBUSB, NATIVE}
-    enum class MdnsBackend{UNKNOWN, BONJOUR, OPENSCREEN}
+  enum class UsbBackend {
+    UNKNOWN,
+    LIBUSB,
+    NATIVE,
+  }
 
-    companion object {
-        const val UNKNOWN = "unknown"
-    }
+  enum class MdnsBackend {
+    UNKNOWN,
+    BONJOUR,
+    OPENSCREEN,
+  }
+
+  companion object {
+    const val UNKNOWN = "unknown"
+  }
 }
 
 /**
@@ -342,28 +263,25 @@ data class ServerStatus(
  */
 class WaitForState(private val queryValue: String) {
 
-    /**
-     * Returns the string to use in the underlying ADB protocol command/query
-     */
-    internal fun toQueryString(): String {
-        return queryValue
-    }
+  /** Returns the string to use in the underlying ADB protocol command/query */
+  internal fun toQueryString(): String {
+    return queryValue
+  }
 
-    override fun toString(): String {
-        return "wait-for-state: " + toQueryString()
-    }
+  override fun toString(): String {
+    return "wait-for-state: " + toQueryString()
+  }
 
-    companion object {
+  companion object {
 
-        val ONLINE = WaitForState("device")
-        val RECOVERY = WaitForState("recovery")
-        val RESCUE = WaitForState("rescue")
-        @Suppress("SpellCheckingInspection")
-        val SIDELOAD = WaitForState("sideload")
-        val BOOTLOADER = WaitForState("bootloader")
-        val ANY = WaitForState("any")
-        val DISCONNECT = WaitForState("disconnect")
-    }
+    val ONLINE = WaitForState("device")
+    val RECOVERY = WaitForState("recovery")
+    val RESCUE = WaitForState("rescue")
+    @Suppress("SpellCheckingInspection") val SIDELOAD = WaitForState("sideload")
+    val BOOTLOADER = WaitForState("bootloader")
+    val ANY = WaitForState("any")
+    val DISCONNECT = WaitForState("disconnect")
+  }
 }
 
 /**
@@ -374,22 +292,20 @@ class WaitForState(private val queryValue: String) {
  * @see ANY
  */
 class WaitForTransport(private val queryValue: String) {
-    /**
-     * Returns the string to use in the underlying ADB protocol command/query
-     */
-    internal fun toQueryString(): String {
-        return queryValue
-    }
+  /** Returns the string to use in the underlying ADB protocol command/query */
+  internal fun toQueryString(): String {
+    return queryValue
+  }
 
-    override fun toString(): String {
-        return "wait-for-transport: " + toQueryString()
-    }
+  override fun toString(): String {
+    return "wait-for-transport: " + toQueryString()
+  }
 
-    companion object {
-        val USB = WaitForTransport("usb")
-        val LOCAL = WaitForTransport("local")
-        val ANY = WaitForTransport("any")
-    }
+  companion object {
+    val USB = WaitForTransport("usb")
+    val LOCAL = WaitForTransport("local")
+    val ANY = WaitForTransport("any")
+  }
 }
 
 /**
@@ -398,12 +314,12 @@ class WaitForTransport(private val queryValue: String) {
  * See [AdbFeatures] for a (subset of the) list of possible features.
  */
 suspend fun AdbHostServices.availableFeatures(device: DeviceSelector): Set<String> {
-    return session.deviceCacheProvider.withDeviceCacheIfAvailable(device, availableFeaturesKey) {
-        // We must return only the set of features common to both the host and the device.
-        val deviceFeaturesSet = features(device).toSet()
-        val hostFeaturesSet = hostFeatures().toSet()
-        hostFeaturesSet.intersect(deviceFeaturesSet).toImmutableSet()
-    }
+  return session.deviceCacheProvider.withDeviceCacheIfAvailable(device, availableFeaturesKey) {
+    // We must return only the set of features common to both the host and the device.
+    val deviceFeaturesSet = features(device).toSet()
+    val hostFeaturesSet = hostFeatures().toSet()
+    hostFeaturesSet.intersect(deviceFeaturesSet).toImmutableSet()
+  }
 }
 
 /**
@@ -412,13 +328,10 @@ suspend fun AdbHostServices.availableFeatures(device: DeviceSelector): Set<Strin
  * See [AdbFeatures] for a (subset of the) list of possible features.
  */
 suspend fun AdbHostServices.hasAvailableFeature(device: DeviceSelector, feature: String): Boolean {
-    return availableFeatures(device).contains(feature)
+  return availableFeatures(device).contains(feature)
 }
 
-/**
- * Returns true if the device with a specified serial number is known to the ADB Server.
- */
-suspend fun AdbHostServices.isKnownDevice(serialNumber: String) =
-    devices().any { it.serialNumber == serialNumber }
+/** Returns true if the device with a specified serial number is known to the ADB Server. */
+suspend fun AdbHostServices.isKnownDevice(serialNumber: String) = devices().any { it.serialNumber == serialNumber }
 
 private val availableFeaturesKey = CoroutineScopeCache.Key<Set<String>>("availableFeaturesKey")

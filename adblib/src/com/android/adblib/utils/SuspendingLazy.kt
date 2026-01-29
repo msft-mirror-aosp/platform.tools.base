@@ -18,20 +18,20 @@ package com.android.adblib.utils
 /**
  * Allows computing a value lazily using a suspending [initializer].
  *
- * Note: The implementation is not thread safe, and [initializer] may be executed
- * multiple times if the first time initialization is executed concurrently.
+ * Note: The implementation is not thread safe, and [initializer] may be executed multiple times if the first time initialization is
+ * executed concurrently.
  */
 class SuspendingLazy<T>(private val initializer: suspend () -> T) {
 
-    private var _value: T? = null
+  private var _value: T? = null
 
-    suspend fun value(): T {
-        return _value ?: init()
-    }
+  suspend fun value(): T {
+    return _value ?: init()
+  }
 
-    private suspend fun init(): T {
-        val result = initializer()
-        _value = result
-        return result
-    }
+  private suspend fun init(): T {
+    val result = initializer()
+    _value = result
+    return result
+  }
 }

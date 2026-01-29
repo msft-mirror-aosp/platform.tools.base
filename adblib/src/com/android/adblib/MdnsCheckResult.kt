@@ -16,8 +16,8 @@
 package com.android.adblib
 
 data class MdnsCheckResult(
-    /** The [status][MdnsStatus] of mDNS support on the ADB Server */
-    val status: MdnsStatus,
-    /** The raw output from the "mdns:check" service invocation */
-    val rawText: String
+  /** The [status][MdnsStatus] of mDNS support on the ADB Server */
+  val status: MdnsStatus,
+  /** The raw output from the "mdns:check" service invocation */
+  val rawText: String,
 )

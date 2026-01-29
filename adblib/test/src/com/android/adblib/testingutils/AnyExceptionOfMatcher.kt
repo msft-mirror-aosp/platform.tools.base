@@ -24,46 +24,42 @@ import org.hamcrest.core.AnyOf
 /**
  * Matches at least one of many [Exception] type.
  *
- * This [BaseMatcher] is intended to be a replacement for an "[anyOf] ([isA] (...), [isA] (...))"
- * expression while avoiding potential type system warnings.
+ * This [BaseMatcher] is intended to be a replacement for an "[anyOf] ([isA] (...), [isA] (...))" expression while avoiding potential type
+ * system warnings.
  *
  * For example,
  *
- *    val ee: ExpectedException
- *    ee.expect(anyOf(isA(FooException::class.java), isA(BarException::class.java)))
+ * val ee: ExpectedException ee.expect(anyOf(isA(FooException::class.java), isA(BarException::class.java)))
  *
- *  currently produces the following warning:
- *
- *  > Type argument for a type parameter T can't be inferred because it has incompatible
- *  upper bounds: FooException, BarException (multiple incompatible classes). This will
- *  become an error in Kotlin 1.9
+ * currently produces the following warning:
+ * > > Type argument for a type parameter T can't be inferred because it has incompatible upper bounds: FooException, BarException (multiple
+ * > incompatible classes). This will become an error in Kotlin 1.9
  *
  * This can be replaced with
  *
- *    val ee: ExpectedException
- *    ee.expect(anyExceptionOf(FooException::class.java, BarException::class.java))
+ * val ee: ExpectedException ee.expect(anyExceptionOf(FooException::class.java, BarException::class.java))
  *
  * See [org.hamcrest.core.AnyOf]
  */
 class AnyExceptionOfMatcher(vararg classes: Class<*>) : BaseMatcher<Class<*>>() {
 
-    private val anyOf = AnyOf(mapClasses(classes))
+  private val anyOf = AnyOf(mapClasses(classes))
 
-    override fun describeTo(description: Description?) {
-        anyOf.describeTo(description)
+  override fun describeTo(description: Description?) {
+    anyOf.describeTo(description)
+  }
+
+  override fun matches(item: Any?): Boolean {
+    return anyOf.matches(item)
+  }
+
+  companion object {
+    fun anyExceptionOf(vararg classes: Class<*>): AnyExceptionOfMatcher {
+      return AnyExceptionOfMatcher(*classes)
     }
 
-    override fun matches(item: Any?): Boolean {
-        return anyOf.matches(item)
+    private fun mapClasses(classes: Array<out Class<*>>): Iterable<Matcher<*>> {
+      return classes.map { type -> isA(type) }.asIterable()
     }
-
-    companion object {
-        fun anyExceptionOf(vararg classes: Class<*>): AnyExceptionOfMatcher {
-            return AnyExceptionOfMatcher(*classes)
-        }
-
-        private fun mapClasses(classes: Array<out Class<*>>): Iterable<Matcher<*>> {
-            return classes.map { type -> isA(type) }.asIterable()
-        }
-    }
+  }
 }

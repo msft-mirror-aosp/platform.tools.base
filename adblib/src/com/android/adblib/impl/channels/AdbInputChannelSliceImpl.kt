@@ -21,47 +21,45 @@ import java.nio.ByteBuffer
 import java.nio.channels.ClosedChannelException
 import java.util.concurrent.TimeUnit
 
-internal class AdbInputChannelSliceImpl(
-    private val inputChannel: AdbInputChannel,
-    private val length: Int
-) : AdbInputChannel {
+internal class AdbInputChannelSliceImpl(private val inputChannel: AdbInputChannel, private val length: Int) : AdbInputChannel {
 
-    private var closed = false
+  private var closed = false
 
-    private var count: Int = 0
+  private var count: Int = 0
 
-    override suspend fun readBuffer(buffer: ByteBuffer, timeout: Long, unit: TimeUnit) {
-        if (closed) {
-            throw ClosedChannelException()
-        }
-
-        if (count >= length) {
-            return
-        }
-        val remainingBytes = length - count
-
-        // Use a slice if needed so that we don't read too much from underlying channel
-        val slice = if (buffer.remaining() > remainingBytes) {
-            buffer.slice().also {
-                it.limit(it.position() + remainingBytes)
-                assert(it.remaining() == remainingBytes)
-            }
-        } else {
-            buffer
-        }
-
-        // Read from underlying channel and update position
-        val readCount = inputChannel.read(slice, timeout, unit)
-        if (readCount >= 0) {
-            count += readCount
-            if (slice !== buffer) {
-                buffer.position(buffer.position() + readCount)
-            }
-            assert(count <= length)
-        }
+  override suspend fun readBuffer(buffer: ByteBuffer, timeout: Long, unit: TimeUnit) {
+    if (closed) {
+      throw ClosedChannelException()
     }
 
-    override fun close() {
-        closed = true
+    if (count >= length) {
+      return
     }
+    val remainingBytes = length - count
+
+    // Use a slice if needed so that we don't read too much from underlying channel
+    val slice =
+      if (buffer.remaining() > remainingBytes) {
+        buffer.slice().also {
+          it.limit(it.position() + remainingBytes)
+          assert(it.remaining() == remainingBytes)
+        }
+      } else {
+        buffer
+      }
+
+    // Read from underlying channel and update position
+    val readCount = inputChannel.read(slice, timeout, unit)
+    if (readCount >= 0) {
+      count += readCount
+      if (slice !== buffer) {
+        buffer.position(buffer.position() + readCount)
+      }
+      assert(count <= length)
+    }
+  }
+
+  override fun close() {
+    closed = true
+  }
 }

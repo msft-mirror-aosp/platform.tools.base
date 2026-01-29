@@ -35,75 +35,63 @@ private const val TAB = "\\t"
  *
  * Regular expression
  *
- *  `<everything>TAB<everything>TAB<everything>`
+ * `<everything>TAB<everything>TAB<everything>`
  */
-private const val SERVICE_LINE_PATTERN =
-    "(${ALL_BUT_TAB})${TAB}(${ALL_BUT_TAB})${TAB}(${ALL_BUT_TAB})"
+private const val SERVICE_LINE_PATTERN = "(${ALL_BUT_TAB})${TAB}(${ALL_BUT_TAB})${TAB}(${ALL_BUT_TAB})"
 
 internal class MdnsServiceListParser {
 
-    private val lineRegex = Regex(SERVICE_LINE_PATTERN)
+  private val lineRegex = Regex(SERVICE_LINE_PATTERN)
 
-    fun parse(text: CharSequence): MdnsServiceList {
-        val builder = ListWithErrors.Builder<MdnsServiceInfo>()
+  fun parse(text: CharSequence): MdnsServiceList {
+    val builder = ListWithErrors.Builder<MdnsServiceInfo>()
 
-        // ADB Host code, Bonjour implementation
-        // https://cs.android.com/android/platform/superproject/+/fbcbf2500b2887952f862fa882741f80464bdbca:packages/modules/adb/client/mdnsresponder_client.cpp;l=576
+    // ADB Host code, Bonjour implementation
+    // https://cs.android.com/android/platform/superproject/+/fbcbf2500b2887952f862fa882741f80464bdbca:packages/modules/adb/client/mdnsresponder_client.cpp;l=576
 
-        // ADB Host code, OpenScreen implementation
-        // https://cs.android.com/android/platform/superproject/+/fbcbf2500b2887952f862fa882741f80464bdbca:packages/modules/adb/client/transport_mdns.cpp;l=290;drc=fbcbf2500b2887952f862fa882741f80464bdbca
-        val dedupedMdnsServiceInfos = mutableSetOf<MdnsServiceInfo>()
-        text.split(ADB_NEW_LINE)
-            .forEachIndexed { lineIndex, line ->
-                if (line.trim().isBlank()) {
-                    return@forEachIndexed
-                }
+    // ADB Host code, OpenScreen implementation
+    // https://cs.android.com/android/platform/superproject/+/fbcbf2500b2887952f862fa882741f80464bdbca:packages/modules/adb/client/transport_mdns.cpp;l=290;drc=fbcbf2500b2887952f862fa882741f80464bdbca
+    val dedupedMdnsServiceInfos = mutableSetOf<MdnsServiceInfo>()
+    text.split(ADB_NEW_LINE).forEachIndexed { lineIndex, line ->
+      if (line.trim().isBlank()) {
+        return@forEachIndexed
+      }
 
-                val matchResult = lineRegex.find(line)
+      val matchResult = lineRegex.find(line)
 
-                if (matchResult == null) {
-                    val error =
-                        ErrorLine("mDNS service entry format not recognized", lineIndex, line)
-                    builder.addError(error)
-                    return@forEachIndexed
-                }
+      if (matchResult == null) {
+        val error = ErrorLine("mDNS service entry format not recognized", lineIndex, line)
+        builder.addError(error)
+        return@forEachIndexed
+      }
 
-                try {
-                    val instanceName = matchResult.groupValues[1]
-                    val serviceName = matchResult.groupValues[2]
-                    val deviceAddress = DeviceAddress(matchResult.groupValues[3])
+      try {
+        val instanceName = matchResult.groupValues[1]
+        val serviceName = matchResult.groupValues[2]
+        val deviceAddress = DeviceAddress(matchResult.groupValues[3])
 
-                    val mdnsServiceInfo = MdnsServiceInfo(instanceName, serviceName, deviceAddress)
+        val mdnsServiceInfo = MdnsServiceInfo(instanceName, serviceName, deviceAddress)
 
-                    // Ignore erroneous IP address "0.0.0.0" (see b/390429989)
-                    if (mdnsServiceInfo.deviceAddress.address.startsWith("0.0.0.0:")) {
-                        val error = ErrorLine(
-                            "Invalid IP address `0.0.0.0` detected", lineIndex, line
-                        )
-                        builder.addError(error)
-                        return@forEachIndexed
-                    }
+        // Ignore erroneous IP address "0.0.0.0" (see b/390429989)
+        if (mdnsServiceInfo.deviceAddress.address.startsWith("0.0.0.0:")) {
+          val error = ErrorLine("Invalid IP address `0.0.0.0` detected", lineIndex, line)
+          builder.addError(error)
+          return@forEachIndexed
+        }
 
-                    if (!dedupedMdnsServiceInfos.add(mdnsServiceInfo)) {
-                        val error = ErrorLine(
-                            "Duplicate mDNS service entry detected", lineIndex, line
-                        )
-                        builder.addError(error)
-                        return@forEachIndexed
-                    }
+        if (!dedupedMdnsServiceInfos.add(mdnsServiceInfo)) {
+          val error = ErrorLine("Duplicate mDNS service entry detected", lineIndex, line)
+          builder.addError(error)
+          return@forEachIndexed
+        }
 
-                    builder.addEntry(mdnsServiceInfo)
-                } catch (_: Exception) {
-                    val error =
-                        ErrorLine(
-                            "mDNS service entry ignored due do invalid characters",
-                            lineIndex,
-                            line
-                        )
-                    builder.addError(error)
-                }
-            }
-
-        return builder.build()
+        builder.addEntry(mdnsServiceInfo)
+      } catch (_: Exception) {
+        val error = ErrorLine("mDNS service entry ignored due do invalid characters", lineIndex, line)
+        builder.addError(error)
+      }
     }
+
+    return builder.build()
+  }
 }

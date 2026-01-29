@@ -16,37 +16,31 @@
 package com.android.adblib
 
 import java.net.InetSocketAddress
-import java.net.SocketAddress
 import java.nio.channels.AsynchronousServerSocketChannel
 
-/**
- * Coroutine-friendly wrapper around an [AsynchronousServerSocketChannel] with the suspending
- * [accept] method.
- */
+/** Coroutine-friendly wrapper around an [AsynchronousServerSocketChannel] with the suspending [accept] method. */
 interface AdbServerSocket : AutoCloseable {
 
-    /**
-     * Binds the channel's socket to a [local address][InetSocketAddress] and configures
-     * the socket to listen for connections with the given [backLog] value.
-     * Returns the assigned local address as an [InetSocketAddress].
-     *
-     * @see [AsynchronousServerSocketChannel.bind]
-     */
-    suspend fun bind(local: InetSocketAddress? = null, backLog: Int = 0): InetSocketAddress
+  /**
+   * Binds the channel's socket to a [local address][InetSocketAddress] and configures the socket to listen for connections with the given
+   * [backLog] value. Returns the assigned local address as an [InetSocketAddress].
+   *
+   * @see [AsynchronousServerSocketChannel.bind]
+   */
+  suspend fun bind(local: InetSocketAddress? = null, backLog: Int = 0): InetSocketAddress
 
-    /**
-     * Returns the socket address that this channel's socket is bound to, or `null` if
-     * the socket is not [bound][bind].
-     *
-     * @see [bind]
-     * @see [AsynchronousServerSocketChannel.getLocalAddress]
-     */
-    suspend fun localAddress(): InetSocketAddress?
+  /**
+   * Returns the socket address that this channel's socket is bound to, or `null` if the socket is not [bound][bind].
+   *
+   * @see [bind]
+   * @see [AsynchronousServerSocketChannel.getLocalAddress]
+   */
+  suspend fun localAddress(): InetSocketAddress?
 
-    /**
-     * Waits for a connection and returns the [AdbChannel] of the connection.
-     *
-     * @see [AsynchronousServerSocketChannel.accept]
-     */
-    suspend fun accept(): AdbChannel
+  /**
+   * Waits for a connection and returns the [AdbChannel] of the connection.
+   *
+   * @see [AsynchronousServerSocketChannel.accept]
+   */
+  suspend fun accept(): AdbChannel
 }

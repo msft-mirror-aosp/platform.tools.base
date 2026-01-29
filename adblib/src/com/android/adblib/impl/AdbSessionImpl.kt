@@ -26,105 +26,94 @@ import com.android.adblib.CoroutineScopeCache
 import com.android.adblib.adbLogger
 import com.android.adblib.impl.channels.AdbChannelFactoryImpl
 import com.android.adblib.utils.createChildScope
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicInteger
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
-import java.util.concurrent.TimeUnit
-import java.util.concurrent.atomic.AtomicInteger
 
 internal class AdbSessionImpl(
-    override val parentSession: AdbSession?,
-    override val host: AdbSessionHost,
-    val channelProvider: AdbServerChannelProvider,
-    private val connectionTimeoutMillis: Long
+  override val parentSession: AdbSession?,
+  override val host: AdbSessionHost,
+  val channelProvider: AdbServerChannelProvider,
+  private val connectionTimeoutMillis: Long,
 ) : AdbSession {
 
-    private val logger = adbLogger(host)
+  private val logger = adbLogger(host)
 
-    private val id = sessionId.incrementAndGet()
+  private val id = sessionId.incrementAndGet()
 
-    private var closed = false
+  private var closed = false
 
-    private val description = when (parentSession) {
-        null -> "${AdbSession::class.simpleName}(id=$id, 'ROOT')"
-        else -> "${AdbSession::class.simpleName}(id=$id, parent=$parentSession)"
+  private val description =
+    when (parentSession) {
+      null -> "${AdbSession::class.simpleName}(id=$id, 'ROOT')"
+      else -> "${AdbSession::class.simpleName}(id=$id, parent=$parentSession)"
     }
 
-    /**
-     * If there is a parent session, create a child scope of that session. If not, create
-     * a standalone scope.
-     */
-    override val scope = parentSession?.scope?.createChildScope(isSupervisor = true, host.parentContext)
-        ?: CoroutineScope(host.parentContext + SupervisorJob() + host.ioDispatcher)
+  /** If there is a parent session, create a child scope of that session. If not, create a standalone scope. */
+  override val scope =
+    parentSession?.scope?.createChildScope(isSupervisor = true, host.parentContext)
+      ?: CoroutineScope(host.parentContext + SupervisorJob() + host.ioDispatcher)
 
-    override val channelFactory: AdbChannelFactory = AdbChannelFactoryImpl(this)
-        get() {
-            throwIfClosed()
-            return field
-        }
-
-    override val hostServices: AdbHostServices = createHostServices()
-        get() {
-            throwIfClosed()
-            return field
-        }
-
-    override val deviceServices: AdbDeviceServices = createDeviceServices()
-        get() {
-            throwIfClosed()
-            return field
-        }
-
-    private val _cache = CoroutineScopeCache.create(scope, description)
-    override val cache: CoroutineScopeCache
-        get() {
-            throwIfClosed()
-            return _cache
-        }
-
-    override fun throwIfClosed() {
-        if (closed) {
-            throw ClosedSessionException("Session has been closed")
-        }
+  override val channelFactory: AdbChannelFactory = AdbChannelFactoryImpl(this)
+    get() {
+      throwIfClosed()
+      return field
     }
 
-    override fun close() {
-        if (!closed) {
-            closed = true
-
-            //TODO: Figure out if it would be worthwhile and efficient enough to implement a
-            //      way to track and release all resources acquired from this session. For example,
-            //      we may want to close all connections to the ADB server that were opened
-            //      from this session.
-            logger.debug { "Closing session and cancelling session scope" }
-            _cache.close()
-            scope.cancel("adblib session has been cancelled")
-        }
+  override val hostServices: AdbHostServices = createHostServices()
+    get() {
+      throwIfClosed()
+      return field
     }
 
-    override fun toString(): String {
-        return description
+  override val deviceServices: AdbDeviceServices = createDeviceServices()
+    get() {
+      throwIfClosed()
+      return field
     }
 
-    private fun createHostServices(): AdbHostServices {
-        return AdbHostServicesImpl(
-            this,
-            channelProvider,
-            connectionTimeoutMillis,
-            TimeUnit.MILLISECONDS
-        )
+  private val _cache = CoroutineScopeCache.create(scope, description)
+  override val cache: CoroutineScopeCache
+    get() {
+      throwIfClosed()
+      return _cache
     }
 
-    private fun createDeviceServices(): AdbDeviceServices {
-        return AdbDeviceServicesImpl(
-            this,
-            channelProvider,
-            connectionTimeoutMillis,
-            TimeUnit.MILLISECONDS
-        )
+  override fun throwIfClosed() {
+    if (closed) {
+      throw ClosedSessionException("Session has been closed")
     }
+  }
 
-    companion object {
-        private val sessionId = AtomicInteger(0)
+  override fun close() {
+    if (!closed) {
+      closed = true
+
+      // TODO: Figure out if it would be worthwhile and efficient enough to implement a
+      //      way to track and release all resources acquired from this session. For example,
+      //      we may want to close all connections to the ADB server that were opened
+      //      from this session.
+      logger.debug { "Closing session and cancelling session scope" }
+      _cache.close()
+      scope.cancel("adblib session has been cancelled")
     }
+  }
+
+  override fun toString(): String {
+    return description
+  }
+
+  private fun createHostServices(): AdbHostServices {
+    return AdbHostServicesImpl(this, channelProvider, connectionTimeoutMillis, TimeUnit.MILLISECONDS)
+  }
+
+  private fun createDeviceServices(): AdbDeviceServices {
+    return AdbDeviceServicesImpl(this, channelProvider, connectionTimeoutMillis, TimeUnit.MILLISECONDS)
+  }
+
+  companion object {
+    private val sessionId = AtomicInteger(0)
+  }
 }

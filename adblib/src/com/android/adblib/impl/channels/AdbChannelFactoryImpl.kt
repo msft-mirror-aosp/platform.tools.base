@@ -19,13 +19,12 @@ import com.android.adblib.AdbBufferedOutputChannel
 import com.android.adblib.AdbChannel
 import com.android.adblib.AdbChannelFactory
 import com.android.adblib.AdbInputChannel
-import com.android.adblib.AdbSessionHost
 import com.android.adblib.AdbOutputChannel
 import com.android.adblib.AdbPipedInputChannel
 import com.android.adblib.AdbServerSocket
 import com.android.adblib.AdbSession
+import com.android.adblib.AdbSessionHost
 import com.android.adblib.utils.closeOnException
-import kotlinx.coroutines.withContext
 import java.io.InputStream
 import java.io.OutputStream
 import java.net.InetSocketAddress
@@ -37,124 +36,89 @@ import java.nio.file.OpenOption
 import java.nio.file.Path
 import java.nio.file.StandardOpenOption
 import java.util.concurrent.TimeUnit
+import kotlinx.coroutines.withContext
 
 internal class AdbChannelFactoryImpl(private val session: AdbSession) : AdbChannelFactory {
-    private val host: AdbSessionHost
-        get() = session.host
+  private val host: AdbSessionHost
+    get() = session.host
 
-    override suspend fun openFile(path: Path): AdbInputChannel {
-        return openInput(path, StandardOpenOption.READ)
-    }
+  override suspend fun openFile(path: Path): AdbInputChannel {
+    return openInput(path, StandardOpenOption.READ)
+  }
 
-    override suspend fun createFile(path: Path): AdbOutputChannel {
-        return openOutput(
-            path,
-            StandardOpenOption.CREATE,
-            StandardOpenOption.TRUNCATE_EXISTING,
-            StandardOpenOption.WRITE
-        )
-    }
+  override suspend fun createFile(path: Path): AdbOutputChannel {
+    return openOutput(path, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.WRITE)
+  }
 
-    override suspend fun createNewFile(path: Path): AdbOutputChannel {
-        return openOutput(path, StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE)
-    }
+  override suspend fun createNewFile(path: Path): AdbOutputChannel {
+    return openOutput(path, StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE)
+  }
 
-    override suspend fun connectSocket(
-        remote: InetSocketAddress,
-        timeout: Long,
-        unit: TimeUnit
-    ): AdbChannel {
-        return withContext(host.ioDispatcher) {
-            @Suppress("BlockingMethodInNonBlockingContext")
-            AsynchronousSocketChannel.open(host.asynchronousChannelGroup)
-                .closeOnException { socketChannel ->
-                    socketChannel.setOption(StandardSocketOptions.TCP_NODELAY, true)
-                    AdbSocketChannelImpl(host, socketChannel).closeOnException { socket ->
-                        socket.connect(remote, timeout, unit)
-                        socket
-                    }
-                }
+  override suspend fun connectSocket(remote: InetSocketAddress, timeout: Long, unit: TimeUnit): AdbChannel {
+    return withContext(host.ioDispatcher) {
+      @Suppress("BlockingMethodInNonBlockingContext")
+      AsynchronousSocketChannel.open(host.asynchronousChannelGroup).closeOnException { socketChannel ->
+        socketChannel.setOption(StandardSocketOptions.TCP_NODELAY, true)
+        AdbSocketChannelImpl(host, socketChannel).closeOnException { socket ->
+          socket.connect(remote, timeout, unit)
+          socket
         }
+      }
     }
+  }
 
-    override suspend fun createServerSocket(): AdbServerSocket {
-        return withContext(host.ioDispatcher) {
-            @Suppress("BlockingMethodInNonBlockingContext")
-            AsynchronousServerSocketChannel.open(host.asynchronousChannelGroup)
-                .closeOnException { serverSocketChannel ->
-                    AdbServerSocketImpl(host, serverSocketChannel)
-                }
-        }
+  override suspend fun createServerSocket(): AdbServerSocket {
+    return withContext(host.ioDispatcher) {
+      @Suppress("BlockingMethodInNonBlockingContext")
+      AsynchronousServerSocketChannel.open(host.asynchronousChannelGroup).closeOnException { serverSocketChannel ->
+        AdbServerSocketImpl(host, serverSocketChannel)
+      }
     }
+  }
 
-    override fun createPipedChannel(bufferSize: Int): AdbPipedInputChannel {
-        return AdbPipedInputChannelImpl(session, bufferSize)
-    }
+  override fun createPipedChannel(bufferSize: Int): AdbPipedInputChannel {
+    return AdbPipedInputChannelImpl(session, bufferSize)
+  }
 
-    override fun createBufferedInputChannel(
-        input: AdbInputChannel,
-        bufferSize: Int,
-        closeInputChannel: Boolean
-    ): AdbInputChannel {
-        return AdbBufferedInputChannelImpl(session, input, bufferSize, closeInputChannel)
-    }
+  override fun createBufferedInputChannel(input: AdbInputChannel, bufferSize: Int, closeInputChannel: Boolean): AdbInputChannel {
+    return AdbBufferedInputChannelImpl(session, input, bufferSize, closeInputChannel)
+  }
 
-    override fun createBufferedOutputChannel(
-        output: AdbOutputChannel,
-        bufferSize: Int,
-        closeOutputChannel: Boolean
-    ): AdbBufferedOutputChannel {
-        return AdbBufferedOutputChannelImpl(session, output, bufferSize, closeOutputChannel)
-    }
+  override fun createBufferedOutputChannel(
+    output: AdbOutputChannel,
+    bufferSize: Int,
+    closeOutputChannel: Boolean,
+  ): AdbBufferedOutputChannel {
+    return AdbBufferedOutputChannelImpl(session, output, bufferSize, closeOutputChannel)
+  }
 
-    override fun createReadAheadChannel(
-        input: AdbInputChannel,
-        bufferSize: Int
-    ): AdbInputChannel {
-        return AdbReadAheadInputChannel(session, input, bufferSize)
-    }
+  override fun createReadAheadChannel(input: AdbInputChannel, bufferSize: Int): AdbInputChannel {
+    return AdbReadAheadInputChannel(session, input, bufferSize)
+  }
 
-    override fun createWriteBackChannel(
-        output: AdbOutputChannel,
-        bufferSize: Int,
-        closeOutputChannel: Boolean
-    ): AdbBufferedOutputChannel {
-        return AdbWriteBackOutputChannel(session, output, bufferSize, closeOutputChannel)
-    }
+  override fun createWriteBackChannel(output: AdbOutputChannel, bufferSize: Int, closeOutputChannel: Boolean): AdbBufferedOutputChannel {
+    return AdbWriteBackOutputChannel(session, output, bufferSize, closeOutputChannel)
+  }
 
-    override fun wrapInputStream(
-        inputStream: InputStream
-    ): AdbInputChannel {
-        return AdbInputStreamChannel(session.host, inputStream)
-    }
+  override fun wrapInputStream(inputStream: InputStream): AdbInputChannel {
+    return AdbInputStreamChannel(session.host, inputStream)
+  }
 
-    override fun wrapOutputStream(outputStream: OutputStream): AdbOutputChannel {
-        return AdbOutputStreamChannel(session, outputStream)
-    }
+  override fun wrapOutputStream(outputStream: OutputStream): AdbOutputChannel {
+    return AdbOutputStreamChannel(session, outputStream)
+  }
 
-    private suspend fun openOutput(
-        path: Path,
-        vararg options: OpenOption
-    ): AdbOutputFileChannel {
-        return withContext(host.ioDispatcher) {
-            @Suppress("BlockingMethodInNonBlockingContext")
-            val fileChannel = AsynchronousFileChannel.open(path, *options)
-            fileChannel.closeOnException {
-                AdbOutputFileChannel(host, path, fileChannel)
-            }
-        }
+  private suspend fun openOutput(path: Path, vararg options: OpenOption): AdbOutputFileChannel {
+    return withContext(host.ioDispatcher) {
+      @Suppress("BlockingMethodInNonBlockingContext") val fileChannel = AsynchronousFileChannel.open(path, *options)
+      fileChannel.closeOnException { AdbOutputFileChannel(host, path, fileChannel) }
     }
+  }
 
-    private suspend fun openInput(
-        path: Path,
-        vararg options: OpenOption
-    ): AdbInputFileChannel {
-        return withContext(host.ioDispatcher) {
-            @Suppress("BlockingMethodInNonBlockingContext")
-            val fileChannel = AsynchronousFileChannel.open(path, *options)
-            fileChannel.closeOnException {
-                AdbInputFileChannel(host, path, fileChannel)
-            }
-        }
+  private suspend fun openInput(path: Path, vararg options: OpenOption): AdbInputFileChannel {
+    return withContext(host.ioDispatcher) {
+      @Suppress("BlockingMethodInNonBlockingContext") val fileChannel = AsynchronousFileChannel.open(path, *options)
+      fileChannel.closeOnException { AdbInputFileChannel(host, path, fileChannel) }
     }
+  }
 }
