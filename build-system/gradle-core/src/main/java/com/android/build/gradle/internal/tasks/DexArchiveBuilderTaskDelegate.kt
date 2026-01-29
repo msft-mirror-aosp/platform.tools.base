@@ -246,19 +246,17 @@ class DexArchiveBuilderTaskDelegate(
                 .filter { it.exists() }
                 .partition { it.isDirectory }
 
-        if (directoryInputs.isNotEmpty()) {
-            directoryInputs.forEach { loggerWrapper.verbose("Processing input %s", it.toString()) }
-            convertToDexArchive(
-                inputs = DirectoryBucketGroup(directoryInputs, numberOfBuckets),
-                outputDir = outputDir,
-                isIncremental = isIncremental,
-                bootClasspath = bootClasspathKey,
-                classpath = classpathKey,
-                changedFiles = changedFiles,
-                desugarGraphDir = desugarGraphDir,
-                globalSyntheticsDir = globalSyntheticsDir
-            )
-        }
+        directoryInputs.forEach { loggerWrapper.verbose("Processing input %s", it.toString()) }
+        convertToDexArchive(
+            inputs = DirectoryBucketGroup(directoryInputs, numberOfBuckets),
+            outputDir = outputDir,
+            isIncremental = isIncremental,
+            bootClasspath = bootClasspathKey,
+            classpath = classpathKey,
+            changedFiles = changedFiles,
+            desugarGraphDir = desugarGraphDir,
+            globalSyntheticsDir = globalSyntheticsDir
+        )
 
         for (input in jarInputs) {
             loggerWrapper.verbose("Processing input %s", input.toString())
