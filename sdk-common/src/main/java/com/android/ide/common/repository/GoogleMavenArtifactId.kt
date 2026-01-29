@@ -17,10 +17,8 @@ package com.android.ide.common.repository
 
 import com.android.support.AndroidxNameUtils
 
-/**
- * Enumeration of known artifacts used in Android Studio
- */
-enum class GoogleMavenArtifactId(val mavenGroupId: String, val mavenArtifactId: String): WellKnownMavenArtifactId {
+/** Enumeration of known artifacts used in Android Studio */
+enum class GoogleMavenArtifactId(val mavenGroupId: String, val mavenArtifactId: String) : WellKnownMavenArtifactId {
   // Support libraries (mostly in support/androidx pairs)
   SUPPORT_ANIMATED_VECTOR_DRAWABLE("com.android.support", "animated-vector-drawable"),
   ANDROIDX_VECTORDRAWABLE_ANIMATED("androidx.vectordrawable", "vectordrawable-animated"),
@@ -271,10 +269,7 @@ enum class GoogleMavenArtifactId(val mavenGroupId: String, val mavenArtifactId: 
   ANDROIDX_VIEWPAGER2("androidx.viewpager2", "viewpager2"),
 
   // Navigation
-  ANDROIDX_NAVIGATION_DYNAMIC_FEATURES_FRAGMENT(
-      "androidx.navigation",
-      "navigation-dynamic-features-fragment"
-  ),
+  ANDROIDX_NAVIGATION_DYNAMIC_FEATURES_FRAGMENT("androidx.navigation", "navigation-dynamic-features-fragment"),
 
   // Google repo
   PLAY_SERVICES("com.google.android.gms", "play-services"),
@@ -301,8 +296,7 @@ enum class GoogleMavenArtifactId(val mavenGroupId: String, val mavenArtifactId: 
   // Core-Ktx
   ANDROIDX_CORE_KTX("androidx.core", "core-ktx"),
   // Room-Ktx
-  ANDROIDX_ROOM_KTX("androidx.room", "room-ktx"),
-  ;
+  ANDROIDX_ROOM_KTX("androidx.room", "room-ktx");
 
   override val groupId = mavenGroupId
   override val artifactId = mavenArtifactId
@@ -313,13 +307,11 @@ enum class GoogleMavenArtifactId(val mavenGroupId: String, val mavenArtifactId: 
     private val ENTRIES_BY_MODULEID = entries.associateBy { it.toString() }
     private val ENTRIES_BY_GROUP_ARTIFACT_PAIR = entries.associateBy { it.mavenGroupId to it.artifactId }
 
-    @JvmStatic fun find(moduleId: String): GoogleMavenArtifactId? =
-        ENTRIES_BY_MODULEID[moduleId]
+    @JvmStatic fun find(moduleId: String): GoogleMavenArtifactId? = ENTRIES_BY_MODULEID[moduleId]
 
-    @JvmStatic fun find(groupId: String, artifactId: String): GoogleMavenArtifactId? =
-        ENTRIES_BY_GROUP_ARTIFACT_PAIR[groupId to artifactId]
+    @JvmStatic fun find(groupId: String, artifactId: String): GoogleMavenArtifactId? = ENTRIES_BY_GROUP_ARTIFACT_PAIR[groupId to artifactId]
 
-    @JvmStatic fun androidxIdOf(id: GoogleMavenArtifactId): GoogleMavenArtifactId =
-        find(AndroidxNameUtils.getCoordinateMapping(id.toString())) ?: id
+    @JvmStatic
+    fun androidxIdOf(id: GoogleMavenArtifactId): GoogleMavenArtifactId = find(AndroidxNameUtils.getCoordinateMapping(id.toString())) ?: id
   }
 }

@@ -16,17 +16,10 @@
 
 package com.android.ide.common.util
 
-/**
- * Holds the set of possible parameters that can be passed to [PathMapTest]. Identifies a
- * specific implementation of [PathMap].
- */
+/** Holds the set of possible parameters that can be passed to [PathMapTest]. Identifies a specific implementation of [PathMap]. */
 enum class PathMapType {
-    /**
-     * Identifies maps returned by [toPathMap].
-     */
-    PATH_HASH_MAP,
-    /**
-     * Identifies maps returned by [toPathTreeMap].
-     */
-    PATH_TREE_MAP
+  /** Identifies maps returned by [toPathMap]. */
+  PATH_HASH_MAP,
+  /** Identifies maps returned by [toPathTreeMap]. */
+  PATH_TREE_MAP,
 }

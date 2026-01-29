@@ -15,33 +15,30 @@ package com.android.ide.common.vectordrawable
 
 import java.awt.Color
 
-/**
- * Represents override information for VectorDrawable's XML file content.
- */
-data class VdOverrideInfo(var width: Double, var height: Double, var tint: Color?, var alpha: Double,
-        var autoMirrored: Boolean) {
-    /** Checks if the width needs to be overridden. */
-    fun needsOverrideWidth(): Boolean {
-        return width > 0
-    }
+/** Represents override information for VectorDrawable's XML file content. */
+data class VdOverrideInfo(var width: Double, var height: Double, var tint: Color?, var alpha: Double, var autoMirrored: Boolean) {
+  /** Checks if the width needs to be overridden. */
+  fun needsOverrideWidth(): Boolean {
+    return width > 0
+  }
 
-    /** Checks if the height needs to be overridden. */
-    fun needsOverrideHeight(): Boolean {
-        return height > 0
-    }
+  /** Checks if the height needs to be overridden. */
+  fun needsOverrideHeight(): Boolean {
+    return height > 0
+  }
 
-    /** Checks if the alpha needs to be overridden. */
-    fun needsOverrideAlpha(): Boolean {
-        return 0 <= alpha && alpha < 1
-    }
+  /** Checks if the alpha needs to be overridden. */
+  fun needsOverrideAlpha(): Boolean {
+    return 0 <= alpha && alpha < 1
+  }
 
-    /** Checks if the tint needs to be overridden. */
-    fun needsOverrideTint(): Boolean {
-        return tint != null
-    }
+  /** Checks if the tint needs to be overridden. */
+  fun needsOverrideTint(): Boolean {
+    return tint != null
+  }
 
-    /** Returns the RGB value of the tint. */
-    fun tintRgb(): Int {
-        return (tint?.rgb ?: 0) and 0xFFFFFF
-    }
+  /** Returns the RGB value of the tint. */
+  fun tintRgb(): Int {
+    return (tint?.rgb ?: 0) and 0xFFFFFF
+  }
 }

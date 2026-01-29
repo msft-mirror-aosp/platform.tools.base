@@ -20,31 +20,48 @@ import org.junit.Test
 
 class FontFamilyTest {
 
-    @Test
-    fun testConstructorAndGetters() {
-        val family = createFontFamily(FontProvider.GOOGLE_PROVIDER, FontSource.DOWNLOADABLE, "Roboto", "https://fonts.com/roboto/v15/xyz.ttf", "")
-        assertThat(family.provider).isEqualTo(FontProvider.GOOGLE_PROVIDER)
-        assertThat(family.fontSource).isEqualTo(FontSource.DOWNLOADABLE)
-        assertThat(family.name).isEqualTo("Roboto")
-        assertThat(family.menu).isEqualTo("https://fonts.com/roboto/v15/xyz.ttf")
-        assertThat(family.menuName).isEqualTo("Roboto")
-    }
+  @Test
+  fun testConstructorAndGetters() {
+    val family =
+      createFontFamily(FontProvider.GOOGLE_PROVIDER, FontSource.DOWNLOADABLE, "Roboto", "https://fonts.com/roboto/v15/xyz.ttf", "")
+    assertThat(family.provider).isEqualTo(FontProvider.GOOGLE_PROVIDER)
+    assertThat(family.fontSource).isEqualTo(FontSource.DOWNLOADABLE)
+    assertThat(family.name).isEqualTo("Roboto")
+    assertThat(family.menu).isEqualTo("https://fonts.com/roboto/v15/xyz.ttf")
+    assertThat(family.menuName).isEqualTo("Roboto")
+  }
 
-    @Test
-    fun testConstructorAndGettersWithSpecifiedMenuName() {
-        val family = createFontFamily(FontProvider.GOOGLE_PROVIDER, FontSource.DOWNLOADABLE, "Alegreya Sans SC", "file:///fonts/alegreya.ttf", "My Alegreya")
-        assertThat(family.provider).isEqualTo(FontProvider.GOOGLE_PROVIDER)
-        assertThat(family.fontSource).isEqualTo(FontSource.DOWNLOADABLE)
-        assertThat(family.name).isEqualTo("Alegreya Sans SC")
-        assertThat(family.menu).isEqualTo("file:///fonts/alegreya.ttf")
-        assertThat(family.menuName).isEqualTo("My Alegreya")
-    }
+  @Test
+  fun testConstructorAndGettersWithSpecifiedMenuName() {
+    val family =
+      createFontFamily(
+        FontProvider.GOOGLE_PROVIDER,
+        FontSource.DOWNLOADABLE,
+        "Alegreya Sans SC",
+        "file:///fonts/alegreya.ttf",
+        "My Alegreya",
+      )
+    assertThat(family.provider).isEqualTo(FontProvider.GOOGLE_PROVIDER)
+    assertThat(family.fontSource).isEqualTo(FontSource.DOWNLOADABLE)
+    assertThat(family.name).isEqualTo("Alegreya Sans SC")
+    assertThat(family.menu).isEqualTo("file:///fonts/alegreya.ttf")
+    assertThat(family.menuName).isEqualTo("My Alegreya")
+  }
 
-    private fun createFontFamily(provider: FontProvider,
-                                 fontSource: FontSource,
-                                 name: String,
-                                 menuUrl: String,
-                                 menuName: String): FontFamily {
-        return FontFamily(provider, fontSource, name, menuUrl, menuName, listOf(MutableFontDetail(name, FontType.SINGLE, 400, 100f, NORMAL, DEFAULT_EXACT, "https://fonts.com/roboto/v15/qrs.ttf", "", false)))
-    }
+  private fun createFontFamily(
+    provider: FontProvider,
+    fontSource: FontSource,
+    name: String,
+    menuUrl: String,
+    menuName: String,
+  ): FontFamily {
+    return FontFamily(
+      provider,
+      fontSource,
+      name,
+      menuUrl,
+      menuName,
+      listOf(MutableFontDetail(name, FontType.SINGLE, 400, 100f, NORMAL, DEFAULT_EXACT, "https://fonts.com/roboto/v15/qrs.ttf", "", false)),
+    )
+  }
 }

@@ -19,29 +19,29 @@ import com.android.ide.common.gradle.Module
 import com.google.common.jimfs.Configuration
 import com.google.common.jimfs.Jimfs
 import com.google.common.truth.Truth.assertThat
-import org.junit.Test
 import java.nio.file.Files
 import java.nio.file.Files.createDirectories
+import org.junit.Test
 
 class MavenRepositoriesTest {
 
-    @Test
-    fun `test get all versions non existent directory`() {
-        val repo = Jimfs.newFileSystem(Configuration.windows()).getPath("C:\\src\\out\\repo")
-        assertThat(MavenRepositories.getAllVersions(repo, Module.parse("com.example:lib"))).isEmpty()
-    }
+  @Test
+  fun `test get all versions non existent directory`() {
+    val repo = Jimfs.newFileSystem(Configuration.windows()).getPath("C:\\src\\out\\repo")
+    assertThat(MavenRepositories.getAllVersions(repo, Module.parse("com.example:lib"))).isEmpty()
+  }
 
-    @Test
-    fun `test get all versions`() {
-        val repo = Jimfs.newFileSystem(Configuration.windows()).getPath("C:\\src\\out\\repo")
-        val dir = repo.resolve("com/example/lib")
-        createDirectories(dir)
-        createDirectories(dir.resolve("8.0.0-alpha02"))
-        createDirectories(dir.resolve("8.0.0"))
-        createDirectories(dir.resolve("8.0.0-beta01"))
-        Files.write(dir.resolve("10"), byteArrayOf())
-        assertThat(MavenRepositories.getAllVersions(repo, Module.parse("com.example:lib")).map { it.toString() })
-            .containsExactly("8.0.0-alpha02", "8.0.0-beta01", "8.0.0")
-            .inOrder()
-    }
+  @Test
+  fun `test get all versions`() {
+    val repo = Jimfs.newFileSystem(Configuration.windows()).getPath("C:\\src\\out\\repo")
+    val dir = repo.resolve("com/example/lib")
+    createDirectories(dir)
+    createDirectories(dir.resolve("8.0.0-alpha02"))
+    createDirectories(dir.resolve("8.0.0"))
+    createDirectories(dir.resolve("8.0.0-beta01"))
+    Files.write(dir.resolve("10"), byteArrayOf())
+    assertThat(MavenRepositories.getAllVersions(repo, Module.parse("com.example:lib")).map { it.toString() })
+      .containsExactly("8.0.0-alpha02", "8.0.0-beta01", "8.0.0")
+      .inOrder()
+  }
 }

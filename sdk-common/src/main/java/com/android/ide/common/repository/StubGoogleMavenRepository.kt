@@ -15,13 +15,16 @@ package com.android.ide.common.repository
 
 import java.nio.file.Path
 
-class StubGoogleMavenRepository @JvmOverloads constructor(
-    private val builtInData: Map<String, String> = emptyMap(),
-    private val urls: Map<String, String> = emptyMap(),
-    cacheDir: Path? = null
+class StubGoogleMavenRepository
+@JvmOverloads
+constructor(
+  private val builtInData: Map<String, String> = emptyMap(),
+  private val urls: Map<String, String> = emptyMap(),
+  cacheDir: Path? = null,
 ) : GoogleMavenRepository(cacheDir = cacheDir) {
-    override fun readUrlData(url: String, timeout: Int, lastModified: Long) =
-        ReadUrlDataResult(urls[url]?.toByteArray(), true)
-    override fun error(throwable: Throwable, message: String?) = throw throwable
-    override fun readDefaultData(relative: String) = builtInData[relative]?.byteInputStream()
+  override fun readUrlData(url: String, timeout: Int, lastModified: Long) = ReadUrlDataResult(urls[url]?.toByteArray(), true)
+
+  override fun error(throwable: Throwable, message: String?) = throw throwable
+
+  override fun readDefaultData(relative: String) = builtInData[relative]?.byteInputStream()
 }

@@ -31,97 +31,95 @@ import org.mockito.MockitoAnnotations
 
 class Aapt2OutputParserTest {
 
-    @get:Rule val temporaryFolder = TemporaryFolder()
+  @get:Rule val temporaryFolder = TemporaryFolder()
 
-    lateinit var parser: ToolOutputParser
+  lateinit var parser: ToolOutputParser
 
-    @Mock lateinit var reader: OutputLineReader
-    @Mock lateinit var logger: ILogger
+  @Mock lateinit var reader: OutputLineReader
+  @Mock lateinit var logger: ILogger
 
-    @Before
-    fun setUp() {
-        MockitoAnnotations.initMocks(this)
+  @Before
+  fun setUp() {
+    MockitoAnnotations.initMocks(this)
 
-        parser = ToolOutputParser(
-            Aapt2OutputParser(),
-            Message.Kind.SIMPLE,
-            StdLogger(StdLogger.Level.INFO)
-        )
-    }
+    parser = ToolOutputParser(Aapt2OutputParser(), Message.Kind.SIMPLE, StdLogger(StdLogger.Level.INFO))
+  }
 
-    @Test
-    fun parseErrorWithLineAndColumn() {
-        val file = createTempFile("colors", ".xml", temporaryFolder.newFolder())
-        val line = "${file.absolutePath}:5:5-49: invalid color."
+  @Test
+  fun parseErrorWithLineAndColumn() {
+    val file = createTempFile("colors", ".xml", temporaryFolder.newFolder())
+    val line = "${file.absolutePath}:5:5-49: invalid color."
 
-        val messages = parser.parseToolOutput(line)
+    val messages = parser.parseToolOutput(line)
 
-        assertThat(messages).hasSize(1)
+    assertThat(messages).hasSize(1)
 
-        val message = messages[0]
+    val message = messages[0]
 
-        assertThat(message.kind).isEqualTo(Message.Kind.ERROR)
-        assertThat(message.text).isEqualTo("invalid color.")
-        assertThat(message.toolName).isEqualTo("AAPT")
-        assertThat(message.sourceFilePositions).hasSize(1)
-        assertThat(message.sourceFilePositions[0].file.sourceFile!!.absolutePath).isEqualTo(file.absolutePath)
+    assertThat(message.kind).isEqualTo(Message.Kind.ERROR)
+    assertThat(message.text).isEqualTo("invalid color.")
+    assertThat(message.toolName).isEqualTo("AAPT")
+    assertThat(message.sourceFilePositions).hasSize(1)
+    assertThat(message.sourceFilePositions[0].file.sourceFile!!.absolutePath).isEqualTo(file.absolutePath)
 
-        // error is in line 5, columns from 5 to 49
-        assertThat(message.sourceFilePositions[0].position).isEqualTo(SourcePosition(4, 4, -1, 4, 48, -1))
-    }
+    // error is in line 5, columns from 5 to 49
+    assertThat(message.sourceFilePositions[0].position).isEqualTo(SourcePosition(4, 4, -1, 4, 48, -1))
+  }
 
-    @Test
-    fun parseErrorWithPathOnly() {
-        val file = createTempFile("foo", ".9.png", temporaryFolder.newFolder())
-        val line = "${file.absolutePath}: error: failed to read PNG signature: file does not start with PNG signature.\n"
-        val messages = parser.parseToolOutput(line, true)
+  @Test
+  fun parseErrorWithPathOnly() {
+    val file = createTempFile("foo", ".9.png", temporaryFolder.newFolder())
+    val line = "${file.absolutePath}: error: failed to read PNG signature: file does not start with PNG signature.\n"
+    val messages = parser.parseToolOutput(line, true)
 
-        assertThat(messages).hasSize(1)
+    assertThat(messages).hasSize(1)
 
-        val message = messages[0]
+    val message = messages[0]
 
-        assertThat(message.kind).isEqualTo(Message.Kind.ERROR)
-        assertThat(message.text).isEqualTo("error: failed to read PNG signature: file does not start with PNG signature.")
-        assertThat(message.toolName).isEqualTo("AAPT")
-        assertThat(message.sourceFilePositions).hasSize(1)
-        assertThat(message.sourceFilePositions[0].file.sourceFile!!.absolutePath).isEqualTo(file.absolutePath)
-        assertThat(message.sourceFilePositions[0].position).isEqualTo(SourcePosition.UNKNOWN)
-    }
+    assertThat(message.kind).isEqualTo(Message.Kind.ERROR)
+    assertThat(message.text).isEqualTo("error: failed to read PNG signature: file does not start with PNG signature.")
+    assertThat(message.toolName).isEqualTo("AAPT")
+    assertThat(message.sourceFilePositions).hasSize(1)
+    assertThat(message.sourceFilePositions[0].file.sourceFile!!.absolutePath).isEqualTo(file.absolutePath)
+    assertThat(message.sourceFilePositions[0].position).isEqualTo(SourcePosition.UNKNOWN)
+  }
 
-    @Test
-    fun testMultipleErrorsParsing() {
-        val file1 = createTempFile("ic_launcher", ".xml", temporaryFolder.newFolder())
-        val file2 = createTempFile("colors", ".xml", temporaryFolder.newFolder())
-        val text = """2 exception was raised by workers:
+  @Test
+  fun testMultipleErrorsParsing() {
+    val file1 = createTempFile("ic_launcher", ".xml", temporaryFolder.newFolder())
+    val file2 = createTempFile("colors", ".xml", temporaryFolder.newFolder())
+    val text =
+      """2 exception was raised by workers:
                         com.android.builder.internal.aapt.v2.Aapt2Exception: Android resource linking failed
                         ${file1.absolutePath}:3: error: attribute android:drawadxble not found.
                         ${file2.absolutePath}:4:5-62: error: resource string/apgfp_name (aka com.example.myapplication:string/apgfp_name) not found.
-      """.trimIndent()
+      """
+        .trimIndent()
 
-        val messages = parser.parseToolOutput(text, true)
+    val messages = parser.parseToolOutput(text, true)
 
-        assertThat(messages).hasSize(2)
+    assertThat(messages).hasSize(2)
 
-        var message = messages[0]
+    var message = messages[0]
 
-        assertThat(message.kind).isEqualTo(Message.Kind.ERROR)
-        assertThat(message.text).isEqualTo("error: attribute android:drawadxble not found.")
-        assertThat(message.toolName).isEqualTo("AAPT")
-        assertThat(message.sourceFilePositions).hasSize(1)
-        assertThat(message.sourceFilePositions[0].file.sourceFile!!.absolutePath).isEqualTo(file1.absolutePath)
+    assertThat(message.kind).isEqualTo(Message.Kind.ERROR)
+    assertThat(message.text).isEqualTo("error: attribute android:drawadxble not found.")
+    assertThat(message.toolName).isEqualTo("AAPT")
+    assertThat(message.sourceFilePositions).hasSize(1)
+    assertThat(message.sourceFilePositions[0].file.sourceFile!!.absolutePath).isEqualTo(file1.absolutePath)
 
-        // error is in line 3
-        assertThat(message.sourceFilePositions[0].position).isEqualTo(SourcePosition(2, -1, -1, 2, -1, -1))
+    // error is in line 3
+    assertThat(message.sourceFilePositions[0].position).isEqualTo(SourcePosition(2, -1, -1, 2, -1, -1))
 
-        message = messages[1]
+    message = messages[1]
 
-        assertThat(message.kind).isEqualTo(Message.Kind.ERROR)
-        assertThat(message.text).isEqualTo("error: resource string/apgfp_name (aka com.example.myapplication:string/apgfp_name) not found.")
-        assertThat(message.toolName).isEqualTo("AAPT")
-        assertThat(message.sourceFilePositions).hasSize(1)
-        assertThat(message.sourceFilePositions[0].file.sourceFile!!.absolutePath).isEqualTo(file2.absolutePath)
+    assertThat(message.kind).isEqualTo(Message.Kind.ERROR)
+    assertThat(message.text).isEqualTo("error: resource string/apgfp_name (aka com.example.myapplication:string/apgfp_name) not found.")
+    assertThat(message.toolName).isEqualTo("AAPT")
+    assertThat(message.sourceFilePositions).hasSize(1)
+    assertThat(message.sourceFilePositions[0].file.sourceFile!!.absolutePath).isEqualTo(file2.absolutePath)
 
-        // error is in line 4, columns from 5 to 62
-        assertThat(message.sourceFilePositions[0].position).isEqualTo(SourcePosition(3, 4, -1, 3, 61, -1))
-    }
+    // error is in line 4, columns from 5 to 62
+    assertThat(message.sourceFilePositions[0].position).isEqualTo(SourcePosition(3, 4, -1, 3, 61, -1))
+  }
 }

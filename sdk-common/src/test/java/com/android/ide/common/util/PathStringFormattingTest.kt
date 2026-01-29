@@ -16,63 +16,54 @@
 package com.android.ide.common.util
 
 import com.google.common.truth.Truth
-import org.junit.Test
 import java.io.File
+import org.junit.Test
 
-/**
- * Tests that verify the treatment of non-semantic information in [PathString]
- */
+/** Tests that verify the treatment of non-semantic information in [PathString] */
 class PathStringFormattingTest {
-    private fun verifyEquals(obj1: Any, obj2: Any) {
-        Truth.assertThat(obj1).isEqualTo(obj2)
-        Truth.assertThat(obj1.hashCode()).isEqualTo(obj2.hashCode())
-    }
+  private fun verifyEquals(obj1: Any, obj2: Any) {
+    Truth.assertThat(obj1).isEqualTo(obj2)
+    Truth.assertThat(obj1.hashCode()).isEqualTo(obj2.hashCode())
+  }
 
-    @Test
-    fun testRawPathPreservesBackSlashes() {
-        val backSlashes = PathString(PATH_WITH_BACKSLASHES)
-        verifyEquals(backSlashes.rawPath,
-                PATH_WITH_BACKSLASHES)
-        verifyEquals(backSlashes.portablePath,
-                PATH_WITH_FORWARD_SLASHES)
-        verifyEquals(backSlashes.nativePath,
-                PATH_WITH_FORWARD_SLASHES.replace('/', File.separatorChar))
-    }
+  @Test
+  fun testRawPathPreservesBackSlashes() {
+    val backSlashes = PathString(PATH_WITH_BACKSLASHES)
+    verifyEquals(backSlashes.rawPath, PATH_WITH_BACKSLASHES)
+    verifyEquals(backSlashes.portablePath, PATH_WITH_FORWARD_SLASHES)
+    verifyEquals(backSlashes.nativePath, PATH_WITH_FORWARD_SLASHES.replace('/', File.separatorChar))
+  }
 
-    @Test
-    fun testRawPathPreservesForwardSlashes() {
-        val backSlashes = PathString(PATH_WITH_FORWARD_SLASHES)
-        verifyEquals(backSlashes.rawPath,
-                PATH_WITH_FORWARD_SLASHES)
-        verifyEquals(backSlashes.portablePath,
-                PATH_WITH_FORWARD_SLASHES)
-        verifyEquals(backSlashes.nativePath,
-                PATH_WITH_FORWARD_SLASHES.replace('/', File.separatorChar))
-    }
+  @Test
+  fun testRawPathPreservesForwardSlashes() {
+    val backSlashes = PathString(PATH_WITH_FORWARD_SLASHES)
+    verifyEquals(backSlashes.rawPath, PATH_WITH_FORWARD_SLASHES)
+    verifyEquals(backSlashes.portablePath, PATH_WITH_FORWARD_SLASHES)
+    verifyEquals(backSlashes.nativePath, PATH_WITH_FORWARD_SLASHES.replace('/', File.separatorChar))
+  }
 
-    @Test
-    fun testParentDoesntNormalizeSeparators() {
-        verifyEquals(PathString("\\foo\\bar").parent!!.rawPath, "\\foo")
-        verifyEquals(PathString("/foo/bar").parent!!.rawPath, "/foo")
-    }
+  @Test
+  fun testParentDoesntNormalizeSeparators() {
+    verifyEquals(PathString("\\foo\\bar").parent!!.rawPath, "\\foo")
+    verifyEquals(PathString("/foo/bar").parent!!.rawPath, "/foo")
+  }
 
-    @Test
-    fun testVfsPathPreservesTrailingSeparator() {
-        val path = PathString("/foo/bar/")
-        verifyEquals(path.rawPath, "/foo/bar/")
-        verifyEquals(path.parent!!.rawPath, "/foo")
-    }
+  @Test
+  fun testVfsPathPreservesTrailingSeparator() {
+    val path = PathString("/foo/bar/")
+    verifyEquals(path.rawPath, "/foo/bar/")
+    verifyEquals(path.parent!!.rawPath, "/foo")
+  }
 
-    @Test
-    fun testVfsPathDoesntInsertTrailingSeparator() {
-        val path = PathString("/foo/bar")
-        verifyEquals(path.rawPath, "/foo/bar")
-        verifyEquals(path.parent!!.rawPath, "/foo")
-    }
+  @Test
+  fun testVfsPathDoesntInsertTrailingSeparator() {
+    val path = PathString("/foo/bar")
+    verifyEquals(path.rawPath, "/foo/bar")
+    verifyEquals(path.parent!!.rawPath, "/foo")
+  }
 
-    companion object {
-        val PATH_WITH_BACKSLASHES = "\\foo\\bar"
-        val PATH_WITH_FORWARD_SLASHES = "/foo/bar"
-    }
+  companion object {
+    val PATH_WITH_BACKSLASHES = "\\foo\\bar"
+    val PATH_WITH_FORWARD_SLASHES = "/foo/bar"
+  }
 }
-

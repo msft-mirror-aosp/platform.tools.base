@@ -42,10 +42,9 @@ private const val KOTLIN_JRE7 = "kotlin-stdlib-jre7"
 /**
  * Stability of known libraries.
  *
- * When we want to add a dependency we would like to warn the user if the added
- * library could be causing version incompatibilities. Unfortunately different
- * libraries adhere to different standards, and there is no known way to determine
- * the stability from the library itself.
+ * When we want to add a dependency we would like to warn the user if the added library could be causing version incompatibilities.
+ * Unfortunately different libraries adhere to different standards, and there is no known way to determine the stability from the library
+ * itself.
  *
  * Here we setup the known rules for the following libraries:
  * - Android X libraries uses [semantic rules](https://semver.org/)
@@ -57,88 +56,77 @@ private const val KOTLIN_JRE7 = "kotlin-stdlib-jre7"
  * - Kotlib stdlib are all stable
  * - Kotlin reflection library is incremental
  *
- * Unknown libraries are handled as having no backwards compatibility.
- * This may lead to warnings that the user would have to accept.
+ * Unknown libraries are handled as having no backwards compatibility. This may lead to warnings that the user would have to accept.
  */
 enum class KnownVersionStability {
-    INCOMPATIBLE, // No backwards compatibility.
-    INCREMENTAL,  // Backwards breaking changes may happen on minor version changes.
-    SEMANTIC,     // Backwards breaking changes may happen on major version changes.
-    STABLE;       // Guaranteed backwards compatibility forever.
+  INCOMPATIBLE, // No backwards compatibility.
+  INCREMENTAL, // Backwards breaking changes may happen on minor version changes.
+  SEMANTIC, // Backwards breaking changes may happen on major version changes.
+  STABLE; // Guaranteed backwards compatibility forever.
 
   /**
    * Expiration from a given [version].
    *
-   * For a given minimum [version] return the maximum or expiration [version] of a
-   * dependency with a given stability. This is used to generate the exclusive upper
-   * bound in a [VersionRange], and should always be a prefixInfimum [Version].
+   * For a given minimum [version] return the maximum or expiration [version] of a dependency with a given stability. This is used to
+   * generate the exclusive upper bound in a [VersionRange], and should always be a prefixInfimum [Version].
    */
   fun expiration(version: Version): Version =
-        when (this) {
-            INCOMPATIBLE -> version.nextPrefix(3)
-            INCREMENTAL -> version.nextPrefix(2)
-            SEMANTIC -> version.nextPrefix(1)
-            STABLE -> Version.prefixInfimum("${Int.MAX_VALUE}")
-        }
+    when (this) {
+      INCOMPATIBLE -> version.nextPrefix(3)
+      INCREMENTAL -> version.nextPrefix(2)
+      SEMANTIC -> version.nextPrefix(1)
+      STABLE -> Version.prefixInfimum("${Int.MAX_VALUE}")
+    }
 }
 
-val Component.stability get() = when {
-    group == KOTLIN_GROUP_ID -> kotlinStabilityOf(name)
-    group == KOTLINX_GROUP_ID -> KnownVersionStability.SEMANTIC
-    group == GOOGLE_MOBILE_SERVICES_GROUP_ID -> gmsAndFirebaseStability(version)
-    group == FIREBASE_GROUP_ID -> gmsAndFirebaseStability(version)
-    group == MATERIAL2_PKG -> KnownVersionStability.SEMANTIC
-    group == SUPPORT_LIB_GROUP_ID -> supportLibStability(name)
-    MavenRepositories.isAndroidX(group) -> KnownVersionStability.SEMANTIC
-    else -> KnownVersionStability.INCOMPATIBLE
-}
+val Component.stability
+  get() =
+    when {
+      group == KOTLIN_GROUP_ID -> kotlinStabilityOf(name)
+      group == KOTLINX_GROUP_ID -> KnownVersionStability.SEMANTIC
+      group == GOOGLE_MOBILE_SERVICES_GROUP_ID -> gmsAndFirebaseStability(version)
+      group == FIREBASE_GROUP_ID -> gmsAndFirebaseStability(version)
+      group == MATERIAL2_PKG -> KnownVersionStability.SEMANTIC
+      group == SUPPORT_LIB_GROUP_ID -> supportLibStability(name)
+      MavenRepositories.isAndroidX(group) -> KnownVersionStability.SEMANTIC
+      else -> KnownVersionStability.INCOMPATIBLE
+    }
 
-@Deprecated(
-    "replace with Component.stability",
-    ReplaceWith("Component(groupId, artifactId, Version.parse(revision)).stability")
-)
-fun stabilityOf(
-    groupId: String,
-    artifactId: String,
-    revision: String = "1.0.0"
-): KnownVersionStability = Component(groupId, artifactId, Version.parse(revision)).stability
+@Deprecated("replace with Component.stability", ReplaceWith("Component(groupId, artifactId, Version.parse(revision)).stability"))
+fun stabilityOf(groupId: String, artifactId: String, revision: String = "1.0.0"): KnownVersionStability =
+  Component(groupId, artifactId, Version.parse(revision)).stability
 
 private fun kotlinStabilityOf(artifactId: String): KnownVersionStability =
-    when (artifactId) {
-        KOTLIN_STDLIB -> KnownVersionStability.STABLE
-        KOTLIN_REFLECT -> KnownVersionStability.INCREMENTAL
-        KOTLIN_JDK9,
-        KOTLIN_JDK8,
-        KOTLIN_JDK7,
-        KOTLIN_JRE9,
-        KOTLIN_JRE8,
-        KOTLIN_JRE7 -> KnownVersionStability.STABLE
-        else -> KnownVersionStability.INCOMPATIBLE
-    }
+  when (artifactId) {
+    KOTLIN_STDLIB -> KnownVersionStability.STABLE
+    KOTLIN_REFLECT -> KnownVersionStability.INCREMENTAL
+    KOTLIN_JDK9,
+    KOTLIN_JDK8,
+    KOTLIN_JDK7,
+    KOTLIN_JRE9,
+    KOTLIN_JRE8,
+    KOTLIN_JRE7 -> KnownVersionStability.STABLE
+    else -> KnownVersionStability.INCOMPATIBLE
+  }
 
 private fun gmsAndFirebaseStability(version: Version): KnownVersionStability {
-    val major = version.major
-    return when {
-        major == null -> KnownVersionStability.INCOMPATIBLE
-        major >= GMS_AND_FIREBASE_SEMANTIC_START -> KnownVersionStability.SEMANTIC
-        else -> KnownVersionStability.INCOMPATIBLE
-    }
+  val major = version.major
+  return when {
+    major == null -> KnownVersionStability.INCOMPATIBLE
+    major >= GMS_AND_FIREBASE_SEMANTIC_START -> KnownVersionStability.SEMANTIC
+    else -> KnownVersionStability.INCOMPATIBLE
+  }
 }
-
 
 /**
  * Stability of legacy support libraries.
  *
- * All support libraries must have the exact same version number.
- * However there are JetPack libraries that point to an old version of the support
- * annotations. This library just contain annotations and we will make the assumption
- * here that we nothing was removed or changed in the last couple of versions.
+ * All support libraries must have the exact same version number. However there are JetPack libraries that point to an old version of the
+ * support annotations. This library just contain annotations and we will make the assumption here that we nothing was removed or changed in
+ * the last couple of versions.
  *
  * <p>JetPack Details b/129408604
  */
 private fun supportLibStability(artifactId: String): KnownVersionStability {
-    return if (artifactId == ANNOTATIONS_LIB_ARTIFACT_ID)
-        KnownVersionStability.STABLE
-    else
-        KnownVersionStability.INCOMPATIBLE
+  return if (artifactId == ANNOTATIONS_LIB_ARTIFACT_ID) KnownVersionStability.STABLE else KnownVersionStability.INCOMPATIBLE
 }

@@ -15,15 +15,15 @@
  */
 package com.android.ide.common.util
 
-import org.junit.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
+import org.junit.Test
 
 class EnumUtilsKtTest {
 
   private enum class MyEnum {
     EntryA,
-    EntryB
+    EntryB,
   }
 
   @Test

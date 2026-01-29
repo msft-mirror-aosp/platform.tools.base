@@ -16,7 +16,5 @@
 
 package com.android.ide.common.symbols
 
-/**
- * Exception thrown when failed to parse the resource values XML.
- */
+/** Exception thrown when failed to parse the resource values XML. */
 class ResourceValuesXmlParseException(description: String) : RuntimeException(description)

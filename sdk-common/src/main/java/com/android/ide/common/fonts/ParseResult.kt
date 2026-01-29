@@ -19,8 +19,6 @@ import com.google.common.collect.Multimap
 
 open class ParseResult
 
-class DownloadableParseResult(
-    val authority: String,
-    val fonts: Multimap<String, MutableFontDetail>) : ParseResult()
+class DownloadableParseResult(val authority: String, val fonts: Multimap<String, MutableFontDetail>) : ParseResult()
 
-class FontQueryParserError(message: String, cause: Throwable): RuntimeException(message, cause)
+class FontQueryParserError(message: String, cause: Throwable) : RuntimeException(message, cause)

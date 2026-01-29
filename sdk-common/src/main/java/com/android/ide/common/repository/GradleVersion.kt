@@ -18,21 +18,20 @@ package com.android.ide.common.repository
 /** Workaround for firebase performance plugin b/428189815 */
 @Suppress("DEPRECATION_ERROR")
 @Deprecated("", level = DeprecationLevel.HIDDEN)
-class GradleVersion private constructor(private val agpVersion: AgpVersion) : Comparable<GradleVersion>  {
+class GradleVersion private constructor(private val agpVersion: AgpVersion) : Comparable<GradleVersion> {
+
+  @Deprecated("", level = DeprecationLevel.HIDDEN)
+  @JvmSynthetic
+  override fun compareTo(other: GradleVersion): Int {
+    return this.agpVersion.compareTo(other.agpVersion)
+  }
+
+  @Deprecated("", level = DeprecationLevel.HIDDEN)
+  companion object {
 
     @Deprecated("", level = DeprecationLevel.HIDDEN)
     @JvmSynthetic
-    override fun compareTo(other: GradleVersion): Int {
-        return this.agpVersion.compareTo(other.agpVersion)
-    }
-
-    @Deprecated("", level = DeprecationLevel.HIDDEN)
-    companion object {
-
-        @Deprecated("", level = DeprecationLevel.HIDDEN)
-        @JvmSynthetic
-        @JvmStatic
-        fun parseAndroidGradlePluginVersion(version: String): GradleVersion =
-            GradleVersion(AgpVersion.parse(version))
-    }
+    @JvmStatic
+    fun parseAndroidGradlePluginVersion(version: String): GradleVersion = GradleVersion(AgpVersion.parse(version))
+  }
 }

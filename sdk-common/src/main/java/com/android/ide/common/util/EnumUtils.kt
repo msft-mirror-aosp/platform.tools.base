@@ -15,19 +15,14 @@
  */
 package com.android.ide.common.util
 
-/**
- * Returns an [Enum] of which [Enum.name] matches [value] from the given class [E]. If no Enum matches, returns [default] instead.
- */
+/** Returns an [Enum] of which [Enum.name] matches [value] from the given class [E]. If no Enum matches, returns [default] instead. */
 inline fun <reified E : Enum<E>> enumValueOfOrDefault(value: String, default: E): E = enumValueOfOrNull<E>(value) ?: default
 
-/**
- * Returns an [Enum] of which [Enum.name] matches [value] from the given class [E]. Null if no Enum matches [value].
- */
+/** Returns an [Enum] of which [Enum.name] matches [value] from the given class [E]. Null if no Enum matches [value]. */
 inline fun <reified E : Enum<E>> enumValueOfOrNull(value: String): E? {
   return try {
     enumValueOf<E>(value)
-  }
-  catch (_: Exception) {
+  } catch (_: Exception) {
     null
   }
 }

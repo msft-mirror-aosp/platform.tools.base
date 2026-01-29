@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 @file:JvmName("SdkFonts")
+
 package com.android.ide.common.fonts
 
 import com.android.SdkConstants.SDK_DL_FONTS_FOLDER
@@ -21,5 +22,5 @@ import java.io.File
 
 /** Returns a folder where downloadable fonts are stored within SDK folder. */
 fun getFontsPath(sdkPath: File?): File? {
-    return sdkPath?.let { File(it, SDK_DL_FONTS_FOLDER) }
+  return sdkPath?.let { File(it, SDK_DL_FONTS_FOLDER) }
 }

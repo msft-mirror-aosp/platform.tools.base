@@ -21,36 +21,30 @@ import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 
 class MutableDetailTest {
-    @Test
-    fun testMatch() {
-        val font1 = FontDetailTest.createFontDetail(
-            SINGLE, 400, 100f, NORMAL, "http://someurl.com/myfont1.ttf", "MyStyle")
+  @Test
+  fun testMatch() {
+    val font1 = FontDetailTest.createFontDetail(SINGLE, 400, 100f, NORMAL, "http://someurl.com/myfont1.ttf", "MyStyle")
 
+    val name = font1.family.name
+    assertThat(MutableFontDetail(name, 400, 100f, NORMAL, false).match(font1)).isEqualTo(0f)
+    assertThat(MutableFontDetail(name, 400, 100f, NORMAL, false).match(font1)).isEqualTo(0f)
+    assertThat(MutableFontDetail(name, 300, 100f, NORMAL, false).match(font1)).isEqualTo(100f)
+    assertThat(MutableFontDetail(name, 500, 100f, NORMAL, false).match(font1)).isEqualTo(100f)
+    assertThat(MutableFontDetail(name, 900, 100f, NORMAL, false).match(font1)).isEqualTo(500f)
+    assertThat(MutableFontDetail(name, 400, 90f, NORMAL, false).match(font1)).isEqualTo(10f)
+    assertThat(MutableFontDetail(name, 400, 100f, ITALICS, false).match(font1)).isEqualTo(50f)
+    assertThat(MutableFontDetail(name, 700, 120f, ITALICS, false).match(font1)).isEqualTo(370f)
+  }
 
-        val name = font1.family.name
-        assertThat(MutableFontDetail(name, 400, 100f, NORMAL, false).match(font1)).isEqualTo(0f)
-        assertThat(MutableFontDetail(name, 400, 100f, NORMAL, false).match(font1)).isEqualTo(0f)
-        assertThat(MutableFontDetail(name, 300, 100f, NORMAL, false).match(font1)).isEqualTo(100f)
-        assertThat(MutableFontDetail(name, 500, 100f, NORMAL, false).match(font1)).isEqualTo(100f)
-        assertThat(MutableFontDetail(name, 900, 100f, NORMAL, false).match(font1)).isEqualTo(500f)
-        assertThat(MutableFontDetail(name, 400, 90f, NORMAL, false).match(font1)).isEqualTo(10f)
-        assertThat(MutableFontDetail(name, 400, 100f, ITALICS, false).match(font1)).isEqualTo(50f)
-        assertThat(MutableFontDetail(name, 700, 120f, ITALICS, false).match(font1)).isEqualTo(370f)
-    }
+  @Test
+  fun testFindBestMatch() {
+    val font1 = FontDetailTest.createFontDetail(SINGLE, 400, 100f, NORMAL, "http://someurl.com/myfont1.ttf", "MyStyle")
+    val font2 = FontDetailTest.createFontDetail(SINGLE, 400, 100f, ITALICS, "http://someurl.com/myfont2.ttf", "MyStyle")
+    val font3 = FontDetailTest.createFontDetail(SINGLE, 700, 100f, NORMAL, "http://someurl.com/myfont3.ttf", "MyStyle")
+    val font4 = FontDetailTest.createFontDetail(SINGLE, 700, 100f, ITALICS, "http://someurl.com/myfont4.ttf", "MyStyle")
+    val fonts = listOf(font1, font2, font3, font4)
 
-    @Test
-    fun testFindBestMatch() {
-        val font1 = FontDetailTest.createFontDetail(
-                SINGLE, 400, 100f, NORMAL, "http://someurl.com/myfont1.ttf", "MyStyle")
-        val font2 = FontDetailTest.createFontDetail(
-                SINGLE, 400, 100f, ITALICS, "http://someurl.com/myfont2.ttf", "MyStyle")
-        val font3 = FontDetailTest.createFontDetail(
-                SINGLE, 700, 100f, NORMAL, "http://someurl.com/myfont3.ttf", "MyStyle")
-        val font4 = FontDetailTest.createFontDetail(
-                SINGLE, 700, 100f, ITALICS, "http://someurl.com/myfont4.ttf", "MyStyle")
-        val fonts = listOf(font1, font2, font3, font4)
-
-        val name = font1.family.name
-        assertThat(MutableFontDetail(name, 900, 100f, ITALICS, false).findBestMatch(fonts)).isEqualTo(font4)
-    }
+    val name = font1.family.name
+    assertThat(MutableFontDetail(name, 900, 100f, ITALICS, false).findBestMatch(fonts)).isEqualTo(font4)
+  }
 }

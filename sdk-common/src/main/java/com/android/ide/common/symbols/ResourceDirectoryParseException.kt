@@ -16,23 +16,21 @@
 
 package com.android.ide.common.symbols
 
-/**
- * Exception thrown when failed to parse a resource directory.
- */
+/** Exception thrown when failed to parse a resource directory. */
 class ResourceDirectoryParseException : RuntimeException {
 
-    /**
-     * Creates a new exception.
-     *
-     * @param description a description of the exception
-     */
-    constructor(description: String) : super(description)
+  /**
+   * Creates a new exception.
+   *
+   * @param description a description of the exception
+   */
+  constructor(description: String) : super(description)
 
-    /**
-     * Creates a new exception.
-     *
-     * @param description a description of the exception
-     * @param cause a cause of the exception
-     */
-    constructor(description: String, cause: Throwable) : super(description, cause)
+  /**
+   * Creates a new exception.
+   *
+   * @param description a description of the exception
+   * @param cause a cause of the exception
+   */
+  constructor(description: String, cause: Throwable) : super(description, cause)
 }

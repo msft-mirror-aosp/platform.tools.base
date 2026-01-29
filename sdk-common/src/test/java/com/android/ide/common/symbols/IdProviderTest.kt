@@ -21,17 +21,17 @@ import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 
 class IdProviderTest {
-    @Test
-    fun aaptFormat() {
-        // Validity check.
-        assertThat(ResourceType.ANIM.ordinal).isEqualTo(0)
-        assertThat(ResourceType.ATTR.ordinal).isEqualTo(3)
+  @Test
+  fun aaptFormat() {
+    // Validity check.
+    assertThat(ResourceType.ANIM.ordinal).isEqualTo(0)
+    assertThat(ResourceType.ATTR.ordinal).isEqualTo(3)
 
-        val provider = IdProvider.sequential()
-        assertThat(provider.next(ResourceType.ANIM)).isEqualTo(0x7f010001)
-        assertThat(provider.next(ResourceType.ANIM)).isEqualTo(0x7f010002)
-        assertThat(provider.next(ResourceType.ATTR)).isEqualTo(0x7f040001)
-        assertThat(provider.next(ResourceType.ANIM)).isEqualTo(0x7f010003)
-        assertThat(provider.next(ResourceType.ATTR)).isEqualTo(0x7f040002)
-    }
+    val provider = IdProvider.sequential()
+    assertThat(provider.next(ResourceType.ANIM)).isEqualTo(0x7f010001)
+    assertThat(provider.next(ResourceType.ANIM)).isEqualTo(0x7f010002)
+    assertThat(provider.next(ResourceType.ATTR)).isEqualTo(0x7f040001)
+    assertThat(provider.next(ResourceType.ANIM)).isEqualTo(0x7f010003)
+    assertThat(provider.next(ResourceType.ATTR)).isEqualTo(0x7f040002)
+  }
 }

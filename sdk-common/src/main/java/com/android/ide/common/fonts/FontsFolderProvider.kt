@@ -19,5 +19,5 @@ import java.io.File
 
 /** Provides the folder where the fonts are stored or null if there are none. */
 interface FontsFolderProvider {
-    val fontsFolder: File?
+  val fontsFolder: File?
 }

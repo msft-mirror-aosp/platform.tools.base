@@ -21,12 +21,7 @@ import org.junit.Test
 
 class DiffsTest {
 
-  private fun diff(
-    originalText: String,
-    newText: String,
-    windowSize: Int = 3,
-    trimEnds: Boolean = false,
-  ): String {
+  private fun diff(originalText: String, newText: String, windowSize: Int = 3, trimEnds: Boolean = false): String {
     return Diffs.diff(originalText, newText, windowSize, trimEnds)
   }
 
@@ -99,12 +94,12 @@ class DiffsTest {
     val new = "Line 1\nNew Line\nLine 3"
     val expectedDiff =
       """
-            @@ -1,3 +1,3 @@
-             Line 1
-            -Old Line
-            +New Line
-             Line 3
-            """
+      @@ -1,3 +1,3 @@
+       Line 1
+      -Old Line
+      +New Line
+       Line 3
+      """
         .trimIndent()
     assertEquals(expectedDiff, diff(original, new))
   }
@@ -116,25 +111,25 @@ class DiffsTest {
     // Expect 2 context lines (default is 3, but here it's limited by actual surrounding lines)
     val expectedDiff =
       """
-            @@ -1,5 +1,5 @@
-             Line 1
-             Line 2
-            -Line 3
-            +Changed
-             Line 4
-             Line 5
-            """
+      @@ -1,5 +1,5 @@
+       Line 1
+       Line 2
+      -Line 3
+      +Changed
+       Line 4
+       Line 5
+      """
         .trimIndent()
     assertEquals(expectedDiff, diff(original, new, windowSize = 2))
 
     val expectedDiff1Context =
       """
-            @@ -2,3 +2,3 @@
-             Line 2
-            -Line 3
-            +Changed
-             Line 4
-            """
+      @@ -2,3 +2,3 @@
+       Line 2
+      -Line 3
+      +Changed
+       Line 4
+      """
         .trimIndent()
     assertEquals(expectedDiff1Context, diff(original, new, windowSize = 1))
   }
@@ -145,11 +140,11 @@ class DiffsTest {
     val new = "Line 1\nLine 2\nLine 3"
     val expectedDiff =
       """
-            @@ -1,2 +1,3 @@
-            +Line 1
-             Line 2
-             Line 3
-            """
+      @@ -1,2 +1,3 @@
+      +Line 1
+       Line 2
+       Line 3
+      """
         .trimIndent()
     assertEquals(expectedDiff, diff(original, new))
   }
@@ -188,11 +183,11 @@ class DiffsTest {
     val new = "Line 2\nLine 3"
     val expectedDiff =
       """
-            @@ -1,3 +1,2 @@
-            -Line 1
-             Line 2
-             Line 3
-            """
+      @@ -1,3 +1,2 @@
+      -Line 1
+       Line 2
+       Line 3
+      """
         .trimIndent()
     assertEquals(expectedDiff, diff(original, new))
   }
@@ -231,15 +226,15 @@ class DiffsTest {
     val new = "Line A\nLine X\nLine C\nLine Y\nLine E"
     val expectedDiff =
       """
-            @@ -1,5 +1,5 @@
-             Line A
-            -Line B
-            +Line X
-             Line C
-            -Line D
-            +Line Y
-             Line E
-            """
+      @@ -1,5 +1,5 @@
+       Line A
+      -Line B
+      +Line X
+       Line C
+      -Line D
+      +Line Y
+       Line E
+      """
         .trimIndent()
     assertEquals(expectedDiff, diff(original, new, windowSize = 1))
   }
@@ -250,10 +245,10 @@ class DiffsTest {
     val new = "Line 1\nLine 2"
     val expectedDiff =
       """
-            @@ -0,0 +1,2 @@
-            +Line 1
-            +Line 2
-            """
+      @@ -0,0 +1,2 @@
+      +Line 1
+      +Line 2
+      """
         .trimIndent()
     assertEquals(expectedDiff, diff(original, new))
   }
@@ -264,10 +259,10 @@ class DiffsTest {
     val new = ""
     val expectedDiff =
       """
-            @@ -1,2 +0,0 @@
-            -Line 1
-            -Line 2
-            """
+      @@ -1,2 +0,0 @@
+      -Line 1
+      -Line 2
+      """
         .trimIndent()
     assertEquals(expectedDiff, diff(original, new))
   }
@@ -278,10 +273,10 @@ class DiffsTest {
     val new = "Line 1\nLine 2\nChanged\nLine 4\nLine 5"
     val expectedDiff =
       """
-            @@ -3 +3 @@
-            -Line 3
-            +Changed
-            """
+      @@ -3 +3 @@
+      -Line 3
+      +Changed
+      """
         .trimIndent()
     assertEquals(expectedDiff, diff(original, new, windowSize = 0))
   }
@@ -290,30 +285,30 @@ class DiffsTest {
   fun testGitExample1() {
     val original =
       """
-            Git is a distributed version control system.
-            It was created by Linus Torvalds in 2005.
-            It is used for tracking changes in source code during software development.
-            It is free and open-source.
-        """
+      Git is a distributed version control system.
+      It was created by Linus Torvalds in 2005.
+      It is used for tracking changes in source code during software development.
+      It is free and open-source.
+      """
         .trimIndent()
     val new =
       """
-            Git is a distributed version control system.
-            It was created by Linus Torvalds in 2005 for Linux kernel development.
-            It is used for tracking changes in source code during software development.
-            It is free and open-source, available under the GPL.
-        """
+      Git is a distributed version control system.
+      It was created by Linus Torvalds in 2005 for Linux kernel development.
+      It is used for tracking changes in source code during software development.
+      It is free and open-source, available under the GPL.
+      """
         .trimIndent()
     val expectedDiff =
       """
-            @@ -1,4 +1,4 @@
-             Git is a distributed version control system.
-            -It was created by Linus Torvalds in 2005.
-            +It was created by Linus Torvalds in 2005 for Linux kernel development.
-             It is used for tracking changes in source code during software development.
-            -It is free and open-source.
-            +It is free and open-source, available under the GPL.
-        """
+      @@ -1,4 +1,4 @@
+       Git is a distributed version control system.
+      -It was created by Linus Torvalds in 2005.
+      +It was created by Linus Torvalds in 2005 for Linux kernel development.
+       It is used for tracking changes in source code during software development.
+      -It is free and open-source.
+      +It is free and open-source, available under the GPL.
+      """
         .trimIndent()
     assertEquals(expectedDiff, diff(original, new, windowSize = 1))
   }
@@ -324,12 +319,12 @@ class DiffsTest {
     val new = "This is an entirely new document.\nWith different content."
     val expectedDiff =
       """
-            @@ -1,2 +1,2 @@
-            -This is the first document.
-            -It has two lines.
-            +This is an entirely new document.
-            +With different content.
-        """
+      @@ -1,2 +1,2 @@
+      -This is the first document.
+      -It has two lines.
+      +This is an entirely new document.
+      +With different content.
+      """
         .trimIndent()
     assertEquals(expectedDiff, diff(original, new))
   }
@@ -340,12 +335,12 @@ class DiffsTest {
     val new = "changed1\nline2\nline3"
     val expectedDiff =
       """
-            @@ -1,3 +1,3 @@
-            -line1
-            +changed1
-             line2
-             line3
-        """
+      @@ -1,3 +1,3 @@
+      -line1
+      +changed1
+       line2
+       line3
+      """
         .trimIndent()
     assertEquals(expectedDiff, diff(original, new, windowSize = 3))
   }
@@ -356,12 +351,12 @@ class DiffsTest {
     val new = "line1\nline2\nchanged3"
     val expectedDiff =
       """
-            @@ -1,3 +1,3 @@
-             line1
-             line2
-            -line3
-            +changed3
-        """
+      @@ -1,3 +1,3 @@
+       line1
+       line2
+      -line3
+      +changed3
+      """
         .trimIndent()
     assertEquals(expectedDiff, diff(original, new, windowSize = 3))
   }
@@ -370,15 +365,15 @@ class DiffsTest {
   fun parse_simpleDiff() {
     val diffText =
       """
-            @@ -1,3 +1,4 @@
-            -old line 1
-            -old line 2
-            -old line 3
-            +new line 1
-            +new line 2
-            +new line 3
-            +new line 4
-            """
+      @@ -1,3 +1,4 @@
+      -old line 1
+      -old line 2
+      -old line 3
+      +new line 1
+      +new line 2
+      +new line 3
+      +new line 4
+      """
         .trimIndent()
     val hunks = parseDiff(diffText)
 
@@ -391,14 +386,14 @@ class DiffsTest {
     assertEquals("@@ -1,3 +1,4 @@", hunk.header)
     assertEquals(
       """
-          -old line 1
-          -old line 2
-          -old line 3
-          +new line 1
-          +new line 2
-          +new line 3
-          +new line 4
-          """
+      -old line 1
+      -old line 2
+      -old line 3
+      +new line 1
+      +new line 2
+      +new line 3
+      +new line 4
+      """
         .trimIndent()
         .lines()
         .joinToString("\n"),
@@ -410,8 +405,7 @@ class DiffsTest {
   fun testNoTrimEnds() {
     val original = "Line 1  \nLine 2\nLine 3\n"
     val new = "Line 1  \nLine 1b  \nLine 2\nLine 3\n"
-    val expectedDiff =
-      "@@ -1,3 +1,4 @@\n" + " Line 1  \n" + "+Line 1b  \n" + " Line 2\n" + " Line 3"
+    val expectedDiff = "@@ -1,3 +1,4 @@\n" + " Line 1  \n" + "+Line 1b  \n" + " Line 2\n" + " Line 3"
     assertEquals(expectedDiff, diff(original, new, trimEnds = false))
   }
 
@@ -506,7 +500,7 @@ class DiffsTest {
       -deleted line 6
       -deleted line 7
       +new line 2
-          """
+      """
         .trimIndent()
 
     assertEquals(expectedDiff, diff(original, new, trimEnds = true))

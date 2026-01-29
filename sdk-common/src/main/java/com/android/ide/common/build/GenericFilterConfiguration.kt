@@ -16,7 +16,5 @@
 
 package com.android.ide.common.build
 
-/**
- * Generic version of the gradle-api FilterConfiguration with gradle specific types removed.
- */
+/** Generic version of the gradle-api FilterConfiguration with gradle specific types removed. */
 data class GenericFilterConfiguration(val filterType: String, val identifier: String)

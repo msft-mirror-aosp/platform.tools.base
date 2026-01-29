@@ -22,22 +22,22 @@ import java.util.function.Supplier
 
 /** Provides fonts stored in SDK or mimics it with a temporary folder if SDK is not available. */
 class SdkFontsFolderProvider(private val sdkHomeProvider: Supplier<File?>) : FontsFolderProvider {
-    private var cachedSdkHome: File? = null
-    override val fontsFolder: File?
-        get() {
-            var sdkHome = sdkHomeProvider.get()
-            if (sdkHome == null) {
-                sdkHome = cachedSdkHome ?: createTempSdk()
-                cachedSdkHome = sdkHome
-            }
-            return getFontsPath(sdkHome)
-        }
-
-    private fun createTempSdk(): File? {
-        return try {
-            Files.createTempDirectory("tempSdk").toFile()
-        } catch (ex: IOException) {
-            null
-        }
+  private var cachedSdkHome: File? = null
+  override val fontsFolder: File?
+    get() {
+      var sdkHome = sdkHomeProvider.get()
+      if (sdkHome == null) {
+        sdkHome = cachedSdkHome ?: createTempSdk()
+        cachedSdkHome = sdkHome
+      }
+      return getFontsPath(sdkHome)
     }
+
+  private fun createTempSdk(): File? {
+    return try {
+      Files.createTempDirectory("tempSdk").toFile()
+    } catch (ex: IOException) {
+      null
+    }
+  }
 }

@@ -16,10 +16,10 @@
 
 package com.android.ide.common.fonts
 
-import org.xml.sax.Attributes
-import org.xml.sax.helpers.DefaultHandler
 import java.util.ArrayList
 import java.util.HashMap
+import org.xml.sax.Attributes
+import org.xml.sax.helpers.DefaultHandler
 
 private const val TAG_PROVIDER = "provider"
 private const val ATTR_PROVIDER_NAME = "name"
@@ -30,24 +30,24 @@ private const val ATTR_PROVIDER_CERT = "cert"
 private const val ATTR_PROVIDER_DEV_CERT = "dev_cert"
 
 class ProviderHandler : DefaultHandler() {
-    private val providers = HashMap<String, FontProvider>()
+  private val providers = HashMap<String, FontProvider>()
 
-    val fontProviders: List<FontProvider>
-        get() = ArrayList(providers.values)
+  val fontProviders: List<FontProvider>
+    get() = ArrayList(providers.values)
 
-    override fun startElement(uri: String, localName: String, qName: String, attributes: Attributes) {
-        when (qName) {
-            TAG_PROVIDER -> {
-                val name = attributes.getValue(ATTR_PROVIDER_NAME)
-                val authority = attributes.getValue(ATTR_AUTHORITY)
-                val packageName = attributes.getValue(ATTR_PACKAGE)
-                val url = attributes.getValue(ATTR_PROVIDER_URL)
-                val cert = attributes.getValue(ATTR_PROVIDER_CERT)
-                val devCert = attributes.getValue(ATTR_PROVIDER_DEV_CERT)
-                if (name.isNotEmpty() && authority.isNotEmpty() && packageName.isNotEmpty()) {
-                    providers[authority] = FontProvider(name, authority, packageName, url, cert, devCert)
-                }
-            }
+  override fun startElement(uri: String, localName: String, qName: String, attributes: Attributes) {
+    when (qName) {
+      TAG_PROVIDER -> {
+        val name = attributes.getValue(ATTR_PROVIDER_NAME)
+        val authority = attributes.getValue(ATTR_AUTHORITY)
+        val packageName = attributes.getValue(ATTR_PACKAGE)
+        val url = attributes.getValue(ATTR_PROVIDER_URL)
+        val cert = attributes.getValue(ATTR_PROVIDER_CERT)
+        val devCert = attributes.getValue(ATTR_PROVIDER_DEV_CERT)
+        if (name.isNotEmpty() && authority.isNotEmpty() && packageName.isNotEmpty()) {
+          providers[authority] = FontProvider(name, authority, packageName, url, cert, devCert)
         }
+      }
     }
+  }
 }

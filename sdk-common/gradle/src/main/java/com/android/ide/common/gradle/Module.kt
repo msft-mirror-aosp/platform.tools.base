@@ -17,43 +17,34 @@ package com.android.ide.common.gradle
 
 import java.io.Serializable
 
-data class Module(
-    val group: String,
-    val name: String,
-): Serializable {
-    override fun toString() = when(val id = toIdentifier()) {
-        is String -> id
-        else -> "Module(group=$group, name=$name)"
+data class Module(val group: String, val name: String) : Serializable {
+  override fun toString() =
+    when (val id = toIdentifier()) {
+      is String -> id
+      else -> "Module(group=$group, name=$name)"
     }
+
+  /** Return a string that will produce the same [Module] when parsed, or `null` if no such identifier exists. */
+  fun toIdentifier() =
+    when {
+      !group.contains(':') && !name.contains(':') -> "${group}:${name}"
+      else -> null
+    }
+
+  companion object {
     /**
-     * Return a string that will produce the same [Module] when parsed, or `null`
-     * if no such identifier exists.
+     * Parse a string with exactly 1 colon (':') character as a [Module], where the colon separates the group from the name. If the string
+     * has zero, or more than one, colon, return `null`.
      */
-    fun toIdentifier() = when {
-        !group.contains(':') && !name.contains(':') -> "${group}:${name}"
-        else -> null
-    }
+    @JvmStatic
+    fun tryParse(string: String) =
+      string.takeIf { s -> s.count { it == ':' } == 1 }?.run { Module(substring(0, indexOf(':')), substring(indexOf(':') + 1)) }
 
-    companion object {
-        /**
-         * Parse a string with exactly 1 colon (':') character as a [Module], where the colon
-         * separates the group from the name.  If the string has zero, or more than one, colon,
-         * return `null`.
-         */
-        @JvmStatic
-        fun tryParse(string: String) = string
-            .takeIf { s -> s.count { it == ':' } == 1 }
-            ?.run { Module(substring(0, indexOf(':')), substring(indexOf(':') + 1)) }
-
-        /**
-         * Attempt to parse a string as a [Module] using [tryParse].  If parsing fails, throw
-         * an [IllegalArgumentException].
-         *
-         * @throws IllegalArgumentException
-         */
-        @JvmStatic
-        fun parse(string: String): Module =
-            tryParse(string) ?: throw IllegalArgumentException("Invalid module: `$string`")
-    }
+    /**
+     * Attempt to parse a string as a [Module] using [tryParse]. If parsing fails, throw an [IllegalArgumentException].
+     *
+     * @throws IllegalArgumentException
+     */
+    @JvmStatic fun parse(string: String): Module = tryParse(string) ?: throw IllegalArgumentException("Invalid module: `$string`")
+  }
 }
-
