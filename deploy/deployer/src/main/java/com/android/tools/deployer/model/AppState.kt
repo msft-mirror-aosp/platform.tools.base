@@ -15,4 +15,4 @@
  */
 package com.android.tools.deployer.model
 
-data class AppState(val abi: String);
+data class AppState(val abi: String)

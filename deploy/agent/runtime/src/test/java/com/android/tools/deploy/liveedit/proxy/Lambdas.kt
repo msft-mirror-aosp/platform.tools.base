@@ -15,30 +15,28 @@
  */
 package com.android.tools.deploy.liveedit
 
-import kotlinx.coroutines.CoroutineName
+import kotlin.coroutines.RestrictsSuspension
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
-import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
-import kotlin.coroutines.RestrictsSuspension
 
 suspend fun doSomethingUsefulOne(): Int {
-    delay(200L) // pretend we are doing something useful here
-    return 13
+  delay(200L) // pretend we are doing something useful here
+  return 13
 }
 
 suspend fun doSomethingUsefulTwo(): Int {
-    delay(200L) // pretend we are doing something useful here, too
-    return 29
+  delay(200L) // pretend we are doing something useful here, too
+  return 29
 }
 
 fun simple(): Sequence<Int> = sequence {
-    for (i in 1..3) {
-        yield(i)
-    }
+  for (i in 1..3) {
+    yield(i)
+  }
 }
 
 fun suspends(block: suspend () -> Int) = block
@@ -47,55 +45,55 @@ fun returnSuspendLambda() = suspends({ 100 })
 
 @RestrictsSuspension
 class Restricts {
-    fun restrict(block: suspend Restricts.() -> Int) = block
+  fun restrict(block: suspend Restricts.() -> Int) = block
 }
 
 fun returnRestrictedSuspendLambda() = Restricts().restrict({ 100 })
 
-fun testRestrictedSuspend() : Int {
-    var result = 0
-    runBlocking<Unit> {
-        for (i in simple()) {
-            result = result + i
-        }
+fun testRestrictedSuspend(): Int {
+  var result = 0
+  runBlocking<Unit> {
+    for (i in simple()) {
+      result = result + i
     }
-    return result
+  }
+  return result
 }
 
-fun testSuspend() : Int {
-    var result = 0
-    runBlocking<Unit> {
-        val one = doSomethingUsefulOne()
-        val two = doSomethingUsefulTwo()
-        result = one + two
-    }
-    return result
+fun testSuspend(): Int {
+  var result = 0
+  runBlocking<Unit> {
+    val one = doSomethingUsefulOne()
+    val two = doSomethingUsefulTwo()
+    result = one + two
+  }
+  return result
 }
 
-fun testAsyncAwait() = runBlocking<Int> {
+fun testAsyncAwait() =
+  runBlocking<Int> {
     val one = async { doSomethingUsefulOne() }
     val two = async { doSomethingUsefulTwo() }
     one.await() + two.await()
-}
+  }
 
-fun testLaunchJoin() = runBlocking<Int> {
+fun testLaunchJoin() =
+  runBlocking<Int> {
     var value = 0
     val job = launch { // launch a new coroutine and keep a reference to its Job
-        delay(500L)
-        value = 100
+      delay(500L)
+      value = 100
     }
     job.join()
     value
-}
+  }
 
 fun testProperThreading() = runBlocking {
-    val threads = Array(3) { "" }
-    threads[0] = Thread.currentThread().name
-    withContext(Dispatchers.IO) {
-        threads[1] = Thread.currentThread().name
-    }
-    threads[2] = Thread.currentThread().name
-    threads
+  val threads = Array(3) { "" }
+  threads[0] = Thread.currentThread().name
+  withContext(Dispatchers.IO) { threads[1] = Thread.currentThread().name }
+  threads[2] = Thread.currentThread().name
+  threads
 }
 
 fun referenceThis(): Int {
@@ -108,16 +106,16 @@ fun testFunctionReference(): Int {
 }
 
 fun returnFunctionReference(): () -> Int {
-    return ::referenceThis
+  return ::referenceThis
 }
 
 fun adaptThis(x: Int = 100): Int = x
 
 fun testAdaptedReference(): Int {
-    fun inner(f: () -> Int) = f()
-    return inner(::adaptThis)
+  fun inner(f: () -> Int) = f()
+  return inner(::adaptThis)
 }
 
 fun returnAdaptedReference(): () -> Int {
-    return ::adaptThis
+  return ::adaptThis
 }

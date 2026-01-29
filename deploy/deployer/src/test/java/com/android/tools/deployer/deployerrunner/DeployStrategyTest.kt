@@ -26,73 +26,60 @@ import org.junit.runner.RunWith
 
 @RunWith(ApiLevel::class)
 class DeployStrategyTest : DeployRunnerTestBase() {
-    @Test
-    @ApiLevel.InRange(min = 33)
-    fun testBaselineInstall() {
-        AssumeUtil.assumeNotWindows() // This test runs the installer on the host
+  @Test
+  @ApiLevel.InRange(min = 33)
+  fun testBaselineInstall() {
+    AssumeUtil.assumeNotWindows() // This test runs the installer on the host
 
-        Assert.assertTrue(device.apps.isEmpty())
-        val runner = DeployerRunner(cacheDb, dexDB, service)
-        val json = TestUtils.resolveWorkspacePath(BASE + "apks/arch_filter.json")
-        val installersPath = DeployerTestUtils.prepareInstaller().toPath()
-        val args = arrayOf(
-            "install",
-            "--strategy=$json",
-            "--force-full-install",
-            "--installers-path=$installersPath"
-        )
-        val returnCode = runner.run(args)
-        Assert.assertEquals(0, returnCode.toLong())
-        Assert.assertEquals(1, device.apps.size.toLong())
+    Assert.assertTrue(device.apps.isEmpty())
+    val runner = DeployerRunner(cacheDb, dexDB, service)
+    val json = TestUtils.resolveWorkspacePath(BASE + "apks/arch_filter.json")
+    val installersPath = DeployerTestUtils.prepareInstaller().toPath()
+    val args = arrayOf("install", "--strategy=$json", "--force-full-install", "--installers-path=$installersPath")
+    val returnCode = runner.run(args)
+    Assert.assertEquals(0, returnCode.toLong())
+    Assert.assertEquals(1, device.apps.size.toLong())
 
-        val apk0 = TestUtils.resolveWorkspacePath(BASE + "apks/simple.apk")
-        val apk1 = TestUtils.resolveWorkspacePath(BASE + "apks/split2.apk")
+    val apk0 = TestUtils.resolveWorkspacePath(BASE + "apks/simple.apk")
+    val apk1 = TestUtils.resolveWorkspacePath(BASE + "apks/split2.apk")
 
-        assertInstalled("com.example.simpleapp", apk0, apk1)
-    }
+    assertInstalled("com.example.simpleapp", apk0, apk1)
+  }
 
-    @Test
-    @ApiLevel.InRange(min = 33)
-    @Throws(Exception::class)
-    fun testRootPushInstall() {
-        AssumeUtil.assumeNotWindows() // This test runs the installer on the host
+  @Test
+  @ApiLevel.InRange(min = 33)
+  @Throws(Exception::class)
+  fun testRootPushInstall() {
+    AssumeUtil.assumeNotWindows() // This test runs the installer on the host
 
-        Assert.assertTrue(device.apps.isEmpty())
-        val runner = DeployerRunner(cacheDb, dexDB, service)
-        val json = TestUtils.resolveWorkspacePath(BASE + "apks/arch_filter.json")
-        val installersPath = DeployerTestUtils.prepareInstaller().toPath()
-        var args = arrayOf(
-            "install",
-            "--strategy=$json",
-            "--force-full-install",
-            "--installers-path=$installersPath",
-            )
-        var  returnCode = runner.run(args)
-        Assert.assertEquals(0, returnCode.toLong())
-        Assert.assertEquals(1, device.apps.size.toLong())
+    Assert.assertTrue(device.apps.isEmpty())
+    val runner = DeployerRunner(cacheDb, dexDB, service)
+    val json = TestUtils.resolveWorkspacePath(BASE + "apks/arch_filter.json")
+    val installersPath = DeployerTestUtils.prepareInstaller().toPath()
+    var args = arrayOf("install", "--strategy=$json", "--force-full-install", "--installers-path=$installersPath")
+    var returnCode = runner.run(args)
+    Assert.assertEquals(0, returnCode.toLong())
+    Assert.assertEquals(1, device.apps.size.toLong())
 
-        val apk0 = TestUtils.resolveWorkspacePath(BASE + "apks/simple.apk")
+    val apk0 = TestUtils.resolveWorkspacePath(BASE + "apks/simple.apk")
 
-        // NOTE that our FakeDevice are of arch "x86" (FakeDevice.java's ABI value)
-        val apk1 = TestUtils.resolveWorkspacePath(BASE + "apks/split2.apk")
+    // NOTE that our FakeDevice are of arch "x86" (FakeDevice.java's ABI value)
+    val apk1 = TestUtils.resolveWorkspacePath(BASE + "apks/split2.apk")
 
-        args = arrayOf(
-            "install",
-            "--strategy=$json",
-            "--force-full-install",
-            "--installers-path=$installersPath",
-            "--use-root-push-install",
-            "--skip-post-install"
-        )
+    args =
+      arrayOf(
+        "install",
+        "--strategy=$json",
+        "--force-full-install",
+        "--installers-path=$installersPath",
+        "--use-root-push-install",
+        "--skip-post-install",
+      )
 
-        returnCode = runner.run(args)
-        Assert.assertEquals(0, returnCode.toLong())
-        Assert.assertEquals(1, device.apps.size.toLong())
-        assertInstalled("com.example.simpleapp", apk0, apk1)
-        assertMetrics(
-            runner.metrics,
-            ":Success",
-            "ROOT_PUSH_INSTALL:Success"
-        )
-    }
+    returnCode = runner.run(args)
+    Assert.assertEquals(0, returnCode.toLong())
+    Assert.assertEquals(1, device.apps.size.toLong())
+    assertInstalled("com.example.simpleapp", apk0, apk1)
+    assertMetrics(runner.metrics, ":Success", "ROOT_PUSH_INSTALL:Success")
+  }
 }

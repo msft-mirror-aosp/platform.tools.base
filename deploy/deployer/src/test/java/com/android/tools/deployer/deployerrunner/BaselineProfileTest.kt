@@ -25,38 +25,33 @@ import org.junit.runner.RunWith
 
 @RunWith(ApiLevel::class)
 class BaselineProfileTest : DeployRunnerTestBase() {
-    @Test
-    @ApiLevel.InRange(min = 31)
-    @Throws(Exception::class)
-    fun testBaselineInstall() {
-        Assert.assertTrue(device.apps.isEmpty())
-        val runner: DeployerRunner = DeployerRunner(cacheDb, dexDB, service)
-        val apk = TestUtils.resolveWorkspacePath(BASE + "sample.apk")
-        val baseline = TestUtils.resolveWorkspacePath(BASE + "sample.dm")
-        val installersPath = DeployerTestUtils.prepareInstaller().toPath()
-        val args = arrayOf(
-            "install",
-            "com.example.helloworld",
-            apk.toString(),
-            baseline.toString(),
-            "--force-full-install",
-            "--installers-path=$installersPath"
-        )
-        val retcode = runner.run(args)
-        Assert.assertEquals(0, retcode.toLong())
-        Assert.assertEquals(1, device.apps.size.toLong())
-        assertInstalled("com.example.helloworld", apk)
-        assertMetrics(
-            runner.metrics,
-            "DELTAINSTALL:DISABLED",
-            "INSTALL:OK",
-            "DDMLIB_UPLOAD",
-            "DDMLIB_INSTALL"
-        )
-        Assert.assertFalse(device.hasFile("/data/local/tmp/sample.apk"))
-    }
+  @Test
+  @ApiLevel.InRange(min = 31)
+  @Throws(Exception::class)
+  fun testBaselineInstall() {
+    Assert.assertTrue(device.apps.isEmpty())
+    val runner: DeployerRunner = DeployerRunner(cacheDb, dexDB, service)
+    val apk = TestUtils.resolveWorkspacePath(BASE + "sample.apk")
+    val baseline = TestUtils.resolveWorkspacePath(BASE + "sample.dm")
+    val installersPath = DeployerTestUtils.prepareInstaller().toPath()
+    val args =
+      arrayOf(
+        "install",
+        "com.example.helloworld",
+        apk.toString(),
+        baseline.toString(),
+        "--force-full-install",
+        "--installers-path=$installersPath",
+      )
+    val retcode = runner.run(args)
+    Assert.assertEquals(0, retcode.toLong())
+    Assert.assertEquals(1, device.apps.size.toLong())
+    assertInstalled("com.example.helloworld", apk)
+    assertMetrics(runner.metrics, "DELTAINSTALL:DISABLED", "INSTALL:OK", "DDMLIB_UPLOAD", "DDMLIB_INSTALL")
+    Assert.assertFalse(device.hasFile("/data/local/tmp/sample.apk"))
+  }
 
-    fun retrieveEditMapping(beforeEditOffset : Int ) : Int? {
-        return null;
-    }
+  fun retrieveEditMapping(beforeEditOffset: Int): Int? {
+    return null
+  }
 }
