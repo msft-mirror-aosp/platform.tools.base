@@ -16,32 +16,34 @@
 
 package com.android.tools.backup
 
+import org.junit.Test
 import org.junit.runners.BlockJUnit4ClassRunner
 import org.junit.runners.model.FrameworkMethod
 import org.junit.runners.model.TestClass
-import org.junit.Test
 
-class AndroidBackupJUnit4Runner(private val testClass: Class<*>?): BlockJUnit4ClassRunner(testClass) {
+class AndroidBackupJUnit4Runner(private val testClass: Class<*>?) : BlockJUnit4ClassRunner(testClass) {
 
-    override fun computeTestMethods(): MutableList<FrameworkMethod> {
-        val allMethods = TestClass(testClass).annotatedMethods
-        val myTestMethods = mutableListOf<FrameworkMethod>()
+  override fun computeTestMethods(): MutableList<FrameworkMethod> {
+    val allMethods = TestClass(testClass).annotatedMethods
+    val myTestMethods = mutableListOf<FrameworkMethod>()
 
-        for (method in allMethods) {
-            if (method.getAnnotation(BeforeBackup::class.java) != null
-                || method.getAnnotation(BeforeRestore::class.java) != null
-                || method.getAnnotation(BetweenBackupAndRestore::class.java) != null
-                || method.getAnnotation(Test::class.java) != null) {
-                myTestMethods.add(method)
-            }
-        }
-        return myTestMethods
+    for (method in allMethods) {
+      if (
+        method.getAnnotation(BeforeBackup::class.java) != null ||
+          method.getAnnotation(BeforeRestore::class.java) != null ||
+          method.getAnnotation(BetweenBackupAndRestore::class.java) != null ||
+          method.getAnnotation(Test::class.java) != null
+      ) {
+        myTestMethods.add(method)
+      }
     }
+    return myTestMethods
+  }
 
-    override fun validateInstanceMethods(errors: List<Throwable>) {
-        super.validatePublicVoidNoArgMethods(BeforeBackup::class.java, false, errors)
-        super.validatePublicVoidNoArgMethods(BeforeRestore::class.java, false, errors)
-        super.validatePublicVoidNoArgMethods(BetweenBackupAndRestore::class.java, false, errors)
-        super.validateTestMethods(errors)
-    }
+  override fun validateInstanceMethods(errors: List<Throwable>) {
+    super.validatePublicVoidNoArgMethods(BeforeBackup::class.java, false, errors)
+    super.validatePublicVoidNoArgMethods(BeforeRestore::class.java, false, errors)
+    super.validatePublicVoidNoArgMethods(BetweenBackupAndRestore::class.java, false, errors)
+    super.validateTestMethods(errors)
+  }
 }

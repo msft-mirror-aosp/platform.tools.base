@@ -19,10 +19,8 @@ package com.android.tools.backup.sampleTests
 import org.junit.Ignore
 import org.junit.Test
 
-
 @Ignore("Example test for AndroidBackupRunnerBuilderTest")
 class ExampleInstrumentedTest {
 
-    @Test
-    fun test1() {}
+  @Test fun test1() {}
 }

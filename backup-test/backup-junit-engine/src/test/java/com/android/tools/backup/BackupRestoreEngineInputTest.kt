@@ -16,23 +16,23 @@
 
 package com.android.tools.backup
 
-import org.junit.Test
 import kotlin.test.assertEquals
+import org.junit.Test
 
 class BackupRestoreEngineInputTest {
-    @Test
-    fun getEngineInputs() {
-        val testAppId = "test.app.id"
-        val resultDirPath = "/results/dir/path"
+  @Test
+  fun getEngineInputs() {
+    val testAppId = "test.app.id"
+    val resultDirPath = "/results/dir/path"
 
-        setTestEngineParam("appId", testAppId)
-        setTestEngineParam("resultsDirPath", resultDirPath)
+    setTestEngineParam("appId", testAppId)
+    setTestEngineParam("resultsDirPath", resultDirPath)
 
-        assertEquals(BackupRestoreEngineInput.appId, testAppId)
-        assertEquals(BackupRestoreEngineInput.resultDirPath, resultDirPath)
-    }
+    assertEquals(BackupRestoreEngineInput.appId, testAppId)
+    assertEquals(BackupRestoreEngineInput.resultDirPath, resultDirPath)
+  }
 
-    private fun setTestEngineParam(key: String, value: String) {
-        System.setProperty("BackupRestoreTestEngineInput.$key", value)
-    }
+  private fun setTestEngineParam(key: String, value: String) {
+    System.setProperty("BackupRestoreTestEngineInput.$key", value)
+  }
 }
