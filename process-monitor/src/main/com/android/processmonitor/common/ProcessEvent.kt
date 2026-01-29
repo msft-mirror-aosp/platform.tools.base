@@ -17,35 +17,28 @@ package com.android.processmonitor.common
 
 import com.android.processmonitor.monitor.ProcessNames
 
-/**
- * An event representing processes being added and removed.
- */
+/** An event representing processes being added and removed. */
 sealed class ProcessEvent(open val pid: Int) {
 
-    data class ProcessAdded(
-        override val pid: Int,
-        val applicationId: String?,
-        val processName: String
-    ) : ProcessEvent(pid) {
+  data class ProcessAdded(override val pid: Int, val applicationId: String?, val processName: String) : ProcessEvent(pid) {
 
-        /**
-         * Creates a [ProcessNames] from a [ProcessAdded] event.
-         *
-         * If packageName is null, use processName to guess what it might be.
-         *
-         *  Based on ClientData::getPackageName(). Specifically, if processName contains a ':',
-         *  we assume that the conventions of `"$applicationId:$processName"` is being observed.
-         *  Otherwise, use the processName as the applicationId.
-         */
-        fun toProcessNames(): ProcessNames {
-            return ProcessNames(applicationId ?: processName.toPackageName(), processName)
-        }
+    /**
+     * Creates a [ProcessNames] from a [ProcessAdded] event.
+     *
+     * If packageName is null, use processName to guess what it might be.
+     *
+     * Based on ClientData::getPackageName(). Specifically, if processName contains a ':', we assume that the conventions of
+     * `"$applicationId:$processName"` is being observed. Otherwise, use the processName as the applicationId.
+     */
+    fun toProcessNames(): ProcessNames {
+      return ProcessNames(applicationId ?: processName.toPackageName(), processName)
     }
+  }
 
-    data class ProcessRemoved(override val pid: Int) : ProcessEvent(pid)
+  data class ProcessRemoved(override val pid: Int) : ProcessEvent(pid)
 }
 
 private fun String.toPackageName(): String {
-    val i = indexOf(':')
-    return if (i < 0) this else substring(0, i)
+  val i = indexOf(':')
+  return if (i < 0) this else substring(0, i)
 }

@@ -22,23 +22,20 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.consumeAsFlow
 
-/**
- * A test implementation of [com.android.processmonitor.common.DeviceTracker]
- */
+/** A test implementation of [com.android.processmonitor.common.DeviceTracker] */
 internal class FakeDeviceTracker : DeviceTracker<String>, Closeable {
 
-    private val deviceEventsChannel = Channel<DeviceEvent<String>>(10)
+  private val deviceEventsChannel = Channel<DeviceEvent<String>>(10)
 
-    suspend fun sendDeviceEvents(vararg events: DeviceEvent<String>) {
-        events.forEach {
-            deviceEventsChannel.send(it)
-        }
-    }
+  suspend fun sendDeviceEvents(vararg events: DeviceEvent<String>) {
+    events.forEach { deviceEventsChannel.send(it) }
+  }
 
-    override fun trackDevices(): Flow<DeviceEvent<String>> = deviceEventsChannel.consumeAsFlow()
-    override fun getDeviceSerialNumber(device: String): String = device
+  override fun trackDevices(): Flow<DeviceEvent<String>> = deviceEventsChannel.consumeAsFlow()
 
-    override fun close() {
-        deviceEventsChannel.close()
-    }
+  override fun getDeviceSerialNumber(device: String): String = device
+
+  override fun close() {
+    deviceEventsChannel.close()
+  }
 }

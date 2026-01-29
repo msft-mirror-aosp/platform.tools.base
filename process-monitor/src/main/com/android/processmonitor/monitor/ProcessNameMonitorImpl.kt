@@ -26,6 +26,8 @@ import com.android.processmonitor.common.ProcessEvent
 import com.android.processmonitor.monitor.adblib.DeviceTrackerAdblib
 import com.android.processmonitor.monitor.adblib.ProcessTrackerFactoryAdblib
 import com.android.sdklib.deviceprovisioner.DeviceProvisioner
+import java.io.Closeable
+import java.util.concurrent.ConcurrentHashMap
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
@@ -35,107 +37,96 @@ import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.launch
 import org.jetbrains.annotations.TestOnly
 import org.jetbrains.annotations.VisibleForTesting
-import java.io.Closeable
-import java.util.concurrent.ConcurrentHashMap
 
-/**
- * Implementation of ProcessNameMonitor
- */
-class ProcessNameMonitorImpl<T> @TestOnly internal constructor(
-    parentScope: CoroutineScope,
-    private val deviceTracker: DeviceTracker<T>,
-    private val processTrackerFactory: ProcessTrackerFactory<T>,
-    private val maxProcessRetention: Int,
-    private val logger: AdbLogger,
+/** Implementation of ProcessNameMonitor */
+class ProcessNameMonitorImpl<T>
+@TestOnly
+internal constructor(
+  parentScope: CoroutineScope,
+  private val deviceTracker: DeviceTracker<T>,
+  private val processTrackerFactory: ProcessTrackerFactory<T>,
+  private val maxProcessRetention: Int,
+  private val logger: AdbLogger,
 ) : ProcessNameMonitor, Closeable {
 
-    private val exceptionHandler = CoroutineExceptionHandler { _, t ->
-        logger.warn(t, "Error in a coroutine: ${t.message}")
+  private val exceptionHandler = CoroutineExceptionHandler { _, t -> logger.warn(t, "Error in a coroutine: ${t.message}") }
+
+  private val scope: CoroutineScope = CoroutineScope(parentScope.coroutineContext + SupervisorJob() + exceptionHandler)
+
+  @Volatile private var isStarted = false
+
+  // Connected devices.
+  @VisibleForTesting internal val devices = ConcurrentHashMap<String, PerDeviceMonitor>()
+
+  override fun start() {
+    if (isStarted) {
+      return
     }
-
-    private val scope: CoroutineScope =
-        CoroutineScope(parentScope.coroutineContext + SupervisorJob() + exceptionHandler)
-
-    @Volatile
-    private var isStarted = false
-
-    // Connected devices.
-    @VisibleForTesting
-    internal val devices = ConcurrentHashMap<String, PerDeviceMonitor>()
-
-    override fun start() {
-        if (isStarted) {
-            return
-        }
-        synchronized(this) {
-            if (isStarted) {
-                return
+    synchronized(this) {
+      if (isStarted) {
+        return
+      }
+      isStarted = true
+    }
+    scope.launch {
+      runCatching {
+          deviceTracker.trackDevices().collect {
+            when (it) {
+              is DeviceOnline -> addDevice(it.device)
+              is DeviceDisconnected -> removeDevice(it.serialNumber)
             }
-            isStarted = true
+          }
         }
-        scope.launch {
-            runCatching {
-                deviceTracker.trackDevices().collect {
-                    when (it) {
-                        is DeviceOnline -> addDevice(it.device)
-                        is DeviceDisconnected -> removeDevice(it.serialNumber)
-                    }
-                }
-            }.onFailure { throwable ->
-                logger.logIOCompletionErrors(throwable)
-            }
-        }
+        .onFailure { throwable -> logger.logIOCompletionErrors(throwable) }
     }
+  }
 
-    override suspend fun trackDeviceProcesses(serialNumber: String): Flow<ProcessEvent> {
-        val processTracker = devices[serialNumber]?.processTracker
-        if (processTracker == null) {
-            logger.warn("Device $serialNumber is not available")
-            return emptyFlow()
-        }
-        return processTracker.trackProcesses()
+  override suspend fun trackDeviceProcesses(serialNumber: String): Flow<ProcessEvent> {
+    val processTracker = devices[serialNumber]?.processTracker
+    if (processTracker == null) {
+      logger.warn("Device $serialNumber is not available")
+      return emptyFlow()
     }
+    return processTracker.trackProcesses()
+  }
 
-    override fun getProcessNames(serialNumber: String, pid: Int): ProcessNames? {
-        return devices[serialNumber]?.getProcessNames(pid)
-    }
+  override fun getProcessNames(serialNumber: String, pid: Int): ProcessNames? {
+    return devices[serialNumber]?.getProcessNames(pid)
+  }
 
-    override fun close() {
-        scope.cancel()
-    }
+  override fun close() {
+    scope.cancel()
+  }
 
-    private suspend fun addDevice(device: T) {
-        val serialNumber = deviceTracker.getDeviceSerialNumber(device)
-        logger.debug { "Adding $serialNumber" }
-        val processTracker =
-            SharedProcessTracker(scope, processTrackerFactory.createProcessTracker(device), logger)
-        val logger = logger.withPrefix("PerDeviceMonitor: $serialNumber: ")
-        devices[serialNumber] =
-            PerDeviceMonitor(scope, logger, maxProcessRetention, processTracker).apply {
-                start()
-            }
-    }
+  private suspend fun addDevice(device: T) {
+    val serialNumber = deviceTracker.getDeviceSerialNumber(device)
+    logger.debug { "Adding $serialNumber" }
+    val processTracker = SharedProcessTracker(scope, processTrackerFactory.createProcessTracker(device), logger)
+    val logger = logger.withPrefix("PerDeviceMonitor: $serialNumber: ")
+    devices[serialNumber] = PerDeviceMonitor(scope, logger, maxProcessRetention, processTracker).apply { start() }
+  }
 
-    private fun removeDevice(serialNumber: String) {
-        logger.debug { ("Removing $serialNumber") }
-        val clientMonitor = devices.remove(serialNumber)
-        clientMonitor?.close()
-    }
+  private fun removeDevice(serialNumber: String) {
+    logger.debug { ("Removing $serialNumber") }
+    val clientMonitor = devices.remove(serialNumber)
+    clientMonitor?.close()
+  }
 
-    companion object {
+  companion object {
 
-        fun create(
-            parentScope: CoroutineScope,
-            adbSession: AdbSession,
-            deviceProvisioner: DeviceProvisioner,
-            config: ProcessNameMonitor.Config,
-            logger: AdbLogger,
-        ) = ProcessNameMonitorImpl(
-            parentScope,
-            DeviceTrackerAdblib(deviceProvisioner, logger),
-            ProcessTrackerFactoryAdblib(adbSession, config.agentConfig, logger),
-            config.maxProcessRetention,
-            logger,
-        )
-    }
+    fun create(
+      parentScope: CoroutineScope,
+      adbSession: AdbSession,
+      deviceProvisioner: DeviceProvisioner,
+      config: ProcessNameMonitor.Config,
+      logger: AdbLogger,
+    ) =
+      ProcessNameMonitorImpl(
+        parentScope,
+        DeviceTrackerAdblib(deviceProvisioner, logger),
+        ProcessTrackerFactoryAdblib(adbSession, config.agentConfig, logger),
+        config.maxProcessRetention,
+        logger,
+      )
+  }
 }

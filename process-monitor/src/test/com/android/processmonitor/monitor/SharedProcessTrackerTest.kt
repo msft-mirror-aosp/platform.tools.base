@@ -18,6 +18,7 @@ package com.android.processmonitor.monitor
 import com.android.adblib.testing.FakeAdbLoggerFactory
 import com.android.processmonitor.common.ProcessEvent
 import com.android.processmonitor.common.ProcessTracker
+import java.io.IOException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.flow
@@ -27,43 +28,34 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import java.io.IOException
 
 class SharedProcessTrackerTest {
 
-    private val logger = FakeAdbLoggerFactory().logger
+  private val logger = FakeAdbLoggerFactory().logger
 
-    @Test
-    fun trackProcesses_doesNotCrashScope_whenDelegateThrows() = runBlocking {
-        // Setup
-        val exceptionProcessed = CompletableDeferred<Unit>()
-        val delegate = ProcessTracker {
-            flow<ProcessEvent> {
-                throw IOException("Test exception")
-            }.onCompletion {
-                exceptionProcessed.complete(Unit)
-            }
-        }
-
-        val tracker = SharedProcessTracker(this, delegate, logger)
-
-        // Act
-        val collectorJob = launch {
-            tracker.trackProcesses().collect { }
-        }
-
-        withTimeout(1000) {
-            exceptionProcessed.await()
-        }
-
-        // Give the scope a chance to be canceled if the exception
-        // wasn't caught
-        delay(100)
-
-        // Assert
-        // Collecting from a shared flow remains active as delegate
-        // flow exception shouldn't crash the shared flow.
-        assertTrue(collectorJob.isActive)
-        collectorJob.cancel()
+  @Test
+  fun trackProcesses_doesNotCrashScope_whenDelegateThrows() = runBlocking {
+    // Setup
+    val exceptionProcessed = CompletableDeferred<Unit>()
+    val delegate = ProcessTracker {
+      flow<ProcessEvent> { throw IOException("Test exception") }.onCompletion { exceptionProcessed.complete(Unit) }
     }
+
+    val tracker = SharedProcessTracker(this, delegate, logger)
+
+    // Act
+    val collectorJob = launch { tracker.trackProcesses().collect {} }
+
+    withTimeout(1000) { exceptionProcessed.await() }
+
+    // Give the scope a chance to be canceled if the exception
+    // wasn't caught
+    delay(100)
+
+    // Assert
+    // Collecting from a shared flow remains active as delegate
+    // flow exception shouldn't crash the shared flow.
+    assertTrue(collectorJob.isActive)
+    collectorJob.cancel()
+  }
 }

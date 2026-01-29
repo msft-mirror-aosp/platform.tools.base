@@ -23,21 +23,14 @@ import com.android.processmonitor.common.ProcessTracker
 import com.android.processmonitor.monitor.BaseProcessTrackerFactory
 import com.android.sdklib.deviceprovisioner.DeviceState
 
-internal class ProcessTrackerFactoryAdblib(
-    adbSession: AdbSession,
-    agentConfig: AgentProcessTrackerConfig?,
-    private val logger: AdbLogger,
-) : BaseProcessTrackerFactory<DeviceState.Connected>(adbSession, agentConfig, logger) {
+internal class ProcessTrackerFactoryAdblib(adbSession: AdbSession, agentConfig: AgentProcessTrackerConfig?, private val logger: AdbLogger) :
+  BaseProcessTrackerFactory<DeviceState.Connected>(adbSession, agentConfig, logger) {
 
-    override fun createMainTracker(device: DeviceState.Connected): ProcessTracker =
-        JdwpProcessTracker(device.connectedDevice, logger)
+  override fun createMainTracker(device: DeviceState.Connected): ProcessTracker = JdwpProcessTracker(device.connectedDevice, logger)
 
-    override suspend fun getDeviceApiLevel(device: DeviceState.Connected): Int =
-        device.properties.androidVersion?.apiLevel ?: 1
+  override suspend fun getDeviceApiLevel(device: DeviceState.Connected): Int = device.properties.androidVersion?.apiLevel ?: 1
 
-    override suspend fun getDeviceAbi(device: DeviceState.Connected): String? =
-        device.properties.primaryAbi?.toString()
+  override suspend fun getDeviceAbi(device: DeviceState.Connected): String? = device.properties.primaryAbi?.toString()
 
-    override fun getDeviceSerialNumber(device: DeviceState.Connected): String =
-        device.connectedDevice.serialNumber
+  override fun getDeviceSerialNumber(device: DeviceState.Connected): String = device.connectedDevice.serialNumber
 }

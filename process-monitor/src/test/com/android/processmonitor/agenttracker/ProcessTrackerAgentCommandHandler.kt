@@ -37,42 +37,41 @@ private const val EOF = "EOF"
  *
  * See `//tools/base/process-monitor/process-tracker-agent`
  */
-internal class ProcessTrackerAgentCommandHandler : SimpleShellHandler(
-    ShellProtocolType.SHELL_V2,
-    AGENT_PATH
-) {
+internal class ProcessTrackerAgentCommandHandler : SimpleShellHandler(ShellProtocolType.SHELL_V2, AGENT_PATH) {
 
-    private val channel = Channel<String>(10)
+  private val channel = Channel<String>(10)
 
-    val invocations = mutableListOf<String>()
+  val invocations = mutableListOf<String>()
 
-    suspend fun emitStdout(line: String): ProcessTrackerAgentCommandHandler {
-        channel.send("$STDOUT$line\n")
-        return this
-    }
-    suspend fun emitEof() = channel.send(EOF)
+  suspend fun emitStdout(line: String): ProcessTrackerAgentCommandHandler {
+    channel.send("$STDOUT$line\n")
+    return this
+  }
 
-    override fun execute(
-        fakeAdbServer: FakeAdbServer,
-        statusWriter: StatusWriter,
-        shellCommandOutput: ShellCommandOutput,
-        device: DeviceState,
-        shellCommand: String,
-        shellCommandArgs: String?
-    ) {
-        statusWriter.writeOk()
-        invocations.add("${device.deviceId}: $shellCommandArgs")
-        runBlocking {
-            channel.consumeAsFlow().takeWhile {
-                it != EOF
-            }.collect {
-                when {
-                    it.startsWith(STDOUT) -> shellCommandOutput.writeStdout(it.dropPrefix(STDOUT))
-                    it.startsWith(STDERR) -> shellCommandOutput.writeStderr(it.dropPrefix(STDERR))
-                    else -> throw IllegalStateException("Unexpected data: $it")
-                }
-            }
+  suspend fun emitEof() = channel.send(EOF)
+
+  override fun execute(
+    fakeAdbServer: FakeAdbServer,
+    statusWriter: StatusWriter,
+    shellCommandOutput: ShellCommandOutput,
+    device: DeviceState,
+    shellCommand: String,
+    shellCommandArgs: String?,
+  ) {
+    statusWriter.writeOk()
+    invocations.add("${device.deviceId}: $shellCommandArgs")
+    runBlocking {
+      channel
+        .consumeAsFlow()
+        .takeWhile { it != EOF }
+        .collect {
+          when {
+            it.startsWith(STDOUT) -> shellCommandOutput.writeStdout(it.dropPrefix(STDOUT))
+            it.startsWith(STDERR) -> shellCommandOutput.writeStderr(it.dropPrefix(STDERR))
+            else -> throw IllegalStateException("Unexpected data: $it")
+          }
         }
-        shellCommandOutput.writeExitCode(0)
     }
+    shellCommandOutput.writeExitCode(0)
+  }
 }

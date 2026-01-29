@@ -26,12 +26,12 @@ import com.android.sdklib.deviceprovisioner.DeviceProperties
 import com.android.sdklib.deviceprovisioner.DeviceState
 import com.android.sdklib.deviceprovisioner.EmptyIcon
 import com.android.sdklib.devices.Abi
-import org.mockito.kotlin.mock
-import org.mockito.kotlin.whenever
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.runBlocking
 import org.junit.Test
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.whenever
 
 /** Tests for [com.android.processmonitor.monitor.adblib.ProcessTrackerFactoryAdblib] */
 class ProcessTrackerFactoryAdblibTest {
@@ -61,6 +61,4 @@ private fun deviceProperties(aplLevel: Int, abi: Abi) =
 
 @Suppress("SameParameterValue")
 private fun mockDevice(serialNumber: String): ConnectedDevice =
-  mock<ConnectedDevice>().apply {
-    whenever(deviceInfoFlow).thenReturn(MutableStateFlow(DeviceInfo(serialNumber, ONLINE)))
-  }
+  mock<ConnectedDevice>().apply { whenever(deviceInfoFlow).thenReturn(MutableStateFlow(DeviceInfo(serialNumber, ONLINE))) }

@@ -21,30 +21,25 @@ import com.android.processmonitor.monitor.ProcessNames
 import kotlinx.coroutines.flow.Flow
 import org.jetbrains.annotations.TestOnly
 
-/**
- * A fake implementation of [ProcessNameMonitor] for tests
- */
+/** A fake implementation of [ProcessNameMonitor] for tests */
 @TestOnly
 class FakeProcessNameMonitor : ProcessNameMonitor {
 
-    private val deviceToProcessesMap = mutableMapOf<String, MutableMap<Int, ProcessNames>>()
-    private val deviceToProcessTrackerMap = mutableMapOf<String, FakeProcessTracker>()
+  private val deviceToProcessesMap = mutableMapOf<String, MutableMap<Int, ProcessNames>>()
+  private val deviceToProcessTrackerMap = mutableMapOf<String, FakeProcessTracker>()
 
-    fun addProcessName(serialNumber: String, pid: Int, applicationId: String, processName: String) {
-        deviceToProcessesMap.computeIfAbsent(serialNumber) { mutableMapOf() }[pid] =
-            ProcessNames(applicationId, processName)
-    }
+  fun addProcessName(serialNumber: String, pid: Int, applicationId: String, processName: String) {
+    deviceToProcessesMap.computeIfAbsent(serialNumber) { mutableMapOf() }[pid] = ProcessNames(applicationId, processName)
+  }
 
-    override fun start() {}
+  override fun start() {}
 
-    override fun getProcessNames(serialNumber: String, pid: Int): ProcessNames? =
-        deviceToProcessesMap[serialNumber]?.get(pid)
+  override fun getProcessNames(serialNumber: String, pid: Int): ProcessNames? = deviceToProcessesMap[serialNumber]?.get(pid)
 
-    override suspend fun trackDeviceProcesses(serialNumber: String): Flow<ProcessEvent> {
-        val tracker = getProcessTracker(serialNumber)
-        return tracker.trackProcesses()
-    }
+  override suspend fun trackDeviceProcesses(serialNumber: String): Flow<ProcessEvent> {
+    val tracker = getProcessTracker(serialNumber)
+    return tracker.trackProcesses()
+  }
 
-    fun getProcessTracker(serialNumber: String) =
-        deviceToProcessTrackerMap.getOrPut(serialNumber) { FakeProcessTracker() }
+  fun getProcessTracker(serialNumber: String) = deviceToProcessTrackerMap.getOrPut(serialNumber) { FakeProcessTracker() }
 }

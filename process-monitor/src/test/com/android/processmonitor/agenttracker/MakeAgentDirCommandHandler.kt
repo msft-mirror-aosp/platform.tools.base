@@ -28,26 +28,23 @@ private const val CMD = "mkdir -p $AGENT_DIR; chmod 755 $AGENT_DIR; chown shell:
 /** Simulates the execution of the command that creates the directory for the tracking agent */
 internal class MakeAgentDirCommandHandler : ShellHandler(ShellProtocolType.SHELL_V2) {
 
-    val invocations = mutableListOf<String>()
+  val invocations = mutableListOf<String>()
 
-    override fun shouldExecute(
-        shellCommand: String,
-        shellCommandArgs: String?
-    ): Boolean {
-        return "$shellCommand $shellCommandArgs" == CMD
-    }
+  override fun shouldExecute(shellCommand: String, shellCommandArgs: String?): Boolean {
+    return "$shellCommand $shellCommandArgs" == CMD
+  }
 
-    override fun execute(
-        fakeAdbServer: FakeAdbServer,
-        statusWriter: StatusWriter,
-        shellCommandOutput: ShellCommandOutput,
-        device: DeviceState,
-        shellCommand: String,
-        shellCommandArgs: String?
-    ) {
-        statusWriter.writeOk()
-        invocations.add(device.deviceId)
-        shellCommandOutput.writeStdout("")
-        shellCommandOutput.writeExitCode(0)
-    }
+  override fun execute(
+    fakeAdbServer: FakeAdbServer,
+    statusWriter: StatusWriter,
+    shellCommandOutput: ShellCommandOutput,
+    device: DeviceState,
+    shellCommand: String,
+    shellCommandArgs: String?,
+  ) {
+    statusWriter.writeOk()
+    invocations.add(device.deviceId)
+    shellCommandOutput.writeStdout("")
+    shellCommandOutput.writeExitCode(0)
+  }
 }

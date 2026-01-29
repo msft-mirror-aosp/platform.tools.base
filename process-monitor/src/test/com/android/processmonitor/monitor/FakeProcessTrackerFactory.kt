@@ -21,18 +21,18 @@ import com.android.processmonitor.monitor.testing.FakeProcessTracker
 
 internal abstract class FakeProcessTrackerFactory<T> : ProcessTrackerFactory<T> {
 
-    private val devices = mutableMapOf<String, FakeProcessTracker>()
+  private val devices = mutableMapOf<String, FakeProcessTracker>()
 
-    override suspend fun createProcessTracker(device: T): ProcessTracker {
-        val tracker = FakeProcessTracker()
-        devices[getSerialNumber(device)] = tracker
-        return tracker
-    }
+  override suspend fun createProcessTracker(device: T): ProcessTracker {
+    val tracker = FakeProcessTracker()
+    devices[getSerialNumber(device)] = tracker
+    return tracker
+  }
 
-    abstract fun getSerialNumber(device: T): String
+  abstract fun getSerialNumber(device: T): String
 
-    suspend fun send(serial: String, event: ProcessEvent) {
-        val tracker = devices[serial] ?: throw IllegalArgumentException("No tracker for $serial")
-        tracker.send(event)
-    }
+  suspend fun send(serial: String, event: ProcessEvent) {
+    val tracker = devices[serial] ?: throw IllegalArgumentException("No tracker for $serial")
+    tracker.send(event)
+  }
 }

@@ -29,98 +29,93 @@ import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
 
-/**
- * Tests for [com.android.processmonitor.monitor.PerDeviceMonitor]
- */
+/** Tests for [com.android.processmonitor.monitor.PerDeviceMonitor] */
 @Suppress("OPT_IN_IS_NOT_ENABLED")
 @OptIn(ExperimentalCoroutinesApi::class) // runTest is experimental (replaced runTestTest)
 class PerDeviceMonitorTest {
 
-    private val logger = FakeAdbLoggerFactory().logger
+  private val logger = FakeAdbLoggerFactory().logger
 
-    @Test
-    fun newProcesses() = runTest {
-        val tracker = Tracker()
-        val monitor = perDeviceMonitor(tracker)
+  @Test
+  fun newProcesses() = runTest {
+    val tracker = Tracker()
+    val monitor = perDeviceMonitor(tracker)
 
-        tracker.send(ProcessAdded(1, null, "process1"))
-        tracker.send(ProcessAdded(2, "package2", "process2"))
-        tracker.send(ProcessAdded(3, "package3", "process3"))
-        advanceUntilIdle()
+    tracker.send(ProcessAdded(1, null, "process1"))
+    tracker.send(ProcessAdded(2, "package2", "process2"))
+    tracker.send(ProcessAdded(3, "package3", "process3"))
+    advanceUntilIdle()
 
-        assertThat(monitor.getProcessNames(1)).isEqualTo(ProcessNames("process1", "process1"))
-        assertThat(monitor.getProcessNames(2)).isEqualTo(ProcessNames("package2", "process2"))
-        assertThat(monitor.getProcessNames(3)).isEqualTo(ProcessNames("package3", "process3"))
+    assertThat(monitor.getProcessNames(1)).isEqualTo(ProcessNames("process1", "process1"))
+    assertThat(monitor.getProcessNames(2)).isEqualTo(ProcessNames("package2", "process2"))
+    assertThat(monitor.getProcessNames(3)).isEqualTo(ProcessNames("package3", "process3"))
+  }
+
+  @Test
+  fun noApplicationId_doesNotReplace() = runTest {
+    val tracker = Tracker()
+    val monitor = perDeviceMonitor(tracker)
+
+    tracker.send(ProcessAdded(1, "package1", "process1"))
+    advanceUntilIdle()
+    tracker.send(ProcessAdded(1, null, "process1"))
+    advanceUntilIdle()
+
+    assertThat(monitor.getProcessNames(1)).isEqualTo(ProcessNames("package1", "process1"))
+  }
+
+  @Test
+  fun noApplicationId_differentProcessName_doesReplace() = runTest {
+    val tracker = Tracker()
+    val monitor = perDeviceMonitor(tracker)
+
+    tracker.send(ProcessAdded(1, "package1", "process1"))
+    advanceUntilIdle()
+    tracker.send(ProcessAdded(1, null, "process2"))
+    advanceUntilIdle()
+
+    assertThat(monitor.getProcessNames(1)).isEqualTo(ProcessNames("process2", "process2"))
+  }
+
+  @Test
+  fun noApplicationId_isReplaceByApplicationId() = runTest {
+    val tracker = Tracker()
+    val monitor = perDeviceMonitor(tracker)
+
+    tracker.send(ProcessAdded(1, null, "process1"))
+    advanceUntilIdle()
+    tracker.send(ProcessAdded(1, "package1", "process1"))
+    advanceUntilIdle()
+
+    assertThat(monitor.getProcessNames(1)).isEqualTo(ProcessNames("package1", "process1"))
+  }
+
+  @Test
+  fun propagatesMaxProcessRetention() = runTest {
+    val tracker = Tracker()
+    val monitor = perDeviceMonitor(tracker, retention = 1)
+
+    tracker.send(ProcessAdded(1, null, "process1"))
+    tracker.send(ProcessAdded(2, null, "process2"))
+    tracker.send(ProcessRemoved(1))
+    tracker.send(ProcessRemoved(2))
+    advanceUntilIdle()
+
+    assertThat(monitor.getProcessNames(1)).isNull()
+    assertThat(monitor.getProcessNames(2)).isEqualTo(ProcessNames("process2", "process2"))
+  }
+
+  private fun CoroutineScope.perDeviceMonitor(tracker: ProcessTracker, retention: Int = 10): PerDeviceMonitor =
+    PerDeviceMonitor(this, logger, retention, tracker).apply { start() }
+
+  private class Tracker : ProcessTracker {
+
+    private val channel = Channel<ProcessEvent>(10)
+
+    suspend fun send(event: ProcessEvent) {
+      channel.send(event)
     }
 
-    @Test
-    fun noApplicationId_doesNotReplace() = runTest {
-        val tracker = Tracker()
-        val monitor = perDeviceMonitor(tracker)
-
-        tracker.send(ProcessAdded(1, "package1", "process1"))
-        advanceUntilIdle()
-        tracker.send(ProcessAdded(1, null, "process1"))
-        advanceUntilIdle()
-
-        assertThat(monitor.getProcessNames(1)).isEqualTo(ProcessNames("package1", "process1"))
-    }
-
-    @Test
-    fun noApplicationId_differentProcessName_doesReplace() = runTest {
-        val tracker = Tracker()
-        val monitor = perDeviceMonitor(tracker)
-
-        tracker.send(ProcessAdded(1, "package1", "process1"))
-        advanceUntilIdle()
-        tracker.send(ProcessAdded(1, null, "process2"))
-        advanceUntilIdle()
-
-        assertThat(monitor.getProcessNames(1)).isEqualTo(ProcessNames("process2", "process2"))
-    }
-
-    @Test
-    fun noApplicationId_isReplaceByApplicationId() = runTest {
-        val tracker = Tracker()
-        val monitor = perDeviceMonitor(tracker)
-
-        tracker.send(ProcessAdded(1, null, "process1"))
-        advanceUntilIdle()
-        tracker.send(ProcessAdded(1, "package1", "process1"))
-        advanceUntilIdle()
-
-        assertThat(monitor.getProcessNames(1)).isEqualTo(ProcessNames("package1", "process1"))
-    }
-
-    @Test
-    fun propagatesMaxProcessRetention() = runTest {
-        val tracker = Tracker()
-        val monitor = perDeviceMonitor(tracker, retention = 1)
-
-        tracker.send(ProcessAdded(1, null, "process1"))
-        tracker.send(ProcessAdded(2, null, "process2"))
-        tracker.send(ProcessRemoved(1))
-        tracker.send(ProcessRemoved(2))
-        advanceUntilIdle()
-
-        assertThat(monitor.getProcessNames(1)).isNull()
-        assertThat(monitor.getProcessNames(2)).isEqualTo(ProcessNames("process2", "process2"))
-    }
-
-    private fun CoroutineScope.perDeviceMonitor(
-        tracker: ProcessTracker,
-        retention: Int = 10,
-    ): PerDeviceMonitor = PerDeviceMonitor(this, logger, retention, tracker).apply { start() }
-
-    private class Tracker : ProcessTracker {
-
-        private val channel = Channel<ProcessEvent>(10)
-
-        suspend fun send(event: ProcessEvent) {
-            channel.send(event)
-        }
-
-        override fun trackProcesses() = channel.consumeAsFlow()
-    }
-
+    override fun trackProcesses() = channel.consumeAsFlow()
+  }
 }

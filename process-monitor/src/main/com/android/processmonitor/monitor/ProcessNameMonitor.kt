@@ -19,25 +19,17 @@ import com.android.processmonitor.agenttracker.AgentProcessTrackerConfig
 import com.android.processmonitor.common.ProcessEvent
 import kotlinx.coroutines.flow.Flow
 
-/**
- * Monitors devices and keeps track of process names.
- */
+/** Monitors devices and keeps track of process names. */
 interface ProcessNameMonitor {
 
-    /**
-     * Starts the monitor if not already started
-     */
-    fun start()
+  /** Starts the monitor if not already started */
+  fun start()
 
-    /**
-     * Returns a [ProcessNames] for a given pid or null if not found.
-     */
-    fun getProcessNames(serialNumber: String, pid: Int): ProcessNames?
+  /** Returns a [ProcessNames] for a given pid or null if not found. */
+  fun getProcessNames(serialNumber: String, pid: Int): ProcessNames?
 
-    /**
-     * Track processes on a device.
-     */
-    suspend fun trackDeviceProcesses(serialNumber: String) : Flow<ProcessEvent>
+  /** Track processes on a device. */
+  suspend fun trackDeviceProcesses(serialNumber: String): Flow<ProcessEvent>
 
-    class Config(val maxProcessRetention: Int, val agentConfig: AgentProcessTrackerConfig?)
+  class Config(val maxProcessRetention: Int, val agentConfig: AgentProcessTrackerConfig?)
 }
