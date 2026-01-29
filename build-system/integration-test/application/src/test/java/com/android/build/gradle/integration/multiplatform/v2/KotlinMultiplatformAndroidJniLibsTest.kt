@@ -28,7 +28,6 @@ class KotlinMultiplatformAndroidJniLibsTest {
     @get:Rule
     val project = GradleTestProjectBuilder()
         .fromTestProject("kotlinMultiplatform")
-        .disableBuiltInKotlin()
         .create()
 
     @Before

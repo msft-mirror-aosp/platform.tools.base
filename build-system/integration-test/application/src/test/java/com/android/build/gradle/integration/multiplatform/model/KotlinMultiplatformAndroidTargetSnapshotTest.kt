@@ -30,7 +30,6 @@ class KotlinMultiplatformAndroidTargetSnapshotTest: BaseModelComparator {
     val project = GradleTestProjectBuilder()
         .fromTestProject("kotlinMultiplatform")
         .addGradleProperties("${BooleanOption.R8_PROGUARD_ANDROID_TXT_DISALLOWED.propertyName}=true")
-        .disableBuiltInKotlin()
         .create()
 
     @Test
