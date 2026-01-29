@@ -59,8 +59,7 @@ internal object Resources {
   // Writeable golden classes location. Can only be used by local execution.
   private val WORKSPACE_GOLDEN =
     Paths.get(
-      System.getenv("BUILD_WORKSPACE_DIRECTORY")
-        ?: System.getProperty("user.dir").removeSuffix("tools/adt/idea"),
+      System.getenv("BUILD_WORKSPACE_DIRECTORY") ?: System.getProperty("user.dir").removeSuffix("tools/adt/idea"),
       "tools/base/debugger-tests",
       "resources/res/golden",
     )
@@ -92,11 +91,7 @@ internal object Resources {
 
 private fun getGoldenFileName(test: String) = "${test.replace(".", File.separator)}.txt"
 
-private fun Path.toClassName() =
-  pathString
-    .substringAfterLast("src${File.separator}")
-    .replace(File.separator, ".")
-    .removeSuffix(".kt")
+private fun Path.toClassName() = pathString.substringAfterLast("src${File.separator}").replace(File.separator, ".").removeSuffix(".kt")
 
 private fun Path.isTestFile(): Boolean {
   if (!isRegularFile()) {

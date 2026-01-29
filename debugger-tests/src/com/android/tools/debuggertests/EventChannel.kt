@@ -40,10 +40,7 @@ internal class EventChannel(queue: EventQueue) {
     }
   }
 
-  private class EventQueueThread(
-    private val queue: EventQueue,
-    private val channel: Channel<Event>,
-  ) : Thread("Event Queue") {
+  private class EventQueueThread(private val queue: EventQueue, private val channel: Channel<Event>) : Thread("Event Queue") {
 
     override fun run() {
       var done = false

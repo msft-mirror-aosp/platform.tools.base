@@ -21,10 +21,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 
 /** A base class for Debugger Tests */
-internal abstract class DebuggerTestBase(
-  private val testClass: String,
-  private val engine: Engine,
-) {
+internal abstract class DebuggerTestBase(private val testClass: String, private val engine: Engine) {
 
   private fun describeTest() = "at $testClass(${testClass.substringAfterLast(".")}.kt:20)"
 

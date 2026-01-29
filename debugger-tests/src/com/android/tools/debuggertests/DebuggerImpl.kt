@@ -55,9 +55,7 @@ internal class DebuggerImpl private constructor(private val vm: VirtualMachine) 
     }
     val event = resume(ClassPrepareEvent::class.java)
 
-    requestManager
-      .createBreakpointRequest(event.referenceType().locationsOfLine(line).first())
-      .apply { enable() }
+    requestManager.createBreakpointRequest(event.referenceType().locationsOfLine(line).first()).apply { enable() }
   }
 
   override fun close() {}
@@ -82,6 +80,4 @@ internal class DebuggerImpl private constructor(private val vm: VirtualMachine) 
   }
 }
 
-private inline fun <reified T : Connector> List<T>.named(name: String): T = first {
-  it.name().endsWith(name)
-}
+private inline fun <reified T : Connector> List<T>.named(name: String): T = first { it.name().endsWith(name) }

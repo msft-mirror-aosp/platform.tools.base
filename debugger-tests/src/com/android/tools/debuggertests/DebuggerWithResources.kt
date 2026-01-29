@@ -18,10 +18,7 @@ package com.android.tools.debuggertests
 import java.io.Closeable
 
 /** A [Debugger] that owns resources and releases them when it's done */
-internal class DebuggerWithResources(
-  private val delegate: Debugger,
-  private vararg val resources: Closeable,
-) : Debugger by delegate {
+internal class DebuggerWithResources(private val delegate: Debugger, private vararg val resources: Closeable) : Debugger by delegate {
 
   override fun close() {
     delegate.close()

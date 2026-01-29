@@ -18,8 +18,8 @@ package com.android.tools.debuggertests
 /**
  * A simple [Engine] that launches and connects to a program.
  *
- * This is the easiest way to debug a program. It uses a [com.sun.jdi.connect.LaunchingConnector]
- * which launches and connects to the process.
+ * This is the easiest way to debug a program. It uses a [com.sun.jdi.connect.LaunchingConnector] which launches and connects to the
+ * process.
  */
 internal class SimpleEngine : Engine("jvm") {
 
