@@ -17,53 +17,50 @@ package com.android.adblib.ddmlibcompatibility.debugging
 
 import com.android.adblib.ShellCollector
 import com.android.ddmlib.IShellOutputReceiver
+import java.nio.ByteBuffer
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.FlowCollector
-import java.nio.ByteBuffer
 
-/**
- * Implementation of `adblib` [ShellCollector] that forwards to a `ddmlib` [IShellOutputReceiver] implementation
- */
-class ShellCollectorToIShellOutputReceiver(private val receiver: IShellOutputReceiver) :
-    ShellCollector<Unit> {
+/** Implementation of `adblib` [ShellCollector] that forwards to a `ddmlib` [IShellOutputReceiver] implementation */
+class ShellCollectorToIShellOutputReceiver(private val receiver: IShellOutputReceiver) : ShellCollector<Unit> {
 
-    val buf = ByteArrayFromByteBuffer()
+  val buf = ByteArrayFromByteBuffer()
 
-    override suspend fun start(collector: FlowCollector<Unit>) {
-        // Nothing to do
+  override suspend fun start(collector: FlowCollector<Unit>) {
+    // Nothing to do
+  }
+
+  override suspend fun collect(collector: FlowCollector<Unit>, stdout: ByteBuffer) {
+    if (receiver.isCancelled) {
+      throw CancellationException("IShellOutputReceiver was cancelled during shell command execution")
     }
+    buf.convert(stdout)
+    receiver.addOutput(buf.bytes, buf.offset, buf.count)
+  }
 
-    override suspend fun collect(collector: FlowCollector<Unit>, stdout: ByteBuffer) {
-        if (receiver.isCancelled) {
-            throw CancellationException("IShellOutputReceiver was cancelled during shell command execution")
-        }
-        buf.convert(stdout)
-        receiver.addOutput(buf.bytes, buf.offset, buf.count)
+  override suspend fun end(collector: FlowCollector<Unit>) {
+    receiver.flush()
+    collector.emit(Unit)
+  }
+
+  class ByteArrayFromByteBuffer {
+
+    var bytes = ByteArray(0)
+    var offset = 0
+    var count = 0
+
+    fun convert(buffer: ByteBuffer) {
+      if (buffer.hasArray()) {
+        bytes = buffer.array()
+        offset = buffer.position()
+        count = buffer.remaining()
+      } else {
+        offset = 0
+        count = buffer.remaining()
+        val bytes = ByteArray(count)
+        buffer.get(bytes)
+        this.bytes = bytes
+      }
     }
-
-    override suspend fun end(collector: FlowCollector<Unit>) {
-        receiver.flush()
-        collector.emit(Unit)
-    }
-
-    class ByteArrayFromByteBuffer {
-
-        var bytes = ByteArray(0)
-        var offset = 0
-        var count = 0
-
-        fun convert(buffer: ByteBuffer) {
-            if (buffer.hasArray()) {
-                bytes = buffer.array()
-                offset = buffer.position()
-                count = buffer.remaining()
-            } else {
-                offset = 0
-                count = buffer.remaining()
-                val bytes = ByteArray(count)
-                buffer.get(bytes)
-                this.bytes = bytes
-            }
-        }
-    }
+  }
 }

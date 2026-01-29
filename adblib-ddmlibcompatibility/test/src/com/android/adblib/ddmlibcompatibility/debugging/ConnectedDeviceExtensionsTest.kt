@@ -33,59 +33,40 @@ import org.junit.rules.RuleChain
 
 class ConnectedDeviceExtensionsTest {
 
-    private val fakeAdbRule = FakeAdbServerProviderRule()
-    private val useAdbLibAndroidDebugBridgeRule =
-        UseAdbLibAndroidDebugBridgeRule { fakeAdbRule.adbSession }
-    private val initAndroidDebugBridgeRule =
-        InitAndroidDebugBridgeRule { fakeAdbRule.fakeAdb.port }
-    @get:Rule
-    val ruleChain = RuleChain.outerRule(fakeAdbRule)
-        .around(useAdbLibAndroidDebugBridgeRule)
-        .around(initAndroidDebugBridgeRule)!!
+  private val fakeAdbRule = FakeAdbServerProviderRule()
+  private val useAdbLibAndroidDebugBridgeRule = UseAdbLibAndroidDebugBridgeRule { fakeAdbRule.adbSession }
+  private val initAndroidDebugBridgeRule = InitAndroidDebugBridgeRule { fakeAdbRule.fakeAdb.port }
+  @get:Rule val ruleChain = RuleChain.outerRule(fakeAdbRule).around(useAdbLibAndroidDebugBridgeRule).around(initAndroidDebugBridgeRule)!!
 
-    private val fakeAdb get() = fakeAdbRule.fakeAdb
+  private val fakeAdb
+    get() = fakeAdbRule.fakeAdb
 
-    @Before
-    fun setUp() {
-        AndroidDebugBridge.createBridge() ?: error("Couldn't create a bridge")
-    }
+  @Before
+  fun setUp() {
+    AndroidDebugBridge.createBridge() ?: error("Couldn't create a bridge")
+  }
 
-    @Test
-    fun testAssociatedIDevice(): Unit = runBlocking {
-        // Setup
-        val serialNumber = "serial123"
-        val device = createConnectedDevice(serialNumber)
+  @Test
+  fun testAssociatedIDevice(): Unit = runBlocking {
+    // Setup
+    val serialNumber = "serial123"
+    val device = createConnectedDevice(serialNumber)
 
-        // Act
-        // There is a slight delay between when a [ConnectedDevice] starts to be tracked by `adblib`
-        // and when `adblib-ddmlibcompatibility` layer exposes it in `AndroidDebugBridge.devices`.
-        yieldUntil {
-            device.associatedIDevice() != null
-        }
-        assertEquals("serial123", device.associatedIDevice()?.serialNumber)
+    // Act
+    // There is a slight delay between when a [ConnectedDevice] starts to be tracked by `adblib`
+    // and when `adblib-ddmlibcompatibility` layer exposes it in `AndroidDebugBridge.devices`.
+    yieldUntil { device.associatedIDevice() != null }
+    assertEquals("serial123", device.associatedIDevice()?.serialNumber)
 
-        // Act: disconnect device and assert `associatedIDevice` starts returning `null`
-        fakeAdb.disconnectDevice(serialNumber)
-        yieldUntil {
-            device.associatedIDevice() == null
-        }
-        assertEquals(com.android.adblib.DeviceState.DISCONNECTED, device.deviceInfoFlow.value.deviceState)
-    }
+    // Act: disconnect device and assert `associatedIDevice` starts returning `null`
+    fakeAdb.disconnectDevice(serialNumber)
+    yieldUntil { device.associatedIDevice() == null }
+    assertEquals(com.android.adblib.DeviceState.DISCONNECTED, device.deviceInfoFlow.value.deviceState)
+  }
 
-    private suspend fun createConnectedDevice(
-        serialNumber: String,
-        sdk: AndroidApiLevel = AndroidApiLevel(29)
-    ): ConnectedDevice {
-        val fakeDevice =
-            fakeAdb.connectDevice(
-                serialNumber,
-                "Google",
-                "Pixel",
-                "versionX",
-                sdk,
-                DeviceState.HostConnectionType.USB
-            )
-        fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
-        return fakeAdbRule.adbSession.waitForOnlineConnectedDevice(serialNumber)
-    }
+  private suspend fun createConnectedDevice(serialNumber: String, sdk: AndroidApiLevel = AndroidApiLevel(29)): ConnectedDevice {
+    val fakeDevice = fakeAdb.connectDevice(serialNumber, "Google", "Pixel", "versionX", sdk, DeviceState.HostConnectionType.USB)
+    fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
+    return fakeAdbRule.adbSession.waitForOnlineConnectedDevice(serialNumber)
+  }
 }

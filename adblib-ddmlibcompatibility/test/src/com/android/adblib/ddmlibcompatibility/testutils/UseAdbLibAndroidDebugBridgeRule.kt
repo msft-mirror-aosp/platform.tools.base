@@ -24,37 +24,23 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import org.junit.rules.ExternalResource
 
 /**
- * This rule instantiates `AdbLibAndroidDebugBridge` and redirects
- * `AndroidDebugBrdige.delegate` to it.
+ * This rule instantiates `AdbLibAndroidDebugBridge` and redirects `AndroidDebugBrdige.delegate` to it.
  *
- * Use `adbSessionSupplier` to feed an `AdbSession` from an outer rule
- * like `FakeAdbServerProviderRule`.
+ * Use `adbSessionSupplier` to feed an `AdbSession` from an outer rule like `FakeAdbServerProviderRule`.
  */
-class UseAdbLibAndroidDebugBridgeRule(
-    private val adbSessionSupplier: () -> AdbSession
-) : ExternalResource() {
+class UseAdbLibAndroidDebugBridgeRule(private val adbSessionSupplier: () -> AdbSession) : ExternalResource() {
 
-    public override fun before() {
-        val config = MutableStateFlow(
-            AdbServerConfiguration(
-                adbPath = null,
-                serverPort = null,
-                isUserManaged = false,
-                isUnitTest = true,
-                envVars = emptyMap()
-            )
-        )
-        val adbSession = adbSessionSupplier()
-        val adbServerController =
-            AdbServerController.createServerController(adbSession.host, config)
-        AndroidDebugBridge.preInit(
-            AdbLibAndroidDebugBridge(
-                adbSession, adbServerController, config
-            )
-        )
-    }
+  public override fun before() {
+    val config =
+      MutableStateFlow(
+        AdbServerConfiguration(adbPath = null, serverPort = null, isUserManaged = false, isUnitTest = true, envVars = emptyMap())
+      )
+    val adbSession = adbSessionSupplier()
+    val adbServerController = AdbServerController.createServerController(adbSession.host, config)
+    AndroidDebugBridge.preInit(AdbLibAndroidDebugBridge(adbSession, adbServerController, config))
+  }
 
-    override fun after() {
-        AndroidDebugBridge.resetForTests()
-    }
+  override fun after() {
+    AndroidDebugBridge.resetForTests()
+  }
 }

@@ -17,8 +17,8 @@ package com.android.adblib.ddmlibcompatibility.debugging
 
 import com.android.adblib.adbLogger
 import com.android.adblib.tools.debugging.AppProcess
-import com.android.adblib.tools.debugging.instructionSet
 import com.android.adblib.tools.debugging.debuggable
+import com.android.adblib.tools.debugging.instructionSet
 import com.android.adblib.tools.debugging.profileable
 import com.android.adblib.tools.debugging.retrieveProcessName
 import com.android.adblib.tools.debugging.scope
@@ -27,53 +27,45 @@ import com.android.ddmlib.ProfileableClientData
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 
-/**
- * Implementation of the ddmlib [ProfileableClient] interface based on a [AppProcess] instance.
- */
-internal class AdblibProfileableClientWrapper(
-    private val trackerHost: ProcessTrackerHost,
-    private val appProcess: AppProcess
-) : ProfileableClient {
+/** Implementation of the ddmlib [ProfileableClient] interface based on a [AppProcess] instance. */
+internal class AdblibProfileableClientWrapper(private val trackerHost: ProcessTrackerHost, private val appProcess: AppProcess) :
+  ProfileableClient {
 
-    private val logger = adbLogger(trackerHost.device.session)
+  private val logger = adbLogger(trackerHost.device.session)
 
-    private val data = ProfileableClientData(appProcess.pid, "", appProcess.instructionSet.toString())
+  private val data = ProfileableClientData(appProcess.pid, "", appProcess.instructionSet.toString())
 
-    /**
-     * [AdblibClientWrapper] instance if this process is [AppProcess.debuggable], `null` otherwise
-     */
-    val clientWrapper: AdblibClientWrapper? = appProcess.jdwpProcess?.let { AdblibClientWrapper(trackerHost, it) }
+  /** [AdblibClientWrapper] instance if this process is [AppProcess.debuggable], `null` otherwise */
+  val clientWrapper: AdblibClientWrapper? = appProcess.jdwpProcess?.let { AdblibClientWrapper(trackerHost, it) }
 
-    val debuggable: Boolean
-        get() = appProcess.debuggable
+  val debuggable: Boolean
+    get() = appProcess.debuggable
 
-    val profileable: Boolean
-        get() = appProcess.profileable
+  val profileable: Boolean
+    get() = appProcess.profileable
 
-    override fun getProfileableClientData(): ProfileableClientData {
-        return data
-    }
+  override fun getProfileableClientData(): ProfileableClientData {
+    return data
+  }
 
-    fun startTracking() {
-        // Fetch process name for "AppProcess"
-        appProcess.scope.launch {
-            retrieveAppProcessName()
+  fun startTracking() {
+    // Fetch process name for "AppProcess"
+    appProcess.scope.launch { retrieveAppProcessName() }
+
+    // Fetch JDWP process properties if this is a JDWP process
+    clientWrapper?.startTracking()
+  }
+
+  private suspend fun retrieveAppProcessName() {
+    runCatching { appProcess.retrieveProcessName() }
+      .onFailure { throwable ->
+        if (throwable !is CancellationException) {
+          logger.warn(throwable, "Error retrieving process name for $appProcess: ${throwable.message}")
         }
-
-        // Fetch JDWP process properties if this is a JDWP process
-        clientWrapper?.startTracking()
-    }
-
-    private suspend fun retrieveAppProcessName() {
-        runCatching {
-            appProcess.retrieveProcessName()
-        }.onFailure { throwable ->
-            if (throwable !is CancellationException) {
-                logger.warn(throwable, "Error retrieving process name for $appProcess: ${throwable.message}")
-            }
-        }.onSuccess { processName ->
-            data.processName = processName
-            trackerHost.postProfileableClientUpdated(this)
-        }
-    }
+      }
+      .onSuccess { processName ->
+        data.processName = processName
+        trackerHost.postProfileableClientUpdated(this)
+      }
+  }
 }

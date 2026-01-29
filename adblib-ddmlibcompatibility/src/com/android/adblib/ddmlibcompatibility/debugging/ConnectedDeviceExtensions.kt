@@ -29,36 +29,31 @@ private object IDeviceKey : Key<IDevice>(IDevice::class.java.simpleName)
 /**
  * For a [ConnectedDevice] find an equivalent [IDevice] as tracked by `AndroidDebugBridge.devices`.
  *
- * This method returns `null` if the device has been disconnected and therefore removed from
- * `AndroidDebugBridge.devices`.
+ * This method returns `null` if the device has been disconnected and therefore removed from `AndroidDebugBridge.devices`.
  *
- * Care should be taken when using this method as there is a slight delay between
- * when a [ConnectedDevice] starts to be tracked by `adblib` and when `adblib-ddmlibcompatibility`
- * layer starts exposing it under [AndroidDebugBridge.getBridge().devices].
+ * Care should be taken when using this method as there is a slight delay between when a [ConnectedDevice] starts to be tracked by `adblib`
+ * and when `adblib-ddmlibcompatibility` layer starts exposing it under [AndroidDebugBridge.getBridge().devices].
  */
 fun ConnectedDevice.associatedIDevice(): IDevice? {
-    if (this.deviceInfoFlow.value.deviceState == DeviceState.DISCONNECTED) {
-        // Connected device is disconnected and should not be used
-        adbLogger(session).withPrefix("device=$this - ")
-            .warn("trying to lookup `IDevice` for a disconnected `ConnectedDevice`")
-        return null
-    }
+  if (this.deviceInfoFlow.value.deviceState == DeviceState.DISCONNECTED) {
+    // Connected device is disconnected and should not be used
+    adbLogger(session).withPrefix("device=$this - ").warn("trying to lookup `IDevice` for a disconnected `ConnectedDevice`")
+    return null
+  }
 
-    return try {
-        this.cache.getOrPut(IDeviceKey) {
-            val iDevice =
-                AndroidDebugBridge.getBridge()?.devices?.firstOrNull { it.serialNumber == serialNumber }
-            if (iDevice == null) {
-                throw Exception("Failed to lookup IDevice by `serialNumber`")
-            }
-            iDevice
-        }
-    } catch (e: Throwable) {
-        // Couldn't find an associated IDevice
-        // Either it's not yet tracked by `AndroidDebugBridge` or a `ConnectedDevice` has been
-        // disconnected and is no longer tracked by `AndroidDebugBridge`
-        adbLogger(session).withPrefix("device=$this - ")
-            .warn("failed to lookup `IDevice` using the `ConnectedDevice` `serialNumber")
-        null
+  return try {
+    this.cache.getOrPut(IDeviceKey) {
+      val iDevice = AndroidDebugBridge.getBridge()?.devices?.firstOrNull { it.serialNumber == serialNumber }
+      if (iDevice == null) {
+        throw Exception("Failed to lookup IDevice by `serialNumber`")
+      }
+      iDevice
     }
+  } catch (e: Throwable) {
+    // Couldn't find an associated IDevice
+    // Either it's not yet tracked by `AndroidDebugBridge` or a `ConnectedDevice` has been
+    // disconnected and is no longer tracked by `AndroidDebugBridge`
+    adbLogger(session).withPrefix("device=$this - ").warn("failed to lookup `IDevice` using the `ConnectedDevice` `serialNumber")
+    null
+  }
 }

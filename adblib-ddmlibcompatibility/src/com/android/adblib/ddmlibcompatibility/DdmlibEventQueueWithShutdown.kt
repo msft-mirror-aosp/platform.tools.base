@@ -26,58 +26,56 @@ import kotlinx.coroutines.launch
 
 class DdmlibEventQueueWithShutdown(logger: AdbLogger, name: String) {
 
-    private val logger = logger.withPrefix("DDMLIB EventQueue '$name': ")
-    private val dispatcherIsRunning = MutableStateFlow(false)
+  private val logger = logger.withPrefix("DDMLIB EventQueue '$name': ")
+  private val dispatcherIsRunning = MutableStateFlow(false)
 
-    /**
-     * We limit to [QUEUE_CAPACITY] events in case a ddmlib handler is slowing down
-     * event dispatching. When the limit is reached, [posting][post] events is throttled.
-     */
-    private val queue = Channel<Event>(QUEUE_CAPACITY)
+  /**
+   * We limit to [QUEUE_CAPACITY] events in case a ddmlib handler is slowing down event dispatching. When the limit is reached,
+   * [posting][post] events is throttled.
+   */
+  private val queue = Channel<Event>(QUEUE_CAPACITY)
 
-    suspend fun post(scope: CoroutineScope, name: String, handler: () -> Unit) {
-        queue.send(Event(scope, name, handler))
-    }
+  suspend fun post(scope: CoroutineScope, name: String, handler: () -> Unit) {
+    queue.send(Event(scope, name, handler))
+  }
 
-    /**
-     * Reads from the channel and processes each `Event` until the coroutine stops or the
-     * channel is closed. Note that when the channel is closed, elements already in the queue
-     * will still be processed, but attempting to post a new event will throw an exception.
-     */
-    suspend fun runDispatcher() {
-        dispatcherIsRunning.value = true
-        queue.receiveAsFlow().collect { event ->
-            event.scope.launch {
-                kotlin.runCatching {
-                    logger.verbose { "Invoking ddmlib listener '${event.name}'" }
-                    event.handler()
-                    logger.verbose { "Invoking ddmlib listener '${event.name}' - done" }
-                }.onFailure { throwable ->
-                    logger.warn(
-                        throwable,
-                        "Invoking ddmlib listener '${event.name}' threw an exception: $throwable"
-                    )
-                }
-            }.join()
+  /**
+   * Reads from the channel and processes each `Event` until the coroutine stops or the channel is closed. Note that when the channel is
+   * closed, elements already in the queue will still be processed, but attempting to post a new event will throw an exception.
+   */
+  suspend fun runDispatcher() {
+    dispatcherIsRunning.value = true
+    queue.receiveAsFlow().collect { event ->
+      event.scope
+        .launch {
+          kotlin
+            .runCatching {
+              logger.verbose { "Invoking ddmlib listener '${event.name}'" }
+              event.handler()
+              logger.verbose { "Invoking ddmlib listener '${event.name}' - done" }
+            }
+            .onFailure { throwable -> logger.warn(throwable, "Invoking ddmlib listener '${event.name}' threw an exception: $throwable") }
         }
-        dispatcherIsRunning.value = false
+        .join()
     }
+    dispatcherIsRunning.value = false
+  }
 
-    /**
-     * Closes the queue channel and waits until the dispatcher processes all the elements already
-     * queued up (given that the dispatched is running).
-     */
-    suspend fun shutdown() {
-        queue.close()
+  /**
+   * Closes the queue channel and waits until the dispatcher processes all the elements already queued up (given that the dispatched is
+   * running).
+   */
+  suspend fun shutdown() {
+    queue.close()
 
-        // Wait until dispatcher is done processing
-        dispatcherIsRunning.first { !it }
-    }
+    // Wait until dispatcher is done processing
+    dispatcherIsRunning.first { !it }
+  }
 
-    private class Event(val scope: CoroutineScope, val name: String, val handler: () -> Unit)
+  private class Event(val scope: CoroutineScope, val name: String, val handler: () -> Unit)
 
-    companion object {
+  companion object {
 
-        const val QUEUE_CAPACITY = 1_000
-    }
+    const val QUEUE_CAPACITY = 1_000
+  }
 }

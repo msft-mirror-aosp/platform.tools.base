@@ -25,48 +25,36 @@ import com.android.ddmlib.IShellOutputReceiver
 import com.android.ddmlib.MultiLineReceiver
 import com.android.fakeadbserver.DeviceState
 import com.android.sdklib.AndroidApiLevel
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicInteger
 import org.junit.Assert
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.ExpectedException
-import java.util.concurrent.TimeUnit
-import java.util.concurrent.atomic.AtomicInteger
 
 class ShellTest {
 
-    @JvmField
-    @Rule
-    var exceptionRule: ExpectedException = ExpectedException.none()
+  @JvmField @Rule var exceptionRule: ExpectedException = ExpectedException.none()
 
-    @JvmField
-    @Rule
-    val fakeAdbRule = FakeAdbServerProviderRule()
+  @JvmField @Rule val fakeAdbRule = FakeAdbServerProviderRule()
 
-    private val fakeAdb get() = fakeAdbRule.fakeAdb
+  private val fakeAdb
+    get() = fakeAdbRule.fakeAdb
 
-    @Test
-    fun executeShellCommandShouldWork() = runBlockingWithTimeout {
-        // Prepare
-        val device = createConnectedDevice("42")
-        val receiver = ListReceiver()
+  @Test
+  fun executeShellCommandShouldWork() = runBlockingWithTimeout {
+    // Prepare
+    val device = createConnectedDevice("42")
+    val receiver = ListReceiver()
 
-        // Act
-        executeShellCommand(
-            AdbHelper.AdbService.SHELL,
-            device,
-            "getprop",
-            receiver,
-            0,
-            0,
-            TimeUnit.MILLISECONDS,
-            null,
-            true
-        )
+    // Act
+    executeShellCommand(AdbHelper.AdbService.SHELL, device, "getprop", receiver, 0, 0, TimeUnit.MILLISECONDS, null, true)
 
-        // Assert
-        val expected = """# This is some build info
+    // Assert
+    val expected =
+      """# This is some build info
 # This is more build info
 
 [ro.build.version.release]: [versionX]
@@ -76,197 +64,156 @@ class ShellTest {
 [ro.product.model]: [Pix3l]
 [ro.serialno]: [42]
 """
-        assertEquals(expected, receiver.lines.joinToString("\n"))
-    }
+    assertEquals(expected, receiver.lines.joinToString("\n"))
+  }
 
-    @Test
-    @Throws(Exception::class)
-    fun executeShellCommandShouldThrowIfInvalidCommand() = runBlockingWithTimeout {
-        // Prepare
-        val device = createConnectedDevice("42")
-        val receiver = ListReceiver()
+  @Test
+  @Throws(Exception::class)
+  fun executeShellCommandShouldThrowIfInvalidCommand() = runBlockingWithTimeout {
+    // Prepare
+    val device = createConnectedDevice("42")
+    val receiver = ListReceiver()
 
-        // Act
-        exceptionRule.expect(AdbDeviceFailResponseException::class.java)
-        executeShellCommand(
-            AdbHelper.AdbService.SHELL,
-            device,
-            "foobarz",
-            receiver,
-            0,
-            0,
-            TimeUnit.MILLISECONDS,
-            null,
-            true
-        )
+    // Act
+    exceptionRule.expect(AdbDeviceFailResponseException::class.java)
+    executeShellCommand(AdbHelper.AdbService.SHELL, device, "foobarz", receiver, 0, 0, TimeUnit.MILLISECONDS, null, true)
 
-        // Assert
-        Assert.fail() // should not be reached
-    }
+    // Assert
+    Assert.fail() // should not be reached
+  }
 
-    @Test
-    fun executeAbbCommandShouldWork() = runBlockingWithTimeout {
-        // Prepare
-        val device = createConnectedDevice("42", sdk = AndroidApiLevel(30))
-        val receiver = ListReceiver()
+  @Test
+  fun executeAbbCommandShouldWork() = runBlockingWithTimeout {
+    // Prepare
+    val device = createConnectedDevice("42", sdk = AndroidApiLevel(30))
+    val receiver = ListReceiver()
 
-        // Act
-        executeAbbCommand(
-            AdbHelper.AdbService.ABB_EXEC,
-            device,
-            "package path com.foo.bar.appp",
-            receiver,
-            0,
-            0,
-            TimeUnit.MILLISECONDS,
-            null,
-            true
-        )
+    // Act
+    executeAbbCommand(
+      AdbHelper.AdbService.ABB_EXEC,
+      device,
+      "package path com.foo.bar.appp",
+      receiver,
+      0,
+      0,
+      TimeUnit.MILLISECONDS,
+      null,
+      true,
+    )
 
-        // Assert
-        val expected = "/data/app/com.foo.bar.appp/base.apk"
-        assertEquals(expected, receiver.lines.joinToString())
-    }
+    // Assert
+    val expected = "/data/app/com.foo.bar.appp/base.apk"
+    assertEquals(expected, receiver.lines.joinToString())
+  }
 
-    @Test
-    @Throws(Exception::class)
-    fun executeAbbCommandOnUnsupportedDeviceShouldThrow() = runBlockingWithTimeout {
-        // Prepare
-        // Create a device that doesn't support ABB
-        val device = createConnectedDevice("42", sdk = AndroidApiLevel(20))
-        val receiver = ListReceiver()
+  @Test
+  @Throws(Exception::class)
+  fun executeAbbCommandOnUnsupportedDeviceShouldThrow() = runBlockingWithTimeout {
+    // Prepare
+    // Create a device that doesn't support ABB
+    val device = createConnectedDevice("42", sdk = AndroidApiLevel(20))
+    val receiver = ListReceiver()
 
-        // Act
-        exceptionRule.expect(IllegalArgumentException::class.java)
-        exceptionRule.expectMessage("No compatible abb protocol is supported or allowed")
-        executeAbbCommand(
-            AdbHelper.AdbService.ABB_EXEC,
-            device,
-            "package list packages",
-            receiver,
-            0,
-            0,
-            TimeUnit.MILLISECONDS,
-            null,
-            true
-        )
+    // Act
+    exceptionRule.expect(IllegalArgumentException::class.java)
+    exceptionRule.expectMessage("No compatible abb protocol is supported or allowed")
+    executeAbbCommand(AdbHelper.AdbService.ABB_EXEC, device, "package list packages", receiver, 0, 0, TimeUnit.MILLISECONDS, null, true)
 
-        // Assert
-        Assert.fail() // should not be reached
-    }
+    // Assert
+    Assert.fail() // should not be reached
+  }
 
-    @Test
-    fun executeShellCommand_doesntCallReceiverConcurrently() = runBlockingWithTimeout {
-        // Prepare
-        val device = createConnectedDevice("42")
-        val receiver = ConcurrencyTrackingIShellOutputReceiver()
+  @Test
+  fun executeShellCommand_doesntCallReceiverConcurrently() = runBlockingWithTimeout {
+    // Prepare
+    val device = createConnectedDevice("42")
+    val receiver = ConcurrencyTrackingIShellOutputReceiver()
 
-        // Act
-        executeShellCommand(
-            AdbHelper.AdbService.SHELL,
-            device,
-            "getprop",
-            receiver,
-            0,
-            0,
-            TimeUnit.MILLISECONDS,
-            null,
-            true
-        )
+    // Act
+    executeShellCommand(AdbHelper.AdbService.SHELL, device, "getprop", receiver, 0, 0, TimeUnit.MILLISECONDS, null, true)
 
-        // Assert
-        assertEquals(0, receiver.concurrentCallsDetected.get())
-        assertEquals(1, receiver.addOutputCallCount.get())
-        assertEquals(1, receiver.flushCallCount.get())
-        // isCancelledCallCount is non-deterministic as there is a cancellation prober
-        assertTrue(receiver.isCancelledCallCount.get() >= 1)
-    }
+    // Assert
+    assertEquals(0, receiver.concurrentCallsDetected.get())
+    assertEquals(1, receiver.addOutputCallCount.get())
+    assertEquals(1, receiver.flushCallCount.get())
+    // isCancelledCallCount is non-deterministic as there is a cancellation prober
+    assertTrue(receiver.isCancelledCallCount.get() >= 1)
+  }
 
-    @Test
-    fun executeAbbCommand_doesntCallReceiverConcurrently() = runBlockingWithTimeout {
-        // Prepare
-        val device = createConnectedDevice("42", sdk = AndroidApiLevel(30))
-        val receiver = ConcurrencyTrackingIShellOutputReceiver()
+  @Test
+  fun executeAbbCommand_doesntCallReceiverConcurrently() = runBlockingWithTimeout {
+    // Prepare
+    val device = createConnectedDevice("42", sdk = AndroidApiLevel(30))
+    val receiver = ConcurrencyTrackingIShellOutputReceiver()
 
-        // Act
-        executeAbbCommand(
-            AdbHelper.AdbService.ABB_EXEC,
-            device,
-            "package path com.foo.bar.appp",
-            receiver,
-            0,
-            0,
-            TimeUnit.MILLISECONDS,
-            null,
-            true
-        )
+    // Act
+    executeAbbCommand(
+      AdbHelper.AdbService.ABB_EXEC,
+      device,
+      "package path com.foo.bar.appp",
+      receiver,
+      0,
+      0,
+      TimeUnit.MILLISECONDS,
+      null,
+      true,
+    )
 
-        // Assert
-        assertEquals(0, receiver.concurrentCallsDetected.get())
-        assertEquals(1, receiver.addOutputCallCount.get())
-        assertEquals(1, receiver.flushCallCount.get())
-        // isCancelledCallCount is non-deterministic as there is a cancellation prober
-        assertTrue(receiver.isCancelledCallCount.get() >= 1)
-    }
+    // Assert
+    assertEquals(0, receiver.concurrentCallsDetected.get())
+    assertEquals(1, receiver.addOutputCallCount.get())
+    assertEquals(1, receiver.flushCallCount.get())
+    // isCancelledCallCount is non-deterministic as there is a cancellation prober
+    assertTrue(receiver.isCancelledCallCount.get() >= 1)
+  }
 
-    private suspend fun createConnectedDevice(
-        serialNumber: String,
-        sdk: AndroidApiLevel = AndroidApiLevel(29)
-    ): ConnectedDevice {
-        val fakeDevice =
-            fakeAdb.connectDevice(
-                serialNumber,
-                "Google",
-                "Pix3l",
-                "versionX",
-                sdk,
-                DeviceState.HostConnectionType.USB
-            )
-        fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
-        return fakeAdbRule.adbSession.waitForOnlineConnectedDevice(serialNumber)
-    }
+  private suspend fun createConnectedDevice(serialNumber: String, sdk: AndroidApiLevel = AndroidApiLevel(29)): ConnectedDevice {
+    val fakeDevice = fakeAdb.connectDevice(serialNumber, "Google", "Pix3l", "versionX", sdk, DeviceState.HostConnectionType.USB)
+    fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
+    return fakeAdbRule.adbSession.waitForOnlineConnectedDevice(serialNumber)
+  }
 }
 
 internal class ListReceiver : MultiLineReceiver() {
 
-    val lines = mutableListOf<String>()
+  val lines = mutableListOf<String>()
 
-    override fun processNewLines(lines: Array<out String>) {
-        this.lines.addAll(lines)
-    }
+  override fun processNewLines(lines: Array<out String>) {
+    this.lines.addAll(lines)
+  }
 
-    override fun isCancelled() = false
+  override fun isCancelled() = false
 }
 
 private class ConcurrencyTrackingIShellOutputReceiver : IShellOutputReceiver {
-    val addOutputCallCount = AtomicInteger(0)
-    val flushCallCount = AtomicInteger(0)
-    val isCancelledCallCount = AtomicInteger(0)
-    val concurrentCallsDetected = AtomicInteger(0)
-    private val executionCounter = AtomicInteger(0)
+  val addOutputCallCount = AtomicInteger(0)
+  val flushCallCount = AtomicInteger(0)
+  val isCancelledCallCount = AtomicInteger(0)
+  val concurrentCallsDetected = AtomicInteger(0)
+  private val executionCounter = AtomicInteger(0)
 
-    override fun addOutput(data: ByteArray, offset: Int, length: Int) {
-        addOutputCallCount.incrementAndGet()
-        sleepAndCheckConcurrency()
-    }
+  override fun addOutput(data: ByteArray, offset: Int, length: Int) {
+    addOutputCallCount.incrementAndGet()
+    sleepAndCheckConcurrency()
+  }
 
-    override fun flush() {
-        flushCallCount.incrementAndGet()
-        sleepAndCheckConcurrency()
-    }
+  override fun flush() {
+    flushCallCount.incrementAndGet()
+    sleepAndCheckConcurrency()
+  }
 
-    override fun isCancelled(): Boolean {
-        isCancelledCallCount.incrementAndGet()
-        sleepAndCheckConcurrency()
-        return false
-    }
+  override fun isCancelled(): Boolean {
+    isCancelledCallCount.incrementAndGet()
+    sleepAndCheckConcurrency()
+    return false
+  }
 
-    private fun sleepAndCheckConcurrency() {
-        val currentCount = executionCounter.incrementAndGet()
-        if (currentCount != 1) {
-            concurrentCallsDetected.incrementAndGet()
-        }
-        Thread.sleep(50)
-        executionCounter.decrementAndGet()
+  private fun sleepAndCheckConcurrency() {
+    val currentCount = executionCounter.incrementAndGet()
+    if (currentCount != 1) {
+      concurrentCallsDetected.incrementAndGet()
     }
+    Thread.sleep(50)
+    executionCounter.decrementAndGet()
+  }
 }

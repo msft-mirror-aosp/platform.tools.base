@@ -24,45 +24,43 @@ import kotlinx.coroutines.launch
 
 /**
  * Allows calling ddmlib listeners asynchronously
- * * [runDispatcher] starts the loop that dispatches events posted with [post]. This should be
- * called once and dispatches events as long as the caller's [CoroutineScope] is active.
+ * * [runDispatcher] starts the loop that dispatches events posted with [post]. This should be called once and dispatches events as long as
+ *   the caller's [CoroutineScope] is active.
  * * [post] enqueue a action to be called asynchronously by the [runDispatcher] loop.
  */
 internal class DdmlibEventQueue(logger: AdbLogger, name: String) {
 
-    private val logger = logger.withPrefix("DDMLIB EventQueue '$name': ")
+  private val logger = logger.withPrefix("DDMLIB EventQueue '$name': ")
 
-    /**
-     * We limit to [QUEUE_CAPACITY] events in case a ddmlib handler is slowing down
-     * event dispatching. When the limit is reached, [posting][post] events is throttled.
-     */
-    private val queue = Channel<Event>(QUEUE_CAPACITY)
+  /**
+   * We limit to [QUEUE_CAPACITY] events in case a ddmlib handler is slowing down event dispatching. When the limit is reached,
+   * [posting][post] events is throttled.
+   */
+  private val queue = Channel<Event>(QUEUE_CAPACITY)
 
-    suspend fun post(scope: CoroutineScope, name: String, handler: () -> Unit) {
-        queue.send(Event(scope, name, handler))
-    }
+  suspend fun post(scope: CoroutineScope, name: String, handler: () -> Unit) {
+    queue.send(Event(scope, name, handler))
+  }
 
-    suspend fun runDispatcher() {
-        queue.receiveAsFlow().collect { event ->
-            event.scope.launch {
-                runCatching {
-                    logger.verbose { "Invoking ddmlib listener '${event.name}'" }
-                    event.handler()
-                    logger.verbose { "Invoking ddmlib listener '${event.name}' - done" }
-                }.onFailure { throwable ->
-                    logger.warn(
-                        throwable,
-                        "Invoking ddmlib listener '${event.name}' threw an exception: $throwable"
-                    )
-                }
-            }.join()
+  suspend fun runDispatcher() {
+    queue.receiveAsFlow().collect { event ->
+      event.scope
+        .launch {
+          runCatching {
+              logger.verbose { "Invoking ddmlib listener '${event.name}'" }
+              event.handler()
+              logger.verbose { "Invoking ddmlib listener '${event.name}' - done" }
+            }
+            .onFailure { throwable -> logger.warn(throwable, "Invoking ddmlib listener '${event.name}' threw an exception: $throwable") }
         }
+        .join()
     }
+  }
 
-    private class Event(val scope: CoroutineScope, val name: String, val handler: () -> Unit)
+  private class Event(val scope: CoroutineScope, val name: String, val handler: () -> Unit)
 
-    companion object {
+  companion object {
 
-        const val QUEUE_CAPACITY = 1_000
-    }
+    const val QUEUE_CAPACITY = 1_000
+  }
 }

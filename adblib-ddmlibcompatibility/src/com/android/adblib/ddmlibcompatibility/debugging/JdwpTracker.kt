@@ -29,63 +29,59 @@ import kotlinx.coroutines.launch
 
 internal class JdwpTracker(private val trackerHost: ProcessTrackerHost) {
 
-    private val session: AdbSession
-        get() = trackerHost.device.session
+  private val session: AdbSession
+    get() = trackerHost.device.session
 
-    private val device: ConnectedDevice
-        get() = trackerHost.device
+  private val device: ConnectedDevice
+    get() = trackerHost.device
 
-    private val iDevice: IDevice
-        get() = trackerHost.iDevice
+  private val iDevice: IDevice
+    get() = trackerHost.iDevice
 
-    private val logger = adbLogger(session)
+  private val logger = adbLogger(session)
 
-    fun startTracking() {
-        device.scope.launch(session.host.ioDispatcher) {
-            logger.debug { "Starting process tracking for device $iDevice" }
-            val processEntryMap = mutableMapOf<Int, AdblibClientWrapper>()
-            try {
-                // Collect debuggable PIDs
-                device.jdwpProcessTracker.processesFlow
-                    .takeWhile { it.flowStatus != StateFlowStatus.endOfFlow }
-                    .collect { processList ->
-                        updateJdwpProcessList(processEntryMap, processList)
-                    }
-            } finally {
-                updateJdwpProcessList(processEntryMap, emptyList())
-                logger.debug { "Stop process tracking for device $iDevice (scope.isActive=${device.scope.isActive})" }
-            }
-        }
+  fun startTracking() {
+    device.scope.launch(session.host.ioDispatcher) {
+      logger.debug { "Starting process tracking for device $iDevice" }
+      val processEntryMap = mutableMapOf<Int, AdblibClientWrapper>()
+      try {
+        // Collect debuggable PIDs
+        device.jdwpProcessTracker.processesFlow
+          .takeWhile { it.flowStatus != StateFlowStatus.endOfFlow }
+          .collect { processList -> updateJdwpProcessList(processEntryMap, processList) }
+      } finally {
+        updateJdwpProcessList(processEntryMap, emptyList())
+        logger.debug { "Stop process tracking for device $iDevice (scope.isActive=${device.scope.isActive})" }
+      }
+    }
+  }
+
+  /** Update our list of processes and invoke listeners. */
+  private suspend fun updateJdwpProcessList(
+    currentProcessEntryMap: MutableMap<Int, AdblibClientWrapper>,
+    newJdwpProcessList: List<JdwpProcess>,
+  ) {
+    val knownPids = currentProcessEntryMap.keys.toHashSet()
+    val effectivePids = newJdwpProcessList.map { it.pid }.toHashSet()
+    val addedPids = effectivePids - knownPids
+    val removePids = knownPids - effectivePids
+
+    // Remove old pids
+    removePids.forEach { pid ->
+      logger.debug { "Removing PID $pid from list of Client processes" }
+      currentProcessEntryMap.remove(pid)
     }
 
-    /**
-     * Update our list of processes and invoke listeners.
-     */
-    private suspend fun updateJdwpProcessList(
-        currentProcessEntryMap: MutableMap<Int, AdblibClientWrapper>,
-        newJdwpProcessList: List<JdwpProcess>
-    ) {
-        val knownPids = currentProcessEntryMap.keys.toHashSet()
-        val effectivePids = newJdwpProcessList.map { it.pid }.toHashSet()
-        val addedPids = effectivePids - knownPids
-        val removePids = knownPids - effectivePids
-
-        // Remove old pids
-        removePids.forEach { pid ->
-            logger.debug { "Removing PID $pid from list of Client processes" }
-            currentProcessEntryMap.remove(pid)
-        }
-
-        // Add new pids
-        addedPids.forEach { pid ->
-            logger.debug { "Adding PID $pid to list of Client processes" }
-            val jdwpProcess = newJdwpProcessList.first { it.pid == pid }
-            val clientWrapper = AdblibClientWrapper(trackerHost, jdwpProcess)
-            currentProcessEntryMap[pid] = clientWrapper
-            clientWrapper.startTracking()
-        }
-
-        assert(currentProcessEntryMap.keys.size == newJdwpProcessList.size)
-        trackerHost.clientsUpdated(currentProcessEntryMap.values.toList())
+    // Add new pids
+    addedPids.forEach { pid ->
+      logger.debug { "Adding PID $pid to list of Client processes" }
+      val jdwpProcess = newJdwpProcessList.first { it.pid == pid }
+      val clientWrapper = AdblibClientWrapper(trackerHost, jdwpProcess)
+      currentProcessEntryMap[pid] = clientWrapper
+      clientWrapper.startTracking()
     }
+
+    assert(currentProcessEntryMap.keys.size == newJdwpProcessList.size)
+    trackerHost.clientsUpdated(currentProcessEntryMap.values.toList())
+  }
 }

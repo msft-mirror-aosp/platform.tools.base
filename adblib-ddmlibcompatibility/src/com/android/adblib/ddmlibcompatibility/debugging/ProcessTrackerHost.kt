@@ -23,25 +23,22 @@ import kotlinx.coroutines.Deferred
 
 internal interface ProcessTrackerHost {
 
-    val device: ConnectedDevice
+  val device: ConnectedDevice
 
-    val iDevice: IDevice
+  val iDevice: IDevice
 
-    suspend fun clientsUpdated(list: List<Client>)
+  suspend fun clientsUpdated(list: List<Client>)
 
-    suspend fun postClientUpdated(
-        clientWrapper: AdblibClientWrapper,
-        updateKind: ClientUpdateKind
-    ): Deferred<Unit>
+  suspend fun postClientUpdated(clientWrapper: AdblibClientWrapper, updateKind: ClientUpdateKind): Deferred<Unit>
 
-    enum class ClientUpdateKind {
-        NameOrProperties,
-        DebuggerConnectionStatus,
-        HeapAllocations,
-        ProfilingStatus,
-    }
+  enum class ClientUpdateKind {
+    NameOrProperties,
+    DebuggerConnectionStatus,
+    HeapAllocations,
+    ProfilingStatus,
+  }
 
-    suspend fun profileableClientsUpdated(list: List<ProfileableClient>)
+  suspend fun profileableClientsUpdated(list: List<ProfileableClient>)
 
-    suspend fun postProfileableClientUpdated(clientWrapper: AdblibProfileableClientWrapper)
+  suspend fun postProfileableClientUpdated(clientWrapper: AdblibProfileableClientWrapper)
 }
