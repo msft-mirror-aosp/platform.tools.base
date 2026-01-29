@@ -46,9 +46,8 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withTimeoutOrNull
 
 /**
- * Central access point for devices and device templates. [DeviceProvisionerPlugin] instances
- * provide collections of [DeviceHandle] and [DeviceTemplate] instances, which are collected by this
- * class and provided to consumers.
+ * Central access point for devices and device templates. [DeviceProvisionerPlugin] instances provide collections of [DeviceHandle] and
+ * [DeviceTemplate] instances, which are collected by this class and provided to consumers.
  */
 class DeviceProvisioner
 private constructor(
@@ -57,11 +56,7 @@ private constructor(
   private val provisioners: List<DeviceProvisionerPlugin>,
 ) {
   companion object {
-    fun create(
-      coroutineScope: CoroutineScope,
-      adbSession: AdbSession,
-      provisioners: List<DeviceProvisionerPlugin>,
-    ) =
+    fun create(coroutineScope: CoroutineScope, adbSession: AdbSession, provisioners: List<DeviceProvisionerPlugin>) =
       DeviceProvisioner(coroutineScope, adbSession, provisioners.sortedByDescending { it.priority })
   }
 
@@ -73,16 +68,14 @@ private constructor(
   private val combinedTemplates = combine(provisioners.map { it.templates }) { it.flatMap { it } }
 
   /** The [device handles][DeviceHandle] known to this class, provided by its plugins. */
-  val devices: StateFlow<List<DeviceHandle>> =
-    combinedDevices.stateIn(scope, SharingStarted.Eagerly, emptyList())
+  val devices: StateFlow<List<DeviceHandle>> = combinedDevices.stateIn(scope, SharingStarted.Eagerly, emptyList())
 
   /** The [device templates][DeviceTemplate] known to this class, provided by its plugins. */
-  val templates: StateFlow<List<DeviceTemplate>> =
-    combinedTemplates.stateIn(scope, SharingStarted.Eagerly, emptyList())
+  val templates: StateFlow<List<DeviceTemplate>> = combinedTemplates.stateIn(scope, SharingStarted.Eagerly, emptyList())
 
   /**
-   * The ConnectedDevices that are not claimed by any plugin (probably because the device is not yet
-   * online, perhaps waiting for authorization).
+   * The ConnectedDevices that are not claimed by any plugin (probably because the device is not yet online, perhaps waiting for
+   * authorization).
    */
   val unclaimedDevices: StateFlow<List<ConnectedDevice>> =
     adbSession.connectedDevicesTracker.connectedDevices
@@ -93,37 +86,25 @@ private constructor(
       .stateIn(scope, SharingStarted.Eagerly, emptyList())
 
   /**
-   * Finds the DeviceHandle of the connected device with the given serial number, waiting up to
-   * [timeout] for it to appear.
+   * Finds the DeviceHandle of the connected device with the given serial number, waiting up to [timeout] for it to appear.
    *
-   * This is intended for interoperability with DDMLib, or AdbLib's ConnectedDevicesTracker. It's
-   * possible for a device to be visible by these interfaces before it becomes visible via the
-   * DeviceProvisioner; thus, we wait a short time for it to show up before giving up.
+   * This is intended for interoperability with DDMLib, or AdbLib's ConnectedDevicesTracker. It's possible for a device to be visible by
+   * these interfaces before it becomes visible via the DeviceProvisioner; thus, we wait a short time for it to show up before giving up.
    *
-   * This has the potential to introduce unnecessary delays if invoked for a device that no longer
-   * exists, thus it should be used with care. Generally, it is preferable to obtain a
-   * [DeviceHandle] by collecting the [devices] flow.
+   * This has the potential to introduce unnecessary delays if invoked for a device that no longer exists, thus it should be used with care.
+   * Generally, it is preferable to obtain a [DeviceHandle] by collecting the [devices] flow.
    */
-  suspend fun findConnectedDeviceHandle(
-    deviceSelector: DeviceSelector,
-    timeout: Duration = 2.seconds,
-  ): DeviceHandle? =
+  suspend fun findConnectedDeviceHandle(deviceSelector: DeviceSelector, timeout: Duration = 2.seconds): DeviceHandle? =
     withTimeoutOrNull(timeout) {
       val serialNumber = adbSession.hostServices.getSerialNo(deviceSelector)
       val connectedDevices = adbSession.connectedDevicesTracker.connectedDevices
       // If it's not present in the ConnectedDevicesTracker, make a call to ADB to be sure.
-      val isPresent =
-        connectedDevices.value.any { it.serialNumber == serialNumber } ||
-          adbSession.hostServices.isKnownDevice(serialNumber)
+      val isPresent = connectedDevices.value.any { it.serialNumber == serialNumber } || adbSession.hostServices.isKnownDevice(serialNumber)
       when {
         isPresent ->
           // ADB is aware of this serial number; wait for it to appear in the provisioner.
           devices
-            .mapNotNull { handles ->
-              handles.firstOrNull {
-                it.state.connectedDevice?.serialNumber == serialNumber && it.state.isOnline()
-              }
-            }
+            .mapNotNull { handles -> handles.firstOrNull { it.state.connectedDevice?.serialNumber == serialNumber && it.state.isOnline() } }
             .firstOrNull()
         else -> null
       }
@@ -143,8 +124,8 @@ private constructor(
   }
 
   /**
-   * Launches a coroutine that runs for the lifetime of the device, offering it to the plugins in
-   * priority order. When it is claimed, wait to see if it becomes unclaimed, then offer it again.
+   * Launches a coroutine that runs for the lifetime of the device, offering it to the plugins in priority order. When it is claimed, wait
+   * to see if it becomes unclaimed, then offer it again.
    */
   private fun offerWhileConnected(scope: CoroutineScope, device: ConnectedDevice) {
     val job =
@@ -158,8 +139,7 @@ private constructor(
               .transformLatest { isOnline ->
                 if (isOnline) {
                   when (val handle = offer(device)) {
-                    null ->
-                      logger.warn("Device ${device.serialNumber} not claimed by any provisioner")
+                    null -> logger.warn("Device ${device.serialNumber} not claimed by any provisioner")
                     else -> emit(handle)
                   }
                 } else {
@@ -180,12 +160,11 @@ private constructor(
   }
 
   /**
-   * Offers the device to the plugins in priority order. It is expected to be claimed by the default
-   * plugin if no other plugin claims it first, unless an exception occurs (e.g. the device goes
-   * offline during claim).
+   * Offers the device to the plugins in priority order. It is expected to be claimed by the default plugin if no other plugin claims it
+   * first, unless an exception occurs (e.g. the device goes offline during claim).
    *
-   * To simplify plugin implementation, we only offer one device to one plugin at a time; we may
-   * want to relax this in the future to support identifying devices in parallel.
+   * To simplify plugin implementation, we only offer one device to one plugin at a time; we may want to relax this in the future to support
+   * identifying devices in parallel.
    */
   private suspend fun offer(device: ConnectedDevice): DeviceHandle? =
     offerMutex.withLock {
@@ -201,22 +180,14 @@ private constructor(
       }
     }
 
-  /**
-   * A composite list of the [CreateDeviceAction]s from all plugins that support device creation.
-   */
-  fun createDeviceActions(): List<CreateDeviceAction> =
-    provisioners.mapNotNull { it.createDeviceAction }
+  /** A composite list of the [CreateDeviceAction]s from all plugins that support device creation. */
+  fun createDeviceActions(): List<CreateDeviceAction> = provisioners.mapNotNull { it.createDeviceAction }
 
-  /**
-   * A composite list of the [CreateDeviceTemplateAction]s from all plugins that support template
-   * creation.
-   */
-  fun createTemplateActions(): List<CreateDeviceTemplateAction> =
-    provisioners.mapNotNull { it.createDeviceTemplateAction }
+  /** A composite list of the [CreateDeviceTemplateAction]s from all plugins that support template creation. */
+  fun createTemplateActions(): List<CreateDeviceTemplateAction> = provisioners.mapNotNull { it.createDeviceTemplateAction }
 
   /** Provides access to extensions, which may be defined and implemented in higher layers. */
-  fun <T : Extension> extensions(extensionClass: Class<T>): List<T> =
-    provisioners.mapNotNull { it.extension(extensionClass) }
+  fun <T : Extension> extensions(extensionClass: Class<T>): List<T> = provisioners.mapNotNull { it.extension(extensionClass) }
 }
 
 inline fun <reified T : Extension> DeviceProvisioner.extensions() = extensions(T::class.java)

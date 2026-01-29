@@ -15,14 +15,11 @@
  */
 package com.android.sdklib.deviceprovisioner
 
+import kotlin.jvm.optionals.getOrNull
 import org.jetbrains.annotations.TestOnly
 import org.jetbrains.annotations.VisibleForTesting
-import kotlin.jvm.optionals.getOrNull
 
-/**
- * Mechanism for calling the [ProcessHandle.of] method that allows tests to inject their own
- * substitute.
- */
+/** Mechanism for calling the [ProcessHandle.of] method that allows tests to inject their own substitute. */
 object ProcessHandleProvider {
 
   private var factory: Factory? = null

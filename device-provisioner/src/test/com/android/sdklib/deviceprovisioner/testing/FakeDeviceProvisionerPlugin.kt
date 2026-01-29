@@ -41,11 +41,10 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 
 /**
- * A DeviceProvisionerPlugin for testing which simply holds whatever you give it. In contrast to
- * [FakeAdbDeviceProvisionerPlugin], it does not require FakeAdb.
+ * A DeviceProvisionerPlugin for testing which simply holds whatever you give it. In contrast to [FakeAdbDeviceProvisionerPlugin], it does
+ * not require FakeAdb.
  */
-class FakeDeviceProvisionerPlugin(val scope: CoroutineScope, override val priority: Int = 1) :
-  DeviceProvisionerPlugin {
+class FakeDeviceProvisionerPlugin(val scope: CoroutineScope, override val priority: Int = 1) : DeviceProvisionerPlugin {
 
   override suspend fun claim(device: ConnectedDevice): DeviceHandle? {
     return devices.value.find { it.serialNumber == device.serialNumber }
@@ -57,8 +56,7 @@ class FakeDeviceProvisionerPlugin(val scope: CoroutineScope, override val priori
   open class FakeDeviceHandle(
     val serialNumber: String,
     override val scope: CoroutineScope,
-    initialState: DeviceState =
-      DeviceState.Disconnected(DeviceProperties.buildForTest { icon = EmptyIcon.DEFAULT }),
+    initialState: DeviceState = DeviceState.Disconnected(DeviceProperties.buildForTest { icon = EmptyIcon.DEFAULT }),
   ) : DeviceHandle {
 
     override val id = DeviceId("Fake", false, serialNumber)
@@ -74,10 +72,7 @@ class FakeDeviceProvisionerPlugin(val scope: CoroutineScope, override val priori
     override var coldBootAction: ColdBootAction? = null
   }
 
-  open class FakeDeviceTemplate(
-    val modelNumber: String,
-    override val properties: DeviceProperties,
-  ) : DeviceTemplate {
+  open class FakeDeviceTemplate(val modelNumber: String, override val properties: DeviceProperties) : DeviceTemplate {
 
     override val id = DeviceId("Fake", true, modelNumber)
     override val stateFlow = MutableStateFlow(TemplateState())
@@ -94,8 +89,7 @@ class FakeDeviceProvisionerPlugin(val scope: CoroutineScope, override val priori
   }
 
   open class FakeTemplateActivationAction : TemplateActivationAction {
-    override suspend fun activate(duration: Duration?): DeviceHandle =
-      throw UnsupportedOperationException()
+    override suspend fun activate(duration: Duration?): DeviceHandle = throw UnsupportedOperationException()
 
     override val durationUsed = false
     override val presentation = MutableStateFlow(TestDefaultDeviceActionPresentation.fromContext())

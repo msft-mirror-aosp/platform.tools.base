@@ -42,21 +42,15 @@ interface Extensible {
 
 inline fun <reified T : Extension> Extensible.extension() = extension(T::class.java)
 
-/**
- * A registry of [ExtensionProvider] for a particular base instance. Extensions are initialized
- * lazily when requested.
- */
-class ExtensionRegistry<BaseT>(base: BaseT, extensionProviders: List<ExtensionProvider<BaseT, *>>) :
-  Extensible {
-  constructor(
-    base: BaseT,
-    vararg extensionProviders: ExtensionProvider<BaseT, *>,
-  ) : this(base, extensionProviders.toList())
+/** A registry of [ExtensionProvider] for a particular base instance. Extensions are initialized lazily when requested. */
+class ExtensionRegistry<BaseT>(base: BaseT, extensionProviders: List<ExtensionProvider<BaseT, *>>) : Extensible {
+  constructor(base: BaseT, vararg extensionProviders: ExtensionProvider<BaseT, *>) : this(base, extensionProviders.toList())
 
   private val extensions: Map<Class<out Extension>, Lazy<Extension?>> =
     extensionProviders.associate { it.extensionClass to lazy { it.createExtension(base) } }
 
   override fun <T : Extension> extension(extensionClass: Class<T>): T? {
-    @Suppress("UNCHECKED_CAST") return extensions[extensionClass]?.value as T?
+    @Suppress("UNCHECKED_CAST")
+    return extensions[extensionClass]?.value as T?
   }
 }

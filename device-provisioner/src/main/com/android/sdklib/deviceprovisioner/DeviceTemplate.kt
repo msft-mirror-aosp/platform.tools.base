@@ -20,12 +20,11 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 /**
- * A DeviceTemplate contains the information necessary to activate / lease a device from a
- * provisioner. In contrast to a DeviceHandle, it does not refer to a specific device: each
- * activation produces a different device.
+ * A DeviceTemplate contains the information necessary to activate / lease a device from a provisioner. In contrast to a DeviceHandle, it
+ * does not refer to a specific device: each activation produces a different device.
  *
- * In contrast to DeviceHandle, a template's [properties] never change. However, a template can use
- * [stateFlow] to indicate availability of the template or error conditions.
+ * In contrast to DeviceHandle, a template's [properties] never change. However, a template can use [stateFlow] to indicate availability of
+ * the template or error conditions.
  */
 interface DeviceTemplate {
   val id: DeviceId
@@ -38,10 +37,7 @@ interface DeviceTemplate {
   val state: TemplateState
     get() = stateFlow.value
 
-  /**
-   * An action that instantiates the template as a specific device. This may involve obtaining a
-   * reservation or creating a device.
-   */
+  /** An action that instantiates the template as a specific device. This may involve obtaining a reservation or creating a device. */
   val activationAction: TemplateActivationAction
 
   val editAction: EditTemplateAction?
@@ -51,8 +47,8 @@ interface DeviceTemplate {
 }
 
 /**
- * The dynamic state of the template. Templates may not necessarily have any dynamic state, but it
- * can be used to indicate device availability or error conditions.
+ * The dynamic state of the template. Templates may not necessarily have any dynamic state, but it can be used to indicate device
+ * availability or error conditions.
  *
  * Fields of this class should be immutable data fields (with equality defined appropriately).
  */

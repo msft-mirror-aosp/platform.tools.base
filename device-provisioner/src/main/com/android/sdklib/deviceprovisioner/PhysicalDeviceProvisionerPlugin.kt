@@ -34,10 +34,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
 /** Plugin providing access to physical devices, connected over USB or Wi-Fi. */
-class PhysicalDeviceProvisionerPlugin(
-  val scope: CoroutineScope,
-  private val deviceIcons: DeviceIcons,
-) : DeviceProvisionerPlugin {
+class PhysicalDeviceProvisionerPlugin(val scope: CoroutineScope, private val deviceIcons: DeviceIcons) : DeviceProvisionerPlugin {
 
   companion object {
     const val PLUGIN_ID = "PhysicalDevice"
@@ -46,8 +43,8 @@ class PhysicalDeviceProvisionerPlugin(
   override val priority = 0
 
   /**
-   * Index of devices by their serial number. This is the device serial number, i.e. the ro.serialno
-   * property, not the adb serial number, which for WiFi devices has extra stuff around it.
+   * Index of devices by their serial number. This is the device serial number, i.e. the ro.serialno property, not the adb serial number,
+   * which for WiFi devices has extra stuff around it.
    */
   @GuardedBy("devicesMutex") private val devicesBySerial = hashMapOf<String, PhysicalDeviceHandle>()
   /** Lock guarding [devicesBySerial] and the contents of [PhysicalDeviceHandle]. */
@@ -97,12 +94,7 @@ class PhysicalDeviceProvisionerPlugin(
         checkNotNull(
             devicesBySerial.compute(serialNumber) { _, handle ->
               when (handle) {
-                null ->
-                  PhysicalDeviceHandle(
-                    serialNumber,
-                    scope.createChildScope(isSupervisor = true),
-                    newState,
-                  )
+                null -> PhysicalDeviceHandle(serialNumber, scope.createChildScope(isSupervisor = true), newState)
                 else ->
                   // The device is already connected by either USB or Wi-Fi, and we got a new
                   // connection via the other interface
@@ -134,29 +126,19 @@ class PhysicalDeviceProvisionerPlugin(
 }
 
 /** Handle of a physical device. */
-private class PhysicalDeviceHandle(
-  private val serialNumber: String,
-  override val scope: CoroutineScope,
-  initialState: Connected,
-) : DeviceHandle {
+private class PhysicalDeviceHandle(private val serialNumber: String, override val scope: CoroutineScope, initialState: Connected) :
+  DeviceHandle {
 
-  override val id =
-    DeviceId(PhysicalDeviceProvisionerPlugin.PLUGIN_ID, false, "serial=$serialNumber")
+  override val id = DeviceId(PhysicalDeviceProvisionerPlugin.PLUGIN_ID, false, "serial=$serialNumber")
 
   /**
-   * The current state of the device is always equal to either the state of the [usbConnectionFlow]
-   * or the [wifiConnectionFlow]. This is updated via [updateState] rather than using Flow.combine
-   * so that it occurs synchronously under the devices mutex.
+   * The current state of the device is always equal to either the state of the [usbConnectionFlow] or the [wifiConnectionFlow]. This is
+   * updated via [updateState] rather than using Flow.combine so that it occurs synchronously under the devices mutex.
    */
   override val stateFlow = MutableStateFlow<DeviceState>(initialState)
-  private val usbConnectionFlow =
-    MutableStateFlow<DeviceState?>(
-      initialState.takeIf { it.properties.connectionType == ConnectionType.USB }
-    )
+  private val usbConnectionFlow = MutableStateFlow<DeviceState?>(initialState.takeIf { it.properties.connectionType == ConnectionType.USB })
   private val wifiConnectionFlow =
-    MutableStateFlow<DeviceState?>(
-      initialState.takeIf { it.properties.connectionType != ConnectionType.USB }
-    )
+    MutableStateFlow<DeviceState?>(initialState.takeIf { it.properties.connectionType != ConnectionType.USB })
 
   private fun updateState() {
     stateFlow.value =
@@ -179,9 +161,7 @@ private class PhysicalDeviceHandle(
   }
 
   fun deviceDisconnected(device: ConnectedDevice) {
-    flowForDevice(device).update {
-      Disconnected(it!!.properties.toBuilder().apply { connectionType = null }.build())
-    }
+    flowForDevice(device).update { Disconnected(it!!.properties.toBuilder().apply { connectionType = null }.build()) }
     updateState()
   }
 

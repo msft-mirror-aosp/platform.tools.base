@@ -55,14 +55,7 @@ import org.junit.Test
 import org.junit.rules.TemporaryFolder
 
 val emptyDeviceIcons =
-  DeviceIcons(
-    EmptyIcon.DEFAULT,
-    EmptyIcon.DEFAULT,
-    EmptyIcon.DEFAULT,
-    EmptyIcon.DEFAULT,
-    EmptyIcon.DEFAULT,
-    EmptyIcon.DEFAULT,
-  )
+  DeviceIcons(EmptyIcon.DEFAULT, EmptyIcon.DEFAULT, EmptyIcon.DEFAULT, EmptyIcon.DEFAULT, EmptyIcon.DEFAULT, EmptyIcon.DEFAULT)
 
 class LocalEmulatorProvisionerPluginTest {
 
@@ -102,14 +95,7 @@ class LocalEmulatorProvisionerPluginTest {
   fun propertiesEquality() {
     // This should have non-default values for all fields specific to LocalEmulatorProperties
     val props =
-      buildProperties(
-        avdManager.makeAvdInfo(
-          1,
-          AndroidVersion(29),
-          hasPlayStore = true,
-          tag = SystemImageTags.AI_GLASSES_COMPATIBLE_TAG,
-        )
-      )
+      buildProperties(avdManager.makeAvdInfo(1, AndroidVersion(29), hasPlayStore = true, tag = SystemImageTags.AI_GLASSES_COMPATIBLE_TAG))
 
     val builder = props.toBuilder()
 
@@ -121,8 +107,7 @@ class LocalEmulatorProvisionerPluginTest {
 
   @Test
   fun genericPropertiesUpdate() {
-    val avdProps =
-      buildProperties(avdManager.makeAvdInfo(1, AndroidVersion(29), hasPlayStore = true))
+    val avdProps = buildProperties(avdManager.makeAvdInfo(1, AndroidVersion(29), hasPlayStore = true))
     val baseProps =
       DeviceProperties.build {
         populateDeviceInfoProto("Test", null, emptyMap(), "1")
@@ -146,8 +131,7 @@ class LocalEmulatorProvisionerPluginTest {
 
     yieldUntil { provisioner.devices.value.size == 2 }
     val devices = provisioner.devices.value
-    assertThat(devices.map { it.state.properties.title })
-      .containsExactly("Fake Device 1", "Fake Device 2")
+    assertThat(devices.map { it.state.properties.title }).containsExactly("Fake Device 1", "Fake Device 2")
     checkProperties(devices[0].state.properties as LocalEmulatorProperties)
   }
 
@@ -192,8 +176,7 @@ class LocalEmulatorProvisionerPluginTest {
     handle.awaitReady()
     assertThat(handle.state.connectedDevice).isNotNull()
 
-    assertThat(provisioner.devices.value.map { it.state.properties.title })
-      .containsExactly("Fake Device 1")
+    assertThat(provisioner.devices.value.map { it.state.properties.title }).containsExactly("Fake Device 1")
     val properties = provisioner.devices.value[0].state.properties as LocalEmulatorProperties
     checkProperties(properties)
     assertThat(properties.androidRelease).isEqualTo(RELEASE)
@@ -203,8 +186,7 @@ class LocalEmulatorProvisionerPluginTest {
     handle.stateFlow.takeWhile { it is Connected }.collect()
     assertThat(handle.state.connectedDevice).isNull()
     assertThat(handle.state).isInstanceOf(Disconnected::class.java)
-    assertThat(provisioner.devices.value.map { it.state.properties.title })
-      .containsExactly("Fake Device 1")
+    assertThat(provisioner.devices.value.map { it.state.properties.title }).containsExactly("Fake Device 1")
   }
 
   @Test
@@ -252,8 +234,7 @@ class LocalEmulatorProvisionerPluginTest {
     var avdInfo = avdManager.makeAvdInfo(1)
     val snapshotPath = avdInfo.dataFolderPath.resolve("snapshots").resolve("snap1")
     createNormalSnapshot(snapshotPath)
-    avdInfo =
-      avdInfo.copy(properties = avdInfo.properties + BootSnapshot(snapshotPath.name).properties())
+    avdInfo = avdInfo.copy(properties = avdInfo.properties + BootSnapshot(snapshotPath.name).properties())
 
     avdManager.createAvd(avdInfo)
 
@@ -270,10 +251,7 @@ class LocalEmulatorProvisionerPluginTest {
 
   @Test
   fun bootFailure(): Unit = runBlockingWithTimeout {
-    val avdInfo =
-      avdManager.makeAvdInfo(1).let {
-        it.copy(properties = it.properties + (LAUNCH_EXCEPTION_MESSAGE to "AVD is broken"))
-      }
+    val avdInfo = avdManager.makeAvdInfo(1).let { it.copy(properties = it.properties + (LAUNCH_EXCEPTION_MESSAGE to "AVD is broken")) }
     avdManager.createAvd(avdInfo)
 
     yieldUntil { provisioner.devices.value.size == 1 }
@@ -411,9 +389,7 @@ class LocalEmulatorProvisionerPluginTest {
 
       val handle = provisioner.devices.value[0]
 
-      assertThat(handle.state.properties.abiList)
-        .containsExactly(Abi.X86_64, Abi.ARM64_V8A)
-        .inOrder()
+      assertThat(handle.state.properties.abiList).containsExactly(Abi.X86_64, Abi.ARM64_V8A).inOrder()
     }
   }
 
@@ -448,15 +424,11 @@ class LocalEmulatorProvisionerPluginTest {
     // Editing the device adds "Edited" to its name
     avdManager.editAvd(handle.onDiskAvdInfo)
 
-    channel.receiveUntilPassing { newState ->
-      assertThat(newState.properties.title).isEqualTo("$name Edited")
-    }
+    channel.receiveUntilPassing { newState -> assertThat(newState.properties.title).isEqualTo("$name Edited") }
 
     // Editing the device while it's online puts it in AvdChangedError state
     avdManager.startAvd(handle.avdInfo, QuickBoot)
-    channel.receiveUntilPassing { newState ->
-      assertThat(newState).isInstanceOf(Connected::class.java)
-    }
+    channel.receiveUntilPassing { newState -> assertThat(newState).isInstanceOf(Connected::class.java) }
     avdManager.editAvd(handle.onDiskAvdInfo)
 
     channel.receiveUntilPassing { newState ->
@@ -491,29 +463,21 @@ class LocalEmulatorProvisionerPluginTest {
 
     // Check if editing the AVD name works while offline.
     val originalName = info.name
-    avdManager.avdEditor = { avdInfo: AvdInfo ->
-      avdInfo.copy(avdInfo.iniFile.resolveSibling("New $originalName"))
-    }
+    avdManager.avdEditor = { avdInfo: AvdInfo -> avdInfo.copy(avdInfo.iniFile.resolveSibling("New $originalName")) }
 
     avdManager.editAvd(handle.onDiskAvdInfo)
     channel.receiveUntilPassing { newState ->
-      assertThat((newState.properties as LocalEmulatorProperties).avdName)
-        .isEqualTo("New $originalName")
+      assertThat((newState.properties as LocalEmulatorProperties).avdName).isEqualTo("New $originalName")
     }
 
     avdManager.startAvd(handle.avdInfo, QuickBoot)
-    channel.receiveUntilPassing { newState ->
-      assertThat(newState).isInstanceOf(Connected::class.java)
-    }
+    channel.receiveUntilPassing { newState -> assertThat(newState).isInstanceOf(Connected::class.java) }
 
     // Editing metadata while running shouldn't have problems.
-    avdManager.avdEditor = { avdInfo: AvdInfo ->
-      avdInfo.copy(userSettings = mapOf(PREFERRED_ABI to "arm64-v8a"))
-    }
+    avdManager.avdEditor = { avdInfo: AvdInfo -> avdInfo.copy(userSettings = mapOf(PREFERRED_ABI to "arm64-v8a")) }
     avdManager.editAvd(handle.onDiskAvdInfo)
     channel.receiveUntilPassing { newState ->
-      assertThat((newState.properties as LocalEmulatorProperties).preferredAbi)
-        .isEqualTo("arm64-v8a")
+      assertThat((newState.properties as LocalEmulatorProperties).preferredAbi).isEqualTo("arm64-v8a")
       assertThat(newState.error).isNull()
     }
 
@@ -554,33 +518,22 @@ class LocalEmulatorProvisionerPluginTest {
   fun updateInsignificantProperties() {
     // Add a key, remove a key, change a key, don't update a significant key
     val initialProperties =
-      mapOf(
-        "significant key" to "123",
-        ConfigKey.FORCE_COLD_BOOT_MODE to "yes",
-        ConfigKey.FORCE_CHOSEN_SNAPSHOT_BOOT_MODE to "no",
-      )
+      mapOf("significant key" to "123", ConfigKey.FORCE_COLD_BOOT_MODE to "yes", ConfigKey.FORCE_CHOSEN_SNAPSHOT_BOOT_MODE to "no")
     val updatedProperties =
-      mapOf(
-        "significant key" to "456",
-        ConfigKey.FORCE_CHOSEN_SNAPSHOT_BOOT_MODE to "yes",
-        ConfigKey.CHOSEN_SNAPSHOT_FILE to "snap",
-      )
+      mapOf("significant key" to "456", ConfigKey.FORCE_CHOSEN_SNAPSHOT_BOOT_MODE to "yes", ConfigKey.CHOSEN_SNAPSHOT_FILE to "snap")
 
     val avdInfo = avdManager.makeAvdInfo(1).copy(properties = initialProperties)
-    val newAvdInfo =
-      avdInfo.updateInsignificantProperties(avdInfo.copy(properties = updatedProperties))
+    val newAvdInfo = avdInfo.updateInsignificantProperties(avdInfo.copy(properties = updatedProperties))
 
     assertThat(newAvdInfo.properties).containsEntry("significant key", "123")
     assertThat(newAvdInfo.properties).doesNotContainKey(ConfigKey.FORCE_COLD_BOOT_MODE)
-    assertThat(newAvdInfo.properties)
-      .containsEntry(ConfigKey.FORCE_CHOSEN_SNAPSHOT_BOOT_MODE, "yes")
+    assertThat(newAvdInfo.properties).containsEntry(ConfigKey.FORCE_CHOSEN_SNAPSHOT_BOOT_MODE, "yes")
     assertThat(newAvdInfo.properties).containsEntry(ConfigKey.CHOSEN_SNAPSHOT_FILE, "snap")
   }
 
   private fun checkProperties(properties: LocalEmulatorProperties) {
     assertThat(properties.manufacturer).isEqualTo(MANUFACTURER)
-    assertThat(properties.avdConfigProperties[ConfigKey.DEVICE_MANUFACTURER])
-      .isEqualTo(MANUFACTURER)
+    assertThat(properties.avdConfigProperties[ConfigKey.DEVICE_MANUFACTURER]).isEqualTo(MANUFACTURER)
     assertThat(properties.model).isEqualTo(MODEL)
     assertThat(properties.androidVersion).isEqualTo(API_LEVEL)
     assertThat(properties.primaryAbi).isEqualTo(ABI)

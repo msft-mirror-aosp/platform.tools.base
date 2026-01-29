@@ -37,10 +37,7 @@ sealed interface SetChange<T> {
   }
 }
 
-/**
- * Given a Flow<Set<T>>, returns a Flow of Change<T>, identifying elements which have been added or
- * removed from the set.
- */
+/** Given a Flow<Set<T>>, returns a Flow of Change<T>, identifying elements which have been added or removed from the set. */
 fun <T> Flow<Set<T>>.trackSetChanges(): Flow<SetChange<T>> = flow {
   var current = emptySet<T>()
   collect { new ->
@@ -51,26 +48,21 @@ fun <T> Flow<Set<T>>.trackSetChanges(): Flow<SetChange<T>> = flow {
 }
 
 /**
- * Given a Flow<Iterable<T>>, where each T contains a nested Flow<S>, return a flow of
- * List<Pair<T,S>> that updates every time the source flow updates or the nested flow of any T
- * updates.
+ * Given a Flow<Iterable<T>>, where each T contains a nested Flow<S>, return a flow of List<Pair<T,S>> that updates every time the source
+ * flow updates or the nested flow of any T updates.
  *
- * Note that the returned flow will not emit any elements unless it has a value from every inner
- * flow; [innerState] should generally return a [StateFlow] or otherwise ensure that an element is
- * produced promptly, unless blocking the outer flow is desired.
+ * Note that the returned flow will not emit any elements unless it has a value from every inner flow; [innerState] should generally return
+ * a [StateFlow] or otherwise ensure that an element is produced promptly, unless blocking the outer flow is desired.
  */
-fun <T, S> Flow<Iterable<T>>.pairWithNestedState(
-  innerState: (T) -> Flow<S>
-): Flow<List<Pair<T, S>>> = mapNestedStateNotNull(innerState, ::Pair)
+fun <T, S> Flow<Iterable<T>>.pairWithNestedState(innerState: (T) -> Flow<S>): Flow<List<Pair<T, S>>> =
+  mapNestedStateNotNull(innerState, ::Pair)
 
 /**
- * Given a Flow<List<Pair<T, S>>>, perhaps from [pairWithNestedState], transforms it to a
- * Flow<List<V>> using the supplied operation on any input list element that changes. An addition or
- * deletion from the list will not cause recomputation of elements whose state has not changed.
+ * Given a Flow<List<Pair<T, S>>>, perhaps from [pairWithNestedState], transforms it to a Flow<List<V>> using the supplied operation on any
+ * input list element that changes. An addition or deletion from the list will not cause recomputation of elements whose state has not
+ * changed.
  */
-fun <T : Any, S : Any, V : Any> Flow<List<Pair<T, S>>>.mapChangedState(
-  op: suspend (T, S) -> V
-): Flow<ImmutableList<V>> = flow {
+fun <T : Any, S : Any, V : Any> Flow<List<Pair<T, S>>>.mapChangedState(op: suspend (T, S) -> V): Flow<ImmutableList<V>> = flow {
   val table = HashBasedTable.create<T, S, V>()
   collect { pairs ->
     table.rowMap().keys.retainAll(pairs.map { it.first }.toSet())
@@ -84,34 +76,25 @@ fun <T : Any, S : Any, V : Any> Flow<List<Pair<T, S>>>.mapChangedState(
   }
 }
 
-/**
- * Transforms the [devices] flow, applying a transform to each handle and its current state, and
- * omitting null results.
- */
-fun <R> DeviceProvisioner.mapStateNotNull(
-  transform: (DeviceHandle, DeviceState) -> R?
-): Flow<List<R>> =
+/** Transforms the [devices] flow, applying a transform to each handle and its current state, and omitting null results. */
+fun <R> DeviceProvisioner.mapStateNotNull(transform: (DeviceHandle, DeviceState) -> R?): Flow<List<R>> =
   devices.mapNestedStateNotNull(innerState = { it.stateFlow }, transform = transform)
 
 /**
- * Given a Flow<Iterable<T>>, where each T contains a nested Flow<S>, and a function from (T, S) to
- * R?, return a flow of List<R> that updates every time the source flow updates or the nested flow
- * of any T updates, excluding elements that are mapped to null.
+ * Given a Flow<Iterable<T>>, where each T contains a nested Flow<S>, and a function from (T, S) to R?, return a flow of List<R> that
+ * updates every time the source flow updates or the nested flow of any T updates, excluding elements that are mapped to null.
  *
- * Note that the returned flow will not emit any elements unless it has a value from every inner
- * flow; [innerState] should generally return a [StateFlow] or otherwise ensure that an element is
- * produced promptly, unless blocking the outer flow is desired.
+ * Note that the returned flow will not emit any elements unless it has a value from every inner flow; [innerState] should generally return
+ * a [StateFlow] or otherwise ensure that an element is produced promptly, unless blocking the outer flow is desired.
  */
-internal fun <T, S, R : Any> Flow<Iterable<T>>.mapNestedStateNotNull(
-  innerState: (T) -> Flow<S>,
-  transform: (T, S) -> R?,
-): Flow<List<R>> = flatMapLatest { ts ->
-  // Optional is used here for technical reasons: combine() below requires the flow type to be
-  // reified, and if we made R reified, then this method and mapStateNotNull would need to be
-  // inline, which would force this method to be public.
-  val innerFlows = ts.map { t -> innerState(t).map { Optional.ofNullable(transform(t, it)) } }
-  when {
-    innerFlows.isEmpty() -> flowOf(emptyList())
-    else -> combine(innerFlows) { rs: Array<Optional<R>> -> rs.mapNotNull { it.orNull() } }
+internal fun <T, S, R : Any> Flow<Iterable<T>>.mapNestedStateNotNull(innerState: (T) -> Flow<S>, transform: (T, S) -> R?): Flow<List<R>> =
+  flatMapLatest { ts ->
+    // Optional is used here for technical reasons: combine() below requires the flow type to be
+    // reified, and if we made R reified, then this method and mapStateNotNull would need to be
+    // inline, which would force this method to be public.
+    val innerFlows = ts.map { t -> innerState(t).map { Optional.ofNullable(transform(t, it)) } }
+    when {
+      innerFlows.isEmpty() -> flowOf(emptyList())
+      else -> combine(innerFlows) { rs: Array<Optional<R>> -> rs.mapNotNull { it.orNull() } }
+    }
   }
-}

@@ -71,8 +71,7 @@ class FlowUtilTest {
   @Test
   fun mapNestedStateNotNull() = runBlockingWithTimeout {
     val flow = MutableStateFlow<List<Device>>(emptyList())
-    val pairedFlow =
-      flow.mapNestedStateNotNull({ it.state }, { _, state -> state.takeIf { state.length > 1 } })
+    val pairedFlow = flow.mapNestedStateNotNull({ it.state }, { _, state -> state.takeIf { state.length > 1 } })
     val channel = Channel<List<String>>()
     val job = launch { pairedFlow.collect { channel.send(it) } }
 

@@ -50,13 +50,11 @@ class PhysicalDeviceProvisionerPluginTest : DeviceProvisionerTestFixture() {
 
       assertThat(handlesByType).hasSize(2)
       val usbHandle = checkNotNull(handlesByType[ConnectionType.USB])
-      assertThat(usbHandle.state.connectedDevice?.serialNumber)
-        .isEqualTo(SerialNumbers.PHYSICAL1_USB)
+      assertThat(usbHandle.state.connectedDevice?.serialNumber).isEqualTo(SerialNumbers.PHYSICAL1_USB)
       usbHandle.state.properties.apply {
         assertThat(wearPairingId).isEqualTo(SerialNumbers.PHYSICAL1_USB)
         assertThat(disambiguator).isEqualTo(SerialNumbers.PHYSICAL1_USB)
-        assertThat(deviceInfoProto.mdnsConnectionType)
-          .isEqualTo(DeviceInfo.MdnsConnectionType.MDNS_NONE)
+        assertThat(deviceInfoProto.mdnsConnectionType).isEqualTo(DeviceInfo.MdnsConnectionType.MDNS_NONE)
         checkPhysicalDeviceProperties()
       }
       usbHandle.id.apply {
@@ -66,13 +64,11 @@ class PhysicalDeviceProvisionerPluginTest : DeviceProvisionerTestFixture() {
       }
 
       val wifiHandle = checkNotNull(handlesByType[ConnectionType.WIFI])
-      assertThat(wifiHandle.state.connectedDevice?.serialNumber)
-        .isEqualTo(SerialNumbers.PHYSICAL2_WIFI)
+      assertThat(wifiHandle.state.connectedDevice?.serialNumber).isEqualTo(SerialNumbers.PHYSICAL2_WIFI)
       wifiHandle.state.properties.apply {
         assertThat(wearPairingId).isEqualTo(SerialNumbers.PHYSICAL2_USB)
         assertThat(disambiguator).isEqualTo(SerialNumbers.PHYSICAL2_USB)
-        assertThat(deviceInfoProto.mdnsConnectionType)
-          .isEqualTo(DeviceInfo.MdnsConnectionType.MDNS_AUTO_CONNECT_TLS)
+        assertThat(deviceInfoProto.mdnsConnectionType).isEqualTo(DeviceInfo.MdnsConnectionType.MDNS_AUTO_CONNECT_TLS)
         checkPhysicalDeviceProperties()
       }
       wifiHandle.id.apply {
@@ -96,9 +92,7 @@ class PhysicalDeviceProvisionerPluginTest : DeviceProvisionerTestFixture() {
           handles[0]
         }
       // We also want to update whenever the state changes.
-      fakeSession.scope.launch {
-        handle1.stateFlow.collect { channel.send(provisioner.devices.value) }
-      }
+      fakeSession.scope.launch { handle1.stateFlow.collect { channel.send(provisioner.devices.value) } }
       channel.drainFor(100.milliseconds)
 
       // Add a Wi-Fi connection to the same device.
@@ -183,9 +177,7 @@ class PhysicalDeviceProvisionerPluginTest : DeviceProvisionerTestFixture() {
         }
 
       // We also want to update whenever the state changes
-      fakeSession.scope.launch {
-        originalHandle.stateFlow.collect { channel.send(provisioner.devices.value) }
-      }
+      fakeSession.scope.launch { originalHandle.stateFlow.collect { channel.send(provisioner.devices.value) } }
 
       setDevices()
 
@@ -218,12 +210,7 @@ class PhysicalDeviceProvisionerPluginTest : DeviceProvisionerTestFixture() {
       // Show the device as unauthorized
       fakeSession.hostServices.devices =
         DeviceList(
-          listOf(
-            com.android.adblib.DeviceInfo(
-              SerialNumbers.PHYSICAL1_USB,
-              com.android.adblib.DeviceState.UNAUTHORIZED,
-            )
-          ),
+          listOf(com.android.adblib.DeviceInfo(SerialNumbers.PHYSICAL1_USB, com.android.adblib.DeviceState.UNAUTHORIZED)),
           emptyList(),
         )
 
@@ -231,8 +218,7 @@ class PhysicalDeviceProvisionerPluginTest : DeviceProvisionerTestFixture() {
         assertThat(devices).hasSize(1)
 
         val device = devices[0]
-        assertThat(device.deviceInfo.deviceState)
-          .isEqualTo(com.android.adblib.DeviceState.UNAUTHORIZED)
+        assertThat(device.deviceInfo.deviceState).isEqualTo(com.android.adblib.DeviceState.UNAUTHORIZED)
       }
 
       // Now show the device as online
@@ -252,7 +238,6 @@ class PhysicalDeviceProvisionerPluginTest : DeviceProvisionerTestFixture() {
 
   private fun DeviceProperties.checkPhysicalDeviceProperties() {
     checkPixel6lDeviceProperties()
-    assertThat(deviceInfoProto.deviceProvisionerId)
-      .isEqualTo(PhysicalDeviceProvisionerPlugin.PLUGIN_ID)
+    assertThat(deviceInfoProto.deviceProvisionerId).isEqualTo(PhysicalDeviceProvisionerPlugin.PLUGIN_ID)
   }
 }

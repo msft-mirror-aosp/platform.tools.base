@@ -37,12 +37,10 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 /**
- * Plugin which provides handles for devices when no other plugin claims them. This will offer a
- * handle for any device, but offers no operations on that device and does not have any memory of
- * devices.
+ * Plugin which provides handles for devices when no other plugin claims them. This will offer a handle for any device, but offers no
+ * operations on that device and does not have any memory of devices.
  */
-class DefaultProvisionerPlugin(val scope: CoroutineScope, private val defaultIcons: DeviceIcons) :
-  DeviceProvisionerPlugin {
+class DefaultProvisionerPlugin(val scope: CoroutineScope, private val defaultIcons: DeviceIcons) : DeviceProvisionerPlugin {
   companion object {
     const val PLUGIN_ID = "Default"
   }
@@ -63,11 +61,7 @@ class DefaultProvisionerPlugin(val scope: CoroutineScope, private val defaultIco
         icon = defaultIcons.iconForDeviceType(deviceType)
         resolution = Resolution.readFromDevice(device)
       }
-    val handle =
-      DefaultDeviceHandle.create(
-        scope.createChildScope(isSupervisor = true),
-        Connected(deviceProperties, device),
-      )
+    val handle = DefaultDeviceHandle.create(scope.createChildScope(isSupervisor = true), Connected(deviceProperties, device))
 
     _devices.update { it + handle }
 
@@ -81,10 +75,7 @@ class DefaultProvisionerPlugin(val scope: CoroutineScope, private val defaultIco
   }
 
   private class DefaultDeviceHandle
-  private constructor(
-    override val scope: CoroutineScope,
-    override val stateFlow: StateFlow<DeviceState>,
-  ) : DeviceHandle {
+  private constructor(override val scope: CoroutineScope, override val stateFlow: StateFlow<DeviceState>) : DeviceHandle {
     companion object {
       suspend fun create(scope: CoroutineScope, baseState: Connected): DefaultDeviceHandle =
         DefaultDeviceHandle(
@@ -95,13 +86,9 @@ class DefaultProvisionerPlugin(val scope: CoroutineScope, private val defaultIco
             .flatMapLatest { deviceState ->
               when (deviceState) {
                 com.android.adblib.DeviceState.ONLINE ->
-                  baseState.connectedDevice.bootStatusFlow().map { bootStatus ->
-                    baseState.applyBootStatus(bootStatus)
-                  }
-                com.android.adblib.DeviceState.DISCONNECTED ->
-                  flowOf(Disconnected(baseState.properties))
-                else ->
-                  flowOf(baseState.copy(isReady = false, status = deviceState.displayString()))
+                  baseState.connectedDevice.bootStatusFlow().map { bootStatus -> baseState.applyBootStatus(bootStatus) }
+                com.android.adblib.DeviceState.DISCONNECTED -> flowOf(Disconnected(baseState.properties))
+                else -> flowOf(baseState.copy(isReady = false, status = deviceState.displayString()))
               }
             }
             .stateIn(scope),
@@ -109,17 +96,9 @@ class DefaultProvisionerPlugin(val scope: CoroutineScope, private val defaultIco
     }
 
     override val id =
-      DeviceId(
-        PLUGIN_ID,
-        false,
-        "serial=${state.properties.wearPairingId!!};connection=${state.properties.deviceInfoProto.connectionId}",
-      )
+      DeviceId(PLUGIN_ID, false, "serial=${state.properties.wearPairingId!!};connection=${state.properties.deviceInfoProto.connectionId}")
   }
 }
 
 private fun DeviceState.Connected.applyBootStatus(bootStatus: BootStatus) =
-  copy(
-    isTransitioning = !bootStatus.isBooted,
-    isReady = bootStatus.isBooted,
-    status = if (bootStatus.isBooted) status else "Booting",
-  )
+  copy(isTransitioning = !bootStatus.isBooted, isReady = bootStatus.isBooted, status = if (bootStatus.isBooted) status else "Booting")
