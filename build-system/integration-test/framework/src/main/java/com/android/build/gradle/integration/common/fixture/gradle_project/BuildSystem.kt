@@ -52,7 +52,6 @@ internal enum class BuildSystem {
     withKspGradlePlugin: Boolean,
     withComposeCompilerGradlePlugin: Boolean,
     withAndroidxPrivacySandboxLibraryPlugin: Boolean,
-    withDeviceProvider: Boolean,
     withExtraPluginClasspath: String?,
     withBuiltInKotlinSupport: Boolean,
   ): String {
@@ -83,9 +82,6 @@ internal enum class BuildSystem {
       script.append(
         "        classpath \"androidx.privacysandbox.plugins:plugins-privacysandbox-library:\${libs.versions.androidxPrivacySandboxLibraryVersion.get()}\"\n"
       )
-    }
-    if (withDeviceProvider) {
-      script.append("        classpath 'com.android.tools.internal.build.test:devicepool:0.1'\n")
     }
     if (!withExtraPluginClasspath.isNullOrBlank()) {
       script.append("        classpath '$withExtraPluginClasspath'\n")

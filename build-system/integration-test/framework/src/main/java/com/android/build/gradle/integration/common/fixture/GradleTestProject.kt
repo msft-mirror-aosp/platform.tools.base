@@ -112,7 +112,6 @@ constructor(
   // Indicates if CMake's directory information needs to be saved in local.properties
   private val withCmakeDirInLocalProp: Boolean,
   private val relativeNdkSymlinkPath: String?,
-  private val withDeviceProvider: Boolean,
   private val withSdk: Boolean,
   private val withAndroidGradlePlugin: Boolean,
   private val withKotlinGradlePlugin: Boolean,
@@ -157,7 +156,6 @@ constructor(
     @JvmField val DEFAULT_MIN_SDK_VERSION: String = "21"
     const val DEFAULT_NDK_SIDE_BY_SIDE_VERSION: String = NDK_DEFAULT_VERSION
 
-    @JvmField val APPLY_DEVICEPOOL_PLUGIN = System.getenv("APPLY_DEVICEPOOL_PLUGIN")?.toBoolean() ?: false
     val USE_LATEST_NIGHTLY_GRADLE_VERSION = System.getenv("USE_GRADLE_NIGHTLY")?.toBoolean() ?: false
     @JvmField val GRADLE_TEST_VERSION: String
     val ANDROID_GRADLE_PLUGIN_VERSION: String?
@@ -438,7 +436,6 @@ constructor(
     cmakeVersion = rootProject.cmakeVersion,
     withCmakeDirInLocalProp = rootProject.withCmakeDirInLocalProp,
     relativeNdkSymlinkPath = rootProject.relativeNdkSymlinkPath,
-    withDeviceProvider = rootProject.withDeviceProvider,
     withSdk = rootProject.withSdk,
     withAndroidGradlePlugin = rootProject.withAndroidGradlePlugin,
     withKotlinGradlePlugin = rootProject.withKotlinGradlePlugin,
@@ -635,9 +632,8 @@ constructor(
   }
 
   private fun generateCommonHeader(): String {
-    var result =
-      String.format(
-        """
+    return String.format(
+      """
 ext {
     buildToolsVersion = '%1${"$"}s'
     latestCompileSdk = %2${"$"}s
@@ -647,34 +643,14 @@ ext {
     kspVersion = '%7${"$"}s'
 }
 """,
-        DEFAULT_BUILD_TOOL_VERSION,
-        compileSdkVersion,
-        false,
-        kotlinVersion,
-        TaskManager.COMPOSE_UI_VERSION,
-        TestUtils.COMPOSE_COMPILER_FOR_TESTS,
-        TestUtils.KSP_VERSION_FOR_TESTS,
-      )
-    if (APPLY_DEVICEPOOL_PLUGIN) {
-      result +=
-        """
-allprojects { proj ->
-    proj.plugins.withId('com.android.application') {
-        proj.apply plugin: 'devicepool'
-    }
-    proj.plugins.withId('com.android.library') {
-        proj.apply plugin: 'devicepool'
-    }
-    proj.plugins.withId('com.android.model.application') {
-        proj.apply plugin: 'devicepool'
-    }
-    proj.plugins.withId('com.android.model.library') {
-        proj.apply plugin: 'devicepool'
-    }
-}
-"""
-    }
-    return result
+      DEFAULT_BUILD_TOOL_VERSION,
+      compileSdkVersion,
+      false,
+      kotlinVersion,
+      TaskManager.COMPOSE_UI_VERSION,
+      TestUtils.COMPOSE_COMPILER_FOR_TESTS,
+      TestUtils.KSP_VERSION_FOR_TESTS,
+    )
   }
 
   fun generateCommonBuildScript(): String {
@@ -685,7 +661,6 @@ allprojects { proj ->
         withKspGradlePlugin,
         withComposeCompilerGradlePlugin,
         withAndroidxPrivacySandboxLibraryPlugin,
-        withDeviceProvider,
         withExtraPluginClasspath,
         withBuiltInKotlinSupport,
       )
