@@ -28,35 +28,32 @@ import org.junit.runner.Description
 import org.junit.runners.model.Statement
 
 /** Wraps [TransportRule] with additional profiler-specific setup. */
-class ProfilerRule @JvmOverloads constructor(
-        activityClass: String,
-        sdkLevel: SdkLevel,
-        ruleConfig: ProfilerConfig = ProfilerConfig())
-    : ExternalResource() {
+class ProfilerRule @JvmOverloads constructor(activityClass: String, sdkLevel: SdkLevel, ruleConfig: ProfilerConfig = ProfilerConfig()) :
+  ExternalResource() {
 
-    val transportRule = TransportRule(activityClass, sdkLevel, ruleConfig)
+  val transportRule = TransportRule(activityClass, sdkLevel, ruleConfig)
 
-    lateinit var session: Common.Session
-        private set
+  lateinit var session: Common.Session
+    private set
 
-    override fun apply(base: Statement, description: Description): Statement {
-        return RuleChain.outerRule(transportRule).apply(super.apply(base, description), description)
+  override fun apply(base: Statement, description: Description): Statement {
+    return RuleChain.outerRule(transportRule).apply(super.apply(base, description), description)
+  }
+
+  override fun before() {
+    val requestBuilder = Profiler.BeginSessionRequest.newBuilder().setDeviceId(TransportRule.DUMMY_DEVICE_ID).setPid(transportRule.pid)
+    val profilerStub = ProfilerServiceGrpc.newBlockingStub(transportRule.grpc.channel)
+    session = profilerStub.beginSession(requestBuilder.build()).session
+
+    if (transportRule.sdkLevel.supportsJvmti()) {
+      // The following message is only printed by the JVMTI agent, and we should wait for it
+      // before continuing. Pre-jvmti, the code is already transformed and ready to go.
+      assertThat(transportRule.androidDriver.waitForInput("Profiler initialization complete on agent.")).isTrue()
     }
+  }
 
-    override fun before() {
-        val requestBuilder = Profiler.BeginSessionRequest.newBuilder().setDeviceId(TransportRule.DUMMY_DEVICE_ID).setPid(transportRule.pid)
-        val profilerStub = ProfilerServiceGrpc.newBlockingStub(transportRule.grpc.channel)
-        session = profilerStub.beginSession(requestBuilder.build()).session
-
-        if (transportRule.sdkLevel.supportsJvmti()) {
-            // The following message is only printed by the JVMTI agent, and we should wait for it
-            // before continuing. Pre-jvmti, the code is already transformed and ready to go.
-            assertThat(transportRule.androidDriver.waitForInput("Profiler initialization complete on agent.")).isTrue()
-        }
-    }
-
-    override fun after() {
-        val profilerStub = ProfilerServiceGrpc.newBlockingStub(transportRule.grpc.channel)
-        profilerStub.endSession(Profiler.EndSessionRequest.newBuilder().setSessionId(session.sessionId).build())
-    }
+  override fun after() {
+    val profilerStub = ProfilerServiceGrpc.newBlockingStub(transportRule.grpc.channel)
+    profilerStub.endSession(Profiler.EndSessionRequest.newBuilder().setSessionId(session.sessionId).build())
+  }
 }

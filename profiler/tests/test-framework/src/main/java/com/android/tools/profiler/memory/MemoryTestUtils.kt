@@ -26,26 +26,28 @@ import com.android.tools.profiler.proto.TransportServiceGrpc
 import com.google.common.truth.Truth.assertThat
 
 fun BatchAllocationContexts.findClassTag(className: String): Int {
-    for (classAlloc in classesList) {
-        if (classAlloc.className.contains(className)) {
-            return classAlloc.classId
-        }
+  for (classAlloc in classesList) {
+    if (classAlloc.className.contains(className)) {
+      return classAlloc.classId
     }
-    return 0
+  }
+  return 0
 }
 
 fun MemoryRule.startAllocationTracking() {
-    // Start memory tracking.
-    val transportStub = TransportServiceGrpc.newBlockingStub(transportRule.grpc.channel)
-    transportStub.execute(
-            Transport.ExecuteRequest.newBuilder()
-                    .setCommand(Commands.Command.newBuilder()
-                            .setType(Commands.Command.CommandType.START_ALLOC_TRACKING)
-                            .setPid(transportRule.pid)
-                            .setStartAllocTracking(
-                                    Memory.StartAllocTracking.newBuilder().setRequestTime(1)))
-                    .build())
+  // Start memory tracking.
+  val transportStub = TransportServiceGrpc.newBlockingStub(transportRule.grpc.channel)
+  transportStub.execute(
+    Transport.ExecuteRequest.newBuilder()
+      .setCommand(
+        Commands.Command.newBuilder()
+          .setType(Commands.Command.CommandType.START_ALLOC_TRACKING)
+          .setPid(transportRule.pid)
+          .setStartAllocTracking(Memory.StartAllocTracking.newBuilder().setRequestTime(1))
+      )
+      .build()
+  )
 
-    // Ensure the initialization process is finished.
-    assertThat(transportRule.androidDriver.waitForInput("Tracking initialization")).isTrue()
+  // Ensure the initialization process is finished.
+  assertThat(transportRule.androidDriver.waitForInput("Tracking initialization")).isTrue()
 }
