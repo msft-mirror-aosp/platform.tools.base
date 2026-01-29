@@ -17,47 +17,47 @@
 package com.android.tools.screenshot.descriptor
 
 import com.android.tools.screenshot.PreviewScreenshotExecutionContext
+import java.util.Optional
 import org.junit.platform.engine.TestDescriptor
 import org.junit.platform.engine.TestSource
 import org.junit.platform.engine.UniqueId
 import org.junit.platform.engine.support.descriptor.AbstractTestDescriptor
 import org.junit.platform.engine.support.descriptor.MethodSource
 import org.junit.platform.engine.support.hierarchical.Node
-import java.util.Optional
 
-class PreviewMethodDescriptor(
-    parentId: UniqueId,
-    private val className: String,
-    private val methodName: String,
-)
-    : AbstractTestDescriptor(parentId.append(SEGMENT_TYPE, methodName), methodName), Node<PreviewScreenshotExecutionContext> {
-    companion object {
-        const val SEGMENT_TYPE: String = "method"
+class PreviewMethodDescriptor(parentId: UniqueId, private val className: String, private val methodName: String) :
+  AbstractTestDescriptor(parentId.append(SEGMENT_TYPE, methodName), methodName), Node<PreviewScreenshotExecutionContext> {
+  companion object {
+    const val SEGMENT_TYPE: String = "method"
+  }
+
+  private val source: MethodSource = MethodSource.from(className, methodName)
+
+  override fun getType(): TestDescriptor.Type = TestDescriptor.Type.CONTAINER
+
+  override fun getSource(): Optional<TestSource> = Optional.of(source)
+
+  override fun mayRegisterTests(): Boolean = true
+
+  override fun execute(
+    context: PreviewScreenshotExecutionContext,
+    dynamicTestExecutor: Node.DynamicTestExecutor,
+  ): PreviewScreenshotExecutionContext {
+    val preview =
+      requireNotNull(context.methodNameToPreview["${className}.${methodName}"]) { "@Preview annotation is required for @PreviewTest" }
+    preview.previewAnnotations.forEach { previewAnnotation ->
+      val childNode =
+        PreviewAnnotationDescriptor(
+          uniqueId,
+          className,
+          methodName,
+          preview,
+          previewAnnotation,
+          displayNameIncludesParams = preview.previewAnnotations.size > 1,
+        )
+      addChild(childNode)
+      dynamicTestExecutor.execute(childNode)
     }
-
-    private val source: MethodSource = MethodSource.from(className, methodName)
-
-    override fun getType(): TestDescriptor.Type = TestDescriptor.Type.CONTAINER
-
-    override fun getSource(): Optional<TestSource> = Optional.of(source)
-
-    override fun mayRegisterTests(): Boolean = true
-
-    override fun execute(
-        context: PreviewScreenshotExecutionContext,
-        dynamicTestExecutor: Node.DynamicTestExecutor
-    ): PreviewScreenshotExecutionContext {
-        val preview = requireNotNull(context.methodNameToPreview["${className}.${methodName}"]) {
-            "@Preview annotation is required for @PreviewTest"
-        }
-        preview.previewAnnotations.forEach { previewAnnotation ->
-            val childNode = PreviewAnnotationDescriptor(
-                uniqueId, className, methodName, preview, previewAnnotation,
-                displayNameIncludesParams = preview.previewAnnotations.size > 1
-            )
-            addChild(childNode)
-            dynamicTestExecutor.execute(childNode)
-        }
-        return context
-    }
+    return context
+  }
 }

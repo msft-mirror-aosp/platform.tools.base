@@ -30,79 +30,75 @@ import org.gradle.api.tasks.testing.TestDescriptor
 import org.gradle.api.tasks.testing.TestListener
 import org.gradle.api.tasks.testing.TestResult
 
-/**
- * Runs screenshot tests of a variant.
- */
+/** Runs screenshot tests of a variant. */
 @CacheableTask
 abstract class PreviewScreenshotValidationTask : Test() {
 
-    @get:Nested
-    abstract val testEngineInput: PreviewScreenshotTestEngineInput
+  @get:Nested abstract val testEngineInput: PreviewScreenshotTestEngineInput
 
-    @get:Internal
-    abstract val analyticsService: Property<AnalyticsService>
+  @get:Internal abstract val analyticsService: Property<AnalyticsService>
 
-    init {
-        classpath = objectFactory.fileCollection().apply {
-            from(
-                testEngineInput.testRuntimeClassDirs, testEngineInput.testRuntimeJars,
-                testEngineInput.mainRuntimeClassDirs, testEngineInput.mainRuntimeJars
-            )
-        }
-        testClassesDirs = objectFactory.fileCollection().apply {
-            from(testEngineInput.testProjectJars, testEngineInput.testProjectClassDirs)
-        }
-        testEngineInput.recordingModeEnabled.set(false)
+  init {
+    classpath =
+      objectFactory.fileCollection().apply {
+        from(
+          testEngineInput.testRuntimeClassDirs,
+          testEngineInput.testRuntimeJars,
+          testEngineInput.mainRuntimeClassDirs,
+          testEngineInput.mainRuntimeJars,
+        )
+      }
+    testClassesDirs = objectFactory.fileCollection().apply { from(testEngineInput.testProjectJars, testEngineInput.testProjectClassDirs) }
+    testEngineInput.recordingModeEnabled.set(false)
+  }
+
+  override fun getClasspath(): ConfigurableFileCollection {
+    return super.getClasspath() as ConfigurableFileCollection
+  }
+
+  @TaskAction
+  override fun executeTests() {
+    // Per b/405923412: Force sequential execution at execution time. This is done here
+    // to override any global parallel execution settings that may have been configured.
+    // Our custom report generation logic can overwrite the same XML report file
+    // if multiple JVMs run in parallel.
+    if (this.maxParallelForks > 1) {
+      logger.warn(
+        "Preview Screenshot Testing does not support parallel execution. " +
+          "Overriding maxParallelForks to 1. " +
+          "To suppress this warning, explicitly set maxParallelForks = 1 for the 'validateScreenshotTest' task."
+      )
+      this.maxParallelForks = 1
     }
 
-    override fun getClasspath(): ConfigurableFileCollection {
-        return super.getClasspath() as ConfigurableFileCollection
-    }
+    analyticsService.get().recordTaskAction(path) {
+      var testCount = 0
+      addTestListener(
+        object : TestListener {
+          override fun beforeSuite(suite: TestDescriptor) {}
 
-    @TaskAction
-    override fun executeTests() {
-        // Per b/405923412: Force sequential execution at execution time. This is done here
-        // to override any global parallel execution settings that may have been configured.
-        // Our custom report generation logic can overwrite the same XML report file
-        // if multiple JVMs run in parallel.
-        if (this.maxParallelForks > 1) {
-            logger.warn(
-                "Preview Screenshot Testing does not support parallel execution. " +
-                "Overriding maxParallelForks to 1. " +
-                "To suppress this warning, explicitly set maxParallelForks = 1 for the 'validateScreenshotTest' task."
-            )
-            this.maxParallelForks = 1
+          override fun afterSuite(suite: TestDescriptor, result: TestResult) {}
+
+          override fun beforeTest(testDescriptor: TestDescriptor?) {
+            testCount++
+          }
+
+          override fun afterTest(testDescriptor: TestDescriptor, result: TestResult) {}
         }
+      )
 
-        analyticsService.get().recordTaskAction(path) {
-            var testCount = 0
-            addTestListener(object : TestListener {
-                override fun beforeSuite(suite: TestDescriptor) {}
-                override fun afterSuite(suite: TestDescriptor, result: TestResult) {}
-                override fun beforeTest(testDescriptor: TestDescriptor?) {
-                    testCount++
-                }
+      testEngineInput.copyJvmArgsTo(::jvmArgs)
+      FileUtils.cleanOutputDir(reports.junitXml.outputLocation.get().asFile)
 
-                override fun afterTest(testDescriptor: TestDescriptor, result: TestResult) {}
-            })
+      try {
+        super.executeTests()
+      } finally {
+        analyticsService.get().recordPreviewScreenshotTestRun(totalTestCount = testCount)
 
-            testEngineInput.copyJvmArgsTo(::jvmArgs)
-            FileUtils.cleanOutputDir(reports.junitXml.outputLocation.get().asFile)
-
-            try {
-                super.executeTests()
-            } finally {
-                analyticsService.get().recordPreviewScreenshotTestRun(
-                    totalTestCount = testCount,
-                )
-
-                // Delete html files which Gradle's Test task generates.
-                FileUtils.cleanOutputDir(reports.html.outputLocation.get().asFile)
-                TestReport(
-                    reports.junitXml.outputLocation.get().asFile,
-                    reports.html.outputLocation.get().asFile
-                ).generateScreenshotTestReport()
-            }
-        }
+        // Delete html files which Gradle's Test task generates.
+        FileUtils.cleanOutputDir(reports.html.outputLocation.get().asFile)
+        TestReport(reports.junitXml.outputLocation.get().asFile, reports.html.outputLocation.get().asFile).generateScreenshotTestReport()
+      }
     }
+  }
 }

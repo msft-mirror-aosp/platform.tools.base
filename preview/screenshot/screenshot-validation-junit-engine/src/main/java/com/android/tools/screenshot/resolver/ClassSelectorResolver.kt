@@ -18,6 +18,7 @@ package com.android.tools.screenshot.resolver
 
 import com.android.tools.screenshot.PreviewTest
 import com.android.tools.screenshot.descriptor.ClassDescriptor
+import java.util.Optional
 import org.junit.platform.commons.support.HierarchyTraversalMode
 import org.junit.platform.commons.support.ReflectionSupport.findMethods
 import org.junit.platform.commons.util.AnnotationUtils.isAnnotated
@@ -26,28 +27,21 @@ import org.junit.platform.engine.discovery.DiscoverySelectors
 import org.junit.platform.engine.support.discovery.SelectorResolver
 import org.junit.platform.engine.support.discovery.SelectorResolver.Match
 import org.junit.platform.engine.support.discovery.SelectorResolver.Resolution
-import java.util.Optional
 
 class ClassSelectorResolver : SelectorResolver {
-    override fun resolve(selector: ClassSelector, context: SelectorResolver.Context): Resolution {
-        return context.addToParent { parent ->
-            Optional.of(
-                ClassDescriptor(
-                    parent.uniqueId,
-                    selector.className
-                )
-            )
-        }.map { classContainerDescriptor ->
-            Resolution.match(Match.exact(classContainerDescriptor) {
-                findMethods(
-                    selector.javaClass,
-                    { isAnnotated(it, PreviewTest::class.java) },
-                    HierarchyTraversalMode.TOP_DOWN
-                )
-                    .asSequence()
-                    .map { DiscoverySelectors.selectMethod(selector.javaClass, it) }
-                    .toMutableSet()
-            })
-        }.orElse(Resolution.unresolved())
-    }
+  override fun resolve(selector: ClassSelector, context: SelectorResolver.Context): Resolution {
+    return context
+      .addToParent { parent -> Optional.of(ClassDescriptor(parent.uniqueId, selector.className)) }
+      .map { classContainerDescriptor ->
+        Resolution.match(
+          Match.exact(classContainerDescriptor) {
+            findMethods(selector.javaClass, { isAnnotated(it, PreviewTest::class.java) }, HierarchyTraversalMode.TOP_DOWN)
+              .asSequence()
+              .map { DiscoverySelectors.selectMethod(selector.javaClass, it) }
+              .toMutableSet()
+          }
+        )
+      }
+      .orElse(Resolution.unresolved())
+  }
 }

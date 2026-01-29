@@ -16,11 +16,7 @@
 
 package com.android.compose.screenshot.report
 
-/**
- * VariantTestResults to accumulate results per variant
- */
-class VariantTestResults(override var name: String, parent: CompositeTestResults?
-) :
-    CompositeTestResults(parent) {
-    override val title = name
+/** VariantTestResults to accumulate results per variant */
+class VariantTestResults(override var name: String, parent: CompositeTestResults?) : CompositeTestResults(parent) {
+  override val title = name
 }

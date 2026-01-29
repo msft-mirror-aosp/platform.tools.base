@@ -18,31 +18,25 @@ package com.android.tools.screenshot.resolver
 
 import com.android.tools.screenshot.PreviewTest
 import com.android.tools.screenshot.descriptor.PreviewMethodDescriptor
+import java.util.Optional
 import org.junit.platform.commons.util.AnnotationUtils.isAnnotated
 import org.junit.platform.engine.discovery.DiscoverySelectors
 import org.junit.platform.engine.discovery.MethodSelector
 import org.junit.platform.engine.support.discovery.SelectorResolver
 import org.junit.platform.engine.support.discovery.SelectorResolver.Match
 import org.junit.platform.engine.support.discovery.SelectorResolver.Resolution
-import java.util.Optional
 
 class MethodSelectorResolver : SelectorResolver {
-    override fun resolve(selector: MethodSelector, context: SelectorResolver.Context): Resolution {
-        if (!isAnnotated(selector.javaMethod, PreviewTest::class.java)) {
-            return Resolution.unresolved()
-        }
-        return context.addToParent(
-            { DiscoverySelectors.selectClass(selector.className) },
-            { parent -> Optional.of(
-                PreviewMethodDescriptor(
-                    parent.uniqueId,
-                    selector.className,
-                    selector.methodName,
-                )
-            )
-            }
-        ).map {
-            Resolution.match(Match.exact(it))
-        }.orElse(Resolution.unresolved())
+  override fun resolve(selector: MethodSelector, context: SelectorResolver.Context): Resolution {
+    if (!isAnnotated(selector.javaMethod, PreviewTest::class.java)) {
+      return Resolution.unresolved()
     }
+    return context
+      .addToParent(
+        { DiscoverySelectors.selectClass(selector.className) },
+        { parent -> Optional.of(PreviewMethodDescriptor(parent.uniqueId, selector.className, selector.methodName)) },
+      )
+      .map { Resolution.match(Match.exact(it)) }
+      .orElse(Resolution.unresolved())
+  }
 }

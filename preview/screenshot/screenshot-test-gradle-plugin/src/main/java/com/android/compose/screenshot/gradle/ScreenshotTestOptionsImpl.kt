@@ -16,6 +16,6 @@
 
 package com.android.compose.screenshot.gradle
 
-abstract class ScreenshotTestOptionsImpl: ScreenshotTestOptions {
-    override var imageDifferenceThreshold: Float = 0.0f
+abstract class ScreenshotTestOptionsImpl : ScreenshotTestOptions {
+  override var imageDifferenceThreshold: Float = 0.0f
 }

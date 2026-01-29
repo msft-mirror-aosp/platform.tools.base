@@ -16,26 +16,19 @@
 
 package com.android.tools.screenshot.descriptor
 
-import com.android.tools.screenshot.renderer.Renderer
 import com.android.tools.screenshot.PreviewScreenshotExecutionContext
+import com.android.tools.screenshot.renderer.Renderer
 import org.junit.platform.engine.UniqueId
 import org.junit.platform.engine.reporting.ReportEntry
 import org.junit.platform.engine.support.descriptor.EngineDescriptor
 import org.junit.platform.engine.support.hierarchical.Node
 
 class PreviewScreenshotTestEngineDescriptor(uniqueId: UniqueId, displayName: String) :
-    EngineDescriptor(uniqueId, displayName), Node<PreviewScreenshotExecutionContext> {
-    override fun around(
-        context: PreviewScreenshotExecutionContext,
-        invocation: Node.Invocation<PreviewScreenshotExecutionContext>
-    ) {
-        context.executionListener.reportingEntryPublished(
-            this, ReportEntry.from("deviceId", "Preview"))
-        context.executionListener.reportingEntryPublished(
-            this, ReportEntry.from("deviceDisplayName", "Preview"))
+  EngineDescriptor(uniqueId, displayName), Node<PreviewScreenshotExecutionContext> {
+  override fun around(context: PreviewScreenshotExecutionContext, invocation: Node.Invocation<PreviewScreenshotExecutionContext>) {
+    context.executionListener.reportingEntryPublished(this, ReportEntry.from("deviceId", "Preview"))
+    context.executionListener.reportingEntryPublished(this, ReportEntry.from("deviceDisplayName", "Preview"))
 
-        Renderer().use { renderer ->
-            invocation(context.copy(renderer = renderer))
-        }
-    }
+    Renderer().use { renderer -> invocation(context.copy(renderer = renderer)) }
+  }
 }

@@ -21,29 +21,27 @@ import java.awt.image.BufferedImage
 private const val MAGENTA = 0xFF_FF_00_FFu
 private const val TRANSPARENT = 0x00_FF_FF_FFu
 
-/**
- * Returns an image highlighting the pixels that differ between image a and b and the number of pixels that differed.
- */
+/** Returns an image highlighting the pixels that differ between image a and b and the number of pixels that differed. */
 fun generatePixelDiffImage(a: BufferedImage, b: BufferedImage): Pair<BufferedImage, Int> {
-    check(a.width == b.width && a.height == b.height) { "Images are different sizes" }
-    val width = a.width
-    val height = b.height
-    val highlights = BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB)
-    var count = 0
+  check(a.width == b.width && a.height == b.height) { "Images are different sizes" }
+  val width = a.width
+  val height = b.height
+  val highlights = BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB)
+  var count = 0
 
-    for (x in 0 until width) {
-        for (y in 0 until height) {
-            val aPixel = a.getRGB(x, y)
-            val bPixel = b.getRGB(x, y)
+  for (x in 0 until width) {
+    for (y in 0 until height) {
+      val aPixel = a.getRGB(x, y)
+      val bPixel = b.getRGB(x, y)
 
-            // Compare full ARGB pixels, but allow other channels to differ if alpha is 0
-            if (aPixel == bPixel || (aPixel ushr 24 == 0 && bPixel ushr 24 == 0)) {
-                highlights.setRGB(x, y, TRANSPARENT.toInt())
-            } else {
-                count++
-                highlights.setRGB(x, y, MAGENTA.toInt())
-            }
-        }
+      // Compare full ARGB pixels, but allow other channels to differ if alpha is 0
+      if (aPixel == bPixel || (aPixel ushr 24 == 0 && bPixel ushr 24 == 0)) {
+        highlights.setRGB(x, y, TRANSPARENT.toInt())
+      } else {
+        count++
+        highlights.setRGB(x, y, MAGENTA.toInt())
+      }
     }
-    return Pair(highlights, count)
+  }
+  return Pair(highlights, count)
 }

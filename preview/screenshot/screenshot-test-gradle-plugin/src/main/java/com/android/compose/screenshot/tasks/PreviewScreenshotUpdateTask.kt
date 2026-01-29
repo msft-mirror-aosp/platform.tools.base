@@ -28,36 +28,35 @@ import org.gradle.work.DisableCachingByDefault
 @DisableCachingByDefault
 abstract class PreviewScreenshotUpdateTask : Test() {
 
-    @get:Nested
-    abstract val testEngineInput: PreviewScreenshotTestEngineInput
+  @get:Nested abstract val testEngineInput: PreviewScreenshotTestEngineInput
 
-    @get:Internal
-    abstract val analyticsService: Property<AnalyticsService>
+  @get:Internal abstract val analyticsService: Property<AnalyticsService>
 
-    init {
-        classpath = objectFactory.fileCollection().apply {
-            from(
-                testEngineInput.testRuntimeClassDirs, testEngineInput.testRuntimeJars,
-                testEngineInput.mainRuntimeClassDirs, testEngineInput.mainRuntimeJars
-            )
-        }
-        testClassesDirs = objectFactory.fileCollection().apply {
-            from(testEngineInput.testProjectJars, testEngineInput.testProjectClassDirs)
-        }
-        testEngineInput.recordingModeEnabled.set(true)
-    }
+  init {
+    classpath =
+      objectFactory.fileCollection().apply {
+        from(
+          testEngineInput.testRuntimeClassDirs,
+          testEngineInput.testRuntimeJars,
+          testEngineInput.mainRuntimeClassDirs,
+          testEngineInput.mainRuntimeJars,
+        )
+      }
+    testClassesDirs = objectFactory.fileCollection().apply { from(testEngineInput.testProjectJars, testEngineInput.testProjectClassDirs) }
+    testEngineInput.recordingModeEnabled.set(true)
+  }
 
-    override fun getClasspath(): ConfigurableFileCollection {
-        return super.getClasspath() as ConfigurableFileCollection
-    }
+  override fun getClasspath(): ConfigurableFileCollection {
+    return super.getClasspath() as ConfigurableFileCollection
+  }
 
-    @TaskAction
-    override fun executeTests() = analyticsService.get().recordTaskAction(path) {
-        if (testEngineInput.testProjectJars.get().isEmpty() &&
-            testEngineInput.testProjectClassDirs.get().isEmpty()) {
-            return@recordTaskAction
-        }
-        testEngineInput.copyJvmArgsTo(::jvmArgs)
-        super.executeTests()
+  @TaskAction
+  override fun executeTests() =
+    analyticsService.get().recordTaskAction(path) {
+      if (testEngineInput.testProjectJars.get().isEmpty() && testEngineInput.testProjectClassDirs.get().isEmpty()) {
+        return@recordTaskAction
+      }
+      testEngineInput.copyJvmArgsTo(::jvmArgs)
+      super.executeTests()
     }
 }

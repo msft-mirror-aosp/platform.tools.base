@@ -16,24 +16,23 @@
 
 package com.android.tools.screenshot.descriptor
 
+import java.util.Optional
 import org.junit.platform.engine.TestDescriptor
 import org.junit.platform.engine.TestSource
 import org.junit.platform.engine.UniqueId
 import org.junit.platform.engine.support.descriptor.AbstractTestDescriptor
 import org.junit.platform.engine.support.descriptor.ClassSource
-import java.util.Optional
 
-class ClassDescriptor(parentId: UniqueId, className: String) :
-    AbstractTestDescriptor(parentId.append(SEGMENT_TYPE, className), className) {
-    companion object {
-        const val SEGMENT_TYPE: String = "class"
-    }
+class ClassDescriptor(parentId: UniqueId, className: String) : AbstractTestDescriptor(parentId.append(SEGMENT_TYPE, className), className) {
+  companion object {
+    const val SEGMENT_TYPE: String = "class"
+  }
 
-    private val source: ClassSource = ClassSource.from(className)
+  private val source: ClassSource = ClassSource.from(className)
 
-    override fun getType(): TestDescriptor.Type = TestDescriptor.Type.CONTAINER
+  override fun getType(): TestDescriptor.Type = TestDescriptor.Type.CONTAINER
 
-    override fun getSource(): Optional<TestSource> {
-        return Optional.of(source)
-    }
+  override fun getSource(): Optional<TestSource> {
+    return Optional.of(source)
+  }
 }

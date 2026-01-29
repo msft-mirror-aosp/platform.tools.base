@@ -27,53 +27,42 @@ import org.junit.platform.launcher.TestPlan
 // Note that delegation in Kotlin doesn't work with Java interface which has default
 // implementation: https://youtrack.jetbrains.com/issue/KT-18324
 class XmlReportGeneratingListener : TestExecutionListener {
-    private val delegate: TestExecutionListener = if (XmlReportInput.isEnabled) {
-        LegacyXmlReportGeneratingListener()
+  private val delegate: TestExecutionListener =
+    if (XmlReportInput.isEnabled) {
+      LegacyXmlReportGeneratingListener()
     } else {
-        object : TestExecutionListener {}
+      object : TestExecutionListener {}
     }
 
-    override fun testPlanExecutionStarted(testPlan: TestPlan) {
-        delegate.testPlanExecutionStarted(testPlan)
-    }
+  override fun testPlanExecutionStarted(testPlan: TestPlan) {
+    delegate.testPlanExecutionStarted(testPlan)
+  }
 
-    override fun testPlanExecutionFinished(testPlan: TestPlan) {
-        delegate.testPlanExecutionFinished(testPlan)
-    }
+  override fun testPlanExecutionFinished(testPlan: TestPlan) {
+    delegate.testPlanExecutionFinished(testPlan)
+  }
 
-    override fun dynamicTestRegistered(testIdentifier: TestIdentifier) {
-        delegate.dynamicTestRegistered(testIdentifier)
-    }
+  override fun dynamicTestRegistered(testIdentifier: TestIdentifier) {
+    delegate.dynamicTestRegistered(testIdentifier)
+  }
 
-    override fun executionSkipped(
-        testIdentifier: TestIdentifier,
-        reason: String
-    ) {
-        delegate.executionSkipped(testIdentifier, reason)
-    }
+  override fun executionSkipped(testIdentifier: TestIdentifier, reason: String) {
+    delegate.executionSkipped(testIdentifier, reason)
+  }
 
-    override fun executionStarted(testIdentifier: TestIdentifier) {
-        delegate.executionStarted(testIdentifier)
-    }
+  override fun executionStarted(testIdentifier: TestIdentifier) {
+    delegate.executionStarted(testIdentifier)
+  }
 
-    override fun executionFinished(
-        testIdentifier: TestIdentifier,
-        testExecutionResult: TestExecutionResult
-    ) {
-        delegate.executionFinished(testIdentifier, testExecutionResult)
-    }
+  override fun executionFinished(testIdentifier: TestIdentifier, testExecutionResult: TestExecutionResult) {
+    delegate.executionFinished(testIdentifier, testExecutionResult)
+  }
 
-    override fun reportingEntryPublished(
-        testIdentifier: TestIdentifier,
-        entry: ReportEntry
-    ) {
-        delegate.reportingEntryPublished(testIdentifier, entry)
-    }
+  override fun reportingEntryPublished(testIdentifier: TestIdentifier, entry: ReportEntry) {
+    delegate.reportingEntryPublished(testIdentifier, entry)
+  }
 
-    override fun fileEntryPublished(
-        testIdentifier: TestIdentifier,
-        file: FileEntry
-    ) {
-        delegate.fileEntryPublished(testIdentifier, file)
-    }
+  override fun fileEntryPublished(testIdentifier: TestIdentifier, file: FileEntry) {
+    delegate.fileEntryPublished(testIdentifier, file)
+  }
 }
