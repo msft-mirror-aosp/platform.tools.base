@@ -84,22 +84,22 @@ private fun manifestWithoutWFFVersion() =
   XmlUtils.parseDocument(
     // language=XML
     """
-<?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    <uses-feature android:name="android.hardware.type.watch" />
-    <application
-        android:icon="@drawable/preview"
-        android:label="@string/app_name"
-        >
-        <meta-data
-            android:name="com.google.android.wearable.standalone"
-            android:value="true" />
-        <uses-library
-            android:name="com.google.android.wearable"
-            android:required="false" />
-    </application>
-</manifest>
-        """
+    <?xml version="1.0" encoding="utf-8"?>
+    <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+        <uses-feature android:name="android.hardware.type.watch" />
+        <application
+            android:icon="@drawable/preview"
+            android:label="@string/app_name"
+            >
+            <meta-data
+                android:name="com.google.android.wearable.standalone"
+                android:value="true" />
+            <uses-library
+                android:name="com.google.android.wearable"
+                android:required="false" />
+        </application>
+    </manifest>
+    """
       .trimIndent(),
     true,
   )

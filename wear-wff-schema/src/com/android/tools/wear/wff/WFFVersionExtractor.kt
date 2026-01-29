@@ -33,9 +33,7 @@ class WFFVersionExtractor {
     val application = root.subtag(TAG_APPLICATION) ?: return null
     val properties = application.subtags(TAG_PROPERTY)
     val wffVersionProperty =
-      properties.asSequence().firstOrNull {
-        it.getAttributeNS(ANDROID_URI, ATTR_NAME) == WATCH_FACE_FORMAT_VERSION_PROPERTY
-      } ?: return null
+      properties.asSequence().firstOrNull { it.getAttributeNS(ANDROID_URI, ATTR_NAME) == WATCH_FACE_FORMAT_VERSION_PROPERTY } ?: return null
     val wffVersion = wffVersionProperty.getAttributeNS(ANDROID_URI, ATTR_VALUE)
     return WFFVersion.entries.firstOrNull { it.version == wffVersion }
   }
