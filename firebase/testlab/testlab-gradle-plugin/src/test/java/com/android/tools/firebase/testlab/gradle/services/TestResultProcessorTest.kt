@@ -57,9 +57,7 @@ class TestResultProcessorTest {
   fun setup() {
     processor = TestResultProcessor(listOf())
 
-    `when`(mockStorage.downloadFromStorage(any(), any())).thenAnswer {
-      temporaryFolderRule.newFile()
-    }
+    `when`(mockStorage.downloadFromStorage(any(), any())).thenAnswer { temporaryFolderRule.newFile() }
 
     resultsOutDir = temporaryFolderRule.newFolder("results")
 
@@ -69,14 +67,7 @@ class TestResultProcessorTest {
   @Test
   fun toUtpResult_testSingleCase() {
     val result =
-      processor.toUtpResult(
-        resultsOutDir,
-        parseStep(buildStep()),
-        null,
-        mockStorage,
-        deviceInfoFile,
-        parseTestCases(testCases()),
-      )
+      processor.toUtpResult(resultsOutDir, parseStep(buildStep()), null, mockStorage, deviceInfoFile, parseTestCases(testCases()))
 
     // General Validation
     assertThat(result.passed()).isTrue()

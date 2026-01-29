@@ -55,8 +55,7 @@ class TestLabBuildServiceTest {
 
   @get:Rule val temporaryFolderRule = TemporaryFolder()
 
-  @Mock(answer = Answers.RETURNS_DEEP_STUBS)
-  lateinit var mockExtension: TestLabGradlePluginExtension
+  @Mock(answer = Answers.RETURNS_DEEP_STUBS) lateinit var mockExtension: TestLabGradlePluginExtension
 
   @Mock lateinit var mockProviderFactory: ProviderFactory
 
@@ -66,14 +65,14 @@ class TestLabBuildServiceTest {
       temporaryFolderRule.newFile("testCredentialFile").apply {
         writeText(
           """
-                    {
-                      "client_id": "test_client_id",
-                      "client_secret": "test_client_secret",
-                      "quota_project_id": "test_quota_project_id",
-                      "refresh_token": "test_refresh_token",
-                      "type": "authorized_user"
-                    }
-                """
+          {
+            "client_id": "test_client_id",
+            "client_secret": "test_client_secret",
+            "quota_project_id": "test_quota_project_id",
+            "refresh_token": "test_refresh_token",
+            "type": "authorized_user"
+          }
+          """
             .trimIndent()
         )
       }
@@ -85,8 +84,7 @@ class TestLabBuildServiceTest {
 
     val mockProject = mock<Project>(defaultAnswer = Answers.RETURNS_DEEP_STUBS)
     `when`(mockProject.path).thenReturn("mockProjectPath")
-    `when`(mockProject.extensions.getByType(eq(TestLabGradlePluginExtension::class.java)))
-      .thenReturn(mockExtension)
+    `when`(mockProject.extensions.getByType(eq(TestLabGradlePluginExtension::class.java))).thenReturn(mockExtension)
     `when`(mockProject.extensions.getByType(eq(CommonExtension::class.java))).thenReturn(mock())
     `when`(mockProject.providers).thenReturn(mockProviderFactory)
 
@@ -104,12 +102,10 @@ class TestLabBuildServiceTest {
       )
 
     val mockSpec = mock<BuildServiceSpec<TestLabBuildService.Parameters>>()
-    val mockParams =
-      mock<TestLabBuildService.Parameters>(defaultAnswer = Answers.RETURNS_DEEP_STUBS)
+    val mockParams = mock<TestLabBuildService.Parameters>(defaultAnswer = Answers.RETURNS_DEEP_STUBS)
     `when`(mockSpec.parameters).thenReturn(mockParams)
     `when`(mockParams.credentialFile.map<String>(any())).then {
-      val file =
-        it.getArgument<Transformer<String, RegularFile>>(0).transform(credentialFileRegularFile)
+      val file = it.getArgument<Transformer<String, RegularFile>>(0).transform(credentialFileRegularFile)
       mock<Provider<String>>().apply { `when`(get()).thenReturn(file) }
     }
 
@@ -138,14 +134,14 @@ class TestLabBuildServiceTest {
       temporaryFolderRule.newFile("testCredentialFile").apply {
         writeText(
           """
-                {
-                  "client_id": "test_client_id",
-                  "client_secret": "test_client_secret",
-                  "quota_project_id": "test_quota_project_id",
-                  "refresh_token": "test_refresh_token",
-                  "type": "authorized_user"
-                }
-            """
+          {
+            "client_id": "test_client_id",
+            "client_secret": "test_client_secret",
+            "quota_project_id": "test_quota_project_id",
+            "refresh_token": "test_refresh_token",
+            "type": "authorized_user"
+          }
+          """
             .trimIndent()
         )
       }
@@ -162,16 +158,16 @@ class TestLabBuildServiceTest {
                   MockLowLevelHttpResponse().apply {
                     setContent(
                       """
+                      {
+                        "androidDeviceCatalog": {
+                          "models": [
                             {
-                              "androidDeviceCatalog": {
-                                "models": [
-                                  {
-                                    "id": "test_device_id"
-                                  }
-                                ]
-                              }
+                              "id": "test_device_id"
                             }
-                        """
+                          ]
+                        }
+                      }
+                      """
                         .trimIndent()
                     )
                   }

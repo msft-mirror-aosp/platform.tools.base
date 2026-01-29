@@ -40,14 +40,9 @@ open class TestRunTaskAction : DeviceTestRunTaskAction<DeviceTestRunInput> {
         .create()
 
     val ftlDeviceModel =
-      gson.fromJson(
-        params.setupResult.file("${params.testRunData.deviceName}.json").get().asFile.readText(),
-        AndroidModel::class.java,
-      )
+      gson.fromJson(params.setupResult.file("${params.testRunData.deviceName}.json").get().asFile.readText(), AndroidModel::class.java)
 
-    val extraDeviceFileUrls =
-      ExtraDeviceFilesManager(params.deviceInput.extraDeviceUrlsFile.get().asFile)
-        .devicePathsToUrls()
+    val extraDeviceFileUrls = ExtraDeviceFilesManager(params.deviceInput.extraDeviceUrlsFile.get().asFile).devicePathsToUrls()
 
     val results =
       params.deviceInput.buildService

@@ -20,9 +20,7 @@ import com.google.firebase.testlab.gradle.ManagedDevice
 import org.gradle.api.NamedDomainObjectFactory
 import org.gradle.api.model.ObjectFactory
 
-class ManagedDeviceFactory(private val objectFactory: ObjectFactory) :
-  NamedDomainObjectFactory<ManagedDevice> {
+class ManagedDeviceFactory(private val objectFactory: ObjectFactory) : NamedDomainObjectFactory<ManagedDevice> {
 
-  override fun create(name: String): ManagedDevice =
-    objectFactory.newInstance(ManagedDeviceImpl::class.java, name)
+  override fun create(name: String): ManagedDevice = objectFactory.newInstance(ManagedDeviceImpl::class.java, name)
 }

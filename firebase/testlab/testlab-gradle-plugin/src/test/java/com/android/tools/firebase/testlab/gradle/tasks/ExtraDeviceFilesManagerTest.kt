@@ -38,21 +38,16 @@ class ExtraDeviceFilesManagerTest {
   fun fileToFileConsistent() {
     val contents =
       """
-                device_path1${"\t"}gs://bucket-name1/file1${"\t"}aabbcc
-                device_path2${"\t"}gs://bucket-name2/file2${"\t"}ddeeff
-            """
+      device_path1${"\t"}gs://bucket-name1/file1${"\t"}aabbcc
+      device_path2${"\t"}gs://bucket-name2/file2${"\t"}ddeeff
+      """
         .trimIndent()
     val contentFile = temporaryFolderRule.newFile().apply { writeText(contents) }
 
     val manager = ExtraDeviceFilesManager(contentFile)
 
     assertThat(manager.devicePathsToUrls())
-      .containsExactlyEntriesIn(
-        mapOf(
-          "device_path1" to "gs://bucket-name1/file1",
-          "device_path2" to "gs://bucket-name2/file2",
-        )
-      )
+      .containsExactlyEntriesIn(mapOf("device_path1" to "gs://bucket-name1/file1", "device_path2" to "gs://bucket-name2/file2"))
 
     val resultFile = temporaryFolderRule.newFile()
 
@@ -84,9 +79,7 @@ class ExtraDeviceFilesManagerTest {
       }
 
     assertThat(manager.devicePathsToUrls())
-      .containsExactlyEntriesIn(
-        mapOf("some_device_path" to "gs://bucket1/hello", "some_other_path" to "gs://bucket2/world")
-      )
+      .containsExactlyEntriesIn(mapOf("some_device_path" to "gs://bucket1/hello", "some_other_path" to "gs://bucket2/world"))
 
     val resultFile = temporaryFolderRule.newFile()
 

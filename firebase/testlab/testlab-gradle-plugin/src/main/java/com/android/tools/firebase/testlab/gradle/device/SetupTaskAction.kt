@@ -50,9 +50,6 @@ open class SetupTaskAction : DeviceSetupTaskAction<DeviceSetupInput> {
       )
     }
 
-    outputDir
-      .file("${setupInput.deviceName.get()}.json")
-      .asFile
-      .writeText(Gson().toJson(ftlDeviceModel))
+    outputDir.file("${setupInput.deviceName.get()}.json").asFile.writeText(Gson().toJson(ftlDeviceModel))
   }
 }

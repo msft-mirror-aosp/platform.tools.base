@@ -24,17 +24,14 @@ import org.gradle.api.file.RegularFileProperty
 /** A DSL for Firebase Test Lab Gradle plugin. */
 @Incubating
 interface TestLabGradlePluginExtension {
-  /**
-   * A path to a JSON file that contains service account credentials to access to a Firebase TestLab
-   * project.
-   */
+  /** A path to a JSON file that contains service account credentials to access to a Firebase TestLab project. */
   @get:Incubating val serviceAccountCredentials: RegularFileProperty
 
   /**
    * Convenience container for specifying FTL managed devices of the type [ManagedDevice].
    *
-   * Any devices created as a part of this container are automatically added to the list of devices
-   * contained in the [managedDevices Block][ManagedDevices.devices].
+   * Any devices created as a part of this container are automatically added to the list of devices contained in the
+   * [managedDevices Block][ManagedDevices.devices].
    */
   @get:Incubating val managedDevices: NamedDomainObjectContainer<ManagedDevice>
 

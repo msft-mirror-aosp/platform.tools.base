@@ -26,27 +26,13 @@ class TestingManager(private val testingClient: Testing) {
 
   private val testMatricesClient: TestMatrices = testingClient.projects().testMatrices()
 
-  fun createTestMatrixRun(
-    projectName: String,
-    testMatrix: TestMatrix,
-    runRequestId: String,
-  ): TestMatrix =
-    testMatricesClient
-      .create(projectName, testMatrix)
-      .apply { this.requestId = runRequestId }
-      .execute()
+  fun createTestMatrixRun(projectName: String, testMatrix: TestMatrix, runRequestId: String): TestMatrix =
+    testMatricesClient.create(projectName, testMatrix).apply { this.requestId = runRequestId }.execute()
 
-  fun getTestMatrix(projectName: String, testMatrix: TestMatrix) =
-    getTestMatrix(projectName, testMatrix.testMatrixId)
+  fun getTestMatrix(projectName: String, testMatrix: TestMatrix) = getTestMatrix(projectName, testMatrix.testMatrixId)
 
-  fun getTestMatrix(projectName: String, testMatrixId: String): TestMatrix =
-    testMatricesClient.get(projectName, testMatrixId).execute()
+  fun getTestMatrix(projectName: String, testMatrixId: String): TestMatrix = testMatricesClient.get(projectName, testMatrixId).execute()
 
   fun catalog(projectName: String): AndroidDeviceCatalog =
-    testingClient
-      .testEnvironmentCatalog()
-      .get("ANDROID")
-      .apply { projectId = projectName }
-      .execute()
-      .androidDeviceCatalog
+    testingClient.testEnvironmentCatalog().get("ANDROID").apply { projectId = projectName }.execute().androidDeviceCatalog
 }

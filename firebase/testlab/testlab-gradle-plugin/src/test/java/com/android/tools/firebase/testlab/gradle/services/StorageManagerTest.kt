@@ -140,10 +140,7 @@ class StorageManagerTest {
 
     val storageObject: StorageObject = mock()
 
-    val cache =
-      mock<FileHashCache>().apply {
-        `when`(this.retrieveOrGenerateHash(any())).thenReturn("fileHash")
-      }
+    val cache = mock<FileHashCache>().apply { `when`(this.retrieveOrGenerateHash(any())).thenReturn("fileHash") }
 
     `when`(mockInsert.execute()).thenReturn(storageObject)
 
@@ -209,10 +206,7 @@ class StorageManagerTest {
       uploadedFiles[getFileName] ?: throw GoogleJsonResponseException(mock(), mock())
     }
 
-    val cache =
-      mock<FileHashCache>().apply {
-        `when`(this.retrieveOrGenerateHash(any())).thenReturn("fileHash")
-      }
+    val cache = mock<FileHashCache>().apply { `when`(this.retrieveOrGenerateHash(any())).thenReturn("fileHash") }
     val storageManager = StorageManager(cloudStorageClient, cache)
 
     val result = storageManager.retrieveOrUploadSharedFile(file, "bucket", "module")
@@ -284,9 +278,7 @@ class StorageManagerTest {
 
     val cache =
       mock<FileHashCache>().apply {
-        `when`(this.retrieveOrGenerateHash(any())).thenAnswer { invocation ->
-          (invocation.getArguments()[0] as File).readLines().first()
-        }
+        `when`(this.retrieveOrGenerateHash(any())).thenAnswer { invocation -> (invocation.getArguments()[0] as File).readLines().first() }
       }
     val storageManager = StorageManager(cloudStorageClient, cache)
 

@@ -24,8 +24,7 @@ import com.google.testing.platform.proto.api.core.TestSuiteResultProto
 // TODO: This class is copied from com.android.build.gradle.internal.testing.utp package. Consider
 //   to move this class into UTP library to share the same code.
 class UtpTestSuiteResultMerger {
-  private val builder: TestSuiteResultProto.TestSuiteResult.Builder =
-    TestSuiteResultProto.TestSuiteResult.newBuilder()
+  private val builder: TestSuiteResultProto.TestSuiteResult.Builder = TestSuiteResultProto.TestSuiteResult.newBuilder()
 
   /** Returns the merged test suite result. */
   val result: TestSuiteResultProto.TestSuiteResult

@@ -41,12 +41,7 @@ class ToolResultsManager(
   private val httpRequestFactory: HttpRequestFactory,
   private val objectParser: JsonObjectParser = JsonObjectParser(Utils.getDefaultJsonFactory()),
 ) {
-  data class RequestInfo(
-    val projectId: String,
-    val historyId: String,
-    val executionId: String,
-    val stepId: String,
-  )
+  data class RequestInfo(val projectId: String, val historyId: String, val executionId: String, val stepId: String)
 
   class TestCases : GenericJson() {
     @Key var testCases: List<TestCase>? = null
@@ -84,17 +79,10 @@ class ToolResultsManager(
       )
   }
 
-  fun initializeSettings(projectName: String): ProjectSettings =
-    toolResultsClient.projects().initializeSettings(projectName).execute()
+  fun initializeSettings(projectName: String): ProjectSettings = toolResultsClient.projects().initializeSettings(projectName).execute()
 
   fun getOrCreateHistory(projectName: String, testHistoryName: String): String {
-    val historyList =
-      toolResultsClient
-        .projects()
-        .histories()
-        .list(projectName)
-        .apply { filterByName = testHistoryName }
-        .execute()
+    val historyList = toolResultsClient.projects().histories().list(projectName).apply { filterByName = testHistoryName }.execute()
     historyList?.histories?.firstOrNull()?.historyId?.let {
       return it
     }
@@ -120,12 +108,7 @@ class ToolResultsManager(
       .histories()
       .executions()
       .steps()
-      .get(
-        requestInfo.projectId,
-        requestInfo.historyId,
-        requestInfo.executionId,
-        requestInfo.stepId,
-      )
+      .get(requestInfo.projectId, requestInfo.historyId, requestInfo.executionId, requestInfo.stepId)
       .execute()
 
   fun requestThumbnails(requestInfo: RequestInfo): ListStepThumbnailsResponse? =
@@ -135,12 +118,7 @@ class ToolResultsManager(
       .executions()
       .steps()
       .thumbnails()
-      .list(
-        requestInfo.projectId,
-        requestInfo.historyId,
-        requestInfo.executionId,
-        requestInfo.stepId,
-      )
+      .list(requestInfo.projectId, requestInfo.historyId, requestInfo.executionId, requestInfo.stepId)
       .execute()
 
   // Need the latest version of google-api-client to use
@@ -152,13 +130,7 @@ class ToolResultsManager(
       .apply { parser = objectParser }
       .execute()
       .content
-      .use { response ->
-        objectParser.parseAndClose<TestCases>(
-          response,
-          StandardCharsets.UTF_8,
-          TestCases::class.java,
-        )
-      }
+      .use { response -> objectParser.parseAndClose<TestCases>(response, StandardCharsets.UTF_8, TestCases::class.java) }
 
   private fun getTestCaseUrl(requestInfo: RequestInfo): String =
     "https://toolResults.googleapis.com/toolresults/v1beta3/projects/${requestInfo.projectId}" +

@@ -26,10 +26,7 @@ abstract class FixtureImpl : Fixture {
         try {
           GrantedPermissions.valueOf(value.uppercase())
         } catch (_: IllegalArgumentException) {
-          error(
-            "$value is invalid. Available options are " +
-              "[${GrantedPermissions.values().joinToString(", ")}]."
-          )
+          error("$value is invalid. Available options are " + "[${GrantedPermissions.values().joinToString(", ")}].")
         }
     }
     get() = _grantedPermissions.name

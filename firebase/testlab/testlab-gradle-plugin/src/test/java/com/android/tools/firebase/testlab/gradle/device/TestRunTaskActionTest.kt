@@ -85,10 +85,7 @@ class TestRunTaskActionTest {
     mockTestRunData.apply {
       `when`(deviceName).thenReturn("myManagedDevice")
       `when`(testData).thenReturn(mockTestData)
-      `when`(outputDirectory)
-        .thenReturn(
-          project.layout.buildDirectory.dir("taskOutput").get().apply { outputDir = this }
-        )
+      `when`(outputDirectory).thenReturn(project.layout.buildDirectory.dir("taskOutput").get().apply { outputDir = this })
       `when`(projectPath).thenReturn(":")
       `when`(variantName).thenReturn("debug")
     }
@@ -188,12 +185,7 @@ class TestRunTaskActionTest {
   @Test
   fun test_runTests_failure() {
     testResults =
-      listOf(
-        FtlTestRunResult(true, null),
-        FtlTestRunResult(true, null),
-        FtlTestRunResult(false, null),
-        FtlTestRunResult(true, null),
-      )
+      listOf(FtlTestRunResult(true, null), FtlTestRunResult(true, null), FtlTestRunResult(false, null), FtlTestRunResult(true, null))
 
     assertThat(TestRunTaskAction().runTests(parameters)).isFalse()
 

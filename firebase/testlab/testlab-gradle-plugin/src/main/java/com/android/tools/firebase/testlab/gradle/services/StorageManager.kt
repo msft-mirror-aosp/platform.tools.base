@@ -49,12 +49,7 @@ class StorageManager(
   fun testRunStorage(testRunId: String, bucketName: String, historyId: String): TestRunStorage =
     TestRunStorage(testRunId, bucketName, historyId, this)
 
-  fun uploadFile(
-    file: File,
-    bucketName: String,
-    prefix: String = "",
-    uploadFileName: String = file.name,
-  ): StorageObject {
+  fun uploadFile(file: File, bucketName: String, prefix: String = "", uploadFileName: String = file.name): StorageObject {
     val storageObject =
       FileInputStream(file).use { fileInputStream ->
         storageClient
@@ -62,9 +57,7 @@ class StorageManager(
           .insert(
             bucketName,
             StorageObject(),
-            InputStreamContent("application/octet-stream", fileInputStream).apply {
-              length = file.length()
-            },
+            InputStreamContent("application/octet-stream", fileInputStream).apply { length = file.length() },
           )
           .apply { name = "$prefix${uploadFileName}" }
           .execute()
@@ -73,26 +66,19 @@ class StorageManager(
   }
 
   /**
-   * Checks whether the given shared file exists as a shared file in the cloud. Otherwise uploads
-   * the file to the cloud.
+   * Checks whether the given shared file exists as a shared file in the cloud. Otherwise uploads the file to the cloud.
    *
-   * The file's sha256 hash is used for shared files, as multiple versions of shared files are
-   * expected to uploaded to the cloud at the same time.
+   * The file's sha256 hash is used for shared files, as multiple versions of shared files are expected to uploaded to the cloud at the same
+   * time.
    *
    * Firstly, the sha256 is retrieved or computed from the file hash cache.
    *
-   * Then the file will be retrieved from [bucketName]/[moduleName]/<computed-hash>-[file]. If it
-   * exists, has not been modified, it is returned, otherwise the file is uploaded to the above
-   * location.
+   * Then the file will be retrieved from [bucketName]/[moduleName]/<computed-hash>-[file]. If it exists, has not been modified, it is
+   * returned, otherwise the file is uploaded to the above location.
    *
    * @return the StorageObject for the given shared file.
    */
-  fun retrieveOrUploadSharedFile(
-    file: File,
-    bucketName: String,
-    moduleName: String,
-    uploadFileName: String = file.name,
-  ): StorageObject {
+  fun retrieveOrUploadSharedFile(file: File, bucketName: String, moduleName: String, uploadFileName: String = file.name): StorageObject {
     return lockOnFile(file) {
       val hash = hashingCache.retrieveOrGenerateHash(file)
       val hashQualifiedPrefix = "$moduleName/$hash-"
@@ -136,15 +122,10 @@ class StorageManager(
     try {
       destination.apply {
         parentFile.mkdirs()
-        outputStream().use {
-          storageClient.objects().get(bucketName, objectName).executeMediaAndDownloadTo(it)
-        }
+        outputStream().use { storageClient.objects().get(bucketName, objectName).executeMediaAndDownloadTo(it) }
       }
     } catch (e: HttpResponseException) {
-      logger.log(
-        LogLevel.WARN,
-        "Failed to download storage object $objectName to file $destination",
-      )
+      logger.log(LogLevel.WARN, "Failed to download storage object $objectName to file $destination")
       null
     }
 
@@ -154,5 +135,4 @@ class StorageManager(
 
 fun StorageObject.toUrl() = "gs://$bucket/$name"
 
-fun StorageObject.isNotModified(): Boolean =
-  getUpdated() == null || getUpdated() == getTimeCreated()
+fun StorageObject.isNotModified(): Boolean = getUpdated() == null || getUpdated() == getTimeCreated()

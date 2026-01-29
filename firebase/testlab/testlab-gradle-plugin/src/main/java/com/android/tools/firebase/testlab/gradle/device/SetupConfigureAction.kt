@@ -23,9 +23,7 @@ import javax.inject.Inject
 import org.gradle.api.Project
 import org.gradle.api.model.ObjectFactory
 
-open class SetupConfigureAction
-@Inject
-constructor(private val objectFactory: ObjectFactory, private val project: Project) :
+open class SetupConfigureAction @Inject constructor(private val objectFactory: ObjectFactory, private val project: Project) :
   DeviceSetupConfigureAction<ManagedDevice, DeviceSetupInput> {
 
   override fun configureTaskInput(deviceDsl: ManagedDevice): DeviceSetupInput {

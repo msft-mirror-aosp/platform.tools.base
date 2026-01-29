@@ -38,8 +38,8 @@ interface ManagedDevice : Device {
   /**
    * The api level of Android to be run on the device.
    *
-   * This argument is optional and only some apiLevels are available for each hardware profile. If
-   * no value is specified the latest available api is used.
+   * This argument is optional and only some apiLevels are available for each hardware profile. If no value is specified the latest
+   * available api is used.
    */
   var apiLevel: Int
 

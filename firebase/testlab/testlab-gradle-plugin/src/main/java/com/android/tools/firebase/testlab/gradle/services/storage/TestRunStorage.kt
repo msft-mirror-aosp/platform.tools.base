@@ -37,11 +37,8 @@ class TestRunStorage(
 
   val resultStoragePath: String = "gs://$bucketName/$testRunId/results"
 
-  fun uploadToStorage(file: File): StorageObject =
-    storageManager.uploadFile(file, bucketName, prefix = "${testRunId}_")
+  fun uploadToStorage(file: File): StorageObject = storageManager.uploadFile(file, bucketName, prefix = "${testRunId}_")
 
   fun downloadFromStorage(fileUri: String, destination: (objectName: String) -> File): File? =
-    storageManager.downloadFile(fileUri) { objectName ->
-      destination(objectName.removePrefix("$testRunId/"))
-    }
+    storageManager.downloadFile(fileUri) { objectName -> destination(objectName.removePrefix("$testRunId/")) }
 }

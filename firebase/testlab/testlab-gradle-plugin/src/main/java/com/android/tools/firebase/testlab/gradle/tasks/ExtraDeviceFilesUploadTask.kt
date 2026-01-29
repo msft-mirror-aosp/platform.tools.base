@@ -33,8 +33,8 @@ import org.gradle.api.tasks.TaskAction
 abstract class ExtraDeviceFilesUploadTask : DefaultTask() {
 
   /**
-   * This task is never assumed to be up-to-date as cloud storage files specified in the DSL might
-   * have been modified. Or the contents in local files may have changed and need to be revalidated.
+   * This task is never assumed to be up-to-date as cloud storage files specified in the DSL might have been modified. Or the contents in
+   * local files may have changed and need to be revalidated.
    */
   init {
     outputs.upToDateWhen { false }
@@ -61,11 +61,7 @@ abstract class ExtraDeviceFilesUploadTask : DefaultTask() {
           filePathToStorage.containsKey(filePath) -> filePathToStorage[filePath]
           isGoogleStorageLink(filePath) -> {
             buildService.get().getStorageObject(filePath).also {
-              it
-                ?: errorMessage.appendLine(
-                  "    Google Storage link: $filePath does not reference a valid Storage " +
-                    "Object."
-                )
+              it ?: errorMessage.appendLine("    Google Storage link: $filePath does not reference a valid Storage " + "Object.")
             }
           }
           else -> {
@@ -73,15 +69,11 @@ abstract class ExtraDeviceFilesUploadTask : DefaultTask() {
             val file = File(filePath)
             when {
               !file.exists() -> {
-                errorMessage.appendLine(
-                  "    Local file path: $filePath does not exist. Cannot upload file."
-                )
+                errorMessage.appendLine("    Local file path: $filePath does not exist. Cannot upload file.")
                 null
               }
               !file.isFile -> {
-                errorMessage.appendLine(
-                  "    Local file path: $filePath must be a file. Cannot be uploaded."
-                )
+                errorMessage.appendLine("    Local file path: $filePath must be a file. Cannot be uploaded.")
                 null
               }
               else -> {

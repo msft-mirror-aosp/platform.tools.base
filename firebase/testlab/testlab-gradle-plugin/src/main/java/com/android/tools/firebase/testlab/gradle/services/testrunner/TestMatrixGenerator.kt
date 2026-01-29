@@ -75,10 +75,7 @@ class TestMatrixGenerator(private val projectSettings: ProjectSettings) {
         TestSpecification().apply {
           testSetup =
             TestSetup().apply {
-              set(
-                "dontAutograntPermissions",
-                projectSettings.grantedPermissions == FixtureImpl.GrantedPermissions.NONE.name,
-              )
+              set("dontAutograntPermissions", projectSettings.grantedPermissions == FixtureImpl.GrantedPermissions.NONE.name)
               projectSettings.networkProfile?.apply { networkProfile = this }
               filesToPush = mutableListOf()
               device.extraDeviceFileUrls.forEach { (onDevicePath, gcsUrl) ->
@@ -86,10 +83,7 @@ class TestMatrixGenerator(private val projectSettings: ProjectSettings) {
                   DeviceFile().apply {
                     regularFile =
                       RegularFile().apply {
-                        content =
-                          com.google.api.services.testing.model.FileReference().apply {
-                            gcsPath = gcsUrl
-                          }
+                        content = com.google.api.services.testing.model.FileReference().apply { gcsPath = gcsUrl }
                         devicePath = onDevicePath
                       }
                   }
@@ -110,14 +104,8 @@ class TestMatrixGenerator(private val projectSettings: ProjectSettings) {
             }
           androidInstrumentationTest =
             AndroidInstrumentationTest().apply {
-              testApk =
-                com.google.api.services.testing.model.FileReference().apply {
-                  gcsPath = testApkObject.toUrl()
-                }
-              appApk =
-                com.google.api.services.testing.model.FileReference().apply {
-                  gcsPath = testedApkObject.toUrl()
-                }
+              testApk = com.google.api.services.testing.model.FileReference().apply { gcsPath = testApkObject.toUrl() }
+              appApk = com.google.api.services.testing.model.FileReference().apply { gcsPath = testedApkObject.toUrl() }
               appPackageId = testData.testedApplicationId
               testPackageId = testData.applicationId
               testRunnerClass = testData.instrumentationRunner
@@ -126,9 +114,7 @@ class TestMatrixGenerator(private val projectSettings: ProjectSettings) {
                 orchestratorOption = "USE_ORCHESTRATOR"
               }
 
-              createShardingOption()?.also { sharding ->
-                this.set(INSTRUMENTATION_TEST_SHARD_FIELD, sharding)
-              }
+              createShardingOption()?.also { sharding -> this.set(INSTRUMENTATION_TEST_SHARD_FIELD, sharding) }
             }
 
           testTimeout = "${projectSettings.ftlTimeoutSeconds}s"
@@ -152,8 +138,7 @@ class TestMatrixGenerator(private val projectSettings: ProjectSettings) {
         }
       resultStorage =
         ResultStorage().apply {
-          googleCloudStorage =
-            GoogleCloudStorage().apply { gcsPath = testRunStorage.resultStoragePath }
+          googleCloudStorage = GoogleCloudStorage().apply { gcsPath = testRunStorage.resultStoragePath }
           toolResultsHistory =
             ToolResultsHistory().apply {
               projectId = projectSettings.name
@@ -171,21 +156,15 @@ class TestMatrixGenerator(private val projectSettings: ProjectSettings) {
       numUniformShards != 0 && targetShardDuration != 0 -> {
         error(
           """
-                    Only one sharding option should be set for "numUniformShards" or
-                    "targetedShardDurationMinutes" in firebaseTestLab.testOptions.execution.
-                """
+          Only one sharding option should be set for "numUniformShards" or
+          "targetedShardDurationMinutes" in firebaseTestLab.testOptions.execution.
+          """
             .trimIndent()
         )
       }
-      numUniformShards != 0 ->
-        ShardingOption().apply {
-          uniformSharding = UniformSharding().apply { numShards = numUniformShards }
-        }
+      numUniformShards != 0 -> ShardingOption().apply { uniformSharding = UniformSharding().apply { numShards = numUniformShards } }
       targetShardDuration != 0 ->
-        ShardingOption().apply {
-          smartSharding =
-            SmartSharding().apply { targetedShardDuration = "${targetShardDuration}s" }
-        }
+        ShardingOption().apply { smartSharding = SmartSharding().apply { targetedShardDuration = "${targetShardDuration}s" } }
       else -> null
     }
   }

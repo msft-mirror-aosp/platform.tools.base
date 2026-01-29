@@ -32,8 +32,7 @@ interface Fixture {
   /**
    * Map of files to push to the device before starting the test.
    *
-   * The key is location on the device. The value is the location of the file, either local or in
-   * Google Cloud.
+   * The key is location on the device. The value is the location of the file, either local or in Google Cloud.
    */
   @get:Incubating val extraDeviceFiles: MapProperty<String, String>
 
