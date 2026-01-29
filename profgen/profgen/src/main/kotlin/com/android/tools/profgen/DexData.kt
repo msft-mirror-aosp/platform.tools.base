@@ -69,7 +69,7 @@ fun Apk(bytes: ByteArray, name: String = ""): Apk {
  * - classes(N).dex
  * - base/dex/classes(N).dex // for AAB dex files
  */
-private val dexClassesPattern = Regex(".*/?(classes[0-9]*\\.dex)$")
+private val dexClassesPattern = Regex("^(?:base/dex/|)(classes[0-9]*\\.dex)$")
 
 /**
  * Slimmed-down in-memory representation of a Dex file. This data structure contains the minimal amount of information that profgen needs in
