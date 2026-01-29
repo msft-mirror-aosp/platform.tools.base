@@ -30,9 +30,8 @@ import kotlin.system.exitProcess
 /**
  * Command-line entry point for an application that patches a binary Protocol Buffers file.
  *
- * This tool replaces substrings within string fields without requiring a schema. The replacements
- * are applied sequentially in the order they are provided. For instance, a replacement chain of
- * "a" -> "b" followed by "b" -> "c" will ultimately transform all "a"s into "c"s.
+ * This tool replaces substrings within string fields without requiring a schema. The replacements are applied sequentially in the order
+ * they are provided. For instance, a replacement chain of "a" -> "b" followed by "b" -> "c" will ultimately transform all "a"s into "c"s.
  *
  * @param args Command-line arguments: <file_path> "<old1>" "<new1>" ["<old2>" "<new2>"]...
  */
@@ -47,17 +46,14 @@ fun main(args: Array<String>) {
 
   val targetFile = File(args[0])
   // Create a map of old_string -> new_string from the arguments.
-  val replacements = args.drop(1)
-    .chunked(2)
-    .associate { it[0] to it[1] }
+  val replacements = args.drop(1).chunked(2).associate { it[0] to it[1] }
 
   patchProtoFile(targetFile, replacements)
 }
 
 /**
- * Replaces substrings within string fields in a binary protobuf file without a schema.
- * This function reads the target file, performs the replacements, and overwrites the file
- * with the modified content if any changes were made.
+ * Replaces substrings within string fields in a binary protobuf file without a schema. This function reads the target file, performs the
+ * replacements, and overwrites the file with the modified content if any changes were made.
  *
  * @param targetFile The target protobuf file to modify.
  * @param replacements A map of substrings to search for and their corresponding new values.
@@ -86,9 +82,8 @@ fun patchProtoFile(targetFile: File, replacements: Map<String, String>): Int {
 /**
  * Recursively processes a byte array representing protobuf data, patching string fields.
  *
- * The replacements are applied sequentially based on the iteration order of the provided map.
- * This allows for chained replacements, where the output of one replacement can be the input
- * for a subsequent one.
+ * The replacements are applied sequentially based on the iteration order of the provided map. This allows for chained replacements, where
+ * the output of one replacement can be the input for a subsequent one.
  *
  * @param inputBytes The raw bytes of the protobuf message (or nested message).
  * @param replacements A map of substrings to search for and their corresponding new values.
@@ -146,7 +141,8 @@ private fun patchProtoData(inputBytes: ByteArray, replacements: Map<String, Stri
         outputStream.writeBytesNoTag(dataToWrite)
       }
 
-      WireFormat.WIRETYPE_START_GROUP, WireFormat.WIRETYPE_END_GROUP -> {
+      WireFormat.WIRETYPE_START_GROUP,
+      WireFormat.WIRETYPE_END_GROUP -> {
         throw InvalidProtocolBufferException("Deprecated group wire types are not supported.")
       }
 
