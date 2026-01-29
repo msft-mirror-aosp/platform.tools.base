@@ -59,24 +59,13 @@ class ReverseForwardStreamTest {
   @Before
   fun setUp() = runBlockingWithTimeout {
     fakeAdbSession = FakeAdbSession()
-    scope =
-      fakeAdbSession.scope.createChildScope(
-        true,
-        Dispatchers.Default.limitedParallelism(DEFAULT_DISPATCHER_PARALLELISM),
-      )
+    scope = fakeAdbSession.scope.createChildScope(true, Dispatchers.Default.limitedParallelism(DEFAULT_DISPATCHER_PARALLELISM))
     val socket = fakeAdbSession.channelFactory.createServerSocket()
 
-    val openMessageList =
-      (1..SOCKET_COUNT).map { StreamDataHeader(MessageType.OPEN, it, 0).toByteBuffer() }
-    val dataMessageList =
-      (1..SOCKET_COUNT).map { StreamDataHeader(MessageType.DATA, it, 0).toByteBuffer() }
-    val closeMessageList =
-      (1..SOCKET_COUNT).map { StreamDataHeader(MessageType.CLSE, it, 0).toByteBuffer() }
-    val messageList =
-      listOf(StreamDataHeader(MessageType.REDY, 0, 0).toByteBuffer()) +
-        openMessageList +
-        dataMessageList +
-        closeMessageList
+    val openMessageList = (1..SOCKET_COUNT).map { StreamDataHeader(MessageType.OPEN, it, 0).toByteBuffer() }
+    val dataMessageList = (1..SOCKET_COUNT).map { StreamDataHeader(MessageType.DATA, it, 0).toByteBuffer() }
+    val closeMessageList = (1..SOCKET_COUNT).map { StreamDataHeader(MessageType.CLSE, it, 0).toByteBuffer() }
+    val messageList = listOf(StreamDataHeader(MessageType.REDY, 0, 0).toByteBuffer()) + openMessageList + dataMessageList + closeMessageList
     val inputData =
       ByteBuffer.allocate(messageList.sumOf { it.remaining() }).apply {
         messageList.forEach { put(it) }
@@ -113,16 +102,7 @@ class ReverseForwardStreamTest {
     readComplete = CompletableDeferred()
 
     reverseForwardStream =
-      ReverseForwardStream(
-        port.toString(),
-        "tcp:12345",
-        1,
-        "localhost:$port",
-        fakeAdbSession,
-        responseWriter,
-        scope,
-        false,
-      ) { _ ->
+      ReverseForwardStream(port.toString(), "tcp:12345", 1, "localhost:$port", fakeAdbSession, responseWriter, scope, false) { _ ->
         (object : AdbChannel {
             override suspend fun shutdownInput() = Unit
 
@@ -151,10 +131,9 @@ class ReverseForwardStreamTest {
   }
 
   /**
-   * [Dispatchers.Default] has limited parallelism support and could freeze with too many blocking
-   * running jobs. This test simulate the situation by limiting the dispatcher's parallelism to
-   * [DEFAULT_DISPATCHER_PARALLELISM] and creates more sockets to overwhelm it. Ideally, all running
-   * jobs reading from sockets should be dispatched properly and do not block.
+   * [Dispatchers.Default] has limited parallelism support and could freeze with too many blocking running jobs. This test simulate the
+   * situation by limiting the dispatcher's parallelism to [DEFAULT_DISPATCHER_PARALLELISM] and creates more sockets to overwhelm it.
+   * Ideally, all running jobs reading from sockets should be dispatched properly and do not block.
    */
   @Test
   fun testParallelism() = runBlockingWithTimeout {

@@ -18,15 +18,9 @@ package com.google.services.firebase.directaccess.client.device.remote.service.a
 
 import com.android.adblib.AdbOutputChannel
 
-/**
- * A helper that writes responses to the adbd socket, behaving as a service running on the device.
- */
-internal class ResponseWriter(
-  private val adbOutputChannel: AdbOutputChannel,
-  private val needsCrc32: Boolean,
-) {
-  suspend fun writeStringResponse(streamId: Int, output: String) =
-    writeResponse(streamId, output.withHexLengthPrefix())
+/** A helper that writes responses to the adbd socket, behaving as a service running on the device. */
+internal class ResponseWriter(private val adbOutputChannel: AdbOutputChannel, private val needsCrc32: Boolean) {
+  suspend fun writeStringResponse(streamId: Int, output: String) = writeResponse(streamId, output.withHexLengthPrefix())
 
   suspend fun writeOkayResponse(streamId: Int, output: String? = null) =
     writeResponse(streamId, "OKAY${output?.withHexLengthPrefix() ?: ""}")

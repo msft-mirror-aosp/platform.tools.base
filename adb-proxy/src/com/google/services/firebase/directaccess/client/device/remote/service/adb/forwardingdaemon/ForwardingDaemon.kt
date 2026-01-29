@@ -31,15 +31,13 @@ val LATENCY_COLLECTION_INTERVAL: Duration = Duration.ofSeconds(10)
  * A ForwardingDaemon behaves as an ADB daemon, connecting to a remote Android device.
  *
  * A forwarding daemon has two primary components:
- * 1. A local server socket, where it speaks the ADB server to device protocol, and it behaves
- *    exactly as a local TCP Android device (such as an emulator or device on the same network)
- *    would.
- * 2. A "StreamOpener" that forwards connections opened locally to a remote service of some kind
- *    (possibly gRPC or even just the ADB client to server protocol).
+ * 1. A local server socket, where it speaks the ADB server to device protocol, and it behaves exactly as a local TCP Android device (such
+ *    as an emulator or device on the same network) would.
+ * 2. A "StreamOpener" that forwards connections opened locally to a remote service of some kind (possibly gRPC or even just the ADB client
+ *    to server protocol).
  *
- * In the context of the ForwardingDaemon and its surrounding components, "local" refers to
- * everything on the machine that the forwarding daemon is running on, and "remote" refers to the
- * ADB server or device that we are connecting to.
+ * In the context of the ForwardingDaemon and its surrounding components, "local" refers to everything on the machine that the forwarding
+ * daemon is running on, and "remote" refers to the ADB server or device that we are connecting to.
  */
 interface ForwardingDaemon : AutoCloseable {
   var devicePort: Int
@@ -47,9 +45,8 @@ interface ForwardingDaemon : AutoCloseable {
   /**
    * Whether commands being written to the local ADB server need the CRC32 to be computed.
    *
-   * Newer versions of ADB (since aosp/568123) ignore the CRC32 bit unless the device requires it.
-   * We ignore it when reading from the ADB server, so this is simply for compatibility with very
-   * old versions of ADB.
+   * Newer versions of ADB (since aosp/568123) ignore the CRC32 bit unless the device requires it. We ignore it when reading from the ADB
+   * server, so this is simply for compatibility with very old versions of ADB.
    */
   val needsCrc32: Boolean
 
@@ -64,16 +61,14 @@ interface ForwardingDaemon : AutoCloseable {
   /**
    * Called when the device state changes.
    *
-   * The "features" string should be exactly as it's returned from the
-   * "host-serial:transport:features" service in the ADB server.
+   * The "features" string should be exactly as it's returned from the "host-serial:transport:features" service in the ADB server.
    */
   fun onStateChanged(newState: DeviceState, features: String? = null)
 
   /**
    * Receive a command from the remote ADB server.
    *
-   * Upon receipt of a remote command from the ADB server, the ForwardingDaemon should handle it by
-   * routing it to the appropriate Stream.
+   * Upon receipt of a remote command from the ADB server, the ForwardingDaemon should handle it by routing it to the appropriate Stream.
    */
   suspend fun receiveRemoteCommand(command: StreamCommand)
 
@@ -84,8 +79,5 @@ interface ForwardingDaemon : AutoCloseable {
   val deviceState: StateFlow<DeviceState>
 }
 
-fun ForwardingDaemon(
-  streamOpener: StreamOpener,
-  scope: CoroutineScope,
-  adbSession: AdbSession,
-): ForwardingDaemon = ForwardingDaemonImpl(streamOpener, scope, adbSession)
+fun ForwardingDaemon(streamOpener: StreamOpener, scope: CoroutineScope, adbSession: AdbSession): ForwardingDaemon =
+  ForwardingDaemonImpl(streamOpener, scope, adbSession)

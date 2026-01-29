@@ -35,20 +35,19 @@ internal const val WRTE = 0x45545257
  *
  * Commands are outlined briefly in
  * [protocol.txt](https://cs.android.com/android/_/android/platform/packages/modules/adb/+/master:protocol.txt;drc=ebf09dd6e6cf295df224730b1551606c521e74a9).
- * In short, commands are a 24-byte packet followed by payload data (if applicable). ADB's packets
- * are laid out using six 32-bit integers (in little endian).
+ * In short, commands are a 24-byte packet followed by payload data (if applicable). ADB's packets are laid out using six 32-bit integers
+ * (in little endian).
  *
  * The packets are laid out as follows:
- * 1. Command type (one of CNXN, OPEN, OKAY, CLSE, or WRTE). There are commands we don't support in
- *    this implementation, such as AUTH.
+ * 1. Command type (one of CNXN, OPEN, OKAY, CLSE, or WRTE). There are commands we don't support in this implementation, such as AUTH.
  * 2. "first arg", which is commonly "local ID"
  * 3. "second arg", which is commonly "remote ID"
  * 4. payload length
  * 5. CRC32 of the payload
  * 6. "magic", which is defined as the command type xor'd with 0xFFFFFFFF
  *
- * Most packets have a notion of "local" and "remote" IDs. "local" is always local to the sender,
- * and "remote" is set by the other end of the connection.
+ * Most packets have a notion of "local" and "remote" IDs. "local" is always local to the sender, and "remote" is set by the other end of
+ * the connection.
  */
 sealed class Command(
   private val type: Int,
@@ -110,20 +109,18 @@ sealed class Command(
     }
   }
 
-  class UnknownCommandTypeException(commandType: Int) :
-    Exception(String.format("Unexpected command type: '%08X'", commandType))
+  class UnknownCommandTypeException(commandType: Int) : Exception(String.format("Unexpected command type: '%08X'", commandType))
 }
 
 /**
  * The connect command (A_CNXN in protocol.txt) is exchanged between the ADB server and the device.
  *
- * The server sends a connect command to the device, containing information about itself, and the
- * device responds with a connect command describing itself. Unlike the other commands, connect
- * sends `adbVersion` and `maxData` as its first and second arguments. Max data is technically
- * defined to be 256KiB, but the documentation is simply out of date.
+ * The server sends a connect command to the device, containing information about itself, and the device responds with a connect command
+ * describing itself. Unlike the other commands, connect sends `adbVersion` and `maxData` as its first and second arguments. Max data is
+ * technically defined to be 256KiB, but the documentation is simply out of date.
  *
- * The banner format is perhaps the most interesting bit of this. The banner is formatted in three
- * sections separated by colons. The three sections are
+ * The banner format is perhaps the most interesting bit of this. The banner is formatted in three sections separated by colons. The three
+ * sections are
  * 1. state (one of "device", "host", "offline", "unauthorized")
  * 2. The device ID (ignored for TCP devices)
  * 3. properties (e.g. "ro.device.model=hammerhead"), separated by semicolons
@@ -134,30 +131,23 @@ class ConnectCommand(val adbVersion: Int = 0x01000001, maxData: Int = 1024 * 102
 /**
  * A StreamCommand is an extraction of common properties of commands sent to streams.
  *
- * It just exposes the "remote ID" of the connection, so we can match this command to a map of
- * stream handlers.
+ * It just exposes the "remote ID" of the connection, so we can match this command to a map of stream handlers.
  *
  * @see [Command] to explain local and remote IDs
  */
-abstract class StreamCommand(
-  type: Int,
-  localId: Int,
-  val remoteId: Int,
-  payload: ByteArray = ByteArray(0),
-) : Command(type, localId, remoteId, payload)
+abstract class StreamCommand(type: Int, localId: Int, val remoteId: Int, payload: ByteArray = ByteArray(0)) :
+  Command(type, localId, remoteId, payload)
 
 /**
  * The open command (A_OPEN in protocol.txt) is sent at the beginning of the stream.
  *
- * The server sends an open command when a new stream should be opened. The open command only
- * contains the local ID (its origin) and the service that it's trying to open (e.g. "shell:ls
- * /sdcard"). The "remote ID" that other commands use is simply set to zero, because it's not yet
- * known.
+ * The server sends an open command when a new stream should be opened. The open command only contains the local ID (its origin) and the
+ * service that it's trying to open (e.g. "shell:ls /sdcard"). The "remote ID" that other commands use is simply set to zero, because it's
+ * not yet known.
  *
  * @see [Command] to explain local ID
  */
-class OpenCommand(val localId: Int, val service: String) :
-  StreamCommand(OPEN, localId, 0, service.toByteArray())
+class OpenCommand(val localId: Int, val service: String) : StreamCommand(OPEN, localId, 0, service.toByteArray())
 
 /**
  * The okay command (A_OKAY in protocol.txt) is sent when the stream is ready for more data.
@@ -167,21 +157,17 @@ class OpenCommand(val localId: Int, val service: String) :
 class OkayCommand(localId: Int, remoteId: Int) : StreamCommand(OKAY, localId, remoteId)
 
 /**
- * The close command (A_CLSE in protocol.txt) is sent when the stream is complete from the local
- * side.
+ * The close command (A_CLSE in protocol.txt) is sent when the stream is complete from the local side.
  *
- * Once a stream has sent a close message, no more data should be sent from that side. However, data
- * may still be received.
+ * Once a stream has sent a close message, no more data should be sent from that side. However, data may still be received.
  *
  * @see [Command] to explain local and remote IDs
  */
 class CloseCommand(localId: Int, remoteId: Int) : StreamCommand(CLSE, localId, remoteId)
 
 /**
- * The write command (A_WRTE in protocol.txt) is sent when there is data being written to the
- * stream.
+ * The write command (A_WRTE in protocol.txt) is sent when there is data being written to the stream.
  *
  * @see [Command] to explain local and remote IDs
  */
-class WriteCommand(localId: Int, remoteId: Int, val payload: ByteArray) :
-  StreamCommand(WRTE, localId, remoteId, payload)
+class WriteCommand(localId: Int, remoteId: Int, val payload: ByteArray) : StreamCommand(WRTE, localId, remoteId, payload)

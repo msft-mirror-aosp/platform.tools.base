@@ -43,8 +43,7 @@ private fun InputStream.readNBytesAndroid(buffer: ByteArray, len: Int): Int {
 }
 
 /**
- * The ReverseDaemon listens on a specific port provided in the args and creates new streams to the
- * ReverseForwardStream that created it.
+ * The ReverseDaemon listens on a specific port provided in the args and creates new streams to the ReverseForwardStream that created it.
  */
 object ReverseDaemon {
   private const val TAG = "ReverseDaemon"
@@ -160,16 +159,12 @@ object ReverseDaemon {
         if (bytesRead == -1) break
 
         synchronized(writeLock) {
-          output.write(
-            StreamDataHeader(MessageType.DATA, streamId, bytesRead).toByteBuffer().array()
-          )
+          output.write(StreamDataHeader(MessageType.DATA, streamId, bytesRead).toByteBuffer().array())
           output.write(buffer, 0, bytesRead)
         }
       }
 
-      synchronized(writeLock) {
-        output.write(StreamDataHeader(MessageType.CLSE, streamId, 0).toByteBuffer().array())
-      }
+      synchronized(writeLock) { output.write(StreamDataHeader(MessageType.CLSE, streamId, 0).toByteBuffer().array()) }
     }
   }
 
@@ -185,9 +180,7 @@ object ReverseDaemon {
 
     override fun accept(streamId: Int): SocketReader {
       val socket = serverSocket.accept()
-      return SocketReader(streamId, socket.getInputStream(), socket.getOutputStream()) {
-        socket.close()
-      }
+      return SocketReader(streamId, socket.getInputStream(), socket.getOutputStream()) { socket.close() }
     }
 
     override fun stopAccepting() {

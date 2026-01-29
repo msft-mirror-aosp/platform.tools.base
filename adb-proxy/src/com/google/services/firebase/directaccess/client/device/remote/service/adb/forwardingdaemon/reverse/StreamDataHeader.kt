@@ -20,9 +20,7 @@ import java.nio.ByteBuffer
 
 /** The header sent between the service and the daemon. */
 class StreamDataHeader(val type: MessageType, val streamId: Int, val len: Int) {
-  constructor(
-    buffer: ByteBuffer
-  ) : this(MessageType.fromConstant(buffer.getInt(0)), buffer.getInt(4), buffer.getInt(8))
+  constructor(buffer: ByteBuffer) : this(MessageType.fromConstant(buffer.getInt(0)), buffer.getInt(4), buffer.getInt(8))
 
   fun toByteBuffer(): ByteBuffer {
     return ByteBuffer.allocate(12).putInt(type.const).putInt(streamId).putInt(len).flip()
