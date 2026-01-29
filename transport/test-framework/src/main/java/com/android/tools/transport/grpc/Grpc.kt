@@ -18,19 +18,17 @@ package com.android.tools.transport.grpc
 import com.android.tools.idea.io.grpc.ManagedChannel
 import com.android.tools.idea.io.grpc.ManagedChannelBuilder
 
-/**
- * Class which wraps gRPC initialization.
- */
+/** Class which wraps gRPC initialization. */
 class Grpc(socket: String, port: Int) {
-    val channel = connectGrpc(socket, port)
+  val channel = connectGrpc(socket, port)
 
-    private fun connectGrpc(socket: String, port: Int): ManagedChannel {
-        val stashedContextClassLoader = Thread.currentThread().contextClassLoader
+  private fun connectGrpc(socket: String, port: Int): ManagedChannel {
+    val stashedContextClassLoader = Thread.currentThread().contextClassLoader
 
-        Thread.currentThread().contextClassLoader = ManagedChannelBuilder::class.java.classLoader
-        val channel = ManagedChannelBuilder.forAddress(socket, port).usePlaintext().build()
+    Thread.currentThread().contextClassLoader = ManagedChannelBuilder::class.java.classLoader
+    val channel = ManagedChannelBuilder.forAddress(socket, port).usePlaintext().build()
 
-        Thread.currentThread().contextClassLoader = stashedContextClassLoader
-        return channel
-    }
+    Thread.currentThread().contextClassLoader = stashedContextClassLoader
+    return channel
+  }
 }

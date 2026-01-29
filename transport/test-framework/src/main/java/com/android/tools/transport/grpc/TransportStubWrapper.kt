@@ -19,29 +19,21 @@ import com.android.tools.profiler.proto.Transport
 import com.android.tools.profiler.proto.TransportServiceGrpc
 import com.android.tools.profiler.proto.TransportServiceGrpc.TransportServiceBlockingStub
 
-/**
- * A wrapping class that provides useful utility methods on top of [TransportServiceGrpc.TransportServiceBlockingStub]
- */
+/** A wrapping class that provides useful utility methods on top of [TransportServiceGrpc.TransportServiceBlockingStub] */
 class TransportStubWrapper(val transportStub: TransportServiceBlockingStub) {
-    companion object {
-        /**
-         * Convenience method for creating a wrapper when you don't need to create the underlying
-         * stub yourself.
-         */
-        @JvmStatic
-        fun create(grpc: Grpc): TransportStubWrapper {
-            return TransportStubWrapper(TransportServiceGrpc.newBlockingStub(grpc.channel))
-        }
+  companion object {
+    /** Convenience method for creating a wrapper when you don't need to create the underlying stub yourself. */
+    @JvmStatic
+    fun create(grpc: Grpc): TransportStubWrapper {
+      return TransportStubWrapper(TransportServiceGrpc.newBlockingStub(grpc.channel))
     }
+  }
 
-    /**
-     * Convenience method for fetching a transport stub's contents by ID and converting it into a UTF8
-     * string.
-     */
-    fun toBytes(id: String): String {
-        if (id.isBlank()) return ""
+  /** Convenience method for fetching a transport stub's contents by ID and converting it into a UTF8 string. */
+  fun toBytes(id: String): String {
+    if (id.isBlank()) return ""
 
-        val bytesRequest = Transport.BytesRequest.newBuilder().setId(id).build()
-        return transportStub.getFile(bytesRequest).filePath
-    }
+    val bytesRequest = Transport.BytesRequest.newBuilder().setId(id).build()
+    return transportStub.getFile(bytesRequest).filePath
+  }
 }
