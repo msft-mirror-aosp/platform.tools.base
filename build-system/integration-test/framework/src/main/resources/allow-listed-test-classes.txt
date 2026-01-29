@@ -560,6 +560,8 @@ com.android.build.gradle.integration.packaging.DexPackagingTest
 com.android.build.gradle.integration.packaging.IncrementalCodeChangeTest
 com.android.build.gradle.integration.packaging.JavaResMergePackagingTest
 com.android.build.gradle.integration.packaging.JavaResPackagingTest
+com.android.build.gradle.integration.packaging.JavaResPackagingAppTest
+com.android.build.gradle.integration.packaging.JavaResPackagingLibraryTest
 com.android.build.gradle.integration.packaging.NativeSoPackagingDirectSubprojectAarTest
 com.android.build.gradle.integration.packaging.NativeSoPackagingFromJarTest
 com.android.build.gradle.integration.packaging.NativeSoPackagingFromRemoteAarTest

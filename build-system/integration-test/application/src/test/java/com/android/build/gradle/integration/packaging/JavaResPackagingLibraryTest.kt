@@ -25,7 +25,6 @@ import com.android.build.gradle.integration.common.fixture.project.GeneratesApk
 import com.android.build.gradle.integration.common.output.AbstractAndroidArchiveSubject
 import com.android.build.gradle.integration.common.truth.ScannerSubject
 import com.android.build.gradle.integration.common.utils.TestFileUtils
-import com.android.testutils.truth.PathSubject
 import com.android.utils.FileUtils
 import com.google.common.base.Charsets
 import com.google.common.io.Files
@@ -35,7 +34,7 @@ import org.junit.Test
 import java.io.File
 
 /** test for packaging of java resources.  */
-class JavaResPackagingTest {
+class JavaResPackagingLibraryTest {
     @get:Rule
     val project = GradleTestProject.builder()
         .fromTestProject("projectWithModules")
@@ -118,102 +117,190 @@ class JavaResPackagingTest {
         return project.executor().run(*tasks)
     }
 
+    // ---- LIB DEFAULT ---
     @Test
-    fun testNonIncrementalPackaging() {
-        project.executor().run("clean", "assembleDebug", "assembleAndroidTest")
 
-        // check the files are there. Start from the bottom of the dependency graph
-        libProject2.checkAar("library2.txt".withContent("library2:abcd"))
-        libProject2.checkTestApk(
-            "library2.txt".withContent("library2:abcd"),
-            "library2test.txt".withContent("library2Test:abcd")
-        )
+    fun testLibProjectWithNewResFile() {
+        execute("library:assembleDebug")
 
-        // aar does not contain dependency's assets
-        libProject.checkAar(
-            "library.txt".withContent("library:abcd"),
-            "localjar.txt".withContent("localjar:abcd")
-        )
-
-        // test apk contains both test-only assets, lib assets, and dependency assets.
-        // but not the assets of the dependency's own test
-        libProject.checkTestApk(
-            "library.txt".withContent("library:abcd"),
-            "library2.txt".withContent("library2:abcd"),
-            "localjar.txt".withContent("localjar:abcd"),
-            "librarytest.txt".withContent("libraryTest:abcd")
-        )
-
-        // app contain own assets + all dependencies' assets.
-        appProject.checkApk(
-            "app.txt".withContent("app:abcd"),
-            "library.txt".withContent("library:abcd"),
-            "library2.txt".withContent("library2:abcd"),
-            "jar.txt".withContent("jar:abcd"),
-            "localjar.txt".withContent("localjar:abcd")
-        )
-
-        // app test contains test-ony assets (not app, dependency, or dependency test assets).
-        appProject.checkTestApk("apptest.txt".withContent("appTest:abcd"))
-
-        // All APKs should exclude .kotlin_module files, but the AAR should include it.
-        appProject.assertApk(ApkSelector.DEBUG) {
-            javaResources().folder("META-INF").containsExactly(
-                "MANIFEST.MF", "CERT.RSA", "CERT.SF", "com/android/build/gradle/app-metadata.properties"
+        TemporaryProjectModification.doTest(
+            libProject
+        ) { project ->
+            project.addFile("src/main/resources/com/foo/newlibrary.txt", "newfile content")
+            execute("library:assembleDebug")
+            libProject.checkAar(
+                "newlibrary.txt".withContent("newfile content"),
+                "library.txt", "localjar.txt"
             )
         }
-        appProject.assertApk(ApkSelector.ANDROIDTEST_DEBUG) {
-            javaResources().folder("META-INF").containsExactly("MANIFEST.MF", "CERT.RSA", "CERT.SF")
-        }
-        libProject.checkAarMetaInf("foo.kotlin_module".withContent("library:abcd"))
-        libProject.assertApk(ApkSelector.ANDROIDTEST_DEBUG) {
-            javaResources().folder("META-INF").containsExactly("MANIFEST.MF", "CERT.RSA", "CERT.SF")
-        }
     }
 
-    // ---- TEST DEFAULT ---
     @Test
 
-    fun testTestProjectWithNewResFile() {
-        project.executor().run("test:clean", "test:assembleDebug")
+    fun testLibProjectWithRemovedFile() {
+        execute("library:assembleDebug")
 
         TemporaryProjectModification.doTest(
-            testProject
+            libProject
         ) { project ->
-            project.addFile("src/main/resources/com/foo/newtest.txt", "newfile content")
-            this.project.executor().run("test:assembleDebug")
-            testProject.checkApk(
-                "newtest.txt".withContent("newfile content"),
-                "test.txt")
+            project.removeFile("src/main/resources/com/foo/library.txt")
+            project.replaceInFile("build.gradle", "api files(.*)", "")
+            execute("library:assembleDebug")
+
+            libProject.checkAar()
         }
     }
 
     @Test
 
-    fun testTestProjectWithRemovedResFile() {
-        project.executor().run("test:clean", "test:assembleDebug")
+    fun testLibProjectWithModifiedResFile() {
+        execute("library:assembleDebug")
 
         TemporaryProjectModification.doTest(
-            testProject
+            libProject
         ) { project ->
-            project.removeFile("src/main/resources/com/foo/test.txt")
-            this.project.executor().run("test:assembleDebug")
-            testProject.checkApk()
+            project.replaceFile("src/main/resources/com/foo/library.txt", "new content")
+            execute("library:assembleDebug")
+            libProject.checkAar(
+                "library.txt".withContent("new content"),
+                "localjar.txt"
+            )
         }
     }
 
     @Test
 
-    fun testTestProjectWithModifiedResFile() {
-        project.executor().run("test:clean", "test:assembleDebug")
+    fun testLibProjectWithNewResFileInDebugSourceSet() {
+        execute("library:assembleDebug")
 
         TemporaryProjectModification.doTest(
-            testProject
+            libProject
         ) { project ->
-            project.replaceFile("src/main/resources/com/foo/test.txt", "new content")
-            this.project.executor().run("test:assembleDebug")
-            testProject.checkApk("test.txt".withContent("new content"))
+            project.addFile("src/debug/resources/com/foo/library.txt", "new content")
+            execute("library:assembleDebug")
+            libProject.checkAar(
+                "library.txt".withContent("new content"),
+                "localjar.txt"
+            )
         }
+
+        // file's been removed, checking in the other direction.
+        execute("library:assembleDebug")
+        libProject.checkAar(
+            "library.txt".withContent("library:abcd"),
+            "localjar.txt"
+        )
+    }
+
+    // ---- LIB TEST ---
+    @Test
+
+    fun testLibProjectTestWithNewResFile() {
+        execute("library:assembleAT")
+
+        TemporaryProjectModification.doTest(
+            libProject
+        ) { project ->
+            project.addFile("src/androidTest/resources/com/foo/newlibrary.txt", "new file content")
+            execute("library:assembleAT")
+            libProject.checkTestApk(
+                "newlibrary.txt".withContent("new file content"),
+                "librarytest.txt", "library.txt", "library2.txt", "localjar.txt"
+            )
+        }
+    }
+
+    @Test
+
+    fun testLibProjectTestWithRemovedResFile() {
+        execute("library:assembleAT")
+
+        TemporaryProjectModification.doTest(
+            libProject
+        ) { project ->
+            project.removeFile("src/androidTest/resources/com/foo/librarytest.txt")
+            project.replaceInFile("build.gradle", "api files(.*)", "")
+            execute("library:assembleAT")
+
+            libProject.checkTestApk("library.txt", "library2.txt")
+        }
+    }
+
+    @Test
+
+    fun testLibProjectTestWithModifiedResFile() {
+        execute("library:assembleAT")
+
+        TemporaryProjectModification.doTest(
+            libProject
+        ) { project ->
+            project.replaceFile("src/androidTest/resources/com/foo/librarytest.txt", "new content")
+            execute("library:assembleAT")
+            libProject.checkTestApk(
+                "librarytest.txt".withContent("new content"),
+                "library.txt", "library2.txt", "localjar.txt"
+            )
+        }
+    }
+
+    @Test
+
+    fun testLibProjectTestWithNewResFileOverridingTestedLib() {
+        execute("library:assembleAT")
+
+        TemporaryProjectModification.doTest(
+            libProject
+        ) { project ->
+            project.addFile("src/androidTest/resources/com/foo/library.txt", "new content")
+            val result = execute("library:assembleAT")
+            result.stdout.use { stdout ->
+                ScannerSubject.assertThat(stdout).contains(
+                    "More than one file was found with OS independent path 'com/foo/library.txt'."
+                )
+            }
+            libProject.checkTestApk(
+                "library.txt".withContent("new content"),
+                "librarytest.txt", "library2.txt", "localjar.txt"
+            )
+        }
+
+        // file's been removed, checking in the other direction.
+        execute("library:assembleAT")
+        libProject.checkTestApk(
+            "library.txt".withContent("library:abcd"),
+            "librarytest.txt", "library2.txt", "localjar.txt"
+        )
+    }
+
+    @Test
+
+    fun testLibProjectTestWithNewResFileOverridingDependency() {
+        execute("library:assembleAT")
+
+        TemporaryProjectModification.doTest(
+            libProject
+        ) { project ->
+            project.addFile(
+                "src/androidTest/resources/com/foo/library2.txt", "new content"
+            )
+            val result = execute("library:assembleAT")
+            result.stdout.use { stdout ->
+                ScannerSubject.assertThat(stdout).contains(
+                    "More than one file was found with OS independent path 'com/foo/library2.txt'."
+                )
+            }
+            libProject.checkTestApk(
+                "library2.txt".withContent("new content"),
+                "librarytest.txt", "library.txt", "localjar.txt"
+            )
+        }
+
+        // file's been removed, checking in the other direction.
+        execute("library:assembleAT")
+        libProject.checkTestApk(
+            "library2.txt".withContent("library2:abcd"),
+            "librarytest.txt", "library.txt", "localjar.txt"
+        )
     }
 
     private fun createOriginalResFile(
@@ -239,44 +326,6 @@ class JavaResPackagingTest {
     }
 
     // --------------------------------
-
-
-    /**
-     * check an apk has (or not) the given res file name.
-     *
-     *
-     * If the content is non-null the file is expected to be there with the same content. If the
-     *
-     *
-     * @param itemList a list of items that must be present in the android archive. The list
-     * can either contain [String] to just validate presence, or [StringWithContent] to validate
-     * presence and content.
-     */
-    private fun GeneratesApk.checkApk(
-        vararg itemList: Any
-    ) {
-        checkApkWithPath("com/foo", *itemList)
-    }
-
-    /**
-     * check an apk has (or not) the given res file name.
-     *
-     *
-     * If the content is non-null the file is expected to be there with the same content. If the
-     *
-     *
-     * @param itemList a list of items that must be present in the android archive. The list
-     * can either contain [String] to just validate presence, or [StringWithContent] to validate
-     * presence and content.
-     */
-    private fun GeneratesApk.checkApkWithPath(
-        folderPath: String,
-        vararg itemList: Any
-    ) {
-        assertApk(ApkSelector.DEBUG) {
-            checkJavaRes(folderPath, *itemList)
-        }
-    }
 
     /**
      * check an apk has (or not) the given res file name.
@@ -313,25 +362,6 @@ class JavaResPackagingTest {
     ) {
         assertAar(AarSelector.DEBUG) {
             checkJavaRes("com/foo", *itemList)
-        }
-    }
-
-    /**
-     * check an aar has (or not) the given res file name.
-     *
-     *
-     * If the content is non-null the file is expected to be there with the same content. If the
-     * content is null the file is not expected to be there.
-     *
-     * @param itemList a list of items that must be present in the android archive. The list
-     * can either contain [String] to just validate presence, or [StringWithContent] to validate
-     * presence and content.
-     */
-    private fun GeneratesAar.checkAarMetaInf(
-        vararg itemList: Any
-    ) {
-        assertAar(AarSelector.DEBUG) {
-            checkJavaRes("META-INF", *itemList)
         }
     }
 
