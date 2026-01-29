@@ -15,7 +15,5 @@
  */
 package com.android.repository.api
 
-/**
- * An instance of ProgressIndicator that does nothing.
- */
+/** An instance of ProgressIndicator that does nothing. */
 object NullProgressIndicator : ProgressIndicatorAdapter()

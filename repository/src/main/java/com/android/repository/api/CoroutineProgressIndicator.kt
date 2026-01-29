@@ -19,10 +19,8 @@ import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.job
 
 /** Decorates a ProgressIndicator, tying its cancellation to that of the given coroutine context. */
-class CoroutineProgressIndicator(
-  val coroutineContext: CoroutineContext,
-  delegate: ProgressIndicator,
-) : DelegatingProgressIndicator(delegate) {
+class CoroutineProgressIndicator(val coroutineContext: CoroutineContext, delegate: ProgressIndicator) :
+  DelegatingProgressIndicator(delegate) {
   override fun isCanceled(): Boolean = coroutineContext.job.isCancelled
 
   override fun cancel() {

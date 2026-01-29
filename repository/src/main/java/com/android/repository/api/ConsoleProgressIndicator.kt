@@ -21,120 +21,120 @@ import java.util.Locale
 /**
  * A simple [ProgressIndicator] that prints log messages to `stdout` and `stderr`.
  *
- * Progress rendering is done by emitting spaces followed by a carriage return, that way text can be
- * re-rendered on the same line. For more information, see https://stackoverflow.com/a/852802.
+ * Progress rendering is done by emitting spaces followed by a carriage return, that way text can be re-rendered on the same line. For more
+ * information, see https://stackoverflow.com/a/852802.
  *
- * @param canPrintProgress should be false for CI environments where 'TERM' is declared as 'dumb'
- * to avoid flooding logs (b/137389944, b/66347650)
+ * @param canPrintProgress should be false for CI environments where 'TERM' is declared as 'dumb' to avoid flooding logs (b/137389944,
+ *   b/66347650)
  */
-open class ConsoleProgressIndicator @JvmOverloads constructor(
-    private val out: PrintStream = System.out,
-    private val err: PrintStream = System.err,
-    private val canPrintProgress: Boolean = System.getenv("TERM") != "dumb"
+open class ConsoleProgressIndicator
+@JvmOverloads
+constructor(
+  private val out: PrintStream = System.out,
+  private val err: PrintStream = System.err,
+  private val canPrintProgress: Boolean = System.getenv("TERM") != "dumb",
 ) : ProgressIndicatorAdapter() {
 
-    private var text: String? = ""
-    private var secondaryText: String? = ""
-    private var progress = 0.0
+  private var text: String? = ""
+  private var secondaryText: String? = ""
+  private var progress = 0.0
 
-    private var last: String? = null
+  private var last: String? = null
 
-    override fun getFraction() = progress
+  override fun getFraction() = progress
 
-    override fun setFraction(progress: Double) {
-        this.progress = progress
-        printProgress(true)
+  override fun setFraction(progress: Double) {
+    this.progress = progress
+    printProgress(true)
+  }
+
+  private fun printProgress(forceShowProgress: Boolean) {
+    if (!canPrintProgress) {
+      return
     }
-
-    private fun printProgress(forceShowProgress: Boolean) {
-        if (!canPrintProgress) {
-            return
-        }
-        val line = StringBuilder()
-        if (forceShowProgress || fraction > 0) {
-            line.append("[")
-            var i = 1
-            while (i < PROGRESS_WIDTH * progress) {
-                line.append("=")
-                i++
-            }
-            while (i < PROGRESS_WIDTH) {
-                line.append(" ")
-                i++
-            }
-            line.append("] ")
-
-            line.append(String.format(Locale.US, "%.0f%%", 100 * progress))
-            line.append(" ")
-        }
-        line.append(text)
+    val line = StringBuilder()
+    if (forceShowProgress || fraction > 0) {
+      line.append("[")
+      var i = 1
+      while (i < PROGRESS_WIDTH * progress) {
+        line.append("=")
+        i++
+      }
+      while (i < PROGRESS_WIDTH) {
         line.append(" ")
-        line.append(secondaryText)
-        if (line.length > MAX_WIDTH) {
-            line.delete(MAX_WIDTH, line.length)
-        } else {
-            line.append(SPACES, 0, MAX_WIDTH - line.length)
-        }
+        i++
+      }
+      line.append("] ")
 
-        line.append("\r")
-
-        // If the progress is at maximum, then append a newline so that future calls to logMessage
-        // won't overlap with this output.
-        if (fraction >= 1) {
-            line.append(System.lineSeparator())
-        }
-
-        val result = line.toString()
-        if (result != last) {
-            out.print(result)
-            out.flush()
-            last = result
-        }
+      line.append(String.format(Locale.US, "%.0f%%", 100 * progress))
+      line.append(" ")
+    }
+    line.append(text)
+    line.append(" ")
+    line.append(secondaryText)
+    if (line.length > MAX_WIDTH) {
+      line.delete(MAX_WIDTH, line.length)
+    } else {
+      line.append(SPACES, 0, MAX_WIDTH - line.length)
     }
 
-    private fun logMessage(
-        s: String, e: Throwable?, stream: PrintStream
-    ) {
-        // Overwrite the entire progress bar with blanks so that we can re-render it on a visibly
-        // lower line at the end of this function when we call printProgress.
-        //
-        // There is no need to blank this out when the progress is full since we would have already
-        // printed a newline character.
-        if (progress > 0 && progress < 1) {
-            out.print(SPACES)
-            out.print("\r")
-            last = null
-        }
-        stream.println(s)
-        e?.printStackTrace()
+    line.append("\r")
 
-        // Re-render the progress bar after having blanked it out.
-        if (progress > 0 && progress < 1) {
-            printProgress(false)
-        }
+    // If the progress is at maximum, then append a newline so that future calls to logMessage
+    // won't overlap with this output.
+    if (fraction >= 1) {
+      line.append(System.lineSeparator())
     }
 
-    override fun logWarning(s: String, e: Throwable?) {
-        logMessage("Warning: $s", e, err)
+    val result = line.toString()
+    if (result != last) {
+      out.print(result)
+      out.flush()
+      last = result
     }
+  }
 
-    override fun logError(s: String, e: Throwable?) {
-        logMessage("Error: $s", e, err)
+  private fun logMessage(s: String, e: Throwable?, stream: PrintStream) {
+    // Overwrite the entire progress bar with blanks so that we can re-render it on a visibly
+    // lower line at the end of this function when we call printProgress.
+    //
+    // There is no need to blank this out when the progress is full since we would have already
+    // printed a newline character.
+    if (progress > 0 && progress < 1) {
+      out.print(SPACES)
+      out.print("\r")
+      last = null
     }
+    stream.println(s)
+    e?.printStackTrace()
 
-    override fun logInfo(s: String) {
-        logMessage("Info: $s", null, out)
+    // Re-render the progress bar after having blanked it out.
+    if (progress > 0 && progress < 1) {
+      printProgress(false)
     }
+  }
 
-    override fun setText(text: String?) {
-        this.text = text
-        printProgress(false)
-    }
+  override fun logWarning(s: String, e: Throwable?) {
+    logMessage("Warning: $s", e, err)
+  }
 
-    override fun setSecondaryText(text: String?) {
-        secondaryText = text
-        printProgress(false)
-    }
+  override fun logError(s: String, e: Throwable?) {
+    logMessage("Error: $s", e, err)
+  }
+
+  override fun logInfo(s: String) {
+    logMessage("Info: $s", null, out)
+  }
+
+  override fun setText(text: String?) {
+    this.text = text
+    printProgress(false)
+  }
+
+  override fun setSecondaryText(text: String?) {
+    secondaryText = text
+    printProgress(false)
+  }
 }
 
 private const val PROGRESS_WIDTH = 40
