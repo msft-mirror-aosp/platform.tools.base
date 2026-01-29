@@ -18,45 +18,35 @@ package com.android.tools.androidtest.testengine
 
 import com.android.tools.androidtest.testengine.instrument.AmInstrumentationParser
 import com.android.tools.androidtest.testengine.instrument.TestResult
+import java.util.concurrent.CompletableFuture
 import org.junit.platform.engine.TestDescriptor
 import org.junit.platform.engine.UniqueId
 import org.junit.platform.engine.support.descriptor.AbstractTestDescriptor
 import org.junit.platform.engine.support.descriptor.MethodSource
 import org.junit.platform.engine.support.hierarchical.Node
-import java.util.concurrent.CompletableFuture
 
-/**
- * A dynamic test descriptor representing a single test case running on an Android device.
- */
-class AndroidDynamicTestDescriptor(
-    uniqueId: UniqueId,
-    displayName: String,
-    className: String,
-    methodName: String,
-) : AbstractTestDescriptor(uniqueId, displayName, MethodSource.from(className, methodName)),
-    Node<AndroidTestExecutionContext> {
+/** A dynamic test descriptor representing a single test case running on an Android device. */
+class AndroidDynamicTestDescriptor(uniqueId: UniqueId, displayName: String, className: String, methodName: String) :
+  AbstractTestDescriptor(uniqueId, displayName, MethodSource.from(className, methodName)), Node<AndroidTestExecutionContext> {
 
-    val resultFuture = CompletableFuture<TestResult>()
+  val resultFuture = CompletableFuture<TestResult>()
 
-    override fun getType(): TestDescriptor.Type = TestDescriptor.Type.TEST
+  override fun getType(): TestDescriptor.Type = TestDescriptor.Type.TEST
 
-    override fun execute(
-        context: AndroidTestExecutionContext,
-        dynamicTestExecutor: Node.DynamicTestExecutor
-    ): AndroidTestExecutionContext {
-        val result = resultFuture.get() // Blocks until testEnded is called in the listener
-        when (result.status) {
-            AmInstrumentationParser.STATUS_CODE_OK -> {
-                // Success
-            }
-            AmInstrumentationParser.STATUS_CODE_ASSUMPTION_FAILURE,
-            AmInstrumentationParser.STATUS_CODE_IGNORED -> {
-                // TODO: Mark as skipped/ignored. For now, we just complete successfully.
-            }
-            else -> {
-                throw RuntimeException(result.stackTrace ?: "Test failed with status ${result.status}")
-            }
-        }
-        return context
+  override fun execute(context: AndroidTestExecutionContext, dynamicTestExecutor: Node.DynamicTestExecutor): AndroidTestExecutionContext {
+    val result = resultFuture.get() // Blocks until testEnded is called in the listener
+    when (result.status) {
+      AmInstrumentationParser.STATUS_CODE_OK -> {
+        // Success
+      }
+      AmInstrumentationParser.STATUS_CODE_ASSUMPTION_FAILURE,
+      AmInstrumentationParser.STATUS_CODE_IGNORED -> {
+        // TODO: Mark as skipped/ignored. For now, we just complete successfully.
+      }
+      else -> {
+        throw RuntimeException(result.stackTrace ?: "Test failed with status ${result.status}")
+      }
     }
+    return context
+  }
 }

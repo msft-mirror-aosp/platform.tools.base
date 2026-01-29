@@ -21,7 +21,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 import java.util.logging.Logger
 
 /** Keeps track of when Instrumentation tests were run. */
-class TestTimeTracker(private val now: () -> Instant =  { Instant.now() }) {
+class TestTimeTracker(private val now: () -> Instant = { Instant.now() }) {
 
   companion object {
     private val logger = Logger.getLogger(TestTimeTracker::class.java.name)
@@ -33,41 +33,34 @@ class TestTimeTracker(private val now: () -> Instant =  { Instant.now() }) {
   private var startTime = -1L
   private var endTime = -1L
 
-  /**
-   * Returns a [TestTimingData] instance with start and end times.
-   */
+  /** Returns a [TestTimingData] instance with start and end times. */
   val testTimingData: TestTimingData
     get() {
-      require(hasStarted.get()) {
-        "Called TestTimeTracker.testTimingData before TestTimeTracker.testStart()"
-      }
-      require(hasEnded.get()) {
-        "Called TestTimeTracker.testTimingData before TestTimeTracker.testEnd()"
-      }
+      require(hasStarted.get()) { "Called TestTimeTracker.testTimingData before TestTimeTracker.testStart()" }
+      require(hasEnded.get()) { "Called TestTimeTracker.testTimingData before TestTimeTracker.testEnd()" }
       return TestTimingData(startTime = startTime, endTime = endTime)
     }
 
   /** Call when a test has started. Sets the start time in the tracker to now. */
   fun testStart() {
     startTime = now().toEpochMilli()
-    require(hasStarted.compareAndSet(false, true)) {
-      "Called TestTimeTracker.testStart() twice"
-    }
+    require(hasStarted.compareAndSet(false, true)) { "Called TestTimeTracker.testStart() twice" }
   }
 
   /** Call when a test has finished. Sets the end time in the tracker to now. */
   fun testEnd() {
     if (!hasStarted.get()) {
       logger.warning(
-        """TestTimeTracker.testEnd() was called before TestTimeTracker.testStart(). The test may not
-          |have run. Check the test logs for details.""".trimMargin()
+        """
+        |TestTimeTracker.testEnd() was called before TestTimeTracker.testStart(). The test may not
+        |have run. Check the test logs for details.
+        """
+          .trimMargin()
       )
       testStart()
     }
     endTime = now().toEpochMilli()
-    require(hasEnded.compareAndSet(false, true)) {
-      "Called TestTimeTracker.testEnd() twice"
-    }
+    require(hasEnded.compareAndSet(false, true)) { "Called TestTimeTracker.testEnd() twice" }
   }
 }
 
@@ -77,12 +70,8 @@ class TestTimeTracker(private val now: () -> Instant =  { Instant.now() }) {
  * The sum of the two times in the TimeStamp is the time since epoch.
  */
 data class TestTimingData(
-  /**
-   * Milliseconds from epoch when test started.
-   */
+  /** Milliseconds from epoch when test started. */
   val startTime: Long,
-  /**
-   * Milliseconds from epoch when test ended.
-   */
-  val endTime: Long
+  /** Milliseconds from epoch when test ended. */
+  val endTime: Long,
 )

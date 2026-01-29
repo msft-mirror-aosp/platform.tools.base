@@ -24,18 +24,17 @@ import java.util.logging.Logger
 /**
  * Executes Android instrumentation tests on a given device via the `am instrument` command.
  *
- * This class builds and runs the `am instrument -r -w` command, capturing and parsing
- * the raw output in real-time to report test events.
+ * This class builds and runs the `am instrument -r -w` command, capturing and parsing the raw output in real-time to report test events.
  *
  * @param adb The ADB executable [File].
  * @param deviceSerial The serial number of the target Android device.
- * @param instrumentationRunnerClass The fully qualified name of the instrumentation runner
- * (e.g., `androidx.test.runner.AndroidJUnitRunner`).
+ * @param instrumentationRunnerClass The fully qualified name of the instrumentation runner (e.g.,
+ *   `androidx.test.runner.AndroidJUnitRunner`).
  * @param instrumentationTargetPackageId The package ID of the application to be instrumented.
  * @param listeners A set of [AmInstrumentationListener]s to receive test events.
  * @param logger An optional [Logger] for recording command outputs and warnings.
- * @param processBuilder A factory for creating [ProcessBuilder] instances, primarily
- * exposed for testing purposes to allow mocking of process execution.
+ * @param processBuilder A factory for creating [ProcessBuilder] instances, primarily exposed for testing purposes to allow mocking of
+ *   process execution.
  */
 class AmInstrumentationRunner(
   private val adb: File,
@@ -44,31 +43,31 @@ class AmInstrumentationRunner(
   private val instrumentationTargetPackageId: String,
   private val listeners: Set<AmInstrumentationListener> = emptySet(),
   private val logger: Logger = Logger.getLogger(AmInstrumentationRunner::class.java.name),
-  private val processBuilder: (command: List<String>) -> ProcessBuilder = { ProcessBuilder(it) }
+  private val processBuilder: (command: List<String>) -> ProcessBuilder = { ProcessBuilder(it) },
 ) {
 
   /**
    * Runs the `am instrument` command for the configured target.
    *
-   * This method constructs the command, launches the process, and synchronously captures
-   * and parses the output until the process terminates. Standard output is parsed as
-   * test events, while standard error is logged as warnings.
+   * This method constructs the command, launches the process, and synchronously captures and parses the output until the process
+   * terminates. Standard output is parsed as test events, while standard error is logged as warnings.
    */
   fun runAmInstrumentCommand() {
     val command = getAmInstrumentCmd()
     val process = processBuilder(command).start()
     val parser = AmInstrumentationParser(listeners = listeners)
-    val handler = object: GrabProcessOutput.IProcessOutput {
-      override fun out(line: String?) { line?.let { parser.parse(it) } }
-      override fun err(line: String?) { line?.let { logger.warning(line) } }
-    }
+    val handler =
+      object : GrabProcessOutput.IProcessOutput {
+        override fun out(line: String?) {
+          line?.let { parser.parse(it) }
+        }
 
-    GrabProcessOutput.grabProcessOutput(
-      process,
-      GrabProcessOutput.Wait.WAIT_FOR_READERS,
-      handler,
-      null,
-      TimeUnit.MILLISECONDS)
+        override fun err(line: String?) {
+          line?.let { logger.warning(line) }
+        }
+      }
+
+    GrabProcessOutput.grabProcessOutput(process, GrabProcessOutput.Wait.WAIT_FOR_READERS, handler, null, TimeUnit.MILLISECONDS)
 
     parser.done()
   }
@@ -76,10 +75,13 @@ class AmInstrumentationRunner(
   private fun getAmInstrumentCmd(): List<String> {
     return listOf(
       adb.absolutePath,
-      "-s", deviceSerial,
-      "shell", "am", "instrument",
-      "-r",  // Outputs results in raw format
-      "-w",  // Forces am instrument to wait until the instrumentation terminates before terminating itself.
+      "-s",
+      deviceSerial,
+      "shell",
+      "am",
+      "instrument",
+      "-r", // Outputs results in raw format
+      "-w", // Forces am instrument to wait until the instrumentation terminates before terminating itself.
       "${instrumentationTargetPackageId}/${instrumentationRunnerClass}",
     )
   }

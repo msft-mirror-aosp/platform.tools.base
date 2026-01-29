@@ -17,6 +17,8 @@
 package com.android.tools.androidtest.testengine.instrument
 
 import com.google.common.truth.Truth.assertThat
+import java.io.File
+import java.util.logging.Logger
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -27,17 +29,12 @@ import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
-import java.io.File
-import java.util.logging.Logger
 
-/**
- * Unit tests for [AmInstrumentationRunner].
- */
+/** Unit tests for [AmInstrumentationRunner]. */
 @RunWith(JUnit4::class)
 class AmInstrumentationRunnerTest {
 
-  @get:Rule
-  val tempFolder = TemporaryFolder()
+  @get:Rule val tempFolder = TemporaryFolder()
 
   private lateinit var fakeAdb: File
   private lateinit var mockLogger: Logger
@@ -58,13 +55,15 @@ class AmInstrumentationRunnerTest {
     val runnerClass = "com.example.TestRunner"
     val targetPackage = "com.example.app"
 
-    val stdout = """
-            INSTRUMENTATION_STATUS_CODE: 1
-            INSTRUMENTATION_STATUS: class=com.example.MyTest
-            INSTRUMENTATION_STATUS: test=testExample
-            INSTRUMENTATION_STATUS_CODE: 0
-            INSTRUMENTATION_CODE: -1
-        """.trimIndent()
+    val stdout =
+      """
+      INSTRUMENTATION_STATUS_CODE: 1
+      INSTRUMENTATION_STATUS: class=com.example.MyTest
+      INSTRUMENTATION_STATUS: test=testExample
+      INSTRUMENTATION_STATUS_CODE: 0
+      INSTRUMENTATION_CODE: -1
+      """
+        .trimIndent()
 
     val stderr = "Warning: This is a test warning."
 
@@ -77,30 +76,26 @@ class AmInstrumentationRunnerTest {
     whenever(mockProcessBuilder.start()).thenReturn(mockProcess)
 
     var capturedCommand: List<String>? = null
-    val runner = AmInstrumentationRunner(
-      adb = fakeAdb,
-      deviceSerial = deviceSerial,
-      instrumentationRunnerClass = runnerClass,
-      instrumentationTargetPackageId = targetPackage,
-      logger = mockLogger,
-      processBuilder = { command ->
-        capturedCommand = command
-        mockProcessBuilder
-      }
-    )
+    val runner =
+      AmInstrumentationRunner(
+        adb = fakeAdb,
+        deviceSerial = deviceSerial,
+        instrumentationRunnerClass = runnerClass,
+        instrumentationTargetPackageId = targetPackage,
+        logger = mockLogger,
+        processBuilder = { command ->
+          capturedCommand = command
+          mockProcessBuilder
+        },
+      )
 
     runner.runAmInstrumentCommand()
 
     // Verify the correct command was constructed and passed to the process builder.
     assertThat(capturedCommand).isNotNull()
-    assertThat(capturedCommand).containsExactly(
-      fakeAdb.absolutePath,
-      "-s", deviceSerial,
-      "shell", "am", "instrument",
-      "-r",
-      "-w",
-      "$targetPackage/$runnerClass"
-    ).inOrder()
+    assertThat(capturedCommand)
+      .containsExactly(fakeAdb.absolutePath, "-s", deviceSerial, "shell", "am", "instrument", "-r", "-w", "$targetPackage/$runnerClass")
+      .inOrder()
 
     // Verify that the process was started.
     verify(mockProcessBuilder).start()

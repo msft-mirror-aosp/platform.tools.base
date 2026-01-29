@@ -18,6 +18,7 @@ package com.android.tools.androidtest.testengine
 
 import com.android.tools.androidtest.testengine.AdbApkInstaller.InstallOptions
 import com.android.tools.androidtest.testengine.instrument.AmInstrumentationRunner
+import java.io.File
 import org.junit.Assert.assertEquals
 import org.junit.Assert.fail
 import org.junit.Before
@@ -33,235 +34,235 @@ import org.mockito.kotlin.inOrder
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
-import java.io.File
 
-/**
- * Unit tests for the [AndroidTestRunner] class.
- */
+/** Unit tests for the [AndroidTestRunner] class. */
 class AndroidTestRunnerTest {
 
-    @get:Rule
-    val tempFolder = TemporaryFolder()
+  @get:Rule val tempFolder = TemporaryFolder()
 
-    @get:Rule
-    val mockitoRule: MockitoRule = MockitoJUnit.rule()
+  @get:Rule val mockitoRule: MockitoRule = MockitoJUnit.rule()
 
-    @Mock
-    private lateinit var adbApkInstaller: AdbApkInstaller
+  @Mock private lateinit var adbApkInstaller: AdbApkInstaller
 
-    @Mock
-    private lateinit var instrumentationRunner: AmInstrumentationRunner
+  @Mock private lateinit var instrumentationRunner: AmInstrumentationRunner
 
-    private lateinit var baseApk: File
-    private lateinit var testApk: File
-    private lateinit var splitApk1: File
-    private lateinit var utilApk: File
+  private lateinit var baseApk: File
+  private lateinit var testApk: File
+  private lateinit var splitApk1: File
+  private lateinit var utilApk: File
 
-    @Before
-    fun setUp() {
-        baseApk = tempFolder.newFile("base.apk")
-        testApk = tempFolder.newFile("test.apk")
-        splitApk1 = tempFolder.newFile("split1.apk")
-        utilApk = tempFolder.newFile("util.apk")
+  @Before
+  fun setUp() {
+    baseApk = tempFolder.newFile("base.apk")
+    testApk = tempFolder.newFile("test.apk")
+    splitApk1 = tempFolder.newFile("split1.apk")
+    utilApk = tempFolder.newFile("util.apk")
+  }
+
+  @Test
+  fun `run with single APK installs, tests, and uninstalls correctly`() {
+    // Given a runner for a single "tested" APK with uninstallation enabled.
+    val installOptions = listOf("-t", "-d")
+    val runner =
+      AndroidTestRunner(
+        adbApkInstaller = adbApkInstaller,
+        instrumentationRunner = instrumentationRunner,
+        testedApks = listOf(baseApk),
+        testApks = emptyList(),
+        apkInstallOptions = installOptions,
+        testUtilApks = emptyList(),
+        uninstallApksAfterTests = true,
+      )
+    val expectedInstallOptions = InstallOptions(extraArgs = installOptions)
+
+    // When the runner is executed.
+    runner.run()
+
+    // Then verify the sequence of operations is correct: install, run tests, cleanup, uninstall.
+    inOrder(adbApkInstaller, instrumentationRunner) {
+      verify(adbApkInstaller).installApk(baseApk, expectedInstallOptions)
+      verify(instrumentationRunner).runAmInstrumentCommand()
+      verify(adbApkInstaller).postTestCleanup()
+      verify(adbApkInstaller).uninstallApk(baseApk)
+    }
+  }
+
+  @Test
+  fun `run with test APK installs, tests, and uninstalls correctly`() {
+    // Given a runner for a single "tested" APK and a single test APK with uninstallation enabled.
+    val installOptions = listOf("-t", "-d")
+    val runner =
+      AndroidTestRunner(
+        adbApkInstaller = adbApkInstaller,
+        instrumentationRunner = instrumentationRunner,
+        testedApks = listOf(baseApk),
+        testApks = listOf(testApk),
+        apkInstallOptions = installOptions,
+        testUtilApks = emptyList(),
+        uninstallApksAfterTests = true,
+      )
+    val expectedInstallOptions = InstallOptions(extraArgs = installOptions)
+
+    // When the runner is executed.
+    runner.run()
+
+    // Then verify the sequence of operations is correct: install, run tests, cleanup, uninstall.
+    inOrder(adbApkInstaller, instrumentationRunner) {
+      verify(adbApkInstaller).installApk(baseApk, expectedInstallOptions)
+      verify(adbApkInstaller).installApk(testApk, expectedInstallOptions)
+      verify(instrumentationRunner).runAmInstrumentCommand()
+      verify(adbApkInstaller).postTestCleanup()
+      verify(adbApkInstaller).uninstallApk(baseApk)
+      verify(adbApkInstaller).uninstallApk(testApk)
+    }
+  }
+
+  @Test
+  fun `run with split APKs installs, tests, and uninstalls correctly`() {
+    // Given a runner for multiple "tested" (split) APKs with uninstallation enabled.
+    val testedApks = listOf(baseApk, splitApk1)
+    val installOptions = listOf("-g")
+    val runner =
+      AndroidTestRunner(
+        adbApkInstaller = adbApkInstaller,
+        instrumentationRunner = instrumentationRunner,
+        testedApks = testedApks,
+        testApks = emptyList(),
+        apkInstallOptions = installOptions,
+        testUtilApks = emptyList(),
+        uninstallApksAfterTests = true,
+      )
+    val expectedInstallOptions = InstallOptions(extraArgs = installOptions)
+
+    // When the runner is executed.
+    runner.run()
+
+    // Then verify the runner uses installSplitApk and uninstalls the base APK.
+    inOrder(adbApkInstaller, instrumentationRunner) {
+      verify(adbApkInstaller).installSplitApk(testedApks, expectedInstallOptions)
+      verify(instrumentationRunner).runAmInstrumentCommand()
+      verify(adbApkInstaller).postTestCleanup()
+      // The current implementation only uninstalls the first APK in the list.
+      verify(adbApkInstaller).uninstallApk(baseApk)
+    }
+  }
+
+  @Test
+  fun `run with util APKs installs, tests, and uninstalls all APKs`() {
+    // Given a runner with a base APK and a utility APK.
+    val runner =
+      AndroidTestRunner(
+        adbApkInstaller = adbApkInstaller,
+        instrumentationRunner = instrumentationRunner,
+        testedApks = listOf(baseApk),
+        testApks = emptyList(),
+        apkInstallOptions = emptyList(),
+        testUtilApks = listOf(utilApk),
+        uninstallApksAfterTests = true,
+      )
+    val expectedUtilApkOptions = InstallOptions(grantPermissions = true, forceQueryable = true)
+
+    // When the runner is executed.
+    runner.run()
+
+    // Then verify all APKs are installed, tests run, and then uninstalled in the correct order.
+    inOrder(adbApkInstaller, instrumentationRunner) {
+      verify(adbApkInstaller).installApk(eq(baseApk), any())
+      verify(adbApkInstaller).installApk(utilApk, expectedUtilApkOptions)
+      verify(instrumentationRunner).runAmInstrumentCommand()
+      verify(adbApkInstaller).postTestCleanup()
+      verify(adbApkInstaller).uninstallApk(baseApk)
+      verify(adbApkInstaller).uninstallApk(utilApk)
+    }
+  }
+
+  @Test
+  fun `run with uninstall set to false does not uninstall APKs`() {
+    // Given a runner where uninstallation is explicitly disabled.
+    val runner =
+      AndroidTestRunner(
+        adbApkInstaller = adbApkInstaller,
+        instrumentationRunner = instrumentationRunner,
+        testedApks = listOf(baseApk),
+        testApks = listOf(testApk),
+        apkInstallOptions = emptyList(),
+        testUtilApks = emptyList(),
+        uninstallApksAfterTests = false, // Key condition for this test
+      )
+
+    // When the runner is executed.
+    runner.run()
+
+    // Then verify that installation, test execution, and cleanup occur.
+    inOrder(adbApkInstaller, instrumentationRunner) {
+      verify(adbApkInstaller).installApk(eq(baseApk), any())
+      verify(adbApkInstaller).installApk(eq(testApk), any())
+      verify(instrumentationRunner).runAmInstrumentCommand()
+      verify(adbApkInstaller).postTestCleanup()
+    }
+    // Crucially, verify that uninstallApk is never called.
+    verify(adbApkInstaller, never()).uninstallApk(any())
+  }
+
+  @Test
+  fun `run when installation fails still performs cleanup and uninstall`() {
+    // Given a runner where the installer will throw an error during installation.
+    val runner =
+      AndroidTestRunner(
+        adbApkInstaller = adbApkInstaller,
+        instrumentationRunner = instrumentationRunner,
+        testedApks = listOf(baseApk),
+        testApks = emptyList(),
+        apkInstallOptions = emptyList(),
+        testUtilApks = emptyList(),
+        uninstallApksAfterTests = true,
+      )
+    val installException = RuntimeException("Install failed!")
+    whenever(adbApkInstaller.installApk(eq(baseApk), any())).thenThrow(installException)
+
+    // When the runner is executed, expect it to fail.
+    try {
+      runner.run()
+      fail("Expected exception was not thrown")
+    } catch (e: RuntimeException) {
+      assertEquals("The original exception should be propagated.", installException, e)
     }
 
-    @Test
-    fun `run with single APK installs, tests, and uninstalls correctly`() {
-        // Given a runner for a single "tested" APK with uninstallation enabled.
-        val installOptions = listOf("-t", "-d")
-        val runner = AndroidTestRunner(
-            adbApkInstaller = adbApkInstaller,
-            instrumentationRunner = instrumentationRunner,
-            testedApks = listOf(baseApk),
-            testApks = emptyList(),
-            apkInstallOptions = installOptions,
-            testUtilApks = emptyList(),
-            uninstallApksAfterTests = true
-        )
-        val expectedInstallOptions = InstallOptions(extraArgs = installOptions)
+    // Then verify that the 'finally' block logic (cleanup and uninstall) still ran.
+    inOrder(adbApkInstaller) {
+      verify(adbApkInstaller).postTestCleanup()
+      verify(adbApkInstaller).uninstallApk(baseApk)
+    }
+    // Verify that tests were never run because of the installation failure.
+    verify(instrumentationRunner, never()).runAmInstrumentCommand()
+  }
 
-        // When the runner is executed.
-        runner.run()
+  @Test
+  fun `run with no APKs runs tests and performs cleanup`() {
+    // Given a runner with no APKs to install.
+    val runner =
+      AndroidTestRunner(
+        adbApkInstaller = adbApkInstaller,
+        instrumentationRunner = instrumentationRunner,
+        testedApks = emptyList(),
+        testApks = emptyList(),
+        apkInstallOptions = emptyList(),
+        testUtilApks = emptyList(),
+        uninstallApksAfterTests = true,
+      )
 
-        // Then verify the sequence of operations is correct: install, run tests, cleanup, uninstall.
-        inOrder(adbApkInstaller, instrumentationRunner) {
-            verify(adbApkInstaller).installApk(baseApk, expectedInstallOptions)
-            verify(instrumentationRunner).runAmInstrumentCommand()
-            verify(adbApkInstaller).postTestCleanup()
-            verify(adbApkInstaller).uninstallApk(baseApk)
-        }
+    // When the runner is executed.
+    runner.run()
+
+    // Then verify that the test command runs, followed by post-test cleanup.
+    inOrder(instrumentationRunner, adbApkInstaller) {
+      verify(instrumentationRunner).runAmInstrumentCommand()
+      verify(adbApkInstaller).postTestCleanup()
     }
 
-    @Test
-    fun `run with test APK installs, tests, and uninstalls correctly`() {
-        // Given a runner for a single "tested" APK and a single test APK with uninstallation enabled.
-        val installOptions = listOf("-t", "-d")
-        val runner = AndroidTestRunner(
-            adbApkInstaller = adbApkInstaller,
-            instrumentationRunner = instrumentationRunner,
-            testedApks = listOf(baseApk),
-            testApks = listOf(testApk),
-            apkInstallOptions = installOptions,
-            testUtilApks = emptyList(),
-            uninstallApksAfterTests = true
-        )
-        val expectedInstallOptions = InstallOptions(extraArgs = installOptions)
-
-        // When the runner is executed.
-        runner.run()
-
-        // Then verify the sequence of operations is correct: install, run tests, cleanup, uninstall.
-        inOrder(adbApkInstaller, instrumentationRunner) {
-            verify(adbApkInstaller).installApk(baseApk, expectedInstallOptions)
-            verify(adbApkInstaller).installApk(testApk, expectedInstallOptions)
-            verify(instrumentationRunner).runAmInstrumentCommand()
-            verify(adbApkInstaller).postTestCleanup()
-            verify(adbApkInstaller).uninstallApk(baseApk)
-            verify(adbApkInstaller).uninstallApk(testApk)
-        }
-    }
-
-    @Test
-    fun `run with split APKs installs, tests, and uninstalls correctly`() {
-        // Given a runner for multiple "tested" (split) APKs with uninstallation enabled.
-        val testedApks = listOf(baseApk, splitApk1)
-        val installOptions = listOf("-g")
-        val runner = AndroidTestRunner(
-            adbApkInstaller = adbApkInstaller,
-            instrumentationRunner = instrumentationRunner,
-            testedApks = testedApks,
-            testApks = emptyList(),
-            apkInstallOptions = installOptions,
-            testUtilApks = emptyList(),
-            uninstallApksAfterTests = true
-        )
-        val expectedInstallOptions = InstallOptions(extraArgs = installOptions)
-
-        // When the runner is executed.
-        runner.run()
-
-        // Then verify the runner uses installSplitApk and uninstalls the base APK.
-        inOrder(adbApkInstaller, instrumentationRunner) {
-            verify(adbApkInstaller).installSplitApk(testedApks, expectedInstallOptions)
-            verify(instrumentationRunner).runAmInstrumentCommand()
-            verify(adbApkInstaller).postTestCleanup()
-            // The current implementation only uninstalls the first APK in the list.
-            verify(adbApkInstaller).uninstallApk(baseApk)
-        }
-    }
-
-    @Test
-    fun `run with util APKs installs, tests, and uninstalls all APKs`() {
-        // Given a runner with a base APK and a utility APK.
-        val runner = AndroidTestRunner(
-            adbApkInstaller = adbApkInstaller,
-            instrumentationRunner = instrumentationRunner,
-            testedApks = listOf(baseApk),
-            testApks = emptyList(),
-            apkInstallOptions = emptyList(),
-            testUtilApks = listOf(utilApk),
-            uninstallApksAfterTests = true
-        )
-        val expectedUtilApkOptions = InstallOptions(grantPermissions = true, forceQueryable = true)
-
-        // When the runner is executed.
-        runner.run()
-
-        // Then verify all APKs are installed, tests run, and then uninstalled in the correct order.
-        inOrder(adbApkInstaller, instrumentationRunner) {
-            verify(adbApkInstaller).installApk(eq(baseApk), any())
-            verify(adbApkInstaller).installApk(utilApk, expectedUtilApkOptions)
-            verify(instrumentationRunner).runAmInstrumentCommand()
-            verify(adbApkInstaller).postTestCleanup()
-            verify(adbApkInstaller).uninstallApk(baseApk)
-            verify(adbApkInstaller).uninstallApk(utilApk)
-        }
-    }
-
-    @Test
-    fun `run with uninstall set to false does not uninstall APKs`() {
-        // Given a runner where uninstallation is explicitly disabled.
-        val runner = AndroidTestRunner(
-            adbApkInstaller = adbApkInstaller,
-            instrumentationRunner = instrumentationRunner,
-            testedApks = listOf(baseApk),
-            testApks = listOf(testApk),
-            apkInstallOptions = emptyList(),
-            testUtilApks = emptyList(),
-            uninstallApksAfterTests = false // Key condition for this test
-        )
-
-        // When the runner is executed.
-        runner.run()
-
-        // Then verify that installation, test execution, and cleanup occur.
-        inOrder(adbApkInstaller, instrumentationRunner) {
-            verify(adbApkInstaller).installApk(eq(baseApk), any())
-            verify(adbApkInstaller).installApk(eq(testApk), any())
-            verify(instrumentationRunner).runAmInstrumentCommand()
-            verify(adbApkInstaller).postTestCleanup()
-        }
-        // Crucially, verify that uninstallApk is never called.
-        verify(adbApkInstaller, never()).uninstallApk(any())
-    }
-
-    @Test
-    fun `run when installation fails still performs cleanup and uninstall`() {
-        // Given a runner where the installer will throw an error during installation.
-        val runner = AndroidTestRunner(
-            adbApkInstaller = adbApkInstaller,
-            instrumentationRunner = instrumentationRunner,
-            testedApks = listOf(baseApk),
-            testApks = emptyList(),
-            apkInstallOptions = emptyList(),
-            testUtilApks = emptyList(),
-            uninstallApksAfterTests = true
-        )
-        val installException = RuntimeException("Install failed!")
-        whenever(adbApkInstaller.installApk(eq(baseApk), any())).thenThrow(installException)
-
-        // When the runner is executed, expect it to fail.
-        try {
-            runner.run()
-            fail("Expected exception was not thrown")
-        } catch (e: RuntimeException) {
-            assertEquals("The original exception should be propagated.", installException, e)
-        }
-
-        // Then verify that the 'finally' block logic (cleanup and uninstall) still ran.
-        inOrder(adbApkInstaller) {
-            verify(adbApkInstaller).postTestCleanup()
-            verify(adbApkInstaller).uninstallApk(baseApk)
-        }
-        // Verify that tests were never run because of the installation failure.
-        verify(instrumentationRunner, never()).runAmInstrumentCommand()
-    }
-
-    @Test
-    fun `run with no APKs runs tests and performs cleanup`() {
-        // Given a runner with no APKs to install.
-        val runner = AndroidTestRunner(
-            adbApkInstaller = adbApkInstaller,
-            instrumentationRunner = instrumentationRunner,
-            testedApks = emptyList(),
-            testApks = emptyList(),
-            apkInstallOptions = emptyList(),
-            testUtilApks = emptyList(),
-            uninstallApksAfterTests = true
-        )
-
-        // When the runner is executed.
-        runner.run()
-
-        // Then verify that the test command runs, followed by post-test cleanup.
-        inOrder(instrumentationRunner, adbApkInstaller) {
-            verify(instrumentationRunner).runAmInstrumentCommand()
-            verify(adbApkInstaller).postTestCleanup()
-        }
-
-        // Verify no install or uninstall attempts were made.
-        verify(adbApkInstaller, never()).installApk(any(), any())
-        verify(adbApkInstaller, never()).installSplitApk(any(), any())
-        verify(adbApkInstaller, never()).uninstallApk(any())
-    }
+    // Verify no install or uninstall attempts were made.
+    verify(adbApkInstaller, never()).installApk(any(), any())
+    verify(adbApkInstaller, never()).installSplitApk(any(), any())
+    verify(adbApkInstaller, never()).uninstallApk(any())
+  }
 }

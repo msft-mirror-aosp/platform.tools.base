@@ -22,7 +22,6 @@ import java.time.Instant
  * Receives events during instrumentation runs.
  *
  * The order of calls is defined below. Calls in square brackets are optional.
- *
  * * `instrumentationStarted`
  * * Zero or more of:
  * ```
@@ -38,6 +37,7 @@ interface AmInstrumentationListener {
    * Reports the start of an instrumentation.
    *
    * @param testCount Total number of tests in the instrumentation. For custom, non-test
+   *
    * ```
    *     instrumentations the count is 0.
    * ```
@@ -69,6 +69,7 @@ interface AmInstrumentationListener {
    * Reports the end of an instrumentation.
    *
    * @param instrumentationResult [InstrumentationResult] reported at the end of an
+   *
    * ```
    *     instrumentation run.
    * ```
@@ -77,24 +78,19 @@ interface AmInstrumentationListener {
 }
 
 /** Identifier for an individual test case. */
-data class TestIdentifier(
-  val testPackage: String,
-  val testClass: String,
-  val testMethod: String
-)
+data class TestIdentifier(val testPackage: String, val testClass: String, val testMethod: String)
 
 /**
  * Represents the final outcome of a single test case execution.
  *
- * The [status] is a raw integer code mirroring the Android instrumentation output.
- * Common state constants are defined in [AmInstrumentationParser]:
- *
+ * The [status] is a raw integer code mirroring the Android instrumentation output. Common state constants are defined in
+ * [AmInstrumentationParser]:
  * - [AmInstrumentationParser.STATUS_CODE_OK]: The test completed successfully.
- * - [AmInstrumentationParser.STATUS_CODE_FAILURE] or [AmInstrumentationParser.STATUS_CODE_ERROR]:
- * The test failed. The [stackTrace] property will contain details of the assertion failure or exception.
+ * - [AmInstrumentationParser.STATUS_CODE_FAILURE] or [AmInstrumentationParser.STATUS_CODE_ERROR]: The test failed. The [stackTrace]
+ *   property will contain details of the assertion failure or exception.
  * - [AmInstrumentationParser.STATUS_CODE_IGNORED]: The test was explicitly ignored (e.g., via JUnit's `@Ignore`).
- * - [AmInstrumentationParser.STATUS_CODE_ASSUMPTION_FAILURE]: The test halted due to a failed assumption
- * (e.g., via JUnit's `assume*()` methods).
+ * - [AmInstrumentationParser.STATUS_CODE_ASSUMPTION_FAILURE]: The test halted due to a failed assumption (e.g., via JUnit's `assume*()`
+ *   methods).
  */
 data class TestResult(
   /** Test case this end result is for. */
@@ -116,14 +112,10 @@ data class TestResult(
  *
  * The `code`, also called Session Result Code, reported by `am instrument` is defined in AOSP
  * `frameworks/base/cmds/am/src/com/android/commands/am/Instrument.java` as:
- *
  * * -1: Success
  * * other: Failure
  */
-data class InstrumentationResult(
-  val code: Int? = null,
-  val bundle: Map<String, String> = mapOf(),
-) {
+data class InstrumentationResult(val code: Int? = null, val bundle: Map<String, String> = mapOf()) {
   val success
     get() = code == -1
 }

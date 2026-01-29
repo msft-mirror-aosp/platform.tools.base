@@ -22,93 +22,72 @@ import java.io.File
 /**
  * Sets up the device for and runs Android tests using the `adb shell am instrument` command.
  *
- * This class manages the entire lifecycle of an instrumented test. It handles installing the
- * application under test and any utility APKs, executing the test command, and finally cleaning up
- * the device by uninstalling the APKs.
+ * This class manages the entire lifecycle of an instrumented test. It handles installing the application under test and any utility APKs,
+ * executing the test command, and finally cleaning up the device by uninstalling the APKs.
  *
- * @param adbApkInstaller An [AdbApkInstaller] instance used to handle APK installation and
- * uninstallation on the target device.
+ * @param adbApkInstaller An [AdbApkInstaller] instance used to handle APK installation and uninstallation on the target device.
  * @param instrumentationRunner Executes the `am instrument` command to run the tests.
- * @param testedApks A list of APK files for the application under test. This can be a single
- * base APK or multiple files for a split APK.
+ * @param testedApks A list of APK files for the application under test. This can be a single base APK or multiple files for a split APK.
  * @param testApks A list of test APK files containing the instrumentation tests.
- * @param apkInstallOptions A list of additional command-line options to be used when
- * installing the [testedApks] and [testApks].
- * @param testUtilApks A list of utility APKs that need to be installed on the device for the
- * tests to run. These might include test services or other dependencies.
- * @param uninstallApksAfterTests If `true`, all APKs installed during the test run will be
- * uninstalled from the device after the test completes.
+ * @param apkInstallOptions A list of additional command-line options to be used when installing the [testedApks] and [testApks].
+ * @param testUtilApks A list of utility APKs that need to be installed on the device for the tests to run. These might include test
+ *   services or other dependencies.
+ * @param uninstallApksAfterTests If `true`, all APKs installed during the test run will be uninstalled from the device after the test
+ *   completes.
  */
 class AndroidTestRunner(
-    private val adbApkInstaller: AdbApkInstaller,
-    private val instrumentationRunner: AmInstrumentationRunner,
-    private val testedApks: List<File>,
-    private val testApks: List<File>,
-    private val apkInstallOptions: List<String>,
-    private val testUtilApks: List<File>,
-    private val uninstallApksAfterTests: Boolean,
-    ) {
+  private val adbApkInstaller: AdbApkInstaller,
+  private val instrumentationRunner: AmInstrumentationRunner,
+  private val testedApks: List<File>,
+  private val testApks: List<File>,
+  private val apkInstallOptions: List<String>,
+  private val testUtilApks: List<File>,
+  private val uninstallApksAfterTests: Boolean,
+) {
 
-    /**
-     * Executes the test run.
-     *
-     * This method orchestrates the following steps:
-     * 1. Installs the main application APK(s).
-     * 2. Installs the test APK(s).
-     * 3. Installs any required test utility APKs.
-     * 4. Runs the `am instrument` command to execute the tests.
-     * 5. Performs cleanup, which is guaranteed to run even if setup or the test itself fails.
-     * Cleanup includes uninstalling all installed APKs if [uninstallApksAfterTests] is true.
-     */
-    fun run() {
-        try {
-            if (testedApks.size == 1) {
-                adbApkInstaller.installApk(
-                    testedApks.first(),
-                    AdbApkInstaller.InstallOptions(extraArgs = apkInstallOptions)
-                )
-            } else if (testedApks.size > 1) {
-                adbApkInstaller.installSplitApk(
-                    testedApks,
-                    AdbApkInstaller.InstallOptions(extraArgs = apkInstallOptions)
-                )
-            }
+  /**
+   * Executes the test run.
+   *
+   * This method orchestrates the following steps:
+   * 1. Installs the main application APK(s).
+   * 2. Installs the test APK(s).
+   * 3. Installs any required test utility APKs.
+   * 4. Runs the `am instrument` command to execute the tests.
+   * 5. Performs cleanup, which is guaranteed to run even if setup or the test itself fails. Cleanup includes uninstalling all installed
+   *    APKs if [uninstallApksAfterTests] is true.
+   */
+  fun run() {
+    try {
+      if (testedApks.size == 1) {
+        adbApkInstaller.installApk(testedApks.first(), AdbApkInstaller.InstallOptions(extraArgs = apkInstallOptions))
+      } else if (testedApks.size > 1) {
+        adbApkInstaller.installSplitApk(testedApks, AdbApkInstaller.InstallOptions(extraArgs = apkInstallOptions))
+      }
 
-            if (testApks.size == 1) {
-                adbApkInstaller.installApk(
-                    testApks.first(),
-                    AdbApkInstaller.InstallOptions(extraArgs = apkInstallOptions)
-                )
-            } else if (testApks.size > 1) {
-                adbApkInstaller.installSplitApk(
-                    testApks,
-                    AdbApkInstaller.InstallOptions(extraArgs = apkInstallOptions)
-                )
-            }
+      if (testApks.size == 1) {
+        adbApkInstaller.installApk(testApks.first(), AdbApkInstaller.InstallOptions(extraArgs = apkInstallOptions))
+      } else if (testApks.size > 1) {
+        adbApkInstaller.installSplitApk(testApks, AdbApkInstaller.InstallOptions(extraArgs = apkInstallOptions))
+      }
 
-            testUtilApks.forEach { apk ->
-                adbApkInstaller.installApk(
-                    apk,
-                    AdbApkInstaller.InstallOptions(grantPermissions = true, forceQueryable = true)
-                )
-            }
+      testUtilApks.forEach { apk ->
+        adbApkInstaller.installApk(apk, AdbApkInstaller.InstallOptions(grantPermissions = true, forceQueryable = true))
+      }
 
-            instrumentationRunner.runAmInstrumentCommand()
-        } finally {
-            adbApkInstaller.postTestCleanup()
-            if (uninstallApksAfterTests) {
-                if (testedApks.isNotEmpty()) {
-                    adbApkInstaller.uninstallApk(testedApks.first())
-                }
-
-                if (testApks.isNotEmpty()) {
-                    adbApkInstaller.uninstallApk(testApks.first())
-                }
-
-                testUtilApks.forEach { apk ->
-                    adbApkInstaller.uninstallApk(apk)
-                }
-            }
+      instrumentationRunner.runAmInstrumentCommand()
+    } finally {
+      adbApkInstaller.postTestCleanup()
+      if (uninstallApksAfterTests) {
+        if (testedApks.isNotEmpty()) {
+          adbApkInstaller.uninstallApk(testedApks.first())
         }
+
+        if (testApks.isNotEmpty()) {
+          adbApkInstaller.uninstallApk(testApks.first())
+        }
+
+        testUtilApks.forEach { apk -> adbApkInstaller.uninstallApk(apk) }
+      }
     }
+  }
 }
