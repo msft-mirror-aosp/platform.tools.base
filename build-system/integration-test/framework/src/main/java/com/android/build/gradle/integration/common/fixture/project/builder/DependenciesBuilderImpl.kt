@@ -24,180 +24,139 @@ import java.nio.file.Path
 import kotlin.io.path.createDirectories
 import kotlin.io.path.writeBytes
 
-internal class DependenciesBuilderImpl(
-) : DependenciesConfigurationsBuilder by DependencyConfigurationsBuilderImpl(), DependenciesBuilder {
+internal class DependenciesBuilderImpl() : DependenciesConfigurationsBuilder by DependencyConfigurationsBuilderImpl(), DependenciesBuilder {
 
-    override fun localJar(name: String, action: JarBuilder.() -> Unit): LocalJarDependency {
-        val builder = JarBuilderImpl().also {
-            action(it)
-        }
+  override fun localJar(name: String, action: JarBuilder.() -> Unit): LocalJarDependency {
+    val builder = JarBuilderImpl().also { action(it) }
 
-        return LocalJarDependencyImpl(name, builder.getContent())
-    }
+    return LocalJarDependencyImpl(name, builder.getContent())
+  }
 
-    override fun files(path: Path): LocalFiles {
-        return LocalFilesImpl(path)
-    }
+  override fun files(path: Path): LocalFiles {
+    return LocalFilesImpl(path)
+  }
 
-    override fun project(
-        path: String,
-        testFixtures: Boolean,
-        configuration: String?
-    ): ProjectDependencyBuilder =
-        ProjectDependencyBuilderImpl(path, testFixtures, configuration)
+  override fun project(path: String, testFixtures: Boolean, configuration: String?): ProjectDependencyBuilder =
+    ProjectDependencyBuilderImpl(path, testFixtures, configuration)
 
-    override fun platform(path: Any): PlatformDependency = PlatformDependencyImpl(path)
+  override fun platform(path: Any): PlatformDependency = PlatformDependencyImpl(path)
 
-    override fun externalLibrary(path: String, testFixtures: Boolean): ExternalDependencyBuilder =
-        ExternalDependencyBuilderImpl(path, testFixtures)
+  override fun externalLibrary(path: String, testFixtures: Boolean): ExternalDependencyBuilder =
+    ExternalDependencyBuilderImpl(path, testFixtures)
 
-    override val constraints: ConstraintsBuilderImpl by lazy(LazyThreadSafetyMode.NONE) {
-        ConstraintsBuilderImpl()
-    }
+  override val constraints: ConstraintsBuilderImpl by lazy(LazyThreadSafetyMode.NONE) { ConstraintsBuilderImpl() }
 
-    override fun constraints(action: ConstraintsBuilder.() -> Unit) {
-        action(constraints)
-    }
+  override fun constraints(action: ConstraintsBuilder.() -> Unit) {
+    action(constraints)
+  }
 
-    val externalLibraries: List<MavenRepoGenerator.Library>
-        get() = getDependenciesData()
-            .map { it.dependency }
-            .filterIsInstance<MavenRepoGenerator.Library>()
+  val externalLibraries: List<MavenRepoGenerator.Library>
+    get() = getDependenciesData().map { it.dependency }.filterIsInstance<MavenRepoGenerator.Library>()
 
-    fun write(buildWriter: BuildWriter, projectLocation: Path) {
-        if (isEmpty() && constraints.isEmpty()) return
+  fun write(buildWriter: BuildWriter, projectLocation: Path) {
+    if (isEmpty() && constraints.isEmpty()) return
 
-        buildWriter.apply {
-            block("dependencies") {
-                constraints.write(this, projectLocation)
-                for ((configurationName, dependency, capability) in getDependenciesData()) {
-                    when (dependency) {
-                        is String -> dependency(configurationName, dependency, capability)
-                        is ExternalDependencyBuilder -> {
-                            if (dependency.testFixtures) {
-                                dependency(
-                                    configurationName,
-                                    rawMethod("testFixtures", dependency.coordinate),
-                                    capability
-                                )
-                            } else {
-                                dependency(configurationName, dependency.coordinate, capability)
-                            }
-                        }
-
-                        is ProjectDependencyBuilder -> {
-                            val dep = getDependencyNotationForProject(dependency)
-
-                            dependency(configurationName, dep, capability)
-                        }
-
-                        is PlatformDependency -> {
-                            val path = (dependency.path as? ProjectDependencyBuilder)?.let {
-                                getDependencyNotationForProject(it)
-                            } ?: dependency.path
-
-                            val dep = rawMethod("platform", path)
-                            dependency(configurationName, dep, capability)
-                        }
-
-                        is MavenRepoGenerator.Library -> dependency(
-                            configurationName,
-                            dependency.mavenCoordinate.toString(),
-                            capability
-                        )
-
-                        is LocalJarDependency -> {
-                            val path = createLocalJar(dependency, projectLocation)
-                            dependency(configurationName, rawMethod("files", path), capability)
-                        }
-
-                        is LocalFiles -> {
-                            dependency(
-                                configurationName,
-                                rawMethod("files", dependency.path.toFile().toFormatted()),
-                                capability
-                            )
-                        }
-
-                        else -> throw RuntimeException("unsupported dependency type: ${(dependency as Any).javaClass}")
-                    }
-                }
+    buildWriter.apply {
+      block("dependencies") {
+        constraints.write(this, projectLocation)
+        for ((configurationName, dependency, capability) in getDependenciesData()) {
+          when (dependency) {
+            is String -> dependency(configurationName, dependency, capability)
+            is ExternalDependencyBuilder -> {
+              if (dependency.testFixtures) {
+                dependency(configurationName, rawMethod("testFixtures", dependency.coordinate), capability)
+              } else {
+                dependency(configurationName, dependency.coordinate, capability)
+              }
             }
 
-            emptyLine()
+            is ProjectDependencyBuilder -> {
+              val dep = getDependencyNotationForProject(dependency)
+
+              dependency(configurationName, dep, capability)
+            }
+
+            is PlatformDependency -> {
+              val path = (dependency.path as? ProjectDependencyBuilder)?.let { getDependencyNotationForProject(it) } ?: dependency.path
+
+              val dep = rawMethod("platform", path)
+              dependency(configurationName, dep, capability)
+            }
+
+            is MavenRepoGenerator.Library -> dependency(configurationName, dependency.mavenCoordinate.toString(), capability)
+
+            is LocalJarDependency -> {
+              val path = createLocalJar(dependency, projectLocation)
+              dependency(configurationName, rawMethod("files", path), capability)
+            }
+
+            is LocalFiles -> {
+              dependency(configurationName, rawMethod("files", dependency.path.toFile().toFormatted()), capability)
+            }
+
+            else -> throw RuntimeException("unsupported dependency type: ${(dependency as Any).javaClass}")
+          }
         }
+      }
+
+      emptyLine()
     }
+  }
 }
 
 internal class DependencyBuilderImpl : DependencyBuilder {
 
-    internal var capability: String? = null
+  internal var capability: String? = null
 
-    override fun requireCapability(capability: String) {
-        this.capability = capability
-    }
+  override fun requireCapability(capability: String) {
+    this.capability = capability
+  }
 }
 
-internal fun BuildWriter.getDependencyNotationForProject(
-    dependency: ProjectDependencyBuilder
-): BuildWriter.RawString {
-    val projectNotation = dependency.configuration?.let { configName ->
-        rawMethod(
-            "project", listOf(
-                "path" to dependency.path,
-                "configuration" to configName
-            )
-        )
-    } ?: rawMethod("project", dependency.path)
+internal fun BuildWriter.getDependencyNotationForProject(dependency: ProjectDependencyBuilder): BuildWriter.RawString {
+  val projectNotation =
+    dependency.configuration?.let { configName -> rawMethod("project", listOf("path" to dependency.path, "configuration" to configName)) }
+      ?: rawMethod("project", dependency.path)
 
-    val dep = if (dependency.testFixtures) {
-        rawMethod("testFixtures", projectNotation)
+  val dep =
+    if (dependency.testFixtures) {
+      rawMethod("testFixtures", projectNotation)
     } else {
-        projectNotation
+      projectNotation
     }
-    return dep
+  return dep
 }
 
 internal fun File.toFormatted(): String {
-    return if (this.isAbsolute) {
-        toURI().toString()
-    } else {
-        // in this case, we want to make sure this is using / even on window as the
-        // gradle (groovy) API requires this
-        toString().replace('\\', '/')
-    }
+  return if (this.isAbsolute) {
+    toURI().toString()
+  } else {
+    // in this case, we want to make sure this is using / even on window as the
+    // gradle (groovy) API requires this
+    toString().replace('\\', '/')
+  }
 }
 
-internal fun createLocalJar(
-    localJarDependency : LocalJarDependency,
-    projectLocation: Path,
-): String {
-    val relativePath = "libs/${localJarDependency.name}"
-    val jarPath = projectLocation.resolve(relativePath)
-    jarPath.parent.createDirectories()
-    jarPath.writeBytes(localJarDependency.content)
+internal fun createLocalJar(localJarDependency: LocalJarDependency, projectLocation: Path): String {
+  val relativePath = "libs/${localJarDependency.name}"
+  val jarPath = projectLocation.resolve(relativePath)
+  jarPath.parent.createDirectories()
+  jarPath.writeBytes(localJarDependency.content)
 
-    return relativePath
+  return relativePath
 }
 
-internal data class LocalJarDependencyImpl(
-    override val name: String,
-    override val content: ByteArray
-): LocalJarDependency
+internal data class LocalJarDependencyImpl(override val name: String, override val content: ByteArray) : LocalJarDependency
 
-private data class LocalFilesImpl(override val path: Path): LocalFiles
+private data class LocalFilesImpl(override val path: Path) : LocalFiles
 
 internal data class ProjectDependencyBuilderImpl(
-    override val path: String,
-    override val testFixtures: Boolean,
-    override val configuration: String? = null
-): ProjectDependencyBuilder
+  override val path: String,
+  override val testFixtures: Boolean,
+  override val configuration: String? = null,
+) : ProjectDependencyBuilder
 
-private data class PlatformDependencyImpl(
-    override val path: Any
-) : PlatformDependency
+private data class PlatformDependencyImpl(override val path: Any) : PlatformDependency
 
-private data class ExternalDependencyBuilderImpl(
-    override val coordinate: String,
-    override val testFixtures: Boolean
-): ExternalDependencyBuilder
+private data class ExternalDependencyBuilderImpl(override val coordinate: String, override val testFixtures: Boolean) :
+  ExternalDependencyBuilder

@@ -19,24 +19,18 @@ package com.android.builder.internal
 import java.io.File
 
 class UnitTestManifestGenerator(
-    outputFile: File,
-    packageName: String,
-    minSdkVersion: String?,
-    targetSdkVersion: String?,
-    testedPackageName: String,
-    testRunnerName: String?,
-): TestManifestGenerator(
-    outputFile,
-    packageName,
-    minSdkVersion,
-    targetSdkVersion,
-    testedPackageName,
-    testRunnerName
-) {
+  outputFile: File,
+  packageName: String,
+  minSdkVersion: String?,
+  targetSdkVersion: String?,
+  testedPackageName: String,
+  testRunnerName: String?,
+) : TestManifestGenerator(outputFile, packageName, minSdkVersion, targetSdkVersion, testedPackageName, testRunnerName) {
 
-    override val templateResourceName: String = if (testRunnerName != null) {
-        "AndroidManifest.UnitTestTemplate"
+  override val templateResourceName: String =
+    if (testRunnerName != null) {
+      "AndroidManifest.UnitTestTemplate"
     } else {
-        "AndroidManifest.UnitTestNoInstrumentationTemplate"
+      "AndroidManifest.UnitTestNoInstrumentationTemplate"
     }
 }

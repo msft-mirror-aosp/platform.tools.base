@@ -25,85 +25,78 @@ import java.io.File
 import java.util.UUID
 
 /**
- * Contains the partial results of a [BuildAnalyzerService]. Each service should combine all
- * partial results into a single result which is used to generate the build analyzer report file.
+ * Contains the partial results of a [BuildAnalyzerService]. Each service should combine all partial results into a single result which is
+ * used to generate the build analyzer report file.
  */
 class BuildAnalyzerPartialResult(issues: Iterable<TaskCategoryIssue>) {
-    val issues = mutableSetOf<TaskCategoryIssue>()
+  val issues = mutableSetOf<TaskCategoryIssue>()
 
-    init {
-        this.issues.addAll(issues)
+  init {
+    this.issues.addAll(issues)
+  }
+
+  fun combineWith(partialResult: BuildAnalyzerPartialResult) {
+    this.issues.addAll(partialResult.issues)
+  }
+
+  fun saveToDir(outputDir: File) {
+    if (issues.isNotEmpty()) {
+      outputDir.mkdirs()
+      File(outputDir, getUniquePartialResultsFileName()).writeText(DataAdapter.toJson(this))
+    }
+  }
+
+  companion object {
+    private const val FILE_NAME_PREFIX = "Build-Analyzer-partial-result"
+
+    private fun isPartialResultsFile(file: File): Boolean {
+      return file.name.startsWith(FILE_NAME_PREFIX)
     }
 
-    fun combineWith(partialResult: BuildAnalyzerPartialResult) {
-        this.issues.addAll(partialResult.issues)
+    private fun getUniquePartialResultsFileName(): String {
+      return "$FILE_NAME_PREFIX-${UUID.randomUUID()}${SdkConstants.DOT_JSON}"
     }
 
-    fun saveToDir(outputDir: File) {
-        if (issues.isNotEmpty()) {
-            outputDir.mkdirs()
-            File(outputDir, getUniquePartialResultsFileName()).writeText(
-                DataAdapter.toJson(this)
-            )
-        }
+    fun getAllPartialResults(outputDir: File): List<BuildAnalyzerPartialResult> {
+      return outputDir.listFiles()?.filter { isPartialResultsFile(it) }?.map { file -> file.reader().use { DataAdapter.fromJson(it) } }
+        ?: emptyList()
     }
 
-    companion object {
-        private const val FILE_NAME_PREFIX = "Build-Analyzer-partial-result"
+    private object DataAdapter : TypeAdapter<BuildAnalyzerPartialResult>() {
 
-        private fun isPartialResultsFile(file: File): Boolean {
-            return file.name.startsWith(FILE_NAME_PREFIX)
-        }
+      override fun write(writer: JsonWriter, partialResult: BuildAnalyzerPartialResult) {
+        writer.beginObject()
 
-        private fun getUniquePartialResultsFileName(): String {
-            return "$FILE_NAME_PREFIX-${UUID.randomUUID()}${SdkConstants.DOT_JSON}"
-        }
+        writer.name("issues").beginArray()
+        partialResult.issues.forEach { writer.value(it.toString()) }
+        writer.endArray()
 
-        fun getAllPartialResults(outputDir: File): List<BuildAnalyzerPartialResult> {
-            return outputDir.listFiles()?.filter { isPartialResultsFile(it) }?.map { file ->
-                file.reader().use {
-                    DataAdapter.fromJson(it)
-                }
-            } ?: emptyList()
-        }
+        writer.endObject()
+      }
 
-        private object DataAdapter : TypeAdapter<BuildAnalyzerPartialResult>() {
+      override fun read(reader: JsonReader): BuildAnalyzerPartialResult {
+        val issues = mutableListOf<TaskCategoryIssue>()
+        reader.beginObject()
 
-            override fun write(writer: JsonWriter, partialResult: BuildAnalyzerPartialResult) {
-                writer.beginObject()
-
-                writer.name("issues").beginArray()
-                partialResult.issues.forEach { writer.value(it.toString()) }
-                writer.endArray()
-
-                writer.endObject()
+        while (reader.hasNext()) {
+          when (reader.nextName()) {
+            "issues" -> {
+              reader.beginArray()
+              while (reader.hasNext()) {
+                issues.add(TaskCategoryIssue.valueOf(reader.nextString()))
+              }
+              reader.endArray()
             }
-
-            override fun read(reader: JsonReader): BuildAnalyzerPartialResult {
-                val issues = mutableListOf<TaskCategoryIssue>()
-                reader.beginObject()
-
-                while (reader.hasNext()) {
-                    when (reader.nextName()) {
-                        "issues" -> {
-                            reader.beginArray()
-                            while (reader.hasNext()) {
-                                issues.add(
-                                    TaskCategoryIssue.valueOf(reader.nextString())
-                                )
-                            }
-                            reader.endArray()
-                        }
-                        else -> {
-                            reader.skipValue()
-                        }
-                    }
-                }
-
-                reader.endObject()
-
-                return BuildAnalyzerPartialResult(issues)
+            else -> {
+              reader.skipValue()
             }
+          }
         }
+
+        reader.endObject()
+
+        return BuildAnalyzerPartialResult(issues)
+      }
     }
+  }
 }

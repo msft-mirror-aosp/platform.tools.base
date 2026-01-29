@@ -26,19 +26,14 @@ import org.gradle.api.artifacts.Configuration
  */
 interface JavaCompilation {
 
-    /**
-     * Returns the [AnnotationProcessor] for configuring Java annotation processor.
-     */
-    @get:Incubating
-    val annotationProcessor: AnnotationProcessor
+  /** Returns the [AnnotationProcessor] for configuring Java annotation processor. */
+  @get:Incubating val annotationProcessor: AnnotationProcessor
 
-    /**
-     * Access to the variant's annotation processor [Configuration]; for example, the
-     * debugAnnotationProcessor [Configuration] for the debug variant.
-     *
-     * The returned [Configuration] should not be resolved until execution time.
-     */
-    @get:Incubating
-    val annotationProcessorConfiguration: Configuration
-
+  /**
+   * Access to the variant's annotation processor [Configuration]; for example, the debugAnnotationProcessor [Configuration] for the debug
+   * variant.
+   *
+   * The returned [Configuration] should not be resolved until execution time.
+   */
+  @get:Incubating val annotationProcessorConfiguration: Configuration
 }

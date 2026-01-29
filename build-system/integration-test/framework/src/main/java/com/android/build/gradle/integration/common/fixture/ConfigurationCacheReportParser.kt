@@ -24,9 +24,8 @@ import java.nio.charset.Charset
 /**
  * Parse the HTML configuration cache report file and extract all errors
  *
- * The file format is not defined or specified by Gradle, therefore this parser
- * is based on experimentation and should be modified accordingly as Gradle
- * evolves the HTML or JSON file format.
+ * The file format is not defined or specified by Gradle, therefore this parser is based on experimentation and should be modified
+ * accordingly as Gradle evolves the HTML or JSON file format.
  *
  * The file format is as follow :
  * ```
@@ -36,214 +35,172 @@ import java.nio.charset.Charset
  * // end-report-data
  * <some more html tags>
  * ```
- *
  */
-class ConfigurationCacheReportParser(
-    val reportFile: File
-) {
-    /**
-     * Defines the different ErrorTypes found in the configuration cache report.
-     *
-     * The list was obtained by looking at examples and could be incomplete.
-     */
-    enum class ErrorType(val text: String) {
-        DirectoryContent("directory content"),
-        EnvironmentVariable("environment variable"),
-        FileSystemEntry("file system entry"),
-        SystemProperty("system property"),
-        ValueFromCustomSource("value from custom source"),
-        File("file"),
-        Unknown("Unknown");
+class ConfigurationCacheReportParser(val reportFile: File) {
+  /**
+   * Defines the different ErrorTypes found in the configuration cache report.
+   *
+   * The list was obtained by looking at examples and could be incomplete.
+   */
+  enum class ErrorType(val text: String) {
+    DirectoryContent("directory content"),
+    EnvironmentVariable("environment variable"),
+    FileSystemEntry("file system entry"),
+    SystemProperty("system property"),
+    ValueFromCustomSource("value from custom source"),
+    File("file"),
+    Unknown("Unknown");
 
-        companion object {
-            fun makeErrorType(errorText: String): ErrorType {
-                ErrorType.values().forEach {
-                    if (it.text == errorText) return it
-                }
-                return Unknown
-            }
-        }
+    companion object {
+      fun makeErrorType(errorText: String): ErrorType {
+        ErrorType.values().forEach { if (it.text == errorText) return it }
+        return Unknown
+      }
+    }
+  }
+
+  /**
+   * Internal representation of an error extracted from the Gradle's configuration cache report.
+   *
+   * @param element raw json data extracted from the report containing the error details.
+   * @param type error type
+   * @param name file name or path accessed
+   */
+  data class Error(val element: String, val type: ErrorType, val name: String) {
+    companion object {
+      fun file(location: String, name: String) = Error(location, ErrorType.File, name)
+
+      fun fileSystemEntry(location: String, name: String) = Error(location, ErrorType.FileSystemEntry, name)
+
+      fun environmentVariable(location: String, name: String) = Error(location, ErrorType.EnvironmentVariable, name)
+
+      fun systemProperty(location: String, name: String) = Error(location, ErrorType.SystemProperty, name)
+
+      fun valueFromCustomSource(location: String, name: String) = Error(location, ErrorType.ValueFromCustomSource, name)
     }
 
-    /**
-     * Internal representation of an error extracted from the Gradle's configuration cache report.
-     *
-     * @param element raw json data extracted from the report containing the error details.
-     * @param type error type
-     * @param name file name or path accessed
-     */
-    data class Error(
-        val element: String,
-        val type: ErrorType,
-        val name: String,
-    ) {
-        companion object {
-            fun file(
-                location: String,
-                name: String,
-            ) = Error(location, ErrorType.File, name)
-            fun fileSystemEntry(
-                location: String,
-                name: String,
-            ) = Error(location, ErrorType.FileSystemEntry, name)
+    class Builder() {
+      var element: String? = null
+      var type: ErrorType? = null
+      var name: String? = null
 
-            fun environmentVariable(
-                location: String,
-                name: String,
-            ) = Error(location, ErrorType.EnvironmentVariable, name)
-
-            fun systemProperty(
-                location: String,
-                name: String,
-            ) = Error(location, ErrorType.SystemProperty, name)
-
-            fun valueFromCustomSource(
-                location: String,
-                name: String,
-            ) = Error(location, ErrorType.ValueFromCustomSource, name)
-        }
-        class Builder() {
-            var element: String? = null
-            var type: ErrorType? = null
-            var name: String? = null
-
-            fun build(): Error =
-                Error(
-                    element ?: throw IllegalStateException("Element not provided"),
-                    type ?: throw IllegalStateException("ErrorType not provided"),
-                    name ?: throw IllegalStateException("name/description not provided")
-                )
-        }
-
-        override fun equals(other: Any?): Boolean {
-            if (this === other) return true
-            if (javaClass != other?.javaClass) return false
-
-            other as Error
-
-            if (type != other.type) return false
-            return name == other.name
-        }
-
-        override fun hashCode(): Int {
-            var result = type.hashCode()
-            result = 31 * result + name.hashCode()
-            return result
-        }
-
-        override fun toString(): String {
-            return "Error(type=$type, name='$name', element='$element')"
-        }
+      fun build(): Error =
+        Error(
+          element ?: throw IllegalStateException("Element not provided"),
+          type ?: throw IllegalStateException("ErrorType not provided"),
+          name ?: throw IllegalStateException("name/description not provided"),
+        )
     }
 
-    /**
-     * Extract all relevant and interesting errors (I/O File access) from
-     * the Gradle's configuration cache report.
-     *
-     * The format of the file is not documented and most likely subject to
-     * change over time.
-     */
-    fun getErrorsAndWarnings(): List<Error> {
-        val sep = File.separatorChar
-        extractReportData(
-            reportFile.readText(
-                charset = Charset.defaultCharset()
-            )
-        ).run {
-            if (isEmpty()) return emptyList()
-            val reportData = JsonParser.parseString(this)
+    override fun equals(other: Any?): Boolean {
+      if (this === other) return true
+      if (javaClass != other?.javaClass) return false
 
-            val listBuilder = mutableListOf<Error>()
-            reportData.asJsonObject.get("diagnostics")
-                .asJsonArray
-                .map(JsonElement::getAsJsonObject)
-                .forEach { element ->
-                    val errorBuilder = Error.Builder()
-                    if (element.has("trace")) {
-                        element.get("trace")
-                            .asJsonArray
-                            .map(JsonElement::getAsJsonObject)
-                            .forEach { trace ->
-                                errorBuilder.element = element.toString()
-                            }
-                    }
+      other as Error
 
-                    if (element.has("input")) {
-                        element.get("input")
-                            .asJsonArray
-                            .map(JsonElement::getAsJsonObject)
-                            .forEach { input ->
-                                if (input.has("name")) {
-                                    var name = input.get("name").asString
-                                    // there are some files that are accessed only in Bazel that seems to be
-                                    // dependent on the NDK version, filed b/290404113 to handle this separately
-                                    if (!(
-                                        name.contains("src${sep}")
-                                        || name.startsWith("local-sdk-for-test")
-                                        || name.contains(Regex("${sep}android-\\d*${sep}"))
-                                        || name.contains("${sep}platform-tools${sep}")
-                                        || name.contains("${sep}prebuilts${sep}studio${sep}sdk")
-                                        || name.contains("android_prefs_root${sep}.android")
-                                        || name.contains("build${sep}intermediates${sep}cxx")
-                                        || name.contains("build${sep}intermediates${sep}prefab_package_header_only")
-                                    )) {
-                                        // some profile file generated with timestamp as prefix
-                                        if (name.endsWith(".profile")) {
-                                            errorBuilder.name = name.substring(name.lastIndexOf(".") )
-                                        } else {
-                                            errorBuilder.name =
-                                                name.substring(name.lastIndexOf("/") + 1)
-                                        }
-                                    }
-                                }
-                                if (input.has("text")) {
-                                    errorBuilder.type =
-                                        ErrorType.makeErrorType(
-                                            input.get("text").asString.trim()
-                                        )
-                                }
-                            }
-                        // We only care far about I/O failures. Access to system properties
-                        // and environment variables are not relevant at this point.
-                        if (!errorBuilder.name.isNullOrEmpty() &&
-                            (errorBuilder.type == ErrorType.FileSystemEntry
-                            || errorBuilder.type == ErrorType.File)) {
+      if (type != other.type) return false
+      return name == other.name
+    }
 
-                            val error = errorBuilder.build()
-                            listBuilder.add(error)
+    override fun hashCode(): Int {
+      var result = type.hashCode()
+      result = 31 * result + name.hashCode()
+      return result
+    }
 
-                        }
+    override fun toString(): String {
+      return "Error(type=$type, name='$name', element='$element')"
+    }
+  }
+
+  /**
+   * Extract all relevant and interesting errors (I/O File access) from the Gradle's configuration cache report.
+   *
+   * The format of the file is not documented and most likely subject to change over time.
+   */
+  fun getErrorsAndWarnings(): List<Error> {
+    val sep = File.separatorChar
+    extractReportData(reportFile.readText(charset = Charset.defaultCharset())).run {
+      if (isEmpty()) return emptyList()
+      val reportData = JsonParser.parseString(this)
+
+      val listBuilder = mutableListOf<Error>()
+      reportData.asJsonObject.get("diagnostics").asJsonArray.map(JsonElement::getAsJsonObject).forEach { element ->
+        val errorBuilder = Error.Builder()
+        if (element.has("trace")) {
+          element.get("trace").asJsonArray.map(JsonElement::getAsJsonObject).forEach { trace -> errorBuilder.element = element.toString() }
+        }
+
+        if (element.has("input")) {
+          element.get("input").asJsonArray.map(JsonElement::getAsJsonObject).forEach { input ->
+            if (input.has("name")) {
+              var name = input.get("name").asString
+              // there are some files that are accessed only in Bazel that seems to be
+              // dependent on the NDK version, filed b/290404113 to handle this separately
+              if (
+                !(name.contains("src${sep}") ||
+                  name.startsWith("local-sdk-for-test") ||
+                  name.contains(Regex("${sep}android-\\d*${sep}")) ||
+                  name.contains("${sep}platform-tools${sep}") ||
+                  name.contains("${sep}prebuilts${sep}studio${sep}sdk") ||
+                  name.contains("android_prefs_root${sep}.android") ||
+                  name.contains("build${sep}intermediates${sep}cxx") ||
+                  name.contains("build${sep}intermediates${sep}prefab_package_header_only"))
+              ) {
+                // some profile file generated with timestamp as prefix
+                if (name.endsWith(".profile")) {
+                  errorBuilder.name = name.substring(name.lastIndexOf("."))
                 } else {
-                    println("Unknown diagnostic record : $element")
+                  errorBuilder.name = name.substring(name.lastIndexOf("/") + 1)
                 }
+              }
             }
-            return listBuilder.toList()
-        }
-    }
+            if (input.has("text")) {
+              errorBuilder.type = ErrorType.makeErrorType(input.get("text").asString.trim())
+            }
+          }
+          // We only care far about I/O failures. Access to system properties
+          // and environment variables are not relevant at this point.
+          if (
+            !errorBuilder.name.isNullOrEmpty() && (errorBuilder.type == ErrorType.FileSystemEntry || errorBuilder.type == ErrorType.File)
+          ) {
 
-    /**
-     * Extract the json data from the html page.
-     *
-     * The html page file format is not published by Gradle and is subject to change.
-     * As this time the format is as follow
-     * ```
-     * <html>....
-     * // begin-report-data
-     * Serialized JSON
-     * // end-report-data
-     * ```
-     */
-    private fun extractReportData(htmlPage: String): String =
-        StringBuilder().also {
-            var inReportData = false
-            htmlPage.reader().readLines().forEach { line ->
-                if (line.equals("// end-report-data")) {
-                    inReportData = false
-                }
-                if (inReportData) it.append(line)
-                if (line.equals("// begin-report-data")) {
-                    inReportData = true
-                }
-            }
-        }.toString()
+            val error = errorBuilder.build()
+            listBuilder.add(error)
+          }
+        } else {
+          println("Unknown diagnostic record : $element")
+        }
+      }
+      return listBuilder.toList()
+    }
+  }
+
+  /**
+   * Extract the json data from the html page.
+   *
+   * The html page file format is not published by Gradle and is subject to change. As this time the format is as follow
+   *
+   * ```
+   * <html>....
+   * // begin-report-data
+   * Serialized JSON
+   * // end-report-data
+   * ```
+   */
+  private fun extractReportData(htmlPage: String): String =
+    StringBuilder()
+      .also {
+        var inReportData = false
+        htmlPage.reader().readLines().forEach { line ->
+          if (line.equals("// end-report-data")) {
+            inReportData = false
+          }
+          if (inReportData) it.append(line)
+          if (line.equals("// begin-report-data")) {
+            inReportData = true
+          }
+        }
+      }
+      .toString()
 }

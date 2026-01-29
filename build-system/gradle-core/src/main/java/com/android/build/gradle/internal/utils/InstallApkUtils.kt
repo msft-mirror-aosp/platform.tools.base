@@ -23,99 +23,86 @@ import com.android.tools.profgen.SDK_LEVEL_FOR_V0_1_5_S
 import com.android.utils.FileUtils
 import com.android.utils.ILogger
 import com.google.common.io.Files
-import org.gradle.api.file.Directory
-import org.gradle.api.provider.Provider
 import java.io.File
 import java.io.FileInputStream
 import java.io.IOException
 import java.io.InputStream
 import java.util.Properties
 import java.util.stream.Collectors
+import org.gradle.api.file.Directory
+import org.gradle.api.provider.Provider
 
-/**
- * Get [DeviceSpec] from given [DeviceConnector]
- */
+/** Get [DeviceSpec] from given [DeviceConnector] */
 fun getDeviceSpec(device: DeviceConnector): DeviceSpec {
-    return DeviceSpec.Builder()
-        .setName(device.name)
-        .setApiLevel(device.apiLevel)
-        .setCodeName(device.apiCodeName)
-        .setAbis(device.abis)
-        .setSupportsPrivacySandbox(device.supportsPrivacySandbox)
-        .setScreenDensity(device.density)
-        .build()
+  return DeviceSpec.Builder()
+    .setName(device.name)
+    .setApiLevel(device.apiLevel)
+    .setCodeName(device.apiCodeName)
+    .setAbis(device.abis)
+    .setSupportsPrivacySandbox(device.supportsPrivacySandbox)
+    .setScreenDensity(device.density)
+    .build()
 }
 
-/**
- * Given a [Directory] [Provider], fetches all the Apks that this [Directory] contains.
- */
+/** Given a [Directory] [Provider], fetches all the Apks that this [Directory] contains. */
 fun getFiles(directoryProvider: Provider<Directory>): List<File> {
-    if (directoryProvider.isPresent) {
-        return directoryProvider.get()
-            .asFileTree
-            .files
-            .stream()
-            .filter { file: File ->
-                file.getName()
-                    .endsWith(SdkConstants.DOT_ANDROID_PACKAGE)
-            }
-            .collect(Collectors.toList())
-    }
-    return listOf()
+  if (directoryProvider.isPresent) {
+    return directoryProvider
+      .get()
+      .asFileTree
+      .files
+      .stream()
+      .filter { file: File -> file.getName().endsWith(SdkConstants.DOT_ANDROID_PACKAGE) }
+      .collect(Collectors.toList())
+  }
+  return listOf()
 }
 
 /**
- * This method takes the dexMetadataDirectory which is an output of the CompileArtProfileTask
- * and uses its contents to add one or more .dm files to [apkFiles] to be installed on the
- * device. This will only execute if the dexMetadataDirectory exists.
+ * This method takes the dexMetadataDirectory which is an output of the CompileArtProfileTask and uses its contents to add one or more .dm
+ * files to [apkFiles] to be installed on the device. This will only execute if the dexMetadataDirectory exists.
  */
 @Throws(IOException::class)
 fun addDexMetadataFiles(
-    dexMetadataDirectory: Provider<Directory>?,
-    apkDirectory: Directory,
-    deviceApiLevel: Int,
-    apkFiles: MutableList<File>,
-    iLogger: ILogger
+  dexMetadataDirectory: Provider<Directory>?,
+  apkDirectory: Directory,
+  deviceApiLevel: Int,
+  apkFiles: MutableList<File>,
+  iLogger: ILogger,
 ) {
-    val dmDir = dexMetadataDirectory?.getOrNull()
-    if (dmDir == null || !dmDir.file(SdkConstants.FN_DEX_METADATA_PROP).asFile.exists()) {
-        return
-    }
-    val dexMetadataProperties = dmDir.file(SdkConstants.FN_DEX_METADATA_PROP).asFile
-    val inputStream: InputStream = FileInputStream(dexMetadataProperties)
-    val properties = Properties()
-    properties.load(inputStream)
-    val dmPath = if (deviceApiLevel > SDK_LEVEL_FOR_V0_1_5_S) {
-        properties.getProperty(Int.MAX_VALUE.toString())
+  val dmDir = dexMetadataDirectory?.getOrNull()
+  if (dmDir == null || !dmDir.file(SdkConstants.FN_DEX_METADATA_PROP).asFile.exists()) {
+    return
+  }
+  val dexMetadataProperties = dmDir.file(SdkConstants.FN_DEX_METADATA_PROP).asFile
+  val inputStream: InputStream = FileInputStream(dexMetadataProperties)
+  val properties = Properties()
+  properties.load(inputStream)
+  val dmPath =
+    if (deviceApiLevel > SDK_LEVEL_FOR_V0_1_5_S) {
+      properties.getProperty(Int.MAX_VALUE.toString())
     } else {
-        properties.getProperty(deviceApiLevel.toString())
+      properties.getProperty(deviceApiLevel.toString())
     }
-    if (dmPath == null) {
-        iLogger.info("Baseline Profile not found for API level {}", deviceApiLevel)
-        return
-    }
+  if (dmPath == null) {
+    iLogger.info("Baseline Profile not found for API level {}", deviceApiLevel)
+    return
+  }
 
-    if (apkFiles.isNotEmpty()) {
-        val fileIndex = File(dmPath).parentFile.name
-        val numApks = apkFiles.size
-        for (i in 0 until numApks) {
-            val apkFileName = apkFiles[i].name
-            if (apkFileName.endsWith(".apk")) {
-                val apkName = Files.getNameWithoutExtension(apkFileName)
-                val renamedBaselineProfile =
-                    FileUtils.join(
-                        apkDirectory.asFile,
-                        SdkConstants.FN_OUTPUT_BASELINE_PROFILES,
-                        fileIndex,
-                        "$apkName.dm"
-                    )
-                if (!renamedBaselineProfile.exists()) {
-                    iLogger.info("Baseline Profile at {} was not found.",
-                        renamedBaselineProfile.absolutePath)
-                    return
-                }
-                apkFiles.add(renamedBaselineProfile)
-            }
+  if (apkFiles.isNotEmpty()) {
+    val fileIndex = File(dmPath).parentFile.name
+    val numApks = apkFiles.size
+    for (i in 0 until numApks) {
+      val apkFileName = apkFiles[i].name
+      if (apkFileName.endsWith(".apk")) {
+        val apkName = Files.getNameWithoutExtension(apkFileName)
+        val renamedBaselineProfile = FileUtils.join(apkDirectory.asFile, SdkConstants.FN_OUTPUT_BASELINE_PROFILES, fileIndex, "$apkName.dm")
+        if (!renamedBaselineProfile.exists()) {
+          iLogger.info("Baseline Profile at {} was not found.", renamedBaselineProfile.absolutePath)
+          return
         }
+        apkFiles.add(renamedBaselineProfile)
+      }
     }
+  }
 }

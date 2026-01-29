@@ -19,13 +19,13 @@ package com.android.build.gradle.tasks
 import com.android.SdkConstants
 import com.android.build.api.variant.MultiOutputHandler
 import com.android.build.gradle.internal.component.ApkCreationConfig
-import com.android.build.gradle.internal.component.ApplicationCreationConfig
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.tasks.BuildAnalyzer
 import com.android.build.gradle.internal.tasks.NonIncrementalTask
 import com.android.build.gradle.internal.tasks.factory.VariantTaskCreationAction
 import com.android.build.gradle.internal.utils.setDisallowChanges
 import com.android.buildanalyzer.common.TaskCategory
+import java.io.File
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.Property
@@ -34,78 +34,62 @@ import org.gradle.api.tasks.Nested
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
-import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.work.DisableCachingByDefault
-import java.io.File
 
 /**
- * Task that consumes [InternalArtifactType.MERGED_MANIFESTS] to produce a unique Android Manifest
- * file suitable for the bundle tool.
+ * Task that consumes [InternalArtifactType.MERGED_MANIFESTS] to produce a unique Android Manifest file suitable for the bundle tool.
  *
- * The bundle tool manifest must have the android:splitName to all activities in case the
- * module is a dynamic feature module, otherwise it wil be unchanged.
+ * The bundle tool manifest must have the android:splitName to all activities in case the module is a dynamic feature module, otherwise it
+ * wil be unchanged.
  *
- * The merged manifest already has the annotated activities so we just need to copy the main
- * split unchanged. We cannot use republish because there can be many merged manifests, but there
- * is only one bundle tool manifest.
+ * The merged manifest already has the annotated activities so we just need to copy the main split unchanged. We cannot use republish
+ * because there can be many merged manifests, but there is only one bundle tool manifest.
  *
- * Caching disabled by default for this task because the task does very little work.
- * An Input file is copied to the Output location without any changes.
- * Calculating cache hit/miss and fetching results is likely more expensive than
- * simply executing the task.
+ * Caching disabled by default for this task because the task does very little work. An Input file is copied to the Output location without
+ * any changes. Calculating cache hit/miss and fetching results is likely more expensive than simply executing the task.
  */
 @DisableCachingByDefault
 @BuildAnalyzer(primaryTaskCategory = TaskCategory.MANIFEST)
-abstract class ProcessManifestForBundleTask: NonIncrementalTask() {
+abstract class ProcessManifestForBundleTask : NonIncrementalTask() {
 
-    @get:OutputFile
-    abstract val bundleManifest: RegularFileProperty
+  @get:OutputFile abstract val bundleManifest: RegularFileProperty
 
-    @get:InputFiles
-    @get:PathSensitive(PathSensitivity.RELATIVE)
-    abstract val applicationMergedManifests: DirectoryProperty
+  @get:InputFiles @get:PathSensitive(PathSensitivity.RELATIVE) abstract val applicationMergedManifests: DirectoryProperty
 
-    @get:Nested
-    abstract val outputsHandler: Property<MultiOutputHandler>
+  @get:Nested abstract val outputsHandler: Property<MultiOutputHandler>
 
-    override fun doTaskAction() {
-        val builtArtifact = outputsHandler.get().getMainSplitArtifact(
-            applicationMergedManifests
-        ) ?: throw RuntimeException("Cannot find main split from generated manifest files at" +
-                " ${applicationMergedManifests.asFile.get().absolutePath}")
+  override fun doTaskAction() {
+    val builtArtifact =
+      outputsHandler.get().getMainSplitArtifact(applicationMergedManifests)
+        ?: throw RuntimeException(
+          "Cannot find main split from generated manifest files at" + " ${applicationMergedManifests.asFile.get().absolutePath}"
+        )
 
-        File(builtArtifact.outputFile).copyTo(
-            target = bundleManifest.get().asFile, overwrite = true)
+    File(builtArtifact.outputFile).copyTo(target = bundleManifest.get().asFile, overwrite = true)
+  }
+
+  class CreationAction(creationConfig: ApkCreationConfig) :
+    VariantTaskCreationAction<ProcessManifestForBundleTask, ApkCreationConfig>(creationConfig = creationConfig) {
+    override val name: String
+      get() = computeTaskName("processApplicationManifest", "ForBundle")
+
+    override val type: Class<ProcessManifestForBundleTask>
+      get() = ProcessManifestForBundleTask::class.java
+
+    override fun handleProvider(taskProvider: TaskProvider<ProcessManifestForBundleTask>) {
+      super.handleProvider(taskProvider)
+      creationConfig.artifacts
+        .setInitialProvider(taskProvider, ProcessManifestForBundleTask::bundleManifest)
+        .withName(SdkConstants.ANDROID_MANIFEST_XML)
+        .on(InternalArtifactType.BUNDLE_MANIFEST)
     }
 
-    class CreationAction(creationConfig: ApkCreationConfig) :
-        VariantTaskCreationAction<ProcessManifestForBundleTask, ApkCreationConfig>(
-            creationConfig = creationConfig
-        ) {
-        override val name: String
-            get() = computeTaskName("processApplicationManifest", "ForBundle")
-        override val type: Class<ProcessManifestForBundleTask>
-            get() = ProcessManifestForBundleTask::class.java
+    override fun configure(task: ProcessManifestForBundleTask) {
+      super.configure(task)
+      creationConfig.artifacts.setTaskInputToFinalProduct(InternalArtifactType.MERGED_MANIFESTS, task.applicationMergedManifests)
 
-        override fun handleProvider(taskProvider: TaskProvider<ProcessManifestForBundleTask>) {
-            super.handleProvider(taskProvider)
-            creationConfig.artifacts.setInitialProvider(
-                taskProvider,
-                ProcessManifestForBundleTask::bundleManifest
-            )
-                .withName(SdkConstants.ANDROID_MANIFEST_XML)
-                .on(InternalArtifactType.BUNDLE_MANIFEST)
-        }
-
-        override fun configure(task: ProcessManifestForBundleTask) {
-            super.configure(task)
-            creationConfig.artifacts.setTaskInputToFinalProduct(
-                InternalArtifactType.MERGED_MANIFESTS,
-                task.applicationMergedManifests
-            )
-
-            task.outputsHandler.setDisallowChanges(MultiOutputHandler.create(creationConfig))
-        }
+      task.outputsHandler.setDisallowChanges(MultiOutputHandler.create(creationConfig))
     }
+  }
 }

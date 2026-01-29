@@ -16,51 +16,45 @@
 
 package com.android.build.api.variant
 
-import org.gradle.api.Incubating
-
 /**
- * Model for application components that only contains configuration-time properties that impacts
- * the build flow.
+ * Model for application components that only contains configuration-time properties that impacts the build flow.
  *
  * See [ComponentBuilder] and [VariantBuilder] for more information.
  */
-interface ApplicationVariantBuilder : VariantBuilder,
-    HasDeviceTestsBuilder,
-    HasAndroidTestBuilder,
-    HasHostTestsBuilder,
-    HasUnitTestBuilder,
-    HasTestFixturesBuilder,
-    HasTestSuitesBuilder,
-    GeneratesApkBuilder,
-    CanMinifyCodeBuilder,
-    CanMinifyAndroidResourcesBuilder {
+interface ApplicationVariantBuilder :
+  VariantBuilder,
+  HasDeviceTestsBuilder,
+  HasAndroidTestBuilder,
+  HasHostTestsBuilder,
+  HasUnitTestBuilder,
+  HasTestFixturesBuilder,
+  HasTestSuitesBuilder,
+  GeneratesApkBuilder,
+  CanMinifyCodeBuilder,
+  CanMinifyAndroidResourcesBuilder {
 
-    /** Specify whether to include SDK dependency information in APKs and Bundles. */
-    val dependenciesInfo: DependenciesInfoBuilder
+  /** Specify whether to include SDK dependency information in APKs and Bundles. */
+  val dependenciesInfo: DependenciesInfoBuilder
 
-    /**
-     * Set to `true` if the variant is profileable, false otherwise.
-     * Default value is calculated based on options and DSL.
-     *
-     * It is not safe to read the value of this property as other plugins that were applied
-     * later can change this value so there is no guarantee you would get the final value.
-     * To get the final value, use the [AndroidComponentsExtension.onVariants] API :
-     * ```kotlin
-     * onVariants { variant ->
-     *   variant.profileable
-     * }
-     * ```
-     * Note the a [RuntimeException] will be thrown at Runtime if a java or groovy code tries
-     * to read the property value.
-     */
-    @get:Deprecated(
-        message="Other plugins can change `profileable` value, it is not safe to read it at this stage",
-        level = DeprecationLevel.ERROR
-    )
-    var profileable: Boolean
+  /**
+   * Set to `true` if the variant is profileable, false otherwise. Default value is calculated based on options and DSL.
+   *
+   * It is not safe to read the value of this property as other plugins that were applied later can change this value so there is no
+   * guarantee you would get the final value. To get the final value, use the [AndroidComponentsExtension.onVariants] API :
+   * ```kotlin
+   * onVariants { variant ->
+   *   variant.profileable
+   * }
+   * ```
+   *
+   * Note the a [RuntimeException] will be thrown at Runtime if a java or groovy code tries to read the property value.
+   */
+  @get:Deprecated(
+    message = "Other plugins can change `profileable` value, it is not safe to read it at this stage",
+    level = DeprecationLevel.ERROR,
+  )
+  var profileable: Boolean
 
-    /**
-     * Access all configuration-time android resources processing properties.
-     */
-    val androidResources: ApplicationAndroidResourcesBuilder
+  /** Access all configuration-time android resources processing properties. */
+  val androidResources: ApplicationAndroidResourcesBuilder
 }

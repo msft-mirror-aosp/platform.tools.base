@@ -19,34 +19,32 @@ package com.android.build.gradle.integration.databinding.incremental
 import com.android.build.gradle.integration.common.fixture.app.EmptyActivityProjectBuilder
 import com.android.build.gradle.integration.common.truth.TaskStateList.ExecutionState.DID_WORK
 import com.android.build.gradle.integration.common.utils.IncrementalTestHelper
-import com.android.build.gradle.integration.common.utils.TestFileUtils
 import org.junit.Rule
 import org.junit.Test
 
 /** Integration test to ensure correctness of incremental builds when view binding is used. */
 class ViewBindingIncrementalTest {
 
-    @get:Rule
-    val project = EmptyActivityProjectBuilder().build()
+  @get:Rule val project = EmptyActivityProjectBuilder().build()
 
-    /** Regression test for bug 140955511. */
-    @Test
-    fun `test view binding disabled then enabled, expect merge-resources task to be out-of-date`() {
-        IncrementalTestHelper(project, buildTask = ":app:compileDebugJavaWithJavac")
-            .runFullBuild()
-            .applyChange {
-                // Enable view binding
-                project.getSubproject("app").buildFile.appendText(
-                    "\nandroid { buildFeatures { viewBinding = true } }")
-            }
-            .runIncrementalBuild()
-            .assertTaskStates(
-                expectedTaskStates = mapOf(
-                    ":app:dataBindingMergeDependencyArtifactsDebug" to DID_WORK,
-                    ":app:mergeDebugResources" to DID_WORK, // Regression test for bug 140955511
-                    ":app:dataBindingGenBaseClassesDebug" to DID_WORK,
-                    ":app:compileDebugJavaWithJavac" to DID_WORK
-                )
-            )
-    }
+  /** Regression test for bug 140955511. */
+  @Test
+  fun `test view binding disabled then enabled, expect merge-resources task to be out-of-date`() {
+    IncrementalTestHelper(project, buildTask = ":app:compileDebugJavaWithJavac")
+      .runFullBuild()
+      .applyChange {
+        // Enable view binding
+        project.getSubproject("app").buildFile.appendText("\nandroid { buildFeatures { viewBinding = true } }")
+      }
+      .runIncrementalBuild()
+      .assertTaskStates(
+        expectedTaskStates =
+          mapOf(
+            ":app:dataBindingMergeDependencyArtifactsDebug" to DID_WORK,
+            ":app:mergeDebugResources" to DID_WORK, // Regression test for bug 140955511
+            ":app:dataBindingGenBaseClassesDebug" to DID_WORK,
+            ":app:compileDebugJavaWithJavac" to DID_WORK,
+          )
+      )
+  }
 }

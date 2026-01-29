@@ -24,35 +24,31 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 
-/**
- * Checks that guava's listenablefuture does not use constraints for test.
- */
+/** Checks that guava's listenablefuture does not use constraints for test. */
 class GuavaSpecialHandlingForTestTest {
 
-    @get:Rule
-    var project = GradleTestProject.builder()
-        .fromTestApp(HelloWorldApp.forPlugin("com.android.application"))
-        .create()
+  @get:Rule var project = GradleTestProject.builder().fromTestApp(HelloWorldApp.forPlugin("com.android.application")).create()
 
-    @Before
-    @Throws(Exception::class)
-    fun setUp() {
-        TestFileUtils.appendToFile(
-            project.buildFile,
-            """
-                dependencies {
-                    implementation "com.google.guava:listenablefuture:1.0"
-                    androidTestImplementation "com.google.guava:guava:27.0.1-android"
-                }
-            """.trimIndent()
-        )
-    }
+  @Before
+  @Throws(Exception::class)
+  fun setUp() {
+    TestFileUtils.appendToFile(
+      project.buildFile,
+      """
+      dependencies {
+          implementation "com.google.guava:listenablefuture:1.0"
+          androidTestImplementation "com.google.guava:guava:27.0.1-android"
+      }
+      """
+        .trimIndent(),
+    )
+  }
 
-    @Test
-    @Throws(Exception::class)
-    fun `check AndroidTest does not fail dependency resolution`() {
-        // Resolved dependency ends up having a path longer than what's allowed on Windows
-        AssumeUtil.assumeNotWindows()
-        project.execute("assembleDebugAndroidTest")
-    }
+  @Test
+  @Throws(Exception::class)
+  fun `check AndroidTest does not fail dependency resolution`() {
+    // Resolved dependency ends up having a path longer than what's allowed on Windows
+    AssumeUtil.assumeNotWindows()
+    project.execute("assembleDebugAndroidTest")
+  }
 }

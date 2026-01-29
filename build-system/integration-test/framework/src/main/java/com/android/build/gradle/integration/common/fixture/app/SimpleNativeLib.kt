@@ -22,12 +22,12 @@ import com.android.build.gradle.integration.common.fixture.GradleTestProject
 /** A simple android library with only native code. */
 class SimpleNativeLib : GradleProject() {
 
-    override fun containsFullBuildScript() = false
+  override fun containsFullBuildScript() = false
 
-    private val buildGradle =
-            TestSourceFile(
-                    "build.gradle",
-                    """
+  private val buildGradle =
+    TestSourceFile(
+      "build.gradle",
+      """
 apply plugin: 'com.android.library'
 android {
     namespace = "com.example.mylibrary"
@@ -37,22 +37,24 @@ android {
             path "CMakeLists.txt"
         }
     }
-}""")
+}""",
+    )
 
-    private val source =
-            TestSourceFile(
-                    "src/main/jni",
-                    "foo.c",
-"""
+  private val source =
+    TestSourceFile(
+      "src/main/jni",
+      "foo.c",
+      """
 void foo() {
 }
-""")
+""",
+    )
 
-    private val cmakeLists =
-            TestSourceFile(
-                    ".",
-                    "CMakeLists.txt",
-                    """
+  private val cmakeLists =
+    TestSourceFile(
+      ".",
+      "CMakeLists.txt",
+      """
 cmake_minimum_required(VERSION 3.4.1)
 
 # Compile all source files under this tree into a single shared library
@@ -60,20 +62,22 @@ file(GLOB_RECURSE SRC src/*.c src/*.cpp src/*.cc src/*.cxx src/*.c++ src/*.C)
 message(\"${"$"}{SRC}\")
 set(CMAKE_VERBOSE_MAKEFILE ON)
 add_library(foo SHARED ${"$"}{SRC})
-""")
+""",
+    )
 
-    private val androidManifestXml =
-            TestSourceFile(
-                    "src/main",
-                    "AndroidManifest.xml",
-                    """
+  private val androidManifestXml =
+    TestSourceFile(
+      "src/main",
+      "AndroidManifest.xml",
+      """
 <manifest xmlns:android="http://schemas.android.com/apk/res/android" />
-""")
+""",
+    )
 
-    init {
-        addFile(buildGradle)
-        addFile(source)
-        addFile(cmakeLists)
-        addFile(androidManifestXml)
-    }
+  init {
+    addFile(buildGradle)
+    addFile(source)
+    addFile(cmakeLists)
+    addFile(androidManifestXml)
+  }
 }

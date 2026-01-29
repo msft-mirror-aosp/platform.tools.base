@@ -22,113 +22,74 @@ import com.android.utils.ILogger
 import java.io.File
 import javax.xml.stream.Location
 
-internal fun blameSource(
-    source: Source,
-    line: Int? = source.line,
-    column: Int? = null
-): BlameLogger.Source =
-    BlameLogger.Source(source.path, line ?: -1, column ?: -1)
+internal fun blameSource(source: Source, line: Int? = source.line, column: Int? = null): BlameLogger.Source =
+  BlameLogger.Source(source.path, line ?: -1, column ?: -1)
 
-internal fun blameSource(
-    source: Source,
-    location: Location
-): BlameLogger.Source =
-    BlameLogger.Source(source.path, location.lineNumber, location.columnNumber)
+internal fun blameSource(source: Source, location: Location): BlameLogger.Source =
+  BlameLogger.Source(source.path, location.lineNumber, location.columnNumber)
 
 class BlameLogger(
-    val logger: ILogger,
-    private val userVisibleSourceTransform: (String) -> String,
-    val blameMap: (Source) -> Source = { it }
+  val logger: ILogger,
+  private val userVisibleSourceTransform: (String) -> String,
+  val blameMap: (Source) -> Source = { it },
 ) {
 
-    constructor(logger: ILogger, blameMap: (Source) -> Source = { it })
-            : this(logger, { it }, blameMap)
+  constructor(logger: ILogger, blameMap: (Source) -> Source = { it }) : this(logger, { it }, blameMap)
 
-    data class Source(
-            val sourcePath: String,
-            val line: Int = -1,
-            val column: Int = -1
-    ) {
+  data class Source(val sourcePath: String, val line: Int = -1, val column: Int = -1) {
 
-        override fun toString(): String {
-            var result = sourcePath
-            if (line != -1) {
-                result += ":$line"
-                if (column != -1) {
-                    result += ":$column"
-                }
-            }
-            return "$result: "
+    override fun toString(): String {
+      var result = sourcePath
+      if (line != -1) {
+        result += ":$line"
+        if (column != -1) {
+          result += ":$column"
         }
-
-        fun toSourceFilePosition() =
-            SourceFilePosition(File(sourcePath), SourcePosition(
-                    line,
-                    column,
-                    -1,
-                    line,
-                    column,
-                    -1
-            ))
-
-        companion object {
-            fun fromSourceFilePosition(filePosition: SourceFilePosition) =
-                Source(filePosition.file.sourcePath!!,
-                        filePosition.position.startLine,
-                        filePosition.position.startColumn)
-        }
+      }
+      return "$result: "
     }
 
-    fun error(message: String, source: Source? = null, throwable: Throwable? = null) {
-        if (source != null) {
-            logger.error(throwable, "${getOutputSource(source)}$message")
-        } else {
-            logger.error(throwable, message)
-        }
-    }
+    fun toSourceFilePosition() = SourceFilePosition(File(sourcePath), SourcePosition(line, column, -1, line, column, -1))
 
-    fun warning(message: String, source: Source? = null) {
-        if (source != null)
-            logger.warning("${getOutputSource(source)}$message")
-        else
-            logger.warning(message)
+    companion object {
+      fun fromSourceFilePosition(filePosition: SourceFilePosition) =
+        Source(filePosition.file.sourcePath!!, filePosition.position.startLine, filePosition.position.startColumn)
     }
+  }
 
-    fun info(message: String, source: Source? = null) {
-        if (source != null)
-            logger.info("${getOutputSource(source)}$message")
-        else
-            logger.info(message)
+  fun error(message: String, source: Source? = null, throwable: Throwable? = null) {
+    if (source != null) {
+      logger.error(throwable, "${getOutputSource(source)}$message")
+    } else {
+      logger.error(throwable, message)
     }
+  }
 
-    fun lifecycle(message: String, source: Source? = null) {
-        if (source != null)
-            logger.lifecycle("${getOutputSource(source)}$message")
-        else
-            logger.lifecycle(message)
-    }
+  fun warning(message: String, source: Source? = null) {
+    if (source != null) logger.warning("${getOutputSource(source)}$message") else logger.warning(message)
+  }
 
-    fun quiet(message: String, source: Source? = null) {
-        if (source != null)
-            logger.quiet("${getOutputSource(source)}$message")
-        else
-            logger.quiet(message)
-    }
+  fun info(message: String, source: Source? = null) {
+    if (source != null) logger.info("${getOutputSource(source)}$message") else logger.info(message)
+  }
 
-    fun verbose(message: String, source: Source? = null) {
-        if (source != null)
-            logger.verbose("${getOutputSource(source)}$message")
-        else
-            logger.verbose(message)
-    }
+  fun lifecycle(message: String, source: Source? = null) {
+    if (source != null) logger.lifecycle("${getOutputSource(source)}$message") else logger.lifecycle(message)
+  }
 
-    internal fun getOutputSource(source: Source) : Source {
-        return getOriginalSource(
-                source.copy(sourcePath = userVisibleSourceTransform(source.sourcePath))
-            )
-    }
+  fun quiet(message: String, source: Source? = null) {
+    if (source != null) logger.quiet("${getOutputSource(source)}$message") else logger.quiet(message)
+  }
 
-    fun getOriginalSource(source: Source): Source {
-        return blameMap(source)
-    }
+  fun verbose(message: String, source: Source? = null) {
+    if (source != null) logger.verbose("${getOutputSource(source)}$message") else logger.verbose(message)
+  }
+
+  internal fun getOutputSource(source: Source): Source {
+    return getOriginalSource(source.copy(sourcePath = userVisibleSourceTransform(source.sourcePath)))
+  }
+
+  fun getOriginalSource(source: Source): Source {
+    return blameMap(source)
+  }
 }

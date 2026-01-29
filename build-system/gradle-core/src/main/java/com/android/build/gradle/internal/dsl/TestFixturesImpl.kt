@@ -19,6 +19,6 @@ package com.android.build.gradle.internal.dsl
 import com.android.build.api.dsl.TestFixtures
 import javax.inject.Inject
 
-open class TestFixturesImpl @Inject constructor(override var enable: Boolean): TestFixtures {
-    override var androidResources: Boolean = false
+open class TestFixturesImpl @Inject constructor(override var enable: Boolean) : TestFixtures {
+  override var androidResources: Boolean = false
 }

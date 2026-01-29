@@ -20,37 +20,26 @@ import com.android.build.gradle.integration.common.fixture.model.ReferenceModelC
 import com.android.builder.model.v2.ide.SyncIssue
 import org.junit.Test
 
-class ResValuesInAppModelTest: ReferenceModelComparator(
-    referenceConfig = {
-        androidApplication {
-            android {
-                buildFeatures {
-                    resValues = true
-                }
-            }
-        }
-    },
+class ResValuesInAppModelTest :
+  ReferenceModelComparator(
+    referenceConfig = { androidApplication { android { buildFeatures { resValues = true } } } },
     deltaConfig = {
-        androidApplication {
-            android {
-                buildTypes {
-                    named("debug") {
-                        it.resValue("string", "foo", "val")
-                        it.resValue("drawable", "foo", "val")
-                    }
-                }
-                buildFeatures {
-                    resValues = true
-                }
+      androidApplication {
+        android {
+          buildTypes {
+            named("debug") {
+              it.resValue("string", "foo", "val")
+              it.resValue("drawable", "foo", "val")
             }
+          }
+          buildFeatures { resValues = true }
         }
+      }
     },
-    syncOptions = {
-        ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
-    }
-) {
-    @Test
-    fun `test AndroidDsl model`() {
-        compareAndroidDslWith(goldenFileSuffix = "AndroidDsl")
-    }
+    syncOptions = { ignoreSyncIssues(SyncIssue.SEVERITY_WARNING) },
+  ) {
+  @Test
+  fun `test AndroidDsl model`() {
+    compareAndroidDslWith(goldenFileSuffix = "AndroidDsl")
+  }
 }

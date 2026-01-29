@@ -22,25 +22,23 @@ import java.io.File
 import java.io.Serializable
 import java.util.Collections
 
-/**
- * Implementation of [JavaArtifact] for serialization via the Tooling API.
- */
+/** Implementation of [JavaArtifact] for serialization via the Tooling API. */
 data class JavaArtifactImpl(
-    override val mockablePlatformJar: File?,
-    override val compileTaskName: String?,
-    override val assembleTaskName: String?,
-    override val classesFolders: Set<File>,
-    override val runtimeResourceFolder: File?,
-    override val ideSetupTaskNames: Set<String>,
-    override val generatedSourceFolders: Collection<File>,
-    override val generatedClassPaths: Map<String, File>,
-    override val bytecodeTransformations: Collection<BytecodeTransformation>,
+  override val mockablePlatformJar: File?,
+  override val compileTaskName: String?,
+  override val assembleTaskName: String?,
+  override val classesFolders: Set<File>,
+  override val runtimeResourceFolder: File?,
+  override val ideSetupTaskNames: Set<String>,
+  override val generatedSourceFolders: Collection<File>,
+  override val generatedClassPaths: Map<String, File>,
+  override val bytecodeTransformations: Collection<BytecodeTransformation>,
 ) : JavaArtifact, Serializable {
-    @Deprecated("Was never used, removed in AGP 8.3")
-    override val modelSyncFiles: Collection<Void> get() = Collections.emptyList()
+  @Deprecated("Was never used, removed in AGP 8.3")
+  override val modelSyncFiles: Collection<Void>
+    get() = Collections.emptyList()
 
-    companion object {
-        @JvmStatic
-        private val serialVersionUID: Long = 1L
-    }
+  companion object {
+    @JvmStatic private val serialVersionUID: Long = 1L
+  }
 }

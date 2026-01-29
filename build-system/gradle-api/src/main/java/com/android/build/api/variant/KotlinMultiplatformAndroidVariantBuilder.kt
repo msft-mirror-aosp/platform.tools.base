@@ -17,9 +17,8 @@
 package com.android.build.api.variant
 
 /**
- * Model for kotlin multiplatform library components that only contains configuration-time properties that impacts
- * the build flow.
+ * Model for kotlin multiplatform library components that only contains configuration-time properties that impacts the build flow.
  *
  * See [ComponentBuilder], [LibraryVariantBuilder] and [VariantBuilder] for more information.
  */
-interface KotlinMultiplatformAndroidVariantBuilder: LibraryVariantBuilder
+interface KotlinMultiplatformAndroidVariantBuilder : LibraryVariantBuilder

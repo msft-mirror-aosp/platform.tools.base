@@ -16,18 +16,13 @@
 
 package com.android.build.gradle.internal.cxx.settings
 
-/**
- * Merge a list of [Settings].
- */
-fun mergeSettings(vararg settings: Settings) : Settings {
-    val environments = mutableListOf<SettingsEnvironment>()
-    val configurations = mutableListOf<SettingsConfiguration>()
-    for (setting in settings) {
-        environments += setting.environments
-        configurations += setting.configurations
-    }
-    return Settings(
-        environments = environments,
-        configurations = configurations
-    )
+/** Merge a list of [Settings]. */
+fun mergeSettings(vararg settings: Settings): Settings {
+  val environments = mutableListOf<SettingsEnvironment>()
+  val configurations = mutableListOf<SettingsConfiguration>()
+  for (setting in settings) {
+    environments += setting.environments
+    configurations += setting.configurations
+  }
+  return Settings(environments = environments, configurations = configurations)
 }

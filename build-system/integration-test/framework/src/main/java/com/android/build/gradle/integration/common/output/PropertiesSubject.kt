@@ -22,28 +22,20 @@ import com.google.common.truth.Subject
 import com.google.common.truth.Truth.assertAbout
 import java.util.Properties
 
-/**
- * A truth subject for testing the content of [Properties]
- */
-class PropertiesSubject internal constructor(
-    metadata: FailureMetadata,
-    actual: Properties
-): Subject<PropertiesSubject, Properties>(metadata, actual) {
+/** A truth subject for testing the content of [Properties] */
+class PropertiesSubject internal constructor(metadata: FailureMetadata, actual: Properties) :
+  Subject<PropertiesSubject, Properties>(metadata, actual) {
 
-    companion object {
-        fun assertThat(properties: Properties, action: PropertiesSubject.() -> Unit) {
-            action(assertAbout(properties()).that(properties))
-        }
-
-        /**
-         * Method for getting the subject factory (for use with assertAbout())
-         */
-        internal fun properties(): Factory<PropertiesSubject, Properties> {
-            return Factory<PropertiesSubject, Properties> { metadata, actual ->
-                PropertiesSubject(metadata, actual)
-            }
-        }
+  companion object {
+    fun assertThat(properties: Properties, action: PropertiesSubject.() -> Unit) {
+      action(assertAbout(properties()).that(properties))
     }
 
-    fun property(name: String): StringSubject = check("property($name").that(actual().getProperty(name))
+    /** Method for getting the subject factory (for use with assertAbout()) */
+    internal fun properties(): Factory<PropertiesSubject, Properties> {
+      return Factory<PropertiesSubject, Properties> { metadata, actual -> PropertiesSubject(metadata, actual) }
+    }
+  }
+
+  fun property(name: String): StringSubject = check("property($name").that(actual().getProperty(name))
 }

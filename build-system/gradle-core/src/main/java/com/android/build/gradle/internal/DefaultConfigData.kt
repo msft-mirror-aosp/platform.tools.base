@@ -19,7 +19,6 @@ package com.android.build.gradle.internal
 import com.android.build.api.dsl.DefaultConfig
 import com.android.build.gradle.internal.api.DefaultAndroidSourceSet
 import com.android.build.gradle.internal.api.LazyAndroidSourceSet
-import com.android.build.gradle.options.ProjectOptions
 
 /**
  * Class containing the DefaultConfig and associated data (sourcesets)
@@ -27,18 +26,19 @@ import com.android.build.gradle.options.ProjectOptions
  * This generated during DSL execution and is used for variant creation
  */
 class DefaultConfigData<DefaultConfigT : DefaultConfig>(
-    val defaultConfig: DefaultConfigT,
-    sourceSet: DefaultAndroidSourceSet,
-    testFixturesSourceSet: LazyAndroidSourceSet?,
-    androidTestSourceSet: LazyAndroidSourceSet?,
-    unitTestSourceSet: LazyAndroidSourceSet?,
-    screenshotTestSourceSet: LazyAndroidSourceSet?,
-    lazySourceSetCreation: Boolean
-) : VariantDimensionData(
+  val defaultConfig: DefaultConfigT,
+  sourceSet: DefaultAndroidSourceSet,
+  testFixturesSourceSet: LazyAndroidSourceSet?,
+  androidTestSourceSet: LazyAndroidSourceSet?,
+  unitTestSourceSet: LazyAndroidSourceSet?,
+  screenshotTestSourceSet: LazyAndroidSourceSet?,
+  lazySourceSetCreation: Boolean,
+) :
+  VariantDimensionData(
     sourceSet,
     testFixturesSourceSet,
     androidTestSourceSet,
     unitTestSourceSet,
     screenshotTestSourceSet,
-    lazySourceSetCreation
-)
+    lazySourceSetCreation,
+  )

@@ -17,10 +17,8 @@
 package com.android.build.gradle.internal.ndk
 
 import com.android.SdkConstants.PLATFORM_DARWIN
-import com.android.SdkConstants.PLATFORM_LINUX
 import com.android.SdkConstants.PLATFORM_WINDOWS
 import com.android.SdkConstants.currentPlatform
-import com.android.build.gradle.internal.core.Abi
 import com.android.build.gradle.internal.cxx.configure.NdkAbiFile
 import com.android.build.gradle.internal.cxx.configure.PlatformConfigurator
 import com.android.build.gradle.internal.cxx.configure.ndkMetaAbisFile
@@ -36,82 +34,65 @@ import com.android.build.gradle.tasks.NativeBuildSystem.NINJA
 import com.android.sdklib.AndroidVersion
 import java.io.File
 
-/**
- * NdkInfo for r25.
- */
+/** NdkInfo for r25. */
 class NdkR25Info(private val rootDirectory: File) : NdkInfo {
 
-    private val platformConfigurator = PlatformConfigurator(rootDirectory)
-    private val abiInfoList = NdkAbiFile(ndkMetaAbisFile(rootDirectory)).abiInfoList
+  private val platformConfigurator = PlatformConfigurator(rootDirectory)
+  private val abiInfoList = NdkAbiFile(ndkMetaAbisFile(rootDirectory)).abiInfoList
 
-    override val default32BitsAbis  get() =
-        abiInfoList
-            .filter { abiInfo -> abiInfo.isDefault && !abiInfo.isDeprecated && abiInfo.bitness == 32 }
-            .map { it.name }
-            .toList()
+  override val default32BitsAbis
+    get() = abiInfoList.filter { abiInfo -> abiInfo.isDefault && !abiInfo.isDeprecated && abiInfo.bitness == 32 }.map { it.name }.toList()
 
-    override val defaultAbis get() =
-        abiInfoList
-            .filter { abiInfo -> abiInfo.isDefault && !abiInfo.isDeprecated }
-            .map { it.name }
-            .toList()
+  override val defaultAbis
+    get() = abiInfoList.filter { abiInfo -> abiInfo.isDefault && !abiInfo.isDeprecated }.map { it.name }.toList()
 
-    override val supported32BitsAbis get() =
-        abiInfoList
-            .filter { abiInfo -> abiInfo.bitness == 32 }
-            .map  { it.name }
-            .toList()
+  override val supported32BitsAbis
+    get() = abiInfoList.filter { abiInfo -> abiInfo.bitness == 32 }.map { it.name }.toList()
 
-    override val supportedAbis get() =
-        abiInfoList
-            .map { it.name }
-            .toList()
+  override val supportedAbis
+    get() = abiInfoList.map { it.name }.toList()
 
-    override val supportedStls = listOf(
-        LIBCXX_SHARED,
-        LIBCXX_STATIC,
-        NONE,
-        SYSTEM
+  override val supportedStls = listOf(LIBCXX_SHARED, LIBCXX_STATIC, NONE, SYSTEM)
+
+  override fun findSuitablePlatformVersion(
+    abi: String,
+    androidVersion: AndroidVersion?,
+    ignoreMinSdkVersionFromDsl: Any?,
+    ignoreMinSdkVersionFromProperty: String?,
+  ): Int {
+    return platformConfigurator.findSuitablePlatformVersion(
+      abi,
+      abiInfoList,
+      androidVersion,
+      ignoreMinSdkVersionFromDsl,
+      ignoreMinSdkVersionFromProperty,
     )
+  }
 
-    override fun findSuitablePlatformVersion(
-        abi: String,
-        androidVersion: AndroidVersion?,
-        ignoreMinSdkVersionFromDsl: Any?,
-        ignoreMinSdkVersionFromProperty: String?
-    ) : Int {
-        return platformConfigurator.findSuitablePlatformVersion(abi, abiInfoList, androidVersion, ignoreMinSdkVersionFromDsl, ignoreMinSdkVersionFromProperty)
+  override fun getDefaultStl(buildSystem: NativeBuildSystem): Stl =
+    when (buildSystem) {
+      CMAKE -> LIBCXX_STATIC
+      NDK_BUILD -> SYSTEM
+      NINJA -> UNKNOWN // Ninja generating script decides its own STL.
     }
 
-    override fun getDefaultStl(buildSystem: NativeBuildSystem): Stl = when (buildSystem) {
-        CMAKE -> LIBCXX_STATIC
-        NDK_BUILD -> SYSTEM
-        NINJA -> UNKNOWN // Ninja generating script decides its own STL.
+  private val hostTag: String by lazy {
+    when (currentPlatform()) {
+      PLATFORM_WINDOWS -> "windows-x86_64"
+      PLATFORM_DARWIN -> "darwin-x86_64"
+      else -> "linux-x86_64"
     }
+  }
 
-    private val hostTag: String by lazy {
-        when(currentPlatform()) {
-            PLATFORM_WINDOWS -> "windows-x86_64"
-            PLATFORM_DARWIN-> "darwin-x86_64"
-            else -> "linux-x86_64"
-        }
-    }
+  override fun getStripExecutable(abi: String) = rootDirectory.resolve("toolchains/llvm/prebuilt/$hostTag/bin/llvm-strip")
 
-    override fun getStripExecutable(abi: String) = rootDirectory.resolve(
-        "toolchains/llvm/prebuilt/$hostTag/bin/llvm-strip"
-    )
+  override fun getObjcopyExecutable(abi: String) = rootDirectory.resolve("toolchains/llvm/prebuilt/$hostTag/bin/llvm-objcopy")
 
-    override fun getObjcopyExecutable(abi: String) = rootDirectory.resolve(
-        "toolchains/llvm/prebuilt/$hostTag/bin/llvm-objcopy"
-    )
+  override fun getStlSharedObjectFile(stl: Stl, abi: String): File {
+    val info = abiInfoList.single { it.name == abi }
+    // https://android.googlesource.com/platform/ndk/+/master/docs/BuildSystemMaintainers.md#stl
+    return rootDirectory.resolve("toolchains/llvm/prebuilt/$hostTag/sysroot/usr/lib/${info.triple}/${stl.libraryName}")
+  }
 
-    override fun getStlSharedObjectFile(stl: Stl, abi: String): File {
-        val info = abiInfoList.single { it.name == abi }
-        // https://android.googlesource.com/platform/ndk/+/master/docs/BuildSystemMaintainers.md#stl
-        return rootDirectory.resolve(
-            "toolchains/llvm/prebuilt/$hostTag/sysroot/usr/lib/${info.triple}/${stl.libraryName}"
-        )
-    }
-
-    override fun validate() = null
+  override fun validate() = null
 }

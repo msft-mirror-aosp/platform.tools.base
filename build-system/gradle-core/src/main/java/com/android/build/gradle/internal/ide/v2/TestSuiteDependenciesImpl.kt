@@ -20,11 +20,9 @@ import com.android.builder.model.v2.models.TestSuiteDependencies
 import com.android.builder.model.v2.models.TestSuiteSourceDependencies
 import java.io.Serializable
 
-data class TestSuiteDependenciesImpl(
-    override val sourcesDependencies: Collection<TestSuiteSourceDependencies>
-): TestSuiteDependencies, Serializable {
-    companion object {
-        @JvmStatic
-        private val serialVersionUID: Long = 1L
-    }
+data class TestSuiteDependenciesImpl(override val sourcesDependencies: Collection<TestSuiteSourceDependencies>) :
+  TestSuiteDependencies, Serializable {
+  companion object {
+    @JvmStatic private val serialVersionUID: Long = 1L
+  }
 }

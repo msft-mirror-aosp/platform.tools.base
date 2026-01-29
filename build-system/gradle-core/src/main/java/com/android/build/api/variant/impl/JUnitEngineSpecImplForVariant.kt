@@ -24,29 +24,22 @@ import org.gradle.api.artifacts.dsl.DependencyCollector
 import org.gradle.api.provider.MapProperty
 import org.gradle.api.provider.Provider
 
-internal class JUnitEngineSpecImplForVariant internal constructor(
-    junitEngineSpec: JUnitEngineSpecForVariantBuilder,
-    mapFactory: () -> MapProperty<String, String>
-): JUnitEngineSpec {
+internal class JUnitEngineSpecImplForVariant
+internal constructor(junitEngineSpec: JUnitEngineSpecForVariantBuilder, mapFactory: () -> MapProperty<String, String>) : JUnitEngineSpec {
 
-    override val includeEngines: MutableSet<String> =
-        junitEngineSpec.includeEngines
+  override val includeEngines: MutableSet<String> = junitEngineSpec.includeEngines
 
-    override val inputs: List<AgpTestSuiteInputParameters> =
-        junitEngineSpec.inputs.toImmutableList()
+  override val inputs: List<AgpTestSuiteInputParameters> = junitEngineSpec.inputs.toImmutableList()
 
-    internal val inputProperties = mapFactory().also {
-        it.putAll(junitEngineSpec.inputProperties)
-    }
+  internal val inputProperties = mapFactory().also { it.putAll(junitEngineSpec.inputProperties) }
 
-    override fun addInputProperty(propertyName: String, propertyValue: String) {
-        inputProperties.put(propertyName, propertyValue)
-    }
+  override fun addInputProperty(propertyName: String, propertyValue: String) {
+    inputProperties.put(propertyName, propertyValue)
+  }
 
-    override fun addInputProperty(propertyName: String, propertyValue: Provider<String>) {
-        inputProperties.put(propertyName, propertyValue)
-    }
+  override fun addInputProperty(propertyName: String, propertyValue: Provider<String>) {
+    inputProperties.put(propertyName, propertyValue)
+  }
 
-    override val enginesDependencies: DependencyCollector =
-        junitEngineSpec.enginesDependencies
+  override val enginesDependencies: DependencyCollector = junitEngineSpec.enginesDependencies
 }

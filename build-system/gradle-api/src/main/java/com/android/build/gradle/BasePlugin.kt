@@ -24,8 +24,8 @@ import org.gradle.api.Project
  *
  * @Deprecated Use the plugin classes directly
  */
-open class BasePlugin: Plugin<Project> {
-    override fun apply(project: Project) {
-        project.apply(VERSION_CHECK_PLUGIN_ID)
-    }
+open class BasePlugin : Plugin<Project> {
+  override fun apply(project: Project) {
+    project.apply(VERSION_CHECK_PLUGIN_ID)
+  }
 }

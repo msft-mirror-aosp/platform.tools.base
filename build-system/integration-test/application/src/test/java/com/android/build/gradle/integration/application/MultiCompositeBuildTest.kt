@@ -23,83 +23,56 @@ import org.junit.Rule
 import org.junit.Test
 
 /**
- * Test the dependencies of a complex multi module/multi build setup with android modules
- * in the included build(s).
+ * Test the dependencies of a complex multi module/multi build setup with android modules in the included build(s).
  *
- * The dependencies from the root app looks like this:
- * :app:debugCompileClasspath
- * +--- project :composite0
- * |    +--- com.test.composite:composite2:1.0 -> project :composite2
- * |    \--- com.test.composite:composite3:1.0 -> project :TestCompositeLib3:composite3
- * |         \--- com.test.composite:composite4:1.0 -> project :composite4
- * +--- com.test.composite:composite1:1.0 -> project :TestCompositeLib1:composite1
- * |    +--- com.test.composite:composite2:1.0 -> project :composite2
- * |    \--- com.test.composite:composite3:1.0 -> project :TestCompositeLib3:composite3
- * |         \--- com.test.composite:composite4:1.0 -> project :composite4
- * \--- com.test.composite:composite4:1.0 -> project :composite4
+ * The dependencies from the root app looks like this: :app:debugCompileClasspath +--- project :composite0 | +---
+ * com.test.composite:composite2:1.0 -> project :composite2 | \--- com.test.composite:composite3:1.0 -> project
+ * :TestCompositeLib3:composite3 | \--- com.test.composite:composite4:1.0 -> project :composite4 +--- com.test.composite:composite1:1.0 ->
+ * project :TestCompositeLib1:composite1 | +--- com.test.composite:composite2:1.0 -> project :composite2 | \---
+ * com.test.composite:composite3:1.0 -> project :TestCompositeLib3:composite3 | \--- com.test.composite:composite4:1.0 -> project
+ * :composite4 \--- com.test.composite:composite4:1.0 -> project :composite4
  *
- * The modules are of the following types:
- * TestCompositeLib1 :app        -> android app
- * TestCompositeLib1 :composite1 -> android lib
- * TestCompositeLib2 :           -> java
- * TestCompositeLib3 :app        -> android app
- * TestCompositeLib3 :composite3 -> android lib
- * TestCompositeLib4 :           -> java
- *
+ * The modules are of the following types: TestCompositeLib1 :app -> android app TestCompositeLib1 :composite1 -> android lib
+ * TestCompositeLib2 : -> java TestCompositeLib3 :app -> android app TestCompositeLib3 :composite3 -> android lib TestCompositeLib4 : ->
+ * java
  */
-class MultiCompositeBuildTest: ModelComparator() {
+class MultiCompositeBuildTest : ModelComparator() {
 
-    @JvmField
-    @Rule
-    val project = GradleTestProject.builder()
-            .fromTestProject("multiCompositeBuild")
-            .withIncludedBuilds(
-                    "TestCompositeApp",
-                    "TestCompositeLib1",
-                    "TestCompositeLib3"
-            )
-            .disableBuiltInKotlin()
-            .create()
+  @JvmField
+  @Rule
+  val project =
+    GradleTestProject.builder()
+      .fromTestProject("multiCompositeBuild")
+      .withIncludedBuilds("TestCompositeApp", "TestCompositeLib1", "TestCompositeLib3")
+      .disableBuiltInKotlin()
+      .create()
 
-    @Test
-    fun `dependencies for root app module`() {
-        val model = project
-            .getSubproject("TestCompositeApp")
-            .modelV2()
-            .withFailOnWarning(false)
-            .fetchModels(variantName = "debug")
+  @Test
+  fun `dependencies for root app module`() {
+    val model = project.getSubproject("TestCompositeApp").modelV2().withFailOnWarning(false).fetchModels(variantName = "debug")
 
-        val rootModelMap = model.container.rootInfoMap
+    val rootModelMap = model.container.rootInfoMap
 
-        assertThat(rootModelMap.entries).hasSize(2)
-        assertThat(rootModelMap.keys).containsExactly(":app", ":composite0")
+    assertThat(rootModelMap.entries).hasSize(2)
+    assertThat(rootModelMap.keys).containsExactly(":app", ":composite0")
 
+    with(model).compareVariantDependencies(projectAction = { getProject(":app") }, goldenFile = "TestCompositeApp_app_VariantDependencies")
+  }
 
-        with(model).compareVariantDependencies(
-            projectAction = { getProject(":app") }, goldenFile = "TestCompositeApp_app_VariantDependencies"
-        )
-    }
+  @Test
+  fun `dependencies for included build module`() {
+    val model = project.getSubproject("TestCompositeLib1").modelV2().withFailOnWarning(false).fetchModels(variantName = "prodDebug")
 
-    @Test
-    fun `dependencies for included build module`() {
-        val model = project
-            .getSubproject("TestCompositeLib1")
-            .modelV2()
-            .withFailOnWarning(false)
-            .fetchModels(variantName = "prodDebug")
+    val rootModelMap = model.container.rootInfoMap
+    assertThat(rootModelMap.entries).hasSize(2)
+    assertThat(rootModelMap.keys).containsExactly(":app", ":composite1")
 
-        val rootModelMap = model.container.rootInfoMap
-        assertThat(rootModelMap.entries).hasSize(2)
-        assertThat(rootModelMap.keys).containsExactly(":app", ":composite1")
-
-        with(model).compareVariantDependencies(
-            projectAction = { getProject(":composite1") }, goldenFile = "TestCompositeLib1_composite1_VariantDependencies"
-        )
-        with(model).compareAndroidDsl(
-            projectAction = { getProject(":composite1") }, goldenFile = "AndroidDsl"
-        )
-        with(model).compareVariantDependencies(
-            projectAction = { getProject(":app") }, goldenFile = "TestCompositeLib1_app_VariantDependencies"
-        )
-    }
+    with(model)
+      .compareVariantDependencies(
+        projectAction = { getProject(":composite1") },
+        goldenFile = "TestCompositeLib1_composite1_VariantDependencies",
+      )
+    with(model).compareAndroidDsl(projectAction = { getProject(":composite1") }, goldenFile = "AndroidDsl")
+    with(model).compareVariantDependencies(projectAction = { getProject(":app") }, goldenFile = "TestCompositeLib1_app_VariantDependencies")
+  }
 }

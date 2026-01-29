@@ -31,52 +31,50 @@ import com.android.build.gradle.internal.variant.ComponentInfo
 import org.gradle.api.Project
 
 internal class DynamicFeatureTaskManager(
-    project: Project,
-    variants: Collection<ComponentInfo<DynamicFeatureVariantBuilder, DynamicFeatureCreationConfig>>,
-    testComponents: Collection<TestComponentCreationConfig>,
-    testFixturesComponents: Collection<TestFixturesCreationConfig>,
-    globalConfig: GlobalTaskCreationConfig,
-    localConfig: TaskManagerConfig,
-) : AbstractAppTaskManager<DynamicFeatureVariantBuilder, DynamicFeatureCreationConfig>(
+  project: Project,
+  variants: Collection<ComponentInfo<DynamicFeatureVariantBuilder, DynamicFeatureCreationConfig>>,
+  testComponents: Collection<TestComponentCreationConfig>,
+  testFixturesComponents: Collection<TestFixturesCreationConfig>,
+  globalConfig: GlobalTaskCreationConfig,
+  localConfig: TaskManagerConfig,
+) :
+  AbstractAppTaskManager<DynamicFeatureVariantBuilder, DynamicFeatureCreationConfig>(
     project,
     variants,
     testComponents,
     testFixturesComponents,
     globalConfig,
     localConfig,
-) {
+  ) {
 
-    override fun doCreateTasksForVariant(
-            variantInfo: ComponentInfo<DynamicFeatureVariantBuilder, DynamicFeatureCreationConfig>
-    ) {
-        createCommonTasks(variantInfo)
+  override fun doCreateTasksForVariant(variantInfo: ComponentInfo<DynamicFeatureVariantBuilder, DynamicFeatureCreationConfig>) {
+    createCommonTasks(variantInfo)
 
-        val variant = variantInfo.variant
+    val variant = variantInfo.variant
 
-        createDynamicBundleTask(variant)
+    createDynamicBundleTask(variant)
 
-        // Non-base feature specific task.
-        // Task will produce artifacts consumed by the base feature
-        taskFactory.register(FeatureSplitDeclarationWriterTask.CreationAction(variant))
-        if (variant.buildFeatures.dataBinding) {
-            // Create a task that will package necessary information about the feature into a
-            // file which is passed into the Data Binding annotation processor.
-            taskFactory.register(DataBindingExportFeatureInfoTask.CreationAction(variant))
-        }
-        taskFactory.register(ExportConsumerProguardFilesTask.CreationAction(variant))
-        taskFactory.register(FeatureNameWriterTask.CreationAction(variant))
-
+    // Non-base feature specific task.
+    // Task will produce artifacts consumed by the base feature
+    taskFactory.register(FeatureSplitDeclarationWriterTask.CreationAction(variant))
+    if (variant.buildFeatures.dataBinding) {
+      // Create a task that will package necessary information about the feature into a
+      // file which is passed into the Data Binding annotation processor.
+      taskFactory.register(DataBindingExportFeatureInfoTask.CreationAction(variant))
     }
+    taskFactory.register(ExportConsumerProguardFilesTask.CreationAction(variant))
+    taskFactory.register(FeatureNameWriterTask.CreationAction(variant))
+  }
 
-    private fun createDynamicBundleTask(variantProperties: DynamicFeatureCreationConfig) {
-        taskFactory.register(PerModuleBundleTask.CreationAction(variantProperties))
+  private fun createDynamicBundleTask(variantProperties: DynamicFeatureCreationConfig) {
+    taskFactory.register(PerModuleBundleTask.CreationAction(variantProperties))
 
-        if (!variantProperties.debuggable) {
-            taskFactory.register(PerModuleReportDependenciesTask.CreationAction(variantProperties))
-        }
+    if (!variantProperties.debuggable) {
+      taskFactory.register(PerModuleReportDependenciesTask.CreationAction(variantProperties))
     }
+  }
 
-    override fun createInstallTask(creationConfig: ApkCreationConfig) {
-        // no install task for Dynamic Features
-    }
+  override fun createInstallTask(creationConfig: ApkCreationConfig) {
+    // no install task for Dynamic Features
+  }
 }

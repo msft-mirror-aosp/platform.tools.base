@@ -36,129 +36,142 @@ import org.junit.Test
 import org.mockito.kotlin.mock
 
 class KotlinMultiplatformAndroidComponentsExtensionTest {
-    private lateinit var dslServices: DslServices
-    private lateinit var sdkComponents: SdkComponents
-    private lateinit var managedDeviceRegistry: ManagedDeviceRegistry
-    private lateinit var applicationExtension: ApplicationExtension
-    private lateinit var variantApiOperationsRegistrar: VariantApiOperationsRegistrar<KotlinMultiplatformAndroidLibraryExtension, KotlinMultiplatformAndroidVariantBuilder, KotlinMultiplatformAndroidVariant>
-    private lateinit var extension: KotlinMultiplatformAndroidLibraryExtension
-    private lateinit var androidTarget: KotlinMultiplatformAndroidLibraryTarget
-    val mockProvider: () -> KotlinMultiplatformAndroidLibraryTarget = { androidTarget }
+  private lateinit var dslServices: DslServices
+  private lateinit var sdkComponents: SdkComponents
+  private lateinit var managedDeviceRegistry: ManagedDeviceRegistry
+  private lateinit var applicationExtension: ApplicationExtension
+  private lateinit var variantApiOperationsRegistrar:
+    VariantApiOperationsRegistrar<
+      KotlinMultiplatformAndroidLibraryExtension,
+      KotlinMultiplatformAndroidVariantBuilder,
+      KotlinMultiplatformAndroidVariant,
+    >
+  private lateinit var extension: KotlinMultiplatformAndroidLibraryExtension
+  private lateinit var androidTarget: KotlinMultiplatformAndroidLibraryTarget
+  val mockProvider: () -> KotlinMultiplatformAndroidLibraryTarget = { androidTarget }
 
-    @Before
-    fun setUp() {
-        val sdkComponentsBuildService = mock<SdkComponentsBuildService>()
-        dslServices = createDslServices(sdkComponents = FakeGradleProvider(sdkComponentsBuildService))
-        sdkComponents = mock<SdkComponents>()
-        managedDeviceRegistry = mock<ManagedDeviceRegistry>()
-        applicationExtension = mock<ApplicationExtension>()
-        extension = mock<KotlinMultiplatformAndroidLibraryExtension>()
-        variantApiOperationsRegistrar = VariantApiOperationsRegistrar(extension)
-        androidTarget = mock<KotlinMultiplatformAndroidLibraryTarget>()
-    }
+  @Before
+  fun setUp() {
+    val sdkComponentsBuildService = mock<SdkComponentsBuildService>()
+    dslServices = createDslServices(sdkComponents = FakeGradleProvider(sdkComponentsBuildService))
+    sdkComponents = mock<SdkComponents>()
+    managedDeviceRegistry = mock<ManagedDeviceRegistry>()
+    applicationExtension = mock<ApplicationExtension>()
+    extension = mock<KotlinMultiplatformAndroidLibraryExtension>()
+    variantApiOperationsRegistrar = VariantApiOperationsRegistrar(extension)
+    androidTarget = mock<KotlinMultiplatformAndroidLibraryTarget>()
+  }
 
-    @Test
-    fun testPluginVersion() {
-        val androidComponents = KotlinMultiplatformAndroidComponentsExtensionImpl(
-            dslServices,
-            sdkComponents,
-            managedDeviceRegistry,
-            variantApiOperationsRegistrar,
-            extension,
-            mockProvider
+  @Test
+  fun testPluginVersion() {
+    val androidComponents =
+      KotlinMultiplatformAndroidComponentsExtensionImpl(
+        dslServices,
+        sdkComponents,
+        managedDeviceRegistry,
+        variantApiOperationsRegistrar,
+        extension,
+        mockProvider,
+      )
+    Truth.assertThat(androidComponents.pluginVersion).isNotNull()
+    Truth.assertThat(androidComponents.pluginVersion >= AndroidPluginVersion(4, 2)).isTrue()
+  }
+
+  @Test
+  fun testSdkComponents() {
+    val sdkComponentsFromComponents =
+      KotlinMultiplatformAndroidComponentsExtensionImpl(
+          dslServices,
+          sdkComponents,
+          managedDeviceRegistry,
+          variantApiOperationsRegistrar,
+          extension,
+          mockProvider,
         )
-        Truth.assertThat(androidComponents.pluginVersion).isNotNull()
-        Truth.assertThat(androidComponents.pluginVersion >= AndroidPluginVersion(4, 2)).isTrue()
-    }
+        .sdkComponents
+    Truth.assertThat(sdkComponentsFromComponents).isSameInstanceAs(sdkComponents)
+  }
 
-    @Test
-    fun testSdkComponents() {
-        val sdkComponentsFromComponents = KotlinMultiplatformAndroidComponentsExtensionImpl(
-            dslServices,
-            sdkComponents,
-            managedDeviceRegistry,
-            variantApiOperationsRegistrar,
-            extension,
-            mockProvider
-        ).sdkComponents
-        Truth.assertThat(sdkComponentsFromComponents).isSameInstanceAs(sdkComponents)
-    }
-
-    @Test
-    fun testCustomDeviceRegistry() {
-        val deviceRegistryFromComponents = KotlinMultiplatformAndroidComponentsExtensionImpl(
-            dslServices,
-            sdkComponents,
-            managedDeviceRegistry,
-            variantApiOperationsRegistrar,
-            extension,
-            mockProvider
-        ).managedDeviceRegistry
-        Truth.assertThat(deviceRegistryFromComponents).isSameInstanceAs(managedDeviceRegistry)
-    }
-
-    @Test
-    fun testCallingOnVariant() {
-        val variant = mock<KotlinMultiplatformAndroidVariant>()
-        val componentsExtension = KotlinMultiplatformAndroidComponentsExtensionImpl(
-            dslServices,
-            sdkComponents,
-            managedDeviceRegistry,
-            variantApiOperationsRegistrar,
-            extension,
-            mockProvider
+  @Test
+  fun testCustomDeviceRegistry() {
+    val deviceRegistryFromComponents =
+      KotlinMultiplatformAndroidComponentsExtensionImpl(
+          dslServices,
+          sdkComponents,
+          managedDeviceRegistry,
+          variantApiOperationsRegistrar,
+          extension,
+          mockProvider,
         )
+        .managedDeviceRegistry
+    Truth.assertThat(deviceRegistryFromComponents).isSameInstanceAs(managedDeviceRegistry)
+  }
 
-        var called = false
-        componentsExtension.onVariants {
-            Truth.assertThat(it).isEqualTo(variant)
-            called = true
-        }
+  @Test
+  fun testCallingOnVariant() {
+    val variant = mock<KotlinMultiplatformAndroidVariant>()
+    val componentsExtension =
+      KotlinMultiplatformAndroidComponentsExtensionImpl(
+        dslServices,
+        sdkComponents,
+        managedDeviceRegistry,
+        variantApiOperationsRegistrar,
+        extension,
+        mockProvider,
+      )
 
-        variantApiOperationsRegistrar.variantOperations.executeOperations(variant)
-        Truth.assertThat(called).isTrue()
+    var called = false
+    componentsExtension.onVariants {
+      Truth.assertThat(it).isEqualTo(variant)
+      called = true
     }
 
-    @Test
-    fun testCallingBeforeVariants() {
-        val variantBuilder = mock<KotlinMultiplatformAndroidVariantBuilder>()
-        val componentsExtension = KotlinMultiplatformAndroidComponentsExtensionImpl(
-            dslServices,
-            sdkComponents,
-            managedDeviceRegistry,
-            variantApiOperationsRegistrar,
-            extension,
-            mockProvider
-        )
+    variantApiOperationsRegistrar.variantOperations.executeOperations(variant)
+    Truth.assertThat(called).isTrue()
+  }
 
-        var called = false
-        componentsExtension.beforeVariants {
-            Truth.assertThat(it).isEqualTo(variantBuilder)
-            called = true
-        }
+  @Test
+  fun testCallingBeforeVariants() {
+    val variantBuilder = mock<KotlinMultiplatformAndroidVariantBuilder>()
+    val componentsExtension =
+      KotlinMultiplatformAndroidComponentsExtensionImpl(
+        dslServices,
+        sdkComponents,
+        managedDeviceRegistry,
+        variantApiOperationsRegistrar,
+        extension,
+        mockProvider,
+      )
 
-        variantApiOperationsRegistrar.variantBuilderOperations.executeOperations(variantBuilder)
-        Truth.assertThat(called).isTrue()
+    var called = false
+    componentsExtension.beforeVariants {
+      Truth.assertThat(it).isEqualTo(variantBuilder)
+      called = true
     }
 
-    @Test
-    fun testDslFinalizationBlock() {
-        val componentsExtension = KotlinMultiplatformAndroidComponentsExtensionImpl(
-            dslServices,
-            sdkComponents,
-            managedDeviceRegistry,
-            variantApiOperationsRegistrar,
-            extension,
-            mockProvider
-        )
+    variantApiOperationsRegistrar.variantBuilderOperations.executeOperations(variantBuilder)
+    Truth.assertThat(called).isTrue()
+  }
 
-        var called = false
-        componentsExtension.finalizeDsl {
-            Truth.assertThat(it).isEqualTo(extension)
-            called = true
-        }
+  @Test
+  fun testDslFinalizationBlock() {
+    val componentsExtension =
+      KotlinMultiplatformAndroidComponentsExtensionImpl(
+        dslServices,
+        sdkComponents,
+        managedDeviceRegistry,
+        variantApiOperationsRegistrar,
+        extension,
+        mockProvider,
+      )
 
-        variantApiOperationsRegistrar.executeDslFinalizationBlocks()
-        Truth.assertThat(called).isTrue()
+    var called = false
+    componentsExtension.finalizeDsl {
+      Truth.assertThat(it).isEqualTo(extension)
+      called = true
     }
+
+    variantApiOperationsRegistrar.executeDslFinalizationBlocks()
+    Truth.assertThat(called).isTrue()
+  }
 }

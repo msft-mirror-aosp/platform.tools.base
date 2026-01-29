@@ -22,24 +22,23 @@ import org.junit.Test
 
 class JacocoInstrumentationActionTest {
 
-    @Test
-    fun testExpectedInstrumentationAction() {
-        val expectedFileAndAction = mapOf(
-            "com/example/R.class" to JacocoTask.Action.COPY,
-            "com/example/RandomClassName.class" to JacocoTask.Action.INSTRUMENT,
-            "com/example/R\$color.class" to JacocoTask.Action.COPY,
-            "com/example/R\$color" to JacocoTask.Action.IGNORE,
-            "com/example/Manifest.class" to JacocoTask.Action.COPY,
-            "com/example/Manifest\$details.class" to JacocoTask.Action.COPY,
-            "com/example/ManifestDetails.class" to JacocoTask.Action.INSTRUMENT,
-            "com/example/BuildConfig.class" to JacocoTask.Action.COPY,
-            "com/example/APiratesFavouriteLetterIsR.class" to JacocoTask.Action.INSTRUMENT,
-            "SomeClass.class" to JacocoTask.Action.INSTRUMENT,
-            "com/example/AnotherClass.class" to JacocoTask.Action.INSTRUMENT,
-            "README.md" to JacocoTask.Action.IGNORE
-        )
-        expectedFileAndAction.forEach {
-            assertThat(JacocoTask.calculateAction(it.key)).isEqualTo(it.value)
-        }
-    }
+  @Test
+  fun testExpectedInstrumentationAction() {
+    val expectedFileAndAction =
+      mapOf(
+        "com/example/R.class" to JacocoTask.Action.COPY,
+        "com/example/RandomClassName.class" to JacocoTask.Action.INSTRUMENT,
+        "com/example/R\$color.class" to JacocoTask.Action.COPY,
+        "com/example/R\$color" to JacocoTask.Action.IGNORE,
+        "com/example/Manifest.class" to JacocoTask.Action.COPY,
+        "com/example/Manifest\$details.class" to JacocoTask.Action.COPY,
+        "com/example/ManifestDetails.class" to JacocoTask.Action.INSTRUMENT,
+        "com/example/BuildConfig.class" to JacocoTask.Action.COPY,
+        "com/example/APiratesFavouriteLetterIsR.class" to JacocoTask.Action.INSTRUMENT,
+        "SomeClass.class" to JacocoTask.Action.INSTRUMENT,
+        "com/example/AnotherClass.class" to JacocoTask.Action.INSTRUMENT,
+        "README.md" to JacocoTask.Action.IGNORE,
+      )
+    expectedFileAndAction.forEach { assertThat(JacocoTask.calculateAction(it.key)).isEqualTo(it.value) }
+  }
 }

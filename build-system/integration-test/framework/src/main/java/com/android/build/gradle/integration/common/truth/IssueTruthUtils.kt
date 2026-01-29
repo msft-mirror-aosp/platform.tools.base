@@ -19,63 +19,47 @@ package com.android.build.gradle.integration.common.truth
 import com.android.builder.model.v2.ide.SyncIssue
 import com.google.common.truth.Truth
 
-fun Collection<SyncIssue>.checkSingleIssue(
-    type: Int? = null,
-    severity: Int? = null,
-    message: String? = null
-) {
-    val issue = checkSingleIssue(type, severity)
+fun Collection<SyncIssue>.checkSingleIssue(type: Int? = null, severity: Int? = null, message: String? = null) {
+  val issue = checkSingleIssue(type, severity)
 
-    message?.let {
-        Truth.assertWithMessage("Issue message").that(issue.message).isEqualTo(it)
-    }
+  message?.let { Truth.assertWithMessage("Issue message").that(issue.message).isEqualTo(it) }
 }
 
-fun Collection<SyncIssue>.checkSingleIssue(
-    type: Int? = null,
-    severity: Int? = null,
-    messageCheck: ((String) -> Unit)? = null
-) {
-    val issue = checkSingleIssue(type, severity)
+fun Collection<SyncIssue>.checkSingleIssue(type: Int? = null, severity: Int? = null, messageCheck: ((String) -> Unit)? = null) {
+  val issue = checkSingleIssue(type, severity)
 
-    messageCheck?.let {
-        messageCheck(issue.message)
-    }
+  messageCheck?.let { messageCheck(issue.message) }
 }
 
-private fun Collection<SyncIssue>.checkSingleIssue(
-    type: Int?,
-    severity: Int?
-): SyncIssue {
-    when (size) {
-        0 -> {
-            throw RuntimeException("Issue list is empty, expected 1")
-        }
-        1 -> {
-            // success, do nothing
-        }
-        else -> {
-            throw RuntimeException("Issue list contains $size entries, expected 1\n${this}")
-        }
+private fun Collection<SyncIssue>.checkSingleIssue(type: Int?, severity: Int?): SyncIssue {
+  when (size) {
+    0 -> {
+      throw RuntimeException("Issue list is empty, expected 1")
     }
-
-    val issue = this.single()
-
-    type?.let {
-        Truth.assertWithMessage("Issue type").that(issue.type).isEqualTo(it)
+    1 -> {
+      // success, do nothing
     }
-
-    severity?.let {
-        if (issue.severity != it) {
-            throw RuntimeException("Incorrect Issue Severity. Expected '${it.toSeverity()}' but was '${issue.severity.toSeverity()}'")
-        }
+    else -> {
+      throw RuntimeException("Issue list contains $size entries, expected 1\n${this}")
     }
+  }
 
-    return issue
+  val issue = this.single()
+
+  type?.let { Truth.assertWithMessage("Issue type").that(issue.type).isEqualTo(it) }
+
+  severity?.let {
+    if (issue.severity != it) {
+      throw RuntimeException("Incorrect Issue Severity. Expected '${it.toSeverity()}' but was '${issue.severity.toSeverity()}'")
+    }
+  }
+
+  return issue
 }
 
-private fun Int.toSeverity(): String = when(this) {
+private fun Int.toSeverity(): String =
+  when (this) {
     SyncIssue.SEVERITY_WARNING -> "WARNING"
     SyncIssue.SEVERITY_ERROR -> "ERROR"
     else -> throw RuntimeException("Unexpected severity value: $this")
-}
+  }

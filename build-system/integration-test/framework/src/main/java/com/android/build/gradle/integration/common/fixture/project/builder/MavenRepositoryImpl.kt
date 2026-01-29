@@ -22,32 +22,28 @@ import com.android.build.gradle.integration.common.dependencies.JarWithDependenc
 import com.android.build.gradle.integration.common.dependencies.JarWithDependenciesBuilderImpl
 import com.android.testutils.MavenRepoGenerator.Library
 
-internal class MavenRepositoryImpl: MavenRepository {
-    private val libraryList = mutableListOf<Library>()
+internal class MavenRepositoryImpl : MavenRepository {
+  private val libraryList = mutableListOf<Library>()
 
-    private val aarBuilders = mutableListOf<AarBuilderImpl>()
-    private val jarBuilders = mutableListOf<JarWithDependenciesBuilderImpl>()
+  private val aarBuilders = mutableListOf<AarBuilderImpl>()
+  private val jarBuilders = mutableListOf<JarWithDependenciesBuilderImpl>()
 
-    internal val libraries: List<Library>
-        get() {
-            val result = mutableListOf<Library>()
-            result += libraryList
-            result += aarBuilders.map { it.toLibrary() }
-            result += jarBuilders.map { it.toLibrary() }
-            return result.toList()
-        }
-
-    override fun library(library: Library) {
-        libraryList.add(library)
+  internal val libraries: List<Library>
+    get() {
+      val result = mutableListOf<Library>()
+      result += libraryList
+      result += aarBuilders.map { it.toLibrary() }
+      result += jarBuilders.map { it.toLibrary() }
+      return result.toList()
     }
 
-    override fun jar(mavenCoordinate: String): JarWithDependenciesBuilder =
-        JarWithDependenciesBuilderImpl(mavenCoordinate).also {
-            jarBuilders.add(it)
-        }
+  override fun library(library: Library) {
+    libraryList.add(library)
+  }
 
-    override fun aar(groupId: String, artifactId: String?, version: String): AarBuilder =
-        AarBuilderImpl(groupId, artifactId, version).also {
-            aarBuilders.add(it)
-        }
+  override fun jar(mavenCoordinate: String): JarWithDependenciesBuilder =
+    JarWithDependenciesBuilderImpl(mavenCoordinate).also { jarBuilders.add(it) }
+
+  override fun aar(groupId: String, artifactId: String?, version: String): AarBuilder =
+    AarBuilderImpl(groupId, artifactId, version).also { aarBuilders.add(it) }
 }

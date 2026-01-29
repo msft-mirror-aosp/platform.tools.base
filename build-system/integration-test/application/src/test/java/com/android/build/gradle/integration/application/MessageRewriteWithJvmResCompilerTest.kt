@@ -18,54 +18,44 @@ package com.android.build.gradle.integration.application
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.GradleTestProject.Companion.builder
 import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification
-import com.android.build.gradle.integration.common.truth.ScannerSubject.Companion.assertThat
 import com.android.utils.FileUtils
 import org.junit.Rule
 import org.junit.Test
 
 class MessageRewriteWithJvmResCompilerTest {
 
-    @get:Rule
-    var project: GradleTestProject = builder().fromTestProject("flavoredlib").create()
+  @get:Rule var project: GradleTestProject = builder().fromTestProject("flavoredlib").create()
 
-    @Test
-    @Throws(Exception::class)
-    fun testErrorInStringsForCompile() {
-        // Incorrect strings.xml should cause the res compiler to throw an error and we should
-        // rewrite it to point to the original file.
-        val executor = project.executor()
-        TemporaryProjectModification.doTest(project) { it: TemporaryProjectModification ->
-            it.replaceInFile(
-                "app/src/flavor1/res/values/strings.xml",
-                "</resources>", "<id name=\"incorrect\">hello</id></resources>"
-            )
-            executor.expectFailure().run("assembleDebug").assertErrorContains(
-                FileUtils.join("app", "src", "flavor1", "res", "values", "strings.xml")
-            )
-        }
-
-        // Fix it up and check that it compiles correctly.
-        TemporaryProjectModification.doTest(project) { it: TemporaryProjectModification ->
-            it.replaceInFile(
-                    "app/src/flavor1/res/values/strings.xml",
-                    "<id name=\"incorrect\">hello</id>",
-                    ""
-            )
-            project.executor().run("assembleDebug")
-        }
+  @Test
+  @Throws(Exception::class)
+  fun testErrorInStringsForCompile() {
+    // Incorrect strings.xml should cause the res compiler to throw an error and we should
+    // rewrite it to point to the original file.
+    val executor = project.executor()
+    TemporaryProjectModification.doTest(project) { it: TemporaryProjectModification ->
+      it.replaceInFile("app/src/flavor1/res/values/strings.xml", "</resources>", "<id name=\"incorrect\">hello</id></resources>")
+      executor
+        .expectFailure()
+        .run("assembleDebug")
+        .assertErrorContains(FileUtils.join("app", "src", "flavor1", "res", "values", "strings.xml"))
     }
 
-    @Test
-    fun testInvalidXmlFileReportsSourceFile() {
-        val executor = project.executor()
-        TemporaryProjectModification.doTest(project) { it: TemporaryProjectModification ->
-            it.replaceInFile(
-                    "app/src/main/res/layout/main.xml",
-                    "</LinearLayout>", ""
-            )
-            executor.expectFailure().run(":app:mergeFlavor1DebugResources").assertErrorContains(
-                FileUtils.join("app", "src", "main", "res", "layout", "main.xml")
-            )
-        }
+    // Fix it up and check that it compiles correctly.
+    TemporaryProjectModification.doTest(project) { it: TemporaryProjectModification ->
+      it.replaceInFile("app/src/flavor1/res/values/strings.xml", "<id name=\"incorrect\">hello</id>", "")
+      project.executor().run("assembleDebug")
     }
+  }
+
+  @Test
+  fun testInvalidXmlFileReportsSourceFile() {
+    val executor = project.executor()
+    TemporaryProjectModification.doTest(project) { it: TemporaryProjectModification ->
+      it.replaceInFile("app/src/main/res/layout/main.xml", "</LinearLayout>", "")
+      executor
+        .expectFailure()
+        .run(":app:mergeFlavor1DebugResources")
+        .assertErrorContains(FileUtils.join("app", "src", "main", "res", "layout", "main.xml"))
+    }
+  }
 }

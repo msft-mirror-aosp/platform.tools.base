@@ -24,41 +24,35 @@ import com.google.wireless.android.sdk.stats.GradleBuildVariant
 import org.gradle.api.model.ObjectFactory
 import org.junit.Rule
 import org.junit.Test
+import org.mockito.junit.MockitoJUnit
+import org.mockito.junit.MockitoRule
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
-import org.mockito.junit.MockitoJUnit
-import org.mockito.junit.MockitoRule
 import org.mockito.quality.Strictness
 
 class AnalyticsEnabledGeneratesApkTest {
 
-    @get:Rule
-    val rule: MockitoRule = MockitoJUnit.rule().strictness(Strictness.STRICT_STUBS)
+  @get:Rule val rule: MockitoRule = MockitoJUnit.rule().strictness(Strictness.STRICT_STUBS)
 
-    private val delegate: GeneratesApk = mock()
+  private val delegate: GeneratesApk = mock()
 
-    private val objectFactory: ObjectFactory = mock()
+  private val objectFactory: ObjectFactory = mock()
 
-    private val stats = GradleBuildVariant.newBuilder()
-    private val proxy: AnalyticsEnabledGeneratesApk by lazy {
-        AnalyticsEnabledGeneratesApk(delegate, stats, objectFactory)
-    }
+  private val stats = GradleBuildVariant.newBuilder()
+  private val proxy: AnalyticsEnabledGeneratesApk by lazy { AnalyticsEnabledGeneratesApk(delegate, stats, objectFactory) }
 
-    @Test
-    fun testDexing() {
-        val dexing = mock<Dexing>()
-        whenever(delegate.dexing).thenReturn(dexing)
-        Truth.assertThat(proxy.dexing).isEqualTo(dexing)
+  @Test
+  fun testDexing() {
+    val dexing = mock<Dexing>()
+    whenever(delegate.dexing).thenReturn(dexing)
+    Truth.assertThat(proxy.dexing).isEqualTo(dexing)
 
-        Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
-        Truth.assertThat(
-            stats.variantApiAccess.variantPropertiesAccessList.first().type
-        ).isEqualTo(VariantPropertiesMethodType.DEXING_VALUE)
-        verify(delegate, times(1))
-            .dexing
-        verifyNoMoreInteractions(delegate)
-    }
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessList.first().type).isEqualTo(VariantPropertiesMethodType.DEXING_VALUE)
+    verify(delegate, times(1)).dexing
+    verifyNoMoreInteractions(delegate)
+  }
 }

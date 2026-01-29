@@ -21,14 +21,13 @@ import com.android.build.api.variant.JUnitEngineSpecBuilder
 import com.android.tools.build.gradle.internal.profile.VariantMethodType
 
 open class AnalyticsEnabledJUnitEngineSpecBuilder(
-    private val delegate: JUnitEngineSpecBuilder,
-    stats: com.google.wireless.android.sdk.stats.GradleBuildVariant.Builder,
-): JUnitEngineSpecBuilder, AnalyticsEnabledJUnitEngineSpec(delegate, stats) {
+  private val delegate: JUnitEngineSpecBuilder,
+  stats: com.google.wireless.android.sdk.stats.GradleBuildVariant.Builder,
+) : JUnitEngineSpecBuilder, AnalyticsEnabledJUnitEngineSpec(delegate, stats) {
 
-    override val inputs: MutableList<AgpTestSuiteInputParameters>
-        get() {
-            stats.variantApiAccessBuilder.addVariantAccessBuilder().type =
-                VariantMethodType.JUNIT_ENGINE_BUILDER_INPUTS_VALUE
-            return delegate.inputs
-        }
+  override val inputs: MutableList<AgpTestSuiteInputParameters>
+    get() {
+      stats.variantApiAccessBuilder.addVariantAccessBuilder().type = VariantMethodType.JUNIT_ENGINE_BUILDER_INPUTS_VALUE
+      return delegate.inputs
+    }
 }

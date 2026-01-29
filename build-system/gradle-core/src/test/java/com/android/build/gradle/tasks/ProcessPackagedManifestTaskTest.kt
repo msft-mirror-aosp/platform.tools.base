@@ -17,20 +17,11 @@
 package com.android.build.gradle.tasks
 
 import com.android.SdkConstants
-import com.android.SdkConstants.PRIVACY_SANDBOX_SDK_DEPENDENCY_MANIFEST_SNIPPET_NAME_SUFFIX
-import com.android.build.gradle.internal.component.ApkCreationConfig
-import com.android.build.gradle.internal.fixtures.FakeFileCollection
 import com.android.build.gradle.internal.fixtures.FakeNoOpAnalyticsService
-import com.android.build.gradle.internal.fixtures.FakeProviderFactory
-import com.android.build.gradle.internal.profile.AnalyticsService
-import com.android.build.gradle.internal.publishing.AndroidArtifacts
-import com.android.build.gradle.internal.services.createProjectServices
-import com.android.build.gradle.internal.services.createTaskCreationServices
-import com.android.build.gradle.internal.services.getBuildServiceName
-import com.android.build.gradle.options.BooleanOption
-import org.mockito.kotlin.whenever
 import com.android.utils.toSystemLineSeparator
 import com.google.common.truth.Truth.assertThat
+import java.io.File
+import java.io.IOException
 import org.gradle.api.Project
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.testfixtures.ProjectBuilder
@@ -38,150 +29,136 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
-import org.mockito.Mockito
-import java.io.File
-import java.io.IOException
 
 class ProcessPackagedManifestTaskTest {
 
-    @Rule
-    @JvmField
-    var temporaryFolder = TemporaryFolder()
+  @Rule @JvmField var temporaryFolder = TemporaryFolder()
 
-    private lateinit var taskProvider: TaskProvider<ProcessPackagedManifestTask>
-    private lateinit var task: ProcessPackagedManifestTask
-    private lateinit var project: Project
+  private lateinit var taskProvider: TaskProvider<ProcessPackagedManifestTask>
+  private lateinit var task: ProcessPackagedManifestTask
+  private lateinit var project: Project
 
-    @Before
-    @Throws(IOException::class)
-    fun setUp() {
-        project= ProjectBuilder.builder().withProjectDir(temporaryFolder.root).build()
-        taskProvider = project.tasks.register(
-            "testManifestForPackage", ProcessPackagedManifestTask::class.java
+  @Before
+  @Throws(IOException::class)
+  fun setUp() {
+    project = ProjectBuilder.builder().withProjectDir(temporaryFolder.root).build()
+    taskProvider = project.tasks.register("testManifestForPackage", ProcessPackagedManifestTask::class.java)
+    task = taskProvider.get()
+  }
+
+  @Test
+  fun testDynamicFeatureDecorationsRemoval() {
+    val sourceFolder = temporaryFolder.newFolder("source_folder")
+    val inputXmlFile =
+      File(sourceFolder, SdkConstants.ANDROID_MANIFEST_XML).also {
+        it.writeText(
+          """
+          <?xml version="1.0" encoding="utf-8"?>
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+              package="com.example.app"
+              android:versionCode="11" >
+
+              <application
+                  android:name="android.support.multidex.MultiDexApplication"
+                  android:debuggable="true" >
+                  <activity
+                      android:name="com.example.app.BaseActivity"
+                      android:label="Base Activity" >
+                      <intent-filter>
+                          <action android:name="android.intent.action.MAIN" />
+
+                          <category android:name="android.intent.category.LAUNCHER" />
+                      </intent-filter>
+                  </activity>
+                  <activity
+                      android:name="com.example.feature1.FeatureActivity"
+                      android:label="Feature Activity"
+                      android:splitName="feature1" >
+                      <intent-filter>
+                          <action android:name="android.intent.action.MAIN" />
+
+                          <category android:name="android.intent.category.LAUNCHER" />
+                      </intent-filter>
+                  </activity>
+                  <activity
+                      android:name="com.example.feature2.FeatureActivity"
+                      android:label="Feature Activity 2"
+                      android:splitName="feature2" >
+                      <intent-filter>
+                          <action android:name="android.intent.action.MAIN" />
+
+                          <category android:name="android.intent.category.LAUNCHER" />
+                      </intent-filter>
+                  </activity>
+              </application>
+          </manifest>
+          """
+            .trimIndent()
         )
-        task = taskProvider.get()
-    }
+      }
+    val workItemParameters = project.objects.newInstance(ProcessPackagedManifestTask.WorkItemParameters::class.java)
+    workItemParameters.inputXmlFile.set(inputXmlFile)
+    val outputFolder = temporaryFolder.newFolder("target_folder")
+    workItemParameters.outputXmlFile.set(File(outputFolder, SdkConstants.ANDROID_MANIFEST_XML))
+    workItemParameters.analyticsService.set(FakeNoOpAnalyticsService())
+    workItemParameters.taskPath.set("taskPath")
+    workItemParameters.workerKey.set("workerKey")
 
-    @Test
-    fun testDynamicFeatureDecorationsRemoval() {
-        val sourceFolder = temporaryFolder.newFolder("source_folder")
-        val inputXmlFile = File(sourceFolder, SdkConstants.ANDROID_MANIFEST_XML).also {
-            it.writeText("""
-                <?xml version="1.0" encoding="utf-8"?>
-                <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-                    package="com.example.app"
-                    android:versionCode="11" >
+    project.objects.newInstance(ProcessPackagedManifestTask.WorkItem::class.java, workItemParameters).execute()
+    val outputXml = workItemParameters.outputXmlFile.get().asFile.readText(Charsets.UTF_8)
+    assertThat(outputXml).doesNotContain("android:splitName")
+  }
 
-                    <application
-                        android:name="android.support.multidex.MultiDexApplication"
-                        android:debuggable="true" >
-                        <activity
-                            android:name="com.example.app.BaseActivity"
-                            android:label="Base Activity" >
-                            <intent-filter>
-                                <action android:name="android.intent.action.MAIN" />
+  @Test
+  fun testIdemPotent() {
+    val sourceFolder = temporaryFolder.newFolder("source_folder")
+    val inputXmlFile =
+      File(sourceFolder, SdkConstants.ANDROID_MANIFEST_XML).also {
+        it.writeText(
+          """
+          <?xml version="1.0" encoding="utf-8"?>
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+              package="com.example.app"
+              android:versionCode="11" >
 
-                                <category android:name="android.intent.category.LAUNCHER" />
-                            </intent-filter>
-                        </activity>
-                        <activity
-                            android:name="com.example.feature1.FeatureActivity"
-                            android:label="Feature Activity"
-                            android:splitName="feature1" >
-                            <intent-filter>
-                                <action android:name="android.intent.action.MAIN" />
+              <application
+                  android:name="android.support.multidex.MultiDexApplication"
+                  android:debuggable="true" >
+                  <activity
+                      android:name="com.example.app.BaseActivity"
+                      android:label="Base Activity" >
+                      <intent-filter>
+                          <action android:name="android.intent.action.MAIN" />
 
-                                <category android:name="android.intent.category.LAUNCHER" />
-                            </intent-filter>
-                        </activity>
-                        <activity
-                            android:name="com.example.feature2.FeatureActivity"
-                            android:label="Feature Activity 2"
-                            android:splitName="feature2" >
-                            <intent-filter>
-                                <action android:name="android.intent.action.MAIN" />
+                          <category android:name="android.intent.category.LAUNCHER" />
+                      </intent-filter>
+                  </activity>
+                  <activity
+                      android:name="com.example.feature1.FeatureActivity"
+                      android:label="Feature Activity" >
+                      <intent-filter>
+                          <action android:name="android.intent.action.MAIN" />
 
-                                <category android:name="android.intent.category.LAUNCHER" />
-                            </intent-filter>
-                        </activity>
-                    </application>
-                </manifest>
-            """.trimIndent())
-        }
-        val workItemParameters =
-            project.objects.newInstance(ProcessPackagedManifestTask.WorkItemParameters::class.java)
-        workItemParameters.inputXmlFile.set(inputXmlFile)
-        val outputFolder = temporaryFolder.newFolder("target_folder")
-        workItemParameters.outputXmlFile.set(File(outputFolder, SdkConstants.ANDROID_MANIFEST_XML))
-        workItemParameters.analyticsService.set(FakeNoOpAnalyticsService())
-        workItemParameters.taskPath.set("taskPath")
-        workItemParameters.workerKey.set("workerKey")
+                          <category android:name="android.intent.category.LAUNCHER" />
+                      </intent-filter>
+                  </activity>
+              </application>
 
-        project.objects.newInstance(
-            ProcessPackagedManifestTask.WorkItem::class.java,
-            workItemParameters).execute()
-        val outputXml = workItemParameters.outputXmlFile.get().asFile.readText(Charsets.UTF_8)
-        assertThat(outputXml).doesNotContain("android:splitName")
-    }
-
-    @Test
-    fun testIdemPotent() {
-        val sourceFolder = temporaryFolder.newFolder("source_folder")
-        val inputXmlFile = File(sourceFolder, SdkConstants.ANDROID_MANIFEST_XML).also {
-            it.writeText(
-                """
-            <?xml version="1.0" encoding="utf-8"?>
-            <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-                package="com.example.app"
-                android:versionCode="11" >
-
-                <application
-                    android:name="android.support.multidex.MultiDexApplication"
-                    android:debuggable="true" >
-                    <activity
-                        android:name="com.example.app.BaseActivity"
-                        android:label="Base Activity" >
-                        <intent-filter>
-                            <action android:name="android.intent.action.MAIN" />
-
-                            <category android:name="android.intent.category.LAUNCHER" />
-                        </intent-filter>
-                    </activity>
-                    <activity
-                        android:name="com.example.feature1.FeatureActivity"
-                        android:label="Feature Activity" >
-                        <intent-filter>
-                            <action android:name="android.intent.action.MAIN" />
-
-                            <category android:name="android.intent.category.LAUNCHER" />
-                        </intent-filter>
-                    </activity>
-                </application>
-
-            </manifest>
-        """.trimIndent()
-            )
-        }
-        val workItemParameters =
-            project.objects.newInstance(ProcessPackagedManifestTask.WorkItemParameters::class.java)
-        workItemParameters.inputXmlFile.set(inputXmlFile)
-        val outputFolder = temporaryFolder.newFolder("target_folder")
-        workItemParameters.outputXmlFile.set(
-            File(
-                outputFolder,
-                SdkConstants.ANDROID_MANIFEST_XML
-            )
+          </manifest>
+          """
+            .trimIndent()
         )
-        workItemParameters.analyticsService.set(FakeNoOpAnalyticsService())
-        workItemParameters.taskPath.set("taskPath")
-        workItemParameters.workerKey.set("workerKey")
+      }
+    val workItemParameters = project.objects.newInstance(ProcessPackagedManifestTask.WorkItemParameters::class.java)
+    workItemParameters.inputXmlFile.set(inputXmlFile)
+    val outputFolder = temporaryFolder.newFolder("target_folder")
+    workItemParameters.outputXmlFile.set(File(outputFolder, SdkConstants.ANDROID_MANIFEST_XML))
+    workItemParameters.analyticsService.set(FakeNoOpAnalyticsService())
+    workItemParameters.taskPath.set("taskPath")
+    workItemParameters.workerKey.set("workerKey")
 
-        project.objects.newInstance(
-            ProcessPackagedManifestTask.WorkItem::class.java,
-            workItemParameters
-        ).execute()
-        val outputXml = workItemParameters.outputXmlFile.get().asFile.readText(Charsets.UTF_8)
-        assertThat(outputXml.toSystemLineSeparator()).isEqualTo(
-            inputXmlFile.readText(Charsets.UTF_8).toSystemLineSeparator())
-    }
+    project.objects.newInstance(ProcessPackagedManifestTask.WorkItem::class.java, workItemParameters).execute()
+    val outputXml = workItemParameters.outputXmlFile.get().asFile.readText(Charsets.UTF_8)
+    assertThat(outputXml.toSystemLineSeparator()).isEqualTo(inputXmlFile.readText(Charsets.UTF_8).toSystemLineSeparator())
+  }
 }

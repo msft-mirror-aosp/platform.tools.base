@@ -21,71 +21,53 @@ import com.android.build.gradle.integration.common.fixture.app.HelloWorldLibrary
 import com.google.common.truth.Truth.assertThat
 import org.junit.Rule
 import org.junit.Test
-import java.util.jar.JarFile
 
 /** Tests for [BundleLibraryJavaRes]. */
 class BundleLibraryJavaResTest {
 
-    @JvmField
-    @Rule
-    val project = GradleTestProject.builder().fromTestApp(HelloWorldLibraryApp.create()).create()
+  @JvmField @Rule val project = GradleTestProject.builder().fromTestApp(HelloWorldLibraryApp.create()).create()
 
-    @Test
-    fun testTaskSkippedWhenNoJavaRes() {
-        // first test that the task is skipped when there are no java resources.
-        project.executor().run(":lib:processDebugJavaRes").run {
-            assertThat(this.skippedTasks).containsAtLeastElementsIn(
-                listOf(":lib:processDebugJavaRes")
-            )
-        }
-
-        project.projectDir.resolve("lib/src/main/resources").mkdirs()
-        project.executor().run(":lib:processDebugJavaRes").run {
-            assertThat(this.skippedTasks).containsAtLeastElementsIn(
-                listOf(":lib:processDebugJavaRes")
-            )
-        }
-
-        project.projectDir.resolve("lib/src/main/resources/foo.txt").createNewFile()
-        project.executor().run(":lib:processDebugJavaRes").run {
-            assertThat(this.didWorkTasks).containsAtLeastElementsIn(
-                listOf(":lib:processDebugJavaRes")
-            )
-        }
-
-        project.projectDir.resolve("lib/src/main/resources/test_dir").mkdirs()
-        project.executor().run(":lib:processDebugJavaRes").run {
-            assertThat(this.didWorkTasks).containsAtLeastElementsIn(
-                    listOf(":lib:processDebugJavaRes")
-            )
-        }
-        // ensure test_dir empty directory is packaged
-        val resDir =
-            project.projectDir.resolve("lib/build/intermediates/java_res/debug/processDebugJavaRes/out/test_dir")
-
-        assertThat(resDir.exists()).isTrue()
-
-        // then test that the task is up-to-date if nothing changes.
-        project.executor().run(":lib:processDebugJavaRes").run {
-            assertThat(this.upToDateTasks).containsAtLeastElementsIn(
-                listOf(":lib:processDebugJavaRes")
-            )
-        }
-
-        // then test that the task does work after the java resource is removed (since it must be
-        // removed from the task's output).
-        project.projectDir.resolve("lib/src/main/resources").deleteRecursively()
-        project.executor().run(":lib:processDebugJavaRes").run {
-            assertThat(this.didWorkTasks).containsAtLeastElementsIn(
-                listOf(":lib:processDebugJavaRes")
-            )
-        }
-
-        // finally test that the task is skipped if we build again with no java resources.
-        project.executor().run(":lib:processDebugJavaRes").run {
-            assertThat(this.skippedTasks).containsAtLeastElementsIn(
-                listOf(":lib:processDebugJavaRes")
-            )
-        }
+  @Test
+  fun testTaskSkippedWhenNoJavaRes() {
+    // first test that the task is skipped when there are no java resources.
+    project.executor().run(":lib:processDebugJavaRes").run {
+      assertThat(this.skippedTasks).containsAtLeastElementsIn(listOf(":lib:processDebugJavaRes"))
     }
+
+    project.projectDir.resolve("lib/src/main/resources").mkdirs()
+    project.executor().run(":lib:processDebugJavaRes").run {
+      assertThat(this.skippedTasks).containsAtLeastElementsIn(listOf(":lib:processDebugJavaRes"))
+    }
+
+    project.projectDir.resolve("lib/src/main/resources/foo.txt").createNewFile()
+    project.executor().run(":lib:processDebugJavaRes").run {
+      assertThat(this.didWorkTasks).containsAtLeastElementsIn(listOf(":lib:processDebugJavaRes"))
+    }
+
+    project.projectDir.resolve("lib/src/main/resources/test_dir").mkdirs()
+    project.executor().run(":lib:processDebugJavaRes").run {
+      assertThat(this.didWorkTasks).containsAtLeastElementsIn(listOf(":lib:processDebugJavaRes"))
+    }
+    // ensure test_dir empty directory is packaged
+    val resDir = project.projectDir.resolve("lib/build/intermediates/java_res/debug/processDebugJavaRes/out/test_dir")
+
+    assertThat(resDir.exists()).isTrue()
+
+    // then test that the task is up-to-date if nothing changes.
+    project.executor().run(":lib:processDebugJavaRes").run {
+      assertThat(this.upToDateTasks).containsAtLeastElementsIn(listOf(":lib:processDebugJavaRes"))
+    }
+
+    // then test that the task does work after the java resource is removed (since it must be
+    // removed from the task's output).
+    project.projectDir.resolve("lib/src/main/resources").deleteRecursively()
+    project.executor().run(":lib:processDebugJavaRes").run {
+      assertThat(this.didWorkTasks).containsAtLeastElementsIn(listOf(":lib:processDebugJavaRes"))
+    }
+
+    // finally test that the task is skipped if we build again with no java resources.
+    project.executor().run(":lib:processDebugJavaRes").run {
+      assertThat(this.skippedTasks).containsAtLeastElementsIn(listOf(":lib:processDebugJavaRes"))
+    }
+  }
 }

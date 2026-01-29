@@ -19,72 +19,70 @@ package com.android.build.gradle.internal.fixtures
 import com.android.build.gradle.internal.errors.DeprecationReporter
 import com.android.build.gradle.options.Option
 
-class FakeDeprecationReporter: DeprecationReporter {
+class FakeDeprecationReporter : DeprecationReporter {
 
-    val warnings = mutableListOf<String>()
-    val errors = mutableListOf<String>()
+  val warnings = mutableListOf<String>()
+  val errors = mutableListOf<String>()
 
-    override fun reportDeprecatedUsage(newDslElement: String,
-            oldDslElement: String,
-            deprecationTarget: DeprecationReporter.DeprecationTarget) {
-        warnings.add(oldDslElement)
+  override fun reportDeprecatedUsage(
+    newDslElement: String,
+    oldDslElement: String,
+    deprecationTarget: DeprecationReporter.DeprecationTarget,
+  ) {
+    warnings.add(oldDslElement)
+  }
+
+  override fun reportObsoleteUsage(oldDslElement: String, deprecationTarget: DeprecationReporter.DeprecationTarget) {
+    warnings.add(oldDslElement)
+  }
+
+  override fun reportDeprecatedApi(
+    newApiElement: String?,
+    oldApiElement: String,
+    url: String,
+    deprecationTarget: DeprecationReporter.DeprecationTarget,
+    requiresOptIn: Boolean,
+  ) {
+    warnings.add(oldApiElement)
+  }
+
+  override fun reportRenamedConfiguration(
+    newConfiguration: String,
+    oldConfiguration: String,
+    deprecationTarget: DeprecationReporter.DeprecationTarget,
+  ) {
+    warnings.add(oldConfiguration)
+  }
+
+  override fun reportDeprecatedConfiguration(
+    newDslElement: String,
+    oldConfiguration: String,
+    deprecationTarget: DeprecationReporter.DeprecationTarget,
+  ) {
+    warnings.add(oldConfiguration)
+  }
+
+  override fun reportRemovedApi(oldApiElement: String, url: String, deprecationTarget: DeprecationReporter.DeprecationTarget) {
+    errors.add(oldApiElement)
+  }
+
+  override fun reportDeprecatedValue(
+    dslElement: String,
+    oldValue: String,
+    newValue: String?,
+    deprecationTarget: DeprecationReporter.DeprecationTarget,
+  ) {
+    warnings.add(dslElement)
+  }
+
+  override fun reportOptionIssuesIfAny(option: Option<*>, value: Any) {
+    if (option.status !is Option.Status.Removed && option.defaultValue == value) {
+      return
     }
-
-    override fun reportObsoleteUsage(oldDslElement: String,
-            deprecationTarget: DeprecationReporter.DeprecationTarget) {
-        warnings.add(oldDslElement)
-    }
-
-    override fun reportDeprecatedApi(
-        newApiElement: String?,
-        oldApiElement: String,
-        url: String,
-        deprecationTarget: DeprecationReporter.DeprecationTarget,
-        requiresOptIn: Boolean,
+    if (
+      option.status is Option.Status.Deprecated || option.status == Option.Status.EXPERIMENTAL || option.status is Option.Status.Removed
     ) {
-        warnings.add(oldApiElement)
+      warnings.add(option.propertyName)
     }
-
-    override fun reportRenamedConfiguration(
-        newConfiguration: String,
-        oldConfiguration: String,
-        deprecationTarget: DeprecationReporter.DeprecationTarget
-    ) {
-        warnings.add(oldConfiguration)
-    }
-
-    override fun reportDeprecatedConfiguration(
-        newDslElement: String,
-        oldConfiguration: String,
-        deprecationTarget: DeprecationReporter.DeprecationTarget
-    ) {
-        warnings.add(oldConfiguration)
-    }
-
-    override fun reportRemovedApi(
-        oldApiElement: String,
-        url: String,
-        deprecationTarget: DeprecationReporter.DeprecationTarget
-    ) {
-        errors.add(oldApiElement)
-    }
-
-    override fun reportDeprecatedValue(dslElement: String,
-            oldValue: String,
-            newValue: String?,
-            deprecationTarget: DeprecationReporter.DeprecationTarget) {
-        warnings.add(dslElement)
-    }
-
-    override fun reportOptionIssuesIfAny(option: Option<*>, value: Any) {
-        if (option.status !is Option.Status.Removed && option.defaultValue == value) {
-            return
-        }
-        if (option.status is Option.Status.Deprecated
-            || option.status == Option.Status.EXPERIMENTAL
-            || option.status is Option.Status.Removed
-        ) {
-            warnings.add(option.propertyName)
-        }
-    }
+  }
 }

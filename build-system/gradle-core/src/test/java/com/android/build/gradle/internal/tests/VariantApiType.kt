@@ -19,8 +19,7 @@ package com.android.build.gradle.internal.tests
 /**
  * types of variant api present in the plugin to test against.
  *
- * Test can then be parameterized on these values to test all
- * variant api flavors.
+ * Test can then be parameterized on these values to test all variant api flavors.
  *
  * ```kotlin
  * @RunWith(Parameterized::class)
@@ -34,8 +33,8 @@ package com.android.build.gradle.internal.tests
  *  ```
  */
 enum class VariantApiType {
-    // old deprecated api.
-    OLD,
-    // new variant api.
-    NEW
+  // old deprecated api.
+  OLD,
+  // new variant api.
+  NEW,
 }

@@ -28,46 +28,41 @@ import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Provider
 import org.gradle.workers.WorkerExecutor
 
-/**
- * Execute android test using Gradle worker.
- */
+/** Execute android test using Gradle worker. */
 fun runAndroidTest(
-    workerExecutor: WorkerExecutor,
-    adbExecutable: Provider<RegularFile>,
-    aaptExecutable: Provider<RegularFile>,
-    deviceProviderFactory: DeviceProviderFactory,
-    testData: TestData,
-    testUtilApks: FileCollection,
-    apkInstallTimeOutInMs: Provider<Integer>,
-    apkInstallOptions: ListProperty<String>,
-    uninstallApksAfterTests: Provider<Boolean>,
+  workerExecutor: WorkerExecutor,
+  adbExecutable: Provider<RegularFile>,
+  aaptExecutable: Provider<RegularFile>,
+  deviceProviderFactory: DeviceProviderFactory,
+  testData: TestData,
+  testUtilApks: FileCollection,
+  apkInstallTimeOutInMs: Provider<Integer>,
+  apkInstallOptions: ListProperty<String>,
+  uninstallApksAfterTests: Provider<Boolean>,
 ) {
-    val deviceProvider = deviceProviderFactory.getDeviceProvider(
-        adbExecutable,
-        System.getenv("ANDROID_SERIAL"))
-    deviceProvider.use {
-        val workQueue = workerExecutor.noIsolation()
-        val onlineDevices = deviceProvider.devices
-            .filter { it.state != IDevice.DeviceState.UNAUTHORIZED }
+  val deviceProvider = deviceProviderFactory.getDeviceProvider(adbExecutable, System.getenv("ANDROID_SERIAL"))
+  deviceProvider.use {
+    val workQueue = workerExecutor.noIsolation()
+    val onlineDevices = deviceProvider.devices.filter { it.state != IDevice.DeviceState.UNAUTHORIZED }
 
-        onlineDevices.forEach { device ->
-            workQueue.submit(AndroidTestWorkAction::class.java) { params ->
-                val deviceConfigProvider = DeviceConfigProviderImpl(device)
-                val testedApks = testData.findTestedApks(deviceConfigProvider)
-                params.adbExecutable.setDisallowChanges(adbExecutable)
-                params.aaptExecutable.setDisallowChanges(aaptExecutable)
-                params.deviceSerial.setDisallowChanges(device.serialNumber)
-                params.deviceApiLevel.setDisallowChanges(deviceConfigProvider.apiLevel)
-                params.instrumentationRunnerClass.setDisallowChanges(testData.instrumentationRunner)
-                params.instrumentationTargetPackageId.setDisallowChanges(testData.instrumentationTargetPackageId)
-                params.testedApks.fromDisallowChanges(testedApks)
-                params.testUtilApks.fromDisallowChanges(testUtilApks)
-                params.apkInstallTimeOutInMs.setDisallowChanges(apkInstallTimeOutInMs)
-                params.apkInstallOptions.setDisallowChanges(apkInstallOptions)
-                params.uninstallApksAfterTests.setDisallowChanges(uninstallApksAfterTests)
-            }
-        }
-
-        workQueue.await()
+    onlineDevices.forEach { device ->
+      workQueue.submit(AndroidTestWorkAction::class.java) { params ->
+        val deviceConfigProvider = DeviceConfigProviderImpl(device)
+        val testedApks = testData.findTestedApks(deviceConfigProvider)
+        params.adbExecutable.setDisallowChanges(adbExecutable)
+        params.aaptExecutable.setDisallowChanges(aaptExecutable)
+        params.deviceSerial.setDisallowChanges(device.serialNumber)
+        params.deviceApiLevel.setDisallowChanges(deviceConfigProvider.apiLevel)
+        params.instrumentationRunnerClass.setDisallowChanges(testData.instrumentationRunner)
+        params.instrumentationTargetPackageId.setDisallowChanges(testData.instrumentationTargetPackageId)
+        params.testedApks.fromDisallowChanges(testedApks)
+        params.testUtilApks.fromDisallowChanges(testUtilApks)
+        params.apkInstallTimeOutInMs.setDisallowChanges(apkInstallTimeOutInMs)
+        params.apkInstallOptions.setDisallowChanges(apkInstallOptions)
+        params.uninstallApksAfterTests.setDisallowChanges(uninstallApksAfterTests)
+      }
     }
+
+    workQueue.await()
+  }
 }

@@ -29,94 +29,66 @@ import org.gradle.api.Project
 import org.junit.Rule
 import org.junit.Test
 
-class AgpApplicationTestSuitesDeclarationTest
-{
-    @get:Rule
-    val rule = GradleRule.configure()
-        .withMavenRepository {
-            jar("com.google.truth:truth:0.44")
+class AgpApplicationTestSuitesDeclarationTest {
+  @get:Rule
+  val rule =
+    GradleRule.configure()
+      .withMavenRepository { jar("com.google.truth:truth:0.44") }
+      .from {
+        rootProject { buildscript { classpath("com.google.truth:truth:0.44") } }
+        gradleProperties { add(BooleanOption.TEST_SUITE_SUPPORT, true) }
+        androidApplication {
+          pluginCallbacks += MyAppCallback::class.java
+          android {
+            testOptions.suites.create("first", AgpTestSuite::class.java) {
+              it.useJunitEngine.inputs += AgpTestSuiteInputParameters.MERGED_MANIFEST
+              it.targetVariants.add("debug")
+              it.targets.apply { create("t1") {} }
+            }
+          }
+          dependencies { implementation("com.google.truth:truth:0.44") }
         }
-        .from {
-            rootProject {
-                buildscript {
-                    classpath("com.google.truth:truth:0.44")
-                }
-            }
-            gradleProperties {
-                add(BooleanOption.TEST_SUITE_SUPPORT, true)
-            }
-            androidApplication {
-                pluginCallbacks += MyAppCallback::class.java
-                android {
-                    testOptions.suites.create("first", AgpTestSuite::class.java) {
-                        it.useJunitEngine.inputs += AgpTestSuiteInputParameters.MERGED_MANIFEST
-                        it.targetVariants.add("debug")
-                        it.targets.apply {
-                            create("t1") { }
-                        }
-                    }
-                }
-                dependencies {
-                    implementation("com.google.truth:truth:0.44")
-                }
-            }
-        }
+      }
 
-    @Test
-    fun testApplicationTestSuites() {
-        rule.build.executor.run(":app:tasks")
-    }
+  @Test
+  fun testApplicationTestSuites() {
+    rule.build.executor.run(":app:tasks")
+  }
 }
 
-class MyAppCallback: ApplicationComponentCallback {
-    override fun handleExtension(
-        project: Project,
-        androidComponents: ApplicationAndroidComponentsExtension
-    ) {
-        androidComponents.finalizeDsl { applicationExtension ->
-            Truth.assertThat(applicationExtension.testOptions.suites.getByName("first").useJunitEngine.inputs)
-                .containsExactly(
-                    AgpTestSuiteInputParameters.MERGED_MANIFEST
-                )
-        }
-
-        androidComponents.beforeVariants(androidComponents.selector().withBuildType("debug")) { variantBuilder ->
-            val listOfTestSuites = variantBuilder.suites.values.joinToString { it.name }
-            if (variantBuilder.suites.size != 1) {
-                throw RuntimeException("Expected 1 testSuites Tests, got $listOfTestSuites")
-            }
-            val testSuiteBuilder = variantBuilder.suites["first"]
-                ?: throw RuntimeException("Cannot find first test suite in test suites : " +
-                        variantBuilder.suites.keys.joinToString(", ")
-                )
-
-            val inputs = testSuiteBuilder.junitEngineSpec.inputs
-            Truth.assertThat(inputs).containsExactly(
-                AgpTestSuiteInputParameters.MERGED_MANIFEST
-            )
-            inputs.add(
-                AgpTestSuiteInputParameters.TESTED_APKS
-            )
-
-        }
-        androidComponents.onVariants(androidComponents.selector().withBuildType("debug")) { variant ->
-            val testSuites = variant as HasTestSuites
-            val firstTestSuite = testSuites.suites["first"]
-                ?: throw RuntimeException(
-                    "Cannot find first test suite in test suites : " +
-                            testSuites.suites.keys.joinToString(", ")
-                )
-            Truth.assertThat(firstTestSuite).isInstanceOf(TestSuite::class.java)
-            Truth.assertThat(firstTestSuite.junitEngineSpec.inputs).containsExactly(
-                AgpTestSuiteInputParameters.MERGED_MANIFEST,
-                AgpTestSuiteInputParameters.TESTED_APKS
-            )
-        }
-
-        androidComponents.onVariants(androidComponents.selector().withBuildType("release")) { variant ->
-            val testSuites = variant as HasTestSuites
-            Truth.assertThat(testSuites.suites).isEmpty()
-        }
+class MyAppCallback : ApplicationComponentCallback {
+  override fun handleExtension(project: Project, androidComponents: ApplicationAndroidComponentsExtension) {
+    androidComponents.finalizeDsl { applicationExtension ->
+      Truth.assertThat(applicationExtension.testOptions.suites.getByName("first").useJunitEngine.inputs)
+        .containsExactly(AgpTestSuiteInputParameters.MERGED_MANIFEST)
     }
-}
 
+    androidComponents.beforeVariants(androidComponents.selector().withBuildType("debug")) { variantBuilder ->
+      val listOfTestSuites = variantBuilder.suites.values.joinToString { it.name }
+      if (variantBuilder.suites.size != 1) {
+        throw RuntimeException("Expected 1 testSuites Tests, got $listOfTestSuites")
+      }
+      val testSuiteBuilder =
+        variantBuilder.suites["first"]
+          ?: throw RuntimeException("Cannot find first test suite in test suites : " + variantBuilder.suites.keys.joinToString(", "))
+
+      val inputs = testSuiteBuilder.junitEngineSpec.inputs
+      Truth.assertThat(inputs).containsExactly(AgpTestSuiteInputParameters.MERGED_MANIFEST)
+      inputs.add(AgpTestSuiteInputParameters.TESTED_APKS)
+    }
+    androidComponents.onVariants(androidComponents.selector().withBuildType("debug")) { variant ->
+      val testSuites = variant as HasTestSuites
+      val firstTestSuite =
+        testSuites.suites["first"]
+          ?: throw RuntimeException("Cannot find first test suite in test suites : " + testSuites.suites.keys.joinToString(", "))
+      Truth.assertThat(firstTestSuite).isInstanceOf(TestSuite::class.java)
+      Truth.assertThat(firstTestSuite.junitEngineSpec.inputs)
+        .containsExactly(AgpTestSuiteInputParameters.MERGED_MANIFEST, AgpTestSuiteInputParameters.TESTED_APKS)
+    }
+
+    androidComponents.onVariants(androidComponents.selector().withBuildType("release")) { variant ->
+      val testSuites = variant as HasTestSuites
+      Truth.assertThat(testSuites.suites).isEmpty()
+    }
+  }
+}

@@ -25,14 +25,12 @@ import org.gradle.api.plugins.ExtensionAware
  * See BuildTypeTest.initWith
  */
 fun initExtensions(from: ExtensionAware, to: ExtensionAware) {
-    for (schema in to.extensions.extensionsSchema) {
-        if (HasInitWith::class.java.isAssignableFrom(schema.publicType.concreteClass)) {
-            val toExtension = to.extensions.getByName(schema.name)
-            @Suppress("UNCHECKED_CAST")
-            toExtension as HasInitWith<Any>
-            from.extensions.findByName(schema.name)?.let { fromExtension ->
-                toExtension.initWith(fromExtension)
-            }
-        }
+  for (schema in to.extensions.extensionsSchema) {
+    if (HasInitWith::class.java.isAssignableFrom(schema.publicType.concreteClass)) {
+      val toExtension = to.extensions.getByName(schema.name)
+      @Suppress("UNCHECKED_CAST")
+      toExtension as HasInitWith<Any>
+      from.extensions.findByName(schema.name)?.let { fromExtension -> toExtension.initWith(fromExtension) }
     }
+  }
 }

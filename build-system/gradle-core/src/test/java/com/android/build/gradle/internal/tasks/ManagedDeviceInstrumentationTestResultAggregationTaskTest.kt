@@ -20,6 +20,7 @@ import com.android.build.gradle.internal.component.InstrumentedTestCreationConfi
 import com.android.build.gradle.internal.fixtures.FakeConfigurableFileCollection
 import com.android.testutils.truth.PathSubject.assertThat
 import com.google.common.truth.Truth.assertThat
+import java.io.File
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.internal.TaskOutputsInternal
 import org.gradle.api.logging.Logger
@@ -36,84 +37,77 @@ import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
-import java.io.File
 
-/**
- * Unit tests for [ManagedDeviceInstrumentationTestResultAggregationTask].
- */
+/** Unit tests for [ManagedDeviceInstrumentationTestResultAggregationTask]. */
 class ManagedDeviceInstrumentationTestResultAggregationTaskTest {
-    @get:Rule
-    var temporaryFolderRule = TemporaryFolder()
+  @get:Rule var temporaryFolderRule = TemporaryFolder()
 
-    private val creationConfig: InstrumentedTestCreationConfig = mock(defaultAnswer = RETURNS_DEEP_STUBS)
+  private val creationConfig: InstrumentedTestCreationConfig = mock(defaultAnswer = RETURNS_DEEP_STUBS)
 
-    @Before
-    fun setUpMocks() {
-        whenever(creationConfig.computeTaskNameInternal(any(), any())).then {
-            val prefix = it.getArgument<String>(0)
-            val suffix = it.getArgument<String>(1)
-            "${prefix}AndroidDebugTest${suffix}"
-        }
-        whenever(creationConfig.name).thenReturn("AndroidDebugTest")
-        whenever(creationConfig.services.buildServiceRegistry
-               .registrations.getByName(any()))
-            .thenReturn(
-                mock<BuildServiceRegistration<*, *>>(defaultAnswer = RETURNS_DEEP_STUBS))
+  @Before
+  fun setUpMocks() {
+    whenever(creationConfig.computeTaskNameInternal(any(), any())).then {
+      val prefix = it.getArgument<String>(0)
+      val suffix = it.getArgument<String>(1)
+      "${prefix}AndroidDebugTest${suffix}"
     }
+    whenever(creationConfig.name).thenReturn("AndroidDebugTest")
+    whenever(creationConfig.services.buildServiceRegistry.registrations.getByName(any()))
+      .thenReturn(mock<BuildServiceRegistration<*, *>>(defaultAnswer = RETURNS_DEEP_STUBS))
+  }
 
-    @Test
-    fun creationTask() {
-        val rootResultsDir = temporaryFolderRule.newFolder("rootResultsDir")
-        val pixel3Dir = File(rootResultsDir, "Pixel3").apply { mkdirs() }
-        val action = ManagedDeviceInstrumentationTestResultAggregationTask.CreationAction(
-            creationConfig,
-            listOf(pixel3Dir),
-            temporaryFolderRule.newFolder("testReportOutputDir"),
-        )
+  @Test
+  fun creationTask() {
+    val rootResultsDir = temporaryFolderRule.newFolder("rootResultsDir")
+    val pixel3Dir = File(rootResultsDir, "Pixel3").apply { mkdirs() }
+    val action =
+      ManagedDeviceInstrumentationTestResultAggregationTask.CreationAction(
+        creationConfig,
+        listOf(pixel3Dir),
+        temporaryFolderRule.newFolder("testReportOutputDir"),
+      )
 
-        assertThat(action.name)
-            .isEqualTo("mergeAndroidDebugTestTestResultProtos")
-        assertThat(action.type)
-            .isEqualTo(ManagedDeviceInstrumentationTestResultAggregationTask::class.java)
-    }
+    assertThat(action.name).isEqualTo("mergeAndroidDebugTestTestResultProtos")
+    assertThat(action.type).isEqualTo(ManagedDeviceInstrumentationTestResultAggregationTask::class.java)
+  }
 
-    @Test
-    fun configureTaskByCreationTask() {
-        val rootResultsDir = temporaryFolderRule.newFolder("rootResultsDir")
-        val pixel3Dir = File(rootResultsDir, "Pixel3").apply { mkdirs() }
-        val action = ManagedDeviceInstrumentationTestResultAggregationTask.CreationAction(
-            creationConfig,
-            listOf(pixel3Dir),
-            temporaryFolderRule.newFolder("testReportOutputDir"),
-        )
-        val task = mock<ManagedDeviceInstrumentationTestResultAggregationTask>(defaultAnswer = RETURNS_DEEP_STUBS)
+  @Test
+  fun configureTaskByCreationTask() {
+    val rootResultsDir = temporaryFolderRule.newFolder("rootResultsDir")
+    val pixel3Dir = File(rootResultsDir, "Pixel3").apply { mkdirs() }
+    val action =
+      ManagedDeviceInstrumentationTestResultAggregationTask.CreationAction(
+        creationConfig,
+        listOf(pixel3Dir),
+        temporaryFolderRule.newFolder("testReportOutputDir"),
+      )
+    val task = mock<ManagedDeviceInstrumentationTestResultAggregationTask>(defaultAnswer = RETURNS_DEEP_STUBS)
 
-        whenever(task.project.buildDir).thenReturn(File("buildDir"))
+    whenever(task.project.buildDir).thenReturn(File("buildDir"))
 
-        action.configure(task)
+    action.configure(task)
 
-        verify(task.deviceTestResultDirs).from(eq(listOf(pixel3Dir)))
-    }
+    verify(task.deviceTestResultDirs).from(eq(listOf(pixel3Dir)))
+  }
 
-    @Test
-    fun taskAction() {
-        val task = mock<ManagedDeviceInstrumentationTestResultAggregationTask>(defaultAnswer = CALLS_REAL_METHODS)
-        whenever(task.analyticsService).thenReturn(mock())
-        doReturn("path").whenever(task).path
-        doReturn(mock<TaskOutputsInternal>(defaultAnswer = RETURNS_DEEP_STUBS))
-            .whenever(task).outputs
-        doReturn(mock<Logger>()).whenever(task).logger
+  @Test
+  fun taskAction() {
+    val task = mock<ManagedDeviceInstrumentationTestResultAggregationTask>(defaultAnswer = CALLS_REAL_METHODS)
+    whenever(task.analyticsService).thenReturn(mock())
+    doReturn("path").whenever(task).path
+    doReturn(mock<TaskOutputsInternal>(defaultAnswer = RETURNS_DEEP_STUBS)).whenever(task).outputs
+    doReturn(mock<Logger>()).whenever(task).logger
 
-        val testReportOutputDir = temporaryFolderRule.newFolder()
-        val testReportOutputDirProperty = mock<DirectoryProperty>(defaultAnswer = RETURNS_DEEP_STUBS)
-        whenever(testReportOutputDirProperty.get().asFile).thenReturn(testReportOutputDir)
-        doReturn(testReportOutputDirProperty).whenever(task).outputTestReportHtmlDir
+    val testReportOutputDir = temporaryFolderRule.newFolder()
+    val testReportOutputDirProperty = mock<DirectoryProperty>(defaultAnswer = RETURNS_DEEP_STUBS)
+    whenever(testReportOutputDirProperty.get().asFile).thenReturn(testReportOutputDir)
+    doReturn(testReportOutputDirProperty).whenever(task).outputTestReportHtmlDir
 
-        val pixel3ResultDir = temporaryFolderRule.newFolder("Pixel3")
-        doReturn(FakeConfigurableFileCollection(pixel3ResultDir)).whenever(task).deviceTestResultDirs
+    val pixel3ResultDir = temporaryFolderRule.newFolder("Pixel3")
+    doReturn(FakeConfigurableFileCollection(pixel3ResultDir)).whenever(task).deviceTestResultDirs
 
-        task.taskAction()
+    task.taskAction()
 
-        assertThat(File(testReportOutputDir, "index.html")).exists()
-    }
+    assertThat(File(testReportOutputDir, "index.html")).exists()
+  }
 }

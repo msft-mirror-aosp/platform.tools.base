@@ -17,6 +17,8 @@
 package com.android.build.gradle.internal.services
 
 import com.android.builder.packaging.JarFlinger
+import java.io.File
+import javax.inject.Inject
 import org.gradle.api.Project
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.model.ObjectFactory
@@ -24,63 +26,52 @@ import org.gradle.api.provider.Property
 import org.gradle.api.provider.ProviderFactory
 import org.gradle.api.services.BuildService
 import org.gradle.api.services.BuildServiceParameters
-import java.io.File
-import javax.inject.Inject
 
 private const val FAKE_DEPENDENCY_JAR = "FakeDependency.jar"
 private const val ANDROID_SUBDIR = "android"
 
-abstract class FakeDependencyJarBuildService : BuildService<FakeDependencyJarBuildService.Params>,
-    AutoCloseable {
+abstract class FakeDependencyJarBuildService : BuildService<FakeDependencyJarBuildService.Params>, AutoCloseable {
 
-    interface Params : BuildServiceParameters {
-        val gradleUserHome: Property<File>
+  interface Params : BuildServiceParameters {
+    val gradleUserHome: Property<File>
+  }
+
+  @get:Inject abstract val providerFactory: ProviderFactory
+
+  @get:Inject abstract val objectFactory: ObjectFactory
+
+  /** Use [ConfigPhaseFileCreator] to create fake dependency jar during configuration phase to avoid configuration cache miss. */
+  val lazyCachedFakeJar: File =
+    providerFactory
+      .of(FakeDependencyJarCreator::class.java) {
+        it.parameters.fakeDependencyJar.set(parameters.gradleUserHome.get().resolve(ANDROID_SUBDIR).resolve(FAKE_DEPENDENCY_JAR))
+      }
+      .get()
+
+  abstract class FakeDependencyJarCreator : ConfigPhaseFileCreator<File, FakeDependencyJarCreator.Params> {
+    interface Params : ConfigPhaseFileCreator.Params {
+      val fakeDependencyJar: RegularFileProperty
     }
 
-    @get:Inject
-    abstract val providerFactory: ProviderFactory
-
-    @get:Inject
-    abstract val objectFactory: ObjectFactory
-
-    /**
-     * Use [ConfigPhaseFileCreator] to create fake dependency jar during configuration phase to
-     * avoid configuration cache miss.
-     */
-    val lazyCachedFakeJar: File = providerFactory.of(FakeDependencyJarCreator::class.java) {
-        it.parameters.fakeDependencyJar.set(
-                parameters.gradleUserHome.get().resolve(ANDROID_SUBDIR).resolve(FAKE_DEPENDENCY_JAR)
-        )
-    }.get()
-
-    abstract class FakeDependencyJarCreator :
-            ConfigPhaseFileCreator<File, FakeDependencyJarCreator.Params> {
-        interface Params: ConfigPhaseFileCreator.Params {
-            val fakeDependencyJar: RegularFileProperty
-        }
-
-        override fun obtain(): File {
-            val fakeDependencyJar = parameters.fakeDependencyJar.get().asFile
-            if (!fakeDependencyJar.exists()) {
-                fakeDependencyJar.parentFile.mkdirs()
-                JarFlinger(fakeDependencyJar.toPath()).use {}
-            }
-            return fakeDependencyJar
-        }
+    override fun obtain(): File {
+      val fakeDependencyJar = parameters.fakeDependencyJar.get().asFile
+      if (!fakeDependencyJar.exists()) {
+        fakeDependencyJar.parentFile.mkdirs()
+        JarFlinger(fakeDependencyJar.toPath()).use {}
+      }
+      return fakeDependencyJar
     }
+  }
 
-    class RegistrationAction(project: Project) :
-        ServiceRegistrationAction<FakeDependencyJarBuildService, Params>(
-            project,
-            FakeDependencyJarBuildService::class.java
-        ) {
+  class RegistrationAction(project: Project) :
+    ServiceRegistrationAction<FakeDependencyJarBuildService, Params>(project, FakeDependencyJarBuildService::class.java) {
 
-        override fun configure(parameters: Params) {
-            parameters.gradleUserHome.set(project.gradle.gradleUserHomeDir)
-        }
+    override fun configure(parameters: Params) {
+      parameters.gradleUserHome.set(project.gradle.gradleUserHomeDir)
     }
+  }
 
-    override fun close() {
-        // do nothing
-    }
+  override fun close() {
+    // do nothing
+  }
 }

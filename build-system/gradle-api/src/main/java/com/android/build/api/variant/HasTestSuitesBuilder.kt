@@ -18,18 +18,13 @@ package com.android.build.api.variant
 
 import org.gradle.api.Incubating
 
-/**
- * Container of [TestSuiteBuilder]
- */
+/** Container of [TestSuiteBuilder] */
 @Incubating
 interface HasTestSuitesBuilder {
-    /**
-     * Variant's [TestSuiteBuilder] configuration to configure test suites associated with this
-     * variant.
-     *
-     * @return a [Map] which keys are unique names within the test suites
-     *
-     */
-    @get:Incubating
-    val suites: Map<String, TestSuiteBuilder>
+  /**
+   * Variant's [TestSuiteBuilder] configuration to configure test suites associated with this variant.
+   *
+   * @return a [Map] which keys are unique names within the test suites
+   */
+  @get:Incubating val suites: Map<String, TestSuiteBuilder>
 }

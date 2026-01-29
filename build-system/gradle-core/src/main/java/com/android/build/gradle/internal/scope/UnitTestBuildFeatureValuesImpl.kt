@@ -16,9 +16,7 @@
 
 package com.android.build.gradle.internal.scope
 
-class UnitTestBuildFeatureValuesImpl(
-    delegate: BuildFeatureValues
-): BuildFeatureValues by delegate {
+class UnitTestBuildFeatureValuesImpl(delegate: BuildFeatureValues) : BuildFeatureValues by delegate {
 
-    override val renderScript: Boolean = false
+  override val renderScript: Boolean = false
 }

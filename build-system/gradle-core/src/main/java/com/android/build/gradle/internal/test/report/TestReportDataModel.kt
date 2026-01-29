@@ -16,21 +16,16 @@
 
 package com.android.build.gradle.internal.test.report
 
-/**
- * Defines the complete data model for the final JSON report.
- */
+/** Defines the complete data model for the final JSON report. */
 
 /**
  * The root of the test report data model.
  *
- * @property variants A list of all variant names included in this report (e.g., "debug", "release").
- *                    These are used as keys in the [Function.results] map.
+ * @property variants A list of all variant names included in this report (e.g., "debug", "release"). These are used as keys in the
+ *   [Function.results] map.
  * @property modules A list of modules in the project (e.g., ":app", ":lib").
  */
-data class RootReport(
-    val variants: List<String>,
-    val modules: List<Module>
-)
+data class RootReport(val variants: List<String>, val modules: List<Module>)
 
 /**
  * Represents a Gradle module in the test report.
@@ -38,10 +33,7 @@ data class RootReport(
  * @property name The path of the module (e.g., ":app").
  * @property testSuites A list of test suites within this module (e.g., "testDebugUnitTest").
  */
-data class Module(
-    val name: String,
-    val testSuites: List<TestSuite>
-)
+data class Module(val name: String, val testSuites: List<TestSuite>)
 
 /**
  * Represents a test suite, typically corresponding to a specific test task or type.
@@ -49,10 +41,7 @@ data class Module(
  * @property name The name of the test suite (e.g., "common" or "UnitTest").
  * @property packages A list of Java/Kotlin packages containing tests.
  */
-data class TestSuite(
-    val name: String,
-    val packages: List<Package>
-)
+data class TestSuite(val name: String, val packages: List<Package>)
 
 /**
  * Represents a Java/Kotlin package containing test classes.
@@ -60,10 +49,7 @@ data class TestSuite(
  * @property name The package name (e.g., "com.example.mytapp").
  * @property classes A list of test classes within this package.
  */
-data class Package(
-    val name: String,
-    val classes: List<ClassType>
-)
+data class Package(val name: String, val classes: List<ClassType>)
 
 /**
  * Represents a test class.
@@ -71,10 +57,7 @@ data class Package(
  * @property name The simple name of the class (e.g., "ExampleUnitTest").
  * @property functions A list of test methods (functions) in this class.
  */
-data class ClassType(
-    val name: String,
-    val functions: List<Function>
-)
+data class ClassType(val name: String, val functions: List<Function>)
 
 /**
  * Represents a single test function execution result.
@@ -82,22 +65,17 @@ data class ClassType(
  * @property status The result status (e.g., "passed", "failed", "skipped").
  * @property stackTrace The stack trace if the test failed, or null otherwise.
  */
-data class TestResults(
-    val status: String,
-    val stackTrace: String? = null
-)
+data class TestResults(val status: String, val stackTrace: String? = null)
 
 /**
  * Represents a test method with results across multiple variants.
  *
  * @property name The name of the test function (e.g., "testAddition").
- * @property results A map where keys are variant names (matching [RootReport.variants])
- *                   and values are the [TestResults] for that variant.
- *                   This allows aggregating results for the same test across different build variants.
+ * @property results A map where keys are variant names (matching [RootReport.variants]) and values are the [TestResults] for that variant.
+ *   This allows aggregating results for the same test across different build variants.
  */
 data class Function(
-    val name: String,
-    // Store TestResult objects instead of simple Strings
-    val results: Map<String, TestResults> = emptyMap()
+  val name: String,
+  // Store TestResult objects instead of simple Strings
+  val results: Map<String, TestResults> = emptyMap(),
 )
-

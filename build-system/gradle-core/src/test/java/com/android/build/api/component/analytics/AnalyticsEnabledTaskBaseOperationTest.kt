@@ -43,163 +43,102 @@ import org.mockito.kotlin.whenever
 
 class AnalyticsEnabledTaskBaseOperationTest {
 
-    abstract class FileBasedTask : Task {
-        @get:InputFile abstract val inputFile: RegularFileProperty
-        @get:OutputFile abstract val outputFile: RegularFileProperty
+  abstract class FileBasedTask : Task {
+    @get:InputFile abstract val inputFile: RegularFileProperty
+    @get:OutputFile abstract val outputFile: RegularFileProperty
+  }
+
+  private val stats = GradleBuildVariant.newBuilder()
+
+  @Test
+  fun testWiredWith() {
+    @Suppress("UNCHECKED_CAST") val delegate: TaskBasedOperation<FileBasedTask> = mock<TaskBasedOperation<FileBasedTask>>()
+    @Suppress("UNCHECKED_CAST") val fakeOutputRequest: OutOperationRequest<RegularFile> = mock<OutOperationRequest<RegularFile>>()
+    val proxy = AnalyticsEnabledTaskBaseOperation(delegate, stats, FakeObjectFactory.factory)
+
+    whenever(delegate.wiredWith(FileBasedTask::outputFile)).thenReturn(fakeOutputRequest)
+    Truth.assertThat(proxy.wiredWith(FileBasedTask::outputFile)).isInstanceOf(OutOperationRequest::class.java)
+
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessList.first().type)
+      .isEqualTo(VariantPropertiesMethodType.WIRED_WITH_VALUE)
+    verify(delegate, times(1)).wiredWith(FileBasedTask::outputFile)
+  }
+
+  @Test
+  fun testWiredWithFiles() {
+    @Suppress("UNCHECKED_CAST") val delegate: TaskBasedOperation<FileBasedTask> = mock<TaskBasedOperation<FileBasedTask>>()
+    @Suppress("UNCHECKED_CAST") val proxy = AnalyticsEnabledTaskBaseOperation(delegate, stats, FakeObjectFactory.factory)
+    val fakeOutputRequest: InAndOutFileOperationRequest = mock<InAndOutFileOperationRequest>()
+
+    whenever(delegate.wiredWithFiles(FileBasedTask::inputFile, FileBasedTask::outputFile)).thenReturn(fakeOutputRequest)
+    Truth.assertThat(proxy.wiredWithFiles(FileBasedTask::inputFile, FileBasedTask::outputFile))
+      .isInstanceOf(InAndOutFileOperationRequest::class.java)
+
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessList.first().type)
+      .isEqualTo(VariantPropertiesMethodType.WIRED_WITH_FILES_VALUE)
+    verify(delegate, times(1)).wiredWithFiles(FileBasedTask::inputFile, FileBasedTask::outputFile)
+  }
+
+  @Test
+  fun testWiredWithDirectories() {
+    abstract class DirectoryBasedTask : Task {
+      @get:InputFiles abstract val inputDir: DirectoryProperty
+      @get:OutputFiles abstract val outputDir: DirectoryProperty
     }
 
-    private val stats = GradleBuildVariant.newBuilder()
+    @Suppress("UNCHECKED_CAST") val delegate: TaskBasedOperation<DirectoryBasedTask> = mock<TaskBasedOperation<DirectoryBasedTask>>()
+    @Suppress("UNCHECKED_CAST") val proxy = AnalyticsEnabledTaskBaseOperation(delegate, stats, FakeObjectFactory.factory)
+    @Suppress("UNCHECKED_CAST") val fakeOutputRequest = mock<InAndOutDirectoryOperationRequest<DirectoryBasedTask>>()
 
-    @Test
-    fun testWiredWith() {
-        @Suppress("UNCHECKED_CAST")
-        val delegate: TaskBasedOperation<FileBasedTask> =
-            mock<TaskBasedOperation<FileBasedTask>>()
-        @Suppress("UNCHECKED_CAST")
-        val fakeOutputRequest: OutOperationRequest<RegularFile> =
-            mock<OutOperationRequest<RegularFile>>()
-        val proxy = AnalyticsEnabledTaskBaseOperation(delegate, stats, FakeObjectFactory.factory)
+    whenever(delegate.wiredWithDirectories(DirectoryBasedTask::inputDir, DirectoryBasedTask::outputDir)).thenReturn(fakeOutputRequest)
+    Truth.assertThat(proxy.wiredWithDirectories(DirectoryBasedTask::inputDir, DirectoryBasedTask::outputDir))
+      .isInstanceOf(InAndOutDirectoryOperationRequest::class.java)
 
-        whenever(delegate.wiredWith(FileBasedTask::outputFile)).thenReturn(fakeOutputRequest)
-        Truth.assertThat(proxy.wiredWith(FileBasedTask::outputFile)).isInstanceOf(
-            OutOperationRequest::class.java
-        )
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessList.first().type)
+      .isEqualTo(VariantPropertiesMethodType.WIRED_WITH_DIRECTORIES_VALUE)
+    verify(delegate, times(1)).wiredWithDirectories(DirectoryBasedTask::inputDir, DirectoryBasedTask::outputDir)
+  }
 
-        Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
-        Truth.assertThat(
-            stats.variantApiAccess.variantPropertiesAccessList.first().type
-        ).isEqualTo(VariantPropertiesMethodType.WIRED_WITH_VALUE)
-        verify(delegate, times(1))
-            .wiredWith(FileBasedTask::outputFile)
+  @Test
+  fun testWiredWithAndCombining() {
+    abstract class DirectoryBasedTask : Task {
+      @get:InputFiles abstract val inputFiles: ListProperty<RegularFile>
+      @get:OutputFiles abstract val outputFile: RegularFileProperty
     }
+    @Suppress("UNCHECKED_CAST") val delegate: TaskBasedOperation<DirectoryBasedTask> = mock<TaskBasedOperation<DirectoryBasedTask>>()
+    @Suppress("UNCHECKED_CAST") val proxy = AnalyticsEnabledTaskBaseOperation(delegate, stats, FakeObjectFactory.factory)
+    @Suppress("UNCHECKED_CAST") val fakeOutputRequest = mock<CombiningOperationRequest<RegularFile>>()
 
-    @Test
-    fun testWiredWithFiles() {
-        @Suppress("UNCHECKED_CAST")
-        val delegate: TaskBasedOperation<FileBasedTask> =
-            mock<TaskBasedOperation<FileBasedTask>>()
-        @Suppress("UNCHECKED_CAST")
-        val proxy = AnalyticsEnabledTaskBaseOperation(delegate, stats, FakeObjectFactory.factory)
-        val fakeOutputRequest: InAndOutFileOperationRequest =
-            mock<InAndOutFileOperationRequest>()
+    whenever(delegate.wiredWith(DirectoryBasedTask::inputFiles, DirectoryBasedTask::outputFile)).thenReturn(fakeOutputRequest)
+    Truth.assertThat(proxy.wiredWith(DirectoryBasedTask::inputFiles, DirectoryBasedTask::outputFile))
+      .isInstanceOf(CombiningOperationRequest::class.java)
 
-        whenever(delegate.wiredWithFiles(
-            FileBasedTask::inputFile,
-            FileBasedTask::outputFile
-        )).thenReturn(fakeOutputRequest)
-        Truth.assertThat(proxy.wiredWithFiles(FileBasedTask::inputFile, FileBasedTask::outputFile)).isInstanceOf(
-            InAndOutFileOperationRequest::class.java
-        )
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessList.first().type)
+      .isEqualTo(VariantPropertiesMethodType.WIRED_WITH_LIST_VALUE)
+    verify(delegate, times(1)).wiredWith(DirectoryBasedTask::inputFiles, DirectoryBasedTask::outputFile)
+  }
 
-        Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
-        Truth.assertThat(
-            stats.variantApiAccess.variantPropertiesAccessList.first().type
-        ).isEqualTo(VariantPropertiesMethodType.WIRED_WITH_FILES_VALUE)
-        verify(delegate, times(1))
-            .wiredWithFiles(
-                FileBasedTask::inputFile,
-                FileBasedTask::outputFile)
+  @Test
+  fun testWiredWithMultiple() {
+    abstract class MultipleRegularFilesBasedTask : Task {
+      @get:InputFiles abstract val inputFiles: ListProperty<RegularFile>
     }
+    @Suppress("UNCHECKED_CAST")
+    val delegate: TaskBasedOperation<MultipleRegularFilesBasedTask> = mock<TaskBasedOperation<MultipleRegularFilesBasedTask>>()
+    @Suppress("UNCHECKED_CAST") val proxy = AnalyticsEnabledTaskBaseOperation(delegate, stats, FakeObjectFactory.factory)
+    @Suppress("UNCHECKED_CAST") val fakeOutputRequest = mock<MultipleArtifactTypeOutOperationRequest<RegularFile>>()
 
-    @Test
-    fun testWiredWithDirectories() {
-        abstract class DirectoryBasedTask : Task {
-            @get:InputFiles abstract val inputDir: DirectoryProperty
-            @get:OutputFiles abstract val outputDir: DirectoryProperty
-        }
+    whenever(delegate.wiredWithMultiple(MultipleRegularFilesBasedTask::inputFiles)).thenReturn(fakeOutputRequest)
+    Truth.assertThat(proxy.wiredWithMultiple(MultipleRegularFilesBasedTask::inputFiles))
+      .isInstanceOf(MultipleArtifactTypeOutOperationRequest::class.java)
 
-        @Suppress("UNCHECKED_CAST")
-        val delegate: TaskBasedOperation<DirectoryBasedTask> =
-            mock<TaskBasedOperation<DirectoryBasedTask>>()
-        @Suppress("UNCHECKED_CAST")
-        val proxy = AnalyticsEnabledTaskBaseOperation(delegate, stats, FakeObjectFactory.factory)
-        @Suppress("UNCHECKED_CAST")
-        val fakeOutputRequest = mock<InAndOutDirectoryOperationRequest<DirectoryBasedTask>>()
-
-        whenever(delegate.wiredWithDirectories(
-            DirectoryBasedTask::inputDir,
-            DirectoryBasedTask::outputDir
-        )).thenReturn(fakeOutputRequest)
-        Truth.assertThat(proxy.wiredWithDirectories(
-            DirectoryBasedTask::inputDir,
-            DirectoryBasedTask::outputDir)
-        ).isInstanceOf(
-            InAndOutDirectoryOperationRequest::class.java
-        )
-
-        Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
-        Truth.assertThat(
-            stats.variantApiAccess.variantPropertiesAccessList.first().type
-        ).isEqualTo(VariantPropertiesMethodType.WIRED_WITH_DIRECTORIES_VALUE)
-        verify(delegate, times(1))
-            .wiredWithDirectories(
-                DirectoryBasedTask::inputDir,
-                DirectoryBasedTask::outputDir)
-    }
-
-    @Test
-    fun testWiredWithAndCombining() {
-        abstract class DirectoryBasedTask : Task {
-            @get:InputFiles abstract val inputFiles: ListProperty<RegularFile>
-            @get:OutputFiles abstract val outputFile: RegularFileProperty
-        }
-        @Suppress("UNCHECKED_CAST")
-        val delegate: TaskBasedOperation<DirectoryBasedTask> =
-            mock<TaskBasedOperation<DirectoryBasedTask>>()
-        @Suppress("UNCHECKED_CAST")
-        val proxy = AnalyticsEnabledTaskBaseOperation(delegate, stats, FakeObjectFactory.factory)
-        @Suppress("UNCHECKED_CAST")
-        val fakeOutputRequest = mock<CombiningOperationRequest<RegularFile>>()
-
-        whenever(delegate.wiredWith(
-            DirectoryBasedTask::inputFiles,
-            DirectoryBasedTask::outputFile
-        )).thenReturn(fakeOutputRequest)
-        Truth.assertThat(proxy.wiredWith(
-            DirectoryBasedTask::inputFiles,
-            DirectoryBasedTask::outputFile
-        )).isInstanceOf(
-            CombiningOperationRequest::class.java
-        )
-
-        Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
-        Truth.assertThat(
-            stats.variantApiAccess.variantPropertiesAccessList.first().type
-        ).isEqualTo(VariantPropertiesMethodType.WIRED_WITH_LIST_VALUE)
-        verify(delegate, times(1))
-            .wiredWith(
-                DirectoryBasedTask::inputFiles,
-                DirectoryBasedTask::outputFile)
-    }
-
-    @Test
-    fun testWiredWithMultiple() {
-        abstract class MultipleRegularFilesBasedTask : Task {
-            @get:InputFiles abstract val inputFiles: ListProperty<RegularFile>
-        }
-        @Suppress("UNCHECKED_CAST")
-        val delegate: TaskBasedOperation<MultipleRegularFilesBasedTask> =
-            mock<TaskBasedOperation<MultipleRegularFilesBasedTask>>()
-        @Suppress("UNCHECKED_CAST")
-        val proxy = AnalyticsEnabledTaskBaseOperation(delegate, stats, FakeObjectFactory.factory)
-        @Suppress("UNCHECKED_CAST")
-        val fakeOutputRequest = mock<MultipleArtifactTypeOutOperationRequest<RegularFile>>()
-
-        whenever(delegate.wiredWithMultiple(
-            MultipleRegularFilesBasedTask::inputFiles,
-        )).thenReturn(fakeOutputRequest)
-        Truth.assertThat(proxy.wiredWithMultiple(
-            MultipleRegularFilesBasedTask::inputFiles,
-        )).isInstanceOf(
-            MultipleArtifactTypeOutOperationRequest::class.java
-        )
-
-        Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
-        Truth.assertThat(
-            stats.variantApiAccess.variantPropertiesAccessList.first().type
-        ).isEqualTo(VariantPropertiesMethodType.WIRED_WITH_MULTIPLE_VALUE)
-        verify(delegate, times(1))
-            .wiredWithMultiple(
-                MultipleRegularFilesBasedTask::inputFiles)
-    }
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessList.first().type)
+      .isEqualTo(VariantPropertiesMethodType.WIRED_WITH_MULTIPLE_VALUE)
+    verify(delegate, times(1)).wiredWithMultiple(MultipleRegularFilesBasedTask::inputFiles)
+  }
 }

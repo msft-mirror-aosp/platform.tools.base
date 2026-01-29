@@ -16,52 +16,46 @@
 
 package com.android.build.api.component.analytics
 
-import com.android.build.api.artifact.SingleArtifact
 import com.android.build.api.artifact.InAndOutDirectoryOperationRequest
+import com.android.build.api.artifact.SingleArtifact
 import com.android.tools.build.gradle.internal.profile.VariantPropertiesMethodType
 import com.google.common.truth.Truth
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
 import org.gradle.api.Task
-
 import org.junit.Before
 import org.junit.Test
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
-import org.mockito.kotlin.whenever
 
 class AnalyticsEnabledInAndOutDirectoryOperationRequestTest {
-    private val delegate: InAndOutDirectoryOperationRequest<Task> = mock()
+  private val delegate: InAndOutDirectoryOperationRequest<Task> = mock()
 
-    private val stats = GradleBuildVariant.newBuilder()
-    private lateinit var proxy: AnalyticsEnabledInAndOutDirectoryOperationRequest<Task>
+  private val stats = GradleBuildVariant.newBuilder()
+  private lateinit var proxy: AnalyticsEnabledInAndOutDirectoryOperationRequest<Task>
 
-    @Before
-    fun setup() {
-        proxy = AnalyticsEnabledInAndOutDirectoryOperationRequest(delegate, stats)
-    }
+  @Before
+  fun setup() {
+    proxy = AnalyticsEnabledInAndOutDirectoryOperationRequest(delegate, stats)
+  }
 
-    @Test
-    fun toTransform() {
-        proxy.toTransform(SingleArtifact.APK)
+  @Test
+  fun toTransform() {
+    proxy.toTransform(SingleArtifact.APK)
 
-        Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
-        Truth.assertThat(
-            stats.variantApiAccess.variantPropertiesAccessList.first().type
-        ).isEqualTo(VariantPropertiesMethodType.TO_TRANSFORM_DIRECTORY_VALUE)
-        verify(delegate, times(1))
-            .toTransform(SingleArtifact.APK)
-    }
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessList.first().type)
+      .isEqualTo(VariantPropertiesMethodType.TO_TRANSFORM_DIRECTORY_VALUE)
+    verify(delegate, times(1)).toTransform(SingleArtifact.APK)
+  }
 
-    @Test
-    fun toTransformMany() {
-        proxy.toTransformMany(SingleArtifact.APK)
+  @Test
+  fun toTransformMany() {
+    proxy.toTransformMany(SingleArtifact.APK)
 
-        Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
-        Truth.assertThat(
-            stats.variantApiAccess.variantPropertiesAccessList.first().type
-        ).isEqualTo(VariantPropertiesMethodType.TO_TRANSFORM_MANY_VALUE)
-        verify(delegate, times(1))
-            .toTransformMany(SingleArtifact.APK)
-    }
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessList.first().type)
+      .isEqualTo(VariantPropertiesMethodType.TO_TRANSFORM_MANY_VALUE)
+    verify(delegate, times(1)).toTransformMany(SingleArtifact.APK)
+  }
 }

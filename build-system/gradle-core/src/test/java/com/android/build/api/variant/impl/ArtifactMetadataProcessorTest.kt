@@ -22,29 +22,28 @@ import org.junit.Test
 
 internal class ArtifactMetadataProcessorTest {
 
-    /**
-     * The [ArtifactMetadataProcessor.internalTypesFinalizingArtifacts] list has to be managed
-     * manually instead of relying on Kotlin reflection for performance reasons. This test will use
-     * Kotlin reflection to check that all [InternalArtifactType] annotated with
-     * [InternalArtifactType.finalizingArtifact] are referenced in the list.
-     */
-    @Test
-    fun testAllFinalizingArtifact() {
-        val finalizingArtifactsDeclarations = mutableListOf<InternalArtifactType<*>>()
-        InternalArtifactType::class.sealedSubclasses.forEach { kClass ->
-            kClass.objectInstance?.let { internalArtifactType ->
-                if (internalArtifactType.finalizingArtifact.isNotEmpty()) {
-                    finalizingArtifactsDeclarations.add(internalArtifactType)
-                }
-            }
+  /**
+   * The [ArtifactMetadataProcessor.internalTypesFinalizingArtifacts] list has to be managed manually instead of relying on Kotlin
+   * reflection for performance reasons. This test will use Kotlin reflection to check that all [InternalArtifactType] annotated with
+   * [InternalArtifactType.finalizingArtifact] are referenced in the list.
+   */
+  @Test
+  fun testAllFinalizingArtifact() {
+    val finalizingArtifactsDeclarations = mutableListOf<InternalArtifactType<*>>()
+    InternalArtifactType::class.sealedSubclasses.forEach { kClass ->
+      kClass.objectInstance?.let { internalArtifactType ->
+        if (internalArtifactType.finalizingArtifact.isNotEmpty()) {
+          finalizingArtifactsDeclarations.add(internalArtifactType)
         }
-
-        Truth.assertWithMessage(
-            "The list defined in ArtifactMetadataProcessor.internalTypesFinalizingArtifacts " +
-                    "is not in sync with the InternalArtifactTypes definition, check the differences" +
-                    " below and update the list accordingly :")
-            .that(ArtifactMetadataProcessor.internalTypesFinalizingArtifacts)
-            .containsExactlyElementsIn(finalizingArtifactsDeclarations)
-
+      }
     }
+
+    Truth.assertWithMessage(
+        "The list defined in ArtifactMetadataProcessor.internalTypesFinalizingArtifacts " +
+          "is not in sync with the InternalArtifactTypes definition, check the differences" +
+          " below and update the list accordingly :"
+      )
+      .that(ArtifactMetadataProcessor.internalTypesFinalizingArtifacts)
+      .containsExactlyElementsIn(finalizingArtifactsDeclarations)
+  }
 }

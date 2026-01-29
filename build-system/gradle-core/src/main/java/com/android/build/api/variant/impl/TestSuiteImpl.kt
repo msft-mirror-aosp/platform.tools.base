@@ -41,102 +41,86 @@ import com.android.build.gradle.internal.testsuites.impl.JUnitEngineSpecForVaria
 import com.android.build.gradle.internal.testsuites.impl.TestSuiteBuilderImpl
 import com.android.build.gradle.internal.variant.VariantComponentInfo
 import com.android.builder.dexing.DexingType
+import java.io.File
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.api.tasks.testing.Test
-import java.io.File
 
-/**
- * Implementation of [TestSuite] for test suites declared via the DSL.
- */
-class TestSuiteImpl internal constructor(
-    testSuiteBuilder: TestSuiteBuilderImpl,
-    override val sourceContainers: Collection<TestSuiteSourceContainer>,
-    val testedVariantComponent: VariantComponentInfo<VariantBuilder, VariantDslInfo, VariantCreationConfig>,
-    override val global: GlobalTaskCreationConfig,
-    override val variantServices: VariantServices,
-    override val services: TaskCreationServices,
-    override val artifacts: ArtifactsImpl,
-    val defaultConfig: DefaultConfig,
-    override val manifestDataProviderBuilder: (File) -> ManifestDataProvider,
-
+/** Implementation of [TestSuite] for test suites declared via the DSL. */
+class TestSuiteImpl
+internal constructor(
+  testSuiteBuilder: TestSuiteBuilderImpl,
+  override val sourceContainers: Collection<TestSuiteSourceContainer>,
+  val testedVariantComponent: VariantComponentInfo<VariantBuilder, VariantDslInfo, VariantCreationConfig>,
+  override val global: GlobalTaskCreationConfig,
+  override val variantServices: VariantServices,
+  override val services: TaskCreationServices,
+  override val artifacts: ArtifactsImpl,
+  val defaultConfig: DefaultConfig,
+  override val manifestDataProviderBuilder: (File) -> ManifestDataProvider,
 ) : TestSuite, TestSuiteCreationConfig {
 
-    private val _name = testSuiteBuilder.name
-    //
-    // Public APIs
-    //
-    override fun getName() = _name
+  private val _name = testSuiteBuilder.name
 
-    override val junitEngineSpec: JUnitEngineSpec =
-            JUnitEngineSpecImplForVariant(
-                testSuiteBuilder.junitEngineSpec as JUnitEngineSpecForVariantBuilder,
-                { variantServices.mapPropertyOf(String::class.java, String::class.java, mapOf()) }
-            )
-    override val testedVariant: VariantCreationConfig
-        get() = testedVariantComponent.variant
+  //
+  // Public APIs
+  //
+  override fun getName() = _name
 
-    override val targets: Map<String, TestSuiteTargetCreationConfig> =
-        testSuiteBuilder.targets.mapValues { entry ->
-            TestSuiteTargetImpl(
-                entry.value,
-                computeTaskName(
-                    testedVariant.name,
-                    "test${_name.capitalizeFirstChar()}${entry.value.uniqueName().capitalizeFirstChar()}",
-                    "TestSuite"
-                )
-            )
-        }
-
-    override val sources: Collection<TestSuiteSourceSet>
-        get() = sourceContainers.map { it.source }
-
-    @Synchronized
-    override fun configureTestTasks(action: Test.(context: TestTaskContext) -> Unit) {
-        testTaskConfigActions.add(action)
-    }
-
-    override val codeCoverage: Property<Boolean> = variantServices.propertyOf(
-        Boolean::class.java, testSuiteBuilder.codeCoverage
+  override val junitEngineSpec: JUnitEngineSpec =
+    JUnitEngineSpecImplForVariant(
+      testSuiteBuilder.junitEngineSpec as JUnitEngineSpecForVariantBuilder,
+      { variantServices.mapPropertyOf(String::class.java, String::class.java, mapOf()) },
     )
+  override val testedVariant: VariantCreationConfig
+    get() = testedVariantComponent.variant
 
-    override fun instrumentationRunner(source: TestSuiteSourceSet.TestApk): Provider<String> {
-            val dslInfo = testedVariantComponent.variantDslInfo
-            val variant = testedVariantComponent.variant
-            return if (dslInfo is ApplicationVariantDslInfo && variant is ApplicationCreationConfig) {
-                getInstrumentationRunner(
-                    dslInfo.productFlavorList,
-                    defaultConfig,
-                    manifestDataProviderBuilder(source.manifestFile),
-                    DexingImpl(
-                        variant,
-                        true,
-                        dslInfo.dexingDslInfo.multiDexKeepProguard,
-                        dslInfo.dexingDslInfo.multiDexKeepFile,
-                        variantServices
-                    ).dexingType,
-                    variantServices
-                )
-            } else {
-                getDefaultInstrumentationTestRunner(variantServices, DexingType.MONO_DEX)
-            }
-        }
-
-    /**
-     * Internal APIs
-     */
-    private val testTaskConfigActions = mutableListOf<Test.(TestTaskContext) -> Unit>().also {
-        it.addAll(testSuiteBuilder.testSuite.testTaskConfigActions)
+  override val targets: Map<String, TestSuiteTargetCreationConfig> =
+    testSuiteBuilder.targets.mapValues { entry ->
+      TestSuiteTargetImpl(
+        entry.value,
+        computeTaskName(
+          testedVariant.name,
+          "test${_name.capitalizeFirstChar()}${entry.value.uniqueName().capitalizeFirstChar()}",
+          "TestSuite",
+        ),
+      )
     }
 
-    @Synchronized
-    override fun runTestTaskConfigurationActions(
-        context: TestTaskContext,
-        testTaskProvider: TaskProvider<out Test>
-    ) {
-        testTaskConfigActions.forEach {
-            testTaskProvider.configure { testTask -> it(testTask, context) }
-        }
+  override val sources: Collection<TestSuiteSourceSet>
+    get() = sourceContainers.map { it.source }
+
+  @Synchronized
+  override fun configureTestTasks(action: Test.(context: TestTaskContext) -> Unit) {
+    testTaskConfigActions.add(action)
+  }
+
+  override val codeCoverage: Property<Boolean> = variantServices.propertyOf(Boolean::class.java, testSuiteBuilder.codeCoverage)
+
+  override fun instrumentationRunner(source: TestSuiteSourceSet.TestApk): Provider<String> {
+    val dslInfo = testedVariantComponent.variantDslInfo
+    val variant = testedVariantComponent.variant
+    return if (dslInfo is ApplicationVariantDslInfo && variant is ApplicationCreationConfig) {
+      getInstrumentationRunner(
+        dslInfo.productFlavorList,
+        defaultConfig,
+        manifestDataProviderBuilder(source.manifestFile),
+        DexingImpl(variant, true, dslInfo.dexingDslInfo.multiDexKeepProguard, dslInfo.dexingDslInfo.multiDexKeepFile, variantServices)
+          .dexingType,
+        variantServices,
+      )
+    } else {
+      getDefaultInstrumentationTestRunner(variantServices, DexingType.MONO_DEX)
     }
+  }
+
+  /** Internal APIs */
+  private val testTaskConfigActions =
+    mutableListOf<Test.(TestTaskContext) -> Unit>().also { it.addAll(testSuiteBuilder.testSuite.testTaskConfigActions) }
+
+  @Synchronized
+  override fun runTestTaskConfigurationActions(context: TestTaskContext, testTaskProvider: TaskProvider<out Test>) {
+    testTaskConfigActions.forEach { testTaskProvider.configure { testTask -> it(testTask, context) } }
+  }
 }

@@ -23,22 +23,21 @@ import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.options.Option
 import org.gradle.work.DisableCachingByDefault
 
-/**
- * Runs instrumentation tests of a variant on a device defined in the DSL.
- */
+/** Runs instrumentation tests of a variant on a device defined in the DSL. */
 @DisableCachingByDefault
 @BuildAnalyzer(primaryTaskCategory = TaskCategory.TEST)
-abstract class DeviceSerialTestTask: DefaultTask() {
-    @Option(
-        option = "serial",
-        description = "The serial of the device to test against. This will take precedence over " +
-                "the serials specified in the ANDROID_SERIAL environment variable. In addition, " +
-                "when this argument is specified the test task will fail if it cannot connect to " +
-                "the device. \n\n" +
-                "Multiple devices can be specified by specifying the command multiple times. " +
-                "i.e. myDeviceSerialTestTask --serial deviceSerial1 --serial deviceSerial2")
-    fun setSerialOption(serials: List<String>) = serialValues.addAll(serials)
+abstract class DeviceSerialTestTask : DefaultTask() {
+  @Option(
+    option = "serial",
+    description =
+      "The serial of the device to test against. This will take precedence over " +
+        "the serials specified in the ANDROID_SERIAL environment variable. In addition, " +
+        "when this argument is specified the test task will fail if it cannot connect to " +
+        "the device. \n\n" +
+        "Multiple devices can be specified by specifying the command multiple times. " +
+        "i.e. myDeviceSerialTestTask --serial deviceSerial1 --serial deviceSerial2",
+  )
+  fun setSerialOption(serials: List<String>) = serialValues.addAll(serials)
 
-    @get: Input
-    abstract val serialValues: ListProperty<String>
+  @get:Input abstract val serialValues: ListProperty<String>
 }

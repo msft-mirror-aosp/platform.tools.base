@@ -25,17 +25,17 @@ import com.android.build.api.variant.TestVariantBuilder
 import com.android.build.gradle.internal.services.DslServices
 
 open class TestAndroidComponentsExtensionImpl(
-        dslServices: DslServices,
-        sdkComponents: SdkComponents,
-        managedDeviceRegistry: ManagedDeviceRegistry,
-        variantApiOperationsRegistrar: VariantApiOperationsRegistrar<TestExtension, TestVariantBuilder, TestVariant>,
-        testExtension: TestExtension
-):
-        TestAndroidComponentsExtension,
-        AndroidComponentsExtensionImpl<TestExtension, TestVariantBuilder, TestVariant>(
-            dslServices,
-            sdkComponents,
-            managedDeviceRegistry,
-            variantApiOperationsRegistrar,
-            testExtension
-        )
+  dslServices: DslServices,
+  sdkComponents: SdkComponents,
+  managedDeviceRegistry: ManagedDeviceRegistry,
+  variantApiOperationsRegistrar: VariantApiOperationsRegistrar<TestExtension, TestVariantBuilder, TestVariant>,
+  testExtension: TestExtension,
+) :
+  TestAndroidComponentsExtension,
+  AndroidComponentsExtensionImpl<TestExtension, TestVariantBuilder, TestVariant>(
+    dslServices,
+    sdkComponents,
+    managedDeviceRegistry,
+    variantApiOperationsRegistrar,
+    testExtension,
+  )

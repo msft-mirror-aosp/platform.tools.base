@@ -28,220 +28,165 @@ import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.truth.PathSubject
 import com.android.utils.FileUtils
 import com.google.common.truth.Truth
+import java.io.File
 import org.junit.Assert
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
-import java.io.File
 
 /**
  * Tests for generated source registration APIs.
  *
- *
  * Includes the following APIs:
- *
- *
- *  * registerJavaGeneratingTask
- *  * registerResGeneratingTask
- *  * registerGeneratedResFolders
- *
+ * * registerJavaGeneratingTask
+ * * registerResGeneratingTask
+ * * registerGeneratedResFolders
  */
 @RunWith(Parameterized::class)
 class GenFolderApiTest(private val variantApiTestType: VariantApiTestType) {
 
-    companion object {
-        @JvmStatic
-        @Parameterized.Parameters(name = "{0}")
-        fun variantAPI() = VariantApiTestType.values()
+  companion object {
+    @JvmStatic @Parameterized.Parameters(name = "{0}") fun variantAPI() = VariantApiTestType.values()
+  }
+
+  @get:Rule
+  val project: GradleTestProject =
+    builder()
+      .fromTestProject("genFolderApi")
+      .apply { if (variantApiTestType == OLD) addGradleProperty(BooleanOption.USE_NEW_DSL, false) }
+      .create()
+
+  private lateinit var ideSetupTasks: List<String>
+
+  private lateinit var container: ModelContainerV2
+
+  @Before
+  @Throws(Exception::class)
+  fun setUp() {
+
+    File(project.projectDir, "${variantApiTestType.name.lowercase()}_variant_api.build.gradle").copyTo(project.buildFile)
+
+    project.executor().withArgument("-P" + "inject_enable_generate_values_res=true").run("assembleDebug")
+    container =
+      project
+        .modelV2()
+        .allowOptionWarning(BooleanOption.USE_NEW_DSL)
+        .withArgument("-P" + "inject_enable_generate_values_res=true")
+        .fetchModels()
+        .container
+
+    ideSetupTasks = container.getDebugGenerateSourcesCommands()
+  }
+
+  @Test
+  @Throws(Exception::class)
+  fun checkTheCustomJavaGenerationTaskRan() {
+    project.getApk(GradleTestProject.ApkType.DEBUG).use { apk ->
+      ApkSubject.assertThat(apk).containsClass("Lcom/custom/Foo;")
+      ApkSubject.assertThat(apk).containsClass("Lcom/custom/Bar;")
+    }
+  }
+
+  @Test
+  @Throws(Exception::class)
+  fun checkTheCustomResGenerationTaskRan() {
+    project.getApk(GradleTestProject.ApkType.DEBUG).use { apk ->
+      if (variantApiTestType == OLD) {
+        ApkSubject.assertThat(apk).contains("res/xml/generated.xml")
+      }
+      ApkSubject.assertThat(apk).hasClass("Lcom/android/tests/basic/R\$string;").that().hasField("generated_string")
+    }
+  }
+
+  /** Regression test for b/120750247 */
+  @Test
+  @Throws(Exception::class)
+  fun checkCustomGenerationRunAtSync() {
+    project.executor().withArgument("-P" + "inject_enable_generate_values_res=true").run(listOf("clean").plus(ideSetupTasks))
+
+    val mainArtifact = container.getProject().androidProject?.getVariantByName("debug")?.mainArtifact!!
+
+    val javaSources = mainArtifact.generatedSourceFolders.filter { it: File -> it.absolutePath.startsWith(getCustomPath("java", "debug")) }
+    Truth.assertThat(javaSources).isNotEmpty()
+    javaSources.forEach { PathSubject.assertThat(it).isDirectory() }
+
+    val resSources = mainArtifact.generatedResourceFolders.filter { it: File -> it.absolutePath.startsWith(getCustomPath("res", "debug")) }
+    Truth.assertThat(resSources).isNotEmpty()
+    resSources.forEach { PathSubject.assertThat(it).isDirectory() }
+
+    if (variantApiTestType == OLD) {
+      val customResources2 = mainArtifact.generatedResourceFolders.single { it: File -> it.absolutePath.startsWith(customRes2Path) }
+      PathSubject.assertThat(customResources2).isDirectory()
+    }
+  }
+
+  @Test
+  @Throws(Exception::class)
+  fun checkAddingAndRemovingGeneratingTasks() {
+    project.executor().withArgument("-P" + "inject_enable_generate_values_res=false").run("clean", "assembleDebug")
+
+    project.getApk(GradleTestProject.ApkType.DEBUG).use { apk ->
+      ApkSubject.assertThat(apk).hasClass("Lcom/android/tests/basic/R\$string;").that().doesNotHaveField("generated_string")
+    }
+    project.executor().withArgument("-P" + "inject_enable_generate_values_res=true").run("assembleDebug")
+    project.getApk(GradleTestProject.ApkType.DEBUG).use { apk ->
+      ApkSubject.assertThat(apk).hasClass("Lcom/android/tests/basic/R\$string;").that().hasField("generated_string")
+    }
+  }
+
+  @Test
+  fun checkJavaFolderInModel() {
+    container.getProject().androidProject?.variants?.forEach { variant ->
+      val mainInfo = variant.mainArtifact
+      Assert.assertNotNull("Null-check on mainArtifactInfo for " + variant.displayName, mainInfo)
+
+      Truth.assertThat(mainInfo.generatedSourceFolders.map(File::getAbsolutePath))
+        .containsAtLeast(getCustomPath("java", variant.name), getCustomPath("java", variant.name, "2"))
+    }
+  }
+
+  @Test
+  fun checkResFolderInModel() {
+    container.getProject().androidProject?.variants?.forEach { variant ->
+      val mainInfo = variant.mainArtifact
+      Assert.assertNotNull("Null-check on mainArtifactInfo for " + variant.displayName, mainInfo)
+
+      val genResFolders = mainInfo.generatedResourceFolders.map(File::getAbsolutePath)
+      Truth.assertThat(genResFolders).containsNoDuplicates()
+      Truth.assertThat(genResFolders).contains(getCustomPath("res", variant.name))
+      if (variantApiTestType == OLD) {
+        Truth.assertThat(genResFolders).contains(customRes2Path + variant.name)
+      }
+    }
+  }
+
+  @Test
+  @Throws(Exception::class)
+  fun backwardsCompatible() {
+    // ATTENTION Author and Reviewers - please make sure required changes to the build file
+    // are backwards compatible before updating this test.
+    Truth.assertThat(TestFileUtils.sha1NormalizedLineEndings(project.file("old_variant_api.build.gradle")))
+      .isEqualTo("685cde8e5eb7ca006bb2f518c4aecf5fcb8b7499")
+    Truth.assertThat(TestFileUtils.sha1NormalizedLineEndings(project.file("new_variant_api.build.gradle")))
+      .isEqualTo("3b98a3744866d60e9034538ca805f1b0285ab873")
+  }
+
+  private fun getCustomPath(sourceType: String, variantName: String, index: String = ""): String =
+    when (variantApiTestType) {
+      OLD -> FileUtils.join(project.projectDir.absolutePath, "build", "custom" + sourceType.capitalize() + index, variantName)
+
+      VariantApiTestType.NEW ->
+        FileUtils.join(
+          project.projectDir.absolutePath,
+          "build",
+          "generated",
+          sourceType,
+          "generate${sourceType.capitalize()}For${variantName.capitalize()}$index",
+        )
     }
 
-    @get:Rule
-    val project: GradleTestProject = builder()
-        .fromTestProject("genFolderApi").apply {
-            if (variantApiTestType == OLD) addGradleProperty(BooleanOption.USE_NEW_DSL, false)
-        }
-        .create()
-
-    private lateinit var ideSetupTasks: List<String>
-
-    private lateinit var container: ModelContainerV2
-
-    @Before
-    @Throws(Exception::class)
-    fun setUp() {
-
-        File(project.projectDir, "${variantApiTestType.name.lowercase()}_variant_api.build.gradle")
-            .copyTo(project.buildFile)
-
-        project.executor()
-            .withArgument("-P" + "inject_enable_generate_values_res=true")
-            .run("assembleDebug")
-        container =
-            project.modelV2()
-                .allowOptionWarning(BooleanOption.USE_NEW_DSL)
-                .withArgument("-P" + "inject_enable_generate_values_res=true")
-                .fetchModels()
-                .container
-
-        ideSetupTasks = container.getDebugGenerateSourcesCommands()
-    }
-
-    @Test
-    @Throws(Exception::class)
-    fun checkTheCustomJavaGenerationTaskRan() {
-        project.getApk(GradleTestProject.ApkType.DEBUG).use { apk ->
-            ApkSubject.assertThat(apk).containsClass("Lcom/custom/Foo;")
-            ApkSubject.assertThat(apk).containsClass("Lcom/custom/Bar;")
-        }
-    }
-
-    @Test
-    @Throws(Exception::class)
-    fun checkTheCustomResGenerationTaskRan() {
-        project.getApk(GradleTestProject.ApkType.DEBUG).use { apk ->
-            if (variantApiTestType == OLD) {
-                ApkSubject.assertThat(apk).contains("res/xml/generated.xml")
-            }
-            ApkSubject.assertThat(apk)
-                .hasClass("Lcom/android/tests/basic/R\$string;")
-                .that()
-                .hasField("generated_string")
-        }
-    }
-
-    /** Regression test for b/120750247  */
-    @Test
-    @Throws(Exception::class)
-    fun checkCustomGenerationRunAtSync() {
-        project.executor()
-            .withArgument("-P" + "inject_enable_generate_values_res=true")
-            .run(listOf("clean").plus(ideSetupTasks))
-
-        val mainArtifact =
-            container.getProject().androidProject
-                ?.getVariantByName("debug")
-                ?.mainArtifact!!
-
-        val javaSources = mainArtifact.generatedSourceFolders
-            .filter { it: File -> it.absolutePath.startsWith(
-                getCustomPath("java", "debug")
-            ) }
-        Truth.assertThat(javaSources).isNotEmpty()
-        javaSources.forEach {
-            PathSubject.assertThat(it).isDirectory()
-        }
-
-        val resSources = mainArtifact.generatedResourceFolders
-            .filter { it: File -> it.absolutePath.startsWith(
-                getCustomPath("res", "debug")
-            ) }
-        Truth.assertThat(resSources).isNotEmpty()
-        resSources.forEach {
-            PathSubject.assertThat(it).isDirectory()
-        }
-
-        if (variantApiTestType == OLD) {
-            val customResources2 =
-                mainArtifact.generatedResourceFolders.single { it: File ->
-                    it.absolutePath.startsWith(
-                        customRes2Path
-                    )
-                }
-            PathSubject.assertThat(customResources2).isDirectory()
-        }
-    }
-
-
-    @Test
-    @Throws(Exception::class)
-    fun checkAddingAndRemovingGeneratingTasks() {
-        project.executor()
-            .withArgument("-P" + "inject_enable_generate_values_res=false")
-            .run("clean", "assembleDebug")
-
-        project.getApk(GradleTestProject.ApkType.DEBUG).use { apk ->
-            ApkSubject.assertThat(apk)
-                .hasClass("Lcom/android/tests/basic/R\$string;")
-                .that()
-                .doesNotHaveField("generated_string")
-        }
-        project.executor()
-            .withArgument("-P" + "inject_enable_generate_values_res=true")
-            .run("assembleDebug")
-        project.getApk(GradleTestProject.ApkType.DEBUG).use { apk ->
-            ApkSubject.assertThat(apk)
-                .hasClass("Lcom/android/tests/basic/R\$string;")
-                .that()
-                .hasField("generated_string")
-        }
-    }
-
-    @Test
-    fun checkJavaFolderInModel() {
-        container.getProject().androidProject?.variants?.forEach { variant ->
-            val mainInfo = variant.mainArtifact
-            Assert.assertNotNull(
-                "Null-check on mainArtifactInfo for " + variant.displayName, mainInfo
-            )
-
-            Truth.assertThat(mainInfo.generatedSourceFolders.map(File::getAbsolutePath)).containsAtLeast(
-                getCustomPath("java", variant.name),
-                getCustomPath("java", variant.name, "2")
-            )
-        }
-    }
-
-    @Test
-    fun checkResFolderInModel() {
-        container.getProject().androidProject?.variants?.forEach {  variant ->
-            val mainInfo = variant.mainArtifact
-            Assert.assertNotNull(
-                "Null-check on mainArtifactInfo for " + variant.displayName, mainInfo
-            )
-
-            val genResFolders = mainInfo.generatedResourceFolders.map(File::getAbsolutePath)
-            Truth.assertThat(genResFolders).containsNoDuplicates()
-            Truth.assertThat(genResFolders).contains(getCustomPath("res", variant.name))
-            if (variantApiTestType == OLD) {
-                Truth.assertThat(genResFolders).contains(
-                    customRes2Path + variant.name
-                )
-            }
-        }
-    }
-
-    @Test
-    @Throws(Exception::class)
-    fun backwardsCompatible() {
-        // ATTENTION Author and Reviewers - please make sure required changes to the build file
-        // are backwards compatible before updating this test.
-        Truth.assertThat(TestFileUtils.sha1NormalizedLineEndings(project.file("old_variant_api.build.gradle")))
-            .isEqualTo("685cde8e5eb7ca006bb2f518c4aecf5fcb8b7499")
-        Truth.assertThat(TestFileUtils.sha1NormalizedLineEndings(project.file("new_variant_api.build.gradle")))
-            .isEqualTo("3b98a3744866d60e9034538ca805f1b0285ab873")
-    }
-
-    private fun getCustomPath(sourceType: String, variantName: String, index: String = ""): String =
-        when(variantApiTestType) {
-            OLD ->
-                FileUtils.join(
-                    project.projectDir.absolutePath,
-                    "build", "custom" + sourceType.capitalize() + index,
-                    variantName)
-
-            VariantApiTestType.NEW ->
-                FileUtils.join(
-                    project.projectDir.absolutePath,
-                    "build",
-                    "generated",
-                    sourceType,
-                    "generate${sourceType.capitalize()}For${variantName.capitalize()}$index"
-                )
-        }
-
-    private val customRes2Path: String
-        get() = (FileUtils.join(project.projectDir.absolutePath, "build", "customRes2")
-                + File.separatorChar)
+  private val customRes2Path: String
+    get() = (FileUtils.join(project.projectDir.absolutePath, "build", "customRes2") + File.separatorChar)
 }

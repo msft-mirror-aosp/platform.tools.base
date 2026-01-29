@@ -21,19 +21,21 @@ package com.android.build.gradle.integration.desugar
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 
 fun configureR8Desugaring(project: GradleTestProject) {
-    // keep all classes, do not rename them, as we'd like to assert things about original ones
-    project.buildFile.resolveSibling("proguard.txt").writeText(
-            """
+  // keep all classes, do not rename them, as we'd like to assert things about original ones
+  project.buildFile
+    .resolveSibling("proguard.txt")
+    .writeText(
+      """
                 -keep class *{*;}
                 -dontobfuscate
                 -dontwarn java.lang.ClassValue
                 """
     )
 
-    project.buildFile.appendText(
-            """
+  project.buildFile.appendText(
+    """
                 android.buildTypes.debug.minifyEnabled true
                 android.buildTypes.debug.proguardFiles 'proguard.txt'
                 """
-    )
+  )
 }

@@ -26,16 +26,13 @@ import org.gradle.api.Incubating
 @Incubating
 interface HasDeviceTestsBuilder {
 
-    /**
-     * List of [DeviceTestBuilder] for this variant.
-     *
-     * The creation of [DeviceTestBuilder] elements is handled by the AGP Plugin
-     * and there is no way to add or remove from the list as of now.
-     *
-     * @return a [Map] which keys are unique names within the tested variant like
-     * [DeviceTestBuilder.ANDROID_TEST_TYPE] and the values are [DeviceTestBuilder] for that host
-     * test suite.
-     */
-    @get:Incubating
-    val deviceTests: Map<String, DeviceTestBuilder>
+  /**
+   * List of [DeviceTestBuilder] for this variant.
+   *
+   * The creation of [DeviceTestBuilder] elements is handled by the AGP Plugin and there is no way to add or remove from the list as of now.
+   *
+   * @return a [Map] which keys are unique names within the tested variant like [DeviceTestBuilder.ANDROID_TEST_TYPE] and the values are
+   *   [DeviceTestBuilder] for that host test suite.
+   */
+  @get:Incubating val deviceTests: Map<String, DeviceTestBuilder>
 }

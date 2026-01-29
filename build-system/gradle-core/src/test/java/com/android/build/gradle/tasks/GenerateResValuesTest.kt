@@ -21,50 +21,48 @@ import com.android.build.api.variant.impl.ResValueKeyImpl
 import com.android.build.gradle.internal.fixtures.FakeNoOpAnalyticsService
 import com.android.build.gradle.internal.generators.ResValueGenerator
 import com.android.testutils.truth.PathSubject.assertThat
+import java.io.File
 import org.gradle.testfixtures.ProjectBuilder
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
-import java.io.File
 
-/**
- * Unit test for GenerateResValues
- */
+/** Unit test for GenerateResValues */
 class GenerateResValuesTest {
 
-    @get:Rule
-    var temporaryFolder = TemporaryFolder()
+  @get:Rule var temporaryFolder = TemporaryFolder()
 
-    @Test
-    fun test() {
-        val testDir = temporaryFolder.newFolder()
-        // To make sure we clean the output directory.
-        val trashFile = File(testDir, "dummy.txt").also { it.createNewFile()}
+  @Test
+  fun test() {
+    val testDir = temporaryFolder.newFolder()
+    // To make sure we clean the output directory.
+    val trashFile = File(testDir, "dummy.txt").also { it.createNewFile() }
 
-        val project = ProjectBuilder.builder().withProjectDir(testDir).build()
+    val project = ProjectBuilder.builder().withProjectDir(testDir).build()
 
-        val task = project.tasks.create("test", GenerateResValues::class.java)
-        task.items.put(
-            ResValueKeyImpl("string", "VALUE_DEFAULT"), ResValue("1")
-        )
-        task.outputDirectory.set(testDir)
-        task.analyticsService.set(FakeNoOpAnalyticsService())
+    val task = project.tasks.create("test", GenerateResValues::class.java)
+    task.items.put(ResValueKeyImpl("string", "VALUE_DEFAULT"), ResValue("1"))
+    task.outputDirectory.set(testDir)
+    task.analyticsService.set(FakeNoOpAnalyticsService())
 
-        task.taskAction()
+    task.taskAction()
 
-        val output = File(testDir, "values/" + ResValueGenerator.RES_VALUE_FILENAME_XML)
-        assertThat(output).contentWithUnixLineSeparatorsIsExactly(
-            """
-                <?xml version="1.0" encoding="utf-8"?>
-                <resources>
+    val output = File(testDir, "values/" + ResValueGenerator.RES_VALUE_FILENAME_XML)
+    assertThat(output)
+      .contentWithUnixLineSeparatorsIsExactly(
+        """
+        <?xml version="1.0" encoding="utf-8"?>
+        <resources>
 
-                    <!-- Automatically generated file. DO NOT MODIFY -->
+            <!-- Automatically generated file. DO NOT MODIFY -->
 
-                    <!-- Added from the variant API -->
-                    <string name="VALUE_DEFAULT" translatable="false">1</string>
+            <!-- Added from the variant API -->
+            <string name="VALUE_DEFAULT" translatable="false">1</string>
 
-                </resources>""".trimIndent()
-        )
-        assertThat(trashFile).doesNotExist()
-    }
+        </resources>
+        """
+          .trimIndent()
+      )
+    assertThat(trashFile).doesNotExist()
+  }
 }

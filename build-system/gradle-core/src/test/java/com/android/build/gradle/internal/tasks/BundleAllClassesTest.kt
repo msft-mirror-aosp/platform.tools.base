@@ -29,30 +29,26 @@ import org.junit.rules.TemporaryFolder
 
 class BundleAllClassesTest {
 
-    @get:Rule
-    val testFolder = TemporaryFolder()
+  @get:Rule val testFolder = TemporaryFolder()
 
-    @Test
-    fun testOutputJarIsCreated() {
-        val outputJar = testFolder.root.resolve("output.jar")
-        object : BundleAllClasses.BundleAllClassesWorkAction() {
-            override fun getParameters(): Parameters {
-                return object : Parameters() {
-                    override val inputDirs =
-                        FakeObjectFactory.factory.fileCollection().from(testFolder.newFolder())
-                    override val inputJars = FakeObjectFactory.factory.fileCollection()
-                    override val outputJar =
-                        FakeObjectFactory.factory.fileProperty().fileValue(outputJar)
-                    override val projectPath = FakeGradleProperty("projectName")
-                    override val taskOwner = FakeGradleProperty("taskOwner")
-                    override val workerKey = FakeGradleProperty("workerKey")
-                    override val analyticsService: Property<AnalyticsService> = FakeGradleProperty(
-                        FakeNoOpAnalyticsService()
-                    )
-                }
-            }
-        }.execute()
+  @Test
+  fun testOutputJarIsCreated() {
+    val outputJar = testFolder.root.resolve("output.jar")
+    object : BundleAllClasses.BundleAllClassesWorkAction() {
+        override fun getParameters(): Parameters {
+          return object : Parameters() {
+            override val inputDirs = FakeObjectFactory.factory.fileCollection().from(testFolder.newFolder())
+            override val inputJars = FakeObjectFactory.factory.fileCollection()
+            override val outputJar = FakeObjectFactory.factory.fileProperty().fileValue(outputJar)
+            override val projectPath = FakeGradleProperty("projectName")
+            override val taskOwner = FakeGradleProperty("taskOwner")
+            override val workerKey = FakeGradleProperty("workerKey")
+            override val analyticsService: Property<AnalyticsService> = FakeGradleProperty(FakeNoOpAnalyticsService())
+          }
+        }
+      }
+      .execute()
 
-        assertThat(outputJar).exists()
-    }
+    assertThat(outputJar).exists()
+  }
 }

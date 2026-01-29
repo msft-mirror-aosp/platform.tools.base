@@ -27,34 +27,32 @@ import org.junit.Test
 
 class BuildTypeDslTest {
 
-    private val app = MinimalSubProject.app("com.example.baseModule")
+  private val app = MinimalSubProject.app("com.example.baseModule")
 
-    @get:Rule
-    val project = GradleTestProject.builder().fromTestApp(app).create()
+  @get:Rule val project = GradleTestProject.builder().fromTestApp(app).create()
 
-    // Regression test for b/379125947
-    @Test
-    fun testBuildTypeInitWithShrinkResources() {
-        TestFileUtils.appendToFile(
-            project.buildFile,
-            """
-                android {
-                    buildTypes {
-                        release {
-                            shrinkResources = true
-                            minifyEnabled true
-                        }
-                        secondRelease {
-                            initWith(release)
-                        }
-                    }
-                }
-            """.trimIndent()
-        )
-        project.executor().run("assembleRelease", "assembleSecondRelease")
-        Truth.assertThat(
-            InternalArtifactType.SHRUNK_RESOURCES_PROTO_FORMAT.getOutputDir(project.buildDir)
-                .resolve("secondRelease").exists()
-        ).isTrue()
-    }
+  // Regression test for b/379125947
+  @Test
+  fun testBuildTypeInitWithShrinkResources() {
+    TestFileUtils.appendToFile(
+      project.buildFile,
+      """
+      android {
+          buildTypes {
+              release {
+                  shrinkResources = true
+                  minifyEnabled true
+              }
+              secondRelease {
+                  initWith(release)
+              }
+          }
+      }
+      """
+        .trimIndent(),
+    )
+    project.executor().run("assembleRelease", "assembleSecondRelease")
+    Truth.assertThat(InternalArtifactType.SHRUNK_RESOURCES_PROTO_FORMAT.getOutputDir(project.buildDir).resolve("secondRelease").exists())
+      .isTrue()
+  }
 }

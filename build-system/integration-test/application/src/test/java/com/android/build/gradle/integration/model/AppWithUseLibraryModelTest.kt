@@ -20,34 +20,25 @@ import com.android.build.gradle.integration.common.fixture.model.ReferenceModelC
 import com.android.builder.model.v2.ide.SyncIssue
 import org.junit.Test
 
-class AppWithUseLibraryModelTest: ReferenceModelComparator(
-    referenceConfig = {
-        androidApplication {  }
-    },
-    deltaConfig = {
-        androidApplication {
-            android {
-                useLibrary("android.car")
-            }
-        }
-    },
-    syncOptions = {
-        ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
-    }
-) {
+class AppWithUseLibraryModelTest :
+  ReferenceModelComparator(
+    referenceConfig = { androidApplication {} },
+    deltaConfig = { androidApplication { android { useLibrary("android.car") } } },
+    syncOptions = { ignoreSyncIssues(SyncIssue.SEVERITY_WARNING) },
+  ) {
 
-    @Test
-    fun `test BasicAndroidProject model`() {
-        compareBasicAndroidProjectWith(goldenFileSuffix = "BasicAndroidProject")
-    }
+  @Test
+  fun `test BasicAndroidProject model`() {
+    compareBasicAndroidProjectWith(goldenFileSuffix = "BasicAndroidProject")
+  }
 
-    @Test
-    fun `test AndroidProject model`() {
-        ensureAndroidProjectDeltaIsEmpty()
-    }
+  @Test
+  fun `test AndroidProject model`() {
+    ensureAndroidProjectDeltaIsEmpty()
+  }
 
-    @Test
-    fun `test AndroidDsl model`() {
-        ensureAndroidDslDeltaIsEmpty()
-    }
+  @Test
+  fun `test AndroidDsl model`() {
+    ensureAndroidDslDeltaIsEmpty()
+  }
 }

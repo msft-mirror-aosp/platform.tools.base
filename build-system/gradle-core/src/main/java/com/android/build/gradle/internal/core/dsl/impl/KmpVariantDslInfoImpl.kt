@@ -49,156 +49,150 @@ import com.android.builder.core.ComponentTypeImpl
 import com.android.builder.core.DefaultVectorDrawablesOptions
 import com.android.builder.model.VectorDrawablesOptions
 import com.google.common.collect.ImmutableSet
+import java.io.File
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.RegularFile
 import org.gradle.api.provider.Provider
-import java.io.File
 
 class KmpVariantDslInfoImpl(
-    extension: KotlinMultiplatformAndroidLibraryExtension,
-    services: VariantServices,
-    buildDirectory: DirectoryProperty,
-    withJava: Boolean,
-    dslServices: DslServices,
-): KmpComponentDslInfoImpl(
-    extension, services, withJava
-), KmpVariantDslInfo {
+  extension: KotlinMultiplatformAndroidLibraryExtension,
+  services: VariantServices,
+  buildDirectory: DirectoryProperty,
+  withJava: Boolean,
+  dslServices: DslServices,
+) : KmpComponentDslInfoImpl(extension, services, withJava), KmpVariantDslInfo {
 
-    override val androidResourcesDsl = object: AndroidResourcesDslInfo {
-        override val androidResources = extension.androidResources
-        override val resourceConfigurations: ImmutableSet<String> = ImmutableSet.of()
-        override val vectorDrawables: VectorDrawablesOptions = DefaultVectorDrawablesOptions()
-        override val isPseudoLocalesEnabled: Boolean = false
-        override val isCrunchPngs: Boolean = false
-        override val isCrunchPngsDefault: Boolean = false
+  override val androidResourcesDsl =
+    object : AndroidResourcesDslInfo {
+      override val androidResources = extension.androidResources
+      override val resourceConfigurations: ImmutableSet<String> = ImmutableSet.of()
+      override val vectorDrawables: VectorDrawablesOptions = DefaultVectorDrawablesOptions()
+      override val isPseudoLocalesEnabled: Boolean = false
+      override val isCrunchPngs: Boolean = false
+      override val isCrunchPngsDefault: Boolean = false
 
-        override fun getResValues(): Map<ResValue.Key, ResValue> {
-            return emptyMap()
-        }
+      override fun getResValues(): Map<ResValue.Key, ResValue> {
+        return emptyMap()
+      }
     }
 
-    override val componentType = ComponentTypeImpl.KMP_ANDROID
-    override val componentIdentity = ComponentIdentityImpl(
-        KmpAndroidCompilationType.MAIN.defaultSourceSetName
-    )
+  override val componentType = ComponentTypeImpl.KMP_ANDROID
+  override val componentIdentity = ComponentIdentityImpl(KmpAndroidCompilationType.MAIN.defaultSourceSetName)
 
-    override val aarMetadata: AarMetadata
-        get() = extension.aarMetadata
+  override val aarMetadata: AarMetadata
+    get() = extension.aarMetadata
 
-    override val namespace: Provider<String> by lazy {
-        extension.namespace?.let { services.provider { it } }
-            ?: throw RuntimeException(
-                "Namespace not specified. Specify a namespace in the module's build file like so:\n" +
-                        "kotlin {\n" +
-                        "    $ANDROID_EXTENSION_ON_KOTLIN_EXTENSION_NAME {\n" +
-                        "        namespace = \"com.example.namespace\"\n" +
-                        "    }\n" +
-                        "}\n"
-            )
-    }
+  override val namespace: Provider<String> by lazy {
+    extension.namespace?.let { services.provider { it } }
+      ?: throw RuntimeException(
+        "Namespace not specified. Specify a namespace in the module's build file like so:\n" +
+          "kotlin {\n" +
+          "    $ANDROID_EXTENSION_ON_KOTLIN_EXTENSION_NAME {\n" +
+          "        namespace = \"com.example.namespace\"\n" +
+          "    }\n" +
+          "}\n"
+      )
+  }
 
-    override val maxSdkVersion: Int? = null
+  override val maxSdkVersion: Int? = null
 
-    override val packaging: Packaging
-        get() = extension.packaging
+  override val packaging: Packaging
+    get() = extension.packaging
 
-    override val testInstrumentationRunnerArguments: Map<String, String>
-        get() = (extension as KotlinMultiplatformAndroidLibraryExtensionImpl).androidTestOnDeviceOptions
-            ?.instrumentationRunnerArguments ?: emptyMap()
+  override val testInstrumentationRunnerArguments: Map<String, String>
+    get() =
+      (extension as KotlinMultiplatformAndroidLibraryExtensionImpl).androidTestOnDeviceOptions?.instrumentationRunnerArguments ?: emptyMap()
 
-    override val experimentalProperties: Map<String, Any>
-        get() = extension.experimentalProperties
+  override val experimentalProperties: Map<String, Any>
+    get() = extension.experimentalProperties
 
-    override val optimizationDslInfo: OptimizationDslInfo by lazy(LazyThreadSafetyMode.NONE) {
-        KmpOptimizationDslInfoImpl(
-            extension, services, buildDirectory
-        )
-    }
+  override val optimizationDslInfo: OptimizationDslInfo by
+    lazy(LazyThreadSafetyMode.NONE) { KmpOptimizationDslInfoImpl(extension, services, buildDirectory) }
 
-    override val enabledUnitTest: Boolean
-        get() = (extension as KotlinMultiplatformAndroidLibraryExtensionImpl).androidTestOnJvmOptions != null
-    override val enableAndroidTest: Boolean
-        get() = (extension as KotlinMultiplatformAndroidLibraryExtensionImpl).androidTestOnDeviceOptions != null
+  override val enabledUnitTest: Boolean
+    get() = (extension as KotlinMultiplatformAndroidLibraryExtensionImpl).androidTestOnJvmOptions != null
 
-    override val androidTestMultiDexEnabled: Boolean?
-        get() = (extension as KotlinMultiplatformAndroidLibraryExtensionImpl).androidTestOnDeviceOptions?.multidex?.enable
+  override val enableAndroidTest: Boolean
+    get() = (extension as KotlinMultiplatformAndroidLibraryExtensionImpl).androidTestOnDeviceOptions != null
 
-    // not supported
-    override val targetSdkVersion: MutableAndroidVersion? = null
+  override val androidTestMultiDexEnabled: Boolean?
+    get() = (extension as KotlinMultiplatformAndroidLibraryExtensionImpl).androidTestOnDeviceOptions?.multidex?.enable
 
-    override val testFixtures: TestFixtures? = null
+  // not supported
+  override val targetSdkVersion: MutableAndroidVersion? = null
 
-    override val shadersDslInfo: ShadersDslInfo? = null
-    override val nativeBuildDslInfo: NativeBuildDslInfo? = null
-    override val renderscriptDslInfo: RenderscriptDslInfo? = null
-    override val buildConfigDslInfo: BuildConfigDslInfo? = null
-    override val manifestPlaceholdersDslInfo: ManifestPlaceholdersDslInfo? = null
-    override val dslDefinedHostTests: List<ComponentDslInfo.DslDefinedHostTest> = listOf()
-    override val dslDefinedDeviceTests: List<ComponentDslInfo.DslDefinedDeviceTest> = listOf()
-    override val dslDefinedTestSuites: List<AgpTestSuiteDslInfo> = listOf()
+  override val testFixtures: TestFixtures? = null
 
-    class KmpOptimizationDslInfoImpl(
-        private val extension: KotlinMultiplatformAndroidLibraryExtension,
-        private val services: VariantServices,
-        private val buildDirectory: DirectoryProperty
-    ): CommonOptimizationDslInfoImpl(services) {
+  override val shadersDslInfo: ShadersDslInfo? = null
+  override val nativeBuildDslInfo: NativeBuildDslInfo? = null
+  override val renderscriptDslInfo: RenderscriptDslInfo? = null
+  override val buildConfigDslInfo: BuildConfigDslInfo? = null
+  override val manifestPlaceholdersDslInfo: ManifestPlaceholdersDslInfo? = null
+  override val dslDefinedHostTests: List<ComponentDslInfo.DslDefinedHostTest> = listOf()
+  override val dslDefinedDeviceTests: List<ComponentDslInfo.DslDefinedDeviceTest> = listOf()
+  override val dslDefinedTestSuites: List<AgpTestSuiteDslInfo> = listOf()
 
-        private val keepRules =
-            (extension.optimization as KmpOptimizationImpl).keepRules as LibraryKeepRulesImpl
+  class KmpOptimizationDslInfoImpl(
+    private val extension: KotlinMultiplatformAndroidLibraryExtension,
+    private val services: VariantServices,
+    private val buildDirectory: DirectoryProperty,
+  ) : CommonOptimizationDslInfoImpl(services) {
 
-        override val ignoreFromInKeepRules: Set<String>
-            get() = keepRules.ignoreFrom
-        override val ignoreFromAllExternalDependenciesInKeepRules: Boolean
-            get() = keepRules.ignoreFromAllExternalDependencies
-        override val ignoreFromInBaselineProfile: Set<String>
-            get() = emptySet()
-        override val ignoreFromAllExternalDependenciesInBaselineProfile: Boolean
-            get() = false
+    private val keepRules = (extension.optimization as KmpOptimizationImpl).keepRules as LibraryKeepRulesImpl
 
-        override val postProcessingOptions: PostProcessingOptions by lazy {
-            object: PostProcessingOptions {
-                override fun getDefaultProguardFiles(): List<File> =
-                    listOf(
-                        ProguardFiles.getDefaultProguardFile(
-                            if (services.projectOptions[BooleanOption.R8_PROGUARD_ANDROID_TXT_DISALLOWED]) {
-                                ProguardFiles.ProguardFile.OPTIMIZE
-                            } else {
-                                ProguardFiles.ProguardFile.DONT_OPTIMIZE
-                            }.fileName,
-                            buildDirectory
-                        )
-                    )
+    override val ignoreFromInKeepRules: Set<String>
+      get() = keepRules.ignoreFrom
 
-                override fun codeShrinkerEnabled(): Boolean = extension.optimization.minify
+    override val ignoreFromAllExternalDependenciesInKeepRules: Boolean
+      get() = keepRules.ignoreFromAllExternalDependencies
 
-                // No android resources
-                override fun resourcesShrinkingEnabled(): Boolean = false
+    override val ignoreFromInBaselineProfile: Set<String>
+      get() = emptySet()
 
-                override fun getProguardFiles(type: ProguardFileType): Collection<File> {
-                    return when (type) {
-                        ProguardFileType.EXPLICIT -> extension.optimization.keepRules.files
-                        ProguardFileType.TEST -> extension.optimization.testKeepRules.files
-                        ProguardFileType.CONSUMER -> extension.optimization.consumerKeepRules.files
-                    }
+    override val ignoreFromAllExternalDependenciesInBaselineProfile: Boolean
+      get() = false
+
+    override val postProcessingOptions: PostProcessingOptions by lazy {
+      object : PostProcessingOptions {
+        override fun getDefaultProguardFiles(): List<File> =
+          listOf(
+            ProguardFiles.getDefaultProguardFile(
+              if (services.projectOptions[BooleanOption.R8_PROGUARD_ANDROID_TXT_DISALLOWED]) {
+                  ProguardFiles.ProguardFile.OPTIMIZE
+                } else {
+                  ProguardFiles.ProguardFile.DONT_OPTIMIZE
                 }
-            }
-        }
-        override val applicationOptimizationEnabled: Boolean
-            get() = false
-        override val includePackages: Set<String>
-            get() = setOf()
-        override val keepRuleFiles: Set<File>
-            get() = setOf()
-
-        override fun gatherProguardFiles(
-            type: ProguardFileType,
-            into: MutableList<RegularFile>
-        ) {
-            val projectDir = services.projectInfo.projectDirectory
-            into.addAll(postProcessingOptions.getProguardFiles(type)
-                .map { file -> projectDir.file(file.path) }
+                .fileName,
+              buildDirectory,
             )
-        }
-    }
+          )
 
+        override fun codeShrinkerEnabled(): Boolean = extension.optimization.minify
+
+        // No android resources
+        override fun resourcesShrinkingEnabled(): Boolean = false
+
+        override fun getProguardFiles(type: ProguardFileType): Collection<File> {
+          return when (type) {
+            ProguardFileType.EXPLICIT -> extension.optimization.keepRules.files
+            ProguardFileType.TEST -> extension.optimization.testKeepRules.files
+            ProguardFileType.CONSUMER -> extension.optimization.consumerKeepRules.files
+          }
+        }
+      }
+    }
+    override val applicationOptimizationEnabled: Boolean
+      get() = false
+
+    override val includePackages: Set<String>
+      get() = setOf()
+
+    override val keepRuleFiles: Set<File>
+      get() = setOf()
+
+    override fun gatherProguardFiles(type: ProguardFileType, into: MutableList<RegularFile>) {
+      val projectDir = services.projectInfo.projectDirectory
+      into.addAll(postProcessingOptions.getProguardFiles(type).map { file -> projectDir.file(file.path) })
+    }
+  }
 }

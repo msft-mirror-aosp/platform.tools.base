@@ -18,92 +18,91 @@ package com.android.build.gradle.integration.common.fixture.project.builder
 
 import com.android.Version
 import com.google.common.truth.Truth
-import org.junit.Rule
-import org.junit.Test
-import org.junit.rules.TemporaryFolder
 import java.nio.file.Path
 import kotlin.io.path.isRegularFile
 import kotlin.io.path.readText
+import org.junit.Rule
+import org.junit.Test
+import org.junit.rules.TemporaryFolder
 
 class GradleBuildDefinitionTest {
 
-    @get:Rule
-    val temporaryFolder: TemporaryFolder = TemporaryFolder()
+  @get:Rule val temporaryFolder: TemporaryFolder = TemporaryFolder()
 
-    @Test
-    fun testSettingsWithSingleProject() {
-        val folder = writeBuild {
-            genericProject(":app") { }
+  @Test
+  fun testSettingsWithSingleProject() {
+    val folder = writeBuild { genericProject(":app") {} }
+
+    checkFile(
+      folder.resolve("settings.gradle"),
+      "settings file presence",
+      """
+      pluginManagement {
+        repositories {
         }
+      }
 
-        checkFile(
-            folder.resolve("settings.gradle"),
-            "settings file presence",
-            """
-                pluginManagement {
-                  repositories {
-                  }
-                }
+      plugins {
+      }
 
-                plugins {
-                }
-
-                dependencyResolutionManagement {
-                  repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
-                  repositories {
-                  }
-                }
-
-                rootProject.name = 'root'
-
-                include(':app')
-
-            """.trimIndent())
-    }
-
-    @Test
-    fun testSettingsWithIncludedBuild() {
-        val folder = writeBuild {
-            includedBuild("build-logic") { }
+      dependencyResolutionManagement {
+        repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+        repositories {
         }
+      }
 
-        checkFile(
-            folder.resolve("settings.gradle"),
-            "settings file presence",
-            """
-                pluginManagement {
-                  repositories {
-                  }
-                }
+      rootProject.name = 'root'
 
-                plugins {
-                }
+      include(':app')
 
-                dependencyResolutionManagement {
-                  repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
-                  repositories {
-                  }
-                }
+      """
+        .trimIndent(),
+    )
+  }
 
-                rootProject.name = 'root'
+  @Test
+  fun testSettingsWithIncludedBuild() {
+    val folder = writeBuild { includedBuild("build-logic") {} }
 
-                includeBuild('build-logic')
+    checkFile(
+      folder.resolve("settings.gradle"),
+      "settings file presence",
+      """
+      pluginManagement {
+        repositories {
+        }
+      }
+
+      plugins {
+      }
+
+      dependencyResolutionManagement {
+        repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+        repositories {
+        }
+      }
+
+      rootProject.name = 'root'
+
+      includeBuild('build-logic')
 
 
-            """.trimIndent())
-    }
+      """
+        .trimIndent(),
+    )
+  }
 
-    @Test
-    fun testRepositories() {
-        val repo = temporaryFolder.newFolder().toPath()
-        val folder = writeBuild(listOf(repo)) { }
+  @Test
+  fun testRepositories() {
+    val repo = temporaryFolder.newFolder().toPath()
+    val folder = writeBuild(listOf(repo)) {}
 
-        val repoUri = repo.toUri().toString()
+    val repoUri = repo.toUri().toString()
 
-        checkFile(
-            folder.resolve("settings.gradle"),
-            "settings file presence",
-            """
+    checkFile(
+      folder.resolve("settings.gradle"),
+      "settings file presence",
+      """
                 pluginManagement {
                   repositories {
                     maven {
@@ -135,35 +134,35 @@ class GradleBuildDefinitionTest {
                 rootProject.name = 'root'
 
 
-            """.trimIndent()
-        )
+            """
+        .trimIndent(),
+    )
+  }
+
+  @Test
+  fun testPlugins() {
+    val folder = writeBuild {
+      androidApplication {}
+      genericProject(":library") { applyPlugin(PluginType.JAVA_LIBRARY) }
     }
 
-    @Test
-    fun testPlugins() {
-        val folder = writeBuild {
-            androidApplication { }
-            genericProject(":library") {
-                applyPlugin(PluginType.JAVA_LIBRARY)
-            }
-        }
-
-        checkFile(
-            folder.resolve("build.gradle"),
-            "root build file presence",
-            """
+    checkFile(
+      folder.resolve("build.gradle"),
+      "root build file presence",
+      """
                 plugins {
                   id('com.android.application') version '${Version.ANDROID_GRADLE_PLUGIN_VERSION}' apply false
                 }
 
 
-            """.trimIndent()
-        )
-
-        checkFile(
-            folder.resolve("app/build.gradle"),
-            "app build file presence",
             """
+        .trimIndent(),
+    )
+
+    checkFile(
+      folder.resolve("app/build.gradle"),
+      "app build file presence",
+      """
                 plugins {
                   id('com.android.application')
                 }
@@ -176,48 +175,49 @@ class GradleBuildDefinitionTest {
                 }
 
 
-            """.trimIndent()
-        )
-
-        checkFile(
-            folder.resolve("library/build.gradle"),
-            "library build file presence",
             """
-                plugins {
-                  id('java-library')
-                }
+        .trimIndent(),
+    )
+
+    checkFile(
+      folder.resolve("library/build.gradle"),
+      "library build file presence",
+      """
+      plugins {
+        id('java-library')
+      }
 
 
-            """.trimIndent()
-        )
+      """
+        .trimIndent(),
+    )
+  }
+
+  @Test
+  fun testKtsPlugins() {
+    val folder = writeBuild {
+      buildFileType = BuildFileType.KTS
+      androidApplication {}
+      genericProject(":library") { applyPlugin(PluginType.JAVA_LIBRARY) }
     }
 
-    @Test
-    fun testKtsPlugins() {
-        val folder = writeBuild {
-            buildFileType = BuildFileType.KTS
-            androidApplication { }
-            genericProject(":library") {
-                applyPlugin(PluginType.JAVA_LIBRARY)
-            }
-        }
-
-        checkFile(
-            folder.resolve("build.gradle.kts"),
-            "root build file presence",
-            """
+    checkFile(
+      folder.resolve("build.gradle.kts"),
+      "root build file presence",
+      """
                 plugins {
                   id("com.android.application") version "${Version.ANDROID_GRADLE_PLUGIN_VERSION}" apply false
                 }
 
 
-            """.trimIndent()
-        )
-
-        checkFile(
-            folder.resolve("app/build.gradle.kts"),
-            "app build file presence",
             """
+        .trimIndent(),
+    )
+
+    checkFile(
+      folder.resolve("app/build.gradle.kts"),
+      "app build file presence",
+      """
                 plugins {
                   id("com.android.application")
                 }
@@ -230,80 +230,66 @@ class GradleBuildDefinitionTest {
                 }
 
 
-            """.trimIndent()
-        )
-
-        checkFile(
-            folder.resolve("library/build.gradle.kts"),
-            "library build file presence",
             """
-                plugins {
-                  id("java-library")
-                }
+        .trimIndent(),
+    )
+
+    checkFile(
+      folder.resolve("library/build.gradle.kts"),
+      "library build file presence",
+      """
+      plugins {
+        id("java-library")
+      }
 
 
-            """.trimIndent()
-        )
+      """
+        .trimIndent(),
+    )
+  }
+
+  @Test
+  fun testDependencies() {
+    val folder = writeBuild {
+      genericProject(":app") { dependencies { api(project(":library")) } }
+      genericProject(":library") {}
     }
 
-    @Test
-    fun testDependencies() {
-        val folder = writeBuild {
-            genericProject(":app") {
-                dependencies {
-                    api(project(":library"))
-                }
-            }
-            genericProject(":library") { }
-        }
+    checkFile(
+      folder.resolve("app/build.gradle"),
+      "app build file presence",
+      """
+      plugins {
+      }
 
-        checkFile(
-            folder.resolve("app/build.gradle"),
-            "app build file presence",
-            """
-                plugins {
-                }
-
-                dependencies {
-                  api(project(':library'))
-                }
+      dependencies {
+        api(project(':library'))
+      }
 
 
-            """.trimIndent()
-        )
-    }
+      """
+        .trimIndent(),
+    )
+  }
 
-    private fun checkFile(
-        file: Path,
-        named: String,
-        content: String
-    ) {
-        Truth.assertThat(file.isRegularFile()).named(named).isTrue()
-        Truth.assertThat(file.readText()).isEqualTo(content)
-    }
+  private fun checkFile(file: Path, named: String, content: String) {
+    Truth.assertThat(file.isRegularFile()).named(named).isTrue()
+    Truth.assertThat(file.readText()).isEqualTo(content)
+  }
 
-    private fun writeBuild(repositories: List<Path> = listOf(), action: GradleBuildDefinition.() -> Unit): Path {
-        val build = GradleBuildDefinitionImpl(
-            "root",
-            "root",
-            enableDefaultContentCreation = true
-        ).also {
-            action(it)
-        }
+  private fun writeBuild(repositories: List<Path> = listOf(), action: GradleBuildDefinition.() -> Unit): Path {
+    val build = GradleBuildDefinitionImpl("root", "root", enableDefaultContentCreation = true).also { action(it) }
 
-        val folder = temporaryFolder.newFolder().toPath()
+    val folder = temporaryFolder.newFolder().toPath()
 
-        build.write(
-            location = folder,
-            globalDefinitionState = GlobalDefinitionStateImpl(
-                additionalProperties = listOf(),
-                repositories = repositories,
-                customPluginMap = mapOf()
-            ),
-            disableUnnecessaryBuiltInKotlinOptOutChecks = false,
-            disableUnnecessaryNewDslOptOutChecks = false,
-        )
+    build.write(
+      location = folder,
+      globalDefinitionState =
+        GlobalDefinitionStateImpl(additionalProperties = listOf(), repositories = repositories, customPluginMap = mapOf()),
+      disableUnnecessaryBuiltInKotlinOptOutChecks = false,
+      disableUnnecessaryNewDslOptOutChecks = false,
+    )
 
-        return folder
-    }
+    return folder
+  }
 }

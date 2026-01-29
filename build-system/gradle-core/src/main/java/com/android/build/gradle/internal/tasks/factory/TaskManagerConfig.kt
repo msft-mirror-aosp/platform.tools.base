@@ -21,8 +21,7 @@ import org.gradle.api.component.SoftwareComponentFactory
 
 interface TaskManagerConfig {
 
-    val componentFactory: SoftwareComponentFactory
+  val componentFactory: SoftwareComponentFactory
 
-    val dataBindingBuilder: DataBindingBuilder
+  val dataBindingBuilder: DataBindingBuilder
 }
-

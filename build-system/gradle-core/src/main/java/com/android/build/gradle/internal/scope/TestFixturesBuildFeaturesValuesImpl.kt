@@ -20,23 +20,18 @@ import com.android.build.api.dsl.BuildFeatures
 import com.android.build.gradle.internal.services.ProjectServices
 
 class TestFixturesBuildFeaturesValuesImpl(
-    buildFeatures: BuildFeatures,
-    projectServices: ProjectServices,
-    androidResourcesEnabled: Boolean,
-    dataBindingOverride: Boolean? = null,
-    mlModelBindingOverride: Boolean? = null
-) : BuildFeatureValuesImpl(
-    buildFeatures,
-    projectServices,
-    dataBindingOverride,
-    mlModelBindingOverride
-) {
+  buildFeatures: BuildFeatures,
+  projectServices: ProjectServices,
+  androidResourcesEnabled: Boolean,
+  dataBindingOverride: Boolean? = null,
+  mlModelBindingOverride: Boolean? = null,
+) : BuildFeatureValuesImpl(buildFeatures, projectServices, dataBindingOverride, mlModelBindingOverride) {
 
-    override val aidl: Boolean = false
-    override val buildConfig: Boolean = false
-    override val prefab: Boolean = false
-    override val renderScript: Boolean = false
-    override val shaders: Boolean = false
-    override val prefabPublishing: Boolean = false
-    override val androidResources: Boolean = androidResourcesEnabled
+  override val aidl: Boolean = false
+  override val buildConfig: Boolean = false
+  override val prefab: Boolean = false
+  override val renderScript: Boolean = false
+  override val shaders: Boolean = false
+  override val prefabPublishing: Boolean = false
+  override val androidResources: Boolean = androidResourcesEnabled
 }

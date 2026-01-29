@@ -16,23 +16,21 @@
 
 package com.android.build.gradle.internal.cxx.configure
 
-/**
- * A subset of possible ndk-build command-line properties.
- */
+/** A subset of possible ndk-build command-line properties. */
 enum class NdkBuildProperty {
-    APP_ABI,
-    APP_BUILD_SCRIPT,
-    APP_CFLAGS,
-    APP_CPPFLAGS,
-    APP_PLATFORM,
-    APP_SHORT_COMMANDS,
-    APP_STL,
-    LOCAL_SHORT_COMMANDS,
-    NDK_ALL_ABIS,
-    NDK_APPLICATION_MK,
-    NDK_DEBUG,
-    NDK_GRADLE_INJECTED_IMPORT_PATH,
-    NDK_LIBS_OUT,
-    NDK_OUT,
-    NDK_PROJECT_PATH
+  APP_ABI,
+  APP_BUILD_SCRIPT,
+  APP_CFLAGS,
+  APP_CPPFLAGS,
+  APP_PLATFORM,
+  APP_SHORT_COMMANDS,
+  APP_STL,
+  LOCAL_SHORT_COMMANDS,
+  NDK_ALL_ABIS,
+  NDK_APPLICATION_MK,
+  NDK_DEBUG,
+  NDK_GRADLE_INJECTED_IMPORT_PATH,
+  NDK_LIBS_OUT,
+  NDK_OUT,
+  NDK_PROJECT_PATH,
 }

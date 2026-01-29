@@ -23,44 +23,40 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 
-/**
- * Integration test for publishing generated Java docs for library projects.
- */
+/** Integration test for publishing generated Java docs for library projects. */
 class JavaDocPublishingTest {
 
-    @get:Rule
-    val project = GradleTestProject.builder()
-        .fromTestProject("kotlinApp")
-        .create()
+  @get:Rule val project = GradleTestProject.builder().fromTestProject("kotlinApp").create()
 
-    private lateinit var library: GradleTestProject
+  private lateinit var library: GradleTestProject
 
-    @Before
-    fun setUp() {
-        project.projectDir.resolve("testrepo").mkdirs()
-        library = project.getSubproject("library")
+  @Before
+  fun setUp() {
+    project.projectDir.resolve("testrepo").mkdirs()
+    library = project.getSubproject("library")
 
-        TestFileUtils.appendToFile(
-            library.buildFile,
-            """
-                apply plugin: 'maven-publish'
+    TestFileUtils.appendToFile(
+      library.buildFile,
+      """
+      apply plugin: 'maven-publish'
 
-                afterEvaluate {
-                    publishing {
-                        repositories {
-                            maven { url = '../testrepo' }
-                        }
-                    }
-                }
-            """.trimIndent()
-        )
-    }
+      afterEvaluate {
+          publishing {
+              repositories {
+                  maven { url = '../testrepo' }
+              }
+          }
+      }
+      """
+        .trimIndent(),
+    )
+  }
 
-    @Test
-    fun testPublishJavaDocWithSingleVariant() {
-        TestFileUtils.appendToFile(
-            library.buildFile,
-            """
+  @Test
+  fun testPublishJavaDocWithSingleVariant() {
+    TestFileUtils.appendToFile(
+      library.buildFile,
+      """
 
                 android {
                     publishing {
@@ -69,45 +65,46 @@ class JavaDocPublishingTest {
                         }
                     }
                 }
-            """.trimIndent()
-        )
-        addPublication(RELEASE)
-
-        library.execute("publish")
-
-        val docJar = project.projectDir.resolve("$DOC_JAR_DIR/library-1.1-javadoc.jar")
-        assertThat(docJar).exists()
-    }
-
-    @Test
-    fun testPublishJavaDocWithMultipleVariants() {
-        TestFileUtils.appendToFile(
-            library.buildFile,
             """
+        .trimIndent(),
+    )
+    addPublication(RELEASE)
 
-                android {
-                    publishing {
-                        multipleVariants {
-                            allVariants()
-                            withJavadocJar()
-                        }
-                    }
-                }
-            """.trimIndent()
-        )
-        addPublication(DEFAULT)
+    library.execute("publish")
 
-        library.execute("publish")
+    val docJar = project.projectDir.resolve("$DOC_JAR_DIR/library-1.1-javadoc.jar")
+    assertThat(docJar).exists()
+  }
 
-        val docJar =
-            project.projectDir.resolve("$DOC_JAR_DIR/library-1.1-release-javadoc.jar")
-        assertThat(docJar).exists()
-    }
+  @Test
+  fun testPublishJavaDocWithMultipleVariants() {
+    TestFileUtils.appendToFile(
+      library.buildFile,
+      """
 
-    private fun addPublication(componentName: String) {
-        TestFileUtils.appendToFile(
-            library.buildFile,
-            """
+      android {
+          publishing {
+              multipleVariants {
+                  allVariants()
+                  withJavadocJar()
+              }
+          }
+      }
+      """
+        .trimIndent(),
+    )
+    addPublication(DEFAULT)
+
+    library.execute("publish")
+
+    val docJar = project.projectDir.resolve("$DOC_JAR_DIR/library-1.1-release-javadoc.jar")
+    assertThat(docJar).exists()
+  }
+
+  private fun addPublication(componentName: String) {
+    TestFileUtils.appendToFile(
+      library.buildFile,
+      """
                 afterEvaluate {
                     publishing {
                         publications {
@@ -121,13 +118,14 @@ class JavaDocPublishingTest {
                         }
                     }
                 }
-            """.trimIndent()
-        )
-    }
+            """
+        .trimIndent(),
+    )
+  }
 
-    companion object {
-        private const val RELEASE: String = "release"
-        private const val DEFAULT: String = "default"
-        private const val DOC_JAR_DIR: String = "testrepo/org/gradle/sample/library/1.1"
-    }
+  companion object {
+    private const val RELEASE: String = "release"
+    private const val DEFAULT: String = "default"
+    private const val DOC_JAR_DIR: String = "testrepo/org/gradle/sample/library/1.1"
+  }
 }

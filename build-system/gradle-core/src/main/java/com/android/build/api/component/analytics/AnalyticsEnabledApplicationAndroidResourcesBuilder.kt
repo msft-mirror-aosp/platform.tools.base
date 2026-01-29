@@ -21,16 +21,14 @@ import com.android.tools.build.gradle.internal.profile.VariantMethodType
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
 
 open class AnalyticsEnabledApplicationAndroidResourcesBuilder(
-    val delegate: ApplicationAndroidResourcesBuilder,
-    stats: GradleBuildVariant.Builder,
-) : AnalyticsEnabledAndroidResourcesBuilder(delegate, stats),
-    ApplicationAndroidResourcesBuilder {
+  val delegate: ApplicationAndroidResourcesBuilder,
+  stats: GradleBuildVariant.Builder,
+) : AnalyticsEnabledAndroidResourcesBuilder(delegate, stats), ApplicationAndroidResourcesBuilder {
 
-    override var generateLocaleConfig: Boolean
-        get() = delegate.generateLocaleConfig
-        set(value) {
-            stats.variantApiAccessBuilder.addVariantAccessBuilder().type =
-                VariantMethodType.GENERATE_LOCALE_CONFIG_BUILDER_VALUE
-            delegate.generateLocaleConfig = value
-        }
+  override var generateLocaleConfig: Boolean
+    get() = delegate.generateLocaleConfig
+    set(value) {
+      stats.variantApiAccessBuilder.addVariantAccessBuilder().type = VariantMethodType.GENERATE_LOCALE_CONFIG_BUILDER_VALUE
+      delegate.generateLocaleConfig = value
+    }
 }

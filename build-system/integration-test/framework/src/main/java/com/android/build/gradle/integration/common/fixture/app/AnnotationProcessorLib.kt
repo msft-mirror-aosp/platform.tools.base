@@ -21,29 +21,28 @@ import com.android.build.gradle.integration.common.fixture.GradleProject
 /**
  * A simple annotation processor library.
  *
- * This is a Java library with an annotation processor.  It provides the ProvideString annotation.
- * Annotation a class with ProvideString will generate a StringValue class, which contains a 'value'
- * field.
- * In addition, it will also generated a InnerClass for the annotated class.
+ * This is a Java library with an annotation processor. It provides the ProvideString annotation. Annotation a class with ProvideString will
+ * generate a StringValue class, which contains a 'value' field. In addition, it will also generated a InnerClass for the annotated class.
  */
 class AnnotationProcessorLib private constructor(isCompiler: Boolean) : GradleProject() {
 
-    init {
-        addFiles(annotation, buildGradle)
-        if (isCompiler) {
-            addFiles(processor, metatinf)
-        }
+  init {
+    addFiles(annotation, buildGradle)
+    if (isCompiler) {
+      addFiles(processor, metatinf)
     }
+  }
 
-    override fun containsFullBuildScript(): Boolean {
-        return true
-    }
+  override fun containsFullBuildScript(): Boolean {
+    return true
+  }
 
-    companion object {
-        private val annotation = TestSourceFile(
-                "src/main/java/com/example/annotation",
-                "ProvideString.java",
-                """package com.example.annotation;
+  companion object {
+    private val annotation =
+      TestSourceFile(
+        "src/main/java/com/example/annotation",
+        "ProvideString.java",
+        """package com.example.annotation;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -52,17 +51,17 @@ import java.lang.annotation.Target;
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.CLASS)
 public @interface ProvideString {
-}""")
+}""",
+      )
 
-        private val metatinf = TestSourceFile(
-                "src/main/resources/META-INF/services",
-                "javax.annotation.processing.Processor",
-                "com.example.annotation.Processor")
+    private val metatinf =
+      TestSourceFile("src/main/resources/META-INF/services", "javax.annotation.processing.Processor", "com.example.annotation.Processor")
 
-        private val processor = TestSourceFile(
-                "src/main/java/com/example/annotation",
-                "Processor.java",
-                """package com.example.annotation;
+    private val processor =
+      TestSourceFile(
+        "src/main/java/com/example/annotation",
+        "Processor.java",
+        """package com.example.annotation;
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.annotation.processing.RoundEnvironment;
@@ -136,24 +135,27 @@ public class Processor extends AbstractProcessor {
     public SourceVersion getSupportedSourceVersion() {
         return SourceVersion.latest();
     }
-}""")
+}""",
+      )
 
-        private val buildGradle = TestSourceFile(
-                "build.gradle",
-                """
+    private val buildGradle =
+      TestSourceFile(
+        "build.gradle",
+        """
 apply plugin: "java"
 java {
     sourceCompatibility = JavaVersion.VERSION_1_8
     targetCompatibility = JavaVersion.VERSION_1_8
 }
-""")
+""",
+      )
 
-        fun createCompiler(): AnnotationProcessorLib {
-            return AnnotationProcessorLib(true)
-        }
-
-        fun createLibrary(): AnnotationProcessorLib {
-            return AnnotationProcessorLib(false)
-        }
+    fun createCompiler(): AnnotationProcessorLib {
+      return AnnotationProcessorLib(true)
     }
+
+    fun createLibrary(): AnnotationProcessorLib {
+      return AnnotationProcessorLib(false)
+    }
+  }
 }

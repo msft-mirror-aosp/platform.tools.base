@@ -22,32 +22,33 @@ import org.junit.Test
 
 class StringCachingBuildServiceTest {
 
-    private val stringCachingService = object : StringCachingBuildService() {
-        override fun getParameters(): BuildServiceParameters.None {
-            TODO("Not yet implemented")
-        }
+  private val stringCachingService =
+    object : StringCachingBuildService() {
+      override fun getParameters(): BuildServiceParameters.None {
+        TODO("Not yet implemented")
+      }
     }
 
-    @Test
-    fun testBasicCache() {
-        val oldFoo = "foo"
-        val newFoo = stringCachingService.cacheString(oldFoo);
-        Truth.assertThat(newFoo).isEqualTo(oldFoo)
-        Truth.assertThat(newFoo).isSameInstanceAs(oldFoo)
+  @Test
+  fun testBasicCache() {
+    val oldFoo = "foo"
+    val newFoo = stringCachingService.cacheString(oldFoo)
+    Truth.assertThat(newFoo).isEqualTo(oldFoo)
+    Truth.assertThat(newFoo).isSameInstanceAs(oldFoo)
 
-        var o = "o"
-        val newerFoo = stringCachingService.cacheString("f" + o + "o")
-        Truth.assertThat(newerFoo).isSameInstanceAs(newFoo)
-    }
+    var o = "o"
+    val newerFoo = stringCachingService.cacheString("f" + o + "o")
+    Truth.assertThat(newerFoo).isSameInstanceAs(newFoo)
+  }
 
-    @Test
-    fun testReset() {
-        val oldFoo = stringCachingService.cacheString("foo");
-        stringCachingService.close()
+  @Test
+  fun testReset() {
+    val oldFoo = stringCachingService.cacheString("foo")
+    stringCachingService.close()
 
-        var o = "o"
-        val newFoo = stringCachingService.cacheString("f" + o + "o")
+    var o = "o"
+    val newFoo = stringCachingService.cacheString("f" + o + "o")
 
-        Truth.assertThat(newFoo).isNotSameInstanceAs(oldFoo)
-    }
+    Truth.assertThat(newFoo).isNotSameInstanceAs(oldFoo)
+  }
 }

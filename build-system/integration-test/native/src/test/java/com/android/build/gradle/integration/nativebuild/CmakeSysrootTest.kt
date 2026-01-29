@@ -24,71 +24,66 @@ import com.android.build.gradle.integration.common.fixture.model.readCompileComm
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.build.gradle.internal.cxx.configure.CMakeVersion
 import com.google.common.truth.Truth.assertThat
+import java.io.File
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
-import java.io.File
 
 /**
- * This test ensures that CMake server codepath returns sufficient information for Android Studio
- * to accept source files as targeting Android.
+ * This test ensures that CMake server codepath returns sufficient information for Android Studio to accept source files as targeting
+ * Android.
  */
 class CmakeSysrootTest {
 
-    @Rule
-    @JvmField
-    val project = GradleTestProject.builder()
-      .fromTestApp(
-        HelloWorldJniApp.builder()
-          .withNativeDir("cpp")
-          .useCppSource(true)
-          .build()
-      )
-        .setCmakeVersion(CMakeVersion.DEFAULT.sdkFolderName)
-        .setSideBySideNdkVersion(DEFAULT_NDK_SIDE_BY_SIDE_VERSION)
-        .setWithCmakeDirInLocalProp(true)
-        .create()
+  @Rule
+  @JvmField
+  val project =
+    GradleTestProject.builder()
+      .fromTestApp(HelloWorldJniApp.builder().withNativeDir("cpp").useCppSource(true).build())
+      .setCmakeVersion(CMakeVersion.DEFAULT.sdkFolderName)
+      .setSideBySideNdkVersion(DEFAULT_NDK_SIDE_BY_SIDE_VERSION)
+      .setWithCmakeDirInLocalProp(true)
+      .create()
 
-    @Before
-    fun setup() {
-        TestFileUtils.appendToFile(
-            project.buildFile,
-            """
+  @Before
+  fun setup() {
+    TestFileUtils.appendToFile(
+      project.buildFile,
+      """
             apply plugin: 'com.android.application'
             android.namespace = "com.example.hellojni"
             android.compileSdkVersion ${GradleTestProject.DEFAULT_COMPILE_SDK_VERSION}
             android.ndkPath = "${project.ndkPath}"
             android.externalNativeBuild.cmake.path "src/main/cpp/CMakeLists.txt"
             android.defaultConfig.minSdk=${GradleTestProject.DEFAULT_MIN_SDK_VERSION}
-            """.trimIndent()
-
-        )
-
-        val cmakeLists = File(project.buildFile.parent, "src/main/cpp/CMakeLists.txt")
-        TestFileUtils.appendToFile(
-            cmakeLists,
             """
-            cmake_minimum_required(VERSION 3.4.1)
-            add_library(native-lib SHARED hello-jni.cpp)
-            find_library(log-lib log)
-            target_link_libraries(native-lib ${'$'}{log-lib})
-            """.trimIndent()
-        )
-    }
+        .trimIndent(),
+    )
 
-    @Test
-    fun testThatFlagsLooksLikeAndroidProject() {
-        val nativeModules = project.modelV2().fetchNativeModules(NativeModuleParams())
-        val nativeModule = nativeModules.container.singleNativeModule
-        assertThat(nativeModule.variants.map { it.name }).containsExactly("debug", "release")
-        for (variant in nativeModule.variants) {
-            for (abi in variant.abis) {
-                val flags =
-                  abi.sourceFlagsFile.readCompileCommandsJsonBin(nativeModules.normalizer)
-                    .single().flags
-                assertThat(flags.any { it.startsWith("--target") }).named("one of the following flags starts with '--target': $flags").isTrue()
-                assertThat(flags.any { it.startsWith("--sysroot") }).named("one of the following flags starts with '--sysroot': $flags").isTrue()
-            }
-        }
+    val cmakeLists = File(project.buildFile.parent, "src/main/cpp/CMakeLists.txt")
+    TestFileUtils.appendToFile(
+      cmakeLists,
+      """
+      cmake_minimum_required(VERSION 3.4.1)
+      add_library(native-lib SHARED hello-jni.cpp)
+      find_library(log-lib log)
+      target_link_libraries(native-lib ${'$'}{log-lib})
+      """
+        .trimIndent(),
+    )
+  }
+
+  @Test
+  fun testThatFlagsLooksLikeAndroidProject() {
+    val nativeModules = project.modelV2().fetchNativeModules(NativeModuleParams())
+    val nativeModule = nativeModules.container.singleNativeModule
+    assertThat(nativeModule.variants.map { it.name }).containsExactly("debug", "release")
+    for (variant in nativeModule.variants) {
+      for (abi in variant.abis) {
+        val flags = abi.sourceFlagsFile.readCompileCommandsJsonBin(nativeModules.normalizer).single().flags
+        assertThat(flags.any { it.startsWith("--target") }).named("one of the following flags starts with '--target': $flags").isTrue()
+        assertThat(flags.any { it.startsWith("--sysroot") }).named("one of the following flags starts with '--sysroot': $flags").isTrue()
+      }
     }
+  }
 }

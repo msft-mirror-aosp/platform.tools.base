@@ -22,22 +22,19 @@ import com.android.build.gradle.integration.common.fixture.project.AarSelector
 import org.junit.Rule
 import org.junit.Test
 
-/**
- * Integration test for extracting annotations with no sources.
- */
+/** Integration test for extracting annotations with no sources. */
 class EmptyExtractAnnotationTest {
 
-    private val emptylib = MinimalSubProject.lib("com.example.lib")
+  private val emptylib = MinimalSubProject.lib("com.example.lib")
 
-    @get:Rule
-    var project = GradleTestProject.builder().fromTestApp(emptylib).create()
+  @get:Rule var project = GradleTestProject.builder().fromTestApp(emptylib).create()
 
-    @Test
-    fun checkExtractAnnotation() {
-        project.execute("assembleRelease")
-        project.assertAar(AarSelector.RELEASE) {
-            // this will make sure the jar is there.
-            mainJar()
-        }
+  @Test
+  fun checkExtractAnnotation() {
+    project.execute("assembleRelease")
+    project.assertAar(AarSelector.RELEASE) {
+      // this will make sure the jar is there.
+      mainJar()
     }
+  }
 }

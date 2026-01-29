@@ -17,27 +17,27 @@
 
 package com.android.build.gradle.internal.crash
 
+import java.util.function.Consumer
 import org.gradle.api.Action
 import org.gradle.api.Project
-import java.util.function.Consumer
 
 /** Runs the specified Runnable and reports exception. */
 fun runAction(c: Runnable) {
-    try {
-        c.run()
-    } catch (t: Throwable) {
-        PluginCrashReporter.maybeReportException(t)
-        throw t
-    }
+  try {
+    c.run()
+  } catch (t: Throwable) {
+    PluginCrashReporter.maybeReportException(t)
+    throw t
+  }
 }
 
 fun afterEvaluate(c: Consumer<Project>): Action<in Project> {
-    return Action { project: Project ->
-        try {
-            c.accept(project)
-        } catch (t: Throwable) {
-            PluginCrashReporter.maybeReportException(t)
-            throw t
-        }
+  return Action { project: Project ->
+    try {
+      c.accept(project)
+    } catch (t: Throwable) {
+      PluginCrashReporter.maybeReportException(t)
+      throw t
     }
+  }
 }

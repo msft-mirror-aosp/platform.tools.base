@@ -29,83 +29,82 @@ import com.google.wireless.android.sdk.stats.GradleBuildProfileSpan
 import com.google.wireless.android.sdk.stats.GradleBuildProject
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
 import com.google.wireless.android.sdk.stats.GradleTransformExecution
-import org.gradle.api.provider.MapProperty
-import org.gradle.api.provider.Property
-import org.gradle.api.provider.ProviderFactory
-import org.gradle.api.provider.SetProperty
-import org.gradle.tooling.events.FinishEvent
 import java.io.File
 import java.util.Base64
 import java.util.concurrent.ConcurrentLinkedQueue
+import org.gradle.api.provider.MapProperty
+import org.gradle.api.provider.Property
+import org.gradle.api.provider.SetProperty
+import org.gradle.tooling.events.FinishEvent
 
-/**
- * A no-operation implementation of [AnalyticsService] for unit tests.
- */
+/** A no-operation implementation of [AnalyticsService] for unit tests. */
 class FakeNoOpAnalyticsService : AnalyticsService() {
-    override fun getParameters(): Params {
-        return object: Params {
-            override val profile: Property<String>
-                get() {
-                    val profile = GradleBuildProfile.newBuilder().build().toByteArray()
-                    return FakeGradleProperty(Base64.getEncoder().encodeToString(profile))
-                }
-            override val anonymizer: Property<String>
-                get() = FakeGradleProperty(NameAnonymizerSerializer().toJson(NameAnonymizer()))
-            override val projects: MapProperty<String, ProjectData>
-                get() = FakeObjectFactory.factory.mapProperty(
-                    String::class.java, ProjectData::class.java)
-            override val enableProfileJson: Property<Boolean>
-                get() = FakeGradleProperty(true)
-            override val profileDir: Property<File>
-                get() = FakeGradleProperty()
-            override val taskMetadata: MapProperty<String, TaskMetadata>
-                get() = FakeObjectFactory.factory.mapProperty(
-                    String::class.java, TaskMetadata::class.java)
-            override val rootProjectPath: Property<String>
-                get() = FakeGradleProperty("/path")
-            override val applicationId: SetProperty<String>
-                get() = FakeObjectFactory.factory.setProperty(String::class.java)
+  override fun getParameters(): Params {
+    return object : Params {
+      override val profile: Property<String>
+        get() {
+          val profile = GradleBuildProfile.newBuilder().build().toByteArray()
+          return FakeGradleProperty(Base64.getEncoder().encodeToString(profile))
         }
+
+      override val anonymizer: Property<String>
+        get() = FakeGradleProperty(NameAnonymizerSerializer().toJson(NameAnonymizer()))
+
+      override val projects: MapProperty<String, ProjectData>
+        get() = FakeObjectFactory.factory.mapProperty(String::class.java, ProjectData::class.java)
+
+      override val enableProfileJson: Property<Boolean>
+        get() = FakeGradleProperty(true)
+
+      override val profileDir: Property<File>
+        get() = FakeGradleProperty()
+
+      override val taskMetadata: MapProperty<String, TaskMetadata>
+        get() = FakeObjectFactory.factory.mapProperty(String::class.java, TaskMetadata::class.java)
+
+      override val rootProjectPath: Property<String>
+        get() = FakeGradleProperty("/path")
+
+      override val applicationId: SetProperty<String>
+        get() = FakeObjectFactory.factory.setProperty(String::class.java)
     }
+  }
 
-    override fun workerAdded(taskPath: String, workerKey: String) {}
+  override fun workerAdded(taskPath: String, workerKey: String) {}
 
-    override fun workerStarted(taskPath: String, workerKey: String) {}
+  override fun workerStarted(taskPath: String, workerKey: String) {}
 
-    override fun workerFinished(taskPath: String, workerKey: String) {}
+  override fun workerFinished(taskPath: String, workerKey: String) {}
 
-    override fun registerSpan(taskPath: String, builder: GradleBuildProfileSpan.Builder) {}
+  override fun registerSpan(taskPath: String, builder: GradleBuildProfileSpan.Builder) {}
 
-    override fun getProjectBuillder(projectPath: String): GradleBuildProject.Builder {
-        return GradleBuildProject.newBuilder()
-    }
+  override fun getProjectBuillder(projectPath: String): GradleBuildProject.Builder {
+    return GradleBuildProject.newBuilder()
+  }
 
-    override fun getVariantBuilder(
-        projectPath: String,
-        variantName: String
-    ): GradleBuildVariant.Builder {
-        return GradleBuildVariant.newBuilder()
-    }
+  override fun getVariantBuilder(projectPath: String, variantName: String): GradleBuildVariant.Builder {
+    return GradleBuildVariant.newBuilder()
+  }
 
-    override fun getTaskRecord(taskPath: String): TaskProfilingRecord? {
-        return null
-    }
+  override fun getTaskRecord(taskPath: String): TaskProfilingRecord? {
+    return null
+  }
 
-    override fun recordBlock(
-        executionType: GradleBuildProfileSpan.ExecutionType,
-        transform: GradleTransformExecution?,
-        projectPath: String,
-        variantName: String,
-        block: Recorder.VoidBlock
-    ) {
-        block.call()
-    }
+  override fun recordBlock(
+    executionType: GradleBuildProfileSpan.ExecutionType,
+    transform: GradleTransformExecution?,
+    projectPath: String,
+    variantName: String,
+    block: Recorder.VoidBlock,
+  ) {
+    block.call()
+  }
 
-    override fun setConfigurationSpans(spans: ConcurrentLinkedQueue<GradleBuildProfileSpan>) {}
+  override fun setConfigurationSpans(spans: ConcurrentLinkedQueue<GradleBuildProfileSpan>) {}
 
-    override fun setInitialMemorySampleForConfiguration(sample: GradleBuildMemorySample) {}
+  override fun setInitialMemorySampleForConfiguration(sample: GradleBuildMemorySample) {}
 
-    override fun close() {}
+  override fun close() {}
 
-    override fun onFinish(p0: FinishEvent?) {}
+  override fun onFinish(p0: FinishEvent?) {}
 }

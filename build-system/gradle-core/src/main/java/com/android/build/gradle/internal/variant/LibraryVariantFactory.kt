@@ -38,9 +38,9 @@ import com.android.build.gradle.internal.plugins.DslContainerProvider
 import com.android.build.gradle.internal.scope.AndroidTestBuildFeatureValuesImpl
 import com.android.build.gradle.internal.scope.BuildFeatureValues
 import com.android.build.gradle.internal.scope.BuildFeatureValuesImpl
+import com.android.build.gradle.internal.scope.HostTestBuildFeaturesValuesImpl
 import com.android.build.gradle.internal.scope.MutableTaskContainer
 import com.android.build.gradle.internal.scope.TestFixturesBuildFeaturesValuesImpl
-import com.android.build.gradle.internal.scope.HostTestBuildFeaturesValuesImpl
 import com.android.build.gradle.internal.services.DslServices
 import com.android.build.gradle.internal.services.ProjectServices
 import com.android.build.gradle.internal.services.TaskCreationServices
@@ -54,210 +54,193 @@ import com.android.builder.core.ComponentTypeImpl
 import com.android.builder.errors.IssueReporter
 import org.gradle.api.Project
 
-class LibraryVariantFactory(
-    dslServices: DslServices,
-) : BaseVariantFactory<LibraryVariantBuilder, LibraryVariantDslInfo, LibraryCreationConfig>(
-    dslServices,
-) {
-    override fun createVariantBuilder(
-        globalVariantBuilderConfig: GlobalVariantBuilderConfig,
-        componentIdentity: ComponentIdentity,
-        variantDslInfo: LibraryVariantDslInfo,
-        variantBuilderServices: VariantBuilderServices
-    ): LibraryVariantBuilder {
-        return dslServices
-                .newInstance(
-                        LibraryVariantBuilderImpl::class.java,
-                        globalVariantBuilderConfig,
-                        variantDslInfo,
-                        componentIdentity,
-                        variantBuilderServices)
+class LibraryVariantFactory(dslServices: DslServices) :
+  BaseVariantFactory<LibraryVariantBuilder, LibraryVariantDslInfo, LibraryCreationConfig>(dslServices) {
+  override fun createVariantBuilder(
+    globalVariantBuilderConfig: GlobalVariantBuilderConfig,
+    componentIdentity: ComponentIdentity,
+    variantDslInfo: LibraryVariantDslInfo,
+    variantBuilderServices: VariantBuilderServices,
+  ): LibraryVariantBuilder {
+    return dslServices.newInstance(
+      LibraryVariantBuilderImpl::class.java,
+      globalVariantBuilderConfig,
+      variantDslInfo,
+      componentIdentity,
+      variantBuilderServices,
+    )
+  }
+
+  override fun createVariant(
+    variantBuilder: LibraryVariantBuilder,
+    componentIdentity: ComponentIdentity,
+    buildFeatures: BuildFeatureValues,
+    variantDslInfo: LibraryVariantDslInfo,
+    variantDependencies: VariantDependencies,
+    variantSources: VariantSources,
+    paths: VariantPathHelper,
+    artifacts: ArtifactsImpl,
+    variantData: BaseVariantData,
+    taskContainer: MutableTaskContainer,
+    variantServices: VariantServices,
+    taskCreationServices: TaskCreationServices,
+    globalConfig: GlobalTaskCreationConfig,
+  ): LibraryCreationConfig {
+    val libraryVariant =
+      dslServices.newInstance(
+        LibraryVariantImpl::class.java,
+        variantBuilder,
+        buildFeatures,
+        variantDslInfo,
+        variantDependencies,
+        variantSources,
+        paths,
+        artifacts,
+        variantData,
+        taskContainer,
+        variantServices,
+        taskCreationServices,
+        globalConfig,
+      )
+    restrictRenderScriptOnRiscv(dslServices, libraryVariant, buildFeatures, globalConfig)
+    return libraryVariant
+  }
+
+  override fun createBuildFeatureValues(buildFeatures: BuildFeatures, projectServices: ProjectServices): BuildFeatureValues {
+    return if (buildFeatures is LibraryBuildFeatures) {
+      BuildFeatureValuesImpl(buildFeatures, projectServices, null /*dataBindingOverride*/, null /*mlModelBindingOverride*/)
+    } else {
+      throw RuntimeException("buildFeatures not of type DynamicFeatureBuildFeatures")
+    }
+  }
+
+  override fun createTestFixturesBuildFeatureValues(
+    buildFeatures: BuildFeatures,
+    projectServices: ProjectServices,
+    androidResourcesEnabled: Boolean,
+  ): BuildFeatureValues {
+    return if (buildFeatures is LibraryBuildFeatures) {
+      TestFixturesBuildFeaturesValuesImpl(
+        buildFeatures,
+        projectServices,
+        androidResourcesEnabled,
+        dataBindingOverride = null,
+        mlModelBindingOverride = null,
+      )
+    } else {
+      throw RuntimeException("buildFeatures not of type DynamicFeatureBuildFeatures")
+    }
+  }
+
+  override fun createHostTestBuildFeatureValues(
+    buildFeatures: BuildFeatures,
+    dataBinding: DataBinding,
+    projectServices: ProjectServices,
+    includeAndroidResources: Boolean,
+    hostTestComponentType: ComponentType,
+  ): BuildFeatureValues {
+    return HostTestBuildFeaturesValuesImpl(
+      buildFeatures,
+      projectServices,
+      dataBindingOverride = null,
+      mlModelBindingOverride = false,
+      // We only create android resources tasks for unit test components when the tested component is
+      // a library variant and the user specifies to includeAndroidResources. Otherwise, the tested
+      // resources and assets are just copied as the unit test resources and assets output.
+      includeAndroidResources = includeAndroidResources,
+    )
+  }
+
+  override fun createAndroidTestBuildFeatureValues(
+    buildFeatures: BuildFeatures,
+    dataBinding: DataBinding,
+    projectServices: ProjectServices,
+  ): BuildFeatureValues {
+    return AndroidTestBuildFeatureValuesImpl(buildFeatures, projectServices, dataBindingOverride = null, mlModelBindingOverride = false)
+  }
+
+  override fun createVariantData(
+    componentIdentity: ComponentIdentity,
+    artifacts: ArtifactsImpl,
+    services: VariantServices,
+  ): BaseVariantData {
+    return LibraryVariantData(componentIdentity, artifacts, services)
+  }
+
+  override val variantImplementationClass: Class<out BaseVariantImpl?>
+    get() {
+      return com.android.build.gradle.internal.api.LibraryVariantImpl::class.java
     }
 
-    override fun createVariant(
-        variantBuilder: LibraryVariantBuilder,
-        componentIdentity: ComponentIdentity,
-        buildFeatures: BuildFeatureValues,
-        variantDslInfo: LibraryVariantDslInfo,
-        variantDependencies: VariantDependencies,
-        variantSources: VariantSources,
-        paths: VariantPathHelper,
-        artifacts: ArtifactsImpl,
-        variantData: BaseVariantData,
-        taskContainer: MutableTaskContainer,
-        variantServices: VariantServices,
-        taskCreationServices: TaskCreationServices,
-        globalConfig: GlobalTaskCreationConfig,
-    ): LibraryCreationConfig {
-        val libraryVariant = dslServices
-            .newInstance(
-                LibraryVariantImpl::class.java,
-                variantBuilder,
-                buildFeatures,
-                variantDslInfo,
-                variantDependencies,
-                variantSources,
-                paths,
-                artifacts,
-                variantData,
-                taskContainer,
-                variantServices,
-                taskCreationServices,
-                globalConfig
-            )
-        restrictRenderScriptOnRiscv(dslServices, libraryVariant, buildFeatures, globalConfig)
-        return libraryVariant
-    }
+  override val componentType
+    get() = ComponentTypeImpl.LIBRARY
 
-    override fun createBuildFeatureValues(
-        buildFeatures: BuildFeatures,
-        projectServices: ProjectServices,
-    ): BuildFeatureValues {
-        return if (buildFeatures is LibraryBuildFeatures) {
-            BuildFeatureValuesImpl(
-                    buildFeatures,
-                    projectServices,
-                    null /*dataBindingOverride*/,
-                    null /*mlModelBindingOverride*/)
-        } else {
-            throw RuntimeException("buildFeatures not of type DynamicFeatureBuildFeatures")
-        }
+  /** * Prevent customization of applicationId or applicationIdSuffix. */
+  override fun preVariantCallback(
+    project: Project,
+    dslExtension: CommonExtension,
+    model: VariantInputModel<DefaultConfig, BuildType, ProductFlavor, SigningConfig>,
+  ) {
+    super.preVariantCallback(project, dslExtension, model)
+    val issueReporter: IssueReporter = dslServices.issueReporter
+    val defaultConfig = model.defaultConfigData.defaultConfig
+    if (defaultConfig.applicationId != null) {
+      val applicationId = defaultConfig.applicationId!!
+      issueReporter.reportError(
+        IssueReporter.Type.GENERIC,
+        "Library projects cannot set applicationId. applicationId is set to" + " '$applicationId' in default config.",
+        applicationId,
+      )
     }
-
-    override fun createTestFixturesBuildFeatureValues(
-        buildFeatures: BuildFeatures,
-        projectServices: ProjectServices,
-        androidResourcesEnabled: Boolean
-    ): BuildFeatureValues {
-        return if (buildFeatures is LibraryBuildFeatures) {
-            TestFixturesBuildFeaturesValuesImpl(
-                buildFeatures,
-                projectServices,
-                androidResourcesEnabled,
-                dataBindingOverride = null,
-                mlModelBindingOverride = null
-            )
-        } else {
-            throw RuntimeException("buildFeatures not of type DynamicFeatureBuildFeatures")
-        }
+    if (defaultConfig.applicationIdSuffix != null) {
+      val applicationIdSuffix = defaultConfig.applicationIdSuffix!!
+      issueReporter.reportError(
+        IssueReporter.Type.GENERIC,
+        "Library projects cannot set applicationIdSuffix. applicationIdSuffix is " + "set to '$applicationIdSuffix' in default config.",
+        applicationIdSuffix,
+      )
     }
-
-    override fun createHostTestBuildFeatureValues(
-        buildFeatures: BuildFeatures,
-        dataBinding: DataBinding,
-        projectServices: ProjectServices,
-        includeAndroidResources: Boolean,
-        hostTestComponentType: ComponentType
-    ): BuildFeatureValues {
-        return HostTestBuildFeaturesValuesImpl(
-            buildFeatures,
-            projectServices,
-            dataBindingOverride = null,
-            mlModelBindingOverride = false,
-            // We only create android resources tasks for unit test components when the tested component is
-            // a library variant and the user specifies to includeAndroidResources. Otherwise, the tested
-            // resources and assets are just copied as the unit test resources and assets output.
-            includeAndroidResources = includeAndroidResources
+    for (buildType in model.buildTypes.values) {
+      if (buildType.buildType.applicationIdSuffix != null) {
+        val applicationIdSuffix = buildType.buildType.applicationIdSuffix!!
+        issueReporter.reportError(
+          IssueReporter.Type.GENERIC,
+          "Library projects cannot set applicationIdSuffix. applicationIdSuffix " +
+            "is set to '$applicationIdSuffix' in build type " +
+            "'${buildType.buildType.name}'.",
+          applicationIdSuffix,
         )
+      }
     }
-
-    override fun createAndroidTestBuildFeatureValues(
-        buildFeatures: BuildFeatures,
-        dataBinding: DataBinding,
-        projectServices: ProjectServices,
-    ): BuildFeatureValues {
-        return AndroidTestBuildFeatureValuesImpl(
-            buildFeatures,
-            projectServices,
-            dataBindingOverride = null,
-            mlModelBindingOverride = false
+    for (productFlavor in model.productFlavors.values) {
+      if (productFlavor.productFlavor.applicationId != null) {
+        val applicationId = productFlavor.productFlavor.applicationId!!
+        issueReporter.reportError(
+          IssueReporter.Type.GENERIC,
+          "Library projects cannot set applicationId. applicationId is set to " +
+            "'$applicationId' in flavor '${productFlavor.productFlavor.name}'.",
+          applicationId,
         )
-    }
-
-    override fun createVariantData(
-        componentIdentity: ComponentIdentity,
-        artifacts: ArtifactsImpl,
-        services: VariantServices
-    ): BaseVariantData {
-        return LibraryVariantData(
-            componentIdentity,
-            artifacts,
-            services
+      }
+      if (productFlavor.productFlavor.applicationIdSuffix != null) {
+        val applicationIdSuffix = productFlavor.productFlavor.applicationIdSuffix!!
+        issueReporter.reportError(
+          IssueReporter.Type.GENERIC,
+          "Library projects cannot set applicationIdSuffix. applicationIdSuffix " +
+            "is set to '$applicationIdSuffix' in flavor" +
+            " '${productFlavor.productFlavor.name}'.",
+          applicationIdSuffix,
         )
+      }
     }
+  }
 
-    override val variantImplementationClass: Class<out BaseVariantImpl?>
-        get() {
-            return com.android.build.gradle.internal.api.LibraryVariantImpl::class.java
-        }
-
-    override val componentType
-        get() = ComponentTypeImpl.LIBRARY
-
-    /** * Prevent customization of applicationId or applicationIdSuffix.  */
-    override fun preVariantCallback(
-        project: Project,
-        dslExtension: CommonExtension,
-        model: VariantInputModel<DefaultConfig, BuildType, ProductFlavor, SigningConfig>
-    ) {
-        super.preVariantCallback(project, dslExtension, model)
-        val issueReporter: IssueReporter = dslServices.issueReporter
-        val defaultConfig = model.defaultConfigData.defaultConfig
-        if (defaultConfig.applicationId != null) {
-            val applicationId = defaultConfig.applicationId!!
-            issueReporter.reportError(
-                    IssueReporter.Type.GENERIC,
-                    "Library projects cannot set applicationId. applicationId is set to" +
-                            " '$applicationId' in default config.",
-                    applicationId)
-        }
-        if (defaultConfig.applicationIdSuffix != null) {
-            val applicationIdSuffix = defaultConfig.applicationIdSuffix!!
-            issueReporter.reportError(
-                    IssueReporter.Type.GENERIC,
-                    "Library projects cannot set applicationIdSuffix. applicationIdSuffix is " +
-                            "set to '$applicationIdSuffix' in default config.",
-                    applicationIdSuffix)
-        }
-        for (buildType in model.buildTypes.values) {
-            if (buildType.buildType.applicationIdSuffix != null) {
-                val applicationIdSuffix = buildType.buildType.applicationIdSuffix!!
-                issueReporter.reportError(
-                        IssueReporter.Type.GENERIC,
-                        "Library projects cannot set applicationIdSuffix. applicationIdSuffix " +
-                                "is set to '$applicationIdSuffix' in build type " +
-                                "'${buildType.buildType.name}'.",
-                        applicationIdSuffix)
-            }
-        }
-        for (productFlavor in model.productFlavors.values) {
-            if (productFlavor.productFlavor.applicationId != null) {
-                val applicationId = productFlavor.productFlavor.applicationId!!
-                issueReporter.reportError(
-                        IssueReporter.Type.GENERIC,
-                        "Library projects cannot set applicationId. applicationId is set to " +
-                                "'$applicationId' in flavor '${productFlavor.productFlavor.name}'.",
-                        applicationId)
-            }
-            if (productFlavor.productFlavor.applicationIdSuffix != null) {
-                val applicationIdSuffix = productFlavor.productFlavor.applicationIdSuffix!!
-                issueReporter.reportError(
-                        IssueReporter.Type.GENERIC,
-                        "Library projects cannot set applicationIdSuffix. applicationIdSuffix " +
-                                "is set to '$applicationIdSuffix' in flavor" +
-                                " '${productFlavor.productFlavor.name}'.",
-                        applicationIdSuffix)
-            }
-        }
-    }
-
-    override fun createDefaultComponents(
-            dslContainers: DslContainerProvider<DefaultConfig, BuildType, ProductFlavor, SigningConfig>) {
-        // must create signing config first so that build type 'debug' can be initialized
-        // with the debug signing config.
-        val signingConfig = dslContainers.signingConfigContainer.create(BuilderConstants.DEBUG)
-        dslContainers.buildTypeContainer.create(BuilderConstants.DEBUG)
-        dslContainers.buildTypeContainer.create(BuilderConstants.RELEASE)
-        dslContainers.defaultConfig.signingConfig = signingConfig
-    }
+  override fun createDefaultComponents(dslContainers: DslContainerProvider<DefaultConfig, BuildType, ProductFlavor, SigningConfig>) {
+    // must create signing config first so that build type 'debug' can be initialized
+    // with the debug signing config.
+    val signingConfig = dslContainers.signingConfigContainer.create(BuilderConstants.DEBUG)
+    dslContainers.buildTypeContainer.create(BuilderConstants.DEBUG)
+    dslContainers.buildTypeContainer.create(BuilderConstants.RELEASE)
+    dslContainers.defaultConfig.signingConfig = signingConfig
+  }
 }

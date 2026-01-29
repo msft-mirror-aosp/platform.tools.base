@@ -29,60 +29,47 @@ import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.testing.Test
 
 open class AnalyticsEnabledTestSuite(
-    val delegate: TestSuite,
-    val stats: com.google.wireless.android.sdk.stats.GradleBuildVariant.Builder,
-    val objectFactory: ObjectFactory
-): TestSuite {
+  val delegate: TestSuite,
+  val stats: com.google.wireless.android.sdk.stats.GradleBuildVariant.Builder,
+  val objectFactory: ObjectFactory,
+) : TestSuite {
 
-    override val sources: Collection<TestSuiteSourceSet>
-        get() {
-            stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
-                VariantPropertiesMethodType.TEST_SUITE_SOURCES_VALUE
-            return delegate.sources.map { source ->
-                when (source.type) {
-                    TestSuiteSourceType.ASSETS ->
-                        AnalyticsEnabledAssetsTestSuiteSourceSet(source as TestSuiteSourceSet.Assets, stats)
-                    TestSuiteSourceType.HOST_JAR ->
-                        AnalyticsEnabledHostJarTestSuiteSourceSet(source as TestSuiteSourceSet.HostJar, stats)
-                    TestSuiteSourceType.TEST_APK ->
-                        AnalyticsEnabledTestApkTestSuiteSourceSet(source as TestSuiteSourceSet.TestApk, stats)
-                }
-            }
+  override val sources: Collection<TestSuiteSourceSet>
+    get() {
+      stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type = VariantPropertiesMethodType.TEST_SUITE_SOURCES_VALUE
+      return delegate.sources.map { source ->
+        when (source.type) {
+          TestSuiteSourceType.ASSETS -> AnalyticsEnabledAssetsTestSuiteSourceSet(source as TestSuiteSourceSet.Assets, stats)
+          TestSuiteSourceType.HOST_JAR -> AnalyticsEnabledHostJarTestSuiteSourceSet(source as TestSuiteSourceSet.HostJar, stats)
+          TestSuiteSourceType.TEST_APK -> AnalyticsEnabledTestApkTestSuiteSourceSet(source as TestSuiteSourceSet.TestApk, stats)
         }
-
-    override fun configureTestTasks(action: Test.(context: TestTaskContext) -> Unit) {
-        stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
-            VariantPropertiesMethodType.CONFIGURE_TEST_TASK_VALUE
-        delegate.configureTestTasks(action)
+      }
     }
 
-    override val junitEngineSpec: JUnitEngineSpec
-        get() {
-            stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
-                VariantPropertiesMethodType.JUNIT_ENGINE_SPEC_VALUE
-            return AnalyticsEnabledJUnitEngineSpec(
-                delegate.junitEngineSpec,
-                stats)
-        }
+  override fun configureTestTasks(action: Test.(context: TestTaskContext) -> Unit) {
+    stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type = VariantPropertiesMethodType.CONFIGURE_TEST_TASK_VALUE
+    delegate.configureTestTasks(action)
+  }
 
-    override fun getName(): String = delegate.name
+  override val junitEngineSpec: JUnitEngineSpec
+    get() {
+      stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type = VariantPropertiesMethodType.JUNIT_ENGINE_SPEC_VALUE
+      return AnalyticsEnabledJUnitEngineSpec(delegate.junitEngineSpec, stats)
+    }
 
-    override val targets: Map<String, TestSuiteTarget>
-        get() {
-            stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
-                VariantPropertiesMethodType.TEST_SUITE_TARGETS_VALUE
-            return delegate.targets.mapValues { target ->
-                AnalyticsEnabledTestSuiteTarget(target.value, stats)
-            }
-        }
-    override val codeCoverage: Property<Boolean>
-        get() {
-            stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
-                VariantPropertiesMethodType.TEST_SUITE_CODE_COVERAGE_VALUE
-            return delegate.codeCoverage
-        }
+  override fun getName(): String = delegate.name
 
-    override fun instrumentationRunner(source: TestSuiteSourceSet.TestApk): Provider<String> =
-        delegate.instrumentationRunner(source)
+  override val targets: Map<String, TestSuiteTarget>
+    get() {
+      stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type = VariantPropertiesMethodType.TEST_SUITE_TARGETS_VALUE
+      return delegate.targets.mapValues { target -> AnalyticsEnabledTestSuiteTarget(target.value, stats) }
+    }
 
+  override val codeCoverage: Property<Boolean>
+    get() {
+      stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type = VariantPropertiesMethodType.TEST_SUITE_CODE_COVERAGE_VALUE
+      return delegate.codeCoverage
+    }
+
+  override fun instrumentationRunner(source: TestSuiteSourceSet.TestApk): Provider<String> = delegate.instrumentationRunner(source)
 }

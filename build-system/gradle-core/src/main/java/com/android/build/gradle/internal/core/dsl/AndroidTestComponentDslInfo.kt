@@ -19,8 +19,8 @@ package com.android.build.gradle.internal.core.dsl
 import com.android.build.gradle.internal.core.dsl.features.AndroidResourcesDslInfo
 
 /**
- * Represents the dsl info for an android test component, initialized from the DSL object model
- * (extension, default config, build type, flavors)
+ * Represents the dsl info for an android test component, initialized from the DSL object model (extension, default config, build type,
+ * flavors)
  *
  * This class allows querying for the values set via the DSL model.
  *
@@ -28,8 +28,7 @@ import com.android.build.gradle.internal.core.dsl.features.AndroidResourcesDslIn
  *
  * @see [com.android.build.gradle.internal.component.DeviceTestCreationConfig]
  */
-interface AndroidTestComponentDslInfo
-    : TestComponentDslInfo, ApkProducingComponentDslInfo, InstrumentedTestComponentDslInfo {
+interface AndroidTestComponentDslInfo : TestComponentDslInfo, ApkProducingComponentDslInfo, InstrumentedTestComponentDslInfo {
 
-    override val androidResourcesDsl: AndroidResourcesDslInfo
+  override val androidResourcesDsl: AndroidResourcesDslInfo
 }

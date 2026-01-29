@@ -25,6 +25,7 @@ import com.android.build.gradle.integration.connected.utils.getEmulator
 import com.android.build.gradle.options.BooleanOption
 import com.android.utils.FileUtils
 import com.google.common.io.Resources
+import java.nio.file.Files
 import org.junit.Before
 import org.junit.ClassRule
 import org.junit.Ignore
@@ -32,41 +33,32 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
-import java.nio.file.Files
 
 /** Connected test for core library desugaring API conversion. */
 @RunWith(FilterableParameterized::class)
 class CoreLibraryDesugarConversionConnectedTest(val minSdkVersion: Int) {
 
-    companion object {
-        @ClassRule
-        @JvmField
-        val emulator = getEmulator()
+  companion object {
+    @ClassRule @JvmField val emulator = getEmulator()
 
-        @Parameterized.Parameters(name = "minSdkVersion_{0}")
-        @JvmStatic
-        fun params() = listOf(21, 24)
+    @Parameterized.Parameters(name = "minSdkVersion_{0}") @JvmStatic fun params() = listOf(21, 24)
 
-        private const val DESUGAR_DEPENDENCY =
-            "com.android.tools:desugar_jdk_libs:$DESUGAR_DEPENDENCY_VERSION"
-        private const val STORE_FILE_NAME = "keystore.jks"
-        private const val STORE_PASSWORD = "store_password"
-        private const val ALIAS_NAME = "alias_name"
-        private const val KEY_PASSWORD = "key_password"
-    }
+    private const val DESUGAR_DEPENDENCY = "com.android.tools:desugar_jdk_libs:$DESUGAR_DEPENDENCY_VERSION"
+    private const val STORE_FILE_NAME = "keystore.jks"
+    private const val STORE_PASSWORD = "store_password"
+    private const val ALIAS_NAME = "alias_name"
+    private const val KEY_PASSWORD = "key_password"
+  }
 
-    @get:Rule
-    val project =
-        GradleTestProject.builder()
-            .fromTestApp(
-                HelloWorldApp.forPluginWithMinSdkVersion("com.android.application", minSdkVersion)
-            ).create()
+  @get:Rule
+  val project =
+    GradleTestProject.builder().fromTestApp(HelloWorldApp.forPluginWithMinSdkVersion("com.android.application", minSdkVersion)).create()
 
-    @Before
-    fun setUp() {
-        TestFileUtils.appendToFile(
-            project.buildFile,
-            """
+  @Before
+  fun setUp() {
+    TestFileUtils.appendToFile(
+      project.buildFile,
+      """
                 android {
                     compileOptions {
                         coreLibraryDesugaringEnabled = true
@@ -81,133 +73,141 @@ class CoreLibraryDesugarConversionConnectedTest(val minSdkVersion: Int) {
                 dependencies {
                     coreLibraryDesugaring "$DESUGAR_DEPENDENCY"
                 }
-            """.trimIndent())
-
-        // fail fast if no response
-        project.addAdbTimeout()
-
-        // add a function with desugar library parameter, which is called from application
-        TestFileUtils.addMethod(
-            FileUtils.join(project.mainSrcDir,"com/example/helloworld/HelloWorld.java"),
             """
-                public static int[] getNumbers() {
-                    // TODO(b/182255766): Fix this.
-                    // int[] numbers = new int[3];
-                    // java.util.Arrays.setAll(numbers, index -> index * 5);
-                    // return numbers;
-                    return null;
-                }
-            """.trimIndent())
+        .trimIndent(),
+    )
 
-        // add a function with desugar library parameter, which is called from application
-        // regression test for b/150774053, make sure it works when minSdkVersion is 24
-        TestFileUtils.addMethod(
-            FileUtils.join(project.mainSrcDir,"com/example/helloworld/HelloWorld.java"),
-            """
-                public static String getTime() {
-                    // TODO(b/182255766): Fix this.
-                    // return java.util.TimeZone.getTimeZone(java.time.ZoneId.of("GMT")).getID();
-                    return null;
-                }
-            """.trimIndent())
+    // fail fast if no response
+    project.addAdbTimeout()
 
-        // add a function with desugar library parameter, which is called from android platform
-        TestFileUtils.addMethod(
-            FileUtils.join(project.mainSrcDir,"com/example/helloworld/HelloWorld.java"),
-            """
-                @Override
-                public void onGetDirectActions(android.os.CancellationSignal cancellationSignal,
-                    java.util.function.Consumer<java.util.List<android.app.DirectAction>> callback) {
-                    callback.accept(java.util.Collections.singletonList(new android.app.DirectAction.Builder("1").build()));
-                }
-            """.trimIndent())
+    // add a function with desugar library parameter, which is called from application
+    TestFileUtils.addMethod(
+      FileUtils.join(project.mainSrcDir, "com/example/helloworld/HelloWorld.java"),
+      """
+      public static int[] getNumbers() {
+          // TODO(b/182255766): Fix this.
+          // int[] numbers = new int[3];
+          // java.util.Arrays.setAll(numbers, index -> index * 5);
+          // return numbers;
+          return null;
+      }
+      """
+        .trimIndent(),
+    )
 
-        TestFileUtils.addMethod(
-            FileUtils.join(project.projectDir, "src/androidTest/java/com/example/helloworld/HelloWorldTest.java"),
-            """
-                @Test
-                public void testGetNumbers() {
-                    // TODO(b/182255766): Fix this.
-                    // Assert.assertEquals(5, HelloWorld.getNumbers()[1]);
-                }
-            """.trimIndent())
+    // add a function with desugar library parameter, which is called from application
+    // regression test for b/150774053, make sure it works when minSdkVersion is 24
+    TestFileUtils.addMethod(
+      FileUtils.join(project.mainSrcDir, "com/example/helloworld/HelloWorld.java"),
+      """
+      public static String getTime() {
+          // TODO(b/182255766): Fix this.
+          // return java.util.TimeZone.getTimeZone(java.time.ZoneId.of("GMT")).getID();
+          return null;
+      }
+      """
+        .trimIndent(),
+    )
 
-        TestFileUtils.addMethod(
-            FileUtils.join(project.projectDir, "src/androidTest/java/com/example/helloworld/HelloWorldTest.java"),
-            """
-                @Test
-                public void testGetTime() {
-                    // TODO(b/182255766): Fix this.
-                    // Assert.assertEquals("GMT", HelloWorld.getTime());
-                }
-            """.trimIndent())
+    // add a function with desugar library parameter, which is called from android platform
+    TestFileUtils.addMethod(
+      FileUtils.join(project.mainSrcDir, "com/example/helloworld/HelloWorld.java"),
+      """
+      @Override
+      public void onGetDirectActions(android.os.CancellationSignal cancellationSignal,
+          java.util.function.Consumer<java.util.List<android.app.DirectAction>> callback) {
+          callback.accept(java.util.Collections.singletonList(new android.app.DirectAction.Builder("1").build()));
+      }
+      """
+        .trimIndent(),
+    )
 
-        TestFileUtils.addMethod(
-            FileUtils.join(project.projectDir, "src/androidTest/java/com/example/helloworld/HelloWorldTest.java"),
-            """
-                @Test
-                public void testGetDirectActions() {
-                    rule.getActivity().onGetDirectActions(new android.os.CancellationSignal(),
-                        x -> x.forEach(it -> System.out.println(it.getId())));
-                }
-            """.trimIndent())
+    TestFileUtils.addMethod(
+      FileUtils.join(project.projectDir, "src/androidTest/java/com/example/helloworld/HelloWorldTest.java"),
+      """
+      @Test
+      public void testGetNumbers() {
+          // TODO(b/182255766): Fix this.
+          // Assert.assertEquals(5, HelloWorld.getNumbers()[1]);
+      }
+      """
+        .trimIndent(),
+    )
 
-        // run the uninstall tasks in order to (1) make sure nothing is installed at the beginning
-        // of each test and (2) check the adb connection before taking the time to build anything.
-        project.execute("uninstallAll")
-    }
+    TestFileUtils.addMethod(
+      FileUtils.join(project.projectDir, "src/androidTest/java/com/example/helloworld/HelloWorldTest.java"),
+      """
+      @Test
+      public void testGetTime() {
+          // TODO(b/182255766): Fix this.
+          // Assert.assertEquals("GMT", HelloWorld.getTime());
+      }
+      """
+        .trimIndent(),
+    )
 
-    @Test
-    fun testFunctionWithDesugaredLibraryParam() {
-        // check non-minified debug build (d8 without keep rules)
-        project.executor()
-                .with(BooleanOption.USE_NON_FINAL_RES_IDS, true)
-                .run("connectedDebugAndroidTest")
+    TestFileUtils.addMethod(
+      FileUtils.join(project.projectDir, "src/androidTest/java/com/example/helloworld/HelloWorldTest.java"),
+      """
+      @Test
+      public void testGetDirectActions() {
+          rule.getActivity().onGetDirectActions(new android.os.CancellationSignal(),
+              x -> x.forEach(it -> System.out.println(it.getId())));
+      }
+      """
+        .trimIndent(),
+    )
 
-        // check minified debug build (r8 with keep rules)
-        project.buildFile.appendText("\n\nandroid.buildTypes.debug.minifyEnabled = true\n\n")
-        TestFileUtils.searchAndReplace(
-            FileUtils.join(project.mainSrcDir, "com/example/helloworld/HelloWorld.java"),
-            "// onCreate",
-            "getNumbers(); getTime();"
-        )
-        // R.id can get shrunk away now, remove the test reference to it
-        TestFileUtils.searchAndReplace(
-                FileUtils.join(project.projectDir, "src/androidTest/java/com/example/helloworld/HelloWorldTest.java"),
-                "mTextView = (TextView) a.findViewById(R.id.text)",
-                "// R.id will get shrunk away // mTextView = (TextView) a.findViewById(R.id.text)")
-        TestFileUtils.searchAndReplace(
-                FileUtils.join(project.projectDir, "src/androidTest/java/com/example/helloworld/HelloWorldTest.java"),
-                "Assert.assertNotNull(mTextView)",
-                "// R.id will get shrunk away // Assert.assertNotNull(mTextView)")
+    // run the uninstall tasks in order to (1) make sure nothing is installed at the beginning
+    // of each test and (2) check the adb connection before taking the time to build anything.
+    project.execute("uninstallAll")
+  }
 
-        project.executor()
-                .with(BooleanOption.USE_NON_FINAL_RES_IDS, true)
-                .run("connectedDebugAndroidTest")
-    }
+  @Test
+  fun testFunctionWithDesugaredLibraryParam() {
+    // check non-minified debug build (d8 without keep rules)
+    project.executor().with(BooleanOption.USE_NON_FINAL_RES_IDS, true).run("connectedDebugAndroidTest")
 
-    // TODO(bingran) This test is temporarily disabled because of b/126429384. For more details,
-    // see b/177973669.
-    @Ignore("126429384")
-    @Test
-    fun testFunctionWithDesugaredLibraryParamInNonMinifiedReleaseBuild() {
-        // check non-minified release build (d8 with keep rules)
-        setupKeyStore()
-        project.buildFile.appendText("\n\nandroid.testBuildType = \"release\"\n\n")
-        project.executor().run("connectedReleaseAndroidTest")
-    }
+    // check minified debug build (r8 with keep rules)
+    project.buildFile.appendText("\n\nandroid.buildTypes.debug.minifyEnabled = true\n\n")
+    TestFileUtils.searchAndReplace(
+      FileUtils.join(project.mainSrcDir, "com/example/helloworld/HelloWorld.java"),
+      "// onCreate",
+      "getNumbers(); getTime();",
+    )
+    // R.id can get shrunk away now, remove the test reference to it
+    TestFileUtils.searchAndReplace(
+      FileUtils.join(project.projectDir, "src/androidTest/java/com/example/helloworld/HelloWorldTest.java"),
+      "mTextView = (TextView) a.findViewById(R.id.text)",
+      "// R.id will get shrunk away // mTextView = (TextView) a.findViewById(R.id.text)",
+    )
+    TestFileUtils.searchAndReplace(
+      FileUtils.join(project.projectDir, "src/androidTest/java/com/example/helloworld/HelloWorldTest.java"),
+      "Assert.assertNotNull(mTextView)",
+      "// R.id will get shrunk away // Assert.assertNotNull(mTextView)",
+    )
 
-    private fun setupKeyStore() {
-        val keystoreFile = project.file(STORE_FILE_NAME)
-        val keystoreContents =
-            Resources.toByteArray(
-                Resources.getResource(
-                    CoreLibraryDesugarConversionConnectedTest::class.java,
-                    "rsa_keystore.jks"
-                )
-            )
-        Files.write(keystoreFile.toPath(), keystoreContents)
-        project.buildFile.appendText("""
+    project.executor().with(BooleanOption.USE_NON_FINAL_RES_IDS, true).run("connectedDebugAndroidTest")
+  }
+
+  // TODO(bingran) This test is temporarily disabled because of b/126429384. For more details,
+  // see b/177973669.
+  @Ignore("126429384")
+  @Test
+  fun testFunctionWithDesugaredLibraryParamInNonMinifiedReleaseBuild() {
+    // check non-minified release build (d8 with keep rules)
+    setupKeyStore()
+    project.buildFile.appendText("\n\nandroid.testBuildType = \"release\"\n\n")
+    project.executor().run("connectedReleaseAndroidTest")
+  }
+
+  private fun setupKeyStore() {
+    val keystoreFile = project.file(STORE_FILE_NAME)
+    val keystoreContents =
+      Resources.toByteArray(Resources.getResource(CoreLibraryDesugarConversionConnectedTest::class.java, "rsa_keystore.jks"))
+    Files.write(keystoreFile.toPath(), keystoreContents)
+    project.buildFile.appendText(
+      """
 
             android {
                 signingConfigs {
@@ -222,6 +222,8 @@ class CoreLibraryDesugarConversionConnectedTest(val minSdkVersion: Int) {
                     release.signingConfig = signingConfigs.release
                 }
             }
-        """.trimIndent())
-    }
+        """
+        .trimIndent()
+    )
+  }
 }

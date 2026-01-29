@@ -65,294 +65,216 @@ import org.gradle.api.file.ProjectLayout
 import org.gradle.api.provider.ProviderFactory
 import org.gradle.api.tasks.TaskProvider
 
-/**
- * Construct gradle tasks for C/C++ configuration and build.
- */
+/** Construct gradle tasks for C/C++ configuration and build. */
 fun <VariantBuilderT : ComponentBuilder, VariantT : VariantCreationConfig> createCxxTasks(
-        androidLocationsProvider: AndroidLocationsProvider,
-        sdkComponents: SdkComponentsBuildService,
-        issueReporter: IssueReporter,
-        taskFactory: TaskFactory,
-        projectOptions: ProjectOptions,
-        variants: Collection<ComponentInfo<VariantBuilderT, VariantT>>,
-        project: Project) {
-    if (variants.isEmpty()) return
-    val providers = project.providers
-    val layout = project.layout
-    IssueReporterLoggingEnvironment(
-        issueReporter = issueReporter,
-        rootBuildGradleFolder = variants.first().variant.services.projectInfo.rootDir,
-        allowStructuredLogging = false, // Don't want to write files during configuration phase
-        cxxFolder = null
-    ).use {
-        val configurationParameters = variants
-                .mapNotNull { tryCreateConfigurationParameters(
-                    projectOptions,
-                    it.variant,
-                ) }
-        if (configurationParameters.isEmpty()) return
-        NativeLocationsBuildService.register(project)
+  androidLocationsProvider: AndroidLocationsProvider,
+  sdkComponents: SdkComponentsBuildService,
+  issueReporter: IssueReporter,
+  taskFactory: TaskFactory,
+  projectOptions: ProjectOptions,
+  variants: Collection<ComponentInfo<VariantBuilderT, VariantT>>,
+  project: Project,
+) {
+  if (variants.isEmpty()) return
+  val providers = project.providers
+  val layout = project.layout
+  IssueReporterLoggingEnvironment(
+      issueReporter = issueReporter,
+      rootBuildGradleFolder = variants.first().variant.services.projectInfo.rootDir,
+      allowStructuredLogging = false, // Don't want to write files during configuration phase
+      cxxFolder = null,
+    )
+    .use {
+      val configurationParameters = variants.mapNotNull { tryCreateConfigurationParameters(projectOptions, it.variant) }
+      if (configurationParameters.isEmpty()) return
+      NativeLocationsBuildService.register(project)
 
-        val abis = createInitialCxxModel(sdkComponents,
-                    configurationParameters,
-                    providers,
-                    layout
+      val abis = createInitialCxxModel(sdkComponents, configurationParameters, providers, layout)
+
+      val variantMap = variants.associate { it.variant.name to it.variant }
+
+      val taskModel = createFoldedCxxTaskDependencyModel(abis)
+
+      for ((name, task) in taskModel.tasks) {
+        when (task) {
+          is Configure -> {
+            val variant = variantMap.getValue(task.representative.variant.variantName)
+            val configureTask = taskFactory.register(createCxxConfigureTask(project, variant, task.representative, name))
+            // Make sure any prefab configurations are generated first
+            configureTask.dependsOn(
+              variant.variantDependencies
+                .getArtifactCollection(COMPILE_CLASSPATH, ALL, AndroidArtifacts.ArtifactType.PREFAB_PACKAGE_CONFIGURATION)
+                .artifactFiles
             )
+            configureTask.dependsOn(variant.taskContainer.preBuildTask)
+          }
+          is ConfigureGroup -> {
+            taskFactory.register(name)
+          }
+          is VariantConfigure -> {
+            val configuration = task.representatives.toConfigurationModel()
+            val variant = variantMap.getValue(configuration.variant.variantName)
+            val configureTask = taskFactory.register(name)
+            // Add prefab configure task
+            if (variant is LibraryCreationConfig && variant.buildFeatures.prefabPublishing) {
+              val publication = createPrefabPublication(configuration, variant, variant.nativeBuildCreationConfig!!)
 
-        val variantMap = variants.associate { it.variant.name to it.variant }
+              // Write the header-only publication.
+              writeHeaderOnlyPublicationFile(providers, publication)
 
-        val taskModel = createFoldedCxxTaskDependencyModel(abis)
-
-        for ((name, task) in taskModel.tasks) {
-            when (task) {
-                is Configure -> {
-                    val variant = variantMap.getValue(task.representative.variant.variantName)
-                    val configureTask = taskFactory.register(createCxxConfigureTask(
-                        project,
-                        variant,
-                        task.representative,
-                        name))
-                    // Make sure any prefab configurations are generated first
-                    configureTask.dependsOn(
-                        variant.variantDependencies.getArtifactCollection(
-                            COMPILE_CLASSPATH,
-                            ALL,
-                            AndroidArtifacts.ArtifactType.PREFAB_PACKAGE_CONFIGURATION
-                        ).artifactFiles
-                    )
-                    configureTask.dependsOn(variant.taskContainer.preBuildTask)
-                }
-                is ConfigureGroup -> {
-                    taskFactory.register(name)
-                }
-                is VariantConfigure -> {
-                    val configuration = task.representatives.toConfigurationModel()
-                    val variant = variantMap.getValue(configuration.variant.variantName)
-                    val configureTask = taskFactory.register(name)
-                    // Add prefab configure task
-                    if (variant is LibraryCreationConfig &&
-                        variant.buildFeatures.prefabPublishing) {
-                        val publication = createPrefabPublication(
-                            configuration,
-                            variant,
-                            variant.nativeBuildCreationConfig!!
-                        )
-
-                        // Write the header-only publication.
-                        writeHeaderOnlyPublicationFile(providers, publication)
-
-                        createPrefabConfigurePackageTask(
-                            taskFactory,
-                            publication,
-                            configureTask,
-                            variant)
-                    }
-                }
-                is Build -> {
-                    val coveredVariantConfigurations =  task.coveredVariants.map { variantMap.getValue(it.variantName) }
-                    val buildTask = taskFactory.register(createWorkingCxxBuildTask(
-                        coveredVariantConfigurations,
-                        task.representative,
-                        name))
-                    for(variant in task.coveredVariants) {
-                        val variantConfiguration = variantMap.getValue(task.representative.variant.variantName)
-
-                        // Make sure any prefab dependencies are built first
-                        buildTask.dependsOn(
-                            variantConfiguration.variantDependencies.getArtifactCollection(
-                                COMPILE_CLASSPATH,
-                                ALL,
-                                PREFAB_PACKAGE
-                            ).artifactFiles
-                        )
-                    }
-                }
-                is BuildGroup -> {
-                    taskFactory.register(name)
-                }
-                is VariantBuild -> {
-                    val configuration = task.representatives.toConfigurationModel()
-                    val variant = variantMap.getValue(configuration.variant.variantName)
-                    val buildTask = taskFactory.register(
-                        createRepublishCxxBuildTask(
-                            configuration,
-                            variant,
-                            variant.computeTaskNameInternal("externalNativeBuild")
-                        )
-                    )
-                    variant.taskContainer.cxxConfigurationModel = configuration
-                    variant.taskContainer.externalNativeBuildTask = buildTask
-                    buildTask.dependsOn(variant.variantDependencies.getArtifactFileCollection(
-                            RUNTIME_CLASSPATH,
-                            ALL,
-                            JNI))
-                    val cleanTask =
-                            taskFactory.register(createVariantCxxCleanTask(configuration,
-                                    variant))
-                    taskFactory.named("clean").dependsOn(cleanTask)
-
-                    // Add prefab package task
-                    if (variant is LibraryCreationConfig &&
-                        variant.buildFeatures.prefabPublishing) {
-                        val publication = createPrefabPublication(
-                            configuration,
-                            variant,
-                            variant.nativeBuildCreationConfig!!
-                        )
-
-                        createPrefabPackageTask(
-                            taskFactory,
-                            publication,
-                            buildTask,
-                            variant)
-                    }
-                }
+              createPrefabConfigurePackageTask(taskFactory, publication, configureTask, variant)
             }
-        }
+          }
+          is Build -> {
+            val coveredVariantConfigurations = task.coveredVariants.map { variantMap.getValue(it.variantName) }
+            val buildTask = taskFactory.register(createWorkingCxxBuildTask(coveredVariantConfigurations, task.representative, name))
+            for (variant in task.coveredVariants) {
+              val variantConfiguration = variantMap.getValue(task.representative.variant.variantName)
 
-        // Establish dependency edges
-        for((dependant, dependee) in taskModel.edges) {
-            taskFactory.named(dependant).dependsOn(taskFactory.named(dependee))
+              // Make sure any prefab dependencies are built first
+              buildTask.dependsOn(
+                variantConfiguration.variantDependencies.getArtifactCollection(COMPILE_CLASSPATH, ALL, PREFAB_PACKAGE).artifactFiles
+              )
+            }
+          }
+          is BuildGroup -> {
+            taskFactory.register(name)
+          }
+          is VariantBuild -> {
+            val configuration = task.representatives.toConfigurationModel()
+            val variant = variantMap.getValue(configuration.variant.variantName)
+            val buildTask =
+              taskFactory.register(
+                createRepublishCxxBuildTask(configuration, variant, variant.computeTaskNameInternal("externalNativeBuild"))
+              )
+            variant.taskContainer.cxxConfigurationModel = configuration
+            variant.taskContainer.externalNativeBuildTask = buildTask
+            buildTask.dependsOn(variant.variantDependencies.getArtifactFileCollection(RUNTIME_CLASSPATH, ALL, JNI))
+            val cleanTask = taskFactory.register(createVariantCxxCleanTask(configuration, variant))
+            taskFactory.named("clean").dependsOn(cleanTask)
+
+            // Add prefab package task
+            if (variant is LibraryCreationConfig && variant.buildFeatures.prefabPublishing) {
+              val publication = createPrefabPublication(configuration, variant, variant.nativeBuildCreationConfig!!)
+
+              createPrefabPackageTask(taskFactory, publication, buildTask, variant)
+            }
+          }
         }
+      }
+
+      // Establish dependency edges
+      for ((dependant, dependee) in taskModel.edges) {
+        taskFactory.named(dependant).dependsOn(taskFactory.named(dependee))
+      }
     }
 }
 
 private fun createPrefabConfigurePackageTask(
-    taskFactory: TaskFactory,
-    publication: PrefabPublication,
-    configureTask: TaskProvider<Task>,
-    libraryVariant: LibraryCreationConfig) {
-    if (publication.packageInfo.modules.isNotEmpty()) {
-        val task = taskFactory.register(
-            PrefabPackageConfigurationTask.CreationAction(
-                publication,
-                libraryVariant.prefabConfigurePackageTaskName(),
-                libraryVariant))
-        task.dependsOn(configureTask)
-    }
+  taskFactory: TaskFactory,
+  publication: PrefabPublication,
+  configureTask: TaskProvider<Task>,
+  libraryVariant: LibraryCreationConfig,
+) {
+  if (publication.packageInfo.modules.isNotEmpty()) {
+    val task =
+      taskFactory.register(
+        PrefabPackageConfigurationTask.CreationAction(publication, libraryVariant.prefabConfigurePackageTaskName(), libraryVariant)
+      )
+    task.dependsOn(configureTask)
+  }
 }
 
 private fun createPrefabPackageTask(
-    taskFactory: TaskFactory,
-    publication: PrefabPublication,
-    buildTask: TaskProvider<out ExternalNativeBuildTask>,
-    libraryVariant: LibraryCreationConfig) {
-    if (publication.packageInfo.modules.isNotEmpty()) {
-        val packageTask = taskFactory.register(
-            PrefabPackageTask.CreationAction(
-                publication,
-                libraryVariant.prefabPackageTaskName(),
-                libraryVariant))
-        packageTask
-            .dependsOn(libraryVariant.prefabConfigurePackageTaskName())
-            .dependsOn(buildTask)
-    }
+  taskFactory: TaskFactory,
+  publication: PrefabPublication,
+  buildTask: TaskProvider<out ExternalNativeBuildTask>,
+  libraryVariant: LibraryCreationConfig,
+) {
+  if (publication.packageInfo.modules.isNotEmpty()) {
+    val packageTask =
+      taskFactory.register(PrefabPackageTask.CreationAction(publication, libraryVariant.prefabPackageTaskName(), libraryVariant))
+    packageTask.dependsOn(libraryVariant.prefabConfigurePackageTaskName()).dependsOn(buildTask)
+  }
 }
 
 /**
- * Create the folded task dependency model. C/C++ build outputs are placed in a folder that is
- * unique for the given C++ configuration. If two tasks map to the same configuration then they
- * will have the same task name and duplicates are automatically removed.
+ * Create the folded task dependency model. C/C++ build outputs are placed in a folder that is unique for the given C++ configuration. If
+ * two tasks map to the same configuration then they will have the same task name and duplicates are automatically removed.
  *
- * The logic that actually determines the output folder names is in
- * [CxxAbiModel::getAndroidGradleSettings].
+ * The logic that actually determines the output folder names is in [CxxAbiModel::getAndroidGradleSettings].
  */
-fun createFoldedCxxTaskDependencyModel(globalAbis: List<CxxAbiModel>) : CxxTaskDependencyModel {
-    if (globalAbis.isEmpty()) return CxxTaskDependencyModel(tasks = mapOf(), edges=listOf())
-    val variantsByName = globalAbis.map { it.variant }.distinct().associateBy { it.variantName }
-    val tasks = mutableMapOf<String, CxxGradleTaskModel>()
-    val edges = mutableListOf<Pair<String, String>>()
-    val namer = CxxConfigurationFolding(globalAbis)
+fun createFoldedCxxTaskDependencyModel(globalAbis: List<CxxAbiModel>): CxxTaskDependencyModel {
+  if (globalAbis.isEmpty()) return CxxTaskDependencyModel(tasks = mapOf(), edges = listOf())
+  val variantsByName = globalAbis.map { it.variant }.distinct().associateBy { it.variantName }
+  val tasks = mutableMapOf<String, CxxGradleTaskModel>()
+  val edges = mutableListOf<Pair<String, String>>()
+  val namer = CxxConfigurationFolding(globalAbis)
 
-    val variantAbis = globalAbis
-            .groupBy { it.variant.variantName }
+  val variantAbis = globalAbis.groupBy { it.variant.variantName }
 
-    namer.configureAbis.forEach { (taskName, target) ->
-        val (variantsCovered, abi) = target
-        tasks[taskName] = Configure(variantsCovered.map { variantsByName.getValue(it) }, abi)
-    }
-    namer.configureGroups.forEach { (groupingTask, configureTasks) ->
-        tasks[groupingTask] = ConfigureGroup
-        configureTasks.forEach { configureTask ->
-            edges += groupingTask to configureTask
-        }
-    }
-    namer.buildAbis.forEach { (taskName, target) ->
-        val (variantsCovered, abi) = target
-        tasks[taskName] = Build(variantsCovered.map { variantsByName.getValue(it) }, abi)
-    }
-    namer.buildGroups.forEach { (groupingTask, buildTasks) ->
-        tasks[groupingTask] = BuildGroup
-        buildTasks.forEach { buildTask ->
-            edges += groupingTask to buildTask
-        }
-    }
-    namer.variantToConfiguration.forEach { (variantName, configureTasks) ->
-        val taskName = "generateJsonModel".appendCapitalized(variantName)
-        tasks[taskName] = VariantConfigure(variantAbis.getValue(variantName))
-        edges += configureTasks.map { configureTask -> taskName to configureTask }
-    }
-    namer.variantToBuild.forEach { (variantName, buildTasks) ->
-        val taskName = "externalNativeBuild".appendCapitalized(variantName)
-        tasks[taskName] = VariantBuild(variantAbis.getValue(variantName))
-        edges += buildTasks.map { buildTask -> taskName to buildTask }
-    }
-    edges += namer.buildConfigureEdges
+  namer.configureAbis.forEach { (taskName, target) ->
+    val (variantsCovered, abi) = target
+    tasks[taskName] = Configure(variantsCovered.map { variantsByName.getValue(it) }, abi)
+  }
+  namer.configureGroups.forEach { (groupingTask, configureTasks) ->
+    tasks[groupingTask] = ConfigureGroup
+    configureTasks.forEach { configureTask -> edges += groupingTask to configureTask }
+  }
+  namer.buildAbis.forEach { (taskName, target) ->
+    val (variantsCovered, abi) = target
+    tasks[taskName] = Build(variantsCovered.map { variantsByName.getValue(it) }, abi)
+  }
+  namer.buildGroups.forEach { (groupingTask, buildTasks) ->
+    tasks[groupingTask] = BuildGroup
+    buildTasks.forEach { buildTask -> edges += groupingTask to buildTask }
+  }
+  namer.variantToConfiguration.forEach { (variantName, configureTasks) ->
+    val taskName = "generateJsonModel".appendCapitalized(variantName)
+    tasks[taskName] = VariantConfigure(variantAbis.getValue(variantName))
+    edges += configureTasks.map { configureTask -> taskName to configureTask }
+  }
+  namer.variantToBuild.forEach { (variantName, buildTasks) ->
+    val taskName = "externalNativeBuild".appendCapitalized(variantName)
+    tasks[taskName] = VariantBuild(variantAbis.getValue(variantName))
+    edges += buildTasks.map { buildTask -> taskName to buildTask }
+  }
+  edges += namer.buildConfigureEdges
 
-    return CxxTaskDependencyModel(
-            tasks = tasks,
-            edges = edges.distinct()
-    )
+  return CxxTaskDependencyModel(tasks = tasks, edges = edges.distinct())
 }
 
-/**
- * Create the [CxxAbiModel]s for a given build.
- */
+/** Create the [CxxAbiModel]s for a given build. */
 fun createInitialCxxModel(
-    sdkComponents: SdkComponentsBuildService,
-    configurationParameters: List<CxxConfigurationParameters>,
-    providers: ProviderFactory,
-    layout: ProjectLayout
-) : List<CxxAbiModel> {
+  sdkComponents: SdkComponentsBuildService,
+  configurationParameters: List<CxxConfigurationParameters>,
+  providers: ProviderFactory,
+  layout: ProjectLayout,
+): List<CxxAbiModel> {
 
-    return configurationParameters.flatMap { parameters ->
-        // Log the fact that configuration parameters were constructed.
-        logStructured { encoder ->
-            CreateCxxModel.newBuilder()
-                .setGradlePath(parameters.gradleModulePathName)
-                .setVariantName(parameters.variantName)
-                .build()
-                .encode(encoder)
-        }
-
-        val module =
-            createCxxModuleModel(
-                sdkComponents,
-                parameters,
-            )
-        val variant = createCxxVariantModel(parameters, module)
-        module.ndkMetaAbiList
-            .map { abi -> createCxxAbiModel(sdkComponents, parameters, variant, abi.name)
-                            .calculateConfigurationArguments(providers, layout)
-        }
+  return configurationParameters.flatMap { parameters ->
+    // Log the fact that configuration parameters were constructed.
+    logStructured { encoder ->
+      CreateCxxModel.newBuilder()
+        .setGradlePath(parameters.gradleModulePathName)
+        .setVariantName(parameters.variantName)
+        .build()
+        .encode(encoder)
     }
+
+    val module = createCxxModuleModel(sdkComponents, parameters)
+    val variant = createCxxVariantModel(parameters, module)
+    module.ndkMetaAbiList.map { abi ->
+      createCxxAbiModel(sdkComponents, parameters, variant, abi.name).calculateConfigurationArguments(providers, layout)
+    }
+  }
 }
 
 private fun List<CxxAbiModel>.toConfigurationModel() =
-        CxxConfigurationModel(
-                variant = first().variant,
-                activeAbis = filter { it.isActiveAbi },
-                unusedAbis = filter { !it.isActiveAbi },
-        )
+  CxxConfigurationModel(variant = first().variant, activeAbis = filter { it.isActiveAbi }, unusedAbis = filter { !it.isActiveAbi })
 
-/**
- * Return the name of the prefab[Variant]Package task.
- */
-private fun ComponentCreationConfig.prefabPackageTaskName() =
-    computeTaskNameInternal("prefab", "Package")
+/** Return the name of the prefab[Variant]Package task. */
+private fun ComponentCreationConfig.prefabPackageTaskName() = computeTaskNameInternal("prefab", "Package")
 
-/**
- * Return the name of the prefab[ConfigurePackage]Package task.
- */
-private fun ComponentCreationConfig.prefabConfigurePackageTaskName() =
-    computeTaskNameInternal("prefab", "ConfigurePackage")
+/** Return the name of the prefab[ConfigurePackage]Package task. */
+private fun ComponentCreationConfig.prefabConfigurePackageTaskName() = computeTaskNameInternal("prefab", "ConfigurePackage")

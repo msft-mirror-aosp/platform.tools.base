@@ -21,125 +21,121 @@ import com.android.build.gradle.internal.transforms.testdata.NewClass
 import com.android.build.gradle.internal.transforms.testdata.SomeClass
 import com.android.build.gradle.internal.transforms.testdata.SomeOtherClass
 import com.android.testutils.TestInputsGenerator
+import kotlin.test.assertEquals
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
-import kotlin.test.assertEquals
 
 class DependenciesAnalyzerTest {
 
-    @Rule
-    @JvmField
-    val tempDir = TemporaryFolder()
+  @Rule @JvmField val tempDir = TemporaryFolder()
 
-    private val expectedOutput = mutableListOf("kotlin/Metadata.class", "java/lang/Object.class")
+  private val expectedOutput = mutableListOf("kotlin/Metadata.class", "java/lang/Object.class")
 
-    /** Tests the analyzer finds the types from the class header (superclass, interfaces
-     * and generics) */
-    @Test
-    fun testTypesInClassHeader() {
-        val input = tempDir.newFolder("classes")
-        val classes = listOf(SomeClass::class.java)
+  /** Tests the analyzer finds the types from the class header (superclass, interfaces and generics) */
+  @Test
+  fun testTypesInClassHeader() {
+    val input = tempDir.newFolder("classes")
+    val classes = listOf(SomeClass::class.java)
 
-        TestInputsGenerator.pathWithClasses(input.toPath(), classes)
+    TestInputsGenerator.pathWithClasses(input.toPath(), classes)
 
-        expectedOutput.addAll(
-                arrayOf(
-                "com/android/build/gradle/internal/transforms/testdata/YetAnotherClass.class",
-                "com/android/build/gradle/internal/transforms/testdata/SomeInterface.class",
-                "com/android/build/gradle/internal/transforms/testdata/CarbonForm.class",
-                "com/android/build/gradle/internal/transforms/testdata/EnumClass.class",
-                "com/android/build/gradle/internal/transforms/testdata/SomeClass.class",
-                "com/android/build/gradle/internal/transforms/testdata/Animal.class",
-                "com/android/build/gradle/internal/transforms/testdata/Dog.class",
-                "com/android/build/gradle/internal/transforms/testdata/Cat.class",
-                "kotlin/jvm/internal/Intrinsics.class",
-                "org/jetbrains/annotations/NotNull.class",
-                "java/util/List.class"
-                )
-        )
+    expectedOutput.addAll(
+      arrayOf(
+        "com/android/build/gradle/internal/transforms/testdata/YetAnotherClass.class",
+        "com/android/build/gradle/internal/transforms/testdata/SomeInterface.class",
+        "com/android/build/gradle/internal/transforms/testdata/CarbonForm.class",
+        "com/android/build/gradle/internal/transforms/testdata/EnumClass.class",
+        "com/android/build/gradle/internal/transforms/testdata/SomeClass.class",
+        "com/android/build/gradle/internal/transforms/testdata/Animal.class",
+        "com/android/build/gradle/internal/transforms/testdata/Dog.class",
+        "com/android/build/gradle/internal/transforms/testdata/Cat.class",
+        "kotlin/jvm/internal/Intrinsics.class",
+        "org/jetbrains/annotations/NotNull.class",
+        "java/util/List.class",
+      )
+    )
 
-        val analyzer = DependenciesAnalyzer()
-        val output = mutableListOf<String>()
-        input.walk().forEach {
-            if (it.isFile && it.name.endsWith(SdkConstants.DOT_CLASS)) {
-                output.addAll(analyzer.findAllDependencies(it.inputStream()))
-            }
-        }
-
-        assertEquals(expectedOutput.sorted(), output.sorted())
+    val analyzer = DependenciesAnalyzer()
+    val output = mutableListOf<String>()
+    input.walk().forEach {
+      if (it.isFile && it.name.endsWith(SdkConstants.DOT_CLASS)) {
+        output.addAll(analyzer.findAllDependencies(it.inputStream()))
+      }
     }
 
-    @Test
-    fun testTypesInMethods() {
-        val input = tempDir.newFolder("classes")
-        val classes = listOf(SomeOtherClass::class.java)
+    assertEquals(expectedOutput.sorted(), output.sorted())
+  }
 
-        TestInputsGenerator.pathWithClasses(input.toPath(), classes)
+  @Test
+  fun testTypesInMethods() {
+    val input = tempDir.newFolder("classes")
+    val classes = listOf(SomeOtherClass::class.java)
 
-        expectedOutput.addAll(
-                arrayOf(
-                "com/android/build/gradle/internal/transforms/testdata/YetAnotherClass.class",
-                "com/android/build/gradle/internal/transforms/testdata/SomeOtherClass.class",
-                "com/android/build/gradle/internal/transforms/testdata/CarbonForm.class",
-                "com/android/build/gradle/internal/transforms/testdata/SomeClass.class",
-                "com/android/build/gradle/internal/transforms/testdata/EnumClass.class",
-                "com/android/build/gradle/internal/transforms/testdata/NewClass.class",
-                "com/android/build/gradle/internal/transforms/testdata/Animal.class",
-                "com/android/build/gradle/internal/transforms/testdata/Tiger.class",
-                "com/android/build/gradle/internal/transforms/testdata/Toy.class",
-                "com/android/build/gradle/internal/transforms/testdata/Cat.class",
-                "com/android/build/gradle/internal/transforms/testdata/Dog.class",
-                "org/jetbrains/annotations/Nullable.class",
-                "org/jetbrains/annotations/NotNull.class",
-                "kotlin/jvm/internal/Intrinsics.class",
-                "java/lang/Exception.class",
-                "java/io/IOException.class",
-                "java/util/Map.class"
-                )
-        )
+    TestInputsGenerator.pathWithClasses(input.toPath(), classes)
 
-        val analyzer = DependenciesAnalyzer()
-        val output = mutableSetOf<String>()
-        input.walk().forEach {
-            if (it.isFile && it.name.endsWith(SdkConstants.DOT_CLASS)) {
-                output.addAll(analyzer.findAllDependencies(it.inputStream()))
-            }
-        }
+    expectedOutput.addAll(
+      arrayOf(
+        "com/android/build/gradle/internal/transforms/testdata/YetAnotherClass.class",
+        "com/android/build/gradle/internal/transforms/testdata/SomeOtherClass.class",
+        "com/android/build/gradle/internal/transforms/testdata/CarbonForm.class",
+        "com/android/build/gradle/internal/transforms/testdata/SomeClass.class",
+        "com/android/build/gradle/internal/transforms/testdata/EnumClass.class",
+        "com/android/build/gradle/internal/transforms/testdata/NewClass.class",
+        "com/android/build/gradle/internal/transforms/testdata/Animal.class",
+        "com/android/build/gradle/internal/transforms/testdata/Tiger.class",
+        "com/android/build/gradle/internal/transforms/testdata/Toy.class",
+        "com/android/build/gradle/internal/transforms/testdata/Cat.class",
+        "com/android/build/gradle/internal/transforms/testdata/Dog.class",
+        "org/jetbrains/annotations/Nullable.class",
+        "org/jetbrains/annotations/NotNull.class",
+        "kotlin/jvm/internal/Intrinsics.class",
+        "java/lang/Exception.class",
+        "java/io/IOException.class",
+        "java/util/Map.class",
+      )
+    )
 
-        assertEquals(expectedOutput.sorted(), output.sorted())
+    val analyzer = DependenciesAnalyzer()
+    val output = mutableSetOf<String>()
+    input.walk().forEach {
+      if (it.isFile && it.name.endsWith(SdkConstants.DOT_CLASS)) {
+        output.addAll(analyzer.findAllDependencies(it.inputStream()))
+      }
     }
 
-    @Test
-    fun testTypesInClassFields() {
-        val input = tempDir.newFolder("classes")
-        val classes = listOf(NewClass::class.java)
+    assertEquals(expectedOutput.sorted(), output.sorted())
+  }
 
-        TestInputsGenerator.pathWithClasses(input.toPath(), classes)
+  @Test
+  fun testTypesInClassFields() {
+    val input = tempDir.newFolder("classes")
+    val classes = listOf(NewClass::class.java)
 
-        expectedOutput.addAll(
-                arrayOf(
-                "com/android/build/gradle/internal/transforms/testdata/NewClass\$Companion.class",
-                "com/android/build/gradle/internal/transforms/testdata/YetAnotherClass.class",
-                "com/android/build/gradle/internal/transforms/testdata/SomeClassKt.class",
-                "com/android/build/gradle/internal/transforms/testdata/NewClass.class",
-                "com/android/build/gradle/internal/transforms/testdata/Animal.class",
-                "com/android/build/gradle/internal/transforms/testdata/Toy.class",
-                "org/jetbrains/annotations/NotNull.class",
-                "kotlin/jvm/internal/Intrinsics.class",
-                "java/lang/String.class"
-                )
-        )
+    TestInputsGenerator.pathWithClasses(input.toPath(), classes)
 
-        val analyzer = DependenciesAnalyzer()
-        val output = mutableSetOf<String>()
-        input.walk().forEach {
-            if (it.isFile && it.name.endsWith(SdkConstants.DOT_CLASS)) {
-                output.addAll(analyzer.findAllDependencies(it.inputStream()))
-            }
-        }
+    expectedOutput.addAll(
+      arrayOf(
+        "com/android/build/gradle/internal/transforms/testdata/NewClass\$Companion.class",
+        "com/android/build/gradle/internal/transforms/testdata/YetAnotherClass.class",
+        "com/android/build/gradle/internal/transforms/testdata/SomeClassKt.class",
+        "com/android/build/gradle/internal/transforms/testdata/NewClass.class",
+        "com/android/build/gradle/internal/transforms/testdata/Animal.class",
+        "com/android/build/gradle/internal/transforms/testdata/Toy.class",
+        "org/jetbrains/annotations/NotNull.class",
+        "kotlin/jvm/internal/Intrinsics.class",
+        "java/lang/String.class",
+      )
+    )
 
-        assertEquals(expectedOutput.sorted(), output.sorted())
+    val analyzer = DependenciesAnalyzer()
+    val output = mutableSetOf<String>()
+    input.walk().forEach {
+      if (it.isFile && it.name.endsWith(SdkConstants.DOT_CLASS)) {
+        output.addAll(analyzer.findAllDependencies(it.inputStream()))
+      }
     }
 
+    assertEquals(expectedOutput.sorted(), output.sorted())
+  }
 }

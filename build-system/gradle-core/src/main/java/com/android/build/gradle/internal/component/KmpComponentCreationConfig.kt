@@ -19,10 +19,9 @@ package com.android.build.gradle.internal.component
 import com.android.build.api.dsl.KotlinMultiplatformAndroidCompilation
 
 /**
- * Interface for all components related to the kotlin multiplatform plugin including the main
- * variant, unit tests, and instrumented tests.
+ * Interface for all components related to the kotlin multiplatform plugin including the main variant, unit tests, and instrumented tests.
  */
-interface KmpComponentCreationConfig: ComponentCreationConfig {
-    val androidKotlinCompilation: KotlinMultiplatformAndroidCompilation
-    val withJava: Boolean
+interface KmpComponentCreationConfig : ComponentCreationConfig {
+  val androidKotlinCompilation: KotlinMultiplatformAndroidCompilation
+  val withJava: Boolean
 }

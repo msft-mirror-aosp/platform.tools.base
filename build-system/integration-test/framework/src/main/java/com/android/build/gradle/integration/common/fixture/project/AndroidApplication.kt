@@ -37,93 +37,71 @@ import java.nio.file.Path
  * @param path the Gradle path of the project
  * @param createMinimumProject whether to initialized default values on required properties
  */
-internal class AndroidApplicationDefinitionImpl(
-    path: String,
-    createMinimumProject: Boolean,
-): AndroidProjectDefinitionImpl<ApplicationExtension>(path) {
-    init {
-        applyPlugin(PluginType.ANDROID_APP)
+internal class AndroidApplicationDefinitionImpl(path: String, createMinimumProject: Boolean) :
+  AndroidProjectDefinitionImpl<ApplicationExtension>(path) {
+  init {
+    applyPlugin(PluginType.ANDROID_APP)
+  }
+
+  override val android: ApplicationExtension =
+    DslProxy.createProxy(ApplicationExtension::class.java, dslRecorder).also {
+      if (createMinimumProject) {
+        initDefaultValues(it)
+      }
     }
-
-    override val android: ApplicationExtension =
-        DslProxy.createProxy(
-            ApplicationExtension::class.java,
-            dslRecorder,
-        ).also {
-            if (createMinimumProject) {
-                initDefaultValues(it)
-            }
-        }
 }
 
-/**
- * Specialized interface for application [AndroidProject] to use in the test
- */
-interface AndroidApplicationProject : AndroidProject<AndroidProjectDefinition<ApplicationExtension>>,
-    GeneratesApk,
-    GeneratesAab {
+/** Specialized interface for application [AndroidProject] to use in the test */
+interface AndroidApplicationProject : AndroidProject<AndroidProjectDefinition<ApplicationExtension>>, GeneratesApk, GeneratesAab {
 
-    fun getApkFromBundleTaskName(variantName: String): String
-    fun locateApkFolderViaModel(variantName: String): File
+  fun getApkFromBundleTaskName(variantName: String): String
+
+  fun locateApkFolderViaModel(variantName: String): File
 }
 
-/**
- * Implementation of [AndroidProject]
- */
+/** Implementation of [AndroidProject] */
 internal class AndroidApplicationImpl(
-    location: Path,
-    projectDefinition: AndroidProjectDefinition<ApplicationExtension>,
-    namespace: String
-) : AndroidProjectImpl<AndroidProjectDefinition<ApplicationExtension>>(
-    location,
-    projectDefinition,
-    namespace,
-), AndroidApplicationProject,
-    GeneratesAab by GeneratesAabDelegate(location),
-    GeneratesApk by GeneratesApkDelegate(projectDefinition.path, location) {
+  location: Path,
+  projectDefinition: AndroidProjectDefinition<ApplicationExtension>,
+  namespace: String,
+) :
+  AndroidProjectImpl<AndroidProjectDefinition<ApplicationExtension>>(location, projectDefinition, namespace),
+  AndroidApplicationProject,
+  GeneratesAab by GeneratesAabDelegate(location),
+  GeneratesApk by GeneratesApkDelegate(projectDefinition.path, location) {
 
-    override fun getApkFromBundleTaskName(variantName: String): String {
-        val projectPath = projectDefinition.path
-        val model = build.modelBuilder.fetchModels().container.getProject(projectPath).androidProject
-            ?: throw RuntimeException("Failed to get sync model for $projectPath module")
+  override fun getApkFromBundleTaskName(variantName: String): String {
+    val projectPath = projectDefinition.path
+    val model =
+      build.modelBuilder.fetchModels().container.getProject(projectPath).androidProject
+        ?: throw RuntimeException("Failed to get sync model for $projectPath module")
 
-        val variantMainArtifact = model.getVariantByName(variantName).mainArtifact
-        return variantMainArtifact.bundleInfo?.apkFromBundleTaskName
-            ?: throw RuntimeException("Module $projectPath does not have apkFromBundle task name")
-    }
+    val variantMainArtifact = model.getVariantByName(variantName).mainArtifact
+    return variantMainArtifact.bundleInfo?.apkFromBundleTaskName
+      ?: throw RuntimeException("Module $projectPath does not have apkFromBundle task name")
+  }
 
-    override fun locateApkFolderViaModel(variantName: String): File {
-        val projectPath = projectDefinition.path
+  override fun locateApkFolderViaModel(variantName: String): File {
+    val projectPath = projectDefinition.path
 
-        val apkFiles = build.modelBuilder.fetchModels().container.getProject(projectPath).androidProject
-            ?.getVariantByName(variantName)
-            ?.getApkLocations()
+    val apkFiles =
+      build.modelBuilder.fetchModels().container.getProject(projectPath).androidProject?.getVariantByName(variantName)?.getApkLocations()
 
-        return apkFiles?.getOrNull(0)?.parentFile
-            ?: throw RuntimeException("Failed to get apk folder for $projectPath module")
-    }
+    return apkFiles?.getOrNull(0)?.parentFile ?: throw RuntimeException("Failed to get apk folder for $projectPath module")
+  }
 
-    override fun getReversibleInstance(fileChangeController: FileChangeController): AndroidApplicationProject =
-        ReversibleAndroidApplicationProject(this, fileChangeController)
+  override fun getReversibleInstance(fileChangeController: FileChangeController): AndroidApplicationProject =
+    ReversibleAndroidApplicationProject(this, fileChangeController)
 }
 
-/**
- * Reversible version of [AndroidApplicationProject]
- */
-internal class ReversibleAndroidApplicationProject(
-    parentProject: AndroidApplicationProject,
-    fileChangeController: FileChangeController
-) : ReversibleAndroidProject<AndroidApplicationProject, AndroidProjectDefinition<ApplicationExtension>>(
-    parentProject,
-    fileChangeController
-), AndroidApplicationProject,
-    GeneratesApk by GeneratesApkFromParentDelegate(parentProject),
-    GeneratesAab by GeneratesAabFromParentDelegate(parentProject) {
+/** Reversible version of [AndroidApplicationProject] */
+internal class ReversibleAndroidApplicationProject(parentProject: AndroidApplicationProject, fileChangeController: FileChangeController) :
+  ReversibleAndroidProject<AndroidApplicationProject, AndroidProjectDefinition<ApplicationExtension>>(parentProject, fileChangeController),
+  AndroidApplicationProject,
+  GeneratesApk by GeneratesApkFromParentDelegate(parentProject),
+  GeneratesAab by GeneratesAabFromParentDelegate(parentProject) {
 
-    override fun getApkFromBundleTaskName(variantName: String): String =
-        parentProject.getApkFromBundleTaskName(variantName)
+  override fun getApkFromBundleTaskName(variantName: String): String = parentProject.getApkFromBundleTaskName(variantName)
 
-    override fun locateApkFolderViaModel(variantName: String): File =
-        parentProject.locateApkFolderViaModel(variantName)
+  override fun locateApkFolderViaModel(variantName: String): File = parentProject.locateApkFolderViaModel(variantName)
 }
-

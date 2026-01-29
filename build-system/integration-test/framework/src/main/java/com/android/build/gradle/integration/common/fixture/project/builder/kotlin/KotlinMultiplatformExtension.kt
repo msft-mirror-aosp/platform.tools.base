@@ -28,34 +28,28 @@ import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSet
  * The actual Kotlin top level type is an abstract class so we cannot use it with
  * [com.android.build.gradle.integration.common.fixture.dsl.DslProxy], and it also fails with ByteBuddy
  *
- * Therefore, this is used as an entry point. This exposes only what we need. This is implemented
- * via the proxy so that we don't have to bother with the implementation and the writing into
- * build files.
+ * Therefore, this is used as an entry point. This exposes only what we need. This is implemented via the proxy so that we don't have to
+ * bother with the implementation and the writing into build files.
  *
  * The normal Kotlin extension is [org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension]
  */
-interface KotlinMultiplatformExtension: KotlinExtension {
-    // we cannot put the androidLibrary() function here as we need to make this dynamic based on
-    // the plugin being applied
+interface KotlinMultiplatformExtension : KotlinExtension {
+  // we cannot put the androidLibrary() function here as we need to make this dynamic based on
+  // the plugin being applied
 
-    fun jvm()
-
+  fun jvm()
 }
 
 // This is already an extension method in the original class from KMP, so we need to reimplement it the same
 // way except we directly handle the proxy/dslRecorder
 val NamedDomainObjectContainer<KotlinSourceSet>.androidMain: NamedDomainObjectProvider<KotlinSourceSet>
-    get() {
-        return sourceSetGetterFor("androidMain")
-    }
-
+  get() {
+    return sourceSetGetterFor("androidMain")
+  }
 
 private fun NamedDomainObjectContainer<KotlinSourceSet>.sourceSetGetterFor(name: String): NamedDomainObjectProviderProxy<KotlinSourceSet> {
-    // we need to get access to the [DslRecorder] from the proxied interface
-    val invocationHandler = this as NamedDomainObjectContainerProxy<KotlinSourceSet>
+  // we need to get access to the [DslRecorder] from the proxied interface
+  val invocationHandler = this as NamedDomainObjectContainerProxy<KotlinSourceSet>
 
-    return NamedDomainObjectProviderProxy(
-        KotlinSourceSet::class.java,
-        invocationHandler.dslRecorder.createChainedRecorder(name)
-    )
+  return NamedDomainObjectProviderProxy(KotlinSourceSet::class.java, invocationHandler.dslRecorder.createChainedRecorder(name))
 }

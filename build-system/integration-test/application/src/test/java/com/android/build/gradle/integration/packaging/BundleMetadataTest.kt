@@ -19,35 +19,23 @@ package com.android.build.gradle.integration.packaging
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.MinimalSubProject
 import com.android.build.gradle.integration.common.output.ZipSubject
+import java.nio.file.Path
 import org.junit.Rule
 import org.junit.Test
-import java.nio.file.Path
 
 class BundleMetadataTest {
-    @get:Rule
-    var project = GradleTestProject.builder()
-        .fromTestApp(
-            MinimalSubProject.app("com.example.test")
-        ).create()
+  @get:Rule var project = GradleTestProject.builder().fromTestApp(MinimalSubProject.app("com.example.test")).create()
 
-    @Test
-    fun bundleContainsAppMetadataTest() {
-        val apksPath = generateApks()
-        ZipSubject.assertThat(apksPath) { apks ->
-            apks.innerZip("splits/base-master.apk") {
-                entries().contains("META-INF/com/android/build/gradle/app-metadata.properties")
-            }
-        }
+  @Test
+  fun bundleContainsAppMetadataTest() {
+    val apksPath = generateApks()
+    ZipSubject.assertThat(apksPath) { apks ->
+      apks.innerZip("splits/base-master.apk") { entries().contains("META-INF/com/android/build/gradle/app-metadata.properties") }
     }
+  }
 
-    private fun generateApks(): Path {
-        project.executor().run(":makeApkFromBundleForDebug")
-        return project.getIntermediateFile(
-            "apks_from_bundle",
-            "debug",
-            "makeApkFromBundleForDebug",
-            "bundle.apks"
-        ).toPath()
-    }
+  private fun generateApks(): Path {
+    project.executor().run(":makeApkFromBundleForDebug")
+    return project.getIntermediateFile("apks_from_bundle", "debug", "makeApkFromBundleForDebug", "bundle.apks").toPath()
+  }
 }
-

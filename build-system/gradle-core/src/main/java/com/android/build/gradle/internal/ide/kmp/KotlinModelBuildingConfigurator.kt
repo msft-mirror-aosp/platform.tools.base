@@ -22,9 +22,9 @@ import com.android.build.api.component.impl.KmpAndroidTestImpl
 import com.android.build.api.component.impl.KmpHostTestImpl
 import com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryTarget
 import com.android.build.gradle.internal.component.DeviceTestCreationConfig
+import com.android.build.gradle.internal.component.HostTestCreationConfig
 import com.android.build.gradle.internal.component.KmpComponentCreationConfig
 import com.android.build.gradle.internal.component.KmpCreationConfig
-import com.android.build.gradle.internal.component.HostTestCreationConfig
 import com.android.build.gradle.internal.ide.Utils.getGeneratedAssetsFolders
 import com.android.build.gradle.internal.ide.proto.convert
 import com.android.build.gradle.internal.ide.proto.setIfNotNull
@@ -48,225 +48,152 @@ import com.android.kotlin.multiplatform.models.InstrumentedTestInfo
 import com.android.kotlin.multiplatform.models.MainVariantInfo
 import com.android.kotlin.multiplatform.models.SourceProvider
 import com.android.kotlin.multiplatform.models.UnitTestInfo
-import org.gradle.api.Project
 import java.io.File
+import org.gradle.api.Project
 
 /**
- * A singleton that is responsible for populating the android models sent along with the android
- * target, compilation and sourceSets. Data is added through [org.jetbrains.kotlin.tooling.core.HasMutableExtras.extras]
- * which the target, compilation and sourceSet implements.
+ * A singleton that is responsible for populating the android models sent along with the android target, compilation and sourceSets. Data is
+ * added through [org.jetbrains.kotlin.tooling.core.HasMutableExtras.extras] which the target, compilation and sourceSet implements.
  *
- * Checkout [androidTargetKey], [androidCompilationKey], [androidSourceSetKey] to see what data is
- * held in each model.
+ * Checkout [androidTargetKey], [androidCompilationKey], [androidSourceSetKey] to see what data is held in each model.
  */
 object KotlinModelBuildingConfigurator {
-    private fun KmpComponentCreationConfig.toType() = when (this) {
-        is KmpCreationConfig -> AndroidCompilation.CompilationType.MAIN
-        is KmpHostTestImpl -> AndroidCompilation.CompilationType.UNIT_TEST
-        is KmpAndroidTestImpl -> AndroidCompilation.CompilationType.INSTRUMENTED_TEST
-        else -> throw IllegalArgumentException("Unknown type ${this::class.java}")
+  private fun KmpComponentCreationConfig.toType() =
+    when (this) {
+      is KmpCreationConfig -> AndroidCompilation.CompilationType.MAIN
+      is KmpHostTestImpl -> AndroidCompilation.CompilationType.UNIT_TEST
+      is KmpAndroidTestImpl -> AndroidCompilation.CompilationType.INSTRUMENTED_TEST
+      else -> throw IllegalArgumentException("Unknown type ${this::class.java}")
     }
 
-    /**
-     * As each [KmpComponentCreationConfig] corresponds to a kotlin compilation, this method
-     * adds extra android-specific information to the android kotlin compilations. That includes,
-     * the main compilation and the unitTest and instrumentedTest compilations if enabled.
-     *
-     * This method also adds android-specific data about the default sourceSet in each compilation,
-     * mainly the android manifest location.
-     */
-    fun setupAndroidCompilations(
-        components: List<KmpComponentCreationConfig>,
-        testInstrumentationRunner: String?,
-        testInstrumentationRunnerArguments: Map<String, String>
-    ) {
-        components.forEach { component ->
-            val compilation = component.androidKotlinCompilation
+  /**
+   * As each [KmpComponentCreationConfig] corresponds to a kotlin compilation, this method adds extra android-specific information to the
+   * android kotlin compilations. That includes, the main compilation and the unitTest and instrumentedTest compilations if enabled.
+   *
+   * This method also adds android-specific data about the default sourceSet in each compilation, mainly the android manifest location.
+   */
+  fun setupAndroidCompilations(
+    components: List<KmpComponentCreationConfig>,
+    testInstrumentationRunner: String?,
+    testInstrumentationRunnerArguments: Map<String, String>,
+  ) {
+    components.forEach { component ->
+      val compilation = component.androidKotlinCompilation
 
-            compilation.extras[androidCompilationKey] =
-                AndroidCompilation.newBuilder()
-                    .setType(component.toType())
-                    .setDefaultSourceSetName(
-                        compilation.defaultSourceSet.name
-                    )
-                    .setAssembleTaskName(
-                        component.taskContainer.assembleTask.name
-                    )
-                    .setKotlinCompileTaskName(
-                        component.androidKotlinCompilation.compileKotlinTaskName
-                    )
-                    .addAllExtraClassesFolders(
-                        getExtraClassesFolders(component).map { it.convert() }
-                    )
-                    .setIfNotNull(
-                        (component as? KmpCreationConfig)?.toInfo(),
-                        AndroidCompilation.Builder::setMainInfo
-                    )
-                    .setIfNotNull(
-                        (component as? HostTestCreationConfig)?.toInfo(),
-                        AndroidCompilation.Builder::setUnitTestInfo
-                    )
-                    .setIfNotNull(
-                        (component as? DeviceTestCreationConfig)?.toInfo(
-                            testInstrumentationRunner, testInstrumentationRunnerArguments
-                        ),
-                        AndroidCompilation.Builder::setInstrumentedTestInfo
-                    )
-                    .build()
+      compilation.extras[androidCompilationKey] =
+        AndroidCompilation.newBuilder()
+          .setType(component.toType())
+          .setDefaultSourceSetName(compilation.defaultSourceSet.name)
+          .setAssembleTaskName(component.taskContainer.assembleTask.name)
+          .setKotlinCompileTaskName(component.androidKotlinCompilation.compileKotlinTaskName)
+          .addAllExtraClassesFolders(getExtraClassesFolders(component).map { it.convert() })
+          .setIfNotNull((component as? KmpCreationConfig)?.toInfo(), AndroidCompilation.Builder::setMainInfo)
+          .setIfNotNull((component as? HostTestCreationConfig)?.toInfo(), AndroidCompilation.Builder::setUnitTestInfo)
+          .setIfNotNull(
+            (component as? DeviceTestCreationConfig)?.toInfo(testInstrumentationRunner, testInstrumentationRunnerArguments),
+            AndroidCompilation.Builder::setInstrumentedTestInfo,
+          )
+          .build()
 
-            compilation.defaultSourceSet.extras[androidSourceSetKey] =
-                AndroidSourceSet.newBuilder()
-                    .setSourceProvider(
-                        SourceProvider.newBuilder()
-                            .setManifestFile(component.sources.manifestFile.convert())
-                    )
-                    .build()
-        }
+      compilation.defaultSourceSet.extras[androidSourceSetKey] =
+        AndroidSourceSet.newBuilder()
+          .setSourceProvider(SourceProvider.newBuilder().setManifestFile(component.sources.manifestFile.convert()))
+          .build()
     }
+  }
 
-    private fun getExtraClassesFolders(creationConfig: KmpComponentCreationConfig): MutableIterable<File> {
-        val extraFolders = mutableListOf<File>()
-        if (creationConfig.withJava) {
-            extraFolders.add(creationConfig.artifacts.get(InternalArtifactType.JAVAC).get().asFile)
-        }
-        return extraFolders
+  private fun getExtraClassesFolders(creationConfig: KmpComponentCreationConfig): MutableIterable<File> {
+    val extraFolders = mutableListOf<File>()
+    if (creationConfig.withJava) {
+      extraFolders.add(creationConfig.artifacts.get(InternalArtifactType.JAVAC).get().asFile)
     }
+    return extraFolders
+  }
 
-    /**
-     * This method attaches global information about the android target to the kotlin android target
-     * object. The data sent here is global to the different android compilations created within the
-     * target.
-     */
-    fun setupAndroidTargetModels(
-        project: Project,
-        mainVariant: KmpCreationConfig,
-        androidTarget: KotlinMultiplatformAndroidLibraryTarget,
-        projectOptions: ProjectOptions,
-        issueReporter: IssueReporter
-    ) {
-        androidTarget.extras[androidTargetKey] =
-            AndroidTarget.newBuilder()
-                .setAgpVersion(Version.ANDROID_GRADLE_PLUGIN_VERSION)
-                .setProjectPath(project.path)
-                .setRootBuildId(
-                    (project.gradle.parent ?: project.gradle).rootProject.projectDir.convert()
-                )
-                .setBuildId(project.gradle.rootProject.projectDir.convert())
-                .setBuildDir(project.layout.buildDirectory.get().asFile.convert())
-                .setBuildToolsVersion(mainVariant.global.buildToolsRevision.toString())
-                .setGroupId(
-                    project.group.toString()
-                )
-                .addAllBootClasspath(
-                    mainVariant.global.filteredBootClasspath.get().map { it.asFile.convert() }
-                )
-                .setTestInfo(
-                    TestInfoImpl(
-                        animationsDisabled = mainVariant.global.androidTestOptions.takeIf {
-                            mainVariant.androidDeviceTest != null
-                        }?.animationsDisabled ?: false,
-                        execution = mainVariant.global.androidTestOptions.takeIf {
-                            mainVariant.androidDeviceTest != null
-                        }?.execution?.convertToExecution(),
-                        additionalRuntimeApks = project
-                            .configurations
-                            .findByName(
-                                SdkConstants.GRADLE_ANDROID_TEST_UTIL_CONFIGURATION
-                            )?.files ?: listOf(),
-                        instrumentedTestTaskName = mainVariant.androidDeviceTest?.taskContainer?.connectedTestTask?.name
-                            ?: ""
-                    ).convert()
-                )
-                .setFlags(
-                    getAgpFlags(
-                        variants = listOf(mainVariant),
-                        projectOptions = projectOptions,
-                        oldVariantApiInUse = false
-                    ).convert()
-                )
-                .addAllLintChecksJars(
-                    getLocalCustomLintChecksForModel(
-                        project,
-                        issueReporter
-                    ).map { it.convert() }
-                )
-                .setIsCoreLibraryDesugaringEnabled(
-                    mainVariant.isCoreLibraryDesugaringEnabledLintCheck
-                )
-                .addAllDesugarLibConfig(
-                    if (mainVariant.isCoreLibraryDesugaringEnabledLintCheck) {
-                        getDesugarLibConfigFile(project)
-                    } else {
-                        emptyList()
-                    }.map { it.convert() }
-                )
-                .addAllDesugaredMethodsFiles(
-                    getDesugaredMethods(
-                        mainVariant.services,
-                        mainVariant.isCoreLibraryDesugaringEnabledLintCheck,
-                        mainVariant.minSdk,
-                        mainVariant.global
-                    ).files.map { it.convert() }
-                )
-                .setWithJava(mainVariant.withJava)
-                .build()
-    }
+  /**
+   * This method attaches global information about the android target to the kotlin android target object. The data sent here is global to
+   * the different android compilations created within the target.
+   */
+  fun setupAndroidTargetModels(
+    project: Project,
+    mainVariant: KmpCreationConfig,
+    androidTarget: KotlinMultiplatformAndroidLibraryTarget,
+    projectOptions: ProjectOptions,
+    issueReporter: IssueReporter,
+  ) {
+    androidTarget.extras[androidTargetKey] =
+      AndroidTarget.newBuilder()
+        .setAgpVersion(Version.ANDROID_GRADLE_PLUGIN_VERSION)
+        .setProjectPath(project.path)
+        .setRootBuildId((project.gradle.parent ?: project.gradle).rootProject.projectDir.convert())
+        .setBuildId(project.gradle.rootProject.projectDir.convert())
+        .setBuildDir(project.layout.buildDirectory.get().asFile.convert())
+        .setBuildToolsVersion(mainVariant.global.buildToolsRevision.toString())
+        .setGroupId(project.group.toString())
+        .addAllBootClasspath(mainVariant.global.filteredBootClasspath.get().map { it.asFile.convert() })
+        .setTestInfo(
+          TestInfoImpl(
+              animationsDisabled =
+                mainVariant.global.androidTestOptions.takeIf { mainVariant.androidDeviceTest != null }?.animationsDisabled ?: false,
+              execution =
+                mainVariant.global.androidTestOptions.takeIf { mainVariant.androidDeviceTest != null }?.execution?.convertToExecution(),
+              additionalRuntimeApks =
+                project.configurations.findByName(SdkConstants.GRADLE_ANDROID_TEST_UTIL_CONFIGURATION)?.files ?: listOf(),
+              instrumentedTestTaskName = mainVariant.androidDeviceTest?.taskContainer?.connectedTestTask?.name ?: "",
+            )
+            .convert()
+        )
+        .setFlags(getAgpFlags(variants = listOf(mainVariant), projectOptions = projectOptions, oldVariantApiInUse = false).convert())
+        .addAllLintChecksJars(getLocalCustomLintChecksForModel(project, issueReporter).map { it.convert() })
+        .setIsCoreLibraryDesugaringEnabled(mainVariant.isCoreLibraryDesugaringEnabledLintCheck)
+        .addAllDesugarLibConfig(
+          if (mainVariant.isCoreLibraryDesugaringEnabledLintCheck) {
+              getDesugarLibConfigFile(project)
+            } else {
+              emptyList()
+            }
+            .map { it.convert() }
+        )
+        .addAllDesugaredMethodsFiles(
+          getDesugaredMethods(
+              mainVariant.services,
+              mainVariant.isCoreLibraryDesugaringEnabledLintCheck,
+              mainVariant.minSdk,
+              mainVariant.global,
+            )
+            .files
+            .map { it.convert() }
+        )
+        .setWithJava(mainVariant.withJava)
+        .build()
+  }
 
-    private fun KmpCreationConfig.toInfo() =
-        MainVariantInfo.newBuilder()
-            .setNamespace(namespace.get())
-            .setCompileSdkTarget(global.compileSdkHashString)
-            .setMinSdkVersion(minSdk.convert())
-            .setIfNotNull(
-                maxSdk,
-                MainVariantInfo.Builder::setMaxSdkVersion
-            )
-            .addAllGeneratedAssetFolders(
-                getGeneratedAssetsFolders(this).map { it.convert() }
-            )
-            .addAllProguardFiles(
-                optimizationCreationConfig.proguardFiles.get().map { it.asFile.convert() }
-            )
-            .addAllConsumerProguardFiles(
-                optimizationCreationConfig.consumerProguardFiles.get().map { it.asFile.convert() }
-            )
-            .setMinificationEnabled(
-                optimizationCreationConfig.minifiedEnabled
-            )
-            .build()
+  private fun KmpCreationConfig.toInfo() =
+    MainVariantInfo.newBuilder()
+      .setNamespace(namespace.get())
+      .setCompileSdkTarget(global.compileSdkHashString)
+      .setMinSdkVersion(minSdk.convert())
+      .setIfNotNull(maxSdk, MainVariantInfo.Builder::setMaxSdkVersion)
+      .addAllGeneratedAssetFolders(getGeneratedAssetsFolders(this).map { it.convert() })
+      .addAllProguardFiles(optimizationCreationConfig.proguardFiles.get().map { it.asFile.convert() })
+      .addAllConsumerProguardFiles(optimizationCreationConfig.consumerProguardFiles.get().map { it.asFile.convert() })
+      .setMinificationEnabled(optimizationCreationConfig.minifiedEnabled)
+      .build()
 
-    private fun HostTestCreationConfig.toInfo() =
-        UnitTestInfo.newBuilder()
-            .setNamespace(namespace.get())
-            .setIfNotNull(
-                global.mockableJarArtifact.files.singleOrNull()?.convert(),
-                UnitTestInfo.Builder::setMockablePlatformJar
-            )
-            .setUnitTestTaskName(
-                computeTaskNameInternal(ComponentType.UNIT_TEST_PREFIX)
-            )
-            .build()
+  private fun HostTestCreationConfig.toInfo() =
+    UnitTestInfo.newBuilder()
+      .setNamespace(namespace.get())
+      .setIfNotNull(global.mockableJarArtifact.files.singleOrNull()?.convert(), UnitTestInfo.Builder::setMockablePlatformJar)
+      .setUnitTestTaskName(computeTaskNameInternal(ComponentType.UNIT_TEST_PREFIX))
+      .build()
 
-    private fun DeviceTestCreationConfig.toInfo(
-        testInstrumentationRunner: String?,
-        testInstrumentationRunnerArguments: Map<String, String>
-    ) =
-        InstrumentedTestInfo.newBuilder()
-            .setNamespace(namespace.get())
-            .setIfNotNull(
-                testInstrumentationRunner,
-                InstrumentedTestInfo.Builder::setTestInstrumentationRunner
-            )
-            .setIfNotNull(
-                signingConfig?.convert(),
-                InstrumentedTestInfo.Builder::setSigningConfig
-            )
-            .putAllTestInstrumentationRunnerArguments(testInstrumentationRunnerArguments)
-            .setAssembleTaskOutputListingFile(
-                artifacts.get(InternalArtifactType.APK_IDE_REDIRECT_FILE).get().asFile.convert()
-            )
-            .addAllGeneratedAssetFolders(
-                getGeneratedAssetsFolders(this).map { it.convert() }
-            )
-            .build()
+  private fun DeviceTestCreationConfig.toInfo(testInstrumentationRunner: String?, testInstrumentationRunnerArguments: Map<String, String>) =
+    InstrumentedTestInfo.newBuilder()
+      .setNamespace(namespace.get())
+      .setIfNotNull(testInstrumentationRunner, InstrumentedTestInfo.Builder::setTestInstrumentationRunner)
+      .setIfNotNull(signingConfig?.convert(), InstrumentedTestInfo.Builder::setSigningConfig)
+      .putAllTestInstrumentationRunnerArguments(testInstrumentationRunnerArguments)
+      .setAssembleTaskOutputListingFile(artifacts.get(InternalArtifactType.APK_IDE_REDIRECT_FILE).get().asFile.convert())
+      .addAllGeneratedAssetFolders(getGeneratedAssetsFolders(this).map { it.convert() })
+      .build()
 }

@@ -25,42 +25,38 @@ import org.junit.rules.ExpectedException
 
 class BaseUtilsKtTest {
 
-    @Rule
-    @JvmField
-    val thrown: ExpectedException = ExpectedException.none()
+  @Rule @JvmField val thrown: ExpectedException = ExpectedException.none()
 
-    @Test
-    @Throws(Exception::class)
-    fun searchForSingleItemWithTriplets() {
-        Truth8.assertThat(searchForSingleItemInList(of("a", "b", "c"), "a", { i -> i }))
-            .hasValue("a")
-    }
+  @Test
+  @Throws(Exception::class)
+  fun searchForSingleItemWithTriplets() {
+    Truth8.assertThat(searchForSingleItemInList(of("a", "b", "c"), "a", { i -> i })).hasValue("a")
+  }
 
-    @Test
-    @Throws(Exception::class)
-    fun searchForSingleItemWithSame3() {
-        thrown.expect(IllegalArgumentException::class.java)
-        searchForSingleItemInList(of("a", "a", "a"), "a", { i -> i })
-    }
+  @Test
+  @Throws(Exception::class)
+  fun searchForSingleItemWithSame3() {
+    thrown.expect(IllegalArgumentException::class.java)
+    searchForSingleItemInList(of("a", "a", "a"), "a", { i -> i })
+  }
 
-    @Test
-    @Throws(Exception::class)
-    fun searchForSingleItemWithSame3outOf4() {
-        thrown.expect(IllegalArgumentException::class.java)
-        searchForSingleItemInList(of("a", "a", "a", "b"), "a", { i -> i })
-    }
+  @Test
+  @Throws(Exception::class)
+  fun searchForSingleItemWithSame3outOf4() {
+    thrown.expect(IllegalArgumentException::class.java)
+    searchForSingleItemInList(of("a", "a", "a", "b"), "a", { i -> i })
+  }
 
-    @Test
-    @Throws(Exception::class)
-    fun searchForSingleItemWithSame2() {
-        thrown.expect(IllegalArgumentException::class.java)
-        searchForSingleItemInList(of("a", "a"), "a", { i -> i })
-    }
+  @Test
+  @Throws(Exception::class)
+  fun searchForSingleItemWithSame2() {
+    thrown.expect(IllegalArgumentException::class.java)
+    searchForSingleItemInList(of("a", "a"), "a", { i -> i })
+  }
 
-    @Test
-    @Throws(Exception::class)
-    fun searchForSingleItemWithMissingValue() {
-        assertThat(searchForSingleItemInList(of("a", "b", "c"), "d", { i -> i }).isPresent)
-            .isFalse()
-    }
+  @Test
+  @Throws(Exception::class)
+  fun searchForSingleItemWithMissingValue() {
+    assertThat(searchForSingleItemInList(of("a", "b", "c"), "d", { i -> i }).isPresent).isFalse()
+  }
 }

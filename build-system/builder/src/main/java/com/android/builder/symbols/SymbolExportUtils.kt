@@ -34,8 +34,8 @@ import java.nio.file.Files
 import java.nio.file.Path
 
 /**
- * Processes the symbol table and generates necessary files: R.txt, R.java. Afterwards generates
- * `R.java` or `R.jar` for all libraries the main library depends on.
+ * Processes the symbol table and generates necessary files: R.txt, R.java. Afterwards generates `R.java` or `R.jar` for all libraries the
+ * main library depends on.
  *
  * @param librarySymbols table with symbols of resources for the library.
  * @param depSymbolTables symbol tables of the libraries which this library depends on
@@ -44,95 +44,91 @@ import java.nio.file.Path
  * @param sourceOut directory to contain R.java
  * @param rClassOutputJar file to output R.jar.
  * @param symbolFileOut R.txt file location
- * @param nonTransitiveRClass if true, the generated R class for this library and the  R.txt will
- *                         contain only the resources defined in this library, otherwise they will
- *                         contain all the resources merged from the transitive dependencies.
+ * @param nonTransitiveRClass if true, the generated R class for this library and the R.txt will contain only the resources defined in this
+ *   library, otherwise they will contain all the resources merged from the transitive dependencies.
  */
 @Throws(IOException::class)
 fun processLibraryMainSymbolTable(
-        librarySymbols: SymbolTable,
-        depSymbolTables: List<SymbolTable>,
-        mainPackageName: String,
-        rClassOutputJar: File?,
-        symbolFileOut: File?,
-        platformSymbols: SymbolTable,
-        nonTransitiveRClass: Boolean,
-        generateDependencyRClasses: Boolean,
-        idProvider: IdProvider
+  librarySymbols: SymbolTable,
+  depSymbolTables: List<SymbolTable>,
+  mainPackageName: String,
+  rClassOutputJar: File?,
+  symbolFileOut: File?,
+  platformSymbols: SymbolTable,
+  nonTransitiveRClass: Boolean,
+  generateDependencyRClasses: Boolean,
+  idProvider: IdProvider,
 ) {
-    // Get symbol tables of the libraries we depend on.
-    val tablesToWrite =
-        processLibraryMainSymbolTable(
-            mainPackageName,
-            librarySymbols,
-            depSymbolTables,
-            platformSymbols,
-            nonTransitiveRClass,
-            symbolFileOut?.toPath(),
-            generateDependencyRClasses,
-            idProvider
-        )
+  // Get symbol tables of the libraries we depend on.
+  val tablesToWrite =
+    processLibraryMainSymbolTable(
+      mainPackageName,
+      librarySymbols,
+      depSymbolTables,
+      platformSymbols,
+      nonTransitiveRClass,
+      symbolFileOut?.toPath(),
+      generateDependencyRClasses,
+      idProvider,
+    )
 
-    if (rClassOutputJar != null) {
-        FileUtils.deleteIfExists(rClassOutputJar)
-        exportToCompiledJava(tablesToWrite, rClassOutputJar.toPath())
-    }
+  if (rClassOutputJar != null) {
+    FileUtils.deleteIfExists(rClassOutputJar)
+    exportToCompiledJava(tablesToWrite, rClassOutputJar.toPath())
+  }
 }
 
 @VisibleForTesting
 internal fun processLibraryMainSymbolTable(
-    finalPackageName: String,
-    librarySymbols: SymbolTable,
-    depSymbolTables: List<SymbolTable>,
-    platformSymbols: SymbolTable,
-    nonTransitiveRClass: Boolean,
-    symbolFileOut: Path?,
-    generateDependencyRClasses: Boolean = true,
-    idProvider: IdProvider = IdProvider.sequential()
+  finalPackageName: String,
+  librarySymbols: SymbolTable,
+  depSymbolTables: List<SymbolTable>,
+  platformSymbols: SymbolTable,
+  nonTransitiveRClass: Boolean,
+  symbolFileOut: Path?,
+  generateDependencyRClasses: Boolean = true,
+  idProvider: IdProvider = IdProvider.sequential(),
 ): List<SymbolTable> {
-    // Merge all the symbols together.
-    // We have to rewrite the IDs because some published R.txt inside AARs are using the
-    // wrong value for some types, and we need to ensure there is no collision in the
-    // file we are creating.
-    val allSymbols: SymbolTable = mergeAndRenumberSymbols(
-        finalPackageName, librarySymbols, depSymbolTables, platformSymbols, idProvider
-    )
+  // Merge all the symbols together.
+  // We have to rewrite the IDs because some published R.txt inside AARs are using the
+  // wrong value for some types, and we need to ensure there is no collision in the
+  // file we are creating.
+  val allSymbols: SymbolTable = mergeAndRenumberSymbols(finalPackageName, librarySymbols, depSymbolTables, platformSymbols, idProvider)
 
-    val mainSymbolTable = if (nonTransitiveRClass) allSymbols.filter(librarySymbols) else allSymbols
+  val mainSymbolTable = if (nonTransitiveRClass) allSymbols.filter(librarySymbols) else allSymbols
 
-    // Generate R.txt file.
-    symbolFileOut?.let {
-        Files.createDirectories(it.parent)
-        SymbolIo.writeForAar(mainSymbolTable, it)
-    }
+  // Generate R.txt file.
+  symbolFileOut?.let {
+    Files.createDirectories(it.parent)
+    SymbolIo.writeForAar(mainSymbolTable, it)
+  }
 
-    return if (generateDependencyRClasses) {
-        RGeneration.generateAllSymbolTablesToWrite(allSymbols, mainSymbolTable, depSymbolTables)
-    } else {
-        ImmutableList.of(mainSymbolTable)
-    }
+  return if (generateDependencyRClasses) {
+    RGeneration.generateAllSymbolTablesToWrite(allSymbols, mainSymbolTable, depSymbolTables)
+  } else {
+    ImmutableList.of(mainSymbolTable)
+  }
 }
 
-
 fun writeSymbolListWithPackageName(table: SymbolTable, writer: Writer) {
-    writer.write(table.tablePackage)
-    writer.write('\n'.code)
+  writer.write(table.tablePackage)
+  writer.write('\n'.code)
 
-    for (resourceType in ResourceType.values()) {
-        val symbols = table.getSymbolByResourceType(resourceType)
-        for (symbol in symbols) {
-            writer.write(resourceType.getName())
-            writer.write(' '.code)
-            writer.write(symbol.canonicalName)
-            if (symbol is Symbol.StyleableSymbol) {
-                for (child in symbol.children) {
-                    writer.write(' '.code)
-                    writer.write(child)
-                }
-            }
-            writer.write('\n'.code)
+  for (resourceType in ResourceType.values()) {
+    val symbols = table.getSymbolByResourceType(resourceType)
+    for (symbol in symbols) {
+      writer.write(resourceType.getName())
+      writer.write(' '.code)
+      writer.write(symbol.canonicalName)
+      if (symbol is Symbol.StyleableSymbol) {
+        for (child in symbol.children) {
+          writer.write(' '.code)
+          writer.write(child)
         }
+      }
+      writer.write('\n'.code)
     }
+  }
 }
 
 /**
@@ -143,14 +139,13 @@ fun writeSymbolListWithPackageName(table: SymbolTable, writer: Writer) {
  * The format does not include styleable children (see `SymbolExportUtilsTest`)
  */
 fun writePublicTxtFile(table: SymbolTable, writer: Writer) {
-    for (resType in ResourceType.values()) {
-        val symbols =
-            table.getSymbolByResourceType(resType)
-        for (s in symbols) {
-            writer.write(s.resourceType.getName())
-            writer.write(' '.code)
-            writer.write(s.canonicalName)
-            writer.write('\n'.code)
-        }
+  for (resType in ResourceType.values()) {
+    val symbols = table.getSymbolByResourceType(resType)
+    for (s in symbols) {
+      writer.write(s.resourceType.getName())
+      writer.write(' '.code)
+      writer.write(s.canonicalName)
+      writer.write('\n'.code)
     }
+  }
 }

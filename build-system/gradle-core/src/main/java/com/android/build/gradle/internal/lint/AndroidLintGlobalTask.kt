@@ -16,8 +16,8 @@
 
 package com.android.build.gradle.internal.lint
 
-import com.android.build.gradle.internal.tasks.BuildAnalyzer
 import com.android.build.gradle.internal.tasks.AndroidGlobalTask
+import com.android.build.gradle.internal.tasks.BuildAnalyzer
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationAction
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfig
 import com.android.buildanalyzer.common.TaskCategory
@@ -31,49 +31,55 @@ import org.gradle.work.DisableCachingByDefault
  */
 @DisableCachingByDefault
 @BuildAnalyzer(primaryTaskCategory = TaskCategory.LINT)
-abstract class AndroidLintGlobalTask: AndroidGlobalTask() {
+abstract class AndroidLintGlobalTask : AndroidGlobalTask() {
 
-    class GlobalCreationAction(creationConfig: GlobalTaskCreationConfig) : BaseGlobalCreationAction(
-        creationConfig
-    ) {
-        override val name: String get() = Companion.name
-        override val description: String get() = "Runs lint on the default variant."
-        companion object {
-            const val name = "lint"
-        }
+  class GlobalCreationAction(creationConfig: GlobalTaskCreationConfig) : BaseGlobalCreationAction(creationConfig) {
+    override val name: String
+      get() = Companion.name
+
+    override val description: String
+      get() = "Runs lint on the default variant."
+
+    companion object {
+      const val name = "lint"
     }
+  }
 
-    class LintFixCreationAction(creationConfig: GlobalTaskCreationConfig) : BaseGlobalCreationAction(
-        creationConfig
-    ) {
-        override val name: String get() = Companion.name
-        override val description: String get() = "Runs lint on the default variant and applies any safe suggestions to the source code."
-        companion object {
-            const val name = "lintFix"
-        }
+  class LintFixCreationAction(creationConfig: GlobalTaskCreationConfig) : BaseGlobalCreationAction(creationConfig) {
+    override val name: String
+      get() = Companion.name
+
+    override val description: String
+      get() = "Runs lint on the default variant and applies any safe suggestions to the source code."
+
+    companion object {
+      const val name = "lintFix"
     }
+  }
 
-    class UpdateBaselineCreationAction(
-        creationConfig: GlobalTaskCreationConfig
-    ) : BaseGlobalCreationAction(creationConfig) {
-        override val name: String get() = Companion.name
-        override val description: String
-            get() = "Updates the lint baseline using the default variant."
-        companion object {
-            const val name = "updateLintBaseline"
-        }
+  class UpdateBaselineCreationAction(creationConfig: GlobalTaskCreationConfig) : BaseGlobalCreationAction(creationConfig) {
+    override val name: String
+      get() = Companion.name
+
+    override val description: String
+      get() = "Updates the lint baseline using the default variant."
+
+    companion object {
+      const val name = "updateLintBaseline"
     }
+  }
 
-    abstract class BaseGlobalCreationAction(creationConfig: GlobalTaskCreationConfig) :
-        GlobalTaskCreationAction<AndroidLintGlobalTask>() {
+  abstract class BaseGlobalCreationAction(creationConfig: GlobalTaskCreationConfig) : GlobalTaskCreationAction<AndroidLintGlobalTask>() {
 
-        final override val type: Class<AndroidLintGlobalTask> get() = AndroidLintGlobalTask::class.java
-        protected abstract val description: String
+    final override val type: Class<AndroidLintGlobalTask>
+      get() = AndroidLintGlobalTask::class.java
 
-        override fun configure(task: AndroidLintGlobalTask) {
-            super.configure(task)
-            task.group = JavaBasePlugin.VERIFICATION_GROUP
-            task.description = description
-        }
+    protected abstract val description: String
+
+    override fun configure(task: AndroidLintGlobalTask) {
+      super.configure(task)
+      task.group = JavaBasePlugin.VERIFICATION_GROUP
+      task.description = description
     }
+  }
 }

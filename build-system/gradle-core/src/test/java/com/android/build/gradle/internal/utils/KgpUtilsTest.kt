@@ -21,43 +21,42 @@ import org.junit.Test
 
 class KgpUtilsTest {
 
-    @Test
-    fun testParseKotlinVersion() {
-        // basic version
-        var kotlinVersion = parseKotlinVersion("1.2.3")
-        assertThat(kotlinVersion).isNotNull()
-        assertThat(kotlinVersion).isEqualTo(KotlinVersion(1, 2, 3))
+  @Test
+  fun testParseKotlinVersion() {
+    // basic version
+    var kotlinVersion = parseKotlinVersion("1.2.3")
+    assertThat(kotlinVersion).isNotNull()
+    assertThat(kotlinVersion).isEqualTo(KotlinVersion(1, 2, 3))
 
-        // kotlin version not available
-        kotlinVersion = parseKotlinVersion("unknown")
-        assertThat(kotlinVersion).isNull()
+    // kotlin version not available
+    kotlinVersion = parseKotlinVersion("unknown")
+    assertThat(kotlinVersion).isNull()
 
-        // missing patch
-        kotlinVersion = parseKotlinVersion("1.0")
-        assertThat(kotlinVersion).isNull()
+    // missing patch
+    kotlinVersion = parseKotlinVersion("1.0")
+    assertThat(kotlinVersion).isNull()
 
-        // missing patch and added extension
-        kotlinVersion = parseKotlinVersion("1.5-IDK")
-        assertThat(kotlinVersion).isNull()
+    // missing patch and added extension
+    kotlinVersion = parseKotlinVersion("1.5-IDK")
+    assertThat(kotlinVersion).isNull()
 
-        // Check empty is results in null
-        kotlinVersion = parseKotlinVersion("")
-        assertThat(kotlinVersion).isNull()
+    // Check empty is results in null
+    kotlinVersion = parseKotlinVersion("")
+    assertThat(kotlinVersion).isNull()
 
-        // Should ignore extension
-        kotlinVersion = parseKotlinVersion("1.0.0-RC")
-        assertThat(kotlinVersion).isNotNull()
-        assertThat(kotlinVersion).isEqualTo(KotlinVersion(1, 0, 0))
+    // Should ignore extension
+    kotlinVersion = parseKotlinVersion("1.0.0-RC")
+    assertThat(kotlinVersion).isNotNull()
+    assertThat(kotlinVersion).isEqualTo(KotlinVersion(1, 0, 0))
 
-        // Should ignore extension
-        kotlinVersion = parseKotlinVersion("1.5.31-preview")
-        assertThat(kotlinVersion).isNotNull()
-        assertThat(kotlinVersion).isEqualTo(KotlinVersion(1, 5, 31))
+    // Should ignore extension
+    kotlinVersion = parseKotlinVersion("1.5.31-preview")
+    assertThat(kotlinVersion).isNotNull()
+    assertThat(kotlinVersion).isEqualTo(KotlinVersion(1, 5, 31))
 
-        // should parse zeroes correctly
-        kotlinVersion = parseKotlinVersion("0.0.1")
-        assertThat(kotlinVersion).isNotNull()
-        assertThat(kotlinVersion).isEqualTo(KotlinVersion(0, 0, 1))
-    }
-
+    // should parse zeroes correctly
+    kotlinVersion = parseKotlinVersion("0.0.1")
+    assertThat(kotlinVersion).isNotNull()
+    assertThat(kotlinVersion).isEqualTo(KotlinVersion(0, 0, 1))
+  }
 }

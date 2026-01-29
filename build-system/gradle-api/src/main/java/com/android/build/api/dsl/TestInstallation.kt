@@ -21,5 +21,4 @@ package com.android.build.api.dsl
  *
  * This is accessed via [TestExtension.installation]
  */
-interface TestInstallation : Installation {
-}
+interface TestInstallation : Installation {}

@@ -24,26 +24,22 @@ import com.android.testutils.truth.PathSubject.assertThat
 import org.junit.Rule
 import org.junit.Test
 
-/**
- * Tests system dependent behaviors on windows
- */
-
+/** Tests system dependent behaviors on windows */
 class WindowsSystemDependencyTest {
-    @get:Rule
-    val project =
-        GradleTestProject.builder().fromTestApp(HelloWorldApp.
-            forPlugin("com.android.library")).create()
+  @get:Rule val project = GradleTestProject.builder().fromTestApp(HelloWorldApp.forPlugin("com.android.library")).create()
 
-    // b/132880111
-    @Test
-    fun noBackslashInBuildElements() {
-        assumeWindows()
+  // b/132880111
+  @Test
+  fun noBackslashInBuildElements() {
+    assumeWindows()
 
-        project.execute("assembleDebug")
+    project.execute("assembleDebug")
 
-        val buildElementsJson = project.file("build/intermediates/aapt_friendly_merged_manifests/debug/processDebugManifest/aapt/${BuiltArtifactsImpl.METADATA_FILE_NAME}")
+    val buildElementsJson =
+      project.file(
+        "build/intermediates/aapt_friendly_merged_manifests/debug/processDebugManifest/aapt/${BuiltArtifactsImpl.METADATA_FILE_NAME}"
+      )
 
-        assertThat(buildElementsJson).doesNotContain("\\\\")
-    }
-
+    assertThat(buildElementsJson).doesNotContain("\\\\")
+  }
 }

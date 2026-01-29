@@ -26,17 +26,13 @@ import org.junit.Test
 
 class AppWithLocalDependencyTest : ModelComparator() {
 
-    @get:Rule
-    val project = GradleTestProject.builder()
-        .fromTestProject("projectWithLocalDeps")
-        .disableBuiltInKotlin()
-        .create()
+  @get:Rule val project = GradleTestProject.builder().fromTestProject("projectWithLocalDeps").disableBuiltInKotlin().create()
 
-    @Before
-    fun setUp() {
-        TestFileUtils.appendToFile(
-            project.buildFile,
-            """
+  @Before
+  fun setUp() {
+    TestFileUtils.appendToFile(
+      project.buildFile,
+      """
                 apply plugin: "com.android.application"
                 android {
                     namespace = 'com.android.tests.libWithProvidedLocalJar'
@@ -48,23 +44,22 @@ class AppWithLocalDependencyTest : ModelComparator() {
                         runtimeOnly files("libs/util-1.0.jar")
                     }
                 }
-            """.trimIndent())
-    }
+            """
+        .trimIndent(),
+    )
+  }
 
-    @Test
-    fun `test VariantDependencies model`() {
-        val result =
-            project.modelV2()
-                .ignoreSyncIssues()
-                .fetchModels(variantName = "debug")
+  @Test
+  fun `test VariantDependencies model`() {
+    val result = project.modelV2().ignoreSyncIssues().fetchModels(variantName = "debug")
 
-        with(result).compareVariantDependencies(goldenFile = "app_VariantDependencies")
-    }
+    with(result).compareVariantDependencies(goldenFile = "app_VariantDependencies")
+  }
 
-    @Test
-    fun checkPackageLocalJarIsPackaged() {
-        project.execute("clean", "assembleDebug")
-        val apk = project.getApk(GradleTestProject.ApkType.DEBUG)
-        TruthHelper.assertThat(apk).containsClass("Lcom/example/android/multiproject/person/People;")
-    }
+  @Test
+  fun checkPackageLocalJarIsPackaged() {
+    project.execute("clean", "assembleDebug")
+    val apk = project.getApk(GradleTestProject.ApkType.DEBUG)
+    TruthHelper.assertThat(apk).containsClass("Lcom/example/android/multiproject/person/People;")
+  }
 }

@@ -25,14 +25,14 @@ import org.gradle.api.initialization.Settings
  *
  * This plugin is meant to be applied in `settings.gradle[.kts]`, not in subprojects.
  */
-class SettingsPlugin: Plugin<Settings> {
-    private lateinit var settings: Settings
+class SettingsPlugin : Plugin<Settings> {
+  private lateinit var settings: Settings
 
-    override fun apply(settings: Settings) {
-        this.settings = settings
-        settings.apply(mapOf("plugin" to "com.android.internal.settings"))
-    }
+  override fun apply(settings: Settings) {
+    this.settings = settings
+    settings.apply(mapOf("plugin" to "com.android.internal.settings"))
+  }
 
-    val android: SettingsExtension
-        get() = settings.extensions.getByType(SettingsExtension::class.java)
+  val android: SettingsExtension
+    get() = settings.extensions.getByType(SettingsExtension::class.java)
 }

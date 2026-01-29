@@ -18,20 +18,11 @@ package com.android.build.gradle.internal.cxx.model
 
 import com.android.build.gradle.internal.cxx.settings.SettingsConfiguration
 
-/**
- * Holds immutable per-ABI configuration specific to CMake needed for JSON generation.
- */
+/** Holds immutable per-ABI configuration specific to CMake needed for JSON generation. */
 data class CxxCmakeAbiModel(
-    /**
-     * The effective CMakeSettings
-     */
-    val effectiveConfiguration : SettingsConfiguration,
+  /** The effective CMakeSettings */
+  val effectiveConfiguration: SettingsConfiguration,
 
-    /**
-     * If present, the extra parameters passed directly to Ninja.
-     */
-    val buildCommandArgs : String?,
+  /** If present, the extra parameters passed directly to Ninja. */
+  val buildCommandArgs: String?,
 )
-
-
-

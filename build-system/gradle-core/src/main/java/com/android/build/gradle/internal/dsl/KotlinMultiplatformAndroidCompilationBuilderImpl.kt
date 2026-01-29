@@ -22,25 +22,22 @@ import org.jetbrains.kotlin.gradle.ExternalKotlinTargetApi
 import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSetTree
 import org.jetbrains.kotlin.gradle.plugin.hierarchy.KotlinSourceSetTreeClassifier
 
-internal class KotlinMultiplatformAndroidCompilationBuilderImpl(
-    private val compilationType: KmpAndroidCompilationType
-): KotlinMultiplatformAndroidCompilationBuilder {
-    var compilationName = compilationType.defaultCompilationName
-    var defaultSourceSetName = compilationType.defaultSourceSetName
-    override var sourceSetTreeName = compilationType.defaultSourceSetTreeName
+internal class KotlinMultiplatformAndroidCompilationBuilderImpl(private val compilationType: KmpAndroidCompilationType) :
+  KotlinMultiplatformAndroidCompilationBuilder {
+  var compilationName = compilationType.defaultCompilationName
+  var defaultSourceSetName = compilationType.defaultSourceSetName
+  override var sourceSetTreeName = compilationType.defaultSourceSetTreeName
 
-    @OptIn(ExternalKotlinTargetApi::class)
-    internal fun getSourceSetTreeClassifier(): KotlinSourceSetTreeClassifier {
-        return when (compilationType) {
-            KmpAndroidCompilationType.MAIN -> KotlinSourceSetTreeClassifier.Default
+  @OptIn(ExternalKotlinTargetApi::class)
+  internal fun getSourceSetTreeClassifier(): KotlinSourceSetTreeClassifier {
+    return when (compilationType) {
+      KmpAndroidCompilationType.MAIN -> KotlinSourceSetTreeClassifier.Default
 
-            KmpAndroidCompilationType.HOST_TEST -> sourceSetTreeName?.let {
-                KotlinSourceSetTreeClassifier.Name(it)
-            } ?: KotlinSourceSetTreeClassifier.Value(KotlinSourceSetTree.test)
+      KmpAndroidCompilationType.HOST_TEST ->
+        sourceSetTreeName?.let { KotlinSourceSetTreeClassifier.Name(it) } ?: KotlinSourceSetTreeClassifier.Value(KotlinSourceSetTree.test)
 
-            KmpAndroidCompilationType.DEVICE_TEST -> sourceSetTreeName?.let {
-                KotlinSourceSetTreeClassifier.Name(it)
-            } ?: KotlinSourceSetTreeClassifier.None
-        }
+      KmpAndroidCompilationType.DEVICE_TEST ->
+        sourceSetTreeName?.let { KotlinSourceSetTreeClassifier.Name(it) } ?: KotlinSourceSetTreeClassifier.None
     }
+  }
 }

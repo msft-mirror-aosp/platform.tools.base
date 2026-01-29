@@ -20,27 +20,23 @@ import com.android.build.api.variant.impl.BuiltArtifactsLoaderImpl
 import org.gradle.api.file.Directory
 import org.gradle.api.provider.Provider
 
-/**
- * Internal CreationConfig for test modules
- */
-interface TestVariantCreationConfig: VariantCreationConfig, TestCreationConfig, InstrumentedTestCreationConfig {
+/** Internal CreationConfig for test modules */
+interface TestVariantCreationConfig : VariantCreationConfig, TestCreationConfig, InstrumentedTestCreationConfig {
 
-    /**
-     * Provide access to the tested APKs, this is a [Directory] that can contain multiple APKs,
-     * therefore a [BuiltArtifactsLoaderImpl] must be used to load the metadata associated with
-     * each APK.
-     */
-    val testedApks: Provider<Directory>
+  /**
+   * Provide access to the tested APKs, this is a [Directory] that can contain multiple APKs, therefore a [BuiltArtifactsLoaderImpl] must be
+   * used to load the metadata associated with each APK.
+   */
+  val testedApks: Provider<Directory>
 
-    val allTestedApks: Provider<List<Directory>>
-    /**
-     * Provide access to the privacy sandbox Sdk APKs, this is a [Directory] that can contain multiple APKs,
-     * therefore a [BuiltArtifactsLoaderImpl] must be used to load the metadata associated with
-     * each APK.
-     */
-    val privacySandboxCompatApks: Provider<Directory>?
+  val allTestedApks: Provider<List<Directory>>
+  /**
+   * Provide access to the privacy sandbox Sdk APKs, this is a [Directory] that can contain multiple APKs, therefore a
+   * [BuiltArtifactsLoaderImpl] must be used to load the metadata associated with each APK.
+   */
+  val privacySandboxCompatApks: Provider<Directory>?
 
-    val usesSdkLibrarySplitForLocalDeployment: Provider<Directory>?
+  val usesSdkLibrarySplitForLocalDeployment: Provider<Directory>?
 
-    val privacySandboxEnabled: Boolean
+  val privacySandboxEnabled: Boolean
 }

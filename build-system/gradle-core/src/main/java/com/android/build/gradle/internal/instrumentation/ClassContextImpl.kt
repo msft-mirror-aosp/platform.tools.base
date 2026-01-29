@@ -19,16 +19,13 @@ package com.android.build.gradle.internal.instrumentation
 import com.android.build.api.instrumentation.ClassContext
 import com.android.build.api.instrumentation.ClassData
 
-class ClassContextImpl(
-    override val currentClassData: ClassData,
-    val classesHierarchyResolver: ClassesHierarchyResolver
-) : ClassContext {
+class ClassContextImpl(override val currentClassData: ClassData, val classesHierarchyResolver: ClassesHierarchyResolver) : ClassContext {
 
-    @Synchronized
-    override fun loadClassData(className: String): ClassData? {
-        if (className.contains("/")) {
-            throw RuntimeException("Fully qualified name must be provided to loadClassData.")
-        }
-        return classesHierarchyResolver.loadClassDataForVisitor(className)
+  @Synchronized
+  override fun loadClassData(className: String): ClassData? {
+    if (className.contains("/")) {
+      throw RuntimeException("Fully qualified name must be provided to loadClassData.")
     }
+    return classesHierarchyResolver.loadClassDataForVisitor(className)
+  }
 }

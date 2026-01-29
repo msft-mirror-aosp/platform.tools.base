@@ -33,28 +33,29 @@ import org.junit.ClassRule
 import org.junit.Rule
 import org.junit.Test
 
-/**
- * Connected tests for annotation processor.
- */
+/** Connected tests for annotation processor. */
 class AnnotationProcessorConnectedTest {
 
-    @Rule
-    @JvmField
-    val project: GradleTestProject = GradleTestProject.builder()
-        .fromTestApp(
-            MultiModuleTestProject(
-                mapOf<String, GradleProject>(
-                    ":app" to app,
-                    ":lib" to AnnotationProcessorLib.createLibrary(),
-                    ":lib-compiler" to AnnotationProcessorLib.createCompiler()
-                )
-            )
-        ).create()
+  @Rule
+  @JvmField
+  val project: GradleTestProject =
+    GradleTestProject.builder()
+      .fromTestApp(
+        MultiModuleTestProject(
+          mapOf<String, GradleProject>(
+            ":app" to app,
+            ":lib" to AnnotationProcessorLib.createLibrary(),
+            ":lib-compiler" to AnnotationProcessorLib.createCompiler(),
+          )
+        )
+      )
+      .create()
 
-    @Before
-    fun setUp() {
-        val testSupportLibVersion = "\${libs.versions.testSupportLibVersion.get()}"
-        val buildScript = ("""
+  @Before
+  fun setUp() {
+    val testSupportLibVersion = "\${libs.versions.testSupportLibVersion.get()}"
+    val buildScript =
+      ("""
                 apply from: "../../commonHeader.gradle"
                 buildscript { apply from: "../../commonBuildScript.gradle" }
 
@@ -85,120 +86,119 @@ class AnnotationProcessorConnectedTest {
                         "com.android.support.test:rules:$testSupportLibVersion"
                     )
                 }
-                """).trimIndent()
-        Files.asCharSink(project.getSubproject(":app")
-            .file("build.gradle"), Charsets.UTF_8)
-            .write(buildScript)
-        // fail fast if no response
-        project.addAdbTimeout()
-        // run the uninstall tasks in order to (1) make sure nothing is installed at the beginning
-        // of each test and (2) check the adb connection before taking the time to build anything.
-        project.executor()
-            .run("uninstallAll")
-    }
+                """)
+        .trimIndent()
+    Files.asCharSink(project.getSubproject(":app").file("build.gradle"), Charsets.UTF_8).write(buildScript)
+    // fail fast if no response
+    project.addAdbTimeout()
+    // run the uninstall tasks in order to (1) make sure nothing is installed at the beginning
+    // of each test and (2) check the adb connection before taking the time to build anything.
+    project.executor().run("uninstallAll")
+  }
 
-    @Test
-    fun connectedCheck() {
-        TestFileUtils.appendToFile(
-            project.getSubproject(":app").buildFile,
-            """
-            dependencies {
-                api project(':lib')
-                annotationProcessor project(':lib-compiler')
-            }
-            """.trimIndent()
+  @Test
+  fun connectedCheck() {
+    TestFileUtils.appendToFile(
+      project.getSubproject(":app").buildFile,
+      """
+      dependencies {
+          api project(':lib')
+          annotationProcessor project(':lib-compiler')
+      }
+      """
+        .trimIndent(),
+    )
+    project.executor().run("connectedAndroidTest")
+  }
+
+  companion object {
+
+    @ClassRule @JvmField val emulator = getEmulator()
+
+    private val app = HelloWorldApp.noBuildFile()
+
+    init {
+      app.replaceFile(
+        TestSourceFile(
+          "src/main/java/com/example/helloworld/HelloWorld.java",
+          """
+          package com.example.helloworld;
+
+          import android.app.Activity;
+          import android.widget.TextView;
+          import android.os.Bundle;
+          import com.example.annotation.ProvideString;
+
+          @ProvideString
+          public class HelloWorld extends Activity {
+              /** Called when the activity is first created. */
+              @Override
+              public void onCreate(Bundle savedInstanceState) {
+                  super.onCreate(savedInstanceState);
+                  TextView tv = new TextView(this);
+                  tv.setText(getString());
+                  setContentView(tv);
+              }
+
+                  public static String getString() {
+                      return new com.example.helloworld.HelloWorldStringValue().value;
+                  }
+
+                  public static String getProcessor() {
+                      return new com.example.helloworld.HelloWorldStringValue().processor;
+                  }
+              }
+          """
+            .trimIndent(),
         )
-        project.executor()
-            .run("connectedAndroidTest")
+      )
+
+      app.removeFileByName("HelloWorldTest.java")
+
+      app.addFile(
+        TestSourceFile(
+          "src/test/java/com/example/helloworld/HelloWorldTest.java",
+          """
+          package com.example.helloworld;
+          import com.example.annotation.ProvideString;
+
+          @ProvideString
+          public class HelloWorldTest {
+          }
+          """
+            .trimIndent(),
+        )
+      )
+
+      app.addFile(
+        TestSourceFile(
+          "src/androidTest/java/com/example/hellojni/HelloWorldAndroidTest.java",
+          """
+          package com.example.helloworld;
+
+          import android.support.test.runner.AndroidJUnit4;
+          import org.junit.Assert;
+          import org.junit.Test;
+          import org.junit.runner.RunWith;
+          import com.example.annotation.ProvideString;
+
+          @ProvideString
+          @RunWith(AndroidJUnit4.class)
+          public class HelloWorldAndroidTest {
+
+              @Test
+              public void testStringValue() {
+                  Assert.assertTrue("Hello".equals(HelloWorld.getString()));
+              }
+              @Test
+              public void testProcessor() {
+                  Assert.assertTrue("Processor".equals(HelloWorld.getProcessor()));
+              }
+          }
+          """
+            .trimIndent(),
+        )
+      )
     }
-
-    companion object {
-
-        @ClassRule
-        @JvmField
-        val emulator = getEmulator()
-
-        private val app = HelloWorldApp.noBuildFile()
-
-        init {
-            app.replaceFile(
-                TestSourceFile(
-                    "src/main/java/com/example/helloworld/HelloWorld.java",
-                    """
-                    package com.example.helloworld;
-
-                    import android.app.Activity;
-                    import android.widget.TextView;
-                    import android.os.Bundle;
-                    import com.example.annotation.ProvideString;
-
-                    @ProvideString
-                    public class HelloWorld extends Activity {
-                        /** Called when the activity is first created. */
-                        @Override
-                        public void onCreate(Bundle savedInstanceState) {
-                            super.onCreate(savedInstanceState);
-                            TextView tv = new TextView(this);
-                            tv.setText(getString());
-                            setContentView(tv);
-                        }
-
-                            public static String getString() {
-                                return new com.example.helloworld.HelloWorldStringValue().value;
-                            }
-
-                            public static String getProcessor() {
-                                return new com.example.helloworld.HelloWorldStringValue().processor;
-                            }
-                        }
-                        """.trimIndent()
-                )
-            )
-
-            app.removeFileByName("HelloWorldTest.java")
-
-            app.addFile(
-                TestSourceFile(
-                    "src/test/java/com/example/helloworld/HelloWorldTest.java",
-                    """
-                    package com.example.helloworld;
-                    import com.example.annotation.ProvideString;
-
-                    @ProvideString
-                    public class HelloWorldTest {
-                    }
-                    """.trimIndent()
-                )
-            )
-
-            app.addFile(
-                TestSourceFile(
-                    "src/androidTest/java/com/example/hellojni/HelloWorldAndroidTest.java",
-                    """
-                    package com.example.helloworld;
-
-                    import android.support.test.runner.AndroidJUnit4;
-                    import org.junit.Assert;
-                    import org.junit.Test;
-                    import org.junit.runner.RunWith;
-                    import com.example.annotation.ProvideString;
-
-                    @ProvideString
-                    @RunWith(AndroidJUnit4.class)
-                    public class HelloWorldAndroidTest {
-
-                        @Test
-                        public void testStringValue() {
-                            Assert.assertTrue("Hello".equals(HelloWorld.getString()));
-                        }
-                        @Test
-                        public void testProcessor() {
-                            Assert.assertTrue("Processor".equals(HelloWorld.getProcessor()));
-                        }
-                    }
-                    """.trimIndent()
-                )
-            )
-        }
-    }
+  }
 }

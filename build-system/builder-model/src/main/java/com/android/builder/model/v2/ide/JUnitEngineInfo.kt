@@ -19,11 +19,10 @@ package com.android.builder.model.v2.ide
 /**
  * Information for JUnitEngines configuration for a test suite.
  *
- * This includes the test engines to use, and other input parameters that can be used by the
- * JUnit engines.
+ * This includes the test engines to use, and other input parameters that can be used by the JUnit engines.
  *
  * @since 8.12
  */
 interface JUnitEngineInfo {
-    val includedEngines: Set<String>
+  val includedEngines: Set<String>
 }

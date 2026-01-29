@@ -32,57 +32,52 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 
 class EmulatorControlConfigTest {
-    private lateinit var dslServices: DslServices
-    private lateinit var emulatorControl: EmulatorControl
+  private lateinit var dslServices: DslServices
+  private lateinit var emulatorControl: EmulatorControl
 
-    private val emptyProjectOptions = ProjectOptions(
-        FakeProviderFactory(
-            FakeProviderFactory.factory, ImmutableMap.of()
-        )
-    )
+  private val emptyProjectOptions = ProjectOptions(FakeProviderFactory(FakeProviderFactory.factory, ImmutableMap.of()))
 
-    @Before
-    fun setUp() {
-        val sdkComponents = mock<SdkComponentsBuildService>()
-        dslServices = createDslServices(sdkComponents = FakeGradleProvider(sdkComponents))
-        emulatorControl = dslServices.newDecoratedInstance(EmulatorControl::class.java, dslServices)
-    }
+  @Before
+  fun setUp() {
+    val sdkComponents = mock<SdkComponentsBuildService>()
+    dslServices = createDslServices(sdkComponents = FakeGradleProvider(sdkComponents))
+    emulatorControl = dslServices.newDecoratedInstance(EmulatorControl::class.java, dslServices)
+  }
 
-    @Test
-    fun defaultExperimentalEnableEmulatorControlBooleanIsTrue() {
-        assertThat(emptyProjectOptions.get(BooleanOption.ENABLE_EMULATOR_CONTROL)).isTrue()
-    }
+  @Test
+  fun defaultExperimentalEnableEmulatorControlBooleanIsTrue() {
+    assertThat(emptyProjectOptions.get(BooleanOption.ENABLE_EMULATOR_CONTROL)).isTrue()
+  }
 
-    @Test
-    fun disableByDefault() {
-        val emulatorControlConfig = createEmulatorControlConfig(emptyProjectOptions, emulatorControl)
-        assertThat(emulatorControlConfig.enabled).isFalse()
-    }
+  @Test
+  fun disableByDefault() {
+    val emulatorControlConfig = createEmulatorControlConfig(emptyProjectOptions, emulatorControl)
+    assertThat(emulatorControlConfig.enabled).isFalse()
+  }
 
-    @Test
-    fun emulatorEnableEmulatorControlWithGradleProperty() {
-        val fakeProjectOptions = mock<ProjectOptions>()
-        whenever(fakeProjectOptions.get(BooleanOption.ENABLE_EMULATOR_CONTROL)).thenReturn(true)
+  @Test
+  fun emulatorEnableEmulatorControlWithGradleProperty() {
+    val fakeProjectOptions = mock<ProjectOptions>()
+    whenever(fakeProjectOptions.get(BooleanOption.ENABLE_EMULATOR_CONTROL)).thenReturn(true)
 
-        emulatorControl.enable = true
-        val emulatorControlConfig = createEmulatorControlConfig(fakeProjectOptions, emulatorControl)
-        assertThat(emulatorControlConfig.enabled).isTrue()
-      }
+    emulatorControl.enable = true
+    val emulatorControlConfig = createEmulatorControlConfig(fakeProjectOptions, emulatorControl)
+    assertThat(emulatorControlConfig.enabled).isTrue()
+  }
 
+  @Test
+  fun setSecondsValidByDsl() {
+    emulatorControl.secondsValid = 30
+    val emulatorControlConfig = createEmulatorControlConfig(emptyProjectOptions, emulatorControl)
+    assertThat(emulatorControlConfig.secondsValid).isEqualTo(30)
+    assertThat(emulatorControlConfig.allowedEndpoints).isEmpty()
+  }
 
-    @Test
-    fun setSecondsValidByDsl() {
-        emulatorControl.secondsValid = 30
-        val emulatorControlConfig = createEmulatorControlConfig(emptyProjectOptions, emulatorControl)
-        assertThat(emulatorControlConfig.secondsValid).isEqualTo(30)
-        assertThat(emulatorControlConfig.allowedEndpoints).isEmpty()
-    }
-
-    @Test
-    fun setAllowEndpointsByDsl() {
-        emulatorControl.allowedEndpoints.add("a")
-        val emulatorControlConfig = createEmulatorControlConfig(emptyProjectOptions, emulatorControl)
-        assertThat(emulatorControlConfig.allowedEndpoints).contains("a")
-        assertThat(emulatorControlConfig.allowedEndpoints).hasSize(1)
-    }
+  @Test
+  fun setAllowEndpointsByDsl() {
+    emulatorControl.allowedEndpoints.add("a")
+    val emulatorControlConfig = createEmulatorControlConfig(emptyProjectOptions, emulatorControl)
+    assertThat(emulatorControlConfig.allowedEndpoints).contains("a")
+    assertThat(emulatorControlConfig.allowedEndpoints).hasSize(1)
+  }
 }

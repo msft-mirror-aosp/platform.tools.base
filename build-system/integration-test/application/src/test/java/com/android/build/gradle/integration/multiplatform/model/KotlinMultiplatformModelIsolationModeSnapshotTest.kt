@@ -31,67 +31,55 @@ import org.junit.Rule
 import org.junit.Test
 
 @Ignore("https://youtrack.jetbrains.com/issue/KT-82090")
-class KotlinMultiplatformModelIsolationModeSnapshotTest: BaseModelComparator {
-    @get:Rule
-    val project = GradleTestProjectBuilder()
-        .addGradleProperties("android.kmp.disable.runtime.classpath=true")
-        .fromTestProject("kotlinMultiplatform")
-        .create()
+class KotlinMultiplatformModelIsolationModeSnapshotTest : BaseModelComparator {
+  @get:Rule
+  val project =
+    GradleTestProjectBuilder()
+      .addGradleProperties("android.kmp.disable.runtime.classpath=true")
+      .fromTestProject("kotlinMultiplatform")
+      .create()
 
-    @Before
-    fun setUp() {
-        // Add a local aar
-        FileUtils.join(
-            project.getSubproject("kmpFirstLib").projectDir,
-            "libs",
-            "local.aar"
-        ).apply {
-            parentFile.mkdir()
-            writeBytes(
-                generateAarWithContent(
-                    packageName = "com.example.aar",
-                    mainJar = TestInputsGenerator.jarWithEmptyClasses(ImmutableList.of("com/example/aar/AarClass")),
-                    resources = mapOf("values/strings.xml" to """<resources><string name="aar_string">Aar String</string></resources>""".toByteArray())
-                )
-            )
-        }
-
-        // Add a local jar
-        FileUtils.join(
-            project.getSubproject("kmpFirstLib").projectDir,
-            "libs",
-            "local.jar"
-        ).writeBytes(
-            TestInputsGenerator.jarWithEmptyClasses(ImmutableList.of("com/example/jar/JarClass"))
+  @Before
+  fun setUp() {
+    // Add a local aar
+    FileUtils.join(project.getSubproject("kmpFirstLib").projectDir, "libs", "local.aar").apply {
+      parentFile.mkdir()
+      writeBytes(
+        generateAarWithContent(
+          packageName = "com.example.aar",
+          mainJar = TestInputsGenerator.jarWithEmptyClasses(ImmutableList.of("com/example/aar/AarClass")),
+          resources =
+            mapOf("values/strings.xml" to """<resources><string name="aar_string">Aar String</string></resources>""".toByteArray()),
         )
-
-        TestFileUtils.appendToFile(
-            project.getSubproject("kmpFirstLib").ktsBuildFile,
-            """
-                kotlin.sourceSets.getByName("androidMain").dependencies {
-                    implementation(files("libs/local.aar", "libs/local.jar"))
-                }
-            """.trimIndent()
-        )
+      )
     }
 
-    @Test
-    fun testModels() {
-        KmpModelComparator(
-            project = project,
-            testClass = this,
-            modelSnapshotTask = "dumpSourceSetDependencies",
-            taskOutputsLocator = { projectPath ->
-                FileUtils.join(
-                    project.getSubproject(projectPath).buildDir,
-                    "ide",
-                    "dependencies",
-                    "json"
-                ).listFiles()!!.toList()
-            },
-            configCacheMode = BaseGradleExecutor.ConfigurationCaching.PROJECT_ISOLATION
-        ).fetchAndCompareModels(
-            listOf(":kmpFirstLib", ":kmpSecondLib")
-        )
-    }
+    // Add a local jar
+    FileUtils.join(project.getSubproject("kmpFirstLib").projectDir, "libs", "local.jar")
+      .writeBytes(TestInputsGenerator.jarWithEmptyClasses(ImmutableList.of("com/example/jar/JarClass")))
+
+    TestFileUtils.appendToFile(
+      project.getSubproject("kmpFirstLib").ktsBuildFile,
+      """
+      kotlin.sourceSets.getByName("androidMain").dependencies {
+          implementation(files("libs/local.aar", "libs/local.jar"))
+      }
+      """
+        .trimIndent(),
+    )
+  }
+
+  @Test
+  fun testModels() {
+    KmpModelComparator(
+        project = project,
+        testClass = this,
+        modelSnapshotTask = "dumpSourceSetDependencies",
+        taskOutputsLocator = { projectPath ->
+          FileUtils.join(project.getSubproject(projectPath).buildDir, "ide", "dependencies", "json").listFiles()!!.toList()
+        },
+        configCacheMode = BaseGradleExecutor.ConfigurationCaching.PROJECT_ISOLATION,
+      )
+      .fetchAndCompareModels(listOf(":kmpFirstLib", ":kmpSecondLib"))
+  }
 }

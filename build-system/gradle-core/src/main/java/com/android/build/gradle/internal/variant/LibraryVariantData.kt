@@ -20,23 +20,16 @@ import com.android.build.api.variant.ComponentIdentity
 import com.android.build.gradle.internal.services.VariantServices
 import com.android.builder.core.ComponentType
 
-/** Data about a variant that produce a Library bundle (.aar)  */
-class LibraryVariantData(
-    componentIdentity: ComponentIdentity,
-    artifacts: ArtifactsImpl,
-    services: VariantServices
-) : BaseVariantData(
-    componentIdentity,
-    artifacts,
-    services
-), TestedVariantData {
-    private val testVariants: MutableMap<ComponentType, TestVariantData> = mutableMapOf()
+/** Data about a variant that produce a Library bundle (.aar) */
+class LibraryVariantData(componentIdentity: ComponentIdentity, artifacts: ArtifactsImpl, services: VariantServices) :
+  BaseVariantData(componentIdentity, artifacts, services), TestedVariantData {
+  private val testVariants: MutableMap<ComponentType, TestVariantData> = mutableMapOf()
 
-    override fun getTestVariantData(type: ComponentType): TestVariantData? {
-        return testVariants[type]
-    }
+  override fun getTestVariantData(type: ComponentType): TestVariantData? {
+    return testVariants[type]
+  }
 
-    override fun setTestVariantData(testVariantData: TestVariantData, type: ComponentType) {
-        testVariants[type] = testVariantData
-    }
+  override fun setTestVariantData(testVariantData: TestVariantData, type: ComponentType) {
+    testVariants[type] = testVariantData
+  }
 }

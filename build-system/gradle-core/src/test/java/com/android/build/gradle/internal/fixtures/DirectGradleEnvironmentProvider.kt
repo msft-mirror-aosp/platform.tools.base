@@ -19,12 +19,12 @@ package com.android.build.gradle.internal.fixtures
 import com.android.build.gradle.internal.utils.GradleEnvironmentProvider
 import org.gradle.api.provider.Provider
 
-class DirectGradleEnvironmentProvider: GradleEnvironmentProvider {
-    override fun getSystemProperty(key: String): Provider<String> {
-        return FakeGradleProvider(System.getProperty(key))
-    }
+class DirectGradleEnvironmentProvider : GradleEnvironmentProvider {
+  override fun getSystemProperty(key: String): Provider<String> {
+    return FakeGradleProvider(System.getProperty(key))
+  }
 
-    override fun getEnvVariable(key: String): Provider<String> {
-        return FakeGradleProvider(System.getenv(key))
-    }
+  override fun getEnvVariable(key: String): Provider<String> {
+    return FakeGradleProvider(System.getenv(key))
+  }
 }

@@ -28,65 +28,63 @@ import java.io.FileReader
 import java.io.FileWriter
 
 fun saveClassData(outputFile: File, classData: ClassData) {
-    BufferedWriter(FileWriter(outputFile)).use {
-        it.write(ClassDataAdapter.toJson(classData))
-    }
+  BufferedWriter(FileWriter(outputFile)).use { it.write(ClassDataAdapter.toJson(classData)) }
 }
 
 fun loadClassData(inputFile: File): ClassData? {
-    try {
-        BufferedReader(FileReader(inputFile)).use {
-            return ClassDataAdapter.fromJson(it)
-        }
-    } catch (e: Exception) {
-        return null
+  try {
+    BufferedReader(FileReader(inputFile)).use {
+      return ClassDataAdapter.fromJson(it)
     }
+  } catch (e: Exception) {
+    return null
+  }
 }
 
 internal object ClassDataAdapter : TypeAdapter<ClassData>() {
 
-    private fun JsonWriter.writeList(name: String, list: List<String>) {
-        name(name).beginArray()
-        list.forEach { value(it) }
-        endArray()
+  private fun JsonWriter.writeList(name: String, list: List<String>) {
+    name(name).beginArray()
+    list.forEach { value(it) }
+    endArray()
+  }
+
+  private fun JsonReader.readList(): List<String> {
+    val list = ImmutableList.Builder<String>()
+    beginArray()
+    while (hasNext()) {
+      list.add(nextString())
     }
+    endArray()
+    return list.build()
+  }
 
-    private fun JsonReader.readList(): List<String> {
-        val list = ImmutableList.Builder<String>()
-        beginArray()
-        while (hasNext()) {
-            list.add(nextString())
-        }
-        endArray()
-        return list.build()
+  override fun write(writer: JsonWriter, data: ClassData) {
+    writer.beginObject()
+    writer.name("className").value(data.className)
+    writer.writeList("classAnnotations", data.classAnnotations)
+    writer.writeList("interfaces", data.interfaces)
+    writer.writeList("superClasses", data.superClasses)
+    writer.endObject()
+  }
+
+  override fun read(reader: JsonReader): ClassData {
+    var className: String? = null
+    var classAnnotations: List<String>? = null
+    var interfaces: List<String>? = null
+    var superClasses: List<String>? = null
+
+    reader.beginObject()
+    while (reader.hasNext()) {
+      when (reader.nextName()) {
+        "className" -> className = reader.nextString()
+        "classAnnotations" -> classAnnotations = reader.readList()
+        "interfaces" -> interfaces = reader.readList()
+        "superClasses" -> superClasses = reader.readList()
+      }
     }
+    reader.endObject()
 
-    override fun write(writer: JsonWriter, data: ClassData) {
-        writer.beginObject()
-        writer.name("className").value(data.className)
-        writer.writeList("classAnnotations", data.classAnnotations)
-        writer.writeList("interfaces", data.interfaces)
-        writer.writeList("superClasses", data.superClasses)
-        writer.endObject()
-    }
-
-    override fun read(reader: JsonReader): ClassData {
-        var className: String? = null
-        var classAnnotations: List<String>? = null
-        var interfaces: List<String>? = null
-        var superClasses: List<String>? = null
-
-        reader.beginObject()
-        while (reader.hasNext()) {
-            when (reader.nextName()) {
-                "className" -> className = reader.nextString()
-                "classAnnotations" -> classAnnotations = reader.readList()
-                "interfaces" -> interfaces = reader.readList()
-                "superClasses" -> superClasses = reader.readList()
-            }
-        }
-        reader.endObject()
-
-        return ClassDataImpl(className!!, classAnnotations!!, interfaces!!, superClasses!!)
-    }
+    return ClassDataImpl(className!!, classAnnotations!!, interfaces!!, superClasses!!)
+  }
 }

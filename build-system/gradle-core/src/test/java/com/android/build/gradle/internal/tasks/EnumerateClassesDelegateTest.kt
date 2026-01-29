@@ -19,53 +19,43 @@ package com.android.build.gradle.internal.tasks
 import com.android.build.gradle.internal.dependency.EnumerateClassesDelegate
 import com.android.testutils.TestInputsGenerator
 import com.google.common.truth.Truth
+import java.nio.file.Path
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
-import java.nio.file.Path
 
 class EnumerateClassesDelegateTest {
-    @JvmField
-    @Rule
-    val tmp = TemporaryFolder()
+  @JvmField @Rule val tmp = TemporaryFolder()
 
-    private fun getClassListFromOutput(outputFile: Path): List<String> {
-        return outputFile.toFile().readLines()
-    }
+  private fun getClassListFromOutput(outputFile: Path): List<String> {
+    return outputFile.toFile().readLines()
+  }
 
-    @Test
-    fun testNoClasses() {
-        val jar = tmp.root.toPath().resolve("jar.jar")
-        TestInputsGenerator.jarWithEmptyClasses(jar, listOf())
+  @Test
+  fun testNoClasses() {
+    val jar = tmp.root.toPath().resolve("jar.jar")
+    TestInputsGenerator.jarWithEmptyClasses(jar, listOf())
 
-        val output = tmp.root.toPath().resolve("out.json")
+    val output = tmp.root.toPath().resolve("out.json")
 
-        EnumerateClassesDelegate().run(
-            jar.toFile(),
-            output.toFile()
-        )
+    EnumerateClassesDelegate().run(jar.toFile(), output.toFile())
 
-        val enumeratedClasses = getClassListFromOutput(output)
+    val enumeratedClasses = getClassListFromOutput(output)
 
-        Truth.assertThat(enumeratedClasses).isEmpty()
-    }
+    Truth.assertThat(enumeratedClasses).isEmpty()
+  }
 
-    @Test
-    fun testWithClasses() {
-        val jar = tmp.root.toPath().resolve("jar.jar")
-        TestInputsGenerator.jarWithEmptyClasses(
-            jar, listOf("test/A", "test/B", "com/example/A", "com/example/C"))
+  @Test
+  fun testWithClasses() {
+    val jar = tmp.root.toPath().resolve("jar.jar")
+    TestInputsGenerator.jarWithEmptyClasses(jar, listOf("test/A", "test/B", "com/example/A", "com/example/C"))
 
-        val output = tmp.root.toPath().resolve("out.json")
+    val output = tmp.root.toPath().resolve("out.json")
 
-        EnumerateClassesDelegate().run(
-            jar.toFile(),
-            output.toFile()
-        )
+    EnumerateClassesDelegate().run(jar.toFile(), output.toFile())
 
-        val enumeratedClasses = getClassListFromOutput(output)
+    val enumeratedClasses = getClassListFromOutput(output)
 
-        Truth.assertThat(enumeratedClasses)
-            .containsExactly("test.A", "test.B", "com.example.A", "com.example.C")
-    }
+    Truth.assertThat(enumeratedClasses).containsExactly("test.A", "test.B", "com.example.A", "com.example.C")
+  }
 }

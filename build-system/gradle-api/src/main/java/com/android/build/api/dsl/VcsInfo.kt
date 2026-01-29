@@ -18,19 +18,14 @@ package com.android.build.api.dsl
 
 import org.gradle.api.Incubating
 
-/**
- * DSL object for configuring Version Control information
- */
+/** DSL object for configuring Version Control information */
 interface VcsInfo {
 
-    /**
-     * Determines whether to include VCS info in the build.
-     *
-     * When the value is not set/null, the feature will be enabled by default in release builds.
-     * However, in the case that it is not successful, the build will not fail but will log the
-     * error message.
-     */
-    @get:Incubating
-    @set:Incubating
-    var include: Boolean?
+  /**
+   * Determines whether to include VCS info in the build.
+   *
+   * When the value is not set/null, the feature will be enabled by default in release builds. However, in the case that it is not
+   * successful, the build will not fail but will log the error message.
+   */
+  @get:Incubating @set:Incubating var include: Boolean?
 }

@@ -16,40 +16,39 @@
 package com.android.build.gradle.internal.dsl
 
 import com.android.build.api.dsl.AndroidResources
-import com.android.build.gradle.internal.dsl.decorator.androidPluginDslDecorator
-import com.android.build.gradle.internal.services.DslServices
 import com.android.build.gradle.internal.services.createDslServices
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 
 class AndroidResourcesTest {
 
-    private val androidResources: AndroidResources by lazy {
-        val dslServices = createDslServices()
-        dslServices.newDecoratedInstance(AaptOptions::class.java, dslServices)
-    }
+  private val androidResources: AndroidResources by lazy {
+    val dslServices = createDslServices()
+    dslServices.newDecoratedInstance(AaptOptions::class.java, dslServices)
+  }
 
-    @Test
-    fun setIgnoreAssetsPattern() {
-        androidResources.ignoreAssetsPattern = "!.svn:!.git:!.ds_store:!*.scc:.*:<dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"
-        assertThat(androidResources.ignoreAssetsPattern).isEqualTo("!.svn:!.git:!.ds_store:!*.scc:.*:<dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~")
-        assertThat(androidResources.ignoreAssetsPatterns).containsExactly(
-                "!.svn", "!.git", "!.ds_store", "!*.scc", ".*", "<dir>_*", "!CVS", "!thumbs.db", "!picasa.ini", "!*~"
-        ).inOrder()
-        androidResources.ignoreAssetsPattern = null
-        assertThat(androidResources.ignoreAssetsPattern).isNull()
-        assertThat(androidResources.ignoreAssetsPatterns).isEmpty()
-    }
+  @Test
+  fun setIgnoreAssetsPattern() {
+    androidResources.ignoreAssetsPattern = "!.svn:!.git:!.ds_store:!*.scc:.*:<dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"
+    assertThat(androidResources.ignoreAssetsPattern).isEqualTo("!.svn:!.git:!.ds_store:!*.scc:.*:<dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~")
+    assertThat(androidResources.ignoreAssetsPatterns)
+      .containsExactly("!.svn", "!.git", "!.ds_store", "!*.scc", ".*", "<dir>_*", "!CVS", "!thumbs.db", "!picasa.ini", "!*~")
+      .inOrder()
+    androidResources.ignoreAssetsPattern = null
+    assertThat(androidResources.ignoreAssetsPattern).isNull()
+    assertThat(androidResources.ignoreAssetsPatterns).isEmpty()
+  }
 
-    @Test
-    fun setIgnoreAssetsPatterns() {
-        androidResources.ignoreAssetsPatterns += listOf("!.svn", "!.git", "!.ds_store", "!*.scc", ".*", "<dir>_*", "!CVS", "!thumbs.db", "!picasa.ini", "!*~")
-        assertThat(androidResources.ignoreAssetsPattern).isEqualTo("!.svn:!.git:!.ds_store:!*.scc:.*:<dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~")
-        assertThat(androidResources.ignoreAssetsPatterns).containsExactly(
-                "!.svn", "!.git", "!.ds_store", "!*.scc", ".*", "<dir>_*", "!CVS", "!thumbs.db", "!picasa.ini", "!*~"
-        ).inOrder()
-        androidResources.ignoreAssetsPatterns.clear()
-        assertThat(androidResources.ignoreAssetsPattern).isNull()
-        assertThat(androidResources.ignoreAssetsPatterns).isEmpty()
-    }
+  @Test
+  fun setIgnoreAssetsPatterns() {
+    androidResources.ignoreAssetsPatterns +=
+      listOf("!.svn", "!.git", "!.ds_store", "!*.scc", ".*", "<dir>_*", "!CVS", "!thumbs.db", "!picasa.ini", "!*~")
+    assertThat(androidResources.ignoreAssetsPattern).isEqualTo("!.svn:!.git:!.ds_store:!*.scc:.*:<dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~")
+    assertThat(androidResources.ignoreAssetsPatterns)
+      .containsExactly("!.svn", "!.git", "!.ds_store", "!*.scc", ".*", "<dir>_*", "!CVS", "!thumbs.db", "!picasa.ini", "!*~")
+      .inOrder()
+    androidResources.ignoreAssetsPatterns.clear()
+    assertThat(androidResources.ignoreAssetsPattern).isNull()
+    assertThat(androidResources.ignoreAssetsPatterns).isEmpty()
+  }
 }

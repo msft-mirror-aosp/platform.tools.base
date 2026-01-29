@@ -27,83 +27,61 @@ import com.android.build.gradle.internal.profile.AnalyticsUtil
 import com.android.tools.build.gradle.internal.profile.VariantPropertiesMethodType
 import com.google.wireless.android.sdk.stats.ArtifactAccess
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
+import javax.inject.Inject
 import org.gradle.api.Task
 import org.gradle.api.file.Directory
 import org.gradle.api.file.FileSystemLocation
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.TaskProvider
-import javax.inject.Inject
 
-open class AnalyticsEnabledArtifacts @Inject constructor(
-    val delegate: Artifacts,
-    val stats: GradleBuildVariant.Builder,
-    val objectFactory: ObjectFactory
-) : Artifacts {
+open class AnalyticsEnabledArtifacts
+@Inject
+constructor(val delegate: Artifacts, val stats: GradleBuildVariant.Builder, val objectFactory: ObjectFactory) : Artifacts {
 
-    override fun getBuiltArtifactsLoader(): BuiltArtifactsLoader {
-        stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
-            VariantPropertiesMethodType.GET_BUILT_ARTIFACTS_LOADER_VALUE
-        return delegate.getBuiltArtifactsLoader()
+  override fun getBuiltArtifactsLoader(): BuiltArtifactsLoader {
+    stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type = VariantPropertiesMethodType.GET_BUILT_ARTIFACTS_LOADER_VALUE
+    return delegate.getBuiltArtifactsLoader()
+  }
+
+  override fun <FileTypeT : FileSystemLocation> get(type: SingleArtifact<FileTypeT>): Provider<FileTypeT> {
+    stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type = VariantPropertiesMethodType.GET_ARTIFACT_VALUE
+    stats.variantApiAccessBuilder.addArtifactAccessBuilder().also {
+      it.inputArtifactType = AnalyticsUtil.getVariantApiArtifactType(type.javaClass).number
+      it.type = ArtifactAccess.AccessType.GET
     }
+    return delegate.get(type)
+  }
 
-    override fun <FileTypeT : FileSystemLocation> get(type: SingleArtifact<FileTypeT>): Provider<FileTypeT> {
-        stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
-            VariantPropertiesMethodType.GET_ARTIFACT_VALUE
-        stats.variantApiAccessBuilder.addArtifactAccessBuilder().also {
-            it.inputArtifactType = AnalyticsUtil.getVariantApiArtifactType(type.javaClass).number
-            it.type = ArtifactAccess.AccessType.GET
-        }
-        return delegate.get(type)
+  override fun <FileTypeT : FileSystemLocation> getAll(type: MultipleArtifact<FileTypeT>): Provider<List<FileTypeT>> {
+    stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type = VariantPropertiesMethodType.GET_ALL_ARTIFACTS_VALUE
+    stats.variantApiAccessBuilder.addArtifactAccessBuilder().also {
+      it.inputArtifactType = AnalyticsUtil.getVariantApiArtifactType(type.javaClass).number
+      it.type = ArtifactAccess.AccessType.GET_ALL
     }
+    return delegate.getAll(type)
+  }
 
-    override fun <FileTypeT : FileSystemLocation> getAll(type: MultipleArtifact<FileTypeT>): Provider<List<FileTypeT>> {
-        stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
-            VariantPropertiesMethodType.GET_ALL_ARTIFACTS_VALUE
-        stats.variantApiAccessBuilder.addArtifactAccessBuilder().also {
-            it.inputArtifactType = AnalyticsUtil.getVariantApiArtifactType(type.javaClass).number
-            it.type = ArtifactAccess.AccessType.GET_ALL
-        }
-        return delegate.getAll(type)
-    }
+  override fun <FileTypeT : FileSystemLocation> add(type: MultipleArtifact<FileTypeT>, artifact: FileTypeT) {
+    stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type = VariantPropertiesMethodType.ADD_ARTIFACTS_VALUE
+    delegate.add(type, artifact)
+  }
 
-    override fun <FileTypeT: FileSystemLocation> add(
-            type: MultipleArtifact<FileTypeT>,
-            artifact: FileTypeT) {
-        stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
-                VariantPropertiesMethodType.ADD_ARTIFACTS_VALUE
-        delegate.add(type, artifact)
-    }
+  override fun <MultipleArtifactT : MultipleArtifact<Directory>> addStaticDirectory(type: MultipleArtifactT, inputLocation: Directory)
+    where MultipleArtifactT : Artifact.Appendable {
+    stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type = VariantPropertiesMethodType.ADD_STATIC_DIRECTORY_VALUE
+    delegate.addStaticDirectory(type, inputLocation)
+  }
 
-    override fun <MultipleArtifactT : MultipleArtifact<Directory>> addStaticDirectory(
-        type: MultipleArtifactT,
-        inputLocation: Directory
-    ) where MultipleArtifactT : Artifact.Appendable {
-        stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
-            VariantPropertiesMethodType.ADD_STATIC_DIRECTORY_VALUE
-        delegate.addStaticDirectory(type, inputLocation)
-    }
+  @Suppress("UNCHECKED_CAST")
+  override fun <TaskT : Task> use(taskProvider: TaskProvider<TaskT>): TaskBasedOperation<TaskT> {
+    stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type = VariantPropertiesMethodType.USE_TASK_VALUE
+    return objectFactory.newInstance(AnalyticsEnabledTaskBaseOperation::class.java, delegate.use(taskProvider), stats, objectFactory)
+      as TaskBasedOperation<TaskT>
+  }
 
-    @Suppress("UNCHECKED_CAST")
-    override fun <TaskT : Task> use(taskProvider: TaskProvider<TaskT>): TaskBasedOperation<TaskT> {
-        stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
-            VariantPropertiesMethodType.USE_TASK_VALUE
-        return objectFactory.newInstance(
-            AnalyticsEnabledTaskBaseOperation::class.java,
-            delegate.use(taskProvider),
-            stats,
-            objectFactory
-        ) as TaskBasedOperation<TaskT>
-    }
-
-    override fun forScope(scope: ScopedArtifacts.Scope): ScopedArtifacts {
-        stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
-            VariantPropertiesMethodType.FOR_SCOPE_VALUE
-        return objectFactory.newInstance(
-            AnalyticsEnabledScopedArtifacts::class.java,
-            delegate.forScope(scope),
-            stats,
-            objectFactory,
-        )
-    }
+  override fun forScope(scope: ScopedArtifacts.Scope): ScopedArtifacts {
+    stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type = VariantPropertiesMethodType.FOR_SCOPE_VALUE
+    return objectFactory.newInstance(AnalyticsEnabledScopedArtifacts::class.java, delegate.forScope(scope), stats, objectFactory)
+  }
 }

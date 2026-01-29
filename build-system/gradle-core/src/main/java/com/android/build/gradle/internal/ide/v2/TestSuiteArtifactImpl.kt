@@ -23,21 +23,20 @@ import java.io.File
 import java.io.Serializable
 
 data class TestSuiteArtifactImpl(
-    override val testInfo: TestSuiteTestInfo,
-    override val compileTaskName: String?,
-    override val assembleTaskName: String?,
-    override val ideSetupTaskNames: Set<String>,
-    override val generatedSourceFolders: Collection<File>,
-    override val classesFolders: Set<File>,
-    override val generatedClassPaths: Map<String, File>,
-    override val bytecodeTransformations: Collection<BytecodeTransformation>,
-) : TestSuiteArtifact, Serializable
-{
-    companion object {
-        @JvmStatic
-        private val serialVersionUID: Long = 2L
-    }
+  override val testInfo: TestSuiteTestInfo,
+  override val compileTaskName: String?,
+  override val assembleTaskName: String?,
+  override val ideSetupTaskNames: Set<String>,
+  override val generatedSourceFolders: Collection<File>,
+  override val classesFolders: Set<File>,
+  override val generatedClassPaths: Map<String, File>,
+  override val bytecodeTransformations: Collection<BytecodeTransformation>,
+) : TestSuiteArtifact, Serializable {
+  companion object {
+    @JvmStatic private val serialVersionUID: Long = 2L
+  }
 
-    @Deprecated("Was never used, removed in AGP 8.3")
-    override val modelSyncFiles: Collection<Void> get() = emptyList()
+  @Deprecated("Was never used, removed in AGP 8.3")
+  override val modelSyncFiles: Collection<Void>
+    get() = emptyList()
 }

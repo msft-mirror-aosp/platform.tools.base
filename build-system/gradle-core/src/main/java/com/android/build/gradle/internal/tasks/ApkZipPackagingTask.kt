@@ -24,6 +24,7 @@ import com.android.build.gradle.internal.tasks.factory.VariantTaskCreationAction
 import com.android.buildanalyzer.common.TaskCategory
 import com.android.builder.packaging.JarFlinger
 import com.android.utils.FileUtils
+import java.io.File
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.tasks.InputDirectory
@@ -34,101 +35,76 @@ import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.work.DisableCachingByDefault
-import java.io.File
 
-/**
- * Package all the APKs and mapping file into a zip for publishing to a repo.
- */
+/** Package all the APKs and mapping file into a zip for publishing to a repo. */
 @DisableCachingByDefault
 @BuildAnalyzer(primaryTaskCategory = TaskCategory.APK_PACKAGING)
 abstract class ApkZipPackagingTask : NonIncrementalTask() {
 
-    @get:InputDirectory
-    @get:PathSensitive(PathSensitivity.NONE)
+  @get:InputDirectory @get:PathSensitive(PathSensitivity.NONE) abstract val apkFolder: DirectoryProperty
+
+  @get:InputFile @get:Optional @get:PathSensitive(PathSensitivity.NAME_ONLY) abstract val mappingFile: RegularFileProperty
+
+  @get:OutputFile abstract val apkZipFile: RegularFileProperty
+
+  override fun doTaskAction() {
+    workerExecutor.noIsolation().submit(ApkZipPackagingRunnable::class.java) {
+      it.initializeFromBaseTask(this)
+      it.apkFolder.set(apkFolder)
+      it.mappingFile.set(mappingFile)
+      it.zipOutputFile.set(apkZipFile)
+    }
+  }
+
+  abstract class Params : ProfileAwareWorkAction.Parameters() {
     abstract val apkFolder: DirectoryProperty
-
-    @get:InputFile
-    @get:Optional
-    @get:PathSensitive(PathSensitivity.NAME_ONLY)
     abstract val mappingFile: RegularFileProperty
+    abstract val zipOutputFile: RegularFileProperty
+  }
 
-    @get:OutputFile
-    abstract val apkZipFile: RegularFileProperty
+  abstract class ApkZipPackagingRunnable : ProfileAwareWorkAction<Params>() {
+    override fun run() {
+      FileUtils.deleteIfExists(parameters.zipOutputFile.asFile.get())
 
-    override fun doTaskAction() {
-        workerExecutor.noIsolation().submit(ApkZipPackagingRunnable::class.java) {
-            it.initializeFromBaseTask(this)
-            it.apkFolder.set(apkFolder)
-            it.mappingFile.set(mappingFile)
-            it.zipOutputFile.set(apkZipFile)
-        }
-    }
+      val sourceFiles = parameters.apkFolder.asFile.get().listFiles() ?: emptyArray<File>()
 
-    abstract class Params : ProfileAwareWorkAction.Parameters () {
-        abstract val apkFolder: DirectoryProperty
-        abstract val mappingFile: RegularFileProperty
-        abstract val zipOutputFile: RegularFileProperty
-    }
-
-    abstract class ApkZipPackagingRunnable : ProfileAwareWorkAction<Params>() {
-        override fun run() {
-            FileUtils.deleteIfExists(parameters.zipOutputFile.asFile.get())
-
-            val sourceFiles = parameters.apkFolder.asFile.get().listFiles() ?: emptyArray<File>()
-
-            JarFlinger(parameters.zipOutputFile.asFile.get().toPath()).use { jar ->
-                for (sourceFile in sourceFiles) {
-                    if (sourceFile.isDirectory) {
-                        jar.addDirectory(
-                            sourceFile.toPath(),
-                            null,
-                            null
-                        ) { entryPath -> "${sourceFile.name}/$entryPath" }
-                    } else {
-                        jar.addFile(sourceFile.name, sourceFile.toPath())
-                    }
-                }
-
-                parameters.mappingFile.asFile.orNull?.let {
-                    jar.addFile(it.name, it.toPath())
-                }
-            }
-        }
-    }
-
-    class CreationAction(creationConfig: ApkCreationConfig) :
-        VariantTaskCreationAction<ApkZipPackagingTask, ApkCreationConfig>(
-            creationConfig
-        ) {
-
-        override val name: String
-            get() = computeTaskName("zipApksFor")
-        override val type: Class<ApkZipPackagingTask>
-            get() = ApkZipPackagingTask::class.java
-
-        override fun handleProvider(
-            taskProvider: TaskProvider<ApkZipPackagingTask>
-        ) {
-            super.handleProvider(taskProvider)
-
-            creationConfig.artifacts.setInitialProvider(
-                taskProvider,
-                ApkZipPackagingTask::apkZipFile
-            ).withName("apks.zip").on(InternalArtifactType.APK_ZIP)
+      JarFlinger(parameters.zipOutputFile.asFile.get().toPath()).use { jar ->
+        for (sourceFile in sourceFiles) {
+          if (sourceFile.isDirectory) {
+            jar.addDirectory(sourceFile.toPath(), null, null) { entryPath -> "${sourceFile.name}/$entryPath" }
+          } else {
+            jar.addFile(sourceFile.name, sourceFile.toPath())
+          }
         }
 
-        override fun configure(
-            task: ApkZipPackagingTask
-        ) {
-            super.configure(task)
-
-            creationConfig.artifacts.setTaskInputToFinalProduct(
-                SingleArtifact.APK, task.apkFolder
-            )
-            creationConfig.artifacts.setTaskInputToFinalProduct(
-                SingleArtifact.OBFUSCATION_MAPPING_FILE,
-                task.mappingFile
-            )
-        }
+        parameters.mappingFile.asFile.orNull?.let { jar.addFile(it.name, it.toPath()) }
+      }
     }
+  }
+
+  class CreationAction(creationConfig: ApkCreationConfig) :
+    VariantTaskCreationAction<ApkZipPackagingTask, ApkCreationConfig>(creationConfig) {
+
+    override val name: String
+      get() = computeTaskName("zipApksFor")
+
+    override val type: Class<ApkZipPackagingTask>
+      get() = ApkZipPackagingTask::class.java
+
+    override fun handleProvider(taskProvider: TaskProvider<ApkZipPackagingTask>) {
+      super.handleProvider(taskProvider)
+
+      creationConfig.artifacts
+        .setInitialProvider(taskProvider, ApkZipPackagingTask::apkZipFile)
+        .withName("apks.zip")
+        .on(InternalArtifactType.APK_ZIP)
+    }
+
+    override fun configure(task: ApkZipPackagingTask) {
+      super.configure(task)
+
+      creationConfig.artifacts.setTaskInputToFinalProduct(SingleArtifact.APK, task.apkFolder)
+      creationConfig.artifacts.setTaskInputToFinalProduct(SingleArtifact.OBFUSCATION_MAPPING_FILE, task.mappingFile)
+    }
+  }
 }

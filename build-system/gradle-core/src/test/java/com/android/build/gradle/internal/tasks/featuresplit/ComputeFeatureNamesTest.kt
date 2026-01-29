@@ -23,77 +23,65 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.ExpectedException
 
-/** Tests for the [computeFeatureNames] method  */
+/** Tests for the [computeFeatureNames] method */
 class ComputeFeatureNamesTest {
 
-    @get:Rule
-    val exception: ExpectedException = ExpectedException.none()
+  @get:Rule val exception: ExpectedException = ExpectedException.none()
 
-    @Test
-    fun testComputeFeatureNames() {
-        val features =
-                listOf(
-                        FeatureSplitDeclaration(":A", "id"),
-                        FeatureSplitDeclaration(":foo:B", "id"),
-                        FeatureSplitDeclaration(":C", "id"))
+  @Test
+  fun testComputeFeatureNames() {
+    val features = listOf(FeatureSplitDeclaration(":A", "id"), FeatureSplitDeclaration(":foo:B", "id"), FeatureSplitDeclaration(":C", "id"))
 
-        assertThat(computeFeatureNames(features).values).containsExactly("A", "B", "C")
-    }
+    assertThat(computeFeatureNames(features).values).containsExactly("A", "B", "C")
+  }
 
-    @Test
-    fun testRootFeatureModule() {
-        val features = listOf(FeatureSplitDeclaration(":", "id"))
-        exception.expect(RTEMatcher("Root module ':' is used as a feature module. This is not supported."))
-        computeFeatureNames(features)
-    }
+  @Test
+  fun testRootFeatureModule() {
+    val features = listOf(FeatureSplitDeclaration(":", "id"))
+    exception.expect(RTEMatcher("Root module ':' is used as a feature module. This is not supported."))
+    computeFeatureNames(features)
+  }
 
-    @Test
-    fun testComputeInvalidFeatureNames() {
-        val features =
-            listOf(
-                FeatureSplitDeclaration(":A$", "id"),
-                FeatureSplitDeclaration(":foo:B-C", "id"),
-                FeatureSplitDeclaration(":C", "id"))
+  @Test
+  fun testComputeInvalidFeatureNames() {
+    val features =
+      listOf(FeatureSplitDeclaration(":A$", "id"), FeatureSplitDeclaration(":foo:B-C", "id"), FeatureSplitDeclaration(":C", "id"))
 
-        exception.expect(
-            RTEMatcher(
-                "The following feature module names contain invalid characters. Feature module " +
-                        "names can only contain letters, digits and underscores.\n" +
-                        "\t-> A\$\n" +
-                        "\t-> B-C"
-            )
-        )
-        computeFeatureNames(features)
-    }
+    exception.expect(
+      RTEMatcher(
+        "The following feature module names contain invalid characters. Feature module " +
+          "names can only contain letters, digits and underscores.\n" +
+          "\t-> A\$\n" +
+          "\t-> B-C"
+      )
+    )
+    computeFeatureNames(features)
+  }
 
+  @Test
+  fun testDuplicatedFeatureNames() {
+    val features = listOf(FeatureSplitDeclaration(":A", "id"), FeatureSplitDeclaration(":foo:A", "id"))
 
-    @Test
-    fun testDuplicatedFeatureNames() {
-        val features =
-            listOf(
-                FeatureSplitDeclaration(":A", "id"),
-                FeatureSplitDeclaration(":foo:A", "id"))
-
-        exception.expect(RTEMatcher("Module name 'A' is used by multiple modules. All dynamic features must have a unique name.\n" +
-                "\t-> :A\n" +
-                "\t-> :foo:A"))
-        computeFeatureNames(features)
-    }
+    exception.expect(
+      RTEMatcher(
+        "Module name 'A' is used by multiple modules. All dynamic features must have a unique name.\n" + "\t-> :A\n" + "\t-> :foo:A"
+      )
+    )
+    computeFeatureNames(features)
+  }
 }
 
-/**
- * custom [BaseMatcher] for RuntimeException with message.
- */
-private class RTEMatcher(private val message: String): BaseMatcher<Any>() {
-    override fun matches(item: Any): Boolean {
-        if (item !is RuntimeException) {
-            return false
-        }
-
-        return item.message == message
+/** custom [BaseMatcher] for RuntimeException with message. */
+private class RTEMatcher(private val message: String) : BaseMatcher<Any>() {
+  override fun matches(item: Any): Boolean {
+    if (item !is RuntimeException) {
+      return false
     }
 
-    override fun describeTo(description: Description) {
-        description.appendText(message)
-    }
+    return item.message == message
+  }
+
+  override fun describeTo(description: Description) {
+    description.appendText(message)
+  }
 }

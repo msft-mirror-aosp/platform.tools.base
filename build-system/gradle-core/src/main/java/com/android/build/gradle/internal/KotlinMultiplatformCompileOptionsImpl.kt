@@ -19,42 +19,38 @@ package com.android.build.gradle.internal
 import com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryExtension
 import org.gradle.api.JavaVersion
 
-/**
- * Implementation of [CompileOptions] that is based on kotlin multiplatform APIs for internal use.
- */
-internal class KotlinMultiplatformCompileOptionsImpl(
-    private val extension: KotlinMultiplatformAndroidLibraryExtension
-): CompileOptions() {
+/** Implementation of [CompileOptions] that is based on kotlin multiplatform APIs for internal use. */
+internal class KotlinMultiplatformCompileOptionsImpl(private val extension: KotlinMultiplatformAndroidLibraryExtension) : CompileOptions() {
 
-    override var isCoreLibraryDesugaringEnabled
-        get() = extension.enableCoreLibraryDesugaring
-        set(_) {
-            throw IllegalAccessException("Compile options for kmp variants are read only.")
-        }
-
-    override var targetCompatibility: JavaVersion
-        get() = super.targetCompatibility
-        set(_) {
-            throw IllegalAccessException("Compile options for kmp variants are read only.")
-        }
-
-    override var sourceCompatibility: JavaVersion
-        get() = super.sourceCompatibility
-        set(_) {
-            throw IllegalAccessException("Compile options for kmp variants are read only.")
-        }
-
-    override var encoding: String
-        get() = super.encoding
-        set(_) {
-            throw IllegalAccessException("Compile options for kmp variants are read only.")
-        }
-
-    override fun sourceCompatibility(sourceCompatibility: Any) {
-        throw IllegalAccessException("Compile options for kmp variants are read only.")
+  override var isCoreLibraryDesugaringEnabled
+    get() = extension.enableCoreLibraryDesugaring
+    set(_) {
+      throw IllegalAccessException("Compile options for kmp variants are read only.")
     }
 
-    override fun targetCompatibility(targetCompatibility: Any) {
-        throw IllegalAccessException("Compile options for kmp variants are read only.")
+  override var targetCompatibility: JavaVersion
+    get() = super.targetCompatibility
+    set(_) {
+      throw IllegalAccessException("Compile options for kmp variants are read only.")
     }
+
+  override var sourceCompatibility: JavaVersion
+    get() = super.sourceCompatibility
+    set(_) {
+      throw IllegalAccessException("Compile options for kmp variants are read only.")
+    }
+
+  override var encoding: String
+    get() = super.encoding
+    set(_) {
+      throw IllegalAccessException("Compile options for kmp variants are read only.")
+    }
+
+  override fun sourceCompatibility(sourceCompatibility: Any) {
+    throw IllegalAccessException("Compile options for kmp variants are read only.")
+  }
+
+  override fun targetCompatibility(targetCompatibility: Any) {
+    throw IllegalAccessException("Compile options for kmp variants are read only.")
+  }
 }

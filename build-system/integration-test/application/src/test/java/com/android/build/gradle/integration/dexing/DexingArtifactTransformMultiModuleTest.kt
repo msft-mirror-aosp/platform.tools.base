@@ -29,209 +29,217 @@ import org.junit.Test
 
 class DexingArtifactTransformMultiModuleTest {
 
-    private val app = MinimalSubProject.app("com.example.app")
-    private val lib = MinimalSubProject.lib("com.example.lib")
-    private val javaLib = MinimalSubProject.javaLibrary()
+  private val app = MinimalSubProject.app("com.example.app")
+  private val lib = MinimalSubProject.lib("com.example.lib")
+  private val javaLib = MinimalSubProject.javaLibrary()
 
-    @Rule
-    @JvmField
-    val project =
-        GradleTestProject.builder().fromTestApp(
-            MultiModuleTestProject.builder().subproject(":app", app)
-                .subproject(":lib", lib)
-                .subproject(":javaLib", javaLib)
-                .dependency(app, lib)
-                .dependency(app, javaLib)
-                .build()
-        ).create()
+  @Rule
+  @JvmField
+  val project =
+    GradleTestProject.builder()
+      .fromTestApp(
+        MultiModuleTestProject.builder()
+          .subproject(":app", app)
+          .subproject(":lib", lib)
+          .subproject(":javaLib", javaLib)
+          .dependency(app, lib)
+          .dependency(app, javaLib)
+          .build()
+      )
+      .create()
 
-    @Test
-    fun testMonoDex() {
-        project.getSubproject("app")
-            .buildFile.appendText("\nandroid.defaultConfig.multiDexEnabled = false")
-        executor().run(":app:assembleDebug")
+  @Test
+  fun testMonoDex() {
+    project.getSubproject("app").buildFile.appendText("\nandroid.defaultConfig.multiDexEnabled = false")
+    executor().run(":app:assembleDebug")
 
-        project.getSubproject("app").getApk(GradleTestProject.ApkType.DEBUG).use {
-            assertThatApk(it).containsClass("Lcom/example/app/R;")
-            assertThatApk(it).containsClass("Lcom/example/lib/R;")
-        }
+    project.getSubproject("app").getApk(GradleTestProject.ApkType.DEBUG).use {
+      assertThatApk(it).containsClass("Lcom/example/app/R;")
+      assertThatApk(it).containsClass("Lcom/example/lib/R;")
     }
+  }
 
-    @Test
-    fun testAndroidLibrary() {
-        project.getSubproject("lib").mainSrcDir.resolve("com/Data.java").let {
-            it.parentFile.mkdirs()
-            it.writeText(
-                """
-                package com;
-                public class Data {}
-            """.trimIndent()
-            )
-        }
-        executor().run(":app:assembleDebug")
-
-        project.getSubproject("app").getApk(GradleTestProject.ApkType.DEBUG).use {
-            assertThatApk(it).containsClass("Lcom/Data;")
-        }
-
-        // Also check that dexing of subprojects is not done by a task (regression test for b/309101832)
-        val subprojectDexOutputs = SUB_PROJECT_DEX_ARCHIVE
-            .getOutputDir(project.getSubproject("app").buildDir)
-            .walk().filter { it.isFile }.toList()
-        assertThat(subprojectDexOutputs).isEmpty()
+  @Test
+  fun testAndroidLibrary() {
+    project.getSubproject("lib").mainSrcDir.resolve("com/Data.java").let {
+      it.parentFile.mkdirs()
+      it.writeText(
+        """
+        package com;
+        public class Data {}
+        """
+          .trimIndent()
+      )
     }
+    executor().run(":app:assembleDebug")
 
-    @Test
-    fun testAndroidLibraryIncremental() {
-        project.getSubproject("app").buildFile.appendText(
-            """
-            android.defaultConfig.multiDexEnabled = true
-            android.defaultConfig.minSdkVersion = 21
-        """.trimIndent()
-        )
-        project.getSubproject("lib").mainSrcDir.resolve("com/Data.java").let {
-            it.parentFile.mkdirs()
-            it.writeText(
-                """
-                package com;
-                public class Data {
-                }
-            """.trimIndent()
-            )
+    project.getSubproject("app").getApk(GradleTestProject.ApkType.DEBUG).use { assertThatApk(it).containsClass("Lcom/Data;") }
+
+    // Also check that dexing of subprojects is not done by a task (regression test for b/309101832)
+    val subprojectDexOutputs =
+      SUB_PROJECT_DEX_ARCHIVE.getOutputDir(project.getSubproject("app").buildDir).walk().filter { it.isFile }.toList()
+    assertThat(subprojectDexOutputs).isEmpty()
+  }
+
+  @Test
+  fun testAndroidLibraryIncremental() {
+    project
+      .getSubproject("app")
+      .buildFile
+      .appendText(
+        """
+        android.defaultConfig.multiDexEnabled = true
+        android.defaultConfig.minSdkVersion = 21
+        """
+          .trimIndent()
+      )
+    project.getSubproject("lib").mainSrcDir.resolve("com/Data.java").let {
+      it.parentFile.mkdirs()
+      it.writeText(
+        """
+        package com;
+        public class Data {
         }
-        executor().run(":app:assembleDebug")
-
-        TestFileUtils.addMethod(
-            project.getSubproject("lib").mainSrcDir.resolve("com/Data.java"),
-            "int i = 0;"
-        )
-        val result = executor().run(":app:assembleDebug")
-        assertThat(result.upToDateTasks).containsAllOf(
-            ":app:mergeProjectDexDebug",
-            ":app:mergeExtDexDebug"
-        )
-        assertThat(result.didWorkTasks).contains(":app:mergeLibDexDebug")
+        """
+          .trimIndent()
+      )
     }
+    executor().run(":app:assembleDebug")
 
-    @Test
-    fun testJavaLib() {
-        addSourceToJavaLib()
-        executor().run(":app:assembleDebug")
+    TestFileUtils.addMethod(project.getSubproject("lib").mainSrcDir.resolve("com/Data.java"), "int i = 0;")
+    val result = executor().run(":app:assembleDebug")
+    assertThat(result.upToDateTasks).containsAllOf(":app:mergeProjectDexDebug", ":app:mergeExtDexDebug")
+    assertThat(result.didWorkTasks).contains(":app:mergeLibDexDebug")
+  }
 
-        project.getSubproject("app").getApk(GradleTestProject.ApkType.DEBUG).use {
-            assertThatApk(it).containsClass("Lcom/Data;")
+  @Test
+  fun testJavaLib() {
+    addSourceToJavaLib()
+    executor().run(":app:assembleDebug")
+
+    project.getSubproject("app").getApk(GradleTestProject.ApkType.DEBUG).use { assertThatApk(it).containsClass("Lcom/Data;") }
+  }
+
+  @Test
+  fun testJavaLibIncremental() {
+    project
+      .getSubproject("app")
+      .buildFile
+      .appendText(
+        """
+        android.defaultConfig.multiDexEnabled = true
+        android.defaultConfig.minSdkVersion = 21
+        """
+          .trimIndent()
+      )
+    project.getSubproject("javaLib").mainSrcDir.resolve("com/Data.java").let {
+      it.parentFile.mkdirs()
+      it.writeText(
+        """
+        package com;
+        public class Data {
         }
+        """
+          .trimIndent()
+      )
     }
+    executor().run(":app:assembleDebug")
 
-    @Test
-    fun testJavaLibIncremental() {
-        project.getSubproject("app").buildFile.appendText(
-            """
-            android.defaultConfig.multiDexEnabled = true
-            android.defaultConfig.minSdkVersion = 21
-        """.trimIndent()
-        )
-        project.getSubproject("javaLib").mainSrcDir.resolve("com/Data.java").let {
-            it.parentFile.mkdirs()
-            it.writeText(
-                """
-                package com;
-                public class Data {
-                }
-            """.trimIndent()
-            )
+    TestFileUtils.addMethod(project.getSubproject("javaLib").mainSrcDir.resolve("com/Data.java"), "int i = 0;")
+    val result = executor().run(":app:assembleDebug")
+    assertThat(result.upToDateTasks).containsAllOf(":app:mergeProjectDexDebug", ":app:mergeExtDexDebug")
+    assertThat(result.didWorkTasks).contains(":app:mergeLibDexDebug")
+  }
+
+  @Test
+  fun testLibraryAndExternalDeps() {
+    project
+      .getSubproject("app")
+      .buildFile
+      .appendText(
+        """
+        dependencies {
+            implementation 'com.google.guava:guava:19.0'
         }
-        executor().run(":app:assembleDebug")
-
-        TestFileUtils.addMethod(
-            project.getSubproject("javaLib").mainSrcDir.resolve("com/Data.java"),
-            "int i = 0;"
-        )
-        val result = executor().run(":app:assembleDebug")
-        assertThat(result.upToDateTasks).containsAllOf(
-            ":app:mergeProjectDexDebug",
-            ":app:mergeExtDexDebug"
-        )
-        assertThat(result.didWorkTasks).contains(":app:mergeLibDexDebug")
+        """
+          .trimIndent()
+      )
+    project.getSubproject("lib").mainSrcDir.resolve("lib/Data.java").let {
+      it.parentFile.mkdirs()
+      it.writeText(
+        """
+        package lib;
+        public class Data { }
+        """
+          .trimIndent()
+      )
     }
-
-    @Test
-    fun testLibraryAndExternalDeps() {
-        project.getSubproject("app").buildFile.appendText(
-            """
-           dependencies {
-               implementation 'com.google.guava:guava:19.0'
-           }
-        """.trimIndent()
-        )
-        project.getSubproject("lib").mainSrcDir.resolve("lib/Data.java").let {
-            it.parentFile.mkdirs()
-            it.writeText(
-                """
-                package lib;
-                public class Data { }
-            """.trimIndent()
-            )
-        }
-        project.getSubproject("javaLib").mainSrcDir.resolve("javaLib/Data.java").let {
-            it.parentFile.mkdirs()
-            it.writeText(
-                """
-                package javaLib;
-                public class Data { }
-            """.trimIndent()
-            )
-        }
-        executor().run(":app:assembleDebug")
-
-        project.getSubproject("app").getApk(GradleTestProject.ApkType.DEBUG).use {
-            assertThatApk(it).containsClass("Llib/Data;")
-            assertThatApk(it).containsClass("LjavaLib/Data;")
-            assertThatApk(it).containsClass("Lcom/google/common/collect/ImmutableList;")
-        }
+    project.getSubproject("javaLib").mainSrcDir.resolve("javaLib/Data.java").let {
+      it.parentFile.mkdirs()
+      it.writeText(
+        """
+        package javaLib;
+        public class Data { }
+        """
+          .trimIndent()
+      )
     }
+    executor().run(":app:assembleDebug")
 
-    @Test
-    fun testLibraryAndroidTest() {
-        project.getSubproject("lib").mainSrcDir.resolve("lib/Data.java").let {
-            it.parentFile.mkdirs()
-            it.writeText(
-                """
-                package lib;
-                public class Data { }
-            """.trimIndent()
-            )
+    project.getSubproject("app").getApk(GradleTestProject.ApkType.DEBUG).use {
+      assertThatApk(it).containsClass("Llib/Data;")
+      assertThatApk(it).containsClass("LjavaLib/Data;")
+      assertThatApk(it).containsClass("Lcom/google/common/collect/ImmutableList;")
+    }
+  }
+
+  @Test
+  fun testLibraryAndroidTest() {
+    project.getSubproject("lib").mainSrcDir.resolve("lib/Data.java").let {
+      it.parentFile.mkdirs()
+      it.writeText(
+        """
+        package lib;
+        public class Data { }
+        """
+          .trimIndent()
+      )
+    }
+    executor().run(":lib:assembleAndroidTest")
+    val apk = project.getSubproject("lib").getApk(GradleTestProject.ApkType.ANDROIDTEST_DEBUG)
+    assertThatApk(apk).containsClass("Llib/Data;")
+  }
+
+  /** Regression test for b/154545489. */
+  @Test
+  fun testAndroidTestDependencySubtraction() {
+    project
+      .getSubproject("app")
+      .buildFile
+      .appendText(
+        """
+        dependencies {
+            androidTestImplementation project(':javaLib')
         }
-        executor().run(":lib:assembleAndroidTest")
-        val apk = project.getSubproject("lib").getApk(GradleTestProject.ApkType.ANDROIDTEST_DEBUG)
-        assertThatApk(apk).containsClass("Llib/Data;")
-    }
+        """
+          .trimIndent()
+      )
+    addSourceToJavaLib()
+    project.executor().run(":app:assembleDebugAndroidTest")
+  }
 
-    /** Regression test for b/154545489. */
-    @Test
-    fun testAndroidTestDependencySubtraction() {
-        project.getSubproject("app").buildFile.appendText(
-            """
-            dependencies {
-                androidTestImplementation project(':javaLib')
-            }
-        """.trimIndent()
-        )
-        addSourceToJavaLib()
-        project.executor().run(":app:assembleDebugAndroidTest")
+  private fun addSourceToJavaLib() {
+    project.getSubproject("javaLib").mainSrcDir.resolve("com/Data.java").let {
+      it.parentFile.mkdirs()
+      it.writeText(
+        """
+        package com;
+        public class Data { }
+        """
+          .trimIndent()
+      )
     }
+  }
 
-    private fun addSourceToJavaLib() {
-        project.getSubproject("javaLib").mainSrcDir.resolve("com/Data.java").let {
-            it.parentFile.mkdirs()
-            it.writeText(
-                """
-                    package com;
-                    public class Data { }
-                """.trimIndent()
-            )
-        }
-    }
-
-    private fun executor() = project.executor()
+  private fun executor() = project.executor()
 }

@@ -22,31 +22,28 @@ import com.android.builder.model.VectorDrawablesOptions
 import com.google.common.collect.ImmutableSet
 
 /**
- * Contains the final dsl info computed from the DSL object model (extension, default config,
- * build type, flavors) that are needed by components that support AndroidResources.
+ * Contains the final dsl info computed from the DSL object model (extension, default config, build type, flavors) that are needed by
+ * components that support AndroidResources.
  */
 interface AndroidResourcesDslInfo {
-    val androidResources: AndroidResources
+  val androidResources: AndroidResources
 
-    val resourceConfigurations: ImmutableSet<String>
+  val resourceConfigurations: ImmutableSet<String>
 
-    val vectorDrawables: VectorDrawablesOptions
+  val vectorDrawables: VectorDrawablesOptions
 
-    val isPseudoLocalesEnabled: Boolean
+  val isPseudoLocalesEnabled: Boolean
 
-    val isCrunchPngs: Boolean?
+  val isCrunchPngs: Boolean?
 
-    @Deprecated("Can be removed once the AaptOptions crunch method is removed.")
-    val isCrunchPngsDefault: Boolean
+  @Deprecated("Can be removed once the AaptOptions crunch method is removed.") val isCrunchPngsDefault: Boolean
 
-    /**
-     * Returns a list of generated resource values.
-     *
-     *
-     * Items can be either fields (instance of [com.android.builder.model.ClassField]) or
-     * comments (instance of String).
-     *
-     * @return a list of items.
-     */
-    fun getResValues(): Map<ResValue.Key, ResValue>
+  /**
+   * Returns a list of generated resource values.
+   *
+   * Items can be either fields (instance of [com.android.builder.model.ClassField]) or comments (instance of String).
+   *
+   * @return a list of items.
+   */
+  fun getResValues(): Map<ResValue.Key, ResValue>
 }

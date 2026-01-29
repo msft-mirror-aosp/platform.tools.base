@@ -17,46 +17,42 @@
 package com.android.build.gradle.internal.cxx.logging
 
 import com.android.build.gradle.internal.cxx.codeText
-import com.android.utils.cxx.CxxDiagnosticCode
 import com.android.utils.cxx.CxxDiagnosticCode.RESERVED_FOR_TESTS
 import com.google.common.truth.Truth.*
-
-import org.junit.Test
 import java.io.File
+import org.junit.Test
 
 class PassThroughPrefixingLoggingEnvironmentTest {
 
-    @Test
-    fun `attach filename to error`() {
-        PassThroughPrefixingLoggingEnvironment(File("my-file")).apply {
-            errorln(RESERVED_FOR_TESTS, "an error")
-            assertThat(errors.single().toString()).isEqualTo("${RESERVED_FOR_TESTS.codeText} my-file : an error")
-        }
+  @Test
+  fun `attach filename to error`() {
+    PassThroughPrefixingLoggingEnvironment(File("my-file")).apply {
+      errorln(RESERVED_FOR_TESTS, "an error")
+      assertThat(errors.single().toString()).isEqualTo("${RESERVED_FOR_TESTS.codeText} my-file : an error")
     }
+  }
 
-    @Test
-    fun `attach tag to error`() {
-        PassThroughPrefixingLoggingEnvironment(tag = "my-tag").apply {
-            errorln(RESERVED_FOR_TESTS, "an error")
-            assertThat(errors.single().toString()).isEqualTo("${RESERVED_FOR_TESTS.codeText} my-tag : an error")
-        }
+  @Test
+  fun `attach tag to error`() {
+    PassThroughPrefixingLoggingEnvironment(tag = "my-tag").apply {
+      errorln(RESERVED_FOR_TESTS, "an error")
+      assertThat(errors.single().toString()).isEqualTo("${RESERVED_FOR_TESTS.codeText} my-tag : an error")
     }
+  }
 
-    @Test
-    fun `attach filename and tag to error`() {
-        PassThroughPrefixingLoggingEnvironment(File("my-file"), "my-tag").apply {
-            errorln(RESERVED_FOR_TESTS, "an error")
-            assertThat(errors.single().toString()).isEqualTo("${RESERVED_FOR_TESTS.codeText} my-file my-tag : an error")
-        }
+  @Test
+  fun `attach filename and tag to error`() {
+    PassThroughPrefixingLoggingEnvironment(File("my-file"), "my-tag").apply {
+      errorln(RESERVED_FOR_TESTS, "an error")
+      assertThat(errors.single().toString()).isEqualTo("${RESERVED_FOR_TESTS.codeText} my-file my-tag : an error")
     }
+  }
 
-    @Test
-    fun `nested has correct precedence`() {
-        PassThroughPrefixingLoggingEnvironment(File("my-file-outer"), "my-tag").apply {
-            PassThroughPrefixingLoggingEnvironment(File("my-file-inner")).use {
-                errorln(RESERVED_FOR_TESTS, "an error")
-            }
-            assertThat(errors.single().toString()).isEqualTo("${RESERVED_FOR_TESTS.codeText} my-file-inner my-tag : an error")
-        }
+  @Test
+  fun `nested has correct precedence`() {
+    PassThroughPrefixingLoggingEnvironment(File("my-file-outer"), "my-tag").apply {
+      PassThroughPrefixingLoggingEnvironment(File("my-file-inner")).use { errorln(RESERVED_FOR_TESTS, "an error") }
+      assertThat(errors.single().toString()).isEqualTo("${RESERVED_FOR_TESTS.codeText} my-file-inner my-tag : an error")
     }
+  }
 }

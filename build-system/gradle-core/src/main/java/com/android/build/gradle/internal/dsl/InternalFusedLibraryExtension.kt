@@ -26,8 +26,11 @@ import org.gradle.api.Action
  * Options that are not exposed in the public extension.
  */
 interface InternalFusedLibraryExtension : FusedLibraryExtension {
-    val minSdkApiLevel: Int?
-    fun minSdk(action: Action<MinSdkSpec>)
-    fun aarMetadata(action: Action<AarMetadata>)
-    fun packaging(action: Action<Packaging>)
+  val minSdkApiLevel: Int?
+
+  fun minSdk(action: Action<MinSdkSpec>)
+
+  fun aarMetadata(action: Action<AarMetadata>)
+
+  fun packaging(action: Action<Packaging>)
 }

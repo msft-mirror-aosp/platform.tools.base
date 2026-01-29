@@ -19,25 +19,21 @@ package com.android.build.api.component.analytics
 import com.android.build.api.variant.ApplicationAndroidResources
 import com.android.tools.build.gradle.internal.profile.VariantPropertiesMethodType
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
-import org.gradle.api.provider.SetProperty
 import javax.inject.Inject
+import org.gradle.api.provider.SetProperty
 
-open class AnalyticsEnabledApplicationAndroidResources @Inject constructor(
-    override val delegate: ApplicationAndroidResources,
-    stats: GradleBuildVariant.Builder,
-): ApplicationAndroidResources, AnalyticsEnabledAndroidResources(
-    delegate,
-    stats,
-) {
-    override val generateLocaleConfig: Boolean
-        get() {
-            stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
-                VariantPropertiesMethodType.GENERATE_LOCALE_CONFIG_FLAG_VALUE
-            return delegate.generateLocaleConfig
-        }
+open class AnalyticsEnabledApplicationAndroidResources
+@Inject
+constructor(override val delegate: ApplicationAndroidResources, stats: GradleBuildVariant.Builder) :
+  ApplicationAndroidResources, AnalyticsEnabledAndroidResources(delegate, stats) {
+  override val generateLocaleConfig: Boolean
+    get() {
+      stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type = VariantPropertiesMethodType.GENERATE_LOCALE_CONFIG_FLAG_VALUE
+      return delegate.generateLocaleConfig
+    }
 
-    override val localeFilters: SetProperty<String>
-        get() {
-            return delegate.localeFilters
-        }
+  override val localeFilters: SetProperty<String>
+    get() {
+      return delegate.localeFilters
+    }
 }

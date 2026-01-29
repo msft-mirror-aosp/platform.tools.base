@@ -26,63 +26,58 @@ import org.gradle.api.attributes.Attribute
 import org.gradle.api.model.ObjectFactory
 
 open class VariantAwareDependenciesBuilder(
-    val project: Project,
-    val issueReporter: IssueReporter,
-    val dslInfo: MultiVariantComponentDslInfo,
+  val project: Project,
+  val issueReporter: IssueReporter,
+  val dslInfo: MultiVariantComponentDslInfo,
 ) {
 
-    protected fun getConsumptionFlavorAttributes(
-        flavorSelection: Map<Attribute<ProductFlavorAttr>, ProductFlavorAttr>?
-    ): Map<Attribute<ProductFlavorAttr>, ProductFlavorAttr> {
-        return getFlavorAttributes(flavorSelection, false)
+  protected fun getConsumptionFlavorAttributes(
+    flavorSelection: Map<Attribute<ProductFlavorAttr>, ProductFlavorAttr>?
+  ): Map<Attribute<ProductFlavorAttr>, ProductFlavorAttr> {
+    return getFlavorAttributes(flavorSelection, false)
+  }
+
+  /**
+   * Returns a map of Configuration attributes containing all the flavor values.
+   *
+   * @param flavorSelection a list of override for flavor matching or for new attributes.
+   * @param addCompatibilityUnprefixedFlavorDimensionAttributes when true also add the previous un-prefixed flavor dimension attributes for
+   *   compatibility
+   */
+  private fun getFlavorAttributes(
+    flavorSelection: Map<Attribute<ProductFlavorAttr>, ProductFlavorAttr>?,
+    addCompatibilityUnprefixedFlavorDimensionAttributes: Boolean,
+  ): Map<Attribute<ProductFlavorAttr>, ProductFlavorAttr> {
+    val productFlavors = dslInfo.productFlavorList
+    val map: MutableMap<Attribute<ProductFlavorAttr>, ProductFlavorAttr> = Maps.newHashMapWithExpectedSize(productFlavors.size)
+
+    // during a sync, it's possible that the flavors don't have dimension names because
+    // the variant manager is lenient about it.
+    // In that case we're going to avoid resolving the dependencies anyway, so we can just
+    // skip this.
+    if (issueReporter.hasIssue(IssueReporter.Type.UNNAMED_FLAVOR_DIMENSION)) {
+      return map
     }
 
-    /**
-     * Returns a map of Configuration attributes containing all the flavor values.
-     *
-     * @param flavorSelection a list of override for flavor matching or for new attributes.
-     * @param addCompatibilityUnprefixedFlavorDimensionAttributes when true also add the previous
-     * un-prefixed flavor dimension attributes for compatibility
-     */
-    private fun getFlavorAttributes(
-        flavorSelection: Map<Attribute<ProductFlavorAttr>, ProductFlavorAttr>?,
-        addCompatibilityUnprefixedFlavorDimensionAttributes: Boolean
-    ): Map<Attribute<ProductFlavorAttr>, ProductFlavorAttr> {
-        val productFlavors = dslInfo.productFlavorList
-        val map: MutableMap<Attribute<ProductFlavorAttr>, ProductFlavorAttr> =
-            Maps.newHashMapWithExpectedSize(productFlavors.size)
+    val objectFactory: ObjectFactory = project.getObjects()
 
-        // during a sync, it's possible that the flavors don't have dimension names because
-        // the variant manager is lenient about it.
-        // In that case we're going to avoid resolving the dependencies anyway, so we can just
-        // skip this.
-        if (issueReporter.hasIssue(IssueReporter.Type.UNNAMED_FLAVOR_DIMENSION)) {
-            return map
+    // first go through the product flavors and add matching attributes
+    for (f in productFlavors) {
+      f.dimension?.let { dimension ->
+        map[of(dimension)] = objectFactory.named(ProductFlavorAttr::class.java, f.name)
+        // Compatibility for e.g. the hilt plugin creates its own configuration with the
+        // old-style attributes
+        if (addCompatibilityUnprefixedFlavorDimensionAttributes) {
+          map[Attribute.of(dimension, ProductFlavorAttr::class.java)] = objectFactory.named(ProductFlavorAttr::class.java, f.name)
         }
-
-        val objectFactory: ObjectFactory = project.getObjects()
-
-        // first go through the product flavors and add matching attributes
-        for (f in productFlavors) {
-            f.dimension?.let { dimension ->
-                map[of(dimension)] =
-                    objectFactory.named(ProductFlavorAttr::class.java, f.name)
-                // Compatibility for e.g. the hilt plugin creates its own configuration with the
-                // old-style attributes
-                if (addCompatibilityUnprefixedFlavorDimensionAttributes) {
-                    map[Attribute.of(
-                        dimension,
-                        ProductFlavorAttr::class.java
-                    )] = objectFactory.named(ProductFlavorAttr::class.java, f.name)
-                }
-            }
-        }
-
-        // then go through the override or new attributes.
-        if (flavorSelection != null) {
-            map.putAll(flavorSelection)
-        }
-
-        return map
+      }
     }
+
+    // then go through the override or new attributes.
+    if (flavorSelection != null) {
+      map.putAll(flavorSelection)
+    }
+
+    return map
+  }
 }

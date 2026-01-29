@@ -3,17 +3,14 @@ package com.android.aaptcompiler
 /**
  * Parses the float in a faster way than String.toFloat. Returns null on failure.
  *
- * Handles both decimal floats (ex. 3.14e0) and Hexadecimal floats (0x3.d2fp0).
- * Does not handle denormal values (values that exist between 1.1754942e-38 and 0 which require
- * special formatting.
+ * Handles both decimal floats (ex. 3.14e0) and Hexadecimal floats (0x3.d2fp0). Does not handle denormal values (values that exist between
+ * 1.1754942e-38 and 0 which require special formatting.
  *
- * Also does not handle special values (positive/negative infinity, NAN, etc.)
- * In other words, if this method returns null, it does not necessarily imply that the string is not
- * a valid float value.
+ * Also does not handle special values (positive/negative infinity, NAN, etc.) In other words, if this method returns null, it does not
+ * necessarily imply that the string is not a valid float value.
  *
- * Some float values are considered to be valid with [parseFloat] which are not considered valid
- * with [String.toFloat]. Specifically, hexadecimal floating point values do not require a exponent
- * marker. That is:
+ * Some float values are considered to be valid with [parseFloat] which are not considered valid with [String.toFloat]. Specifically,
+ * hexadecimal floating point values do not require a exponent marker. That is:
  *
  * 0x1.2p0 is valid for both [parseFloat] and [String.toFloat]
  *
@@ -33,18 +30,16 @@ fun parseFloat(text: String): Float? {
 }
 
 /**
- *  Gets the significand equivalent to the value 1 x 10^exponent. Used in decimal float parsing.
+ * Gets the significand equivalent to the value 1 x 10^exponent. Used in decimal float parsing.
  *
- *  This selects the correct index from either the [positiveSignificands] or [negativeSignificands].
- *  If the value is out of range 0L is returned.
+ * This selects the correct index from either the [positiveSignificands] or [negativeSignificands]. If the value is out of range 0L is
+ * returned.
  *
- *  The power of 10 is represented as:
- *  [getValue] * 2^[getShift]
- *  where the significand is fixed point with 59 bits of precision.
- *  @see getShift
+ * The power of 10 is represented as: [getValue] * 2^[getShift] where the significand is fixed point with 59 bits of precision.
  *
- *  @param exponent the power of 10 that the significand represents.
- *  @return the correct significand or 0L if the exponent is out of bounds.
+ * @param exponent the power of 10 that the significand represents.
+ * @return the correct significand or 0L if the exponent is out of bounds.
+ * @see getShift
  */
 private fun getValue(exponent: Int) =
   when {
@@ -55,19 +50,15 @@ private fun getValue(exponent: Int) =
   }
 
 /**
- * Gets the binary exponent associated with the value 1 x 10^exponent. Used in decimal float
- * parsing.
+ * Gets the binary exponent associated with the value 1 x 10^exponent. Used in decimal float parsing.
  *
- * This selects the correct index from either the [positiveShifts] or [negativeShifts]. If the value
- * is out of range 0 is returned.
+ * This selects the correct index from either the [positiveShifts] or [negativeShifts]. If the value is out of range 0 is returned.
  *
- * The power of 10 is represented as:
- *   [getValue] * 2^[getShift]
- * where the significand is fixed point with 59 bits of precision.
- * @see getShift
+ * The power of 10 is represented as: [getValue] * 2^[getShift] where the significand is fixed point with 59 bits of precision.
  *
  * @param exponent the power of 10, which corresponds the shift requested.
  * @return the correct binary shift or 0 if the exponent is out of bounds.
+ * @see getShift
  */
 private fun getShift(exponent: Int) =
   when {
@@ -78,21 +69,16 @@ private fun getShift(exponent: Int) =
   }
 
 /**
- * Returns the shift that would normalize the given value to proper significand format. Used in
- * decimal float parsing.
+ * Returns the shift that would normalize the given value to proper significand format. Used in decimal float parsing.
  *
- * This method is used to normalize a significand multiplied by a scalar, by returning how many bits
- * the value should be shifted in order to have the significant bit in the 59th position.
+ * This method is used to normalize a significand multiplied by a scalar, by returning how many bits the value should be shifted in order to
+ * have the significant bit in the 59th position.
  *
- * @param valueToNormalize: The significand, after multiplication by a scalar, to be
- * re-normalized.
- * @return the amount the significand should be downshifted, as well as the amount the corresponding
- * binary shift should be increased. For example (all significands are in binary):
+ * @param valueToNormalize: The significand, after multiplication by a scalar, to be re-normalized.
+ * @return the amount the significand should be downshifted, as well as the amount the corresponding binary shift should be increased. For
+ *   example (all significands are in binary):
  *
- *     100.1 * 2^12
- * Normalizes to:
- *     1.001 * 2^14
- * So the getScalarShift(100.1) -> 2
+ *   100.1 * 2^12 Normalizes to: 1.001 * 2^14 So the getScalarShift(100.1) -> 2
  */
 private fun getScalarShift(valueToNormalize: Long) =
   when {
@@ -108,107 +94,80 @@ private fun getScalarShift(valueToNormalize: Long) =
  *
  * Mechanically this is done in a number of steps. We'll use "03.01e1" as an example.
  *
- * First, find the exponent of the leading significant figure. The leading zero is ignored and
- * therefore 3 is the leading significant figure. Although the 3 is in the one's place, the "e1"
- * means that it is actually representing the ten's place. I.e. 3.01e1 = 30.1. So the exponent is 1.
+ * First, find the exponent of the leading significant figure. The leading zero is ignored and therefore 3 is the leading significant
+ * figure. Although the 3 is in the one's place, the "e1" means that it is actually representing the ten's place. I.e. 3.01e1 = 30.1. So the
+ * exponent is 1.
  *
  * Second, we compute the significand and shift of the leading figure.
  *
  *      1.010 * 2^3   (10^1 in binary)
  *     *    3         (leading figure in decimal)
  *     =  11.110 * 2^3   (significand in binary)
- *
  *     (normalize the significand):
  *     11.110 * 2^3
  *     = 1.1110 * 2^4 (1)
  *
- *  Third go through each decimal and add its significand (shifted relative to the significand of
- *  the leading figure) to the running total. For example:
+ * Third go through each decimal and add its significand (shifted relative to the significand of the leading figure) to the running total.
+ * For example:
  *
- *     0 in 3.01e1 does not contribute to the significand, so it is skipped.
+ * 0 in 3.01e1 does not contribute to the significand, so it is skipped.
  *
- *     1 in 3.01e1 represents the tenth's place, So compute the significand.
+ * 1 in 3.01e1 represents the tenth's place, So compute the significand.
  *
- *       1.100_1100_ * 2^-4   (1/10 in binary, the _1100_ means repeating ad infinitum)
- *     *           1          (the value in the tenth's place in decimal)
- *     = 1.100_1100_ * 2^-4   (significand of the tenth's place in binary)
+ * 1.100_1100_ * 2^-4 (1/10 in binary, the _1100_ means repeating ad infinitum)
+ * * 1 (the value in the tenth's place in decimal) = 1.100_1100_ * 2^-4 (significand of the tenth's place in binary)
  *
- *     (normalization is skipped because it is already normalized)
+ *   (normalization is skipped because it is already normalized)
  *
- *     (make the significand align with the shift of the leading figure in (1)):
- *     1.100_1100_ * 2^-4
- *     = .0000000_1100_ * 2^4 (2)
+ *   (make the significand align with the shift of the leading figure in (1)): 1.100_1100_ * 2^-4 = .0000000_1100_ * 2^4 (2)
  *
- *     (Add to the accumulated significand)
- *       1.1110            * 2^4 (The significand so far in binary from (1))
- *     + 0.0000000_1100_   * 2^4 (The aligned tenth's significand in binary from (2))
- *     = 1.1110000_1100_   * 2^4 (The accumulated significand) (3)
+ *   (Add to the accumulated significand) 1.1110 * 2^4 (The significand so far in binary from (1))
+ * + 0.0000000_1100_ * 2^4 (The aligned tenth's significand in binary from (2)) = 1.1110000_1100_ * 2^4 (The accumulated significand) (3)
  *
- *     (normalization is skipped, as the sum is already normalized.)
+ *   (normalization is skipped, as the sum is already normalized.)
  *
- *  Fourth and finally, convert the accumulated significand to IEEE Floating Point format:
+ * Fourth and finally, convert the accumulated significand to IEEE Floating Point format:
  *
  *       1.1110000_1100_ * 2^4 (from (3))
- *
  *     (cut the leading bit in the significand as it is assumed in the format):
  *          1.1110000_1100_
  *        -> .1110000_1100_
- *
  *     (limit to 23 bits of precision (rounded)):
  *           .1110000_1100_
  *        -> .11100001100110011001101 (significand in floating point format)
- *
  *     (add the required bias to the exponent, as specified by the format):
  *            4  (exponent of significand)
  *        + 127  (bias)
  *        = 131  (biased exponent)
  *        = 10000011 (in binary) (biased exponent in floating point format)
- *
  *     (set the sign bit if the float was negative):
  *       0  (0 means positive float)
- *
  *     (combine the bits. sign - biased exponent - significand)
  *       0  10000011  11100001100110011001101
  *
- * @param lowerCaseText: The string representing the float in lower case. The float should be of the
- * form:
+ * @param lowerCaseText: The string representing the float in lower case. The float should be of the form:
  *
- *    [+/-]XXXXX[.]XXXXX[e[+/-]XXXXX]
+ *   [+/-]XXXXX[.]XXXXX[e[+/-]XXXXX]
  *
- *    Where XXXXX represents zero or more digits.
- *    1. Both the decimal (.) and the specified exponent (eXXXXX) is optional.
- *    2. At least one digit is required that is not part of the specified exponent. This digit may
- *    be before or after the decimal. I.e.
- *      "1.e12" is okay.
- *      "1." is okay
- *      "-.0" is okay
- *      ".2e-2" is okay.
- *      "3.14" is okay.
- *      "15" is okay.
- *      "e12" is not okay.
- *      "." is not okay.
- *    3. An optional sign ("+" or "-") can come before the significand and/or the exponent value.
- *    I.e.
- *      "+12" is okay
- *      "5e-2" is okay
- *      "-2.1e+0" is okay.
- *      "++2" is not okay.
- *      "4e+-4" is not okay.
+ *   Where XXXXX represents zero or more digits.
+ *     1. Both the decimal (.) and the specified exponent (eXXXXX) is optional.
+ *     2. At least one digit is required that is not part of the specified exponent. This digit may be before or after the decimal. I.e.
+ *        "1.e12" is okay. "1." is okay "-.0" is okay ".2e-2" is okay. "3.14" is okay. "15" is okay. "e12" is not okay. "." is not okay.
+ *     3. An optional sign ("+" or "-") can come before the significand and/or the exponent value. I.e. "+12" is okay "5e-2" is okay
+ *        "-2.1e+0" is okay. "++2" is not okay. "4e+-4" is not okay.
  *
  * If the float is not well formed, the returned result will be null.
  *
- * If the float has a magnitude less than 1.1754942e-38 and is not zero, then null is returned
- * (These values are called *denormal* and are not supported).
+ * If the float has a magnitude less than 1.1754942e-38 and is not zero, then null is returned (These values are called *denormal* and are
+ * not supported).
  *
- * If the float has a magnitude greater than 3.4028235e38, then null is returned (This would
- * return +/- Infinity on [String.toFloat] which is not supported by this parser)
+ * If the float has a magnitude greater than 3.4028235e38, then null is returned (This would return +/- Infinity on [String.toFloat] which
+ * is not supported by this parser)
  *
- * Lastly, values such as "+Infinity", "-Infinity", "NaN", or other *special non-number* cases are
- * not supported and will return null.
+ * Lastly, values such as "+Infinity", "-Infinity", "NaN", or other *special non-number* cases are not supported and will return null.
  *
- * @return The float value closest to the value represented by the text (within margin of error).
- * If the text is malformed or the text represents a value that is not supported, null is returned
- * instead.
+ * @return The float value closest to the value represented by the text (within margin of error). If the text is malformed or the text
+ *   represents a value that is not supported, null is returned instead.
  */
 fun parseFloatDec(lowerCaseText: String): Float? {
   // Save this for formatting later.
@@ -235,8 +194,7 @@ fun parseFloatDec(lowerCaseText: String): Float? {
   var mostSignificantExponent = 0
 
   // If we hit the exponent marker 'e', we are done with the significand.
-  while (currentIndex < lowerCaseText.length &&
-    lowerCaseText[currentIndex] != DEC_EXPONENT_MARKER) {
+  while (currentIndex < lowerCaseText.length && lowerCaseText[currentIndex] != DEC_EXPONENT_MARKER) {
 
     // Hitting a decimal, means we've move into sub-integer positions.
     if (lowerCaseText[currentIndex] == '.') {
@@ -304,11 +262,12 @@ fun parseFloatDec(lowerCaseText: String): Float? {
     }
 
     while (currentIndex < lowerCaseText.length) {
-      val currentValue = when (lowerCaseText[currentIndex]) {
-        in '0'..'9' -> lowerCaseText[currentIndex] - '0'
-        else -> return null
-      }
-      declaredExponent = declaredExponent*10 + currentValue
+      val currentValue =
+        when (lowerCaseText[currentIndex]) {
+          in '0'..'9' -> lowerCaseText[currentIndex] - '0'
+          else -> return null
+        }
+      declaredExponent = declaredExponent * 10 + currentValue
       ++currentIndex
     }
 
@@ -348,21 +307,22 @@ fun parseFloatDec(lowerCaseText: String): Float? {
   // Third go through each decimal and add its significand (shifted relative to the significand of
   // the leading figure) to the running total.
   compute@ while (currentIndex < significandEnd) {
-    val scalarValue = when (lowerCaseText[currentIndex]) {
-      in '1'..'9'-> (lowerCaseText[currentIndex] - '0')
-      '0' -> {
-        ++currentIndex
-        --currentExponent
-        continue@compute
+    val scalarValue =
+      when (lowerCaseText[currentIndex]) {
+        in '1'..'9' -> (lowerCaseText[currentIndex] - '0')
+        '0' -> {
+          ++currentIndex
+          --currentExponent
+          continue@compute
+        }
+        // We hit the decimal, which we don't need it anymore.
+        else -> {
+          ++currentIndex
+          continue@compute
+        }
       }
-      // We hit the decimal, which we don't need it anymore.
-      else -> {
-        ++currentIndex
-        continue@compute
-      }
-    }
 
-    var currentValue = getValue(currentExponent)*scalarValue
+    var currentValue = getValue(currentExponent) * scalarValue
     var relativeDownShift = baseBinaryShift - getShift(currentExponent)
 
     // make sure to re-normalize the significand before shifting.
@@ -386,10 +346,9 @@ fun parseFloatDec(lowerCaseText: String): Float? {
 
     --currentExponent
     ++currentIndex
-
   }
 
-  //Finally convert the Information into single precision floating point format.
+  // Finally convert the Information into single precision floating point format.
   // round the significand
   significandValue += ROUND_VALUE
   // handle overflow
@@ -399,19 +358,16 @@ fun parseFloatDec(lowerCaseText: String): Float? {
   }
 
   // Handle the cases where the binary exponent is out-of-bounds.
-  if (baseBinaryShift < SINGLE_PRECISION_EXP_MIN || baseBinaryShift > SINGLE_PRECISION_EXP_MAX ) {
+  if (baseBinaryShift < SINGLE_PRECISION_EXP_MIN || baseBinaryShift > SINGLE_PRECISION_EXP_MAX) {
     return null
   }
 
   // Trim off the front bit and shift down to floating point precision for standard format.
-  val mantissa =
-    (significandValue and DEC_SIGNIFICAND_LEADING_BIT.inv()).ushr(
-      DEC_SIGNIFICAND_DOWN_SHIFT).toInt()
+  val mantissa = (significandValue and DEC_SIGNIFICAND_LEADING_BIT.inv()).ushr(DEC_SIGNIFICAND_DOWN_SHIFT).toInt()
 
   // Bias the exponent
   val biasedExp = baseBinaryShift + SINGLE_PRECISION_BIAS
-  return Float.fromBits(
-    (if (negative) FLOAT_NEGATIVE_MASK else 0) or mantissa or (biasedExp shl 23))
+  return Float.fromBits((if (negative) FLOAT_NEGATIVE_MASK else 0) or mantissa or (biasedExp shl 23))
 }
 
 /**
@@ -420,17 +376,13 @@ fun parseFloatDec(lowerCaseText: String): Float? {
  * Mechanically this is done in three steps. We'll use "-0x3a.1p+5"
  *
  * First, process the significand, to acquire 2 pieces of information.
- *     1. The normalized value of the significand. Unlike in decimal parsing, we can compute the
- *     precision exactly in base16. Because of this, we only need 24 bits (+1 for rounding) for the
- *     significand.
+ *     1. The normalized value of the significand. Unlike in decimal parsing, we can compute the precision exactly in base16. Because of
+ *        this, we only need 24 bits (+1 for rounding) for the significand.
  *
- *          3   a.   1
- *     = 00111010.0001   (3a.1 in binary)
- *     = 1.110100001     (normalized significand)
+ *    3 a. 1 = 00111010.0001 (3a.1 in binary) = 1.110100001 (normalized significand)
  *
  *     2. the binary offset of the leading bit of the significand. Basically how much the decimal
  *     needs to be shifted left for this significant figure to be in the one's position.
- *
  *         111010.0001 << 5
  *       = 1.110100001      (1)
  *
@@ -444,70 +396,47 @@ fun parseFloatDec(lowerCaseText: String): Float? {
  * Third and finally, convert the significand and shift to IEEE floating point format:
  *
  *     1.110100001 * 2^10     (from (1) and (2))
- *
  *     (cut the leading bit in the significand as it is assumed in the format):
  *          1.110100001
  *        -> .110100001
- *
  *     (limit to 23 bits of precision (rounded)):
  *           .110100001
  *        -> .1101000010000000000000 (significand in floating point format)
- *
  *     (add the required bias to the exponent as specified by the format):
  *           10  (exponent of significand)
  *        + 127  (bias)
  *        = 137  (biased exponent)
  *        = 10001001 (in binary) (biased exponent in floating point format)
  *
- *    (set the sign bit if the float was negative):
- *       1  (1 means negative float)
+ * (set the sign bit if the float was negative): 1 (1 means negative float)
  *
- *    (combine the bits. sign - biased exponent - significand)
- *       1  10001001  1101000010000000000000
+ * (combine the bits. sign - biased exponent - significand) 1 10001001 1101000010000000000000
  *
- * @param lowerCaseText: The string representing the float in lower case. The float should be of the
- * form:
+ * @param lowerCaseText: The string representing the float in lower case. The float should be of the form:
  *
- *     [+/-]0xYYYYY[.]YYYYY[p[+/-]XXXXX]
+ *   [+/-]0xYYYYY[.]YYYYY[p[+/-]XXXXX]
  *
- *     Where XXXXX represents 0 or more decimal digits, and YYYYY represents 0 or more hexadecimal
- *     digits.
+ *   Where XXXXX represents 0 or more decimal digits, and YYYYY represents 0 or more hexadecimal digits.
  *     1. The significand must be lead by "0x".
  *     2. Both the decimal (.) and the specified exponent (pXXXXX) is optional.
- *     3. At least one digit is required that is not part of the specified exponent. This digit may
- *     be before or after the decimal. I.e.
- *       "0x.8p-4" is okay.
- *       "0x1." is okay
- *       "-0x.0" is okay
- *       "0x.ap-2" is okay.
- *       "0x3.ef" is okay.
- *       "0xf" is okay.
- *       "0xp12" is not okay.
- *       "0x." is not okay.
- *       "0x" is not okay.
- *     4. An optional sign ("+" or "-") can come before the significand and/or the exponent value.
- *     I.e.
- *       "+0xa" is okay
- *       "0x1ce-3" is okay
- *       "-0x2.8p+10" is okay.
- *       "++0xa" is not okay.
- *       "0x4p+-19" is not okay.
+ *     3. At least one digit is required that is not part of the specified exponent. This digit may be before or after the decimal. I.e.
+ *        "0x.8p-4" is okay. "0x1." is okay "-0x.0" is okay "0x.ap-2" is okay. "0x3.ef" is okay. "0xf" is okay. "0xp12" is not okay. "0x."
+ *        is not okay. "0x" is not okay.
+ *     4. An optional sign ("+" or "-") can come before the significand and/or the exponent value. I.e. "+0xa" is okay "0x1ce-3" is okay
+ *        "-0x2.8p+10" is okay. "++0xa" is not okay. "0x4p+-19" is not okay.
  *
  * If the float is not well formed, the returned result will be null.
  *
- * If the float has a magnitude less than 0x1.fffffep-127 and is not zero, then null is returned
- * (These values are called *denormal* and are not supported).
- * Note: 0x1.fffffep-127 rounds up to 1p-126, which is the minimum normal value.
+ * If the float has a magnitude less than 0x1.fffffep-127 and is not zero, then null is returned (These values are called *denormal* and are
+ * not supported). Note: 0x1.fffffep-127 rounds up to 1p-126, which is the minimum normal value.
  *
- * If the float has a magnitude greater than 1.fffffep127, then null is returned (This would
- * return +/- Infinity on [String.toFloat] which is not supported by this parser)
+ * If the float has a magnitude greater than 1.fffffep127, then null is returned (This would return +/- Infinity on [String.toFloat] which
+ * is not supported by this parser)
  *
- * Lastly, values such as "+Infinity", "-Infinity", "NaN", or other *special non-number* cases are
- * not supported and will return null.
+ * Lastly, values such as "+Infinity", "-Infinity", "NaN", or other *special non-number* cases are not supported and will return null.
  *
- * @return The float value closest to the value represented by the text (within margin of error).
- * If the text is malformed or the text represents a value that is not supported, null is returned
- * instead.
+ * @return The float value closest to the value represented by the text (within margin of error). If the text is malformed or the text
+ *   represents a value that is not supported, null is returned instead.
  */
 fun parseFloatHex(lowerCaseText: String): Float? {
   // Save for formatting later.
@@ -536,35 +465,35 @@ fun parseFloatHex(lowerCaseText: String): Float? {
   var validMantissa = false
 
   // Compute the mantissa of the float.
-  mantissa@ while (currentIndex < lowerCaseText.length &&
-    lowerCaseText[currentIndex] != HEX_EXPONENT_MARKER) {
+  mantissa@ while (currentIndex < lowerCaseText.length && lowerCaseText[currentIndex] != HEX_EXPONENT_MARKER) {
 
-    val indexValue = when (lowerCaseText[currentIndex]) {
-      in '0'..'9' -> {
-        validMantissa = true
-        (lowerCaseText[currentIndex] - '0')
-      }
-      in 'a'..'f' -> {
-        validMantissa = true
-        (lowerCaseText[currentIndex] - 'a') + 10
-      }
-      '.' -> {
-        if (subInteger) {
-          // hit 2 decimal points in the mantissa, which is not allowed.
-          return null
-        } else {
-          // Hit first decimal point. So we've gone subinteger.
-          subInteger = true
-          ++currentIndex
-          continue@mantissa
+    val indexValue =
+      when (lowerCaseText[currentIndex]) {
+        in '0'..'9' -> {
+          validMantissa = true
+          (lowerCaseText[currentIndex] - '0')
         }
+        in 'a'..'f' -> {
+          validMantissa = true
+          (lowerCaseText[currentIndex] - 'a') + 10
+        }
+        '.' -> {
+          if (subInteger) {
+            // hit 2 decimal points in the mantissa, which is not allowed.
+            return null
+          } else {
+            // Hit first decimal point. So we've gone subinteger.
+            subInteger = true
+            ++currentIndex
+            continue@mantissa
+          }
+        }
+        // Invalid character.
+        else -> return null
       }
-      // Invalid character.
-      else -> return null
-    }
 
     // Start the mantissa, recording how many bits are required.
-    if (!mantissaStart && indexValue !=0) {
+    if (!mantissaStart && indexValue != 0) {
       mantissaStart = true
       currentMantissa = indexValue
       // The number of bits in the mantissa is decided by the leading bit in the hex value.
@@ -586,7 +515,7 @@ fun parseFloatHex(lowerCaseText: String): Float? {
           mantissaBits = 0
         }
       }
-    // In the case that mantissa has been started and we can acquire more precision, do so.
+      // In the case that mantissa has been started and we can acquire more precision, do so.
     } else if (mantissaStart && mantissaBits < 24) {
       currentMantissa = (currentMantissa shl 4) + indexValue
       mantissaBits += 4
@@ -622,11 +551,12 @@ fun parseFloatHex(lowerCaseText: String): Float? {
     }
 
     while (currentIndex < lowerCaseText.length) {
-      val currentValue = when (lowerCaseText[currentIndex]) {
-        in '0'..'9' -> lowerCaseText[currentIndex] - '0'
-        else -> return null
-      }
-      declaredExponent = declaredExponent*10 + currentValue
+      val currentValue =
+        when (lowerCaseText[currentIndex]) {
+          in '0'..'9' -> lowerCaseText[currentIndex] - '0'
+          else -> return null
+        }
+      declaredExponent = declaredExponent * 10 + currentValue
       ++currentIndex
     }
 
@@ -635,11 +565,12 @@ fun parseFloatHex(lowerCaseText: String): Float? {
 
   // Align the mantissa
   // MantissaBits may be greater than or less than 24 bits, so we need to adjust.
-  currentMantissa = if (24 - mantissaBits < 0) {
-    currentMantissa ushr (mantissaBits - 24)
-  } else {
-    currentMantissa shl (24 - mantissaBits)
-  }
+  currentMantissa =
+    if (24 - mantissaBits < 0) {
+      currentMantissa ushr (mantissaBits - 24)
+    } else {
+      currentMantissa shl (24 - mantissaBits)
+    }
   // Remove the leading 1
   currentMantissa = currentMantissa and MANTISSA_EXPONENT_ADJUST_VALUE
 
@@ -651,8 +582,7 @@ fun parseFloatHex(lowerCaseText: String): Float? {
         currentMantissa = 0
         declaredExponent + currentSkew + 1
       }
-      (currentMantissa == DENORMAL_EXPONENT_ADJUST_VALUE &&
-              declaredExponent + currentSkew + 1 == SINGLE_PRECISION_EXP_MIN) -> {
+      (currentMantissa == DENORMAL_EXPONENT_ADJUST_VALUE && declaredExponent + currentSkew + 1 == SINGLE_PRECISION_EXP_MIN) -> {
         currentMantissa = 0
         declaredExponent + currentSkew + 1
       }
@@ -674,6 +604,5 @@ fun parseFloatHex(lowerCaseText: String): Float? {
   // Finally, put the floating point data into standard format.
   // Bias the exponent
   val biasedExp = exponent + SINGLE_PRECISION_BIAS
-  return Float.fromBits(
-    (if (negative) FLOAT_NEGATIVE_MASK else 0) or currentMantissa or (biasedExp shl 23))
+  return Float.fromBits((if (negative) FLOAT_NEGATIVE_MASK else 0) or currentMantissa or (biasedExp shl 23))
 }

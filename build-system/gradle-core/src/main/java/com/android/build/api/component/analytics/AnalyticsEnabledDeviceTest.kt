@@ -29,145 +29,129 @@ import com.android.build.api.variant.ResValue
 import com.android.build.api.variant.SigningConfig
 import com.android.tools.build.gradle.internal.profile.VariantPropertiesMethodType
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
+import java.io.Serializable
+import javax.inject.Inject
 import org.gradle.api.file.RegularFile
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.MapProperty
 import org.gradle.api.provider.Property
-import java.io.Serializable
-import javax.inject.Inject
 
-open class AnalyticsEnabledDeviceTest @Inject constructor(
-    override val delegate: DeviceTest,
-    stats: GradleBuildVariant.Builder,
-    objectFactory: ObjectFactory
+open class AnalyticsEnabledDeviceTest
+@Inject
+constructor(override val delegate: DeviceTest, stats: GradleBuildVariant.Builder, objectFactory: ObjectFactory) :
+  AnalyticsEnabledTestComponent(delegate, stats, objectFactory), DeviceTest {
 
-): AnalyticsEnabledTestComponent(
-    delegate, stats, objectFactory
-), DeviceTest {
-
-    override val applicationId: Property<String>
-        get() {
-            stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
-                VariantPropertiesMethodType.APPLICATION_ID_VALUE
-            return delegate.applicationId
-        }
-    override val signingConfig: SigningConfig?
-        get() {
-            stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
-                VariantPropertiesMethodType.SIGNING_CONFIG_VALUE
-            return delegate.signingConfig
-        }
-    override val manifestPlaceholders: MapProperty<String, String>
-        get() {
-            stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
-                VariantPropertiesMethodType.MANIFEST_PLACEHOLDERS_VALUE
-            return delegate.manifestPlaceholders
-        }
-
-    override val instrumentationRunner: Property<String>
-        get() {
-            stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
-                VariantPropertiesMethodType.INSTRUMENTATION_RUNNER_VALUE
-            return delegate.instrumentationRunner
-        }
-
-    override val instrumentationRunnerArguments: MapProperty<String, String>
-        get() {
-            stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
-                VariantPropertiesMethodType.INSTRUMENTATION_RUNNER_ARGUMENTS_VALUE
-            return delegate.instrumentationRunnerArguments
-        }
-
-    override val handleProfiling: Property<Boolean>
-        get() {
-            stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
-                VariantPropertiesMethodType.HANDLE_PROFILING_VALUE
-            return delegate.handleProfiling
-        }
-    override val functionalTest: Property<Boolean>
-        get() {
-            stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
-                VariantPropertiesMethodType.FUNCTIONAL_TEST_VALUE
-            return delegate.functionalTest
-        }
-    override val testLabel: Property<String>
-        get() {
-            stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
-                VariantPropertiesMethodType.TEST_LABEL_VALUE
-            return delegate.testLabel
-        }
-
-    override val buildConfigFields: MapProperty<String, BuildConfigField<out Serializable>>?
-        get() {
-            stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
-                VariantPropertiesMethodType.BUILD_CONFIG_FIELDS_VALUE
-            return delegate.buildConfigFields
-        }
-
-    override val resValues: MapProperty<ResValue.Key, ResValue>
-        get() {
-            stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
-                VariantPropertiesMethodType.RES_VALUE_VALUE
-            return delegate.resValues
-        }
-
-    override fun makeResValueKey(type: String, name: String): ResValue.Key {
-        stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
-            VariantPropertiesMethodType.MAKE_RES_VALUE_KEY_VALUE
-        return delegate.makeResValueKey(type, name)
+  override val applicationId: Property<String>
+    get() {
+      stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type = VariantPropertiesMethodType.APPLICATION_ID_VALUE
+      return delegate.applicationId
     }
 
-    override val pseudoLocalesEnabled: Property<Boolean>
-        get() {
-            stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
-                VariantPropertiesMethodType.VARIANT_PSEUDOLOCALES_ENABLED_VALUE
-            return delegate.pseudoLocalesEnabled
-        }
-
-    override val proguardFiles: ListProperty<RegularFile>
-        get() {
-            stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
-                VariantPropertiesMethodType.PROGUARD_FILES_VALUE
-            return delegate.proguardFiles
-        }
-
-    override val dexing: Dexing
-        get() = generatesApk.dexing
-
-    private val generatesApk: GeneratesApk by lazy(LazyThreadSafetyMode.SYNCHRONIZED){
-        AnalyticsEnabledGeneratesApk(
-            delegate,
-            stats,
-            objectFactory
-        )
+  override val signingConfig: SigningConfig?
+    get() {
+      stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type = VariantPropertiesMethodType.SIGNING_CONFIG_VALUE
+      return delegate.signingConfig
     }
 
-    override val androidResources: AndroidResources
-        get() = generatesApk.androidResources
+  override val manifestPlaceholders: MapProperty<String, String>
+    get() {
+      stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type = VariantPropertiesMethodType.MANIFEST_PLACEHOLDERS_VALUE
+      return delegate.manifestPlaceholders
+    }
 
-    override val renderscript: Renderscript?
-        get() = generatesApk.renderscript
+  override val instrumentationRunner: Property<String>
+    get() {
+      stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type = VariantPropertiesMethodType.INSTRUMENTATION_RUNNER_VALUE
+      return delegate.instrumentationRunner
+    }
 
-    override val packaging: ApkPackaging
-        get() = generatesApk.packaging
+  override val instrumentationRunnerArguments: MapProperty<String, String>
+    get() {
+      stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
+        VariantPropertiesMethodType.INSTRUMENTATION_RUNNER_ARGUMENTS_VALUE
+      return delegate.instrumentationRunnerArguments
+    }
 
-    override val targetSdk: AndroidVersion
-        get() = generatesApk.targetSdk
+  override val handleProfiling: Property<Boolean>
+    get() {
+      stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type = VariantPropertiesMethodType.HANDLE_PROFILING_VALUE
+      return delegate.handleProfiling
+    }
 
-    override val targetSdkVersion: AndroidVersion
-        get() = generatesApk.targetSdk
+  override val functionalTest: Property<Boolean>
+    get() {
+      stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type = VariantPropertiesMethodType.FUNCTIONAL_TEST_VALUE
+      return delegate.functionalTest
+    }
 
-    override val minSdk: AndroidVersion
-        get() = generatesApk.minSdk
+  override val testLabel: Property<String>
+    get() {
+      stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type = VariantPropertiesMethodType.TEST_LABEL_VALUE
+      return delegate.testLabel
+    }
 
-    override val codeCoverageEnabled: Boolean
-        get() {
-            stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
-                VariantPropertiesMethodType.DEVICE_TEST_CODE_COVERAGE_ENABLED_VALUE
-            return delegate.codeCoverageEnabled
-        }
+  override val buildConfigFields: MapProperty<String, BuildConfigField<out Serializable>>?
+    get() {
+      stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type = VariantPropertiesMethodType.BUILD_CONFIG_FIELDS_VALUE
+      return delegate.buildConfigFields
+    }
 
-    override val outputProviders: ApkOutputProviders
-        get() = generatesApk.outputProviders
+  override val resValues: MapProperty<ResValue.Key, ResValue>
+    get() {
+      stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type = VariantPropertiesMethodType.RES_VALUE_VALUE
+      return delegate.resValues
+    }
+
+  override fun makeResValueKey(type: String, name: String): ResValue.Key {
+    stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type = VariantPropertiesMethodType.MAKE_RES_VALUE_KEY_VALUE
+    return delegate.makeResValueKey(type, name)
+  }
+
+  override val pseudoLocalesEnabled: Property<Boolean>
+    get() {
+      stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
+        VariantPropertiesMethodType.VARIANT_PSEUDOLOCALES_ENABLED_VALUE
+      return delegate.pseudoLocalesEnabled
+    }
+
+  override val proguardFiles: ListProperty<RegularFile>
+    get() {
+      stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type = VariantPropertiesMethodType.PROGUARD_FILES_VALUE
+      return delegate.proguardFiles
+    }
+
+  override val dexing: Dexing
+    get() = generatesApk.dexing
+
+  private val generatesApk: GeneratesApk by
+    lazy(LazyThreadSafetyMode.SYNCHRONIZED) { AnalyticsEnabledGeneratesApk(delegate, stats, objectFactory) }
+
+  override val androidResources: AndroidResources
+    get() = generatesApk.androidResources
+
+  override val renderscript: Renderscript?
+    get() = generatesApk.renderscript
+
+  override val packaging: ApkPackaging
+    get() = generatesApk.packaging
+
+  override val targetSdk: AndroidVersion
+    get() = generatesApk.targetSdk
+
+  override val targetSdkVersion: AndroidVersion
+    get() = generatesApk.targetSdk
+
+  override val minSdk: AndroidVersion
+    get() = generatesApk.minSdk
+
+  override val codeCoverageEnabled: Boolean
+    get() {
+      stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
+        VariantPropertiesMethodType.DEVICE_TEST_CODE_COVERAGE_ENABLED_VALUE
+      return delegate.codeCoverageEnabled
+    }
+
+  override val outputProviders: ApkOutputProviders
+    get() = generatesApk.outputProviders
 }

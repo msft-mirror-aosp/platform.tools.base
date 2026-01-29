@@ -38,105 +38,101 @@ import org.mockito.quality.Strictness
 
 internal class AssetSourceDirectoriesImplTest {
 
-    @get:Rule
-    val rule: MockitoRule = MockitoJUnit.rule().strictness(Strictness.STRICT_STUBS)
+  @get:Rule val rule: MockitoRule = MockitoJUnit.rule().strictness(Strictness.STRICT_STUBS)
 
-    @get:Rule
-    val temporaryFolder = TemporaryFolder()
+  @get:Rule val temporaryFolder = TemporaryFolder()
 
-    private val variantServices: VariantServices = mock()
+  private val variantServices: VariantServices = mock()
 
-    @Captor
-    lateinit var callableCaptor: ArgumentCaptor<Callable<Any?>>
+  @Captor lateinit var callableCaptor: ArgumentCaptor<Callable<Any?>>
 
-    private lateinit var project: Project
+  private lateinit var project: Project
 
-    private fun <T> capture(argumentCaptor: ArgumentCaptor<T>): T = argumentCaptor.capture()
+  private fun <T> capture(argumentCaptor: ArgumentCaptor<T>): T = argumentCaptor.capture()
 
-    @Before
-    fun setup() {
-        project = ProjectBuilder.builder()
-            .withProjectDir(temporaryFolder.newFolder())
-            .build()
+  @Before
+  fun setup() {
+    project = ProjectBuilder.builder().withProjectDir(temporaryFolder.newFolder()).build()
 
-        whenever(variantServices.newListPropertyForInternalUse(DirectoryEntries::class.java))
-            .thenAnswer { project.objects.listProperty(DirectoryEntries::class.java) }
-        whenever(variantServices.newListPropertyForInternalUse(Collection::class.java))
-            .thenAnswer { project.objects.listProperty(Collection::class.java) }
+    whenever(variantServices.newListPropertyForInternalUse(DirectoryEntries::class.java)).thenAnswer {
+      project.objects.listProperty(DirectoryEntries::class.java)
+    }
+    whenever(variantServices.newListPropertyForInternalUse(Collection::class.java)).thenAnswer {
+      project.objects.listProperty(Collection::class.java)
+    }
+  }
 
+  @Test
+  fun asAssetSetEmptyTest() {
+    val testTarget = LayeredSourceDirectoriesImpl("unit_test", variantServices, null)
+
+    Truth.assertThat(testTarget.getAscendingOrderAssetSets(FakeGradleProvider("aapt_env"))).isNotNull()
+    Truth.assertThat(testTarget.getAscendingOrderAssetSets(FakeGradleProvider("aapt_env")).get()).isEmpty()
+  }
+
+  @Test
+  fun asAssetSetTest() {
+    val projectInfo = mock<ProjectInfo>()
+    whenever(variantServices.projectInfo).thenReturn(projectInfo)
+    whenever(projectInfo.projectDirectory).thenReturn(project.layout.projectDirectory)
+    whenever(variantServices.fileCollection()).thenReturn(project.objects.fileCollection())
+
+    whenever(variantServices.provider(capture(callableCaptor))).thenAnswer {
+      val capturedCallable: Callable<Any?> = callableCaptor.value
+      project.provider(Callable { capturedCallable.call()!! })
+    }
+    whenever(variantServices.newListPropertyForInternalUse(Directory::class.java)).also {
+      var stub = it
+      repeat(5) { stub = stub.thenReturn(project.objects.listProperty(Directory::class.java)) }
     }
 
-    @Test
-    fun asAssetSetEmptyTest() {
-        val testTarget = LayeredSourceDirectoriesImpl(
-            "unit_test",
-            variantServices,
-            null
-        )
+    val testTarget = LayeredSourceDirectoriesImpl("unit_test", variantServices, null)
 
-        Truth.assertThat(testTarget.getAscendingOrderAssetSets(FakeGradleProvider("aapt_env"))).isNotNull()
-        Truth.assertThat(testTarget.getAscendingOrderAssetSets(FakeGradleProvider("aapt_env")).get()).isEmpty()
-    }
+    // directories are added in reverse order, lower priority first, then higher prioriry
+    testTarget.addStaticSources(
+      DirectoryEntries(
+        "lowest",
+        mutableListOf(
+          FileBasedDirectoryEntryImpl("lowest1", temporaryFolder.newFolder("lowest1")),
+          FileBasedDirectoryEntryImpl("lowest2", temporaryFolder.newFolder("lowest2")),
+          FileBasedDirectoryEntryImpl("lowest3", temporaryFolder.newFolder("lowest3")),
+        ),
+      )
+    )
 
-    @Test
-    fun asAssetSetTest() {
-        val projectInfo = mock<ProjectInfo>()
-        whenever(variantServices.projectInfo).thenReturn(projectInfo)
-        whenever(projectInfo.projectDirectory).thenReturn(project.layout.projectDirectory)
-        whenever(variantServices.fileCollection()).thenReturn(project.objects.fileCollection())
+    testTarget.addStaticSources(
+      DirectoryEntries(
+        "lower",
+        mutableListOf(
+          FileBasedDirectoryEntryImpl("lower1", temporaryFolder.newFolder("lower1")),
+          FileBasedDirectoryEntryImpl("lower2", temporaryFolder.newFolder("lower2")),
+          FileBasedDirectoryEntryImpl("lower3", temporaryFolder.newFolder("lower3")),
+        ),
+      )
+    )
 
-        whenever(
-            variantServices.provider(capture(callableCaptor))
-        ).thenAnswer {
-            val capturedCallable: Callable<Any?> = callableCaptor.value
-            project.provider(Callable { capturedCallable.call()!! })
-        }
-        whenever(variantServices.newListPropertyForInternalUse(Directory::class.java)).also {
-            var stub = it
-            repeat(5) {
-                stub = stub.thenReturn(project.objects.listProperty(Directory::class.java))
-            }
-        }
+    testTarget.addStaticSources(
+      DirectoryEntries(
+        "higher",
+        mutableListOf(
+          FileBasedDirectoryEntryImpl("higher1", temporaryFolder.newFolder("higher1")),
+          FileBasedDirectoryEntryImpl("higher2", temporaryFolder.newFolder("higher2")),
+          FileBasedDirectoryEntryImpl("higher3", temporaryFolder.newFolder("higher3")),
+        ),
+      )
+    )
 
-        val testTarget = LayeredSourceDirectoriesImpl(
-            "unit_test",
-            variantServices,
-            null
-        )
-
-        // directories are added in reverse order, lower priority first, then higher prioriry
-        testTarget.addStaticSources(DirectoryEntries("lowest", mutableListOf(
-            FileBasedDirectoryEntryImpl("lowest1", temporaryFolder.newFolder("lowest1")),
-            FileBasedDirectoryEntryImpl("lowest2", temporaryFolder.newFolder("lowest2")),
-            FileBasedDirectoryEntryImpl("lowest3", temporaryFolder.newFolder("lowest3")),
-        )
-        ))
-
-        testTarget.addStaticSources(DirectoryEntries("lower", mutableListOf(
-            FileBasedDirectoryEntryImpl("lower1", temporaryFolder.newFolder("lower1")),
-            FileBasedDirectoryEntryImpl("lower2", temporaryFolder.newFolder("lower2")),
-            FileBasedDirectoryEntryImpl("lower3", temporaryFolder.newFolder("lower3")),
-        )
-        ))
-
-        testTarget.addStaticSources(DirectoryEntries("higher", mutableListOf(
-            FileBasedDirectoryEntryImpl("higher1", temporaryFolder.newFolder("higher1")),
-            FileBasedDirectoryEntryImpl("higher2", temporaryFolder.newFolder("higher2")),
-            FileBasedDirectoryEntryImpl("higher3", temporaryFolder.newFolder("higher3")),
-        )
-        ))
-
-        Truth.assertThat(testTarget.getAscendingOrderAssetSets(FakeGradleProvider("aapt_env"))).isNotNull()
-        val assetSets = testTarget.getAscendingOrderAssetSets(FakeGradleProvider("aapt_env")).get()
-        Truth.assertThat(assetSets).hasSize(9)
-        Truth.assertThat(assetSets[0].configName).isEqualTo("lowest")
-        Truth.assertThat(assetSets[1].configName).isEqualTo("lowest")
-        Truth.assertThat(assetSets[2].configName).isEqualTo("lowest")
-        Truth.assertThat(assetSets[3].configName).isEqualTo("lower")
-        Truth.assertThat(assetSets[4].configName).isEqualTo("lower")
-        Truth.assertThat(assetSets[5].configName).isEqualTo("lower")
-        Truth.assertThat(assetSets[6].configName).isEqualTo("higher")
-        Truth.assertThat(assetSets[7].configName).isEqualTo("higher")
-        Truth.assertThat(assetSets[8].configName).isEqualTo("higher")
-    }
+    Truth.assertThat(testTarget.getAscendingOrderAssetSets(FakeGradleProvider("aapt_env"))).isNotNull()
+    val assetSets = testTarget.getAscendingOrderAssetSets(FakeGradleProvider("aapt_env")).get()
+    Truth.assertThat(assetSets).hasSize(9)
+    Truth.assertThat(assetSets[0].configName).isEqualTo("lowest")
+    Truth.assertThat(assetSets[1].configName).isEqualTo("lowest")
+    Truth.assertThat(assetSets[2].configName).isEqualTo("lowest")
+    Truth.assertThat(assetSets[3].configName).isEqualTo("lower")
+    Truth.assertThat(assetSets[4].configName).isEqualTo("lower")
+    Truth.assertThat(assetSets[5].configName).isEqualTo("lower")
+    Truth.assertThat(assetSets[6].configName).isEqualTo("higher")
+    Truth.assertThat(assetSets[7].configName).isEqualTo("higher")
+    Truth.assertThat(assetSets[8].configName).isEqualTo("higher")
+  }
 }

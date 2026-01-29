@@ -47,12 +47,13 @@ import com.android.ide.common.resources.CompileResourceRequest
 import com.android.ide.common.resources.ResourcePathEncoding
 import com.android.ide.common.resources.configuration.FolderConfiguration
 import com.android.ide.common.resources.generateLocaleString
-import com.android.ide.common.resources.mergeIdentifiedSourceSetFiles
 import com.android.ide.common.resources.readFromSourceSetPathsFile
 import com.android.ide.common.resources.readSupportedLocales
 import com.android.ide.common.resources.writeLocaleConfig
 import com.android.utils.FileUtils
 import com.google.common.collect.ImmutableSet
+import java.io.File
+import javax.inject.Inject
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.RegularFileProperty
@@ -74,354 +75,289 @@ import org.gradle.api.tasks.TaskProvider
 import org.gradle.process.ExecOperations
 import org.gradle.workers.WorkParameters
 import org.gradle.workers.WorkerExecutor
-import java.io.File
-import javax.inject.Inject
 
 const val LOCALE_CONFIG_FILE_NAME = "_generated_res_locale_config"
 
 /**
  * Task to generate locale configuration from res qualifiers
  *
- * Additionally, if non-density resource configurations are present in the project, we must filter
- * the locales in the config to only include the locales that these res configs filter into the APK.
- * This requires us to create a mini-AAPT2 workflow that compiles project resources and links them
- * along with the res configs to get the locales which will be in the APK. We cannot use
- * PROCESSED_RES since this creates a circular dependency with this task and MergeResources.
+ * Additionally, if non-density resource configurations are present in the project, we must filter the locales in the config to only include
+ * the locales that these res configs filter into the APK. This requires us to create a mini-AAPT2 workflow that compiles project resources
+ * and links them along with the res configs to get the locales which will be in the APK. We cannot use PROCESSED_RES since this creates a
+ * circular dependency with this task and MergeResources.
  */
 @CacheableTask
 @BuildAnalyzer(primaryTaskCategory = TaskCategory.ANDROID_RESOURCES)
 abstract class GenerateLocaleConfigTask : NonIncrementalTask() {
 
-    // A generated xml res file containing the supported locales
-    @get:OutputDirectory
-    abstract val localeConfig: DirectoryProperty
+  // A generated xml res file containing the supported locales
+  @get:OutputDirectory abstract val localeConfig: DirectoryProperty
 
-    @get:InputFile
-    @get:PathSensitive(PathSensitivity.NAME_ONLY)
+  @get:InputFile @get:PathSensitive(PathSensitivity.NAME_ONLY) abstract val appLocales: RegularFileProperty
+
+  @get:InputFiles @get:PathSensitive(PathSensitivity.RELATIVE) abstract val dependencyLocales: ConfigurableFileCollection
+
+  // The below properties are optional because they are only used if non-density resource
+  // configurations are specified
+  @get:Optional @get:Input abstract val resConfigs: SetProperty<String>
+
+  @get:Optional @get:Input abstract val localeFilters: SetProperty<String>
+
+  @get:Internal abstract val incrementalDir: DirectoryProperty
+
+  @get:Input abstract val compileSdk: Property<Int>
+
+  @get:Input abstract val minSdk: Property<Int>
+
+  @get:Input abstract val pseudoLocalesEnabled: Property<Boolean>
+
+  // These properties are only used with res configs as well, but they cannot be optional because
+  // they use `Nested` And `Inject`
+  @get:Inject abstract val execOperations: ExecOperations
+
+  @get:Nested abstract val aapt2: Aapt2Input
+
+  @get:Nested abstract val androidJarInput: AndroidJarInput
+
+  // No effect on task output, used for writing the relative resource source path of the
+  // generated local config field and resolving absolute paths for error messaging during link.
+  @get:Internal abstract val resSourceSetMaps: RegularFileProperty
+
+  public override fun doTaskAction() {
+
+    workerExecutor.noIsolation().submit(GenerateLocaleWorkAction::class.java) {
+      it.initializeFromBaseTask(this)
+      it.appLocales.set(appLocales)
+      it.dependencyLocales.setFrom(dependencyLocales)
+      it.localeConfig.set(localeConfig)
+      it.resConfigs.set(resConfigs)
+      it.localeFilters.set(localeFilters)
+      it.aapt2.set(aapt2)
+      it.resApkDir.set(incrementalDir.dir("resApkDir"))
+      it.compiledResOutput.set(incrementalDir.dir("compiledResOutput"))
+      it.tempProjectDir.set(incrementalDir.dir("tempProject"))
+      it.androidJarInput.set(androidJarInput)
+      it.compileSdk.set(compileSdk)
+      it.minSdk.set(minSdk)
+      it.pseudoLocalesEnabled.set(pseudoLocalesEnabled)
+      it.resSourceSetsPathFiles.set(resSourceSetMaps)
+    }
+  }
+
+  /** [WorkParameters] for [GenerateLocaleWorkAction] */
+  abstract class GenerateLocaleWorkParameters : ProfileAwareWorkAction.Parameters() {
+
     abstract val appLocales: RegularFileProperty
-
-    @get:InputFiles
-    @get:PathSensitive(PathSensitivity.RELATIVE)
     abstract val dependencyLocales: ConfigurableFileCollection
-
-    // The below properties are optional because they are only used if non-density resource
-    // configurations are specified
-    @get:Optional
-    @get:Input
-    abstract val resConfigs: SetProperty<String>
-
-    @get:Optional
-    @get:Input
-    abstract val localeFilters: SetProperty<String>
-
-    @get:Internal
-    abstract val incrementalDir: DirectoryProperty
-
-    @get:Input
+    abstract val localeConfig: DirectoryProperty
+    abstract val resConfigs: ListProperty<String>
+    abstract val localeFilters: ListProperty<String>
+    abstract val aapt2: Property<Aapt2Input>
+    abstract val resApkDir: DirectoryProperty
+    abstract val compiledResOutput: DirectoryProperty
+    abstract val tempProjectDir: DirectoryProperty
+    abstract val androidJarInput: Property<AndroidJarInput>
     abstract val compileSdk: Property<Int>
-
-    @get:Input
     abstract val minSdk: Property<Int>
-
-    @get:Input
     abstract val pseudoLocalesEnabled: Property<Boolean>
+    abstract val resSourceSetsPathFiles: RegularFileProperty
+  }
 
-    // These properties are only used with res configs as well, but they cannot be optional because
-    // they use `Nested` And `Inject`
-    @get:Inject
-    abstract val execOperations: ExecOperations
+  abstract class GenerateLocaleWorkAction : ProfileAwareWorkAction<GenerateLocaleWorkParameters>() {
 
-    @get:Nested
-    abstract val aapt2: Aapt2Input
+    @get:Inject abstract val workerExecutor: WorkerExecutor
 
-    @get:Nested
-    abstract val androidJarInput: AndroidJarInput
+    @get:Inject abstract val execOperations: ExecOperations
 
-    // No effect on task output, used for writing the relative resource source path of the
-    // generated local config field and resolving absolute paths for error messaging during link.
-    @get:Internal
-    abstract val resSourceSetMaps: RegularFileProperty
+    override fun run() {
+      // List of locales merged from app and dependencies
+      val folderLocales = mutableSetOf<String>()
+      // Add app locales
+      val appLocales = readSupportedLocales(parameters.appLocales.get().asFile)
+      folderLocales.addAll(appLocales.folderLocales)
+      // Add locales from dependencies
+      parameters.dependencyLocales.files.forEach { folderLocales.addAll(it.readLines()) }
 
-    public override fun doTaskAction() {
+      var finalLocales = mutableSetOf(appLocales.defaultLocale)
+      val mergedLocaleQualifiers = folderLocales.map { FolderConfiguration.getConfigFromQualifiers(it.split("-")).localeQualifier }
+      mergedLocaleQualifiers.forEach { finalLocales.add(generateLocaleString(it)) }
 
-        workerExecutor.noIsolation().submit(GenerateLocaleWorkAction::class.java) {
-            it.initializeFromBaseTask(this)
-            it.appLocales.set(appLocales)
-            it.dependencyLocales.setFrom(dependencyLocales)
-            it.localeConfig.set(localeConfig)
-            it.resConfigs.set(resConfigs)
-            it.localeFilters.set(localeFilters)
-            it.aapt2.set(aapt2)
-            it.resApkDir.set(incrementalDir.dir("resApkDir"))
-            it.compiledResOutput.set(incrementalDir.dir("compiledResOutput"))
-            it.tempProjectDir.set(incrementalDir.dir("tempProject"))
-            it.androidJarInput.set(androidJarInput)
-            it.compileSdk.set(compileSdk)
-            it.minSdk.set(minSdk)
-            it.pseudoLocalesEnabled.set(pseudoLocalesEnabled)
-            it.resSourceSetsPathFiles.set(resSourceSetMaps)
+      val localeResConfigs = parameters.localeFilters.get().ifEmpty { parameters.resConfigs.get().filter { validLocale(it) } }
+      if (localeResConfigs.isNotEmpty()) {
+        compileResFilesWithAapt2(folderLocales)
+        runAapt2Link(localeResConfigs)
+
+        // Get the contents of the res apk and extract the locales
+        val parser = ApkInfoParser(parameters.aapt2.get().getAapt2Executable().toFile(), GradleProcessExecutor(execOperations::exec))
+        val apkAaptOutput = parser.getAaptOutput(parameters.resApkDir.get().file("res.apk").asFile)
+        val apkLocales = ApkInfoParser.getLocalesFromApkContents(apkAaptOutput)
+
+        if (!apkLocales.isNullOrEmpty()) {
+          finalLocales = finalLocales.filter { apkLocales.contains(it) || it == appLocales.defaultLocale }.toImmutableSet()
+        }
+      }
+
+      val localeConfigFolder = parameters.localeConfig.get().asFile
+      val localeConfigFile = File(localeConfigFolder, "xml${File.separator}$LOCALE_CONFIG_FILE_NAME.xml")
+      localeConfigFile.parentFile.mkdirs()
+
+      // Starting with API 35, add the default locale in the config
+      val compileSdk = parameters.compileSdk.get()
+      val minSdk = parameters.minSdk.get()
+      if (compileSdk >= 35) {
+        writeLocaleConfig(output = localeConfigFile, finalLocales, appLocales.defaultLocale)
+
+        if (minSdk <= 35) {
+          // The default locale is problematic on API 35, causing application language changes
+          // after a UI refresh. To work around this, we generate an API level 35 specific
+          // locale config without the default locale.
+          val xmlV35Folder = File(localeConfigFolder, "xml-v35")
+          val localeConfigV35 = File(xmlV35Folder, "$LOCALE_CONFIG_FILE_NAME.xml")
+          localeConfigV35.parentFile.mkdirs()
+
+          writeLocaleConfig(output = localeConfigV35, finalLocales)
+        }
+      } else {
+        writeLocaleConfig(output = localeConfigFile, finalLocales)
+      }
+    }
+
+    // Create temp res files from the project and dependencies and compiles with AAPT2 to
+    // generate compiled res output
+    private fun compileResFilesWithAapt2(folderLocales: Set<String>) {
+      parameters.compiledResOutput.get().asFile.mkdirs()
+      WorkerExecutorResourceCompilationService(
+          parameters.projectPath,
+          parameters.taskOwner.get(),
+          workerExecutor,
+          parameters.analyticsService,
+          parameters.aapt2.get(),
+          await = true,
+        )
+        .use { compilationService ->
+          // Add a default values folder/strings file
+          val defaultValuesFolder = FileUtils.join(parameters.tempProjectDir.get().asFile, "res", "values")
+          aapt2CompileFile(defaultValuesFolder, compilationService)
+
+          // Add strings for each folder locale in the project
+          folderLocales.forEach { folderLocale ->
+            val valuesFolder = FileUtils.join(parameters.tempProjectDir.get().asFile, "res", "values-$folderLocale")
+            aapt2CompileFile(valuesFolder, compilationService)
+          }
         }
     }
 
-    /** [WorkParameters] for [GenerateLocaleWorkAction] */
-    abstract class GenerateLocaleWorkParameters : ProfileAwareWorkAction.Parameters() {
-
-        abstract val appLocales: RegularFileProperty
-        abstract val dependencyLocales: ConfigurableFileCollection
-        abstract val localeConfig: DirectoryProperty
-        abstract val resConfigs: ListProperty<String>
-        abstract val localeFilters: ListProperty<String>
-        abstract val aapt2: Property<Aapt2Input>
-        abstract val resApkDir: DirectoryProperty
-        abstract val compiledResOutput: DirectoryProperty
-        abstract val tempProjectDir: DirectoryProperty
-        abstract val androidJarInput: Property<AndroidJarInput>
-        abstract val compileSdk: Property<Int>
-        abstract val minSdk: Property<Int>
-        abstract val pseudoLocalesEnabled: Property<Boolean>
-        abstract val resSourceSetsPathFiles: RegularFileProperty
+    private fun aapt2CompileFile(valuesFolder: File, compilationService: WorkerExecutorResourceCompilationService) {
+      val tempStringFileContent =
+        """
+        <resources>
+            <string name="placeholder_name">Placeholder</string>
+        </resources>
+        """
+          .trimIndent()
+      valuesFolder.mkdirs()
+      val tempStringFile = File(valuesFolder, "strings.xml")
+      tempStringFile.createNewFile()
+      tempStringFile.writeText(tempStringFileContent)
+      val resSourceSets = readFromSourceSetPathsFile(parameters.resSourceSetsPathFiles.get().asFile)
+      val request =
+        CompileResourceRequest(
+          tempStringFile,
+          parameters.compiledResOutput.get().asFile,
+          resourcePathEncoding = ResourcePathEncoding.Relative(resSourceSets),
+        )
+      compilationService.submitCompile(request)
     }
 
-    abstract class GenerateLocaleWorkAction: ProfileAwareWorkAction<GenerateLocaleWorkParameters>() {
+    // Runs AAPT2 link with a temp manifest which generates the res APK within this task
+    private fun runAapt2Link(localeResConfigs: List<String>) {
+      val manifest = File(parameters.tempProjectDir.get().asFile, "AndroidManifest.xml")
+      manifest.parentFile.mkdirs()
+      manifest.createNewFile()
+      manifest.writeText(
+        """
+        <?xml version="1.0" encoding="utf-8"?>
+        <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+            xmlns:dist="http://schemas.android.com/apk/distribution"
+            package="com.example.app">
+        </manifest>
+        """
+          .trimIndent()
+      )
 
-        @get:Inject
-        abstract val workerExecutor: WorkerExecutor
+      val resApk = parameters.resApkDir.get().file("res.apk").asFile
+      val resSourceSetMap = readFromSourceSetPathsFile(parameters.resSourceSetsPathFiles.get().asFile)
 
-        @get:Inject
-        abstract val execOperations: ExecOperations
+      val aaptPackageConfig =
+        AaptPackageConfig.Builder()
+          .setManifestFile(manifest)
+          .setOptions(AaptOptions())
+          .setComponentType(ComponentTypeImpl.BASE_APK)
+          .setAndroidJarPath(parameters.androidJarInput.get().getAndroidJar().get().absolutePath)
+          .setResourceConfigs(localeResConfigs.toImmutableSet())
+          .setResourceOutputApk(resApk)
+          .addResourceDir(parameters.compiledResOutput.get().asFile)
+          .setPseudoLocalesEnabled(parameters.pseudoLocalesEnabled.get())
+          .setIdentifiedSourceSetMap(resSourceSetMap)
+          .build()
 
-        override fun run() {
-            // List of locales merged from app and dependencies
-            val folderLocales = mutableSetOf<String>()
-            // Add app locales
-            val appLocales = readSupportedLocales(parameters.appLocales.get().asFile)
-            folderLocales.addAll(appLocales.folderLocales)
-            // Add locales from dependencies
-            parameters.dependencyLocales.files.forEach {
-                folderLocales.addAll(it.readLines())
-            }
+      val logger = Logging.getLogger(GenerateLocaleConfigTask::class.java)
+      parameters.aapt2.get().getLeasingAapt2().link(aaptPackageConfig, LoggerWrapper(logger))
+    }
+  }
 
-            var finalLocales = mutableSetOf(appLocales.defaultLocale)
-            val mergedLocaleQualifiers = folderLocales.map {
-                FolderConfiguration.getConfigFromQualifiers(it.split("-")).localeQualifier
-            }
-            mergedLocaleQualifiers.forEach {
-                finalLocales.add(generateLocaleString(it))
-            }
+  class CreationAction(creationConfig: ComponentCreationConfig) :
+    VariantTaskCreationAction<GenerateLocaleConfigTask, ComponentCreationConfig>(creationConfig) {
 
-            val localeResConfigs = parameters.localeFilters.get().ifEmpty {
-                parameters.resConfigs.get().filter { validLocale(it) }
-            }
-            if (localeResConfigs.isNotEmpty()) {
-                compileResFilesWithAapt2(folderLocales)
-                runAapt2Link(localeResConfigs)
+    override val name: String
+      get() = computeTaskName("generate", "LocaleConfig")
 
-                // Get the contents of the res apk and extract the locales
-                val parser = ApkInfoParser(
-                    parameters.aapt2.get().getAapt2Executable().toFile(),
-                    GradleProcessExecutor(execOperations::exec)
-                )
-                val apkAaptOutput =
-                    parser.getAaptOutput(parameters.resApkDir.get().file("res.apk").asFile)
-                val apkLocales = ApkInfoParser.getLocalesFromApkContents(apkAaptOutput)
+    override val type: Class<GenerateLocaleConfigTask>
+      get() = GenerateLocaleConfigTask::class.java
 
-                if (!apkLocales.isNullOrEmpty()) {
-                    finalLocales = finalLocales.filter {
-                        apkLocales.contains(it) || it == appLocales.defaultLocale
-                    }.toImmutableSet()
-                }
-            }
+    override fun handleProvider(taskProvider: TaskProvider<GenerateLocaleConfigTask>) {
+      super.handleProvider(taskProvider)
 
-            val localeConfigFolder = parameters.localeConfig.get().asFile
-            val localeConfigFile =
-                File(localeConfigFolder, "xml${File.separator}$LOCALE_CONFIG_FILE_NAME.xml")
-            localeConfigFile.parentFile.mkdirs()
+      creationConfig.artifacts
+        .setInitialProvider(taskProvider, GenerateLocaleConfigTask::localeConfig)
+        .atLocation(creationConfig.paths.getGeneratedResourcesDir("localeConfig").get().asFile.absolutePath)
+        .on(InternalArtifactType.GENERATED_LOCALE_CONFIG)
 
-            // Starting with API 35, add the default locale in the config
-            val compileSdk = parameters.compileSdk.get()
-            val minSdk = parameters.minSdk.get()
-            if (compileSdk >= 35) {
-                writeLocaleConfig(output = localeConfigFile, finalLocales, appLocales.defaultLocale)
-
-                if (minSdk <= 35) {
-                    // The default locale is problematic on API 35, causing application language changes
-                    // after a UI refresh. To work around this, we generate an API level 35 specific
-                    // locale config without the default locale.
-                    val xmlV35Folder = File(localeConfigFolder, "xml-v35")
-                    val localeConfigV35 = File(xmlV35Folder, "$LOCALE_CONFIG_FILE_NAME.xml")
-                    localeConfigV35.parentFile.mkdirs()
-
-                    writeLocaleConfig(output = localeConfigV35, finalLocales)
-                }
-            } else {
-                writeLocaleConfig(output = localeConfigFile, finalLocales)
-            }
-        }
-
-        // Create temp res files from the project and dependencies and compiles with AAPT2 to
-        // generate compiled res output
-        private fun compileResFilesWithAapt2(folderLocales: Set<String>) {
-            parameters.compiledResOutput.get().asFile.mkdirs()
-            WorkerExecutorResourceCompilationService(
-                parameters.projectPath,
-                parameters.taskOwner.get(),
-                workerExecutor,
-                parameters.analyticsService,
-                parameters.aapt2.get(),
-                await = true
-            ).use { compilationService ->
-                // Add a default values folder/strings file
-                val defaultValuesFolder = FileUtils.join(
-                    parameters.tempProjectDir.get().asFile,
-                    "res",
-                    "values"
-                )
-                aapt2CompileFile(defaultValuesFolder, compilationService)
-
-                // Add strings for each folder locale in the project
-                folderLocales.forEach { folderLocale ->
-                    val valuesFolder = FileUtils.join(
-                        parameters.tempProjectDir.get().asFile,
-                        "res",
-                        "values-$folderLocale"
-                    )
-                    aapt2CompileFile(valuesFolder, compilationService)
-                }
-            }
-        }
-
-        private fun aapt2CompileFile(
-            valuesFolder: File,
-            compilationService: WorkerExecutorResourceCompilationService
-        ) {
-            val tempStringFileContent =
-                """
-                    <resources>
-                        <string name="placeholder_name">Placeholder</string>
-                    </resources>
-                """.trimIndent()
-            valuesFolder.mkdirs()
-            val tempStringFile = File(valuesFolder, "strings.xml")
-            tempStringFile.createNewFile()
-            tempStringFile.writeText(tempStringFileContent)
-            val resSourceSets =
-                readFromSourceSetPathsFile(parameters.resSourceSetsPathFiles.get().asFile)
-            val request = CompileResourceRequest(
-                tempStringFile,
-                parameters.compiledResOutput.get().asFile,
-                resourcePathEncoding = ResourcePathEncoding.Relative(resSourceSets)
-            )
-            compilationService.submitCompile(request)
-        }
-
-        // Runs AAPT2 link with a temp manifest which generates the res APK within this task
-        private fun runAapt2Link(localeResConfigs: List<String>) {
-            val manifest = File(parameters.tempProjectDir.get().asFile, "AndroidManifest.xml")
-            manifest.parentFile.mkdirs()
-            manifest.createNewFile()
-            manifest.writeText(
-                """
-                    <?xml version="1.0" encoding="utf-8"?>
-                    <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-                        xmlns:dist="http://schemas.android.com/apk/distribution"
-                        package="com.example.app">
-                    </manifest>
-                """.trimIndent()
-            )
-
-            val resApk = parameters.resApkDir.get().file("res.apk").asFile
-            val resSourceSetMap =
-                readFromSourceSetPathsFile(parameters.resSourceSetsPathFiles.get().asFile)
-
-            val aaptPackageConfig = AaptPackageConfig.Builder()
-                .setManifestFile(manifest)
-                .setOptions(AaptOptions())
-                .setComponentType(ComponentTypeImpl.BASE_APK)
-                .setAndroidJarPath(parameters.androidJarInput.get().getAndroidJar().get().absolutePath)
-                .setResourceConfigs(localeResConfigs.toImmutableSet())
-                .setResourceOutputApk(resApk)
-                .addResourceDir(parameters.compiledResOutput.get().asFile)
-                .setPseudoLocalesEnabled(parameters.pseudoLocalesEnabled.get())
-                .setIdentifiedSourceSetMap(resSourceSetMap)
-                .build()
-
-            val logger = Logging.getLogger(GenerateLocaleConfigTask::class.java)
-            parameters.aapt2.get().getLeasingAapt2().link(aaptPackageConfig, LoggerWrapper(logger))
-        }
+      creationConfig.artifacts
+        .setInitialProvider(taskProvider, GenerateLocaleConfigTask::incrementalDir)
+        .on(InternalArtifactType.GENERATED_LOCALE_CONFIG_INCREMENTAL_DIR)
     }
 
-    class CreationAction(
-        creationConfig: ComponentCreationConfig
-    ) :
-        VariantTaskCreationAction<GenerateLocaleConfigTask, ComponentCreationConfig>(
-            creationConfig
-        ) {
+    override fun configure(task: GenerateLocaleConfigTask) {
+      super.configure(task)
 
-        override val name: String
-            get() = computeTaskName("generate", "LocaleConfig")
-        override val type: Class<GenerateLocaleConfigTask>
-            get() = GenerateLocaleConfigTask::class.java
+      task.dependencyLocales.fromDisallowChanges(
+        creationConfig.variantDependencies.getArtifactFileCollection(
+          AndroidArtifacts.ConsumedConfigType.RUNTIME_CLASSPATH,
+          AndroidArtifacts.ArtifactScope.PROJECT,
+          AndroidArtifacts.ArtifactType.SUPPORTED_LOCALE_LIST,
+        )
+      )
+      task.appLocales.setDisallowChanges(creationConfig.artifacts.get(InternalArtifactType.SUPPORTED_LOCALE_LIST))
 
-        override fun handleProvider(
-            taskProvider: TaskProvider<GenerateLocaleConfigTask>
-        ) {
-            super.handleProvider(taskProvider)
+      creationConfig.services.initializeAapt2Input(task.aapt2, task)
+      task.androidJarInput.initialize(task, creationConfig)
 
-            creationConfig.artifacts.setInitialProvider(
-                taskProvider,
-                GenerateLocaleConfigTask::localeConfig
-            ).atLocation(
-                creationConfig.paths.getGeneratedResourcesDir("localeConfig")
-                    .get().asFile.absolutePath
-            ).on(InternalArtifactType.GENERATED_LOCALE_CONFIG)
+      task.compileSdk.setDisallowChanges(parseTargetHash(creationConfig.global.compileSdkHashString).apiLevel ?: 1)
 
-            creationConfig.artifacts.setInitialProvider(
-                taskProvider,
-                GenerateLocaleConfigTask::incrementalDir
-            ).on(InternalArtifactType.GENERATED_LOCALE_CONFIG_INCREMENTAL_DIR)
-        }
+      task.minSdk.setDisallowChanges(creationConfig.minSdk.apiLevel)
 
-        override fun configure(
-            task: GenerateLocaleConfigTask
-        ) {
-            super.configure(task)
+      val applicationAndroidResources = creationConfig.androidResources as ApplicationAndroidResources
+      task.localeFilters.setDisallowChanges(applicationAndroidResources.localeFilters)
+      val resConfigs = creationConfig.androidResourcesCreationConfig?.resourceConfigurations ?: ImmutableSet.of()
+      val filteredResConfigs = AaptUtils.getNonDensityResConfigs(resConfigs).toSet()
+      task.resConfigs.setDisallowChanges(filteredResConfigs)
+      creationConfig.androidResourcesCreationConfig?.let { task.pseudoLocalesEnabled.set(it.pseudoLocalesEnabled) }
 
-            task.dependencyLocales.fromDisallowChanges(
-                creationConfig.variantDependencies.getArtifactFileCollection(
-                    AndroidArtifacts.ConsumedConfigType.RUNTIME_CLASSPATH,
-                    AndroidArtifacts.ArtifactScope.PROJECT,
-                    AndroidArtifacts.ArtifactType.SUPPORTED_LOCALE_LIST
-                )
-            )
-            task.appLocales.setDisallowChanges(
-                creationConfig.artifacts.get(InternalArtifactType.SUPPORTED_LOCALE_LIST))
-
-            creationConfig.services.initializeAapt2Input(task.aapt2, task)
-            task.androidJarInput.initialize(task, creationConfig)
-
-            task.compileSdk.setDisallowChanges(
-                parseTargetHash(creationConfig.global.compileSdkHashString).apiLevel ?: 1
-            )
-
-            task.minSdk.setDisallowChanges(
-                creationConfig.minSdk.apiLevel
-            )
-
-            val applicationAndroidResources =
-                creationConfig.androidResources as ApplicationAndroidResources
-            task.localeFilters.setDisallowChanges(applicationAndroidResources.localeFilters)
-            val resConfigs = creationConfig.androidResourcesCreationConfig?.resourceConfigurations ?: ImmutableSet.of()
-            val filteredResConfigs = AaptUtils.getNonDensityResConfigs(resConfigs).toSet()
-            task.resConfigs.setDisallowChanges(filteredResConfigs)
-            creationConfig.androidResourcesCreationConfig?.let {
-                task.pseudoLocalesEnabled.set(it.pseudoLocalesEnabled)
-            }
-
-            val sourceSetMap =
-                creationConfig.artifacts.get(InternalArtifactType.ANDROID_RES_SOURCE_SET_PATH_MAP)
-            task.resSourceSetMaps.set(sourceSetMap)
-            task.dependsOn(sourceSetMap)
-            task.pseudoLocalesEnabled.disallowChanges()
-        }
+      val sourceSetMap = creationConfig.artifacts.get(InternalArtifactType.ANDROID_RES_SOURCE_SET_PATH_MAP)
+      task.resSourceSetMaps.set(sourceSetMap)
+      task.dependsOn(sourceSetMap)
+      task.pseudoLocalesEnabled.disallowChanges()
     }
+  }
 }

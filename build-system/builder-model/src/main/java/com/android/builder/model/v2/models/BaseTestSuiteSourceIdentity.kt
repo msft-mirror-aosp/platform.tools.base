@@ -16,21 +16,17 @@
 
 package com.android.builder.model.v2.models
 
-/**
- * Parent interface for all test suite source dependencies in model.
- */
+/** Parent interface for all test suite source dependencies in model. */
 interface BaseTestSuiteSourceIdentity {
 
-    /**
-     * Type of source for this test suite and dependencies.
-     * For example: [SourceType.ASSETS], [SourceType.HOST_JAR], [SourceType.TEST_APK].
-     */
-    val type: SourceType
+  /**
+   * Type of source for this test suite and dependencies. For example: [SourceType.ASSETS], [SourceType.HOST_JAR], [SourceType.TEST_APK].
+   */
+  val type: SourceType
 
-    /**
-     * The name of this source dependency set. This is used to identify the dependencies associated
-     * with a specific source type within the test suite.
-     * For example, for [SourceType.ASSETS], this might be "assets".
-     */
-    val name: String
+  /**
+   * The name of this source dependency set. This is used to identify the dependencies associated with a specific source type within the
+   * test suite. For example, for [SourceType.ASSETS], this might be "assets".
+   */
+  val name: String
 }

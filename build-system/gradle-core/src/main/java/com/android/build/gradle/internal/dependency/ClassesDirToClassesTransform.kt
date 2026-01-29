@@ -17,48 +17,43 @@
 package com.android.build.gradle.internal.dependency
 
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
+import com.android.build.gradle.internal.publishing.AndroidArtifacts.ClassesDirFormat.CONTAINS_CLASS_FILES_ONLY
+import com.android.build.gradle.internal.publishing.AndroidArtifacts.ClassesDirFormat.CONTAINS_SINGLE_JAR
+import com.android.builder.dexing.isJarFile
+import java.io.File
+import org.gradle.api.artifacts.transform.InputArtifact
 import org.gradle.api.artifacts.transform.TransformAction
 import org.gradle.api.artifacts.transform.TransformOutputs
 import org.gradle.api.file.FileSystemLocation
 import org.gradle.api.provider.Provider
-import java.io.File
-import com.android.build.gradle.internal.publishing.AndroidArtifacts.ClassesDirFormat.CONTAINS_SINGLE_JAR
-import com.android.build.gradle.internal.publishing.AndroidArtifacts.ClassesDirFormat.CONTAINS_CLASS_FILES_ONLY
-import com.android.builder.dexing.isJarFile
-import org.gradle.api.artifacts.transform.InputArtifact
 import org.gradle.api.tasks.Classpath
 import org.gradle.work.DisableCachingByDefault
 
-/**
- * Transform from [AndroidArtifacts.ArtifactType.CLASSES_DIR] to
- * [AndroidArtifacts.ArtifactType.CLASSES].
- */
+/** Transform from [AndroidArtifacts.ArtifactType.CLASSES_DIR] to [AndroidArtifacts.ArtifactType.CLASSES]. */
 @DisableCachingByDefault
 abstract class ClassesDirToClassesTransform : TransformAction<GenericTransformParameters> {
 
-    @get:Classpath
-    @get:InputArtifact
-    abstract val inputArtifact: Provider<FileSystemLocation>
+  @get:Classpath @get:InputArtifact abstract val inputArtifact: Provider<FileSystemLocation>
 
-    override fun transform(outputs: TransformOutputs) {
-        val input = inputArtifact.get().asFile
-        when (getClassesDirFormat(input)) {
-            CONTAINS_SINGLE_JAR -> {
-                outputs.file(input.listFiles()!![0])
-            }
-            CONTAINS_CLASS_FILES_ONLY -> {
-                outputs.dir(input)
-            }
-        }
+  override fun transform(outputs: TransformOutputs) {
+    val input = inputArtifact.get().asFile
+    when (getClassesDirFormat(input)) {
+      CONTAINS_SINGLE_JAR -> {
+        outputs.file(input.listFiles()!![0])
+      }
+      CONTAINS_CLASS_FILES_ONLY -> {
+        outputs.dir(input)
+      }
     }
+  }
 }
 
 fun getClassesDirFormat(classesDir: File): AndroidArtifacts.ClassesDirFormat {
-    check(classesDir.isDirectory) { "Not a directory: ${classesDir.path}"}
-    val filesInDir = classesDir.listFiles()!!
-    return if (filesInDir.size == 1 && isJarFile(filesInDir[0])) {
-        CONTAINS_SINGLE_JAR
-    } else {
-        CONTAINS_CLASS_FILES_ONLY
-    }
+  check(classesDir.isDirectory) { "Not a directory: ${classesDir.path}" }
+  val filesInDir = classesDir.listFiles()!!
+  return if (filesInDir.size == 1 && isJarFile(filesInDir[0])) {
+    CONTAINS_SINGLE_JAR
+  } else {
+    CONTAINS_CLASS_FILES_ONLY
+  }
 }

@@ -24,113 +24,61 @@ import com.android.builder.model.v2.models.ModelBuilderParameter
 import org.junit.Rule
 import org.junit.Test
 
-class BasicModelV2Test: ModelComparator() {
-    @get:Rule
-    val rule = GradleRule.fromProject(BasicSpec())
+class BasicModelV2Test : ModelComparator() {
+  @get:Rule val rule = GradleRule.fromProject(BasicSpec())
 
-    @Test
-    fun `test models`() {
-        val result = rule
-            .build
-            .modelBuilder
-            .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
-            .fetchModels(variantName = "debug")
+  @Test
+  fun `test models`() {
+    val result = rule.build.modelBuilder.ignoreSyncIssues(SyncIssue.SEVERITY_WARNING).fetchModels(variantName = "debug")
 
-        with(result).compareBasicAndroidProject(
-            projectAction = { getProject(":app") },
-            goldenFile = "basicAndroidProject"
-        )
-        with(result).compareAndroidProject(
-            projectAction = { getProject(":app") },
-            goldenFile = "testProject"
-        )
-        with(result).compareAndroidDsl(
-            projectAction = { getProject(":app") },
-            goldenFile = "AndroidDsl"
-        )
-        with(result).compareVariantDependencies(
-            projectAction = { getProject(":app") },
-            goldenFile = "testDep"
-        )
-    }
+    with(result).compareBasicAndroidProject(projectAction = { getProject(":app") }, goldenFile = "basicAndroidProject")
+    with(result).compareAndroidProject(projectAction = { getProject(":app") }, goldenFile = "testProject")
+    with(result).compareAndroidDsl(projectAction = { getProject(":app") }, goldenFile = "AndroidDsl")
+    with(result).compareVariantDependencies(projectAction = { getProject(":app") }, goldenFile = "testDep")
+  }
 
-    @Test
-    fun `test models no java runtime classpath`() {
-        val result = rule
-            .build
-            .modelBuilder
-            .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
-            .fetchModels(
-                variantName = "debug",
-                parameterMutator = buildOnlyTestRuntimeClasspaths(
-                    buildUnitTestsRuntime = false,
-                    buildScreenshotTestsRuntime = false
-                )
-            )
+  @Test
+  fun `test models no java runtime classpath`() {
+    val result =
+      rule.build.modelBuilder
+        .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
+        .fetchModels(
+          variantName = "debug",
+          parameterMutator = buildOnlyTestRuntimeClasspaths(buildUnitTestsRuntime = false, buildScreenshotTestsRuntime = false),
+        )
 
-        with(result).compareBasicAndroidProject(
-            projectAction = { getProject(":app") },
-            goldenFile = "basicAndroidProject"
-        )
-        with(result).compareAndroidProject(
-            projectAction = { getProject(":app") },
-            goldenFile = "testProject"
-        )
-        with(result).compareAndroidDsl(
-            projectAction = { getProject(":app") },
-            goldenFile = "AndroidDsl"
-        )
-        with(result).compareVariantDependencies(
-            projectAction = { getProject(":app") },
-            goldenFile = "testDepAndroidRuntime"
-        )
-    }
+    with(result).compareBasicAndroidProject(projectAction = { getProject(":app") }, goldenFile = "basicAndroidProject")
+    with(result).compareAndroidProject(projectAction = { getProject(":app") }, goldenFile = "testProject")
+    with(result).compareAndroidDsl(projectAction = { getProject(":app") }, goldenFile = "AndroidDsl")
+    with(result).compareVariantDependencies(projectAction = { getProject(":app") }, goldenFile = "testDepAndroidRuntime")
+  }
 
-    @Test
-    fun `test models no main runtime classpath, but screenshot and unit tests are present`() {
-        val result = rule
-            .build
-            .modelBuilder
-            .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
-            .fetchModels(
-                variantName = "debug",
-                parameterMutator = buildOnlyTestRuntimeClasspaths(
-                    buildUnitTestsRuntime = true,
-                    buildScreenshotTestsRuntime = true
-                )
-            )
+  @Test
+  fun `test models no main runtime classpath, but screenshot and unit tests are present`() {
+    val result =
+      rule.build.modelBuilder
+        .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
+        .fetchModels(
+          variantName = "debug",
+          parameterMutator = buildOnlyTestRuntimeClasspaths(buildUnitTestsRuntime = true, buildScreenshotTestsRuntime = true),
+        )
 
-        with(result).compareBasicAndroidProject(
-            projectAction = { getProject(":app") },
-            goldenFile = "basicAndroidProject"
-        )
-        with(result).compareAndroidProject(
-            projectAction = { getProject(":app") },
-            goldenFile = "testProject"
-        )
-        with(result).compareAndroidDsl(
-            projectAction = { getProject(":app") },
-            goldenFile = "AndroidDsl"
-        )
-        with(result).compareVariantDependencies(
-            projectAction = { getProject(":app") },
-            goldenFile = "testDepAndroidRuntimeWithScreenShotAndUnit"
-        )
-    }
+    with(result).compareBasicAndroidProject(projectAction = { getProject(":app") }, goldenFile = "basicAndroidProject")
+    with(result).compareAndroidProject(projectAction = { getProject(":app") }, goldenFile = "testProject")
+    with(result).compareAndroidDsl(projectAction = { getProject(":app") }, goldenFile = "AndroidDsl")
+    with(result)
+      .compareVariantDependencies(projectAction = { getProject(":app") }, goldenFile = "testDepAndroidRuntimeWithScreenShotAndUnit")
+  }
 }
 
-fun buildOnlyTestRuntimeClasspaths(
-    buildUnitTestsRuntime: Boolean,
-    buildScreenshotTestsRuntime: Boolean
-): (ModelBuilderParameter) -> Unit = {
+fun buildOnlyTestRuntimeClasspaths(buildUnitTestsRuntime: Boolean, buildScreenshotTestsRuntime: Boolean): (ModelBuilderParameter) -> Unit =
+  {
     it.dontBuildRuntimeClasspath = true
     it.dontBuildUnitTestRuntimeClasspath = !buildUnitTestsRuntime
     it.dontBuildScreenshotTestRuntimeClasspath = !buildScreenshotTestsRuntime
     it.dontBuildAndroidTestRuntimeClasspath = false
     it.dontBuildTestFixtureRuntimeClasspath = true
-    it.dontBuildHostTestRuntimeClasspath = mapOf(
-        "UnitTest" to it.dontBuildUnitTestRuntimeClasspath,
-        "ScreenshotTest" to it.dontBuildScreenshotTestRuntimeClasspath
-    )
+    it.dontBuildHostTestRuntimeClasspath =
+      mapOf("UnitTest" to it.dontBuildUnitTestRuntimeClasspath, "ScreenshotTest" to it.dontBuildScreenshotTestRuntimeClasspath)
     it.additionalArtifactsInModel = true
-}
+  }

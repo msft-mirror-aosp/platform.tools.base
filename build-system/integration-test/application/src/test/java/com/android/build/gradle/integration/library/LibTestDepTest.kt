@@ -19,46 +19,39 @@ package com.android.build.gradle.integration.library
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.model.ModelComparator
 import com.android.build.gradle.integration.common.truth.TruthHelper
+import java.io.File
 import org.junit.Rule
 import org.junit.Test
-import java.io.File
 
 class LibTestDepTest : ModelComparator() {
 
-    @get:Rule
-    val project = GradleTestProject.builder()
-        .fromTestProject("libTestDep")
-        .disableBuiltInKotlin()
-        .create()
+  @get:Rule val project = GradleTestProject.builder().fromTestProject("libTestDep").disableBuiltInKotlin().create()
 
-    @Test
-    fun `test VariantDependencies model`() {
-        val result =
-            project.modelV2()
-                .ignoreSyncIssues()
-                .fetchModels(variantName = "debug")
+  @Test
+  fun `test VariantDependencies model`() {
+    val result = project.modelV2().ignoreSyncIssues().fetchModels(variantName = "debug")
 
-        with(result).compareVariantDependencies(goldenFile = "lib_VariantDependencies")
-    }
+    with(result).compareVariantDependencies(goldenFile = "lib_VariantDependencies")
+  }
 
-    @Test
-    fun lint() {
-        project.executor().run("lint")
-    }
+  @Test
+  fun lint() {
+    project.executor().run("lint")
+  }
 
-    @Test
-    fun checkDebugAndReleaseOutputHaveDifferentNames() {
-        project.execute("clean", "assembleDebug")
-        val debugOutput = getOutputFile()
-        project.execute("clean", "assembleRelease")
-        val releaseOutput = getOutputFile()
-        TruthHelper.assertThat(debugOutput.getName()).isNotEqualTo(releaseOutput.getName())
-    }
+  @Test
+  fun checkDebugAndReleaseOutputHaveDifferentNames() {
+    project.execute("clean", "assembleDebug")
+    val debugOutput = getOutputFile()
+    project.execute("clean", "assembleRelease")
+    val releaseOutput = getOutputFile()
+    TruthHelper.assertThat(debugOutput.getName()).isNotEqualTo(releaseOutput.getName())
+  }
 
-    private fun getOutputFile(): File {
-        val outputs = File(project.buildDir, "outputs/aar").listFiles()
-        TruthHelper.assertThat(outputs).isNotNull()
-        TruthHelper.assertThat(outputs).hasLength(1)
-        return outputs?.get(0)!!
-    }
+  private fun getOutputFile(): File {
+    val outputs = File(project.buildDir, "outputs/aar").listFiles()
+    TruthHelper.assertThat(outputs).isNotNull()
+    TruthHelper.assertThat(outputs).hasLength(1)
+    return outputs?.get(0)!!
+  }
 }

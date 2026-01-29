@@ -21,13 +21,8 @@ import org.junit.Test
 
 class VectorDrawablesOptionsTest {
 
-    @Test
-    fun testCopyOf() {
-        CopyOfTester.assertAllGettersCalled(
-            VectorDrawablesOptions::class.java,
-            VectorDrawablesOptions()
-        ) {
-            VectorDrawablesOptions.copyOf(it)
-        }
-    }
+  @Test
+  fun testCopyOf() {
+    CopyOfTester.assertAllGettersCalled(VectorDrawablesOptions::class.java, VectorDrawablesOptions()) { VectorDrawablesOptions.copyOf(it) }
+  }
 }

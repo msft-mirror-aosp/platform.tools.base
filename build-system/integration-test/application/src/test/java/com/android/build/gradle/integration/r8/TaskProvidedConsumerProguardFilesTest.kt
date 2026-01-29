@@ -29,56 +29,47 @@ import org.junit.Rule
 import org.junit.Test
 
 class TaskProvidedConsumerProguardFilesTest {
-    @get:Rule
-    val rule = GradleRule.configure()
-        .from {
-            androidLibrary {
-                android {
-                }
-                pluginCallbacks += MyLibraryCallback::class.java
-            }
-        }
-
-    class MyLibraryCallback: LibraryComponentCallback {
-        override fun handleExtension(
-            project: Project,
-            androidComponents: LibraryAndroidComponentsExtension
-        ) {
-            androidComponents.onVariants(androidComponents.selector().withBuildType("debug")) { variant ->
-                val producerTask = project.tasks.register(
-                    "${variant.name}ProducerTask",
-                    ConsumerProguardFileProduceTask::class.java
-                ) {
-                    println("Producer Task configured.");
-                    it.outputFile.set(project.layout.buildDirectory.file("intermediates/${variant.name}ProducerTask"))
-                }
-                println("Adding producer task to consumer proguard files")
-                variant.consumerProguardFiles.add(producerTask.flatMap { it.outputFile })
-            }
-        }
+  @get:Rule
+  val rule =
+    GradleRule.configure().from {
+      androidLibrary {
+        android {}
+        pluginCallbacks += MyLibraryCallback::class.java
+      }
     }
 
-    @Test
-    fun testTaskBasedProduction() {
-        val project = rule.build
-        project.executor.run("assembleDebug")
-
-        // check the resulting aar.
-        project.androidLibrary(":lib").assertAar(AarSelector.DEBUG) {
-            textFile("proguard.txt").isEqualTo("some proguard statements")
-        }
+  class MyLibraryCallback : LibraryComponentCallback {
+    override fun handleExtension(project: Project, androidComponents: LibraryAndroidComponentsExtension) {
+      androidComponents.onVariants(androidComponents.selector().withBuildType("debug")) { variant ->
+        val producerTask =
+          project.tasks.register("${variant.name}ProducerTask", ConsumerProguardFileProduceTask::class.java) {
+            println("Producer Task configured.")
+            it.outputFile.set(project.layout.buildDirectory.file("intermediates/${variant.name}ProducerTask"))
+          }
+        println("Adding producer task to consumer proguard files")
+        variant.consumerProguardFiles.add(producerTask.flatMap { it.outputFile })
+      }
     }
+  }
+
+  @Test
+  fun testTaskBasedProduction() {
+    val project = rule.build
+    project.executor.run("assembleDebug")
+
+    // check the resulting aar.
+    project.androidLibrary(":lib").assertAar(AarSelector.DEBUG) { textFile("proguard.txt").isEqualTo("some proguard statements") }
+  }
 }
 
-/** Task to  generate a consumer proguard file */
-abstract class ConsumerProguardFileProduceTask: DefaultTask() {
+/** Task to generate a consumer proguard file */
+abstract class ConsumerProguardFileProduceTask : DefaultTask() {
 
-    @get:OutputFile
-    abstract val outputFile: RegularFileProperty
+  @get:OutputFile abstract val outputFile: RegularFileProperty
 
-    @TaskAction
-    fun generate() {
-        println("ConsumerProguardFileProduceTask called !")
-        outputFile.get().asFile.writeText("some proguard statements")
-    }
+  @TaskAction
+  fun generate() {
+    println("ConsumerProguardFileProduceTask called !")
+    outputFile.get().asFile.writeText("some proguard statements")
+  }
 }

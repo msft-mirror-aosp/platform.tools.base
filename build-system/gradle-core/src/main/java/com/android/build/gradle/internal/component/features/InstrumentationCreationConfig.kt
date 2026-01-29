@@ -27,25 +27,23 @@ import org.gradle.api.model.ObjectFactory
  * Creation config for components that support instrumenting bytecode.
  *
  * To use this in a task that requires instrumentation support, use
- * [com.android.build.gradle.internal.tasks.factory.features.InstrumentationTaskCreationAction].
- * Otherwise, access the nullable property on the component
- * [com.android.build.gradle.internal.component.ComponentCreationConfig.instrumentationCreationConfig].
+ * [com.android.build.gradle.internal.tasks.factory.features.InstrumentationTaskCreationAction]. Otherwise, access the nullable property on
+ * the component [com.android.build.gradle.internal.component.ComponentCreationConfig.instrumentationCreationConfig].
  */
 interface InstrumentationCreationConfig {
-    val instrumentation: Instrumentation
+  val instrumentation: Instrumentation
 
-    val asmFramesComputationMode: FramesComputationMode
+  val asmFramesComputationMode: FramesComputationMode
 
-    val projectClassesAreInstrumented: Boolean
-    val dependenciesClassesAreInstrumented: Boolean
+  val projectClassesAreInstrumented: Boolean
+  val dependenciesClassesAreInstrumented: Boolean
 
-    val projectClassesPostInstrumentation: FileCollection
-    fun getDependenciesClassesJarsPostInstrumentation(
-        scope: AndroidArtifacts.ArtifactScope
-    ): FileCollection
+  val projectClassesPostInstrumentation: FileCollection
 
-    val registeredProjectClassesVisitors: List<AsmClassVisitorFactory<*>>
-    val registeredDependenciesClassesVisitors: List<AsmClassVisitorFactory<*>>
+  fun getDependenciesClassesJarsPostInstrumentation(scope: AndroidArtifacts.ArtifactScope): FileCollection
 
-    fun configureAndLockAsmClassesVisitors(objectFactory: ObjectFactory)
+  val registeredProjectClassesVisitors: List<AsmClassVisitorFactory<*>>
+  val registeredDependenciesClassesVisitors: List<AsmClassVisitorFactory<*>>
+
+  fun configureAndLockAsmClassesVisitors(objectFactory: ObjectFactory)
 }

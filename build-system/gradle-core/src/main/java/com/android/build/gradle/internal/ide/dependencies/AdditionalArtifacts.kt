@@ -19,11 +19,9 @@ package com.android.build.gradle.internal.ide.dependencies
 import com.android.builder.model.v2.ide.Library
 import java.io.File
 
-/**
- * Data class containing javadoc, source and sample source locations of a given [Library].
- */
+/** Data class containing javadoc, source and sample source locations of a given [Library]. */
 data class AdditionalArtifacts(val javadoc: File?, val sources: List<File>) {
-    companion object {
-        val EMPTY = AdditionalArtifacts(javadoc = null, emptyList())
-    }
+  companion object {
+    val EMPTY = AdditionalArtifacts(javadoc = null, emptyList())
+  }
 }

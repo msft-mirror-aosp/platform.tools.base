@@ -19,20 +19,20 @@ package com.android.build.api.apiTest.kotlin
 import com.android.build.api.apiTest.VariantApiBaseTest
 import com.android.build.gradle.options.BooleanOption
 import com.google.common.truth.Truth.assertThat
-import org.junit.Test
 import java.io.File
 import kotlin.test.assertNotNull
+import org.junit.Test
 
-class TransformWithDirectoriesApiTest: VariantApiBaseTest(TestType.Script) {
-        @Test
-        fun androidApkTransformTest() {
-            given {
-                tasksToInvoke.add(":app:debugUpdateApkDir")
-                addModule(":app") {
-                    @Suppress("RemoveExplicitTypeArguments")
-                    buildFile =
-                        // language=kotlin
-                        """
+class TransformWithDirectoriesApiTest : VariantApiBaseTest(TestType.Script) {
+  @Test
+  fun androidApkTransformTest() {
+    given {
+      tasksToInvoke.add(":app:debugUpdateApkDir")
+      addModule(":app") {
+        @Suppress("RemoveExplicitTypeArguments")
+        buildFile =
+          // language=kotlin
+          """
         plugins {
                 id("com.android.application")
                 kotlin("android")
@@ -94,25 +94,21 @@ class TransformWithDirectoriesApiTest: VariantApiBaseTest(TestType.Script) {
                 .toTransform(SingleArtifact.APK)
             }
         }
-    """.trimIndent()
-                    testingElements.addManifest(this)
-                }
-            }
-            withOptions(mapOf(BooleanOption.ENABLE_PROFILE_JSON to true))
-            check {
-                assertNotNull(this)
-                assertThat(output).containsMatch(
-                    "inputDir = .+?/app/build/intermediates/apk/debug/packageDebug"
-                )
-                assertThat(output).containsMatch(
-                    "outputDir = .+?/app/build/outputs/apk/debug"
-                )
-                val outputDirLine = output.split("\n").find { it.startsWith("outputDir =") }
-                val outputDir = outputDirLine!!.substringAfter(" = ")
-                assertThat(File(outputDir).isDirectory).isTrue()
-                assertThat(File(outputDir).list()).isNotEmpty()
-                assertThat(output).contains("BUILD SUCCESSFUL")
-            }
-        }
+    """
+            .trimIndent()
+        testingElements.addManifest(this)
+      }
     }
-
+    withOptions(mapOf(BooleanOption.ENABLE_PROFILE_JSON to true))
+    check {
+      assertNotNull(this)
+      assertThat(output).containsMatch("inputDir = .+?/app/build/intermediates/apk/debug/packageDebug")
+      assertThat(output).containsMatch("outputDir = .+?/app/build/outputs/apk/debug")
+      val outputDirLine = output.split("\n").find { it.startsWith("outputDir =") }
+      val outputDir = outputDirLine!!.substringAfter(" = ")
+      assertThat(File(outputDir).isDirectory).isTrue()
+      assertThat(File(outputDir).list()).isNotEmpty()
+      assertThat(output).contains("BUILD SUCCESSFUL")
+    }
+  }
+}

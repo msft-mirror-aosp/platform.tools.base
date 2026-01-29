@@ -19,32 +19,33 @@ package com.android.build.api.component.analytics
 import com.android.build.api.variant.AnnotationProcessor
 import com.android.tools.build.gradle.internal.profile.VariantPropertiesMethodType
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
+import javax.inject.Inject
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.MapProperty
 import org.gradle.process.CommandLineArgumentProvider
-import javax.inject.Inject
 
-open class AnalyticsEnabledAnnotationProcessor @Inject constructor(
-    open val delegate: AnnotationProcessor,
-    val stats: GradleBuildVariant.Builder,
-) : AnnotationProcessor {
+open class AnalyticsEnabledAnnotationProcessor
+@Inject
+constructor(open val delegate: AnnotationProcessor, val stats: GradleBuildVariant.Builder) : AnnotationProcessor {
 
-    override val classNames: ListProperty<String>
-        get() {
-            stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
-                VariantPropertiesMethodType.ANNOTATION_PROCESSOR_CLASS_NAMES_VALUE
-            return delegate.classNames
-        }
-    override val arguments: MapProperty<String, String>
-        get() {
-            stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
-                VariantPropertiesMethodType.ANNOTATION_PROCESSOR_ARGUMENTS_VALUE
-            return delegate.arguments
-        }
-    override val argumentProviders: MutableList<CommandLineArgumentProvider>
-        get() {
-            stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
-                VariantPropertiesMethodType.ANNOTATION_PROCESSOR_ARGUMENT_PROVIDERS_VALUE
-            return delegate.argumentProviders
-        }
+  override val classNames: ListProperty<String>
+    get() {
+      stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
+        VariantPropertiesMethodType.ANNOTATION_PROCESSOR_CLASS_NAMES_VALUE
+      return delegate.classNames
+    }
+
+  override val arguments: MapProperty<String, String>
+    get() {
+      stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
+        VariantPropertiesMethodType.ANNOTATION_PROCESSOR_ARGUMENTS_VALUE
+      return delegate.arguments
+    }
+
+  override val argumentProviders: MutableList<CommandLineArgumentProvider>
+    get() {
+      stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
+        VariantPropertiesMethodType.ANNOTATION_PROCESSOR_ARGUMENT_PROVIDERS_VALUE
+      return delegate.argumentProviders
+    }
 }

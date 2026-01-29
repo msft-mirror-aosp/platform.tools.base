@@ -22,39 +22,28 @@ import org.junit.Rule
 import org.junit.Test
 
 class SdkVersionTest {
-    @get:Rule
-    val rule = GradleRule.from {
-        androidApplication {
-            android {
-                namespace = "com.example.app"
-            }
-        }
-    }
+  @get:Rule val rule = GradleRule.from { androidApplication { android { namespace = "com.example.app" } } }
 
-    @Test
-    fun testCompileSdkVersionTooLowForMinorVersion() {
-        val build = rule.build
-        build.androidApplication().reconfigure {
-            android.compileSdk = 35
-            android.compileSdkMinor = 2
-        }
-        val result = build.executor.expectFailure().run("app:assembleDebug")
-        ScannerSubject.assertThat(result.stderr).contains(
-            "Minor versions are only supported for API 36 and above."
-        )
+  @Test
+  fun testCompileSdkVersionTooLowForMinorVersion() {
+    val build = rule.build
+    build.androidApplication().reconfigure {
+      android.compileSdk = 35
+      android.compileSdkMinor = 2
     }
+    val result = build.executor.expectFailure().run("app:assembleDebug")
+    ScannerSubject.assertThat(result.stderr).contains("Minor versions are only supported for API 36 and above.")
+  }
 
-    @Test
-    fun testCompileSdkMinor() {
-        val build = rule.build
-        build.androidApplication().reconfigure {
-            android.compileSdk = 36
-            android.compileSdkMinor = 2
-        }
-        // TODO (b/356143412): remove failure once there is support for this SDK and check manifest
-        val result = build.executor.expectFailure().run("app:assembleDebug")
-        ScannerSubject.assertThat(result.stderr).contains(
-            "Failed to find target with hash string 'android-36.2' in:"
-        )
+  @Test
+  fun testCompileSdkMinor() {
+    val build = rule.build
+    build.androidApplication().reconfigure {
+      android.compileSdk = 36
+      android.compileSdkMinor = 2
     }
+    // TODO (b/356143412): remove failure once there is support for this SDK and check manifest
+    val result = build.executor.expectFailure().run("app:assembleDebug")
+    ScannerSubject.assertThat(result.stderr).contains("Failed to find target with hash string 'android-36.2' in:")
+  }
 }

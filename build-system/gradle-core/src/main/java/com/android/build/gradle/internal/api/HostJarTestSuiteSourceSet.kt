@@ -21,36 +21,28 @@ import com.android.build.api.dsl.AgpTestSuiteDependencies
 import com.android.build.api.variant.TestSuiteSourceSet
 import com.android.build.api.variant.impl.FlatSourceDirectoriesImpl
 import com.android.build.gradle.internal.services.VariantServices
-import org.gradle.api.file.Directory
 import java.io.File
+import org.gradle.api.file.Directory
 import org.gradle.api.provider.Provider
 
 internal class HostJarTestSuiteSourceSet(
-    sourceSetName: String,
-    variantServices: VariantServices,
-    userAddedSourceSets: Collection<Directory>,
-    javaEnabled: Boolean,
-    kotlinEnabled: Boolean,
-    includeAndroidResources: Provider<Boolean>,
-    override val dependencies: AgpTestSuiteDependencies?,
-): AbstractTestSuiteSourceSet(
-    sourceSetName,
-    variantServices,
-    userAddedSourceSets,
-    javaEnabled,
-    kotlinEnabled
-), TestSuiteSourceSet.HostJar {
+  sourceSetName: String,
+  variantServices: VariantServices,
+  userAddedSourceSets: Collection<Directory>,
+  javaEnabled: Boolean,
+  kotlinEnabled: Boolean,
+  includeAndroidResources: Provider<Boolean>,
+  override val dependencies: AgpTestSuiteDependencies?,
+) :
+  AbstractTestSuiteSourceSet(sourceSetName, variantServices, userAddedSourceSets, javaEnabled, kotlinEnabled), TestSuiteSourceSet.HostJar {
 
-    val manifestFileCandidate = File(
-        variantServices.projectInfo.projectDirectory.asFile,
-        "src/$sourceSetName/$FN_ANDROID_MANIFEST_XML"
-    )
+  val manifestFileCandidate = File(variantServices.projectInfo.projectDirectory.asFile, "src/$sourceSetName/$FN_ANDROID_MANIFEST_XML")
 
-    override val manifestFile: File? = manifestFileCandidate.takeIf { includeAndroidResources.get() }
+  override val manifestFile: File? = manifestFileCandidate.takeIf { includeAndroidResources.get() }
 
-    override val java: FlatSourceDirectoriesImpl? = if (javaEnabled) createJavaSources() else null
+  override val java: FlatSourceDirectoriesImpl? = if (javaEnabled) createJavaSources() else null
 
-    override val kotlin: FlatSourceDirectoriesImpl? = if (kotlinEnabled) createKotlinSources() else null
+  override val kotlin: FlatSourceDirectoriesImpl? = if (kotlinEnabled) createKotlinSources() else null
 
-    override val resources: FlatSourceDirectoriesImpl = resourcesSourcesFolder
+  override val resources: FlatSourceDirectoriesImpl = resourcesSourcesFolder
 }

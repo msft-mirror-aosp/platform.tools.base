@@ -18,15 +18,10 @@ package com.android.build.gradle.internal.ide.v2
 
 import com.android.builder.model.v2.ide.Installation
 import java.io.Serializable
-/**
- * Implementation of [Installation] for serialization via the Tooling API
- */
-data class InstallationImpl(
-    override val timeOutInMs: Int,
-    override val installOptions: Collection<String>
-): Installation, Serializable {
-    companion object {
-        @JvmStatic
-        private val serialVersionUID: Long = 1L
-    }
+
+/** Implementation of [Installation] for serialization via the Tooling API */
+data class InstallationImpl(override val timeOutInMs: Int, override val installOptions: Collection<String>) : Installation, Serializable {
+  companion object {
+    @JvmStatic private val serialVersionUID: Long = 1L
+  }
 }

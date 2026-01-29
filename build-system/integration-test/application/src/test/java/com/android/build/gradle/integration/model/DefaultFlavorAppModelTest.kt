@@ -20,44 +20,29 @@ import com.android.build.gradle.integration.common.fixture.model.ReferenceModelC
 import com.android.builder.model.v2.ide.SyncIssue
 import org.junit.Test
 
-class DefaultFlavorAppModelTest: ReferenceModelComparator(
+class DefaultFlavorAppModelTest :
+  ReferenceModelComparator(
     referenceConfig = {
-        androidApplication {
-            android {
-                flavorDimensions += "foo"
-                productFlavors {
-                    create("flavorA") {
-                        it.dimension = "foo"
-                    }
-                    create("flavorB") {
-                        it.dimension = "foo"
-                    }
-                }
-            }
+      androidApplication {
+        android {
+          flavorDimensions += "foo"
+          productFlavors {
+            create("flavorA") { it.dimension = "foo" }
+            create("flavorB") { it.dimension = "foo" }
+          }
         }
+      }
     },
-    deltaConfig = {
-        androidApplication {
-            android {
-                productFlavors {
-                    named("flavorA") {
-                        it.isDefault = true
-                    }
-                }
-            }
-        }
-    },
-    syncOptions = {
-        ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
-    }
-) {
-    @Test
-    fun `test AndroidProject model`() {
-        ensureAndroidProjectDeltaIsEmpty()
-    }
+    deltaConfig = { androidApplication { android { productFlavors { named("flavorA") { it.isDefault = true } } } } },
+    syncOptions = { ignoreSyncIssues(SyncIssue.SEVERITY_WARNING) },
+  ) {
+  @Test
+  fun `test AndroidProject model`() {
+    ensureAndroidProjectDeltaIsEmpty()
+  }
 
-    @Test
-    fun `test AndroidDsl model`() {
-        compareAndroidDslWith(goldenFileSuffix = "AndroidDsl")
-    }
+  @Test
+  fun `test AndroidDsl model`() {
+    compareAndroidDslWith(goldenFileSuffix = "AndroidDsl")
+  }
 }

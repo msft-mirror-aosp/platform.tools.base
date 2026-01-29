@@ -29,45 +29,37 @@ import com.android.build.gradle.internal.cxx.settings.BuildSettingsConfiguration
 import com.android.build.gradle.internal.cxx.settings.EnvironmentVariable
 import com.android.testutils.truth.PathSubject.assertThat
 import com.android.utils.FileUtils.join
+import java.io.File
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
-import java.io.File
 
 @RunWith(Parameterized::class)
-class CMakeBuildSettingsTest(
-    private val cmakeVersionInDsl: String,
-    private val hasFoldableVariants: Boolean
-) {
-    @Rule
-    @JvmField
-    val project = GradleTestProject.builder()
-        .fromTestApp(
-            HelloWorldJniApp.builder().withNativeDir("cxx").withCmake().build()
-        )
-        .setSideBySideNdkVersion(GradleTestProject.DEFAULT_NDK_SIDE_BY_SIDE_VERSION)
-        .create()
+class CMakeBuildSettingsTest(private val cmakeVersionInDsl: String, private val hasFoldableVariants: Boolean) {
+  @Rule
+  @JvmField
+  val project =
+    GradleTestProject.builder()
+      .fromTestApp(HelloWorldJniApp.builder().withNativeDir("cxx").withCmake().build())
+      .setSideBySideNdkVersion(GradleTestProject.DEFAULT_NDK_SIDE_BY_SIDE_VERSION)
+      .create()
 
-    companion object {
-        @Parameterized.Parameters(name = "version={0} hasFoldableVariants={1}")
-        @JvmStatic
-        fun data() =
-                cartesianOf(
-                    CMakeVersion.FOR_TESTING.map { it.version }.toTypedArray(),
-                    arrayOf(true, false)
-                )
-    }
+  companion object {
+    @Parameterized.Parameters(name = "version={0} hasFoldableVariants={1}")
+    @JvmStatic
+    fun data() = cartesianOf(CMakeVersion.FOR_TESTING.map { it.version }.toTypedArray(), arrayOf(true, false))
+  }
 
-    @Before
-    fun setUp() {
-        assertThat(project.buildFile).isNotNull()
-        assertThat(project.buildFile).isFile()
+  @Before
+  fun setUp() {
+    assertThat(project.buildFile).isNotNull()
+    assertThat(project.buildFile).isFile()
 
-        TestFileUtils.appendToFile(
-            project.buildFile,
-            """
+    TestFileUtils.appendToFile(
+      project.buildFile,
+      """
                 apply plugin: 'com.android.application'
 
                 android {
@@ -102,108 +94,116 @@ class CMakeBuildSettingsTest(
                     }
                 }
 
-            """.trimIndent()
-        )
-        if (hasFoldableVariants) {
-            TestFileUtils.appendToFile(project.buildFile, """
-            android {
-                buildTypes {
-                    secondRelease {}
-                }
-            }
-            """.trimIndent())
-        }
-        setupTestLauncher()
-    }
-
-    private fun setupTestLauncher() {
-        // Launcher that prints ${TEST_ENV} to launcher_output.txt then runs the Ninja build
-        val wrapper = if(SdkConstants.currentPlatform() == SdkConstants.PLATFORM_WINDOWS){
-            setupWindowsLauncher()
-        } else {
-            setupLinuxLauncher()
-        }
-        wrapper.setReadable(true)
-        wrapper.setExecutable(true)
-
-        TestFileUtils.appendToFile(
-            join(project.buildFile.parentFile, "CMakeLists.txt"),
-            "set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE \"${wrapper.path.replace("\\", "\\\\")}\")"
-        )
-    }
-
-    private fun setupLinuxLauncher(): File {
-        val wrapper = join(project.buildFile.parentFile, "wrapper.sh")
-        TestFileUtils.appendToFile(
-            wrapper,
             """
+        .trimIndent(),
+    )
+    if (hasFoldableVariants) {
+      TestFileUtils.appendToFile(
+        project.buildFile,
+        """
+        android {
+            buildTypes {
+                secondRelease {}
+            }
+        }
+        """
+          .trimIndent(),
+      )
+    }
+    setupTestLauncher()
+  }
+
+  private fun setupTestLauncher() {
+    // Launcher that prints ${TEST_ENV} to launcher_output.txt then runs the Ninja build
+    val wrapper =
+      if (SdkConstants.currentPlatform() == SdkConstants.PLATFORM_WINDOWS) {
+        setupWindowsLauncher()
+      } else {
+        setupLinuxLauncher()
+      }
+    wrapper.setReadable(true)
+    wrapper.setExecutable(true)
+
+    TestFileUtils.appendToFile(
+      join(project.buildFile.parentFile, "CMakeLists.txt"),
+      "set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE \"${wrapper.path.replace("\\", "\\\\")}\")",
+    )
+  }
+
+  private fun setupLinuxLauncher(): File {
+    val wrapper = join(project.buildFile.parentFile, "wrapper.sh")
+    TestFileUtils.appendToFile(
+      wrapper,
+      """
                 #!/bin/bash
                 echo "${'$'}{TEST_ENV}" > ${join(project.buildFile.parentFile, "launcher_output.txt")}
                 $*
-            """.trimIndent()
-        )
-        return wrapper
-    }
-
-    private fun setupWindowsLauncher(): File {
-        val wrapper = join(project.buildFile.parentFile, "wrapper.cmd")
-        TestFileUtils.appendToFile(
-            wrapper,
             """
+        .trimIndent(),
+    )
+    return wrapper
+  }
+
+  private fun setupWindowsLauncher(): File {
+    val wrapper = join(project.buildFile.parentFile, "wrapper.cmd")
+    TestFileUtils.appendToFile(
+      wrapper,
+      """
                 echo %TEST_ENV% > ${join(project.buildFile.parentFile, "launcher_output.txt")}
                 %*
-            """.trimIndent()
-        )
-        return wrapper
-    }
-
-    @Test
-    fun `uses empty BuildSettingsConfiguration if JSON file does not exist`() {
-        project.execute("clean", "assembleDebug")
-
-        // No BuildSettings.json, should have empty BuildSettingsConfiguration
-        project.recoverExistingCxxAbiModels()
-            .forEach {
-                assertThat(it.buildSettings).isEqualTo(BuildSettingsConfiguration())
-            }
-    }
-
-    @Test
-    fun `uses BuildSettings environment variables during the build`() {
-        TestFileUtils.appendToFile(
-            join(project.buildFile.parentFile, "BuildSettings.json"),
             """
-            {
-                "environmentVariables": [
-                    {
-                      "name": "TEST_ENV",
-                      "value": "value for TEST_ENV"
-                    },
-                    {
-                      "name": "abi",
-                      "value": "${'$'}{ndk.abi}"
-                    }
-                ]
-            }""".trimIndent()
+        .trimIndent(),
+    )
+    return wrapper
+  }
+
+  @Test
+  fun `uses empty BuildSettingsConfiguration if JSON file does not exist`() {
+    project.execute("clean", "assembleDebug")
+
+    // No BuildSettings.json, should have empty BuildSettingsConfiguration
+    project.recoverExistingCxxAbiModels().forEach { assertThat(it.buildSettings).isEqualTo(BuildSettingsConfiguration()) }
+  }
+
+  @Test
+  fun `uses BuildSettings environment variables during the build`() {
+    TestFileUtils.appendToFile(
+      join(project.buildFile.parentFile, "BuildSettings.json"),
+      """
+      {
+          "environmentVariables": [
+              {
+                "name": "TEST_ENV",
+                "value": "value for TEST_ENV"
+              },
+              {
+                "name": "abi",
+                "value": "${'$'}{ndk.abi}"
+              }
+          ]
+      }
+      """
+        .trimIndent(),
+    )
+
+    project.execute("clean", "assembleDebug")
+
+    // Verify that environment variables is set in BuildSettings
+    project.recoverExistingCxxAbiModels().forEach {
+      assertThat(it.buildSettings)
+        .isEqualTo(
+          BuildSettingsConfiguration(
+            environmentVariables =
+              listOf(
+                EnvironmentVariable(name = "TEST_ENV", value = "value for TEST_ENV"),
+                EnvironmentVariable(name = "abi", value = it.name),
+              )
+          )
         )
-
-        project.execute("clean", "assembleDebug")
-
-        // Verify that environment variables is set in BuildSettings
-        project.recoverExistingCxxAbiModels()
-            .forEach {
-                assertThat(it.buildSettings).isEqualTo(
-                    BuildSettingsConfiguration(
-                        environmentVariables = listOf(
-                            EnvironmentVariable(name = "TEST_ENV", value = "value for TEST_ENV"),
-                            EnvironmentVariable(name = "abi", value = it.name)
-                        )
-                    )
-                )
-            }
-
-        // Verify the environment variable was used by the launcher
-        val launcherOutput = join(project.buildFile.parentFile, "launcher_output.txt")
-        assertThat(launcherOutput.readText().trim()).isEqualTo("value for TEST_ENV")
     }
+
+    // Verify the environment variable was used by the launcher
+    val launcherOutput = join(project.buildFile.parentFile, "launcher_output.txt")
+    assertThat(launcherOutput.readText().trim()).isEqualTo("value for TEST_ENV")
+  }
 }

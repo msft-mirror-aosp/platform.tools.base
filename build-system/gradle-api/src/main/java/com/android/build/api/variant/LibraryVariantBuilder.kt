@@ -16,16 +16,16 @@
 package com.android.build.api.variant
 
 /**
- * Model for library components that only contains configuration-time properties that impacts
- * the build flow.
+ * Model for library components that only contains configuration-time properties that impacts the build flow.
  *
  * See [ComponentBuilder] and [VariantBuilder] for more information.
  */
-interface LibraryVariantBuilder : VariantBuilder,
-    HasDeviceTestsBuilder,
-    HasAndroidTestBuilder,
-    HasHostTestsBuilder,
-    HasUnitTestBuilder,
-    HasTestFixturesBuilder,
-    HasTestSuitesBuilder,
-    CanMinifyCodeBuilder
+interface LibraryVariantBuilder :
+  VariantBuilder,
+  HasDeviceTestsBuilder,
+  HasAndroidTestBuilder,
+  HasHostTestsBuilder,
+  HasUnitTestBuilder,
+  HasTestFixturesBuilder,
+  HasTestSuitesBuilder,
+  CanMinifyCodeBuilder

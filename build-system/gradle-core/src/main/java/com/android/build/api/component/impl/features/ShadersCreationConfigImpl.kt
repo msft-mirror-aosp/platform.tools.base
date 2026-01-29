@@ -19,11 +19,10 @@ package com.android.build.api.component.impl.features
 import com.android.build.gradle.internal.component.features.ShadersCreationConfig
 import com.android.build.gradle.internal.core.dsl.features.ShadersDslInfo
 
-class ShadersCreationConfigImpl(
-    private val dslInfo: ShadersDslInfo
-): ShadersCreationConfig {
-    override val defaultGlslcArgs: List<String>
-        get() = dslInfo.defaultGlslcArgs
-    override val scopedGlslcArgs: Map<String, List<String>>
-        get() = dslInfo.scopedGlslcArgs
+class ShadersCreationConfigImpl(private val dslInfo: ShadersDslInfo) : ShadersCreationConfig {
+  override val defaultGlslcArgs: List<String>
+    get() = dslInfo.defaultGlslcArgs
+
+  override val scopedGlslcArgs: Map<String, List<String>>
+    get() = dslInfo.scopedGlslcArgs
 }

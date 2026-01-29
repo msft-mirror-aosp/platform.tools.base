@@ -20,17 +20,11 @@ import org.junit.Test
 
 class CreateCxxVariantModelTest {
 
-    @Test
-    fun `simple variant does not throw exception`() {
-        BasicCmakeMock().let {
-            val module = createCxxModuleModel(
-                it.sdkComponents,
-                it.configurationParameters,
-            )
-            createCxxVariantModel(
-                it.configurationParameters,
-                module
-            )
-        }
+  @Test
+  fun `simple variant does not throw exception`() {
+    BasicCmakeMock().let {
+      val module = createCxxModuleModel(it.sdkComponents, it.configurationParameters)
+      createCxxVariantModel(it.configurationParameters, module)
     }
+  }
 }

@@ -22,38 +22,26 @@ import com.android.build.gradle.internal.packaging.defaultExcludes
 import com.android.build.gradle.internal.packaging.defaultMerges
 import com.android.build.gradle.internal.services.VariantServices
 
-open class ResourcesPackagingImpl(
-    private val dslPackaging: Packaging,
-    variantServices: VariantServices
-) : ResourcesPackaging {
+open class ResourcesPackagingImpl(private val dslPackaging: Packaging, variantServices: VariantServices) : ResourcesPackaging {
 
-    override val excludes =
-        variantServices.setPropertyOf(String::class.java) { getBaseExcludes() }
+  override val excludes = variantServices.setPropertyOf(String::class.java) { getBaseExcludes() }
 
-    override val pickFirsts =
-        variantServices.setPropertyOf(String::class.java) {
-            dslPackaging.pickFirsts.union(dslPackaging.resources.pickFirsts)
-        }
+  override val pickFirsts =
+    variantServices.setPropertyOf(String::class.java) { dslPackaging.pickFirsts.union(dslPackaging.resources.pickFirsts) }
 
-    override val merges =
-        variantServices.setPropertyOf(String::class.java) {
-            // the union of dslPackagingOptions.merges and dslPackagingOptions.resources.merges,
-            // minus the default patterns removed from either of them.
-            dslPackaging.merges
-                .union(dslPackaging.resources.merges)
-                .minus(
-                    defaultMerges.subtract(dslPackaging.merges)
-                        .union(defaultMerges.subtract(dslPackaging.resources.merges))
-                )
-        }
+  override val merges =
+    variantServices.setPropertyOf(String::class.java) {
+      // the union of dslPackagingOptions.merges and dslPackagingOptions.resources.merges,
+      // minus the default patterns removed from either of them.
+      dslPackaging.merges
+        .union(dslPackaging.resources.merges)
+        .minus(defaultMerges.subtract(dslPackaging.merges).union(defaultMerges.subtract(dslPackaging.resources.merges)))
+    }
 
-    // the union of dslPackagingOptions.excludes and dslPackagingOptions.resources.excludes, minus
-    // the default patterns removed from either of them.
-    protected fun getBaseExcludes(): Set<String> =
-        dslPackaging.excludes
-            .union(dslPackaging.resources.excludes)
-            .minus(
-                defaultExcludes.subtract(dslPackaging.excludes)
-                    .union(defaultExcludes.subtract(dslPackaging.resources.excludes))
-            )
+  // the union of dslPackagingOptions.excludes and dslPackagingOptions.resources.excludes, minus
+  // the default patterns removed from either of them.
+  protected fun getBaseExcludes(): Set<String> =
+    dslPackaging.excludes
+      .union(dslPackaging.resources.excludes)
+      .minus(defaultExcludes.subtract(dslPackaging.excludes).union(defaultExcludes.subtract(dslPackaging.resources.excludes)))
 }

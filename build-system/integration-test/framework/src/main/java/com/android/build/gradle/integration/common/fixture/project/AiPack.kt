@@ -31,80 +31,54 @@ import java.nio.file.Path
  * Support for Android AI Pack in the [GradleRule] fixture
  */
 
-/**
- * Specialized interface for [GenericProjectDefinition]
- */
+/** Specialized interface for [GenericProjectDefinition] */
 @GradleDefinitionDsl
-interface AiPackDefinition: GradleProjectDefinition {
-    val aiPack: AiPackExtension
-    fun aiPack(action: AiPackExtension.() -> Unit)
+interface AiPackDefinition : GradleProjectDefinition {
+  val aiPack: AiPackExtension
 
-    /** executes the lambda that adds/updates/removes files from the project */
-    fun files(action: GradleProjectFiles.() -> Unit)
+  fun aiPack(action: AiPackExtension.() -> Unit)
+
+  /** executes the lambda that adds/updates/removes files from the project */
+  fun files(action: GradleProjectFiles.() -> Unit)
 }
 
-/**
- * Implementation of [AiPackDefinition]
- */
-internal class AiPackDefinitionImpl(path: String) : GradleProjectDefinitionImpl(path),
-    AiPackDefinition {
+/** Implementation of [AiPackDefinition] */
+internal class AiPackDefinitionImpl(path: String) : GradleProjectDefinitionImpl(path), AiPackDefinition {
 
-    init {
-        applyPlugin(PluginType.ANDROID_AI_PACK)
+  init {
+    applyPlugin(PluginType.ANDROID_AI_PACK)
+  }
+
+  override fun files(action: GradleProjectFiles.() -> Unit) {
+    action(files)
+  }
+
+  override val aiPack: AiPackExtension = DslProxy.createProxy(AiPackExtension::class.java, dslRecorder)
+
+  override fun aiPack(action: AiPackExtension.() -> Unit) {
+    action(aiPack)
+  }
+
+  override fun writeExtension(writer: BuildWriter, location: Path) {
+    writer.apply {
+      block("aiPack") { dslRecorder.writeContent(this) }
+
+      emptyLine()
     }
-
-    override fun files (action: GradleProjectFiles.() -> Unit) {
-        action(files)
-    }
-
-    override val aiPack: AiPackExtension =
-        DslProxy.createProxy(
-            AiPackExtension::class.java,
-            dslRecorder,
-        )
-
-    override fun aiPack(action: AiPackExtension.() -> Unit) {
-        action(aiPack)
-    }
-
-    override fun writeExtension(writer: BuildWriter, location: Path) {
-        writer.apply {
-            block("aiPack") {
-                dslRecorder.writeContent(this)
-            }
-
-            emptyLine()
-        }
-    }
+  }
 }
 
-/**
- * Specialized interface for AI Pack [AndroidProject] to use in the test
- */
-interface AiPackProject: GradleProject<AiPackDefinition>
+/** Specialized interface for AI Pack [AndroidProject] to use in the test */
+interface AiPackProject : GradleProject<AiPackDefinition>
 
-/**
- * Implementation of [AndroidProject]
- */
-internal class AiPackImpl(
-    location: Path,
-    projectDefinition: AiPackDefinition,
-) : GradleProjectImpl<AiPackDefinition>(
-    location,
-    projectDefinition,
-), AiPackProject {
+/** Implementation of [AndroidProject] */
+internal class AiPackImpl(location: Path, projectDefinition: AiPackDefinition) :
+  GradleProjectImpl<AiPackDefinition>(location, projectDefinition), AiPackProject {
 
-    override fun getReversibleInstance(fileChangeController: FileChangeController): AiPackProject =
-        ReversibleAiPackProject(this, fileChangeController)
+  override fun getReversibleInstance(fileChangeController: FileChangeController): AiPackProject =
+    ReversibleAiPackProject(this, fileChangeController)
 }
 
-/**
- * Reversible version of [AiPackProject]
- */
-internal class ReversibleAiPackProject(
-    parentProject: AiPackProject,
-    fileChangeController: FileChangeController
-) : ReversibleGradleProject<AiPackProject, AiPackDefinition>(
-    parentProject,
-    fileChangeController
-), AiPackProject
+/** Reversible version of [AiPackProject] */
+internal class ReversibleAiPackProject(parentProject: AiPackProject, fileChangeController: FileChangeController) :
+  ReversibleGradleProject<AiPackProject, AiPackDefinition>(parentProject, fileChangeController), AiPackProject

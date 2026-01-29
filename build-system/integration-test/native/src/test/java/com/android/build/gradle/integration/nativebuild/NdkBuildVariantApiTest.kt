@@ -30,18 +30,21 @@ import org.junit.Rule
 import org.junit.Test
 
 class NdkBuildVariantApiTest {
-    @Rule
-    @JvmField
-    val project = GradleTestProject.builder()
-            .fromTestApp(HelloWorldJniApp.builder().build())
-            .setSideBySideNdkVersion(DEFAULT_NDK_SIDE_BY_SIDE_VERSION)
-            .addFile(HelloWorldJniApp.androidMkC("src/main/jni"))
-            .create()
+  @Rule
+  @JvmField
+  val project =
+    GradleTestProject.builder()
+      .fromTestApp(HelloWorldJniApp.builder().build())
+      .setSideBySideNdkVersion(DEFAULT_NDK_SIDE_BY_SIDE_VERSION)
+      .addFile(HelloWorldJniApp.androidMkC("src/main/jni"))
+      .create()
 
-    @Test
-    fun testAbiFilter() {
+  @Test
+  fun testAbiFilter() {
 
-        TestFileUtils.appendToFile(project.buildFile, """
+    TestFileUtils.appendToFile(
+      project.buildFile,
+      """
             apply plugin: 'com.android.application'
 
             android {
@@ -74,31 +77,35 @@ class NdkBuildVariantApiTest {
                     it.externalNativeBuild.abiFilters.add("x86_64")
                 })
             }
-        """.trimIndent())
+        """
+        .trimIndent(),
+    )
 
-        project.buildFile.resolveSibling("foo.cpp").writeText("void foo() {}")
-        project.execute("assembleDebug")
+    project.buildFile.resolveSibling("foo.cpp").writeText("void foo() {}")
+    project.execute("assembleDebug")
 
-        assertThat(project.getSoFolderFor(Abi.ARM64_V8A)).isNull()
-        assertThat(project.getSoFolderFor(Abi.X86)).isNull()
-        assertThat(project.getSoFolderFor(Abi.ARMEABI_V7A)).isNull()
-        assertThat(project.getSoFolderFor(Abi.X86_64)).exists()
+    assertThat(project.getSoFolderFor(Abi.ARM64_V8A)).isNull()
+    assertThat(project.getSoFolderFor(Abi.X86)).isNull()
+    assertThat(project.getSoFolderFor(Abi.ARMEABI_V7A)).isNull()
+    assertThat(project.getSoFolderFor(Abi.X86_64)).exists()
 
-        project.recoverExistingCxxAbiModels().forEach { abi ->
-            val buildCommandFile = abi.metadataGenerationCommandFile
-            assertThat(buildCommandFile).exists()
-            val buildCommand = buildCommandFile.readText()
+    project.recoverExistingCxxAbiModels().forEach { abi ->
+      val buildCommandFile = abi.metadataGenerationCommandFile
+      assertThat(buildCommandFile).exists()
+      val buildCommand = buildCommandFile.readText()
 
-            Truth.assertThat(buildCommand).contains("APP_CPPFLAGS+=-DTEST_CPP_FLAG")
-            Truth.assertThat(buildCommand).contains("APP_CFLAGS+=-DTEST_C_FLAG")
-            Truth.assertThat(buildCommand).contains("NDK_ALL_ABIS=x86_64")
-        }
+      Truth.assertThat(buildCommand).contains("APP_CPPFLAGS+=-DTEST_CPP_FLAG")
+      Truth.assertThat(buildCommand).contains("APP_CFLAGS+=-DTEST_C_FLAG")
+      Truth.assertThat(buildCommand).contains("NDK_ALL_ABIS=x86_64")
     }
+  }
 
-    @Test
-    fun testFlags() {
+  @Test
+  fun testFlags() {
 
-        TestFileUtils.appendToFile(project.buildFile, """
+    TestFileUtils.appendToFile(
+      project.buildFile,
+      """
             apply plugin: 'com.android.application'
 
             android {
@@ -131,32 +138,36 @@ class NdkBuildVariantApiTest {
                     it.externalNativeBuild.getCppFlags().add("-DTEST_CPP_FLAG2")
                 })
             }
-        """.trimIndent())
+        """
+        .trimIndent(),
+    )
 
-        project.buildFile.resolveSibling("foo.cpp").writeText("void foo() {}")
-        project.execute("assembleDebug")
+    project.buildFile.resolveSibling("foo.cpp").writeText("void foo() {}")
+    project.execute("assembleDebug")
 
-        assertThat(project.getSoFolderFor(Abi.ARM64_V8A)).isNull()
-        assertThat(project.getSoFolderFor(Abi.X86)).isNull()
-        assertThat(project.getSoFolderFor(Abi.ARMEABI_V7A)).exists()
-        assertThat(project.getSoFolderFor(Abi.X86_64)).exists()
+    assertThat(project.getSoFolderFor(Abi.ARM64_V8A)).isNull()
+    assertThat(project.getSoFolderFor(Abi.X86)).isNull()
+    assertThat(project.getSoFolderFor(Abi.ARMEABI_V7A)).exists()
+    assertThat(project.getSoFolderFor(Abi.X86_64)).exists()
 
-        project.recoverExistingCxxAbiModels().forEach { abi ->
-            val buildCommandFile = abi.metadataGenerationCommandFile
-            assertThat(buildCommandFile).exists()
-            val buildCommand = buildCommandFile.readText()
+    project.recoverExistingCxxAbiModels().forEach { abi ->
+      val buildCommandFile = abi.metadataGenerationCommandFile
+      assertThat(buildCommandFile).exists()
+      val buildCommand = buildCommandFile.readText()
 
-            Truth.assertThat(buildCommand).contains("APP_CPPFLAGS+=-DTEST_CPP_FLAG")
-            Truth.assertThat(buildCommand).contains("APP_CPPFLAGS+=-DTEST_CPP_FLAG2")
-            Truth.assertThat(buildCommand).contains("APP_CFLAGS+=-DTEST_C_FLAG")
-            Truth.assertThat(buildCommand).contains("APP_CFLAGS+=-DTEST_C_FLAG2")
-        }
+      Truth.assertThat(buildCommand).contains("APP_CPPFLAGS+=-DTEST_CPP_FLAG")
+      Truth.assertThat(buildCommand).contains("APP_CPPFLAGS+=-DTEST_CPP_FLAG2")
+      Truth.assertThat(buildCommand).contains("APP_CFLAGS+=-DTEST_C_FLAG")
+      Truth.assertThat(buildCommand).contains("APP_CFLAGS+=-DTEST_C_FLAG2")
     }
+  }
 
-    @Test
-    fun testArguments() {
+  @Test
+  fun testArguments() {
 
-        TestFileUtils.appendToFile(project.buildFile, """
+    TestFileUtils.appendToFile(
+      project.buildFile,
+      """
             apply plugin: 'com.android.application'
 
             android {
@@ -190,21 +201,23 @@ class NdkBuildVariantApiTest {
                     it.externalNativeBuild.arguments.add("NDK_MODULE_PATH+=./third_party/modules")
                 })
             }
-        """.trimIndent())
+        """
+        .trimIndent(),
+    )
 
-        project.buildFile.resolveSibling("foo.cpp").writeText("void foo() {}")
-        project.execute("assembleDebug")
+    project.buildFile.resolveSibling("foo.cpp").writeText("void foo() {}")
+    project.execute("assembleDebug")
 
-        assertThat(project.getSoFolderFor(Abi.ARM64_V8A)).isNull()
-        assertThat(project.getSoFolderFor(Abi.X86)).isNull()
-        assertThat(project.getSoFolderFor(Abi.ARMEABI_V7A)).isNull()
-        assertThat(project.getSoFolderFor(Abi.X86_64)).exists()
+    assertThat(project.getSoFolderFor(Abi.ARM64_V8A)).isNull()
+    assertThat(project.getSoFolderFor(Abi.X86)).isNull()
+    assertThat(project.getSoFolderFor(Abi.ARMEABI_V7A)).isNull()
+    assertThat(project.getSoFolderFor(Abi.X86_64)).exists()
 
-        project.recoverExistingCxxAbiModels().forEach { abi ->
-            val buildCommandFile = abi.metadataGenerationCommandFile
-            assertThat(buildCommandFile).exists()
-            val buildCommand = buildCommandFile.readText()
-            Truth.assertThat(buildCommand).contains("NDK_MODULE_PATH+=./third_party/modules")
-        }
+    project.recoverExistingCxxAbiModels().forEach { abi ->
+      val buildCommandFile = abi.metadataGenerationCommandFile
+      assertThat(buildCommandFile).exists()
+      val buildCommand = buildCommandFile.readText()
+      Truth.assertThat(buildCommand).contains("NDK_MODULE_PATH+=./third_party/modules")
     }
+  }
 }

@@ -18,68 +18,60 @@ package com.android.build.api.component
 
 import com.android.ide.common.build.CommonBuiltArtifact
 import com.android.ide.common.build.CommonBuiltArtifacts
-import org.junit.Assert.fail
-import org.junit.Test
 import java.io.Serializable
 import kotlin.reflect.KClass
 import kotlin.reflect.KTypeProjection
 import kotlin.reflect.jvm.javaType
+import org.junit.Assert.fail
+import org.junit.Test
 
 class BuiltArtifactsSerializableTest {
 
-    /**
-     * This test is to ensure that all the types in the CommonBuiltArtifact and CommonBuiltArtifacts
-     * are serializable.
-     */
-    @Test
-    fun testBuiltArtifactsSerializable() {
-        val commonBuiltArtifact = CommonBuiltArtifact::class
-        val commonBuiltArtifacts = CommonBuiltArtifacts::class
+  /** This test is to ensure that all the types in the CommonBuiltArtifact and CommonBuiltArtifacts are serializable. */
+  @Test
+  fun testBuiltArtifactsSerializable() {
+    val commonBuiltArtifact = CommonBuiltArtifact::class
+    val commonBuiltArtifacts = CommonBuiltArtifacts::class
 
-        val classesToValidate = listOf(commonBuiltArtifact, commonBuiltArtifacts)
-        val typesNotSerializable = mutableListOf<String>()
-        classesToValidate.forEach { clazz ->
-            // Iterate through each property of the class
-            clazz.members.forEach { classProperty ->
-                // Get the arguments of each property (e.g. `String` and `Int` in `Map<String, Int>`)
-                val propertyArguments = classProperty.returnType.arguments
-                if (propertyArguments.isEmpty()) {
-                    val propertyType = classProperty.returnType.javaType
-                    if (propertyType is Class<*> && !propertyType.isPrimitive) {
-                        // Validate that the class is Serializable
-                        if (!Serializable::class.java.isAssignableFrom(propertyType)) {
-                            typesNotSerializable.add("$propertyType in $clazz")
-                        }
-                    }
-                }
-                // Recursively validate the arguments of the property
-                validateProperties(propertyArguments, typesNotSerializable, clazz)
+    val classesToValidate = listOf(commonBuiltArtifact, commonBuiltArtifacts)
+    val typesNotSerializable = mutableListOf<String>()
+    classesToValidate.forEach { clazz ->
+      // Iterate through each property of the class
+      clazz.members.forEach { classProperty ->
+        // Get the arguments of each property (e.g. `String` and `Int` in `Map<String, Int>`)
+        val propertyArguments = classProperty.returnType.arguments
+        if (propertyArguments.isEmpty()) {
+          val propertyType = classProperty.returnType.javaType
+          if (propertyType is Class<*> && !propertyType.isPrimitive) {
+            // Validate that the class is Serializable
+            if (!Serializable::class.java.isAssignableFrom(propertyType)) {
+              typesNotSerializable.add("$propertyType in $clazz")
             }
+          }
         }
-
-        if (typesNotSerializable.isNotEmpty()) {
-            val errorMessage =
-                "The following types must be Serializable:\n\n${typesNotSerializable.joinToString("\n")}"
-            fail(errorMessage)
-        }
+        // Recursively validate the arguments of the property
+        validateProperties(propertyArguments, typesNotSerializable, clazz)
+      }
     }
 
-    private fun validateProperties(
-        properties: List<KTypeProjection>,
-        typesNotSerializable: MutableList<String>,
-        clazz: KClass<*>
-    ) {
-        properties.forEach { property ->
-            val arguments = property.type?.arguments
-            if (!arguments.isNullOrEmpty()) {
-                validateProperties(arguments, typesNotSerializable, clazz)
-            }
-            val propertyType = property.type?.javaType
-            if (propertyType != null && propertyType is Class<*> && !propertyType.isPrimitive) {
-                if (!Serializable::class.java.isAssignableFrom(propertyType)) {
-                    typesNotSerializable.add("$propertyType in $clazz")
-                }
-            }
-        }
+    if (typesNotSerializable.isNotEmpty()) {
+      val errorMessage = "The following types must be Serializable:\n\n${typesNotSerializable.joinToString("\n")}"
+      fail(errorMessage)
     }
+  }
+
+  private fun validateProperties(properties: List<KTypeProjection>, typesNotSerializable: MutableList<String>, clazz: KClass<*>) {
+    properties.forEach { property ->
+      val arguments = property.type?.arguments
+      if (!arguments.isNullOrEmpty()) {
+        validateProperties(arguments, typesNotSerializable, clazz)
+      }
+      val propertyType = property.type?.javaType
+      if (propertyType != null && propertyType is Class<*> && !propertyType.isPrimitive) {
+        if (!Serializable::class.java.isAssignableFrom(propertyType)) {
+          typesNotSerializable.add("$propertyType in $clazz")
+        }
+      }
+    }
+  }
 }

@@ -36,102 +36,89 @@ import org.gradle.api.provider.Provider
 
 interface CodeCoverageReportCreationConfig : TaskCreationConfig {
 
-    /**
-     * Kotlin source folders.
-     */
-    val kotlin: FlatSourceDirectoriesImpl?
+  /** Kotlin source folders. */
+  val kotlin: FlatSourceDirectoriesImpl?
 
-    /**
-     * Java sources folders.
-     */
-    val java: FlatSourceDirectoriesImpl?
+  /** Java sources folders. */
+  val java: FlatSourceDirectoriesImpl?
 
-    /**
-     * runs [action] passing the [Sources.java] internal representation if not null.
-     * If null, action is not run.
-     */
-    fun java(action: (FlatSourceDirectoriesImpl) -> Unit)
+  /** runs [action] passing the [Sources.java] internal representation if not null. If null, action is not run. */
+  fun java(action: (FlatSourceDirectoriesImpl) -> Unit)
 
-    /**
-     * runs [action] passing the [Sources.kotlin] internal representation if not null.
-     * If null, action is not run.
-     */
-    fun kotlin(action: (FlatSourceDirectoriesImpl) -> Unit)
+  /** runs [action] passing the [Sources.kotlin] internal representation if not null. If null, action is not run. */
+  fun kotlin(action: (FlatSourceDirectoriesImpl) -> Unit)
 
-    /**
-     * Access to the global artifacts
-     */
-    val globalArtifacts: Artifacts
+  /** Access to the global artifacts */
+  val globalArtifacts: Artifacts
 
-    /**
-     * Collection of coverage reports from dependent modules.
-     */
-    val dependantModulesReports: FileCollection
+  /** Collection of coverage reports from dependent modules. */
+  val dependantModulesReports: FileCollection
 
-    /**
-     * Provider for the unit test coverage file.
-     */
-    val unitTestCoverageFile: Provider<RegularFile>?
+  /** Provider for the unit test coverage file. */
+  val unitTestCoverageFile: Provider<RegularFile>?
 
-    /**
-     * Provider for the connected test coverage directory.
-     */
-    val connectedTestCoverageDirectory: Provider<Directory>?
+  /** Provider for the connected test coverage directory. */
+  val connectedTestCoverageDirectory: Provider<Directory>?
 }
 
 class CodeCoverageReportCreationConfigImpl(
-    private val variantCreationConfig: VariantCreationConfig,
-    private val testComponents: Collection<TestComponentCreationConfig>
+  private val variantCreationConfig: VariantCreationConfig,
+  private val testComponents: Collection<TestComponentCreationConfig>,
 ) : CodeCoverageReportCreationConfig {
 
-    override val kotlin: FlatSourceDirectoriesImpl?
-        get() = variantCreationConfig.sources.kotlin
-    override val java: FlatSourceDirectoriesImpl?
-        get() = variantCreationConfig.sources.java
+  override val kotlin: FlatSourceDirectoriesImpl?
+    get() = variantCreationConfig.sources.kotlin
 
-    override fun java(action: (FlatSourceDirectoriesImpl) -> Unit) {
-        variantCreationConfig.sources.java(action)
-    }
+  override val java: FlatSourceDirectoriesImpl?
+    get() = variantCreationConfig.sources.java
 
-    override fun kotlin(action: (FlatSourceDirectoriesImpl) -> Unit) {
-        variantCreationConfig.sources.kotlin(action)
-    }
+  override fun java(action: (FlatSourceDirectoriesImpl) -> Unit) {
+    variantCreationConfig.sources.java(action)
+  }
 
-    override val globalArtifacts: Artifacts
-        get() = variantCreationConfig.global.globalArtifacts
+  override fun kotlin(action: (FlatSourceDirectoriesImpl) -> Unit) {
+    variantCreationConfig.sources.kotlin(action)
+  }
 
-    override val dependantModulesReports: FileCollection
-        get() = variantCreationConfig.variantDependencies.getArtifactFileCollection(
-            AndroidArtifacts.ConsumedConfigType.RUNTIME_CLASSPATH,
-            AndroidArtifacts.ArtifactScope.PROJECT,
-            AndroidArtifacts.ArtifactType.CODE_COVERAGE_DATA,
-        )
+  override val globalArtifacts: Artifacts
+    get() = variantCreationConfig.global.globalArtifacts
 
-    override val name: String
-        get() = variantCreationConfig.name
+  override val dependantModulesReports: FileCollection
+    get() =
+      variantCreationConfig.variantDependencies.getArtifactFileCollection(
+        AndroidArtifacts.ConsumedConfigType.RUNTIME_CLASSPATH,
+        AndroidArtifacts.ArtifactScope.PROJECT,
+        AndroidArtifacts.ArtifactType.CODE_COVERAGE_DATA,
+      )
 
-    override val services: TaskCreationServices
-        get() = variantCreationConfig.services
+  override val name: String
+    get() = variantCreationConfig.name
 
-    override val taskContainer: MutableTaskContainer
-        get() = variantCreationConfig.taskContainer
+  override val services: TaskCreationServices
+    get() = variantCreationConfig.services
 
-    override val artifacts: ArtifactsImpl
-        get() = variantCreationConfig.artifacts
+  override val taskContainer: MutableTaskContainer
+    get() = variantCreationConfig.taskContainer
 
-    override val unitTestCoverageFile: Provider<RegularFile>?
-        get() = testComponents.firstOrNull {
-            it.mainVariant.name == name &&
-                    it is HostTestCreationConfig &&
-                    it.codeCoverageEnabled &&
-                    it.componentType == ComponentTypeImpl.UNIT_TEST
-        }?.artifacts?.get(InternalArtifactType.UNIT_TEST_CODE_COVERAGE)
+  override val artifacts: ArtifactsImpl
+    get() = variantCreationConfig.artifacts
 
-    override val connectedTestCoverageDirectory: Provider<Directory>?
-        get() = testComponents.firstOrNull {
-            it.mainVariant.name == name &&
-                    it is DeviceTestCreationConfig &&
-                    it.codeCoverageEnabled &&
-                    it.componentType.isApk
-        }?.artifacts?.get(InternalArtifactType.CODE_COVERAGE)
+  override val unitTestCoverageFile: Provider<RegularFile>?
+    get() =
+      testComponents
+        .firstOrNull {
+          it.mainVariant.name == name &&
+            it is HostTestCreationConfig &&
+            it.codeCoverageEnabled &&
+            it.componentType == ComponentTypeImpl.UNIT_TEST
+        }
+        ?.artifacts
+        ?.get(InternalArtifactType.UNIT_TEST_CODE_COVERAGE)
+
+  override val connectedTestCoverageDirectory: Provider<Directory>?
+    get() =
+      testComponents
+        .firstOrNull { it.mainVariant.name == name && it is DeviceTestCreationConfig && it.codeCoverageEnabled && it.componentType.isApk }
+        ?.artifacts
+        ?.get(InternalArtifactType.CODE_COVERAGE)
 }

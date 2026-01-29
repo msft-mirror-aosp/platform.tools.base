@@ -30,63 +30,71 @@ import org.gradle.api.file.RegularFile
 import org.gradle.api.provider.Provider
 
 interface DexMergingCreationConfig : TaskCreationConfig {
-    val action: DexMergingAction
-    val dexingType: DexingType
-    val dexingUsingArtifactTransforms: Boolean
-    val dexing: DexingCreationConfig
-    val separateFileDependenciesDexingTask: Boolean
-    val outputType: InternalMultipleArtifactType<Directory>
-    val bootClasspath: Provider<List<RegularFile>>
-    val debuggable: Boolean
-    val enableGlobalSynthetics: Boolean
-    val variantDependencies: VariantDependencies
-    val enableApiModeling: Boolean
-    val instrumentationCreationConfig: InstrumentationCreationConfig?
-    val requiresJacocoTransformation: Boolean
+  val action: DexMergingAction
+  val dexingType: DexingType
+  val dexingUsingArtifactTransforms: Boolean
+  val dexing: DexingCreationConfig
+  val separateFileDependenciesDexingTask: Boolean
+  val outputType: InternalMultipleArtifactType<Directory>
+  val bootClasspath: Provider<List<RegularFile>>
+  val debuggable: Boolean
+  val enableGlobalSynthetics: Boolean
+  val variantDependencies: VariantDependencies
+  val enableApiModeling: Boolean
+  val instrumentationCreationConfig: InstrumentationCreationConfig?
+  val requiresJacocoTransformation: Boolean
 }
 
 fun createDexMergingCreationConfig(
-    creationConfig: ApkCreationConfig,
-    action: DexMergingAction,
-    dexingType: DexingType,
-    dexingUsingArtifactTransforms: Boolean = true,
-    separateFileDependenciesDexingTask: Boolean = false,
-    outputType: InternalMultipleArtifactType<Directory> = InternalMultipleArtifactType.DEX
+  creationConfig: ApkCreationConfig,
+  action: DexMergingAction,
+  dexingType: DexingType,
+  dexingUsingArtifactTransforms: Boolean = true,
+  separateFileDependenciesDexingTask: Boolean = false,
+  outputType: InternalMultipleArtifactType<Directory> = InternalMultipleArtifactType.DEX,
 ): DexMergingCreationConfig {
-    return object : BaseDexMergingCreationConfig(creationConfig) {
-        override val action: DexMergingAction
-            get() = action
-        override val dexingType: DexingType
-            get() = dexingType
-        override val dexingUsingArtifactTransforms: Boolean
-            get() = dexingUsingArtifactTransforms
-        override val separateFileDependenciesDexingTask: Boolean
-            get() = separateFileDependenciesDexingTask
-        override val outputType: InternalMultipleArtifactType<Directory>
-            get() = outputType
-        override val debuggable: Boolean
-            get() = creationConfig.debuggable
-        override val enableGlobalSynthetics: Boolean
-            get() = creationConfig.enableGlobalSynthetics
-        override val requiresJacocoTransformation: Boolean
-            get() = creationConfig.requiresJacocoTransformation
-        override val enableApiModeling: Boolean
-            get() = creationConfig.enableApiModeling
-        override val dexing: DexingCreationConfig
-            get() = creationConfig.dexing
-    }
+  return object : BaseDexMergingCreationConfig(creationConfig) {
+    override val action: DexMergingAction
+      get() = action
+
+    override val dexingType: DexingType
+      get() = dexingType
+
+    override val dexingUsingArtifactTransforms: Boolean
+      get() = dexingUsingArtifactTransforms
+
+    override val separateFileDependenciesDexingTask: Boolean
+      get() = separateFileDependenciesDexingTask
+
+    override val outputType: InternalMultipleArtifactType<Directory>
+      get() = outputType
+
+    override val debuggable: Boolean
+      get() = creationConfig.debuggable
+
+    override val enableGlobalSynthetics: Boolean
+      get() = creationConfig.enableGlobalSynthetics
+
+    override val requiresJacocoTransformation: Boolean
+      get() = creationConfig.requiresJacocoTransformation
+
+    override val enableApiModeling: Boolean
+      get() = creationConfig.enableApiModeling
+
+    override val dexing: DexingCreationConfig
+      get() = creationConfig.dexing
+  }
 }
 
-abstract class BaseDexMergingCreationConfig(
-    val creationConfig: ComponentCreationConfig
-) : DexMergingCreationConfig, TaskCreationConfig by creationConfig {
+abstract class BaseDexMergingCreationConfig(val creationConfig: ComponentCreationConfig) :
+  DexMergingCreationConfig, TaskCreationConfig by creationConfig {
 
-    override val bootClasspath: Provider<List<RegularFile>>
-        get() = creationConfig.global.bootClasspath
+  override val bootClasspath: Provider<List<RegularFile>>
+    get() = creationConfig.global.bootClasspath
 
-    override val variantDependencies: VariantDependencies
-        get() = creationConfig.variantDependencies
-    override val instrumentationCreationConfig: InstrumentationCreationConfig?
-        get() = creationConfig.instrumentationCreationConfig
+  override val variantDependencies: VariantDependencies
+    get() = creationConfig.variantDependencies
 
+  override val instrumentationCreationConfig: InstrumentationCreationConfig?
+    get() = creationConfig.instrumentationCreationConfig
 }

@@ -20,36 +20,19 @@ import com.android.build.gradle.integration.common.fixture.model.ReferenceModelC
 import com.android.builder.model.v2.ide.SyncIssue
 import org.junit.Test
 
-class DisabledResValuesInAppModelTest: ReferenceModelComparator(
-    referenceConfig = {
-        androidApplication {
-            android {
-                buildFeatures {
-                    resValues = true
-                }
-            }
-        }
-    },
-    deltaConfig = {
-        androidApplication {
-            android {
-                buildFeatures {
-                    resValues = false
-                }
-            }
-        }
-    },
-    syncOptions = {
-        ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
-    }
-) {
-    @Test
-    fun `test AndroidProject model`() {
-        compareAndroidProjectWith(goldenFileSuffix = "AndroidProject")
-    }
+class DisabledResValuesInAppModelTest :
+  ReferenceModelComparator(
+    referenceConfig = { androidApplication { android { buildFeatures { resValues = true } } } },
+    deltaConfig = { androidApplication { android { buildFeatures { resValues = false } } } },
+    syncOptions = { ignoreSyncIssues(SyncIssue.SEVERITY_WARNING) },
+  ) {
+  @Test
+  fun `test AndroidProject model`() {
+    compareAndroidProjectWith(goldenFileSuffix = "AndroidProject")
+  }
 
-    @Test
-    fun `test AndroidDsl model`() {
-        compareAndroidDslWith(goldenFileSuffix = "AndroidDsl")
-    }
+  @Test
+  fun `test AndroidDsl model`() {
+    compareAndroidDslWith(goldenFileSuffix = "AndroidDsl")
+  }
 }

@@ -15,6 +15,7 @@
  */
 
 package com.android.build.api.dsl
+
 import org.gradle.api.Incubating
 
 /**
@@ -25,15 +26,8 @@ import org.gradle.api.Incubating
 @Incubating
 interface BundleAiModelVersion {
 
-    @get:Incubating
-    @set:Incubating
-    var enableSplit: Boolean?
+  @get:Incubating @set:Incubating var enableSplit: Boolean?
 
-    /**
-     * Specifies the default AI model version value for the bundle. Used for filtering splits for
-     * standalone, system and universal APKs.
-     */
-    @get:Incubating
-    @set:Incubating
-    var defaultVersion: String?
+  /** Specifies the default AI model version value for the bundle. Used for filtering splits for standalone, system and universal APKs. */
+  @get:Incubating @set:Incubating var defaultVersion: String?
 }

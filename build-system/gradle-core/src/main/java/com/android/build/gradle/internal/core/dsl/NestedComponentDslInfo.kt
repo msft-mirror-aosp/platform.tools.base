@@ -16,7 +16,7 @@
 
 package com.android.build.gradle.internal.core.dsl
 
-interface NestedComponentDslInfo: ComponentDslInfo {
+interface NestedComponentDslInfo : ComponentDslInfo {
 
-    val mainVariantDslInfo: TestedVariantDslInfo
+  val mainVariantDslInfo: TestedVariantDslInfo
 }

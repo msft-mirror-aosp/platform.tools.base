@@ -26,68 +26,73 @@ import org.junit.rules.TemporaryFolder
 
 class ProguardMappingsRecorderTest {
 
-    @get:Rule
-    val temporaryFolder = TemporaryFolder()
+  @get:Rule val temporaryFolder = TemporaryFolder()
 
-    @Test
-    fun `test resolve original class name`() {
-        val obfuscatedClasses = ProguardMappingsRecorder(createMappingsFile())
-            .extractObfuscatedResourceClasses()
+  @Test
+  fun `test resolve original class name`() {
+    val obfuscatedClasses = ProguardMappingsRecorder(createMappingsFile()).extractObfuscatedResourceClasses()
 
-        assertEquals("androidx.loader.content.Panel",
-            obfuscatedClasses.resolveOriginalClass("a.k.b.b"))
-        assertEquals("androidx.recyclerview.R\$dimen",
-            obfuscatedClasses.resolveOriginalClass("a.l.a"))
-        assertEquals("com.NotObfuscated",
-            obfuscatedClasses.resolveOriginalClass("com.NotObfuscated"))
-    }
+    assertEquals("androidx.loader.content.Panel", obfuscatedClasses.resolveOriginalClass("a.k.b.b"))
+    assertEquals("androidx.recyclerview.R\$dimen", obfuscatedClasses.resolveOriginalClass("a.l.a"))
+    assertEquals("com.NotObfuscated", obfuscatedClasses.resolveOriginalClass("com.NotObfuscated"))
+  }
 
-    @Test
-    fun `test resolve original fields and methods`() {
-        val obfuscatedClasses = ProguardMappingsRecorder(createMappingsFile())
-            .extractObfuscatedResourceClasses()
+  @Test
+  fun `test resolve original fields and methods`() {
+    val obfuscatedClasses = ProguardMappingsRecorder(createMappingsFile()).extractObfuscatedResourceClasses()
 
-        assertEquals(ClassAndMethod("androidx.recyclerview.R\$dimen", "margin1"),
-            obfuscatedClasses.resolveOriginalMethod(ClassAndMethod("a.l.a", "d")))
+    assertEquals(
+      ClassAndMethod("androidx.recyclerview.R\$dimen", "margin1"),
+      obfuscatedClasses.resolveOriginalMethod(ClassAndMethod("a.l.a", "d")),
+    )
 
-        assertEquals(ClassAndMethod("androidx.loader.content.Loader", "dump"),
-            obfuscatedClasses.resolveOriginalMethod(ClassAndMethod("a.k.b.a", "d")))
-        assertEquals(ClassAndMethod("androidx.loader.content.Loader", "abandon"),
-            obfuscatedClasses.resolveOriginalMethod(ClassAndMethod("a.k.b.a", "a")))
+    assertEquals(
+      ClassAndMethod("androidx.loader.content.Loader", "dump"),
+      obfuscatedClasses.resolveOriginalMethod(ClassAndMethod("a.k.b.a", "d")),
+    )
+    assertEquals(
+      ClassAndMethod("androidx.loader.content.Loader", "abandon"),
+      obfuscatedClasses.resolveOriginalMethod(ClassAndMethod("a.k.b.a", "a")),
+    )
 
-        assertEquals(ClassAndMethod("androidx.loader.content.Panel", "start"),
-            obfuscatedClasses.resolveOriginalMethod(ClassAndMethod("a.k.b.b", "start")))
+    assertEquals(
+      ClassAndMethod("androidx.loader.content.Panel", "start"),
+      obfuscatedClasses.resolveOriginalMethod(ClassAndMethod("a.k.b.b", "start")),
+    )
 
-        val notObfuscatedMethod = ClassAndMethod("com.NotObfuscated", "method")
-        assertEquals(notObfuscatedMethod,
-            obfuscatedClasses.resolveOriginalMethod(notObfuscatedMethod))
-    }
+    val notObfuscatedMethod = ClassAndMethod("com.NotObfuscated", "method")
+    assertEquals(notObfuscatedMethod, obfuscatedClasses.resolveOriginalMethod(notObfuscatedMethod))
+  }
 
-    private fun createMappingsFile(): Path {
-        val tempFile = temporaryFolder.newFile()
-        Files.asCharSink(tempFile, Charsets.UTF_8).write("""
-            # compiler: R8
-            # compiler_version: 2.1.12-dev
-            # min_api: 24
-            # compiler_hash: ba61baaed5cd2da8a79c616ed701190bfa7bcc1b
-            # pg_map_id: 15e7330
-            # common_typos_disable
-            androidx.recyclerview.R${'$'}dimen -> a.l.a:
-                int fastscroll_margin -> b
-                int fastscroll_minimum_range -> c
-                int fastscroll_default_thickness -> a
-                int margin1 -> d
-            androidx.loader.content.Panel -> a.k.b.b:
-            androidx.loader.content.Loader -> a.k.b.a:
-                void abandon() -> a
-                boolean cancelLoad() -> b
-                java.lang.String dataToString(java.lang.Object) -> c
-                void dump(java.lang.String,java.io.FileDescriptor,java.io.PrintWriter,java.lang.String[]) -> d
-                void reset() -> e
-                void startLoading() -> f
-                void stopLoading() -> g
+  private fun createMappingsFile(): Path {
+    val tempFile = temporaryFolder.newFile()
+    Files.asCharSink(tempFile, Charsets.UTF_8)
+      .write(
+        """
+        # compiler: R8
+        # compiler_version: 2.1.12-dev
+        # min_api: 24
+        # compiler_hash: ba61baaed5cd2da8a79c616ed701190bfa7bcc1b
+        # pg_map_id: 15e7330
+        # common_typos_disable
+        androidx.recyclerview.R${'$'}dimen -> a.l.a:
+            int fastscroll_margin -> b
+            int fastscroll_minimum_range -> c
+            int fastscroll_default_thickness -> a
+            int margin1 -> d
+        androidx.loader.content.Panel -> a.k.b.b:
+        androidx.loader.content.Loader -> a.k.b.a:
+            void abandon() -> a
+            boolean cancelLoad() -> b
+            java.lang.String dataToString(java.lang.Object) -> c
+            void dump(java.lang.String,java.io.FileDescriptor,java.io.PrintWriter,java.lang.String[]) -> d
+            void reset() -> e
+            void startLoading() -> f
+            void stopLoading() -> g
 
-        """.trimIndent())
-        return tempFile.toPath()
-    }
+        """
+          .trimIndent()
+      )
+    return tempFile.toPath()
+  }
 }

@@ -26,54 +26,43 @@ import org.gradle.api.file.RegularFile
 import org.gradle.api.provider.Provider
 import org.junit.Rule
 import org.junit.Test
+import org.mockito.junit.MockitoJUnit
+import org.mockito.junit.MockitoRule
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
-import org.mockito.junit.MockitoJUnit
-import org.mockito.junit.MockitoRule
 import org.mockito.quality.Strictness
 
 class AnalyticsEnabledBundleConfigTest {
-    @get:Rule
-    val rule: MockitoRule = MockitoJUnit.rule().strictness(Strictness.STRICT_STUBS)
+  @get:Rule val rule: MockitoRule = MockitoJUnit.rule().strictness(Strictness.STRICT_STUBS)
 
-    private val delegate: BundleConfig = mock()
+  private val delegate: BundleConfig = mock()
 
-    private val stats = GradleBuildVariant.newBuilder()
-    private val proxy: AnalyticsEnabledBundleConfig by lazy {
-        AnalyticsEnabledBundleConfig(delegate, stats, FakeObjectFactory.factory)
-    }
+  private val stats = GradleBuildVariant.newBuilder()
+  private val proxy: AnalyticsEnabledBundleConfig by lazy { AnalyticsEnabledBundleConfig(delegate, stats, FakeObjectFactory.factory) }
 
-    @Test
-    fun testCodeTransparency() {
-        val codeTransparency = mock<CodeTransparency>()
-        whenever(delegate.codeTransparency).thenReturn(codeTransparency)
+  @Test
+  fun testCodeTransparency() {
+    val codeTransparency = mock<CodeTransparency>()
+    whenever(delegate.codeTransparency).thenReturn(codeTransparency)
 
-        Truth.assertThat((proxy.codeTransparency as AnalyticsEnabledCodeTransparency).delegate)
-            .isEqualTo(codeTransparency)
+    Truth.assertThat((proxy.codeTransparency as AnalyticsEnabledCodeTransparency).delegate).isEqualTo(codeTransparency)
 
-        Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
-        Truth.assertThat(
-            stats.variantApiAccess.variantPropertiesAccessList.first().type
-        ).isEqualTo(VariantPropertiesMethodType.GET_CODE_TRANSPARENCY_VALUE)
-        verify(delegate, times(1))
-            .codeTransparency
-    }
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessList.first().type)
+      .isEqualTo(VariantPropertiesMethodType.GET_CODE_TRANSPARENCY_VALUE)
+    verify(delegate, times(1)).codeTransparency
+  }
 
-    @Test
-    fun testAddMetadataFile() {
-        val provider = mock<Provider<RegularFile>>()
-        proxy.addMetadataFile(
-            "com.android.build",
-            provider,
-        )
+  @Test
+  fun testAddMetadataFile() {
+    val provider = mock<Provider<RegularFile>>()
+    proxy.addMetadataFile("com.android.build", provider)
 
-        Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
-        Truth.assertThat(
-            stats.variantApiAccess.variantPropertiesAccessList.first().type
-        ).isEqualTo(VariantPropertiesMethodType.BUNDLE_CONFIG_ADD_METADATA_VALUE)
-        verify(delegate, times(1))
-            .addMetadataFile("com.android.build", provider )
-    }
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessList.first().type)
+      .isEqualTo(VariantPropertiesMethodType.BUNDLE_CONFIG_ADD_METADATA_VALUE)
+    verify(delegate, times(1)).addMetadataFile("com.android.build", provider)
+  }
 }

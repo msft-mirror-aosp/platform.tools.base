@@ -29,55 +29,47 @@ const val PROPERTY_OVERRIDE_NAME = "kotlin.stdlib.default.dependency"
 // file that is defined with `gradleProperties.add`
 class PropertyOverridingTest {
 
-    @get:Rule
-    val rule = GradleRule.from {}
+  @get:Rule val rule = GradleRule.from {}
 
-    @Test
-    fun testKotlinPropertyOverriding() {
-        val build = rule.build {
-            androidApplication {
-                pluginCallbacks += KotlinPropertyCheckCallback::class.java
-            }
-            gradleProperties {
-                add(PROPERTY_OVERRIDE_NAME, "false")
-            }
-        }
-        build.executor.withArgument("-P$PROPERTY_OVERRIDE_NAME=true")
-            .run("tasks")
-            .assertOutputContains("property: $PROPERTY_OVERRIDE_NAME=true")
-    }
+  @Test
+  fun testKotlinPropertyOverriding() {
+    val build =
+      rule.build {
+        androidApplication { pluginCallbacks += KotlinPropertyCheckCallback::class.java }
+        gradleProperties { add(PROPERTY_OVERRIDE_NAME, "false") }
+      }
+    build.executor
+      .withArgument("-P$PROPERTY_OVERRIDE_NAME=true")
+      .run("tasks")
+      .assertOutputContains("property: $PROPERTY_OVERRIDE_NAME=true")
+  }
 
-    @Test
-    fun testAndroidPropertyOverriding() {
-        val build = rule.build {
-            androidApplication {
-                pluginCallbacks += AndroidPropertyCheckCallback::class.java
-            }
-            gradleProperties {
-                add(ENABLE_APP_COMPILE_TIME_R_CLASS, false)
-            }
-        }
-        build.executor.with(ENABLE_APP_COMPILE_TIME_R_CLASS, true)
-            .run("tasks")
-            .assertOutputContains("property: ${ENABLE_APP_COMPILE_TIME_R_CLASS.propertyName}=true")
-    }
+  @Test
+  fun testAndroidPropertyOverriding() {
+    val build =
+      rule.build {
+        androidApplication { pluginCallbacks += AndroidPropertyCheckCallback::class.java }
+        gradleProperties { add(ENABLE_APP_COMPILE_TIME_R_CLASS, false) }
+      }
+    build.executor
+      .with(ENABLE_APP_COMPILE_TIME_R_CLASS, true)
+      .run("tasks")
+      .assertOutputContains("property: ${ENABLE_APP_COMPILE_TIME_R_CLASS.propertyName}=true")
+  }
 }
 
 class KotlinPropertyCheckCallback : GenericCallback {
 
-    override fun handleProject(project: Project) {
-        project.providers.gradleProperty(PROPERTY_OVERRIDE_NAME).let {
-            println("property: $PROPERTY_OVERRIDE_NAME=${it.get()}")
-        }
-    }
+  override fun handleProject(project: Project) {
+    project.providers.gradleProperty(PROPERTY_OVERRIDE_NAME).let { println("property: $PROPERTY_OVERRIDE_NAME=${it.get()}") }
+  }
 }
 
 class AndroidPropertyCheckCallback : GenericCallback {
 
-    override fun handleProject(project: Project) {
-        project.providers.gradleProperty(ENABLE_APP_COMPILE_TIME_R_CLASS.propertyName).let {
-            println("property: ${ENABLE_APP_COMPILE_TIME_R_CLASS.propertyName}=${it.get()}")
-        }
+  override fun handleProject(project: Project) {
+    project.providers.gradleProperty(ENABLE_APP_COMPILE_TIME_R_CLASS.propertyName).let {
+      println("property: ${ENABLE_APP_COMPILE_TIME_R_CLASS.propertyName}=${it.get()}")
     }
+  }
 }
-

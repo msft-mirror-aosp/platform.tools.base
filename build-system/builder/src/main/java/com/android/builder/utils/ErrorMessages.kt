@@ -19,5 +19,5 @@ package com.android.builder.utils
 private const val agpReferenceDocsSitePrefix = "https://developer.android.com/reference/tools/gradle-api/"
 
 fun agpReferenceDocsUrl(path: String): String {
-    return agpReferenceDocsSitePrefix + path
+  return agpReferenceDocsSitePrefix + path
 }

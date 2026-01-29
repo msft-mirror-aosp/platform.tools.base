@@ -27,83 +27,68 @@ import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
 
 /**
- * Contains the final dsl info computed from the DSL object model (extension, default config,
- * build type, flavors) that are needed by all components.
+ * Contains the final dsl info computed from the DSL object model (extension, default config, build type, flavors) that are needed by all
+ * components.
  */
 interface ComponentDslInfo {
 
-    val componentIdentity: ComponentIdentity
+  val componentIdentity: ComponentIdentity
 
-    val componentType: ComponentType
+  val componentType: ComponentType
 
-    val missingDimensionStrategies: Map<String, AbstractProductFlavor.DimensionRequest>
+  val missingDimensionStrategies: Map<String, AbstractProductFlavor.DimensionRequest>
 
-    /**
-     * Minimum information about host tests required to create the
-     * [com.android.build.api.variant.HostTestBuilder] instances. This is required to be available
-     * early as other DslInfo instances are not created yet and only will be when the VariantBuilder
-     * have been finalized (since variants can be turned off). However, this information is required
-     * during the lifecycle of the VariantBuilder callbacks.
-     */
-    class DslDefinedHostTest(
-        val type: String,
-        val codeCoverageEnabled: Boolean,
-        val isIncludeAndroidResources: Boolean,
-    )
+  /**
+   * Minimum information about host tests required to create the [com.android.build.api.variant.HostTestBuilder] instances. This is required
+   * to be available early as other DslInfo instances are not created yet and only will be when the VariantBuilder have been finalized
+   * (since variants can be turned off). However, this information is required during the lifecycle of the VariantBuilder callbacks.
+   */
+  class DslDefinedHostTest(val type: String, val codeCoverageEnabled: Boolean, val isIncludeAndroidResources: Boolean)
 
-    class DslDefinedDeviceTest(
-        val type: String,
-        val codeCoverageEnabled: Boolean,
-    )
+  class DslDefinedDeviceTest(val type: String, val codeCoverageEnabled: Boolean)
 
-    /**
-     * Returns the list of [ComponentDslInfo.DslDefinedHostTest] pre-defined from the DSL for this
-     * component.
-     *
-     * This list will drive the initial list of [com.android.build.api.variant.HostTest] created
-     * by AGP for this Component.
-     */
-    val dslDefinedHostTests: List<DslDefinedHostTest>
+  /**
+   * Returns the list of [ComponentDslInfo.DslDefinedHostTest] pre-defined from the DSL for this component.
+   *
+   * This list will drive the initial list of [com.android.build.api.variant.HostTest] created by AGP for this Component.
+   */
+  val dslDefinedHostTests: List<DslDefinedHostTest>
 
-    val dslDefinedDeviceTests: List<DslDefinedDeviceTest>
+  val dslDefinedDeviceTests: List<DslDefinedDeviceTest>
 
-    val dslDefinedTestSuites: List<AgpTestSuiteDslInfo>
+  val dslDefinedTestSuites: List<AgpTestSuiteDslInfo>
 
-    /**
-     * Returns the application ID for this variant. This could be coming from the manifest or could
-     * be overridden through the product flavors and/or the build type.
-     *
-     * @return the application ID
-     */
-    val applicationId: Property<String>
+  /**
+   * Returns the application ID for this variant. This could be coming from the manifest or could be overridden through the product flavors
+   * and/or the build type.
+   *
+   * @return the application ID
+   */
+  val applicationId: Property<String>
 
-    /**
-     * The namespace of the generated R and BuildConfig classes. Also, the namespace used to resolve
-     * any relative class names that are declared in the AndroidManifest.xml.
-     *
-     * For test components, this is set to the `testNamespace` DSL value, if present, or else to the
-     * DSL's `namespace` + ".test".
-     */
-    val namespace: Provider<String>
+  /**
+   * The namespace of the generated R and BuildConfig classes. Also, the namespace used to resolve any relative class names that are
+   * declared in the AndroidManifest.xml.
+   *
+   * For test components, this is set to the `testNamespace` DSL value, if present, or else to the DSL's `namespace` + ".test".
+   */
+  val namespace: Provider<String>
 
-    /**
-     * Return the minSdkVersion for this variant.
-     *
-     *
-     * This uses both the value from the manifest (if present), and the override coming from the
-     * flavor(s) (if present).
-     *
-     * @return the minSdkVersion
-     */
-    val minSdkVersion: MutableAndroidVersion
+  /**
+   * Return the minSdkVersion for this variant.
+   *
+   * This uses both the value from the manifest (if present), and the override coming from the flavor(s) (if present).
+   *
+   * @return the minSdkVersion
+   */
+  val minSdkVersion: MutableAndroidVersion
 
-    val javaCompileOptionsSetInDSL: JavaCompileOptions
+  val javaCompileOptionsSetInDSL: JavaCompileOptions
 
-    val androidResourcesDsl: AndroidResourcesDslInfo?
+  val androidResourcesDsl: AndroidResourcesDslInfo?
 
-    val privacySandboxDsl: PrivacySandboxDslInfo
+  val privacySandboxDsl: PrivacySandboxDslInfo
 
-    /** Enables the compilation of Kotlin sources. */
-    val enableKotlin: Boolean
-
+  /** Enables the compilation of Kotlin sources. */
+  val enableKotlin: Boolean
 }

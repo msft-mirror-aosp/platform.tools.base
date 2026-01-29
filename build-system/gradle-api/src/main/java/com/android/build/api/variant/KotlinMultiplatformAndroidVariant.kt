@@ -16,7 +16,5 @@
 
 package com.android.build.api.variant
 
-/**
- * Properties for the main Variant of a kotlin multiplatform android library
- */
-interface KotlinMultiplatformAndroidVariant: LibraryVariant
+/** Properties for the main Variant of a kotlin multiplatform android library */
+interface KotlinMultiplatformAndroidVariant : LibraryVariant

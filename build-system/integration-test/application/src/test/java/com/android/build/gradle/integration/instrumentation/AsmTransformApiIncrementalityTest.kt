@@ -29,298 +29,279 @@ import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.build.gradle.internal.instrumentation.loadClassData
 import com.android.utils.FileUtils
 import com.google.common.truth.Truth.assertThat
+import java.io.File
 import org.junit.Rule
 import org.junit.Test
-import java.io.File
 
-/**
- * Tests incremental changes to project and dependencies classes.
- */
+/** Tests incremental changes to project and dependencies classes. */
 class AsmTransformApiIncrementalityTest {
 
-    @get:Rule
-    val project = GradleTestProject.builder().fromTestProject("asmTransformApi").create()
+  @get:Rule val project = GradleTestProject.builder().fromTestProject("asmTransformApi").create()
 
-    @Test
-    fun testIncrementalProjectCodeChange() {
-        configureExtensionForAnnotationAddingVisitor(project)
-        configureExtensionForInterfaceAddingVisitor(
-                project = project,
-                classesToInstrument = listOf(
-                        "com.example.myapplication.ClassWithNoInterfacesOrSuperclasses",
-                        "com.example.myapplication.ClassExtendsOneClassAndImplementsTwoInterfaces",
-                        "com.example.lib.InterfaceExtendsI",
-                        "com.example.myapplication.ANewClassImplementsI"
-                )
+  @Test
+  fun testIncrementalProjectCodeChange() {
+    configureExtensionForAnnotationAddingVisitor(project)
+    configureExtensionForInterfaceAddingVisitor(
+      project = project,
+      classesToInstrument =
+        listOf(
+          "com.example.myapplication.ClassWithNoInterfacesOrSuperclasses",
+          "com.example.myapplication.ClassExtendsOneClassAndImplementsTwoInterfaces",
+          "com.example.lib.InterfaceExtendsI",
+          "com.example.myapplication.ANewClassImplementsI",
+        ),
+    )
+
+    project.executor().run(":app:assembleDebug")
+
+    // Add class ANewClassImplementsI
+    FileUtils.writeToFile(
+      project.getSubproject(":app").file("src/main/java/com/example/myapplication/ANewClassImplementsI.kt"),
+      """
+      package com.example.myapplication
+
+                      import com.example.lib.I
+
+                      class ANewClassImplementsI : I {
+                          override fun f1() {}
+                          fun f4() {}
+                      }
+      """
+        .trimIndent(),
+    )
+
+    // modify class ClassExtendsOneClassAndImplementsTwoInterfaces (add method f4)
+    TestFileUtils.searchAndReplace(
+      project.getSubproject(":app").file("src/main/java/com/example/myapplication/ClassExtendsOneClassAndImplementsTwoInterfaces.kt"),
+      "override fun f3() {}",
+      "override fun f3() {} fun f4() {}",
+    )
+
+    // delete class ClassExtendsAClassThatExtendsAnotherClassAndImplementsTwoInterfaces
+    project
+      .getSubproject(":app")
+      .file("src/main/java/com/example/myapplication/ClassExtendsAClassThatExtendsAnotherClassAndImplementsTwoInterfaces.kt")
+      .delete()
+
+    // remove feature class ClassExtendsAnAppClass inheritance from ClassExtendsAClassThatExtendsAnotherClassAndImplementsTwoInterfaces
+    project
+      .getSubproject(":feature")
+      .file("src/main/java/com/example/feature/ClassExtendsAnAppClass.kt")
+      .writeText(
+        """
+        package com.example.feature
+        class ClassExtendsAnAppClass { }
+        """
+          .trimIndent()
+      )
+
+    val taskOutputDir =
+      FileUtils.join(project.getSubproject(":app").intermediatesDir, "classes", "debug", "transformDebugClassesWithAsm", "dirs")
+    val originalFiles = getClassFilesModifiedTimeMap(taskOutputDir)
+
+    val result = project.executor().run(":app:assembleDebug")
+
+    assertThat(result.didWorkTasks).contains(":app:transformDebugClassesWithAsm")
+
+    val filesAfterModification = getClassFilesModifiedTimeMap(taskOutputDir)
+
+    assertThat(originalFiles.keys)
+      .containsExactlyElementsIn(
+        listOf(
+          "ClassImplementsI.class",
+          "ClassWithNoInterfacesOrSuperclasses.class",
+          "ClassExtendsOneClassAndImplementsTwoInterfaces.class",
+          "ClassExtendsAClassThatExtendsAnotherClassAndImplementsTwoInterfaces.class",
         )
+      )
 
-        project.executor().run(":app:assembleDebug")
-
-        // Add class ANewClassImplementsI
-        FileUtils.writeToFile(
-                project.getSubproject(":app")
-                        .file("src/main/java/com/example/myapplication/ANewClassImplementsI.kt"),
-                """package com.example.myapplication
-
-                import com.example.lib.I
-
-                class ANewClassImplementsI : I {
-                    override fun f1() {}
-                    fun f4() {}
-                }
-            """.trimIndent()
+    assertThat(filesAfterModification.keys)
+      .containsExactlyElementsIn(
+        listOf(
+          "ClassImplementsI.class",
+          "ClassWithNoInterfacesOrSuperclasses.class",
+          "ClassExtendsOneClassAndImplementsTwoInterfaces.class",
+          "ANewClassImplementsI.class",
         )
+      )
 
-        // modify class ClassExtendsOneClassAndImplementsTwoInterfaces (add method f4)
-        TestFileUtils.searchAndReplace(
-                project.getSubproject(":app")
-                        .file("src/main/java/com/example/myapplication/ClassExtendsOneClassAndImplementsTwoInterfaces.kt"),
-                "override fun f3() {}",
-                "override fun f3() {} fun f4() {}"
-        )
-
-        // delete class ClassExtendsAClassThatExtendsAnotherClassAndImplementsTwoInterfaces
-        project.getSubproject(":app")
-                .file("src/main/java/com/example/myapplication/ClassExtendsAClassThatExtendsAnotherClassAndImplementsTwoInterfaces.kt")
-                .delete()
-
-        // remove feature class ClassExtendsAnAppClass inheritance from ClassExtendsAClassThatExtendsAnotherClassAndImplementsTwoInterfaces
-        project.getSubproject(":feature")
-            .file("src/main/java/com/example/feature/ClassExtendsAnAppClass.kt")
-            .writeText(
-                """
-                    package com.example.feature
-                    class ClassExtendsAnAppClass { }
-                """.trimIndent()
-            )
-
-        val taskOutputDir = FileUtils.join(
-                project.getSubproject(":app").intermediatesDir,
-            "classes", "debug", "transformDebugClassesWithAsm", "dirs"
-        )
-        val originalFiles = getClassFilesModifiedTimeMap(taskOutputDir)
-
-        val result = project.executor().run(":app:assembleDebug")
-
-        assertThat(result.didWorkTasks).contains(":app:transformDebugClassesWithAsm")
-
-        val filesAfterModification = getClassFilesModifiedTimeMap(taskOutputDir)
-
-        assertThat(originalFiles.keys).containsExactlyElementsIn(
-                listOf(
-                        "ClassImplementsI.class",
-                        "ClassWithNoInterfacesOrSuperclasses.class",
-                        "ClassExtendsOneClassAndImplementsTwoInterfaces.class",
-                        "ClassExtendsAClassThatExtendsAnotherClassAndImplementsTwoInterfaces.class",
-                )
-        )
-
-        assertThat(filesAfterModification.keys).containsExactlyElementsIn(
-                listOf(
-                        "ClassImplementsI.class",
-                        "ClassWithNoInterfacesOrSuperclasses.class",
-                        "ClassExtendsOneClassAndImplementsTwoInterfaces.class",
-                        "ANewClassImplementsI.class",
-                )
-        )
-
-        // Only ClassExtendsOneClassAndImplementsTwoInterfaces should be modified
-        filesAfterModification.forEach { (name, modifiedTime) ->
-            if (name == "ClassExtendsOneClassAndImplementsTwoInterfaces.class") {
-                assertThat(originalFiles[name]).isNotEqualTo(modifiedTime)
-            } else if (name != "ANewClassImplementsI.class") {
-                assertThat(originalFiles[name]).isEqualTo(modifiedTime)
-            }
-        }
-
-        val apk = project.getSubproject(":app").getApk(GradleTestProject.ApkType.DEBUG)
-
-        // app classes
-        checkClassesAreInstrumented(
-                apk = apk,
-                classesDescriptorPackagePrefix = appClassesDescriptorPrefix,
-                expectedClasses = projectClasses.toMutableList().apply {
-                    remove("ClassExtendsAClassThatExtendsAnotherClassAndImplementsTwoInterfaces")
-                    add("ANewClassImplementsI")
-                },
-                expectedAnnotatedMethods = mapOf(
-                        "ClassImplementsI" to listOf("f1"),
-                        "ClassExtendsOneClassAndImplementsTwoInterfaces" to listOf("f3", "f4"),
-                        "ANewClassImplementsI" to listOf("f1", "f4")
-                ),
-                expectedInstrumentedClasses = listOf(
-                        "ClassWithNoInterfacesOrSuperclasses",
-                        "ClassExtendsOneClassAndImplementsTwoInterfaces",
-                        "ANewClassImplementsI"
-                )
-        )
-
-        // lib classes
-        checkClassesAreInstrumented(
-                apk = apk,
-                classesDescriptorPackagePrefix = libClassesDescriptorPrefix,
-                expectedClasses = libClasses,
-                expectedAnnotatedMethods = mapOf(
-                        "InterfaceExtendsI" to listOf("f3")
-                ),
-                expectedInstrumentedClasses = listOf("InterfaceExtendsI")
-        )
+    // Only ClassExtendsOneClassAndImplementsTwoInterfaces should be modified
+    filesAfterModification.forEach { (name, modifiedTime) ->
+      if (name == "ClassExtendsOneClassAndImplementsTwoInterfaces.class") {
+        assertThat(originalFiles[name]).isNotEqualTo(modifiedTime)
+      } else if (name != "ANewClassImplementsI.class") {
+        assertThat(originalFiles[name]).isEqualTo(modifiedTime)
+      }
     }
 
-    @Test
-    fun testChangeInLibraryCode() {
-        configureExtensionForAnnotationAddingVisitor(project)
-        configureExtensionForInterfaceAddingVisitor(
-                project = project,
-                classesToInstrument = listOf(
-                        "com.example.myapplication.ClassWithNoInterfacesOrSuperclasses",
-                        "com.example.myapplication.ClassExtendsOneClassAndImplementsTwoInterfaces",
-                        "com.example.lib.InterfaceExtendsI",
-                        "com.example.lib.NewInterfaceExtendsI"
-                )
-        )
-        project.executor().run(":app:assembleDebug")
+    val apk = project.getSubproject(":app").getApk(GradleTestProject.ApkType.DEBUG)
 
-        // Add interface NewInterfaceExtendsI in lib
-        FileUtils.writeToFile(
-                project.getSubproject(":lib")
-                        .file("src/main/java/com/example/lib/NewInterfaceExtendsI.kt"),
-                """package com.example.lib
+    // app classes
+    checkClassesAreInstrumented(
+      apk = apk,
+      classesDescriptorPackagePrefix = appClassesDescriptorPrefix,
+      expectedClasses =
+        projectClasses.toMutableList().apply {
+          remove("ClassExtendsAClassThatExtendsAnotherClassAndImplementsTwoInterfaces")
+          add("ANewClassImplementsI")
+        },
+      expectedAnnotatedMethods =
+        mapOf(
+          "ClassImplementsI" to listOf("f1"),
+          "ClassExtendsOneClassAndImplementsTwoInterfaces" to listOf("f3", "f4"),
+          "ANewClassImplementsI" to listOf("f1", "f4"),
+        ),
+      expectedInstrumentedClasses =
+        listOf("ClassWithNoInterfacesOrSuperclasses", "ClassExtendsOneClassAndImplementsTwoInterfaces", "ANewClassImplementsI"),
+    )
 
-                interface NewInterfaceExtendsI : I {
-                    fun f3()
-                    fun f4()
-                }
-            """.trimIndent()
-        )
+    // lib classes
+    checkClassesAreInstrumented(
+      apk = apk,
+      classesDescriptorPackagePrefix = libClassesDescriptorPrefix,
+      expectedClasses = libClasses,
+      expectedAnnotatedMethods = mapOf("InterfaceExtendsI" to listOf("f3")),
+      expectedInstrumentedClasses = listOf("InterfaceExtendsI"),
+    )
+  }
 
-        project.executor().run(":app:assembleDebug")
-        val apk = project.getSubproject(":app").getApk(GradleTestProject.ApkType.DEBUG)
+  @Test
+  fun testChangeInLibraryCode() {
+    configureExtensionForAnnotationAddingVisitor(project)
+    configureExtensionForInterfaceAddingVisitor(
+      project = project,
+      classesToInstrument =
+        listOf(
+          "com.example.myapplication.ClassWithNoInterfacesOrSuperclasses",
+          "com.example.myapplication.ClassExtendsOneClassAndImplementsTwoInterfaces",
+          "com.example.lib.InterfaceExtendsI",
+          "com.example.lib.NewInterfaceExtendsI",
+        ),
+    )
+    project.executor().run(":app:assembleDebug")
 
-        // lib classes
-        checkClassesAreInstrumented(
-                apk = apk,
-                classesDescriptorPackagePrefix = libClassesDescriptorPrefix,
-                expectedClasses = libClasses.toMutableList().apply {
-                    add("NewInterfaceExtendsI")
-                },
-                expectedAnnotatedMethods = mapOf(
-                        "InterfaceExtendsI" to listOf("f3"),
-                        "NewInterfaceExtendsI" to listOf("f3", "f4")
-                ),
-                expectedInstrumentedClasses = listOf("InterfaceExtendsI", "NewInterfaceExtendsI")
-        )
-    }
+    // Add interface NewInterfaceExtendsI in lib
+    FileUtils.writeToFile(
+      project.getSubproject(":lib").file("src/main/java/com/example/lib/NewInterfaceExtendsI.kt"),
+      """
+      package com.example.lib
 
-    @Test
-    fun loadedClassChanged() {
-        configureExtensionForAnnotationAddingVisitor(project)
-        configureExtensionForInterfaceAddingVisitor(project)
+                      interface NewInterfaceExtendsI : I {
+                          fun f3()
+                          fun f4()
+                      }
+      """
+        .trimIndent(),
+    )
 
-        // Make the AnnotationAddingClassVisitorFactory query for ClassImplementsI class data
-        TestFileUtils.searchAndReplace(
-            project.getSubproject(":buildSrc")
-                .file("src/main/java/com/example/buildsrc/instrumentation/AnnotationAddingClassVisitorFactory.kt"),
-            "return AnnotationAddingClassVisitor(",
-            "classContext.loadClassData(\"com.example.myapplication.ClassImplementsI\")" +
-                    System.lineSeparator() +
-                    "return AnnotationAddingClassVisitor("
-        )
+    project.executor().run(":app:assembleDebug")
+    val apk = project.getSubproject(":app").getApk(GradleTestProject.ApkType.DEBUG)
 
-        project.executor().run(":app:transformDebugClassesWithAsm")
+    // lib classes
+    checkClassesAreInstrumented(
+      apk = apk,
+      classesDescriptorPackagePrefix = libClassesDescriptorPrefix,
+      expectedClasses = libClasses.toMutableList().apply { add("NewInterfaceExtendsI") },
+      expectedAnnotatedMethods = mapOf("InterfaceExtendsI" to listOf("f3"), "NewInterfaceExtendsI" to listOf("f3", "f4")),
+      expectedInstrumentedClasses = listOf("InterfaceExtendsI", "NewInterfaceExtendsI"),
+    )
+  }
 
-        val incrementalDir = FileUtils.join(
-            project.getSubproject(":app").intermediatesDir,
-            "incremental",
-            "transformDebugClassesWithAsm"
-        )
+  @Test
+  fun loadedClassChanged() {
+    configureExtensionForAnnotationAddingVisitor(project)
+    configureExtensionForInterfaceAddingVisitor(project)
 
-        assertThat(incrementalDir.listFiles()).hasLength(1)
-        var classData = loadClassData(incrementalDir.listFiles()!![0])!!
-        assertThat(classData.className).isEqualTo("com.example.myapplication.ClassImplementsI")
-        assertThat(classData.interfaces).containsExactly("com.example.lib.I")
-        assertThat(classData.superClasses).containsExactly("java.lang.Object")
-        assertThat(classData.classAnnotations).isEmpty()
+    // Make the AnnotationAddingClassVisitorFactory query for ClassImplementsI class data
+    TestFileUtils.searchAndReplace(
+      project.getSubproject(":buildSrc").file("src/main/java/com/example/buildsrc/instrumentation/AnnotationAddingClassVisitorFactory.kt"),
+      "return AnnotationAddingClassVisitor(",
+      "classContext.loadClassData(\"com.example.myapplication.ClassImplementsI\")" +
+        System.lineSeparator() +
+        "return AnnotationAddingClassVisitor(",
+    )
 
-        val taskOutputDir = FileUtils.join(
-            project.getSubproject(":app").intermediatesDir,
-            "classes", "debug", "transformDebugClassesWithAsm", "dirs"
-        )
-        var originalFiles = getClassFilesModifiedTimeMap(taskOutputDir)
+    project.executor().run(":app:transformDebugClassesWithAsm")
 
-        // change ClassImplementsI in a way that doesn't affect the class data, and so we should
-        // be still running incrementally
-        TestFileUtils.searchAndReplace(
-            project.getSubproject(":app")
-                .file("src/main/java/com/example/myapplication/ClassImplementsI.kt"),
-            "fun f2() {}",
-            "fun f2() {}" + System.lineSeparator() +
-                    "fun f() {}"
-        )
+    val incrementalDir = FileUtils.join(project.getSubproject(":app").intermediatesDir, "incremental", "transformDebugClassesWithAsm")
 
-        var result = project.executor().run(":app:transformDebugClassesWithAsm")
+    assertThat(incrementalDir.listFiles()).hasLength(1)
+    var classData = loadClassData(incrementalDir.listFiles()!![0])!!
+    assertThat(classData.className).isEqualTo("com.example.myapplication.ClassImplementsI")
+    assertThat(classData.interfaces).containsExactly("com.example.lib.I")
+    assertThat(classData.superClasses).containsExactly("java.lang.Object")
+    assertThat(classData.classAnnotations).isEmpty()
 
-        assertThat(result.didWorkTasks).contains(":app:transformDebugClassesWithAsm")
+    val taskOutputDir =
+      FileUtils.join(project.getSubproject(":app").intermediatesDir, "classes", "debug", "transformDebugClassesWithAsm", "dirs")
+    var originalFiles = getClassFilesModifiedTimeMap(taskOutputDir)
 
-        var modifiedFiles = getClassFilesModifiedTimeMap(taskOutputDir).filter {
-            originalFiles[it.key] != it.value
-        }
+    // change ClassImplementsI in a way that doesn't affect the class data, and so we should
+    // be still running incrementally
+    TestFileUtils.searchAndReplace(
+      project.getSubproject(":app").file("src/main/java/com/example/myapplication/ClassImplementsI.kt"),
+      "fun f2() {}",
+      "fun f2() {}" + System.lineSeparator() + "fun f() {}",
+    )
 
-        assertThat(modifiedFiles).hasSize(1)
-        assertThat(modifiedFiles.keys).containsExactly("ClassImplementsI.class")
+    var result = project.executor().run(":app:transformDebugClassesWithAsm")
 
-        originalFiles = getClassFilesModifiedTimeMap(taskOutputDir)
+    assertThat(result.didWorkTasks).contains(":app:transformDebugClassesWithAsm")
 
-        // change ClassImplementsI in a way that will change the class data, and so we should run
-        // non incrementally
-        TestFileUtils.searchAndReplace(
-            project.getSubproject(":app")
-                .file("src/main/java/com/example/myapplication/ClassImplementsI.kt"),
-            "ClassImplementsI : I",
-            "ClassImplementsI : I, java.io.Serializable"
-        )
+    var modifiedFiles = getClassFilesModifiedTimeMap(taskOutputDir).filter { originalFiles[it.key] != it.value }
 
-        result = project.executor().run(":app:transformDebugClassesWithAsm")
+    assertThat(modifiedFiles).hasSize(1)
+    assertThat(modifiedFiles.keys).containsExactly("ClassImplementsI.class")
 
-        assertThat(result.didWorkTasks).contains(":app:transformDebugClassesWithAsm")
+    originalFiles = getClassFilesModifiedTimeMap(taskOutputDir)
 
-        modifiedFiles = getClassFilesModifiedTimeMap(taskOutputDir).filter {
-            originalFiles[it.key] != it.value
-        }
+    // change ClassImplementsI in a way that will change the class data, and so we should run
+    // non incrementally
+    TestFileUtils.searchAndReplace(
+      project.getSubproject(":app").file("src/main/java/com/example/myapplication/ClassImplementsI.kt"),
+      "ClassImplementsI : I",
+      "ClassImplementsI : I, java.io.Serializable",
+    )
 
-        // all classes should be modified
-        assertThat(modifiedFiles).hasSize(originalFiles.size)
+    result = project.executor().run(":app:transformDebugClassesWithAsm")
 
-        // new class data should be outputted
-        assertThat(incrementalDir.listFiles()).hasLength(1)
-        classData = loadClassData(incrementalDir.listFiles()!![0])!!
-        assertThat(classData.className).isEqualTo("com.example.myapplication.ClassImplementsI")
-        assertThat(classData.interfaces).containsExactly("com.example.lib.I", "java.io.Serializable")
-        assertThat(classData.superClasses).containsExactly("java.lang.Object")
-        assertThat(classData.classAnnotations).isEmpty()
-    }
+    assertThat(result.didWorkTasks).contains(":app:transformDebugClassesWithAsm")
 
-    @Test
-    fun loadClassFailure() {
-        configureExtensionForAnnotationAddingVisitor(project)
-        configureExtensionForInterfaceAddingVisitor(project)
+    modifiedFiles = getClassFilesModifiedTimeMap(taskOutputDir).filter { originalFiles[it.key] != it.value }
 
-        TestFileUtils.searchAndReplace(
-            project.getSubproject(":buildSrc")
-                .file("src/main/java/com/example/buildsrc/instrumentation/AnnotationAddingClassVisitorFactory.kt"),
-            "return AnnotationAddingClassVisitor(",
-            "classContext.loadClassData(\"com/example/myapplication/ClassImplementsI\")" +
-                    System.lineSeparator() +
-                    "return AnnotationAddingClassVisitor("
-        )
+    // all classes should be modified
+    assertThat(modifiedFiles).hasSize(originalFiles.size)
 
-        val result = project.executor().expectFailure().run(":app:transformDebugClassesWithAsm")
-        assertThat(result.failureMessage).contains("Fully qualified name must be provided to loadClassData.")
-    }
+    // new class data should be outputted
+    assertThat(incrementalDir.listFiles()).hasLength(1)
+    classData = loadClassData(incrementalDir.listFiles()!![0])!!
+    assertThat(classData.className).isEqualTo("com.example.myapplication.ClassImplementsI")
+    assertThat(classData.interfaces).containsExactly("com.example.lib.I", "java.io.Serializable")
+    assertThat(classData.superClasses).containsExactly("java.lang.Object")
+    assertThat(classData.classAnnotations).isEmpty()
+  }
 
-    private fun getClassFilesModifiedTimeMap(outputDir: File): Map<String, Long> {
-        return FileUtils.getAllFiles(outputDir).filter { it!!.name.endsWith(SdkConstants.DOT_CLASS) }.map {
-            it.name to it.lastModified()
-        }.toMap()
-    }
+  @Test
+  fun loadClassFailure() {
+    configureExtensionForAnnotationAddingVisitor(project)
+    configureExtensionForInterfaceAddingVisitor(project)
+
+    TestFileUtils.searchAndReplace(
+      project.getSubproject(":buildSrc").file("src/main/java/com/example/buildsrc/instrumentation/AnnotationAddingClassVisitorFactory.kt"),
+      "return AnnotationAddingClassVisitor(",
+      "classContext.loadClassData(\"com/example/myapplication/ClassImplementsI\")" +
+        System.lineSeparator() +
+        "return AnnotationAddingClassVisitor(",
+    )
+
+    val result = project.executor().expectFailure().run(":app:transformDebugClassesWithAsm")
+    assertThat(result.failureMessage).contains("Fully qualified name must be provided to loadClassData.")
+  }
+
+  private fun getClassFilesModifiedTimeMap(outputDir: File): Map<String, Long> {
+    return FileUtils.getAllFiles(outputDir)
+      .filter { it!!.name.endsWith(SdkConstants.DOT_CLASS) }
+      .map { it.name to it.lastModified() }
+      .toMap()
+  }
 }

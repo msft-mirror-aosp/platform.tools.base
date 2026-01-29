@@ -23,79 +23,69 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 
-/** Integration test for composite build.  */
+/** Integration test for composite build. */
 class CompositeBuildTest {
 
-    @get:Rule
-    val rule = GradleRule.from {
-        androidApplication {
-            android {
-                buildTypes {
-                    named("debug") {
-                        it.isTestCoverageEnabled = true
-                    }
-                }
-            }
-            dependencies {
-                api("com.example:lib:1.0")
-                api("com.example:androidLib1:1.0")
-                api("com.example:androidLib2:1.0")
-            }
+  @get:Rule
+  val rule =
+    GradleRule.from {
+      androidApplication {
+        android { buildTypes { named("debug") { it.isTestCoverageEnabled = true } } }
+        dependencies {
+          api("com.example:lib:1.0")
+          api("com.example:androidLib1:1.0")
+          api("com.example:androidLib2:1.0")
         }
-        includedBuild("lib") {
-            rootProject {
-                group = "com.example"
-                version = "1.0"
-                applyPlugin(PluginType.JAVA_LIBRARY)
-                files.add("gradle.properties",
-                    """
+      }
+      includedBuild("lib") {
+        rootProject {
+          group = "com.example"
+          version = "1.0"
+          applyPlugin(PluginType.JAVA_LIBRARY)
+          files.add(
+            "gradle.properties",
+            """
                         org.gradle.java.installations.paths=${TestUtils.getJava17Jdk().toString().replace("\\", "/")}
-                    """.trimIndent())
-            }
+                    """
+              .trimIndent(),
+          )
         }
-        includedBuild("androidLib") {
-            androidLibrary(":androidLib1") {
-                group = "com.example"
-                version = "1.0"
-            }
-
-            androidLibrary(":androidLib2") {
-                group = "com.example"
-                version = "1.0"
-            }
+      }
+      includedBuild("androidLib") {
+        androidLibrary(":androidLib1") {
+          group = "com.example"
+          version = "1.0"
         }
-    }
 
-    @Before
-    fun setUp() {
-    }
-
-    @Test
-    fun assembleDebug() {
-        val build = rule.build
-        build.executor.run(":app:assembleDebug")
-
-        build.androidApplication().assertApk(ApkSelector.DEBUG) {
-            exists()
+        androidLibrary(":androidLib2") {
+          group = "com.example"
+          version = "1.0"
         }
+      }
     }
 
-    @Test
-    fun assembleDebugWithConfigureOnDemand() {
-        val build = rule.build
+  @Before fun setUp() {}
 
-        build.executor.withArgument("--configure-on-demand").run(":app:assembleDebug")
+  @Test
+  fun assembleDebug() {
+    val build = rule.build
+    build.executor.run(":app:assembleDebug")
 
-        build.androidApplication().assertApk(ApkSelector.DEBUG) {
-            exists()
-        }
-    }
+    build.androidApplication().assertApk(ApkSelector.DEBUG) { exists() }
+  }
 
-    /**
-     * Regression test for b/327670497
-     */
-    @Test
-    fun lintDebug() {
-        rule.build.executor.run(":app:lintDebug")
-    }
+  @Test
+  fun assembleDebugWithConfigureOnDemand() {
+    val build = rule.build
+
+    build.executor.withArgument("--configure-on-demand").run(":app:assembleDebug")
+
+    build.androidApplication().assertApk(ApkSelector.DEBUG) { exists() }
+  }
+
+  /** Regression test for b/327670497 */
+  @Test
+  fun lintDebug() {
+    rule.build.executor.run(":app:lintDebug")
+  }
 }

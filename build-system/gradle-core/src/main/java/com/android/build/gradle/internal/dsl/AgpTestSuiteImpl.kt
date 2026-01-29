@@ -25,139 +25,116 @@ import com.android.build.api.dsl.TestSuiteTestApkSpec
 import com.android.build.api.dsl.TestTaskContext
 import com.android.build.gradle.internal.services.DslServices
 import com.android.build.gradle.internal.testsuites.TestSuiteSourceCreationConfig
+import java.util.concurrent.atomic.AtomicBoolean
+import javax.inject.Inject
 import org.gradle.api.Action
 import org.gradle.api.NamedDomainObjectContainer
 import org.gradle.api.tasks.testing.Test
-import java.util.concurrent.atomic.AtomicBoolean
-import javax.inject.Inject
 
 /**
  * Implementation of the [AgpTestSuite] Dsl extension.
  *
  * @param name the Test Suite Name
  * @param dslServices internal services
- * @param androidResourcesIncluded DSL declaration on whether the android resources should be
- * included.
+ * @param androidResourcesIncluded DSL declaration on whether the android resources should be included.
  */
-abstract class AgpTestSuiteImpl @Inject constructor(
-    private val name: String,
-    val dslServices: DslServices,
-    val androidResourcesIncluded: Boolean
-): AgpTestSuite {
+abstract class AgpTestSuiteImpl
+@Inject
+constructor(private val name: String, val dslServices: DslServices, val androidResourcesIncluded: Boolean) : AgpTestSuite {
 
-    private val jUnitEngineSpec = dslServices.newInstance(
-        JUnitEngineSpecImpl::class.java,
-    )
+  private val jUnitEngineSpec = dslServices.newInstance(JUnitEngineSpecImpl::class.java)
 
-    private val junitEngineUsed = AtomicBoolean(false)
+  private val junitEngineUsed = AtomicBoolean(false)
 
-    fun getJunitEngineIfUsed(): JUnitEngineSpec? = jUnitEngineSpec.takeIf { junitEngineUsed.get() }
+  fun getJunitEngineIfUsed(): JUnitEngineSpec? = jUnitEngineSpec.takeIf { junitEngineUsed.get() }
 
-    override fun useJunitEngine(action: JUnitEngineSpec.() -> Unit) {
-        action.invoke(useJunitEngine)
+  override fun useJunitEngine(action: JUnitEngineSpec.() -> Unit) {
+    action.invoke(useJunitEngine)
+  }
+
+  fun useJunitEngine(action: Action<JUnitEngineSpec>) {
+    action.execute(useJunitEngine)
+  }
+
+  override val useJunitEngine: JUnitEngineSpec
+    get() {
+      junitEngineUsed.set(true)
+      return jUnitEngineSpec
     }
 
-    fun useJunitEngine(action: Action<JUnitEngineSpec>) {
-        action.execute(useJunitEngine)
+  override fun getName(): String = name
+
+  override val targetVariants = mutableListOf<String>()
+
+  /**
+   * Adds one or more target variants to the [targetVariants] list.
+   *
+   * This method is provided for Groovy DSL support, allowing a more idiomatic syntax. For example:
+   * ```groovy
+   * targetVariants 'debug', 'release'
+   * ```
+   *
+   * @param targetVariants The names of the variants to target.
+   */
+  fun targetVariants(vararg targetVariants: String) = this.targetVariants.addAll(targetVariants)
+
+  private val targets =
+    dslServices.domainObjectContainer(AgpTestSuiteTarget::class.java) { name -> AgpTestSuiteTargetImpl(this@AgpTestSuiteImpl, name) }
+
+  override fun getTargets(): NamedDomainObjectContainer<AgpTestSuiteTarget> = targets
+
+  override fun assets(action: TestSuiteAssetsSpec.() -> Unit) {
+    addSource<TestSuiteAssetsSpecImpl>(action)
+  }
+
+  override fun hostJar(action: TestSuiteHostJarSpec.() -> Unit) {
+    addSource<TestSuiteHostJarSpecImpl> {
+      this.enableAndroidResources = androidResourcesIncluded
+      action(this)
     }
+  }
 
-    override val useJunitEngine: JUnitEngineSpec
-        get() {
-            junitEngineUsed.set(true)
-            return jUnitEngineSpec
-        }
+  fun hostJar(action: Action<TestSuiteHostJarSpec>) {
+    hostJar { action.execute(this) }
+  }
 
-    override fun getName(): String = name
+  override fun testApk(action: TestSuiteTestApkSpec.() -> Unit) {
+    addSource<TestSuiteTestApkSpecImpl>(action)
+  }
 
-    override val targetVariants = mutableListOf<String>()
+  fun testApk(action: Action<TestSuiteTestApkSpec>) {
+    testApk { action.execute(this) }
+  }
 
-    /**
-     * Adds one or more target variants to the [targetVariants] list.
-     *
-     * This method is provided for Groovy DSL support, allowing a more idiomatic syntax.
-     * For example:
-     * ```groovy
-     * targetVariants 'debug', 'release'
-     * ```
-     * @param targetVariants The names of the variants to target.
-     */
-    fun targetVariants(vararg targetVariants: String) = this.targetVariants.addAll(targetVariants)
+  private val sources = mutableListOf<TestSuiteSourceCreationConfig>()
 
-    private val targets = dslServices.domainObjectContainer(
-        AgpTestSuiteTarget::class.java
-    ) { name ->
-        AgpTestSuiteTargetImpl(
-            this@AgpTestSuiteImpl, name
-        )
+  internal fun getSourceContainers(): Collection<TestSuiteSourceCreationConfig> = sources
+
+  override fun configureTestTasks(action: Test.(TestTaskContext) -> Unit) {
+    testTaskConfigActions.add(action)
+  }
+
+  override var codeCoverage = false
+
+  /** Internal APIs */
+  internal val testTaskConfigActions = mutableListOf<Test.(TestTaskContext) -> Unit>()
+
+  /** Private APIs */
+  private inline fun <reified T : TestSuiteSourceCreationConfig> addSource(initializationBlock: T.() -> Unit) {
+    if (sources.isNotEmpty()) {
+      // this may be another initialization block for the same source.
+      val existingSource = sources.single()
+      if (existingSource is T) {
+        initializationBlock.invoke(existingSource)
+        return
+      } else {
+        throw RuntimeException("It is not yet possible to register multiple sources for a test suite")
+      }
     }
-
-    override fun getTargets(): NamedDomainObjectContainer<AgpTestSuiteTarget> = targets
-
-    override fun assets(action: TestSuiteAssetsSpec.() -> Unit) {
-        addSource<TestSuiteAssetsSpecImpl>( action)
+    dslServices.newInstance(T::class.java, name, dslServices.projectInfo.projectDirectory, dslServices.projectInfo.buildDirectory).also {
+      newSources ->
+      sources.add(newSources)
+      initializationBlock.invoke(newSources)
     }
-
-    override fun hostJar(action: TestSuiteHostJarSpec.() -> Unit) {
-        addSource<TestSuiteHostJarSpecImpl> {
-            this.enableAndroidResources = androidResourcesIncluded
-            action(this)
-        }
-    }
-
-    fun hostJar(action: Action<TestSuiteHostJarSpec>) {
-        hostJar { action.execute(this) }
-    }
-
-    override fun testApk(action: TestSuiteTestApkSpec.() -> Unit) {
-        addSource<TestSuiteTestApkSpecImpl>(action)
-    }
-
-    fun testApk(action: Action<TestSuiteTestApkSpec>) {
-        testApk { action.execute(this) }
-    }
-
-    private val sources = mutableListOf<TestSuiteSourceCreationConfig>()
-
-    internal fun  getSourceContainers(): Collection<TestSuiteSourceCreationConfig> =
-        sources
-
-    override fun configureTestTasks(action: Test.(TestTaskContext) -> Unit) {
-        testTaskConfigActions.add(action)
-    }
-
-    override var codeCoverage = false
-
-    /**
-     * Internal APIs
-     */
-    internal val testTaskConfigActions = mutableListOf<Test.(TestTaskContext) -> Unit>()
-
-    /**
-     * Private APIs
-     */
-    private inline fun <reified T: TestSuiteSourceCreationConfig> addSource(
-        initializationBlock: T.() -> Unit
-    ) {
-        if (sources.isNotEmpty()) {
-            // this may be another initialization block for the same source.
-            val existingSource = sources.single()
-            if (existingSource is T) {
-                initializationBlock.invoke(existingSource)
-                return
-            } else {
-                throw RuntimeException(
-                    "It is not yet possible to register multiple sources for a test suite"
-                )
-            }
-        }
-        dslServices.newInstance(
-            T::class.java,
-            name,
-            dslServices.projectInfo.projectDirectory,
-            dslServices.projectInfo.buildDirectory,
-        ).also { newSources ->
-            sources.add(newSources)
-            initializationBlock.invoke(newSources)
-        }
-    }
+  }
 }

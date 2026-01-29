@@ -38,11 +38,12 @@ fun extractPackageFromUri(namespaceUri: String): ExtractedPackage? {
   }
 }
 
-fun constructPackageUri(alias: String, isPrivate: Boolean) = if (isPrivate) {
-  SCHEMA_PRIVATE_PREFIX + alias
-} else {
-  SCHEMA_PUBLIC_PREFIX + alias
-}
+fun constructPackageUri(alias: String, isPrivate: Boolean) =
+  if (isPrivate) {
+    SCHEMA_PRIVATE_PREFIX + alias
+  } else {
+    SCHEMA_PUBLIC_PREFIX + alias
+  }
 
 fun transformPackageAlias(element: StartElement, alias: String): ExtractedPackage? {
   if (alias.isEmpty()) {
@@ -62,15 +63,12 @@ fun resolvePackage(element: StartElement, ref: Reference) {
 }
 
 /**
- * Polls the {@code eventReader} till the reader is after the corresponding end element of
- * {@code element}.
+ * Polls the {@code eventReader} till the reader is after the corresponding end element of {@code element}.
  *
- * <p> It is assumed that {@code element} is the last startElement read from
- * the reader.
+ * <p> It is assumed that {@code element} is the last startElement read from the reader.
  *
  * @param element The start of the element to which we want to reach the end of.
- * @param eventReader The eventReader to be moved to the end of the corresponding
- *   {@code EndElement}.
+ * @param eventReader The eventReader to be moved to the end of the corresponding {@code EndElement}.
  */
 internal fun walkToEndOfElement(element: StartElement, eventReader: XMLEventReader) {
   var depth = 1

@@ -17,6 +17,9 @@
 package com.android.build.api.artifact.impl
 
 import com.google.common.truth.Truth.assertThat
+import java.lang.RuntimeException
+import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.test.fail
 import org.gradle.api.DefaultTask
 import org.gradle.api.Project
 import org.gradle.api.file.DirectoryProperty
@@ -35,327 +38,286 @@ import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
-import java.lang.RuntimeException
-import java.util.concurrent.atomic.AtomicBoolean
-import kotlin.test.fail
 
 @Ignore
-abstract class AbstractMultipleArtifactTest<T: FileSystemLocation>(
-    private val propertyAllocator: (ObjectFactory) -> ListProperty<T>,
-    private val valueAllocator: (DirectoryProperty, String) -> Provider<T>,
-    private val taskAllocator: (tasks: TaskContainer, name: String) -> TaskProvider<out AbstractSingleArtifactTest.ProducerTask<T>>
+abstract class AbstractMultipleArtifactTest<T : FileSystemLocation>(
+  private val propertyAllocator: (ObjectFactory) -> ListProperty<T>,
+  private val valueAllocator: (DirectoryProperty, String) -> Provider<T>,
+  private val taskAllocator: (tasks: TaskContainer, name: String) -> TaskProvider<out AbstractSingleArtifactTest.ProducerTask<T>>,
 ) {
 
-    @Rule
-    @JvmField
-    val tmpDir: TemporaryFolder = TemporaryFolder()
-    lateinit var project: Project
+  @Rule @JvmField val tmpDir: TemporaryFolder = TemporaryFolder()
+  lateinit var project: Project
 
-    @Before
-    fun setUp() {
-        project = ProjectBuilder.builder().withProjectDir(tmpDir.newFolder()).build()
+  @Before
+  fun setUp() {
+    project = ProjectBuilder.builder().withProjectDir(tmpDir.newFolder()).build()
+  }
+
+  abstract val fileSystemLocationAllocator: (objects: ObjectFactory) -> FileSystemLocationProperty<T>
+
+  private fun allocateProperty() =
+    MultiplePropertyAdapter(propertyAllocator(project.objects), { fileSystemLocationAllocator(project.objects) })
+
+  private fun allocateValue(name: String) = valueAllocator(project.layout.buildDirectory, name)
+
+  private fun allocateTask(name: String) = taskAllocator(project.tasks, name)
+
+  @Test
+  fun testSet() {
+    val artifact = MultipleArtifactContainer { allocateProperty() }
+
+    val initialized = AtomicBoolean(false)
+    val value = allocateValue("firstProduced")
+    val producer = taskAllocator(project.tasks, "firstProducer")
+    producer.configure {
+      initialized.set(true)
+      it.getOutputFile().set(value)
     }
 
-    abstract val fileSystemLocationAllocator: (objects: ObjectFactory) -> FileSystemLocationProperty<T>
+    artifact.addInitialProvider(producer, producer.flatMap { it.getOutputFile() })
+    assertThat(initialized.get()).isFalse()
 
-    private fun allocateProperty() =  MultiplePropertyAdapter(
-        propertyAllocator(project.objects),
-        { fileSystemLocationAllocator(project.objects) }
-    )
-    private fun allocateValue(name: String) = valueAllocator(project.layout.buildDirectory, name)
-    private fun allocateTask(name: String) = taskAllocator(project.tasks, name)
+    assertValues(artifact.getCurrent(), listOf(value))
+    assertValues(artifact.get(), listOf(value))
+    assertThat(initialized.get()).isTrue()
+  }
 
-    @Test
-    fun testSet() {
-        val artifact = MultipleArtifactContainer { allocateProperty() }
+  @Test
+  fun testMultipleSet() {
+    val artifact = MultipleArtifactContainer { allocateProperty() }
 
-        val initialized = AtomicBoolean(false)
-        val value = allocateValue("firstProduced")
-        val producer = taskAllocator(project.tasks, "firstProducer")
-        producer.configure {
-            initialized.set(true)
-            it.getOutputFile().set(value)
-        }
+    val listOfValues = mutableListOf<Provider<T>>()
+    for (i in 1..3) {
+      val value = allocateValue("firstProduced$i")
+      val producer = taskAllocator(project.tasks, "firstProducer$i")
+      producer.configure { it.getOutputFile().set(value) }
+      artifact.addInitialProvider(producer, producer.flatMap { it.getOutputFile() })
+      listOfValues.add(value)
+    }
+    assertValues(artifact.get(), listOfValues)
+  }
 
-        artifact.addInitialProvider(producer, producer.flatMap { it.getOutputFile() })
-        assertThat(initialized.get()).isFalse()
+  @Test(expected = RuntimeException::class)
+  fun testChangesDisallowed() {
+    val artifact = MultipleArtifactContainer { allocateProperty() }
 
-        assertValues(artifact.getCurrent(), listOf(value))
-        assertValues(artifact.get(), listOf(value))
-        assertThat(initialized.get()).isTrue()
+    val listOfValues = mutableListOf<Provider<T>>()
+    for (i in 1..3) {
+      val value = allocateValue("firstProduced$i")
+      val producer = taskAllocator(project.tasks, "firstProducer$i")
+      producer.configure { it.getOutputFile().set(value) }
+      artifact.addInitialProvider(producer, producer.flatMap { it.getOutputFile() })
+      listOfValues.add(value)
+    }
+    artifact.disallowChanges()
+    // try to add an extra producer, it should fail
+    val value = allocateValue("extraProduced")
+    val producer = taskAllocator(project.tasks, "extraProducer")
+    producer.configure { it.getOutputFile().set(value) }
+    artifact.addInitialProvider(producer, producer.flatMap { it.getOutputFile() })
+  }
+
+  @Test
+  fun testGetFinal() {
+    val artifact = MultipleArtifactContainer { allocateProperty() }
+    val final = artifact.get()
+    assertThat(final.get()).isEmpty()
+
+    // add some producers.
+    for (i in 1..3) {
+      val value = allocateValue("firstProduced$i")
+      val producer = taskAllocator(project.tasks, "firstProducer$i")
+      producer.configure { it.getOutputFile().set(value) }
+      artifact.addInitialProvider(producer, producer.flatMap { it.getOutputFile() })
+    }
+    artifact.disallowChanges()
+    assertThat(final.get().size).isEqualTo(3)
+
+    // check that the collection cannot be altered.
+    if (final is ListProperty<*>) {
+      try {
+        @Suppress("Unchecked_cast") final.add(allocateValue("foo") as Provider<out Nothing>)
+        fail("getCurrent() returned an unprotected collection")
+      } catch (expected: Exception) {
+        // expected
+      }
+    }
+  }
+
+  @Test
+  fun testGetCurrent() {
+    val artifact = MultipleArtifactContainer { allocateProperty() }
+
+    // initial producer.
+    for (i in 1..3) {
+      val value = allocateValue("firstProduced$i")
+      val producer = taskAllocator(project.tasks, "firstProducer$i")
+      producer.configure { it.getOutputFile().set(value) }
+      artifact.addInitialProvider(producer, producer.flatMap { it.getOutputFile() })
+    }
+    val currentValues = artifact.getCurrent()
+
+    // add a few more producers.
+    for (i in 4..5) {
+      val value = allocateValue("firstProduced$i")
+      val producer = taskAllocator(project.tasks, "firstProducer$i")
+      producer.configure { it.getOutputFile().set(value) }
+      artifact.addInitialProvider(producer, producer.flatMap { it.getOutputFile() })
+    }
+    assertThat(currentValues.get().size).isEqualTo(5)
+
+    // check that the collection cannot be altered.
+    if (currentValues is ListProperty<*>) {
+      try {
+        @Suppress("Unchecked_cast") currentValues.add(allocateValue("foo") as Provider<out Nothing>)
+        fail("getCurrent() returned an unprotected collection")
+      } catch (expected: Exception) {
+        // expected
+      }
+    }
+  }
+
+  fun testReplace(
+    initialProducerAllocator: (TaskContainer, String) -> TaskProvider<out MultipleProducerTask<T>>,
+    secondProducerAllocator: (TaskContainer, String) -> TaskProvider<out MultipleArtifactTransformTask<T>>,
+  ) {
+
+    val artifact = MultipleArtifactContainer { allocateProperty() }
+
+    val initialProducerConfigured = AtomicBoolean(false)
+
+    val producer =
+      allocateCombiningProducers(initialProducerAllocator, "initialProducer", initialProducerConfigured, mutableListOf<Provider<T>>())
+    artifact.addInitialProvider(listOf(producer), producer.flatMap { it.getOutputFiles() })
+
+    // and now replace all these values in by one combining task.
+    val replacingProducer = secondProducerAllocator(project.tasks, "secondProducer")
+    val replacingValue = allocateValue("replacement")
+    replacingProducer.configure { it.transformedOutput.set(replacingValue) }
+
+    artifact.replace(replacingProducer, replacingProducer.flatMap { it.transformedOutput })
+    // from now on, only one provider remain, which is "replacingValue"
+    assertValues(artifact.get(), listOf(replacingValue))
+    // make sure the initial provider is not configured since it's replaced.
+    assertThat(initialProducerConfigured.get()).isFalse()
+  }
+
+  fun testAddAndReplace(
+    initialProducerAllocator: (TaskContainer, String) -> TaskProvider<out MultipleProducerTask<T>>,
+    multipleProducerAllocator: (TaskContainer, String) -> TaskProvider<out MultipleArtifactTransformTask<T>>,
+  ) {
+
+    val artifact = MultipleArtifactContainer { allocateProperty() }
+
+    val initialProducerConfigured = AtomicBoolean(false)
+    val initialProviders = mutableListOf<Provider<T>>()
+    val producer = allocateCombiningProducers(initialProducerAllocator, "initialProducer", initialProducerConfigured, initialProviders)
+
+    artifact.addInitialProvider(listOf(producer), producer.flatMap { it.getOutputFiles() })
+    // test current
+    var currentArtifactValues = artifact.getCurrent()
+    assertThat(currentArtifactValues.get().size).isEqualTo(3)
+
+    // add an element
+    val addedValue = allocateValue("secondProduced")
+    val addedProducer = taskAllocator(project.tasks, "addedProducer")
+    addedProducer.configure {
+      it.getOutputFile().set(addedValue)
+      initialProviders.add(addedValue)
+    }
+    artifact.addInitialProvider(addedProducer, addedProducer.flatMap { it.getOutputFile() })
+
+    // test current
+    currentArtifactValues = artifact.getCurrent()
+    // it should still be 3 since we have replaced all producers with "initialProducer"
+    assertThat(currentArtifactValues.get().size).isEqualTo(4)
+    assertThat(currentArtifactValues.get()[3].asFile.name).isEqualTo("secondProduced")
+
+    // and now replace all these values in by one combining task.
+    val replacingProducer = multipleProducerAllocator(project.tasks, "secondProducer")
+    val replacingValue = allocateValue("replacement")
+    replacingProducer.configure { it.transformedOutput.set(replacingValue) }
+
+    artifact.replace(replacingProducer, replacingProducer.flatMap { it.transformedOutput })
+    // from now on, only one provider remain, which is "replacingValue"
+
+    // test current
+    assertValues(artifact.getCurrent(), listOf(replacingValue))
+
+    // test final.
+    assertValues(artifact.get(), listOf(replacingValue))
+
+    // assert that original current value has not been polluted by subsequent operations.
+    assertValues(currentArtifactValues, initialProviders)
+  }
+
+  fun testTransform(
+    initialProducerAllocator: (TaskContainer, String) -> TaskProvider<out MultipleProducerTask<T>>,
+    multipleProducerAllocator: (TaskContainer, String) -> TaskProvider<out MultipleArtifactTransformTask<T>>,
+  ) {
+
+    val artifact = MultipleArtifactContainer { allocateProperty() }
+    val initialProducersInitialized = AtomicBoolean(false)
+    val producers = mutableListOf<TaskProvider<*>>()
+    for (i in 1..3) {
+      val value = allocateValue("firstProduced$i")
+      val producer = taskAllocator(project.tasks, "firstProducer$i")
+      producer.configure {
+        it.getOutputFile().set(value)
+        initialProducersInitialized.set(true)
+      }
+      producers.add(producer)
+      artifact.addInitialProvider(producer, producer.flatMap { it.getOutputFile() })
     }
 
-    @Test
-    fun testMultipleSet() {
-        val artifact = MultipleArtifactContainer { allocateProperty() }
+    val value = allocateValue("transformed")
+    val transformer = multipleProducerAllocator(project.tasks, "transformer")
+    transformer.configure { it.transformedOutput.set(value) }
+    producers.add(transformer)
+    artifact.transform(transformer, transformer.flatMap { it.transformedOutput })
+    assertThat(artifact.getTaskProviders()).isEqualTo(producers)
+    assertValues(artifact.get(), listOf(value))
+    // none of the initial providers should be involved.
+    assertThat(initialProducersInitialized.get()).isFalse()
+  }
 
-        val listOfValues= mutableListOf<Provider<T>>()
-        for (i in 1..3) {
-            val value = allocateValue("firstProduced$i")
-            val producer = taskAllocator(project.tasks, "firstProducer$i")
-            producer.configure {
-                it.getOutputFile().set(value)
-            }
-            artifact.addInitialProvider(producer, producer.flatMap { it.getOutputFile() })
-            listOfValues.add(value)
-        }
-        assertValues(artifact.get(), listOfValues)
+  private fun allocateCombiningProducers(
+    multipleAllocator: (TaskContainer, String) -> TaskProvider<out MultipleProducerTask<T>>,
+    name: String,
+    configuredRecorder: AtomicBoolean? = null,
+    values: MutableList<Provider<T>>? = null,
+  ): TaskProvider<out MultipleProducerTask<T>> {
+
+    val producer = multipleAllocator(project.tasks, name)
+
+    for (i in 1..3) {
+      val value = allocateValue("$name$i")
+      producer.configure {
+        it.getOutputFiles().add(value)
+        values?.add(value)
+      }
     }
-
-    @Test(expected = RuntimeException::class)
-    fun testChangesDisallowed() {
-        val artifact = MultipleArtifactContainer { allocateProperty() }
-
-        val listOfValues= mutableListOf<Provider<T>>()
-        for (i in 1..3) {
-            val value = allocateValue("firstProduced$i")
-            val producer = taskAllocator(project.tasks, "firstProducer$i")
-            producer.configure {
-                it.getOutputFile().set(value)
-            }
-            artifact.addInitialProvider(producer, producer.flatMap { it.getOutputFile() })
-            listOfValues.add(value)
-        }
-        artifact.disallowChanges()
-        // try to add an extra producer, it should fail
-        val value = allocateValue("extraProduced")
-        val producer = taskAllocator(project.tasks, "extraProducer")
-        producer.configure {
-            it.getOutputFile().set(value)
-        }
-        artifact.addInitialProvider(producer, producer.flatMap { it.getOutputFile() })
+    if (configuredRecorder != null) {
+      producer.configure { configuredRecorder.set(true) }
     }
+    return producer
+  }
 
-    @Test
-    fun testGetFinal() {
-        val artifact = MultipleArtifactContainer { allocateProperty() }
-        val final = artifact.get()
-        assertThat(final.get()).isEmpty()
-
-        // add some producers.
-        for (i in 1..3) {
-            val value = allocateValue("firstProduced$i")
-            val producer = taskAllocator(project.tasks, "firstProducer$i")
-            producer.configure {
-                it.getOutputFile().set(value)
-            }
-            artifact.addInitialProvider(producer, producer.flatMap { it.getOutputFile() })
-        }
-        artifact.disallowChanges()
-        assertThat(final.get().size).isEqualTo(3)
-
-        // check that the collection cannot be altered.
-        if (final is ListProperty<*>) {
-            try {
-                @Suppress("Unchecked_cast")
-                final.add(allocateValue("foo") as Provider<out Nothing>)
-                fail("getCurrent() returned an unprotected collection")
-            } catch(expected: Exception) {
-                // expected
-            }
-        }
+  private fun assertValues(provider: Provider<List<T>>, values: List<Provider<T>>) {
+    assertThat(provider.isPresent).isTrue()
+    val listOfValues = provider.get()
+    assertThat(listOfValues.size).isEqualTo(values.size)
+    for (i in values.indices) {
+      assertThat(listOfValues[i].asFile.name).isEqualTo(values[i].get().asFile.name)
     }
+  }
 
-    @Test
-    fun testGetCurrent() {
-        val artifact = MultipleArtifactContainer { allocateProperty() }
+  abstract class MultipleProducerTask<T : FileSystemLocation> : DefaultTask() {
+    @OutputFiles abstract fun getOutputFiles(): ListProperty<T>
+  }
 
-        // initial producer.
-        for (i in 1..3) {
-            val value = allocateValue("firstProduced$i")
-            val producer = taskAllocator(project.tasks, "firstProducer$i")
-            producer.configure {
-                it.getOutputFile().set(value)
-            }
-            artifact.addInitialProvider(producer, producer.flatMap { it.getOutputFile() })
-        }
-        val currentValues = artifact.getCurrent()
-
-        // add a few more producers.
-        for (i in 4..5) {
-            val value = allocateValue("firstProduced$i")
-            val producer = taskAllocator(project.tasks, "firstProducer$i")
-            producer.configure {
-                it.getOutputFile().set(value)
-            }
-            artifact.addInitialProvider(producer, producer.flatMap { it.getOutputFile() })
-        }
-        assertThat(currentValues.get().size).isEqualTo(5)
-
-        // check that the collection cannot be altered.
-        if (currentValues is ListProperty<*>) {
-            try {
-                @Suppress("Unchecked_cast")
-                currentValues.add(allocateValue("foo") as Provider<out Nothing>)
-                fail("getCurrent() returned an unprotected collection")
-            } catch(expected: Exception) {
-                // expected
-            }
-        }
-    }
-
-    fun testReplace(
-        initialProducerAllocator:
-            (TaskContainer, String) -> TaskProvider<out MultipleProducerTask<T>>,
-        secondProducerAllocator:
-            (TaskContainer, String) -> TaskProvider<out MultipleArtifactTransformTask<T>>) {
-
-        val artifact = MultipleArtifactContainer { allocateProperty() }
-
-        val initialProducerConfigured = AtomicBoolean(false)
-
-        val producer = allocateCombiningProducers(
-            initialProducerAllocator,
-            "initialProducer",
-            initialProducerConfigured,
-            mutableListOf<Provider<T>>()
-        )
-        artifact.addInitialProvider(listOf(producer), producer.flatMap { it.getOutputFiles() })
-
-        // and now replace all these values in by one combining task.
-        val replacingProducer = secondProducerAllocator(project.tasks, "secondProducer")
-        val replacingValue = allocateValue("replacement")
-        replacingProducer.configure {
-            it.transformedOutput.set(replacingValue)
-        }
-
-        artifact.replace(replacingProducer, replacingProducer.flatMap { it.transformedOutput })
-        // from now on, only one provider remain, which is "replacingValue"
-        assertValues(artifact.get(), listOf(replacingValue))
-        // make sure the initial provider is not configured since it's replaced.
-        assertThat(initialProducerConfigured.get()).isFalse()
-    }
-
-    fun testAddAndReplace(
-        initialProducerAllocator:
-            (TaskContainer, String) -> TaskProvider<out MultipleProducerTask<T>>,
-        multipleProducerAllocator:
-        (TaskContainer, String) -> TaskProvider<out MultipleArtifactTransformTask<T>>) {
-
-        val artifact = MultipleArtifactContainer { allocateProperty() }
-
-        val initialProducerConfigured = AtomicBoolean(false)
-        val initialProviders = mutableListOf<Provider<T>>()
-        val producer = allocateCombiningProducers(
-            initialProducerAllocator,
-            "initialProducer",
-            initialProducerConfigured,
-            initialProviders
-        )
-
-        artifact.addInitialProvider(listOf(producer), producer.flatMap { it.getOutputFiles() })
-        // test current
-        var currentArtifactValues = artifact.getCurrent()
-        assertThat(currentArtifactValues.get().size).isEqualTo(3)
-
-        // add an element
-        val addedValue = allocateValue("secondProduced")
-        val addedProducer = taskAllocator(project.tasks, "addedProducer")
-        addedProducer.configure {
-            it.getOutputFile().set(addedValue)
-            initialProviders.add(addedValue)
-        }
-        artifact.addInitialProvider(addedProducer, addedProducer.flatMap { it.getOutputFile() })
-
-        // test current
-        currentArtifactValues = artifact.getCurrent()
-        // it should still be 3 since we have replaced all producers with "initialProducer"
-        assertThat(currentArtifactValues.get().size).isEqualTo(4)
-        assertThat(currentArtifactValues.get()[3].asFile.name).isEqualTo("secondProduced")
-
-        // and now replace all these values in by one combining task.
-        val replacingProducer = multipleProducerAllocator(project.tasks, "secondProducer")
-        val replacingValue = allocateValue("replacement")
-        replacingProducer.configure {
-            it.transformedOutput.set(replacingValue)
-        }
-
-        artifact.replace(replacingProducer, replacingProducer.flatMap { it.transformedOutput })
-        // from now on, only one provider remain, which is "replacingValue"
-
-        // test current
-        assertValues(artifact.getCurrent(), listOf(replacingValue))
-
-        // test final.
-        assertValues(artifact.get(), listOf(replacingValue))
-
-        // assert that original current value has not been polluted by subsequent operations.
-        assertValues(currentArtifactValues, initialProviders)
-   }
-
-    fun testTransform(
-        initialProducerAllocator:
-            (TaskContainer, String) -> TaskProvider<out MultipleProducerTask<T>>,
-        multipleProducerAllocator:
-            (TaskContainer, String) -> TaskProvider<out MultipleArtifactTransformTask<T>>) {
-
-        val artifact = MultipleArtifactContainer { allocateProperty() }
-        val initialProducersInitialized = AtomicBoolean(false)
-        val producers = mutableListOf<TaskProvider<*>>()
-        for (i in 1..3) {
-            val value = allocateValue("firstProduced$i")
-            val producer = taskAllocator(project.tasks, "firstProducer$i")
-            producer.configure {
-                it.getOutputFile().set(value)
-                initialProducersInitialized.set(true)
-            }
-            producers.add(producer)
-            artifact.addInitialProvider(producer, producer.flatMap { it.getOutputFile() })
-        }
-
-        val value = allocateValue("transformed")
-        val transformer = multipleProducerAllocator(project.tasks, "transformer")
-        transformer.configure {
-            it.transformedOutput.set(value)
-        }
-        producers.add(transformer)
-        artifact.transform(transformer, transformer.flatMap { it.transformedOutput })
-        assertThat(artifact.getTaskProviders()).isEqualTo(producers)
-        assertValues(artifact.get(), listOf(value))
-        // none of the initial providers should be involved.
-        assertThat(initialProducersInitialized.get()).isFalse()
-    }
-
-    private fun allocateCombiningProducers(
-        multipleAllocator: (TaskContainer, String) -> TaskProvider<out MultipleProducerTask<T>>,
-        name: String,
-        configuredRecorder: AtomicBoolean? = null,
-        values: MutableList<Provider<T>>? = null
-    ): TaskProvider<out MultipleProducerTask<T>>{
-
-        val producer= multipleAllocator(project.tasks, name)
-
-        for (i in 1..3) {
-            val value = allocateValue("$name$i")
-            producer.configure {
-                it.getOutputFiles().add(value)
-                values?.add(value)
-            }
-        }
-        if (configuredRecorder!=null) {
-            producer.configure {
-                configuredRecorder.set(true)
-            }
-        }
-        return producer
-    }
-
-    private fun assertValues(provider: Provider<List<T>>, values: List<Provider<T>>) {
-        assertThat(provider.isPresent).isTrue()
-        val listOfValues = provider.get()
-        assertThat(listOfValues.size).isEqualTo(values.size)
-        for (i in values.indices)  {
-            assertThat(listOfValues[i].asFile.name).isEqualTo(values[i].get().asFile.name)
-        }
-    }
-
-    abstract class MultipleProducerTask<T: FileSystemLocation>: DefaultTask() {
-        @OutputFiles
-        abstract fun getOutputFiles(): ListProperty<T>
-    }
-
-    abstract class MultipleArtifactTransformTask<T: FileSystemLocation>: DefaultTask() {
-        @get:OutputFile
-        abstract val transformedOutput: FileSystemLocationProperty<T>
-    }
+  abstract class MultipleArtifactTransformTask<T : FileSystemLocation> : DefaultTask() {
+    @get:OutputFile abstract val transformedOutput: FileSystemLocationProperty<T>
+  }
 }

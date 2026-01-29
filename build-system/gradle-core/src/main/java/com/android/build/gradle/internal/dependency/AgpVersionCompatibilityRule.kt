@@ -17,20 +17,21 @@
 package com.android.build.gradle.internal.dependency
 
 import com.android.build.api.attributes.AgpVersionAttr
+import java.lang.RuntimeException
 import org.gradle.api.attributes.AttributeCompatibilityRule
 import org.gradle.api.attributes.CompatibilityCheckDetails
-import java.lang.RuntimeException
 
 class AgpVersionCompatibilityRule : AttributeCompatibilityRule<AgpVersionAttr> {
 
-    override fun execute(details: CompatibilityCheckDetails<AgpVersionAttr>) {
-        val producerValue = details.producerValue
-        val consumerValue = details.consumerValue
-        if (producerValue == consumerValue) {
-            details.compatible()
-        } else {
-            throw RuntimeException("Using multiple versions of the Android Gradle plugin" +
-                    "($producerValue, $consumerValue) in the same build is not allowed.")
-        }
+  override fun execute(details: CompatibilityCheckDetails<AgpVersionAttr>) {
+    val producerValue = details.producerValue
+    val consumerValue = details.consumerValue
+    if (producerValue == consumerValue) {
+      details.compatible()
+    } else {
+      throw RuntimeException(
+        "Using multiple versions of the Android Gradle plugin" + "($producerValue, $consumerValue) in the same build is not allowed."
+      )
     }
+  }
 }

@@ -42,142 +42,129 @@ import com.android.builder.core.AbstractProductFlavor
 import com.android.builder.core.ComponentType
 import com.google.common.collect.ImmutableMap
 
-internal abstract class ComponentDslInfoImpl internal constructor(
-    final override val componentIdentity: ComponentIdentity,
-    final override val componentType: ComponentType,
-    protected val defaultConfig: DefaultConfig,
-    /**
-     * Public because this is needed by the old Variant API. Nothing else should touch this.
-     */
-    val buildTypeObj: BuildType,
-    final override val productFlavorList: List<ProductFlavor>,
-    protected val services: VariantServices,
-    protected val extension: CommonExtension
-): ComponentDslInfo, MultiVariantComponentDslInfo {
+internal abstract class ComponentDslInfoImpl
+internal constructor(
+  final override val componentIdentity: ComponentIdentity,
+  final override val componentType: ComponentType,
+  protected val defaultConfig: DefaultConfig,
+  /** Public because this is needed by the old Variant API. Nothing else should touch this. */
+  val buildTypeObj: BuildType,
+  final override val productFlavorList: List<ProductFlavor>,
+  protected val services: VariantServices,
+  protected val extension: CommonExtension,
+) : ComponentDslInfo, MultiVariantComponentDslInfo {
 
-    /**
-     * This should be mostly private and not used outside this class, but is still public for legacy
-     * variant API and model v1 support.
-     *
-     * At some point we should remove this and rely on each property to combine dsl values in the
-     * manner that it is meaningful for the property. Take a look at
-     * [VariantDslInfoImpl.initApplicationId] for guidance on how will that look like.
-     *
-     * DO NOT USE. You should mostly use the interfaces which does not give access to this.
-     */
-    val mergedFlavor: MergedFlavor by lazy {
-        MergedFlavor.mergeFlavors(
-            defaultConfig,
-            productFlavorList.map { it as com.android.build.gradle.internal.dsl.ProductFlavor },
-            applicationId,
-            services
-        )
-    }
+  /**
+   * This should be mostly private and not used outside this class, but is still public for legacy variant API and model v1 support.
+   *
+   * At some point we should remove this and rely on each property to combine dsl values in the manner that it is meaningful for the
+   * property. Take a look at [VariantDslInfoImpl.initApplicationId] for guidance on how will that look like.
+   *
+   * DO NOT USE. You should mostly use the interfaces which does not give access to this.
+   */
+  val mergedFlavor: MergedFlavor by lazy {
+    MergedFlavor.mergeFlavors(
+      defaultConfig,
+      productFlavorList.map { it as com.android.build.gradle.internal.dsl.ProductFlavor },
+      applicationId,
+      services,
+    )
+  }
 
-    final override val javaCompileOptionsSetInDSL = MergedJavaCompileOptions()
+  final override val javaCompileOptionsSetInDSL = MergedJavaCompileOptions()
 
-    override val privacySandboxDsl: PrivacySandboxDslInfo = PrivacySandboxDslInfoImpl(extension)
+  override val privacySandboxDsl: PrivacySandboxDslInfo = PrivacySandboxDslInfoImpl(extension)
 
-    override val enableKotlin: Boolean
-        get() = extension.enableKotlin
+  override val enableKotlin: Boolean
+    get() = extension.enableKotlin
 
-    init {
-        computeMergedOptions(
-            defaultConfig,
-            buildTypeObj,
-            productFlavorList,
-            javaCompileOptionsSetInDSL,
-            { javaCompileOptions as JavaCompileOptions },
-            { javaCompileOptions as JavaCompileOptions }
-        )
-    }
+  init {
+    computeMergedOptions(
+      defaultConfig,
+      buildTypeObj,
+      productFlavorList,
+      javaCompileOptionsSetInDSL,
+      { javaCompileOptions as JavaCompileOptions },
+      { javaCompileOptions as JavaCompileOptions },
+    )
+  }
 
-    // merged flavor delegates
+  // merged flavor delegates
 
-    override val missingDimensionStrategies: ImmutableMap<String, AbstractProductFlavor.DimensionRequest>
-        get() = ImmutableMap.copyOf(mergedFlavor.missingDimensionStrategies)
+  override val missingDimensionStrategies: ImmutableMap<String, AbstractProductFlavor.DimensionRequest>
+    get() = ImmutableMap.copyOf(mergedFlavor.missingDimensionStrategies)
 
-    // helper methods
+  // helper methods
 
-    override val androidResourcesDsl: AndroidResourcesDslInfo by lazy {
-        AndroidResourcesDslInfoImpl(
-            defaultConfig, buildTypeObj, productFlavorList, mergedFlavor, extension
-        )
-    }
+  override val androidResourcesDsl: AndroidResourcesDslInfo by lazy {
+    AndroidResourcesDslInfoImpl(defaultConfig, buildTypeObj, productFlavorList, mergedFlavor, extension)
+  }
 
-    /**
-     * Combines all the appId suffixes into a single one.
-     *
-     * The suffixes are separated by '.' whether their first char is a '.' or not.
-     */
-    protected fun computeApplicationIdSuffix(): String {
-        // for the suffix we combine the suffix from all the flavors. However, we're going to
-        // want the higher priority one to be last.
-        val suffixes = mutableListOf<String>()
-        defaultConfig.applicationIdSuffix?.let {
-            suffixes.add(it)
-        }
+  /**
+   * Combines all the appId suffixes into a single one.
+   *
+   * The suffixes are separated by '.' whether their first char is a '.' or not.
+   */
+  protected fun computeApplicationIdSuffix(): String {
+    // for the suffix we combine the suffix from all the flavors. However, we're going to
+    // want the higher priority one to be last.
+    val suffixes = mutableListOf<String>()
+    defaultConfig.applicationIdSuffix?.let { suffixes.add(it) }
 
-        suffixes.addAll(
-            productFlavorList
-                .asSequence()
-                .filterIsInstance(ApplicationProductFlavor::class.java)
-                .mapNotNull { it.applicationIdSuffix })
+    suffixes.addAll(
+      productFlavorList.asSequence().filterIsInstance(ApplicationProductFlavor::class.java).mapNotNull { it.applicationIdSuffix }
+    )
 
-        // then we add the build type after.
-        (buildTypeObj as? ApplicationBuildType)?.applicationIdSuffix?.let {
-            suffixes.add(it)
-        }
-        val nonEmptySuffixes = suffixes.filter { it.isNotEmpty() }
-        return if (nonEmptySuffixes.isNotEmpty()) {
-            ".${
+    // then we add the build type after.
+    (buildTypeObj as? ApplicationBuildType)?.applicationIdSuffix?.let { suffixes.add(it) }
+    val nonEmptySuffixes = suffixes.filter { it.isNotEmpty() }
+    return if (nonEmptySuffixes.isNotEmpty()) {
+      ".${
                 nonEmptySuffixes.joinToString(
                     separator = ".",
-                    transform = { it.removePrefix(".") })
+                    transform = { it.removePrefix(".") },)
             }"
-        } else {
-            ""
-        }
+    } else {
+      ""
     }
+  }
 
-    // TODO : we should provide a generic setting in build type to enable code coverage for any
-    // host test instance.
-    override val dslDefinedHostTests: List<ComponentDslInfo.DslDefinedHostTest>
-        get() = listOf(
-            ComponentDslInfo.DslDefinedHostTest(
-                HostTestBuilder.UNIT_TEST_TYPE,
-                buildTypeObj.enableUnitTestCoverage || buildTypeObj.isTestCoverageEnabled,
-                extension.testOptions.unitTests.isIncludeAndroidResources
-            ),
-            ComponentDslInfo.DslDefinedHostTest(
-                HostTestBuilder.SCREENSHOT_TEST_TYPE,
-                codeCoverageEnabled = false,
-                isIncludeAndroidResources = false
-            ),
+  // TODO : we should provide a generic setting in build type to enable code coverage for any
+  // host test instance.
+  override val dslDefinedHostTests: List<ComponentDslInfo.DslDefinedHostTest>
+    get() =
+      listOf(
+        ComponentDslInfo.DslDefinedHostTest(
+          HostTestBuilder.UNIT_TEST_TYPE,
+          buildTypeObj.enableUnitTestCoverage || buildTypeObj.isTestCoverageEnabled,
+          extension.testOptions.unitTests.isIncludeAndroidResources,
+        ),
+        ComponentDslInfo.DslDefinedHostTest(
+          HostTestBuilder.SCREENSHOT_TEST_TYPE,
+          codeCoverageEnabled = false,
+          isIncludeAndroidResources = false,
+        ),
+      )
+
+  /**
+   * A test suite is potentially targeting multiple variants. We must create an instance of [AgpTestSuiteDslInfo] for each test suite that
+   * applies to the current [componentIdentity].
+   *
+   * In other words, we duplicate the test suites for each variants that it applies to.
+   */
+  override val dslDefinedTestSuites: List<AgpTestSuiteDslInfo>
+    get() =
+      extension.testOptions.suites
+        .filterIsInstance<AgpTestSuiteImpl>()
+        .filter { it.targetVariants.contains(componentIdentity.name) }
+        .map { AgpTestSuiteDslInfo(it, it.targets.filterIsInstance<AgpTestSuiteTargetImpl>()) }
+
+  override val dslDefinedDeviceTests: List<ComponentDslInfo.DslDefinedDeviceTest>
+    get() =
+      listOf(
+        ComponentDslInfo.DslDefinedDeviceTest(
+          DeviceTestBuilder.ANDROID_TEST_TYPE,
+          buildTypeObj.enableAndroidTestCoverage || buildTypeObj.isTestCoverageEnabled,
         )
-
-    /**
-     * A test suite is potentially targeting multiple variants. We must create an instance of
-     * [AgpTestSuiteDslInfo] for each test suite that applies to the current [componentIdentity].
-     *
-     * In other words, we duplicate the test suites for each variants that it applies to.
-     */
-    override val dslDefinedTestSuites: List<AgpTestSuiteDslInfo>
-        get() =
-            extension.testOptions.suites
-                .filterIsInstance<AgpTestSuiteImpl>()
-                .filter {
-                    it.targetVariants.contains(componentIdentity.name)
-                }.map {
-                    AgpTestSuiteDslInfo(it,
-                        it.targets.filterIsInstance<AgpTestSuiteTargetImpl>())
-                }
-
-    override val dslDefinedDeviceTests: List<ComponentDslInfo.DslDefinedDeviceTest>
-        get() = listOf(
-            ComponentDslInfo.DslDefinedDeviceTest(
-                DeviceTestBuilder.ANDROID_TEST_TYPE,
-                buildTypeObj.enableAndroidTestCoverage || buildTypeObj.isTestCoverageEnabled
-            )
-        )
+      )
 }

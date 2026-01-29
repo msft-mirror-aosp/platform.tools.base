@@ -24,94 +24,99 @@ import com.google.common.collect.ListMultimap
 import org.junit.Assert.fail
 
 fun checkIssuesForSameSeverity(issues: Collection<SyncIssue>, severity: Int) {
-    testIssuesForSingleValue(issues, severity, "severity", SyncIssue::severity)
+  testIssuesForSingleValue(issues, severity, "severity", SyncIssue::severity)
 }
 
 fun checkIssuesForSameType(issues: Collection<SyncIssue>, type: Int) {
-    testIssuesForSingleValue(issues, type, "type", SyncIssue::type)
+  testIssuesForSingleValue(issues, type, "type", SyncIssue::type)
 }
 
 fun checkIssuesForSameData(issues: Collection<SyncIssue>, data: String?) {
-    testIssuesForSingleValue(issues, data, "data", SyncIssue::data)
+  testIssuesForSingleValue(issues, data, "data", SyncIssue::data)
 }
 
 fun checkIssuesWithSeverityIn(issues: Collection<SyncIssue>, vararg severity: Integer) {
-    testIssuesForPossibleValue(issues, severity.asList(), "severity", SyncIssue::severity)
+  testIssuesForPossibleValue(issues, severity.asList(), "severity", SyncIssue::severity)
 }
 
 fun checkIssuesFoTypeIn(issues: Collection<SyncIssue>, vararg type: Integer) {
-    testIssuesForPossibleValue(issues, type.asList(), "type", SyncIssue::type)
+  testIssuesForPossibleValue(issues, type.asList(), "type", SyncIssue::type)
 }
 
 fun checkIssuesForDataIn(issues: Collection<SyncIssue>, vararg data: String) {
-    testIssuesForPossibleValue(issues, data.asList(), "data", SyncIssue::data)
+  testIssuesForPossibleValue(issues, data.asList(), "data", SyncIssue::data)
 }
 
 fun checkSomeIssuesHaveSeverityValue(issues: Collection<SyncIssue>, data: String): Int =
-        testIssuesForAtleastOneWithValue(issues, data, "severity", SyncIssue::severity)
+  testIssuesForAtleastOneWithValue(issues, data, "severity", SyncIssue::severity)
 
 fun checkSomeIssuesHaveTypeValue(issues: Collection<SyncIssue>, data: String): Int =
-        testIssuesForAtleastOneWithValue(issues, data, "type", SyncIssue::type)
+  testIssuesForAtleastOneWithValue(issues, data, "type", SyncIssue::type)
 
 fun checkSomeIssuesHaveDataValue(issues: Collection<SyncIssue>, data: String): Int =
-        testIssuesForAtleastOneWithValue(issues, data, "data", SyncIssue::data)
+  testIssuesForAtleastOneWithValue(issues, data, "data", SyncIssue::data)
 
-
-private fun <T> testIssuesForSingleValue(
-        issues: Collection<SyncIssue>,
-        expectedValue: T?,
-        propName: String,
-        function: (SyncIssue) ->  T) {
-    val incorrectIssues = ArrayList<SyncIssue>()
-    val correctIssues = ArrayList<SyncIssue>()
-    issues.forEach {
-        val value = function.invoke(it)
-        if (expectedValue != value) {
-            incorrectIssues.add(it)
-        } else {
-            correctIssues.add(it)
-        }
+private fun <T> testIssuesForSingleValue(issues: Collection<SyncIssue>, expectedValue: T?, propName: String, function: (SyncIssue) -> T) {
+  val incorrectIssues = ArrayList<SyncIssue>()
+  val correctIssues = ArrayList<SyncIssue>()
+  issues.forEach {
+    val value = function.invoke(it)
+    if (expectedValue != value) {
+      incorrectIssues.add(it)
+    } else {
+      correctIssues.add(it)
     }
+  }
 
-    if (!incorrectIssues.isEmpty()) {
-        val total = issues.size
-        fail("Not true that all <$issues> have '$propName' == <$expectedValue>. It contains correct items (${correctIssues.size}/$total) <$correctIssues>, and incorrect items (${incorrectIssues.size}/$total) <$incorrectIssues>")
-    }
+  if (!incorrectIssues.isEmpty()) {
+    val total = issues.size
+    fail(
+      "Not true that all <$issues> have '$propName' == <$expectedValue>. It contains correct items (${correctIssues.size}/$total) <$correctIssues>, and incorrect items (${incorrectIssues.size}/$total) <$incorrectIssues>"
+    )
+  }
 }
 
 private fun <T> testIssuesForPossibleValue(
-        issues: Collection<SyncIssue>,
-        expectedValues: List<T?>,
-        propName: String,
-        function: (SyncIssue) ->  T) {
-    val incorrectIssues : ListMultimap<T, SyncIssue> = ArrayListMultimap.create()
-    val correctIssues = ArrayList<SyncIssue>()
-    issues.forEach {
-        val value = function.invoke(it)
-        if (!expectedValues.contains(value)) {
-            incorrectIssues.put(value, it)
-        } else {
-            correctIssues.add(it)
-        }
+  issues: Collection<SyncIssue>,
+  expectedValues: List<T?>,
+  propName: String,
+  function: (SyncIssue) -> T,
+) {
+  val incorrectIssues: ListMultimap<T, SyncIssue> = ArrayListMultimap.create()
+  val correctIssues = ArrayList<SyncIssue>()
+  issues.forEach {
+    val value = function.invoke(it)
+    if (!expectedValues.contains(value)) {
+      incorrectIssues.put(value, it)
+    } else {
+      correctIssues.add(it)
     }
+  }
 
-    if (!incorrectIssues.isEmpty) {
-        val total = issues.size
-        fail("Not true that all <$issues> have '$propName' in <$expectedValues>'. It contains correct items (${correctIssues.size}/$total) <$correctIssues>, and incorrect items (${incorrectIssues.size()}/$total) <${incorrectIssues.values()}>")
-    }
+  if (!incorrectIssues.isEmpty) {
+    val total = issues.size
+    fail(
+      "Not true that all <$issues> have '$propName' in <$expectedValues>'. It contains correct items (${correctIssues.size}/$total) <$correctIssues>, and incorrect items (${incorrectIssues.size()}/$total) <${incorrectIssues.values()}>"
+    )
+  }
 }
 
-private fun <T> testIssuesForAtleastOneWithValue(issues: Collection<SyncIssue>, expectedValue: T?, propName: String, function: (SyncIssue) -> T): Int {
-    var count = 0
-    issues.forEach {
-        if (expectedValue == function.invoke(it)) {
-            count++
-        }
+private fun <T> testIssuesForAtleastOneWithValue(
+  issues: Collection<SyncIssue>,
+  expectedValue: T?,
+  propName: String,
+  function: (SyncIssue) -> T,
+): Int {
+  var count = 0
+  issues.forEach {
+    if (expectedValue == function.invoke(it)) {
+      count++
     }
+  }
 
-    if (count == 0) {
-        fail("Not true that  <$issues> contains at least one issue with '$propName' == <$expectedValue>.")
-    }
+  if (count == 0) {
+    fail("Not true that  <$issues> contains at least one issue with '$propName' == <$expectedValue>.")
+  }
 
-    return count
+  return count
 }

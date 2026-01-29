@@ -20,10 +20,10 @@ import com.android.builder.model.v2.models.HostJarTestSuiteSource
 import java.io.File
 
 class HostJarTestSuiteSourceImpl(
-    override val name: String,
-    override val defaultTopLevel: File,
-    override val java: Collection<File>,
-    override val kotlin: Collection<File>,
-    override val resources: Collection<File>,
-    override val manifestFile: File?
-): HostJarTestSuiteSource
+  override val name: String,
+  override val defaultTopLevel: File,
+  override val java: Collection<File>,
+  override val kotlin: Collection<File>,
+  override val resources: Collection<File>,
+  override val manifestFile: File?,
+) : HostJarTestSuiteSource

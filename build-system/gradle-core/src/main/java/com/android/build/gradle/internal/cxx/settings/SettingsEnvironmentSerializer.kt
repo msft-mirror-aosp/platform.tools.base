@@ -20,64 +20,51 @@ import com.google.gson.*
 import java.lang.reflect.Type
 
 /**
- * Serializes from json to [SettingsEnvironment].
- * A custom serializer is required because there are predefined properties like "namespace"
+ * Serializes from json to [SettingsEnvironment]. A custom serializer is required because there are predefined properties like "namespace"
  * mixed with custom defined properties Map<String, String>.
  */
-class SettingsEnvironmentSerializer :
-    JsonDeserializer<SettingsEnvironment>,
-    JsonSerializer<SettingsEnvironment> {
-    override fun deserialize(
-        element: JsonElement,
-        type: Type,
-        context: JsonDeserializationContext?
-    ): SettingsEnvironment {
-        val obj = element as JsonObject
-        val result = SettingsEnvironment()
-        val properties: MutableMap<String, String> = mutableMapOf()
-        var namespace = ""
-        var environment = ""
-        var groupPriority: Int? = null
-        var inheritEnvironments: List<String> = listOf()
+class SettingsEnvironmentSerializer : JsonDeserializer<SettingsEnvironment>, JsonSerializer<SettingsEnvironment> {
+  override fun deserialize(element: JsonElement, type: Type, context: JsonDeserializationContext?): SettingsEnvironment {
+    val obj = element as JsonObject
+    val result = SettingsEnvironment()
+    val properties: MutableMap<String, String> = mutableMapOf()
+    var namespace = ""
+    var environment = ""
+    var groupPriority: Int? = null
+    var inheritEnvironments: List<String> = listOf()
 
-        for ((key, value) in obj.entrySet()) {
-            when (key) {
-                "namespace" -> namespace = value.asString
-                "environment" -> environment = value.asString
-                "groupPriority" -> groupPriority = value.asInt
-                "inheritEnvironments" -> {
-                    inheritEnvironments = value.asJsonArray
-                        .map { it.asString }
-                        .toMutableList()
-                }
-                else -> {
-                    result.properties
-                    properties[key] = value.asString
-                }
-            }
+    for ((key, value) in obj.entrySet()) {
+      when (key) {
+        "namespace" -> namespace = value.asString
+        "environment" -> environment = value.asString
+        "groupPriority" -> groupPriority = value.asInt
+        "inheritEnvironments" -> {
+          inheritEnvironments = value.asJsonArray.map { it.asString }.toMutableList()
         }
-        return SettingsEnvironment(
-            namespace = namespace,
-            environment = environment,
-            groupPriority = groupPriority,
-            inheritEnvironments = inheritEnvironments,
-            properties = properties
-        )
+        else -> {
+          result.properties
+          properties[key] = value.asString
+        }
+      }
     }
+    return SettingsEnvironment(
+      namespace = namespace,
+      environment = environment,
+      groupPriority = groupPriority,
+      inheritEnvironments = inheritEnvironments,
+      properties = properties,
+    )
+  }
 
-    override fun serialize(
-            environment: SettingsEnvironment,
-            type: Type,
-            context: JsonSerializationContext
-    ): JsonElement {
-        val list = mutableMapOf<String, Any?>()
-        list["namespace"] = environment.namespace
-        list["environment"] = environment.environment
-        list["groupPriority"] = environment.groupPriority
-        list["inheritEnvironments"] = environment.inheritEnvironments
-        for ((key, value) in environment.properties) {
-            list[key] = value
-        }
-        return context.serialize(list)
+  override fun serialize(environment: SettingsEnvironment, type: Type, context: JsonSerializationContext): JsonElement {
+    val list = mutableMapOf<String, Any?>()
+    list["namespace"] = environment.namespace
+    list["environment"] = environment.environment
+    list["groupPriority"] = environment.groupPriority
+    list["inheritEnvironments"] = environment.inheritEnvironments
+    for ((key, value) in environment.properties) {
+      list[key] = value
     }
+    return context.serialize(list)
+  }
 }

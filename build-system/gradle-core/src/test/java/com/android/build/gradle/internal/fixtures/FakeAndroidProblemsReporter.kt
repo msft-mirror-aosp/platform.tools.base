@@ -22,19 +22,11 @@ import com.android.builder.errors.IssueReporter
 
 class FakeAndroidProblemsReporter : AndroidProblemsReporter {
 
-    val reportedSyncIssues = mutableListOf<ReportedIssue>()
+  val reportedSyncIssues = mutableListOf<ReportedIssue>()
 
-    override fun reportSyncIssue(
-        type: IssueReporter.Type,
-        severity: IssueReporter.Severity,
-        exception: EvalIssueException
-    ) {
-        reportedSyncIssues.add(ReportedIssue(type, severity, exception.message))
-    }
+  override fun reportSyncIssue(type: IssueReporter.Type, severity: IssueReporter.Severity, exception: EvalIssueException) {
+    reportedSyncIssues.add(ReportedIssue(type, severity, exception.message))
+  }
 
-    data class ReportedIssue(
-        val type: IssueReporter.Type,
-        val severity: IssueReporter.Severity,
-        val message: String
-    )
+  data class ReportedIssue(val type: IssueReporter.Type, val severity: IssueReporter.Severity, val message: String)
 }

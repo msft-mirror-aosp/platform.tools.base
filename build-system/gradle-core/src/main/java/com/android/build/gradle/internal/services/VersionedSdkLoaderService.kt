@@ -27,20 +27,15 @@ import org.gradle.api.provider.Provider
  * This is used by several other services
  */
 class VersionedSdkLoaderService(
-    private val services: BaseServices,
-    private val project: Project,
-    private val compileSdkVersionAction: () -> String?,
-    private val buildToolsRevision: () -> Revision
+  private val services: BaseServices,
+  private val project: Project,
+  private val compileSdkVersionAction: () -> String?,
+  private val buildToolsRevision: () -> Revision,
 ) {
-    val versionedSdkLoader: Provider<SdkComponentsBuildService.VersionedSdkLoader> by lazy {
-        val buildService =
-            getBuildService(services.buildServiceRegistry, SdkComponentsBuildService::class.java)
-        buildService
-            .map { sdkComponentsBuildService ->
-                sdkComponentsBuildService.sdkLoader(
-                    project.provider(compileSdkVersionAction),
-                    project.provider(buildToolsRevision)
-                )
-            }
+  val versionedSdkLoader: Provider<SdkComponentsBuildService.VersionedSdkLoader> by lazy {
+    val buildService = getBuildService(services.buildServiceRegistry, SdkComponentsBuildService::class.java)
+    buildService.map { sdkComponentsBuildService ->
+      sdkComponentsBuildService.sdkLoader(project.provider(compileSdkVersionAction), project.provider(buildToolsRevision))
     }
+  }
 }

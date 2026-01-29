@@ -18,12 +18,12 @@ package com.android.build.gradle.internal.scope
 
 import com.android.build.gradle.internal.fixtures.FakeGradleProvider
 import com.android.build.gradle.internal.fixtures.FakeObjectFactory
-import com.android.build.gradle.internal.fixtures.FakeProviderFactory
 import com.android.build.gradle.internal.fixtures.FakeSyncIssueReporter
 import com.android.build.gradle.internal.services.TaskCreationServicesImpl
 import com.android.build.gradle.internal.services.createProjectServices
 import com.android.sdklib.AndroidVersion
 import com.google.common.truth.Truth.assertThat
+import java.io.File
 import org.gradle.api.Project
 import org.gradle.api.file.ProjectLayout
 import org.gradle.api.file.RegularFile
@@ -33,54 +33,49 @@ import org.junit.After
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
-import java.io.File
 
 class BootClasspathBuilderTest {
 
-    @get:Rule
-    val temporaryFolder = TemporaryFolder()
+  @get:Rule val temporaryFolder = TemporaryFolder()
 
-    private val project: Project = ProjectBuilder.builder().build()
-    private val projectLayout: ProjectLayout = project.layout
+  private val project: Project = ProjectBuilder.builder().build()
+  private val projectLayout: ProjectLayout = project.layout
 
-    private val issueReporter = FakeSyncIssueReporter()
+  private val issueReporter = FakeSyncIssueReporter()
 
-    @After
-    fun checkIssues() {
-        assertThat(issueReporter.messages).isEmpty()
-    }
+  @After
+  fun checkIssues() {
+    assertThat(issueReporter.messages).isEmpty()
+  }
 
-    /** Regression test for b/139780810 */
-    @Test
-    fun checkPreviewHandling() {
+  /** Regression test for b/139780810 */
+  @Test
+  fun checkPreviewHandling() {
 
-        val android28 = temporaryFolder.newFile("android-28.jar")
-        val android28Classpath = getClasspath(AndroidVersion(28), android28)
+    val android28 = temporaryFolder.newFile("android-28.jar")
+    val android28Classpath = getClasspath(AndroidVersion(28), android28)
 
-        val androidQ = temporaryFolder.newFile("android-Q.jar")
-        val androidQClasspath = getClasspath(AndroidVersion(28, "Q"), androidQ)
+    val androidQ = temporaryFolder.newFile("android-Q.jar")
+    val androidQClasspath = getClasspath(AndroidVersion(28, "Q"), androidQ)
 
-        // Check that preview and final versions are not mixed.
-        assertThat(android28Classpath.get().single().asFile.name).isEqualTo("android-28.jar")
-        assertThat(androidQClasspath.get().single().asFile.name).isEqualTo("android-Q.jar")
-    }
+    // Check that preview and final versions are not mixed.
+    assertThat(android28Classpath.get().single().asFile.name).isEqualTo("android-28.jar")
+    assertThat(androidQClasspath.get().single().asFile.name).isEqualTo("android-Q.jar")
+  }
 
-    private fun getClasspath(
-        androidVersion: AndroidVersion,
-        androidJar: File
-    ): Provider<List<RegularFile>> {
-        val projectServices = createProjectServices(project)
+  private fun getClasspath(androidVersion: AndroidVersion, androidJar: File): Provider<List<RegularFile>> {
+    val projectServices = createProjectServices(project)
 
-        return BootClasspathBuilder.computeClasspath(
-            services = TaskCreationServicesImpl(projectServices),
-            objects = FakeObjectFactory.factory,
-            targetBootClasspath = FakeGradleProvider(listOf(androidJar)),
-            targetAndroidVersion = FakeGradleProvider(androidVersion),
-            additionalLibraries = FakeGradleProvider(listOf()),
-            optionalLibraries = FakeGradleProvider(listOf()),
-            annotationsJar = FakeGradleProvider(null),
-            addAllOptionalLibraries = false,
-            libraryRequests = listOf()
-        )
-    }
+    return BootClasspathBuilder.computeClasspath(
+      services = TaskCreationServicesImpl(projectServices),
+      objects = FakeObjectFactory.factory,
+      targetBootClasspath = FakeGradleProvider(listOf(androidJar)),
+      targetAndroidVersion = FakeGradleProvider(androidVersion),
+      additionalLibraries = FakeGradleProvider(listOf()),
+      optionalLibraries = FakeGradleProvider(listOf()),
+      annotationsJar = FakeGradleProvider(null),
+      addAllOptionalLibraries = false,
+      libraryRequests = listOf(),
+    )
+  }
 }

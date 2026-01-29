@@ -21,31 +21,29 @@ import com.android.build.gradle.internal.scope.ProjectInfo
 import com.android.build.gradle.internal.utils.GradleEnvironmentProvider
 import com.android.build.gradle.options.ProjectOptions
 import com.android.builder.errors.IssueReporter
-import org.gradle.api.services.BuildServiceRegistry
 import java.io.File
+import org.gradle.api.services.BuildServiceRegistry
 
-/**
- * Interface providing services useful everywhere.
- */
+/** Interface providing services useful everywhere. */
 interface BaseServices {
 
-    val issueReporter: IssueReporter
-    val deprecationReporter: DeprecationReporter
-    val projectOptions: ProjectOptions
-    val buildServiceRegistry: BuildServiceRegistry
-    val gradleEnvironmentProvider: GradleEnvironmentProvider
-    val projectInfo: ProjectInfo
+  val issueReporter: IssueReporter
+  val deprecationReporter: DeprecationReporter
+  val projectOptions: ProjectOptions
+  val buildServiceRegistry: BuildServiceRegistry
+  val gradleEnvironmentProvider: GradleEnvironmentProvider
+  val projectInfo: ProjectInfo
 
-    /**
-     * Services related to the built-in Kotlin support.
-     *
-     * NOTE: This property is available only when
-     * [com.android.build.gradle.internal.component.ComponentCreationConfig.useBuiltInKotlinSupport] == true.
-     * Otherwise, attempting to access this property will result in an exception.
-     */
-    val builtInKotlinServices: BuiltInKotlinServices
+  /**
+   * Services related to the built-in Kotlin support.
+   *
+   * NOTE: This property is available only when
+   * [com.android.build.gradle.internal.component.ComponentCreationConfig.useBuiltInKotlinSupport] == true. Otherwise, attempting to access
+   * this property will result in an exception.
+   */
+  val builtInKotlinServices: BuiltInKotlinServices
 
-    fun <T> newInstance(type: Class<T>, vararg args: Any?): T
+  fun <T> newInstance(type: Class<T>, vararg args: Any?): T
 
-    fun file(file: Any): File
+  fun file(file: Any): File
 }

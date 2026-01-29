@@ -44,67 +44,50 @@ import org.gradle.api.tasks.TaskProvider
 @BuildAnalyzer(primaryTaskCategory = TaskCategory.COMPILED_CLASSES, secondaryTaskCategories = [TaskCategory.SOURCE_GENERATION])
 abstract class GenerateMlModelClass : NonIncrementalTask() {
 
-    @get:PathSensitive(PathSensitivity.NAME_ONLY)
-    @get:InputFiles
-    abstract val modelFileDir: DirectoryProperty
+  @get:PathSensitive(PathSensitivity.NAME_ONLY) @get:InputFiles abstract val modelFileDir: DirectoryProperty
 
-    @get:OutputDirectory
-    abstract val sourceOutDir: DirectoryProperty
+  @get:OutputDirectory abstract val sourceOutDir: DirectoryProperty
 
-    @get:Input
-    abstract val namespace: Property<String>
+  @get:Input abstract val namespace: Property<String>
 
-    override fun doTaskAction() {
-        modelFileDir.asFileTree.visit(
-            object : FileVisitor {
-                override fun visitDir(fileVisitDetails: FileVisitDetails) {
-                    // Do nothing
-                }
-
-                override fun visitFile(fileVisitDetails: FileVisitDetails) {
-                    val modelFile = fileVisitDetails.file
-                    if (modelFile.name.endsWith(DOT_TFLITE)
-                        && modelFile.length() <= MlConstants.MAX_SUPPORTED_MODEL_FILE_SIZE_IN_BYTES
-                    ) {
-                        try {
-                            val modelGenerator = TfliteModelGenerator(
-                                modelFile,
-                                namespace.get() + MlNames.PACKAGE_SUFFIX,
-                                fileVisitDetails.relativePath.pathString
-                            )
-                            modelGenerator.generateBuildClass(sourceOutDir)
-                        } catch (e: Exception) {
-                            Logging.getLogger(this.javaClass).warn(e.message)
-                        }
-                    }
-                }
-            })
-    }
-
-    class CreationAction(creationConfig: ComponentCreationConfig) :
-        VariantTaskCreationAction<GenerateMlModelClass, ComponentCreationConfig>(
-            creationConfig
-        ) {
-
-        override val name: String = computeTaskName("generate", "MlModelClass")
-        override val type: Class<GenerateMlModelClass> = GenerateMlModelClass::class.java
-
-        override fun handleProvider(taskProvider: TaskProvider<GenerateMlModelClass>) {
-            super.handleProvider(taskProvider)
-            creationConfig.artifacts.setInitialProvider(
-                taskProvider,
-                GenerateMlModelClass::sourceOutDir
-            ).on(InternalArtifactType.ML_SOURCE_OUT)
+  override fun doTaskAction() {
+    modelFileDir.asFileTree.visit(
+      object : FileVisitor {
+        override fun visitDir(fileVisitDetails: FileVisitDetails) {
+          // Do nothing
         }
 
-        override fun configure(task: GenerateMlModelClass) {
-            super.configure(task)
-            creationConfig
-                .artifacts
-                .setTaskInputToFinalProduct(
-                    MERGED_ML_MODELS, task.modelFileDir
-                )
-            task.namespace.setDisallowChanges(creationConfig.namespace)
+        override fun visitFile(fileVisitDetails: FileVisitDetails) {
+          val modelFile = fileVisitDetails.file
+          if (modelFile.name.endsWith(DOT_TFLITE) && modelFile.length() <= MlConstants.MAX_SUPPORTED_MODEL_FILE_SIZE_IN_BYTES) {
+            try {
+              val modelGenerator =
+                TfliteModelGenerator(modelFile, namespace.get() + MlNames.PACKAGE_SUFFIX, fileVisitDetails.relativePath.pathString)
+              modelGenerator.generateBuildClass(sourceOutDir)
+            } catch (e: Exception) {
+              Logging.getLogger(this.javaClass).warn(e.message)
+            }
+          }
         }
+      }
+    )
+  }
+
+  class CreationAction(creationConfig: ComponentCreationConfig) :
+    VariantTaskCreationAction<GenerateMlModelClass, ComponentCreationConfig>(creationConfig) {
+
+    override val name: String = computeTaskName("generate", "MlModelClass")
+    override val type: Class<GenerateMlModelClass> = GenerateMlModelClass::class.java
+
+    override fun handleProvider(taskProvider: TaskProvider<GenerateMlModelClass>) {
+      super.handleProvider(taskProvider)
+      creationConfig.artifacts.setInitialProvider(taskProvider, GenerateMlModelClass::sourceOutDir).on(InternalArtifactType.ML_SOURCE_OUT)
     }
+
+    override fun configure(task: GenerateMlModelClass) {
+      super.configure(task)
+      creationConfig.artifacts.setTaskInputToFinalProduct(MERGED_ML_MODELS, task.modelFileDir)
+      task.namespace.setDisallowChanges(creationConfig.namespace)
+    }
+  }
 }

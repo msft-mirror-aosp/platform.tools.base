@@ -16,8 +16,8 @@
 
 package com.android.build.gradle.tasks
 
-import com.android.build.gradle.internal.fusedlibrary.FusedLibraryInternalArtifactType
 import com.android.build.gradle.internal.fusedlibrary.FusedLibraryGlobalScope
+import com.android.build.gradle.internal.fusedlibrary.FusedLibraryInternalArtifactType
 import com.android.build.gradle.internal.profile.AnalyticsService
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
 import com.android.build.gradle.internal.services.getBuildService
@@ -46,96 +46,77 @@ import org.gradle.api.tasks.TaskProvider
 /**
  * Manages Android resource merging for libraries dependencies of the fused library.
  *
- * This task only merges resources and does not handle more complex resource operations such as
- * png generation/crunching, compilation, pseudolocalization etc., as these operations are just
- * handled by the AGP MergeResources task.
+ * This task only merges resources and does not handle more complex resource operations such as png generation/crunching, compilation,
+ * pseudolocalization etc., as these operations are just handled by the AGP MergeResources task.
  */
 @CacheableTask
 @BuildAnalyzer(primaryTaskCategory = TaskCategory.ANDROID_RESOURCES, secondaryTaskCategories = [TaskCategory.MERGING, TaskCategory.FUSING])
 abstract class FusedLibraryMergeResourcesTask : NonIncrementalGlobalTask() {
 
-    @get:OutputDirectory
-    abstract val mergedResources: DirectoryProperty
+  @get:OutputDirectory abstract val mergedResources: DirectoryProperty
 
-    @get:OutputDirectory
-    abstract val blameLogOutputFolder: DirectoryProperty
+  @get:OutputDirectory abstract val blameLogOutputFolder: DirectoryProperty
 
-    // Not yet consumed, as incremental resource merging is not yet supported for fused libraries.
-    @get:OutputDirectory
-    @get:Optional
-    abstract val incrementalMergedResources: DirectoryProperty
+  // Not yet consumed, as incremental resource merging is not yet supported for fused libraries.
+  @get:OutputDirectory @get:Optional abstract val incrementalMergedResources: DirectoryProperty
 
-    @get:Internal
-    abstract val projectFilepath: Property<String>
+  @get:Internal abstract val projectFilepath: Property<String>
 
-    @get:Input
-    abstract val minSdk: Property<Int>
+  @get:Input abstract val minSdk: Property<Int>
 
-    @get:ServiceReference
-    abstract val analytics: Property<AnalyticsService>
+  @get:ServiceReference abstract val analytics: Property<AnalyticsService>
 
-    @get:Internal
-    val aaptWorkerFacade: WorkerExecutorFacade
-        get() = Workers.withGradleWorkers(
-                projectFilepath.get(),
-                path,
-                workerExecutor,
-                analyticsService
+  @get:Internal
+  val aaptWorkerFacade: WorkerExecutorFacade
+    get() = Workers.withGradleWorkers(projectFilepath.get(), path, workerExecutor, analyticsService)
+
+  @get:InputFiles @get:PathSensitive(PathSensitivity.ABSOLUTE) abstract val resourceSets: ConfigurableFileCollection
+
+  override fun doTaskAction() {
+    mergeResourcesWithCompilationService(
+      resCompilerService = CopyToOutputDirectoryResourceCompilationService,
+      incrementalMergedResources = incrementalMergedResources.get().asFile,
+      mergedResources = mergedResources.get().asFile,
+      resourceSets = resourceSets.files.toList(),
+      minSdk = minSdk.get(),
+      aaptWorkerFacade = aaptWorkerFacade,
+      blameLogOutputFolder = blameLogOutputFolder.get().asFile,
+      logger = logger,
+    )
+  }
+
+  class CreationAction(private val creationConfig: FusedLibraryGlobalScope) : GlobalTaskCreationAction<FusedLibraryMergeResourcesTask>() {
+
+    override val name: String
+      get() = "mergeResources"
+
+    override val type: Class<FusedLibraryMergeResourcesTask>
+      get() = FusedLibraryMergeResourcesTask::class.java
+
+    override fun handleProvider(taskProvider: TaskProvider<FusedLibraryMergeResourcesTask>) {
+      super.handleProvider(taskProvider)
+      creationConfig.artifacts
+        .setInitialProvider(taskProvider, FusedLibraryMergeResourcesTask::mergedResources)
+        .on(FusedLibraryInternalArtifactType.MERGED_RES)
+      creationConfig.artifacts
+        .setInitialProvider(taskProvider, FusedLibraryMergeResourcesTask::incrementalMergedResources)
+        .on(FusedLibraryInternalArtifactType.INCREMENTAL_MERGED_RES)
+      creationConfig.artifacts
+        .setInitialProvider(taskProvider, FusedLibraryMergeResourcesTask::blameLogOutputFolder)
+        .on(FusedLibraryInternalArtifactType.MERGED_RES_BLAME_LOG)
+    }
+
+    override fun configure(task: FusedLibraryMergeResourcesTask) {
+
+      task.projectFilepath.set(creationConfig.projectLayout.projectDirectory.asFile.absolutePath)
+      task.analyticsService.setDisallowChanges(getBuildService(task.project.gradle.sharedServices))
+      task.minSdk.setDisallowChanges(creationConfig.minSdkApiLevel)
+      task.resourceSets.setFrom(
+        creationConfig.dependencies.getArtifactFileCollection(
+          AndroidArtifacts.ConsumedConfigType.RUNTIME_CLASSPATH,
+          AndroidArtifacts.ArtifactType.ANDROID_RES,
         )
-
-    @get:InputFiles
-    @get:PathSensitive(PathSensitivity.ABSOLUTE)
-    abstract val resourceSets: ConfigurableFileCollection
-
-    override fun doTaskAction() {
-        mergeResourcesWithCompilationService(
-                resCompilerService = CopyToOutputDirectoryResourceCompilationService,
-                incrementalMergedResources = incrementalMergedResources.get().asFile,
-                mergedResources = mergedResources.get().asFile,
-                resourceSets = resourceSets.files.toList(),
-                minSdk = minSdk.get(),
-                aaptWorkerFacade = aaptWorkerFacade,
-                blameLogOutputFolder = blameLogOutputFolder.get().asFile,
-                logger = logger)
+      )
     }
-
-    class CreationAction(private val creationConfig: FusedLibraryGlobalScope) :
-        GlobalTaskCreationAction<FusedLibraryMergeResourcesTask>() {
-
-        override val name: String
-            get() = "mergeResources"
-        override val type: Class<FusedLibraryMergeResourcesTask>
-            get() = FusedLibraryMergeResourcesTask::class.java
-
-        override fun handleProvider(taskProvider: TaskProvider<FusedLibraryMergeResourcesTask>) {
-            super.handleProvider(taskProvider)
-            creationConfig.artifacts.setInitialProvider(
-                    taskProvider,
-                    FusedLibraryMergeResourcesTask::mergedResources
-            ).on(FusedLibraryInternalArtifactType.MERGED_RES)
-            creationConfig.artifacts.setInitialProvider(
-                    taskProvider,
-                    FusedLibraryMergeResourcesTask::incrementalMergedResources
-            ).on(FusedLibraryInternalArtifactType.INCREMENTAL_MERGED_RES)
-            creationConfig.artifacts.setInitialProvider(
-                    taskProvider,
-                    FusedLibraryMergeResourcesTask::blameLogOutputFolder
-            ).on(FusedLibraryInternalArtifactType.MERGED_RES_BLAME_LOG)
-        }
-
-        override fun configure(task: FusedLibraryMergeResourcesTask) {
-
-            task.projectFilepath.set(creationConfig.projectLayout.projectDirectory.asFile.absolutePath)
-            task.analyticsService.setDisallowChanges(
-                    getBuildService(task.project.gradle.sharedServices)
-            )
-            task.minSdk.setDisallowChanges(creationConfig.minSdkApiLevel)
-            task.resourceSets.setFrom(
-                    creationConfig.dependencies.getArtifactFileCollection(
-                        AndroidArtifacts.ConsumedConfigType.RUNTIME_CLASSPATH,
-                        AndroidArtifacts.ArtifactType.ANDROID_RES
-                    )
-            )
-        }
-    }
+  }
 }

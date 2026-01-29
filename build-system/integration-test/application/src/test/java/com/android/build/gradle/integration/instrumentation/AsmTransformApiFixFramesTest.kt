@@ -17,159 +17,154 @@
 package com.android.build.gradle.integration.instrumentation
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.runner.FilterableParameterized
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.google.common.truth.Truth.assertThat
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
-import org.junit.runner.RunWith
-import org.junit.runners.Parameterized
 
-/**
- * Tests frames will be fixed when setting the frames computation mode to something other than to
- * copy frames.
- */
+/** Tests frames will be fixed when setting the frames computation mode to something other than to copy frames. */
 class AsmTransformApiFixFramesTest {
 
+  @get:Rule val project = GradleTestProject.builder().fromTestProject("asmTransformApi").create()
 
-    @get:Rule
-    val project = GradleTestProject.builder().fromTestProject("asmTransformApi").create()
+  @Before
+  fun setUp() {
+    project
+      .getSubproject(":buildSrc")
+      .file("src/main/java/com/example/buildsrc/instrumentation/FramesBreakingClassVisitor.kt")
+      .writeText(
+        // language=kotlin
+        """
+        package com.example.buildsrc.instrumentation
 
-    @Before
-    fun setUp() {
-        project.getSubproject(":buildSrc")
-                .file("src/main/java/com/example/buildsrc/instrumentation/FramesBreakingClassVisitor.kt")
-                .writeText(
-                        // language=kotlin
-                        """
-                    package com.example.buildsrc.instrumentation
-
-                    import org.objectweb.asm.ClassVisitor
-                    import org.objectweb.asm.Label
-                    import org.objectweb.asm.Opcodes.*
+        import org.objectweb.asm.ClassVisitor
+        import org.objectweb.asm.Label
+        import org.objectweb.asm.Opcodes.*
 
 
-                    class FramesBreakingClassVisitor(
-                            apiVersion: Int,
-                            cv: ClassVisitor
-                    ) : ClassVisitor(apiVersion, cv) {
+        class FramesBreakingClassVisitor(
+                apiVersion: Int,
+                cv: ClassVisitor
+        ) : ClassVisitor(apiVersion, cv) {
 
-                        override fun visit(
-                                version: Int,
-                                access: Int,
-                                name: String?,
-                                signature: String?,
-                                superName: String?,
-                                interfaces: Array<out String>?
-                        ) {
-                            super.visit(version, access, name, signature, superName, interfaces)
+            override fun visit(
+                    version: Int,
+                    access: Int,
+                    name: String?,
+                    signature: String?,
+                    superName: String?,
+                    interfaces: Array<out String>?
+            ) {
+                super.visit(version, access, name, signature, superName, interfaces)
 
-                            injectCode()
-                        }
+                injectCode()
+            }
 
-                        private fun injectCode() {
-                            // Code below is (with manually broken stack map and maxs):
-                            // public void foo() {
-                            //     Object i = null;
-                            //     if (i == null) {
-                            //         i = new String();
-                            //     } else {
-                            //         i = new StringBuilder();
-                            //     }
-                            // }
+            private fun injectCode() {
+                // Code below is (with manually broken stack map and maxs):
+                // public void foo() {
+                //     Object i = null;
+                //     if (i == null) {
+                //         i = new String();
+                //     } else {
+                //         i = new StringBuilder();
+                //     }
+                // }
 
-                            val mv = visitMethod(ACC_PUBLIC, "foo", "()V", null, null)
-                            mv.visitCode()
-                            mv.visitInsn(ACONST_NULL)
-                            mv.visitVarInsn(ASTORE, 1)
-                            mv.visitVarInsn(ALOAD, 1)
-                            val l0 = Label()
-                            mv.visitJumpInsn(IFNONNULL, l0)
-                            mv.visitTypeInsn(NEW, "java/lang/StringBuilder")
-                            mv.visitInsn(DUP)
-                            mv.visitMethodInsn(INVOKESPECIAL, "java/lang/StringBuilder", "<init>", "()V", false)
-                            mv.visitVarInsn(ASTORE, 1)
-                            val l1 = Label()
-                            mv.visitJumpInsn(GOTO, l1)
-                            mv.visitLabel(l0)
-                            mv.visitFrame(F_APPEND, 1, arrayOf<Any>(INTEGER), 0, null)
-                            mv.visitTypeInsn(NEW, "java/lang/String")
-                            mv.visitInsn(DUP)
-                            mv.visitMethodInsn(INVOKESPECIAL, "java/lang/String", "<init>", "()V", false)
-                            mv.visitVarInsn(ASTORE, 1)
-                            mv.visitLabel(l1)
-                            mv.visitFrame(F_SAME, 0, null, 0, null)
-                            mv.visitInsn(RETURN)
-                            mv.visitMaxs(0, 0)
-                            mv.visitEnd()
-                        }
-                    }
-                        """.trimIndent()
+                val mv = visitMethod(ACC_PUBLIC, "foo", "()V", null, null)
+                mv.visitCode()
+                mv.visitInsn(ACONST_NULL)
+                mv.visitVarInsn(ASTORE, 1)
+                mv.visitVarInsn(ALOAD, 1)
+                val l0 = Label()
+                mv.visitJumpInsn(IFNONNULL, l0)
+                mv.visitTypeInsn(NEW, "java/lang/StringBuilder")
+                mv.visitInsn(DUP)
+                mv.visitMethodInsn(INVOKESPECIAL, "java/lang/StringBuilder", "<init>", "()V", false)
+                mv.visitVarInsn(ASTORE, 1)
+                val l1 = Label()
+                mv.visitJumpInsn(GOTO, l1)
+                mv.visitLabel(l0)
+                mv.visitFrame(F_APPEND, 1, arrayOf<Any>(INTEGER), 0, null)
+                mv.visitTypeInsn(NEW, "java/lang/String")
+                mv.visitInsn(DUP)
+                mv.visitMethodInsn(INVOKESPECIAL, "java/lang/String", "<init>", "()V", false)
+                mv.visitVarInsn(ASTORE, 1)
+                mv.visitLabel(l1)
+                mv.visitFrame(F_SAME, 0, null, 0, null)
+                mv.visitInsn(RETURN)
+                mv.visitMaxs(0, 0)
+                mv.visitEnd()
+            }
+        }
+        """
+          .trimIndent()
+      )
+
+    project
+      .getSubproject(":buildSrc")
+      .file("src/main/java/com/example/buildsrc/instrumentation/FramesBreakingClassVisitorFactory.kt")
+      .writeText(
+        // language=kotlin
+        """
+        package com.example.buildsrc.instrumentation
+
+        import com.android.build.api.instrumentation.AsmClassVisitorFactory
+        import com.android.build.api.instrumentation.ClassContext
+        import com.android.build.api.instrumentation.ClassData
+        import com.android.build.api.instrumentation.InstrumentationParameters
+        import org.objectweb.asm.ClassVisitor
+
+        abstract class FramesBreakingClassVisitorFactory:
+                AsmClassVisitorFactory<InstrumentationParameters.None> {
+            override fun createClassVisitor(
+                    classContext: ClassContext,
+                    nextClassVisitor: ClassVisitor
+            ): ClassVisitor {
+                return FramesBreakingClassVisitor(
+                        instrumentationContext.apiVersion.get(),
+                        nextClassVisitor
                 )
+            }
 
-        project.getSubproject(":buildSrc")
-                .file("src/main/java/com/example/buildsrc/instrumentation/FramesBreakingClassVisitorFactory.kt")
-                .writeText(
-                        // language=kotlin
-                        """
-                    package com.example.buildsrc.instrumentation
+            override fun isInstrumentable(classData: ClassData): Boolean {
+                return true
+            }
+        }
+        """
+          .trimIndent()
+      )
 
-                    import com.android.build.api.instrumentation.AsmClassVisitorFactory
-                    import com.android.build.api.instrumentation.ClassContext
-                    import com.android.build.api.instrumentation.ClassData
-                    import com.android.build.api.instrumentation.InstrumentationParameters
-                    import org.objectweb.asm.ClassVisitor
+    project.getSubproject(":app").file("src/test/java/com/example/unittest/UnitTestBrokenFramesTest.kt").apply {
+      parentFile.mkdirs()
+      writeText(
+        // language=kotlin
+        """
+        package com.example.unittest
 
-                    abstract class FramesBreakingClassVisitorFactory:
-                            AsmClassVisitorFactory<InstrumentationParameters.None> {
-                        override fun createClassVisitor(
-                                classContext: ClassContext,
-                                nextClassVisitor: ClassVisitor
-                        ): ClassVisitor {
-                            return FramesBreakingClassVisitor(
-                                    instrumentationContext.apiVersion.get(),
-                                    nextClassVisitor
-                            )
-                        }
+        import org.junit.Test
 
-                        override fun isInstrumentable(classData: ClassData): Boolean {
-                            return true
-                        }
-                    }
-                        """.trimIndent()
-                )
+        class UnitTestBrokenFramesTest {
 
-        project.getSubproject(":app")
-                .file("src/test/java/com/example/unittest/UnitTestBrokenFramesTest.kt").apply {
-                    parentFile.mkdirs()
-                    writeText(
-                            // language=kotlin
-                            """
-                        package com.example.unittest
-
-                        import org.junit.Test
-
-                        class UnitTestBrokenFramesTest {
-
-                            @Test
-                            fun invokeInjectedMethod() {
-                                this::class.java.getMethod("foo").invoke(this)
-                            }
-                        }
-                        """.trimIndent()
-                    )
-                }
+            @Test
+            fun invokeInjectedMethod() {
+                this::class.java.getMethod("foo").invoke(this)
+            }
+        }
+        """
+          .trimIndent()
+      )
     }
+  }
 
-    private fun configureVisitor(framesMode: String) {
+  private fun configureVisitor(framesMode: String) {
 
-        TestFileUtils.searchAndReplace(
-                project.getSubproject(":buildSrc")
-                        .file("src/main/java/com/example/buildsrc/plugin/InstrumentationPlugin.kt"),
-                "val androidComponentsExt = project.extensions.getByType(AndroidComponentsExtension::class.java)",
-                // language=kotlin
-                """
+    TestFileUtils.searchAndReplace(
+      project.getSubproject(":buildSrc").file("src/main/java/com/example/buildsrc/plugin/InstrumentationPlugin.kt"),
+      "val androidComponentsExt = project.extensions.getByType(AndroidComponentsExtension::class.java)",
+      // language=kotlin
+      """
             val androidComponentsExt = project.extensions.getByType(AndroidComponentsExtension::class.java)
             androidComponentsExt.onVariants {
                     (it as? HasUnitTest)?.unitTest?.instrumentation?.transformClassesWith(
@@ -178,33 +173,33 @@ class AsmTransformApiFixFramesTest {
                     ) {}
                     (it as? HasUnitTest)?.unitTest?.instrumentation?.setAsmFramesComputationMode($framesMode)
                 }
-                """.trimIndent()
+                """
+        .trimIndent(),
+    )
+  }
 
-        )
-    }
+  @Test
+  fun framesShouldBeBrokenWithCopyFramesMode() {
+    configureVisitor("FramesComputationMode.COPY_FRAMES")
+    val result = project.executor().expectFailure().run(":app:testDebugUnitTest")
+    assertThat(result.failedTasks).containsExactly(":app:testDebugUnitTest")
+  }
 
-    @Test
-    fun framesShouldBeBrokenWithCopyFramesMode() {
-        configureVisitor("FramesComputationMode.COPY_FRAMES")
-        val result = project.executor().expectFailure().run(":app:testDebugUnitTest")
-        assertThat(result.failedTasks).containsExactly(":app:testDebugUnitTest")
-    }
+  @Test
+  fun framesShouldBeFixedWithComputeFramesForInstrumentedMethodsMode() {
+    configureVisitor("FramesComputationMode.COMPUTE_FRAMES_FOR_INSTRUMENTED_METHODS")
+    project.executor().run(":app:testDebugUnitTest")
+  }
 
-    @Test
-    fun framesShouldBeFixedWithComputeFramesForInstrumentedMethodsMode() {
-        configureVisitor("FramesComputationMode.COMPUTE_FRAMES_FOR_INSTRUMENTED_METHODS")
-        project.executor().run(":app:testDebugUnitTest")
-    }
+  @Test
+  fun framesShouldBeFixedWithComputeFramesForInstrumentedClassesMode() {
+    configureVisitor("FramesComputationMode.COMPUTE_FRAMES_FOR_INSTRUMENTED_CLASSES")
+    project.executor().run(":app:testDebugUnitTest")
+  }
 
-    @Test
-    fun framesShouldBeFixedWithComputeFramesForInstrumentedClassesMode() {
-        configureVisitor("FramesComputationMode.COMPUTE_FRAMES_FOR_INSTRUMENTED_CLASSES")
-        project.executor().run(":app:testDebugUnitTest")
-    }
-
-    @Test
-    fun framesShouldBeFixedWithComputeFramesForAllClassesMode() {
-        configureVisitor("FramesComputationMode.COMPUTE_FRAMES_FOR_ALL_CLASSES")
-        project.executor().run(":app:testDebugUnitTest")
-    }
+  @Test
+  fun framesShouldBeFixedWithComputeFramesForAllClassesMode() {
+    configureVisitor("FramesComputationMode.COMPUTE_FRAMES_FOR_ALL_CLASSES")
+    project.executor().run(":app:testDebugUnitTest")
+  }
 }

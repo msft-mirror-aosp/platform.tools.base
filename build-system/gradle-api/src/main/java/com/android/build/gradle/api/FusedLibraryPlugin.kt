@@ -24,8 +24,8 @@ import org.gradle.api.Project
  *
  * @suppress Do not use from production code. Only exposed for prototype.
  */
-class FusedLibraryPlugin: Plugin<Project> {
-    override fun apply(project: Project) {
-        project.apply(mapOf("plugin" to "com.android.internal.fused-library"))
-    }
+class FusedLibraryPlugin : Plugin<Project> {
+  override fun apply(project: Project) {
+    project.apply(mapOf("plugin" to "com.android.internal.fused-library"))
+  }
 }

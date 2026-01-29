@@ -24,46 +24,44 @@ import org.junit.Test
 
 class GetCompileClasspathTest {
 
-    @get:Rule
-    val project =
-        GradleTestProject.builder()
-            .fromTestApp(HelloWorldApp.forPlugin("com.android.application"))
-            .create()
+  @get:Rule val project = GradleTestProject.builder().fromTestApp(HelloWorldApp.forPlugin("com.android.application")).create()
 
-    @Test
-    fun testErrorWhenResolvingDuringConfiguration() {
-        TestFileUtils.appendToFile(
-            project.buildFile,
-            // language=groovy
-            """
-                abstract class PrintClasspathTask extends DefaultTask {
+  @Test
+  fun testErrorWhenResolvingDuringConfiguration() {
+    TestFileUtils.appendToFile(
+      project.buildFile,
+      // language=groovy
+      """
+      abstract class PrintClasspathTask extends DefaultTask {
 
-                    @Classpath
-                    abstract ConfigurableFileCollection getClasspath()
+          @Classpath
+          abstract ConfigurableFileCollection getClasspath()
 
-                    @TaskAction
-                    def taskAction() {
-                        for (file in classpath.files) {
-                            System.out.println(file.getAbsolutePath())
-                        }
-                    }
-                }
+          @TaskAction
+          def taskAction() {
+              for (file in classpath.files) {
+                  System.out.println(file.getAbsolutePath())
+              }
+          }
+      }
 
-                androidComponents {
-                    onVariants(selector().all(), { variant ->
-                        project.tasks.register(
-                            variant.name + "PrintCompileClasspath",
-                            PrintClasspathTask.class
-                        ) {
-                            // The expected error is caused by trying to resolve the FileCollection
-                            // during configuration here.
-                            it.classpath.from(variant.compileClasspath.files)
-                        }
-                    })
-                }
-            """.trimIndent())
+      androidComponents {
+          onVariants(selector().all(), { variant ->
+              project.tasks.register(
+                  variant.name + "PrintCompileClasspath",
+                  PrintClasspathTask.class
+              ) {
+                  // The expected error is caused by trying to resolve the FileCollection
+                  // during configuration here.
+                  it.classpath.from(variant.compileClasspath.files)
+              }
+          })
+      }
+      """
+        .trimIndent(),
+    )
 
-        val result = project.executor().expectFailure().run("debugPrintCompileClasspath")
-        result.assertErrorContains("Configuration 'debugCompileClasspath' was resolved during configuration time.")
-    }
+    val result = project.executor().expectFailure().run("debugPrintCompileClasspath")
+    result.assertErrorContains("Configuration 'debugCompileClasspath' was resolved during configuration time.")
+  }
 }

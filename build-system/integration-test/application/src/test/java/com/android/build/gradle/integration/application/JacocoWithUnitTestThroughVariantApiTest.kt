@@ -25,39 +25,30 @@ import org.junit.Rule
 import org.junit.Test
 
 class JacocoWithUnitTestThroughVariantApiTest {
-    @get:Rule
-    val testProject = GradleTestProjectBuilder()
-        .fromTestProject("unitTesting")
-        .create()
+  @get:Rule val testProject = GradleTestProjectBuilder().fromTestProject("unitTesting").create()
 
-    @Before
-    fun setup() {
-        // Make sure you can turn on code coverage though the variant API.
-        TestFileUtils.appendToFile(
-            testProject.buildFile,
-            """
-            androidComponents {
-                beforeVariants(selector().withBuildType("debug")) {
-                    it.hostTests.get(
-                        com.android.build.api.variant.HostTestBuilder.UNIT_TEST_TYPE
-                    ).enableCodeCoverage = true
-                }
-            }
-            """.trimIndent()
-        )
-    }
+  @Before
+  fun setup() {
+    // Make sure you can turn on code coverage though the variant API.
+    TestFileUtils.appendToFile(
+      testProject.buildFile,
+      """
+      androidComponents {
+          beforeVariants(selector().withBuildType("debug")) {
+              it.hostTests.get(
+                  com.android.build.api.variant.HostTestBuilder.UNIT_TEST_TYPE
+              ).enableCodeCoverage = true
+          }
+      }
+      """
+        .trimIndent(),
+    )
+  }
 
-    @Test
-    fun `test expected report contents`() {
-        testProject.executor().run("createDebugUnitTestCoverageReport")
-        val generatedCoverageReport = FileUtils.join(
-            testProject.buildDir,
-            "reports",
-            "coverage",
-            "test",
-            "debug",
-            "index.html"
-        )
-        Truth.assertThat(generatedCoverageReport.exists()).isTrue()
-    }
+  @Test
+  fun `test expected report contents`() {
+    testProject.executor().run("createDebugUnitTestCoverageReport")
+    val generatedCoverageReport = FileUtils.join(testProject.buildDir, "reports", "coverage", "test", "debug", "index.html")
+    Truth.assertThat(generatedCoverageReport.exists()).isTrue()
+  }
 }

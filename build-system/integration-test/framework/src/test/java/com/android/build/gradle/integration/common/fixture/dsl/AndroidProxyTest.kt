@@ -18,7 +18,6 @@ package com.android.build.gradle.integration.common.fixture.dsl
 
 import com.android.build.api.dsl.ApplicationExtension
 import com.android.build.api.dsl.Person
-import com.android.build.gradle.integration.common.fixture.project.builder.BuildWriterTest
 import com.android.build.gradle.integration.common.fixture.project.builder.GroovyBuildWriter
 import com.android.build.gradle.integration.common.fixture.project.builder.KtsBuildWriter
 import com.google.common.truth.Truth
@@ -29,409 +28,381 @@ import org.junit.Test
  *
  * This does not test the content, this is handled by [BasicDslProxyTest] and [DslRecorderTest]
  */
-class AndroidProxyTest: ExtensionAwareDefinition {
+class AndroidProxyTest : ExtensionAwareDefinition {
 
-    @Test
-    fun testFullApp_Groovy() {
-        val content = generateGroovyContent {
-            generateFullDsl()
-        }
-        Truth.assertThat(content).isEqualTo("""
-            android {
-              namespace = 'foo'
-              compileSdk {
-                version = release(36)
-              }
-              defaultConfig {
-                minSdk {
-                  version = release(21)
-                }
-                maxSdk {
-                  version = release(99)
-                }
-                targetSdk {
-                  version = release(36)
-                }
-              }
-              androidResources {
-                generateLocaleConfig = true
-              }
-              compileOptions {
-                coreLibraryDesugaringEnabled = true
-              }
-              splits {
-                abi {
-                  reset()
-                  include('x86', 'armeabi')
-                }
-              }
-              buildTypes {
-                named('debug') {
-                  debuggable = false
-                }
-              }
+  @Test
+  fun testFullApp_Groovy() {
+    val content = generateGroovyContent { generateFullDsl() }
+    Truth.assertThat(content)
+      .isEqualTo(
+        """
+        android {
+          namespace = 'foo'
+          compileSdk {
+            version = release(36)
+          }
+          defaultConfig {
+            minSdk {
+              version = release(21)
             }
+            maxSdk {
+              version = release(99)
+            }
+            targetSdk {
+              version = release(36)
+            }
+          }
+          androidResources {
+            generateLocaleConfig = true
+          }
+          compileOptions {
+            coreLibraryDesugaringEnabled = true
+          }
+          splits {
+            abi {
+              reset()
+              include('x86', 'armeabi')
+            }
+          }
+          buildTypes {
+            named('debug') {
+              debuggable = false
+            }
+          }
+        }
 
-        """.trimIndent())
+        """
+          .trimIndent()
+      )
+  }
 
+  @Test
+  fun testFullApp_Kts() {
+    val content = generateKtsContent { generateFullDsl() }
+    Truth.assertThat(content)
+      .isEqualTo(
+        """
+        android {
+          namespace = "foo"
+          compileSdk {
+            version = release(36)
+          }
+          defaultConfig {
+            minSdk {
+              version = release(21)
+            }
+            maxSdk {
+              version = release(99)
+            }
+            targetSdk {
+              version = release(36)
+            }
+          }
+          androidResources {
+            generateLocaleConfig = true
+          }
+          compileOptions {
+            isCoreLibraryDesugaringEnabled = true
+          }
+          splits {
+            abi {
+              reset()
+              include("x86", "armeabi")
+            }
+          }
+          buildTypes {
+            named("debug") {
+              isDebuggable = false
+            }
+          }
+        }
+
+        """
+          .trimIndent()
+      )
+  }
+
+  @Test
+  fun testCompilePreview_Kts() {
+    val content = generateKtsContent { compileSdk { version = preview("FOO") } }
+
+    Truth.assertThat(content)
+      .isEqualTo(
+        """
+        android {
+          compileSdk {
+            version = preview("FOO")
+          }
+        }
+
+        """
+          .trimIndent()
+      )
+  }
+
+  @Test
+  fun testCompileAddon_Kts() {
+    val content = generateKtsContent { compileSdk { version = addon("vendor", "name", 36) } }
+
+    Truth.assertThat(content)
+      .isEqualTo(
+        """
+        android {
+          compileSdk {
+            version = addon("vendor", "name", 36)
+          }
+        }
+
+        """
+          .trimIndent()
+      )
+  }
+
+  @Test
+  fun testCompileMinorApi_Kts() {
+    val content = generateKtsContent { compileSdk { version = release(36) { minorApiLevel = 1 } } }
+
+    Truth.assertThat(content)
+      .isEqualTo(
+        """
+        android {
+          compileSdk {
+            version = release(36) {
+              minorApiLevel = 1
+            }
+          }
+        }
+
+        """
+          .trimIndent()
+      )
+  }
+
+  @Test
+  fun testCompileSdkExtensionApi_Kts() {
+    val content = generateKtsContent { compileSdk { version = release(36) { sdkExtension = 17 } } }
+
+    Truth.assertThat(content)
+      .isEqualTo(
+        """
+        android {
+          compileSdk {
+            version = release(36) {
+              sdkExtension = 17
+            }
+          }
+        }
+
+        """
+          .trimIndent()
+      )
+  }
+
+  @Test
+  fun testCompileFullRelease_Kts() {
+    val content = generateKtsContent {
+      compileSdk {
+        version =
+          release(36) {
+            minorApiLevel = 1
+            sdkExtension = 17
+          }
+      }
     }
 
-    @Test
-    fun testFullApp_Kts() {
-        val content = generateKtsContent {
-            generateFullDsl()
-        }
-        Truth.assertThat(content).isEqualTo("""
-            android {
-              namespace = "foo"
-              compileSdk {
-                version = release(36)
-              }
-              defaultConfig {
-                minSdk {
-                  version = release(21)
-                }
-                maxSdk {
-                  version = release(99)
-                }
-                targetSdk {
-                  version = release(36)
-                }
-              }
-              androidResources {
-                generateLocaleConfig = true
-              }
-              compileOptions {
-                isCoreLibraryDesugaringEnabled = true
-              }
-              splits {
-                abi {
-                  reset()
-                  include("x86", "armeabi")
-                }
-              }
-              buildTypes {
-                named("debug") {
-                  isDebuggable = false
-                }
-              }
+    Truth.assertThat(content)
+      .isEqualTo(
+        """
+        android {
+          compileSdk {
+            version = release(36) {
+              minorApiLevel = 1
+              sdkExtension = 17
             }
+          }
+        }
 
-        """.trimIndent())
+        """
+          .trimIndent()
+      )
+  }
+
+  @Test
+  fun testCompileEmptyRelease_Kts() {
+    val content = generateKtsContent { compileSdk { version = release(36) {} } }
+
+    Truth.assertThat(content)
+      .isEqualTo(
+        """
+        android {
+          compileSdk {
+            version = release(36)
+          }
+        }
+
+        """
+          .trimIndent()
+      )
+  }
+
+  @Test
+  fun testMinPreview_Kts() {
+    val content = generateKtsContent { defaultConfig { minSdk { version = preview("FOO") } } }
+
+    Truth.assertThat(content)
+      .isEqualTo(
+        """
+        android {
+          defaultConfig {
+            minSdk {
+              version = preview("FOO")
+            }
+          }
+        }
+
+        """
+          .trimIndent()
+      )
+  }
+
+  @Test
+  fun testTargetPreview_Kts() {
+    val content = generateKtsContent { defaultConfig { targetSdk { version = preview("FOO") } } }
+
+    Truth.assertThat(content)
+      .isEqualTo(
+        """
+        android {
+          defaultConfig {
+            targetSdk {
+              version = preview("FOO")
+            }
+          }
+        }
+
+        """
+          .trimIndent()
+      )
+  }
+
+  @Test
+  fun publishing_singleVariant() {
+    val content = generateKtsContent { publishing { singleVariant("foo") { publishApk() } } }
+
+    Truth.assertThat(content)
+      .isEqualTo(
+        """
+        android {
+          publishing {
+            singleVariant("foo") {
+              publishApk()
+            }
+          }
+        }
+
+        """
+          .trimIndent()
+      )
+  }
+
+  @Test
+  fun viaExtension_Kts() {
+    val content = generateKtsContent {
+      viaExtension("person", Person::class) { name = "android" }
+      buildTypes { named("debug") { it.viaExtension("person", Person::class) { name = "debug" } } }
     }
 
-    @Test
-    fun testCompilePreview_Kts() {
-        val content = generateKtsContent {
-            compileSdk {
-                version = preview("FOO")
-            }
-        }
-
-        Truth.assertThat(content).isEqualTo("""
-            android {
-              compileSdk {
-                version = preview("FOO")
+    Truth.assertThat(content)
+      .isEqualTo(
+        """
+        android {
+          person {
+            name = "android"
+          }
+          buildTypes {
+            named("debug") {
+              configure<com.android.build.api.dsl.Person> {
+                name = "debug"
               }
             }
-
-        """.trimIndent())
-    }
-
-    @Test
-    fun testCompileAddon_Kts() {
-        val content = generateKtsContent {
-            compileSdk {
-                version = addon("vendor", "name", 36)
-            }
+          }
         }
 
-        Truth.assertThat(content).isEqualTo("""
-            android {
-              compileSdk {
-                version = addon("vendor", "name", 36)
-              }
-            }
+        """
+          .trimIndent()
+      )
+  }
 
-        """.trimIndent())
+  @Test
+  fun viaExtension_Groovy() {
+    val content = generateGroovyContent {
+      viaExtension("person", Person::class) { name = "android" }
+      buildTypes { named("debug") { it.viaExtension("person", Person::class) { name = "debug" } } }
     }
 
-    @Test
-    fun testCompileMinorApi_Kts() {
-        val content = generateKtsContent {
-            compileSdk {
-                version = release(36) {
-                    minorApiLevel = 1
-                }
-            }
-        }
-
-        Truth.assertThat(content).isEqualTo("""
-            android {
-              compileSdk {
-                version = release(36) {
-                  minorApiLevel = 1
-                }
-              }
-            }
-
-        """.trimIndent())
-    }
-
-    @Test
-    fun testCompileSdkExtensionApi_Kts() {
-        val content = generateKtsContent {
-            compileSdk {
-                version = release(36) {
-                    sdkExtension = 17
-                }
-            }
-        }
-
-        Truth.assertThat(content).isEqualTo("""
-            android {
-              compileSdk {
-                version = release(36) {
-                  sdkExtension = 17
-                }
-              }
-            }
-
-        """.trimIndent())
-    }
-
-    @Test
-    fun testCompileFullRelease_Kts() {
-        val content = generateKtsContent {
-            compileSdk {
-                version = release(36) {
-                    minorApiLevel = 1
-                    sdkExtension = 17
-                }
-            }
-        }
-
-        Truth.assertThat(content).isEqualTo("""
-            android {
-              compileSdk {
-                version = release(36) {
-                  minorApiLevel = 1
-                  sdkExtension = 17
-                }
-              }
-            }
-
-        """.trimIndent())
-    }
-
-    @Test
-    fun testCompileEmptyRelease_Kts() {
-        val content = generateKtsContent {
-            compileSdk {
-                version = release(36) { }
-            }
-        }
-
-        Truth.assertThat(content).isEqualTo("""
-            android {
-              compileSdk {
-                version = release(36)
-              }
-            }
-
-        """.trimIndent())
-    }
-
-    @Test
-    fun testMinPreview_Kts() {
-        val content = generateKtsContent {
-            defaultConfig {
-                minSdk {
-                    version = preview("FOO")
-                }
-            }
-        }
-
-        Truth.assertThat(content).isEqualTo("""
-            android {
-              defaultConfig {
-                minSdk {
-                  version = preview("FOO")
-                }
-              }
-            }
-
-        """.trimIndent())
-    }
-
-    @Test
-    fun testTargetPreview_Kts() {
-        val content = generateKtsContent {
-            defaultConfig {
-                targetSdk {
-                    version = preview("FOO")
-                }
-            }
-        }
-
-        Truth.assertThat(content).isEqualTo("""
-            android {
-              defaultConfig {
-                targetSdk {
-                  version = preview("FOO")
-                }
-              }
-            }
-
-        """.trimIndent())
-    }
-
-    @Test
-    fun publishing_singleVariant() {
-        val content = generateKtsContent {
-            publishing {
-                singleVariant("foo") {
-                    publishApk()
-                }
-            }
-        }
-
-        Truth.assertThat(content).isEqualTo("""
-            android {
-              publishing {
-                singleVariant("foo") {
-                  publishApk()
-                }
-              }
-            }
-
-        """.trimIndent())
-    }
-
-    @Test
-    fun viaExtension_Kts() {
-        val content = generateKtsContent {
-            viaExtension("person", Person::class) {
-                name = "android"
-            }
-            buildTypes {
-                named("debug") {
-                    it.viaExtension("person", Person::class) {
-                        name = "debug"
-                    }
-                }
-            }
-        }
-
-        Truth.assertThat(content).isEqualTo("""
-            android {
+    Truth.assertThat(content)
+      .isEqualTo(
+        """
+        android {
+          person {
+            name = 'android'
+          }
+          buildTypes {
+            named('debug') {
               person {
-                name = "android"
-              }
-              buildTypes {
-                named("debug") {
-                  configure<com.android.build.api.dsl.Person> {
-                    name = "debug"
-                  }
-                }
+                name = 'debug'
               }
             }
-
-        """.trimIndent())
-
-    }
-
-    @Test
-    fun viaExtension_Groovy() {
-        val content = generateGroovyContent {
-            viaExtension("person", Person::class) {
-                name = "android"
-            }
-            buildTypes {
-                named("debug") {
-                    it.viaExtension("person", Person::class) {
-                        name = "debug"
-                    }
-                }
-            }
+          }
         }
 
-        Truth.assertThat(content).isEqualTo("""
-            android {
-              person {
-                name = 'android'
-              }
-              buildTypes {
-                named('debug') {
-                  person {
-                    name = 'debug'
-                  }
-                }
-              }
-            }
+        """
+          .trimIndent()
+      )
+  }
 
-        """.trimIndent())
+  private fun generateKtsContent(action: ApplicationExtension.() -> Unit): String {
+    val dslRecorder = DefaultDslRecorder()
+    dslRecorder.runNestedBlock("android", listOf(), ApplicationExtension::class.java, action)
 
-    }
+    val kts = KtsBuildWriter()
+    dslRecorder.writeContent(kts)
+    return kts.toString()
+  }
 
-    private fun generateKtsContent(action: ApplicationExtension.() -> Unit): String {
-        val dslRecorder = DefaultDslRecorder()
-        dslRecorder.runNestedBlock("android", listOf(), ApplicationExtension::class.java, action)
+  private fun generateGroovyContent(action: ApplicationExtension.() -> Unit): String {
+    val dslRecorder = DefaultDslRecorder()
+    dslRecorder.runNestedBlock("android", listOf(), ApplicationExtension::class.java, action)
 
-        val kts = KtsBuildWriter()
-        dslRecorder.writeContent(kts)
-        return kts.toString()
-    }
+    val groovy = GroovyBuildWriter()
+    dslRecorder.writeContent(groovy)
+    return groovy.toString()
+  }
 
-    private fun generateGroovyContent(action: ApplicationExtension.() -> Unit): String {
-        val dslRecorder = DefaultDslRecorder()
-        dslRecorder.runNestedBlock("android", listOf(), ApplicationExtension::class.java, action)
+  private fun ApplicationExtension.generateFullDsl() {
+    apply {
+      namespace = "foo"
 
-        val groovy = GroovyBuildWriter()
-        dslRecorder.writeContent(groovy)
-        return groovy.toString()
-    }
+      compileSdk { version = release(36) }
 
-    private fun ApplicationExtension.generateFullDsl() {
-        apply {
-            namespace = "foo"
+      defaultConfig {
+        minSdk { version = release(21) }
+        maxSdk { version = release(99) }
+        targetSdk { version = release(36) }
+      }
 
-            compileSdk {
-                version = release(36)
-            }
+      androidResources { generateLocaleConfig = true }
 
-            defaultConfig {
-                minSdk {
-                    version = release(21)
-                }
-                maxSdk {
-                    version = release(99)
-                }
-                targetSdk {
-                    version = release(36)
-                }
-            }
+      compileOptions { isCoreLibraryDesugaringEnabled = true }
 
-            androidResources {
-                generateLocaleConfig = true
-            }
-
-            compileOptions {
-                isCoreLibraryDesugaringEnabled = true
-            }
-
-            splits {
-                abi {
-                    reset()
-                    include("x86", "armeabi")
-                }
-            }
-
-            buildTypes {
-                named("debug") {
-                    it.isDebuggable = false
-                }
-            }
+      splits {
+        abi {
+          reset()
+          include("x86", "armeabi")
         }
+      }
+
+      buildTypes { named("debug") { it.isDebuggable = false } }
     }
+  }
 }

@@ -28,16 +28,16 @@ import org.gradle.api.services.BuildServiceParameters
  */
 abstract class R8MaxParallelTasksBuildService : BuildService<BuildServiceParameters.None>, AutoCloseable {
 
-    class RegistrationAction(project: Project, projectOptions: ProjectOptions) :
-        ServiceRegistrationAction<R8MaxParallelTasksBuildService, BuildServiceParameters.None>(
-            project,
-            R8MaxParallelTasksBuildService::class.java,
-            // This `IntegerOption` has default value so get() should return not-null
-            projectOptions.get(IntegerOption.R8_MAX_WORKERS)!!
-        ) {
+  class RegistrationAction(project: Project, projectOptions: ProjectOptions) :
+    ServiceRegistrationAction<R8MaxParallelTasksBuildService, BuildServiceParameters.None>(
+      project,
+      R8MaxParallelTasksBuildService::class.java,
+      // This `IntegerOption` has default value so get() should return not-null
+      projectOptions.get(IntegerOption.R8_MAX_WORKERS)!!,
+    ) {
 
-        override fun configure(parameters: BuildServiceParameters.None) {
-           // Do nothing
-        }
+    override fun configure(parameters: BuildServiceParameters.None) {
+      // Do nothing
     }
+  }
 }

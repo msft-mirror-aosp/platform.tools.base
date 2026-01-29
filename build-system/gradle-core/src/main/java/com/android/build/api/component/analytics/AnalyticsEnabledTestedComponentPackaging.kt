@@ -22,15 +22,14 @@ import com.android.tools.build.gradle.internal.profile.VariantPropertiesMethodTy
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
 import javax.inject.Inject
 
-open class AnalyticsEnabledTestedComponentPackaging @Inject constructor(
-    override val delegate: TestedComponentPackaging,
-    stats: GradleBuildVariant.Builder
-) : AnalyticsEnabledPackaging(delegate, stats), TestedComponentPackaging {
+open class AnalyticsEnabledTestedComponentPackaging
+@Inject
+constructor(override val delegate: TestedComponentPackaging, stats: GradleBuildVariant.Builder) :
+  AnalyticsEnabledPackaging(delegate, stats), TestedComponentPackaging {
 
-    override val jniLibs: JniLibsTestedComponentPackaging
-        get() {
-            stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
-                VariantPropertiesMethodType.JNI_LIBS_PACKAGING_OPTIONS_VALUE
-            return delegate.jniLibs
-        }
+  override val jniLibs: JniLibsTestedComponentPackaging
+    get() {
+      stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type = VariantPropertiesMethodType.JNI_LIBS_PACKAGING_OPTIONS_VALUE
+      return delegate.jniLibs
+    }
 }

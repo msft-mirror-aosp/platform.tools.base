@@ -17,8 +17,8 @@
 
 package com.android.build.gradle.internal.res
 
-import com.android.aaptcompiler.compileResource
 import com.android.aaptcompiler.BlameLogger
+import com.android.aaptcompiler.compileResource
 import com.android.build.gradle.internal.LoggerWrapper
 import com.android.build.gradle.internal.errors.MessageReceiverImpl
 import com.android.build.gradle.internal.errors.humanReadableMessage
@@ -32,72 +32,61 @@ import com.android.ide.common.blame.parser.ToolOutputParser
 import com.android.ide.common.blame.parser.aapt.Aapt2OutputParser
 import com.android.ide.common.blame.parser.aapt.AbstractAaptOutputParser
 import com.android.ide.common.resources.CompileResourceRequest
-import com.android.ide.common.resources.ResourcePathEncoding
 import com.android.ide.common.resources.relativeResourcePathToAbsolutePath
 import com.android.tools.build.bundletool.model.utils.files.FileUtils
 import com.android.utils.StdLogger
 import com.google.common.base.Charsets
 import com.google.common.collect.ImmutableList
-import org.gradle.api.logging.Logger
 import java.io.File
 import java.nio.file.FileSystems
+import org.gradle.api.logging.Logger
 
 /**
  * Rewrite exceptions to point to their original files.
  *
  * Returns the same exception as is if it could not be rewritten.
  *
- * This is expensive, so should only be used if the build is going to fail anyway.
- * The merging log is used directly from memory, as this only is needed within the resource merger.
+ * This is expensive, so should only be used if the build is going to fail anyway. The merging log is used directly from memory, as this
+ * only is needed within the resource merger.
  */
 fun rewriteCompileException(
-    e: Aapt2Exception,
-    request: CompileResourceRequest,
-    errorFormatMode: SyncOptions.ErrorFormatMode,
-    enableBlame: Boolean,
-    logger: Logger
+  e: Aapt2Exception,
+  request: CompileResourceRequest,
+  errorFormatMode: SyncOptions.ErrorFormatMode,
+  enableBlame: Boolean,
+  logger: Logger,
 ): Aapt2Exception {
-    if (!enableBlame) {
-        return rewriteException(e, errorFormatMode, false, logger) {
-            it
-        }
+  if (!enableBlame) {
+    return rewriteException(e, errorFormatMode, false, logger) { it }
+  }
+  if (request.blameMap.isEmpty()) {
+    if (request.mergeBlameFolder != null) {
+      val mergingLog = MergingLog(request.mergeBlameFolder!!)
+      return rewriteException(e, errorFormatMode, true, logger) { mergingLog.find(it) }
     }
-    if (request.blameMap.isEmpty()) {
-        if (request.mergeBlameFolder != null) {
-            val mergingLog = MergingLog(request.mergeBlameFolder!!)
-            return rewriteException(e, errorFormatMode, true, logger) {
-                mergingLog.find(it)
-            }
-        }
 
-        val originalException =
-            if (request.inputFile == request.originalInputFile) {
-                e
-            } else {
-                Aapt2Exception.create(
-                    description = "Failed to compile android resource " +
-                            "'${request.originalInputFile.absolutePath}'.",
-                    cause = e,
-                    output = e.output?.replace(
-                        request.inputFile.absolutePath,
-                        request.originalInputFile.absolutePath
-                    ),
-                    processName = e.processName,
-                    command = e.command
-                )
-            }
+    val originalException =
+      if (request.inputFile == request.originalInputFile) {
+        e
+      } else {
+        Aapt2Exception.create(
+          description = "Failed to compile android resource " + "'${request.originalInputFile.absolutePath}'.",
+          cause = e,
+          output = e.output?.replace(request.inputFile.absolutePath, request.originalInputFile.absolutePath),
+          processName = e.processName,
+          command = e.command,
+        )
+      }
 
-        return rewriteException(originalException, errorFormatMode, false, logger) {
-            it
-        }
+    return rewriteException(originalException, errorFormatMode, false, logger) { it }
+  }
+  return rewriteException(e, errorFormatMode, true, logger) {
+    if (it.file.sourceFile?.absolutePath == request.originalInputFile.absolutePath) {
+      MergingLog.find(it.position, request.blameMap) ?: it
+    } else {
+      it
     }
-    return rewriteException(e, errorFormatMode, true, logger) {
-        if (it.file.sourceFile?.absolutePath == request.originalInputFile.absolutePath) {
-            MergingLog.find(it.position, request.blameMap) ?: it
-        } else {
-            it
-        }
-    }
+  }
 }
 
 /**
@@ -105,179 +94,145 @@ fun rewriteCompileException(
  *
  * Returns the same exception as is if it could not be rewritten.
  *
- * This is expensive, so should only be used if the build is going to fail anyway.
- * The merging log is loaded from files lazily.
+ * This is expensive, so should only be used if the build is going to fail anyway. The merging log is loaded from files lazily.
  */
 fun rewriteLinkException(
-    e: Aapt2Exception,
-    errorFormatMode: SyncOptions.ErrorFormatMode,
-    mergeBlameFolder: File?,
-    manifestMergeBlameFile: File?,
-    identifiedSourceSetMap: Map<String, String>,
-    logger: Logger,
+  e: Aapt2Exception,
+  errorFormatMode: SyncOptions.ErrorFormatMode,
+  mergeBlameFolder: File?,
+  manifestMergeBlameFile: File?,
+  identifiedSourceSetMap: Map<String, String>,
+  logger: Logger,
 ): Aapt2Exception {
-    if (mergeBlameFolder == null && manifestMergeBlameFile == null) {
-        return rewriteException(e, errorFormatMode, false, logger) {
-            it
-        }
-    }
-    var mergingLog: MergingLog? = null
-    if (mergeBlameFolder != null) {
-        mergingLog = MergingLog(mergeBlameFolder, identifiedSourceSetMap)
-    }
+  if (mergeBlameFolder == null && manifestMergeBlameFile == null) {
+    return rewriteException(e, errorFormatMode, false, logger) { it }
+  }
+  var mergingLog: MergingLog? = null
+  if (mergeBlameFolder != null) {
+    mergingLog = MergingLog(mergeBlameFolder, identifiedSourceSetMap)
+  }
 
-    var manifestMergeBlameContents: List<String>? = null
-    if (manifestMergeBlameFile != null && manifestMergeBlameFile.isFile) {
-        manifestMergeBlameContents = manifestMergeBlameFile.readLines(Charsets.UTF_8)
-    }
+  var manifestMergeBlameContents: List<String>? = null
+  if (manifestMergeBlameFile != null && manifestMergeBlameFile.isFile) {
+    manifestMergeBlameContents = manifestMergeBlameFile.readLines(Charsets.UTF_8)
+  }
 
-    return rewriteException(e, errorFormatMode, true, logger, identifiedSourceSetMap) {
-        var newFile = it
-        if (mergingLog != null) {
-            try {
-                newFile = mergingLog.find(it)
-            } catch (ignored: Exception) { }
-        }
-        // If the merging log fails to find the original position, then try the manifest merge blame
-        if (it == newFile && manifestMergeBlameContents != null) {
-            newFile = findOriginalManifestFilePosition(manifestMergeBlameContents, it)
-        }
-        newFile
+  return rewriteException(e, errorFormatMode, true, logger, identifiedSourceSetMap) {
+    var newFile = it
+    if (mergingLog != null) {
+      try {
+        newFile = mergingLog.find(it)
+      } catch (ignored: Exception) {}
     }
+    // If the merging log fails to find the original position, then try the manifest merge blame
+    if (it == newFile && manifestMergeBlameContents != null) {
+      newFile = findOriginalManifestFilePosition(manifestMergeBlameContents, it)
+    }
+    newFile
+  }
 }
 
 /**
- * Creates a blame logger for the given [CompileResourceRequest] to be passed into the
- * [compileResource].
+ * Creates a blame logger for the given [CompileResourceRequest] to be passed into the [compileResource].
  *
  * @param request The request being sent through [ResourceCompilerRunnable].
- *
  * @param logger: Logger the logger for the [BlameLogger] to be wrapped around.
- *
  * @return A Blame Logger that can rewrite sources, to their correct locations pre-merge.
  */
-fun blameLoggerFor(
-    request: CompileResourceRequest, logger: LoggerWrapper,
-): BlameLogger {
-    val sourcePathFunc = if (request.usesRelativePaths) {
-        relativeResourcePathToAbsolutePath(
-            request.resEncodingSourceSetMap
-                ?: error("No resource source sets provided when compiling ${request.inputFile.absolutePath}"),
-            FileSystems.getDefault()
-        )
+fun blameLoggerFor(request: CompileResourceRequest, logger: LoggerWrapper): BlameLogger {
+  val sourcePathFunc =
+    if (request.usesRelativePaths) {
+      relativeResourcePathToAbsolutePath(
+        request.resEncodingSourceSetMap ?: error("No resource source sets provided when compiling ${request.inputFile.absolutePath}"),
+        FileSystems.getDefault(),
+      )
     } else {
-        { it }
+      { it }
     }
-    if (request.blameMap.isEmpty()) {
-        if (request.mergeBlameFolder != null) {
-            val mergingLog = MergingLog(request.mergeBlameFolder!!)
-            return BlameLogger(
-                logger,
-                sourcePathFunc,
-            ) {
-                val sourceFile = it.toSourceFilePosition()
-                BlameLogger.Source.fromSourceFilePosition(mergingLog.find(sourceFile))
-            }
-        }
-        return BlameLogger(
-            logger,
-            sourcePathFunc
-        )
+  if (request.blameMap.isEmpty()) {
+    if (request.mergeBlameFolder != null) {
+      val mergingLog = MergingLog(request.mergeBlameFolder!!)
+      return BlameLogger(logger, sourcePathFunc) {
+        val sourceFile = it.toSourceFilePosition()
+        BlameLogger.Source.fromSourceFilePosition(mergingLog.find(sourceFile))
+      }
     }
-    return BlameLogger(
-        logger, sourcePathFunc
-    ) {
-        if (FileUtils.getPath(it.sourcePath).toAbsolutePath() ==
-            request.originalInputFile.toPath().toAbsolutePath()
-        ) {
-            val sourceFile = it.toSourceFilePosition()
-            val foundSource = MergingLog.find(sourceFile.position, request.blameMap)
-            if (foundSource == null) {
-                it
-            } else {
-                BlameLogger.Source.fromSourceFilePosition(foundSource)
-            }
-        } else {
-            it
-        }
+    return BlameLogger(logger, sourcePathFunc)
+  }
+  return BlameLogger(logger, sourcePathFunc) {
+    if (FileUtils.getPath(it.sourcePath).toAbsolutePath() == request.originalInputFile.toPath().toAbsolutePath()) {
+      val sourceFile = it.toSourceFilePosition()
+      val foundSource = MergingLog.find(sourceFile.position, request.blameMap)
+      if (foundSource == null) {
+        it
+      } else {
+        BlameLogger.Source.fromSourceFilePosition(foundSource)
+      }
+    } else {
+      it
     }
+  }
 }
 
 /** Attempt to rewrite the given exception using the lookup function. */
 private fun rewriteException(
-    e: Aapt2Exception,
-    errorFormatMode: SyncOptions.ErrorFormatMode,
-    rewriteFilePositions: Boolean,
-    logger: Logger,
-    identifiedSourceSetMap: Map<String, String> = emptyMap(),
-    blameLookup: (SourceFilePosition) -> SourceFilePosition
+  e: Aapt2Exception,
+  errorFormatMode: SyncOptions.ErrorFormatMode,
+  rewriteFilePositions: Boolean,
+  logger: Logger,
+  identifiedSourceSetMap: Map<String, String> = emptyMap(),
+  blameLookup: (SourceFilePosition) -> SourceFilePosition,
 ): Aapt2Exception {
-    try {
-        var messages =
-            ToolOutputParser(
-                Aapt2OutputParser(identifiedSourceSetMap),
-                Message.Kind.SIMPLE,
-                StdLogger(StdLogger.Level.INFO)
-            ).parseToolOutput(e.output ?: "", true)
-        if (messages.isEmpty()) {
-            // No messages were parsed, create a dummy message.
-            messages = listOf(
-                Message(
-                    Message.Kind.ERROR,
-                    e.output ?: "",
-                    "",
-                    //noinspection VisibleForTests
-                    AbstractAaptOutputParser.AAPT_TOOL_NAME,
-                    SourceFilePosition.UNKNOWN
-                )
-            )
-        }
-
-        if (rewriteFilePositions) {
-            messages = messages.map { message ->
-                message.copy(
-                    sourceFilePositions = rewritePositions(
-                        message.sourceFilePositions,
-                        blameLookup
-                    )
-                )
-            }
-        }
-
-        val detailedMessage = messages.joinToString("\n") {
-            humanReadableMessage(it)
-        }
-
-        // Log messages in a json format so parsers can parse and show them in the build output
-        // window.
-        if (errorFormatMode == SyncOptions.ErrorFormatMode.MACHINE_PARSABLE) {
-            MessageReceiverImpl(errorFormatMode, logger).run {
-                messages.map { message ->
-                    message.copy(
-                        text = e.description,
-                        rawMessage = humanReadableMessage(message)
-                    )
-                }.forEach(this::receiveMessage)
-            }
-        }
-
-        return Aapt2Exception.create(
-            description = e.description,
-            cause = e.cause,
-            output = detailedMessage,
-            processName = e.processName,
-            command = e.command
+  try {
+    var messages =
+      ToolOutputParser(Aapt2OutputParser(identifiedSourceSetMap), Message.Kind.SIMPLE, StdLogger(StdLogger.Level.INFO))
+        .parseToolOutput(e.output ?: "", true)
+    if (messages.isEmpty()) {
+      // No messages were parsed, create a dummy message.
+      messages =
+        listOf(
+          Message(
+            Message.Kind.ERROR,
+            e.output ?: "",
+            "",
+            //noinspection VisibleForTests
+            AbstractAaptOutputParser.AAPT_TOOL_NAME,
+            SourceFilePosition.UNKNOWN,
+          )
         )
-    } catch (e2: Exception) {
-        // Something went wrong, report the original error with the error reporting error suppressed
-        return e.apply { addSuppressed(e2) }
     }
+
+    if (rewriteFilePositions) {
+      messages = messages.map { message -> message.copy(sourceFilePositions = rewritePositions(message.sourceFilePositions, blameLookup)) }
+    }
+
+    val detailedMessage = messages.joinToString("\n") { humanReadableMessage(it) }
+
+    // Log messages in a json format so parsers can parse and show them in the build output
+    // window.
+    if (errorFormatMode == SyncOptions.ErrorFormatMode.MACHINE_PARSABLE) {
+      MessageReceiverImpl(errorFormatMode, logger).run {
+        messages
+          .map { message -> message.copy(text = e.description, rawMessage = humanReadableMessage(message)) }
+          .forEach(this::receiveMessage)
+      }
+    }
+
+    return Aapt2Exception.create(
+      description = e.description,
+      cause = e.cause,
+      output = detailedMessage,
+      processName = e.processName,
+      command = e.command,
+    )
+  } catch (e2: Exception) {
+    // Something went wrong, report the original error with the error reporting error suppressed
+    return e.apply { addSuppressed(e2) }
+  }
 }
 
 private fun rewritePositions(
-    sourceFilePositions: List<SourceFilePosition>,
-    blameLookup: (SourceFilePosition) -> SourceFilePosition
+  sourceFilePositions: List<SourceFilePosition>,
+  blameLookup: (SourceFilePosition) -> SourceFilePosition,
 ): ImmutableList<SourceFilePosition> =
-    ImmutableList.builder<SourceFilePosition>().apply {
-        sourceFilePositions.forEach { add(blameLookup.invoke(it)) }
-    }.build()
+  ImmutableList.builder<SourceFilePosition>().apply { sourceFilePositions.forEach { add(blameLookup.invoke(it)) } }.build()

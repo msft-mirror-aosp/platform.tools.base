@@ -25,104 +25,75 @@ import com.android.tools.build.gradle.internal.profile.VariantMethodType
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
 import javax.inject.Inject
 
-/**
- * Shim object for [LibraryVariantBuilder] that records all mutating accesses to the analytics.
- */
-open class AnalyticsEnabledLibraryVariantBuilder @Inject constructor(
-    override val delegate: LibraryVariantBuilder,
-    stats: GradleBuildVariant.Builder
-) : AnalyticsEnabledVariantBuilder(delegate, stats),
-    LibraryVariantBuilder {
+/** Shim object for [LibraryVariantBuilder] that records all mutating accesses to the analytics. */
+open class AnalyticsEnabledLibraryVariantBuilder
+@Inject
+constructor(override val delegate: LibraryVariantBuilder, stats: GradleBuildVariant.Builder) :
+  AnalyticsEnabledVariantBuilder(delegate, stats), LibraryVariantBuilder {
 
-    override var androidTestEnabled: Boolean
-        get() = delegate.androidTest.enable
-        set(value) {
-            stats.variantApiAccessBuilder.addVariantAccessBuilder().type =
-                VariantMethodType.ANDROID_TEST_ENABLED_VALUE
-            delegate.androidTest.enable = value
-        }
+  override var androidTestEnabled: Boolean
+    get() = delegate.androidTest.enable
+    set(value) {
+      stats.variantApiAccessBuilder.addVariantAccessBuilder().type = VariantMethodType.ANDROID_TEST_ENABLED_VALUE
+      delegate.androidTest.enable = value
+    }
 
-    override var enableAndroidTest: Boolean
-        get() = delegate.androidTest.enable
-        set(value) {
-            stats.variantApiAccessBuilder.addVariantAccessBuilder().type =
-                VariantMethodType.ANDROID_TEST_ENABLED_VALUE
-            delegate.androidTest.enable = value
-        }
+  override var enableAndroidTest: Boolean
+    get() = delegate.androidTest.enable
+    set(value) {
+      stats.variantApiAccessBuilder.addVariantAccessBuilder().type = VariantMethodType.ANDROID_TEST_ENABLED_VALUE
+      delegate.androidTest.enable = value
+    }
 
-    override var enableTestFixtures: Boolean
-        get() = delegate.enableTestFixtures
-        set(value) {
-            stats.variantApiAccessBuilder.addVariantAccessBuilder().type =
-                VariantMethodType.TEST_FIXTURES_ENABLED_VALUE
-            delegate.enableTestFixtures = value
-        }
+  override var enableTestFixtures: Boolean
+    get() = delegate.enableTestFixtures
+    set(value) {
+      stats.variantApiAccessBuilder.addVariantAccessBuilder().type = VariantMethodType.TEST_FIXTURES_ENABLED_VALUE
+      delegate.enableTestFixtures = value
+    }
 
-    override var isMinifyEnabled: Boolean
-        get() = delegate.isMinifyEnabled
-        set(value) {
-            stats.variantApiAccessBuilder.addVariantAccessBuilder().type =
-                VariantMethodType.CODE_MINIFICATION_VALUE_VALUE
-            delegate.isMinifyEnabled = value
-        }
+  override var isMinifyEnabled: Boolean
+    get() = delegate.isMinifyEnabled
+    set(value) {
+      stats.variantApiAccessBuilder.addVariantAccessBuilder().type = VariantMethodType.CODE_MINIFICATION_VALUE_VALUE
+      delegate.isMinifyEnabled = value
+    }
 
-    override val androidTest: AndroidTestBuilder
-        get() {
-            stats.variantApiAccessBuilder.addVariantAccessBuilder().type =
-                VariantMethodType.ANDROID_TEST_BUILDER_VALUE
-            return AnalyticsEnabledAndroidTestBuilder(
-                delegate.androidTest,
-                stats
-            )
-        }
-    override val deviceTests: Map<String, DeviceTestBuilder>
-        get() {
-            stats.variantApiAccessBuilder.addVariantAccessBuilder().type =
-                VariantMethodType.DEVICE_TESTS_BUILDER_VALUE
-            // return a copy of the map every time as new items may have
-            // been added to it since last call.
-            return delegate.deviceTests.mapValues {
-                val value = it.value
-                @Suppress("DEPRECATION")
-                if (value is AndroidTestBuilder) {
-                    AnalyticsEnabledAndroidTestBuilder(
-                        value,
-                        stats
-                    )
-                } else {
-                    AnalyticsEnabledDeviceTestBuilder(
-                        value,
-                        stats
-                    )
-                }
-            }
-        }
+  override val androidTest: AndroidTestBuilder
+    get() {
+      stats.variantApiAccessBuilder.addVariantAccessBuilder().type = VariantMethodType.ANDROID_TEST_BUILDER_VALUE
+      return AnalyticsEnabledAndroidTestBuilder(delegate.androidTest, stats)
+    }
 
-    override val hostTests: Map<String, HostTestBuilder>
-        get() {
-            stats.variantApiAccessBuilder.addVariantAccessBuilder().type =
-                VariantMethodType.HOST_TESTS_BUILDER_VALUE
-            // return a copy of the map every time as new items may have
-            // been added to it since last call.
-            return delegate.hostTests.mapValues {
-                AnalyticsEnabledHostTestBuilder(
-                    it.value,
-                    stats
-                )
-            }
+  override val deviceTests: Map<String, DeviceTestBuilder>
+    get() {
+      stats.variantApiAccessBuilder.addVariantAccessBuilder().type = VariantMethodType.DEVICE_TESTS_BUILDER_VALUE
+      // return a copy of the map every time as new items may have
+      // been added to it since last call.
+      return delegate.deviceTests.mapValues {
+        val value = it.value
+        @Suppress("DEPRECATION")
+        if (value is AndroidTestBuilder) {
+          AnalyticsEnabledAndroidTestBuilder(value, stats)
+        } else {
+          AnalyticsEnabledDeviceTestBuilder(value, stats)
         }
+      }
+    }
 
-    override val suites: Map<String, TestSuiteBuilder>
-        get() {
-            stats.variantApiAccessBuilder.addVariantAccessBuilder().type =
-                VariantMethodType.TEST_SUITE_BUILDER_VALUE
-            // return a copy of the list every time as new items may have
-            // been added to it since last call.
-            return delegate.suites.mapValues {
-                AnalyticsEnabledTestSuiteBuilder(
-                    it.value,
-                    stats
-                )
-            }
-        }
+  override val hostTests: Map<String, HostTestBuilder>
+    get() {
+      stats.variantApiAccessBuilder.addVariantAccessBuilder().type = VariantMethodType.HOST_TESTS_BUILDER_VALUE
+      // return a copy of the map every time as new items may have
+      // been added to it since last call.
+      return delegate.hostTests.mapValues { AnalyticsEnabledHostTestBuilder(it.value, stats) }
+    }
+
+  override val suites: Map<String, TestSuiteBuilder>
+    get() {
+      stats.variantApiAccessBuilder.addVariantAccessBuilder().type = VariantMethodType.TEST_SUITE_BUILDER_VALUE
+      // return a copy of the list every time as new items may have
+      // been added to it since last call.
+      return delegate.suites.mapValues { AnalyticsEnabledTestSuiteBuilder(it.value, stats) }
+    }
 }

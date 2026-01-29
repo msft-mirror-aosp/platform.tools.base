@@ -24,14 +24,11 @@ import org.junit.Test
 /** Integration test to ensure that plugin binary compatibility of AGP APIs is preserved. */
 class ApiCompatibilityTest {
 
-    @get:Rule
-    val project = GradleTestProject.builder().fromTestProject("apiBinaryCompatibility")
-        .create()
+  @get:Rule val project = GradleTestProject.builder().fromTestProject("apiBinaryCompatibility").create()
 
-    @Test
-    fun binaryCompatibilityTest() {
-        val result = project.executor().run(":lib:examplePluginTask")
-        assertThat(result.stdout).contains("Custom task ran OK")
-    }
-
+  @Test
+  fun binaryCompatibilityTest() {
+    val result = project.executor().run(":lib:examplePluginTask")
+    assertThat(result.stdout).contains("Custom task ran OK")
+  }
 }

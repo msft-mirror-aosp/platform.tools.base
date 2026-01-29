@@ -24,92 +24,89 @@ import com.android.build.gradle.internal.dsl.BaseAppModuleExtension
 import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.options.StringOption
 import com.android.testutils.truth.PathSubject.assertThat
+import kotlin.test.assertTrue
 import org.gradle.api.Project
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
-import kotlin.test.assertTrue
 
 @RunWith(Parameterized::class)
 class ProcessApplicationManifestWithSplitsTest(private val abi: String, private val expectedVersion: Int) {
-    @get:Rule
-    val rule = GradleRule.from {
-        androidApplication {
-            android {
-                defaultConfig {
-                    minSdk = 33
-                    versionCode = 1
-                }
-                splits {
-                    // Configures multiple APKs based on ABI.
-                    abi {
-                        // Enables building multiple APKs per ABI.
-                        isEnable = true
+  @get:Rule
+  val rule =
+    GradleRule.from {
+      androidApplication {
+        android {
+          defaultConfig {
+            minSdk = 33
+            versionCode = 1
+          }
+          splits {
+            // Configures multiple APKs based on ABI.
+            abi {
+              // Enables building multiple APKs per ABI.
+              isEnable = true
 
-                        // By default all ABIs are included, so use reset() and include to specify that you only
-                        // want APKs for x86 and x86_64.
+              // By default all ABIs are included, so use reset() and include to specify that you only
+              // want APKs for x86 and x86_64.
 
-                        // Resets the list of ABIs for Gradle to create APKs for to none.
-                        reset()
+              // Resets the list of ABIs for Gradle to create APKs for to none.
+              reset()
 
-                        // Specifies a list of ABIs for Gradle to create APKs for.
-                        include("x86_64", "x86", "arm64-v8a", "armeabi-v7a")
+              // Specifies a list of ABIs for Gradle to create APKs for.
+              include("x86_64", "x86", "arm64-v8a", "armeabi-v7a")
 
-                        // Specifies that you don't want to also generate a universal APK that includes all ABIs.
-                        isUniversalApk = false
-                    }
-                }
+              // Specifies that you don't want to also generate a universal APK that includes all ABIs.
+              isUniversalApk = false
             }
-            pluginCallbacks += MyAppCallback::class.java
+          }
         }
-        gradleProperties {
-            add(BooleanOption.USE_NEW_DSL, false)
+        pluginCallbacks += MyAppCallback::class.java
+      }
+      gradleProperties { add(BooleanOption.USE_NEW_DSL, false) }
+    }
+
+  class MyAppCallback : LegacyApplicationCallback {
+    override fun handleExtension(project: Project, extension: BaseAppModuleExtension) {
+      val abiCodes = mapOf("armeabi-v7a" to 2, "arm64-v8a" to 3, "x86" to 8, "x86_64" to 9)
+
+      extension.applicationVariants.all { variant ->
+        variant.outputs.forEach { output ->
+          // need to force this as the API does not return the right thing.
+          output as ApkVariantOutput
+          val baseAbiVersionCode = abiCodes[output.getFilter(VariantOutput.FilterType.ABI)]
+          if (baseAbiVersionCode != null) {
+            output.versionCodeOverride = baseAbiVersionCode * 1000 + variant.versionCode
+          }
         }
+      }
     }
+  }
 
-    class MyAppCallback: LegacyApplicationCallback {
-        override fun handleExtension(project: Project, extension: BaseAppModuleExtension) {
-            val abiCodes = mapOf("armeabi-v7a" to 2, "arm64-v8a" to 3, "x86" to 8, "x86_64" to 9)
+  companion object {
+    @JvmStatic
+    @Parameterized.Parameters(name = "{0}_{1}")
+    fun parameters() =
+      listOf(
+        arrayOf("armeabi-v7a", 2001),
+        arrayOf("arm64-v8a", 3001),
+        arrayOf("arm64-v8a,armeabi-v7a", 3001),
+        arrayOf("x86", 8001),
+        arrayOf("x86_64", 9001),
+      )
+  }
 
-            extension.applicationVariants.all { variant ->
-                variant.outputs.forEach { output ->
-                    // need to force this as the API does not return the right thing.
-                    output as ApkVariantOutput
-                    val baseAbiVersionCode =
-                        abiCodes[output.getFilter(VariantOutput.FilterType.ABI)]
-                    if (baseAbiVersionCode != null) {
-                        output.versionCodeOverride = baseAbiVersionCode * 1000 + variant.versionCode
-                    }
-                }
-            }
-        }
-    }
+  @Test
+  fun testAppManifestContainsAbiSpecificVersionCode() {
+    val build = rule.build
+    val app = build.androidApplication()
 
-    companion object {
-        @JvmStatic
-        @Parameterized.Parameters(name = "{0}_{1}")
-        fun parameters() = listOf(
-                arrayOf("armeabi-v7a", 2001),
-                arrayOf("arm64-v8a", 3001),
-                arrayOf("arm64-v8a,armeabi-v7a", 3001),
-                arrayOf("x86", 8001),
-                arrayOf("x86_64", 9001)
-        )
-    }
+    val result =
+      build.executor.with(StringOption.IDE_BUILD_TARGET_ABI, abi).with(BooleanOption.ENABLE_LEGACY_API, true).run(":app:assembleDebug")
+    assertTrue { result.failedTasks.isEmpty() }
 
-    @Test
-    fun testAppManifestContainsAbiSpecificVersionCode() {
-        val build = rule.build
-        val app = build.androidApplication()
-
-        val result = build.executor
-                .with(StringOption.IDE_BUILD_TARGET_ABI, abi)
-                .with(BooleanOption.ENABLE_LEGACY_API, true)
-                .run(":app:assembleDebug")
-        assertTrue { result.failedTasks.isEmpty()}
-
-        val manifestFile = app.intermediatesDir.resolve("merged_manifest/debug/processDebugMainManifest/AndroidManifest.xml")
-        assertThat(manifestFile).contains("android:versionCode=\"$expectedVersion\"")
-    }
+    val manifestFile = app.intermediatesDir.resolve("merged_manifest/debug/processDebugMainManifest/AndroidManifest.xml")
+    assertThat(manifestFile).contains("android:versionCode=\"$expectedVersion\"")
+  }
 }

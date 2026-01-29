@@ -17,19 +17,17 @@
 package com.android.build.gradle.internal.tasks.factory
 
 import android.databinding.tool.DataBindingBuilder
-import com.android.build.gradle.internal.SdkComponentsBuildService
 import com.android.build.gradle.internal.services.BaseServices
 import com.android.build.gradle.options.SyncOptions
 import org.gradle.api.component.SoftwareComponentFactory
-import org.gradle.api.provider.Provider
 
-class TaskManagerConfigImpl(
-    private val services: BaseServices,
-    override val componentFactory: SoftwareComponentFactory,
-): TaskManagerConfig {
+class TaskManagerConfigImpl(private val services: BaseServices, override val componentFactory: SoftwareComponentFactory) :
+  TaskManagerConfig {
 
-    override val dataBindingBuilder: DataBindingBuilder = DataBindingBuilder().also {
-        it.setPrintMachineReadableOutput(
-            SyncOptions.getErrorFormatMode(services.projectOptions) == SyncOptions.ErrorFormatMode.MACHINE_PARSABLE)
+  override val dataBindingBuilder: DataBindingBuilder =
+    DataBindingBuilder().also {
+      it.setPrintMachineReadableOutput(
+        SyncOptions.getErrorFormatMode(services.projectOptions) == SyncOptions.ErrorFormatMode.MACHINE_PARSABLE
+      )
     }
 }

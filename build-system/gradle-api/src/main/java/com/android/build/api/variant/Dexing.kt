@@ -23,7 +23,6 @@ import org.gradle.api.file.RegularFileProperty
  * Settings related to how dex files are produced.
  *
  * To change any of these settings :
- *
  * ```kotlin
  * androidComponents {
  *     beforeVariants { variant ->
@@ -35,22 +34,19 @@ import org.gradle.api.file.RegularFileProperty
 @Incubating
 interface Dexing {
 
-    val isMultiDexEnabled: Boolean
+  val isMultiDexEnabled: Boolean
 
-    /**
-     * If set, will point to the multiDex proguard file
-     *
-     * Note that the [GeneratesApkBuilder.enableMultiDex] must be set to true for this
-     * property to be used.
-     */
-    val multiDexKeepProguard: RegularFileProperty
+  /**
+   * If set, will point to the multiDex proguard file
+   *
+   * Note that the [GeneratesApkBuilder.enableMultiDex] must be set to true for this property to be used.
+   */
+  val multiDexKeepProguard: RegularFileProperty
 
-    /**
-     * If set, will point to a text file that specifies additional classes that will be compiled
-     * into the main dex file.
-     *
-     * Note that the [GeneratesApkBuilder.enableMultiDex] must be set to true for this
-     * property to be used.
-     */
-    val multiDexKeepFile: RegularFileProperty
+  /**
+   * If set, will point to a text file that specifies additional classes that will be compiled into the main dex file.
+   *
+   * Note that the [GeneratesApkBuilder.enableMultiDex] must be set to true for this property to be used.
+   */
+  val multiDexKeepFile: RegularFileProperty
 }

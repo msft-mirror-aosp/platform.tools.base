@@ -16,7 +16,6 @@
 
 package com.android.build.gradle.internal.core.dsl.impl.features
 
-
 import com.android.build.api.dsl.CommonExtension
 import com.android.build.api.dsl.EmulatorControl
 import com.android.build.api.dsl.ManagedDevices
@@ -24,23 +23,27 @@ import com.android.build.api.variant.AndroidVersion
 import com.android.build.gradle.internal.core.dsl.features.DeviceTestOptionsDslInfo
 import com.android.build.gradle.internal.utils.createTargetSdkVersion
 
-internal class DeviceTestOptionsDslInfoImpl(
-    private val extension: CommonExtension,
-): DeviceTestOptionsDslInfo {
-    override val animationsDisabled: Boolean
-        get() = extension.testOptions.animationsDisabled
-    override val execution: String
-        get() = extension.testOptions.execution
+internal class DeviceTestOptionsDslInfoImpl(private val extension: CommonExtension) : DeviceTestOptionsDslInfo {
+  override val animationsDisabled: Boolean
+    get() = extension.testOptions.animationsDisabled
 
-    override val resultsDir: String?
-        get() = extension.testOptions.resultsDir
-    override val reportDir: String?
-        get() = extension.testOptions.reportDir
-    override val managedDevices: ManagedDevices
-        get() = extension.testOptions.managedDevices
-    override val emulatorControl: EmulatorControl
-        get() = extension.testOptions.emulatorControl
-    override val targetSdkVersion: AndroidVersion?
-        get() = extension.testOptions.run { createTargetSdkVersion(targetSdk, targetSdkPreview)}
-    override val codeCoverageEnabled: Boolean = false
+  override val execution: String
+    get() = extension.testOptions.execution
+
+  override val resultsDir: String?
+    get() = extension.testOptions.resultsDir
+
+  override val reportDir: String?
+    get() = extension.testOptions.reportDir
+
+  override val managedDevices: ManagedDevices
+    get() = extension.testOptions.managedDevices
+
+  override val emulatorControl: EmulatorControl
+    get() = extension.testOptions.emulatorControl
+
+  override val targetSdkVersion: AndroidVersion?
+    get() = extension.testOptions.run { createTargetSdkVersion(targetSdk, targetSdkPreview) }
+
+  override val codeCoverageEnabled: Boolean = false
 }

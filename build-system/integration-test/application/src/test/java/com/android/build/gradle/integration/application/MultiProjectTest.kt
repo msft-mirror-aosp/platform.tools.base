@@ -23,32 +23,15 @@ import org.junit.Test
 
 class MultiProjectTest : ModelComparator() {
 
-    @get:Rule
-    val project = GradleTestProject.builder()
-        .fromTestProject("multiproject")
-        .disableBuiltInKotlin()
-        .create()
+  @get:Rule val project = GradleTestProject.builder().fromTestProject("multiproject").disableBuiltInKotlin().create()
 
-    @Test
-    fun `check models`() {
-        val result = project.modelV2()
-            .fetchModels(variantName = "release")
+  @Test
+  fun `check models`() {
+    val result = project.modelV2().fetchModels(variantName = "release")
 
-        with(result).compareBasicAndroidProject(
-            projectAction = { getProject(":baseLibrary") },
-            goldenFile = "baseLibrary_BasicAndroidProject"
-        )
-        with(result).compareAndroidProject(
-            projectAction = { getProject(":baseLibrary") },
-            goldenFile = "baseLibrary_AndroidProject"
-        )
-        with(result).compareAndroidDsl(
-            projectAction = { getProject(":baseLibrary") },
-            goldenFile = "baseLibrary_AndroidDsl"
-        )
-        with(result).compareVariantDependencies(
-            projectAction = { getProject(":baseLibrary") },
-            goldenFile = "baseLibrary_VariantDependencies"
-        )
-    }
+    with(result).compareBasicAndroidProject(projectAction = { getProject(":baseLibrary") }, goldenFile = "baseLibrary_BasicAndroidProject")
+    with(result).compareAndroidProject(projectAction = { getProject(":baseLibrary") }, goldenFile = "baseLibrary_AndroidProject")
+    with(result).compareAndroidDsl(projectAction = { getProject(":baseLibrary") }, goldenFile = "baseLibrary_AndroidDsl")
+    with(result).compareVariantDependencies(projectAction = { getProject(":baseLibrary") }, goldenFile = "baseLibrary_VariantDependencies")
+  }
 }

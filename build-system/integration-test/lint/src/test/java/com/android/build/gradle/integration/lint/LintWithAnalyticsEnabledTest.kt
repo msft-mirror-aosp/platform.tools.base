@@ -22,40 +22,31 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 
-/** Integration test that runs lint with analytics enabled. Regression test for b/178904638  */
+/** Integration test that runs lint with analytics enabled. Regression test for b/178904638 */
 class LintWithAnalyticsEnabledTest {
 
-    @get:Rule
-    val project: GradleTestProject =
-        GradleTestProject.builder()
-            .fromTestProject("lintKotlin")
-            .create()
+  @get:Rule val project: GradleTestProject = GradleTestProject.builder().fromTestProject("lintKotlin").create()
 
-    @Before
-    fun disableAbortOnError() {
-        project.getSubproject(":app").buildFile
-            .appendText("\nandroid.lintOptions.abortOnError=false\n")
-        project.getSubproject(":library").buildFile
-            .appendText("\nandroid.lintOptions.abortOnError=false\n")
-    }
+  @Before
+  fun disableAbortOnError() {
+    project.getSubproject(":app").buildFile.appendText("\nandroid.lintOptions.abortOnError=false\n")
+    project.getSubproject(":library").buildFile.appendText("\nandroid.lintOptions.abortOnError=false\n")
+  }
 
-    @Test
-    fun testLint() {
-        getExecutor().run("lint")
-    }
+  @Test
+  fun testLint() {
+    getExecutor().run("lint")
+  }
 
-    @Test
-    fun testLintFix() {
-        getExecutor().expectFailure().run("lintFix").assertErrorContains(
-            "Aborting build since sources were modified to apply quickfixes"
-        )
-    }
+  @Test
+  fun testLintFix() {
+    getExecutor().expectFailure().run("lintFix").assertErrorContains("Aborting build since sources were modified to apply quickfixes")
+  }
 
-    @Test
-    fun testBuild() {
-        getExecutor().run("build")
-    }
+  @Test
+  fun testBuild() {
+    getExecutor().run("build")
+  }
 
-    private fun getExecutor(): GradleTaskExecutor =
-        project.executor().with(BooleanOption.ENABLE_PROFILE_JSON, true)
+  private fun getExecutor(): GradleTaskExecutor = project.executor().with(BooleanOption.ENABLE_PROFILE_JSON, true)
 }

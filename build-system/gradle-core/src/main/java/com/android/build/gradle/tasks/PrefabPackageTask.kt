@@ -30,6 +30,7 @@ import com.android.build.gradle.internal.tasks.factory.VariantTaskCreationAction
 import com.android.build.gradle.internal.utils.fromDisallowChanges
 import com.android.build.gradle.internal.utils.setDisallowChanges
 import com.android.buildanalyzer.common.TaskCategory
+import javax.inject.Inject
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.FileSystemOperations
@@ -42,76 +43,59 @@ import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.work.DisableCachingByDefault
-import javax.inject.Inject
 
 /**
- * Publishes this module's native build outputs and specified headers
- * into a prefab-defined folder structure. This can be consumed either
- * by tasks that produce AAR or by other modules in this project.
+ * Publishes this module's native build outputs and specified headers into a prefab-defined folder structure. This can be consumed either by
+ * tasks that produce AAR or by other modules in this project.
  *
  * The exported artifacts are named [InternalArtifactType.PREFAB_PACKAGE]
  */
 @DisableCachingByDefault
 @BuildAnalyzer(primaryTaskCategory = TaskCategory.NATIVE)
 abstract class PrefabPackageTask : NonIncrementalTask() {
-    @Inject
-    protected abstract fun getFileOperations(): FileSystemOperations
+  @Inject protected abstract fun getFileOperations(): FileSystemOperations
 
-    @get:Internal
-    abstract val sdkComponents: Property<SdkComponentsBuildService>
+  @get:Internal abstract val sdkComponents: Property<SdkComponentsBuildService>
 
-    @get:Nested
-    lateinit var publication: PrefabPublication
-        private set
+  @get:Nested
+  lateinit var publication: PrefabPublication
+    private set
 
-    @get:InputFiles
-    @get:PathSensitive(PathSensitivity.RELATIVE)
-    abstract val libraries: ConfigurableFileCollection
+  @get:InputFiles @get:PathSensitive(PathSensitivity.RELATIVE) abstract val libraries: ConfigurableFileCollection
 
-    @get:OutputDirectory
-    abstract val outputDirectory: DirectoryProperty
+  @get:OutputDirectory abstract val outputDirectory: DirectoryProperty
 
-    override fun doTaskAction() {
-        val patched = publication.copyWithLibraryInformationAdded()
-        buildPrefabPackage(
-            fileOperations = getFileOperations(),
-            publication = patched
-        )
+  override fun doTaskAction() {
+    val patched = publication.copyWithLibraryInformationAdded()
+    buildPrefabPackage(fileOperations = getFileOperations(), publication = patched)
+  }
+
+  class CreationAction(
+    private val publication: PrefabPublication,
+    private val taskName: String,
+    componentProperties: LibraryCreationConfig,
+  ) : VariantTaskCreationAction<PrefabPackageTask, LibraryCreationConfig>(componentProperties) {
+    override val name: String
+      get() = taskName
+
+    override val type: Class<PrefabPackageTask>
+      get() = PrefabPackageTask::class.java
+
+    override fun handleProvider(taskProvider: TaskProvider<PrefabPackageTask>) {
+      super.handleProvider(taskProvider)
+      creationConfig.artifacts
+        .setInitialProvider(taskProvider, PrefabPackageTask::outputDirectory)
+        .withName("prefab")
+        .atLocation(publication.installationFolder.parent)
+        .on(InternalArtifactType.PREFAB_PACKAGE)
     }
 
-    class CreationAction(
-        private val publication: PrefabPublication,
-        private val taskName : String,
-        componentProperties: LibraryCreationConfig
-    ) : VariantTaskCreationAction<PrefabPackageTask, LibraryCreationConfig>(
-        componentProperties
-    ) {
-        override val name: String
-            get() = taskName
-
-        override val type: Class<PrefabPackageTask>
-            get() = PrefabPackageTask::class.java
-
-        override fun handleProvider(taskProvider: TaskProvider<PrefabPackageTask>) {
-            super.handleProvider(taskProvider)
-            creationConfig.artifacts.setInitialProvider(
-                taskProvider,
-                PrefabPackageTask::outputDirectory
-            ).withName("prefab")
-             .atLocation(publication.installationFolder.parent)
-             .on(InternalArtifactType.PREFAB_PACKAGE)
-        }
-
-        override fun configure(task: PrefabPackageTask) {
-            super.configure(task)
-            task.description = "Creates a Prefab package for inclusion in an AAR"
-            task.publication = publication
-            task.sdkComponents.setDisallowChanges(
-                getBuildService(creationConfig.services.buildServiceRegistry)
-            )
-            task.libraries.fromDisallowChanges(
-                creationConfig.artifacts.getAll(InternalMultipleArtifactType.EXTERNAL_NATIVE_BUILD_LIBS)
-            )
-        }
+    override fun configure(task: PrefabPackageTask) {
+      super.configure(task)
+      task.description = "Creates a Prefab package for inclusion in an AAR"
+      task.publication = publication
+      task.sdkComponents.setDisallowChanges(getBuildService(creationConfig.services.buildServiceRegistry))
+      task.libraries.fromDisallowChanges(creationConfig.artifacts.getAll(InternalMultipleArtifactType.EXTERNAL_NATIVE_BUILD_LIBS))
     }
+  }
 }

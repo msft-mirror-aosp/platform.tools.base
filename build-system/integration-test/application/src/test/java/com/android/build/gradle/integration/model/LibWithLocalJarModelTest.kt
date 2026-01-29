@@ -28,52 +28,33 @@ import org.junit.Rule
 import org.junit.Test
 
 class LibWithLocalJarModelTest : ModelComparator() {
-    @get:Rule
-    val rule = GradleRule.from {
-        androidApplication {
-            android {
-                enableKotlin = false
-            }
-            dependencies {
-                implementation(project(DEFAULT_LIB_PATH))
-            }
-        }
-        androidLibrary {
-            android {
-                enableKotlin = false
-            }
-            dependencies {
-                implementation(
-                    localJar("foo.jar") {
-                        addEmptyClasses("com/example/MainClass")
-                    }
-                )
-            }
-        }
+  @get:Rule
+  val rule =
+    GradleRule.from {
+      androidApplication {
+        android { enableKotlin = false }
+        dependencies { implementation(project(DEFAULT_LIB_PATH)) }
+      }
+      androidLibrary {
+        android { enableKotlin = false }
+        dependencies { implementation(localJar("foo.jar") { addEmptyClasses("com/example/MainClass") }) }
+      }
     }
 
-    private lateinit var result: ModelBuilderV2.FetchResult<ModelContainerV2>
+  private lateinit var result: ModelBuilderV2.FetchResult<ModelContainerV2>
 
-    @Before
-    fun setup() {
-        result = rule.build.modelBuilder
-            .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
-            .fetchModels(variantName = "debug")
-    }
+  @Before
+  fun setup() {
+    result = rule.build.modelBuilder.ignoreSyncIssues(SyncIssue.SEVERITY_WARNING).fetchModels(variantName = "debug")
+  }
 
-    @Test
-    fun `test app dependency model`() {
-        with(result).compareVariantDependencies(
-            projectAction = { getProject(DEFAULT_APP_PATH) },
-            goldenFile = "app"
-        )
-    }
+  @Test
+  fun `test app dependency model`() {
+    with(result).compareVariantDependencies(projectAction = { getProject(DEFAULT_APP_PATH) }, goldenFile = "app")
+  }
 
-    @Test
-    fun `test lib dependency model`() {
-        with(result).compareVariantDependencies(
-            projectAction = { getProject(DEFAULT_LIB_PATH) },
-            goldenFile = "lib"
-        )
-    }
+  @Test
+  fun `test lib dependency model`() {
+    with(result).compareVariantDependencies(projectAction = { getProject(DEFAULT_LIB_PATH) }, goldenFile = "lib")
+  }
 }

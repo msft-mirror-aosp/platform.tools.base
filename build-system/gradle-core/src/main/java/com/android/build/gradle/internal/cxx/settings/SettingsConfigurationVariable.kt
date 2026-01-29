@@ -16,10 +16,5 @@
 
 package com.android.build.gradle.internal.cxx.settings
 
-/**
- * Schema of 'variables' element from CMakeSettings.json
- */
-data class SettingsConfigurationVariable(
-    val name: String,
-    val value: String
-)
+/** Schema of 'variables' element from CMakeSettings.json */
+data class SettingsConfigurationVariable(val name: String, val value: String)

@@ -24,13 +24,15 @@ import org.junit.Test
 
 class SeparateTestAccessToTestedApks {
 
-    @get:Rule
-    var project = builder().fromTestProject("separateTestModule").create()
+  @get:Rule var project = builder().fromTestProject("separateTestModule").create()
 
-    @Before
-    fun setUp() {
-        project.getSubproject(":test").buildFile.appendText(
-            """
+  @Before
+  fun setUp() {
+    project
+      .getSubproject(":test")
+      .buildFile
+      .appendText(
+        """
                 import org.gradle.api.DefaultTask
                 import org.gradle.api.file.DirectoryProperty
                 import org.gradle.api.tasks.InputFiles
@@ -68,18 +70,15 @@ class SeparateTestAccessToTestedApks {
                         it.builtArtifactsLoader.set(variant.artifacts.getBuiltArtifactsLoader())
                     }
                 })
-            """.trimIndent()
-        )
-    }
+            """
+          .trimIndent()
+      )
+  }
 
-    @Test
-    fun build() {
-        val result = project.execute(":test:debugDisplayApks")
-        Truth.assertThat(
-            result.didWorkTasks.contains(":test:debugDisplayApks")
-        ).isTrue()
-        Truth.assertThat(
-            result.stdout.findAll("app-debug.apk").count()
-        ).isEqualTo(1)
-    }
+  @Test
+  fun build() {
+    val result = project.execute(":test:debugDisplayApks")
+    Truth.assertThat(result.didWorkTasks.contains(":test:debugDisplayApks")).isTrue()
+    Truth.assertThat(result.stdout.findAll("app-debug.apk").count()).isEqualTo(1)
+  }
 }

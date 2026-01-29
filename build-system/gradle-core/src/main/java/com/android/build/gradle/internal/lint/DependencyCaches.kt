@@ -22,8 +22,8 @@ import com.android.tools.lint.model.LintModelLibrary
 import java.io.File
 
 internal class DependencyCaches(
-    val localJarCache: CreatingCache<File, List<File>>,
-    val mavenCoordinatesCache: MavenCoordinatesCacheBuildService,
+  val localJarCache: CreatingCache<File, List<File>>,
+  val mavenCoordinatesCache: MavenCoordinatesCacheBuildService,
 ) {
-    val libraryMap: MutableMap<String, LintModelLibrary> = mutableMapOf()
+  val libraryMap: MutableMap<String, LintModelLibrary> = mutableMapOf()
 }

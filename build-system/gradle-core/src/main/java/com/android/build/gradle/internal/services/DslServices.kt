@@ -33,38 +33,31 @@ import org.gradle.api.provider.Provider
  *
  * This contains whatever is needed by all the DSL objects.
  *
- * This is meant to be transient and only available by the DSL objects. Other stages of the
- * plugin will use different services objects.
+ * This is meant to be transient and only available by the DSL objects. Other stages of the plugin will use different services objects.
  */
-interface DslServices: BaseServices {
+interface DslServices : BaseServices {
 
-    val logger: Logger
-    val buildDirectory: DirectoryProperty
+  val logger: Logger
+  val buildDirectory: DirectoryProperty
 
-    @Deprecated("Should not be used in new DSL object. Only for older DSL objects.")
-    val sdkComponents: Provider<SdkComponentsBuildService>
-    @Deprecated("Should not be used in new DSL object. Only for older DSL objects.")
-    val versionedSdkLoaderService: VersionedSdkLoaderService
-    val projectType: ProjectType?
-    val configurations: ConfigurationContainer
+  @Deprecated("Should not be used in new DSL object. Only for older DSL objects.") val sdkComponents: Provider<SdkComponentsBuildService>
+  @Deprecated("Should not be used in new DSL object. Only for older DSL objects.") val versionedSdkLoaderService: VersionedSdkLoaderService
+  val projectType: ProjectType?
+  val configurations: ConfigurationContainer
 
+  fun <T> domainObjectSet(type: Class<T>): DomainObjectSet<T>
 
-    fun <T> domainObjectSet(type: Class<T>): DomainObjectSet<T>
-    fun <T> domainObjectContainer(
-        type: Class<T>,
-        factory: NamedDomainObjectFactory<T>
-    ): NamedDomainObjectContainer<T>
-    fun <T> domainObjectContainer(type: Class<T>): NamedDomainObjectContainer<T>
-    fun <T> polymorphicDomainObjectContainer(
-        type: Class<T>
-    ): ExtensiblePolymorphicDomainObjectContainer<T>
+  fun <T> domainObjectContainer(type: Class<T>, factory: NamedDomainObjectFactory<T>): NamedDomainObjectContainer<T>
 
-    @Deprecated("do not use. DSL elements should not use Property<T> objects")
-    fun <T> property(type: Class<T>): Property<T>
-    @Deprecated("do not use. DSL elements should not use DirectoryProperty objects")
-    fun directoryProperty(): DirectoryProperty
+  fun <T> domainObjectContainer(type: Class<T>): NamedDomainObjectContainer<T>
 
-    fun <T> provider(type: Class<T>, value: T?): Provider<T>
+  fun <T> polymorphicDomainObjectContainer(type: Class<T>): ExtensiblePolymorphicDomainObjectContainer<T>
 
-    fun <T: Any> newDecoratedInstance(dslClass: Class<T>, vararg args: Any) : T
+  @Deprecated("do not use. DSL elements should not use Property<T> objects") fun <T> property(type: Class<T>): Property<T>
+
+  @Deprecated("do not use. DSL elements should not use DirectoryProperty objects") fun directoryProperty(): DirectoryProperty
+
+  fun <T> provider(type: Class<T>, value: T?): Provider<T>
+
+  fun <T : Any> newDecoratedInstance(dslClass: Class<T>, vararg args: Any): T
 }

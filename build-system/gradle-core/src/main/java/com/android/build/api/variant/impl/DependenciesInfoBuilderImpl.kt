@@ -21,33 +21,28 @@ import com.android.build.api.variant.DependenciesInfoBuilder
 import com.android.build.gradle.internal.services.VariantBuilderServices
 import javax.inject.Inject
 
-open class DependenciesInfoBuilderImpl @Inject constructor(
-    variantBuilderServices: VariantBuilderServices,
-    dslDependencyInfo: DependenciesInfo,
-): DependenciesInfoBuilder {
+open class DependenciesInfoBuilderImpl
+@Inject
+constructor(variantBuilderServices: VariantBuilderServices, dslDependencyInfo: DependenciesInfo) : DependenciesInfoBuilder {
 
-    private val includeInApkValue = variantBuilderServices.valueOf(dslDependencyInfo.includeInApk)
-    private val includeInBundleValue = variantBuilderServices.valueOf(dslDependencyInfo.includeInBundle)
+  private val includeInApkValue = variantBuilderServices.valueOf(dslDependencyInfo.includeInApk)
+  private val includeInBundleValue = variantBuilderServices.valueOf(dslDependencyInfo.includeInBundle)
 
-    @Deprecated(
-        "This property is renamed to includeInApk",
-        replaceWith = ReplaceWith("includeInApk")
-    )
-    override var includedInApk: Boolean
-        set(value) = includeInApkValue.set(value)
-        get() = includeInApkValue.get()
+  @Deprecated("This property is renamed to includeInApk", replaceWith = ReplaceWith("includeInApk"))
+  override var includedInApk: Boolean
+    set(value) = includeInApkValue.set(value)
+    get() = includeInApkValue.get()
 
-    @Deprecated(
-        "This property is renamed to includeInBundle",
-        replaceWith = ReplaceWith("includeInBundle")
-    )
-    override var includedInBundle: Boolean
-        set(value) = includeInBundleValue.set(value)
-        get() = includeInBundleValue.get()
-    override var includeInApk: Boolean
-        set(value) = includeInApkValue.set(value)
-        get() = includeInApkValue.get()
-    override var includeInBundle: Boolean
-        set(value) = includeInBundleValue.set(value)
-        get() = includeInBundleValue.get()
+  @Deprecated("This property is renamed to includeInBundle", replaceWith = ReplaceWith("includeInBundle"))
+  override var includedInBundle: Boolean
+    set(value) = includeInBundleValue.set(value)
+    get() = includeInBundleValue.get()
+
+  override var includeInApk: Boolean
+    set(value) = includeInApkValue.set(value)
+    get() = includeInApkValue.get()
+
+  override var includeInBundle: Boolean
+    set(value) = includeInBundleValue.set(value)
+    get() = includeInBundleValue.get()
 }

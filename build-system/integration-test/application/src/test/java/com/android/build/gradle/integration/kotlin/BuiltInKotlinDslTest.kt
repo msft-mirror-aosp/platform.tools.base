@@ -24,41 +24,23 @@ import org.junit.Test
 
 class BuiltInKotlinDslTest() {
 
-    @get:Rule
-    val rule = GradleRule.from {
-        androidApplication {
-            HelloWorldAndroid.setupKotlin(files)
-        }
-    }
+  @get:Rule val rule = GradleRule.from { androidApplication { HelloWorldAndroid.setupKotlin(files) } }
 
-    @Test
-    fun `set enableKotlin=true, expect Kotlin compile task to run`() {
-        val build = rule.build {
-            androidApplication {
-                android {
-                    enableKotlin = true
-                }
-            }
-        }
+  @Test
+  fun `set enableKotlin=true, expect Kotlin compile task to run`() {
+    val build = rule.build { androidApplication { android { enableKotlin = true } } }
 
-        val result = build.executor.run(":app:assembleDebug")
+    val result = build.executor.run(":app:assembleDebug")
 
-        assertThat(result.tasks).contains(":app:compileDebugKotlin")
-    }
+    assertThat(result.tasks).contains(":app:compileDebugKotlin")
+  }
 
-    @Test
-    fun `set enableKotlin=false, expect Kotlin compile task to not run`() {
-        val build = rule.build {
-            androidApplication {
-                android {
-                    enableKotlin = false
-                }
-            }
-        }
+  @Test
+  fun `set enableKotlin=false, expect Kotlin compile task to not run`() {
+    val build = rule.build { androidApplication { android { enableKotlin = false } } }
 
-        val result = build.executor.run(":app:assembleDebug")
+    val result = build.executor.run(":app:assembleDebug")
 
-        assertThat(result.tasks).doesNotContain(":app:compileDebugKotlin")
-    }
-
+    assertThat(result.tasks).doesNotContain(":app:compileDebugKotlin")
+  }
 }

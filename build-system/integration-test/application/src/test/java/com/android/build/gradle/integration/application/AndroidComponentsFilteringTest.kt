@@ -22,89 +22,89 @@ import com.google.common.truth.Truth
 import org.junit.Rule
 import org.junit.Test
 
-class AndroidComponentsFilteringTest
-    : AbstractReturnGivenBuildResultTest<String,
-        AndroidComponentsFilteringTest.VariantBuilder,
-        List<AndroidComponentsFilteringTest.VariantInfo>>() {
+class AndroidComponentsFilteringTest :
+  AbstractReturnGivenBuildResultTest<
+    String,
+    AndroidComponentsFilteringTest.VariantBuilder,
+    List<AndroidComponentsFilteringTest.VariantInfo>,
+  >() {
 
-    @get:Rule
-    val project =
-            GradleTestProject.builder().fromTestProject("emptyApp").create()
+  @get:Rule val project = GradleTestProject.builder().fromTestProject("emptyApp").create()
 
-    @Test
-    fun `before-unit-tests filtering via new api using buildtype callback`() {
-        given {
-            """
+  @Test
+  fun `before-unit-tests filtering via new api using buildtype callback`() {
+    given {
+      """
                 |    beforeVariants(selector().withBuildType("debug")) {
                 |        unitTestEnabled = false
                 |    }
             """
-        }
-
-        expect {
-            variant {
-                name = "release"
-                unitTest = false
-                androidTest = false
-            }
-            variant {
-                name = "debug"
-                unitTest = false
-            }
-        }
     }
 
-    @Test
-    fun `before-android-tests filtering via new api using buildtype callback`() {
-        given {
-            """
+    expect {
+      variant {
+        name = "release"
+        unitTest = false
+        androidTest = false
+      }
+      variant {
+        name = "debug"
+        unitTest = false
+      }
+    }
+  }
+
+  @Test
+  fun `before-android-tests filtering via new api using buildtype callback`() {
+    given {
+      """
                 |    beforeVariants(selector().withBuildType("debug")) {
                 |        androidTestEnabled = false
                 |    }
             """
-        }
-
-        expect {
-            variant {
-                name = "release"
-                unitTest = false
-                androidTest = false
-            }
-            variant {
-                name = "debug"
-                androidTest = false
-            }
-        }
     }
 
-    @Test
-    fun `before-test-fixtures filtering via new api using buildtype callback`() {
-        given {
-            """
+    expect {
+      variant {
+        name = "release"
+        unitTest = false
+        androidTest = false
+      }
+      variant {
+        name = "debug"
+        androidTest = false
+      }
+    }
+  }
+
+  @Test
+  fun `before-test-fixtures filtering via new api using buildtype callback`() {
+    given {
+      """
                 |    beforeVariants(selector().withBuildType("debug")) {
                 |        enableTestFixtures = true
                 |    }
             """
-        }
-
-        expect {
-            variant {
-                name = "release"
-                unitTest = false
-                androidTest = false
-                testFixtures = false
-            }
-            variant {
-                name = "debug"
-                testFixtures = true
-            }
-        }
     }
 
-    @Test
-    fun `before-unit-tests filtering via new api using buildtype and flavor callback`() {
-        android {
-            """
+    expect {
+      variant {
+        name = "release"
+        unitTest = false
+        androidTest = false
+        testFixtures = false
+      }
+      variant {
+        name = "debug"
+        testFixtures = true
+      }
+    }
+  }
+
+  @Test
+  fun `before-unit-tests filtering via new api using buildtype and flavor callback`() {
+    android {
+      """
                 |    flavorDimensions "one"
                 |    productFlavors {
                 |        flavor1 {
@@ -115,10 +115,10 @@ class AndroidComponentsFilteringTest
                 |        }
                 |    }
             """
-        }
+    }
 
-        given {
-            """
+    given {
+      """
                 |    beforeVariants(
                 |            selector()
                 |               .withFlavor(new kotlin.Pair("one", "flavor1"))
@@ -126,33 +126,31 @@ class AndroidComponentsFilteringTest
                 |        unitTestEnabled = false
                 |    }
             """
-        }
-
-        expect {
-            variant {
-                name = "flavor1Debug"
-                unitTest = false
-            }
-            variant {
-                name = "flavor1Release"
-                unitTest = false
-                androidTest = false
-            }
-            variant {
-                name = "flavor2Release"
-                unitTest = false
-                androidTest = false
-            }
-            variant {
-                name = "flavor2Debug"
-            }
-        }
     }
 
-    @Test
-    fun `before-android-tests filtering via new api using buildtype and flavor callback`() {
-        android {
-            """
+    expect {
+      variant {
+        name = "flavor1Debug"
+        unitTest = false
+      }
+      variant {
+        name = "flavor1Release"
+        unitTest = false
+        androidTest = false
+      }
+      variant {
+        name = "flavor2Release"
+        unitTest = false
+        androidTest = false
+      }
+      variant { name = "flavor2Debug" }
+    }
+  }
+
+  @Test
+  fun `before-android-tests filtering via new api using buildtype and flavor callback`() {
+    android {
+      """
                 |    flavorDimensions "one"
                 |    productFlavors {
                 |        flavor1 {
@@ -163,10 +161,10 @@ class AndroidComponentsFilteringTest
                 |        }
                 |    }
             """
-        }
+    }
 
-        given {
-            """
+    given {
+      """
                 |    beforeVariants(
                 |            selector()
                 |               .withFlavor(new kotlin.Pair("one", "flavor1"))
@@ -174,31 +172,31 @@ class AndroidComponentsFilteringTest
                 |        androidTestEnabled = false
                 |    }
             """
-        }
-
-        expect {
-            variant {
-                name = "flavor1Debug"
-                androidTest = false
-            }
-            variant {
-                name = "flavor1Release"
-                unitTest = false
-                androidTest = false
-            }
-            variant {
-                name = "flavor2Release"
-                unitTest = false
-                androidTest = false
-            }
-            variant { name = "flavor2Debug" }
-        }
     }
 
-    @Test
-    fun `before-test-fixtures filtering via new api using buildtype and flavor callback`() {
-        android {
-            """
+    expect {
+      variant {
+        name = "flavor1Debug"
+        androidTest = false
+      }
+      variant {
+        name = "flavor1Release"
+        unitTest = false
+        androidTest = false
+      }
+      variant {
+        name = "flavor2Release"
+        unitTest = false
+        androidTest = false
+      }
+      variant { name = "flavor2Debug" }
+    }
+  }
+
+  @Test
+  fun `before-test-fixtures filtering via new api using buildtype and flavor callback`() {
+    android {
+      """
                 |    flavorDimensions "one"
                 |    productFlavors {
                 |        flavor1 {
@@ -210,10 +208,10 @@ class AndroidComponentsFilteringTest
                 |    }
                 |    testFixtures.enable = true
             """
-        }
+    }
 
-        given {
-            """
+    given {
+      """
                 |    beforeVariants(
                 |            selector()
                 |               .withFlavor(new kotlin.Pair("one", "flavor1"))
@@ -221,76 +219,76 @@ class AndroidComponentsFilteringTest
                 |        enableTestFixtures = false
                 |    }
             """
-        }
-
-        expect {
-            variant {
-                name = "flavor1Debug"
-                testFixtures = false
-            }
-            variant {
-                name = "flavor1Release"
-                testFixtures = true
-                unitTest = false
-                androidTest = false
-            }
-            variant {
-                name = "flavor2Release"
-                testFixtures = true
-                unitTest = false
-                androidTest = false
-            }
-            variant {
-                name = "flavor2Debug"
-                testFixtures = true
-            }
-        }
     }
 
-    @Test
-    fun `filtering using generic callback on build type names`() {
-        given {
-            """
+    expect {
+      variant {
+        name = "flavor1Debug"
+        testFixtures = false
+      }
+      variant {
+        name = "flavor1Release"
+        testFixtures = true
+        unitTest = false
+        androidTest = false
+      }
+      variant {
+        name = "flavor2Release"
+        testFixtures = true
+        unitTest = false
+        androidTest = false
+      }
+      variant {
+        name = "flavor2Debug"
+        testFixtures = true
+      }
+    }
+  }
+
+  @Test
+  fun `filtering using generic callback on build type names`() {
+    given {
+      """
                 |    beforeVariants(selector().all(), {
                 |        if (buildType.equals("debug")) {
                 |            enable = false
                 |        }
                 |    })
             """
-        }
-
-        expect {
-            variant {
-                name = "release"
-                unitTest = false
-                androidTest = false
-            }
-        }
     }
 
-    @Test
-    fun `filtering using buildtype callback`() {
-        given {
-            """
+    expect {
+      variant {
+        name = "release"
+        unitTest = false
+        androidTest = false
+      }
+    }
+  }
+
+  @Test
+  fun `filtering using buildtype callback`() {
+    given {
+      """
                 |    beforeVariants(selector().withBuildType("debug"), {
                 |        enable = false
                 |    })
             """
-        }
-
-        expect {
-            variant {
-                name = "release"
-                unitTest = false
-                androidTest = false
-            }
-        }
     }
 
-    @Test
-    fun `filtering using flavor callback`() {
-        android {
-            """
+    expect {
+      variant {
+        name = "release"
+        unitTest = false
+        androidTest = false
+      }
+    }
+  }
+
+  @Test
+  fun `filtering using flavor callback`() {
+    android {
+      """
                 |    flavorDimensions "one"
                 |    productFlavors {
                 |        flavor1 {
@@ -301,30 +299,30 @@ class AndroidComponentsFilteringTest
                 |        }
                 |    }
             """
-        }
+    }
 
-        given {
-            """
+    given {
+      """
                 |    beforeVariants(selector().withFlavor(new kotlin.Pair("one", "flavor1")), {
                 |        enable = false
                 |    })
             """
-        }
-
-        expect {
-            variant { name = "flavor2Debug" }
-            variant {
-                name = "flavor2Release"
-                unitTest = false
-                androidTest = false
-            }
-        }
     }
 
-    @Test
-    fun `filtering using multiple flavor callbacks`() {
-        android {
-            """
+    expect {
+      variant { name = "flavor2Debug" }
+      variant {
+        name = "flavor2Release"
+        unitTest = false
+        androidTest = false
+      }
+    }
+  }
+
+  @Test
+  fun `filtering using multiple flavor callbacks`() {
+    android {
+      """
                 |    flavorDimensions "one", "two"
                 |    productFlavors {
                 |        flavor1 {
@@ -341,45 +339,44 @@ class AndroidComponentsFilteringTest
                 |        }
                 |    }
             """
-        }
+    }
 
-        given {
-            """
+    given {
+      """
                 |    beforeVariants(selector()
                 |          .withFlavor(new kotlin.Pair("one", "flavor1"))
                 |          .withFlavor(new kotlin.Pair("two", "flavorA")), {
                 |        enable = false
                 |    })
             """
-        }
-
-
-        expect {
-            variant { name = "flavor1FlavorBDebug" }
-            variant {
-                name = "flavor1FlavorBRelease"
-                unitTest = false
-                androidTest = false
-            }
-            variant { name = "flavor2FlavorADebug" }
-            variant {
-                name = "flavor2FlavorARelease"
-                unitTest = false
-                androidTest = false
-            }
-            variant { name = "flavor2FlavorBDebug" }
-            variant {
-                name = "flavor2FlavorBRelease"
-                unitTest = false
-                androidTest = false
-            }
-        }
     }
 
-    @Test
-    fun `filtering using flavor callback then build type callback`() {
-        android {
-            """
+    expect {
+      variant { name = "flavor1FlavorBDebug" }
+      variant {
+        name = "flavor1FlavorBRelease"
+        unitTest = false
+        androidTest = false
+      }
+      variant { name = "flavor2FlavorADebug" }
+      variant {
+        name = "flavor2FlavorARelease"
+        unitTest = false
+        androidTest = false
+      }
+      variant { name = "flavor2FlavorBDebug" }
+      variant {
+        name = "flavor2FlavorBRelease"
+        unitTest = false
+        androidTest = false
+      }
+    }
+  }
+
+  @Test
+  fun `filtering using flavor callback then build type callback`() {
+    android {
+      """
                 |    flavorDimensions "one"
                 |    productFlavors {
                 |        flavor1 {
@@ -390,37 +387,37 @@ class AndroidComponentsFilteringTest
                 |        }
                 |    }
             """
-        }
+    }
 
-        given {
-            """
+    given {
+      """
                 |    beforeVariants(selector()
                 |          .withFlavor(new kotlin.Pair("one", "flavor1"))
                 |          .withBuildType("debug"), {
                 |        enable = false
                 |    })
             """
-        }
-
-        expect {
-            variant {
-                name = "flavor1Release"
-                unitTest = false
-                androidTest = false
-            }
-            variant { name = "flavor2Debug" }
-            variant {
-                name = "flavor2Release"
-                unitTest = false
-                androidTest = false
-            }
-        }
     }
 
-    @Test
-    fun `filtering using build-type callback then flavor callback`() {
-        android {
-            """
+    expect {
+      variant {
+        name = "flavor1Release"
+        unitTest = false
+        androidTest = false
+      }
+      variant { name = "flavor2Debug" }
+      variant {
+        name = "flavor2Release"
+        unitTest = false
+        androidTest = false
+      }
+    }
+  }
+
+  @Test
+  fun `filtering using build-type callback then flavor callback`() {
+    android {
+      """
                 |    flavorDimensions "one"
                 |    productFlavors {
                 |        flavor1 {
@@ -431,37 +428,37 @@ class AndroidComponentsFilteringTest
                 |        }
                 |    }
             """
-        }
+    }
 
-        given {
-            """
+    given {
+      """
                 |    beforeVariants(selector()
                 |          .withBuildType("debug")
                 |          .withFlavor(new kotlin.Pair("one", "flavor1")), {
                 |        enable = false
                 |    })
             """
-        }
-
-        expect {
-            variant {
-                name = "flavor1Release"
-                unitTest = false
-                androidTest = false
-            }
-            variant { name = "flavor2Debug" }
-            variant {
-                name = "flavor2Release"
-                unitTest = false
-                androidTest = false
-            }
-        }
     }
 
-    @Test
-    fun `filtering using multiple flavor callback then build-type callback`() {
-        android {
-            """
+    expect {
+      variant {
+        name = "flavor1Release"
+        unitTest = false
+        androidTest = false
+      }
+      variant { name = "flavor2Debug" }
+      variant {
+        name = "flavor2Release"
+        unitTest = false
+        androidTest = false
+      }
+    }
+  }
+
+  @Test
+  fun `filtering using multiple flavor callback then build-type callback`() {
+    android {
+      """
                 |    flavorDimensions "one", "two"
                 |    productFlavors {
                 |        flavor1 {
@@ -478,10 +475,10 @@ class AndroidComponentsFilteringTest
                 |        }
                 |    }
             """
-        }
+    }
 
-        given {
-            """
+    given {
+      """
                 |    beforeVariants(selector()
                 |          .withFlavor(new kotlin.Pair("one", "flavor1"))
                 |          .withFlavor(new kotlin.Pair("two", "flavorA"))
@@ -489,39 +486,39 @@ class AndroidComponentsFilteringTest
                 |        enable = false
                 |    })
             """
-        }
-
-        expect {
-            variant {
-                name = "flavor1FlavorARelease"
-                unitTest = false
-                androidTest = false
-            }
-            variant { name = "flavor1FlavorBDebug" }
-            variant {
-                name = "flavor1FlavorBRelease"
-                unitTest = false
-                androidTest = false
-            }
-            variant { name = "flavor2FlavorADebug" }
-            variant {
-                name = "flavor2FlavorARelease"
-                unitTest = false
-                androidTest = false
-            }
-            variant { name = "flavor2FlavorBDebug" }
-            variant {
-                name = "flavor2FlavorBRelease"
-                unitTest = false
-                androidTest = false
-            }
-        }
     }
 
-    @Test
-    fun `filtering using build-type callback then multiple flavor callback`() {
-        android {
-            """
+    expect {
+      variant {
+        name = "flavor1FlavorARelease"
+        unitTest = false
+        androidTest = false
+      }
+      variant { name = "flavor1FlavorBDebug" }
+      variant {
+        name = "flavor1FlavorBRelease"
+        unitTest = false
+        androidTest = false
+      }
+      variant { name = "flavor2FlavorADebug" }
+      variant {
+        name = "flavor2FlavorARelease"
+        unitTest = false
+        androidTest = false
+      }
+      variant { name = "flavor2FlavorBDebug" }
+      variant {
+        name = "flavor2FlavorBRelease"
+        unitTest = false
+        androidTest = false
+      }
+    }
+  }
+
+  @Test
+  fun `filtering using build-type callback then multiple flavor callback`() {
+    android {
+      """
                 |    flavorDimensions "one", "two"
                 |    productFlavors {
                 |        flavor1 {
@@ -538,10 +535,10 @@ class AndroidComponentsFilteringTest
                 |        }
                 |    }
             """
-        }
+    }
 
-        given {
-            """
+    given {
+      """
                 |    beforeVariants(selector()
                 |          .withBuildType("debug")
                 |          .withFlavor(new kotlin.Pair("one", "flavor1"))
@@ -549,40 +546,40 @@ class AndroidComponentsFilteringTest
                 |        enable = false
                 |    })
             """
-        }
-
-        expect {
-            variant {
-                name = "flavor1FlavorARelease"
-                unitTest = false
-                androidTest = false
-            }
-            variant { name = "flavor1FlavorBDebug" }
-            variant {
-                name = "flavor1FlavorBRelease"
-                unitTest = false
-                androidTest = false
-            }
-
-            variant { name = "flavor2FlavorADebug" }
-            variant {
-                name = "flavor2FlavorARelease"
-                unitTest = false
-                androidTest = false
-            }
-            variant { name = "flavor2FlavorBDebug" }
-            variant {
-                name = "flavor2FlavorBRelease"
-                unitTest = false
-                androidTest = false
-            }
-        }
     }
 
-    @Test
-    fun `filtering using name callback`() {
-        android {
-            """
+    expect {
+      variant {
+        name = "flavor1FlavorARelease"
+        unitTest = false
+        androidTest = false
+      }
+      variant { name = "flavor1FlavorBDebug" }
+      variant {
+        name = "flavor1FlavorBRelease"
+        unitTest = false
+        androidTest = false
+      }
+
+      variant { name = "flavor2FlavorADebug" }
+      variant {
+        name = "flavor2FlavorARelease"
+        unitTest = false
+        androidTest = false
+      }
+      variant { name = "flavor2FlavorBDebug" }
+      variant {
+        name = "flavor2FlavorBRelease"
+        unitTest = false
+        androidTest = false
+      }
+    }
+  }
+
+  @Test
+  fun `filtering using name callback`() {
+    android {
+      """
                 |    flavorDimensions "one"
                 |    productFlavors {
                 |        flavor1 {
@@ -593,173 +590,174 @@ class AndroidComponentsFilteringTest
                 |        }
                 |    }
             """
-        }
+    }
 
-        given {
-            """
+    given {
+      """
                 |    beforeVariants(selector()
                 |          .withName("flavor1Debug"), {
                 |        enable = false
                 |    })
             """
-        }
-
-        expect {
-            variant {
-                name = "flavor1Release"
-                unitTest = false
-                androidTest = false
-            }
-            variant { name = "flavor2Debug" }
-            variant {
-                name = "flavor2Release"
-                unitTest = false
-                androidTest = false
-            }
-        }
     }
 
-    @Test
-    fun `unit-test filtering using buildtype callback`() {
-        given {
-            """
+    expect {
+      variant {
+        name = "flavor1Release"
+        unitTest = false
+        androidTest = false
+      }
+      variant { name = "flavor2Debug" }
+      variant {
+        name = "flavor2Release"
+        unitTest = false
+        androidTest = false
+      }
+    }
+  }
+
+  @Test
+  fun `unit-test filtering using buildtype callback`() {
+    given {
+      """
                 |    beforeVariants(selector()
                 |          .withBuildType("debug"), {
                 |        unitTestEnabled = false
                 |    })
             """
-        }
-
-        expect {
-            variant {
-                name = "release"
-                unitTest = false
-                androidTest = false
-            }
-            variant {
-                name = "debug"
-                unitTest = false
-            }
-        }
     }
 
-    @Test
-    fun `android-test filtering using buildtype callback`() {
-        given {
-            """
+    expect {
+      variant {
+        name = "release"
+        unitTest = false
+        androidTest = false
+      }
+      variant {
+        name = "debug"
+        unitTest = false
+      }
+    }
+  }
+
+  @Test
+  fun `android-test filtering using buildtype callback`() {
+    given {
+      """
                 |    beforeVariants(selector()
                 |          .withBuildType("debug"), {
                 |        androidTestEnabled = false
                 |    })
             """
-        }
-
-        expect {
-            variant {
-                name = "release"
-                unitTest = false
-                androidTest = false
-            }
-            variant {
-                name = "debug"
-                androidTest = false
-            }
-        }
     }
 
-    @Test
-    fun `test-fixtures filtering using buildtype callback`() {
-        android {
-            """
+    expect {
+      variant {
+        name = "release"
+        unitTest = false
+        androidTest = false
+      }
+      variant {
+        name = "debug"
+        androidTest = false
+      }
+    }
+  }
+
+  @Test
+  fun `test-fixtures filtering using buildtype callback`() {
+    android {
+      """
                 |    testFixtures {
                 |        it.enable = true
                 |    }
             """
-        }
+    }
 
-        given {
-            """
+    given {
+      """
                 |    beforeVariants(selector()
                 |          .withBuildType("debug"), {
                 |        enableTestFixtures = false
                 |    })
             """
-        }
-
-        expect {
-            variant {
-                name = "release"
-                testFixtures = true
-                unitTest = false
-                androidTest = false
-            }
-            variant {
-                name = "debug"
-                testFixtures = false
-            }
-        }
     }
 
-    var androidBlock: (() -> String)? = null
-
-    /**
-     * Registers an action block returning the given state as a single object
-     */
-    open fun android(action: () -> String) {
-        checkState(TestState.START)
-        androidBlock = action
+    expect {
+      variant {
+        name = "release"
+        testFixtures = true
+        unitTest = false
+        androidTest = false
+      }
+      variant {
+        name = "debug"
+        testFixtures = false
+      }
     }
+  }
 
-    override fun instantiateResulBuilder(): VariantBuilder = VariantBuilder()
-    override fun defaultWhen(given: String): List<VariantInfo>? {
+  var androidBlock: (() -> String)? = null
 
-        androidBlock?.let {
-            project.buildFile.appendText(
-                    """
+  /** Registers an action block returning the given state as a single object */
+  open fun android(action: () -> String) {
+    checkState(TestState.START)
+    androidBlock = action
+  }
+
+  override fun instantiateResulBuilder(): VariantBuilder = VariantBuilder()
+
+  override fun defaultWhen(given: String): List<VariantInfo>? {
+
+    androidBlock?.let {
+      project.buildFile.appendText(
+        """
                 |android {
                 |${it().trimMargin()}
                 |}
                 |
-            """.trimMargin()
-            )
-        }
-        project.buildFile.appendText(
-                """
+            """
+          .trimMargin()
+      )
+    }
+    project.buildFile.appendText(
+      """
                 |androidComponents {
                 |${given.trimMargin()}
                 |}
-            """.trimMargin()
-        )
-        return project.modelV2().fetchModels().container.getProject().androidProject!!.variants.map {
-            VariantInfo(
-                it.name,
-                unitTest = it.unitTestArtifact != null,
-                androidTest = it.androidTestArtifact != null,
-                testFixtures = it.testFixturesArtifact != null,
-            )
-        }
-    }
-
-    override fun compareResult(expected: List<VariantInfo>?, actual: List<VariantInfo>?, given: String) {
-        Truth.assertThat(actual).containsExactlyElementsIn(expected)
-    }
-
-    class VariantBuilder: ResultBuilder<List<VariantInfo>> {
-        private val variants = mutableListOf<VariantInfo>()
-
-        fun variant(action: VariantInfo.() -> Unit) {
-            variants.add(VariantInfo().also { action(it) })
-        }
-
-        override fun toResult(): List<VariantInfo> {
-            return variants
-        }
-    }
-
-    data class VariantInfo(
-        var name: String = "",
-        var unitTest: Boolean = true,
-        var androidTest: Boolean = true,
-        var testFixtures: Boolean = false
+            """
+        .trimMargin()
     )
+    return project.modelV2().fetchModels().container.getProject().androidProject!!.variants.map {
+      VariantInfo(
+        it.name,
+        unitTest = it.unitTestArtifact != null,
+        androidTest = it.androidTestArtifact != null,
+        testFixtures = it.testFixturesArtifact != null,
+      )
+    }
+  }
+
+  override fun compareResult(expected: List<VariantInfo>?, actual: List<VariantInfo>?, given: String) {
+    Truth.assertThat(actual).containsExactlyElementsIn(expected)
+  }
+
+  class VariantBuilder : ResultBuilder<List<VariantInfo>> {
+    private val variants = mutableListOf<VariantInfo>()
+
+    fun variant(action: VariantInfo.() -> Unit) {
+      variants.add(VariantInfo().also { action(it) })
+    }
+
+    override fun toResult(): List<VariantInfo> {
+      return variants
+    }
+  }
+
+  data class VariantInfo(
+    var name: String = "",
+    var unitTest: Boolean = true,
+    var androidTest: Boolean = true,
+    var testFixtures: Boolean = false,
+  )
 }

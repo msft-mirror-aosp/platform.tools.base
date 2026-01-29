@@ -18,156 +18,101 @@ package com.android.build.gradle.integration.bundle
 
 import com.android.build.gradle.integration.common.fixture.project.AabSelector
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
-import com.android.bundle.Config
 import com.android.tools.build.bundletool.model.AndroidManifest.MODULE_TYPE_AI_VALUE
 import com.android.tools.build.bundletool.model.BundleModule
 import com.android.tools.build.bundletool.model.BundleModuleName
 import com.google.common.truth.Truth.assertThat
+import java.util.Optional
 import org.junit.Rule
 import org.junit.Test
-import java.util.Optional
 
 class AiPackTest {
-    private val packageName = "com.example.aipacktestapp"
+  private val packageName = "com.example.aipacktestapp"
 
-    @get:Rule
-    val rule = GradleRule.from {
-        androidJavaApplication {
-            android {
-                namespace = packageName
-                assetPacks += listOf(
-                    ":customModelInstallTime",
-                    ":customModelFastFollow",
-                    ":modelAdaptationOnDemand"
-                )
-            }
+  @get:Rule
+  val rule =
+    GradleRule.from {
+      androidJavaApplication {
+        android {
+          namespace = packageName
+          assetPacks += listOf(":customModelInstallTime", ":customModelFastFollow", ":modelAdaptationOnDemand")
         }
+      }
 
-        aiPack(":customModelInstallTime") {
-            aiPack {
-                packName.set("customModelInstallTime")
-                dynamicDelivery {
-                    deliveryType.set("install-time")
-                }
-            }
-            files {
-                add(
-                    "src/main/assets/customModel.tflite",
-                    """This is a custom model delivered at install time."""
-                )
-            }
+      aiPack(":customModelInstallTime") {
+        aiPack {
+          packName.set("customModelInstallTime")
+          dynamicDelivery { deliveryType.set("install-time") }
         }
+        files { add("src/main/assets/customModel.tflite", """This is a custom model delivered at install time.""") }
+      }
 
-        aiPack(":customModelFastFollow") {
-            aiPack {
-                packName.set("customModelFastFollow")
-                dynamicDelivery {
-                    deliveryType.set("fast-follow")
-                }
-            }
-            files {
-                add(
-                    "src/main/assets/customModel.jax",
-                    """This is a custom model delivered after install time."""                )
-            }
+      aiPack(":customModelFastFollow") {
+        aiPack {
+          packName.set("customModelFastFollow")
+          dynamicDelivery { deliveryType.set("fast-follow") }
         }
+        files { add("src/main/assets/customModel.jax", """This is a custom model delivered after install time.""") }
+      }
 
-        aiPack(":modelAdaptationOnDemand") {
-            aiPack {
-                packName.set("modelAdaptationOnDemand")
-                dynamicDelivery {
-                    deliveryType.set("on-demand")
-                }
-                modelDependency {
-                    aiModelPackageName.set("com.foundation.app")
-                    aiModelName.set("com.foundation.llm")
-                }
-            }
-            files {
-                add(
-                    "src/main/assets/adaptation.lora",
-                    """This is an adaptation file delivered on-demand."""
-                )
-            }
+      aiPack(":modelAdaptationOnDemand") {
+        aiPack {
+          packName.set("modelAdaptationOnDemand")
+          dynamicDelivery { deliveryType.set("on-demand") }
+          modelDependency {
+            aiModelPackageName.set("com.foundation.app")
+            aiModelName.set("com.foundation.llm")
+          }
         }
+        files { add("src/main/assets/adaptation.lora", """This is an adaptation file delivered on-demand.""") }
+      }
     }
 
-    @Test
-    fun buildDebugBundle() {
-        val build = rule.build
+  @Test
+  fun buildDebugBundle() {
+    val build = rule.build
 
-        build.executor.run(":app:bundleDebug")
+    build.executor.run(":app:bundleDebug")
 
-        val app = build.androidApplication()
-        app.assertAab(AabSelector.DEBUG) {
-            exists()
-            contains(
-                "/customModelInstallTime/assets/customModel.tflite",
-                "/customModelInstallTime/manifest/AndroidManifest.xml",
-                "/customModelInstallTime/assets.pb",
-                "/customModelFastFollow/assets/customModel.jax",
-                "/customModelFastFollow/manifest/AndroidManifest.xml",
-                "/customModelFastFollow/assets.pb",
-                "/modelAdaptationOnDemand/assets/adaptation.lora",
-                "/modelAdaptationOnDemand/manifest/AndroidManifest.xml",
-                "/modelAdaptationOnDemand/assets.pb",
-            )
-        }
-
-        app.withAppBundle(AabSelector.DEBUG) {
-
-            // Bundletool treats AI packs as special types of asset packs.
-            val moduleNames = assetModules.keys.map { it.name }
-            assertThat(moduleNames).containsExactly(
-                "customModelInstallTime",
-                "customModelFastFollow",
-                "modelAdaptationOnDemand"
-            )
-
-            val customModelInstallTimeManifest =
-                assetModules[BundleModuleName.create("customModelInstallTime")]!!.androidManifest
-            assertThat(customModelInstallTimeManifest.moduleType).isEqualTo(
-                BundleModule.ModuleType.ASSET_MODULE
-            )
-            assertThat(customModelInstallTimeManifest.optionalModuleTypeAttributeValue).isEqualTo(
-                Optional.of(MODULE_TYPE_AI_VALUE)
-            )
-            assertThat(customModelInstallTimeManifest.packageName).isEqualTo(packageName)
-            assertThat(
-                customModelInstallTimeManifest.manifestDeliveryElement.get()
-                    .hasInstallTimeElement()
-            )
-                .isTrue()
-
-            val customModelFastFollowManifest =
-                assetModules[BundleModuleName.create("customModelFastFollow")]!!.androidManifest
-            assertThat(customModelFastFollowManifest.moduleType).isEqualTo(
-                BundleModule.ModuleType.ASSET_MODULE
-            )
-            assertThat(customModelInstallTimeManifest.optionalModuleTypeAttributeValue).isEqualTo(
-                Optional.of(MODULE_TYPE_AI_VALUE)
-            )
-            assertThat(customModelFastFollowManifest.packageName).isEqualTo(packageName)
-            assertThat(
-                customModelFastFollowManifest.manifestDeliveryElement.get()
-                    .hasFastFollowElement()
-            )
-                .isTrue()
-
-            val modelAdaptationOnDemandManifest =
-                assetModules[BundleModuleName.create("modelAdaptationOnDemand")]!!.androidManifest
-            assertThat(modelAdaptationOnDemandManifest.moduleType).isEqualTo(
-                BundleModule.ModuleType.ASSET_MODULE
-            )
-            assertThat(modelAdaptationOnDemandManifest.optionalModuleTypeAttributeValue).isEqualTo(
-                Optional.of(MODULE_TYPE_AI_VALUE)
-            )
-            assertThat(modelAdaptationOnDemandManifest.packageName).isEqualTo(packageName)
-            assertThat(
-                modelAdaptationOnDemandManifest.manifestDeliveryElement.get()
-                    .hasOnDemandElement()
-            )
-                .isTrue()
-        }
+    val app = build.androidApplication()
+    app.assertAab(AabSelector.DEBUG) {
+      exists()
+      contains(
+        "/customModelInstallTime/assets/customModel.tflite",
+        "/customModelInstallTime/manifest/AndroidManifest.xml",
+        "/customModelInstallTime/assets.pb",
+        "/customModelFastFollow/assets/customModel.jax",
+        "/customModelFastFollow/manifest/AndroidManifest.xml",
+        "/customModelFastFollow/assets.pb",
+        "/modelAdaptationOnDemand/assets/adaptation.lora",
+        "/modelAdaptationOnDemand/manifest/AndroidManifest.xml",
+        "/modelAdaptationOnDemand/assets.pb",
+      )
     }
+
+    app.withAppBundle(AabSelector.DEBUG) {
+
+      // Bundletool treats AI packs as special types of asset packs.
+      val moduleNames = assetModules.keys.map { it.name }
+      assertThat(moduleNames).containsExactly("customModelInstallTime", "customModelFastFollow", "modelAdaptationOnDemand")
+
+      val customModelInstallTimeManifest = assetModules[BundleModuleName.create("customModelInstallTime")]!!.androidManifest
+      assertThat(customModelInstallTimeManifest.moduleType).isEqualTo(BundleModule.ModuleType.ASSET_MODULE)
+      assertThat(customModelInstallTimeManifest.optionalModuleTypeAttributeValue).isEqualTo(Optional.of(MODULE_TYPE_AI_VALUE))
+      assertThat(customModelInstallTimeManifest.packageName).isEqualTo(packageName)
+      assertThat(customModelInstallTimeManifest.manifestDeliveryElement.get().hasInstallTimeElement()).isTrue()
+
+      val customModelFastFollowManifest = assetModules[BundleModuleName.create("customModelFastFollow")]!!.androidManifest
+      assertThat(customModelFastFollowManifest.moduleType).isEqualTo(BundleModule.ModuleType.ASSET_MODULE)
+      assertThat(customModelInstallTimeManifest.optionalModuleTypeAttributeValue).isEqualTo(Optional.of(MODULE_TYPE_AI_VALUE))
+      assertThat(customModelFastFollowManifest.packageName).isEqualTo(packageName)
+      assertThat(customModelFastFollowManifest.manifestDeliveryElement.get().hasFastFollowElement()).isTrue()
+
+      val modelAdaptationOnDemandManifest = assetModules[BundleModuleName.create("modelAdaptationOnDemand")]!!.androidManifest
+      assertThat(modelAdaptationOnDemandManifest.moduleType).isEqualTo(BundleModule.ModuleType.ASSET_MODULE)
+      assertThat(modelAdaptationOnDemandManifest.optionalModuleTypeAttributeValue).isEqualTo(Optional.of(MODULE_TYPE_AI_VALUE))
+      assertThat(modelAdaptationOnDemandManifest.packageName).isEqualTo(packageName)
+      assertThat(modelAdaptationOnDemandManifest.manifestDeliveryElement.get().hasOnDemandElement()).isTrue()
+    }
+  }
 }

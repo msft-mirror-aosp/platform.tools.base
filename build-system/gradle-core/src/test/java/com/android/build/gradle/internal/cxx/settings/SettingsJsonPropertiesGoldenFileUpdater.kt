@@ -18,11 +18,11 @@ package com.android.build.gradle.internal.cxx.settings
 
 /** See [SettingsJsonPropertiesGoldenFileTest] */
 class SettingsJsonPropertiesGoldenFileUpdater {
-    companion object {
-        /** Run this to update the expected file.*/
-        @JvmStatic
-        fun main(args: Array<String>) {
-            SettingsJsonPropertiesGoldenFileTest.goldenFile.update()
-        }
+  companion object {
+    /** Run this to update the expected file. */
+    @JvmStatic
+    fun main(args: Array<String>) {
+      SettingsJsonPropertiesGoldenFileTest.goldenFile.update()
     }
+  }
 }

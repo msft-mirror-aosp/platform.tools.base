@@ -15,9 +15,7 @@
  */
 
 /**
- * transliterated from
- * https://android.googlesource.com/platform/frameworks/base/+/master/tools/aapt2/text/Unicode.cpp
- * and
+ * transliterated from https://android.googlesource.com/platform/frameworks/base/+/master/tools/aapt2/text/Unicode.cpp and
  * https://android.googlesource.com/platform/frameworks/base/+/master/tools/aapt2/text/Unicode_data.cpp
  */
 package com.android.aaptcompiler
@@ -643,30 +641,25 @@ private fun findCharacterProperties(utf32: Int): Int =
   }
 
 /**
- * Returns true if the Unicode codepoint has the XID_Start property, meaning it can be used as the
- * first character of a programming language identifier.
- * http://unicode.org/reports/tr31/#Default_Identifier_Syntax
+ * Returns true if the Unicode codepoint has the XID_Start property, meaning it can be used as the first character of a programming language
+ * identifier. http://unicode.org/reports/tr31/#Default_Identifier_Syntax
  *
- * XID_Start is a Unicode Derived Core Property. It is a variation of the ID_Start
- * Derived Core Property, accounting for a few characters that, when normalized, yield valid
- * characters in the ID_Start set.
+ * XID_Start is a Unicode Derived Core Property. It is a variation of the ID_Start Derived Core Property, accounting for a few characters
+ * that, when normalized, yield valid characters in the ID_Start set.
  */
 fun isXidStart(utf32: Int): Boolean = (findCharacterProperties(utf32) and XID_START_FLAG) != 0
 
 /**
- * Returns true if the Unicode codepoint has the XID_Continue property, meaning it can be used in
- * any position of a programming language identifier, except the first.
- * http://unicode.org/reports/tr31/#Default_Identifier_Syntax
+ * Returns true if the Unicode codepoint has the XID_Continue property, meaning it can be used in any position of a programming language
+ * identifier, except the first. http://unicode.org/reports/tr31/#Default_Identifier_Syntax
  *
- * XID_Continue is a Unicode Derived Core Property. It is a variation of the ID_Continue
- * Derived Core Property, accounting for a few characters that, when normalized, yield valid
- * characters in the ID_Continue set.
+ * XID_Continue is a Unicode Derived Core Property. It is a variation of the ID_Continue Derived Core Property, accounting for a few
+ * characters that, when normalized, yield valid characters in the ID_Continue set.
  */
 fun isXidContinue(utf32: Int): Boolean = (findCharacterProperties(utf32) and XID_CONTINUE_FLAG) != 0
 
 /**
- * Returns true if the UTF8 string can be used as a Java identifier.
- * NOTE: This does not check against the set of reserved Java keywords.
+ * Returns true if the UTF8 string can be used as a Java identifier. NOTE: This does not check against the set of reserved Java keywords.
  */
 fun isJavaIdentifier(string: String): Boolean {
   if (string.isEmpty()) {
@@ -674,10 +667,7 @@ fun isJavaIdentifier(string: String): Boolean {
   }
 
   val firstCodePoint = string.codePointAt(0)
-  if (!isXidStart(firstCodePoint) &&
-    firstCodePoint != '_'.code &&
-    firstCodePoint != '$'.code
-  ) {
+  if (!isXidStart(firstCodePoint) && firstCodePoint != '_'.code && firstCodePoint != '$'.code) {
     return false
   }
 
@@ -690,10 +680,7 @@ fun isJavaIdentifier(string: String): Boolean {
   return true
 }
 
-/**
- * Returns true if the UTF8 string can be used as the entry name of a resource name.
- * This is the `entry` part of package:type/entry.
- */
+/** Returns true if the UTF8 string can be used as the entry name of a resource name. This is the `entry` part of package:type/entry. */
 fun isValidResourceEntryName(string: String): Boolean {
   if (string.isEmpty()) {
     return false

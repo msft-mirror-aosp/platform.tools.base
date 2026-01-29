@@ -19,39 +19,35 @@ package com.android.build.api.component.analytics
 import com.android.build.api.variant.Renderscript
 import com.android.tools.build.gradle.internal.profile.VariantPropertiesMethodType
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
-import org.gradle.api.provider.Property
 import javax.inject.Inject
+import org.gradle.api.provider.Property
 
-open class AnalyticsEnabledRenderscript @Inject constructor(
-    val delegate: Renderscript,
-    val stats: GradleBuildVariant.Builder)
-: Renderscript {
+open class AnalyticsEnabledRenderscript @Inject constructor(val delegate: Renderscript, val stats: GradleBuildVariant.Builder) :
+  Renderscript {
 
-    override val supportModeEnabled: Property<Boolean>
-        get() {
-            stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
-                VariantPropertiesMethodType.RENDERSCRIPT_SUPPORT_MODE_VALUE
-            return delegate.supportModeEnabled
-        }
+  override val supportModeEnabled: Property<Boolean>
+    get() {
+      stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type = VariantPropertiesMethodType.RENDERSCRIPT_SUPPORT_MODE_VALUE
+      return delegate.supportModeEnabled
+    }
 
-    override val supportModeBlasEnabled: Property<Boolean>
-        get() {
-            stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
-                VariantPropertiesMethodType.RENDERSCRIPT_SUPPORT_MODE_BLAS_VALUE
-            return delegate.supportModeBlasEnabled
-        }
+  override val supportModeBlasEnabled: Property<Boolean>
+    get() {
+      stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
+        VariantPropertiesMethodType.RENDERSCRIPT_SUPPORT_MODE_BLAS_VALUE
+      return delegate.supportModeBlasEnabled
+    }
 
-    override val ndkModeEnabled: Property<Boolean>
-        get() {
-            stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
-                VariantPropertiesMethodType.RENDERSCRIPT_NDK_MODE_VALUE
-            return delegate.ndkModeEnabled
-        }
+  override val ndkModeEnabled: Property<Boolean>
+    get() {
+      stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type = VariantPropertiesMethodType.RENDERSCRIPT_NDK_MODE_VALUE
+      return delegate.ndkModeEnabled
+    }
 
-    override val optimLevel: Property<Int>
-        get() {
-            stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
-                VariantPropertiesMethodType.RENDERSCRIPT_OPTIMIZATION_LEVEL_VALUE
-            return delegate.optimLevel
-        }
+  override val optimLevel: Property<Int>
+    get() {
+      stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
+        VariantPropertiesMethodType.RENDERSCRIPT_OPTIMIZATION_LEVEL_VALUE
+      return delegate.optimLevel
+    }
 }

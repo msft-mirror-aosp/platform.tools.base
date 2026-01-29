@@ -25,111 +25,122 @@ import com.android.testutils.truth.PathSubject.assertThat
 import com.android.tools.build.libraries.metadata.AppDependencies
 import com.google.common.collect.ImmutableList.toImmutableList
 import com.google.common.truth.Truth.assertThat
+import java.util.zip.ZipFile
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
-import java.util.zip.ZipFile
 
-/**
- * Tests DSL controlling addition of dependency information to bundles.
- */
+/** Tests DSL controlling addition of dependency information to bundles. */
 @RunWith(JUnit4::class)
 class DependenciesReportDslTest {
-    val app = MinimalSubProject.app("com.example.app")
-        .appendToBuild("android.dynamicFeatures = [':feature']")
-    val feature = MinimalSubProject.dynamicFeature("com.example.test").apply {
-        replaceFile(TestSourceFile("src/main/AndroidManifest.xml",
-            // language=XML
-            """<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-                    |        xmlns:dist="http://schemas.android.com/apk/distribution">
-                    |    <dist:module> <dist:fusing dist:include="true"/>
-                    |        <dist:delivery>
-                    |           <dist:install-time/>
-                    |        </dist:delivery>
-                    |    </dist:module>
-                    |    <application />
-                    |</manifest>""".trimMargin()))
+  val app = MinimalSubProject.app("com.example.app").appendToBuild("android.dynamicFeatures = [':feature']")
+  val feature =
+    MinimalSubProject.dynamicFeature("com.example.test").apply {
+      replaceFile(
+        TestSourceFile(
+          "src/main/AndroidManifest.xml",
+          // language=XML
+          """
+          |<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+          |        xmlns:dist="http://schemas.android.com/apk/distribution">
+          |    <dist:module> <dist:fusing dist:include="true"/>
+          |        <dist:delivery>
+          |           <dist:install-time/>
+          |        </dist:delivery>
+          |    </dist:module>
+          |    <application />
+          |</manifest>
+          """
+            .trimMargin(),
+        )
+      )
     }
 
-    private val testApp =
-        MultiModuleTestProject.builder()
-            .subproject(":app", app)
-            .subproject(":feature", feature)
-            .dependency(feature, "androidx.fragment:fragment:1.0.0")
-            .dependency(app, "androidx.core:core:1.0.1")
-            .dependency(feature, app)
-            .build()
+  private val testApp =
+    MultiModuleTestProject.builder()
+      .subproject(":app", app)
+      .subproject(":feature", feature)
+      .dependency(feature, "androidx.fragment:fragment:1.0.0")
+      .dependency(app, "androidx.core:core:1.0.1")
+      .dependency(feature, app)
+      .build()
 
-    @get:Rule
-    val project = GradleTestProject.builder().fromTestApp(testApp).create()
+  @get:Rule val project = GradleTestProject.builder().fromTestApp(testApp).create()
 
-    @Test
-    fun testDependenciesFileUnspecifiedDsl() {
-        project.executor().run(":app:bundleRelease")
-        val bundle = project.locateBundleFileViaModel("release", ":app")
-        assertThat(bundle).exists()
-        ZipFile(bundle).use {
-            val dependenciesFile = it.getEntry("BUNDLE-METADATA/com.android.tools.build.libraries/dependencies.pb")
-            val deps = AppDependencies.parseFrom(it.getInputStream(dependenciesFile))
-            val mavenDependencyGroupIds = deps.libraryList.stream()
-                .filter { library -> library.hasMavenLibrary() }
-                .map { library -> library.mavenLibrary.groupId }
-                .collect(toImmutableList())
+  @Test
+  fun testDependenciesFileUnspecifiedDsl() {
+    project.executor().run(":app:bundleRelease")
+    val bundle = project.locateBundleFileViaModel("release", ":app")
+    assertThat(bundle).exists()
+    ZipFile(bundle).use {
+      val dependenciesFile = it.getEntry("BUNDLE-METADATA/com.android.tools.build.libraries/dependencies.pb")
+      val deps = AppDependencies.parseFrom(it.getInputStream(dependenciesFile))
+      val mavenDependencyGroupIds =
+        deps.libraryList
+          .stream()
+          .filter { library -> library.hasMavenLibrary() }
+          .map { library -> library.mavenLibrary.groupId }
+          .collect(toImmutableList())
 
-            assertThat(mavenDependencyGroupIds).contains("androidx.core")
-            assertThat(mavenDependencyGroupIds).contains("androidx.fragment")
-        }
+      assertThat(mavenDependencyGroupIds).contains("androidx.core")
+      assertThat(mavenDependencyGroupIds).contains("androidx.fragment")
     }
+  }
 
-    @Test
-    fun testDependenciesFileDslOn() {
-        project.getSubproject(":app").buildFile.appendText(
-            """
+  @Test
+  fun testDependenciesFileDslOn() {
+    project
+      .getSubproject(":app")
+      .buildFile
+      .appendText(
+        """
                 android {
                     dependenciesInfo {
                         includeInBundle = true
                     }
                 }
             """
-        )
+      )
 
-        project.executor().run(":app:bundleRelease")
-        val bundle = project.locateBundleFileViaModel("release", ":app")
-        assertThat(bundle).exists()
-        ZipFile(bundle).use {
-            val dependenciesFile = it.getEntry("BUNDLE-METADATA/com.android.tools.build.libraries/dependencies.pb")
-            val deps = AppDependencies.parseFrom(it.getInputStream(dependenciesFile))
-            val mavenDependencyGroupIds = deps.libraryList.stream()
-                .filter { library -> library.hasMavenLibrary() }
-                .map { library -> library.mavenLibrary.groupId }
-                .collect(toImmutableList())
+    project.executor().run(":app:bundleRelease")
+    val bundle = project.locateBundleFileViaModel("release", ":app")
+    assertThat(bundle).exists()
+    ZipFile(bundle).use {
+      val dependenciesFile = it.getEntry("BUNDLE-METADATA/com.android.tools.build.libraries/dependencies.pb")
+      val deps = AppDependencies.parseFrom(it.getInputStream(dependenciesFile))
+      val mavenDependencyGroupIds =
+        deps.libraryList
+          .stream()
+          .filter { library -> library.hasMavenLibrary() }
+          .map { library -> library.mavenLibrary.groupId }
+          .collect(toImmutableList())
 
-            assertThat(mavenDependencyGroupIds).contains("androidx.core")
-            assertThat(mavenDependencyGroupIds).contains("androidx.fragment")
-        }
+      assertThat(mavenDependencyGroupIds).contains("androidx.core")
+      assertThat(mavenDependencyGroupIds).contains("androidx.fragment")
     }
+  }
 
-    @Test
-    fun testDependenciesFileDslOff() {
-        project.getSubproject(":app").buildFile.appendText(
-            """
+  @Test
+  fun testDependenciesFileDslOff() {
+    project
+      .getSubproject(":app")
+      .buildFile
+      .appendText(
+        """
                 android {
                     dependenciesInfo {
                         includeInBundle = false
                     }
                 }
             """
-        )
+      )
 
-        project.executor().run(":app:bundleRelease")
-        val bundle = project.locateBundleFileViaModel("release", ":app").toPath()
-        ZipSubject.assertThat(bundle) {
-            // validate absence of com.android.tools.build.libraries/dependencies.pb
-            folder("BUNDLE-METADATA").containsExactly(
-                "com.android.tools/d8.json",
-                "com.android.tools.build.gradle/app-metadata.properties"
-            )
-        }
+    project.executor().run(":app:bundleRelease")
+    val bundle = project.locateBundleFileViaModel("release", ":app").toPath()
+    ZipSubject.assertThat(bundle) {
+      // validate absence of com.android.tools.build.libraries/dependencies.pb
+      folder("BUNDLE-METADATA").containsExactly("com.android.tools/d8.json", "com.android.tools.build.gradle/app-metadata.properties")
     }
+  }
 }

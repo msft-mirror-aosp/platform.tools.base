@@ -22,240 +22,219 @@ import com.android.build.gradle.integration.common.fixture.GradleTestProjectBuil
 import com.android.build.gradle.integration.common.fixture.project.ApkSelector
 import com.android.build.gradle.integration.common.output.AarSubject
 import com.android.build.gradle.integration.common.utils.TestFileUtils
-import com.android.testutils.apk.Apk
 import com.android.utils.FileUtils
 import com.google.common.truth.Truth
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
-import kotlin.io.path.pathString
 
 class KotlinMultiplatformAndroidPluginNativeTest {
 
-    @get:Rule
-    val project = GradleTestProjectBuilder()
-        .fromTestProject("kotlinMultiplatform")
-        .create()
+  @get:Rule val project = GradleTestProjectBuilder().fromTestProject("kotlinMultiplatform").create()
 
-    @Before
-    fun setUp() {
-        TestFileUtils.appendToFile(
-            project.settingsFile,
-            "\ninclude ':nativeLib'"
+  @Before
+  fun setUp() {
+    TestFileUtils.appendToFile(project.settingsFile, "\ninclude ':nativeLib'")
+    val jniKotlinFile =
+      FileUtils.join(
+          project.getSubproject("kmpFirstLib").projectDir,
+          "src",
+          "androidMain",
+          "kotlin",
+          "com",
+          "example",
+          "nativelib",
+          "Incrementer.kt",
         )
-        val jniKotlinFile = FileUtils.join(
-            project.getSubproject("kmpFirstLib").projectDir,
-            "src", "androidMain", "kotlin", "com", "example", "nativelib", "Incrementer.kt"
-        ).also {
-            it.parentFile.mkdirs()
-        }
-        FileUtils.writeToFile(
-            jniKotlinFile,
-            // language=kotlin
-            """
-                package com.example.nativelib
+        .also { it.parentFile.mkdirs() }
+    FileUtils.writeToFile(
+      jniKotlinFile,
+      // language=kotlin
+      """
+      package com.example.nativelib
 
-                internal class Jni {
-                    external fun nativeGetNextNumber(x: Int): Int
-                }
+      internal class Jni {
+          external fun nativeGetNextNumber(x: Int): Int
+      }
 
-                class Incrementer {
-                    private val jni = Jni()
-                    fun getNextNumber(x: Int) = jni.nativeGetNextNumber(x)
-                }
-            """.trimIndent()
-        )
+      class Incrementer {
+          private val jni = Jni()
+          fun getNextNumber(x: Int) = jni.nativeGetNextNumber(x)
+      }
+      """
+        .trimIndent(),
+    )
 
-        TestFileUtils.appendToFile(
-            project.getSubproject("kmpFirstLib").ktsBuildFile,
-            // language=kotlin
-            """
-                kotlin.sourceSets.getByName("androidMain") {
-                    dependencies {
-                        compileOnly(project(":nativeLib"))
-                    }
-                }
+    TestFileUtils.appendToFile(
+      project.getSubproject("kmpFirstLib").ktsBuildFile,
+      // language=kotlin
+      """
+      kotlin.sourceSets.getByName("androidMain") {
+          dependencies {
+              compileOnly(project(":nativeLib"))
+          }
+      }
 
-                kotlin.sourceSets.getByName("androidDeviceTest") {
-                    dependencies {
-                        implementation(project(":nativeLib"))
-                    }
-                }
+      kotlin.sourceSets.getByName("androidDeviceTest") {
+          dependencies {
+              implementation(project(":nativeLib"))
+          }
+      }
 
-                configurations.create("mergeNativeLibs") {
-                    isCanBeConsumed = false
-                    isCanBeResolved = true
-                }
+      configurations.create("mergeNativeLibs") {
+          isCanBeConsumed = false
+          isCanBeResolved = true
+      }
 
-                dependencies {
-                    add("mergeNativeLibs", project(":nativeLib"))
-                }
+      dependencies {
+          add("mergeNativeLibs", project(":nativeLib"))
+      }
 
-                abstract class PackagingTask: Zip() {
-                    @get:InputFile
-                    abstract val aarFile: RegularFileProperty
+      abstract class PackagingTask: Zip() {
+          @get:InputFile
+          abstract val aarFile: RegularFileProperty
 
-                    @get:OutputFile
-                    abstract val output: RegularFileProperty
-                }
+          @get:OutputFile
+          abstract val output: RegularFileProperty
+      }
 
-                androidComponents {
-                    onVariants {
-                        val taskProvider = project.tasks.register("repackageAar", PackagingTask::class.java)
+      androidComponents {
+          onVariants {
+              val taskProvider = project.tasks.register("repackageAar", PackagingTask::class.java)
 
-                        it.artifacts.use(
-                            taskProvider
-                        ).wiredWithFiles(PackagingTask::aarFile, PackagingTask::output)
-                            .toTransform(com.android.build.api.artifact.SingleArtifact.AAR)
+              it.artifacts.use(
+                  taskProvider
+              ).wiredWithFiles(PackagingTask::aarFile, PackagingTask::output)
+                  .toTransform(com.android.build.api.artifact.SingleArtifact.AAR)
 
-                        taskProvider.configure {
-                            val nativeLibsArtifact =
-                                project.configurations.getByName("mergeNativeLibs").incoming.artifactView {
-                                    attributes {
-                                        attribute(Attribute.of("artifactType", String::class.java), "android-jni")
-                                    }
-                                }
+              taskProvider.configure {
+                  val nativeLibsArtifact =
+                      project.configurations.getByName("mergeNativeLibs").incoming.artifactView {
+                          attributes {
+                              attribute(Attribute.of("artifactType", String::class.java), "android-jni")
+                          }
+                      }
 
-                            from(nativeLibsArtifact.artifacts.artifactFiles) {
-                                includeEmptyDirs = false
-                                eachFile {
-                                    relativePath = relativePath.prepend("jni")
-                                }
-                                include { element ->
-                                    element.isDirectory || element.name == "libnative_lib.so"
-                                }
-                            }
-
-                            from(project.zipTree(aarFile))
-
-                            destinationDirectory.fileProvider(output.locationOnly.map { it.asFile.parentFile })
-                            archiveFileName.set(output.locationOnly.map { it.asFile.name })
-                        }
-                    }
-                }
-            """.trimIndent()
-        )
-    }
-
-    @Test
-    fun testKmpLibraryAarContents() {
-        executor().run(":kmpFirstLib:assemble")
-
-        val aarPath = project.getSubproject("kmpFirstLib")
-            .getOutputFile("aar", "kmpFirstLib.aar")
-
-        AarSubject.assertThat(aarPath) {
-            mainJar {
-                classes().containsExactly(
-                    "com/example/kmpfirstlib/KmpCommonFirstLibClass",
-                    "com/example/kmpfirstlib/KmpAndroidFirstLibClass",
-                    "com/example/kmpfirstlib/KmpAndroidFirstLibJavaClass",
-                    "com/example/kmpfirstlib/KmpAndroidActivity",
-                    "com/example/nativelib/Jni",
-                    "com/example/nativelib/Incrementer"
-                )
-                resources().containsExactly(
-                    "kmp_resource.txt",
-                    "META-INF/kmpFirstLib.kotlin_module"
-                )
-            }
-
-            jniLibs().containsExactly(
-                "x86/libnative_lib.so",
-                "x86_64/libnative_lib.so",
-                "armeabi-v7a/libnative_lib.so",
-                "arm64-v8a/libnative_lib.so"
-            )
-        }
-    }
-
-    @Test
-    fun testKmpLibraryTestApkContents() {
-        TestFileUtils.appendToFile(
-            project.getSubproject("kmpFirstLib").ktsBuildFile,
-            """
-                kotlin.androidLibrary {
-                    packaging.resources.excludes.addAll(listOf(
-                        "**/*.java",
-                        "junit/**",
-                        "LICENSE-junit.txt"
-                    ))
-                }
-            """.trimIndent()
-        )
-
-        executor().run(":kmpFirstLib:assembleDeviceTest")
-
-        project.getSubproject("kmpFirstLib").assertApk(
-            ApkSelector.NO_BUILD_TYPE.forTestSuite("androidTest")
-        ) {
-            jniLibs().containsExactly(
-                "x86_64/libnative_lib.so",
-                "x86/libnative_lib.so",
-                "armeabi-v7a/libnative_lib.so",
-                "arm64-v8a/libnative_lib.so"
-            )
-
-            javaResources().containsExactly(
-                "META-INF/",
-                "kotlin/", // for .kotlin_builtins files
-                "kmp_resource.txt",
-                "android_lib_resource.txt"
-            )
-        }
-    }
-
-    @Test
-    fun publicationMetadataDoesNotIncludeNativeLib() {
-        TestFileUtils.searchAndReplace(
-            project.getSubproject("kmpFirstLib").ktsBuildFile,
-            "plugins {",
-            "plugins {\n  id(\"maven-publish\")"
-        )
-        TestFileUtils.searchAndReplace(
-            project.getSubproject("kmpSecondLib").ktsBuildFile,
-            "plugins {",
-            "plugins {\n  id(\"maven-publish\")"
-        )
-        TestFileUtils.searchAndReplace(
-            project.getSubproject("kmpJvmOnly").ktsBuildFile,
-            "plugins {",
-            "plugins {\n  id(\"maven-publish\")"
-        )
-        TestFileUtils.appendToFile(project.getSubproject("kmpFirstLib").ktsBuildFile,
-            """
-                group = "com.example"
-                version = "1.0"
-                publishing {
-                  repositories {
-                    maven {
-                      url = uri("../testRepo")
-                    }
+                  from(nativeLibsArtifact.artifacts.artifactFiles) {
+                      includeEmptyDirs = false
+                      eachFile {
+                          relativePath = relativePath.prepend("jni")
+                      }
+                      include { element ->
+                          element.isDirectory || element.name == "libnative_lib.so"
+                      }
                   }
-                }
-            """.trimIndent()
+
+                  from(project.zipTree(aarFile))
+
+                  destinationDirectory.fileProvider(output.locationOnly.map { it.asFile.parentFile })
+                  archiveFileName.set(output.locationOnly.map { it.asFile.name })
+              }
+          }
+      }
+      """
+        .trimIndent(),
+    )
+  }
+
+  @Test
+  fun testKmpLibraryAarContents() {
+    executor().run(":kmpFirstLib:assemble")
+
+    val aarPath = project.getSubproject("kmpFirstLib").getOutputFile("aar", "kmpFirstLib.aar")
+
+    AarSubject.assertThat(aarPath) {
+      mainJar {
+        classes()
+          .containsExactly(
+            "com/example/kmpfirstlib/KmpCommonFirstLibClass",
+            "com/example/kmpfirstlib/KmpAndroidFirstLibClass",
+            "com/example/kmpfirstlib/KmpAndroidFirstLibJavaClass",
+            "com/example/kmpfirstlib/KmpAndroidActivity",
+            "com/example/nativelib/Jni",
+            "com/example/nativelib/Incrementer",
+          )
+        resources().containsExactly("kmp_resource.txt", "META-INF/kmpFirstLib.kotlin_module")
+      }
+
+      jniLibs()
+        .containsExactly("x86/libnative_lib.so", "x86_64/libnative_lib.so", "armeabi-v7a/libnative_lib.so", "arm64-v8a/libnative_lib.so")
+    }
+  }
+
+  @Test
+  fun testKmpLibraryTestApkContents() {
+    TestFileUtils.appendToFile(
+      project.getSubproject("kmpFirstLib").ktsBuildFile,
+      """
+      kotlin.androidLibrary {
+          packaging.resources.excludes.addAll(listOf(
+              "**/*.java",
+              "junit/**",
+              "LICENSE-junit.txt"
+          ))
+      }
+      """
+        .trimIndent(),
+    )
+
+    executor().run(":kmpFirstLib:assembleDeviceTest")
+
+    project.getSubproject("kmpFirstLib").assertApk(ApkSelector.NO_BUILD_TYPE.forTestSuite("androidTest")) {
+      jniLibs()
+        .containsExactly("x86_64/libnative_lib.so", "x86/libnative_lib.so", "armeabi-v7a/libnative_lib.so", "arm64-v8a/libnative_lib.so")
+
+      javaResources()
+        .containsExactly(
+          "META-INF/",
+          "kotlin/", // for .kotlin_builtins files
+          "kmp_resource.txt",
+          "android_lib_resource.txt",
         )
-
-        executor().run(":kmpFirstLib:publish")
-
-        // Assert that maven metadata and gradle module metadata files have no mention of the native
-        // lib dependency.
-        Truth.assertThat(
-            FileUtils.join(
-                project.projectDir, "testRepo", "com", "example", "kmpFirstLib-android", "maven-metadata.xml"
-            ).readText()
-        ).doesNotContain("native")
-
-        Truth.assertThat(
-            FileUtils.join(
-                project.projectDir, "testRepo", "com", "example", "kmpFirstLib-android", "1.0", "kmpFirstLib-android-1.0.module"
-            ).readText()
-        ).doesNotContain("native")
     }
+  }
 
-    private fun executor(): GradleTaskExecutor {
-        return project.executor()
-            .withFailOnWarning(false) // b/455891987
-            .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
-    }
+  @Test
+  fun publicationMetadataDoesNotIncludeNativeLib() {
+    TestFileUtils.searchAndReplace(project.getSubproject("kmpFirstLib").ktsBuildFile, "plugins {", "plugins {\n  id(\"maven-publish\")")
+    TestFileUtils.searchAndReplace(project.getSubproject("kmpSecondLib").ktsBuildFile, "plugins {", "plugins {\n  id(\"maven-publish\")")
+    TestFileUtils.searchAndReplace(project.getSubproject("kmpJvmOnly").ktsBuildFile, "plugins {", "plugins {\n  id(\"maven-publish\")")
+    TestFileUtils.appendToFile(
+      project.getSubproject("kmpFirstLib").ktsBuildFile,
+      """
+      group = "com.example"
+      version = "1.0"
+      publishing {
+        repositories {
+          maven {
+            url = uri("../testRepo")
+          }
+        }
+      }
+      """
+        .trimIndent(),
+    )
+
+    executor().run(":kmpFirstLib:publish")
+
+    // Assert that maven metadata and gradle module metadata files have no mention of the native
+    // lib dependency.
+    Truth.assertThat(
+        FileUtils.join(project.projectDir, "testRepo", "com", "example", "kmpFirstLib-android", "maven-metadata.xml").readText()
+      )
+      .doesNotContain("native")
+
+    Truth.assertThat(
+        FileUtils.join(project.projectDir, "testRepo", "com", "example", "kmpFirstLib-android", "1.0", "kmpFirstLib-android-1.0.module")
+          .readText()
+      )
+      .doesNotContain("native")
+  }
+
+  private fun executor(): GradleTaskExecutor {
+    return project
+      .executor()
+      .withFailOnWarning(false) // b/455891987
+      .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
+  }
 }

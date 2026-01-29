@@ -16,11 +16,9 @@
 
 package com.android.build.gradle.external.gnumake
 
-/**
- * Return true if the executable in [command] ends with [executableName] or [executableName].exe.
- */
-internal fun endsWithExecutableName(command : CommandLine, executableName : String) : Boolean {
-    if (command.executable.endsWith(executableName)) return true
-    if (command.executable.endsWith("${executableName}.exe")) return true
-    return false
+/** Return true if the executable in [command] ends with [executableName] or [executableName].exe. */
+internal fun endsWithExecutableName(command: CommandLine, executableName: String): Boolean {
+  if (command.executable.endsWith(executableName)) return true
+  if (command.executable.endsWith("${executableName}.exe")) return true
+  return false
 }

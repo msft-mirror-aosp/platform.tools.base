@@ -26,52 +26,38 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 
-class SeparateTestModelTest: ModelComparator() {
-    @get:Rule
-    val rule = GradleRule.from {
-        androidApplication {
-            android {
-                enableKotlin = false
-            }
+class SeparateTestModelTest : ModelComparator() {
+  @get:Rule
+  val rule =
+    GradleRule.from {
+      androidApplication { android { enableKotlin = false } }
+      androidTest {
+        android {
+          targetProjectPath = DEFAULT_APP_PATH
+          enableKotlin = false
         }
-        androidTest {
-            android {
-                targetProjectPath = DEFAULT_APP_PATH
-                enableKotlin = false
-            }
-        }
+      }
     }
 
-    private lateinit var result: ModelBuilderV2.FetchResult<ModelContainerV2>
+  private lateinit var result: ModelBuilderV2.FetchResult<ModelContainerV2>
 
-    @Before
-    fun setup() {
-        result = rule.build.modelBuilder
-            .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
-            .fetchModels(variantName = "debug")
-    }
+  @Before
+  fun setup() {
+    result = rule.build.modelBuilder.ignoreSyncIssues(SyncIssue.SEVERITY_WARNING).fetchModels(variantName = "debug")
+  }
 
-    @Test
-    fun `test BasicAndroidProject`() {
-        with(result).compareBasicAndroidProject(
-            projectAction = { getProject(":test") },
-            goldenFile = "BasicAndroidProject"
-        )
-    }
+  @Test
+  fun `test BasicAndroidProject`() {
+    with(result).compareBasicAndroidProject(projectAction = { getProject(":test") }, goldenFile = "BasicAndroidProject")
+  }
 
-    @Test
-    fun `test AndroidProject`() {
-        with(result).compareAndroidProject(
-            projectAction = { getProject(":test") },
-            goldenFile = "AndroidProject"
-        )
-    }
+  @Test
+  fun `test AndroidProject`() {
+    with(result).compareAndroidProject(projectAction = { getProject(":test") }, goldenFile = "AndroidProject")
+  }
 
-    @Test
-    fun `test VariantDependencies`() {
-        with(result).compareVariantDependencies(
-            projectAction = { getProject(":test") },
-            goldenFile = "VariantDependencies"
-        )
-    }
+  @Test
+  fun `test VariantDependencies`() {
+    with(result).compareVariantDependencies(projectAction = { getProject(":test") }, goldenFile = "VariantDependencies")
+  }
 }

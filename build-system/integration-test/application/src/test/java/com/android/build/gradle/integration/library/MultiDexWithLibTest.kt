@@ -18,64 +18,70 @@ package com.android.build.gradle.integration.library
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.GradleTestProject.Companion.builder
 import com.android.build.gradle.integration.common.utils.AssumeBuildToolsUtil
+import java.io.IOException
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
-import java.io.IOException
 
-/** Assemble tests for multiDexWithLib.  */
+/** Assemble tests for multiDexWithLib. */
 class MultiDexWithLibTest {
 
-    @get:Rule
-    val tempFolder = TemporaryFolder()
+  @get:Rule val tempFolder = TemporaryFolder()
 
-    @get:Rule
-    val project: GradleTestProject = builder()
-            .fromTestProject("multiDexWithLib")
-            .withHeap("2048M")
-            .create()
+  @get:Rule val project: GradleTestProject = builder().fromTestProject("multiDexWithLib").withHeap("2048M").create()
 
-    @Before
-    @Throws(IOException::class, InterruptedException::class)
-    fun setUp() {
-        AssumeBuildToolsUtil.assumeBuildToolsAtLeast(21)
-    }
-    @Test
-    @Throws(IOException::class, InterruptedException::class)
-    fun lint() {
-        project.executor().run("clean", "assembleDebug", "assembleDebugAndroidTest", "lint")
-    }
+  @Before
+  @Throws(IOException::class, InterruptedException::class)
+  fun setUp() {
+    AssumeBuildToolsUtil.assumeBuildToolsAtLeast(21)
+  }
 
-    @Test
-    @Throws(IOException::class, InterruptedException::class)
-    fun testAppVariantSettings() {
-        project.getSubproject(":app").buildFile.appendText("""
-            android.buildTypes.debug.multiDexEnabled=false
+  @Test
+  @Throws(IOException::class, InterruptedException::class)
+  fun lint() {
+    project.executor().run("clean", "assembleDebug", "assembleDebugAndroidTest", "lint")
+  }
 
-            androidComponents {
-                beforeVariants(selector().withBuildType("debug"), { debugVariantBuilder ->
-                    debugVariantBuilder.enableMultiDex = true
-                })
-            }
-        """.trimIndent())
-        project.execute("clean", "assembleDebug")
-    }
+  @Test
+  @Throws(IOException::class, InterruptedException::class)
+  fun testAppVariantSettings() {
+    project
+      .getSubproject(":app")
+      .buildFile
+      .appendText(
+        """
+        android.buildTypes.debug.multiDexEnabled=false
 
-    @Test
-    @Throws(IOException::class, InterruptedException::class)
-    fun testWithAndroidTestInLibraryVariantSettings() {
-        project.getSubproject(":lib").buildFile.appendText("""
-            android.buildTypes.debug.multiDexEnabled=false
+        androidComponents {
+            beforeVariants(selector().withBuildType("debug"), { debugVariantBuilder ->
+                debugVariantBuilder.enableMultiDex = true
+            })
+        }
+        """
+          .trimIndent()
+      )
+    project.execute("clean", "assembleDebug")
+  }
 
-            androidComponents {
-                beforeVariants(selector().withBuildType("debug"), { debugVariantBuilder ->
-                    debugVariantBuilder.androidTest.enableMultiDex = true
-                })
-            }
-        """.trimIndent())
-        project.execute("clean", "assembleDebugAndroidTest")
-    }
+  @Test
+  @Throws(IOException::class, InterruptedException::class)
+  fun testWithAndroidTestInLibraryVariantSettings() {
+    project
+      .getSubproject(":lib")
+      .buildFile
+      .appendText(
+        """
+        android.buildTypes.debug.multiDexEnabled=false
 
-
+        androidComponents {
+            beforeVariants(selector().withBuildType("debug"), { debugVariantBuilder ->
+                debugVariantBuilder.androidTest.enableMultiDex = true
+            })
+        }
+        """
+          .trimIndent()
+      )
+    project.execute("clean", "assembleDebugAndroidTest")
+  }
 }

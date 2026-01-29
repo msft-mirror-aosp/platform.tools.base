@@ -31,88 +31,78 @@ import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
 
 class AnalyticsEnabledExternalNdkBuildTest {
-    private val delegate: ExternalNdkBuild = mock()
+  private val delegate: ExternalNdkBuild = mock()
 
-    private val stats = GradleBuildVariant.newBuilder()
-    private lateinit var proxy: AnalyticsEnabledExternalNdkBuild
+  private val stats = GradleBuildVariant.newBuilder()
+  private lateinit var proxy: AnalyticsEnabledExternalNdkBuild
 
-    @Before
-    fun setup() {
-        proxy = AnalyticsEnabledExternalNdkBuild(delegate, stats)
-    }
+  @Before
+  fun setup() {
+    proxy = AnalyticsEnabledExternalNdkBuild(delegate, stats)
+  }
 
-    @Test
-    fun getAbiFilters() {
-        @Suppress("UNCHECKED_CAST") val setProperty: SetProperty<String>
-                = mock<SetProperty<String>>()
-        whenever(delegate.abiFilters).thenReturn(setProperty)
-        Truth.assertThat(proxy.abiFilters).isEqualTo(setProperty)
+  @Test
+  fun getAbiFilters() {
+    @Suppress("UNCHECKED_CAST") val setProperty: SetProperty<String> = mock<SetProperty<String>>()
+    whenever(delegate.abiFilters).thenReturn(setProperty)
+    Truth.assertThat(proxy.abiFilters).isEqualTo(setProperty)
 
-        Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
-        Truth.assertThat(
-                stats.variantApiAccess.variantPropertiesAccessList.first().type
-        ).isEqualTo(VariantPropertiesMethodType.NDK_BUILD_OPTIONS_ABI_FILTERS_VALUE)
-        verify(delegate, times(1)).abiFilters
-        verifyNoMoreInteractions(delegate)
-    }
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessList.first().type)
+      .isEqualTo(VariantPropertiesMethodType.NDK_BUILD_OPTIONS_ABI_FILTERS_VALUE)
+    verify(delegate, times(1)).abiFilters
+    verifyNoMoreInteractions(delegate)
+  }
 
-    @Test
-    fun getTargets() {
-        @Suppress("UNCHECKED_CAST") val setProperty: SetProperty<String>
-                = mock<SetProperty<String>>()
-        whenever(delegate.targets).thenReturn(setProperty)
-        Truth.assertThat(proxy.targets).isEqualTo(setProperty)
+  @Test
+  fun getTargets() {
+    @Suppress("UNCHECKED_CAST") val setProperty: SetProperty<String> = mock<SetProperty<String>>()
+    whenever(delegate.targets).thenReturn(setProperty)
+    Truth.assertThat(proxy.targets).isEqualTo(setProperty)
 
-        Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
-        Truth.assertThat(
-                stats.variantApiAccess.variantPropertiesAccessList.first().type
-        ).isEqualTo(VariantPropertiesMethodType.NDK_BUILD_OPTIONS_TARGETS_VALUE)
-        verify(delegate, times(1)).targets
-        verifyNoMoreInteractions(delegate)
-    }
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessList.first().type)
+      .isEqualTo(VariantPropertiesMethodType.NDK_BUILD_OPTIONS_TARGETS_VALUE)
+    verify(delegate, times(1)).targets
+    verifyNoMoreInteractions(delegate)
+  }
 
-    @Test
-    fun getArguments() {
-        @Suppress("UNCHECKED_CAST") val listProperty: ListProperty<String>
-                = mock<ListProperty<String>>()
-        whenever(delegate.arguments).thenReturn(listProperty)
-        Truth.assertThat(proxy.arguments).isEqualTo(listProperty)
+  @Test
+  fun getArguments() {
+    @Suppress("UNCHECKED_CAST") val listProperty: ListProperty<String> = mock<ListProperty<String>>()
+    whenever(delegate.arguments).thenReturn(listProperty)
+    Truth.assertThat(proxy.arguments).isEqualTo(listProperty)
 
-        Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
-        Truth.assertThat(
-                stats.variantApiAccess.variantPropertiesAccessList.first().type
-        ).isEqualTo(VariantPropertiesMethodType.NDK_BUILD_OPTIONS_ARGUMENTS_VALUE)
-        verify(delegate, times(1)).arguments
-        verifyNoMoreInteractions(delegate)
-    }
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessList.first().type)
+      .isEqualTo(VariantPropertiesMethodType.NDK_BUILD_OPTIONS_ARGUMENTS_VALUE)
+    verify(delegate, times(1)).arguments
+    verifyNoMoreInteractions(delegate)
+  }
 
-    @Test
-    fun getCFlags() {
-        @Suppress("UNCHECKED_CAST") val listProperty: ListProperty<String>
-                = mock<ListProperty<String>>()
-        whenever(delegate.cFlags).thenReturn(listProperty)
-        Truth.assertThat(proxy.cFlags).isEqualTo(listProperty)
+  @Test
+  fun getCFlags() {
+    @Suppress("UNCHECKED_CAST") val listProperty: ListProperty<String> = mock<ListProperty<String>>()
+    whenever(delegate.cFlags).thenReturn(listProperty)
+    Truth.assertThat(proxy.cFlags).isEqualTo(listProperty)
 
-        Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
-        Truth.assertThat(
-                stats.variantApiAccess.variantPropertiesAccessList.first().type
-        ).isEqualTo(VariantPropertiesMethodType.NDK_BUILD_OPTIONS_C_FLAGS_VALUE)
-        verify(delegate, times(1)).cFlags
-        verifyNoMoreInteractions(delegate)
-    }
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessList.first().type)
+      .isEqualTo(VariantPropertiesMethodType.NDK_BUILD_OPTIONS_C_FLAGS_VALUE)
+    verify(delegate, times(1)).cFlags
+    verifyNoMoreInteractions(delegate)
+  }
 
-    @Test
-    fun getCppFlags() {
-        @Suppress("UNCHECKED_CAST") val listProperty: ListProperty<String>
-                = mock<ListProperty<String>>()
-        whenever(delegate.cppFlags).thenReturn(listProperty)
-        Truth.assertThat(proxy.cppFlags).isEqualTo(listProperty)
+  @Test
+  fun getCppFlags() {
+    @Suppress("UNCHECKED_CAST") val listProperty: ListProperty<String> = mock<ListProperty<String>>()
+    whenever(delegate.cppFlags).thenReturn(listProperty)
+    Truth.assertThat(proxy.cppFlags).isEqualTo(listProperty)
 
-        Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
-        Truth.assertThat(
-                stats.variantApiAccess.variantPropertiesAccessList.first().type
-        ).isEqualTo(VariantPropertiesMethodType.NDK_BUILD_OPTIONS_CPP_FLAGS_VALUE)
-        verify(delegate, times(1)).cppFlags
-        verifyNoMoreInteractions(delegate)
-    }
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessList.first().type)
+      .isEqualTo(VariantPropertiesMethodType.NDK_BUILD_OPTIONS_CPP_FLAGS_VALUE)
+    verify(delegate, times(1)).cppFlags
+    verifyNoMoreInteractions(delegate)
+  }
 }

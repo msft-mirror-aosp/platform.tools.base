@@ -29,73 +29,54 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.experimental.categories.Category
 
-/**
- * Assemble tests for basic.
- */
+/** Assemble tests for basic. */
 @Category(SmokeTests::class)
 class BasicTest {
 
-    @get:Rule
-    val rule = GradleRule.fromProject(BasicSpec())
+  @get:Rule val rule = GradleRule.fromProject(BasicSpec())
 
-    @Test
-    fun weDontFailOnLicenceDotTxtWhenPackagingDependencies() {
-        rule.build.executor.run("assembleAndroidTest")
-    }
+  @Test
+  fun weDontFailOnLicenceDotTxtWhenPackagingDependencies() {
+    rule.build.executor.run("assembleAndroidTest")
+  }
 
-    @Test
-    fun testRenderscriptDidNotRun() {
-        // First enable renderscript, then execute renderscript task and check if it was skipped
-        val build = rule.build {
-            androidApplication(":app") {
-                android {
-                    buildFeatures {
-                        renderScript = true
-                    }
-                }
-            }
-        }
+  @Test
+  fun testRenderscriptDidNotRun() {
+    // First enable renderscript, then execute renderscript task and check if it was skipped
+    val build = rule.build { androidApplication(":app") { android { buildFeatures { renderScript = true } } } }
 
-        val result = build.executor.run("compileDebugRenderscript")
-        Truth.assertThat(result.getTask(":app:compileDebugRenderscript").executionState.toString())
-            .isEqualTo("SKIPPED")
-    }
+    val result = build.executor.run("compileDebugRenderscript")
+    Truth.assertThat(result.getTask(":app:compileDebugRenderscript").executionState.toString()).isEqualTo("SKIPPED")
+  }
 
-    @Test
-    fun testOutputs() {
-        val build = rule.build {
-            androidApplication(":app") {
-                pluginCallbacks += BasicTestCallback::class.java
-            }
-            gradleProperties {
-                add(BooleanOption.USE_NEW_DSL, false)
-            }
-        }
+  @Test
+  fun testOutputs() {
+    val build =
+      rule.build {
+        androidApplication(":app") { pluginCallbacks += BasicTestCallback::class.java }
+        gradleProperties { add(BooleanOption.USE_NEW_DSL, false) }
+      }
 
-        val result = build.executor.run(":app:assembleRelease")
+    val result = build.executor.run(":app:assembleRelease")
 
-        result.assertOutputContains("Customizing release / 12")
-        result.assertOutputContains("Done with release / 13")
-    }
+    result.assertOutputContains("Customizing release / 12")
+    result.assertOutputContains("Done with release / 13")
+  }
 }
 
-
-class BasicTestCallback: LegacyApplicationCallback {
-    override fun handleExtension(
-        project: Project,
-        extension: BaseAppModuleExtension
-    ) {
-        // Override the versionCode of the release version
-        extension.applicationVariants.all { variant: ApplicationVariant ->
-            println(variant.name)
-            if (variant.buildType.name == "release") {
-                variant.outputs.all { output ->
-                    output as ApkVariantOutput
-                    println("Customizing ${output.name} / ${output.versionCodeOverride}")
-                    output.setVersionCodeOverride(13)
-                    println("Done with ${output.name} / ${output.versionCodeOverride}")
-                }
-            }
+class BasicTestCallback : LegacyApplicationCallback {
+  override fun handleExtension(project: Project, extension: BaseAppModuleExtension) {
+    // Override the versionCode of the release version
+    extension.applicationVariants.all { variant: ApplicationVariant ->
+      println(variant.name)
+      if (variant.buildType.name == "release") {
+        variant.outputs.all { output ->
+          output as ApkVariantOutput
+          println("Customizing ${output.name} / ${output.versionCodeOverride}")
+          output.setVersionCodeOverride(13)
+          println("Done with ${output.name} / ${output.versionCodeOverride}")
         }
+      }
     }
+  }
 }

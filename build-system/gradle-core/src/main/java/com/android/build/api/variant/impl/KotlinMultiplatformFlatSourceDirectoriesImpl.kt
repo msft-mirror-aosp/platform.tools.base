@@ -22,34 +22,28 @@ import org.gradle.api.file.Directory
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.util.PatternFilterable
 
-/**
- * Implementation of [SourceDirectories.Flat] that is read-only.
- */
-class KotlinMultiplatformFlatSourceDirectoriesImpl(
-    name: String,
-    variantServices: VariantServices,
-    variantDslFilters: PatternFilterable?
-): FlatSourceDirectoriesImpl(name, variantServices, variantDslFilters) {
+/** Implementation of [SourceDirectories.Flat] that is read-only. */
+class KotlinMultiplatformFlatSourceDirectoriesImpl(name: String, variantServices: VariantServices, variantDslFilters: PatternFilterable?) :
+  FlatSourceDirectoriesImpl(name, variantServices, variantDslFilters) {
 
-    /**
-     * Note: This doesn't preserve task dependencies of internal `directoryEntry` objects as the
-     * provider watched is the one from the outer scope only. Do not use unless necessary.
-     *
-     * https://youtrack.jetbrains.com/issue/KT-59503
-     */
-    @Deprecated("This is only to support kotlin multiplatform")
-    internal fun addStaticSources(sources: Provider<out Collection<DirectoryEntry>>) {
-        variantSources.addAll(sources)
+  /**
+   * Note: This doesn't preserve task dependencies of internal `directoryEntry` objects as the provider watched is the one from the outer
+   * scope only. Do not use unless necessary.
+   *
+   * https://youtrack.jetbrains.com/issue/KT-59503
+   */
+  @Deprecated("This is only to support kotlin multiplatform")
+  internal fun addStaticSources(sources: Provider<out Collection<DirectoryEntry>>) {
+    variantSources.addAll(sources)
 
-        val projectDir = variantServices.projectInfo.projectDirectory
-        val results = variantServices.newListPropertyForInternalUse(Directory::class.java)
-        val mappedResults: Provider<List<Directory>> = sources.flatMap { directoryEntries: Collection<DirectoryEntry>? ->
-            directoryEntries?.forEach { directoryEntry ->
-                directoryEntry.addTo(projectDir, results)
-            }
-            return@flatMap results
-        }
+    val projectDir = variantServices.projectInfo.projectDirectory
+    val results = variantServices.newListPropertyForInternalUse(Directory::class.java)
+    val mappedResults: Provider<List<Directory>> =
+      sources.flatMap { directoryEntries: Collection<DirectoryEntry>? ->
+        directoryEntries?.forEach { directoryEntry -> directoryEntry.addTo(projectDir, results) }
+        return@flatMap results
+      }
 
-        directories.addAll(mappedResults)
-    }
+    directories.addAll(mappedResults)
+  }
 }

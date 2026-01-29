@@ -16,81 +16,71 @@
 
 package com.android.build.api.variant
 
-import org.gradle.api.Incubating
 import java.util.Objects
+import org.gradle.api.Incubating
 
-/**
- * A class representing device-specific attributes.
- */
+/** A class representing device-specific attributes. */
 @Incubating
-class DeviceSpec private constructor(
-    /**
-     * The name of the device which can be helpful in debugging.
-     */
-    val name: String?,
+class DeviceSpec
+private constructor(
+  /** The name of the device which can be helpful in debugging. */
+  val name: String?,
 
-    /**
-     * The API level of the device.
-     */
-    val apiLevel: Int,
+  /** The API level of the device. */
+  val apiLevel: Int,
 
-    /**
-     * The code name of the device.
-     */
-    val codeName: String?,
+  /** The code name of the device. */
+  val codeName: String?,
 
-    /**
-     * The ABIs of the device.
-     */
-    val abis: List<String>,
+  /** The ABIs of the device. */
+  val abis: List<String>,
 
-    /**
-     * The screen density of the device.
-     */
-    val screenDensity: Int,
+  /** The screen density of the device. */
+  val screenDensity: Int,
 
-    /**
-     * Whether the device supports Privacy Sandbox.
-     */
-    val supportsPrivacySandbox: Boolean
+  /** Whether the device supports Privacy Sandbox. */
+  val supportsPrivacySandbox: Boolean,
 ) {
-    override fun toString() = "DeviceSpec(name=$name, apiLevel=$apiLevel, codeName=$codeName, abis=$abis, supportsPrivacySandbox=$supportsPrivacySandbox, screenDensity=$screenDensity)"
-    override fun equals(other: Any?) = other is DeviceSpec
-            && name == other.name
-            && apiLevel == other.apiLevel
-            && codeName == other.codeName
-            && supportsPrivacySandbox == other.supportsPrivacySandbox
-            && abis.toSet() == other.abis.toSet()
-            && screenDensity == other.screenDensity
+  override fun toString() =
+    "DeviceSpec(name=$name, apiLevel=$apiLevel, codeName=$codeName, abis=$abis, supportsPrivacySandbox=$supportsPrivacySandbox, screenDensity=$screenDensity)"
 
-    override fun hashCode() = Objects.hash(name, apiLevel, codeName, supportsPrivacySandbox, abis.toSet(), screenDensity)
+  override fun equals(other: Any?) =
+    other is DeviceSpec &&
+      name == other.name &&
+      apiLevel == other.apiLevel &&
+      codeName == other.codeName &&
+      supportsPrivacySandbox == other.supportsPrivacySandbox &&
+      abis.toSet() == other.abis.toSet() &&
+      screenDensity == other.screenDensity
 
-    @Incubating
-    class Builder {
-        @set:JvmSynthetic
-        var name: String? = null
+  override fun hashCode() = Objects.hash(name, apiLevel, codeName, supportsPrivacySandbox, abis.toSet(), screenDensity)
 
-        @set:JvmSynthetic
-        var apiLevel: Int = 0
+  @Incubating
+  class Builder {
+    @set:JvmSynthetic var name: String? = null
 
-        @set:JvmSynthetic
-        var codeName: String? = null
+    @set:JvmSynthetic var apiLevel: Int = 0
 
-        @set:JvmSynthetic
-        var supportsPrivacySandbox: Boolean = false
+    @set:JvmSynthetic var codeName: String? = null
 
-        @set:JvmSynthetic
-        var abis: List<String> = listOf()
+    @set:JvmSynthetic var supportsPrivacySandbox: Boolean = false
 
-        @set:JvmSynthetic
-        var screenDensity: Int = 0
+    @set:JvmSynthetic var abis: List<String> = listOf()
 
-        fun setName(name: String?) = apply { this.name = name }
-        fun setApiLevel(apiLevel: Int) = apply { this.apiLevel = apiLevel }
-        fun setCodeName(codeName: String?) = apply { this.codeName = codeName }
-        fun setSupportsPrivacySandbox(supportsPrivacySandbox: Boolean) = apply { this.supportsPrivacySandbox = supportsPrivacySandbox }
-        fun setAbis(abis: List<String>) = apply { this.abis = abis }
-        fun setScreenDensity(screenDensity: Int) = apply { this.screenDensity = screenDensity }
-        fun build() = DeviceSpec(name, apiLevel, codeName, abis, screenDensity, supportsPrivacySandbox)
-    }
+    @set:JvmSynthetic var screenDensity: Int = 0
+
+    fun setName(name: String?) = apply { this.name = name }
+
+    fun setApiLevel(apiLevel: Int) = apply { this.apiLevel = apiLevel }
+
+    fun setCodeName(codeName: String?) = apply { this.codeName = codeName }
+
+    fun setSupportsPrivacySandbox(supportsPrivacySandbox: Boolean) = apply { this.supportsPrivacySandbox = supportsPrivacySandbox }
+
+    fun setAbis(abis: List<String>) = apply { this.abis = abis }
+
+    fun setScreenDensity(screenDensity: Int) = apply { this.screenDensity = screenDensity }
+
+    fun build() = DeviceSpec(name, apiLevel, codeName, abis, screenDensity, supportsPrivacySandbox)
+  }
 }

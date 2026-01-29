@@ -23,51 +23,31 @@ import java.io.File
 import java.io.Serializable
 
 /**
- * Final values for the [TestData] that can be passed to test runners. This should not be used as
- * task input.
+ * Final values for the [TestData] that can be passed to test runners. This should not be used as task input.
  *
  * @property applicationId the application ID of the test APK.
- * @property testedApplicationId the application ID of the APK under testing. This can be null if
- *     there is no such an APK. For example, android-test in library module does not have tested-
- *     application.
- * @property instrumentationTargetPackageId the instrumentation target application id. This is
- *     same value to [applicationId] if it is a self-instrumeting test, otherwise
- *     [testedApplicationId].
+ * @property testedApplicationId the application ID of the APK under testing. This can be null if there is no such an APK. For example,
+ *   android-test in library module does not have tested- application.
+ * @property instrumentationTargetPackageId the instrumentation target application id. This is same value to [applicationId] if it is a
+ *   self-instrumeting test, otherwise [testedApplicationId].
  */
 data class StaticTestData(
-    override val applicationId: String,
-
-    override val testedApplicationId: String?,
-
-    override val instrumentationTargetPackageId: String,
-
-    override val instrumentationRunner: String,
-
-    override val instrumentationRunnerArguments: Map<String, String>,
-
-    override val animationsDisabled: Boolean,
-
-    override val isTestCoverageEnabled: Boolean,
-
-    override val minSdkVersion: AndroidVersion,
-
-    override val isLibrary: Boolean,
-
-    override val flavorName: String,
-
-    override val testApk: File,
-
-    override val testDirectories: List<File?>,
-
-    val testedApks: ApksFinder,
+  override val applicationId: String,
+  override val testedApplicationId: String?,
+  override val instrumentationTargetPackageId: String,
+  override val instrumentationRunner: String,
+  override val instrumentationRunnerArguments: Map<String, String>,
+  override val animationsDisabled: Boolean,
+  override val isTestCoverageEnabled: Boolean,
+  override val minSdkVersion: AndroidVersion,
+  override val isLibrary: Boolean,
+  override val flavorName: String,
+  override val testApk: File,
+  override val testDirectories: List<File?>,
+  val testedApks: ApksFinder,
 ) : com.android.build.api.instrumentation.StaticTestData, Serializable {
 
-    /**
-     *
-     * Returns APK files to install based on given density and abis. If none match,
-     * empty list is returned.
-     */
-    override val
-            testedApkFinder: (DeviceConfigProvider) -> List<File>
-        get() = testedApks::findApks
+  /** Returns APK files to install based on given density and abis. If none match, empty list is returned. */
+  override val testedApkFinder: (DeviceConfigProvider) -> List<File>
+    get() = testedApks::findApks
 }

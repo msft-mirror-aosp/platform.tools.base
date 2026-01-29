@@ -28,147 +28,147 @@ import com.android.buildanalyzer.common.CheckJetifierResult
 import com.android.testutils.MavenRepoGenerator
 import com.android.utils.FileUtils
 import com.google.common.truth.Truth.assertThat
+import java.io.File
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
-import java.io.File
 
 class CheckJetifierTaskTest {
 
-    @get:Rule
-    val project = GradleTestProject.builder().fromTestApp(setUpTestProject()).create()
+  @get:Rule val project = GradleTestProject.builder().fromTestApp(setUpTestProject()).create()
 
-    private fun setUpTestProject(): TestProject {
-        val app = MinimalSubProject.app()
-        val lib = MinimalSubProject.lib()
-        return MultiModuleTestProject.builder()
-            .subproject(app)
-            .subproject(lib)
-            .dependency("implementation", app, lib)
-            .build()
-    }
+  private fun setUpTestProject(): TestProject {
+    val app = MinimalSubProject.app()
+    val lib = MinimalSubProject.lib()
+    return MultiModuleTestProject.builder().subproject(app).subproject(lib).dependency("implementation", app, lib).build()
+  }
 
-    private lateinit var resultFile: File
+  private lateinit var resultFile: File
 
-    @Before
-    fun setUp() {
-        resultFile = project.buildDir.resolve("result.json")
-    }
+  @Before
+  fun setUp() {
+    resultFile = project.buildDir.resolve("result.json")
+  }
 
-    private fun addMavenRepo() {
-        val mavenRepo = project.projectDir.resolve("mavenRepo")
-        FileUtils.mkdirs(mavenRepo)
-        MavenRepoGenerator(
-            listOf(
-                MavenRepoGenerator.Library(
-                    "example:A:1.0",
-                    "example:B:1.0",
-                ),
-                MavenRepoGenerator.Library(
-                    "example:B:1.0",
-                    "com.android.support:support-annotations:$SUPPORT_LIB_VERSION",
-                ),
-            )
-        ).generate(mavenRepo.toPath())
-    }
-
-    private fun addSupportLibDependencies() {
-        TestFileUtils.appendToFile(
-                project.settingsFile,
-                """
-                    dependencyResolutionManagement {
-                        repositories {
-                            maven { url = 'mavenRepo' }
-                        }
-                    }
-                """.trimIndent()
+  private fun addMavenRepo() {
+    val mavenRepo = project.projectDir.resolve("mavenRepo")
+    FileUtils.mkdirs(mavenRepo)
+    MavenRepoGenerator(
+        listOf(
+          MavenRepoGenerator.Library("example:A:1.0", "example:B:1.0"),
+          MavenRepoGenerator.Library("example:B:1.0", "com.android.support:support-annotations:$SUPPORT_LIB_VERSION"),
         )
-        TestFileUtils.appendToFile(
-            project.getSubproject("app").buildFile,
-            """
+      )
+      .generate(mavenRepo.toPath())
+  }
+
+  private fun addSupportLibDependencies() {
+    TestFileUtils.appendToFile(
+      project.settingsFile,
+      """
+      dependencyResolutionManagement {
+          repositories {
+              maven { url = 'mavenRepo' }
+          }
+      }
+      """
+        .trimIndent(),
+    )
+    TestFileUtils.appendToFile(
+      project.getSubproject("app").buildFile,
+      """
             dependencies {
                 implementation 'example:A:1.0' // `A` transitively depends on a support library
                 implementation 'com.android.support:collections:$SUPPORT_LIB_VERSION'
             }
-            """.trimIndent()
-        )
-        TestFileUtils.appendToFile(
-            project.getSubproject("lib").buildFile,
             """
+        .trimIndent(),
+    )
+    TestFileUtils.appendToFile(
+      project.getSubproject("lib").buildFile,
+      """
             dependencies {
                 implementation 'example:B:1.0' // B directly depends on a support library
                 // Add the same dependency in app to check if the task can handle duplicates
                 implementation 'com.android.support:collections:$SUPPORT_LIB_VERSION'
             }
-            """.trimIndent()
-        )
-    }
-
-    private fun runCheckJetifier() {
-        project.executor()
-            .with(BooleanOption.ENABLE_JETIFIER, true)
-            .with(StringOption.IDE_CHECK_JETIFIER_RESULT_FILE, resultFile.path)
-            .run("checkJetifier")
-    }
-
-    @Test
-    fun `support library dependencies present`() {
-        addMavenRepo()
-        addSupportLibDependencies()
-
-        runCheckJetifier()
-        checkSupportLibDetected()
-    }
-
-    @Test
-    fun `support library dependencies not present`() {
-        runCheckJetifier()
-
-        val result = CheckJetifierResult.load(resultFile)
-        assertThat(result.getDisplayString()).isEqualTo("")
-    }
-
-    @Test
-    fun testConfigurationsThatExtendAreResolvedFirst() {
-        addMavenRepo()
-        addSupportLibDependencies()
-
-        project.getSubproject("app").buildFile.appendText(
             """
+        .trimIndent(),
+    )
+  }
 
-            configurations {
-                aaa {
-                    canBeResolved = true
-                }
-            }
-            afterEvaluate {
-                Configuration c = configurations.getByName("aaa")
-                if (c.name >= "debugRuntimeClasspath" || c.name >= "debugAndroidTestRuntimeClasspath") {
-                    throw new RuntimeException(
-                        "This name should be less than AGP's, it s important for this test."
-                    )
-                }
-                c.extendsFrom(configurations.getByName("debugRuntimeClasspath"))
-                c.extendsFrom(configurations.getByName("debugAndroidTestRuntimeClasspath"))
-            }
-        """.trimIndent()
-        )
-        runCheckJetifier()
-        checkSupportLibDetected()
-    }
+  private fun runCheckJetifier() {
+    project
+      .executor()
+      .with(BooleanOption.ENABLE_JETIFIER, true)
+      .with(StringOption.IDE_CHECK_JETIFIER_RESULT_FILE, resultFile.path)
+      .run("checkJetifier")
+  }
 
-    private fun checkSupportLibDetected() {
-        val result = CheckJetifierResult.load(resultFile)
-        assertThat(result.getDisplayString()).isEqualTo(
-            """
-            com.android.support:collections:28.0.0
-                Project ':app', configuration 'debugAndroidTestCompileClasspath' -> com.android.support:collections:28.0.0
-                Project ':lib', configuration 'debugAndroidTestCompileClasspath' -> com.android.support:collections:28.0.0
-            example:A:1.0
-                Project ':app', configuration 'debugAndroidTestCompileClasspath' -> example:A:1.0 -> example:B:1.0 -> com.android.support:support-annotations:28.0.0
-            example:B:1.0
-                Project ':lib', configuration 'debugAndroidTestCompileClasspath' -> example:B:1.0 -> com.android.support:support-annotations:28.0.0
-            """.trimIndent()
-        )
-    }
+  @Test
+  fun `support library dependencies present`() {
+    addMavenRepo()
+    addSupportLibDependencies()
+
+    runCheckJetifier()
+    checkSupportLibDetected()
+  }
+
+  @Test
+  fun `support library dependencies not present`() {
+    runCheckJetifier()
+
+    val result = CheckJetifierResult.load(resultFile)
+    assertThat(result.getDisplayString()).isEqualTo("")
+  }
+
+  @Test
+  fun testConfigurationsThatExtendAreResolvedFirst() {
+    addMavenRepo()
+    addSupportLibDependencies()
+
+    project
+      .getSubproject("app")
+      .buildFile
+      .appendText(
+        """
+
+        configurations {
+            aaa {
+                canBeResolved = true
+            }
+        }
+        afterEvaluate {
+            Configuration c = configurations.getByName("aaa")
+            if (c.name >= "debugRuntimeClasspath" || c.name >= "debugAndroidTestRuntimeClasspath") {
+                throw new RuntimeException(
+                    "This name should be less than AGP's, it s important for this test."
+                )
+            }
+            c.extendsFrom(configurations.getByName("debugRuntimeClasspath"))
+            c.extendsFrom(configurations.getByName("debugAndroidTestRuntimeClasspath"))
+        }
+        """
+          .trimIndent()
+      )
+    runCheckJetifier()
+    checkSupportLibDetected()
+  }
+
+  private fun checkSupportLibDetected() {
+    val result = CheckJetifierResult.load(resultFile)
+    assertThat(result.getDisplayString())
+      .isEqualTo(
+        """
+        com.android.support:collections:28.0.0
+            Project ':app', configuration 'debugAndroidTestCompileClasspath' -> com.android.support:collections:28.0.0
+            Project ':lib', configuration 'debugAndroidTestCompileClasspath' -> com.android.support:collections:28.0.0
+        example:A:1.0
+            Project ':app', configuration 'debugAndroidTestCompileClasspath' -> example:A:1.0 -> example:B:1.0 -> com.android.support:support-annotations:28.0.0
+        example:B:1.0
+            Project ':lib', configuration 'debugAndroidTestCompileClasspath' -> example:B:1.0 -> com.android.support:support-annotations:28.0.0
+        """
+          .trimIndent()
+      )
+  }
 }

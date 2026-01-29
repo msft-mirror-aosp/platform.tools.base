@@ -18,22 +18,18 @@ package com.android.build.gradle.internal.profile
 
 import com.android.utils.HelpfulEnumConverter
 
-enum class ProfilingMode(
-    val modeName: String?,
-    val isDebuggable: Boolean?,
-    val isProfileable: Boolean?
-) {
+enum class ProfilingMode(val modeName: String?, val isDebuggable: Boolean?, val isProfileable: Boolean?) {
 
-    UNDEFINED(null, null, null),
-    DEBUGGABLE("debuggable", true, false),
-    PROFILEABLE("profileable", false, true);
+  UNDEFINED(null, null, null),
+  DEBUGGABLE("debuggable", true, false),
+  PROFILEABLE("profileable", false, true);
 
-    companion object {
+  companion object {
 
-        private val profilingModeConverter = HelpfulEnumConverter(ProfilingMode::class.java)
+    private val profilingModeConverter = HelpfulEnumConverter(ProfilingMode::class.java)
 
-        fun getProfilingModeType(modeName: String?): ProfilingMode {
-            return profilingModeConverter.convert(modeName) ?: UNDEFINED
-        }
+    fun getProfilingModeType(modeName: String?): ProfilingMode {
+      return profilingModeConverter.convert(modeName) ?: UNDEFINED
     }
+  }
 }

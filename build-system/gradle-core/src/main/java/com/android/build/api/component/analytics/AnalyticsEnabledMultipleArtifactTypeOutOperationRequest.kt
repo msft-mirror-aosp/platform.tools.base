@@ -20,17 +20,16 @@ import com.android.build.api.artifact.Artifact
 import com.android.build.api.artifact.MultipleArtifactTypeOutOperationRequest
 import com.android.tools.build.gradle.internal.profile.VariantPropertiesMethodType
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
-import org.gradle.api.file.FileSystemLocation
 import javax.inject.Inject
+import org.gradle.api.file.FileSystemLocation
 
-open class AnalyticsEnabledMultipleArtifactTypeOutOperationRequest<FileTypeT: FileSystemLocation> @Inject constructor(
-    val delegate: MultipleArtifactTypeOutOperationRequest<FileTypeT>,
-    val stats: GradleBuildVariant.Builder
-): MultipleArtifactTypeOutOperationRequest<FileTypeT> {
+open class AnalyticsEnabledMultipleArtifactTypeOutOperationRequest<FileTypeT : FileSystemLocation>
+@Inject
+constructor(val delegate: MultipleArtifactTypeOutOperationRequest<FileTypeT>, val stats: GradleBuildVariant.Builder) :
+  MultipleArtifactTypeOutOperationRequest<FileTypeT> {
 
-    override fun <ArtifactTypeT : Artifact.Multiple<FileTypeT>> toListenTo(type: ArtifactTypeT) {
-        stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
-            VariantPropertiesMethodType.MULTIPLE_TO_LISTEN_TO_VALUE
-        delegate.toListenTo(type)
-    }
+  override fun <ArtifactTypeT : Artifact.Multiple<FileTypeT>> toListenTo(type: ArtifactTypeT) {
+    stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type = VariantPropertiesMethodType.MULTIPLE_TO_LISTEN_TO_VALUE
+    delegate.toListenTo(type)
+  }
 }

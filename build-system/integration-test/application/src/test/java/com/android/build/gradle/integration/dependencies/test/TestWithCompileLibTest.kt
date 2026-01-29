@@ -27,40 +27,33 @@ import org.junit.Test
 
 class TestWithCompileLibTest : ModelComparator() {
 
-    @get:Rule
-    val project = GradleTestProject.builder()
-        .fromTestProject("projectWithModules")
-        .disableBuiltInKotlin()
-        .create()
+  @get:Rule val project = GradleTestProject.builder().fromTestProject("projectWithModules").disableBuiltInKotlin().create()
 
-    @Before
-    fun setUp() {
-        project.setIncludedProjects("app", "library")
-        TestFileUtils.appendToFile(
-            project.getSubproject("app").buildFile,
-            """
-                dependencies {
-                    androidTestImplementation project(":library")
-                }
-            """.trimIndent())
-    }
+  @Before
+  fun setUp() {
+    project.setIncludedProjects("app", "library")
+    TestFileUtils.appendToFile(
+      project.getSubproject("app").buildFile,
+      """
+      dependencies {
+          androidTestImplementation project(":library")
+      }
+      """
+        .trimIndent(),
+    )
+  }
 
-    @Test
-    fun `test VariantDependencies model`() {
-        val result =
-            project.modelV2()
-                .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
-                .fetchModels(variantName = "debug")
+  @Test
+  fun `test VariantDependencies model`() {
+    val result = project.modelV2().ignoreSyncIssues(SyncIssue.SEVERITY_WARNING).fetchModels(variantName = "debug")
 
-        with(result).compareVariantDependencies(
-            projectAction = { getProject(":app") }, goldenFile = "app_VariantDependencies"
-        )
-    }
+    with(result).compareVariantDependencies(projectAction = { getProject(":app") }, goldenFile = "app_VariantDependencies")
+  }
 
-    @Test
-    fun `check compiled jar is packaged`() {
-        project.execute("clean", ":app:assembleDebugAndroidTest")
-        val testApk = project.getSubproject(":app").getTestApk()
-        TruthHelper.assertThat(testApk).containsClass("Lcom/example/android/multiproject/library/PersonView;")
-    }
+  @Test
+  fun `check compiled jar is packaged`() {
+    project.execute("clean", ":app:assembleDebugAndroidTest")
+    val testApk = project.getSubproject(":app").getTestApk()
+    TruthHelper.assertThat(testApk).containsClass("Lcom/example/android/multiproject/library/PersonView;")
+  }
 }

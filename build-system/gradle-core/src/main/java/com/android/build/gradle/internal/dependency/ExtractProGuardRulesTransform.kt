@@ -20,6 +20,7 @@ import com.android.build.gradle.internal.r8.TargetedR8Rules
 import com.android.build.gradle.internal.r8.TargetedR8RulesReadWriter
 import com.android.build.gradle.internal.r8.TargetedR8RulesReadWriter.createJarContents
 import com.android.utils.FileUtils
+import javax.inject.Inject
 import org.gradle.api.artifacts.transform.CacheableTransform
 import org.gradle.api.artifacts.transform.InputArtifact
 import org.gradle.api.artifacts.transform.TransformAction
@@ -29,48 +30,39 @@ import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.Classpath
 import org.gradle.api.tasks.Input
-import javax.inject.Inject
 
 @CacheableTransform
-abstract class ExtractProGuardRulesTransform @Inject constructor() :
-    TransformAction<ExtractProGuardRulesTransform.Parameters> {
+abstract class ExtractProGuardRulesTransform @Inject constructor() : TransformAction<ExtractProGuardRulesTransform.Parameters> {
 
-    interface Parameters : GenericTransformParameters{
-        @get:Input
-        val filterOutGlobalRules: Property<Boolean>
-    }
+  interface Parameters : GenericTransformParameters {
+    @get:Input val filterOutGlobalRules: Property<Boolean>
+  }
 
-    @get:Classpath
-    @get:InputArtifact
-    abstract val inputArtifact: Provider<FileSystemLocation>
+  @get:Classpath @get:InputArtifact abstract val inputArtifact: Provider<FileSystemLocation>
 
-    override fun transform(transformOutputs: TransformOutputs) {
-        val targetedR8Rules =
-            TargetedR8RulesReadWriter.readFromJar(
-                inputArtifact.get().asFile,
-                isClassesJarInAar = false,
-                shouldRemoveBannedGlobals = parameters.filterOutGlobalRules.get()
-            )
-        writeTargetedR8Rules(targetedR8Rules, transformOutputs)
-    }
+  override fun transform(transformOutputs: TransformOutputs) {
+    val targetedR8Rules =
+      TargetedR8RulesReadWriter.readFromJar(
+        inputArtifact.get().asFile,
+        isClassesJarInAar = false,
+        shouldRemoveBannedGlobals = parameters.filterOutGlobalRules.get(),
+      )
+    writeTargetedR8Rules(targetedR8Rules, transformOutputs)
+  }
 
-    companion object {
+  companion object {
 
-        fun writeTargetedR8Rules(
-            targetedR8Rules: TargetedR8Rules,
-            transformOutputs: TransformOutputs,
-            isClassesJarInAar: Boolean = false
-        ) {
-            // Create a subdirectory called "lib" as FilterShrinkerRulesTransform expects this structure
-            val outputDirectory = transformOutputs.dir("shrink-rules").resolve("lib")
-            FileUtils.mkdirs(outputDirectory)
+    fun writeTargetedR8Rules(targetedR8Rules: TargetedR8Rules, transformOutputs: TransformOutputs, isClassesJarInAar: Boolean = false) {
+      // Create a subdirectory called "lib" as FilterShrinkerRulesTransform expects this structure
+      val outputDirectory = transformOutputs.dir("shrink-rules").resolve("lib")
+      FileUtils.mkdirs(outputDirectory)
 
-            targetedR8Rules.createJarContents(isClassesJarInAar = isClassesJarInAar).forEach { (relativePath, contents) ->
-                outputDirectory.resolve(relativePath).run {
-                    FileUtils.mkdirs(parentFile)
-                    writeBytes(contents)
-                }
-            }
+      targetedR8Rules.createJarContents(isClassesJarInAar = isClassesJarInAar).forEach { (relativePath, contents) ->
+        outputDirectory.resolve(relativePath).run {
+          FileUtils.mkdirs(parentFile)
+          writeBytes(contents)
         }
+      }
     }
+  }
 }

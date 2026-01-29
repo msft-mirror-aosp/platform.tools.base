@@ -19,31 +19,27 @@ package com.android.build.api.component.analytics
 import com.android.build.api.variant.SourceDirectories
 import com.android.tools.build.gradle.internal.profile.VariantPropertiesMethodType
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
+import javax.inject.Inject
 import org.gradle.api.file.Directory
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.Provider
-import javax.inject.Inject
 
-open class AnalyticsEnabledLayered @Inject constructor(
-    override val delegate: SourceDirectories.Layered,
-    stats: GradleBuildVariant.Builder,
-    objectFactory: ObjectFactory,
-):
-    AnalyticsEnabledSourceDirectories(delegate, stats, objectFactory),
-    SourceDirectories.Layered
-{
+open class AnalyticsEnabledLayered
+@Inject
+constructor(override val delegate: SourceDirectories.Layered, stats: GradleBuildVariant.Builder, objectFactory: ObjectFactory) :
+  AnalyticsEnabledSourceDirectories(delegate, stats, objectFactory), SourceDirectories.Layered {
 
-    override val all: Provider<List<Collection<Directory>>>
-        get() {
-            stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
-                VariantPropertiesMethodType.SOURCES_AND_OVERLAY_DIRECTORIES_GET_ALL_VALUE
-            return delegate.all
-        }
+  override val all: Provider<List<Collection<Directory>>>
+    get() {
+      stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
+        VariantPropertiesMethodType.SOURCES_AND_OVERLAY_DIRECTORIES_GET_ALL_VALUE
+      return delegate.all
+    }
 
-    override val static: Provider<List<Collection<Directory>>>
-        get() {
-            stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
-                VariantPropertiesMethodType.SOURCES_AND_OVERLAY_DIRECTORIES_GET_STATIC_VALUE
-            return delegate.static
-        }
+  override val static: Provider<List<Collection<Directory>>>
+    get() {
+      stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
+        VariantPropertiesMethodType.SOURCES_AND_OVERLAY_DIRECTORIES_GET_STATIC_VALUE
+      return delegate.static
+    }
 }

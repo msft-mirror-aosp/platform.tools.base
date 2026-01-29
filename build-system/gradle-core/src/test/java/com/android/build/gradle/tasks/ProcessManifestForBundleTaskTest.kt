@@ -27,6 +27,8 @@ import com.android.build.gradle.internal.fixtures.FakeGradleProperty
 import com.android.build.gradle.internal.fixtures.FakeNoOpAnalyticsService
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.google.common.truth.Truth
+import java.io.File
+import java.io.IOException
 import org.gradle.api.Project
 import org.gradle.testfixtures.ProjectBuilder
 import org.gradle.workers.WorkerExecutor
@@ -36,104 +38,101 @@ import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
-import java.io.File
-import java.io.IOException
 
 class ProcessManifestForBundleTaskTest {
 
-    @Rule
-    @JvmField var temporaryFolder = TemporaryFolder()
+  @Rule @JvmField var temporaryFolder = TemporaryFolder()
 
-    private val creationConfig: ApplicationCreationConfig = mock()
+  private val creationConfig: ApplicationCreationConfig = mock()
 
-    private val workers: WorkerExecutor = mock()
+  private val workers: WorkerExecutor = mock()
 
-    private lateinit var task: ProcessManifestForBundleTask
-    private lateinit var sourceManifestFolder: File
+  private lateinit var task: ProcessManifestForBundleTask
+  private lateinit var sourceManifestFolder: File
 
-    @Before
-    @Throws(IOException::class)
-    fun setUp() {
-        val project: Project = ProjectBuilder.builder().withProjectDir(temporaryFolder.root).build()
-        val taskProvider = project.tasks.register("testManifestForBundle", ProcessManifestForBundleTask::class.java)
-        task = taskProvider.get()
-        sourceManifestFolder = temporaryFolder.newFolder("source_manifest")
+  @Before
+  @Throws(IOException::class)
+  fun setUp() {
+    val project: Project = ProjectBuilder.builder().withProjectDir(temporaryFolder.root).build()
+    val taskProvider = project.tasks.register("testManifestForBundle", ProcessManifestForBundleTask::class.java)
+    task = taskProvider.get()
+    sourceManifestFolder = temporaryFolder.newFolder("source_manifest")
 
-        val mainSplit = VariantOutputImpl(
-            FakeGradleProperty(5),
-            FakeGradleProperty("version_name"),
-            FakeGradleProperty(true),
-            VariantOutputConfigurationImpl(),
-            "base_name",
-            "split_full_name",
-            FakeGradleProperty(value = "output_file_name"),
-        )
-        whenever(creationConfig.outputs).thenReturn(VariantOutputList(listOf(mainSplit)))
-        task.outputsHandler.set(MultiOutputHandler.create(creationConfig))
-        task.analyticsService.set(FakeNoOpAnalyticsService())
-    }
+    val mainSplit =
+      VariantOutputImpl(
+        FakeGradleProperty(5),
+        FakeGradleProperty("version_name"),
+        FakeGradleProperty(true),
+        VariantOutputConfigurationImpl(),
+        "base_name",
+        "split_full_name",
+        FakeGradleProperty(value = "output_file_name"),
+      )
+    whenever(creationConfig.outputs).thenReturn(VariantOutputList(listOf(mainSplit)))
+    task.outputsHandler.set(MultiOutputHandler.create(creationConfig))
+    task.analyticsService.set(FakeNoOpAnalyticsService())
+  }
 
-    @Test
-    fun testWithoutFeatureNameProcessing() {
+  @Test
+  fun testWithoutFeatureNameProcessing() {
 
-        val sourceManifest = File(sourceManifestFolder, "AndroidManifest.xml")
-        sourceManifest.writeText("Some content")
-        BuiltArtifactsImpl(
-            artifactType = InternalArtifactType.MERGED_MANIFESTS,
-            applicationId = "appId",
-            variantName = "debug",
-            elements = listOf(
-                BuiltArtifactImpl.make(sourceManifest.absolutePath)
-            )
-        ).saveToDirectory(sourceManifestFolder)
-        task.applicationMergedManifests.set(sourceManifestFolder)
+    val sourceManifest = File(sourceManifestFolder, "AndroidManifest.xml")
+    sourceManifest.writeText("Some content")
+    BuiltArtifactsImpl(
+        artifactType = InternalArtifactType.MERGED_MANIFESTS,
+        applicationId = "appId",
+        variantName = "debug",
+        elements = listOf(BuiltArtifactImpl.make(sourceManifest.absolutePath)),
+      )
+      .saveToDirectory(sourceManifestFolder)
+    task.applicationMergedManifests.set(sourceManifestFolder)
 
-        task.bundleManifest.set(temporaryFolder.newFile("output_manifest.xml"))
-        task.taskAction()
+    task.bundleManifest.set(temporaryFolder.newFile("output_manifest.xml"))
+    task.taskAction()
 
-        Truth.assertThat(task.bundleManifest.get().asFile.readText(Charsets.UTF_8))
-            .isEqualTo("Some content")
-    }
+    Truth.assertThat(task.bundleManifest.get().asFile.readText(Charsets.UTF_8)).isEqualTo("Some content")
+  }
 
-    @Test
-    fun testFeatureNameNotRemoved() {
-        val sourceManifest = File(sourceManifestFolder, "AndroidManifest.xml")
-        sourceManifest.writeText(
-            """<?xml version="1.0" encoding="utf-8"?>
-                <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-                    xmlns:dist="http://schemas.android.com/apk/distribution"
-                    featureSplit="feature1"
-                    package="com.example.app"
-                    android:versionCode="11" >
+  @Test
+  fun testFeatureNameNotRemoved() {
+    val sourceManifest = File(sourceManifestFolder, "AndroidManifest.xml")
+    sourceManifest.writeText(
+      """
+      <?xml version="1.0" encoding="utf-8"?>
+                      <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+                          xmlns:dist="http://schemas.android.com/apk/distribution"
+                          featureSplit="feature1"
+                          package="com.example.app"
+                          android:versionCode="11" >
 
-                    <application android:debuggable="true" >
-                        <activity
-                            android:name="com.example.feature1.FeatureActivity"
-                            android:label="Feature Activity"
-                            android:splitName="feature1">
-                            <intent-filter>
-                                <action android:name="android.intent.action.MAIN" />
-                                <category android:name="android.intent.category.LAUNCHER" />
-                            </intent-filter>
-                        </activity>
-                    </application>
-                </manifest>""".trimIndent()
-        )
+                          <application android:debuggable="true" >
+                              <activity
+                                  android:name="com.example.feature1.FeatureActivity"
+                                  android:label="Feature Activity"
+                                  android:splitName="feature1">
+                                  <intent-filter>
+                                      <action android:name="android.intent.action.MAIN" />
+                                      <category android:name="android.intent.category.LAUNCHER" />
+                                  </intent-filter>
+                              </activity>
+                          </application>
+                      </manifest>
+      """
+        .trimIndent()
+    )
 
-        BuiltArtifactsImpl(
-            artifactType = InternalArtifactType.MERGED_MANIFESTS,
-            applicationId = "appId",
-            variantName = "debug",
-            elements = listOf(
-                BuiltArtifactImpl.make(sourceManifest.absolutePath)
-            )
-        ).saveToDirectory(sourceManifestFolder)
-        task.applicationMergedManifests.set(sourceManifestFolder)
+    BuiltArtifactsImpl(
+        artifactType = InternalArtifactType.MERGED_MANIFESTS,
+        applicationId = "appId",
+        variantName = "debug",
+        elements = listOf(BuiltArtifactImpl.make(sourceManifest.absolutePath)),
+      )
+      .saveToDirectory(sourceManifestFolder)
+    task.applicationMergedManifests.set(sourceManifestFolder)
 
-        task.bundleManifest.set(temporaryFolder.newFile("output_manifest.xml"))
-        task.taskAction()
+    task.bundleManifest.set(temporaryFolder.newFile("output_manifest.xml"))
+    task.taskAction()
 
-        Truth.assertThat(task.bundleManifest.get().asFile.readText(Charsets.UTF_8))
-            .contains("android:splitName=\"feature1\"")
-    }
+    Truth.assertThat(task.bundleManifest.get().asFile.readText(Charsets.UTF_8)).contains("android:splitName=\"feature1\"")
+  }
 }

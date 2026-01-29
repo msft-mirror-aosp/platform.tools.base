@@ -24,28 +24,28 @@ import java.nio.file.Files
 import java.nio.file.Path
 
 /**
- * When executing bazel tests that require artifacts in the offline maven repo at runtime, this
- * function should be called from the static/init method to copy the repository for usage.
+ * When executing bazel tests that require artifacts in the offline maven repo at runtime, this function should be called from the
+ * static/init method to copy the repository for usage.
  */
 internal fun importOfflineMavenRepo() {
-    if (TestUtils.runningFromBazel()) {
-        val originOfflineRepo: Path =
-                TestUtils.getWorkspaceRoot().parent.resolve("maven/repository")
-        if (!Files.exists(originOfflineRepo)) {
-            throw IllegalArgumentException("$originOfflineRepo does not exist")
-        }
-        val destinationOfflineRepo: File = TestUtils.getPrebuiltOfflineMavenRepo().toFile()
-        if (destinationOfflineRepo.walkTopDown().count() > 1) {
-            // Offline maven repo is already created.
-            return
-        }
-        FileUtils.copyDirectoryContentToDirectory(
-                originOfflineRepo.toFile(), destinationOfflineRepo)
-        val offlineRepoManifest =
-                TestUtils.getWorkspaceRoot().resolve(
-                        // generated from :runtime_test_dependencies target in BUILD
-                        "tools/base/build-system/gradle-core/runtime_test_dependencies.manifest")
-        val manifestContent = Files.readAllLines(offlineRepoManifest)
-        RepoLinker().link(destinationOfflineRepo.toPath(), manifestContent)
+  if (TestUtils.runningFromBazel()) {
+    val originOfflineRepo: Path = TestUtils.getWorkspaceRoot().parent.resolve("maven/repository")
+    if (!Files.exists(originOfflineRepo)) {
+      throw IllegalArgumentException("$originOfflineRepo does not exist")
     }
+    val destinationOfflineRepo: File = TestUtils.getPrebuiltOfflineMavenRepo().toFile()
+    if (destinationOfflineRepo.walkTopDown().count() > 1) {
+      // Offline maven repo is already created.
+      return
+    }
+    FileUtils.copyDirectoryContentToDirectory(originOfflineRepo.toFile(), destinationOfflineRepo)
+    val offlineRepoManifest =
+      TestUtils.getWorkspaceRoot()
+        .resolve(
+          // generated from :runtime_test_dependencies target in BUILD
+          "tools/base/build-system/gradle-core/runtime_test_dependencies.manifest"
+        )
+    val manifestContent = Files.readAllLines(offlineRepoManifest)
+    RepoLinker().link(destinationOfflineRepo.toPath(), manifestContent)
+  }
 }

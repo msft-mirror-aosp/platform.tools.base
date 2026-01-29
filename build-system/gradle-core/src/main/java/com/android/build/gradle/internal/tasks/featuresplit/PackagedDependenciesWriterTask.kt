@@ -51,213 +51,176 @@ import org.gradle.api.tasks.TaskProvider
 import org.gradle.internal.component.local.model.OpaqueComponentArtifactIdentifier
 
 private val aarOrJarType = Action { container: AttributeContainer ->
-    container.attribute(ARTIFACT_TYPE, AndroidArtifacts.ArtifactType.AAR_OR_JAR.type)
+  container.attribute(ARTIFACT_TYPE, AndroidArtifacts.ArtifactType.AAR_OR_JAR.type)
 }
 
-/** Task to write the list of transitive dependencies.  */
+/** Task to write the list of transitive dependencies. */
 @CacheableTask
 @BuildAnalyzer(primaryTaskCategory = TaskCategory.METADATA)
 abstract class PackagedDependenciesWriterTask : NonIncrementalTask() {
 
-    @get:OutputFile
-    abstract val outputFile: RegularFileProperty
+  @get:OutputFile abstract val outputFile: RegularFileProperty
 
-    private lateinit var runtimeAarOrJarDeps: ArtifactCollection
+  private lateinit var runtimeAarOrJarDeps: ArtifactCollection
 
-    /**
-     * Deduplication of entries is needed because Gradle resolves to two (or more)
-     * ResolvedArtifactResult pointing to the same id and file but different variants
-     *
-     * This leads to an error in dynamic feature modules when running :app:checkDebugLibraries
-     *
-     * See b/247843123, b/246529493
-     * See https://github.com/gradle/gradle/issues/23604
-     */
-    @get:Input
-    val content: List<String>
-       get() = runtimeAarOrJarDeps.map { it.toIdString() }.distinct().sorted()
+  /**
+   * Deduplication of entries is needed because Gradle resolves to two (or more) ResolvedArtifactResult pointing to the same id and file but
+   * different variants
+   *
+   * This leads to an error in dynamic feature modules when running :app:checkDebugLibraries
+   *
+   * See b/247843123, b/246529493 See https://github.com/gradle/gradle/issues/23604
+   */
+  @get:Input
+  val content: List<String>
+    get() = runtimeAarOrJarDeps.map { it.toIdString() }.distinct().sorted()
 
-    // the list of packaged dependencies by transitive dependencies.
-    private lateinit var transitivePackagedDeps : ArtifactCollection
+  // the list of packaged dependencies by transitive dependencies.
+  private lateinit var transitivePackagedDeps: ArtifactCollection
 
-    @get:InputFiles
-    @get:PathSensitive(PathSensitivity.NONE)
-    val transitivePackagedDepsFC : FileCollection
-        get() = transitivePackagedDeps.artifactFiles
+  @get:InputFiles
+  @get:PathSensitive(PathSensitivity.NONE)
+  val transitivePackagedDepsFC: FileCollection
+    get() = transitivePackagedDeps.artifactFiles
 
-    @get:Input
-    abstract val currentProjectIds: ListProperty<String>
+  @get:Input abstract val currentProjectIds: ListProperty<String>
 
-    override fun doTaskAction() {
-        val apkFilters = mutableSetOf<String>()
-        val contentFilters = mutableSetOf<String>()
-        // load the transitive information and remove from the full content.
-        // We know this is correct because this information is also used in
-        // FilteredArtifactCollection to remove this content from runtime-based ArtifactCollection.
-        // However since we directly use the Configuration here, we have to manually remove it.
-        for (transitiveDep in transitivePackagedDeps) {
-            // register the APK that generated this list to remove it from our list
-            apkFilters.add(transitiveDep.toIdString())
-            // read its packaged content to also remove it.
-            val lines = transitiveDep.file.readLines()
-            contentFilters.addAll(lines)
-        }
-
-        val contentWithProject = content + currentProjectIds.get()
-
-        // compute the overall content
-        val filteredContent =
-            contentWithProject.filter {
-                !apkFilters.contains(it) && !contentFilters.contains(it)
-            }.sorted()
-
-        val asFile = outputFile.get().asFile
-        FileUtils.mkdirs(asFile.parentFile)
-        asFile.writeText(Joiner.on(System.lineSeparator()).join(filteredContent))
+  override fun doTaskAction() {
+    val apkFilters = mutableSetOf<String>()
+    val contentFilters = mutableSetOf<String>()
+    // load the transitive information and remove from the full content.
+    // We know this is correct because this information is also used in
+    // FilteredArtifactCollection to remove this content from runtime-based ArtifactCollection.
+    // However since we directly use the Configuration here, we have to manually remove it.
+    for (transitiveDep in transitivePackagedDeps) {
+      // register the APK that generated this list to remove it from our list
+      apkFilters.add(transitiveDep.toIdString())
+      // read its packaged content to also remove it.
+      val lines = transitiveDep.file.readLines()
+      contentFilters.addAll(lines)
     }
 
-    /**
-     * Action to create the task that generates the transitive dependency list to be consumed by
-     * other modules.
-     *
-     * This cannot depend on preBuild as it would introduce a dependency cycle.
-     */
-    class CreationAction(creationConfig: ComponentCreationConfig) :
-        VariantTaskCreationAction<PackagedDependenciesWriterTask, ComponentCreationConfig>(
-            creationConfig,
-            dependsOnPreBuildTask = false
-        ) {
+    val contentWithProject = content + currentProjectIds.get()
 
-        override val name: String
-            get() = computeTaskName("generate", "FeatureTransitiveDeps")
-        override val type: Class<PackagedDependenciesWriterTask>
-            get() = PackagedDependenciesWriterTask::class.java
+    // compute the overall content
+    val filteredContent = contentWithProject.filter { !apkFilters.contains(it) && !contentFilters.contains(it) }.sorted()
 
-        override fun handleProvider(
-            taskProvider: TaskProvider<PackagedDependenciesWriterTask>
-        ) {
-            super.handleProvider(taskProvider)
-            creationConfig.artifacts.setInitialProvider(
-                taskProvider,
-                PackagedDependenciesWriterTask::outputFile
-            ).withName("deps.txt").on(InternalArtifactType.PACKAGED_DEPENDENCIES)
-        }
+    val asFile = outputFile.get().asFile
+    FileUtils.mkdirs(asFile.parentFile)
+    asFile.writeText(Joiner.on(System.lineSeparator()).join(filteredContent))
+  }
 
-        override fun configure(
-            task: PackagedDependenciesWriterTask
-        ) {
-            super.configure(task)
-            val apiAndRuntimeConfigurations = listOfNotNull(
-                creationConfig.variantDependencies.getElements(
-                    PublishedConfigSpec(
-                        AndroidArtifacts.PublishedConfigType.API_ELEMENTS
-                    )
-                ),
-                creationConfig.variantDependencies.getElements(
-                    PublishedConfigSpec(
-                        AndroidArtifacts.PublishedConfigType.RUNTIME_ELEMENTS
-                    )
-                )
-            )
-            task.currentProjectIds.setDisallowChanges(
-                apiAndRuntimeConfigurations.let { configurations ->
+  /**
+   * Action to create the task that generates the transitive dependency list to be consumed by other modules.
+   *
+   * This cannot depend on preBuild as it would introduce a dependency cycle.
+   */
+  class CreationAction(creationConfig: ComponentCreationConfig) :
+    VariantTaskCreationAction<PackagedDependenciesWriterTask, ComponentCreationConfig>(creationConfig, dependsOnPreBuildTask = false) {
 
-                    val capabilitiesList = configurations.map { it.outgoing.capabilities }.filter {
-                        it.isNotEmpty()
-                    }.ifEmpty {
-                        listOf(listOf(creationConfig.services.projectInfo.defaultProjectCapability))
-                    }
+    override val name: String
+      get() = computeTaskName("generate", "FeatureTransitiveDeps")
 
-                    val projectId = "${creationConfig.services.projectInfo.path}::${task.variantName}"
-                    capabilitiesList.map { capabilities ->
-                        encodeCapabilitiesInId(projectId) {
-                            capabilities.joinToString(";") { it.convertToString() }
-                        }
-                    }.distinct()
-                }
-            )
-            task.runtimeAarOrJarDeps =
-                creationConfig.variantDependencies
-                    .runtimeClasspath
-                    .incoming
-                    .artifactView { it.attributes(aarOrJarType) }
-                    .artifacts
-            task.dependsOn(task.runtimeAarOrJarDeps.artifactFiles)
+    override val type: Class<PackagedDependenciesWriterTask>
+      get() = PackagedDependenciesWriterTask::class.java
 
-            task.transitivePackagedDeps =
-                creationConfig.variantDependencies.getArtifactCollection(
-                    AndroidArtifacts.ConsumedConfigType.PROVIDED_CLASSPATH,
-                    AndroidArtifacts.ArtifactScope.PROJECT,
-                    AndroidArtifacts.ArtifactType.PACKAGED_DEPENDENCIES)
-
-            // When there is a local file dependency, we need to store the absolute path to that
-            // file otherwise we can't do the exclusion correctly.
-            task.outputs.doNotCacheIf("Local file dependencies found") {
-                (it as PackagedDependenciesWriterTask).runtimeAarOrJarDeps.artifacts.any { artifact ->
-                    artifact.id.componentIdentifier is OpaqueComponentArtifactIdentifier
-                }
-            }
-        }
+    override fun handleProvider(taskProvider: TaskProvider<PackagedDependenciesWriterTask>) {
+      super.handleProvider(taskProvider)
+      creationConfig.artifacts
+        .setInitialProvider(taskProvider, PackagedDependenciesWriterTask::outputFile)
+        .withName("deps.txt")
+        .on(InternalArtifactType.PACKAGED_DEPENDENCIES)
     }
+
+    override fun configure(task: PackagedDependenciesWriterTask) {
+      super.configure(task)
+      val apiAndRuntimeConfigurations =
+        listOfNotNull(
+          creationConfig.variantDependencies.getElements(PublishedConfigSpec(AndroidArtifacts.PublishedConfigType.API_ELEMENTS)),
+          creationConfig.variantDependencies.getElements(PublishedConfigSpec(AndroidArtifacts.PublishedConfigType.RUNTIME_ELEMENTS)),
+        )
+      task.currentProjectIds.setDisallowChanges(
+        apiAndRuntimeConfigurations.let { configurations ->
+          val capabilitiesList =
+            configurations
+              .map { it.outgoing.capabilities }
+              .filter { it.isNotEmpty() }
+              .ifEmpty { listOf(listOf(creationConfig.services.projectInfo.defaultProjectCapability)) }
+
+          val projectId = "${creationConfig.services.projectInfo.path}::${task.variantName}"
+          capabilitiesList
+            .map { capabilities -> encodeCapabilitiesInId(projectId) { capabilities.joinToString(";") { it.convertToString() } } }
+            .distinct()
+        }
+      )
+      task.runtimeAarOrJarDeps =
+        creationConfig.variantDependencies.runtimeClasspath.incoming.artifactView { it.attributes(aarOrJarType) }.artifacts
+      task.dependsOn(task.runtimeAarOrJarDeps.artifactFiles)
+
+      task.transitivePackagedDeps =
+        creationConfig.variantDependencies.getArtifactCollection(
+          AndroidArtifacts.ConsumedConfigType.PROVIDED_CLASSPATH,
+          AndroidArtifacts.ArtifactScope.PROJECT,
+          AndroidArtifacts.ArtifactType.PACKAGED_DEPENDENCIES,
+        )
+
+      // When there is a local file dependency, we need to store the absolute path to that
+      // file otherwise we can't do the exclusion correctly.
+      task.outputs.doNotCacheIf("Local file dependencies found") {
+        (it as PackagedDependenciesWriterTask).runtimeAarOrJarDeps.artifacts.any { artifact ->
+          artifact.id.componentIdentifier is OpaqueComponentArtifactIdentifier
+        }
+      }
+    }
+  }
 }
 
 fun ResolvedArtifactResult.toIdString(): String {
-    return id.componentIdentifier.toIdString(
-        variantProvider = { variant.attributes.getAttribute(VariantAttr.ATTRIBUTE)?.name }
-    ) {
-        variant.capabilities.joinToString(";") {
-            it.convertToString()
-        }
-    }
+  return id.componentIdentifier.toIdString(variantProvider = { variant.attributes.getAttribute(VariantAttr.ATTRIBUTE)?.name }) {
+    variant.capabilities.joinToString(";") { it.convertToString() }
+  }
 }
 
 /**
- * Converts the capability object to a string. We intentionally leave out the version, which is not
- * a part of the capability identity, to not repackage the same dependency if the versions don't
- * match.
- * TODO(b/185161615): We still have a problem in that case as currently the artifact that will be
- *   used to build the dynamic feature module will not be the one that ends up in the base apk.
+ * Converts the capability object to a string. We intentionally leave out the version, which is not a part of the capability identity, to
+ * not repackage the same dependency if the versions don't match.
+ *
+ * TODO(b/185161615): We still have a problem in that case as currently the artifact that will be used to build the dynamic feature module
+ *   will not be the one that ends up in the base apk.
  */
 fun Capability.convertToString(): String {
-    return "Capability: group='$group', name='$name'"
+  return "Capability: group='$group', name='$name'"
 }
 
-private fun ComponentIdentifier.toIdString(
-    variantProvider: () -> String?,
-    capabilitiesProvider: () -> String
-) : String {
-    val id = when (this) {
-        is ProjectComponentIdentifier -> {
-            val variant = variantProvider()
-            if (variant == null) {
-                getIdString()
-            } else {
-                "${getIdString()}::${variant}"
-            }
+private fun ComponentIdentifier.toIdString(variantProvider: () -> String?, capabilitiesProvider: () -> String): String {
+  val id =
+    when (this) {
+      is ProjectComponentIdentifier -> {
+        val variant = variantProvider()
+        if (variant == null) {
+          getIdString()
+        } else {
+          "${getIdString()}::${variant}"
         }
-        is ModuleComponentIdentifier -> "$group:$module"
-        is OpaqueComponentArtifactIdentifier -> file.absolutePath
-        else -> toString()
+      }
+      is ModuleComponentIdentifier -> "$group:$module"
+      is OpaqueComponentArtifactIdentifier -> file.absolutePath
+      else -> toString()
     }
 
-    return encodeCapabilitiesInId(id, capabilitiesProvider)
+  return encodeCapabilitiesInId(id, capabilitiesProvider)
 }
 
-private fun encodeCapabilitiesInId(
-    id: String,
-    capabilitiesProvider: () -> String
-): String {
-    return capabilitiesProvider.invoke().takeIf { it.isNotEmpty() }?.let { "$id;$it" } ?: id
+private fun encodeCapabilitiesInId(id: String, capabilitiesProvider: () -> String): String {
+  return capabilitiesProvider.invoke().takeIf { it.isNotEmpty() }?.let { "$id;$it" } ?: id
 }
 
-fun removeVariantNameFromId(
-    id: String
-): String {
-    return if (id.contains("::")) {
-        val libraryWithoutVariant = id.substringBeforeLast("::")
-        val capabilities = id.substringAfter(";")
-        "$libraryWithoutVariant;$capabilities"
-    } else {
-        id
-    }
+fun removeVariantNameFromId(id: String): String {
+  return if (id.contains("::")) {
+    val libraryWithoutVariant = id.substringBeforeLast("::")
+    val capabilities = id.substringAfter(";")
+    "$libraryWithoutVariant;$capabilities"
+  } else {
+    id
+  }
 }

@@ -21,72 +21,68 @@ import com.android.build.gradle.integration.common.fixture.project.prebuilts.Bas
 import com.android.builder.model.SyncIssue
 import com.android.testutils.AssumeUtil
 import com.google.common.truth.Truth.assertThat
+import java.util.regex.Pattern
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
-import java.util.regex.Pattern
 
-/**
- * A very simple test to compile a project with special characters in it
- */
+/** A very simple test to compile a project with special characters in it */
 @RunWith(Parameterized::class)
 class SpecialCharactersBasicTest(projectName: String) {
 
-    @get:Rule
-    val rule = GradleRule.fromProject(BasicSpec(), folderName = projectName)
+  @get:Rule val rule = GradleRule.fromProject(BasicSpec(), folderName = projectName)
 
-    @Test
-    fun testProjectsWithSpecialCharacters() {
-        // Windows won't work with the weird characters, and we throw an exception already
-        AssumeUtil.assumeNotWindows()
+  @Test
+  fun testProjectsWithSpecialCharacters() {
+    // Windows won't work with the weird characters, and we throw an exception already
+    AssumeUtil.assumeNotWindows()
 
-        val build = rule.build
+    val build = rule.build
 
-        build.executor.run("assemble")
+    build.executor.run("assemble")
 
-        val container = build.modelBuilder.ignoreSyncIssues().fetchModels().container
-        val issues = container.getProject().issues!!.syncIssues
+    val container = build.modelBuilder.ignoreSyncIssues().fetchModels().container
+    val issues = container.getProject().issues!!.syncIssues
 
-        // basic project overwrites buildConfigField which emits a sync warning
-        issues.forEach { issue ->
-            assertThat(issue.severity).isEqualTo(SyncIssue.SEVERITY_WARNING)
-            assertThat(issue.message)
-                .containsMatch(Pattern.compile(".*value is being replaced.*"))
-        }
+    // basic project overwrites buildConfigField which emits a sync warning
+    issues.forEach { issue ->
+      assertThat(issue.severity).isEqualTo(SyncIssue.SEVERITY_WARNING)
+      assertThat(issue.message).containsMatch(Pattern.compile(".*value is being replaced.*"))
     }
+  }
 
-    companion object {
-        @JvmStatic
-        @Parameterized.Parameters
-        fun projectNames(): Collection<String> {
-            return listOf(
-                "1b@s %i péà`e eã~e=.{}\$#!&^()¡²³¤€¼½¾‘’¥×βαосಮೂ基本どきコラપા기본आधមូលั้นਬੁਨਿਆძიমৌƏՀիመሠ",
-                "בסיסיالأساسيةיקערדיק"
+  companion object {
+    @JvmStatic
+    @Parameterized.Parameters
+    fun projectNames(): Collection<String> {
+      return listOf(
+        "1b@s %i péà`e eã~e=.{}\$#!&^()¡²³¤€¼½¾‘’¥×βαосಮೂ基本どきコラપા기본आधមូលั้นਬੁਨਿਆძიমৌƏՀիመሠ",
+        "בסיסיالأساسيةיקערדיק",
 
-                /* TODO lint fails when ";" is part of the project name b/458128469
-                "test;project" */
+        /* TODO lint fails when ";" is part of the project name b/458128469
+        "test;project" */
 
-                /* Add these for individual language tests
-                "βασικός",
-                "основной",
-                "ಮೂಲಭೂತ",
-                "基本的な",
-                "પાયાની",
-                "الأساسية",
-                "기본",
-                "आधारभूत",
-                "יקערדיק",
-                "មូលដ្ឋាន",
-                "ขั้นพื้นฐาน",
-                "ਬੁਨਿਆਦੀ",
-                "בסיסי",
-                "ძირითადი",
-                "মৌলিক",
-                "Əsas",
-                "Հիմնական",
-                "መሠረታዊ"*/
-            )
-        }
+        /* Add these for individual language tests
+        "βασικός",
+        "основной",
+        "ಮೂಲಭೂತ",
+        "基本的な",
+        "પાયાની",
+        "الأساسية",
+        "기본",
+        "आधारभूत",
+        "יקערדיק",
+        "មូលដ្ឋាន",
+        "ขั้นพื้นฐาน",
+        "ਬੁਨਿਆਦੀ",
+        "בסיסי",
+        "ძირითადი",
+        "মৌলিক",
+        "Əsas",
+        "Հիմնական",
+        "መሠረታዊ"*/
+      )
     }
+  }
 }

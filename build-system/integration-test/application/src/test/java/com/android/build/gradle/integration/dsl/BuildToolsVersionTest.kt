@@ -18,8 +18,8 @@ package com.android.build.gradle.integration.dsl
 
 import com.android.build.api.variant.ApplicationAndroidComponentsExtension
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
-import com.android.build.gradle.integration.common.fixture.project.plugins.ApplicationComponentCallback
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
+import com.android.build.gradle.integration.common.fixture.project.plugins.ApplicationComponentCallback
 import com.android.build.gradle.integration.common.truth.forEachLine
 import com.google.common.truth.Truth
 import junit.framework.TestCase.fail
@@ -28,48 +28,40 @@ import org.junit.Rule
 import org.junit.Test
 
 class BuildToolsVersionTest {
-    @get:Rule
-    val rule = GradleRule.from {
-        settings {
-            applyPlugin(PluginType.ANDROID_SETTINGS)
-            android {
-                buildToolsVersion = "1.2"
-            }
-        }
-        androidApplication {
-            pluginCallbacks += AppCallback::class.java
-        }
+  @get:Rule
+  val rule =
+    GradleRule.from {
+      settings {
+        applyPlugin(PluginType.ANDROID_SETTINGS)
+        android { buildToolsVersion = "1.2" }
+      }
+      androidApplication { pluginCallbacks += AppCallback::class.java }
     }
 
-    class AppCallback: ApplicationComponentCallback {
-        override fun handleExtension(
-            project: Project,
-            androidComponents: ApplicationAndroidComponentsExtension
-        ) {
-            androidComponents.finalizeDsl { extension ->
-                println("$PREFIX${extension.buildToolsVersion}")
-            }
-        }
+  class AppCallback : ApplicationComponentCallback {
+    override fun handleExtension(project: Project, androidComponents: ApplicationAndroidComponentsExtension) {
+      androidComponents.finalizeDsl { extension -> println("$PREFIX${extension.buildToolsVersion}") }
+    }
+  }
+
+  @Test
+  fun testBuildToolsVersionFromSettings() {
+    val result = rule.build.executor.run("projects")
+
+    var found = false
+    result.stdout.forEachLine {
+      if (it.startsWith(PREFIX)) {
+        found = true
+        val value = it.substring(PREFIX.length)
+        Truth.assertThat(value).isEqualTo("1.2.0")
+        return@forEachLine
+      }
     }
 
-    @Test
-    fun testBuildToolsVersionFromSettings() {
-        val result = rule.build.executor.run("projects")
-
-        var found = false
-        result.stdout.forEachLine {
-            if (it.startsWith(PREFIX)) {
-                found = true
-                val value = it.substring(PREFIX.length)
-                Truth.assertThat(value).isEqualTo("1.2.0")
-                return@forEachLine
-            }
-        }
-
-        if (!found) {
-            fail("Did not find buildToolsVersion value in stdout")
-        }
+    if (!found) {
+      fail("Did not find buildToolsVersion value in stdout")
     }
+  }
 }
 
 private const val PREFIX = "BTV: "

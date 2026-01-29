@@ -21,17 +21,15 @@ import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 
 class JsonUtilTest {
-    @Test
-    fun `round trip`() {
-        BasicCmakeMock().apply {
-            val json = abi.toJsonString()
-            val writtenBackAbi = createCxxAbiModelFromJson(json)
-            val writtenBackJson = writtenBackAbi.toJsonString()
-            assertThat(json).isEqualTo(writtenBackJson)
-            assertThat(writtenBackAbi.cxxBuildFolder.parentFile.parentFile.parentFile.path).endsWith(".cxx")
-            assertThat(writtenBackAbi.variant.module.ndkVersion.toString()).isEqualTo(
-                NDK_DEFAULT_VERSION
-            )
-        }
+  @Test
+  fun `round trip`() {
+    BasicCmakeMock().apply {
+      val json = abi.toJsonString()
+      val writtenBackAbi = createCxxAbiModelFromJson(json)
+      val writtenBackJson = writtenBackAbi.toJsonString()
+      assertThat(json).isEqualTo(writtenBackJson)
+      assertThat(writtenBackAbi.cxxBuildFolder.parentFile.parentFile.parentFile.path).endsWith(".cxx")
+      assertThat(writtenBackAbi.variant.module.ndkVersion.toString()).isEqualTo(NDK_DEFAULT_VERSION)
     }
+  }
 }

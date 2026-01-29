@@ -17,8 +17,8 @@
 package com.android.build.gradle.tasks
 
 import com.android.SdkConstants
-import com.android.build.gradle.internal.fusedlibrary.FusedLibraryInternalArtifactType
 import com.android.build.gradle.internal.fusedlibrary.FusedLibraryGlobalScope
+import com.android.build.gradle.internal.fusedlibrary.FusedLibraryInternalArtifactType
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
 import com.android.build.gradle.internal.services.SymbolTableBuildService
 import com.android.build.gradle.internal.services.getBuildService
@@ -49,78 +49,64 @@ import org.gradle.api.tasks.TaskProvider
 @CacheableTask
 abstract class FusedLibraryMergeResourceCompileSymbolsTask : NonIncrementalGlobalTask() {
 
-    @get:Input
-    abstract val namespace: Property<String>
+  @get:Input abstract val namespace: Property<String>
 
-    @get:InputFiles
-    @get:PathSensitive(PathSensitivity.RELATIVE)
-    abstract val symbolDependencyTables: ConfigurableFileCollection
+  @get:InputFiles @get:PathSensitive(PathSensitivity.RELATIVE) abstract val symbolDependencyTables: ConfigurableFileCollection
 
-    @get:ServiceReference
-    abstract val symbolTableBuildService: Property<SymbolTableBuildService>
+  @get:ServiceReference abstract val symbolTableBuildService: Property<SymbolTableBuildService>
 
-    @get:Optional
-    @get:OutputFile
-    abstract val fusedSymbolFile: RegularFileProperty
+  @get:Optional @get:OutputFile abstract val fusedSymbolFile: RegularFileProperty
 
-    @get:OutputFile
-    abstract val packageAwareRTxt: RegularFileProperty
+  @get:OutputFile abstract val packageAwareRTxt: RegularFileProperty
 
-    override fun doTaskAction() {
-        processLibraryMainSymbolTable(
-            librarySymbols = SymbolTable.EMPTY, // No sources in Fused Library
-            depSymbolTables = symbolTableBuildService.get().loadClasspath(symbolDependencyTables),
-            namespace.get(),
-            rClassOutputJar = null,
-            symbolFileOut = if (symbolDependencyTables.files.none()) null else fusedSymbolFile.get().asFile,
-            platformSymbols = SymbolTable.EMPTY,
-            nonTransitiveRClass = false,
-            generateDependencyRClasses = false,
-            idProvider = IdProvider.constant()
-        )
-        SymbolIo.writeSymbolListWithPackageName(
-            fusedSymbolFile.get().asFile.toPath(),
-            namespace.get(),
-            packageAwareRTxt.get().asFile.toPath()
-        )
+  override fun doTaskAction() {
+    processLibraryMainSymbolTable(
+      librarySymbols = SymbolTable.EMPTY, // No sources in Fused Library
+      depSymbolTables = symbolTableBuildService.get().loadClasspath(symbolDependencyTables),
+      namespace.get(),
+      rClassOutputJar = null,
+      symbolFileOut = if (symbolDependencyTables.files.none()) null else fusedSymbolFile.get().asFile,
+      platformSymbols = SymbolTable.EMPTY,
+      nonTransitiveRClass = false,
+      generateDependencyRClasses = false,
+      idProvider = IdProvider.constant(),
+    )
+    SymbolIo.writeSymbolListWithPackageName(fusedSymbolFile.get().asFile.toPath(), namespace.get(), packageAwareRTxt.get().asFile.toPath())
+  }
+
+  class CreationAction(private val creationConfig: FusedLibraryGlobalScope) :
+    GlobalTaskCreationAction<FusedLibraryMergeResourceCompileSymbolsTask>() {
+
+    override val name: String
+      get() = "fusedLibraryMergeResourceCompileSymbols"
+
+    override val type: Class<FusedLibraryMergeResourceCompileSymbolsTask>
+      get() = FusedLibraryMergeResourceCompileSymbolsTask::class.java
+
+    override fun handleProvider(taskProvider: TaskProvider<FusedLibraryMergeResourceCompileSymbolsTask>) {
+      super.handleProvider(taskProvider)
+
+      creationConfig.artifacts
+        .setInitialProvider(taskProvider, FusedLibraryMergeResourceCompileSymbolsTask::fusedSymbolFile)
+        .withName(SdkConstants.FN_RESOURCE_TEXT)
+        .on(FusedLibraryInternalArtifactType.COMPILE_SYMBOL_LIST)
+
+      creationConfig.artifacts
+        .setInitialProvider(taskProvider, FusedLibraryMergeResourceCompileSymbolsTask::packageAwareRTxt)
+        .withName("package-aware-r.txt")
+        .on(FusedLibraryInternalArtifactType.SYMBOL_LIST_WITH_PACKAGE_NAME)
     }
 
-    class CreationAction(private val creationConfig: FusedLibraryGlobalScope) :
-        GlobalTaskCreationAction<FusedLibraryMergeResourceCompileSymbolsTask>() {
-
-        override val name: String
-            get() = "fusedLibraryMergeResourceCompileSymbols"
-        override val type: Class<FusedLibraryMergeResourceCompileSymbolsTask>
-            get() = FusedLibraryMergeResourceCompileSymbolsTask::class.java
-
-        override fun handleProvider(taskProvider: TaskProvider<FusedLibraryMergeResourceCompileSymbolsTask>) {
-            super.handleProvider(taskProvider)
-
-            creationConfig.artifacts.setInitialProvider(
-                taskProvider,
-                FusedLibraryMergeResourceCompileSymbolsTask::fusedSymbolFile
-            ).withName(SdkConstants.FN_RESOURCE_TEXT)
-                .on(FusedLibraryInternalArtifactType.COMPILE_SYMBOL_LIST)
-
-            creationConfig.artifacts.setInitialProvider(
-                taskProvider,
-                FusedLibraryMergeResourceCompileSymbolsTask::packageAwareRTxt
-            ).withName("package-aware-r.txt")
-                .on(FusedLibraryInternalArtifactType.SYMBOL_LIST_WITH_PACKAGE_NAME)
-        }
-
-        override fun configure(task: FusedLibraryMergeResourceCompileSymbolsTask) {
-            super.configure(task)
-            task.namespace.setDisallowChanges(creationConfig.namespace)
-            task.symbolTableBuildService.setDisallowChanges(
-                getBuildService(creationConfig.services.buildServiceRegistry))
-            task.symbolDependencyTables.fromDisallowChanges(
-                creationConfig.dependencies.getArtifactFileCollection(
-                    AndroidArtifacts.ConsumedConfigType.RUNTIME_CLASSPATH,
-                    AndroidArtifacts.ArtifactType.SYMBOL_LIST_WITH_PACKAGE_NAME
-                )
-            )
-        }
+    override fun configure(task: FusedLibraryMergeResourceCompileSymbolsTask) {
+      super.configure(task)
+      task.namespace.setDisallowChanges(creationConfig.namespace)
+      task.symbolTableBuildService.setDisallowChanges(getBuildService(creationConfig.services.buildServiceRegistry))
+      task.symbolDependencyTables.fromDisallowChanges(
+        creationConfig.dependencies.getArtifactFileCollection(
+          AndroidArtifacts.ConsumedConfigType.RUNTIME_CLASSPATH,
+          AndroidArtifacts.ArtifactType.SYMBOL_LIST_WITH_PACKAGE_NAME,
+        )
+      )
     }
-
+  }
 }

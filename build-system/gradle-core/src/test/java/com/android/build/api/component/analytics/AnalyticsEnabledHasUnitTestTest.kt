@@ -36,36 +36,28 @@ import org.mockito.quality.Strictness
 
 class AnalyticsEnabledHasUnitTestTest {
 
-    @get:Rule
-    val rule: MockitoRule = MockitoJUnit.rule().strictness(Strictness.STRICT_STUBS)
+  @get:Rule val rule: MockitoRule = MockitoJUnit.rule().strictness(Strictness.STRICT_STUBS)
 
-    private val delegate: HasUnitTest = Mockito.mock(
-        HasUnitTest::class.java,
-        Mockito.withSettings().extraInterfaces(Variant::class.java)
-    )
+  private val delegate: HasUnitTest = Mockito.mock(HasUnitTest::class.java, Mockito.withSettings().extraInterfaces(Variant::class.java))
 
+  private val stats = GradleBuildVariant.newBuilder()
+  private val proxy: AnalyticsEnabledVariant by lazy {
+    object : AnalyticsEnabledVariant(delegate as Variant, stats, FakeObjectFactory.factory) {}
+  }
 
-    private val stats = GradleBuildVariant.newBuilder()
-    private val proxy: AnalyticsEnabledVariant by lazy {
-        object : AnalyticsEnabledVariant(delegate as Variant, stats, FakeObjectFactory.factory) {}
-    }
+  @Test
+  fun testUnitTest() {
+    val mockedUnitTest = mock<com.android.build.api.component.UnitTest>()
+    @Suppress("UNCHECKED_CAST") val map: MapProperty<String, String> = mock<MapProperty<String, String>>()
 
+    whenever(mockedUnitTest.manifestPlaceholders).thenReturn(map)
+    whenever(delegate.unitTest).thenReturn(mockedUnitTest)
 
-    @Test
-    fun testUnitTest() {
-        val mockedUnitTest = mock<com.android.build.api.component.UnitTest>()
-        @Suppress("UNCHECKED_CAST")
-        val map: MapProperty<String, String> =
-            mock<MapProperty<String, String>>()
+    Truth.assertThat(proxy.unitTest!!.manifestPlaceholders).isEqualTo(map)
 
-        whenever(mockedUnitTest.manifestPlaceholders).thenReturn(map)
-        whenever(delegate.unitTest).thenReturn(mockedUnitTest)
-
-        Truth.assertThat(proxy.unitTest!!.manifestPlaceholders).isEqualTo(map)
-
-        Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
-        Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessList.first().type)
-            .isEqualTo(VariantPropertiesMethodType.MANIFEST_PLACEHOLDERS_VALUE)
-        verify(delegate, times(1)).unitTest
-    }
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessList.first().type)
+      .isEqualTo(VariantPropertiesMethodType.MANIFEST_PLACEHOLDERS_VALUE)
+    verify(delegate, times(1)).unitTest
+  }
 }

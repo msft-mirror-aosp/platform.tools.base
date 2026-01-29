@@ -27,68 +27,58 @@ import org.junit.Rule
 import org.junit.Test
 
 class HostTestIncludeAndroidResourcesWithVariantApiTest {
-    @get:Rule
-    val project = GradleRule.from {
-        androidApplication {
-            android {
-                compileSdk = 34
-                defaultConfig.applicationId = "com.android_token_test_lib"
-            }
-            files {
-                add(
-                    "src/main/res/values/strings.xml",
-                    //language=xml
-                    """
-                        <resources>
-                            <string name="oem_token_demo">TOKEN_DEMO</string>
-                        </resources>""".trimIndent())
-                add(
-                    "src/main/res/values/values.xml",
-                    //language=xml
-                    "<resources />"
-                )
-            }
-            pluginCallbacks += HostTestIncludeAndroidResourcesWithVariantApiTestApplicationCallback::class.java
+  @get:Rule
+  val project =
+    GradleRule.from {
+      androidApplication {
+        android {
+          compileSdk = 34
+          defaultConfig.applicationId = "com.android_token_test_lib"
         }
-        androidLibrary {
-            android {}
-            pluginCallbacks += HostTestIncludeAndroidResourcesWithVariantApiTestLibraryCallback::class.java
+        files {
+          add(
+            "src/main/res/values/strings.xml",
+            // language=xml
+            """
+            <resources>
+                <string name="oem_token_demo">TOKEN_DEMO</string>
+            </resources>
+            """
+              .trimIndent(),
+          )
+          add(
+            "src/main/res/values/values.xml",
+            // language=xml
+            "<resources />",
+          )
         }
+        pluginCallbacks += HostTestIncludeAndroidResourcesWithVariantApiTestApplicationCallback::class.java
+      }
+      androidLibrary {
+        android {}
+        pluginCallbacks += HostTestIncludeAndroidResourcesWithVariantApiTestLibraryCallback::class.java
+      }
     }
 
-    @Test
-    fun checkClassesDir() {
-        val buildResult = project.build.executor.run("testDebugUnitTest")
-        Truth.assertThat(buildResult.didWorkTasks).contains(":lib:generateDebugUnitTestConfig")
-        Truth.assertThat(buildResult.didWorkTasks).contains(":app:generateDebugUnitTestConfig")
-    }
+  @Test
+  fun checkClassesDir() {
+    val buildResult = project.build.executor.run("testDebugUnitTest")
+    Truth.assertThat(buildResult.didWorkTasks).contains(":lib:generateDebugUnitTestConfig")
+    Truth.assertThat(buildResult.didWorkTasks).contains(":app:generateDebugUnitTestConfig")
+  }
 }
 
-class HostTestIncludeAndroidResourcesWithVariantApiTestApplicationCallback: ApplicationComponentCallback {
+class HostTestIncludeAndroidResourcesWithVariantApiTestApplicationCallback : ApplicationComponentCallback {
 
-    override fun handleExtension(
-        project: Project,
-        androidComponents: ApplicationAndroidComponentsExtension
-    ) {
-        androidComponents.beforeVariants { variant ->
-            variant.hostTests.values.forEach { hostTest ->
-                hostTest.includeAndroidResources = true
-            }
-        }
-    }
+  override fun handleExtension(project: Project, androidComponents: ApplicationAndroidComponentsExtension) {
+    androidComponents.beforeVariants { variant -> variant.hostTests.values.forEach { hostTest -> hostTest.includeAndroidResources = true } }
+  }
 }
 
-class HostTestIncludeAndroidResourcesWithVariantApiTestLibraryCallback: LibraryComponentCallback {
+class HostTestIncludeAndroidResourcesWithVariantApiTestLibraryCallback : LibraryComponentCallback {
 
-    override fun handleExtension(
-        project: Project,
-        androidComponents: LibraryAndroidComponentsExtension
-    ) {
+  override fun handleExtension(project: Project, androidComponents: LibraryAndroidComponentsExtension) {
 
-        androidComponents.beforeVariants { variant ->
-            variant.hostTests.values.forEach { hostTest ->
-                hostTest.includeAndroidResources = true
-            }
-        }
-    }
+    androidComponents.beforeVariants { variant -> variant.hostTests.values.forEach { hostTest -> hostTest.includeAndroidResources = true } }
+  }
 }

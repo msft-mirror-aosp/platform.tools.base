@@ -21,6 +21,4 @@ package com.android.build.api.dsl
  *
  * See [ProductFlavor] and [DefaultConfig] for more information.
  */
-interface LibraryBaseFlavor :
-    BaseFlavor,
-    LibraryVariantDimension {}
+interface LibraryBaseFlavor : BaseFlavor, LibraryVariantDimension {}

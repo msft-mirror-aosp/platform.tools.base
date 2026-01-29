@@ -27,34 +27,30 @@ import org.gradle.api.Plugin
 import org.gradle.api.Project
 
 class AiPackPlugin : Plugin<Project> {
-    override fun apply(project: Project) {
-        val aiPackExtension = project.extensions.create(AiPackExtension::class.java, "aiPack", AiPackExtensionImpl::class.java)
+  override fun apply(project: Project) {
+    val aiPackExtension = project.extensions.create(AiPackExtension::class.java, "aiPack", AiPackExtensionImpl::class.java)
 
-        val manifestGenerationTaskProvider = project.tasks.register(
-            "generateAiPackManifest",
-            AssetPackManifestGenerationTask::class.java
-        ) { manifestGenerationTask ->
-            UsesAnalytics.ConfigureAction.configure(manifestGenerationTask)
-            manifestGenerationTask.manifestFile.setDisallowChanges(
-                project.layout.buildDirectory.get().dir(
-                    SdkConstants.FD_INTERMEDIATES
-                ).dir("ai_pack_manifest").file(SdkConstants.FN_ANDROID_MANIFEST_XML)
-            )
-            manifestGenerationTask.aiPack.setDisallowChanges(true)
-            manifestGenerationTask.packName.setDisallowChanges(aiPackExtension.packName)
-            manifestGenerationTask.deliveryType.setDisallowChanges(aiPackExtension.dynamicDelivery.deliveryType)
-            manifestGenerationTask.instantDeliveryType.setDisallowChanges(aiPackExtension.dynamicDelivery.instantDeliveryType)
-            manifestGenerationTask.aiModelDependencyName.setDisallowChanges(aiPackExtension.modelDependency.aiModelName)
-            manifestGenerationTask.aiModelDependencyPackageName.setDisallowChanges(aiPackExtension.modelDependency.aiModelPackageName)
-        }
+    val manifestGenerationTaskProvider =
+      project.tasks.register("generateAiPackManifest", AssetPackManifestGenerationTask::class.java) { manifestGenerationTask ->
+        UsesAnalytics.ConfigureAction.configure(manifestGenerationTask)
+        manifestGenerationTask.manifestFile.setDisallowChanges(
+          project.layout.buildDirectory
+            .get()
+            .dir(SdkConstants.FD_INTERMEDIATES)
+            .dir("ai_pack_manifest")
+            .file(SdkConstants.FN_ANDROID_MANIFEST_XML)
+        )
+        manifestGenerationTask.aiPack.setDisallowChanges(true)
+        manifestGenerationTask.packName.setDisallowChanges(aiPackExtension.packName)
+        manifestGenerationTask.deliveryType.setDisallowChanges(aiPackExtension.dynamicDelivery.deliveryType)
+        manifestGenerationTask.instantDeliveryType.setDisallowChanges(aiPackExtension.dynamicDelivery.instantDeliveryType)
+        manifestGenerationTask.aiModelDependencyName.setDisallowChanges(aiPackExtension.modelDependency.aiModelName)
+        manifestGenerationTask.aiModelDependencyPackageName.setDisallowChanges(aiPackExtension.modelDependency.aiModelPackageName)
+      }
 
-        project.configurations.maybeRegister("packElements") {
-            isCanBeConsumed = true
-        }
-        project.configurations.maybeRegister("manifestElements") {
-            isCanBeConsumed = true
-        }
-        project.artifacts.add("manifestElements", manifestGenerationTaskProvider.flatMap { it.manifestFile })
-        project.artifacts.add("packElements", project.layout.projectDirectory.dir("src/main/assets"))
-    }
+    project.configurations.maybeRegister("packElements") { isCanBeConsumed = true }
+    project.configurations.maybeRegister("manifestElements") { isCanBeConsumed = true }
+    project.artifacts.add("manifestElements", manifestGenerationTaskProvider.flatMap { it.manifestFile })
+    project.artifacts.add("packElements", project.layout.projectDirectory.dir("src/main/assets"))
+  }
 }

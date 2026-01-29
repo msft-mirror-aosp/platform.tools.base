@@ -17,26 +17,22 @@
 package com.android.build.gradle.options
 
 import com.android.build.gradle.internal.services.ServiceRegistrationAction
+import javax.inject.Inject
 import org.gradle.api.Project
 import org.gradle.api.provider.ProviderFactory
 import org.gradle.api.services.BuildService
 import org.gradle.api.services.BuildServiceParameters
-import javax.inject.Inject
 
-/**
- * A build service to provide [ProjectOptions] to all projects.
- */
+/** A build service to provide [ProjectOptions] to all projects. */
 abstract class ProjectOptionService : BuildService<BuildServiceParameters.None> {
 
-    @get:Inject
-    abstract val providerFactory: ProviderFactory
+  @get:Inject abstract val providerFactory: ProviderFactory
 
-    val projectOptions = ProjectOptions(providerFactory)
+  val projectOptions = ProjectOptions(providerFactory)
 
-    class RegistrationAction(project: Project):
-        ServiceRegistrationAction<ProjectOptionService, BuildServiceParameters.None>(
-            project, ProjectOptionService::class.java) {
+  class RegistrationAction(project: Project) :
+    ServiceRegistrationAction<ProjectOptionService, BuildServiceParameters.None>(project, ProjectOptionService::class.java) {
 
-        override fun configure(parameters: BuildServiceParameters.None) { }
-    }
+    override fun configure(parameters: BuildServiceParameters.None) {}
+  }
 }

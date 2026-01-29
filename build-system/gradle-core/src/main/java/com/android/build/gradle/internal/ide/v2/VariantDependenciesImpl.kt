@@ -23,25 +23,24 @@ import com.android.builder.model.v2.models.TestSuiteDependencies
 import com.android.builder.model.v2.models.VariantDependencies
 import java.io.Serializable
 
-/**
- * Implementation of [VariantDependencies] for serialization via the Tooling API.
- */
+/** Implementation of [VariantDependencies] for serialization via the Tooling API. */
 data class VariantDependenciesImpl(
-    override val name: String,
-    override val mainArtifact: ArtifactDependencies,
-    override val deviceTestArtifacts: Map<String, ArtifactDependencies>,
-    override val hostTestArtifacts: Map<String, ArtifactDependencies>,
-    override val testSuiteArtifacts: Map<String, TestSuiteDependencies>,
-    override val testFixturesArtifact: ArtifactDependencies?,
-    override val libraries: Map<String, Library>
+  override val name: String,
+  override val mainArtifact: ArtifactDependencies,
+  override val deviceTestArtifacts: Map<String, ArtifactDependencies>,
+  override val hostTestArtifacts: Map<String, ArtifactDependencies>,
+  override val testSuiteArtifacts: Map<String, TestSuiteDependencies>,
+  override val testFixturesArtifact: ArtifactDependencies?,
+  override val libraries: Map<String, Library>,
 ) : VariantDependencies, Serializable {
 
-    override val androidTestArtifact: ArtifactDependencies?
-        get() = deviceTestArtifacts[ComponentTypeImpl.ANDROID_TEST.artifactName]
-    override val unitTestArtifact: ArtifactDependencies?
-        get() = hostTestArtifacts[ComponentTypeImpl.UNIT_TEST.artifactName]
-    companion object {
-        @JvmStatic
-        private val serialVersionUID: Long = 1L
-    }
+  override val androidTestArtifact: ArtifactDependencies?
+    get() = deviceTestArtifacts[ComponentTypeImpl.ANDROID_TEST.artifactName]
+
+  override val unitTestArtifact: ArtifactDependencies?
+    get() = hostTestArtifacts[ComponentTypeImpl.UNIT_TEST.artifactName]
+
+  companion object {
+    @JvmStatic private val serialVersionUID: Long = 1L
+  }
 }

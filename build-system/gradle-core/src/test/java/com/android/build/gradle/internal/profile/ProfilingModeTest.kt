@@ -17,33 +17,28 @@
 package com.android.build.gradle.internal.profile
 
 import com.google.common.truth.Truth.assertThat
+import kotlin.test.assertFailsWith
 import org.jetbrains.kotlin.gradle.utils.`is`
 import org.junit.Test
-import kotlin.test.assertFailsWith
 
 internal class ProfilingModeTest {
 
-    @Test
-    fun supportsTypicalProfilingModeTypes() {
-        val profileable = ProfilingMode.getProfilingModeType("profileable")
-        assertThat(profileable).`is`(ProfilingMode.PROFILEABLE::class.java)
+  @Test
+  fun supportsTypicalProfilingModeTypes() {
+    val profileable = ProfilingMode.getProfilingModeType("profileable")
+    assertThat(profileable).`is`(ProfilingMode.PROFILEABLE::class.java)
 
-        val debuggable = ProfilingMode.getProfilingModeType("debuggable")
-        assertThat(debuggable).`is`(ProfilingMode.DEBUGGABLE::class.java)
+    val debuggable = ProfilingMode.getProfilingModeType("debuggable")
+    assertThat(debuggable).`is`(ProfilingMode.DEBUGGABLE::class.java)
 
-        val nullable = ProfilingMode.getProfilingModeType(null)
-        assertThat(nullable).`is`(ProfilingMode.UNDEFINED::class.java)
-    }
+    val nullable = ProfilingMode.getProfilingModeType(null)
+    assertThat(nullable).`is`(ProfilingMode.UNDEFINED::class.java)
+  }
 
-    @Test
-    fun nonSupportedProfilingTypeAccessed() {
-        val exception = assertFailsWith<Exception> {
-            ProfilingMode.getProfilingModeType("foo")
-        }
-        assertThat(exception.message).isEqualTo(
-            "Unknown ProfilingMode value 'foo'. " +
-                    "Possible values are 'undefined', 'debuggable', 'profileable'."
-        )
-    }
-
+  @Test
+  fun nonSupportedProfilingTypeAccessed() {
+    val exception = assertFailsWith<Exception> { ProfilingMode.getProfilingModeType("foo") }
+    assertThat(exception.message)
+      .isEqualTo("Unknown ProfilingMode value 'foo'. " + "Possible values are 'undefined', 'debuggable', 'profileable'.")
+  }
 }

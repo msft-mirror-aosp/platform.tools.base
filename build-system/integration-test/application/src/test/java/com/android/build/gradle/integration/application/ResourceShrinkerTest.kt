@@ -36,481 +36,445 @@ import com.android.utils.FileUtils
 import com.android.utils.StdLogger
 import com.google.common.io.ByteStreams
 import com.google.common.truth.Truth.assertThat
+import java.io.File
+import java.util.stream.Collectors
+import java.util.zip.ZipEntry
+import java.util.zip.ZipFile
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
-import java.io.File
-import java.util.stream.Collectors
-import java.util.zip.ZipEntry
-import java.util.zip.ZipFile
 
 @RunWith(Parameterized::class)
-class ResourceShrinkerTest(
-    private val r8OptimizedShrinking: Boolean
-) {
+class ResourceShrinkerTest(private val r8OptimizedShrinking: Boolean) {
 
-    companion object {
+  companion object {
 
-        @Parameterized.Parameters(name = "r8OptimizedShrinking_{0}")
-        @JvmStatic
-        fun parameters() = listOf(false, true)
+    @Parameterized.Parameters(name = "r8OptimizedShrinking_{0}") @JvmStatic fun parameters() = listOf(false, true)
+  }
+
+  @get:Rule
+  var project =
+    builder()
+      .fromTestProject("shrink")
+      .addGradleProperty(BooleanOption.R8_OPTIMIZED_RESOURCE_SHRINKING, r8OptimizedShrinking)
+      .disableBuiltInKotlin()
+      .create()
+
+  @get:Rule
+  var projectWithDynamicFeatureModules =
+    builder()
+      .fromTestProject("shrinkDynamicFeatureModules")
+      .addGradleProperty(BooleanOption.R8_OPTIMIZED_RESOURCE_SHRINKING, r8OptimizedShrinking)
+      .create()
+
+  private val testAapt2 = TestUtils.getAapt2().toFile().absoluteFile
+
+  @Before
+  fun setUp() {
+    for (project in listOf(project, projectWithDynamicFeatureModules.getSubproject("base"))) {
+      TestFileUtils.searchAndReplace(
+        project.mainSrcDir.resolve("com/android/tests/shrink/RootActivity.java"),
+        "/* Use if android.nonFinalResIds=true */ // ",
+        "",
+      )
     }
+  }
 
-    @get:Rule
-    var project = builder().fromTestProject("shrink")
-        .addGradleProperty(BooleanOption.R8_OPTIMIZED_RESOURCE_SHRINKING, r8OptimizedShrinking)
-        .disableBuiltInKotlin()
-        .create()
+  @Test
+  fun `shrink resources for APKs`() {
+    project
+      .executor()
+      .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
+      .run(":assembleRelease", ":webview:assembleRelease", ":keep:assembleRelease", ":assembleDebug")
 
-    @get:Rule
-    var projectWithDynamicFeatureModules = builder().fromTestProject("shrinkDynamicFeatureModules")
-        .addGradleProperty(BooleanOption.R8_OPTIMIZED_RESOURCE_SHRINKING, r8OptimizedShrinking)
-        .create()
-
-    private val testAapt2 = TestUtils.getAapt2().toFile().absoluteFile
-
-    @Before
-    fun setUp() {
-        for (project in listOf(project, projectWithDynamicFeatureModules.getSubproject("base"))) {
-            TestFileUtils.searchAndReplace(
-                project.mainSrcDir.resolve("com/android/tests/shrink/RootActivity.java"),
-                "/* Use if android.nonFinalResIds=true */ // ",
-                ""
-            )
-        }
-    }
-
-    @Test
-    fun `shrink resources for APKs`() {
-        project.executor()
-            .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
-            .run(
-                ":assembleRelease",
-                ":webview:assembleRelease",
-                ":keep:assembleRelease",
-                ":assembleDebug"
-            )
-
-        // Check that unused resources are replaced in shrunk apk.
-        val removedFiles = listOf(
-                "res/drawable-hdpi-v4/notification_bg_normal.9.png",
-                "res/drawable-hdpi-v4/notification_bg_low_pressed.9.png",
-                "res/drawable-hdpi-v4/notification_bg_low_normal.9.png",
-                "res/drawable-hdpi-v4/notify_panel_notification_icon_bg.png",
-                "res/drawable-hdpi-v4/notification_bg_normal_pressed.9.png",
-                "res/drawable-mdpi-v4/notification_bg_normal.9.png",
-                "res/drawable-mdpi-v4/notification_bg_low_pressed.9.png",
-                "res/drawable-mdpi-v4/notification_bg_low_normal.9.png",
-                "res/drawable-mdpi-v4/notify_panel_notification_icon_bg.png",
-                "res/drawable-mdpi-v4/notification_bg_normal_pressed.9.png",
-                "res/drawable-xhdpi-v4/notification_bg_normal.9.png",
-                "res/drawable-xhdpi-v4/notification_bg_low_pressed.9.png",
-                "res/drawable-xhdpi-v4/notification_bg_low_normal.9.png",
-                "res/drawable-xhdpi-v4/notify_panel_notification_icon_bg.png",
-                "res/drawable-xhdpi-v4/notification_bg_normal_pressed.9.png",
-                "res/drawable-v21/notification_action_background.xml",
-                "res/drawable/force_remove.xml",
-                "res/drawable/notification_bg.xml",
-                "res/drawable/notification_bg_low.xml",
-                "res/drawable/notification_icon_background.xml",
-                "res/drawable/notification_tile_bg.xml",
-                "res/drawable/unused9.xml",
-                "res/drawable/unused10.xml",
-                "res/drawable/unused11.xml",
-                "res/layout-v16/notification_template_custom_big.xml",
-                "res/layout-v17/notification_template_lines_media.xml",
-                "res/layout-v17/notification_action_tombstone.xml",
-                "res/layout-v17/notification_template_media.xml",
-                "res/layout-v17/notification_template_big_media_custom.xml",
-                "res/layout-v17/notification_template_custom_big.xml",
-                "res/layout-v17/notification_template_big_media_narrow_custom.xml",
-                "res/layout-v17/notification_template_big_media_narrow.xml",
-                "res/layout-v17/notification_template_big_media.xml",
-                "res/layout-v17/notification_action.xml",
-                "res/layout-v17/notification_template_media_custom.xml",
-                "res/layout-v21/notification_template_custom_big.xml",
-                "res/layout-v21/notification_action.xml",
-                "res/layout-v21/notification_action_tombstone.xml",
-                "res/layout-v21/notification_template_icon_group.xml",
-                "res/layout/lib_unused.xml",
-                "res/layout/marked_as_used_by_old.xml",
-                "res/layout/notification_action.xml",
-                "res/layout/notification_action_tombstone.xml",
-                "res/layout/notification_media_action.xml",
-                "res/layout/notification_media_cancel_action.xml",
-                "res/layout/notification_template_big_media.xml",
-                "res/layout/notification_template_big_media_custom.xml",
-                "res/layout/notification_template_big_media_narrow.xml",
-                "res/layout/notification_template_big_media_narrow_custom.xml",
-                "res/layout/notification_template_icon_group.xml",
-                "res/layout/notification_template_lines_media.xml",
-                "res/layout/notification_template_media.xml",
-                "res/layout/notification_template_media_custom.xml",
-                "res/layout/notification_template_part_chronometer.xml",
-                "res/layout/notification_template_part_time.xml",
-                "res/layout/unused1.xml",
-                "res/layout/unused2.xml",
-                "res/layout/unused14.xml",
-                "res/layout/unused13.xml",
-                "res/menu/unused12.xml",
-                "res/raw/keep.xml"
-        ) + if (r8OptimizedShrinking) {
-            // With optimized shrinking, more resources are removed.
-            listOf(
-                "res/layout/prefix_3_suffix.xml",
-                "res/layout/prefix_used_1.xml",
-                "res/layout/prefix_used_2.xml",
-                "res/layout/used3.xml",
-                "res/layout/used4.xml",
-                "res/layout/used5.xml",
-                "res/layout/used6.xml",
-            )
+    // Check that unused resources are replaced in shrunk apk.
+    val removedFiles =
+      listOf(
+        "res/drawable-hdpi-v4/notification_bg_normal.9.png",
+        "res/drawable-hdpi-v4/notification_bg_low_pressed.9.png",
+        "res/drawable-hdpi-v4/notification_bg_low_normal.9.png",
+        "res/drawable-hdpi-v4/notify_panel_notification_icon_bg.png",
+        "res/drawable-hdpi-v4/notification_bg_normal_pressed.9.png",
+        "res/drawable-mdpi-v4/notification_bg_normal.9.png",
+        "res/drawable-mdpi-v4/notification_bg_low_pressed.9.png",
+        "res/drawable-mdpi-v4/notification_bg_low_normal.9.png",
+        "res/drawable-mdpi-v4/notify_panel_notification_icon_bg.png",
+        "res/drawable-mdpi-v4/notification_bg_normal_pressed.9.png",
+        "res/drawable-xhdpi-v4/notification_bg_normal.9.png",
+        "res/drawable-xhdpi-v4/notification_bg_low_pressed.9.png",
+        "res/drawable-xhdpi-v4/notification_bg_low_normal.9.png",
+        "res/drawable-xhdpi-v4/notify_panel_notification_icon_bg.png",
+        "res/drawable-xhdpi-v4/notification_bg_normal_pressed.9.png",
+        "res/drawable-v21/notification_action_background.xml",
+        "res/drawable/force_remove.xml",
+        "res/drawable/notification_bg.xml",
+        "res/drawable/notification_bg_low.xml",
+        "res/drawable/notification_icon_background.xml",
+        "res/drawable/notification_tile_bg.xml",
+        "res/drawable/unused9.xml",
+        "res/drawable/unused10.xml",
+        "res/drawable/unused11.xml",
+        "res/layout-v16/notification_template_custom_big.xml",
+        "res/layout-v17/notification_template_lines_media.xml",
+        "res/layout-v17/notification_action_tombstone.xml",
+        "res/layout-v17/notification_template_media.xml",
+        "res/layout-v17/notification_template_big_media_custom.xml",
+        "res/layout-v17/notification_template_custom_big.xml",
+        "res/layout-v17/notification_template_big_media_narrow_custom.xml",
+        "res/layout-v17/notification_template_big_media_narrow.xml",
+        "res/layout-v17/notification_template_big_media.xml",
+        "res/layout-v17/notification_action.xml",
+        "res/layout-v17/notification_template_media_custom.xml",
+        "res/layout-v21/notification_template_custom_big.xml",
+        "res/layout-v21/notification_action.xml",
+        "res/layout-v21/notification_action_tombstone.xml",
+        "res/layout-v21/notification_template_icon_group.xml",
+        "res/layout/lib_unused.xml",
+        "res/layout/marked_as_used_by_old.xml",
+        "res/layout/notification_action.xml",
+        "res/layout/notification_action_tombstone.xml",
+        "res/layout/notification_media_action.xml",
+        "res/layout/notification_media_cancel_action.xml",
+        "res/layout/notification_template_big_media.xml",
+        "res/layout/notification_template_big_media_custom.xml",
+        "res/layout/notification_template_big_media_narrow.xml",
+        "res/layout/notification_template_big_media_narrow_custom.xml",
+        "res/layout/notification_template_icon_group.xml",
+        "res/layout/notification_template_lines_media.xml",
+        "res/layout/notification_template_media.xml",
+        "res/layout/notification_template_media_custom.xml",
+        "res/layout/notification_template_part_chronometer.xml",
+        "res/layout/notification_template_part_time.xml",
+        "res/layout/unused1.xml",
+        "res/layout/unused2.xml",
+        "res/layout/unused14.xml",
+        "res/layout/unused13.xml",
+        "res/menu/unused12.xml",
+        "res/raw/keep.xml",
+      ) +
+        if (r8OptimizedShrinking) {
+          // With optimized shrinking, more resources are removed.
+          listOf(
+            "res/layout/prefix_3_suffix.xml",
+            "res/layout/prefix_used_1.xml",
+            "res/layout/prefix_used_2.xml",
+            "res/layout/used3.xml",
+            "res/layout/used4.xml",
+            "res/layout/used5.xml",
+            "res/layout/used6.xml",
+          )
         } else {
-            emptyList()
+          emptyList()
         }
-        checkUnusedResourcesAreReplacedInApk(project, removedFiles)
+    checkUnusedResourcesAreReplacedInApk(project, removedFiles)
 
-        val debugApk = project.getApk(DEBUG)
-        val releaseApk = project.getApk(RELEASE)
-        val debugEntries = getZipPaths(debugApk.file.toFile())
-        val releaseEntries = getZipPaths(releaseApk.file.toFile())
-        val (debugResEntries, debugNonResEntries) = debugEntries.partition { it.startsWith("res/") }
-        val (releaseResEntries, releaseNonResEntries) = releaseEntries.partition { it.startsWith("res/") }
-        assertThat(debugResEntries.size).isEqualTo(87)
-        assertThat(debugNonResEntries.size).isEqualTo(32)
-        assertThat(releaseResEntries.size).isEqualTo((debugResEntries - removedFiles.toSet()).size)
-        assertThat(releaseNonResEntries).containsExactlyElementsIn(
-            debugNonResEntries
-                    // Only in debug APK
-                    - setOf("META-INF/CERT.RSA", "META-INF/CERT.SF", "META-INF/MANIFEST.MF")
-                    // Only in release APK
-                    + "META-INF/version-control-info.textproto"
-        )
+    val debugApk = project.getApk(DEBUG)
+    val releaseApk = project.getApk(RELEASE)
+    val debugEntries = getZipPaths(debugApk.file.toFile())
+    val releaseEntries = getZipPaths(releaseApk.file.toFile())
+    val (debugResEntries, debugNonResEntries) = debugEntries.partition { it.startsWith("res/") }
+    val (releaseResEntries, releaseNonResEntries) = releaseEntries.partition { it.startsWith("res/") }
+    assertThat(debugResEntries.size).isEqualTo(87)
+    assertThat(debugNonResEntries.size).isEqualTo(32)
+    assertThat(releaseResEntries.size).isEqualTo((debugResEntries - removedFiles.toSet()).size)
+    assertThat(releaseNonResEntries)
+      .containsExactlyElementsIn(
+        debugNonResEntries
+        // Only in debug APK
+        - setOf("META-INF/CERT.RSA", "META-INF/CERT.SF", "META-INF/MANIFEST.MF")
+        // Only in release APK
+        + "META-INF/version-control-info.textproto"
+      )
 
-        // Check that unused resources are removed in project with web views and all web view
-        // resources are marked as used.
-        checkUnusedResourcesAreReplacedInApk(
-            project.getSubproject("webview"), listOf(
-                "res/raw/unused_icon.png",
-                "res/raw/unused_index.html",
-                "res/xml/my_xml.xml"
-            )
-        )
-        // Check that replaced files has proper dummy content.
-        assertThat(project.getSubproject("webview").getApk(RELEASE).file.toFile()) {
-            it.doesNotContain("res/0t.png")
-            it.doesNotContain("res/VT.html")
-            it.doesNotContain("res/jd.xml")
-        }
-        // Check that zip entities have proper methods.
-        val expectedShrunkResources = listOf(
-            "  stored  resources.arsc",
-            "deflated  AndroidManifest.xml",
-            "deflated  res/raw/unknown",
-            "deflated  res/layout/used_layout1.xml",
-            "deflated  res/layout/used_layout2.xml",
-            "deflated  res/layout/webview.xml"
-        ) + if (r8OptimizedShrinking) {
-            // R8 team: We don't track reflective usage in optimized shrinking (strict mode implied)
-            emptyList()
+    // Check that unused resources are removed in project with web views and all web view
+    // resources are marked as used.
+    checkUnusedResourcesAreReplacedInApk(
+      project.getSubproject("webview"),
+      listOf("res/raw/unused_icon.png", "res/raw/unused_index.html", "res/xml/my_xml.xml"),
+    )
+    // Check that replaced files has proper dummy content.
+    assertThat(project.getSubproject("webview").getApk(RELEASE).file.toFile()) {
+      it.doesNotContain("res/0t.png")
+      it.doesNotContain("res/VT.html")
+      it.doesNotContain("res/jd.xml")
+    }
+    // Check that zip entities have proper methods.
+    val expectedShrunkResources =
+      listOf(
+        "  stored  resources.arsc",
+        "deflated  AndroidManifest.xml",
+        "deflated  res/raw/unknown",
+        "deflated  res/layout/used_layout1.xml",
+        "deflated  res/layout/used_layout2.xml",
+        "deflated  res/layout/webview.xml",
+      ) +
+        if (r8OptimizedShrinking) {
+          // R8 team: We don't track reflective usage in optimized shrinking (strict mode implied)
+          emptyList()
         } else {
-            listOf(
-                "deflated  res/drawable/used1.xml",
-                "  stored  res/raw/used_icon.png",
-                "  stored  res/raw/used_icon2.png",
-                "deflated  res/raw/used_index.html",
-                "deflated  res/raw/used_index2.html",
-                "deflated  res/raw/used_index3.html",
-                "deflated  res/layout/used_layout3.xml",
-                "deflated  res/raw/used_script.js",
-                "deflated  res/raw/used_styles.css",
-            )
+          listOf(
+            "deflated  res/drawable/used1.xml",
+            "  stored  res/raw/used_icon.png",
+            "  stored  res/raw/used_icon2.png",
+            "deflated  res/raw/used_index.html",
+            "deflated  res/raw/used_index2.html",
+            "deflated  res/raw/used_index3.html",
+            "deflated  res/layout/used_layout3.xml",
+            "deflated  res/raw/used_script.js",
+            "deflated  res/raw/used_styles.css",
+          )
         }
-        assertThat(getZipPathsWithMethod(project.getSubproject("webview").getShrunkBinaryResources()))
-            .containsExactlyElementsIn(expectedShrunkResources)
+    assertThat(getZipPathsWithMethod(project.getSubproject("webview").getShrunkBinaryResources()))
+      .containsExactlyElementsIn(expectedShrunkResources)
 
-        // Check that unused resources that are referenced with Resources.getIdentifier are removed
-        // in case shrinker mode is set to 'strict'.
-        checkUnusedResourcesAreReplacedInApk(
-            project.getSubproject("keep"),
-            listOf(
-                "res/raw/keep.xml",
-                "res/layout/unused1.xml",
-                "res/layout/unused2.xml"
-            )
-        )
-        // Ensure that report file is created and near mapping file
-        assertThat(project.file("build/outputs/mapping/release/mapping.txt")).exists()
-        assertThat(project.file("build/outputs/mapping/release/resources.txt").readText()).isNotEmpty()
-    }
+    // Check that unused resources that are referenced with Resources.getIdentifier are removed
+    // in case shrinker mode is set to 'strict'.
+    checkUnusedResourcesAreReplacedInApk(
+      project.getSubproject("keep"),
+      listOf("res/raw/keep.xml", "res/layout/unused1.xml", "res/layout/unused2.xml"),
+    )
+    // Ensure that report file is created and near mapping file
+    assertThat(project.file("build/outputs/mapping/release/mapping.txt")).exists()
+    assertThat(project.file("build/outputs/mapping/release/resources.txt").readText()).isNotEmpty()
+  }
 
-    private fun checkUnusedResourcesAreReplacedInApk(
-        project: GradleTestProject,
-        unusedResources: List<String>,
-        multiApkSplitName: String? = null
-    ) {
-        val linkedResources = project.getLinkedProtoResources(multiApkSplitName)
-        val shrunkResources = project.getShrunkProtoResources(multiApkSplitName)
-        val releaseApk = project.getApk(multiApkSplitName, RELEASE).file.toFile()
+  private fun checkUnusedResourcesAreReplacedInApk(
+    project: GradleTestProject,
+    unusedResources: List<String>,
+    multiApkSplitName: String? = null,
+  ) {
+    val linkedResources = project.getLinkedProtoResources(multiApkSplitName)
+    val shrunkResources = project.getShrunkProtoResources(multiApkSplitName)
+    val releaseApk = project.getApk(multiApkSplitName, RELEASE).file.toFile()
 
-        assertThat(getZipPaths(linkedResources)).containsAtLeastElementsIn(unusedResources)
-        assertThat(getZipPaths(shrunkResources)).containsNoneIn(unusedResources)
-        assertThat(getZipPaths(releaseApk)).containsNoneIn(unusedResources)
-    }
+    assertThat(getZipPaths(linkedResources)).containsAtLeastElementsIn(unusedResources)
+    assertThat(getZipPaths(shrunkResources)).containsNoneIn(unusedResources)
+    assertThat(getZipPaths(releaseApk)).containsNoneIn(unusedResources)
+  }
 
-    private fun checkUnusedResourcesAreReplacedInBundle(
-        project: GradleTestProject,
-        unusedResources: List<String>
-    ) {
-        assertThat(getZipPaths(project.getOriginalBundle())).containsNoneIn(unusedResources)
-    }
+  private fun checkUnusedResourcesAreReplacedInBundle(project: GradleTestProject, unusedResources: List<String>) {
+    assertThat(getZipPaths(project.getOriginalBundle())).containsNoneIn(unusedResources)
+  }
 
-    @Test
-    fun `optimize shrunk resources`() {
-        project.executor().run(":webview:assembleRelease")
+  @Test
+  fun `optimize shrunk resources`() {
+    project.executor().run(":webview:assembleRelease")
 
-        val releaseApk = project.getSubproject("webview").getApk(RELEASE).file.toFile()
+    val releaseApk = project.getSubproject("webview").getApk(RELEASE).file.toFile()
 
-        val expectedOptimizeApkContents = listOf(
-                "classes.dex",
-                "resources.arsc",
-                "AndroidManifest.xml",
-                "META-INF/com/android/build/gradle/app-metadata.properties",
-                "META-INF/version-control-info.textproto",
-                "res/GM",
-                "res/_M.xml",
-                "res/_S.xml",
-                "res/g0.xml",
-        ) + if (r8OptimizedShrinking) {
-            // R8 team: We don't track reflective usage in optimized shrinking (strict mode implied)
-            emptyList()
+    val expectedOptimizeApkContents =
+      listOf(
+        "classes.dex",
+        "resources.arsc",
+        "AndroidManifest.xml",
+        "META-INF/com/android/build/gradle/app-metadata.properties",
+        "META-INF/version-control-info.textproto",
+        "res/GM",
+        "res/_M.xml",
+        "res/_S.xml",
+        "res/g0.xml",
+      ) +
+        if (r8OptimizedShrinking) {
+          // R8 team: We don't track reflective usage in optimized shrinking (strict mode implied)
+          emptyList()
         } else {
-            listOf(
-                "res/0g.js",
-                "res/1B.png",
-                "res/95.html",
-                "res/Fr.xml",
-                "res/Hv.xml",
-                "res/Ta.css",
-                "res/jL.html",
-                "res/mZ.html",
-                "res/vy.png",
-            )
+          listOf(
+            "res/0g.js",
+            "res/1B.png",
+            "res/95.html",
+            "res/Fr.xml",
+            "res/Hv.xml",
+            "res/Ta.css",
+            "res/jL.html",
+            "res/mZ.html",
+            "res/vy.png",
+          )
         }
 
-        // As AAPT optimize shortens file paths including shrunk resource file names,
-        // the shrunk apk must include the obfuscated files.
-        val optimizeApkFileNames = getZipPaths(releaseApk)
-        assertThat(optimizeApkFileNames).containsExactlyElementsIn(expectedOptimizeApkContents)
+    // As AAPT optimize shortens file paths including shrunk resource file names,
+    // the shrunk apk must include the obfuscated files.
+    val optimizeApkFileNames = getZipPaths(releaseApk)
+    assertThat(optimizeApkFileNames).containsExactlyElementsIn(expectedOptimizeApkContents)
 
-        assertThat(getZipPathsWithMethod(releaseApk))
-                .containsAtLeast(
-                        "deflated  AndroidManifest.xml",
-                        "  stored  resources.arsc",
-                        "deflated  classes.dex"
-                )
+    assertThat(getZipPathsWithMethod(releaseApk))
+      .containsAtLeast("deflated  AndroidManifest.xml", "  stored  resources.arsc", "deflated  classes.dex")
 
-        assertThat(getZipEntriesWithContent(releaseApk, TINY_PROTO_CONVERTED_TO_BINARY_XML)).isEmpty()
-        assertThat(getZipEntriesWithContent(releaseApk, ByteArray(0))).isEmpty()
-        assertThat(getZipEntriesWithContent(releaseApk, TINY_PNG)).isEmpty()
+    assertThat(getZipEntriesWithContent(releaseApk, TINY_PROTO_CONVERTED_TO_BINARY_XML)).isEmpty()
+    assertThat(getZipEntriesWithContent(releaseApk, ByteArray(0))).isEmpty()
+    assertThat(getZipEntriesWithContent(releaseApk, TINY_PNG)).isEmpty()
+  }
+
+  @Test
+  fun `shrink resources for bundles`() {
+    project
+      .executor()
+      .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
+      .run(":bundleRelease", ":packageDebugUniversalApk", ":packageReleaseUniversalApk", ":webview:bundleRelease", ":keep:bundleRelease")
+
+    // Check that unused resources are replaced in shrunk bundle.
+    val replacedFiles =
+      listOf(
+        "res/drawable-hdpi-v4/notification_bg_normal.9.png",
+        "res/drawable-hdpi-v4/notification_bg_low_pressed.9.png",
+        "res/drawable-hdpi-v4/notification_bg_low_normal.9.png",
+        "res/drawable-hdpi-v4/notify_panel_notification_icon_bg.png",
+        "res/drawable-hdpi-v4/notification_bg_normal_pressed.9.png",
+        "res/drawable-mdpi-v4/notification_bg_normal.9.png",
+        "res/drawable-mdpi-v4/notification_bg_low_pressed.9.png",
+        "res/drawable-mdpi-v4/notification_bg_low_normal.9.png",
+        "res/drawable-mdpi-v4/notify_panel_notification_icon_bg.png",
+        "res/drawable-mdpi-v4/notification_bg_normal_pressed.9.png",
+        "res/drawable-xhdpi-v4/notification_bg_normal.9.png",
+        "res/drawable-xhdpi-v4/notification_bg_low_pressed.9.png",
+        "res/drawable-xhdpi-v4/notification_bg_low_normal.9.png",
+        "res/drawable-xhdpi-v4/notify_panel_notification_icon_bg.png",
+        "res/drawable-xhdpi-v4/notification_bg_normal_pressed.9.png",
+        "res/drawable-v21/notification_action_background.xml",
+        "res/drawable/force_remove.xml",
+        "res/drawable/notification_bg.xml",
+        "res/drawable/notification_bg_low.xml",
+        "res/drawable/notification_icon_background.xml",
+        "res/drawable/notification_tile_bg.xml",
+        "res/drawable/unused9.xml",
+        "res/drawable/unused10.xml",
+        "res/drawable/unused11.xml",
+        "res/layout-v16/notification_template_custom_big.xml",
+        "res/layout-v17/notification_template_lines_media.xml",
+        "res/layout-v17/notification_action_tombstone.xml",
+        "res/layout-v17/notification_template_media.xml",
+        "res/layout-v17/notification_template_big_media_custom.xml",
+        "res/layout-v17/notification_template_custom_big.xml",
+        "res/layout-v17/notification_template_big_media_narrow_custom.xml",
+        "res/layout-v17/notification_template_big_media_narrow.xml",
+        "res/layout-v17/notification_template_big_media.xml",
+        "res/layout-v17/notification_action.xml",
+        "res/layout-v17/notification_template_media_custom.xml",
+        "res/layout-v21/notification_template_custom_big.xml",
+        "res/layout-v21/notification_action.xml",
+        "res/layout-v21/notification_action_tombstone.xml",
+        "res/layout-v21/notification_template_icon_group.xml",
+        "res/layout/lib_unused.xml",
+        "res/layout/marked_as_used_by_old.xml",
+        "res/layout/notification_action.xml",
+        "res/layout/notification_action_tombstone.xml",
+        "res/layout/notification_media_action.xml",
+        "res/layout/notification_media_cancel_action.xml",
+        "res/layout/notification_template_big_media.xml",
+        "res/layout/notification_template_big_media_custom.xml",
+        "res/layout/notification_template_big_media_narrow.xml",
+        "res/layout/notification_template_big_media_narrow_custom.xml",
+        "res/layout/notification_template_icon_group.xml",
+        "res/layout/notification_template_lines_media.xml",
+        "res/layout/notification_template_media.xml",
+        "res/layout/notification_template_media_custom.xml",
+        "res/layout/notification_template_part_chronometer.xml",
+        "res/layout/notification_template_part_time.xml",
+        "res/layout/unused1.xml",
+        "res/layout/unused2.xml",
+        "res/layout/unused14.xml",
+        "res/layout/unused13.xml",
+        "res/menu/unused12.xml",
+        "res/raw/keep.xml",
+      )
+    checkUnusedResourcesAreReplacedInBundle(project, replacedFiles.map { "base/$it" })
+
+    // Check that unused resources are removed in release APK and leave as is in debug one.
+    val unusedResources = listOf("META-INF/BNDLTOOL.RSA", "META-INF/BNDLTOOL.SF", "META-INF/MANIFEST.MF")
+    assertThat(getZipPaths(project.getBundleUniversalApk(DEBUG).file.toFile())).containsAtLeastElementsIn(unusedResources)
+    assertThat(getZipPaths(project.getBundleUniversalApk(RELEASE).file.toFile())).containsNoneIn(unusedResources)
+
+    // Check that unused resources are removed in project with web views and all web view
+    // resources are marked as used.
+    checkUnusedResourcesAreReplacedInBundle(
+      project.getSubproject("webview"),
+      listOf("base/res/raw/unused_icon.png", "base/res/raw/unused_index.html", "base/res/xml/my_xml.xml"),
+    )
+
+    // Check that unused resources that are referenced with Resources.getIdentifier are removed
+    // in case shrinker mode is set to 'strict'.
+    checkUnusedResourcesAreReplacedInBundle(
+      project.getSubproject("keep"),
+      listOf("base/res/raw/keep.xml", "base/res/layout/unused1.xml", "base/res/layout/unused2.xml"),
+    )
+  }
+
+  @Test
+  fun `shrink resources for bundles with dynamic features`() {
+    projectWithDynamicFeatureModules.executor().run(":base:bundleRelease")
+
+    // Check that unused resources are replaced in shrunk bundle.
+    checkUnusedResourcesAreReplacedInBundle(
+      projectWithDynamicFeatureModules.getSubproject("base"),
+      listOf(
+        "feature/res/drawable/feat_unused.png",
+        "feature/res/drawable/discard_from_feature_1.xml",
+        "feature/res/layout/feat_unused_layout.xml",
+        "feature/res/raw/feat_keep.xml",
+        "feature/res/raw/webpage.html",
+        "base/res/drawable/discard_from_feature_2.xml",
+        "base/res/drawable/force_remove.xml",
+        "base/res/drawable/unused5.9.png",
+        "base/res/drawable/unused9.xml",
+        "base/res/drawable/unused10.xml",
+        "base/res/drawable/unused11.xml",
+        "base/res/layout/unused1.xml",
+        "base/res/layout/unused2.xml",
+        "base/res/layout/unused13.xml",
+        "base/res/layout/unused14.xml",
+        "base/res/menu/unused12.xml",
+        "base/res/raw/keep.xml",
+      ),
+    )
+
+    // Check that replaced files release bundle have proper dummy content.
+    val releaseBundle = projectWithDynamicFeatureModules.getSubproject("base").getOutputFile("bundle", "release", "base-release.aab")
+
+    assertThat(releaseBundle) {
+      it.doesNotContain("feature/res/drawable/feat_unused.png")
+      it.doesNotContain("feature/res/layout/feat_unused_layout.xml")
+      it.doesNotContain("feature/res/raw/webpage.html")
+      it.doesNotContain("base/res/layout/unused1.xml")
+      it.doesNotContain("base/res/raw/keep.xml")
+      it.doesNotContain("base/res/drawable/unused5.9.png")
     }
 
-    @Test
-    fun `shrink resources for bundles`() {
-        project.executor()
-            .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
-            .run(
-                ":bundleRelease",
-                ":packageDebugUniversalApk",
-                ":packageReleaseUniversalApk",
-                ":webview:bundleRelease",
-                ":keep:bundleRelease"
-            )
+    // Ensure that report file is created and near mapping file
+    assertThat(projectWithDynamicFeatureModules.getSubproject("base").file("build/outputs/mapping/release/mapping.txt")).exists()
+    assertThat(projectWithDynamicFeatureModules.getSubproject("base").file("build/outputs/mapping/release/resources.txt").readText())
+      .isNotEmpty()
+  }
 
-        // Check that unused resources are replaced in shrunk bundle.
-        val replacedFiles = listOf(
-                "res/drawable-hdpi-v4/notification_bg_normal.9.png",
-                "res/drawable-hdpi-v4/notification_bg_low_pressed.9.png",
-                "res/drawable-hdpi-v4/notification_bg_low_normal.9.png",
-                "res/drawable-hdpi-v4/notify_panel_notification_icon_bg.png",
-                "res/drawable-hdpi-v4/notification_bg_normal_pressed.9.png",
-                "res/drawable-mdpi-v4/notification_bg_normal.9.png",
-                "res/drawable-mdpi-v4/notification_bg_low_pressed.9.png",
-                "res/drawable-mdpi-v4/notification_bg_low_normal.9.png",
-                "res/drawable-mdpi-v4/notify_panel_notification_icon_bg.png",
-                "res/drawable-mdpi-v4/notification_bg_normal_pressed.9.png",
-                "res/drawable-xhdpi-v4/notification_bg_normal.9.png",
-                "res/drawable-xhdpi-v4/notification_bg_low_pressed.9.png",
-                "res/drawable-xhdpi-v4/notification_bg_low_normal.9.png",
-                "res/drawable-xhdpi-v4/notify_panel_notification_icon_bg.png",
-                "res/drawable-xhdpi-v4/notification_bg_normal_pressed.9.png",
-                "res/drawable-v21/notification_action_background.xml",
-                "res/drawable/force_remove.xml",
-                "res/drawable/notification_bg.xml",
-                "res/drawable/notification_bg_low.xml",
-                "res/drawable/notification_icon_background.xml",
-                "res/drawable/notification_tile_bg.xml",
-                "res/drawable/unused9.xml",
-                "res/drawable/unused10.xml",
-                "res/drawable/unused11.xml",
-                "res/layout-v16/notification_template_custom_big.xml",
-                "res/layout-v17/notification_template_lines_media.xml",
-                "res/layout-v17/notification_action_tombstone.xml",
-                "res/layout-v17/notification_template_media.xml",
-                "res/layout-v17/notification_template_big_media_custom.xml",
-                "res/layout-v17/notification_template_custom_big.xml",
-                "res/layout-v17/notification_template_big_media_narrow_custom.xml",
-                "res/layout-v17/notification_template_big_media_narrow.xml",
-                "res/layout-v17/notification_template_big_media.xml",
-                "res/layout-v17/notification_action.xml",
-                "res/layout-v17/notification_template_media_custom.xml",
-                "res/layout-v21/notification_template_custom_big.xml",
-                "res/layout-v21/notification_action.xml",
-                "res/layout-v21/notification_action_tombstone.xml",
-                "res/layout-v21/notification_template_icon_group.xml",
-                "res/layout/lib_unused.xml",
-                "res/layout/marked_as_used_by_old.xml",
-                "res/layout/notification_action.xml",
-                "res/layout/notification_action_tombstone.xml",
-                "res/layout/notification_media_action.xml",
-                "res/layout/notification_media_cancel_action.xml",
-                "res/layout/notification_template_big_media.xml",
-                "res/layout/notification_template_big_media_custom.xml",
-                "res/layout/notification_template_big_media_narrow.xml",
-                "res/layout/notification_template_big_media_narrow_custom.xml",
-                "res/layout/notification_template_icon_group.xml",
-                "res/layout/notification_template_lines_media.xml",
-                "res/layout/notification_template_media.xml",
-                "res/layout/notification_template_media_custom.xml",
-                "res/layout/notification_template_part_chronometer.xml",
-                "res/layout/notification_template_part_time.xml",
-                "res/layout/unused1.xml",
-                "res/layout/unused2.xml",
-                "res/layout/unused14.xml",
-                "res/layout/unused13.xml",
-                "res/menu/unused12.xml",
-                "res/raw/keep.xml"
-        )
-        checkUnusedResourcesAreReplacedInBundle(project, replacedFiles.map { "base/$it" })
+  @Test
+  fun `shrink resources for APKs with dynamic features`() {
+    projectWithDynamicFeatureModules.executor().run(":base:assembleRelease")
 
-        // Check that unused resources are removed in release APK and leave as is in debug one.
-        val unusedResources = listOf(
-            "META-INF/BNDLTOOL.RSA",
-            "META-INF/BNDLTOOL.SF",
-            "META-INF/MANIFEST.MF"
-        )
-        assertThat(getZipPaths(project.getBundleUniversalApk(DEBUG).file.toFile()))
-            .containsAtLeastElementsIn(unusedResources)
-        assertThat(getZipPaths(project.getBundleUniversalApk(RELEASE).file.toFile()))
-            .containsNoneIn(unusedResources)
+    // Check that unused resources are replaced in shrunk bundle.
+    checkUnusedResourcesAreReplacedInApk(
+      projectWithDynamicFeatureModules.getSubproject("base"),
+      unusedResources =
+        listOf(
+          "res/drawable/discard_from_feature_2.xml",
+          "res/drawable/force_remove.xml",
+          "res/drawable/unused10.xml",
+          "res/drawable/unused11.xml",
+          "res/drawable/unused9.xml",
+          "res/layout/unused1.xml",
+          "res/layout/unused13.xml",
+          "res/layout/unused14.xml",
+          "res/layout/unused2.xml",
+          "res/menu/unused12.xml",
+        ),
+    )
+  }
 
-        // Check that unused resources are removed in project with web views and all web view
-        // resources are marked as used.
-        checkUnusedResourcesAreReplacedInBundle(
-            project.getSubproject("webview"),
-            listOf(
-                "base/res/raw/unused_icon.png",
-                "base/res/raw/unused_index.html",
-                "base/res/xml/my_xml.xml"
-            )
-        )
-
-        // Check that unused resources that are referenced with Resources.getIdentifier are removed
-        // in case shrinker mode is set to 'strict'.
-        checkUnusedResourcesAreReplacedInBundle(
-            project.getSubproject("keep"),
-            listOf(
-                "base/res/raw/keep.xml",
-                "base/res/layout/unused1.xml",
-                "base/res/layout/unused2.xml"
-            )
-        )
-    }
-
-    @Test
-    fun `shrink resources for bundles with dynamic features`() {
-        projectWithDynamicFeatureModules.executor().run(":base:bundleRelease")
-
-        // Check that unused resources are replaced in shrunk bundle.
-        checkUnusedResourcesAreReplacedInBundle(
-            projectWithDynamicFeatureModules.getSubproject("base"), listOf(
-                "feature/res/drawable/feat_unused.png",
-                "feature/res/drawable/discard_from_feature_1.xml",
-                "feature/res/layout/feat_unused_layout.xml",
-                "feature/res/raw/feat_keep.xml",
-                "feature/res/raw/webpage.html",
-                "base/res/drawable/discard_from_feature_2.xml",
-                "base/res/drawable/force_remove.xml",
-                "base/res/drawable/unused5.9.png",
-                "base/res/drawable/unused9.xml",
-                "base/res/drawable/unused10.xml",
-                "base/res/drawable/unused11.xml",
-                "base/res/layout/unused1.xml",
-                "base/res/layout/unused2.xml",
-                "base/res/layout/unused13.xml",
-                "base/res/layout/unused14.xml",
-                "base/res/menu/unused12.xml",
-                "base/res/raw/keep.xml"
-            )
-        )
-
-        // Check that replaced files release bundle have proper dummy content.
-        val releaseBundle = projectWithDynamicFeatureModules.getSubproject("base")
-                .getOutputFile("bundle", "release", "base-release.aab")
-
-        assertThat(releaseBundle) {
-            it.doesNotContain("feature/res/drawable/feat_unused.png")
-            it.doesNotContain("feature/res/layout/feat_unused_layout.xml")
-            it.doesNotContain("feature/res/raw/webpage.html")
-            it.doesNotContain("base/res/layout/unused1.xml")
-            it.doesNotContain("base/res/raw/keep.xml")
-            it.doesNotContain("base/res/drawable/unused5.9.png")
-        }
-
-        // Ensure that report file is created and near mapping file
-        assertThat(
-            projectWithDynamicFeatureModules.getSubproject("base")
-                .file("build/outputs/mapping/release/mapping.txt")
-        ).exists()
-        assertThat(
-            projectWithDynamicFeatureModules.getSubproject("base")
-                .file("build/outputs/mapping/release/resources.txt").readText()
-        ).isNotEmpty()
-    }
-
-    @Test
-    fun `shrink resources for APKs with dynamic features`() {
-        projectWithDynamicFeatureModules.executor().run(":base:assembleRelease")
-
-        // Check that unused resources are replaced in shrunk bundle.
-        checkUnusedResourcesAreReplacedInApk(
-            projectWithDynamicFeatureModules.getSubproject("base"),
-            unusedResources = listOf(
-                "res/drawable/discard_from_feature_2.xml",
-                "res/drawable/force_remove.xml",
-                "res/drawable/unused10.xml",
-                "res/drawable/unused11.xml",
-                "res/drawable/unused9.xml",
-                "res/layout/unused1.xml",
-                "res/layout/unused13.xml",
-                "res/layout/unused14.xml",
-                "res/layout/unused2.xml",
-                "res/menu/unused12.xml",
-            )
-        )
-    }
-
-    @Test
-    fun `shrink resources for multi-APKs`() {
-        val abiSplitsSubproject = project.getSubproject("abisplits")
-        FileUtils.createFile(
-                FileUtils.join(
-                        abiSplitsSubproject.mainResDir,
-                        SdkConstants.FD_RES_XML,
-                        "signing_certificates.xml"),
-                """<?xml version="1.0" encoding="utf-8"?>
+  @Test
+  fun `shrink resources for multi-APKs`() {
+    val abiSplitsSubproject = project.getSubproject("abisplits")
+    FileUtils.createFile(
+      FileUtils.join(abiSplitsSubproject.mainResDir, SdkConstants.FD_RES_XML, "signing_certificates.xml"),
+      """<?xml version="1.0" encoding="utf-8"?>
                 <parent_tag>
                     <signing_certificate
                         name="Resource 1">
@@ -519,129 +483,107 @@ class ResourceShrinkerTest(
                         Line Three
                     </signing_certificate>
                 </parent_tag>
-                """
+                """,
+    )
+
+    // Use the signing configuration xml resource, to replacing with empty contents
+    // during resource shrinking.
+    val usedActivity = FileUtils.join(abiSplitsSubproject.mainSrcDir, "com", "android", "tests", "shrink", "UsedActivity.java")
+    val usedActivtyContentsWithXmlUsage =
+      usedActivity
+        .readText()
+        .replace(
+          "setContentView(R.layout.used);",
+          "setContentView(R.layout.used);\n" + "getApplicationContext().getResources().getXml(R.xml.signing_certificates);",
         )
+    usedActivity.writeText(usedActivtyContentsWithXmlUsage)
 
-        // Use the signing configuration xml resource, to replacing with empty contents
-        // during resource shrinking.
-        val usedActivity = FileUtils.join(
-                abiSplitsSubproject.mainSrcDir,
-                "com", "android", "tests", "shrink", "UsedActivity.java"
-        )
-        val usedActivtyContentsWithXmlUsage =
-                usedActivity.readText().replace("setContentView(R.layout.used);",
-                        "setContentView(R.layout.used);\n" +
-                                "getApplicationContext().getResources().getXml(R.xml.signing_certificates);"
-                )
-        usedActivity.writeText(usedActivtyContentsWithXmlUsage)
+    abiSplitsSubproject.buildFile.appendText(
+      "android {\n" +
+        "    splits {\n" +
+        "        abi {\n" +
+        "            enable = true\n" +
+        "            reset()\n" +
+        "            include \"x86\", \"x86_64\", \"armeabi-v7a\", \"arm64-v8a\"\n" +
+        "            universalApk = true\n" +
+        "        }\n" +
+        "    }\n" +
+        "  }\n"
+    )
 
-        abiSplitsSubproject.buildFile.appendText(
-                "android {\n" +
-                        "    splits {\n" +
-                        "        abi {\n" +
-                        "            enable = true\n" +
-                        "            reset()\n" +
-                        "            include \"x86\", \"x86_64\", \"armeabi-v7a\", \"arm64-v8a\"\n" +
-                        "            universalApk = true\n" +
-                        "        }\n" +
-                        "    }\n" +
-                        "  }\n"
-        )
+    project.executor().withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON).run(":abisplits:assembleRelease")
 
-        project.executor()
-            .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
-            .run(":abisplits:assembleRelease")
+    // Check that unused resources are removed from all split APKs, including universal APK
+    for (split in listOf("universal", "arm64-v8a", "armeabi-v7a", "x86", "x86_64")) {
+      checkUnusedResourcesAreReplacedInApk(project.getSubproject("abisplits"), listOf("res/layout/unused.xml"), split)
+    }
 
-        // Check that unused resources are removed from all split APKs, including universal APK
-        for (split in listOf("universal", "arm64-v8a", "armeabi-v7a", "x86", "x86_64")) {
-            checkUnusedResourcesAreReplacedInApk(
-                project.getSubproject("abisplits"),
-                listOf("res/layout/unused.xml"),
-                split
-            )
+    // Regression test for b/22833352 (Check signing cert content is correctly compiled)
+    val shrunkUniversalApk = FileUtils.join(abiSplitsSubproject.outputDir, "apk", "release", "abisplits-universal-release-unsigned.apk")
+    val logger = StdLogger(StdLogger.Level.VERBOSE)
+    val result = AaptInvoker(testAapt2.toPath(), logger).getXmlStrings(shrunkUniversalApk, "res/V7.xml")
+    assertThat(result.map(String::trim))
+      .containsExactly(
+        "String pool of 5 unique UTF-8 non-sorted strings, 5 entries and 0 styles using 184 bytes:",
+        "String #0 :  Line One",
+        "Line Two",
+        "Line Three",
+        "String #1 : Resource 1",
+        "String #2 : name",
+        "String #3 : parent_tag",
+        "String #4 : signing_certificate",
+      )
+  }
+
+  private fun getZipPaths(zipFile: File, transform: (path: ZipEntry) -> String = { it.name }) =
+    ZipFile(zipFile).use { zip -> zip.stream().map(transform).collect(Collectors.toList()) }
+
+  private fun getZipPathsWithMethod(zipFile: File) =
+    getZipPaths(zipFile) {
+      val method =
+        when (it.method) {
+          ZipEntry.STORED -> "  stored"
+          ZipEntry.DEFLATED -> "deflated"
+          else -> " unknown"
         }
-
-        // Regression test for b/22833352 (Check signing cert content is correctly compiled)
-        val shrunkUniversalApk =
-                FileUtils.join(abiSplitsSubproject.outputDir,
-                        "apk",
-                        "release",
-                        "abisplits-universal-release-unsigned.apk")
-        val logger = StdLogger(StdLogger.Level.VERBOSE)
-        val result = AaptInvoker(testAapt2.toPath(), logger)
-                .getXmlStrings(shrunkUniversalApk, "res/V7.xml")
-        assertThat(result.map(String::trim)).containsExactly(
-                "String pool of 5 unique UTF-8 non-sorted strings, 5 entries and 0 styles using 184 bytes:",
-                "String #0 :  Line One",
-                "Line Two",
-                "Line Three",
-                "String #1 : Resource 1",
-                "String #2 : name",
-                "String #3 : parent_tag",
-                "String #4 : signing_certificate"
-        )
+      "$method  ${it.name}"
     }
 
-    private fun getZipPaths(zipFile: File, transform: (path: ZipEntry) -> String = { it.name }) =
-            ZipFile(zipFile).use { zip ->
-                zip.stream().map(transform).collect(Collectors.toList())
-            }
-
-    private fun getZipPathsWithMethod(zipFile: File) = getZipPaths(zipFile) {
-        val method = when (it.method) {
-            ZipEntry.STORED -> "  stored"
-            ZipEntry.DEFLATED -> "deflated"
-            else -> " unknown"
-        }
-        "$method  ${it.name}"
+  private fun getZipEntriesWithContent(zipFile: File, content: ByteArray) =
+    ZipFile(zipFile).use { zip ->
+      zip
+        .stream()
+        .filter { ByteStreams.toByteArray(zip.getInputStream(it)).contentEquals(content) }
+        .map { it.name }
+        .collect(Collectors.toList())
     }
 
-    private fun getZipEntriesWithContent(zipFile: File, content: ByteArray) =
-            ZipFile(zipFile).use { zip ->
-                zip.stream()
-                        .filter {
-                            ByteStreams.toByteArray(zip.getInputStream(it))
-                                    .contentEquals(content)
-                        }
-                        .map { it.name }
-                        .collect(Collectors.toList())
-            }
+  private fun GradleTestProject.getOriginalBundle() =
+    getIntermediateFile("intermediary_bundle", "release", "packageReleaseBundle", "intermediary-bundle.aab")
 
-    private fun GradleTestProject.getOriginalBundle() =
-            getIntermediateFile(
-                    "intermediary_bundle",
-                    "release",
-                    "packageReleaseBundle",
-                    "intermediary-bundle.aab"
-            )
+  private fun GradleTestProject.getShrunkBundle() =
+    getIntermediateFile("intermediary_bundle", "release", "shrinkBundleReleaseResources", "intermediary-bundle.aab")
 
-    private fun GradleTestProject.getShrunkBundle() =
-            getIntermediateFile(
-                    "intermediary_bundle",
-                    "release",
-                    "shrinkBundleReleaseResources",
-                    "intermediary-bundle.aab"
-            )
+  private fun GradleTestProject.getLinkedProtoResources(splitName: String? = null): File {
+    val fileNameSuffix =
+      if (splitName != null) {
+        "${splitName}Release"
+      } else {
+        "release"
+      }
+    return InternalArtifactType.LINKED_RESOURCES_PROTO_FORMAT.getOutputDir(buildDir)
+      .resolve("release/processReleaseResources/linked-resources-proto-format-$fileNameSuffix.ap_")
+  }
 
-    private fun GradleTestProject.getLinkedProtoResources(splitName: String? = null): File {
-        val fileNameSuffix = if (splitName != null) {
-            "${splitName}Release"
-        } else {
-            "release"
-        }
-        return InternalArtifactType.LINKED_RESOURCES_PROTO_FORMAT.getOutputDir(buildDir)
-            .resolve("release/processReleaseResources/linked-resources-proto-format-$fileNameSuffix.ap_")
-    }
+  private fun GradleTestProject.getShrunkProtoResources(splitName: String? = null): File {
+    val task = "minifyReleaseWithR8"
+    return InternalArtifactType.SHRUNK_RESOURCES_PROTO_FORMAT.getOutputDir(buildDir)
+      .resolve("release/$task")
+      .resolve(listOfNotNull("shrunk-resources-proto-format", splitName, "release.ap_").joinToString("-"))
+  }
 
-    private fun GradleTestProject.getShrunkProtoResources(splitName: String? = null): File {
-        val task = "minifyReleaseWithR8"
-        return InternalArtifactType.SHRUNK_RESOURCES_PROTO_FORMAT.getOutputDir(buildDir)
-            .resolve("release/$task")
-            .resolve(listOfNotNull("shrunk-resources-proto-format", splitName, "release.ap_").joinToString("-"))
-    }
-
-    private fun GradleTestProject.getShrunkBinaryResources(splitName: String? = null): File =
-        InternalArtifactType.SHRUNK_RESOURCES_BINARY_FORMAT.getOutputDir(buildDir)
-            .resolve("release/convertShrunkResourcesToBinaryRelease")
-            .resolve(listOfNotNull("shrunk-resources-binary-format", splitName, "release.ap_").joinToString("-"))
+  private fun GradleTestProject.getShrunkBinaryResources(splitName: String? = null): File =
+    InternalArtifactType.SHRUNK_RESOURCES_BINARY_FORMAT.getOutputDir(buildDir)
+      .resolve("release/convertShrunkResourcesToBinaryRelease")
+      .resolve(listOfNotNull("shrunk-resources-binary-format", splitName, "release.ap_").joinToString("-"))
 }

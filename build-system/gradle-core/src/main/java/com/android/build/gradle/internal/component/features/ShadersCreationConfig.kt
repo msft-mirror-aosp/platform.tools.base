@@ -23,7 +23,7 @@ package com.android.build.gradle.internal.component.features
  * [com.android.build.gradle.internal.component.ConsumableCreationConfig.shadersCreationConfig].
  */
 interface ShadersCreationConfig {
-    val defaultGlslcArgs: List<String>
+  val defaultGlslcArgs: List<String>
 
-    val scopedGlslcArgs: Map<String, List<String>>
+  val scopedGlslcArgs: Map<String, List<String>>
 }

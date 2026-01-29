@@ -25,47 +25,32 @@ import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.SetProperty
 
 /**
- * A common [ExternalNativeBuild] abstraction over [CoreExternalNativeNinjaOptions].
- * This class is analogous to [ExternalCmakeImpl] and [ExternalNdkBuildImpl] which wrap
- * [CoreExternalNativeCmakeOptions] and [CoreExternalNativeNdkBuildOptions] respectively.
+ * A common [ExternalNativeBuild] abstraction over [CoreExternalNativeNinjaOptions]. This class is analogous to [ExternalCmakeImpl] and
+ * [ExternalNdkBuildImpl] which wrap [CoreExternalNativeCmakeOptions] and [CoreExternalNativeNdkBuildOptions] respectively.
  */
-class ExternalNinjaImpl(
-    mergedExternalNativeNinjaOptions: CoreExternalNativeNinjaOptions,
-    variantServices: VariantServices
-): ExternalNativeBuild {
+class ExternalNinjaImpl(mergedExternalNativeNinjaOptions: CoreExternalNativeNinjaOptions, variantServices: VariantServices) :
+  ExternalNativeBuild {
 
-    override val abiFilters: SetProperty<String> =
-        variantServices.setPropertyOf(
-            type = String::class.java,
-            value = mergedExternalNativeNinjaOptions.abiFilters,
-            disallowUnsafeRead = false
-        )
+  override val abiFilters: SetProperty<String> =
+    variantServices.setPropertyOf(
+      type = String::class.java,
+      value = mergedExternalNativeNinjaOptions.abiFilters,
+      disallowUnsafeRead = false,
+    )
 
-    override val arguments: ListProperty<String> =
-        variantServices.listPropertyOf(
-            type = String::class.java,
-            value = mergedExternalNativeNinjaOptions.arguments,
-            disallowUnsafeRead = false
-        )
+  override val arguments: ListProperty<String> =
+    variantServices.listPropertyOf(
+      type = String::class.java,
+      value = mergedExternalNativeNinjaOptions.arguments,
+      disallowUnsafeRead = false,
+    )
 
-    override val cFlags: ListProperty<String> =
-        variantServices.listPropertyOf(
-            type = String::class.java,
-            value = mergedExternalNativeNinjaOptions.cFlags,
-            disallowUnsafeRead = false
-        )
+  override val cFlags: ListProperty<String> =
+    variantServices.listPropertyOf(type = String::class.java, value = mergedExternalNativeNinjaOptions.cFlags, disallowUnsafeRead = false)
 
-    override val cppFlags: ListProperty<String> =
-        variantServices.listPropertyOf(
-            type = String::class.java,
-            value = mergedExternalNativeNinjaOptions.cppFlags,
-            disallowUnsafeRead = false
-        )
+  override val cppFlags: ListProperty<String> =
+    variantServices.listPropertyOf(type = String::class.java, value = mergedExternalNativeNinjaOptions.cppFlags, disallowUnsafeRead = false)
 
-    override val targets: SetProperty<String> =
-        variantServices.setPropertyOf(
-            type = String::class.java,
-            value = mergedExternalNativeNinjaOptions.targets,
-            disallowUnsafeRead = false
-        )
+  override val targets: SetProperty<String> =
+    variantServices.setPropertyOf(type = String::class.java, value = mergedExternalNativeNinjaOptions.targets, disallowUnsafeRead = false)
 }

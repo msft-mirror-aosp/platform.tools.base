@@ -23,39 +23,40 @@ import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.build.gradle.options.BooleanOption
 import com.android.builder.model.SyncIssue
 import com.google.common.truth.Truth.assertThat
+import kotlin.test.assertNull
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
-import kotlin.test.assertNull
 
 @RunWith(Parameterized::class)
-class DataBindingKtxTest(
-    private val useKotlin: Boolean,
-    private val useBuiltInKotlin: Boolean,
-    private val useAndroidX: Boolean
-) {
-    companion object {
-        @JvmStatic
-        @Parameterized.Parameters(name = "useKotlin={0}, useBuiltInKotlin={1}, useAndroidX={2}")
-        fun modes() = listOf(
-            arrayOf(true, true, true),
-            arrayOf(true, true, false),
-            arrayOf(true, false, true),
-            arrayOf(true, false, false),
-            arrayOf(false, false, true),
-            arrayOf(false, false, false)
-        )
-    }
+class DataBindingKtxTest(private val useKotlin: Boolean, private val useBuiltInKotlin: Boolean, private val useAndroidX: Boolean) {
+  companion object {
+    @JvmStatic
+    @Parameterized.Parameters(name = "useKotlin={0}, useBuiltInKotlin={1}, useAndroidX={2}")
+    fun modes() =
+      listOf(
+        arrayOf(true, true, true),
+        arrayOf(true, true, false),
+        arrayOf(true, false, true),
+        arrayOf(true, false, false),
+        arrayOf(false, false, true),
+        arrayOf(false, false, false),
+      )
+  }
 
-    private val app = if (useKotlin) {
+  private val app =
+    if (useKotlin) {
         KotlinHelloWorldApp.forPlugin("com.android.application")
-    } else {
+      } else {
         HelloWorldApp.forPlugin("com.android.application")
-    }.apply {
+      }
+      .apply {
         if (useKotlin && !useBuiltInKotlin) {
-            replaceFile(getFile("build.gradle").appendContent(
-                    """
+          replaceFile(
+            getFile("build.gradle")
+              .appendContent(
+                """
                 buildscript {
                     dependencies {
                         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${'$'}{'$'}{libs.versions.kotlinVersion.get()}"
@@ -63,58 +64,59 @@ class DataBindingKtxTest(
                 }
                 apply plugin: 'kotlin-android'
 
-                    """.trimIndent()
-                )
-            )
+                """
+                  .trimIndent()
+              )
+          )
         }
         replaceFile(
-            getFile("build.gradle").appendContent(
-                """
-            android {
-                buildFeatures {
-                    dataBinding = true
-                }
-                dataBinding {
-                    addKtx = true
-                }
-            }
-            """.trimIndent()
+          getFile("build.gradle")
+            .appendContent(
+              """
+              android {
+                  buildFeatures {
+                      dataBinding = true
+                  }
+                  dataBinding {
+                      addKtx = true
+                  }
+              }
+              """
+                .trimIndent()
             )
         )
-    }
+      }
 
-    @get:Rule
-    val project =
-        GradleTestProject
-            .builder()
-            .fromTestApp(app).apply {
-                if (!useBuiltInKotlin) {
-                    addGradleProperty(BooleanOption.BUILT_IN_KOTLIN, false)
-                    addGradleProperty(BooleanOption.USE_NEW_DSL, false)
-                }
-            }
-            .create()
-
-    @Test
-    fun `Databinding KTX gives a warning if the project doesn't use Kotlin or AndroidX`() {
-        TestFileUtils.appendToFile(
-            project.gradlePropertiesFile,
-            "android.useAndroidX=${useAndroidX}"
-        )
-
-        val model = project.modelV2().ignoreSyncIssues().fetchModels()
-        val issueModel = model.container.getProject(":").issues ?: throw RuntimeException("Failed to get issues from model")
-        val issue = issueModel.syncIssues.find { it.message.contains("addKtx")}
-
-        if (useKotlin && useAndroidX) {
-            assertNull(issue)
-        } else {
-            assertThat(issue!!.severity).isEqualTo(SyncIssue.SEVERITY_WARNING)
-            assertThat(issue.message).isEqualTo(ERROR_MESSAGE)
+  @get:Rule
+  val project =
+    GradleTestProject.builder()
+      .fromTestApp(app)
+      .apply {
+        if (!useBuiltInKotlin) {
+          addGradleProperty(BooleanOption.BUILT_IN_KOTLIN, false)
+          addGradleProperty(BooleanOption.USE_NEW_DSL, false)
         }
+      }
+      .create()
+
+  @Test
+  fun `Databinding KTX gives a warning if the project doesn't use Kotlin or AndroidX`() {
+    TestFileUtils.appendToFile(project.gradlePropertiesFile, "android.useAndroidX=${useAndroidX}")
+
+    val model = project.modelV2().ignoreSyncIssues().fetchModels()
+    val issueModel = model.container.getProject(":").issues ?: throw RuntimeException("Failed to get issues from model")
+    val issue = issueModel.syncIssues.find { it.message.contains("addKtx") }
+
+    if (useKotlin && useAndroidX) {
+      assertNull(issue)
+    } else {
+      assertThat(issue!!.severity).isEqualTo(SyncIssue.SEVERITY_WARNING)
+      assertThat(issue.message).isEqualTo(ERROR_MESSAGE)
     }
+  }
 }
 
-private const val ERROR_MESSAGE = "The `android.dataBinding.addKtx` DSL option has no effect " +
-        "because the `android.useAndroidX` property is not enabled or the project " +
-        "does not use Kotlin."
+private const val ERROR_MESSAGE =
+  "The `android.dataBinding.addKtx` DSL option has no effect " +
+    "because the `android.useAndroidX` property is not enabled or the project " +
+    "does not use Kotlin."

@@ -26,33 +26,23 @@ import org.gradle.api.Action
 
 /** Internal implementation of the 'new' DSL interface */
 abstract class TestedExtensionImpl<
-        BuildTypeT : com.android.build.api.dsl.BuildType,
-        DefaultConfigT : DefaultConfig,
-        ProductFlavorT : com.android.build.api.dsl.ProductFlavor,
-        InstallationT : Installation>(
-            dslServices: DslServices,
-            dslContainers: DslContainerProvider<DefaultConfigT, BuildTypeT, ProductFlavorT, SigningConfig>
-        ) : CommonExtensionImpl<
-        BuildTypeT,
-        DefaultConfigT,
-        ProductFlavorT>(
-    dslServices,
-    dslContainers
-), com.android.build.api.dsl.TestedExtension {
-    override var testBuildType = "debug"
-    override var testNamespace: String? = null
+  BuildTypeT : com.android.build.api.dsl.BuildType,
+  DefaultConfigT : DefaultConfig,
+  ProductFlavorT : com.android.build.api.dsl.ProductFlavor,
+  InstallationT : Installation,
+>(dslServices: DslServices, dslContainers: DslContainerProvider<DefaultConfigT, BuildTypeT, ProductFlavorT, SigningConfig>) :
+  CommonExtensionImpl<BuildTypeT, DefaultConfigT, ProductFlavorT>(dslServices, dslContainers), com.android.build.api.dsl.TestedExtension {
+  override var testBuildType = "debug"
+  override var testNamespace: String? = null
 
-    override val testFixtures: TestFixtures =
-        dslServices.newInstance(
-            TestFixturesImpl::class.java,
-            dslServices.projectOptions[BooleanOption.ENABLE_TEST_FIXTURES]
-        )
+  override val testFixtures: TestFixtures =
+    dslServices.newInstance(TestFixturesImpl::class.java, dslServices.projectOptions[BooleanOption.ENABLE_TEST_FIXTURES])
 
-    override fun testFixtures(action: TestFixtures.() -> Unit) {
-        action.invoke(testFixtures)
-    }
+  override fun testFixtures(action: TestFixtures.() -> Unit) {
+    action.invoke(testFixtures)
+  }
 
-    fun testFixtures(action: Action<TestFixtures>) {
-        action.execute(testFixtures)
-    }
+  fun testFixtures(action: Action<TestFixtures>) {
+    action.execute(testFixtures)
+  }
 }

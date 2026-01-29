@@ -29,92 +29,72 @@ import org.junit.Test
 
 class JacocoWithMinificationIntegrationTest {
 
-    @get:Rule
-    val project = builder()
-        .fromTestApp(KotlinHelloWorldApp.forPlugin("com.android.application"))
-        .create()
+  @get:Rule val project = builder().fromTestApp(KotlinHelloWorldApp.forPlugin("com.android.application")).create()
 
-    @Before
-    fun setUpBuildFile() {
-        TestFileUtils.appendToFile(
-            project.buildFile,
-            """
-                android {
-                  buildTypes {
-                    debug {
-                      testCoverage {
-                        enableAndroidTestCoverage = true
-                      }
-                      minifyEnabled = true
-                      proguardFiles(
-                        getDefaultProguardFile("proguard-android-optimize.txt"),
-                        "proguard-rules.pro"
-                      )
-                    }
+  @Before
+  fun setUpBuildFile() {
+    TestFileUtils.appendToFile(
+      project.buildFile,
+      """
+      android {
+        buildTypes {
+          debug {
+            testCoverage {
+              enableAndroidTestCoverage = true
+            }
+            minifyEnabled = true
+            proguardFiles(
+              getDefaultProguardFile("proguard-android-optimize.txt"),
+              "proguard-rules.pro"
+            )
+          }
 
-                    release {
-                      testCoverage {
-                        enableAndroidTestCoverage = true
-                      }
-                      minifyEnabled = true
-                      proguardFiles(
-                        getDefaultProguardFile("proguard-android-optimize.txt"),
-                        "proguard-rules.pro"
-                      )
-                    }
-                  }
-                }
-            """.trimIndent()
-        )
+          release {
+            testCoverage {
+              enableAndroidTestCoverage = true
+            }
+            minifyEnabled = true
+            proguardFiles(
+              getDefaultProguardFile("proguard-android-optimize.txt"),
+              "proguard-rules.pro"
+            )
+          }
+        }
+      }
+      """
+        .trimIndent(),
+    )
 
+    TestFileUtils.searchAndReplace(
+      FileUtils.join(project.projectDir, "src", "main", "kotlin", "com", "example", "helloworld", "HelloWorld.kt"),
+      "override fun onCreate(savedInstanceState: Bundle?) {",
+      """
+      fun unusedMethod() { }
+      override fun onCreate(savedInstanceState: Bundle?) {
+      """
+        .trimIndent(),
+    )
+  }
 
-        TestFileUtils.searchAndReplace(
-            FileUtils.join(
-                project.projectDir,
-                "src", "main", "kotlin", "com", "example", "helloworld", "HelloWorld.kt"
-            ),
-            "override fun onCreate(savedInstanceState: Bundle?) {",
-            """
-                fun unusedMethod() { }
-                override fun onCreate(savedInstanceState: Bundle?) {
-            """.trimIndent()
-        )
+  /** Regression test for b/283015405. */
+  @Test
+  fun checkApk() {
+    project.executor().run("assembleDebug")
+
+    project.getApk(GradleTestProject.ApkType.DEBUG).use {
+      DexSubject.assertThat(it.mainDexFile.get()).containsClass("Lcom/example/helloworld/HelloWorld;")
+      DexClassSubject.assertThat(it.mainDexFile.get().classes["Lcom/example/helloworld/HelloWorld;"]).hasMethod("\$jacocoInit")
+      DexClassSubject.assertThat(it.mainDexFile.get().classes["Lcom/example/helloworld/HelloWorld;"]).doesNotHaveMethod("unusedMethod")
     }
 
-    /**
-     * Regression test for b/283015405.
-     */
-    @Test
-    fun checkApk() {
-        project.executor().run("assembleDebug")
+    TestFileUtils.appendToFile(project.buildFile, "android.testBuildType = 'release'")
 
-        project.getApk(GradleTestProject.ApkType.DEBUG).use {
-            DexSubject.assertThat(it.mainDexFile.get())
-                .containsClass("Lcom/example/helloworld/HelloWorld;")
-            DexClassSubject.assertThat(
-                it.mainDexFile.get().classes["Lcom/example/helloworld/HelloWorld;"]
-            ).hasMethod("\$jacocoInit")
-            DexClassSubject.assertThat(
-                it.mainDexFile.get().classes["Lcom/example/helloworld/HelloWorld;"]
-            ).doesNotHaveMethod("unusedMethod")
-        }
+    project.executor().run("assembleRelease")
 
-        TestFileUtils.appendToFile(
-            project.buildFile,
-            "android.testBuildType = 'release'"
-        )
-
-        project.executor().run("assembleRelease")
-
-        project.getApk(GradleTestProject.ApkType.RELEASE).use {
-            DexSubject.assertThat(it.mainDexFile.get())
-                .containsClass("Lcom/example/helloworld/HelloWorld;")
-            DexClassSubject.assertThat(
-                it.mainDexFile.get().classes["Lcom/example/helloworld/HelloWorld;"]
-            ).hasMethod("\$jacocoInit")
-            DexClassSubject.assertThat(
-                it.mainDexFile.get().classes["Lcom/example/helloworld/HelloWorld;"]
-            ).doesNotHaveMethod("unusedMethod")
-        }
+    project.getApk(GradleTestProject.ApkType.RELEASE).use {
+      DexSubject.assertThat(it.mainDexFile.get()).containsClass("Lcom/example/helloworld/HelloWorld;")
+      DexClassSubject.assertThat(it.mainDexFile.get().classes["Lcom/example/helloworld/HelloWorld;"]).hasMethod("\$jacocoInit")
+      DexClassSubject.assertThat(it.mainDexFile.get().classes["Lcom/example/helloworld/HelloWorld;"]).doesNotHaveMethod("unusedMethod")
     }
+  }
 }

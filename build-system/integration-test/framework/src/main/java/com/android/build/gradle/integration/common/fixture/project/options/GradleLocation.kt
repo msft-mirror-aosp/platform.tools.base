@@ -28,72 +28,67 @@ import java.io.File
 
 @GradleDefinitionDsl
 interface GradleLocationBuilder {
-    fun customInstallation(value: File): GradleLocationBuilder
-    fun version(value: String): GradleLocationBuilder
-    fun distributionDirectory(value: File): GradleLocationBuilder
+  fun customInstallation(value: File): GradleLocationBuilder
+
+  fun version(value: String): GradleLocationBuilder
+
+  fun distributionDirectory(value: File): GradleLocationBuilder
 }
 
 data class GradleLocation(
-    val customGradleInstallation: File? = null, // FIXME is this needed?
-    val gradleVersion: String,
-    val gradleDistributionDirectory: File,
-    ) {
+  val customGradleInstallation: File? = null, // FIXME is this needed?
+  val gradleVersion: String,
+  val gradleDistributionDirectory: File,
+) {
 
-    fun getDistributionZip(): File {
-        if (customGradleInstallation != null) {
-            throw RuntimeException("Use targetDistributionInstallation as it's not null")
-        }
-
-        val distributionName = String.format("gradle-%s-bin.zip", gradleVersion)
-        val distributionZip = File(gradleDistributionDirectory, distributionName)
-        assertThat(distributionZip).isFile()
-
-        return distributionZip
+  fun getDistributionZip(): File {
+    if (customGradleInstallation != null) {
+      throw RuntimeException("Use targetDistributionInstallation as it's not null")
     }
+
+    val distributionName = String.format("gradle-%s-bin.zip", gradleVersion)
+    val distributionZip = File(gradleDistributionDirectory, distributionName)
+    assertThat(distributionZip).isFile()
+
+    return distributionZip
+  }
 }
 
-internal class GradleLocationDelegate: GradleLocationBuilder, MergeableOptions<GradleLocationDelegate> {
-    private var customGradleInstallation: File? = null // FIXME is this needed?
-    private var gradleVersion: String? = null
-    private var gradleDistributionDirectory: File? = null
+internal class GradleLocationDelegate : GradleLocationBuilder, MergeableOptions<GradleLocationDelegate> {
+  private var customGradleInstallation: File? = null // FIXME is this needed?
+  private var gradleVersion: String? = null
+  private var gradleDistributionDirectory: File? = null
 
-    override fun customInstallation(value: File): GradleLocationBuilder {
-        customGradleInstallation = value
-        return this
-    }
+  override fun customInstallation(value: File): GradleLocationBuilder {
+    customGradleInstallation = value
+    return this
+  }
 
-    override fun version(value: String): GradleLocationBuilder {
-        customGradleInstallation = null
-        gradleVersion = value
-        return this
-    }
+  override fun version(value: String): GradleLocationBuilder {
+    customGradleInstallation = null
+    gradleVersion = value
+    return this
+  }
 
-    override fun distributionDirectory(value: File): GradleLocationBuilder {
-        gradleDistributionDirectory = value
-        return this
-    }
+  override fun distributionDirectory(value: File): GradleLocationBuilder {
+    gradleDistributionDirectory = value
+    return this
+  }
 
-    val asGradleLocation: GradleLocation
-        get() = GradleLocation(
-            customGradleInstallation,
-            gradleVersion ?: GRADLE_TEST_VERSION,
-            gradleDistributionDirectory ?: TestUtils.resolveWorkspacePath("tools/external/gradle").toFile()
-        )
+  val asGradleLocation: GradleLocation
+    get() =
+      GradleLocation(
+        customGradleInstallation,
+        gradleVersion ?: GRADLE_TEST_VERSION,
+        gradleDistributionDirectory ?: TestUtils.resolveWorkspacePath("tools/external/gradle").toFile(),
+      )
 
-    override fun mergeWith(other: GradleLocationDelegate) {
-        other.customGradleInstallation?.let {
-            customGradleInstallation = it
-        }
+  override fun mergeWith(other: GradleLocationDelegate) {
+    other.customGradleInstallation?.let { customGradleInstallation = it }
 
-        // must be done after the customGradleInstallation above
-        other.gradleVersion?.let {
-            version(it)
-        }
+    // must be done after the customGradleInstallation above
+    other.gradleVersion?.let { version(it) }
 
-        other.gradleDistributionDirectory?.let {
-            gradleDistributionDirectory = it
-        }
-
-    }
+    other.gradleDistributionDirectory?.let { gradleDistributionDirectory = it }
+  }
 }
-

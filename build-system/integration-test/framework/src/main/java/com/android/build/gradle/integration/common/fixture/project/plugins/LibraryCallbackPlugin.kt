@@ -23,36 +23,26 @@ import org.gradle.api.Plugin
 import org.gradle.api.Project
 
 /**
- * A Custom plugin to be used with [LibraryComponentCallback] in projects created
- * by [GradleRule].
+ * A Custom plugin to be used with [LibraryComponentCallback] in projects created by [GradleRule].
  *
- * Do not extend this. Instead, implement [LibraryComponentCallback] and register the implementation
- * class to [com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectDefinition.pluginCallbacks]
+ * Do not extend this. Instead, implement [LibraryComponentCallback] and register the implementation class to
+ * [com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectDefinition.pluginCallbacks]
  *
  * This class is automatically decorated to call the callback at runtime.
  */
-abstract class LibraryCallbackPlugin: Plugin<Project> {
+abstract class LibraryCallbackPlugin : Plugin<Project> {
 
-    override fun apply(target: Project) {
-        target.plugins.withType(LibraryPlugin::class.java) {
-            val componentsExtension = target.extensions.getByType(LibraryAndroidComponentsExtension::class.java)
-            handleExtension(target, componentsExtension)
-        }
+  override fun apply(target: Project) {
+    target.plugins.withType(LibraryPlugin::class.java) {
+      val componentsExtension = target.extensions.getByType(LibraryAndroidComponentsExtension::class.java)
+      handleExtension(target, componentsExtension)
     }
+  }
 
-    abstract fun handleExtension(
-        project: Project,
-        componentsExtension: LibraryAndroidComponentsExtension
-    )
+  abstract fun handleExtension(project: Project, componentsExtension: LibraryAndroidComponentsExtension)
 }
 
-/**
- * interface to implement to provide custom plugin logic to a [GradleRule] project
- * of type Android Library
- */
-interface LibraryComponentCallback: PluginCallback {
-    fun handleExtension(
-        project: Project,
-        androidComponents: LibraryAndroidComponentsExtension
-    )
+/** interface to implement to provide custom plugin logic to a [GradleRule] project of type Android Library */
+interface LibraryComponentCallback : PluginCallback {
+  fun handleExtension(project: Project, androidComponents: LibraryAndroidComponentsExtension)
 }

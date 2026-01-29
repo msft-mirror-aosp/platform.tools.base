@@ -24,105 +24,98 @@ import com.android.testutils.truth.PathSubject.assertThat
 import org.junit.Rule
 import org.junit.Test
 
-/**
- * Integration test running lint on generated resources
- */
+/** Integration test running lint on generated resources */
 class LintGeneratedResourcesTest {
 
-    @get:Rule
-    val project: GradleTestProject =
-        GradleTestProject.builder()
-            .fromTestApp(
-                MinimalSubProject.app("com.example.app")
-                    .appendToBuild(
-                        """
-                            android {
-                                lint {
-                                    abortOnError = false
-                                    textOutput = file("lint-results.txt")
-                                    checkGeneratedSources = true
-                                }
-                            }
+  @get:Rule
+  val project: GradleTestProject =
+    GradleTestProject.builder()
+      .fromTestApp(
+        MinimalSubProject.app("com.example.app")
+          .appendToBuild(
+            """
+            android {
+                lint {
+                    abortOnError = false
+                    textOutput = file("lint-results.txt")
+                    checkGeneratedSources = true
+                }
+            }
 
-                            public class GenerateRes extends DefaultTask {
-                                @Input
-                                String value
+            public class GenerateRes extends DefaultTask {
+                @Input
+                String value
 
-                                @OutputFile
-                                File outputFile
+                @OutputFile
+                File outputFile
 
-                                @TaskAction
-                                void taskAction() {
-                                    getOutputFile().text =
-                                        '<?xml version="1.0" encoding="utf-8"?>\n' + getValue()
-                                }
-                            }
+                @TaskAction
+                void taskAction() {
+                    getOutputFile().text =
+                        '<?xml version="1.0" encoding="utf-8"?>\n' + getValue()
+                }
+            }
 
-                            android.applicationVariants.all { variant ->
-                                ConfigurableFileCollection resFolder = files("${"$"}{buildDir}/customRes/${"$"}{variant.dirName}")
-                                def resGenerationTask = tasks.create(name: "generateResFor${"$"}{variant.name.capitalize()}", type: GenerateRes) {
-                                    value = '<resources>\n' +
-                                            '    <!-- xml comment -->\n' +
-                                            '    <string\n' +
-                                            '        name="foo">Foo</string>\n' +
-                                            '</resources>'
-                                    outputFile = file("${"$"}{resFolder.singleFile.absolutePath}/values/generated.xml")
-                                }
-                                resFolder.builtBy(resGenerationTask)
-                                variant.registerGeneratedResFolders(resFolder)
-                            }
+            android.applicationVariants.all { variant ->
+                ConfigurableFileCollection resFolder = files("${"$"}{buildDir}/customRes/${"$"}{variant.dirName}")
+                def resGenerationTask = tasks.create(name: "generateResFor${"$"}{variant.name.capitalize()}", type: GenerateRes) {
+                    value = '<resources>\n' +
+                            '    <!-- xml comment -->\n' +
+                            '    <string\n' +
+                            '        name="foo">Foo</string>\n' +
+                            '</resources>'
+                    outputFile = file("${"$"}{resFolder.singleFile.absolutePath}/values/generated.xml")
+                }
+                resFolder.builtBy(resGenerationTask)
+                variant.registerGeneratedResFolders(resFolder)
+            }
 
-                            android.testVariants.all { variant ->
-                                ConfigurableFileCollection resFolder = files("${"$"}{buildDir}/customRes/${"$"}{variant.name}")
-                                def resGenerationTask = tasks.create(name: "generateResFor${"$"}{variant.name.capitalize()}", type: GenerateRes) {
-                                    value = '<resources>\n' +
-                                            '    <!-- xml comment -->\n' +
-                                            '    <string\n' +
-                                            '        name="foo">Foo</string>\n' +
-                                            '</resources>'
-                                    outputFile = file("${"$"}{resFolder.singleFile.absolutePath}/values/generated.xml")
-                                }
-                                resFolder.builtBy(resGenerationTask)
-                                variant.registerGeneratedResFolders(resFolder)
-                            }
-                        """.trimIndent()
-                    )
-            )
-            .addGradleProperty(BooleanOption.USE_NEW_DSL, false)
-            .create()
+            android.testVariants.all { variant ->
+                ConfigurableFileCollection resFolder = files("${"$"}{buildDir}/customRes/${"$"}{variant.name}")
+                def resGenerationTask = tasks.create(name: "generateResFor${"$"}{variant.name.capitalize()}", type: GenerateRes) {
+                    value = '<resources>\n' +
+                            '    <!-- xml comment -->\n' +
+                            '    <string\n' +
+                            '        name="foo">Foo</string>\n' +
+                            '</resources>'
+                    outputFile = file("${"$"}{resFolder.singleFile.absolutePath}/values/generated.xml")
+                }
+                resFolder.builtBy(resGenerationTask)
+                variant.registerGeneratedResFolders(resFolder)
+            }
+            """
+              .trimIndent()
+          )
+      )
+      .addGradleProperty(BooleanOption.USE_NEW_DSL, false)
+      .create()
 
-    /** Test that changes to generated resources cause the lint tasks to re-run as expected. */
-    @Test
-    fun testNotUpToDate() {
-        project.executor().run("clean", "lintDebug").apply {
-            assertTask(":lintReportDebug").didWork()
-            assertTask(":lintAnalyzeDebug").didWork()
-        }
-        val lintReport = project.file("lint-results.txt")
-        assertThat(lintReport).exists()
-        assertThat(lintReport).doesNotContain(
-            "generated.xml:3: Error: Found byte-order-mark in the middle of a file [ByteOrderMark]"
-        )
-
-        // Add a byteOrderMark to the generated resources
-        val byteOrderMark = "\ufeff"
-        TestFileUtils.searchAndReplace(project.buildFile, "xml comment", byteOrderMark)
-
-        project.executor().run("lintDebug").apply {
-            assertTask(":lintReportDebug").didWork()
-            assertTask(":lintAnalyzeDebug").didWork()
-        }
-        assertThat(lintReport).exists()
-        assertThat(lintReport).contains(
-            "generated.xml:3: Error: Found byte-order-mark in the middle of a file [ByteOrderMark]"
-        )
+  /** Test that changes to generated resources cause the lint tasks to re-run as expected. */
+  @Test
+  fun testNotUpToDate() {
+    project.executor().run("clean", "lintDebug").apply {
+      assertTask(":lintReportDebug").didWork()
+      assertTask(":lintAnalyzeDebug").didWork()
     }
+    val lintReport = project.file("lint-results.txt")
+    assertThat(lintReport).exists()
+    assertThat(lintReport).doesNotContain("generated.xml:3: Error: Found byte-order-mark in the middle of a file [ByteOrderMark]")
 
-    /** Regression test for b/337776938 */
-    @Test
-    fun testDependencyOnGeneratedResForAndroidTest() {
-        project.executor().run("clean", "lintDebug")
-            .assertTask(":generateResForDebugAndroidTest")
-            .didWork()
+    // Add a byteOrderMark to the generated resources
+    val byteOrderMark = "\ufeff"
+    TestFileUtils.searchAndReplace(project.buildFile, "xml comment", byteOrderMark)
+
+    project.executor().run("lintDebug").apply {
+      assertTask(":lintReportDebug").didWork()
+      assertTask(":lintAnalyzeDebug").didWork()
     }
+    assertThat(lintReport).exists()
+    assertThat(lintReport).contains("generated.xml:3: Error: Found byte-order-mark in the middle of a file [ByteOrderMark]")
+  }
+
+  /** Regression test for b/337776938 */
+  @Test
+  fun testDependencyOnGeneratedResForAndroidTest() {
+    project.executor().run("clean", "lintDebug").assertTask(":generateResForDebugAndroidTest").didWork()
+  }
 }

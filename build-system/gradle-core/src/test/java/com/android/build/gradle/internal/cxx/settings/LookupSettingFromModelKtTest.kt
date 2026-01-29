@@ -33,156 +33,100 @@ import org.junit.Test
 
 class LookupSettingFromModelKtTest {
 
-    private fun convertWindowsAspectsToLinux(example : String) : String {
-        val result = example
-                .replace("\\", "/")
-                .replace("darwin", "linux")
-                .replace("windows", "linux")
-        return result.substringBeforeLast(".exe")
+  private fun convertWindowsAspectsToLinux(example: String): String {
+    val result = example.replace("\\", "/").replace("darwin", "linux").replace("windows", "linux")
+    return result.substringBeforeLast(".exe")
+  }
+
+  @Test
+  fun `ensure all CMake macros have have a corresponding lookup`() {
+    BasicCmakeMock().let {
+      // Walk all vals in the model and invoke them
+      val module = createCxxModuleModel(it.sdkComponents, it.configurationParameters)
+      val variant = createCxxVariantModel(it.configurationParameters, module)
+      val abi = createCxxAbiModel(it.sdkComponents, it.configurationParameters, variant, "x86_64")
+
+      assertThat(abi.resolveMacroValue(Macro.NDK_PLATFORM_SYSTEM_VERSION)).isEqualTo("19")
+
+      Macro.values().forEach { macro -> abi.resolveMacroValue(macro) }
     }
+  }
 
-    @Test
-    fun `ensure all CMake macros have have a corresponding lookup`() {
-        BasicCmakeMock().let {
-            // Walk all vals in the model and invoke them
-            val module = createCxxModuleModel(
-                it.sdkComponents,
-                it.configurationParameters,
-            )
-            val variant = createCxxVariantModel(
-                it.configurationParameters,
-                module)
-            val abi = createCxxAbiModel(
-                it.sdkComponents,
-                it.configurationParameters,
-                variant,
-                "x86_64")
+  @Test
+  fun `ensure all ndkBuild macros have have a corresponding lookup`() {
+    BasicCmakeMock().apply {
+      val parameters = configurationParameters.copy(buildSystem = NativeBuildSystem.NDK_BUILD)
+      val abi = createInitialCxxModel(sdkComponents, listOf(parameters), providers, layout).single { abi -> abi.name == Abi.X86_64.tag }
 
-            assertThat(abi.resolveMacroValue(Macro.NDK_PLATFORM_SYSTEM_VERSION))
-                .isEqualTo("19")
+      Macro.values().forEach { macro -> abi.resolveMacroValue(macro) }
+    }
+  }
 
-            Macro.values()
-                    .forEach { macro ->
-                abi.resolveMacroValue(macro)
+  @Test
+  fun `ensure all CMake macros example values are accurate`() {
+    BasicCmakeMock().let {
+      val configurationParameters =
+        it.configurationParameters.copy(
+          nativeVariantConfig = it.configurationParameters.nativeVariantConfig.copy(arguments = listOf("-DANDROID_STL=c++_shared"))
+        )
+      val allAbis = createInitialCxxModel(it.sdkComponents, listOf(configurationParameters), it.providers, it.layout)
+      val abi = allAbis.single { abi -> abi.name == Abi.X86_64.tag }.rewriteWithLocations(it.nativeLocationsBuildService)
+
+      Macro.values().forEach { macro ->
+        val resolved = abi.resolveMacroValue(macro).replace(Macro.NDK_ABI.ref, abi.name)
+        val example = StringBuilder()
+        tokenizeMacroString(macro.example) { token ->
+          when (token) {
+            is LiteralToken -> {
+              val expanded = token.literal.replace("\$HOME", it.home.path).replace("\$PROJECTS", it.projects.path)
+              example.append(expanded)
             }
-        }
-    }
-
-    @Test
-    fun `ensure all ndkBuild macros have have a corresponding lookup`() {
-        BasicCmakeMock().apply {
-            val parameters = configurationParameters.copy(
-                    buildSystem = NativeBuildSystem.NDK_BUILD)
-            val abi = createInitialCxxModel(
-                    sdkComponents,
-                    listOf(parameters),
-                    providers,
-                    layout)
-                    .single { abi -> abi.name == Abi.X86_64.tag }
-
-            Macro.values()
-                    .forEach { macro ->
-                        abi.resolveMacroValue(macro)
-                    }
-        }
-    }
-
-    @Test
-    fun `ensure all CMake macros example values are accurate`() {
-        BasicCmakeMock().let {
-            val configurationParameters = it.configurationParameters.copy(
-                    nativeVariantConfig = it.configurationParameters.nativeVariantConfig.copy(
-                            arguments = listOf("-DANDROID_STL=c++_shared")
-                    )
-            )
-            val allAbis = createInitialCxxModel(
-                it.sdkComponents, listOf(configurationParameters),
-                it.providers, it.layout
-            )
-            val abi = allAbis
-                .single { abi -> abi.name == Abi.X86_64.tag }
-                .rewriteWithLocations(it.nativeLocationsBuildService)
-
-            Macro.values().forEach { macro ->
-                val resolved = abi.resolveMacroValue(macro)
-                        .replace(Macro.NDK_ABI.ref, abi.name)
-                val example = StringBuilder()
-                tokenizeMacroString(macro.example) { token ->
-                    when(token) {
-                        is LiteralToken -> {
-                            val expanded = token.literal
-                                .replace("\$HOME", it.home.path)
-                                .replace("\$PROJECTS", it.projects.path)
-                            example.append(expanded)
-                        }
-                        is MacroToken -> {
-                            val tokenMacro = Macro.lookup(token.macro)!!
-                            assertThat(tokenMacro)
-                                .named("${token.macro} in ${macro.example}")
-                                .isNotNull()
-                            example.append(abi.resolveMacroValue(tokenMacro))
-                        }
-                    }
-                }
-                if (macro != Macro.NDK_CONFIGURATION_HASH && macro != Macro.NDK_FULL_CONFIGURATION_HASH) {
-                    assertThat(convertWindowsAspectsToLinux(resolved))
-                            .named(macro.ref)
-                            .isEqualTo(convertWindowsAspectsToLinux(example.toString()))
-                }
+            is MacroToken -> {
+              val tokenMacro = Macro.lookup(token.macro)!!
+              assertThat(tokenMacro).named("${token.macro} in ${macro.example}").isNotNull()
+              example.append(abi.resolveMacroValue(tokenMacro))
             }
+          }
         }
-    }
-
-    @Test
-    fun `ensure all ndkBuild macros example values are accurate`() {
-        BasicNdkBuildMock().let {
-            val allAbis =
-                    createInitialCxxModel(
-                        it.sdkComponents,
-                        listOf(it.configurationParameters),
-                        it.providers,
-                        it.layout
-                    )
-            val abi = allAbis
-                .single { abi -> abi.name == Abi.X86_64.tag }
-                .rewriteWithLocations(it.nativeLocationsBuildService)
-            if (!abi.variant.module.hasBuildTimeInformation) {
-                error("Expected build time information after rewriteWithLocations")
-            }
-
-            Macro.values().forEach { macro ->
-                val resolved = abi.resolveMacroValue(macro)
-                        .replace(Macro.NDK_ABI.ref, abi.name)
-                val example = StringBuilder()
-                assertThat(macro.ndkBuildExample)
-                        .named("ndk-build and CMake examples differ needlessly: ${macro.ref}")
-                        .isNotEqualTo(macro.example)
-                tokenizeMacroString(macro.ndkBuildExample ?: macro.example) { token ->
-                    when(token) {
-                        is LiteralToken -> {
-                            val expanded = token.literal
-                                    .replace("\$HOME", it.home.path)
-                                    .replace("\$PROJECTS", it.projects.path)
-                            example.append(expanded)
-                        }
-                        is MacroToken -> {
-                            val tokenMacro = Macro.lookup(token.macro)!!
-                            assertThat(tokenMacro)
-                                    .named("${token.macro} in ${macro.example}")
-                                    .isNotNull()
-                            example.append(abi.resolveMacroValue(tokenMacro))
-                        }
-                    }
-                }
-                if (macro != Macro.NDK_CONFIGURATION_HASH
-                        && macro != Macro.NDK_FULL_CONFIGURATION_HASH) {
-                    val actual = convertWindowsAspectsToLinux(resolved)
-                    val expected = example.toString()
-                    assertThat(actual)
-                            .named(macro.name)
-                            .isEqualTo(convertWindowsAspectsToLinux(expected))
-                }
-            }
+        if (macro != Macro.NDK_CONFIGURATION_HASH && macro != Macro.NDK_FULL_CONFIGURATION_HASH) {
+          assertThat(convertWindowsAspectsToLinux(resolved)).named(macro.ref).isEqualTo(convertWindowsAspectsToLinux(example.toString()))
         }
+      }
     }
+  }
+
+  @Test
+  fun `ensure all ndkBuild macros example values are accurate`() {
+    BasicNdkBuildMock().let {
+      val allAbis = createInitialCxxModel(it.sdkComponents, listOf(it.configurationParameters), it.providers, it.layout)
+      val abi = allAbis.single { abi -> abi.name == Abi.X86_64.tag }.rewriteWithLocations(it.nativeLocationsBuildService)
+      if (!abi.variant.module.hasBuildTimeInformation) {
+        error("Expected build time information after rewriteWithLocations")
+      }
+
+      Macro.values().forEach { macro ->
+        val resolved = abi.resolveMacroValue(macro).replace(Macro.NDK_ABI.ref, abi.name)
+        val example = StringBuilder()
+        assertThat(macro.ndkBuildExample).named("ndk-build and CMake examples differ needlessly: ${macro.ref}").isNotEqualTo(macro.example)
+        tokenizeMacroString(macro.ndkBuildExample ?: macro.example) { token ->
+          when (token) {
+            is LiteralToken -> {
+              val expanded = token.literal.replace("\$HOME", it.home.path).replace("\$PROJECTS", it.projects.path)
+              example.append(expanded)
+            }
+            is MacroToken -> {
+              val tokenMacro = Macro.lookup(token.macro)!!
+              assertThat(tokenMacro).named("${token.macro} in ${macro.example}").isNotNull()
+              example.append(abi.resolveMacroValue(tokenMacro))
+            }
+          }
+        }
+        if (macro != Macro.NDK_CONFIGURATION_HASH && macro != Macro.NDK_FULL_CONFIGURATION_HASH) {
+          val actual = convertWindowsAspectsToLinux(resolved)
+          val expected = example.toString()
+          assertThat(actual).named(macro.name).isEqualTo(convertWindowsAspectsToLinux(expected))
+        }
+      }
+    }
+  }
 }

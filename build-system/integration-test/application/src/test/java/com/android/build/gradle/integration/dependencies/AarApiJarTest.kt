@@ -26,25 +26,25 @@ import com.android.build.gradle.options.BooleanOption
 import org.junit.Rule
 import org.junit.Test
 
-/**
- * Sanity tests for consuming an AAR with an API jar.
- */
+/** Sanity tests for consuming an AAR with an API jar. */
 class AarApiJarTest {
 
-    private val apiJarLib = MinimalSubProject.javaLibrary()
-        .withFile(
-            "src/main/java/com/example/publishedlib/Example.java",
-            """package com.example.publishedlib;
+  private val apiJarLib =
+    MinimalSubProject.javaLibrary()
+      .withFile(
+        "src/main/java/com/example/publishedlib/Example.java",
+        """package com.example.publishedlib;
                     public class Example {
                         // This doesn't actually make sense to have this in the API only,
                         // but it means we can be sure we were compiling against the API only jar.
                         public static void apiOnly() {}
-                    }"""
-        )
+                    }""",
+      )
 
-    private val publishedLib = MinimalSubProject.lib("com.example.publishedlib")
-        .appendToBuild(
-            """
+  private val publishedLib =
+    MinimalSubProject.lib("com.example.publishedlib")
+      .appendToBuild(
+        """
                 configurations {
                     apiJar
                 }
@@ -61,67 +61,68 @@ class AarApiJarTest {
                         }
                     }
                 }"""
-        )
-        .withFile(
-            "src/main/java/com/example/publishedlib/Example.java",
-            """package com.example.publishedlib;
+      )
+      .withFile(
+        "src/main/java/com/example/publishedlib/Example.java",
+        """package com.example.publishedlib;
                     public class Example {
                         public static void runtimeOnly() {}
-                    }"""
-        )
+                    }""",
+      )
 
-    private val consumingapp = MinimalSubProject.app("com.example.app")
-        .appendToBuild(
-            """
+  private val consumingapp =
+    MinimalSubProject.app("com.example.app")
+      .appendToBuild(
+        """
                     dependencies { implementation(project.dependencyFactory.create(null, "publishedLib-release", null, null, "aar")) }"""
-        )
-        .withFile(
-            "src/main/java/com/example/lib2/Example.java",
-            """package com.example.lib2;
+      )
+      .withFile(
+        "src/main/java/com/example/lib2/Example.java",
+        """package com.example.lib2;
                     public class Example {
                         public static void useApiMethod() {
                             com.example.publishedlib.Example.apiOnly();
                         }
                     }
-                    """
-        )
+                    """,
+      )
 
-    val testApp =
-        MultiModuleTestProject.builder()
-            .subproject(":publishedLib", publishedLib)
-            .subproject(":apiJarLib", apiJarLib)
-            .subproject(":consumingApp", consumingapp)
-            .build()
+  val testApp =
+    MultiModuleTestProject.builder()
+      .subproject(":publishedLib", publishedLib)
+      .subproject(":apiJarLib", apiJarLib)
+      .subproject(":consumingApp", consumingapp)
+      .build()
 
-    @get:Rule
-    val project = GradleTestProject.builder().fromTestApp(testApp).create()
+  @get:Rule val project = GradleTestProject.builder().fromTestApp(testApp).create()
 
-    @Test
-    fun checkBuilds() {
-        TestFileUtils.appendToFile(
-                project.settingsFile,
-                """
-                    dependencyResolutionManagement {
-                        repositories {
-                            flatDir { dirs 'publishedLib/build/outputs/aar/' }
-                        }
-                     }
-                """.trimIndent()
-        )
+  @Test
+  fun checkBuilds() {
+    TestFileUtils.appendToFile(
+      project.settingsFile,
+      """
+      dependencyResolutionManagement {
+          repositories {
+              flatDir { dirs 'publishedLib/build/outputs/aar/' }
+          }
+       }
+      """
+        .trimIndent(),
+    )
 
-        project.executor().withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
-            .with(BooleanOption.ENABLE_LEGACY_API, true)
-            .run(":publishedLib:assembleRelease")
-        project.executor().withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
-            .with(BooleanOption.ENABLE_LEGACY_API, true)
-            .run(":consumingApp:assembleDebug")
+    project
+      .executor()
+      .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
+      .with(BooleanOption.ENABLE_LEGACY_API, true)
+      .run(":publishedLib:assembleRelease")
+    project
+      .executor()
+      .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
+      .with(BooleanOption.ENABLE_LEGACY_API, true)
+      .run(":consumingApp:assembleDebug")
 
-        project.getSubproject("consumingApp")
-            .getApk(GradleTestProject.ApkType.DEBUG).use { apk ->
-                assertThat(apk)
-                    .hasClass("Lcom/example/publishedlib/Example;")
-                    .that().hasMethod("runtimeOnly")
-            }
+    project.getSubproject("consumingApp").getApk(GradleTestProject.ApkType.DEBUG).use { apk ->
+      assertThat(apk).hasClass("Lcom/example/publishedlib/Example;").that().hasMethod("runtimeOnly")
     }
-
+  }
 }

@@ -18,30 +18,19 @@ package com.android.build.api.dsl
 import org.gradle.api.Incubating
 import org.gradle.api.provider.Property
 
-/**
- * Extension properties for the Asset Pack plugin that are specific to AI packs.
- */
+/** Extension properties for the Asset Pack plugin that are specific to AI packs. */
 @Incubating
 interface AiPackExtension {
-    /**
-     * The split name to assign to the AI pack.
-     */
-    @get:Incubating
-    val packName: Property<String>
-    /**
-     * Contains the dynamic delivery settings for the AI pack.
-     */
-    @get:Incubating
-    val dynamicDelivery: DynamicDelivery
-    /**
-     * The AI model which this AI pack depends upon.
-     */
-    @get:Incubating
-    val modelDependency: ModelDependency
-    /** @see dynamicDelivery */
-    @Incubating
-    fun dynamicDelivery(action: DynamicDelivery.() -> Unit)
-    /** @see modelDependency */
-    @Incubating
-    fun modelDependency(action: ModelDependency.() -> Unit)
+  /** The split name to assign to the AI pack. */
+  @get:Incubating val packName: Property<String>
+  /** Contains the dynamic delivery settings for the AI pack. */
+  @get:Incubating val dynamicDelivery: DynamicDelivery
+  /** The AI model which this AI pack depends upon. */
+  @get:Incubating val modelDependency: ModelDependency
+
+  /** @see dynamicDelivery */
+  @Incubating fun dynamicDelivery(action: DynamicDelivery.() -> Unit)
+
+  /** @see modelDependency */
+  @Incubating fun modelDependency(action: ModelDependency.() -> Unit)
 }

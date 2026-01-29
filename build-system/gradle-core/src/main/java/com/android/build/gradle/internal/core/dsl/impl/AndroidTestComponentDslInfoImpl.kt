@@ -40,18 +40,19 @@ import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
 
 internal class AndroidTestComponentDslInfoImpl(
-    componentIdentity: ComponentIdentity,
-    componentType: ComponentType,
-    defaultConfig: DefaultConfig,
-    buildTypeObj: BuildType,
-    productFlavorList: List<ProductFlavor>,
-    dataProvider: ManifestDataProvider,
-    services: VariantServices,
-    buildDirectory: DirectoryProperty,
-    override val mainVariantDslInfo: TestedVariantDslInfo,
-    private val signingConfigOverride: SigningConfig?,
-    extension: InternalTestedExtension
-) : ConsumableComponentDslInfoImpl(
+  componentIdentity: ComponentIdentity,
+  componentType: ComponentType,
+  defaultConfig: DefaultConfig,
+  buildTypeObj: BuildType,
+  productFlavorList: List<ProductFlavor>,
+  dataProvider: ManifestDataProvider,
+  services: VariantServices,
+  buildDirectory: DirectoryProperty,
+  override val mainVariantDslInfo: TestedVariantDslInfo,
+  private val signingConfigOverride: SigningConfig?,
+  extension: InternalTestedExtension,
+) :
+  ConsumableComponentDslInfoImpl(
     componentIdentity,
     componentType,
     defaultConfig,
@@ -59,68 +60,62 @@ internal class AndroidTestComponentDslInfoImpl(
     productFlavorList,
     services,
     buildDirectory,
-    extension
-), AndroidTestComponentDslInfo {
-    override val namespace: Provider<String> by lazy {
-        getTestComponentNamespace(extension, services)
+    extension,
+  ),
+  AndroidTestComponentDslInfo {
+  override val namespace: Provider<String> by lazy { getTestComponentNamespace(extension, services) }
+
+  override val applicationId: Property<String> =
+    services.newPropertyBackingDeprecatedApi(String::class.java, initTestApplicationId(productFlavorList, defaultConfig, services))
+
+  override val minSdkVersion: MutableAndroidVersion
+    get() = mainVariantDslInfo.minSdkVersion
+
+  override val isAndroidTestCoverageEnabled: Boolean
+    get() = instrumentedTestDelegate.isAndroidTestCoverageEnabled
+
+  // TODO: Android Test doesn't have isDebuggable dsl in the build type, we should move to using
+  //  the value from the tested type
+  override val isDebuggable: Boolean
+    get() =
+      ProfilingMode.getProfilingModeType(services.projectOptions[StringOption.PROFILING_MODE]).isDebuggable
+        ?: (buildTypeObj as? ApplicationBuildType)?.isDebuggable
+        ?: false
+
+  override val signingConfigResolver: SigningConfigResolver? by lazy {
+    if (mainVariantDslInfo is DynamicFeatureVariantDslInfo) {
+      null
+    } else {
+      SigningConfigResolver.create(buildTypeObj, mergedFlavor, signingConfigOverride, extension, services)
     }
+  }
 
-    override val applicationId: Property<String> =
-        services.newPropertyBackingDeprecatedApi(
-            String::class.java,
-            initTestApplicationId(productFlavorList, defaultConfig, services)
-        )
+  private val instrumentedTestDelegate by lazy {
+    InstrumentedTestDslInfoImpl(
+      buildTypeObj,
+      productFlavorList,
+      defaultConfig,
+      dataProvider,
+      services,
+      mainVariantDslInfo.testInstrumentationRunnerArguments,
+    )
+  }
 
-    override val minSdkVersion: MutableAndroidVersion
-        get() = mainVariantDslInfo.minSdkVersion
+  override val dexingDslInfo: DexingDslInfo by lazy { DexingDslInfoImpl(buildTypeObj, mergedFlavor) }
 
-    override val isAndroidTestCoverageEnabled: Boolean
-        get() = instrumentedTestDelegate.isAndroidTestCoverageEnabled
+  override fun getInstrumentationRunner(dexingType: DexingType): Provider<String> {
+    return instrumentedTestDelegate.getInstrumentationRunner(dexingType)
+  }
 
-    // TODO: Android Test doesn't have isDebuggable dsl in the build type, we should move to using
-    //  the value from the tested type
-    override val isDebuggable: Boolean
-        get() = ProfilingMode.getProfilingModeType(
-            services.projectOptions[StringOption.PROFILING_MODE]
-        ).isDebuggable
-            ?: (buildTypeObj as? ApplicationBuildType)?.isDebuggable
-            ?: false
+  override val instrumentationRunnerArguments: Map<String, String>
+    get() = instrumentedTestDelegate.instrumentationRunnerArguments
 
-    override val signingConfigResolver: SigningConfigResolver? by lazy {
-        if (mainVariantDslInfo is DynamicFeatureVariantDslInfo) {
-            null
-        } else {
-            SigningConfigResolver.create(buildTypeObj, mergedFlavor, signingConfigOverride, extension, services)
-        }
-    }
+  override val handleProfiling: Provider<Boolean>
+    get() = instrumentedTestDelegate.handleProfiling
 
-    private val instrumentedTestDelegate by lazy {
-        InstrumentedTestDslInfoImpl(
-            buildTypeObj,
-            productFlavorList,
-            defaultConfig,
-            dataProvider,
-            services,
-            mainVariantDslInfo.testInstrumentationRunnerArguments
-        )
-    }
+  override val functionalTest: Provider<Boolean>
+    get() = instrumentedTestDelegate.functionalTest
 
-    override val dexingDslInfo: DexingDslInfo by lazy {
-        DexingDslInfoImpl(
-            buildTypeObj, mergedFlavor
-        )
-    }
-
-    override fun getInstrumentationRunner(dexingType: DexingType): Provider<String> {
-        return instrumentedTestDelegate.getInstrumentationRunner(dexingType)
-    }
-
-    override val instrumentationRunnerArguments: Map<String, String>
-        get() = instrumentedTestDelegate.instrumentationRunnerArguments
-    override val handleProfiling: Provider<Boolean>
-        get() = instrumentedTestDelegate.handleProfiling
-    override val functionalTest: Provider<Boolean>
-        get() = instrumentedTestDelegate.functionalTest
-    override val testLabel: Provider<String>
-        get() = instrumentedTestDelegate.testLabel
+  override val testLabel: Provider<String>
+    get() = instrumentedTestDelegate.testLabel
 }

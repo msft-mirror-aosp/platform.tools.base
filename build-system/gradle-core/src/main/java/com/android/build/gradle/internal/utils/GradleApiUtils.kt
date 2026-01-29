@@ -16,22 +16,21 @@
 
 package com.android.build.gradle.internal.utils
 
-import org.gradle.api.file.Directory
 import java.io.File
+import org.gradle.api.file.Directory
 
 /**
  * Returns all regular files in this [Directory] in stable order (even across platforms).
  *
  * Similar to [Directory.getAsFileTree], this method
- *   - returns regular files only
- *   - includes regular files in subdirectories
+ * - returns regular files only
+ * - includes regular files in subdirectories
  *
  * Unlike [Directory.getAsFileTree], this method
- *   - ensures stable order across platforms (by sorting files based on [File.invariantSeparatorsPath]).
- *     This is the main reason we introduced this utility method.
- *     See https://github.com/gradle/gradle/issues/21379 for more context.
- *   - is not lazy (files are resolved immediately) -- we can make it lazy later if necessary
+ * - ensures stable order across platforms (by sorting files based on [File.invariantSeparatorsPath]). This is the main reason we introduced
+ *   this utility method. See https://github.com/gradle/gradle/issues/21379 for more context.
+ * - is not lazy (files are resolved immediately) -- we can make it lazy later if necessary
  */
 fun Directory.getOrderedFileTree(): List<File> {
-    return asFileTree.files.sortedBy { it.invariantSeparatorsPath }
+  return asFileTree.files.sortedBy { it.invariantSeparatorsPath }
 }

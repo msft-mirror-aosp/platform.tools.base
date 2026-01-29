@@ -21,20 +21,20 @@ import com.android.build.gradle.integration.common.fixture.app.MinimalSubProject
 import com.android.build.gradle.integration.common.fixture.app.MultiModuleTestProject
 import com.android.testutils.truth.PathSubject.assertThat
 import com.google.common.truth.Truth.assertThat
+import java.io.File
+import kotlin.test.assertNotNull
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
-import java.io.File
-import kotlin.test.assertNotNull
 
 class VariantApiCustomizationTest {
 
-    @JvmField
-    @Rule
-    val tmp = TemporaryFolder()
+  @JvmField @Rule val tmp = TemporaryFolder()
 
-    val app = MinimalSubProject.app("com.example.test")
-        .appendToBuild("""
+  val app =
+    MinimalSubProject.app("com.example.test")
+      .appendToBuild(
+        """
 abstract class CustomTask extends DefaultTask {
 
     String versionCode
@@ -89,26 +89,23 @@ androidComponents {
             return value;
         })
     })
-}""")
+}"""
+      )
 
-    @JvmField
-    @Rule
-    val project = GradleTestProject.builder()
-        .fromTestApp(
-            MultiModuleTestProject.builder()
-                .subproject(":app", app)
-                .build()
-        ).create()
+  @JvmField
+  @Rule
+  val project = GradleTestProject.builder().fromTestApp(MultiModuleTestProject.builder().subproject(":app", app).build()).create()
 
-    @Test
-    fun setValuesViaVariantApi() {
-        assertNotNull(project)
-        project.execute("clean", "assembleDebug")
-        val appProject = project.getSubproject(":app")
-        // now check that resulting merged manifest has the right 123 version.
-        val manifestFile = File(appProject.buildDir, "intermediates/packaged_manifests/debug/processDebugManifestForPackage/AndroidManifest.xml")
-        assertThat(manifestFile).exists()
-        assertThat(manifestFile.readText()).contains("android:versionCode=\"123\"")
-        assertThat(manifestFile.readText()).contains("android:versionName=\"foo\"")
-    }
+  @Test
+  fun setValuesViaVariantApi() {
+    assertNotNull(project)
+    project.execute("clean", "assembleDebug")
+    val appProject = project.getSubproject(":app")
+    // now check that resulting merged manifest has the right 123 version.
+    val manifestFile =
+      File(appProject.buildDir, "intermediates/packaged_manifests/debug/processDebugManifestForPackage/AndroidManifest.xml")
+    assertThat(manifestFile).exists()
+    assertThat(manifestFile.readText()).contains("android:versionCode=\"123\"")
+    assertThat(manifestFile.readText()).contains("android:versionName=\"foo\"")
+  }
 }

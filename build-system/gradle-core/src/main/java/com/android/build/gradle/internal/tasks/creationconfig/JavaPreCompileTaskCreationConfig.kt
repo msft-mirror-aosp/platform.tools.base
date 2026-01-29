@@ -31,93 +31,92 @@ import org.gradle.api.artifacts.ArtifactView
 import org.gradle.api.artifacts.Configuration
 import org.gradle.api.provider.Provider
 
-interface JavaPreCompileTaskCreationConfig: TaskCreationConfig {
-    val annotationProcessorArtifacts: ArtifactCollection?
-    val finalListOfClassNames: Provider<List<String>>
-    val kspProcessorArtifacts: ArtifactCollection?
+interface JavaPreCompileTaskCreationConfig : TaskCreationConfig {
+  val annotationProcessorArtifacts: ArtifactCollection?
+  val finalListOfClassNames: Provider<List<String>>
+  val kspProcessorArtifacts: ArtifactCollection?
 }
 
 fun createJavaPreCompileConfig(
-    creationConfig: ComponentCreationConfig,
-    usingKapt: Boolean,
-    usingKsp: Boolean,
+  creationConfig: ComponentCreationConfig,
+  usingKapt: Boolean,
+  usingKsp: Boolean,
 ): JavaPreCompileTaskCreationConfig {
-    return when (creationConfig) {
-        is KmpComponentCreationConfig -> object : BaseJavaPreCompileTaskCreationConfig(
-            creationConfig,
-            usingKapt,
-            usingKsp
-        ) {
-            override val annotationProcessorArtifacts: ArtifactCollection?
-                get() = if (usingKapt) super.annotationProcessorArtifacts else null
-        }
+  return when (creationConfig) {
+    is KmpComponentCreationConfig ->
+      object : BaseJavaPreCompileTaskCreationConfig(creationConfig, usingKapt, usingKsp) {
+        override val annotationProcessorArtifacts: ArtifactCollection?
+          get() = if (usingKapt) super.annotationProcessorArtifacts else null
+      }
 
-        else -> BaseJavaPreCompileTaskCreationConfig(creationConfig, usingKapt, usingKsp)
-    }
+    else -> BaseJavaPreCompileTaskCreationConfig(creationConfig, usingKapt, usingKsp)
+  }
 }
 
 internal open class BaseJavaPreCompileTaskCreationConfig(
-    val creationConfig: ComponentCreationConfig,
-    val usingKapt: Boolean,
-    usingKsp: Boolean
-) :
-    JavaPreCompileTaskCreationConfig, TaskCreationConfig by creationConfig {
+  val creationConfig: ComponentCreationConfig,
+  val usingKapt: Boolean,
+  usingKsp: Boolean,
+) : JavaPreCompileTaskCreationConfig, TaskCreationConfig by creationConfig {
 
-    private val kaptClasspath: Configuration? = if (usingKapt) {
-        createKaptOrKspClassPath("kapt")
+  private val kaptClasspath: Configuration? =
+    if (usingKapt) {
+      createKaptOrKspClassPath("kapt")
     } else null
 
-    // Create the configuration early to avoid issues with composite builds (e.g., bug 183952598)
-    private val kspClasspath: Configuration? = if (usingKsp) {
-        createKaptOrKspClassPath("ksp")
+  // Create the configuration early to avoid issues with composite builds (e.g., bug 183952598)
+  private val kspClasspath: Configuration? =
+    if (usingKsp) {
+      createKaptOrKspClassPath("ksp")
     } else null
 
-    override val artifacts: ArtifactsImpl
-        get() = creationConfig.artifacts
-    override val annotationProcessorArtifacts: ArtifactCollection?
-        get() {
-            // Query for JAR instead of PROCESSED_JAR as this task only cares about the original
-            // jars.
-            return if (usingKapt) {
-                kaptClasspath!!.incoming
-                    .artifactView { config: ArtifactView.ViewConfiguration ->
-                        config.attributes { it.attribute(ARTIFACT_TYPE, ArtifactType.JAR.type) }
-                    }
-                    .artifacts
-            } else {
-                creationConfig.variantDependencies
-                    .getArtifactCollection(
-                        ConsumedConfigType.ANNOTATION_PROCESSOR,
-                        ArtifactScope.ALL,
-                        ArtifactType.JAR
-                    )
-            }
-        }
-    override val finalListOfClassNames: Provider<List<String>>
-        get() = (creationConfig.javaCompilation.annotationProcessor as AnnotationProcessorImpl)
-            .finalListOfClassNames
-    override val kspProcessorArtifacts: ArtifactCollection?
-        get() = kspClasspath?.incoming
-            ?.artifactView { config: ArtifactView.ViewConfiguration ->
-                config.attributes { it.attribute(ARTIFACT_TYPE, ArtifactType.JAR.type) }
-            }
-            ?.artifacts
+  override val artifacts: ArtifactsImpl
+    get() = creationConfig.artifacts
 
-    // Create the configuration early to avoid issues with composite builds (e.g., bug 183952598)
-    private fun createKaptOrKspClassPath(kaptOrKsp: String): Configuration {
-        val configurations = findKaptOrKspConfigurationsForVariant(
-            creationConfig,
-            kaptOrKsp
+  override val annotationProcessorArtifacts: ArtifactCollection?
+    get() {
+      // Query for JAR instead of PROCESSED_JAR as this task only cares about the original
+      // jars.
+      return if (usingKapt) {
+        kaptClasspath!!
+          .incoming
+          .artifactView { config: ArtifactView.ViewConfiguration ->
+            config.attributes { it.attribute(ARTIFACT_TYPE, ArtifactType.JAR.type) }
+          }
+          .artifacts
+      } else {
+        creationConfig.variantDependencies.getArtifactCollection(
+          ConsumedConfigType.ANNOTATION_PROCESSOR,
+          ArtifactScope.ALL,
+          ArtifactType.JAR,
         )
-        // This is a private detail, so we want to use a detached configuration, but it's not
-        // possible because of https://github.com/gradle/gradle/issues/6881.
-        return creationConfig.services.configurations
-            .create("_agp_internal_${name}_${kaptOrKsp}Classpath")
-            .setExtendsFrom(configurations)
-            .apply {
-                isVisible = false
-                isCanBeResolved = true
-                isCanBeConsumed = false
-            }
+      }
     }
+
+  override val finalListOfClassNames: Provider<List<String>>
+    get() = (creationConfig.javaCompilation.annotationProcessor as AnnotationProcessorImpl).finalListOfClassNames
+
+  override val kspProcessorArtifacts: ArtifactCollection?
+    get() =
+      kspClasspath
+        ?.incoming
+        ?.artifactView { config: ArtifactView.ViewConfiguration ->
+          config.attributes { it.attribute(ARTIFACT_TYPE, ArtifactType.JAR.type) }
+        }
+        ?.artifacts
+
+  // Create the configuration early to avoid issues with composite builds (e.g., bug 183952598)
+  private fun createKaptOrKspClassPath(kaptOrKsp: String): Configuration {
+    val configurations = findKaptOrKspConfigurationsForVariant(creationConfig, kaptOrKsp)
+    // This is a private detail, so we want to use a detached configuration, but it's not
+    // possible because of https://github.com/gradle/gradle/issues/6881.
+    return creationConfig.services.configurations
+      .create("_agp_internal_${name}_${kaptOrKsp}Classpath")
+      .setExtendsFrom(configurations)
+      .apply {
+        isVisible = false
+        isCanBeResolved = true
+        isCanBeConsumed = false
+      }
+  }
 }

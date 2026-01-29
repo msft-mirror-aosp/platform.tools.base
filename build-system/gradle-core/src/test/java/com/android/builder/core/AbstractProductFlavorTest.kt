@@ -26,50 +26,41 @@ import org.junit.Test
 
 class AbstractProductFlavorTest {
 
-    private val dslServices: DslServices by lazy { createDslServices() }
+  private val dslServices: DslServices by lazy { createDslServices() }
 
-    private fun productFlavor(name: String): ProductFlavor =
-        dslServices.newDecoratedInstance(ProductFlavor::class.java, name, dslServices)
+  private fun productFlavor(name: String): ProductFlavor = dslServices.newDecoratedInstance(ProductFlavor::class.java, name, dslServices)
 
-    @Test
-    fun testInitWith() {
-        val custom = productFlavor("custom")
-        custom.setMinSdkVersion(42)
-        custom.targetSdkVersion = DefaultApiVersion(43)
-        custom.renderscriptTargetApi = 17
-        custom.setVersionCode(44)
-        custom.setVersionName("42.0")
-        custom.setTestApplicationId("com.forty.two.test")
-        custom.setTestInstrumentationRunner("com.forty.two.test.Runner")
-        custom.setTestHandleProfiling(true)
-        custom.setTestFunctionalTest(true)
-        custom.addResourceConfiguration("hdpi")
-        custom.addManifestPlaceholders(
-            ImmutableMap.of(
-                "one",
-                "oneValue",
-                "two",
-                "twoValue"
-            )
-        )
-        custom.addResValue("foo/one", ClassFieldImpl("foo", "one", "oneValue"))
-        custom.addResValue("foo/two", ClassFieldImpl("foo", "two", "twoValue"))
-        custom.addBuildConfigField(ClassFieldImpl("foo", "one", "oneValue"))
-        custom.addBuildConfigField(ClassFieldImpl("foo", "two", "twoValue"))
-        custom.setVersionNameSuffix("custom")
-        custom.setApplicationIdSuffix("custom")
-        custom.vectorDrawables.useSupportLibrary = true
+  @Test
+  fun testInitWith() {
+    val custom = productFlavor("custom")
+    custom.setMinSdkVersion(42)
+    custom.targetSdkVersion = DefaultApiVersion(43)
+    custom.renderscriptTargetApi = 17
+    custom.setVersionCode(44)
+    custom.setVersionName("42.0")
+    custom.setTestApplicationId("com.forty.two.test")
+    custom.setTestInstrumentationRunner("com.forty.two.test.Runner")
+    custom.setTestHandleProfiling(true)
+    custom.setTestFunctionalTest(true)
+    custom.addResourceConfiguration("hdpi")
+    custom.addManifestPlaceholders(ImmutableMap.of("one", "oneValue", "two", "twoValue"))
+    custom.addResValue("foo/one", ClassFieldImpl("foo", "one", "oneValue"))
+    custom.addResValue("foo/two", ClassFieldImpl("foo", "two", "twoValue"))
+    custom.addBuildConfigField(ClassFieldImpl("foo", "one", "oneValue"))
+    custom.addBuildConfigField(ClassFieldImpl("foo", "two", "twoValue"))
+    custom.setVersionNameSuffix("custom")
+    custom.setApplicationIdSuffix("custom")
+    custom.vectorDrawables.useSupportLibrary = true
 
-        val defaultSigning = createDslServices().let { services ->
-            services.newDecoratedInstance(SigningConfig::class.java, "defaultConfig", services)
-        }
+    val defaultSigning =
+      createDslServices().let { services -> services.newDecoratedInstance(SigningConfig::class.java, "defaultConfig", services) }
 
-        defaultSigning.storePassword("test")
-        custom.setSigningConfig(defaultSigning)
-        custom.isDefault = true
+    defaultSigning.storePassword("test")
+    custom.setSigningConfig(defaultSigning)
+    custom.isDefault = true
 
-        val flavor = productFlavor(custom.name)
-        flavor.initWith(custom)
-        assertThat(custom.toString()).isEqualTo(flavor.toString())
-    }
+    val flavor = productFlavor(custom.name)
+    flavor.initWith(custom)
+    assertThat(custom.toString()).isEqualTo(flavor.toString())
+  }
 }

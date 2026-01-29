@@ -34,45 +34,34 @@ import org.mockito.quality.Strictness
 
 class AnalyticsEnabledTestSuiteBuilderTest {
 
-     @get:Rule
-     val rule: MockitoRule = MockitoJUnit.rule().strictness(Strictness.STRICT_STUBS)
+  @get:Rule val rule: MockitoRule = MockitoJUnit.rule().strictness(Strictness.STRICT_STUBS)
 
-     private val delegate: TestSuiteBuilder = mock()
+  private val delegate: TestSuiteBuilder = mock()
 
-     private val stats = GradleBuildVariant.newBuilder()
-     private val proxy: AnalyticsEnabledTestSuiteBuilder by lazy {
-         object: AnalyticsEnabledTestSuiteBuilder(delegate, stats) {}
-     }
+  private val stats = GradleBuildVariant.newBuilder()
+  private val proxy: AnalyticsEnabledTestSuiteBuilder by lazy { object : AnalyticsEnabledTestSuiteBuilder(delegate, stats) {} }
 
-    @Test
-    fun junitEngineSpec() {
-        val junitEngineSpec = Mockito.mock<JUnitEngineSpecBuilder>()
-        Mockito.`when`(delegate.junitEngineSpec).thenReturn(junitEngineSpec)
-        val junitEngineSpecProxy = proxy.junitEngineSpec
+  @Test
+  fun junitEngineSpec() {
+    val junitEngineSpec = Mockito.mock<JUnitEngineSpecBuilder>()
+    Mockito.`when`(delegate.junitEngineSpec).thenReturn(junitEngineSpec)
+    val junitEngineSpecProxy = proxy.junitEngineSpec
 
-        Truth.assertThat(junitEngineSpecProxy).isInstanceOf(
-            AnalyticsEnabledJUnitEngineSpecBuilder::class.java
-        )
+    Truth.assertThat(junitEngineSpecProxy).isInstanceOf(AnalyticsEnabledJUnitEngineSpecBuilder::class.java)
 
-        Truth.assertThat(
-            stats.variantApiAccess.variantAccessList.first().type
-        ).isEqualTo(VariantMethodType.JUNIT_ENGINE_SPEC_BUILDER_VALUE)
-        verify(delegate, times(1))
-            .junitEngineSpec
-    }
+    Truth.assertThat(stats.variantApiAccess.variantAccessList.first().type).isEqualTo(VariantMethodType.JUNIT_ENGINE_SPEC_BUILDER_VALUE)
+    verify(delegate, times(1)).junitEngineSpec
+  }
 
-    @Test
-    fun target() {
-        val targets = mapOf<String, TestSuiteTargetBuilder>()
-        Mockito.`when`(proxy.targets).thenReturn(targets)
-        val targetProxy = proxy.targets
+  @Test
+  fun target() {
+    val targets = mapOf<String, TestSuiteTargetBuilder>()
+    Mockito.`when`(proxy.targets).thenReturn(targets)
+    val targetProxy = proxy.targets
 
-        Truth.assertThat(targetProxy).isEqualTo(targets)
+    Truth.assertThat(targetProxy).isEqualTo(targets)
 
-        Truth.assertThat(
-            stats.variantApiAccess.variantAccessList.first().type
-        ).isEqualTo(VariantMethodType.TEST_SUITE_BUILDER_TARGETS_VALUE)
-        verify(delegate, times(1))
-            .targets
-    }
- }
+    Truth.assertThat(stats.variantApiAccess.variantAccessList.first().type).isEqualTo(VariantMethodType.TEST_SUITE_BUILDER_TARGETS_VALUE)
+    verify(delegate, times(1)).targets
+  }
+}

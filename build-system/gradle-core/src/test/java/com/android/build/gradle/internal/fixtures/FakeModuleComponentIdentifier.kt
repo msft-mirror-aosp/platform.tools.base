@@ -19,18 +19,17 @@ package com.android.build.gradle.internal.fixtures
 import org.gradle.api.artifacts.ModuleIdentifier
 import org.gradle.api.artifacts.component.ModuleComponentIdentifier
 
-data class FakeModuleComponentIdentifier(
-        private val group: String,
-        private val module: String,
-        private val version: String
-) : ModuleComponentIdentifier {
-    override fun getGroup() = group
-    override fun getModule() = module
-    override fun getVersion() = version
+data class FakeModuleComponentIdentifier(private val group: String, private val module: String, private val version: String) :
+  ModuleComponentIdentifier {
+  override fun getGroup() = group
 
-    override fun getDisplayName() = "$group:$module:$version"
+  override fun getModule() = module
 
-    override fun getModuleIdentifier(): ModuleIdentifier {
-        TODO("Not yet implemented")
-    }
+  override fun getVersion() = version
+
+  override fun getDisplayName() = "$group:$module:$version"
+
+  override fun getModuleIdentifier(): ModuleIdentifier {
+    TODO("Not yet implemented")
+  }
 }

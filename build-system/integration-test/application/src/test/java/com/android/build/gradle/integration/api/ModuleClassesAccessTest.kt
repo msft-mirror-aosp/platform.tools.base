@@ -27,124 +27,115 @@ import org.junit.Test
 
 class ModuleClassesAccessTest {
 
-    @get:Rule
-    val project =
-        GradleTestProject.builder()
-            .fromTestApp(KotlinHelloWorldApp.forPlugin("com.android.application"))
-            .create()
+  @get:Rule val project = GradleTestProject.builder().fromTestApp(KotlinHelloWorldApp.forPlugin("com.android.application")).create()
 
-    @Test
-    fun `ensure merging task not invoked when moduleClasses are not requested`() {
-        val result = project.executor().run("assembleDebug")
-        Truth.assertThat(result.didWorkTasks).doesNotContain(":mergeDebugProjectClasses")
-    }
+  @Test
+  fun `ensure merging task not invoked when moduleClasses are not requested`() {
+    val result = project.executor().run("assembleDebug")
+    Truth.assertThat(result.didWorkTasks).doesNotContain(":mergeDebugProjectClasses")
+  }
 
-    @Test
-    fun `ensure merging task is invoked when moduleClasses are transformed`() {
-        project.buildFile.appendText(
-            """
-buildscript {
-    dependencies {
-        classpath("org.javassist:javassist:3.26.0-GA")
-    }
-}
+  @Test
+  fun `ensure merging task is invoked when moduleClasses are transformed`() {
+    project.buildFile.appendText(
+      """
+      buildscript {
+          dependencies {
+              classpath("org.javassist:javassist:3.26.0-GA")
+          }
+      }
 
-import com.android.build.api.artifact.ScopedArtifact
-import com.android.build.api.variant.ScopedArtifacts.Scope;
-import javassist.ClassPool
-import javassist.CtClass
-import java.util.jar.*;
+      import com.android.build.api.artifact.ScopedArtifact
+      import com.android.build.api.variant.ScopedArtifacts.Scope;
+      import javassist.ClassPool
+      import javassist.CtClass
+      import java.util.jar.*;
 
-abstract class ModifyClassesTask extends DefaultTask {
-    @OutputFile
-    abstract RegularFileProperty getOutputClasses()
+      abstract class ModifyClassesTask extends DefaultTask {
+          @OutputFile
+          abstract RegularFileProperty getOutputClasses()
 
-    @InputFiles
-    abstract ListProperty<RegularFile> getInputJars()
+          @InputFiles
+          abstract ListProperty<RegularFile> getInputJars()
 
-    @InputFiles
-    abstract ListProperty<Directory> getInputDirectories()
+          @InputFiles
+          abstract ListProperty<Directory> getInputDirectories()
 
-    @TaskAction
-    void taskAction() {
+          @TaskAction
+          void taskAction() {
 
-        ClassPool pool = new ClassPool(ClassPool.getDefault())
+              ClassPool pool = new ClassPool(ClassPool.getDefault())
 
-        JarOutputStream jarOutput = new JarOutputStream(new BufferedOutputStream(new FileOutputStream(
-            getOutputClasses().get().getAsFile()
-        )));
-        getInputJars().get().forEach { regularFile ->
+              JarOutputStream jarOutput = new JarOutputStream(new BufferedOutputStream(new FileOutputStream(
+                  getOutputClasses().get().getAsFile()
+              )));
+              getInputJars().get().forEach { regularFile ->
 
-            JarFile jarFile = new JarFile(regularFile.getAsFile());
-            Enumeration<JarEntry> jarEntries = jarFile.entries();
-            while(jarEntries.hasMoreElements()) {
-                JarEntry jarEntry = jarEntries.nextElement();
-                if (!jarEntry.isDirectory()) {
-                    System.out.println("Putting from jar " + jarEntry.getName())
-                    jarOutput.putNextEntry(new JarEntry(jarEntry.getName()))
-                    jarFile.getInputStream(jarEntry).withCloseable { is ->
-                        is.transferTo(jarOutput)
-                    }
-                    jarOutput.closeEntry()
-                }
-            }
-            jarFile.close()
+                  JarFile jarFile = new JarFile(regularFile.getAsFile());
+                  Enumeration<JarEntry> jarEntries = jarFile.entries();
+                  while(jarEntries.hasMoreElements()) {
+                      JarEntry jarEntry = jarEntries.nextElement();
+                      if (!jarEntry.isDirectory()) {
+                          System.out.println("Putting from jar " + jarEntry.getName())
+                          jarOutput.putNextEntry(new JarEntry(jarEntry.getName()))
+                          jarFile.getInputStream(jarEntry).withCloseable { is ->
+                              is.transferTo(jarOutput)
+                          }
+                          jarOutput.closeEntry()
+                      }
+                  }
+                  jarFile.close()
 
-        }
+              }
 
-        getInputDirectories().get().forEach { directory ->
-            directory.getAsFile().eachFileRecurse (groovy.io.FileType.FILES) { file ->
-                String relativePath = directory.getAsFile().toURI().relativize(file.toURI()).getPath();
-                System.out.println("Putting from file " + relativePath.replace(File.separatorChar, '/' as char))
-                jarOutput.putNextEntry(new JarEntry(relativePath.replace(File.separatorChar, '/' as char)))
-                    new FileInputStream(file).withCloseable { is ->
-                        is.transferTo(jarOutput)
-                    }
-                    jarOutput.closeEntry()
-            }
-        }
-        CtClass interfaceClass = pool.makeInterface("com.android.api.tests.SomeInterface");
-        println("Adding ${'$'}interfaceClass")
-        jarOutput.putNextEntry(new JarEntry("com/android/api/tests/SomeInterface.class"))
-        jarOutput.write(interfaceClass.toBytecode())
-        jarOutput.closeEntry()
+              getInputDirectories().get().forEach { directory ->
+                  directory.getAsFile().eachFileRecurse (groovy.io.FileType.FILES) { file ->
+                      String relativePath = directory.getAsFile().toURI().relativize(file.toURI()).getPath();
+                      System.out.println("Putting from file " + relativePath.replace(File.separatorChar, '/' as char))
+                      jarOutput.putNextEntry(new JarEntry(relativePath.replace(File.separatorChar, '/' as char)))
+                          new FileInputStream(file).withCloseable { is ->
+                              is.transferTo(jarOutput)
+                          }
+                          jarOutput.closeEntry()
+                  }
+              }
+              CtClass interfaceClass = pool.makeInterface("com.android.api.tests.SomeInterface");
+              println("Adding ${'$'}interfaceClass")
+              jarOutput.putNextEntry(new JarEntry("com/android/api/tests/SomeInterface.class"))
+              jarOutput.write(interfaceClass.toBytecode())
+              jarOutput.closeEntry()
 
-        jarOutput.close()
-    }
-}
+              jarOutput.close()
+          }
+      }
 
-androidComponents {
-    onVariants(selector().all(), { variant ->
-        TaskProvider<?> taskProvider = project.tasks.register(variant.getName() + "ModifyClasses", ModifyClassesTask.class)
-        variant.artifacts.forScope(Scope.PROJECT).use(taskProvider)
-            .toTransform(
-                ScopedArtifact.CLASSES.INSTANCE,
-                ModifyClassesTask::getInputJars,
-                ModifyClassesTask::getInputDirectories,
-                ModifyClassesTask::getOutputClasses
-            )
-    })
-}
-        """.trimIndent()
-        )
+      androidComponents {
+          onVariants(selector().all(), { variant ->
+              TaskProvider<?> taskProvider = project.tasks.register(variant.getName() + "ModifyClasses", ModifyClassesTask.class)
+              variant.artifacts.forScope(Scope.PROJECT).use(taskProvider)
+                  .toTransform(
+                      ScopedArtifact.CLASSES.INSTANCE,
+                      ModifyClassesTask::getInputJars,
+                      ModifyClassesTask::getInputDirectories,
+                      ModifyClassesTask::getOutputClasses
+                  )
+          })
+      }
+      """
+        .trimIndent()
+    )
 
-        val result = project.executor().run("assembleDebug")
-        Truth.assertThat(result.didWorkTasks).contains(":debugModifyClasses")
-        // check resulting APK that new classes is present in the dex.
+    val result = project.executor().run("assembleDebug")
+    Truth.assertThat(result.didWorkTasks).contains(":debugModifyClasses")
+    // check resulting APK that new classes is present in the dex.
 
-        val apk = project.getApk(GradleTestProject.ApkType.DEBUG)
-        TruthHelper.assertThatApk(apk)
-            .containsClass("Lcom/android/api/tests/SomeInterface;");
-        TruthHelper.assertThatApk(apk)
-            .containsClass("Lcom/example/helloworld/HelloWorld;");
+    val apk = project.getApk(GradleTestProject.ApkType.DEBUG)
+    TruthHelper.assertThatApk(apk).containsClass("Lcom/android/api/tests/SomeInterface;")
+    TruthHelper.assertThatApk(apk).containsClass("Lcom/example/helloworld/HelloWorld;")
 
-        val debug =
-            project.modelV2()
-                .fetchModels("debug").container.getProject(":").androidProject!!.variants.first { it.name == "debug" }
-        assertThat(debug.mainArtifact.bytecodeTransformations).containsExactly(
-            BytecodeTransformation.MODIFIES_PROJECT_CLASS_FILES
-        )
-        assertThat(debug.androidTestArtifact!!.bytecodeTransformations).isEmpty()
-        assertThat(debug.unitTestArtifact!!.bytecodeTransformations).isEmpty()
-    }
+    val debug = project.modelV2().fetchModels("debug").container.getProject(":").androidProject!!.variants.first { it.name == "debug" }
+    assertThat(debug.mainArtifact.bytecodeTransformations).containsExactly(BytecodeTransformation.MODIFIES_PROJECT_CLASS_FILES)
+    assertThat(debug.androidTestArtifact!!.bytecodeTransformations).isEmpty()
+    assertThat(debug.unitTestArtifact!!.bytecodeTransformations).isEmpty()
+  }
 }

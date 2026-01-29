@@ -16,6 +16,5 @@
 
 package com.android.builder.internal.aapt.v2
 
-/** Exception thrown when there is an issue with the AAPT2 infrastructure.  */
-class Aapt2InternalException(description: String, cause: Throwable) :
-        RuntimeException(description, cause)
+/** Exception thrown when there is an issue with the AAPT2 infrastructure. */
+class Aapt2InternalException(description: String, cause: Throwable) : RuntimeException(description, cause)

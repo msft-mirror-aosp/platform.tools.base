@@ -21,22 +21,24 @@ import org.gradle.api.artifacts.component.BuildIdentifier
 import org.gradle.api.artifacts.component.ProjectComponentIdentifier
 
 data class FakeProjectComponentIdentifier(
-    private val projectPath: String,
-    private val displayName: String = projectPath,
-    private val buildIdentifier: BuildIdentifier,
+  private val projectPath: String,
+  private val displayName: String = projectPath,
+  private val buildIdentifier: BuildIdentifier,
 ) : ProjectComponentIdentifier {
 
-    override fun getDisplayName() = displayName
-    override fun getProjectPath(): String = projectPath
-    @Incubating
-    override fun getBuildTreePath(): String {
-        TODO("Not yet implemented")
-    }
+  override fun getDisplayName() = displayName
 
-    override fun getBuild(): BuildIdentifier = buildIdentifier
+  override fun getProjectPath(): String = projectPath
 
-    override fun getProjectName(): String {
-        if (projectPath == ":") return projectPath
-        return projectPath.split(":").last()
-    }
+  @Incubating
+  override fun getBuildTreePath(): String {
+    TODO("Not yet implemented")
+  }
+
+  override fun getBuild(): BuildIdentifier = buildIdentifier
+
+  override fun getProjectName(): String {
+    if (projectPath == ":") return projectPath
+    return projectPath.split(":").last()
+  }
 }

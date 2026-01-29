@@ -20,7 +20,6 @@ package com.android.build.api.dsl
  * DSL object to configure the target SDK.
  *
  * To configure target SDK with a release API level,
- *
  * ```
  * android {
  *   defaultConfig {
@@ -45,36 +44,28 @@ package com.android.build.api.dsl
  */
 interface TargetSdkSpec {
 
-    /**
-     * The target SDK version.
-     */
-    var version: TargetSdkVersion?
+  /** The target SDK version. */
+  var version: TargetSdkVersion?
 
-    /**
-     * To set target SDK version with a released API level, use this function to compute the
-     * [TargetSdkVersion] and assign it to [TargetSdkSpec.version] property.
-     */
-    fun release(version: Int): TargetSdkVersion
+  /**
+   * To set target SDK version with a released API level, use this function to compute the [TargetSdkVersion] and assign it to
+   * [TargetSdkSpec.version] property.
+   */
+  fun release(version: Int): TargetSdkVersion
 
-    /**
-     * To set target SDK version with a preview API level, use this function to compute the
-     * [TargetSdkVersion] and assign it to [TargetSdkSpec.version] property.
-     */
-    fun preview(codeName: String): TargetSdkVersion
+  /**
+   * To set target SDK version with a preview API level, use this function to compute the [TargetSdkVersion] and assign it to
+   * [TargetSdkSpec.version] property.
+   */
+  fun preview(codeName: String): TargetSdkVersion
 }
 
-/**
- * DSL object to represent the target SDK.
- */
+/** DSL object to represent the target SDK. */
 interface TargetSdkVersion {
 
-    /**
-     * The released API level for the target SDK.
-     */
-    val apiLevel: Int?
+  /** The released API level for the target SDK. */
+  val apiLevel: Int?
 
-    /**
-     * The preview API level for the target SDK.
-     */
-    val codeName: String?
+  /** The preview API level for the target SDK. */
+  val codeName: String?
 }

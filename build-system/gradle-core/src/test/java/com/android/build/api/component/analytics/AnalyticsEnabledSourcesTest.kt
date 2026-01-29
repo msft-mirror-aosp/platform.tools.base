@@ -24,144 +24,101 @@ import com.google.common.truth.Truth
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
 import org.junit.Rule
 import org.junit.Test
+import org.mockito.junit.MockitoJUnit
+import org.mockito.junit.MockitoRule
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
-import org.mockito.kotlin.whenever
 import org.mockito.kotlin.verifyNoMoreInteractions
-import org.mockito.junit.MockitoJUnit
-import org.mockito.junit.MockitoRule
+import org.mockito.kotlin.whenever
 import org.mockito.quality.Strictness
 
 class AnalyticsEnabledSourcesTest {
-    @get:Rule
-    val rule: MockitoRule = MockitoJUnit.rule().strictness(Strictness.STRICT_STUBS)
+  @get:Rule val rule: MockitoRule = MockitoJUnit.rule().strictness(Strictness.STRICT_STUBS)
 
-    private val delegate: Sources = mock()
+  private val delegate: Sources = mock()
 
-    private val stats = GradleBuildVariant.newBuilder()
-    private val proxy: AnalyticsEnabledSources by lazy {
-        object: AnalyticsEnabledSources(delegate, stats, FakeObjectFactory.factory) {}
-    }
+  private val stats = GradleBuildVariant.newBuilder()
+  private val proxy: AnalyticsEnabledSources by lazy { object : AnalyticsEnabledSources(delegate, stats, FakeObjectFactory.factory) {} }
 
-    @Test
-    fun getJava() {
-        testAnalytics<SourceDirectories.Flat>(
-            Sources::java,
-            VariantPropertiesMethodType.SOURCES_JAVA_ACCESS_VALUE
-        )
-    }
+  @Test
+  fun getJava() {
+    testAnalytics<SourceDirectories.Flat>(Sources::java, VariantPropertiesMethodType.SOURCES_JAVA_ACCESS_VALUE)
+  }
 
-    @Test
-    fun getKotlin() {
-        testAnalytics<SourceDirectories.Flat>(
-            Sources::kotlin,
-            VariantPropertiesMethodType.SOURCES_KOTLIN_ACCESS_VALUE
-        )
-    }
+  @Test
+  fun getKotlin() {
+    testAnalytics<SourceDirectories.Flat>(Sources::kotlin, VariantPropertiesMethodType.SOURCES_KOTLIN_ACCESS_VALUE)
+  }
 
-    @Test
-    fun getRenderscript() {
-        testAnalytics<SourceDirectories.Flat>(
-            Sources::renderscript,
-            VariantPropertiesMethodType.SOURCES_RENDERSCRIPT_ACCESS_VALUE
-        )
-    }
+  @Test
+  fun getRenderscript() {
+    testAnalytics<SourceDirectories.Flat>(Sources::renderscript, VariantPropertiesMethodType.SOURCES_RENDERSCRIPT_ACCESS_VALUE)
+  }
 
-    @Test
-    fun getMlModels() {
-        testAnalytics<SourceDirectories.Layered>(
-            Sources::mlModels,
-            VariantPropertiesMethodType.SOURCES_ML_MODELS_ACCESS_VALUE
-        )
-    }
+  @Test
+  fun getMlModels() {
+    testAnalytics<SourceDirectories.Layered>(Sources::mlModels, VariantPropertiesMethodType.SOURCES_ML_MODELS_ACCESS_VALUE)
+  }
 
-    @Test
-    fun getAidl() {
-        testAnalytics<SourceDirectories.Flat>(
-            Sources::aidl,
-            VariantPropertiesMethodType.SOURCES_AIDL_ACCESS_VALUE
-        )
-    }
+  @Test
+  fun getAidl() {
+    testAnalytics<SourceDirectories.Flat>(Sources::aidl, VariantPropertiesMethodType.SOURCES_AIDL_ACCESS_VALUE)
+  }
 
-    @Test
-    fun getRes() {
-        testAnalytics<SourceDirectories.Layered>(
-            Sources::res,
-            VariantPropertiesMethodType.SOURCES_RES_ACCESS_VALUE
-        )
-    }
+  @Test
+  fun getRes() {
+    testAnalytics<SourceDirectories.Layered>(Sources::res, VariantPropertiesMethodType.SOURCES_RES_ACCESS_VALUE)
+  }
 
-    @Test
-    fun getJniLibs() {
-        testAnalytics<SourceDirectories.Layered>(
-            Sources::jniLibs,
-            VariantPropertiesMethodType.SOURCES_JNI_ACCESS_VALUE
-        )
-    }
+  @Test
+  fun getJniLibs() {
+    testAnalytics<SourceDirectories.Layered>(Sources::jniLibs, VariantPropertiesMethodType.SOURCES_JNI_ACCESS_VALUE)
+  }
 
-    @Test
-    fun getShaders() {
-        testAnalytics<SourceDirectories.Layered>(
-            Sources::shaders,
-            VariantPropertiesMethodType.SOURCES_SHADERS_ACCESS_VALUE
-        )
-    }
+  @Test
+  fun getShaders() {
+    testAnalytics<SourceDirectories.Layered>(Sources::shaders, VariantPropertiesMethodType.SOURCES_SHADERS_ACCESS_VALUE)
+  }
 
-    @Test
-    fun getAssets() {
-        testAnalytics<SourceDirectories.Layered>(
-            Sources::assets,
-            VariantPropertiesMethodType.SOURCES_ASSETS_ACCESS_VALUE
-        )
-    }
+  @Test
+  fun getAssets() {
+    testAnalytics<SourceDirectories.Layered>(Sources::assets, VariantPropertiesMethodType.SOURCES_ASSETS_ACCESS_VALUE)
+  }
 
-    @Test
-    fun getKeepRules() {
-        testAnalytics<SourceDirectories.Flat>(
-            Sources::keepRules,
-            VariantPropertiesMethodType.SOURCES_KEEP_RULES_ACCESS_VALUE
-        )
-    }
+  @Test
+  fun getKeepRules() {
+    testAnalytics<SourceDirectories.Flat>(Sources::keepRules, VariantPropertiesMethodType.SOURCES_KEEP_RULES_ACCESS_VALUE)
+  }
 
-    @Test
-    fun getResources() {
-        testAnalytics<SourceDirectories.Flat>(
-            Sources::resources,
-            VariantPropertiesMethodType.SOURCES_RESOURCES_ACCESS_VALUE
-        )
-    }
+  @Test
+  fun getResources() {
+    testAnalytics<SourceDirectories.Flat>(Sources::resources, VariantPropertiesMethodType.SOURCES_RESOURCES_ACCESS_VALUE)
+  }
 
-    @Test
-    fun testNullableApis() {
-        Truth.assertThat(proxy.res).isNull()
-        Truth.assertThat(proxy.assets).isNull()
-        Truth.assertThat(proxy.mlModels).isNull()
-        Truth.assertThat(proxy.aidl).isNull()
-        Truth.assertThat(proxy.baselineProfiles).isNull()
-        Truth.assertThat(proxy.keepRules).isNull()
-        Truth.assertThat(proxy.jniLibs).isNull()
-        Truth.assertThat(proxy.shaders).isNull()
-        Truth.assertThat(proxy.renderscript).isNull()
-    }
+  @Test
+  fun testNullableApis() {
+    Truth.assertThat(proxy.res).isNull()
+    Truth.assertThat(proxy.assets).isNull()
+    Truth.assertThat(proxy.mlModels).isNull()
+    Truth.assertThat(proxy.aidl).isNull()
+    Truth.assertThat(proxy.baselineProfiles).isNull()
+    Truth.assertThat(proxy.keepRules).isNull()
+    Truth.assertThat(proxy.jniLibs).isNull()
+    Truth.assertThat(proxy.shaders).isNull()
+    Truth.assertThat(proxy.renderscript).isNull()
+  }
 
-    private inline fun <reified T: SourceDirectories> testAnalytics(
-        accessor: (sources: Sources) -> T?,
-        analyticsEnumValue: Int,
-    ) {
-        val mockedType: T = mock()
-        whenever(accessor(delegate)).thenReturn(mockedType)
+  private inline fun <reified T : SourceDirectories> testAnalytics(accessor: (sources: Sources) -> T?, analyticsEnumValue: Int) {
+    val mockedType: T = mock()
+    whenever(accessor(delegate)).thenReturn(mockedType)
 
-        val sourcesProxy = accessor(proxy)
-        Truth.assertThat(sourcesProxy is AnalyticsEnabledSourceDirectories).isTrue()
-        Truth.assertThat((sourcesProxy as AnalyticsEnabledSourceDirectories).delegate)
-            .isEqualTo(mockedType)
+    val sourcesProxy = accessor(proxy)
+    Truth.assertThat(sourcesProxy is AnalyticsEnabledSourceDirectories).isTrue()
+    Truth.assertThat((sourcesProxy as AnalyticsEnabledSourceDirectories).delegate).isEqualTo(mockedType)
 
-        Truth.assertThat(
-            stats.variantApiAccess.variantPropertiesAccessList.first().type
-        ).isEqualTo(analyticsEnumValue)
-        accessor(verify(delegate, times(1)))
-        verifyNoMoreInteractions(delegate)
-    }
-
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessList.first().type).isEqualTo(analyticsEnumValue)
+    accessor(verify(delegate, times(1)))
+    verifyNoMoreInteractions(delegate)
+  }
 }

@@ -24,17 +24,18 @@ import org.junit.Rule
 import org.junit.Test
 
 class AidlSdkComponentsTest {
-    @JvmField
-    @Rule
-    val project = GradleTestProject.builder().fromTestApp(
-        MinimalSubProject.app("com.example.app")
-    ).withPluginManagementBlock(true).create()
+  @JvmField
+  @Rule
+  val project = GradleTestProject.builder().fromTestApp(MinimalSubProject.app("com.example.app")).withPluginManagementBlock(true).create()
 
-    @Test
-    fun testAidlTools() {
-        project.buildFile.delete()
+  @Test
+  fun testAidlTools() {
+    project.buildFile.delete()
 
-        project.file("build.gradle.kts").writeText("""
+    project
+      .file("build.gradle.kts")
+      .writeText(
+        """
             apply(from = "../commonHeader.gradle")
             plugins {
                 id("com.android.application")
@@ -73,8 +74,10 @@ class AidlSdkComponentsTest {
                 this.aidlInput.set(androidComponents.sdkComponents.aidl)
             }
 
-        """.trimIndent())
+        """
+          .trimIndent()
+      )
 
-        project.executor().run("getAidlTools")
-    }
+    project.executor().run("getAidlTools")
+  }
 }

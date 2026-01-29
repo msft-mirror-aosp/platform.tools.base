@@ -27,17 +27,18 @@ import org.gradle.api.file.ProjectLayout
 import org.gradle.api.provider.MapProperty
 
 interface FusedLibraryGlobalScope {
-    val aarMetadata: AarMetadataImpl
-    val artifacts: ArtifactsImpl
-    val experimentalProperties: MapProperty<String, Any>
-    val extension: FusedLibraryExtension
-    val manifestPlaceholders: MutableMap<String, String>
-    val minSdkApiLevel: Int
-    val namespace: String
-    val packaging: Packaging
-    val projectLayout: ProjectLayout
-    val services: TaskCreationServices
-    val dependencies: FusedLibraryDependencies
-    val incomingConfigurations: PluginConfigurations
-    fun getLocalJars(): FileCollection
+  val aarMetadata: AarMetadataImpl
+  val artifacts: ArtifactsImpl
+  val experimentalProperties: MapProperty<String, Any>
+  val extension: FusedLibraryExtension
+  val manifestPlaceholders: MutableMap<String, String>
+  val minSdkApiLevel: Int
+  val namespace: String
+  val packaging: Packaging
+  val projectLayout: ProjectLayout
+  val services: TaskCreationServices
+  val dependencies: FusedLibraryDependencies
+  val incomingConfigurations: PluginConfigurations
+
+  fun getLocalJars(): FileCollection
 }

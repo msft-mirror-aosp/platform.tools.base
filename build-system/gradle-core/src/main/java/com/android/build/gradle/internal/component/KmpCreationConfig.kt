@@ -16,10 +16,8 @@
 
 package com.android.build.gradle.internal.component
 
-/**
- * Represents the main variant of the kotlin multiplatform plugin.
- */
-interface KmpCreationConfig: KmpComponentCreationConfig, VariantCreationConfig, AarCreationConfig {
-    val unitTest: HostTestCreationConfig?
-    val androidDeviceTest: DeviceTestCreationConfig?
+/** Represents the main variant of the kotlin multiplatform plugin. */
+interface KmpCreationConfig : KmpComponentCreationConfig, VariantCreationConfig, AarCreationConfig {
+  val unitTest: HostTestCreationConfig?
+  val androidDeviceTest: DeviceTestCreationConfig?
 }

@@ -34,85 +34,80 @@ import java.util.concurrent.ForkJoinPool
 import java.util.concurrent.ForkJoinTask
 import java.util.zip.ZipFile
 
-/**
- * Signs and compresses the bundle using the zipflinger library.
- */
-class AabFlinger(
-        outputFile: File,
-        signerName: String,
-        privateKey: PrivateKey,
-        certificates: List<X509Certificate>,
-        minSdkVersion: Int
-): Closeable {
+/** Signs and compresses the bundle using the zipflinger library. */
+class AabFlinger(outputFile: File, signerName: String, privateKey: PrivateKey, certificates: List<X509Certificate>, minSdkVersion: Int) :
+  Closeable {
 
-    /**
-     * The archive file, which must be synchronized because we make async calls to it in the
-     * writeFile method below, in order to do compression in parallel.
-     */
-    private val archive =
-            SynchronizedArchive(
-                    StableArchive(
-                            SignedApk(
-                                    outputFile,
-                                    SignedApkOptions.Builder()
-                                            .setName(signerName)
-                                            .setPrivateKey(privateKey)
-                                            .setCertificates(certificates)
-                                            .setMinSdkVersion(minSdkVersion)
-                                            .setV1Enabled(true)
-                                            .setV2Enabled(false)
-                                            .setV3Enabled(false)
-                                            .setV4Enabled(false)
-                                            .build(),
-                                    Zip64.Policy.ALLOW
-                            )
-                    )
+  /**
+   * The archive file, which must be synchronized because we make async calls to it in the writeFile method below, in order to do
+   * compression in parallel.
+   */
+  private val archive =
+    SynchronizedArchive(
+      StableArchive(
+        SignedApk(
+          outputFile,
+          SignedApkOptions.Builder()
+            .setName(signerName)
+            .setPrivateKey(privateKey)
+            .setCertificates(certificates)
+            .setMinSdkVersion(minSdkVersion)
+            .setV1Enabled(true)
+            .setV2Enabled(false)
+            .setV3Enabled(false)
+            .setV4Enabled(false)
+            .build(),
+          Zip64.Policy.ALLOW,
+        )
+      )
+    )
+
+  /** forkJoinPool used so that compression can occur in parallel */
+  private val forkJoinPool = ForkJoinPool.commonPool()
+  private val subTasks = mutableListOf<ForkJoinTask<Unit>>()
+  private val openZipFiles = mutableListOf<ZipFile>()
+
+  /**
+   * Writes the content of a Jar/Zip archive to the receiver archive.
+   *
+   * @param zip the zip to copy data from
+   * @throws IOException I/O error
+   */
+  @Throws(IOException::class)
+  fun writeZip(zip: File, compressionLevel: Int) {
+    Preconditions.checkArgument(zip.isFile, "!zip.isFile()")
+
+    val zipFile = ZipFile(zip)
+    openZipFiles.add(zipFile)
+    val entries = zipFile.entries()
+    while (entries.hasMoreElements()) {
+      val entry = entries.nextElement()
+      if (entry.isDirectory) {
+        continue
+      }
+      if (entry.name.contains("../")) {
+        throw InvalidPathException(entry.name, "Entry name contains invalid characters")
+      }
+      subTasks.add(
+        forkJoinPool.submit(
+          Callable {
+            archive.add(
+              Sources.from(
+                // the input stream will be closed in StreamSource
+                zipFile.getInputStream(entry),
+                entry.name,
+                compressionLevel,
+              )
             )
-
-    /** forkJoinPool used so that compression can occur in parallel */
-    private val forkJoinPool = ForkJoinPool.commonPool()
-    private val subTasks = mutableListOf<ForkJoinTask<Unit>>()
-    private val openZipFiles = mutableListOf<ZipFile>()
-
-    /**
-     * Writes the content of a Jar/Zip archive to the receiver archive.
-     *
-     * @param zip the zip to copy data from
-     * @throws IOException I/O error
-     */
-    @Throws(IOException::class)
-    fun writeZip(zip: File, compressionLevel: Int) {
-        Preconditions.checkArgument(zip.isFile, "!zip.isFile()")
-
-        val zipFile = ZipFile(zip)
-        openZipFiles.add(zipFile)
-        val entries = zipFile.entries()
-        while (entries.hasMoreElements()) {
-            val entry = entries.nextElement()
-            if (entry.isDirectory) {
-                continue
-            }
-            if (entry.name.contains("../")) {
-                throw InvalidPathException(entry.name, "Entry name contains invalid characters")
-            }
-            subTasks.add(
-                forkJoinPool.submit(Callable {
-                    archive.add(
-                        Sources.from(
-                            // the input stream will be closed in StreamSource
-                            zipFile.getInputStream(entry),
-                            entry.name,
-                            compressionLevel
-                        )
-                    )
-                })
-            )
-        }
+          }
+        )
+      )
     }
+  }
 
-    override fun close() {
-        subTasks.forEach { it.join() }
-        archive.close()
-        openZipFiles.forEach(Closeable::close)
-    }
+  override fun close() {
+    subTasks.forEach { it.join() }
+    archive.close()
+    openZipFiles.forEach(Closeable::close)
+  }
 }

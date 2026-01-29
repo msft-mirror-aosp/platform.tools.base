@@ -19,10 +19,8 @@ package com.android.build.api.variant.impl
 import com.android.build.api.variant.TestedComponentPackaging
 import com.android.build.gradle.internal.services.VariantServices
 
-class TestedComponentPackagingImpl(
-    dslPackaging: com.android.build.api.dsl.Packaging,
-    variantServices: VariantServices
-) : PackagingImpl(dslPackaging, variantServices), TestedComponentPackaging {
+class TestedComponentPackagingImpl(dslPackaging: com.android.build.api.dsl.Packaging, variantServices: VariantServices) :
+  PackagingImpl(dslPackaging, variantServices), TestedComponentPackaging {
 
-    override val jniLibs = JniLibsTestedComponentPackagingImpl(dslPackaging, variantServices)
+  override val jniLibs = JniLibsTestedComponentPackagingImpl(dslPackaging, variantServices)
 }

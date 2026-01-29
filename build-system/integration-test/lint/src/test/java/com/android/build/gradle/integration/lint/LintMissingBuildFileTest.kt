@@ -24,21 +24,24 @@ import org.junit.Test
 
 class LintMissingBuildFileTest {
 
-    @get:Rule
-    val rule = GradleRule.from {
-        settings {
-            applyPlugin(PluginType.ANDROID_SETTINGS)
-        }
-        androidApplication(createMinimumProject = false) {
-            android.namespace = "com.example.app"
-            files.setupMinimumManifest()
-        }
+  @get:Rule
+  val rule =
+    GradleRule.from {
+      settings { applyPlugin(PluginType.ANDROID_SETTINGS) }
+      androidApplication(createMinimumProject = false) {
+        android.namespace = "com.example.app"
+        files.setupMinimumManifest()
+      }
     }
 
-    @Test
-    fun lintRunsWithoutBuildFile() {
-        val build = rule.build
-        build.directory.resolve("settings.gradle").toFile().appendText("""
+  @Test
+  fun lintRunsWithoutBuildFile() {
+    val build = rule.build
+    build.directory
+      .resolve("settings.gradle")
+      .toFile()
+      .appendText(
+        """
 
             include ':app'
 
@@ -57,18 +60,20 @@ class LintMissingBuildFileTest {
                     }
                 }
             }
-        """.trimIndent())
+        """
+          .trimIndent()
+      )
 
-        // Ensure app/build.gradle does not exist
-        val appBuild = build.directory.resolve("app/build.gradle").toFile()
-        if (appBuild.exists()) {
-            appBuild.delete()
-        }
-
-        // Run lint on the app module
-        val result = build.executor.run(":app:lintDebug")
-
-        // Verify task execution
-        result.assertTask(":app:lintDebug").didWork()
+    // Ensure app/build.gradle does not exist
+    val appBuild = build.directory.resolve("app/build.gradle").toFile()
+    if (appBuild.exists()) {
+      appBuild.delete()
     }
+
+    // Run lint on the app module
+    val result = build.executor.run(":app:lintDebug")
+
+    // Verify task execution
+    result.assertTask(":app:lintDebug").didWork()
+  }
 }

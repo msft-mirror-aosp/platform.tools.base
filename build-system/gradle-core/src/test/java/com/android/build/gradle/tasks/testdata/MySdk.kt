@@ -16,9 +16,9 @@
 
 package com.android.build.gradle.tasks.testdata
 
-//import androidx.privacysandbox.tools.PrivacySandboxService
+// import androidx.privacysandbox.tools.PrivacySandboxService
 
-//@PrivacySandboxService
+// @PrivacySandboxService
 interface MySdk {
-    fun myFunc(a: Int)
+  fun myFunc(a: Int)
 }

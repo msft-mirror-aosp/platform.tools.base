@@ -20,11 +20,7 @@ import com.android.build.api.dsl.AgpTestSuiteInputParameters
 import org.gradle.api.Incubating
 
 @Incubating
-interface JUnitEngineSpecBuilder: JUnitEngineSpec {
-    /**
-     * Returns a mutable list of inputs required by the junit engine running the test suite.
-     *
-     */
-    @get:Incubating
-    override val inputs: MutableList<AgpTestSuiteInputParameters>
+interface JUnitEngineSpecBuilder : JUnitEngineSpec {
+  /** Returns a mutable list of inputs required by the junit engine running the test suite. */
+  @get:Incubating override val inputs: MutableList<AgpTestSuiteInputParameters>
 }

@@ -25,43 +25,28 @@ import org.junit.Test
 
 class BuiltInSettingsJsonKtTest {
 
-    @Test
-    fun `NDK-level CMakeSettings does not throw exception when evaluated`() {
-        BasicCmakeMock().let {
-            val module = createCxxModuleModel(
-                it.sdkComponents,
-                it.configurationParameters,
-            )
-            val variant = createCxxVariantModel(
-                it.configurationParameters,
-                module)
-            val abi = createCxxAbiModel(
-                it.sdkComponents,
-                it.configurationParameters,
-                variant,
-                "x86")
-            abi.getNdkMetaSettingsJson().toJsonString()
-        }
+  @Test
+  fun `NDK-level CMakeSettings does not throw exception when evaluated`() {
+    BasicCmakeMock().let {
+      val module = createCxxModuleModel(it.sdkComponents, it.configurationParameters)
+      val variant = createCxxVariantModel(it.configurationParameters, module)
+      val abi = createCxxAbiModel(it.sdkComponents, it.configurationParameters, variant, "x86")
+      abi.getNdkMetaSettingsJson().toJsonString()
     }
+  }
 
-    @Test
-    fun `Gradle-level CMakeSettings does not throw exception when evaluated`() {
-        BasicCmakeMock().apply {
-            abi.getAndroidGradleSettings().toJsonString()
-        }
-    }
+  @Test
+  fun `Gradle-level CMakeSettings does not throw exception when evaluated`() {
+    BasicCmakeMock().apply { abi.getAndroidGradleSettings().toJsonString() }
+  }
 
-    @Test
-    fun `Traditional CMakeSettings does not throw when evaluated`() {
-        BasicCmakeMock().apply {
-            getCmakeDefaultEnvironment(abi.buildIsPrefabCapable()).toJsonString()
-        }
-    }
+  @Test
+  fun `Traditional CMakeSettings does not throw when evaluated`() {
+    BasicCmakeMock().apply { getCmakeDefaultEnvironment(abi.buildIsPrefabCapable()).toJsonString() }
+  }
 
-    @Test
-    fun `RISCV ABI does not throw when evaluated`() {
-        BasicCmakeMock().apply {
-            getCmakeDefaultEnvironment(riscvAbi.buildIsPrefabCapable()).toJsonString()
-        }
-    }
+  @Test
+  fun `RISCV ABI does not throw when evaluated`() {
+    BasicCmakeMock().apply { getCmakeDefaultEnvironment(riscvAbi.buildIsPrefabCapable()).toJsonString() }
+  }
 }

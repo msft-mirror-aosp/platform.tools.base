@@ -17,7 +17,4 @@ package com.android.build.api.variant.impl
 
 import com.android.build.api.variant.DependenciesInfo
 
-open class DependenciesInfoImpl(
-    override val includedInApk: Boolean,
-    override val includedInBundle: Boolean,
-): DependenciesInfo
+open class DependenciesInfoImpl(override val includedInApk: Boolean, override val includedInBundle: Boolean) : DependenciesInfo

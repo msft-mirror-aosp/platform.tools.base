@@ -25,52 +25,46 @@ import org.gradle.work.DisableCachingByDefault
  *
  * Be careful using this class, strongly prefer extending [NonIncrementalTask].
  *
- * Such tasks always run when in the task graph, and rely on the task implementation to handle
- * up-to-date checks e.g. the external native build tasks, where the underlying external build
- * system handles those checks. Lint does not use this class, as while it is never up-to-date
- * currently as it doesn't model its inputs, it should clean its outputs before running.
+ * Such tasks always run when in the task graph, and rely on the task implementation to handle up-to-date checks e.g. the external native
+ * build tasks, where the underlying external build system handles those checks. Lint does not use this class, as while it is never
+ * up-to-date currently as it doesn't model its inputs, it should clean its outputs before running.
  *
- * Unlike [NonIncrementalTask], this task does **not** clean up its outputs before the task is run.
- * This means that the task implementation is responsible for ensuring that the outputs are correct
- * in that case.
+ * Unlike [NonIncrementalTask], this task does **not** clean up its outputs before the task is run. This means that the task implementation
+ * is responsible for ensuring that the outputs are correct in that case.
  */
 @DisableCachingByDefault(because = DisabledCachingReason.BASE_TASK)
 abstract class UnsafeOutputsTask(reasonToLog: String) : AndroidVariantTask() {
 
-    init {
-        outputs.upToDateWhen { task ->
-            task.logger.debug(reasonToLog)
-            return@upToDateWhen false
-        }
+  init {
+    outputs.upToDateWhen { task ->
+      task.logger.debug(reasonToLog)
+      return@upToDateWhen false
     }
+  }
 
-    protected abstract fun doTaskAction()
+  protected abstract fun doTaskAction()
 
-    @TaskAction
-    fun taskAction() {
-        recordTaskAction {
-            doTaskAction()
-        }
-    }
+  @TaskAction
+  fun taskAction() {
+    recordTaskAction { doTaskAction() }
+  }
 }
 
 /** Similar to [UnsafeOutputsTask] but for an [AndroidGlobalTask]. */
 @DisableCachingByDefault(because = DisabledCachingReason.BASE_TASK)
 abstract class UnsafeOutputsGlobalTask(reasonToLog: String) : AndroidGlobalTask() {
 
-    init {
-        outputs.upToDateWhen { task ->
-            task.logger.debug(reasonToLog)
-            return@upToDateWhen false
-        }
+  init {
+    outputs.upToDateWhen { task ->
+      task.logger.debug(reasonToLog)
+      return@upToDateWhen false
     }
+  }
 
-    protected abstract fun doTaskAction()
+  protected abstract fun doTaskAction()
 
-    @TaskAction
-    fun taskAction() {
-        recordTaskAction {
-            doTaskAction()
-        }
-    }
+  @TaskAction
+  fun taskAction() {
+    recordTaskAction { doTaskAction() }
+  }
 }

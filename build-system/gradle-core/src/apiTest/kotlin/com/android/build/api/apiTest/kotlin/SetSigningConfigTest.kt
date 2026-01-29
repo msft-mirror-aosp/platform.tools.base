@@ -20,23 +20,21 @@ import com.android.build.api.apiTest.VariantApiBaseTest
 import com.android.build.gradle.options.BooleanOption
 import com.android.tools.build.gradle.internal.profile.VariantPropertiesMethodType
 import com.google.common.truth.Truth
-import com.google.wireless.android.sdk.stats.ArtifactAccess
-import com.google.wireless.android.sdk.stats.VariantPropertiesAccess
-import org.junit.Test
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
+import org.junit.Test
 
-class SetSigningConfigTest: VariantApiBaseTest(TestType.Script) {
-    @Test
-    fun setSigningConfig() {
-        given {
-            expectFailure()
-            tasksToInvoke.addAll(listOf("clean", ":app:assembleFlavor1Special"))
-            addModule(":app") {
-                @Suppress("RemoveExplicitTypeArguments")
-                buildFile =
-                        // language=kotlin
-                    """
+class SetSigningConfigTest : VariantApiBaseTest(TestType.Script) {
+  @Test
+  fun setSigningConfig() {
+    given {
+      expectFailure()
+      tasksToInvoke.addAll(listOf("clean", ":app:assembleFlavor1Special"))
+      addModule(":app") {
+        @Suppress("RemoveExplicitTypeArguments")
+        buildFile =
+          // language=kotlin
+          """
             plugins {
                     id("com.android.application")
                     kotlin("android")
@@ -90,45 +88,45 @@ class SetSigningConfigTest: VariantApiBaseTest(TestType.Script) {
                         variant.signingConfig?.setConfig(android.signingConfigs.getByName("other"))
                 }
             }
-        """.trimIndent()
-                testingElements.addManifest( this)
-            }
-        }
-        withOptions(mapOf(BooleanOption.ENABLE_PROFILE_JSON to true))
-        withDocs {
-            index =
-                    // language=markdown
-                """
-# artifacts.get in Kotlin
-This sample shows how to reset the variant's [com.android.build.api.variant.SigningConfig] using one
- of the DSL [com.android.build.api.dsl.SigningConfig] named element present in the android's
-[signingConfigs] block.
-
-In this example, we define 2 signing configurations : default and other.
-The 'default' configuration is the default signing configuration used for all the variants signing.
-However, using the Variant API, the 'flavor1Special' variant will use the 'other' signing
-configuration.
-
-## To Run
-./gradlew :app:assembleFlavor1Special
-expected result : "Got an APK...." message.
-            """.trimIndent()
-        }
-        check {
-            assertNotNull(this)
-            Truth.assertThat(output).contains("Keystore file '/path/to/some/other/keystore.jks' not found for signing config 'other'")
-            Truth.assertThat(output).contains("FAILURE: Build failed with an exception.")
-            var assertedStats = false
-            super.onVariantStats {
-                if (it.variantApiAccess.variantPropertiesAccessCount == 4) {
-                    assertedStats = true
-                    val accessType = it.variantApiAccess.variantPropertiesAccessList[3].type
-                    Truth.assertThat(accessType).isEqualTo(
-                        VariantPropertiesMethodType.SIGNING_CONFIG_SET_CONFIG_VALUE
-                    )
-                }
-            }
-            assertTrue(assertedStats)
-        }
+        """
+            .trimIndent()
+        testingElements.addManifest(this)
+      }
     }
+    withOptions(mapOf(BooleanOption.ENABLE_PROFILE_JSON to true))
+    withDocs {
+      index =
+        // language=markdown
+        """
+        # artifacts.get in Kotlin
+        This sample shows how to reset the variant's [com.android.build.api.variant.SigningConfig] using one
+         of the DSL [com.android.build.api.dsl.SigningConfig] named element present in the android's
+        [signingConfigs] block.
+
+        In this example, we define 2 signing configurations : default and other.
+        The 'default' configuration is the default signing configuration used for all the variants signing.
+        However, using the Variant API, the 'flavor1Special' variant will use the 'other' signing
+        configuration.
+
+        ## To Run
+        ./gradlew :app:assembleFlavor1Special
+        expected result : "Got an APK...." message.
+        """
+          .trimIndent()
+    }
+    check {
+      assertNotNull(this)
+      Truth.assertThat(output).contains("Keystore file '/path/to/some/other/keystore.jks' not found for signing config 'other'")
+      Truth.assertThat(output).contains("FAILURE: Build failed with an exception.")
+      var assertedStats = false
+      super.onVariantStats {
+        if (it.variantApiAccess.variantPropertiesAccessCount == 4) {
+          assertedStats = true
+          val accessType = it.variantApiAccess.variantPropertiesAccessList[3].type
+          Truth.assertThat(accessType).isEqualTo(VariantPropertiesMethodType.SIGNING_CONFIG_SET_CONFIG_VALUE)
+        }
+      }
+      assertTrue(assertedStats)
+    }
+  }
 }

@@ -27,120 +27,114 @@ import org.junit.Test
 /** Test for the mutablitly of Packaging Options */
 class PackagingOptionsTest {
 
-    private lateinit var packaging: Packaging
-    private val dslServices: DslServices = createDslServices()
+  private lateinit var packaging: Packaging
+  private val dslServices: DslServices = createDslServices()
 
-    interface PackagingOptionsWrapper {
-        val packaging: Packaging
-    }
+  interface PackagingOptionsWrapper {
+    val packaging: Packaging
+  }
 
-    @Before
-    fun init() {
-        packaging  = androidPluginDslDecorator.decorate(PackagingOptionsWrapper::class.java)
-            .getDeclaredConstructor(DslServices::class.java)
-            .newInstance(dslServices)
-            .packaging
-    }
+  @Before
+  fun init() {
+    packaging =
+      androidPluginDslDecorator
+        .decorate(PackagingOptionsWrapper::class.java)
+        .getDeclaredConstructor(DslServices::class.java)
+        .newInstance(dslServices)
+        .packaging
+  }
 
-    @Test
-    fun `test defaults`() {
-        assertThat(packaging.excludes)
-            .containsExactly(
-                "**/*.kotlin_metadata",
-                "**/*~",
-                "**/.*",
-                "**/.*/**",
-                "**/.svn/**",
-                "**/CVS/**",
-                "**/SCCS/**",
-                "**/_*",
-                "**/_*/**",
-                "**/about.html",
-                "**/overview.html",
-                "**/package.html",
-                "**/picasa.ini",
-                "**/protobuf.meta",
-                "**/thumbs.db",
-                "/LICENSE",
-                "/LICENSE.txt",
-                "/META-INF/*.DSA",
-                "/META-INF/*.EC",
-                "/META-INF/*.RSA",
-                "/META-INF/*.SF",
-                "/META-INF/LICENSE",
-                "/META-INF/LICENSE.txt",
-                "/META-INF/MANIFEST.MF",
-                "/META-INF/**/MANIFEST.MF",
-                "/META-INF/NOTICE",
-                "/META-INF/NOTICE.txt",
-                "/META-INF/com.android.tools/**",
-                "/META-INF/maven/**",
-                "/META-INF/proguard/*",
-                "/NOTICE",
-                "/NOTICE.txt"
-            )
-        assertThat(packaging.pickFirsts).isEmpty()
-        assertThat(packaging.merges)
-            .containsExactly(
-                "/META-INF/services/**",
-                "jacoco-agent.properties",
-            )
-        assertThat(packaging.doNotStrip).isEmpty()
-    }
+  @Test
+  fun `test defaults`() {
+    assertThat(packaging.excludes)
+      .containsExactly(
+        "**/*.kotlin_metadata",
+        "**/*~",
+        "**/.*",
+        "**/.*/**",
+        "**/.svn/**",
+        "**/CVS/**",
+        "**/SCCS/**",
+        "**/_*",
+        "**/_*/**",
+        "**/about.html",
+        "**/overview.html",
+        "**/package.html",
+        "**/picasa.ini",
+        "**/protobuf.meta",
+        "**/thumbs.db",
+        "/LICENSE",
+        "/LICENSE.txt",
+        "/META-INF/*.DSA",
+        "/META-INF/*.EC",
+        "/META-INF/*.RSA",
+        "/META-INF/*.SF",
+        "/META-INF/LICENSE",
+        "/META-INF/LICENSE.txt",
+        "/META-INF/MANIFEST.MF",
+        "/META-INF/**/MANIFEST.MF",
+        "/META-INF/NOTICE",
+        "/META-INF/NOTICE.txt",
+        "/META-INF/com.android.tools/**",
+        "/META-INF/maven/**",
+        "/META-INF/proguard/*",
+        "/NOTICE",
+        "/NOTICE.txt",
+      )
+    assertThat(packaging.pickFirsts).isEmpty()
+    assertThat(packaging.merges).containsExactly("/META-INF/services/**", "jacoco-agent.properties")
+    assertThat(packaging.doNotStrip).isEmpty()
+  }
 
-    @Test
-    fun `test excludes mutations are possible`() {
-        packaging.excludes.clear()
-        assertThat(packaging.excludes).isEmpty()
+  @Test
+  fun `test excludes mutations are possible`() {
+    packaging.excludes.clear()
+    assertThat(packaging.excludes).isEmpty()
 
-        packaging.exclude("example1")
-        packaging.excludes.add("example2")
-        assertThat(packaging.excludes).containsExactly("example1", "example2")
+    packaging.exclude("example1")
+    packaging.excludes.add("example2")
+    assertThat(packaging.excludes).containsExactly("example1", "example2")
 
-        (packaging as com.android.build.gradle.internal.dsl.PackagingOptions)
-            .setExcludes(Sets.union(packaging.excludes, setOf("example3")))
-        assertThat(packaging.excludes).containsExactly("example1", "example2", "example3")
-    }
+    (packaging as com.android.build.gradle.internal.dsl.PackagingOptions).setExcludes(Sets.union(packaging.excludes, setOf("example3")))
+    assertThat(packaging.excludes).containsExactly("example1", "example2", "example3")
+  }
 
-    @Test
-    fun pickFirsts() {
-        packaging.pickFirsts.clear()
-        assertThat(packaging.pickFirsts).isEmpty()
+  @Test
+  fun pickFirsts() {
+    packaging.pickFirsts.clear()
+    assertThat(packaging.pickFirsts).isEmpty()
 
-        packaging.pickFirst("example1")
-        packaging.pickFirsts.add("example2")
-        assertThat(packaging.pickFirsts).containsExactly("example1", "example2")
+    packaging.pickFirst("example1")
+    packaging.pickFirsts.add("example2")
+    assertThat(packaging.pickFirsts).containsExactly("example1", "example2")
 
-        (packaging as com.android.build.gradle.internal.dsl.PackagingOptions)
-            .setPickFirsts(Sets.union(packaging.pickFirsts, setOf("example3")))
-        assertThat(packaging.pickFirsts).containsExactly("example1", "example2", "example3");
-    }
+    (packaging as com.android.build.gradle.internal.dsl.PackagingOptions).setPickFirsts(Sets.union(packaging.pickFirsts, setOf("example3")))
+    assertThat(packaging.pickFirsts).containsExactly("example1", "example2", "example3")
+  }
 
-    @Test
-    fun merges() {
-        packaging.merges.clear()
-        assertThat(packaging.merges).isEmpty()
+  @Test
+  fun merges() {
+    packaging.merges.clear()
+    assertThat(packaging.merges).isEmpty()
 
-        packaging.merge("example1")
-        packaging.merges.add("example2")
-        assertThat(packaging.merges).containsExactly("example1", "example2")
+    packaging.merge("example1")
+    packaging.merges.add("example2")
+    assertThat(packaging.merges).containsExactly("example1", "example2")
 
-        (packaging as com.android.build.gradle.internal.dsl.PackagingOptions)
-            .setMerges(Sets.union(packaging.merges, setOf("example3")))
-        assertThat(packaging.merges).containsExactly("example1", "example2", "example3");
-    }
+    (packaging as com.android.build.gradle.internal.dsl.PackagingOptions).setMerges(Sets.union(packaging.merges, setOf("example3")))
+    assertThat(packaging.merges).containsExactly("example1", "example2", "example3")
+  }
 
-    @Test
-    fun doNotStrip() {
-        packaging.doNotStrip.clear()
-        assertThat(packaging.doNotStrip).isEmpty()
+  @Test
+  fun doNotStrip() {
+    packaging.doNotStrip.clear()
+    assertThat(packaging.doNotStrip).isEmpty()
 
-        packaging.doNotStrip("example1")
-        packaging.doNotStrip.add("example2")
-        assertThat(packaging.doNotStrip).containsExactly("example1", "example2")
+    packaging.doNotStrip("example1")
+    packaging.doNotStrip.add("example2")
+    assertThat(packaging.doNotStrip).containsExactly("example1", "example2")
 
-        (packaging as com.android.build.gradle.internal.dsl.PackagingOptions)
-            .setDoNotStrip(Sets.union(packaging.doNotStrip, setOf("example3")))
-        assertThat(packaging.doNotStrip).containsExactly("example1", "example2", "example3");
-    }
+    (packaging as com.android.build.gradle.internal.dsl.PackagingOptions).setDoNotStrip(Sets.union(packaging.doNotStrip, setOf("example3")))
+    assertThat(packaging.doNotStrip).containsExactly("example1", "example2", "example3")
+  }
 }

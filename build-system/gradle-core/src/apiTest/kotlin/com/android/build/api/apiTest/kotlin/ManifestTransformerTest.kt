@@ -18,20 +18,18 @@ package com.android.build.api.apiTest.kotlin
 
 import com.android.build.api.apiTest.VariantApiBaseTest
 import com.google.common.truth.Truth
+import kotlin.test.assertNotNull
 import org.gradle.testkit.runner.TaskOutcome
 import org.junit.Test
-import kotlin.test.assertNotNull
 
-class ManifestTransformerTest: VariantApiBaseTest(
-    TestType.Script
-) {
-    @Test
-    fun manifestTransformerTest() {
-        given {
-            addModule(":app") {
-                buildFile =
-                        // language=kotlin
-                    """
+class ManifestTransformerTest : VariantApiBaseTest(TestType.Script) {
+  @Test
+  fun manifestTransformerTest() {
+    given {
+      addModule(":app") {
+        buildFile =
+          // language=kotlin
+          """
             plugins {
                     id("com.android.application")
                     kotlin("android")
@@ -60,23 +58,19 @@ class ManifestTransformerTest: VariantApiBaseTest(
                         .toTransform(com.android.build.api.artifact.SingleArtifact.MERGED_MANIFEST)
                 }
             }
-            """.trimIndent()
-                testingElements.addManifest(this)
-            }
-        }
-        check {
-            assertNotNull(this)
-            Truth.assertThat(output).contains("BUILD SUCCESSFUL")
-            arrayOf(
-                ":app:debugGitVersionProvider",
-                ":app:processDebugMainManifest",
-                ":app:debugManifestUpdater"
-            ).forEach {
-                val task = task(it)
-                assertNotNull(task)
-                Truth.assertThat(task.outcome).isEqualTo(TaskOutcome.SUCCESS)
-            }
-        }
+            """
+            .trimIndent()
+        testingElements.addManifest(this)
+      }
     }
-
+    check {
+      assertNotNull(this)
+      Truth.assertThat(output).contains("BUILD SUCCESSFUL")
+      arrayOf(":app:debugGitVersionProvider", ":app:processDebugMainManifest", ":app:debugManifestUpdater").forEach {
+        val task = task(it)
+        assertNotNull(task)
+        Truth.assertThat(task.outcome).isEqualTo(TaskOutcome.SUCCESS)
+      }
+    }
+  }
 }

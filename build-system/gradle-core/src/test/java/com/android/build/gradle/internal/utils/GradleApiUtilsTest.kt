@@ -17,39 +17,30 @@
 package com.android.build.gradle.internal.utils
 
 import com.google.common.truth.Truth.assertThat
+import java.io.File
 import org.gradle.testfixtures.ProjectBuilder
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
-import java.io.File
 
 class GradleApiUtilsTest {
 
-    @get:Rule
-    val tmpDir = TemporaryFolder()
+  @get:Rule val tmpDir = TemporaryFolder()
 
-    @Test
-    fun `test Directory#getOrderedFileTree`() {
-        // The following file paths are crafted such that if `Directory.getOrderedFileTree()`
-        // does not sort the files based on `invariantSeparatorsPath`, this test will fail on
-        // Windows.
-        val rootDir = tmpDir.root
-        val files = listOf(
-            File(rootDir, "ABC/D"),
-            File(rootDir, "AB/CD"),
-            File(rootDir, "AB/xy")
-        )
-        files.forEach {
-            it.parentFile.mkdirs()
-            it.createNewFile()
-        }
-        val project = ProjectBuilder.builder().build()
-        val directory = project.objects.directoryProperty().fileValue(rootDir).get()
-
-        assertThat(directory.getOrderedFileTree()).isEqualTo(listOf(
-            File(rootDir, "AB/CD"),
-            File(rootDir, "AB/xy"),
-            File(rootDir, "ABC/D")
-        ))
+  @Test
+  fun `test Directory#getOrderedFileTree`() {
+    // The following file paths are crafted such that if `Directory.getOrderedFileTree()`
+    // does not sort the files based on `invariantSeparatorsPath`, this test will fail on
+    // Windows.
+    val rootDir = tmpDir.root
+    val files = listOf(File(rootDir, "ABC/D"), File(rootDir, "AB/CD"), File(rootDir, "AB/xy"))
+    files.forEach {
+      it.parentFile.mkdirs()
+      it.createNewFile()
     }
+    val project = ProjectBuilder.builder().build()
+    val directory = project.objects.directoryProperty().fileValue(rootDir).get()
+
+    assertThat(directory.getOrderedFileTree()).isEqualTo(listOf(File(rootDir, "AB/CD"), File(rootDir, "AB/xy"), File(rootDir, "ABC/D")))
+  }
 }

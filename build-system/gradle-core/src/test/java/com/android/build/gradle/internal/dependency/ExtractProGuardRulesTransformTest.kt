@@ -22,132 +22,123 @@ import com.android.build.gradle.internal.fixtures.FakeGradleRegularFile
 import com.android.build.gradle.internal.fixtures.FakeTransformOutputs
 import com.android.testutils.truth.PathSubject.assertThat
 import com.google.common.truth.Truth.assertThat
+import java.io.File
+import java.io.FileOutputStream
+import java.util.zip.ZipEntry
+import java.util.zip.ZipOutputStream
 import org.gradle.api.file.FileSystemLocation
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
-import java.io.File
-import java.io.FileOutputStream
-import java.util.zip.ZipEntry
-import java.util.zip.ZipOutputStream
 
 class ExtractProGuardRulesTransformTest {
 
-    private val slash = File.separator
+  private val slash = File.separator
 
-    @Rule
-    @JvmField
-    val tmp = TemporaryFolder()
+  @Rule @JvmField val tmp = TemporaryFolder()
 
-    @Test
-    fun testNoRules_UnrelatedFile() {
-        val jarFile = createZip("bar.txt" to "hello")
-        val transformOutputs = FakeTransformOutputs(tmp)
-        createTransform(jarFile).transform(transformOutputs)
+  @Test
+  fun testNoRules_UnrelatedFile() {
+    val jarFile = createZip("bar.txt" to "hello")
+    val transformOutputs = FakeTransformOutputs(tmp)
+    createTransform(jarFile).transform(transformOutputs)
 
-        assertThat(getProducedFileNames(transformOutputs.rootDir)).isEmpty()
+    assertThat(getProducedFileNames(transformOutputs.rootDir)).isEmpty()
+  }
+
+  @Test
+  fun testNoRules_FolderExists() {
+    val jarFile = createZip("META-INF/proguard" to null)
+    val transformOutputs = FakeTransformOutputs(tmp)
+    createTransform(jarFile).transform(transformOutputs)
+
+    assertThat(getProducedFileNames(transformOutputs.rootDir)).isEmpty()
+  }
+
+  @Test
+  fun testSingleRuleFile() {
+    val jarFile = createZip("META-INF/proguard/foo.txt" to "bar")
+    val transformOutputs = FakeTransformOutputs(tmp)
+    createTransform(jarFile).transform(transformOutputs)
+
+    assertThat(getProducedFileNames(transformOutputs.outputDirectory)).containsExactly("lib${slash}META-INF${slash}proguard${slash}foo.txt")
+    assertThat(transformOutputs.outputDirectory.resolve("lib${slash}META-INF${slash}proguard${slash}foo.txt")).hasContents("bar")
+  }
+
+  @Test fun testBannedGlobalRules_filtered() = verifyBannedGlobalRules(filterOutGlobalRules = true)
+
+  @Test fun testBannedGlobalRules_unfiltered() = verifyBannedGlobalRules(filterOutGlobalRules = false)
+
+  fun verifyBannedGlobalRules(filterOutGlobalRules: Boolean) {
+    val initialRules =
+      """
+      -dontoptimize
+      -repackageclasses
+      #preexisting comment -dontoptimize
+      """
+        .trimIndent()
+    val jarFile = createZip("META-INF/proguard/foo.txt" to initialRules)
+    val transformOutputs = FakeTransformOutputs(tmp)
+    createTransform(jarFile, filterOutGlobalRules = filterOutGlobalRules).transform(transformOutputs)
+
+    assertThat(getProducedFileNames(transformOutputs.outputDirectory)).containsExactly("lib${slash}META-INF${slash}proguard${slash}foo.txt")
+    val outputFile = transformOutputs.outputDirectory.resolve("lib${slash}META-INF${slash}proguard${slash}foo.txt")
+    if (filterOutGlobalRules) {
+      assertThat(outputFile)
+        .hasContents(
+          """
+          # REMOVED CONSUMER RULE: -dontoptimize
+          # REMOVED CONSUMER RULE: -repackageclasses
+          #preexisting comment -dontoptimize
+          """
+            .trimIndent()
+        )
+    } else {
+      assertThat(outputFile).hasContents(initialRules)
     }
+  }
 
-    @Test
-    fun testNoRules_FolderExists() {
-        val jarFile = createZip("META-INF/proguard" to null)
-        val transformOutputs = FakeTransformOutputs(tmp)
-        createTransform(jarFile).transform(transformOutputs)
+  @Test
+  fun testMultipleRuleFiles() {
+    val jarFile = createZip("META-INF/proguard/bar.txt" to "hello", "META-INF/proguard/foo.pro" to "goodbye")
+    val transformOutputs = FakeTransformOutputs(tmp)
+    createTransform(jarFile).transform(transformOutputs)
 
-        assertThat(getProducedFileNames(transformOutputs.rootDir)).isEmpty()
-    }
+    assertThat(getProducedFileNames(transformOutputs.outputDirectory))
+      .containsExactly("lib${slash}META-INF${slash}proguard${slash}foo.pro", "lib${slash}META-INF${slash}proguard${slash}bar.txt")
+    assertThat(transformOutputs.outputDirectory.resolve("lib${slash}META-INF${slash}proguard${slash}foo.pro")).hasContents("goodbye")
+    assertThat(transformOutputs.outputDirectory.resolve("lib${slash}META-INF${slash}proguard${slash}bar.txt")).hasContents("hello")
+  }
 
-    @Test
-    fun testSingleRuleFile() {
-        val jarFile = createZip("META-INF/proguard/foo.txt" to "bar")
-        val transformOutputs = FakeTransformOutputs(tmp)
-        createTransform(jarFile).transform(transformOutputs)
+  private fun getProducedFileNames(rootDir: File): List<String> =
+    rootDir.walk().filter { !it.isDirectory }.map { it.relativeTo(rootDir).path }.toList()
 
-        assertThat(getProducedFileNames(transformOutputs.outputDirectory)).containsExactly("lib${slash}META-INF${slash}proguard${slash}foo.txt")
-        assertThat(transformOutputs.outputDirectory.resolve("lib${slash}META-INF${slash}proguard${slash}foo.txt")).hasContents("bar")
-    }
-
-    @Test
-    fun testBannedGlobalRules_filtered() = verifyBannedGlobalRules(filterOutGlobalRules = true)
-
-    @Test
-    fun testBannedGlobalRules_unfiltered() = verifyBannedGlobalRules(filterOutGlobalRules = false)
-
-    fun verifyBannedGlobalRules(filterOutGlobalRules: Boolean) {
-        val initialRules = """
-            -dontoptimize
-            -repackageclasses
-            #preexisting comment -dontoptimize
-        """.trimIndent()
-        val jarFile = createZip("META-INF/proguard/foo.txt" to initialRules)
-        val transformOutputs = FakeTransformOutputs(tmp)
-        createTransform(jarFile, filterOutGlobalRules = filterOutGlobalRules)
-            .transform(transformOutputs)
-
-        assertThat(getProducedFileNames(transformOutputs.outputDirectory)).containsExactly("lib${slash}META-INF${slash}proguard${slash}foo.txt")
-        val outputFile = transformOutputs.outputDirectory.resolve("lib${slash}META-INF${slash}proguard${slash}foo.txt")
-        if (filterOutGlobalRules) {
-            assertThat(outputFile).hasContents(
-                """
-            # REMOVED CONSUMER RULE: -dontoptimize
-            # REMOVED CONSUMER RULE: -repackageclasses
-            #preexisting comment -dontoptimize
-        """.trimIndent()
-            )
-        } else {
-            assertThat(outputFile).hasContents(initialRules)
+  private fun createZip(vararg entries: Pair<String, String?>): File {
+    val zipFile = tmp.newFile()
+    ZipOutputStream(FileOutputStream(zipFile)).use {
+      for (entry in entries) {
+        it.putNextEntry(ZipEntry(entry.first))
+        if (entry.second != null) {
+          it.write(entry.second!!.toByteArray())
         }
+        it.closeEntry()
+      }
     }
+    return zipFile
+  }
 
-    @Test
-    fun testMultipleRuleFiles() {
-        val jarFile = createZip(
-            "META-INF/proguard/bar.txt" to "hello",
-            "META-INF/proguard/foo.pro" to "goodbye")
-        val transformOutputs = FakeTransformOutputs(tmp)
-        createTransform(jarFile).transform(transformOutputs)
+  private fun createTransform(primaryInput: File, filterOutGlobalRules: Boolean = true): ExtractProGuardRulesTransform {
+    return object : ExtractProGuardRulesTransform() {
+      override val inputArtifact: Provider<FileSystemLocation> = FakeGradleProvider(FakeGradleRegularFile(primaryInput))
 
-        assertThat(getProducedFileNames(transformOutputs.outputDirectory)).containsExactly("lib${slash}META-INF${slash}proguard${slash}foo.pro", "lib${slash}META-INF${slash}proguard${slash}bar.txt")
-        assertThat(transformOutputs.outputDirectory.resolve("lib${slash}META-INF${slash}proguard${slash}foo.pro")).hasContents("goodbye")
-        assertThat(transformOutputs.outputDirectory.resolve("lib${slash}META-INF${slash}proguard${slash}bar.txt")).hasContents("hello")
-    }
-
-    private fun getProducedFileNames(rootDir: File): List<String> = rootDir
-        .walk()
-        .filter { !it.isDirectory }
-        .map { it.relativeTo(rootDir).path }
-        .toList()
-
-    private fun createZip(vararg entries: Pair<String, String?>): File {
-        val zipFile = tmp.newFile()
-        ZipOutputStream(FileOutputStream(zipFile)).use {
-            for (entry in entries) {
-                it.putNextEntry(ZipEntry(entry.first))
-                if (entry.second != null) {
-                    it.write(entry.second!!.toByteArray())
-                }
-                it.closeEntry()
-            }
+      override fun getParameters(): ExtractProGuardRulesTransform.Parameters {
+        return object : Parameters {
+          override val projectName: Property<String> = FakeGradleProperty("")
+          override val filterOutGlobalRules: Property<Boolean> = FakeGradleProperty(filterOutGlobalRules)
         }
-        return zipFile
+      }
     }
-
-    private fun createTransform(
-        primaryInput: File,
-        filterOutGlobalRules: Boolean = true
-    ): ExtractProGuardRulesTransform {
-        return object: ExtractProGuardRulesTransform() {
-            override val inputArtifact: Provider<FileSystemLocation> = FakeGradleProvider(FakeGradleRegularFile(primaryInput))
-
-            override fun getParameters(): ExtractProGuardRulesTransform.Parameters {
-                return object : Parameters {
-                    override val projectName: Property<String> = FakeGradleProperty("")
-                    override val filterOutGlobalRules: Property<Boolean> =
-                        FakeGradleProperty(filterOutGlobalRules)
-                }
-            }
-        }
-    }
+  }
 }

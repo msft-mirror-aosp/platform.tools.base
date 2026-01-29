@@ -40,46 +40,40 @@ import org.gradle.api.services.BuildServiceParameters
  * - content of local jar folders so that we only need to do IO once per folder.
  */
 @Suppress("UnstableApiUsage")
-abstract class GlobalSyncService : BuildService<GlobalSyncService.Parameters>,
-    AutoCloseable {
+abstract class GlobalSyncService : BuildService<GlobalSyncService.Parameters>, AutoCloseable {
 
-    interface Parameters: BuildServiceParameters {
-        val mavenCoordinatesCache: Property<MavenCoordinatesCacheBuildService>
+  interface Parameters : BuildServiceParameters {
+    val mavenCoordinatesCache: Property<MavenCoordinatesCacheBuildService>
+  }
+
+  class RegistrationAction(project: Project, private val mavenCoordinatesCache: Provider<MavenCoordinatesCacheBuildService>) :
+    ServiceRegistrationAction<GlobalSyncService, Parameters>(project, GlobalSyncService::class.java) {
+    override fun configure(parameters: Parameters) {
+      parameters.mavenCoordinatesCache.set(mavenCoordinatesCache)
     }
+  }
 
-    class RegistrationAction(
-        project: Project,
-        private val mavenCoordinatesCache: Provider<MavenCoordinatesCacheBuildService>
-    ) : ServiceRegistrationAction<GlobalSyncService, Parameters>(
-        project,
-        GlobalSyncService::class.java
-    ) {
-        override fun configure(parameters: Parameters) {
-            parameters.mavenCoordinatesCache.set(mavenCoordinatesCache)
-        }
-    }
+  val stringCache: StringCache
+    get() = _stringCache
 
-    val stringCache: StringCache
-        get() = _stringCache
+  val localJarCache: LocalJarCache
+    get() = _localJarCache
 
-    val localJarCache: LocalJarCache
-        get() = _localJarCache
-    val libraryCache: LibraryCache
-        get() = _libraryCache
+  val libraryCache: LibraryCache
+    get() = _libraryCache
 
-    val graphEdgeCache: GraphEdgeCache
-        get() = _graphEdgeCache
+  val graphEdgeCache: GraphEdgeCache
+    get() = _graphEdgeCache
 
-    private val _stringCache = StringCacheImpl()
-    private val _localJarCache = LocalJarCacheImpl()
-    private val _libraryCache  = LibraryCacheImpl(_stringCache, _localJarCache)
-    private val _graphEdgeCache  = GraphEdgeCacheImpl()
+  private val _stringCache = StringCacheImpl()
+  private val _localJarCache = LocalJarCacheImpl()
+  private val _libraryCache = LibraryCacheImpl(_stringCache, _localJarCache)
+  private val _graphEdgeCache = GraphEdgeCacheImpl()
 
-    override fun close() {
-        _stringCache.clear()
-        _localJarCache.clear()
-        _libraryCache.clear()
-        _graphEdgeCache.clear()
-    }
+  override fun close() {
+    _stringCache.clear()
+    _localJarCache.clear()
+    _libraryCache.clear()
+    _graphEdgeCache.clear()
+  }
 }
-

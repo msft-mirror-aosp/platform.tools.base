@@ -19,69 +19,55 @@ package com.android.build.api.dsl
 import org.gradle.api.JavaVersion
 import org.gradle.declarative.dsl.model.annotations.Restricted
 
-/**
- * Java compilation options.
- */
+/** Java compilation options. */
 interface CompileOptions {
-    /**
-     * Language level of the java source code.
-     *
-     * Similar to what [Gradle Java plugin](http://www.gradle.org/docs/current/userguide/java_plugin.html)
-     * uses. Formats supported are:
-     *
-     * - `"1.6"`
-     * - `1.6`
-     * - `JavaVersion.Version_1_6`
-     * - `"Version_1_6"`
-     */
-    @get:Restricted
-    var sourceCompatibility: JavaVersion
+  /**
+   * Language level of the java source code.
+   *
+   * Similar to what [Gradle Java plugin](http://www.gradle.org/docs/current/userguide/java_plugin.html) uses. Formats supported are:
+   * - `"1.6"`
+   * - `1.6`
+   * - `JavaVersion.Version_1_6`
+   * - `"Version_1_6"`
+   */
+  @get:Restricted var sourceCompatibility: JavaVersion
 
-    /**
-     * Language level of the java source code.
-     *
-     * Similar to what [Gradle Java plugin](http://www.gradle.org/docs/current/userguide/java_plugin.html)
-     * uses. Formats supported are:
-     *
-     * - `"1.6"`
-     * - `1.6`
-     * - `JavaVersion.Version_1_6`
-     * - `"Version_1_6"`
-     */
-    fun sourceCompatibility(sourceCompatibility: Any)
+  /**
+   * Language level of the java source code.
+   *
+   * Similar to what [Gradle Java plugin](http://www.gradle.org/docs/current/userguide/java_plugin.html) uses. Formats supported are:
+   * - `"1.6"`
+   * - `1.6`
+   * - `JavaVersion.Version_1_6`
+   * - `"Version_1_6"`
+   */
+  fun sourceCompatibility(sourceCompatibility: Any)
 
-    /**
-     * Version of the generated Java bytecode.
-     *
-     * Similar to what [Gradle Java plugin](http://www.gradle.org/docs/current/userguide/java_plugin.html)
-     * uses. Formats supported are:
-     *
-     * - `"1.6"`
-     * - `1.6`
-     * - `JavaVersion.Version_1_6`
-     * - `"Version_1_6"`
-     */
-    @get:Restricted
-    var targetCompatibility: JavaVersion
+  /**
+   * Version of the generated Java bytecode.
+   *
+   * Similar to what [Gradle Java plugin](http://www.gradle.org/docs/current/userguide/java_plugin.html) uses. Formats supported are:
+   * - `"1.6"`
+   * - `1.6`
+   * - `JavaVersion.Version_1_6`
+   * - `"Version_1_6"`
+   */
+  @get:Restricted var targetCompatibility: JavaVersion
 
-    /**
-     * Version of the generated Java bytecode.
-     *
-     * Similar to what [Gradle Java plugin](http://www.gradle.org/docs/current/userguide/java_plugin.html)
-     * uses. Formats supported are:
-     *
-     * - `"1.6"`
-     * - `1.6`
-     * - `JavaVersion.Version_1_6`
-     * - `"Version_1_6"`
-     */
-    fun targetCompatibility(targetCompatibility: Any)
+  /**
+   * Version of the generated Java bytecode.
+   *
+   * Similar to what [Gradle Java plugin](http://www.gradle.org/docs/current/userguide/java_plugin.html) uses. Formats supported are:
+   * - `"1.6"`
+   * - `1.6`
+   * - `JavaVersion.Version_1_6`
+   * - `"Version_1_6"`
+   */
+  fun targetCompatibility(targetCompatibility: Any)
 
-    /** Java source files encoding. */
-    @get:Restricted
-    var encoding: String
+  /** Java source files encoding. */
+  @get:Restricted var encoding: String
 
-    /** Whether core library desugaring is enabled. */
-    @get:Restricted
-    var isCoreLibraryDesugaringEnabled: Boolean
+  /** Whether core library desugaring is enabled. */
+  @get:Restricted var isCoreLibraryDesugaringEnabled: Boolean
 }

@@ -20,7 +20,5 @@ import com.android.build.api.dsl.LibrarySingleVariant
 import com.android.build.gradle.internal.services.DslServices
 import javax.inject.Inject
 
-abstract class LibrarySingleVariantImpl @Inject constructor(
-    dslServices: DslServices,
-    override val variantName: String,
-) : LibrarySingleVariant, PublishingOptionsImpl()
+abstract class LibrarySingleVariantImpl @Inject constructor(dslServices: DslServices, override val variantName: String) :
+  LibrarySingleVariant, PublishingOptionsImpl()

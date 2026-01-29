@@ -20,57 +20,56 @@ import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
 import com.android.utils.FileUtils
 import com.google.common.truth.Truth
-import org.junit.Rule
-import org.junit.Test
 import java.io.File
 import java.util.zip.ZipFile
+import org.junit.Rule
+import org.junit.Test
 
 class VariantAPIBundleTest {
-    @get:Rule
-    val project: GradleTestProject = GradleTestProject.builder()
-        .fromTestApp(HelloWorldApp.forPlugin("com.android.application"))
-        .create()
+  @get:Rule
+  val project: GradleTestProject = GradleTestProject.builder().fromTestApp(HelloWorldApp.forPlugin("com.android.application")).create()
 
-    @Test
-    fun testMetadataAddedFromVariantAPI() {
-        project.buildFile.appendText("""
-            abstract class AddMetadataInBundleTask extends DefaultTask {
-                @OutputFile
-                abstract RegularFileProperty getMetadataFile()
+  @Test
+  fun testMetadataAddedFromVariantAPI() {
+    project.buildFile.appendText(
+      """
+      abstract class AddMetadataInBundleTask extends DefaultTask {
+          @OutputFile
+          abstract RegularFileProperty getMetadataFile()
 
-                @TaskAction
-                void taskAction() {
-                    getMetadataFile().get().getAsFile().write("some metadata", true)
-                }
-            }
+          @TaskAction
+          void taskAction() {
+              getMetadataFile().get().getAsFile().write("some metadata", true)
+          }
+      }
 
-            androidComponents {
+      androidComponents {
 
-                onVariants(selector().all(), { variant ->
-                    Provider<Task> metadataTask = project.tasks.register(
-                        variant.name + "AddMetadata",
-                         AddMetadataInBundleTask.class
-                    ) { task ->
-                        task.getMetadataFile().set(new File(project.buildDir, "metadata.pb"))
-                    }
-                    variant.bundleConfig.addMetadataFile(
-                        "com.foo",
-                        metadataTask.flatMap { it.getMetadataFile() }
-                    )
-                })
-            }
-        """.trimIndent()
-        )
+          onVariants(selector().all(), { variant ->
+              Provider<Task> metadataTask = project.tasks.register(
+                  variant.name + "AddMetadata",
+                   AddMetadataInBundleTask.class
+              ) { task ->
+                  task.getMetadataFile().set(new File(project.buildDir, "metadata.pb"))
+              }
+              variant.bundleConfig.addMetadataFile(
+                  "com.foo",
+                  metadataTask.flatMap { it.getMetadataFile() }
+              )
+          })
+      }
+      """
+        .trimIndent()
+    )
 
-        project.execute("bundleDebug")
+    project.execute("bundleDebug")
 
-        ZipFile(getResultBundle()).use { aab ->
-            Truth.assertThat(aab.entries().toList().map { it.name })
-                .contains("BUNDLE-METADATA/com.foo/metadata.pb")
-        }
+    ZipFile(getResultBundle()).use { aab ->
+      Truth.assertThat(aab.entries().toList().map { it.name }).contains("BUNDLE-METADATA/com.foo/metadata.pb")
     }
+  }
 
-    private fun getResultBundle(): File {
-        return FileUtils.join(project.buildDir, "outputs", "bundle", "debug", "project-debug.aab")
-    }
+  private fun getResultBundle(): File {
+    return FileUtils.join(project.buildDir, "outputs", "bundle", "debug", "project-debug.aab")
+  }
 }

@@ -30,126 +30,136 @@ import org.junit.Test
 
 class GenerateResValuesIntegrationTest {
 
-    @get:Rule
-    val project = GradleTestProject.builder()
-        .fromTestApp(
-            MultiModuleTestProject.builder()
-                .subproject(
-                    MinimalSubProject.app().withFile(
-                        "src/main/res/values/strings.xml",
-                        """
+  @get:Rule
+  val project =
+    GradleTestProject.builder()
+      .fromTestApp(
+        MultiModuleTestProject.builder()
+          .subproject(
+            MinimalSubProject.app()
+              .withFile(
+                "src/main/res/values/strings.xml",
+                """
                 <?xml version="1.0" encoding="utf-8"?>
                 <resources>
                     <!-- The below string is a used to demonstrate resource merging. -->
                     <string name="some_string" translatable="false">hello world</string>
-                </resources>""".trimIndent()
-                    )
-                )
-                .build()
-        )
-        .create()
+                </resources>
+                """
+                  .trimIndent(),
+              )
+          )
+          .build()
+      )
+      .create()
 
-    @Before
-    fun setup() {
-        TestFileUtils.appendToFile(
-            project.getSubproject(":app").buildFile,
-            //language=groovy
-            """
-                android {
-                    buildFeatures { resValues = true }
-                    def vMajor = 0
-                    def vMinor = 1
-                    defaultConfig {
-                        versionCode vMajor+vMinor
-                        versionName vMajor+"."+vMinor
-                        resValue "string", "app_name", "TEST APP " + versionName + " (" + versionCode + ")"
-                    }
-                }
-            """.trimIndent()
-        )
-    }
+  @Before
+  fun setup() {
+    TestFileUtils.appendToFile(
+      project.getSubproject(":app").buildFile,
+      // language=groovy
+      """
+      android {
+          buildFeatures { resValues = true }
+          def vMajor = 0
+          def vMinor = 1
+          defaultConfig {
+              versionCode vMajor+vMinor
+              versionName vMajor+"."+vMinor
+              resValue "string", "app_name", "TEST APP " + versionName + " (" + versionCode + ")"
+          }
+      }
+      """
+        .trimIndent(),
+    )
+  }
 
-    @Test
-    fun testResValueIsUpdatedOnCleanAndIncrementalReleaseBuilds() {
-        val app = project.getSubproject(":app")
-        val executor = project.executor()
-        executor.run(":app:mergeReleaseResources")
+  @Test
+  fun testResValueIsUpdatedOnCleanAndIncrementalReleaseBuilds() {
+    val app = project.getSubproject(":app")
+    val executor = project.executor()
+    executor.run(":app:mergeReleaseResources")
 
-        val generatedResValueReleaseXml =
-            FileUtils.join(
-                app.generatedDir,
-                SdkConstants.RES_FOLDER,
-                "resValues",
-                "release",
-                SdkConstants.FD_RES_VALUES,
-                ResValueGenerator.RES_VALUE_FILENAME_XML
-            )
-        assertThat(generatedResValueReleaseXml).contentWithUnixLineSeparatorsIsExactly(
-            """
-                <?xml version="1.0" encoding="utf-8"?>
-                <resources>
+    val generatedResValueReleaseXml =
+      FileUtils.join(
+        app.generatedDir,
+        SdkConstants.RES_FOLDER,
+        "resValues",
+        "release",
+        SdkConstants.FD_RES_VALUES,
+        ResValueGenerator.RES_VALUE_FILENAME_XML,
+      )
+    assertThat(generatedResValueReleaseXml)
+      .contentWithUnixLineSeparatorsIsExactly(
+        """
+        <?xml version="1.0" encoding="utf-8"?>
+        <resources>
 
-                    <!-- Automatically generated file. DO NOT MODIFY -->
+            <!-- Automatically generated file. DO NOT MODIFY -->
 
-                    <!-- Value from default config. -->
-                    <string name="app_name" translatable="false">TEST APP 0.1 (1)</string>
+            <!-- Value from default config. -->
+            <string name="app_name" translatable="false">TEST APP 0.1 (1)</string>
 
-                </resources>""".trimIndent()
-        )
+        </resources>
+        """
+          .trimIndent()
+      )
 
-        val incrementalMergedFile = app.getIntermediateFile(
-            "incremental", "release", "mergeReleaseResources", "merged.dir", "values", "values.xml"
-        )
-        assertThat(incrementalMergedFile).contentWithUnixLineSeparatorsIsExactly(
-            """
-                <?xml version="1.0" encoding="utf-8"?>
-                <resources>
-                    <string name="app_name" translatable="false">TEST APP 0.1 (1)</string>
-                    <string name="some_string" translatable="false">hello world</string>
-                </resources>""".trimIndent()
-        )
+    val incrementalMergedFile =
+      app.getIntermediateFile("incremental", "release", "mergeReleaseResources", "merged.dir", "values", "values.xml")
+    assertThat(incrementalMergedFile)
+      .contentWithUnixLineSeparatorsIsExactly(
+        """
+        <?xml version="1.0" encoding="utf-8"?>
+        <resources>
+            <string name="app_name" translatable="false">TEST APP 0.1 (1)</string>
+            <string name="some_string" translatable="false">hello world</string>
+        </resources>
+        """
+          .trimIndent()
+      )
 
-        // Make a modification to resValues.
-        TestFileUtils.searchAndReplace(
-            app.buildFile,
-            "def vMajor = 0",
-            "def vMajor = 1"
-        )
+    // Make a modification to resValues.
+    TestFileUtils.searchAndReplace(app.buildFile, "def vMajor = 0", "def vMajor = 1")
 
-        // Run incremental build.
-        val incrementalReleaseBuild = executor.run(":app:mergeReleaseResources")
+    // Run incremental build.
+    val incrementalReleaseBuild = executor.run(":app:mergeReleaseResources")
 
-        incrementalReleaseBuild.assertTask(":app:mergeReleaseResources").didWork()
+    incrementalReleaseBuild.assertTask(":app:mergeReleaseResources").didWork()
 
-        // Check generated resValues and merged.dir values.xml have been updated.
-        assertThat(generatedResValueReleaseXml).contentWithUnixLineSeparatorsIsExactly(
-            """
-                <?xml version="1.0" encoding="utf-8"?>
-                <resources>
+    // Check generated resValues and merged.dir values.xml have been updated.
+    assertThat(generatedResValueReleaseXml)
+      .contentWithUnixLineSeparatorsIsExactly(
+        """
+        <?xml version="1.0" encoding="utf-8"?>
+        <resources>
 
-                    <!-- Automatically generated file. DO NOT MODIFY -->
+            <!-- Automatically generated file. DO NOT MODIFY -->
 
-                    <!-- Value from default config. -->
-                    <string name="app_name" translatable="false">TEST APP 1.1 (2)</string>
+            <!-- Value from default config. -->
+            <string name="app_name" translatable="false">TEST APP 1.1 (2)</string>
 
-                </resources>""".trimIndent()
-        )
-        assertThat(incrementalMergedFile).contentWithUnixLineSeparatorsIsExactly(
-            """
-                <?xml version="1.0" encoding="utf-8"?>
-                <resources>
-                    <string name="app_name" translatable="false">TEST APP 1.1 (2)</string>
-                    <string name="some_string" translatable="false">hello world</string>
-                </resources>""".trimIndent()
-        )
-    }
+        </resources>
+        """
+          .trimIndent()
+      )
+    assertThat(incrementalMergedFile)
+      .contentWithUnixLineSeparatorsIsExactly(
+        """
+        <?xml version="1.0" encoding="utf-8"?>
+        <resources>
+            <string name="app_name" translatable="false">TEST APP 1.1 (2)</string>
+            <string name="some_string" translatable="false">hello world</string>
+        </resources>
+        """
+          .trimIndent()
+      )
+  }
 
-    @Test
-    fun testMergeResourcesUpToDateWhenNoResValueChange() {
-        val executor = project.executor()
-        executor.run(":app:mergeReleaseResources")
-        executor.run(":app:mergeReleaseResources")
-            .assertTask(":app:mergeReleaseResources")
-            .wasUpToDate()
-    }
+  @Test
+  fun testMergeResourcesUpToDateWhenNoResValueChange() {
+    val executor = project.executor()
+    executor.run(":app:mergeReleaseResources")
+    executor.run(":app:mergeReleaseResources").assertTask(":app:mergeReleaseResources").wasUpToDate()
+  }
 }

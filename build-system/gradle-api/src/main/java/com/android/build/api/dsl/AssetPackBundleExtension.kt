@@ -19,34 +19,33 @@ package com.android.build.api.dsl
 import org.gradle.api.Incubating
 
 interface AssetPackBundleExtension {
-    var applicationId: String
+  var applicationId: String
 
-    var compileSdk: Int
+  var compileSdk: Int
 
-    var versionTag: String
+  var versionTag: String
 
-    val versionCodes: MutableSet<Int>
+  val versionCodes: MutableSet<Int>
 
-    val assetPacks: MutableSet<String>
+  val assetPacks: MutableSet<String>
 
-    val signingConfig: SigningConfig
-    fun signingConfig(action: SigningConfig.() -> Unit)
+  val signingConfig: SigningConfig
 
-    val texture: BundleTexture
-    fun texture(action: BundleTexture.() -> Unit)
+  fun signingConfig(action: SigningConfig.() -> Unit)
 
-    @get:Incubating
-    val deviceTier: BundleDeviceTier
-    @Incubating
-    fun deviceTier(action: BundleDeviceTier.() -> Unit)
+  val texture: BundleTexture
 
-    @get:Incubating
-    val countrySet: BundleCountrySet
-    @Incubating
-    fun countrySet(action: BundleCountrySet.() -> Unit)
+  fun texture(action: BundleTexture.() -> Unit)
 
-    @get:Incubating
-    val aiModelVersion: BundleAiModelVersion
-    @Incubating
-    fun aiModelVersion(action: BundleAiModelVersion.() -> Unit)
+  @get:Incubating val deviceTier: BundleDeviceTier
+
+  @Incubating fun deviceTier(action: BundleDeviceTier.() -> Unit)
+
+  @get:Incubating val countrySet: BundleCountrySet
+
+  @Incubating fun countrySet(action: BundleCountrySet.() -> Unit)
+
+  @get:Incubating val aiModelVersion: BundleAiModelVersion
+
+  @Incubating fun aiModelVersion(action: BundleAiModelVersion.() -> Unit)
 }

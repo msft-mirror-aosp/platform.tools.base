@@ -17,12 +17,9 @@
 package com.android.build.api.dsl
 
 interface ToolOptions {
-    /** If true, run tool workers out of process. */
-    var runInSeparateProcess: Boolean
+  /** If true, run tool workers out of process. */
+  var runInSeparateProcess: Boolean
 
-    /**
-     * Extra JVM options to give to the out of process worker JVM. Useful for
-     * setting things like max memory usage
-     */
-    val jvmOptions: MutableList<String>
+  /** Extra JVM options to give to the out of process worker JVM. Useful for setting things like max memory usage */
+  val jvmOptions: MutableList<String>
 }

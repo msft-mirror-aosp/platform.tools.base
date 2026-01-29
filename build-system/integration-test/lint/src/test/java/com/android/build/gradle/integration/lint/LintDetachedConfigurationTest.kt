@@ -23,18 +23,15 @@ import org.junit.Test
 
 class LintDetachedConfigurationTest {
 
-    @get:Rule
-    val project: GradleTestProject =
-        GradleTestProject.builder()
-            .fromTestApp(
-                MinimalSubProject.app("com.example.app")
-                    .appendToBuild("\n\nconfigurations.all { exclude module: 'gson' }\n\n")
-            )
-            .create()
+  @get:Rule
+  val project: GradleTestProject =
+    GradleTestProject.builder()
+      .fromTestApp(MinimalSubProject.app("com.example.app").appendToBuild("\n\nconfigurations.all { exclude module: 'gson' }\n\n"))
+      .create()
 
-    /** Regression test for b/195382391. */
-    @Test
-    fun testLintCache() {
-        project.execute("clean", "lintDebug")
-    }
+  /** Regression test for b/195382391. */
+  @Test
+  fun testLintCache() {
+    project.execute("clean", "lintDebug")
+  }
 }

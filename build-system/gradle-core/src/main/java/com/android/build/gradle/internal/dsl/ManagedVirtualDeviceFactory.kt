@@ -20,9 +20,9 @@ import com.android.build.gradle.internal.services.DslServices
 import org.gradle.api.NamedDomainObjectFactory
 
 class ManagedVirtualDeviceFactory(private val dslServices: DslServices) :
-    NamedDomainObjectFactory<com.android.build.api.dsl.ManagedVirtualDevice> {
+  NamedDomainObjectFactory<com.android.build.api.dsl.ManagedVirtualDevice> {
 
-    override fun create(name: String): ManagedVirtualDevice {
-        return dslServices.newInstance(ManagedVirtualDevice::class.java, name);
-    }
+  override fun create(name: String): ManagedVirtualDevice {
+    return dslServices.newInstance(ManagedVirtualDevice::class.java, name)
+  }
 }

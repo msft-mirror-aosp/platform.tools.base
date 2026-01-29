@@ -26,334 +26,332 @@ import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.truth.PathSubject.assertThat
 import com.android.utils.usLocaleCapitalize
 import com.google.common.truth.Truth.assertThat
-import org.junit.Rule
-import org.junit.Test
 import kotlin.io.path.listDirectoryEntries
 import kotlin.io.path.name
 import kotlin.io.path.readText
 import org.junit.Ignore
+import org.junit.Rule
+import org.junit.Test
 
 private const val TILES_VERSION = "1.4.0"
 private const val PROTOLAYOUT_VERSION = "1.2.0"
 
 class WearTileScreenshotTest {
 
-    @get:Rule
-    val rule = GradleRule.configure()
-        .withProfileOutput()
-        .from {
-            androidApplication {
-                applyPlugin(PluginType.KOTLIN_ANDROID)
-                applyPlugin(
-                    PluginType.Custom(
-                        id = "com.android.compose.screenshot",
-                        version = "+",
-                        artifact = "com.android.compose.screenshot:screenshot-test-gradle-plugin",
-                        hasMarker = false,
-                    )
-                )
+  @get:Rule
+  val rule =
+    GradleRule.configure().withProfileOutput().from {
+      androidApplication {
+        applyPlugin(PluginType.KOTLIN_ANDROID)
+        applyPlugin(
+          PluginType.Custom(
+            id = "com.android.compose.screenshot",
+            version = "+",
+            artifact = "com.android.compose.screenshot:screenshot-test-gradle-plugin",
+            hasMarker = false,
+          )
+        )
 
-                android {
-                    defaultConfig {
-                        minSdk = 26
-                        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-                    }
-                    experimentalProperties["android.experimental.enableScreenshotTest"] = true
-                }
-                dependencies {
-                    screenshotTestImplementation("com.android.tools.screenshot:screenshot-validation-api:+")
-                    testImplementation("junit:junit:4.13.2")
-                    implementation("androidx.wear.tiles:tiles:$TILES_VERSION")
-                    implementation("androidx.wear.tiles:tiles-material:$TILES_VERSION")
-                    implementation("androidx.wear.tiles:tiles-tooling:$TILES_VERSION")
-                    implementation("androidx.wear.tiles:tiles-tooling-preview:$TILES_VERSION")
-                    implementation("androidx.wear.protolayout:protolayout:$PROTOLAYOUT_VERSION")
-                    implementation("androidx.wear.protolayout:protolayout-material:$PROTOLAYOUT_VERSION")
-                }
-                kotlin {
-                    // Required by LayoutLib (com/android/layoutlib/bridge/Bridge).
-                    jvmToolchain(21)
-                }
+        android {
+          defaultConfig {
+            minSdk = 26
+            testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+          }
+          experimentalProperties["android.experimental.enableScreenshotTest"] = true
+        }
+        dependencies {
+          screenshotTestImplementation("com.android.tools.screenshot:screenshot-validation-api:+")
+          testImplementation("junit:junit:4.13.2")
+          implementation("androidx.wear.tiles:tiles:$TILES_VERSION")
+          implementation("androidx.wear.tiles:tiles-material:$TILES_VERSION")
+          implementation("androidx.wear.tiles:tiles-tooling:$TILES_VERSION")
+          implementation("androidx.wear.tiles:tiles-tooling-preview:$TILES_VERSION")
+          implementation("androidx.wear.protolayout:protolayout:$PROTOLAYOUT_VERSION")
+          implementation("androidx.wear.protolayout:protolayout-material:$PROTOLAYOUT_VERSION")
+        }
+        kotlin {
+          // Required by LayoutLib (com/android/layoutlib/bridge/Bridge).
+          jvmToolchain(21)
+        }
 
-                files {
-                    add(
-                        "src/main/java/com/Example.kt",
-                        //language=kotlin
-                        """
-                          package pkg.name
+        files {
+          add(
+            "src/main/java/com/Example.kt",
+            // language=kotlin
+            """
+            package pkg.name
 
-                          import android.content.Context
-                          import androidx.wear.protolayout.ColorBuilders.argb
-                          import androidx.wear.protolayout.LayoutElementBuilders
-                          import androidx.wear.protolayout.ResourceBuilders
-                          import androidx.wear.protolayout.TimelineBuilders
-                          import androidx.wear.protolayout.material.Colors
-                          import androidx.wear.protolayout.material.Text
-                          import androidx.wear.protolayout.material.Typography
-                          import androidx.wear.protolayout.material.layouts.PrimaryLayout
-                          import androidx.wear.tiles.RequestBuilders
-                          import androidx.wear.tiles.TileBuilders
+            import android.content.Context
+            import androidx.wear.protolayout.ColorBuilders.argb
+            import androidx.wear.protolayout.LayoutElementBuilders
+            import androidx.wear.protolayout.ResourceBuilders
+            import androidx.wear.protolayout.TimelineBuilders
+            import androidx.wear.protolayout.material.Colors
+            import androidx.wear.protolayout.material.Text
+            import androidx.wear.protolayout.material.Typography
+            import androidx.wear.protolayout.material.layouts.PrimaryLayout
+            import androidx.wear.tiles.RequestBuilders
+            import androidx.wear.tiles.TileBuilders
 
-                          private const val RESOURCES_VERSION = "0"
+            private const val RESOURCES_VERSION = "0"
 
-                          fun resources(): ResourceBuilders.Resources {
-                              return ResourceBuilders.Resources.Builder()
-                                  .setVersion(RESOURCES_VERSION)
-                                  .build()
-                          }
-
-                          fun tile(
-                              requestParams: RequestBuilders.TileRequest,
-                              context: Context,
-                          ): TileBuilders.Tile {
-                              val singleTileTimeline = TimelineBuilders.Timeline.Builder()
-                                  .addTimelineEntry(
-                                      TimelineBuilders.TimelineEntry.Builder()
-                                          .setLayout(
-                                              LayoutElementBuilders.Layout.Builder()
-                                                  .setRoot(tileLayout(requestParams, context))
-                                                  .build()
-                                          )
-                                          .build()
-                                  )
-                                  .build()
-
-                              return TileBuilders.Tile.Builder()
-                                  .setResourcesVersion(RESOURCES_VERSION)
-                                  .setTileTimeline(singleTileTimeline)
-                                  .build()
-                          }
-
-                          private fun tileLayout(
-                              requestParams: RequestBuilders.TileRequest,
-                              context: Context,
-                          ): LayoutElementBuilders.LayoutElement {
-                              return PrimaryLayout.Builder(requestParams.deviceConfiguration)
-                                  .setResponsiveContentInsetEnabled(true)
-                                  .setContent(
-                                      Text.Builder(context, "Hello World!")
-                                          .setColor(argb(Colors.DEFAULT.onSurface))
-                                          .setTypography(Typography.TYPOGRAPHY_CAPTION1)
-                                          .build()
-                                  ).build()
-                          }
-                      """.trimIndent()
-                    )
-                    add(
-                        "src/screenshotTest/java/com/ExampleTest.kt",
-                        //language=kotlin
-                        """
-                          package pkg.name
-
-                          import android.content.Context
-                          import androidx.wear.tiles.tooling.preview.Preview
-                          import androidx.wear.tiles.tooling.preview.TilePreviewData
-                          import androidx.wear.tooling.preview.devices.WearDevices
-                          import com.android.tools.screenshot.PreviewTest
-
-                          class ExampleTest {
-                              @PreviewTest
-                              @Preview(name = "simple tile")
-                              fun simpleTilePreview(context: Context) = TilePreviewData({ resources() }) {
-                                  tile(it, context)
-                              }
-
-                              @PreviewTest
-                              @Preview(name = "simple tile 2", device = WearDevices.LARGE_ROUND)
-                              fun simpleTilePreview2(context: Context) = TilePreviewData({ resources() }) {
-                                  tile(it, context)
-                              }
-
-                              @PreviewTest
-                              @Preview(name = "small", device = WearDevices.SMALL_ROUND)
-                              @Preview(name = "large", device = WearDevices.LARGE_ROUND)
-                              fun multiplePreviewsTest(context: Context) = TilePreviewData({ resources() }) {
-                                  tile(it, context)
-                              }
-                          }
-                      """.trimIndent()
-                    )
-                    add(
-                        "src/screenshotTest/java/com/TopLevelPreviewTest.kt",
-                        //language=kotlin
-                        """
-                          package pkg.name
-
-                          import android.content.Context
-                          import androidx.wear.tiles.tooling.preview.Preview
-                          import androidx.wear.tiles.tooling.preview.TilePreviewData
-                          import androidx.wear.tooling.preview.devices.WearDevices
-                          import com.android.tools.screenshot.PreviewTest
-
-                          @PreviewTest
-                          @Preview
-                          fun simpleTilePreview3(context: Context) = TilePreviewData({ resources() }) {
-                              tile(it, context)
-                          }
-                      """.trimIndent()
-                    )
-                }
+            fun resources(): ResourceBuilders.Resources {
+                return ResourceBuilders.Resources.Builder()
+                    .setVersion(RESOURCES_VERSION)
+                    .build()
             }
 
-            gradleProperties {
-                add(BooleanOption.ENABLE_SCREENSHOT_TEST, true)
-                add(BooleanOption.BUILT_IN_KOTLIN, false)
-                add(BooleanOption.USE_NEW_DSL, false)
+            fun tile(
+                requestParams: RequestBuilders.TileRequest,
+                context: Context,
+            ): TileBuilders.Tile {
+                val singleTileTimeline = TimelineBuilders.Timeline.Builder()
+                    .addTimelineEntry(
+                        TimelineBuilders.TimelineEntry.Builder()
+                            .setLayout(
+                                LayoutElementBuilders.Layout.Builder()
+                                    .setRoot(tileLayout(requestParams, context))
+                                    .build()
+                            )
+                            .build()
+                    )
+                    .build()
+
+                return TileBuilders.Tile.Builder()
+                    .setResourcesVersion(RESOURCES_VERSION)
+                    .setTileTimeline(singleTileTimeline)
+                    .build()
             }
-        }
 
-    // custom executor configuration for screenshotTesting (sst)
-    private fun GradleBuild.sstExecutor(): GradleTaskExecutor =
-        executor
-            .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
-            .withLoggingLevel(LoggingLevel.LIFECYCLE)
-
-    private fun updateReferenceImage(
-        buildType: String = "debug",
-        flavor: String = "",
-        projectName: String = "app") {
-        val build = rule.build
-        val variantName = if (flavor.isEmpty()) {
-            buildType
-        } else {
-            flavor + buildType.usLocaleCapitalize()
-        }
-        build.sstExecutor().run(
-            ":$projectName:update${variantName.usLocaleCapitalize()}ScreenshotTest")
-    }
-
-    @Test
-    fun runPreviewScreenshotTest() {
-        val build = rule.build
-        val appProject = build.androidApplication()
-
-        // Generate screenshots to be tested against
-        updateReferenceImage()
-
-        val exampleTestReferenceScreenshotDir = appProject.resolve("src/screenshotTestDebug/reference/pkg/name/ExampleTest")
-        val topLevelTestReferenceScreenshotDir = appProject.resolve("src/screenshotTestDebug/reference/pkg/name/TopLevelPreviewTestKt")
-        assertThat(exampleTestReferenceScreenshotDir.listDirectoryEntries().map { it.name }).containsExactly(
-            "multiplePreviewsTest_small_dfcc4c35_0.png",
-            "simpleTilePreview_simple tile_7cfb9daa_0.png",
-            "simpleTilePreview2_simple tile 2_7c408cfe_0.png",
-            "multiplePreviewsTest_large_f3ef1d95_0.png",
-        )
-        assertThat(topLevelTestReferenceScreenshotDir.listDirectoryEntries().map { it.name }).containsExactly(
-            "simpleTilePreview3_0.png"
-        )
-
-        // Validate previews matches screenshots
-        build.sstExecutor().run(":app:validateDebugScreenshotTest")
-
-        // Verify that HTML reports are generated and all tests pass
-        val indexHtmlReport = appProject.buildDir.resolve("reports/screenshotTest/preview/debug/index.html")
-        val classHtmlReport = appProject.buildDir.resolve("reports/screenshotTest/preview/debug/pkg.name.ExampleTest.html")
-        val class2HtmlReport = appProject.buildDir.resolve("reports/screenshotTest/preview/debug/pkg.name.TopLevelPreviewTestKt.html")
-        val packageHtmlReport = appProject.buildDir.resolve("reports/screenshotTest/preview/debug/pkg.name.html")
-        assertThat(indexHtmlReport).exists()
-        assertThat(classHtmlReport).exists()
-        val expectedOutput = listOf(
-            """<h3 class="success">multiplePreviewsTest_large_{device=id:wearos_large_round}</h3>""",
-            """<h3 class="success">multiplePreviewsTest_small_{device=id:wearos_small_round}</h3>""",
-            """<h3 class="success">simpleTilePreview2_simple tile 2</h3>""",
-            """<h3 class="success">simpleTilePreview_simple tile</h3>""",
-        )
-        var classHtmlReportText = classHtmlReport.readText()
-        expectedOutput.forEach { assertThat(classHtmlReportText).contains(it) }
-        assertThat(class2HtmlReport.readText()).contains("""<h3 class="success">simpleTilePreview3</h3>""")
-        assertThat(packageHtmlReport).exists()
-
-        // Assert that no diff images were generated because screenshot matched the reference image
-        val exampleTestDiffDir = appProject.buildDir.resolve("outputs/screenshotTest-results/preview/debug/diffs/pkg/name/ExampleTest")
-        val topLevelTestDiffDir = appProject.buildDir.resolve("outputs/screenshotTest-results/preview/debug/diffs/pkg/name/TopLevelPreviewTestKt")
-        assert(exampleTestDiffDir.listDirectoryEntries().isEmpty())
-        assert(topLevelTestDiffDir.listDirectoryEntries().isEmpty())
-
-        // Update previews to be different from the references
-        appProject.files.apply {
-            update("src/main/java/com/Example.kt")
-                .searchAndReplace("Hello World", "HelloWorld ")
-        }
-
-        // Rerun validation task - modified tests should fail and diffs are generated
-        build.sstExecutor().expectFailure().run(":app:validateDebugScreenshotTest")
-
-        assertThat(indexHtmlReport).exists()
-        assertThat(classHtmlReport).exists()
-        val expectedOutputAfterChangingPreviews = listOf(
-            "Failed tests",
-            """<h3 class="failures">multiplePreviewsTest_large_{device=id:wearos_large_round}</h3>""",
-            """<h3 class="failures">multiplePreviewsTest_small_{device=id:wearos_small_round}</h3>""",
-            """<h3 class="failures">simpleTilePreview2_simple tile 2</h3>""",
-            """<h3 class="failures">simpleTilePreview_simple tile</h3>""",
-        )
-        classHtmlReportText = classHtmlReport.readText()
-        expectedOutputAfterChangingPreviews.forEach { assertThat(classHtmlReportText).contains(it) }
-        assertThat(class2HtmlReport.readText()).contains("""<h3 class="failures">simpleTilePreview3</h3>""")
-        assertThat(packageHtmlReport).exists()
-
-        assertThat(exampleTestDiffDir.listDirectoryEntries().map { it.name }).containsExactly(
-            "multiplePreviewsTest_small_dfcc4c35_0.png",
-            "simpleTilePreview_simple tile_7cfb9daa_0.png",
-            "simpleTilePreview2_simple tile 2_7c408cfe_0.png",
-            "multiplePreviewsTest_large_f3ef1d95_0.png",
-        )
-        assertThat(topLevelTestDiffDir.listDirectoryEntries().map { it.name }).containsExactly(
-            "simpleTilePreview3_0.png"
-        )
-    }
-
-    @Ignore("b/388773416")
-    @Test
-    fun runPreviewScreenshotTestsWithTilesToolingAsTestDep() {
-        val tilesToolingDep = "androidx.wear.tiles:tiles-tooling:$TILES_VERSION"
-        rule.build.androidApplication().reconfigure {
-            dependencies {
-                remove("implementation", tilesToolingDep)
-                screenshotTestImplementation(tilesToolingDep)
+            private fun tileLayout(
+                requestParams: RequestBuilders.TileRequest,
+                context: Context,
+            ): LayoutElementBuilders.LayoutElement {
+                return PrimaryLayout.Builder(requestParams.deviceConfiguration)
+                    .setResponsiveContentInsetEnabled(true)
+                    .setContent(
+                        Text.Builder(context, "Hello World!")
+                            .setColor(argb(Colors.DEFAULT.onSurface))
+                            .setTypography(Typography.TYPOGRAPHY_CAPTION1)
+                            .build()
+                    ).build()
             }
-        }
-        val appProject = rule.build.androidApplication()
+            """
+              .trimIndent(),
+          )
+          add(
+            "src/screenshotTest/java/com/ExampleTest.kt",
+            // language=kotlin
+            """
+            package pkg.name
 
-        // Generate screenshots to be tested against
-        updateReferenceImage()
+            import android.content.Context
+            import androidx.wear.tiles.tooling.preview.Preview
+            import androidx.wear.tiles.tooling.preview.TilePreviewData
+            import androidx.wear.tooling.preview.devices.WearDevices
+            import com.android.tools.screenshot.PreviewTest
 
-        // Validate previews matches screenshots
-        rule.build.sstExecutor().run(":app:validateDebugScreenshotTest")
+            class ExampleTest {
+                @PreviewTest
+                @Preview(name = "simple tile")
+                fun simpleTilePreview(context: Context) = TilePreviewData({ resources() }) {
+                    tile(it, context)
+                }
 
-        // Verify that HTML reports are generated and all tests pass
-        val indexHtmlReport = appProject.buildDir.resolve("reports/screenshotTest/preview/debug/index.html")
-        val classHtmlReport = appProject.buildDir.resolve("reports/screenshotTest/preview/debug/pkg.name.ExampleTest.html")
-        assertThat(indexHtmlReport).exists()
-        assertThat(classHtmlReport).exists()
-        val expectedOutput = listOf(
-            """<h3 class="success">multiplePreviewsTest_large_{device=id:wearos_large_round}</h3>""",
-            """<h3 class="success">multiplePreviewsTest_small_{device=id:wearos_small_round}</h3>""",
-            """<h3 class="success">simpleTilePreview2_simple tile 2</h3>""",
-            """<h3 class="success">simpleTilePreview_simple tile</h3>""",
-        )
-        val classHtmlReportText = classHtmlReport.readText()
-        expectedOutput.forEach { assertThat(classHtmlReportText).contains(it) }
+                @PreviewTest
+                @Preview(name = "simple tile 2", device = WearDevices.LARGE_ROUND)
+                fun simpleTilePreview2(context: Context) = TilePreviewData({ resources() }) {
+                    tile(it, context)
+                }
 
-        // Assert that no diff images were generated because screenshot matched the reference image
-        val exampleTestDiffDir = appProject.buildDir.resolve("outputs/screenshotTest-results/preview/debug/diffs/pkg/name/ExampleTest")
-        assert(exampleTestDiffDir.listDirectoryEntries().isEmpty())
-    }
-
-    @Test
-    fun runPreviewScreenshotTestsWithMissingTilesToolingDep() {
-        val tilesToolingDep = "androidx.wear.tiles:tiles-tooling:$TILES_VERSION"
-        val build = rule.build {
-            androidApplication {
-                dependencies {
-                    // Verify that exception is thrown when tiles-tooling dep is missing
-                    remove("implementation", tilesToolingDep)
+                @PreviewTest
+                @Preview(name = "small", device = WearDevices.SMALL_ROUND)
+                @Preview(name = "large", device = WearDevices.LARGE_ROUND)
+                fun multiplePreviewsTest(context: Context) = TilePreviewData({ resources() }) {
+                    tile(it, context)
                 }
             }
-        }
+            """
+              .trimIndent(),
+          )
+          add(
+            "src/screenshotTest/java/com/TopLevelPreviewTest.kt",
+            // language=kotlin
+            """
+            package pkg.name
 
-        val result = build.sstExecutor().expectFailure().run(":app:validateDebugScreenshotTest")
-        result.assertErrorContains("Missing required runtime dependency. Please add androidx.wear.tiles:tiles-tooling as a screenshotTestImplementation dependency.")
+            import android.content.Context
+            import androidx.wear.tiles.tooling.preview.Preview
+            import androidx.wear.tiles.tooling.preview.TilePreviewData
+            import androidx.wear.tooling.preview.devices.WearDevices
+            import com.android.tools.screenshot.PreviewTest
+
+            @PreviewTest
+            @Preview
+            fun simpleTilePreview3(context: Context) = TilePreviewData({ resources() }) {
+                tile(it, context)
+            }
+            """
+              .trimIndent(),
+          )
+        }
+      }
+
+      gradleProperties {
+        add(BooleanOption.ENABLE_SCREENSHOT_TEST, true)
+        add(BooleanOption.BUILT_IN_KOTLIN, false)
+        add(BooleanOption.USE_NEW_DSL, false)
+      }
     }
 
+  // custom executor configuration for screenshotTesting (sst)
+  private fun GradleBuild.sstExecutor(): GradleTaskExecutor =
+    executor.withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON).withLoggingLevel(LoggingLevel.LIFECYCLE)
+
+  private fun updateReferenceImage(buildType: String = "debug", flavor: String = "", projectName: String = "app") {
+    val build = rule.build
+    val variantName =
+      if (flavor.isEmpty()) {
+        buildType
+      } else {
+        flavor + buildType.usLocaleCapitalize()
+      }
+    build.sstExecutor().run(":$projectName:update${variantName.usLocaleCapitalize()}ScreenshotTest")
+  }
+
+  @Test
+  fun runPreviewScreenshotTest() {
+    val build = rule.build
+    val appProject = build.androidApplication()
+
+    // Generate screenshots to be tested against
+    updateReferenceImage()
+
+    val exampleTestReferenceScreenshotDir = appProject.resolve("src/screenshotTestDebug/reference/pkg/name/ExampleTest")
+    val topLevelTestReferenceScreenshotDir = appProject.resolve("src/screenshotTestDebug/reference/pkg/name/TopLevelPreviewTestKt")
+    assertThat(exampleTestReferenceScreenshotDir.listDirectoryEntries().map { it.name })
+      .containsExactly(
+        "multiplePreviewsTest_small_dfcc4c35_0.png",
+        "simpleTilePreview_simple tile_7cfb9daa_0.png",
+        "simpleTilePreview2_simple tile 2_7c408cfe_0.png",
+        "multiplePreviewsTest_large_f3ef1d95_0.png",
+      )
+    assertThat(topLevelTestReferenceScreenshotDir.listDirectoryEntries().map { it.name }).containsExactly("simpleTilePreview3_0.png")
+
+    // Validate previews matches screenshots
+    build.sstExecutor().run(":app:validateDebugScreenshotTest")
+
+    // Verify that HTML reports are generated and all tests pass
+    val indexHtmlReport = appProject.buildDir.resolve("reports/screenshotTest/preview/debug/index.html")
+    val classHtmlReport = appProject.buildDir.resolve("reports/screenshotTest/preview/debug/pkg.name.ExampleTest.html")
+    val class2HtmlReport = appProject.buildDir.resolve("reports/screenshotTest/preview/debug/pkg.name.TopLevelPreviewTestKt.html")
+    val packageHtmlReport = appProject.buildDir.resolve("reports/screenshotTest/preview/debug/pkg.name.html")
+    assertThat(indexHtmlReport).exists()
+    assertThat(classHtmlReport).exists()
+    val expectedOutput =
+      listOf(
+        """<h3 class="success">multiplePreviewsTest_large_{device=id:wearos_large_round}</h3>""",
+        """<h3 class="success">multiplePreviewsTest_small_{device=id:wearos_small_round}</h3>""",
+        """<h3 class="success">simpleTilePreview2_simple tile 2</h3>""",
+        """<h3 class="success">simpleTilePreview_simple tile</h3>""",
+      )
+    var classHtmlReportText = classHtmlReport.readText()
+    expectedOutput.forEach { assertThat(classHtmlReportText).contains(it) }
+    assertThat(class2HtmlReport.readText()).contains("""<h3 class="success">simpleTilePreview3</h3>""")
+    assertThat(packageHtmlReport).exists()
+
+    // Assert that no diff images were generated because screenshot matched the reference image
+    val exampleTestDiffDir = appProject.buildDir.resolve("outputs/screenshotTest-results/preview/debug/diffs/pkg/name/ExampleTest")
+    val topLevelTestDiffDir =
+      appProject.buildDir.resolve("outputs/screenshotTest-results/preview/debug/diffs/pkg/name/TopLevelPreviewTestKt")
+    assert(exampleTestDiffDir.listDirectoryEntries().isEmpty())
+    assert(topLevelTestDiffDir.listDirectoryEntries().isEmpty())
+
+    // Update previews to be different from the references
+    appProject.files.apply { update("src/main/java/com/Example.kt").searchAndReplace("Hello World", "HelloWorld ") }
+
+    // Rerun validation task - modified tests should fail and diffs are generated
+    build.sstExecutor().expectFailure().run(":app:validateDebugScreenshotTest")
+
+    assertThat(indexHtmlReport).exists()
+    assertThat(classHtmlReport).exists()
+    val expectedOutputAfterChangingPreviews =
+      listOf(
+        "Failed tests",
+        """<h3 class="failures">multiplePreviewsTest_large_{device=id:wearos_large_round}</h3>""",
+        """<h3 class="failures">multiplePreviewsTest_small_{device=id:wearos_small_round}</h3>""",
+        """<h3 class="failures">simpleTilePreview2_simple tile 2</h3>""",
+        """<h3 class="failures">simpleTilePreview_simple tile</h3>""",
+      )
+    classHtmlReportText = classHtmlReport.readText()
+    expectedOutputAfterChangingPreviews.forEach { assertThat(classHtmlReportText).contains(it) }
+    assertThat(class2HtmlReport.readText()).contains("""<h3 class="failures">simpleTilePreview3</h3>""")
+    assertThat(packageHtmlReport).exists()
+
+    assertThat(exampleTestDiffDir.listDirectoryEntries().map { it.name })
+      .containsExactly(
+        "multiplePreviewsTest_small_dfcc4c35_0.png",
+        "simpleTilePreview_simple tile_7cfb9daa_0.png",
+        "simpleTilePreview2_simple tile 2_7c408cfe_0.png",
+        "multiplePreviewsTest_large_f3ef1d95_0.png",
+      )
+    assertThat(topLevelTestDiffDir.listDirectoryEntries().map { it.name }).containsExactly("simpleTilePreview3_0.png")
+  }
+
+  @Ignore("b/388773416")
+  @Test
+  fun runPreviewScreenshotTestsWithTilesToolingAsTestDep() {
+    val tilesToolingDep = "androidx.wear.tiles:tiles-tooling:$TILES_VERSION"
+    rule.build.androidApplication().reconfigure {
+      dependencies {
+        remove("implementation", tilesToolingDep)
+        screenshotTestImplementation(tilesToolingDep)
+      }
+    }
+    val appProject = rule.build.androidApplication()
+
+    // Generate screenshots to be tested against
+    updateReferenceImage()
+
+    // Validate previews matches screenshots
+    rule.build.sstExecutor().run(":app:validateDebugScreenshotTest")
+
+    // Verify that HTML reports are generated and all tests pass
+    val indexHtmlReport = appProject.buildDir.resolve("reports/screenshotTest/preview/debug/index.html")
+    val classHtmlReport = appProject.buildDir.resolve("reports/screenshotTest/preview/debug/pkg.name.ExampleTest.html")
+    assertThat(indexHtmlReport).exists()
+    assertThat(classHtmlReport).exists()
+    val expectedOutput =
+      listOf(
+        """<h3 class="success">multiplePreviewsTest_large_{device=id:wearos_large_round}</h3>""",
+        """<h3 class="success">multiplePreviewsTest_small_{device=id:wearos_small_round}</h3>""",
+        """<h3 class="success">simpleTilePreview2_simple tile 2</h3>""",
+        """<h3 class="success">simpleTilePreview_simple tile</h3>""",
+      )
+    val classHtmlReportText = classHtmlReport.readText()
+    expectedOutput.forEach { assertThat(classHtmlReportText).contains(it) }
+
+    // Assert that no diff images were generated because screenshot matched the reference image
+    val exampleTestDiffDir = appProject.buildDir.resolve("outputs/screenshotTest-results/preview/debug/diffs/pkg/name/ExampleTest")
+    assert(exampleTestDiffDir.listDirectoryEntries().isEmpty())
+  }
+
+  @Test
+  fun runPreviewScreenshotTestsWithMissingTilesToolingDep() {
+    val tilesToolingDep = "androidx.wear.tiles:tiles-tooling:$TILES_VERSION"
+    val build =
+      rule.build {
+        androidApplication {
+          dependencies {
+            // Verify that exception is thrown when tiles-tooling dep is missing
+            remove("implementation", tilesToolingDep)
+          }
+        }
+      }
+
+    val result = build.sstExecutor().expectFailure().run(":app:validateDebugScreenshotTest")
+    result.assertErrorContains(
+      "Missing required runtime dependency. Please add androidx.wear.tiles:tiles-tooling as a screenshotTestImplementation dependency."
+    )
+  }
 }

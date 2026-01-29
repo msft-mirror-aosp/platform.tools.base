@@ -20,7 +20,4 @@ import com.android.builder.model.v2.CustomSourceDirectory
 import java.io.File
 import java.io.Serializable
 
-class CustomSourceDirectoryImpl(
-    override val sourceTypeName: String,
-    override val directory: File,
-) : CustomSourceDirectory, Serializable
+class CustomSourceDirectoryImpl(override val sourceTypeName: String, override val directory: File) : CustomSourceDirectory, Serializable

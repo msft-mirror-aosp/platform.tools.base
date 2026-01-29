@@ -18,42 +18,40 @@ package com.android.build.api.metalava
 
 import com.android.testutils.TestUtils
 import com.google.common.io.Resources
-import org.junit.Test
 import java.lang.AssertionError
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
+import org.junit.Test
 
-/**
- * Test that tries to ensure that our public API remains stable.
- */
+/** Test that tries to ensure that our public API remains stable. */
 @Suppress("UnstableApiUsage")
 class StableApiTest {
-    @Test
-    fun checkCurrentApi() {
-        val expected: List<String> = Resources.asCharSource(EXPECTED_CURRENT_API_FILE, StandardCharsets.UTF_8).readLines()
-        val actual = Files.readAllLines(ACTUAL_CURRENT_API_FILE, StandardCharsets.UTF_8)
-        if (expected != actual) {
-            throw AssertionError(
-                """
-                    The Android Gradle Plugin API does not match the expectation file.
+  @Test
+  fun checkCurrentApi() {
+    val expected: List<String> = Resources.asCharSource(EXPECTED_CURRENT_API_FILE, StandardCharsets.UTF_8).readLines()
+    val actual = Files.readAllLines(ACTUAL_CURRENT_API_FILE, StandardCharsets.UTF_8)
+    if (expected != actual) {
+      throw AssertionError(
+        """
+        The Android Gradle Plugin API does not match the expectation file.
 
-                    Either:
-                      * revert the api change
-                      * or apply the below changes by running the updateApi task:
-                            gradle :base:gradle-api:updateMetalavaApi
+        Either:
+          * revert the api change
+          * or apply the below changes by running the updateApi task:
+                gradle :base:gradle-api:updateMetalavaApi
 
-                    To update all the API expectation files, run
-                        gradlew updateApi
-                    """.trimIndent() +
-                        TestUtils.getDiff(expected.toTypedArray(), actual.toTypedArray())
-            )
-        }
+        To update all the API expectation files, run
+            gradlew updateApi
+        """
+          .trimIndent() + TestUtils.getDiff(expected.toTypedArray(), actual.toTypedArray())
+      )
     }
+  }
 
-    companion object {
-        private val EXPECTED_CURRENT_API_FILE = Resources.getResource("current.txt")
-        private val ACTUAL_CURRENT_API_FILE: Path = Paths.get(System.getProperty("metalavaCurrentApiFile")!!).resolve("current.txt")
-    }
+  companion object {
+    private val EXPECTED_CURRENT_API_FILE = Resources.getResource("current.txt")
+    private val ACTUAL_CURRENT_API_FILE: Path = Paths.get(System.getProperty("metalavaCurrentApiFile")!!).resolve("current.txt")
+  }
 }

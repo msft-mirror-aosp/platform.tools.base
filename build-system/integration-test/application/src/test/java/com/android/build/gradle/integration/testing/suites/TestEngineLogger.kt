@@ -20,27 +20,26 @@ import java.io.File
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
-/**
- * Simplistic logger for test JUnit test engines.
- */
-class TestEngineLogger(
-    val loggerFile: File
-) {
-    private val dateTimeFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS")
+/** Simplistic logger for test JUnit test engines. */
+class TestEngineLogger(val loggerFile: File) {
+  private val dateTimeFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS")
 
-    private fun log(level: String, message: String) {
-        val timestamp = LocalDateTime.now().format(dateTimeFormatter)
-        val logEntry = "[$timestamp] [$level] $message\n"
+  private fun log(level: String, message: String) {
+    val timestamp = LocalDateTime.now().format(dateTimeFormatter)
+    val logEntry = "[$timestamp] [$level] $message\n"
 
-        try {
-            loggerFile.appendText(logEntry)
-        } catch (e: Exception) {
-            System.err.println("Error writing to log file '${loggerFile.absolutePath}': ${e.message}")
-        }
+    try {
+      loggerFile.appendText(logEntry)
+    } catch (e: Exception) {
+      System.err.println("Error writing to log file '${loggerFile.absolutePath}': ${e.message}")
     }
+  }
 
-    fun info(message: String) = log("INFO", message)
-    fun debug(message: String) = log("DEBUG", message)
-    fun warn(message: String) = log("WARN", message)
-    fun error(message: String) = log("ERROR", message)
+  fun info(message: String) = log("INFO", message)
+
+  fun debug(message: String) = log("DEBUG", message)
+
+  fun warn(message: String) = log("WARN", message)
+
+  fun error(message: String) = log("ERROR", message)
 }

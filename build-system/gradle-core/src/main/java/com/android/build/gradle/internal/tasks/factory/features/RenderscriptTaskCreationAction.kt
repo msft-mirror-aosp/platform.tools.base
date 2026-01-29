@@ -38,13 +38,10 @@ import com.android.build.gradle.internal.component.features.RenderscriptCreation
  * ```
  */
 interface RenderscriptTaskCreationAction {
-    val renderscriptCreationConfig: RenderscriptCreationConfig
+  val renderscriptCreationConfig: RenderscriptCreationConfig
 }
 
-class RenderscriptTaskCreationActionImpl(
-    creationConfig: ConsumableCreationConfig
-): RenderscriptTaskCreationAction {
+class RenderscriptTaskCreationActionImpl(creationConfig: ConsumableCreationConfig) : RenderscriptTaskCreationAction {
 
-    override val renderscriptCreationConfig: RenderscriptCreationConfig =
-        creationConfig.renderscriptCreationConfig!!
+  override val renderscriptCreationConfig: RenderscriptCreationConfig = creationConfig.renderscriptCreationConfig!!
 }

@@ -29,30 +29,33 @@ import com.android.testutils.TestInputsGenerator
 import com.android.testutils.generateAarWithContent
 import com.android.utils.FileUtils
 import com.google.common.truth.Truth
+import java.io.File
 import org.junit.Before
 import org.junit.ClassRule
 import org.junit.Rule
 import org.junit.Test
-import java.io.File
 
 class CustomTestedApksTest {
 
-    private val mavenRepo = MavenRepoGenerator(
-        listOf(
-            MavenRepoGenerator.Library(
-                "com.example:library:1",
-                "aar",
-                generateAarWithContent(
-                    packageName = "com.example.library",
-                    mainJar = TestInputsGenerator.jarWithEmptyClasses(listOf("com/example/library/MyClass")),
-                    resources = mapOf("layout/lib_layout.xml" to """<LinearLayout/>""".toByteArray())
-                )
-            )
+  private val mavenRepo =
+    MavenRepoGenerator(
+      listOf(
+        MavenRepoGenerator.Library(
+          "com.example:library:1",
+          "aar",
+          generateAarWithContent(
+            packageName = "com.example.library",
+            mainJar = TestInputsGenerator.jarWithEmptyClasses(listOf("com/example/library/MyClass")),
+            resources = mapOf("layout/lib_layout.xml" to """<LinearLayout/>""".toByteArray()),
+          ),
         )
+      )
     )
 
-    private fun aarUser(packageName: String) = TestSourceFile("src/main/java/${packageName.replace('.','/')}/Util.java", //language=java
-        """
+  private fun aarUser(packageName: String) =
+    TestSourceFile(
+      "src/main/java/${packageName.replace('.','/')}/Util.java", // language=java
+      """
                 package $packageName;
 
                 // To check the app is compiled against the class
@@ -63,180 +66,179 @@ class CustomTestedApksTest {
                         return new MyClass();
                     }
                 }
-        """.trimIndent())
+        """
+        .trimIndent(),
+    )
 
-    private val app = MinimalSubProject.app("com.example.app").apply {
-        appendToBuild(//language=groovy
-            """
-            android {
-                buildTypes {
-                    benchmark {
-                        debuggable = false
-                        signingConfig = debug.signingConfig
-                    }
+  private val app =
+    MinimalSubProject.app("com.example.app").apply {
+      appendToBuild( // language=groovy
+        """
+        android {
+            buildTypes {
+                benchmark {
+                    debuggable = false
+                    signingConfig = debug.signingConfig
                 }
             }
-            """.trimIndent()
-        )
-        addFile(
-            "src/benchmark/AndroidManifest.xml", //language=xml
-            """
-                <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-                    <application>
-                         <!--suppress AndroidElementNotAllowed -->
-                        <profileable android:shell="true"/>
-                    </application>
-                </manifest>
-                """.trimIndent()
-        )
-        addFile(aarUser("com.example.app"))
+        }
+        """
+          .trimIndent()
+      )
+      addFile(
+        "src/benchmark/AndroidManifest.xml", // language=xml
+        """
+        <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+            <application>
+                 <!--suppress AndroidElementNotAllowed -->
+                <profileable android:shell="true"/>
+            </application>
+        </manifest>
+        """
+          .trimIndent(),
+      )
+      addFile(aarUser("com.example.app"))
     }
 
-    private val test = MinimalSubProject.test("com.example.app.benchmark").apply {
-        appendToBuild( //language=groovy
-            """
-                android {
-                    defaultConfig.testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
-                    buildTypes {
-                        benchmark {
-                            debuggable = true
-                            signingConfig = debug.signingConfig
-                        }
-                    }
-                    targetProjectPath = ":app"
-                    experimentalProperties["android.experimental.self-instrumenting"] = true
+  private val test =
+    MinimalSubProject.test("com.example.app.benchmark").apply {
+      appendToBuild( // language=groovy
+        """
+        android {
+            defaultConfig.testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
+            buildTypes {
+                benchmark {
+                    debuggable = true
+                    signingConfig = debug.signingConfig
                 }
+            }
+            targetProjectPath = ":app"
+            experimentalProperties["android.experimental.self-instrumenting"] = true
+        }
 
-                androidComponents {
-                   beforeVariants(selector().all()) {
-                        enabled = buildType == 'benchmark'
-                    }
-                }
+        androidComponents {
+           beforeVariants(selector().all()) {
+                enabled = buildType == 'benchmark'
+            }
+        }
 
-                dependencies {
-                    implementation 'androidx.test.ext:junit:1.1.5'
-                    implementation 'androidx.test:runner:1.3.0'
-                    implementation 'androidx.test:rules:1.3.0'
-                }
+        dependencies {
+            implementation 'androidx.test.ext:junit:1.1.5'
+            implementation 'androidx.test:runner:1.3.0'
+            implementation 'androidx.test:rules:1.3.0'
+        }
 
-            """.trimIndent()
-        )
-        addFile(
-            "src/main/java/com/example/app/benchmark/MyTest.java",
-            //language=java
-            """
-                package com.example.app.benchmark;
+        """
+          .trimIndent()
+      )
+      addFile(
+        "src/main/java/com/example/app/benchmark/MyTest.java",
+        // language=java
+        """
+        package com.example.app.benchmark;
 
-                import static org.junit.Assert.assertEquals;
-                import static org.junit.Assert.assertTrue;
-                import org.junit.runner.RunWith;
-                import org.junit.Test;
-                import androidx.test.ext.junit.runners.AndroidJUnit4;
-                import androidx.test.platform.app.InstrumentationRegistry;
-                import android.content.pm.ApplicationInfo;
+        import static org.junit.Assert.assertEquals;
+        import static org.junit.Assert.assertTrue;
+        import org.junit.runner.RunWith;
+        import org.junit.Test;
+        import androidx.test.ext.junit.runners.AndroidJUnit4;
+        import androidx.test.platform.app.InstrumentationRegistry;
+        import android.content.pm.ApplicationInfo;
 
 
-                @RunWith(AndroidJUnit4.class)
-                public class MyTest {
-                    @Test
-                    public void checkProfileable() throws Exception {
-                        ApplicationInfo info = InstrumentationRegistry.getInstrumentation()
-                                .getContext()
-                                .getPackageManager()
-                                .getApplicationInfo("com.example.app", 0);
-                        assertTrue("com.example.app should be profileable by shell", info.isProfileableByShell());
-                    }
+        @RunWith(AndroidJUnit4.class)
+        public class MyTest {
+            @Test
+            public void checkProfileable() throws Exception {
+                ApplicationInfo info = InstrumentationRegistry.getInstrumentation()
+                        .getContext()
+                        .getPackageManager()
+                        .getApplicationInfo("com.example.app", 0);
+                assertTrue("com.example.app should be profileable by shell", info.isProfileableByShell());
+            }
 
-                    @Test
-                    public void checkAdditionalTestOutputDir() throws Exception {
-                        String additionalTestOutputDir =InstrumentationRegistry.getArguments()
-                                .getCharSequence("additionalTestOutputDir")
-                                .toString();
-                        assertEquals(
-                            "/sdcard/Android/media/com.example.app.benchmark/additional_test_output",
-                            additionalTestOutputDir);
-                    }
-                }
-                """.trimIndent()
-        )
-        addFile(aarUser("com.example.app.benchmark"))
-        replaceFile(
-            "src/main/AndroidManifest.xml",
-            //language=xml
-            """
-            <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-                <!-- Required for API level 30+ devices -->
-                <queries>
-                    <package android:name="com.example.app" />
-                </queries>
-            </manifest>
-            """.trimIndent())
+            @Test
+            public void checkAdditionalTestOutputDir() throws Exception {
+                String additionalTestOutputDir =InstrumentationRegistry.getArguments()
+                        .getCharSequence("additionalTestOutputDir")
+                        .toString();
+                assertEquals(
+                    "/sdcard/Android/media/com.example.app.benchmark/additional_test_output",
+                    additionalTestOutputDir);
+            }
+        }
+        """
+          .trimIndent(),
+      )
+      addFile(aarUser("com.example.app.benchmark"))
+      replaceFile(
+        "src/main/AndroidManifest.xml",
+        // language=xml
+        """
+        <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+            <!-- Required for API level 30+ devices -->
+            <queries>
+                <package android:name="com.example.app" />
+            </queries>
+        </manifest>
+        """
+          .trimIndent(),
+      )
     }
 
-    private val androidTestUtilExample =
-        MultiModuleTestProject.builder()
-            .subproject("app", app)
-            .dependency(app, "com.example:library:1")
-            .subproject("test", test)
-            .dependency(test, "com.example:library:1")
-            .build()
+  private val androidTestUtilExample =
+    MultiModuleTestProject.builder()
+      .subproject("app", app)
+      .dependency(app, "com.example:library:1")
+      .subproject("test", test)
+      .dependency(test, "com.example:library:1")
+      .build()
 
-    @get:Rule
-    val project =
-        GradleTestProject.builder()
-            .fromTestApp(androidTestUtilExample)
-            .withAdditionalMavenRepo(mavenRepo)
-            .create()
+  @get:Rule val project = GradleTestProject.builder().fromTestApp(androidTestUtilExample).withAdditionalMavenRepo(mavenRepo).create()
 
-    @Before
-    fun setUp() {
-        // fail fast if no response
-        project.addAdbTimeout()
-        // run the uninstall tasks in order to (1) make sure nothing is installed at the beginning
-        // of each test and (2) check the adb connection before taking the time to build anything.
-        project.executor().run("uninstallAll")
-    }
+  @Before
+  fun setUp() {
+    // fail fast if no response
+    project.addAdbTimeout()
+    // run the uninstall tasks in order to (1) make sure nothing is installed at the beginning
+    // of each test and (2) check the adb connection before taking the time to build anything.
+    project.executor().run("uninstallAll")
+  }
 
-    @Test
-    fun connectedCheckInstalls() {
-        project.executor().run(":test:connectedCheck")
-        val androidProject = project.modelV2().fetchModels().container.getProject(":test")
-            .androidProject!!
+  @Test
+  fun connectedCheckInstalls() {
+    project.executor().run(":test:connectedCheck")
+    val androidProject = project.modelV2().fetchModels().container.getProject(":test").androidProject!!
 
-        val testVariant = androidProject.variants.first()
-        val testedTargetVariants = testVariant.testedTargetVariant
-        Truth.assertThat(testedTargetVariants?.targetProjectPath).isEqualTo(":app")
-        Truth.assertThat(testedTargetVariants?.targetVariant).isEqualTo("benchmark")
+    val testVariant = androidProject.variants.first()
+    val testedTargetVariants = testVariant.testedTargetVariant
+    Truth.assertThat(testedTargetVariants?.targetProjectPath).isEqualTo(":app")
+    Truth.assertThat(testedTargetVariants?.targetVariant).isEqualTo("benchmark")
 
-        // check the benchmark manifest file, it should self instrument itself.
-        val packagedManifestFolder =
-            FileUtils.join(
-                project.getSubproject("test").buildDir,
-                SdkConstants.FD_INTERMEDIATES,
-                InternalArtifactType.PACKAGED_MANIFESTS.getFolderName(),
-                "benchmark",
-                "processBenchmarkManifest"
-            )
-        Truth.assertThat(packagedManifestFolder.exists()).isTrue()
-        val manifests = BuiltArtifactsLoaderImpl.loadFromDirectory(packagedManifestFolder)
-                ?: throw RuntimeException("No manifest file generated !")
-        Truth.assertThat(manifests.elements.size).isEqualTo(1)
-        val manifestFile = File(manifests.elements.single().outputFile)
-        Truth.assertThat(manifestFile.exists()).isTrue()
-        Truth.assertThat(manifestFile.readText()).contains("" +
-                "android:targetPackage=\"com.example.app.benchmark\" />")
+    // check the benchmark manifest file, it should self instrument itself.
+    val packagedManifestFolder =
+      FileUtils.join(
+        project.getSubproject("test").buildDir,
+        SdkConstants.FD_INTERMEDIATES,
+        InternalArtifactType.PACKAGED_MANIFESTS.getFolderName(),
+        "benchmark",
+        "processBenchmarkManifest",
+      )
+    Truth.assertThat(packagedManifestFolder.exists()).isTrue()
+    val manifests =
+      BuiltArtifactsLoaderImpl.loadFromDirectory(packagedManifestFolder) ?: throw RuntimeException("No manifest file generated !")
+    Truth.assertThat(manifests.elements.size).isEqualTo(1)
+    val manifestFile = File(manifests.elements.single().outputFile)
+    Truth.assertThat(manifestFile.exists()).isTrue()
+    Truth.assertThat(manifestFile.readText()).contains("" + "android:targetPackage=\"com.example.app.benchmark\" />")
 
-        val testOnlyApk =
-            project.getSubproject("test").getApk(GradleTestProject.ApkType.of("benchmark", true));
-        TruthHelper.assertThat(testOnlyApk).containsClass("Lcom/example/library/MyClass;")
-        TruthHelper.assertThat(testOnlyApk).containsResource("layout/lib_layout.xml")
-    }
+    val testOnlyApk = project.getSubproject("test").getApk(GradleTestProject.ApkType.of("benchmark", true))
+    TruthHelper.assertThat(testOnlyApk).containsClass("Lcom/example/library/MyClass;")
+    TruthHelper.assertThat(testOnlyApk).containsResource("layout/lib_layout.xml")
+  }
 
-    companion object {
+  companion object {
 
-        @get:ClassRule
-        @get:JvmStatic
-        val emulator = getEmulator()
-    }
-
+    @get:ClassRule @get:JvmStatic val emulator = getEmulator()
+  }
 }

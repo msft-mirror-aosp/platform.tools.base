@@ -19,4 +19,4 @@ package com.android.build.gradle.internal.dsl
 import com.android.build.api.dsl.AarMetadata
 
 /** DSL object for configuring AAR metadata. */
-interface AarMetadataImpl: AarMetadata
+interface AarMetadataImpl : AarMetadata

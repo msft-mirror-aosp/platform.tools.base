@@ -20,8 +20,6 @@ import com.android.build.api.dsl.AndroidTest
 import com.android.build.gradle.internal.services.DslServices
 import javax.inject.Inject
 
-abstract class AndroidTestImpl@Inject constructor(
-    dslServices: DslServices
-): AndroidTest {
-    abstract override var enableMinification: Boolean
+abstract class AndroidTestImpl @Inject constructor(dslServices: DslServices) : AndroidTest {
+  abstract override var enableMinification: Boolean
 }

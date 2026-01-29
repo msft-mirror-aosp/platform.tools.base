@@ -23,8 +23,8 @@ import com.android.build.gradle.internal.cxx.model.clientQueryFolder
 import com.android.build.gradle.internal.cxx.model.clientReplyFolder
 import com.android.build.gradle.internal.cxx.model.compileCommandsJsonBinFile
 import com.android.build.gradle.internal.cxx.model.compileCommandsJsonFile
-import com.android.build.gradle.internal.cxx.model.jsonFile
 import com.android.build.gradle.internal.cxx.model.createNinjaCommand
+import com.android.build.gradle.internal.cxx.model.jsonFile
 import com.android.build.gradle.internal.cxx.process.ExecuteProcessCommand
 import com.android.build.gradle.internal.cxx.process.ExecuteProcessType
 import com.android.build.gradle.internal.cxx.process.createExecuteProcessCommand
@@ -35,48 +35,39 @@ import com.google.wireless.android.sdk.stats.GradleNativeAndroidModule
 import org.gradle.api.tasks.Internal
 import org.gradle.process.ExecOperations
 
-/**
- * Invoke CMake to generate ninja project. Along the way, generate android_gradle_build.json from
- * the result of CMake file API query.
- */
-internal class CmakeQueryMetadataGenerator(
-        abi: CxxAbiModel,
-        @get:Internal override val variantBuilder: GradleBuildVariant.Builder?
-) : ExternalNativeJsonGenerator(abi, variantBuilder) {
-    init {
-        variantBuilder?.nativeBuildSystemType = GradleNativeAndroidModule.NativeBuildSystemType.CMAKE
-        cmakeMakefileChecks(abi.variant)
-    }
-    override fun executeProcess(ops: ExecOperations, abi: CxxAbiModel) {
-        // Request File API responses from CMake by creating placeholder files
-        // with specific query type names and versions
-        abi.clientQueryFolder.mkdirs()
-        join(abi.clientQueryFolder, "codemodel-v2").writeText("")
-        join(abi.clientQueryFolder, "cache-v2").writeText("")
-        join(abi.clientQueryFolder, "cmakeFiles-v1").writeText("")
+/** Invoke CMake to generate ninja project. Along the way, generate android_gradle_build.json from the result of CMake file API query. */
+internal class CmakeQueryMetadataGenerator(abi: CxxAbiModel, @get:Internal override val variantBuilder: GradleBuildVariant.Builder?) :
+  ExternalNativeJsonGenerator(abi, variantBuilder) {
+  init {
+    variantBuilder?.nativeBuildSystemType = GradleNativeAndroidModule.NativeBuildSystemType.CMAKE
+    cmakeMakefileChecks(abi.variant)
+  }
 
-        // Execute CMake
-        abi.executeProcess(
-            processType = ExecuteProcessType.CONFIGURE_PROCESS,
-            command = getProcessBuilder(abi),
-            ops = ops
-        )
+  override fun executeProcess(ops: ExecOperations, abi: CxxAbiModel) {
+    // Request File API responses from CMake by creating placeholder files
+    // with specific query type names and versions
+    abi.clientQueryFolder.mkdirs()
+    join(abi.clientQueryFolder, "codemodel-v2").writeText("")
+    join(abi.clientQueryFolder, "cache-v2").writeText("")
+    join(abi.clientQueryFolder, "cmakeFiles-v1").writeText("")
 
-        // Build expected metadata
-        parseCmakeFileApiReply(
-            replyFolder = abi.clientReplyFolder,
-            additionalFiles = abi.additionalProjectFilesIndexFile,
-            androidGradleBuildJsonFile = abi.jsonFile,
-            compileCommandsJsonFile = abi.compileCommandsJsonFile,
-            compileCommandsJsonBinFile = abi.compileCommandsJsonBinFile,
-            createNinjaCommand = { arg -> abi.createNinjaCommand(arg) }
-        )
-    }
+    // Execute CMake
+    abi.executeProcess(processType = ExecuteProcessType.CONFIGURE_PROCESS, command = getProcessBuilder(abi), ops = ops)
 
-    override fun getProcessBuilder(abi: CxxAbiModel): ExecuteProcessCommand {
-        return createExecuteProcessCommand(abi.variant.module.cmake!!.cmakeExe!!)
-            .addArgs(abi.configurationArguments)
-    }
+    // Build expected metadata
+    parseCmakeFileApiReply(
+      replyFolder = abi.clientReplyFolder,
+      additionalFiles = abi.additionalProjectFilesIndexFile,
+      androidGradleBuildJsonFile = abi.jsonFile,
+      compileCommandsJsonFile = abi.compileCommandsJsonFile,
+      compileCommandsJsonBinFile = abi.compileCommandsJsonBinFile,
+      createNinjaCommand = { arg -> abi.createNinjaCommand(arg) },
+    )
+  }
 
-    override fun checkPrefabConfig() { }
+  override fun getProcessBuilder(abi: CxxAbiModel): ExecuteProcessCommand {
+    return createExecuteProcessCommand(abi.variant.module.cmake!!.cmakeExe!!).addArgs(abi.configurationArguments)
+  }
+
+  override fun checkPrefabConfig() {}
 }

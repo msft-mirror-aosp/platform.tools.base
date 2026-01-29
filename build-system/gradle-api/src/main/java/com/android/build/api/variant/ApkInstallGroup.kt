@@ -19,19 +19,13 @@ package com.android.build.api.variant
 import org.gradle.api.file.RegularFile
 
 /**
- * An interface representing a set of APKs files and that are installed as a unit on a device.
- * These Apks are installed together with one install-multiple adb command if there are more than
- * one Apks in the group.
+ * An interface representing a set of APKs files and that are installed as a unit on a device. These Apks are installed together with one
+ * install-multiple adb command if there are more than one Apks in the group.
  */
 interface ApkInstallGroup {
-    /**
-     * A group of APK files installed as a unit on a device (e.g., via the install-multiple adb
-     * command).
-     */
-    val apks: List<RegularFile>
+  /** A group of APK files installed as a unit on a device (e.g., via the install-multiple adb command). */
+  val apks: List<RegularFile>
 
-    /**
-     * A brief description of this install group.
-     */
-    val description: String
+  /** A brief description of this install group. */
+  val description: String
 }

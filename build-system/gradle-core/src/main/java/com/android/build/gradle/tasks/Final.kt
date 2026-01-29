@@ -16,7 +16,5 @@
 
 package com.android.build.gradle.tasks
 
-/**
- * Denotes a request for the final artifact version for injection.
- */
+/** Denotes a request for the final artifact version for injection. */
 annotation class Final

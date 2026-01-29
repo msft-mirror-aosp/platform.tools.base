@@ -16,15 +16,12 @@
 
 package com.android.build.gradle.internal.coverage.renderer.utils
 
-import org.gradle.api.file.DirectoryProperty
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
+import org.gradle.api.file.DirectoryProperty
 
-/**
- * A helper for copying resources needed for the HTML coverage and test reports.
- */
-
+/** A helper for copying resources needed for the HTML coverage and test reports. */
 
 /**
  * Copies all specified resource files to the report output directory.
@@ -33,36 +30,28 @@ import java.io.IOException
  * @param resourceFiles A list of resource file names to copy.
  */
 fun copyResources(reportOutputDir: DirectoryProperty, resourceFiles: List<String>, contextClass: Class<*>) {
-    resourceFiles.forEach { resourceFile ->
-        copyResource(resourceFile, reportOutputDir, contextClass)
-    }
+  resourceFiles.forEach { resourceFile -> copyResource(resourceFile, reportOutputDir, contextClass) }
 }
 
 /**
  * Copies a single resource file to the report output directory.
  *
- * This function will create the necessary parent directories for the output file.
- * The resource is loaded from the classpath.
+ * This function will create the necessary parent directories for the output file. The resource is loaded from the classpath.
  *
  * @param resourceName The name of the resource to copy.
  * @param reportOutputDir The directory where the resource will be copied.
  * @throws IOException if the resource is not found or if the file cannot be written.
  */
 fun copyResource(resourceName: String, reportOutputDir: DirectoryProperty, contextClass: Class<*>) {
-    val inputStream = contextClass.getResourceAsStream(resourceName)
-        ?: throw IOException("Could not find resource '$resourceName'.")
+  val inputStream = contextClass.getResourceAsStream(resourceName) ?: throw IOException("Could not find resource '$resourceName'.")
 
-    val outputFile = File(reportOutputDir.get().asFile, resourceName)
-    val parentDir = outputFile.parentFile
+  val outputFile = File(reportOutputDir.get().asFile, resourceName)
+  val parentDir = outputFile.parentFile
 
-    parentDir.mkdirs()
-    if (!parentDir.isDirectory) {
-        throw IOException("Cannot create directory '$parentDir'.")
-    }
+  parentDir.mkdirs()
+  if (!parentDir.isDirectory) {
+    throw IOException("Cannot create directory '$parentDir'.")
+  }
 
-    inputStream.use { input ->
-        FileOutputStream(outputFile).use { output ->
-            input.copyTo(output)
-        }
-    }
+  inputStream.use { input -> FileOutputStream(outputFile).use { output -> input.copyTo(output) } }
 }

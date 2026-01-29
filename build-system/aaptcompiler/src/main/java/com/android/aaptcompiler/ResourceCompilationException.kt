@@ -34,4 +34,4 @@ import java.lang.RuntimeException
  * limitations under the License.
  */
 
-class ResourceCompilationException(message: String, throwable: Throwable?): RuntimeException(message, throwable)
+class ResourceCompilationException(message: String, throwable: Throwable?) : RuntimeException(message, throwable)

@@ -23,163 +23,145 @@ import java.nio.file.Files
 import java.nio.file.attribute.BasicFileAttributes
 import java.util.function.Consumer
 
-/**
- * Base Truth subject for all Zip archive types, providing basic validation for the content.
- */
+/** Base Truth subject for all Zip archive types, providing basic validation for the content. */
 @SubjectDsl
-open class AbstractZipSubject<S: BaseZipSubject<S, T>, T: Zip> internal constructor(
-    metadata: FailureMetadata,
-    actual: T
-): BaseZipSubject<S, T>(metadata, actual), FileArchiveSubject {
+open class AbstractZipSubject<S : BaseZipSubject<S, T>, T : Zip> internal constructor(metadata: FailureMetadata, actual: T) :
+  BaseZipSubject<S, T>(metadata, actual), FileArchiveSubject {
 
-    /**
-     * Validates that the archive file list matches exactly with the provided list.
-     *
-     * The archive list contains files only. There are no folders in it.
-     *
-     * The possible format of the items in the provided list includes both file path and folders.
-     * In the case of folders, it will match against any files in the archive that are in that folder.
-     */
-    override fun containsExactly(items: Collection<String>) {
-        exists()
-        check("entries()")
-            .about(ArchiveEntriesSubject.files())
-            .that(actual().getEntries())
-            .containsExactly(items)
-    }
+  /**
+   * Validates that the archive file list matches exactly with the provided list.
+   *
+   * The archive list contains files only. There are no folders in it.
+   *
+   * The possible format of the items in the provided list includes both file path and folders. In the case of folders, it will match
+   * against any files in the archive that are in that folder.
+   */
+  override fun containsExactly(items: Collection<String>) {
+    exists()
+    check("entries()").about(ArchiveEntriesSubject.files()).that(actual().getEntries()).containsExactly(items)
+  }
 
-    /**
-     * Validates that the archive file list matches exactly with the provided list.
-     *
-     * The archive list contains files only. There are no folders in it.
-     *
-     * The possible format of the items in the provided list includes both file path and folders.
-     * In the case of folders, it will match against any files in the archive that are in that folder.
-     */
-    override fun containsExactly(vararg items: String) {
-        containsExactly(items.toList())
-    }
+  /**
+   * Validates that the archive file list matches exactly with the provided list.
+   *
+   * The archive list contains files only. There are no folders in it.
+   *
+   * The possible format of the items in the provided list includes both file path and folders. In the case of folders, it will match
+   * against any files in the archive that are in that folder.
+   */
+  override fun containsExactly(vararg items: String) {
+    containsExactly(items.toList())
+  }
 
-    /**
-     * Validates whether the archive is empty.
-     */
-    override fun isEmpty() {
-        exists()
-        check("entries()").that(actual().getEntries()).isEmpty()
-    }
+  /** Validates whether the archive is empty. */
+  override fun isEmpty() {
+    exists()
+    check("entries()").that(actual().getEntries()).isEmpty()
+  }
 
-    override fun hasSize(size: Int) {
-        exists()
-        check("entries()").that(actual().getEntries()).hasSize(size)
-    }
+  override fun hasSize(size: Int) {
+    exists()
+    check("entries()").that(actual().getEntries()).hasSize(size)
+  }
 
-    override fun containsAtLeast(items: Collection<String>) {
-        exists()
-        check("entries()")
-            .about(ArchiveEntriesSubject.files())
-            .that(actual().getEntries())
-            .containsAtLeast(items)
-    }
+  override fun containsAtLeast(items: Collection<String>) {
+    exists()
+    check("entries()").about(ArchiveEntriesSubject.files()).that(actual().getEntries()).containsAtLeast(items)
+  }
 
-    // --------------
+  // --------------
 
-    /**
-     * Returns a [StringSubject] with the text content of the file at the given path.
-     *
-     * @param path the path of the item which must not include a leading /
-     */
-    fun textFile(path: String): StringSubject {
-        contains(path)
-        return check("textFile($path)").that(actual().textFile(path))
-    }
+  /**
+   * Returns a [StringSubject] with the text content of the file at the given path.
+   *
+   * @param path the path of the item which must not include a leading /
+   */
+  fun textFile(path: String): StringSubject {
+    contains(path)
+    return check("textFile($path)").that(actual().textFile(path))
+  }
 
-    /**
-     * Returns a [BinarySubject] with the binary content of the file at the given path.
-     *
-     * @param path the path of the item which must not include a leading /
-     */
-    fun binaryFile(path: String): BinarySubject {
-        contains(path)
-        return check("binaryFile($path)").about(BinarySubject.bytes()).that(actual().binaryFile(path))
-    }
+  /**
+   * Returns a [BinarySubject] with the binary content of the file at the given path.
+   *
+   * @param path the path of the item which must not include a leading /
+   */
+  fun binaryFile(path: String): BinarySubject {
+    contains(path)
+    return check("binaryFile($path)").about(BinarySubject.bytes()).that(actual().binaryFile(path))
+  }
 
-    /**
-     * Returns a [ZipSubject] with the zip content of the file at the given path.
-     *
-     * @param path the path of the item which must not include a leading /
-     */
-    fun innerZip(path: String): ZipSubject {
-        // it's possible the zip does not exist, but we want to still return something because we
-        // want to be able to check for missing zip (though technically this can also be done
-        // with doesNot exist)
-        // It's ok to not close this empty zip as it's not using a real file.
-        // Inner zips are automatically closed when the enclosing zip is closed.
-        val zip = actual().innerZip(path) ?: SimpleZip(null)
-        return check("innerZip($path)").about(zips()).that(zip)
-    }
+  /**
+   * Returns a [ZipSubject] with the zip content of the file at the given path.
+   *
+   * @param path the path of the item which must not include a leading /
+   */
+  fun innerZip(path: String): ZipSubject {
+    // it's possible the zip does not exist, but we want to still return something because we
+    // want to be able to check for missing zip (though technically this can also be done
+    // with doesNot exist)
+    // It's ok to not close this empty zip as it's not using a real file.
+    // Inner zips are automatically closed when the enclosing zip is closed.
+    val zip = actual().innerZip(path) ?: SimpleZip(null)
+    return check("innerZip($path)").about(zips()).that(zip)
+  }
 
-    /**
-     * creates a [ZipSubject] with the zip content of the file at the given path,
-     * and configures it with the provided action
-     *
-     * @param path the path of the item which must not include a leading /
-     */
-    fun innerZip(path: String, action: ZipSubject.() -> Unit) {
-        action(innerZip(path))
-    }
+  /**
+   * creates a [ZipSubject] with the zip content of the file at the given path, and configures it with the provided action
+   *
+   * @param path the path of the item which must not include a leading /
+   */
+  fun innerZip(path: String, action: ZipSubject.() -> Unit) {
+    action(innerZip(path))
+  }
 
-    /**
-     * Returns a [ZipSubject] representing the given folder inside the current zip file.
-     *
-     * @param folderPath the path of the folder which must not include a leading /
-     */
-    fun folder(folderPath: String): ZipSubject {
-        val view = ZipFolderView(actual(), folderPath)
-        return check("folderView($folderPath)").about(zips()).that(view)
-    }
+  /**
+   * Returns a [ZipSubject] representing the given folder inside the current zip file.
+   *
+   * @param folderPath the path of the folder which must not include a leading /
+   */
+  fun folder(folderPath: String): ZipSubject {
+    val view = ZipFolderView(actual(), folderPath)
+    return check("folderView($folderPath)").about(zips()).that(view)
+  }
 
-    /**
-     * creates a [ZipSubject]  representing the given folder inside the current zip file,
-     * and configures it with the provided action
-     *
-     * @param folderPath the path of the folder which must not include a leading /
-     */
-    fun folder(folderPath: String, action: ZipSubject.() -> Unit) {
-        action(folder(folderPath))
-    }
+  /**
+   * creates a [ZipSubject] representing the given folder inside the current zip file, and configures it with the provided action
+   *
+   * @param folderPath the path of the folder which must not include a leading /
+   */
+  fun folder(folderPath: String, action: ZipSubject.() -> Unit) {
+    action(folder(folderPath))
+  }
 
-    /**
-     * creates a [ZipSubject]  representing the given folder inside the current zip file,
-     * and configures it with the provided action
-     *
-     * @param folderPath the path of the folder which must not include a leading /
-     */
-    fun folder(folderPath: String, action: Consumer<ZipSubject>) {
-        action.accept(folder(folderPath))
-    }
+  /**
+   * creates a [ZipSubject] representing the given folder inside the current zip file, and configures it with the provided action
+   *
+   * @param folderPath the path of the folder which must not include a leading /
+   */
+  fun folder(folderPath: String, action: Consumer<ZipSubject>) {
+    action.accept(folder(folderPath))
+  }
 
-    /**
-     * creates a [ZipSubject] with the zip content of the file at the given path,
-     * and configures it with the provided action
-     *
-     * @param path the path of the item which must not include a leading /
-     */
-    fun innerZip(path: String, action: Consumer<ZipSubject>) {
-        innerZip(path) {
-            action.accept(this)
-        }
-    }
+  /**
+   * creates a [ZipSubject] with the zip content of the file at the given path, and configures it with the provided action
+   *
+   * @param path the path of the item which must not include a leading /
+   */
+  fun innerZip(path: String, action: Consumer<ZipSubject>) {
+    innerZip(path) { action.accept(this) }
+  }
 
-    fun fileAttributes(path: String): FileAttributesSubject {
-        contains(path)
-        val entryPath = actual().getEntry(path)!!
-        val attributes = Files.readAttributes(entryPath, BasicFileAttributes::class.java)
-        return check("fileAttributes($path)").about(FileAttributesSubject.attributes()).that(attributes)
-    }
+  fun fileAttributes(path: String): FileAttributesSubject {
+    contains(path)
+    val entryPath = actual().getEntry(path)!!
+    val attributes = Files.readAttributes(entryPath, BasicFileAttributes::class.java)
+    return check("fileAttributes($path)").about(FileAttributesSubject.attributes()).that(attributes)
+  }
 
-    fun zipEntry(path: String): ZipEntrySubject {
-        contains(path)
-        val entry = actual().getZipEntry(path)!!
-        return check("zipEntry($path)").about(ZipEntrySubject.zipEntries()).that(entry)
-    }
+  fun zipEntry(path: String): ZipEntrySubject {
+    contains(path)
+    val entry = actual().getZipEntry(path)!!
+    return check("zipEntry($path)").about(ZipEntrySubject.zipEntries()).that(entry)
+  }
 }

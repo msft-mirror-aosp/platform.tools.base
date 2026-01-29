@@ -25,20 +25,16 @@ import com.android.build.gradle.integration.common.fixture.project.reversible.Fi
  *
  * Returned by [ReversibleGradleBuild] when used with [GradleBuild.withReversibleModifications]
  */
-internal open class ReversibleAndroidProject<ProjectT: AndroidProject<ProjectDefinitionT>, ProjectDefinitionT : GradleProjectDefinition>(
-    parentProject: ProjectT,
-    fileChangeController: FileChangeController,
-) : BaseReversibleAndroidProjectImpl<ProjectT, ProjectDefinitionT>(
-    parentProject,
-    fileChangeController,
-), AndroidProject<ProjectDefinitionT> {
+internal open class ReversibleAndroidProject<ProjectT : AndroidProject<ProjectDefinitionT>, ProjectDefinitionT : GradleProjectDefinition>(
+  parentProject: ProjectT,
+  fileChangeController: FileChangeController,
+) :
+  BaseReversibleAndroidProjectImpl<ProjectT, ProjectDefinitionT>(parentProject, fileChangeController), AndroidProject<ProjectDefinitionT> {
 
-    override val namespace: String
-        get() = parentProject.namespace
+  override val namespace: String
+    get() = parentProject.namespace
 
-    @Suppress("UNCHECKED_CAST")
-    final override val files: AndroidProjectFiles = fileChangeController.newAndroidProjectFiles(
-        parentProject.files,
-        (parentProject as GradleProjectImpl<ProjectDefinitionT>).location
-    )
+  @Suppress("UNCHECKED_CAST")
+  final override val files: AndroidProjectFiles =
+    fileChangeController.newAndroidProjectFiles(parentProject.files, (parentProject as GradleProjectImpl<ProjectDefinitionT>).location)
 }

@@ -24,21 +24,16 @@ import com.android.build.gradle.internal.core.dsl.impl.features.KmpDeviceTestOpt
 import com.android.build.gradle.internal.dsl.KotlinMultiplatformAndroidLibraryExtensionImpl
 import com.android.builder.core.DefaultApiVersion
 
-class KmpGlobalVariantBuilderConfigImpl(
-    private val extension: KotlinMultiplatformAndroidLibraryExtension
-) : GlobalVariantBuilderConfig {
+class KmpGlobalVariantBuilderConfigImpl(private val extension: KotlinMultiplatformAndroidLibraryExtension) : GlobalVariantBuilderConfig {
 
-    override val dependenciesInfo: DependenciesInfo
-        get() = throw RuntimeException(
-            "Access to dependenciesInfo on a non Application variant is not permitted"
-        )
+  override val dependenciesInfo: DependenciesInfo
+    get() = throw RuntimeException("Access to dependenciesInfo on a non Application variant is not permitted")
 
-    override val deviceTestOptions: DeviceTestOptionsDslInfo
-        get() = KmpDeviceTestOptionsDslInfoImpl(extension as KotlinMultiplatformAndroidLibraryExtensionImpl)
+  override val deviceTestOptions: DeviceTestOptionsDslInfo
+    get() = KmpDeviceTestOptionsDslInfoImpl(extension as KotlinMultiplatformAndroidLibraryExtensionImpl)
 
-    override val compileSdk: AndroidVersion?
-        get() = extension.compileSdk?.let(::AndroidVersionImpl)
-            ?: extension.compileSdkPreview?.let {
-                AndroidVersionImpl(DefaultApiVersion(it).apiLevel, it)
-            }
+  override val compileSdk: AndroidVersion?
+    get() =
+      extension.compileSdk?.let(::AndroidVersionImpl)
+        ?: extension.compileSdkPreview?.let { AndroidVersionImpl(DefaultApiVersion(it).apiLevel, it) }
 }

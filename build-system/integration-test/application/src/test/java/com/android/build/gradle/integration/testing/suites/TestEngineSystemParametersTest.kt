@@ -26,6 +26,11 @@ import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.options.StringOption
 import com.android.testutils.truth.PathSubject
 import com.google.common.truth.Truth
+import java.io.File
+import java.io.FileReader
+import java.io.FileWriter
+import java.util.Properties
+import kotlin.io.path.absolutePathString
 import org.junit.Rule
 import org.junit.Test
 import org.junit.platform.engine.EngineDiscoveryRequest
@@ -37,164 +42,136 @@ import org.junit.platform.engine.TestExecutionResult
 import org.junit.platform.engine.UniqueId
 import org.junit.platform.engine.support.descriptor.AbstractTestDescriptor
 import org.junit.rules.TemporaryFolder
-import java.io.File
-import java.io.FileReader
-import java.io.FileWriter
-import java.util.Properties
-import kotlin.io.path.absolutePathString
 
 class TestEngineSystemParametersTest {
 
-    @get:Rule
-    private val temporaryFolder = TemporaryFolder().also {
-        it.create()
+  @get:Rule private val temporaryFolder = TemporaryFolder().also { it.create() }
+  private val temporaryFile =
+    temporaryFolder.newFile("junit_engines_additional_inputs.txt").also {
+      Properties().also { properties ->
+        properties.setProperty("com.android.build.test.token", "_random_token_")
+        properties.store(FileWriter(it), "Input properties for test engine")
+      }
     }
-    private val temporaryFile = temporaryFolder.newFile("junit_engines_additional_inputs.txt").also {
-        Properties().also { properties ->
-            properties.setProperty("com.android.build.test.token", "_random_token_")
-            properties.store(FileWriter(it), "Input properties for test engine")
+
+  @get:Rule
+  val rule =
+    GradleRule.configure()
+      .withMavenRepository {
+        jar("com.google.truth:truth:0.44")
+        jar("org.junit.platform:junit-platform-engine:1.10.1")
+        jar("org.junit.platform:junit-platform-launcher:1.10.1")
+        jar("org.jetbrains.kotlin:kotlin-stdlib:2.1.20")
+        jar("com.test:toy-junit-engine:1.0")
+          .addClasses(
+            ToyJunitEngineForTestingSystemProperties::class.java,
+            ToyTestDescriptorForTestingSystemProperties::class.java,
+            TestEngineLogger::class.java,
+          )
+          .addTextFile("META-INF/services/org.junit.platform.engine.TestEngine", ToyJunitEngineForTestingSystemProperties::class.java.name)
+      }
+      .from {
+        gradleProperties {
+          add(BooleanOption.TEST_SUITE_SUPPORT, true)
+          add(
+            StringOption.TEST_SUITE_TEST_TASK_ADDITIONAL_INPUTS_FILE,
+            // make path windows friendly by escaping the separator
+            temporaryFile.absolutePath.replace("\\", "\\\\"),
+          )
         }
-    }
-
-    @get:Rule
-    val rule = GradleRule.configure()
-        .withMavenRepository {
-            jar("com.google.truth:truth:0.44")
-            jar("org.junit.platform:junit-platform-engine:1.10.1")
-            jar("org.junit.platform:junit-platform-launcher:1.10.1")
-            jar("org.jetbrains.kotlin:kotlin-stdlib:2.1.20")
-            jar("com.test:toy-junit-engine:1.0")
-                .addClasses(
-                    ToyJunitEngineForTestingSystemProperties::class.java,
-                    ToyTestDescriptorForTestingSystemProperties::class.java,
-                    TestEngineLogger::class.java,
-                )
-                .addTextFile(
-                    "META-INF/services/org.junit.platform.engine.TestEngine",
-                    ToyJunitEngineForTestingSystemProperties::class.java.name
-                )
-
-        }.from {
-            gradleProperties {
-                add(BooleanOption.TEST_SUITE_SUPPORT, true)
-                add(StringOption.TEST_SUITE_TEST_TASK_ADDITIONAL_INPUTS_FILE,
-                    // make path windows friendly by escaping the separator
-                    temporaryFile.absolutePath.replace("\\", "\\\\"))
+        androidApplication(":app") {
+          android {
+            namespace = "com.example.app"
+            defaultConfig { applicationId = "com.example.app" }
+            testOptions.suites.create("first", AgpTestSuite::class.java) {
+              it.useJunitEngine.apply {
+                inputs.add(AgpTestSuiteInputParameters.MERGED_MANIFEST)
+                includeEngines.add("toy-junit-engine-for-system-properties")
+                enginesDependencies.add("com.android.tools.build:gradle-api:${Version.ANDROID_GRADLE_PLUGIN_VERSION}")
+                enginesDependencies.add("org.junit.platform:junit-platform-launcher")
+                enginesDependencies.add("com.test:toy-junit-engine:1.0")
+                enginesDependencies.add("org.junit.platform:junit-platform-engine:1.12.0")
+              }
+              it.assets {}
+              it.targetVariants.add("debug")
+              it.targets.create("t1") {}
             }
-            androidApplication(":app") {
-                android {
-                    namespace = "com.example.app"
-                    defaultConfig {
-                        applicationId = "com.example.app"
-                    }
-                    testOptions.suites.create("first", AgpTestSuite::class.java) {
-                        it.useJunitEngine.apply {
-                            inputs.add(
-                                AgpTestSuiteInputParameters.MERGED_MANIFEST
-                            )
-                            includeEngines.add(
-                                "toy-junit-engine-for-system-properties"
-                            )
-                            enginesDependencies.add("com.android.tools.build:gradle-api:${Version.ANDROID_GRADLE_PLUGIN_VERSION}")
-                            enginesDependencies.add("org.junit.platform:junit-platform-launcher")
-                            enginesDependencies.add("com.test:toy-junit-engine:1.0")
-                            enginesDependencies.add("org.junit.platform:junit-platform-engine:1.12.0")
-                        }
-                        it.assets {}
-                        it.targetVariants.add("debug")
-                        it.targets.create("t1") { }
-                    }
-                }
-                this.dependencies {
-                    implementation("com.google.truth:truth:0.44")
-                }
-            }
+          }
+          this.dependencies { implementation("com.google.truth:truth:0.44") }
         }
+      }
 
-    @Test
-    fun testSystemProperties() {
-        val project = rule.build
-        val result = project
-            .executor
-            .run("testFirstT1DebugTestSuite")
-        Truth.assertThat(result.didWorkTasks).contains(":app:testFirstT1DebugTestSuite")
+  @Test
+  fun testSystemProperties() {
+    val project = rule.build
+    val result = project.executor.run("testFirstT1DebugTestSuite")
+    Truth.assertThat(result.didWorkTasks).contains(":app:testFirstT1DebugTestSuite")
 
-        val appBuildDir = project.subProject(":app").buildDir
+    val appBuildDir = project.subProject(":app").buildDir
 
-        // lookup the test engine logging file.
-        val loggingFile = File(
-            appBuildDir.toFile(),
-            "intermediates/debug/testFirstT1DebugTestSuite/junit_engines_logging.txt")
+    // lookup the test engine logging file.
+    val loggingFile = File(appBuildDir.toFile(), "intermediates/debug/testFirstT1DebugTestSuite/junit_engines_logging.txt")
 
-        PathSubject.assertThat(loggingFile).exists()
-        PathSubject.assertThat(loggingFile).contains("token = _random_token_")
-        PathSubject.assertThat(loggingFile).contains(
-            "Property com.android.junit.engine.results.dir = ${appBuildDir.absolutePathString()}"
-        )
-    }
+    PathSubject.assertThat(loggingFile).exists()
+    PathSubject.assertThat(loggingFile).contains("token = _random_token_")
+    PathSubject.assertThat(loggingFile).contains("Property com.android.junit.engine.results.dir = ${appBuildDir.absolutePathString()}")
+  }
 }
 
-class ToyJunitEngineForTestingSystemProperties: TestEngine {
+class ToyJunitEngineForTestingSystemProperties : TestEngine {
 
-    // load my input properties as a json object, I am only using a handful of those so far.
-    private val inputParams = TestSuiteExecutionClient.default()
+  // load my input properties as a json object, I am only using a handful of those so far.
+  private val inputParams = TestSuiteExecutionClient.default()
 
-    private val logger = TestEngineLogger(
-        File(inputParams.getInputParameter(TestEngineInputProperty.LOGGING_FILE))
-    )
+  private val logger = TestEngineLogger(File(inputParams.getInputParameter(TestEngineInputProperty.LOGGING_FILE)))
 
-    override fun getId(): String = "toy-junit-engine-for-system-properties"
+  override fun getId(): String = "toy-junit-engine-for-system-properties"
 
-    override fun discover(p0: EngineDiscoveryRequest?, p1: UniqueId?): TestDescriptor =
-        ToyTestDescriptorForTestingSystemProperties(UniqueId.parse("[method: some-test]"))
+  override fun discover(p0: EngineDiscoveryRequest?, p1: UniqueId?): TestDescriptor =
+    ToyTestDescriptorForTestingSystemProperties(UniqueId.parse("[method: some-test]"))
 
-    override fun execute(p0: ExecutionRequest?) {
-        p0?.let { executionRequest ->
-            logger.info("Executing toy engine ! ${executionRequest.rootTestDescriptor}")
-            val listener: EngineExecutionListener = executionRequest.engineExecutionListener
-            val engineDescriptor = executionRequest.rootTestDescriptor
-            listener.executionStarted(engineDescriptor)
+  override fun execute(p0: ExecutionRequest?) {
+    p0?.let { executionRequest ->
+      logger.info("Executing toy engine ! ${executionRequest.rootTestDescriptor}")
+      val listener: EngineExecutionListener = executionRequest.engineExecutionListener
+      val engineDescriptor = executionRequest.rootTestDescriptor
+      listener.executionStarted(engineDescriptor)
 
-            val additionalInputsPath = System.getProperty("android.testSuite.testTaskAdditionalInputsFile")
-            if (additionalInputsPath == null) {
-                throw RuntimeException("No additional input file provided")
-            }
-            val additionalInputs = Properties().also {
-                it.load(FileReader(additionalInputsPath))
-            }
+      val additionalInputsPath = System.getProperty("android.testSuite.testTaskAdditionalInputsFile")
+      if (additionalInputsPath == null) {
+        throw RuntimeException("No additional input file provided")
+      }
+      val additionalInputs = Properties().also { it.load(FileReader(additionalInputsPath)) }
 
-            // keep this code old fashioned to avoid creating inner classes that need to be packaged.
-            val entries = inputParams.inputParameters.iterator()
-            while (entries.hasNext()) {
-                val next = entries.next()
-                logger.info("Property ${next.name} = ${next.value}")
-            }
+      // keep this code old fashioned to avoid creating inner classes that need to be packaged.
+      val entries = inputParams.inputParameters.iterator()
+      while (entries.hasNext()) {
+        val next = entries.next()
+        logger.info("Property ${next.name} = ${next.value}")
+      }
 
-            val token = additionalInputs.getProperty("com.android.build.test.token")
+      val token = additionalInputs.getProperty("com.android.build.test.token")
 
-            logger.info("token = $token")
+      logger.info("token = $token")
 
-            // Simulated test execution
-            try {
-                val testSucceeded = token == "_random_token_"
-                if (testSucceeded) {
-                    logger.info("Test Passed !")
-                    listener.executionFinished(engineDescriptor, TestExecutionResult.successful())
-                } else {
-                    logger.info("Test Failed !")
-                    listener.executionFinished(
-                        engineDescriptor,
-                        TestExecutionResult.failed(Exception("Test failed, token = $token"))
-                    )
-                }
-            } catch (t: Throwable) {
-                listener.executionFinished(engineDescriptor, TestExecutionResult.failed(t))
-            }
-            logger.info("Finished $engineDescriptor test.")
+      // Simulated test execution
+      try {
+        val testSucceeded = token == "_random_token_"
+        if (testSucceeded) {
+          logger.info("Test Passed !")
+          listener.executionFinished(engineDescriptor, TestExecutionResult.successful())
+        } else {
+          logger.info("Test Failed !")
+          listener.executionFinished(engineDescriptor, TestExecutionResult.failed(Exception("Test failed, token = $token")))
         }
+      } catch (t: Throwable) {
+        listener.executionFinished(engineDescriptor, TestExecutionResult.failed(t))
+      }
+      logger.info("Finished $engineDescriptor test.")
     }
+  }
 }
 
-class ToyTestDescriptorForTestingSystemProperties(uniqueId: UniqueId): AbstractTestDescriptor(uniqueId, "toy descriptor") {
-    override fun getType(): TestDescriptor.Type = TestDescriptor.Type.TEST
+class ToyTestDescriptorForTestingSystemProperties(uniqueId: UniqueId) : AbstractTestDescriptor(uniqueId, "toy descriptor") {
+  override fun getType(): TestDescriptor.Type = TestDescriptor.Type.TEST
 }

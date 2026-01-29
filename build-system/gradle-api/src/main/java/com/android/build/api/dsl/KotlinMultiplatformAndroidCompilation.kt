@@ -21,17 +21,17 @@ import org.jetbrains.kotlin.gradle.dsl.KotlinJvmCompilerOptions
 import org.jetbrains.kotlin.gradle.plugin.KotlinCompilation
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask
 
-interface KotlinMultiplatformAndroidCompilation: KotlinCompilation<Any> { // <Any> instead of <KotlinCommonOptions> to avoid compilation error
+interface KotlinMultiplatformAndroidCompilation :
+  KotlinCompilation<Any> { // <Any> instead of <KotlinCommonOptions> to avoid compilation error
 
-    override val compileTaskProvider: TaskProvider<out KotlinCompilationTask<KotlinJvmCompilerOptions>>
+  override val compileTaskProvider: TaskProvider<out KotlinCompilationTask<KotlinJvmCompilerOptions>>
 
-    /**
-     * The name of the component corresponding to this Android compilation.
-     * Consists of the compilation name prefixed by the android target name (e.g "android")
-     * The default component names for the default compilations would be:
-     *   - androidMain
-     *   - androidHostTest
-     *   - androidDeviceTest
-     */
-    val componentName: String
+  /**
+   * The name of the component corresponding to this Android compilation. Consists of the compilation name prefixed by the android target
+   * name (e.g "android") The default component names for the default compilations would be:
+   * - androidMain
+   * - androidHostTest
+   * - androidDeviceTest
+   */
+  val componentName: String
 }

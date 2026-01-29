@@ -30,10 +30,11 @@ import com.android.build.gradle.internal.tasks.factory.VariantTaskCreationAction
 import com.android.build.gradle.internal.utils.setDisallowChanges
 import com.android.build.gradle.options.SyncOptions
 import com.android.buildanalyzer.common.TaskCategory
-import com.android.builder.core.ToolsRevisionUtils
 import com.android.builder.core.ComponentTypeImpl
+import com.android.builder.core.ToolsRevisionUtils
 import com.android.builder.internal.aapt.AaptOptions
 import com.android.builder.internal.aapt.AaptPackageConfig
+import java.io.File
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.Nested
@@ -42,123 +43,101 @@ import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.work.DisableCachingByDefault
-import java.io.File
 
 /**
- * Task that passes the generated manifest file for the asset pack to AAPT2 for processing,
- * producing a linked manifest file suitable for packaging in the Android App Bundle.
+ * Task that passes the generated manifest file for the asset pack to AAPT2 for processing, producing a linked manifest file suitable for
+ * packaging in the Android App Bundle.
  */
 @DisableCachingByDefault
 @BuildAnalyzer(primaryTaskCategory = TaskCategory.MANIFEST, secondaryTaskCategories = [TaskCategory.LINKING])
 abstract class LinkManifestForAssetPackTask : NonIncrementalTask() {
 
-    /**
-     * The manifest file previously generated for this asset pack by the
-     * AssetPackManifestGenerationTask.
-     */
-    @get:InputFiles
-    @get:PathSensitive(PathSensitivity.RELATIVE)
-    abstract val manifestsDirectory: DirectoryProperty
+  /** The manifest file previously generated for this asset pack by the AssetPackManifestGenerationTask. */
+  @get:InputFiles @get:PathSensitive(PathSensitivity.RELATIVE) abstract val manifestsDirectory: DirectoryProperty
 
-    @get:Nested
-    abstract val androidJarInput: AndroidJarInput
+  @get:Nested abstract val androidJarInput: AndroidJarInput
 
-    @get:Nested
-    abstract val aapt2: Aapt2Input
+  @get:Nested abstract val aapt2: Aapt2Input
 
-    /**
-     * A directory containing the archives for each asset pack that contains the linked manifest file and resources.pb file produced by AAPT2.
-     */
-    @get:OutputDirectory
-    abstract val linkedManifestsDirectory: DirectoryProperty
+  /**
+   * A directory containing the archives for each asset pack that contains the linked manifest file and resources.pb file produced by AAPT2.
+   */
+  @get:OutputDirectory abstract val linkedManifestsDirectory: DirectoryProperty
 
-    override fun doTaskAction() {
-        for (manifestFile: File in manifestsDirectory.asFileTree.files) {
-            val assetPackName = manifestFile.parentFile.name
-            val config = AaptPackageConfig(
-                androidJarPath = androidJarInput.getAndroidJar().get().absolutePath,
-                generateProtos = true,
-                manifestFile = manifestFile,
-                options = AaptOptions(),
-                resourceOutputApk = File(File(linkedManifestsDirectory.get().asFile, assetPackName), "${assetPackName}.ap_"),
-                componentType = ComponentTypeImpl.BASE_APK,
-                //debuggable = false,
-                // Bundletool assumes this field will be filled in for the module, even though it won't be used for the asset pack.
-                packageId = 0xFF
-            )
+  override fun doTaskAction() {
+    for (manifestFile: File in manifestsDirectory.asFileTree.files) {
+      val assetPackName = manifestFile.parentFile.name
+      val config =
+        AaptPackageConfig(
+          androidJarPath = androidJarInput.getAndroidJar().get().absolutePath,
+          generateProtos = true,
+          manifestFile = manifestFile,
+          options = AaptOptions(),
+          resourceOutputApk = File(File(linkedManifestsDirectory.get().asFile, assetPackName), "${assetPackName}.ap_"),
+          componentType = ComponentTypeImpl.BASE_APK,
+          // debuggable = false,
+          // Bundletool assumes this field will be filled in for the module, even though it won't be used for the asset pack.
+          packageId = 0xFF,
+        )
 
-            val aapt2ServiceKey = aapt2.registerAaptService()
-            workerExecutor.noIsolation().submit(Aapt2ProcessResourcesRunnable::class.java) {
-                it.initializeFromBaseTask(this)
-                it.aapt2ServiceKey.set(aapt2ServiceKey)
-                it.request.set(config)
-                it.errorFormatMode.set(SyncOptions.ErrorFormatMode.HUMAN_READABLE)
-            }
-        }
+      val aapt2ServiceKey = aapt2.registerAaptService()
+      workerExecutor.noIsolation().submit(Aapt2ProcessResourcesRunnable::class.java) {
+        it.initializeFromBaseTask(this)
+        it.aapt2ServiceKey.set(aapt2ServiceKey)
+        it.request.set(config)
+        it.errorFormatMode.set(SyncOptions.ErrorFormatMode.HUMAN_READABLE)
+      }
+    }
+  }
+
+  internal class CreationForAssetPackBundleAction(
+    private val artifacts: ArtifactsImpl,
+    private val projectServices: ProjectServices,
+    private val compileSdk: Int,
+  ) : AndroidVariantTaskCreationAction<LinkManifestForAssetPackTask>() {
+
+    override val type = LinkManifestForAssetPackTask::class.java
+    override val name = "linkManifestForAssetPacks"
+
+    override fun handleProvider(taskProvider: TaskProvider<LinkManifestForAssetPackTask>) {
+      super.handleProvider(taskProvider)
+      artifacts
+        .setInitialProvider(taskProvider, LinkManifestForAssetPackTask::linkedManifestsDirectory)
+        .on(InternalArtifactType.LINKED_RES_FOR_ASSET_PACK)
     }
 
-    internal class CreationForAssetPackBundleAction(
-        private val artifacts: ArtifactsImpl,
-        private val projectServices: ProjectServices,
-        private val compileSdk: Int
-    ) : AndroidVariantTaskCreationAction<LinkManifestForAssetPackTask>() {
+    override fun configure(task: LinkManifestForAssetPackTask) {
+      super.configure(task)
 
-        override val type = LinkManifestForAssetPackTask::class.java
-        override val name = "linkManifestForAssetPacks"
+      artifacts.setTaskInputToFinalProduct(InternalArtifactType.ASSET_PACK_MANIFESTS, task.manifestsDirectory)
+      projectServices.initializeAapt2Input(task.aapt2, task)
 
-        override fun handleProvider(taskProvider: TaskProvider<LinkManifestForAssetPackTask>) {
-            super.handleProvider(taskProvider)
-            artifacts.setInitialProvider(
-                taskProvider,
-                LinkManifestForAssetPackTask::linkedManifestsDirectory
-            ).on(InternalArtifactType.LINKED_RES_FOR_ASSET_PACK)
-        }
+      task.androidJarInput.initializeSdkComponentsBuildService(task)
+      task.androidJarInput.buildToolsRevision.setDisallowChanges(ToolsRevisionUtils.DEFAULT_BUILD_TOOLS_REVISION)
+      task.androidJarInput.compileSdkVersion.setDisallowChanges("android-${compileSdk}")
+    }
+  }
 
-        override fun configure(task: LinkManifestForAssetPackTask) {
-            super.configure(task)
+  internal class CreationAction(creationConfig: VariantCreationConfig) :
+    VariantTaskCreationAction<LinkManifestForAssetPackTask, VariantCreationConfig>(creationConfig) {
 
-            artifacts.setTaskInputToFinalProduct(
-                InternalArtifactType.ASSET_PACK_MANIFESTS, task.manifestsDirectory
-            )
-            projectServices.initializeAapt2Input(task.aapt2, task)
+    override val type = LinkManifestForAssetPackTask::class.java
+    override val name = computeTaskName("link", "ManifestForAssetPacks")
 
-            task.androidJarInput.initializeSdkComponentsBuildService(task)
-            task.androidJarInput.buildToolsRevision.setDisallowChanges(
-                ToolsRevisionUtils.DEFAULT_BUILD_TOOLS_REVISION
-            )
-            task.androidJarInput.compileSdkVersion.setDisallowChanges("android-${compileSdk}")
-        }
+    override fun handleProvider(taskProvider: TaskProvider<LinkManifestForAssetPackTask>) {
+      super.handleProvider(taskProvider)
+      creationConfig.artifacts
+        .setInitialProvider(taskProvider, LinkManifestForAssetPackTask::linkedManifestsDirectory)
+        .on(InternalArtifactType.LINKED_RES_FOR_ASSET_PACK)
     }
 
-    internal class CreationAction(
-        creationConfig: VariantCreationConfig
-    ) : VariantTaskCreationAction<LinkManifestForAssetPackTask, VariantCreationConfig>(
-        creationConfig
-    ) {
+    override fun configure(task: LinkManifestForAssetPackTask) {
+      super.configure(task)
 
-        override val type = LinkManifestForAssetPackTask::class.java
-        override val name = computeTaskName("link", "ManifestForAssetPacks")
+      creationConfig.artifacts.setTaskInputToFinalProduct(InternalArtifactType.ASSET_PACK_MANIFESTS, task.manifestsDirectory)
 
-        override fun handleProvider(
-            taskProvider: TaskProvider<LinkManifestForAssetPackTask>
-        ) {
-            super.handleProvider(taskProvider)
-            creationConfig.artifacts.setInitialProvider(
-                taskProvider,
-                LinkManifestForAssetPackTask::linkedManifestsDirectory
-            ).on(InternalArtifactType.LINKED_RES_FOR_ASSET_PACK)
-        }
-
-        override fun configure(
-            task: LinkManifestForAssetPackTask
-        ) {
-            super.configure(task)
-
-            creationConfig.artifacts.setTaskInputToFinalProduct(
-                InternalArtifactType.ASSET_PACK_MANIFESTS, task.manifestsDirectory)
-
-            creationConfig.services.initializeAapt2Input(task.aapt2, task)
-            task.androidJarInput.initialize(task, creationConfig)
-        }
+      creationConfig.services.initializeAapt2Input(task.aapt2, task)
+      task.androidJarInput.initialize(task, creationConfig)
     }
+  }
 }

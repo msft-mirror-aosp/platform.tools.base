@@ -21,50 +21,41 @@ import com.android.build.api.variant.ResValue
 import com.android.build.api.variant.TestFixtures
 import com.android.tools.build.gradle.internal.profile.VariantPropertiesMethodType
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
+import javax.inject.Inject
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.MapProperty
 import org.gradle.api.provider.Property
-import javax.inject.Inject
 
-open class AnalyticsEnabledTestFixtures @Inject constructor(
-    override val delegate: TestFixtures,
-    stats: GradleBuildVariant.Builder,
-    objectFactory: ObjectFactory
-) : AnalyticsEnabledComponent(
-    delegate, stats, objectFactory
-), TestFixtures {
-    private val userVisibleAarMetadata: AarMetadata by lazy(LazyThreadSafetyMode.SYNCHRONIZED){
-        objectFactory.newInstance(
-            AnalyticsEnabledAarMetadata::class.java,
-            delegate.aarMetadata,
-            stats
-        )
+open class AnalyticsEnabledTestFixtures
+@Inject
+constructor(override val delegate: TestFixtures, stats: GradleBuildVariant.Builder, objectFactory: ObjectFactory) :
+  AnalyticsEnabledComponent(delegate, stats, objectFactory), TestFixtures {
+  private val userVisibleAarMetadata: AarMetadata by
+    lazy(LazyThreadSafetyMode.SYNCHRONIZED) {
+      objectFactory.newInstance(AnalyticsEnabledAarMetadata::class.java, delegate.aarMetadata, stats)
     }
 
-    override val aarMetadata: AarMetadata
-        get() {
-            stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
-                VariantPropertiesMethodType.VARIANT_AAR_METADATA_VALUE
-            return userVisibleAarMetadata
-        }
-
-    override val resValues: MapProperty<ResValue.Key, ResValue>
-        get() {
-            stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
-                VariantPropertiesMethodType.RES_VALUE_VALUE
-            return delegate.resValues
-        }
-
-    override fun makeResValueKey(type: String, name: String): ResValue.Key {
-        stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
-            VariantPropertiesMethodType.MAKE_RES_VALUE_KEY_VALUE
-        return delegate.makeResValueKey(type, name)
+  override val aarMetadata: AarMetadata
+    get() {
+      stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type = VariantPropertiesMethodType.VARIANT_AAR_METADATA_VALUE
+      return userVisibleAarMetadata
     }
 
-    override val pseudoLocalesEnabled: Property<Boolean>
-        get() {
-            stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
-                VariantPropertiesMethodType.VARIANT_PSEUDOLOCALES_ENABLED_VALUE
-            return delegate.pseudoLocalesEnabled
-        }
+  override val resValues: MapProperty<ResValue.Key, ResValue>
+    get() {
+      stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type = VariantPropertiesMethodType.RES_VALUE_VALUE
+      return delegate.resValues
+    }
+
+  override fun makeResValueKey(type: String, name: String): ResValue.Key {
+    stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type = VariantPropertiesMethodType.MAKE_RES_VALUE_KEY_VALUE
+    return delegate.makeResValueKey(type, name)
+  }
+
+  override val pseudoLocalesEnabled: Property<Boolean>
+    get() {
+      stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
+        VariantPropertiesMethodType.VARIANT_PSEUDOLOCALES_ENABLED_VALUE
+      return delegate.pseudoLocalesEnabled
+    }
 }

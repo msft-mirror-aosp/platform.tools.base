@@ -36,56 +36,55 @@ import org.junit.Test
 import org.junit.rules.TemporaryFolder
 
 class ProtoAndroidManifestUsageRecorderTest {
-    private val ANDROID_NS = "http://schemas.android.com/apk/res/android"
-    private val packageName = "com.my.package"
+  private val ANDROID_NS = "http://schemas.android.com/apk/res/android"
+  private val packageName = "com.my.package"
 
-    @get:Rule
-    val temporaryFolder = TemporaryFolder()
+  @get:Rule val temporaryFolder = TemporaryFolder()
 
-    @Test
-    fun `test recording usages from proto AndroidManifest stored in compiled items`() {
-        val model = ResourceShrinkerModel(NoDebugReporter, false)
-        model.addResource(DRAWABLE, packageName, "icon", 0x7f010000)
-        model.addResource(STRING, packageName, "app_name", 0x7f020000)
-        model.addResource(STRING, packageName, "another_name", 0x7f020001)
-        model.addResource(STRING, packageName, "main_name", 0x7f020003)
-        model.addResource(STYLE, packageName, "CustomTheme_Example", 0x7f080002)
+  @Test
+  fun `test recording usages from proto AndroidManifest stored in compiled items`() {
+    val model = ResourceShrinkerModel(NoDebugReporter, false)
+    model.addResource(DRAWABLE, packageName, "icon", 0x7f010000)
+    model.addResource(STRING, packageName, "app_name", 0x7f020000)
+    model.addResource(STRING, packageName, "another_name", 0x7f020001)
+    model.addResource(STRING, packageName, "main_name", 0x7f020003)
+    model.addResource(STYLE, packageName, "CustomTheme_Example", 0x7f080002)
 
-        val manifest =
-            xmlElement("manifest")
-                .addNamespace("android", ANDROID_NS)
-                .addChild(
-                    xmlElement("application")
-                        .addAttribute("allowBackup", ANDROID_NS, "true")
-                        // resource referenced by id
-                        .addAttribute("icon", ANDROID_NS, "@drawable/icon", 0x7f010000)
-                        // resource referenced by name, without id
-                        .addAttributeWithRefNameOnly("label", "string/app_name")
-                        .addChild(
-                            xmlElement("example")
-                                // resources should not be referenced from text
-                                .addChild(XmlNode.newBuilder().setText("@string/another_name"))
-                        )
-                        .addChild(
-                            xmlElement("activity")
-                                // resourced reference by name with `.` inside ref name
-                                .addAttributeWithRefNameOnly("theme", "style/CustomTheme.Example")
-                                // resources should not be referenced without compiled item
-                                .addAttribute("some", value = "@string/another_name")
-                                .addAttribute("label", ANDROID_NS, "@string/main_name", 0x7f020003)
-                        )
-                )
-                .buildNode()
+    val manifest =
+      xmlElement("manifest")
+        .addNamespace("android", ANDROID_NS)
+        .addChild(
+          xmlElement("application")
+            .addAttribute("allowBackup", ANDROID_NS, "true")
+            // resource referenced by id
+            .addAttribute("icon", ANDROID_NS, "@drawable/icon", 0x7f010000)
+            // resource referenced by name, without id
+            .addAttributeWithRefNameOnly("label", "string/app_name")
+            .addChild(
+              xmlElement("example")
+                // resources should not be referenced from text
+                .addChild(XmlNode.newBuilder().setText("@string/another_name"))
+            )
+            .addChild(
+              xmlElement("activity")
+                // resourced reference by name with `.` inside ref name
+                .addAttributeWithRefNameOnly("theme", "style/CustomTheme.Example")
+                // resources should not be referenced without compiled item
+                .addAttribute("some", value = "@string/another_name")
+                .addAttribute("label", ANDROID_NS, "@string/main_name", 0x7f020003)
+            )
+        )
+        .buildNode()
 
-        val manifestPath = temporaryFolder.newFile().toPath()
-        Files.write(manifestPath, manifest.toByteArray())
+    val manifestPath = temporaryFolder.newFile().toPath()
+    Files.write(manifestPath, manifest.toByteArray())
 
-        ProtoAndroidManifestUsageRecorder(manifestPath).recordUsages(model)
+    ProtoAndroidManifestUsageRecorder(manifestPath).recordUsages(model)
 
-        assertTrue(model.resourceStore.getResource(0x7f010000)!!.isReachable)
-        assertTrue(model.resourceStore.getResource(0x7f020000)!!.isReachable)
-        assertFalse(model.resourceStore.getResource(0x7f020001)!!.isReachable)
-        assertTrue(model.resourceStore.getResource(0x7f020003)!!.isReachable)
-        assertTrue(model.resourceStore.getResource(0x7f080002)!!.isReachable)
-    }
+    assertTrue(model.resourceStore.getResource(0x7f010000)!!.isReachable)
+    assertTrue(model.resourceStore.getResource(0x7f020000)!!.isReachable)
+    assertFalse(model.resourceStore.getResource(0x7f020001)!!.isReachable)
+    assertTrue(model.resourceStore.getResource(0x7f020003)!!.isReachable)
+    assertTrue(model.resourceStore.getResource(0x7f080002)!!.isReachable)
+  }
 }

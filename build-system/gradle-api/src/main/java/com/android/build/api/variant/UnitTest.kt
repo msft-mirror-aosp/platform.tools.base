@@ -24,37 +24,36 @@ import org.gradle.api.tasks.testing.Test
  *
  * Model for Unit Test components that contains build-time properties
  *
- * This object is accessible on subtypes of [Variant] that implement [HasUnitTest], via
- * [HasUnitTest.unitTest]. It is also part of [Variant.nestedComponents].
+ * This object is accessible on subtypes of [Variant] that implement [HasUnitTest], via [HasUnitTest.unitTest]. It is also part of
+ * [Variant.nestedComponents].
  *
- * Prefer using [HostTest] rather than this interface which will be deprecated once [HostTest] is
- * stable.
+ * Prefer using [HostTest] rather than this interface which will be deprecated once [HostTest] is stable.
  *
- * The presence of this component in a variant is controlled by [HasUnitTestBuilder.enableUnitTest]
- * which is accessible on subtypes of [VariantBuilder] that implement [HasUnitTestBuilder]
-*/
-interface UnitTest: TestComponent {
+ * The presence of this component in a variant is controlled by [HasUnitTestBuilder.enableUnitTest] which is accessible on subtypes of
+ * [VariantBuilder] that implement [HasUnitTestBuilder]
+ */
+interface UnitTest : TestComponent {
 
-    /**
-     * Runs some action to configure the Variant's unit test [Test] task.
-     *
-     * The action will only run if the task is configured. In particular the
-     * [HasUnitTestBuilder.enableUnitTest]] must be set to true (it is true by default).
-     *
-     * Example :
-     * ```(kotlin)
-     *  androidComponents {
-     *      onVariants { variant ->
-     *          variant.unitTest?.configureTestTask { testTask ->
-     *              testTask.beforeTest { descriptor ->
-     *                  println("Running test: " + descriptor)
-     *              }
-     *          }
-     *      }
-     *  }
-     * ```
-     * @param action to configure the [Test] task.
-     */
-    @Incubating
-    fun configureTestTask(action: (Test)-> Unit)
+  /**
+   * Runs some action to configure the Variant's unit test [Test] task.
+   *
+   * The action will only run if the task is configured. In particular the [HasUnitTestBuilder.enableUnitTest]] must be set to true (it is
+   * true by default).
+   *
+   * Example :
+   * ```(kotlin)
+   *  androidComponents {
+   *      onVariants { variant ->
+   *          variant.unitTest?.configureTestTask { testTask ->
+   *              testTask.beforeTest { descriptor ->
+   *                  println("Running test: " + descriptor)
+   *              }
+   *          }
+   *      }
+   *  }
+   * ```
+   *
+   * @param action to configure the [Test] task.
+   */
+  @Incubating fun configureTestTask(action: (Test) -> Unit)
 }

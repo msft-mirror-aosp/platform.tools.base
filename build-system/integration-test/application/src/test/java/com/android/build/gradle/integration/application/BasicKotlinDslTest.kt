@@ -25,17 +25,18 @@ import org.junit.Test
 /** Regression test for http://b/166468915. */
 class BasicKotlinDslTest {
 
-    @JvmField
-    @Rule
-    val project = GradleTestProject.builder().fromTestApp(MinimalSubProject.app("com.example.app"))
-            .withPluginManagementBlock(true)
-            .create()
+  @JvmField
+  @Rule
+  val project = GradleTestProject.builder().fromTestApp(MinimalSubProject.app("com.example.app")).withPluginManagementBlock(true).create()
 
-    @Test
-    fun testAbleToBuild() {
-        project.buildFile.delete()
+  @Test
+  fun testAbleToBuild() {
+    project.buildFile.delete()
 
-        project.file("build.gradle.kts").writeText("""
+    project
+      .file("build.gradle.kts")
+      .writeText(
+        """
             apply(from = "../commonHeader.gradle")
             plugins {
                 id("com.android.application")
@@ -55,21 +56,31 @@ class BasicKotlinDslTest {
                 }
 
             }
-        """.trimIndent())
+        """
+          .trimIndent()
+      )
 
-        // add at least one property, as that was triggering http://b/166468915
-        project.file("gradle.properties").appendText("""
-            android.debug.obsoleteApi=true
-        """.trimIndent())
+    // add at least one property, as that was triggering http://b/166468915
+    project
+      .file("gradle.properties")
+      .appendText(
+        """
+        android.debug.obsoleteApi=true
+        """
+          .trimIndent()
+      )
 
-        project.executor().run("assembleDebug")
-    }
+    project.executor().run("assembleDebug")
+  }
 
-    @Test
-    fun testApplicationAndroidResources() {
-        project.buildFile.delete()
+  @Test
+  fun testApplicationAndroidResources() {
+    project.buildFile.delete()
 
-        project.file("build.gradle.kts").writeText("""
+    project
+      .file("build.gradle.kts")
+      .writeText(
+        """
             apply(from = "../commonHeader.gradle")
             plugins {
                 id("com.android.application")
@@ -83,11 +94,12 @@ class BasicKotlinDslTest {
                     localeFilters += listOf("fr")
                 }
             }
-        """.trimIndent())
+        """
+          .trimIndent()
+      )
 
-        FileUtils.createFile(project.file("src/main/res/resources.properties"),
-            "unqualifiedResLocale=en-US")
+    FileUtils.createFile(project.file("src/main/res/resources.properties"), "unqualifiedResLocale=en-US")
 
-        project.executor().run("assembleDebug")
-    }
+    project.executor().run("assembleDebug")
+  }
 }

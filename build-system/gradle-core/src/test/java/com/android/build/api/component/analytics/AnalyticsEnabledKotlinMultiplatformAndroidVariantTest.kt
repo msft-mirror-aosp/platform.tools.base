@@ -22,73 +22,65 @@ import com.android.build.gradle.internal.fixtures.FakeObjectFactory
 import com.android.tools.build.gradle.internal.profile.VariantPropertiesMethodType
 import com.google.common.truth.Truth
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
+import kotlin.test.fail
 import org.junit.Rule
 import org.junit.Test
+import org.mockito.junit.MockitoJUnit
+import org.mockito.junit.MockitoRule
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
-import org.mockito.junit.MockitoJUnit
-import org.mockito.junit.MockitoRule
 import org.mockito.quality.Strictness
-import kotlin.test.fail
 
 class AnalyticsEnabledKotlinMultiplatformAndroidVariantTest {
-    @get:Rule
-    val rule: MockitoRule = MockitoJUnit.rule().strictness(Strictness.STRICT_STUBS)
+  @get:Rule val rule: MockitoRule = MockitoJUnit.rule().strictness(Strictness.STRICT_STUBS)
 
-    private val delegate: KotlinMultiplatformAndroidVariant = mock()
+  private val delegate: KotlinMultiplatformAndroidVariant = mock()
 
-    private val stats = GradleBuildVariant.newBuilder()
-    private val proxy: AnalyticsEnabledKotlinMultiplatformAndroidVariant by lazy {
-        AnalyticsEnabledKotlinMultiplatformAndroidVariant(delegate, stats, FakeObjectFactory.factory)
-    }
+  private val stats = GradleBuildVariant.newBuilder()
+  private val proxy: AnalyticsEnabledKotlinMultiplatformAndroidVariant by lazy {
+    AnalyticsEnabledKotlinMultiplatformAndroidVariant(delegate, stats, FakeObjectFactory.factory)
+  }
 
-    @Test
-    fun getDeviceTests() {
-        val deviceTest = mock<DeviceTest>()
-        whenever(delegate.deviceTests).thenReturn(mapOf(DeviceTestBuilder.ANDROID_TEST_TYPE to deviceTest))
-        val deviceTestsProxy = proxy.deviceTests
+  @Test
+  fun getDeviceTests() {
+    val deviceTest = mock<DeviceTest>()
+    whenever(delegate.deviceTests).thenReturn(mapOf(DeviceTestBuilder.ANDROID_TEST_TYPE to deviceTest))
+    val deviceTestsProxy = proxy.deviceTests
 
-        Truth.assertThat(deviceTestsProxy.size).isEqualTo(1)
-        val deviceTestProxy = deviceTestsProxy[DeviceTestBuilder.ANDROID_TEST_TYPE]
-        Truth.assertThat(deviceTestProxy is AnalyticsEnabledDeviceTest).isTrue()
-        Truth.assertThat((deviceTestProxy as AnalyticsEnabledDeviceTest).delegate).isEqualTo(deviceTest)
-        Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
-        Truth.assertThat(
-            stats.variantApiAccess.variantPropertiesAccessList.first().type
-        ).isEqualTo(VariantPropertiesMethodType.DEVICE_TESTS_VALUE)
-        verify(delegate, times(1))
-            .deviceTests
-    }
+    Truth.assertThat(deviceTestsProxy.size).isEqualTo(1)
+    val deviceTestProxy = deviceTestsProxy[DeviceTestBuilder.ANDROID_TEST_TYPE]
+    Truth.assertThat(deviceTestProxy is AnalyticsEnabledDeviceTest).isTrue()
+    Truth.assertThat((deviceTestProxy as AnalyticsEnabledDeviceTest).delegate).isEqualTo(deviceTest)
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessList.first().type)
+      .isEqualTo(VariantPropertiesMethodType.DEVICE_TESTS_VALUE)
+    verify(delegate, times(1)).deviceTests
+  }
 
-    @Test
-    fun getDeviceTests_for_android_test() {
-        @Suppress("DEPRECATION")
-        val deviceTest = mock<com.android.build.api.variant.AndroidTest>()
-        whenever(delegate.deviceTests).thenReturn(mapOf(DeviceTestBuilder.ANDROID_TEST_TYPE to deviceTest))
-        whenever(delegate.androidTest).thenReturn(deviceTest)
-        val deviceTestsProxy = proxy.deviceTests
+  @Test
+  fun getDeviceTests_for_android_test() {
+    @Suppress("DEPRECATION") val deviceTest = mock<com.android.build.api.variant.AndroidTest>()
+    whenever(delegate.deviceTests).thenReturn(mapOf(DeviceTestBuilder.ANDROID_TEST_TYPE to deviceTest))
+    whenever(delegate.androidTest).thenReturn(deviceTest)
+    val deviceTestsProxy = proxy.deviceTests
 
-        Truth.assertThat(deviceTestsProxy.size).isEqualTo(1)
-        var deviceTestProxy = deviceTestsProxy[DeviceTestBuilder.ANDROID_TEST_TYPE]
-        Truth.assertThat(deviceTestProxy is AnalyticsEnabledAndroidTest).isTrue()
-        Truth.assertThat((deviceTestProxy as AnalyticsEnabledAndroidTest).delegate).isEqualTo(deviceTest)
+    Truth.assertThat(deviceTestsProxy.size).isEqualTo(1)
+    var deviceTestProxy = deviceTestsProxy[DeviceTestBuilder.ANDROID_TEST_TYPE]
+    Truth.assertThat(deviceTestProxy is AnalyticsEnabledAndroidTest).isTrue()
+    Truth.assertThat((deviceTestProxy as AnalyticsEnabledAndroidTest).delegate).isEqualTo(deviceTest)
 
-        deviceTestProxy = proxy.androidTest ?: fail("deviceTest method returned null")
-        Truth.assertThat(deviceTestProxy is AnalyticsEnabledAndroidTest).isTrue()
-        Truth.assertThat((deviceTestProxy as AnalyticsEnabledAndroidTest).delegate).isEqualTo(deviceTest)
+    deviceTestProxy = proxy.androidTest ?: fail("deviceTest method returned null")
+    Truth.assertThat(deviceTestProxy is AnalyticsEnabledAndroidTest).isTrue()
+    Truth.assertThat((deviceTestProxy as AnalyticsEnabledAndroidTest).delegate).isEqualTo(deviceTest)
 
-        Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(2)
-        Truth.assertThat(
-            stats.variantApiAccess.variantPropertiesAccessList.first().type
-        ).isEqualTo(VariantPropertiesMethodType.DEVICE_TESTS_VALUE)
-        Truth.assertThat(
-            stats.variantApiAccess.variantPropertiesAccessList.last().type
-        ).isEqualTo(VariantPropertiesMethodType.ANDROID_TEST_VALUE)
-        verify(delegate, times(1))
-            .deviceTests
-        verify(delegate, times(1))
-            .androidTest
-    }
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(2)
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessList.first().type)
+      .isEqualTo(VariantPropertiesMethodType.DEVICE_TESTS_VALUE)
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessList.last().type)
+      .isEqualTo(VariantPropertiesMethodType.ANDROID_TEST_VALUE)
+    verify(delegate, times(1)).deviceTests
+    verify(delegate, times(1)).androidTest
+  }
 }

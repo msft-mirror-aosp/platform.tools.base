@@ -20,61 +20,59 @@ import com.android.build.gradle.integration.common.fixture.project.AarSelector
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
 import com.android.build.gradle.options.BooleanOption
+import java.io.File
 import org.junit.Rule
 import org.junit.Test
-import java.io.File
 
 class CustomConsumerProguardFilesInDslTest {
-    @get:Rule
-    val rule = GradleRule.from {
-            kotlinMultiplatformLibrary(":lib") {
-                applyPlugin(PluginType.ANDROID_KMP_LIBRARY)
-                android {
-                    namespace = "com.test.library"
-                    compileSdk = 36
-                    optimization.consumerKeepRules.publish = true
-                    optimization.consumerKeepRules.files(File("proguard-rules.pro"))
-                }
-            }
+  @get:Rule
+  val rule =
+    GradleRule.from {
+      kotlinMultiplatformLibrary(":lib") {
+        applyPlugin(PluginType.ANDROID_KMP_LIBRARY)
+        android {
+          namespace = "com.test.library"
+          compileSdk = 36
+          optimization.consumerKeepRules.publish = true
+          optimization.consumerKeepRules.files(File("proguard-rules.pro"))
         }
-
-    @Test
-    fun testRelativePath() {
-        val project = rule.build {
-            kotlinMultiplatformLibrary(":lib") {
-                files.add("proguard-rules.pro", "some proguard statements")
-            }
-        }
-        project.executor
-            .withFailOnWarning(false) // b/455891987
-            .run("clean")
-
-        project.executor
-            .withFailOnWarning(false) // b/455891987
-            .run("assemble")
-
-        // check the resulting aar.
-        project.kotlinMultiplatformLibrary(":lib").assertAar(AarSelector.NO_BUILD_TYPE) {
-            textFile("proguard.txt").isEqualTo("some proguard statements")
-        }
-    }
-    @Test
-    fun testFileDoesNotExists() {
-        val project = rule.build
-        project.executor.expectFailure()
-            .with(BooleanOption.FAIL_ON_MISSING_PROGUARD_FILES, true)
-            .run("assemble")
-            .assertErrorContains("Supplied consumer proguard configuration does not exist")
-
+      }
     }
 
-    @Test
-    fun testFileDoesNotExistsWithFlag() {
-        val project = rule.build
-        project.executor
-            .with(BooleanOption.FAIL_ON_MISSING_PROGUARD_FILES, false)
-            .withFailOnWarning(false) // b/455891987
-            .run("assemble")
-            .assertOutputContains("Supplied consumer proguard configuration does not exist")
+  @Test
+  fun testRelativePath() {
+    val project = rule.build { kotlinMultiplatformLibrary(":lib") { files.add("proguard-rules.pro", "some proguard statements") } }
+    project.executor
+      .withFailOnWarning(false) // b/455891987
+      .run("clean")
+
+    project.executor
+      .withFailOnWarning(false) // b/455891987
+      .run("assemble")
+
+    // check the resulting aar.
+    project.kotlinMultiplatformLibrary(":lib").assertAar(AarSelector.NO_BUILD_TYPE) {
+      textFile("proguard.txt").isEqualTo("some proguard statements")
     }
+  }
+
+  @Test
+  fun testFileDoesNotExists() {
+    val project = rule.build
+    project.executor
+      .expectFailure()
+      .with(BooleanOption.FAIL_ON_MISSING_PROGUARD_FILES, true)
+      .run("assemble")
+      .assertErrorContains("Supplied consumer proguard configuration does not exist")
+  }
+
+  @Test
+  fun testFileDoesNotExistsWithFlag() {
+    val project = rule.build
+    project.executor
+      .with(BooleanOption.FAIL_ON_MISSING_PROGUARD_FILES, false)
+      .withFailOnWarning(false) // b/455891987
+      .run("assemble")
+      .assertOutputContains("Supplied consumer proguard configuration does not exist")
+  }
 }

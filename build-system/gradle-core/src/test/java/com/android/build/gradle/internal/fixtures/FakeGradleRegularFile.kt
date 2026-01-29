@@ -16,9 +16,9 @@
 
 package com.android.build.gradle.internal.fixtures
 
-import org.gradle.api.file.RegularFile
 import java.io.File
+import org.gradle.api.file.RegularFile
 
 class FakeGradleRegularFile(private val file: File) : RegularFile {
-    override fun getAsFile(): File = file
+  override fun getAsFile(): File = file
 }

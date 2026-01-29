@@ -22,28 +22,25 @@ import org.junit.Rule
 import org.junit.Test
 
 class UnitTestingTestTaskAccess {
-    @JvmField
-    @Rule
-    val project = GradleTestProject.builder().fromTestProject("unitTesting").create()
+  @JvmField @Rule val project = GradleTestProject.builder().fromTestProject("unitTesting").create()
 
-    @Test
-    fun testTestTaskAccess() {
-        project.buildFile.appendText(
-            """
-            androidComponents {
-                onVariants(selector().all()) { variant ->
-                    variant.unitTest?.configureTestTask { testTask ->
-                        testTask.beforeTest { descriptor ->
-                            println("Running test: " + descriptor)
-                        }
-                    }
-                }
-            }
-            """.trimIndent()
-        )
-        var result = project.executor().run("testDebug")
-        Truth.assertThat(result.stdout.findAll("Running test: *").count())
-            .isGreaterThan(10)
-
-    }
+  @Test
+  fun testTestTaskAccess() {
+    project.buildFile.appendText(
+      """
+      androidComponents {
+          onVariants(selector().all()) { variant ->
+              variant.unitTest?.configureTestTask { testTask ->
+                  testTask.beforeTest { descriptor ->
+                      println("Running test: " + descriptor)
+                  }
+              }
+          }
+      }
+      """
+        .trimIndent()
+    )
+    var result = project.executor().run("testDebug")
+    Truth.assertThat(result.stdout.findAll("Running test: *").count()).isGreaterThan(10)
+  }
 }

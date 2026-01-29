@@ -39,6 +39,17 @@ import com.android.tools.build.gradle.internal.profile.GradleTaskExecutionType
 import com.android.utils.usLocaleCapitalize
 import com.google.common.truth.Truth.assertThat
 import com.sun.management.HotSpotDiagnosticMXBean
+import java.io.File
+import java.lang.management.ManagementFactory
+import java.text.DecimalFormat
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.UUID
+import kotlin.io.path.listDirectoryEntries
+import kotlin.io.path.name
+import kotlin.io.path.readText
+import kotlin.math.max
+import kotlin.math.min
 import org.gradle.api.Project
 import org.gradle.api.tasks.testing.TestDescriptor
 import org.gradle.api.tasks.testing.TestListener
@@ -51,955 +62,894 @@ import org.junit.platform.engine.TestExecutionResult
 import org.junit.platform.launcher.TestExecutionListener
 import org.junit.platform.launcher.TestIdentifier
 import org.junit.rules.TemporaryFolder
-import java.io.File
-import java.lang.management.ManagementFactory
-import java.text.DecimalFormat
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.UUID
-import kotlin.io.path.listDirectoryEntries
-import kotlin.io.path.name
-import kotlin.io.path.readText
-import kotlin.math.max
-import kotlin.math.min
 
 class ScreenshotTest {
 
-    @get:Rule
-    val rule = GradleRule.configure()
-        .withProfileOutput()
-        .withMavenRepository {
-            jar("com.mytest.memory-printer:memory-printer:1.0")
-                .addClasses(MemoryPrinter::class.java)
-                .addClasses(CheckMemoryUsage::class.java)
-                .addTextFile("META-INF/services/org.junit.platform.launcher.TestExecutionListener", CheckMemoryUsage::class.java.name)
-        }
-        .from {
-            androidApplication {
-                setupProject()
-            }
-            androidLibrary {
-                setupProject()
-            }
-            // All of these libraries will share the same class loader.
-            // See b/340362066 for more details.
-            repeat(2) {
-                androidLibrary(":lib2_$it") {
-                    setupProject(addEmptyJarToClassPath = false)
-                }
-            }
+  @get:Rule
+  val rule =
+    GradleRule.configure()
+      .withProfileOutput()
+      .withMavenRepository {
+        jar("com.mytest.memory-printer:memory-printer:1.0")
+          .addClasses(MemoryPrinter::class.java)
+          .addClasses(CheckMemoryUsage::class.java)
+          .addTextFile("META-INF/services/org.junit.platform.launcher.TestExecutionListener", CheckMemoryUsage::class.java.name)
+      }
+      .from {
+        androidApplication { setupProject() }
+        androidLibrary { setupProject() }
+        // All of these libraries will share the same class loader.
+        // See b/340362066 for more details.
+        repeat(2) { androidLibrary(":lib2_$it") { setupProject(addEmptyJarToClassPath = false) } }
 
-            gradleProperties {
-                add(BooleanOption.ENABLE_SCREENSHOT_TEST, true)
-            }
-        }
+        gradleProperties { add(BooleanOption.ENABLE_SCREENSHOT_TEST, true) }
+      }
 
-    @JvmField
-    @Rule
-    val temporaryFolder = TemporaryFolder()
+  @JvmField @Rule val temporaryFolder = TemporaryFolder()
 
-    class ConfigureMaxParallelForksCallback : GenericCallback {
-        override fun handleProject(project: Project) {
-            project.afterEvaluate {
-                project.tasks.withType(com.android.compose.screenshot.tasks.PreviewScreenshotValidationTask::class.java) {
-                    println("Forcibly setting maxParallelForks to 4 for task ${it.path}")
-                    it.maxParallelForks = 4
-                }
-            }
+  class ConfigureMaxParallelForksCallback : GenericCallback {
+    override fun handleProject(project: Project) {
+      project.afterEvaluate {
+        project.tasks.withType(com.android.compose.screenshot.tasks.PreviewScreenshotValidationTask::class.java) {
+          println("Forcibly setting maxParallelForks to 4 for task ${it.path}")
+          it.maxParallelForks = 4
         }
+      }
+    }
+  }
+
+  private fun AndroidProjectDefinition<out CommonExtension>.setupProject(addEmptyJarToClassPath: Boolean = true) {
+    setupProjectNoScreenshotTestSource()
+
+    if (addEmptyJarToClassPath) {
+      val customJarName = UUID.randomUUID().toString() + ".jar"
+      buildscript { classpath(localJar(customJarName) { addEmptyClasses("RandomClass_${UUID.randomUUID()}") }) }
     }
 
-    private fun AndroidProjectDefinition<out CommonExtension>.setupProject(addEmptyJarToClassPath: Boolean = true) {
-        setupProjectNoScreenshotTestSource()
+    kotlin {
+      // Screenshot Test should work with JDK 17.
+      jvmToolchain(17)
+    }
 
-        if (addEmptyJarToClassPath) {
-            val customJarName = UUID.randomUUID().toString() + ".jar"
-            buildscript {
-                classpath(localJar(customJarName) {
-                    addEmptyClasses("RandomClass_${UUID.randomUUID()}")
-                })
-            }
-        }
+    dependencies { screenshotTestImplementation("com.android.tools.screenshot:screenshot-validation-api:+") }
 
-        kotlin {
-            // Screenshot Test should work with JDK 17.
-            jvmToolchain(17)
-        }
+    files {
+      add(
+        "src/screenshotTest/java/com/AnotherPreviewParameterProvider.kt",
+        // language=kotlin
+        """
+        package pkg.name
 
-        dependencies {
-            screenshotTestImplementation("com.android.tools.screenshot:screenshot-validation-api:+")
-        }
+        import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 
-        files {
-            add(
-                "src/screenshotTest/java/com/AnotherPreviewParameterProvider.kt",
-                //language=kotlin
-                """
-                    package pkg.name
-
-                    import androidx.compose.ui.tooling.preview.PreviewParameterProvider
-
-                    class AnotherPreviewParameterProvider : PreviewParameterProvider<String> {
-                        override val values = sequenceOf(
-                            "text 1", "text 2"
-                        )
-                    }
-                """.trimIndent()
-            )
-            add(
-                "src/screenshotTest/java/com/ExampleTest.kt",
-                //language=kotlin
-                """
-                    package pkg.name
-
-                    import androidx.compose.ui.tooling.preview.Preview
-                    import androidx.compose.ui.tooling.preview.PreviewParameter
-                    import androidx.compose.runtime.Composable
-                    import com.android.tools.screenshot.PreviewTest
-
-                    class ExampleTest {
-                        @PreviewTest
-                        @Preview(name = "simpleComposable", showBackground = true)
-                        @Composable
-                        fun simpleComposableTest() {
-                            SimpleComposable()
-                        }
-
-                        @PreviewTest
-                        @Preview(name = "simpleComposable", widthDp = 800, heightDp = 800)
-                        @Composable
-                        fun simpleComposableTest2() {
-                            SimpleComposable()
-                        }
-
-                        @PreviewTest
-                        @Preview(name = "with_Background", showBackground = true)
-                        @Preview(name = "withoutBackground", showBackground = false)
-                        @Composable
-                        fun multiPreviewTest() {
-                            SimpleComposable()
-                        }
-
-                        @PreviewTest
-                        @Preview(name = "simplePreviewParameterProvider")
-                        @Composable
-                        fun parameterProviderTest(
-                            @PreviewParameter(SimplePreviewParameterProvider::class) data: String
-                        ) {
-                           SimpleComposable(data)
-                        }
-
-                        @PreviewTest
-                        @Preview(name = "invalid/File/Name")
-                        @Composable
-                        fun previewNameCannotBeUsedAsFileNameTest() {
-                            SimpleComposable()
-                        }
-                    }
-                """.trimIndent()
-            )
-            add(
-                "src/screenshotTest/java/com/TopLevelPreviewTest.kt",
-                //language=kotlin
-                """
-                    package pkg.name
-
-                    import androidx.compose.ui.tooling.preview.Preview
-                    import androidx.compose.ui.tooling.preview.PreviewParameter
-                    import androidx.compose.runtime.Composable
-                    import com.android.tools.screenshot.PreviewTest
-
-                    @PreviewTest
-                    @Preview(showBackground = true)
-                    @Composable
-                    fun simpleComposableTest_3() {
-                        SimpleComposable()
-                    }
-                """.trimIndent()
+        class AnotherPreviewParameterProvider : PreviewParameterProvider<String> {
+            override val values = sequenceOf(
+                "text 1", "text 2"
             )
         }
-    }
+        """
+          .trimIndent(),
+      )
+      add(
+        "src/screenshotTest/java/com/ExampleTest.kt",
+        // language=kotlin
+        """
+        package pkg.name
 
-    private fun AndroidProjectDefinition<out CommonExtension>.setupProjectNoScreenshotTestSource() {
-        applyPlugin(
-            PluginType.Custom(
-                id = com.android.build.gradle.internal.utils.COMPOSE_COMPILER_PLUGIN_ID,
-                version = TestUtils.KOTLIN_VERSION_FOR_TESTS,
-                artifact = "org.jetbrains.kotlin.plugin.compose:org.jetbrains.kotlin.plugin.compose.gradle.plugin",
-                hasMarker = false,
+        import androidx.compose.ui.tooling.preview.Preview
+        import androidx.compose.ui.tooling.preview.PreviewParameter
+        import androidx.compose.runtime.Composable
+        import com.android.tools.screenshot.PreviewTest
+
+        class ExampleTest {
+            @PreviewTest
+            @Preview(name = "simpleComposable", showBackground = true)
+            @Composable
+            fun simpleComposableTest() {
+                SimpleComposable()
+            }
+
+            @PreviewTest
+            @Preview(name = "simpleComposable", widthDp = 800, heightDp = 800)
+            @Composable
+            fun simpleComposableTest2() {
+                SimpleComposable()
+            }
+
+            @PreviewTest
+            @Preview(name = "with_Background", showBackground = true)
+            @Preview(name = "withoutBackground", showBackground = false)
+            @Composable
+            fun multiPreviewTest() {
+                SimpleComposable()
+            }
+
+            @PreviewTest
+            @Preview(name = "simplePreviewParameterProvider")
+            @Composable
+            fun parameterProviderTest(
+                @PreviewParameter(SimplePreviewParameterProvider::class) data: String
+            ) {
+               SimpleComposable(data)
+            }
+
+            @PreviewTest
+            @Preview(name = "invalid/File/Name")
+            @Composable
+            fun previewNameCannotBeUsedAsFileNameTest() {
+                SimpleComposable()
+            }
+        }
+        """
+          .trimIndent(),
+      )
+      add(
+        "src/screenshotTest/java/com/TopLevelPreviewTest.kt",
+        // language=kotlin
+        """
+        package pkg.name
+
+        import androidx.compose.ui.tooling.preview.Preview
+        import androidx.compose.ui.tooling.preview.PreviewParameter
+        import androidx.compose.runtime.Composable
+        import com.android.tools.screenshot.PreviewTest
+
+        @PreviewTest
+        @Preview(showBackground = true)
+        @Composable
+        fun simpleComposableTest_3() {
+            SimpleComposable()
+        }
+        """
+          .trimIndent(),
+      )
+    }
+  }
+
+  private fun AndroidProjectDefinition<out CommonExtension>.setupProjectNoScreenshotTestSource() {
+    applyPlugin(
+      PluginType.Custom(
+        id = com.android.build.gradle.internal.utils.COMPOSE_COMPILER_PLUGIN_ID,
+        version = TestUtils.KOTLIN_VERSION_FOR_TESTS,
+        artifact = "org.jetbrains.kotlin.plugin.compose:org.jetbrains.kotlin.plugin.compose.gradle.plugin",
+        hasMarker = false,
+      )
+    )
+    applyPlugin(
+      PluginType.Custom(
+        id = "com.android.compose.screenshot",
+        version = "+",
+        artifact = "com.android.compose.screenshot:screenshot-test-gradle-plugin",
+        hasMarker = false,
+      )
+    )
+
+    android {
+      defaultConfig.apply {
+        minSdk = 24
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+      }
+
+      buildFeatures.apply { compose = true }
+      composeOptions.kotlinCompilerExtensionVersion = TestUtils.COMPOSE_COMPILER_FOR_TESTS
+      experimentalProperties["android.experimental.enableScreenshotTest"] = true
+    }
+    dependencies {
+      testImplementation("junit:junit:4.13.2")
+      implementation("androidx.compose.ui:ui-tooling:${TaskManager.COMPOSE_UI_VERSION}")
+      implementation("androidx.compose.ui:ui-tooling-preview:${TaskManager.COMPOSE_UI_VERSION}")
+      implementation("androidx.compose.material:material:${TaskManager.COMPOSE_UI_VERSION}")
+    }
+    kotlin { jvmToolchain(17) }
+    pluginCallbacks += ScreenshotCallback::class.java
+
+    files {
+      add(
+        "src/main/java/com/Example.kt",
+        // language=kotlin
+        """
+        package pkg.name
+
+        import androidx.compose.material.Text
+        import androidx.compose.runtime.Composable
+
+        @Composable
+        fun SimpleComposable(text: String = "Hello World") {
+            Text(text)
+        }
+        """
+          .trimIndent(),
+      )
+      add(
+        "src/main/java/com/ParameterProviders.kt",
+        // language=kotlin
+        """
+        package pkg.name
+
+        import androidx.compose.ui.tooling.preview.PreviewParameterProvider
+
+        class SimplePreviewParameterProvider : PreviewParameterProvider<String> {
+            override val values = sequenceOf(
+                "Primary text", "Secondary text"
             )
-        )
-        applyPlugin(
-            PluginType.Custom(
-                id = "com.android.compose.screenshot",
-                version = "+",
-                artifact = "com.android.compose.screenshot:screenshot-test-gradle-plugin",
-                hasMarker = false,
-            )
-        )
+        }
+        """
+          .trimIndent(),
+      )
+    }
+  }
 
-        android {
-            defaultConfig.apply {
-                minSdk = 24
-                testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+  class ScreenshotCallback : GenericCallback {
+    override fun handleProject(project: Project) {
+      println(
+        "Class loader for AGP API = " + com.android.build.api.variant.AndroidComponentsExtension::class.java.getClassLoader().hashCode()
+      )
+
+      // Add test listener to log additional test results for easier debugging when tests failed.
+      project.tasks.withType(org.gradle.api.tasks.testing.Test::class.java) {
+        it.addTestListener(
+          object : TestListener {
+            override fun beforeSuite(suite: TestDescriptor) {
+              println("Starting test suite: ${suite.name}")
             }
 
-            buildFeatures.apply {
-                compose = true
+            override fun afterSuite(suite: TestDescriptor, result: TestResult) {
+              println("Finished test suite: ${suite.name} with result: ${result.resultType}")
+              result.exception?.printStackTrace()
             }
-            composeOptions.kotlinCompilerExtensionVersion = TestUtils.COMPOSE_COMPILER_FOR_TESTS
-            experimentalProperties["android.experimental.enableScreenshotTest"] = true
-        }
-        dependencies {
-            testImplementation("junit:junit:4.13.2")
-            implementation("androidx.compose.ui:ui-tooling:${TaskManager.COMPOSE_UI_VERSION}")
-            implementation("androidx.compose.ui:ui-tooling-preview:${TaskManager.COMPOSE_UI_VERSION}")
-            implementation("androidx.compose.material:material:${TaskManager.COMPOSE_UI_VERSION}")
-        }
-        kotlin {
-            jvmToolchain(17)
-        }
-        pluginCallbacks += ScreenshotCallback::class.java
 
-        files {
-            add(
-                "src/main/java/com/Example.kt",
-                //language=kotlin
-                """
-                    package pkg.name
-
-                    import androidx.compose.material.Text
-                    import androidx.compose.runtime.Composable
-
-                    @Composable
-                    fun SimpleComposable(text: String = "Hello World") {
-                        Text(text)
-                    }
-                """.trimIndent()
-            )
-            add(
-                "src/main/java/com/ParameterProviders.kt",
-                //language=kotlin
-                """
-                    package pkg.name
-
-                    import androidx.compose.ui.tooling.preview.PreviewParameterProvider
-
-                    class SimplePreviewParameterProvider : PreviewParameterProvider<String> {
-                        override val values = sequenceOf(
-                            "Primary text", "Secondary text"
-                        )
-                    }
-                """.trimIndent()
-            )
-        }
-    }
-
-    class ScreenshotCallback: GenericCallback {
-        override fun handleProject(project: Project) {
-            println("Class loader for AGP API = " + com.android.build.api.variant.AndroidComponentsExtension::class.java.getClassLoader().hashCode())
-
-            // Add test listener to log additional test results for easier debugging when tests failed.
-            project.tasks.withType(org.gradle.api.tasks.testing.Test::class.java) {
-                it.addTestListener(object: TestListener {
-                    override fun beforeSuite(suite: TestDescriptor) {
-                        println("Starting test suite: ${suite.name}")
-                    }
-
-                    override fun afterSuite(suite: TestDescriptor, result: TestResult) {
-                        println("Finished test suite: ${suite.name} with result: ${result.resultType}")
-                        result.exception?.printStackTrace()
-                    }
-
-                    override fun beforeTest(testDescriptor: TestDescriptor) {
-                        println("Starting test: ${testDescriptor.name}")
-                    }
-
-                    override fun afterTest(testDescriptor: TestDescriptor, result: TestResult) {
-                        println("Finished test: ${testDescriptor.name} with result: ${result.resultType}")
-                        result.exception?.printStackTrace()
-                    }
-                })
+            override fun beforeTest(testDescriptor: TestDescriptor) {
+              println("Starting test: ${testDescriptor.name}")
             }
-        }
-    }
 
-    // custom executor configuration for screenshotTesting (sst)
-    private fun GradleBuild.sstExecutor(): GradleTaskExecutor =
-        executor
-            .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
-            .withLoggingLevel(LoggingLevel.LIFECYCLE)
-
-    @Test
-    fun runPreviewScreenshotTestWithThreshold() {
-        val build = rule.build
-        val appProject = build.androidApplication()
-
-        updateReferenceImage()
-        //update the preview - tests fail
-        appProject.files.update("src/main/java/com/Example.kt")
-            .searchAndReplace("Hello World", "Hello Worid")
-
-        val result = build.sstExecutor().expectFailure().run(":app:validateDebugScreenshotTest")
-        result.assertErrorContains("There were failing tests. See the report at: ")
-
-        //set high threshold - tests pass
-        appProject.reconfigure {
-            android {
-                testOptions {
-                    // ScreenshotTestOptions is not yet part of the AGP API so use it via the
-                    // extension mechanism
-                    viaExtension("screenshotTests", ScreenshotTestOptions::class) {
-                        imageDifferenceThreshold = 0.5f
-                    }
-                }
+            override fun afterTest(testDescriptor: TestDescriptor, result: TestResult) {
+              println("Finished test: ${testDescriptor.name} with result: ${result.resultType}")
+              result.exception?.printStackTrace()
             }
-        }
-
-        build.sstExecutor().run(":app:validateDebugScreenshotTest")
-
-        //reduce threshold - tests fail
-        appProject.reconfigure {
-            android {
-                testOptions {
-                    viaExtension("screenshotTests", ScreenshotTestOptions::class) {
-                        imageDifferenceThreshold = 0.001f
-                    }
-                }
-            }
-        }
-
-        val resultLowThreshold = build.sstExecutor().expectFailure().run(":app:validateDebugScreenshotTest")
-        resultLowThreshold.assertErrorContains("There were failing tests. See the report at: ")
-    }
-
-    private fun updateReferenceImage(
-        buildType: String = "debug",
-        flavor: String = "",
-        projectName: String = "app"): GradleBuildResult {
-        val build = rule.build
-        val variantName = if (flavor.isEmpty()) {
-            buildType
-        } else {
-            flavor + buildType.usLocaleCapitalize()
-        }
-        return build.sstExecutor().run(
-            ":$projectName:update${variantName.usLocaleCapitalize()}ScreenshotTest")
-    }
-
-    private fun updateReferenceImageForAllProjects(
-        variantName: String = "debug"): GradleBuildResult {
-        val build = rule.build
-        return build.sstExecutor().run(
-            "update${variantName.usLocaleCapitalize()}ScreenshotTest")
-    }
-
-    @Test
-    fun runPreviewScreenshotTest() {
-        val build = rule.build
-        val appProject = build.androidApplication()
-
-        // Generate screenshots to be tested against
-        updateReferenceImage()
-
-        val exampleTestReferenceScreenshotDir = appProject.resolve("src/screenshotTestDebug/reference/pkg/name/ExampleTest")
-        val topLevelTestReferenceScreenshotDir = appProject.resolve("src/screenshotTestDebug/reference/pkg/name/TopLevelPreviewTestKt")
-        assertThat(exampleTestReferenceScreenshotDir.listDirectoryEntries().map { it.name }).containsExactly(
-            "simpleComposableTest_simpleComposable_c5877f71_0.png",
-            "simpleComposableTest2_simpleComposable_7362dd6b_0.png",
-            "multiPreviewTest_with_Background_6d9364e2_0.png",
-            "multiPreviewTest_withoutBackground_3619adf7_0.png",
-            "parameterProviderTest_simplePreviewParameterProvider_893e015e_b983d6d8_1.png",
-            "parameterProviderTest_simplePreviewParameterProvider_893e015e_b983d6d8_0.png",
-            "previewNameCannotBeUsedAsFileNameTest_aa50de45_0.png",
+          }
         )
-        assertThat(topLevelTestReferenceScreenshotDir.listDirectoryEntries().map { it.name }).containsExactly(
-            "simpleComposableTest_3_748aa731_0.png"
-        )
+      }
+    }
+  }
 
-        // Validate previews matches screenshots
-        val result = build.sstExecutor().run(":app:validateDebugScreenshotTest")
-        result.assertOutputDoesNotContain("Slow render action")
+  // custom executor configuration for screenshotTesting (sst)
+  private fun GradleBuild.sstExecutor(): GradleTaskExecutor =
+    executor.withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON).withLoggingLevel(LoggingLevel.LIFECYCLE)
 
-        // Verify that HTML reports are generated and all tests pass
-        val indexHtmlReport = appProject.buildDir.resolve("reports/screenshotTest/preview/debug/index.html")
-        val classHtmlReport = appProject.buildDir.resolve("reports/screenshotTest/preview/debug/pkg.name.ExampleTest.html")
-        val class2HtmlReport = appProject.buildDir.resolve("reports/screenshotTest/preview/debug/pkg.name.TopLevelPreviewTestKt.html")
-        val packageHtmlReport = appProject.buildDir.resolve("reports/screenshotTest/preview/debug/pkg.name.html")
-        assertThat(indexHtmlReport).exists()
-        assertThat(classHtmlReport).exists()
-        val expectedOutput = listOf(
-            """<h3 class="success">simpleComposableTest_simpleComposable</h3>""",
-            """<h3 class="success">simpleComposableTest2_simpleComposable</h3>""",
-            """<h3 class="success">multiPreviewTest_with_Background_{showBackground=true}</h3>""",
-            """<h3 class="success">multiPreviewTest_withoutBackground_{showBackground=false}</h3>""",
-            """{provider=pkg.name.SimplePreviewParameterProvider}]_0</h3>""",
-            """{provider=pkg.name.SimplePreviewParameterProvider}]_1</h3>""",
-            """<h3 class="success">previewNameCannotBeUsedAsFileNameTest_invalid/File/Name</h3>""",
-            """<h3 class="success">parameterProviderTest_simplePreviewParameterProvider_[{provider=pkg.name.SimplePreviewParameterProvider}]_0</h3>""",
-            """<h3 class="success">parameterProviderTest_simplePreviewParameterProvider_[{provider=pkg.name.SimplePreviewParameterProvider}]_1</h3>"""
-        )
-        var classHtmlReportText = classHtmlReport.readText()
-        expectedOutput.forEach { assertThat(classHtmlReportText).contains(it) }
-        class2HtmlReport.readText().let {
-            assertThat(it).contains("""<h3 class="success">simpleComposableTest_3</h3>""")
-            assertThat(it).contains("simpleComposableTest_3_748aa731_0.png")
+  @Test
+  fun runPreviewScreenshotTestWithThreshold() {
+    val build = rule.build
+    val appProject = build.androidApplication()
+
+    updateReferenceImage()
+    // update the preview - tests fail
+    appProject.files.update("src/main/java/com/Example.kt").searchAndReplace("Hello World", "Hello Worid")
+
+    val result = build.sstExecutor().expectFailure().run(":app:validateDebugScreenshotTest")
+    result.assertErrorContains("There were failing tests. See the report at: ")
+
+    // set high threshold - tests pass
+    appProject.reconfigure {
+      android {
+        testOptions {
+          // ScreenshotTestOptions is not yet part of the AGP API so use it via the
+          // extension mechanism
+          viaExtension("screenshotTests", ScreenshotTestOptions::class) { imageDifferenceThreshold = 0.5f }
         }
-        assertThat(packageHtmlReport).exists()
-
-        // Assert that no diff images were generated because screenshot matched the reference image
-        val exampleTestDiffDir = appProject.buildDir.resolve("outputs/screenshotTest-results/preview/debug/diffs/pkg/name/ExampleTest")
-        val topLevelTestDiffDir = appProject.buildDir.resolve("outputs/screenshotTest-results/preview/debug/diffs/pkg/name/TopLevelPreviewTestKt")
-        assert(exampleTestDiffDir.listDirectoryEntries().isEmpty())
-        assert(topLevelTestDiffDir.listDirectoryEntries().isEmpty())
-
-        // Update previews to be different from the references
-        appProject.files.apply {
-            update("src/main/java/com/Example.kt")
-                .searchAndReplace("Hello World", "HelloWorld ")
-            update("src/main/java/com/ParameterProviders.kt")
-                .searchAndReplace("Primary text", " Primarytext")
-        }
-
-        // Rerun validation task - modified tests should fail and diffs are generated
-        build.sstExecutor().expectFailure().run(":app:validateDebugScreenshotTest")
-
-        assertThat(indexHtmlReport).exists()
-        assertThat(classHtmlReport).exists()
-        val expectedOutputAfterChangingPreviews = listOf(
-            "Failed tests",
-            """<h3 class="failures">simpleComposableTest_simpleComposable</h3>""",
-            """<h3 class="failures">simpleComposableTest2_simpleComposable</h3>""",
-            """<h3 class="failures">multiPreviewTest_with_Background_{showBackground=true}</h3>""",
-            """<h3 class="failures">multiPreviewTest_withoutBackground_{showBackground=false}</h3>""",
-            """{provider=pkg.name.SimplePreviewParameterProvider}]_0</h3>""",
-            """{provider=pkg.name.SimplePreviewParameterProvider}]_1</h3>""",
-            """<h3 class="failures">previewNameCannotBeUsedAsFileNameTest_invalid/File/Name</h3>""",
-            """<h3 class="failures">parameterProviderTest_simplePreviewParameterProvider_[{provider=pkg.name.SimplePreviewParameterProvider}]_0</h3>""",
-            """<h3 class="success">parameterProviderTest_simplePreviewParameterProvider_[{provider=pkg.name.SimplePreviewParameterProvider}]_1</h3>"""
-        )
-        classHtmlReportText = classHtmlReport.readText()
-        expectedOutputAfterChangingPreviews.forEach { assertThat(classHtmlReportText).contains(it) }
-        class2HtmlReport.readText().let {
-            assertThat(it).contains("""<h3 class="failures">simpleComposableTest_3</h3>""")
-            assertThat(it).contains("rendered/pkg/name/TopLevelPreviewTestKt/simpleComposableTest_3_748aa731_0.png")
-            assertThat(it).contains("reference/pkg/name/TopLevelPreviewTestKt/simpleComposableTest_3_748aa731_0.png")
-            assertThat(it).contains("diffs/pkg/name/TopLevelPreviewTestKt/simpleComposableTest_3_748aa731_0.png")
-        }
-        assertThat(packageHtmlReport).exists()
-
-        assertThat(exampleTestDiffDir.listDirectoryEntries().map { it.name }).containsExactly(
-            "simpleComposableTest_simpleComposable_c5877f71_0.png",
-            "simpleComposableTest2_simpleComposable_7362dd6b_0.png",
-            "multiPreviewTest_with_Background_6d9364e2_0.png",
-            "multiPreviewTest_withoutBackground_3619adf7_0.png",
-            "parameterProviderTest_simplePreviewParameterProvider_893e015e_b983d6d8_0.png",
-            "previewNameCannotBeUsedAsFileNameTest_aa50de45_0.png",
-        )
-        assertThat(topLevelTestDiffDir.listDirectoryEntries().map { it.name }).containsExactly(
-            "simpleComposableTest_3_748aa731_0.png"
-        )
+      }
     }
 
-    @Test
-    fun runPreviewScreenshotTestWithMultiModuleProject() {
-        val build = rule.build {
-            useOldPluginStyleForSeparateClassloaders = true
-        }
-        // Generate screenshots to be tested against
-        verifyClassLoaderSetup(updateReferenceImageForAllProjects())
+    build.sstExecutor().run(":app:validateDebugScreenshotTest")
 
-        // Validate previews matches screenshots
-        build.sstExecutor().run("validateDebugScreenshotTest")
+    // reduce threshold - tests fail
+    appProject.reconfigure {
+      android { testOptions { viaExtension("screenshotTests", ScreenshotTestOptions::class) { imageDifferenceThreshold = 0.001f } } }
     }
 
-    @Test
-    fun runUpdateScreenshotTestWithMultiModuleProjectBySingleWorker() {
-        // Generate screenshots to be tested against
-        updateReferenceImageForAllProjects()
+    val resultLowThreshold = build.sstExecutor().expectFailure().run(":app:validateDebugScreenshotTest")
+    resultLowThreshold.assertErrorContains("There were failing tests. See the report at: ")
+  }
 
-        // Set the max workers to 1 to let Gradle reuse the same worker daemon process for
-        // running TestEngine more than once. See b/340362066 for more details.
-        rule.build.sstExecutor().withArguments(listOf("--max-workers", "1")).run("validateDebugScreenshotTest")
+  private fun updateReferenceImage(buildType: String = "debug", flavor: String = "", projectName: String = "app"): GradleBuildResult {
+    val build = rule.build
+    val variantName =
+      if (flavor.isEmpty()) {
+        buildType
+      } else {
+        flavor + buildType.usLocaleCapitalize()
+      }
+    return build.sstExecutor().run(":$projectName:update${variantName.usLocaleCapitalize()}ScreenshotTest")
+  }
+
+  private fun updateReferenceImageForAllProjects(variantName: String = "debug"): GradleBuildResult {
+    val build = rule.build
+    return build.sstExecutor().run("update${variantName.usLocaleCapitalize()}ScreenshotTest")
+  }
+
+  @Test
+  fun runPreviewScreenshotTest() {
+    val build = rule.build
+    val appProject = build.androidApplication()
+
+    // Generate screenshots to be tested against
+    updateReferenceImage()
+
+    val exampleTestReferenceScreenshotDir = appProject.resolve("src/screenshotTestDebug/reference/pkg/name/ExampleTest")
+    val topLevelTestReferenceScreenshotDir = appProject.resolve("src/screenshotTestDebug/reference/pkg/name/TopLevelPreviewTestKt")
+    assertThat(exampleTestReferenceScreenshotDir.listDirectoryEntries().map { it.name })
+      .containsExactly(
+        "simpleComposableTest_simpleComposable_c5877f71_0.png",
+        "simpleComposableTest2_simpleComposable_7362dd6b_0.png",
+        "multiPreviewTest_with_Background_6d9364e2_0.png",
+        "multiPreviewTest_withoutBackground_3619adf7_0.png",
+        "parameterProviderTest_simplePreviewParameterProvider_893e015e_b983d6d8_1.png",
+        "parameterProviderTest_simplePreviewParameterProvider_893e015e_b983d6d8_0.png",
+        "previewNameCannotBeUsedAsFileNameTest_aa50de45_0.png",
+      )
+    assertThat(topLevelTestReferenceScreenshotDir.listDirectoryEntries().map { it.name })
+      .containsExactly("simpleComposableTest_3_748aa731_0.png")
+
+    // Validate previews matches screenshots
+    val result = build.sstExecutor().run(":app:validateDebugScreenshotTest")
+    result.assertOutputDoesNotContain("Slow render action")
+
+    // Verify that HTML reports are generated and all tests pass
+    val indexHtmlReport = appProject.buildDir.resolve("reports/screenshotTest/preview/debug/index.html")
+    val classHtmlReport = appProject.buildDir.resolve("reports/screenshotTest/preview/debug/pkg.name.ExampleTest.html")
+    val class2HtmlReport = appProject.buildDir.resolve("reports/screenshotTest/preview/debug/pkg.name.TopLevelPreviewTestKt.html")
+    val packageHtmlReport = appProject.buildDir.resolve("reports/screenshotTest/preview/debug/pkg.name.html")
+    assertThat(indexHtmlReport).exists()
+    assertThat(classHtmlReport).exists()
+    val expectedOutput =
+      listOf(
+        """<h3 class="success">simpleComposableTest_simpleComposable</h3>""",
+        """<h3 class="success">simpleComposableTest2_simpleComposable</h3>""",
+        """<h3 class="success">multiPreviewTest_with_Background_{showBackground=true}</h3>""",
+        """<h3 class="success">multiPreviewTest_withoutBackground_{showBackground=false}</h3>""",
+        """{provider=pkg.name.SimplePreviewParameterProvider}]_0</h3>""",
+        """{provider=pkg.name.SimplePreviewParameterProvider}]_1</h3>""",
+        """<h3 class="success">previewNameCannotBeUsedAsFileNameTest_invalid/File/Name</h3>""",
+        """<h3 class="success">parameterProviderTest_simplePreviewParameterProvider_[{provider=pkg.name.SimplePreviewParameterProvider}]_0</h3>""",
+        """<h3 class="success">parameterProviderTest_simplePreviewParameterProvider_[{provider=pkg.name.SimplePreviewParameterProvider}]_1</h3>""",
+      )
+    var classHtmlReportText = classHtmlReport.readText()
+    expectedOutput.forEach { assertThat(classHtmlReportText).contains(it) }
+    class2HtmlReport.readText().let {
+      assertThat(it).contains("""<h3 class="success">simpleComposableTest_3</h3>""")
+      assertThat(it).contains("simpleComposableTest_3_748aa731_0.png")
+    }
+    assertThat(packageHtmlReport).exists()
+
+    // Assert that no diff images were generated because screenshot matched the reference image
+    val exampleTestDiffDir = appProject.buildDir.resolve("outputs/screenshotTest-results/preview/debug/diffs/pkg/name/ExampleTest")
+    val topLevelTestDiffDir =
+      appProject.buildDir.resolve("outputs/screenshotTest-results/preview/debug/diffs/pkg/name/TopLevelPreviewTestKt")
+    assert(exampleTestDiffDir.listDirectoryEntries().isEmpty())
+    assert(topLevelTestDiffDir.listDirectoryEntries().isEmpty())
+
+    // Update previews to be different from the references
+    appProject.files.apply {
+      update("src/main/java/com/Example.kt").searchAndReplace("Hello World", "HelloWorld ")
+      update("src/main/java/com/ParameterProviders.kt").searchAndReplace("Primary text", " Primarytext")
     }
 
-    private fun verifyClassLoaderSetup(result: GradleBuildResult) {
-        val taskLogs = mutableSetOf<String>()
-        result.stdout.forEachLine {
-            if (it.startsWith("Class loader for AGP API = ")) {
-                taskLogs.add(it)
-            }
-        }
-        assertThat(taskLogs)
-                .named("Log lines that should contain different class loader hashes")
-                .hasSize(3)
+    // Rerun validation task - modified tests should fail and diffs are generated
+    build.sstExecutor().expectFailure().run(":app:validateDebugScreenshotTest")
+
+    assertThat(indexHtmlReport).exists()
+    assertThat(classHtmlReport).exists()
+    val expectedOutputAfterChangingPreviews =
+      listOf(
+        "Failed tests",
+        """<h3 class="failures">simpleComposableTest_simpleComposable</h3>""",
+        """<h3 class="failures">simpleComposableTest2_simpleComposable</h3>""",
+        """<h3 class="failures">multiPreviewTest_with_Background_{showBackground=true}</h3>""",
+        """<h3 class="failures">multiPreviewTest_withoutBackground_{showBackground=false}</h3>""",
+        """{provider=pkg.name.SimplePreviewParameterProvider}]_0</h3>""",
+        """{provider=pkg.name.SimplePreviewParameterProvider}]_1</h3>""",
+        """<h3 class="failures">previewNameCannotBeUsedAsFileNameTest_invalid/File/Name</h3>""",
+        """<h3 class="failures">parameterProviderTest_simplePreviewParameterProvider_[{provider=pkg.name.SimplePreviewParameterProvider}]_0</h3>""",
+        """<h3 class="success">parameterProviderTest_simplePreviewParameterProvider_[{provider=pkg.name.SimplePreviewParameterProvider}]_1</h3>""",
+      )
+    classHtmlReportText = classHtmlReport.readText()
+    expectedOutputAfterChangingPreviews.forEach { assertThat(classHtmlReportText).contains(it) }
+    class2HtmlReport.readText().let {
+      assertThat(it).contains("""<h3 class="failures">simpleComposableTest_3</h3>""")
+      assertThat(it).contains("rendered/pkg/name/TopLevelPreviewTestKt/simpleComposableTest_3_748aa731_0.png")
+      assertThat(it).contains("reference/pkg/name/TopLevelPreviewTestKt/simpleComposableTest_3_748aa731_0.png")
+      assertThat(it).contains("diffs/pkg/name/TopLevelPreviewTestKt/simpleComposableTest_3_748aa731_0.png")
     }
+    assertThat(packageHtmlReport).exists()
 
-    @Test
-    fun analytics() {
-        val build = rule.build
-        val capturer = ProfileCapturer(build)
+    assertThat(exampleTestDiffDir.listDirectoryEntries().map { it.name })
+      .containsExactly(
+        "simpleComposableTest_simpleComposable_c5877f71_0.png",
+        "simpleComposableTest2_simpleComposable_7362dd6b_0.png",
+        "multiPreviewTest_with_Background_6d9364e2_0.png",
+        "multiPreviewTest_withoutBackground_3619adf7_0.png",
+        "parameterProviderTest_simplePreviewParameterProvider_893e015e_b983d6d8_0.png",
+        "previewNameCannotBeUsedAsFileNameTest_aa50de45_0.png",
+      )
+    assertThat(topLevelTestDiffDir.listDirectoryEntries().map { it.name }).containsExactly("simpleComposableTest_3_748aa731_0.png")
+  }
 
-        val profiles = capturer.capture {
-            updateReferenceImage()
-        }
+  @Test
+  fun runPreviewScreenshotTestWithMultiModuleProject() {
+    val build = rule.build { useOldPluginStyleForSeparateClassloaders = true }
+    // Generate screenshots to be tested against
+    verifyClassLoaderSetup(updateReferenceImageForAllProjects())
 
-        profiles.mapNotNull { profile ->
-            val spanList = profile.spanList
-            val taskSpan = spanList.firstOrNull {
-                it.task.type == GradleTaskExecutionType.PREVIEW_SCREENSHOT_UPDATE_VALUE
-            } ?: return@mapNotNull null
-            taskSpan.durationInMs
-        }.first { durationInMs ->
-            durationInMs > 0L
-        }
+    // Validate previews matches screenshots
+    build.sstExecutor().run("validateDebugScreenshotTest")
+  }
+
+  @Test
+  fun runUpdateScreenshotTestWithMultiModuleProjectBySingleWorker() {
+    // Generate screenshots to be tested against
+    updateReferenceImageForAllProjects()
+
+    // Set the max workers to 1 to let Gradle reuse the same worker daemon process for
+    // running TestEngine more than once. See b/340362066 for more details.
+    rule.build.sstExecutor().withArguments(listOf("--max-workers", "1")).run("validateDebugScreenshotTest")
+  }
+
+  private fun verifyClassLoaderSetup(result: GradleBuildResult) {
+    val taskLogs = mutableSetOf<String>()
+    result.stdout.forEachLine {
+      if (it.startsWith("Class loader for AGP API = ")) {
+        taskLogs.add(it)
+      }
     }
+    assertThat(taskLogs).named("Log lines that should contain different class loader hashes").hasSize(3)
+  }
 
-    @Test
-    fun runPreviewScreenshotTestWithNoSourceFiles() {
-        val build = rule.build {
-            androidApplication {
-                // Delete test classes so that there are no source files in screenshotTest source set
-                files {
-                    remove("src/screenshotTest/java/com/ExampleTest.kt")
-                    remove("src/screenshotTest/java/com/TopLevelPreviewTest.kt")
-                    remove("src/screenshotTest/java/com/AnotherPreviewParameterProvider.kt")
-                }
-            }
+  @Test
+  fun analytics() {
+    val build = rule.build
+    val capturer = ProfileCapturer(build)
+
+    val profiles = capturer.capture { updateReferenceImage() }
+
+    profiles
+      .mapNotNull { profile ->
+        val spanList = profile.spanList
+        val taskSpan =
+          spanList.firstOrNull { it.task.type == GradleTaskExecutionType.PREVIEW_SCREENSHOT_UPDATE_VALUE } ?: return@mapNotNull null
+        taskSpan.durationInMs
+      }
+      .first { durationInMs -> durationInMs > 0L }
+  }
+
+  @Test
+  fun runPreviewScreenshotTestWithNoSourceFiles() {
+    val build =
+      rule.build {
+        androidApplication {
+          // Delete test classes so that there are no source files in screenshotTest source set
+          files {
+            remove("src/screenshotTest/java/com/ExampleTest.kt")
+            remove("src/screenshotTest/java/com/TopLevelPreviewTest.kt")
+            remove("src/screenshotTest/java/com/AnotherPreviewParameterProvider.kt")
+          }
         }
-        val appProject = build.androidApplication()
+      }
+    val appProject = build.androidApplication()
 
-        // Validation is skipped when there are no source files
-        val result = build.sstExecutor().run(":app:validateDebugScreenshotTest")
-        assertThat(result.skippedTasks).contains(":app:validateDebugScreenshotTest")
+    // Validation is skipped when there are no source files
+    val result = build.sstExecutor().run(":app:validateDebugScreenshotTest")
+    assertThat(result.skippedTasks).contains(":app:validateDebugScreenshotTest")
 
-        val indexHtmlReport = appProject.buildDir.resolve("reports/screenshotTest/preview/debug/index.html")
-        assertThat(indexHtmlReport).doesNotExist()
-    }
+    val indexHtmlReport = appProject.buildDir.resolve("reports/screenshotTest/preview/debug/index.html")
+    assertThat(indexHtmlReport).doesNotExist()
+  }
 
-    @Test
-    fun runPreviewScreenshotTestWithSourceFilesAndNoPreviewsToTest() {
-        val build = rule.build {
-            androidApplication {
-                // Comment out preview tests so that source files exist with no previews to test
-                files {
-                    update("src/screenshotTest/java/com/ExampleTest.kt")
-                        .transform { """
+  @Test
+  fun runPreviewScreenshotTestWithSourceFilesAndNoPreviewsToTest() {
+    val build =
+      rule.build {
+        androidApplication {
+          // Comment out preview tests so that source files exist with no previews to test
+          files {
+            update("src/screenshotTest/java/com/ExampleTest.kt").transform {
+              """
                             /*
                             $it
                             */
-                        """.trimIndent() }
-                    update("src/screenshotTest/java/com/TopLevelPreviewTest.kt")
-                        .transform { """
-                            /*
-                            $it
-                            */
-                        """.trimIndent() }
-                }
-            }
-        }
-        val appProject = build.androidApplication()
-
-        // Gradle test tasks fail when there are source files but no tests are executed starting in Gradle 9.0
-        build.sstExecutor()
-            .expectFailure()
-            .run(":app:validateDebugScreenshotTest")
-
-        val indexHtmlReport = appProject.buildDir.resolve("reports/screenshotTest/preview/debug/index.html")
-        assertThat(indexHtmlReport).exists()
-    }
-
-    @Test
-    fun runPreviewScreenshotTestWithNoPreviewAnnotation() {
-        val build = rule.build {
-            androidApplication {
-                // Comment out preview tests so that source files exist with no previews to test
-                files {
-                    add(
-                        "src/screenshotTest/java/com/PreviewTestWithoutPreview.kt",
-                        //language=kotlin
                         """
-                        package pkg.name
-
-                        import com.android.tools.screenshot.PreviewTest
-
-                        @PreviewTest
-                        fun previewTestWithoutPreview() {}
-                        """.trimIndent()
-                    )
-                }
+                .trimIndent()
             }
-        }
-        val appProject = build.androidApplication()
-
-        // Gradle test tasks fail when there are source files but no tests are executed starting in Gradle 9.0
-        build.sstExecutor()
-            .expectFailure()
-            .run(":app:validateDebugScreenshotTest")
-
-        val indexHtmlReport = appProject.buildDir.resolve("reports/screenshotTest/preview/debug/index.html")
-        assertThat(indexHtmlReport).exists()
-
-        val xmlReport = appProject.buildDir.resolve("test-results/validateDebugScreenshotTest/TEST-preview-screenshot-test-engine.xml")
-        assertThat(xmlReport).exists()
-        assertThat(xmlReport.readText()).contains("@Preview annotation is required for @PreviewTest")
-    }
-
-    @Test
-    fun runPreviewScreenshotTestsWithMissingUiToolingDep() {
-        val uiToolingDep = "androidx.compose.ui:ui-tooling:${TaskManager.COMPOSE_UI_VERSION}"
-        val build = rule.build {
-            androidApplication {
-                dependencies {
-                    // Verify that no exception is thrown when ui-tooling is added as an screenshotTestImplementation dependency
-                    remove("implementation", uiToolingDep)
-                    screenshotTestImplementation(uiToolingDep)
-                }
+            update("src/screenshotTest/java/com/TopLevelPreviewTest.kt").transform {
+              """
+                            /*
+                            $it
+                            */
+                        """
+                .trimIndent()
             }
+          }
         }
+      }
+    val appProject = build.androidApplication()
 
-        updateReferenceImage()
+    // Gradle test tasks fail when there are source files but no tests are executed starting in Gradle 9.0
+    build.sstExecutor().expectFailure().run(":app:validateDebugScreenshotTest")
 
-        // Verify that exception is thrown when ui-tooling dep is missing
-        build.androidApplication().reconfigure {
-            dependencies {
-                remove("screenshotTestImplementation", uiToolingDep)
+    val indexHtmlReport = appProject.buildDir.resolve("reports/screenshotTest/preview/debug/index.html")
+    assertThat(indexHtmlReport).exists()
+  }
+
+  @Test
+  fun runPreviewScreenshotTestWithNoPreviewAnnotation() {
+    val build =
+      rule.build {
+        androidApplication {
+          // Comment out preview tests so that source files exist with no previews to test
+          files {
+            add(
+              "src/screenshotTest/java/com/PreviewTestWithoutPreview.kt",
+              // language=kotlin
+              """
+              package pkg.name
+
+              import com.android.tools.screenshot.PreviewTest
+
+              @PreviewTest
+              fun previewTestWithoutPreview() {}
+              """
+                .trimIndent(),
+            )
+          }
+        }
+      }
+    val appProject = build.androidApplication()
+
+    // Gradle test tasks fail when there are source files but no tests are executed starting in Gradle 9.0
+    build.sstExecutor().expectFailure().run(":app:validateDebugScreenshotTest")
+
+    val indexHtmlReport = appProject.buildDir.resolve("reports/screenshotTest/preview/debug/index.html")
+    assertThat(indexHtmlReport).exists()
+
+    val xmlReport = appProject.buildDir.resolve("test-results/validateDebugScreenshotTest/TEST-preview-screenshot-test-engine.xml")
+    assertThat(xmlReport).exists()
+    assertThat(xmlReport.readText()).contains("@Preview annotation is required for @PreviewTest")
+  }
+
+  @Test
+  fun runPreviewScreenshotTestsWithMissingUiToolingDep() {
+    val uiToolingDep = "androidx.compose.ui:ui-tooling:${TaskManager.COMPOSE_UI_VERSION}"
+    val build =
+      rule.build {
+        androidApplication {
+          dependencies {
+            // Verify that no exception is thrown when ui-tooling is added as an screenshotTestImplementation dependency
+            remove("implementation", uiToolingDep)
+            screenshotTestImplementation(uiToolingDep)
+          }
+        }
+      }
+
+    updateReferenceImage()
+
+    // Verify that exception is thrown when ui-tooling dep is missing
+    build.androidApplication().reconfigure { dependencies { remove("screenshotTestImplementation", uiToolingDep) } }
+
+    val result = build.sstExecutor().expectFailure().run(":app:validateDebugScreenshotTest")
+    result.assertErrorContains(
+      "Missing required runtime dependency. Please add androidx.compose.ui:ui-tooling as a screenshotTestImplementation dependency."
+    )
+  }
+
+  @Test
+  fun runScreenshotTestWithNoSource() {
+    val build = rule.build { androidApplication(":appWithNoSource") { setupProjectNoScreenshotTestSource() } }
+    updateReferenceImage(projectName = "appWithNoSource")
+    build.sstExecutor().run(":appWithNoSource:validateDebugScreenshotTest")
+  }
+
+  @Test
+  fun runScreenshotTestWithEmptyPreview() {
+    val build =
+      rule.build {
+        androidApplication { files.update("src/screenshotTest/java/com/TopLevelPreviewTest.kt").searchAndReplace("SimpleComposable()", "") }
+      }
+    updateReferenceImage()
+    build.sstExecutor().run(":app:validateDebugScreenshotTest")
+  }
+
+  @Test
+  fun runPreviewScreenshotTestsOnMultipleFlavors() {
+    val build =
+      rule.build {
+        androidApplication {
+          android {
+            flavorDimensions += "new"
+            productFlavors {
+              create("flavor1") { it.dimension = "new" }
+              create("flavor2") { it.dimension = "new" }
             }
-        }
-
-        val result = build.sstExecutor().expectFailure().run(":app:validateDebugScreenshotTest")
-        result.assertErrorContains("Missing required runtime dependency. Please add androidx.compose.ui:ui-tooling as a screenshotTestImplementation dependency.")
-    }
-
-    @Test
-    fun runScreenshotTestWithNoSource() {
-        val build = rule.build {
-            androidApplication(":appWithNoSource") {
-                setupProjectNoScreenshotTestSource()
-            }
-        }
-        updateReferenceImage(projectName = "appWithNoSource")
-        build.sstExecutor().run(":appWithNoSource:validateDebugScreenshotTest")
-    }
-
-    @Test
-    fun runScreenshotTestWithEmptyPreview() {
-        val build = rule.build {
-            androidApplication {
-                files.update("src/screenshotTest/java/com/TopLevelPreviewTest.kt")
-                    .searchAndReplace("SimpleComposable()", "")
-            }
-        }
-        updateReferenceImage()
-        build.sstExecutor().run(":app:validateDebugScreenshotTest")
-    }
-
-    @Test
-    fun runPreviewScreenshotTestsOnMultipleFlavors() {
-        val build = rule.build {
-            androidApplication {
-                android {
-                    flavorDimensions += "new"
-                    productFlavors {
-                        create("flavor1") {
-                            it.dimension = "new"
-                        }
-                        create("flavor2") {
-                            it.dimension = "new"
-                        }
-                    }
-                }
-                // Comment out the previews in ExampleTest to limit this test to running on the preview in TopLevelPreviewTest
-                files.update("src/screenshotTest/java/com/ExampleTest.kt").transform {
-                    """
+          }
+          // Comment out the previews in ExampleTest to limit this test to running on the preview in TopLevelPreviewTest
+          files.update("src/screenshotTest/java/com/ExampleTest.kt").transform {
+            """
                         /*
                         $it
                         */
-                    """.trimIndent()
-                }
-            }
+                    """
+              .trimIndent()
+          }
         }
-        val appProject = build.androidApplication()
+      }
+    val appProject = build.androidApplication()
 
-        updateReferenceImage("debug", "flavor1")
-        updateReferenceImage("debug", "flavor2")
+    updateReferenceImage("debug", "flavor1")
+    updateReferenceImage("debug", "flavor2")
 
-        // Verify that reference images are created for both flavors
-        val flavor1ReferenceScreenshotDir = appProject.resolve("src/screenshotTestFlavor1Debug/reference/pkg/name/TopLevelPreviewTestKt")
-        val flavor2ReferenceScreenshotDir = appProject.resolve("src/screenshotTestFlavor2Debug/reference/pkg/name/TopLevelPreviewTestKt")
-        assertThat(flavor1ReferenceScreenshotDir.listDirectoryEntries().single().name)
-            .isEqualTo("simpleComposableTest_3_748aa731_0.png")
-        assertThat(flavor2ReferenceScreenshotDir.listDirectoryEntries().single().name)
-            .isEqualTo("simpleComposableTest_3_748aa731_0.png")
+    // Verify that reference images are created for both flavors
+    val flavor1ReferenceScreenshotDir = appProject.resolve("src/screenshotTestFlavor1Debug/reference/pkg/name/TopLevelPreviewTestKt")
+    val flavor2ReferenceScreenshotDir = appProject.resolve("src/screenshotTestFlavor2Debug/reference/pkg/name/TopLevelPreviewTestKt")
+    assertThat(flavor1ReferenceScreenshotDir.listDirectoryEntries().single().name).isEqualTo("simpleComposableTest_3_748aa731_0.png")
+    assertThat(flavor2ReferenceScreenshotDir.listDirectoryEntries().single().name).isEqualTo("simpleComposableTest_3_748aa731_0.png")
 
-        build.sstExecutor().run(":app:validateScreenshotTest")
+    build.sstExecutor().run(":app:validateScreenshotTest")
 
-        // Verify that HTML reports are generated for each flavor and all tests pass
-        val flavor1IndexHtmlReport = appProject.buildDir.resolve("reports/screenshotTest/preview/debug/flavor1/index.html")
-        val flavor2IndexHtmlReport = appProject.buildDir.resolve("reports/screenshotTest/preview/debug/flavor2/index.html")
-        val flavor1ClassHtmlReport = appProject.buildDir.resolve("reports/screenshotTest/preview/debug/flavor1/pkg.name.TopLevelPreviewTestKt.html")
-        val flavor2ClassHtmlReport = appProject.buildDir.resolve("reports/screenshotTest/preview/debug/flavor2/pkg.name.TopLevelPreviewTestKt.html")
-        val flavor1PackageHtmlReport = appProject.buildDir.resolve("reports/screenshotTest/preview/debug/flavor1/pkg.name.html")
-        val flavor2PackageHtmlReport = appProject.buildDir.resolve("reports/screenshotTest/preview/debug/flavor2/pkg.name.html")
-        assertThat(flavor1IndexHtmlReport).exists()
-        assertThat(flavor2IndexHtmlReport).exists()
-        assertThat(flavor1ClassHtmlReport).exists()
-        assertThat(flavor2ClassHtmlReport).exists()
-        val expectedOutput = listOf(
-            """<h3 class="success">simpleComposableTest_3</h3>""",
-        )
-        expectedOutput.forEach {
-            assertThat(flavor1ClassHtmlReport.readText()).contains(it)
-            assertThat(flavor2ClassHtmlReport.readText()).contains(it)
+    // Verify that HTML reports are generated for each flavor and all tests pass
+    val flavor1IndexHtmlReport = appProject.buildDir.resolve("reports/screenshotTest/preview/debug/flavor1/index.html")
+    val flavor2IndexHtmlReport = appProject.buildDir.resolve("reports/screenshotTest/preview/debug/flavor2/index.html")
+    val flavor1ClassHtmlReport =
+      appProject.buildDir.resolve("reports/screenshotTest/preview/debug/flavor1/pkg.name.TopLevelPreviewTestKt.html")
+    val flavor2ClassHtmlReport =
+      appProject.buildDir.resolve("reports/screenshotTest/preview/debug/flavor2/pkg.name.TopLevelPreviewTestKt.html")
+    val flavor1PackageHtmlReport = appProject.buildDir.resolve("reports/screenshotTest/preview/debug/flavor1/pkg.name.html")
+    val flavor2PackageHtmlReport = appProject.buildDir.resolve("reports/screenshotTest/preview/debug/flavor2/pkg.name.html")
+    assertThat(flavor1IndexHtmlReport).exists()
+    assertThat(flavor2IndexHtmlReport).exists()
+    assertThat(flavor1ClassHtmlReport).exists()
+    assertThat(flavor2ClassHtmlReport).exists()
+    val expectedOutput = listOf("""<h3 class="success">simpleComposableTest_3</h3>""")
+    expectedOutput.forEach {
+      assertThat(flavor1ClassHtmlReport.readText()).contains(it)
+      assertThat(flavor2ClassHtmlReport.readText()).contains(it)
+    }
+    assertThat(flavor1PackageHtmlReport).exists()
+    assertThat(flavor2PackageHtmlReport).exists()
+
+    // Assert that no diff images were generated because screenshots matched the reference images
+    val diffDir1 = appProject.buildDir.resolve("outputs/screenshotTest-results/preview/debug/flavor1/diffs/pkg/name/TopLevelPreviewTestKt")
+    val diffDir2 = appProject.buildDir.resolve("outputs/screenshotTest-results/preview/debug/flavor2/diffs/pkg/name/TopLevelPreviewTestKt")
+    assert(diffDir1.listDirectoryEntries().isEmpty())
+    assert(diffDir2.listDirectoryEntries().isEmpty())
+  }
+
+  @Test
+  fun runPreviewScreenshotTestWithFilter() {
+    val build =
+      rule.build {
+        androidApplication {
+          // cannot set filter using the conventional command ./gradlew validateDebugScreenshotTest --tests "Pattern".
+          // https://github.com/gradle/gradle/issues/1228
+          pluginCallbacks += FilterSetupCallback::class.java
         }
-        assertThat(flavor1PackageHtmlReport).exists()
-        assertThat(flavor2PackageHtmlReport).exists()
+      }
+    val appProject = build.androidApplication()
 
-        // Assert that no diff images were generated because screenshots matched the reference images
-        val diffDir1 = appProject.buildDir.resolve("outputs/screenshotTest-results/preview/debug/flavor1/diffs/pkg/name/TopLevelPreviewTestKt")
-        val diffDir2 = appProject.buildDir.resolve("outputs/screenshotTest-results/preview/debug/flavor2/diffs/pkg/name/TopLevelPreviewTestKt")
-        assert(diffDir1.listDirectoryEntries().isEmpty())
-        assert(diffDir2.listDirectoryEntries().isEmpty())
+    // Generate screenshots to be tested against.
+    // Note: update task doesn't provide filter functions.
+    updateReferenceImage()
+
+    val exampleTestReferenceScreenshotDir = appProject.resolve("src/screenshotTestDebug/reference/pkg/name/ExampleTest")
+    val topLevelTestReferenceScreenshotDir = appProject.resolve("src/screenshotTestDebug/reference/pkg/name/TopLevelPreviewTestKt")
+    assertThat(exampleTestReferenceScreenshotDir.listDirectoryEntries().map { it.name })
+      .containsExactly(
+        "multiPreviewTest_with_Background_6d9364e2_0.png",
+        "multiPreviewTest_withoutBackground_3619adf7_0.png",
+        "parameterProviderTest_simplePreviewParameterProvider_893e015e_b983d6d8_0.png",
+        "parameterProviderTest_simplePreviewParameterProvider_893e015e_b983d6d8_1.png",
+        "previewNameCannotBeUsedAsFileNameTest_aa50de45_0.png",
+        "simpleComposableTest2_simpleComposable_7362dd6b_0.png",
+        "simpleComposableTest_simpleComposable_c5877f71_0.png",
+      )
+    assertThat(topLevelTestReferenceScreenshotDir.listDirectoryEntries().map { it.name })
+      .containsExactly("simpleComposableTest_3_748aa731_0.png")
+
+    // Validate previews matches screenshots
+    build.sstExecutor().run(":app:validateDebugScreenshotTest")
+
+    // Verify that HTML reports are generated and all tests pass
+    val indexHtmlReport = appProject.buildDir.resolve("reports/screenshotTest/preview/debug/index.html")
+    val classHtmlReport = appProject.buildDir.resolve("reports/screenshotTest/preview/debug/pkg.name.ExampleTest.html")
+    val class2HtmlReport = appProject.buildDir.resolve("reports/screenshotTest/preview/debug/pkg.name.TopLevelPreviewTestKt.html")
+    val packageHtmlReport = appProject.buildDir.resolve("reports/screenshotTest/preview/debug/pkg.name.html")
+    assertThat(indexHtmlReport).exists()
+    assertThat(classHtmlReport).exists()
+    val expectedOutput =
+      listOf(
+        """<h3 class="success">simpleComposableTest_simpleComposable</h3>""",
+        """<h3 class="success">simpleComposableTest2_simpleComposable</h3>""",
+      )
+    val unExpectedOutput =
+      listOf(
+        """<h3 class="success">multiPreviewTest_with_Background_{showBackground=true}</h3>""",
+        """<h3 class="success">multiPreviewTest_withoutBackground_{showBackground=false}</h3>""",
+        """{provider=pkg.name.SimplePreviewParameterProvider}]_0</h3>""",
+        """{provider=pkg.name.SimplePreviewParameterProvider}]_1</h3>""",
+        """<h3 class="success">previewNameCannotBeUsedAsFileNameTest_invalid/File/Name</h3>""",
+        """<h3 class="success">parameterProviderTest_simplePreviewParameterProvider_[{provider=pkg.name.SimplePreviewParameterProvider}]_0</h3>""",
+        """<h3 class="success">parameterProviderTest_simplePreviewParameterProvider_[{provider=pkg.name.SimplePreviewParameterProvider}]_1</h3>""",
+      )
+    var classHtmlReportText = classHtmlReport.readText()
+    expectedOutput.forEach { assertThat(classHtmlReportText).contains(it) }
+    unExpectedOutput.forEach { assertThat(classHtmlReportText).doesNotContain(it) }
+    assertThat(class2HtmlReport.readText()).contains("""<h3 class="success">simpleComposableTest_3</h3>""")
+    assertThat(packageHtmlReport).exists()
+
+    // Assert that no diff images were generated because screenshot matched the reference image
+    val exampleTestDiffDir = appProject.buildDir.resolve("outputs/screenshotTest-results/preview/debug/diffs/pkg/name/ExampleTest")
+    val topLevelTestDiffDir =
+      appProject.buildDir.resolve("outputs/screenshotTest-results/preview/debug/diffs/pkg/name/TopLevelPreviewTestKt")
+    assert(exampleTestDiffDir.listDirectoryEntries().isEmpty())
+    assert(topLevelTestDiffDir.listDirectoryEntries().isEmpty())
+
+    // Update previews to be different from the references
+    appProject.files.apply {
+      update("src/main/java/com/Example.kt").searchAndReplace("Hello World", "HelloWorld ")
+      update("src/main/java/com/ParameterProviders.kt").searchAndReplace("Primary text", " Primarytext")
     }
 
-    @Test
-    fun runPreviewScreenshotTestWithFilter() {
-        val build = rule.build {
-            androidApplication {
-                // cannot set filter using the conventional command ./gradlew validateDebugScreenshotTest --tests "Pattern". https://github.com/gradle/gradle/issues/1228
-                pluginCallbacks += FilterSetupCallback::class.java
-            }
+    // Rerun validation task - modified tests should fail and diffs are generated
+    build.sstExecutor().expectFailure().run(":app:validateDebugScreenshotTest")
+
+    assertThat(exampleTestDiffDir.listDirectoryEntries().map { it.name })
+      .containsExactly("simpleComposableTest_simpleComposable_c5877f71_0.png", "simpleComposableTest2_simpleComposable_7362dd6b_0.png")
+  }
+
+  class FilterSetupCallback : GenericCallback {
+    override fun handleProject(project: Project) {
+      project.afterEvaluate {
+        project.tasks.named("validateDebugScreenshotTest", org.gradle.api.tasks.testing.Test::class.java) {
+          it.setTestNameIncludePatterns(listOf("*simpleComposableTest*"))
         }
-        val appProject = build.androidApplication()
-
-        // Generate screenshots to be tested against.
-        // Note: update task doesn't provide filter functions.
-        updateReferenceImage()
-
-        val exampleTestReferenceScreenshotDir = appProject.resolve("src/screenshotTestDebug/reference/pkg/name/ExampleTest")
-        val topLevelTestReferenceScreenshotDir = appProject.resolve("src/screenshotTestDebug/reference/pkg/name/TopLevelPreviewTestKt")
-        assertThat(exampleTestReferenceScreenshotDir.listDirectoryEntries().map { it.name }).containsExactly(
-            "multiPreviewTest_with_Background_6d9364e2_0.png",
-            "multiPreviewTest_withoutBackground_3619adf7_0.png",
-            "parameterProviderTest_simplePreviewParameterProvider_893e015e_b983d6d8_0.png",
-            "parameterProviderTest_simplePreviewParameterProvider_893e015e_b983d6d8_1.png",
-            "previewNameCannotBeUsedAsFileNameTest_aa50de45_0.png",
-            "simpleComposableTest2_simpleComposable_7362dd6b_0.png",
-            "simpleComposableTest_simpleComposable_c5877f71_0.png",
-        )
-        assertThat(topLevelTestReferenceScreenshotDir.listDirectoryEntries().map { it.name }).containsExactly(
-            "simpleComposableTest_3_748aa731_0.png"
-        )
-
-        // Validate previews matches screenshots
-        build.sstExecutor().run(":app:validateDebugScreenshotTest")
-
-        // Verify that HTML reports are generated and all tests pass
-        val indexHtmlReport = appProject.buildDir.resolve("reports/screenshotTest/preview/debug/index.html")
-        val classHtmlReport = appProject.buildDir.resolve("reports/screenshotTest/preview/debug/pkg.name.ExampleTest.html")
-        val class2HtmlReport = appProject.buildDir.resolve("reports/screenshotTest/preview/debug/pkg.name.TopLevelPreviewTestKt.html")
-        val packageHtmlReport = appProject.buildDir.resolve("reports/screenshotTest/preview/debug/pkg.name.html")
-        assertThat(indexHtmlReport).exists()
-        assertThat(classHtmlReport).exists()
-        val expectedOutput = listOf(
-            """<h3 class="success">simpleComposableTest_simpleComposable</h3>""",
-            """<h3 class="success">simpleComposableTest2_simpleComposable</h3>"""
-        )
-        val unExpectedOutput = listOf(
-            """<h3 class="success">multiPreviewTest_with_Background_{showBackground=true}</h3>""",
-            """<h3 class="success">multiPreviewTest_withoutBackground_{showBackground=false}</h3>""",
-            """{provider=pkg.name.SimplePreviewParameterProvider}]_0</h3>""",
-            """{provider=pkg.name.SimplePreviewParameterProvider}]_1</h3>""",
-            """<h3 class="success">previewNameCannotBeUsedAsFileNameTest_invalid/File/Name</h3>""",
-            """<h3 class="success">parameterProviderTest_simplePreviewParameterProvider_[{provider=pkg.name.SimplePreviewParameterProvider}]_0</h3>""",
-            """<h3 class="success">parameterProviderTest_simplePreviewParameterProvider_[{provider=pkg.name.SimplePreviewParameterProvider}]_1</h3>"""
-        )
-        var classHtmlReportText = classHtmlReport.readText()
-        expectedOutput.forEach { assertThat(classHtmlReportText).contains(it) }
-        unExpectedOutput.forEach { assertThat(classHtmlReportText).doesNotContain(it) }
-        assertThat(class2HtmlReport.readText()).contains("""<h3 class="success">simpleComposableTest_3</h3>""")
-        assertThat(packageHtmlReport).exists()
-
-        // Assert that no diff images were generated because screenshot matched the reference image
-        val exampleTestDiffDir = appProject.buildDir.resolve("outputs/screenshotTest-results/preview/debug/diffs/pkg/name/ExampleTest")
-        val topLevelTestDiffDir = appProject.buildDir.resolve("outputs/screenshotTest-results/preview/debug/diffs/pkg/name/TopLevelPreviewTestKt")
-        assert(exampleTestDiffDir.listDirectoryEntries().isEmpty())
-        assert(topLevelTestDiffDir.listDirectoryEntries().isEmpty())
-
-        // Update previews to be different from the references
-        appProject.files.apply {
-            update("src/main/java/com/Example.kt")
-                .searchAndReplace("Hello World", "HelloWorld ")
-            update("src/main/java/com/ParameterProviders.kt")
-                .searchAndReplace("Primary text", " Primarytext")
-        }
-
-        // Rerun validation task - modified tests should fail and diffs are generated
-        build.sstExecutor().expectFailure().run(":app:validateDebugScreenshotTest")
-
-        assertThat(exampleTestDiffDir.listDirectoryEntries().map { it.name }).containsExactly(
-            "simpleComposableTest_simpleComposable_c5877f71_0.png",
-            "simpleComposableTest2_simpleComposable_7362dd6b_0.png",
-        )
+      }
     }
+  }
 
-    class FilterSetupCallback: GenericCallback {
-        override fun handleProject(project: Project) {
-            project.afterEvaluate {
+  @Test
+  fun runPreviewScreenshotTestWithReportEntrySettingEnabled() {
+    val build =
+      rule.build {
+        androidApplication {
+          class EnableEntrySettingCallback : GenericCallback {
+            override fun handleProject(project: Project) {
+              project.afterEvaluate {
                 project.tasks.named("validateDebugScreenshotTest", org.gradle.api.tasks.testing.Test::class.java) {
-                    it.setTestNameIncludePatterns(listOf("*simpleComposableTest*"))
+                  it.jvmArgs("-DPreviewScreenshotTestEngineInput.ReportEntrySetting.redirectToStdout=true")
                 }
+              }
             }
+          }
+          pluginCallbacks += EnableEntrySettingCallback::class.java
         }
-    }
+      }
+    build.androidApplication()
 
-    @Test
-    fun runPreviewScreenshotTestWithReportEntrySettingEnabled() {
-        val build = rule.build {
-            androidApplication {
-                class EnableEntrySettingCallback: GenericCallback {
-                    override fun handleProject(project: Project) {
-                        project.afterEvaluate {
-                            project.tasks.named(
-                                "validateDebugScreenshotTest", org.gradle.api.tasks.testing.Test::class.java) {
-                                it.jvmArgs("-DPreviewScreenshotTestEngineInput.ReportEntrySetting.redirectToStdout=true")
-                            }
-                        }
-                    }
-                }
-                pluginCallbacks += EnableEntrySettingCallback::class.java
-            }
+    // Generate screenshots to be tested against
+    updateReferenceImage()
+
+    // Validate previews matches screenshots
+    val result = build.sstExecutor().run(":app:validateDebugScreenshotTest")
+
+    assertThat(result.stdout).contains("[additionalTestArtifacts]PreviewScreenshot.newImagePath=")
+    assertThat(result.stdout).contains("[additionalTestArtifacts]PreviewScreenshot.refImagePath=")
+    assertThat(result.stdout).contains("[additionalTestArtifacts]PreviewScreenshot.previewName=")
+    assertThat(result.stdout).contains("[additionalTestArtifacts]PreviewScreenshot.methodName=")
+    assertThat(result.stdout).contains("[additionalTestArtifacts]PreviewScreenshot.diffPercent=")
+  }
+
+  @Test
+  fun runPreviewScreenshotTestWithCustomFontShouldLoadCustomFonts() {
+    val build =
+      rule.build {
+        androidApplication {
+          files {
+            add("src/main/res/font/my_custom_font.ttf", this.javaClass.getResourceAsStream("/fonts/test_font.ttf")!!.readAllBytes())
+            add(
+              "src/main/java/com/ExampleWithFont.kt",
+              """
+              package pkg.name
+
+              import androidx.compose.material.Text
+              import androidx.compose.runtime.Composable
+              import androidx.compose.ui.text.font.Font
+              import androidx.compose.ui.text.font.FontFamily
+              import androidx.compose.ui.text.font.FontWeight
+              import pkg.name.app.R
+
+              private val customFontFamily = FontFamily(
+                  Font(R.font.my_custom_font, FontWeight.Normal)
+              )
+
+
+              @Composable
+              fun SimpleComposableWithFont(text: String = "Hello World") {
+                  Text(text, fontFamily = customFontFamily)
+              }
+              """
+                .trimIndent(),
+            )
+            add(
+              "src/screenshotTest/java/com/ExampleWithFontTest.kt",
+              """
+              package pkg.name
+
+              import androidx.compose.ui.tooling.preview.Preview
+              import androidx.compose.ui.tooling.preview.PreviewParameter
+              import androidx.compose.runtime.Composable
+              import com.android.tools.screenshot.PreviewTest
+
+              class ExampleWithFontTest {
+                  @PreviewTest
+                  @Preview(name = "simpleComposable", showBackground = true)
+                  @Composable
+                  fun simpleComposableWithFontTest() {
+                      SimpleComposableWithFont()
+                  }
+              }
+              """
+                .trimIndent(),
+            )
+          }
         }
-        build.androidApplication()
+      }
 
-        // Generate screenshots to be tested against
-        updateReferenceImage()
+    updateReferenceImage()
 
-        // Validate previews matches screenshots
-        val result = build.sstExecutor().run(":app:validateDebugScreenshotTest")
+    val result = build.sstExecutor().run(":app:validateDebugScreenshotTest")
 
-        assertThat(result.stdout).contains("[additionalTestArtifacts]PreviewScreenshot.newImagePath=")
-        assertThat(result.stdout).contains("[additionalTestArtifacts]PreviewScreenshot.refImagePath=")
-        assertThat(result.stdout).contains("[additionalTestArtifacts]PreviewScreenshot.previewName=")
-        assertThat(result.stdout).contains("[additionalTestArtifacts]PreviewScreenshot.methodName=")
-        assertThat(result.stdout).contains("[additionalTestArtifacts]PreviewScreenshot.diffPercent=")
-    }
+    result.assertOutputDoesNotContain("Could not load font")
+  }
 
-    @Test
-    fun runPreviewScreenshotTestWithCustomFontShouldLoadCustomFonts() {
-        val build = rule.build {
-            androidApplication {
-                files {
-                    add(
-                        "src/main/res/font/my_custom_font.ttf",
-                        this.javaClass.getResourceAsStream("/fonts/test_font.ttf")!!
-                            .readAllBytes()
-                    )
-                    add(
-                        "src/main/java/com/ExampleWithFont.kt",
-                        """
-                    package pkg.name
+  @Test
+  fun runPreviewScreenshotTestInParallel() {
+    val build = rule.build
+    updateReferenceImage()
+    build.sstExecutor().withArguments(listOf("--parallel", "--max-workers=4")).run(":app:validateDebugScreenshotTest")
+    val appProject = build.androidApplication()
+    val indexHtmlReport = appProject.buildDir.resolve("reports/screenshotTest/preview/debug/index.html")
+    assertThat(indexHtmlReport).exists()
+    val classHtmlReport = appProject.buildDir.resolve("reports/screenshotTest/preview/debug/pkg.name.ExampleTest.html")
+    assertThat(classHtmlReport).exists()
+    val class2HtmlReport = appProject.buildDir.resolve("reports/screenshotTest/preview/debug/pkg.name.TopLevelPreviewTestKt.html")
+    assertThat(class2HtmlReport).exists()
+    assertThat(classHtmlReport.readText()).contains("""<h3 class="success">simpleComposableTest_simpleComposable</h3>""")
+    assertThat(class2HtmlReport.readText()).contains("""<h3 class="success">simpleComposableTest_3</h3>""")
+  }
 
-                    import androidx.compose.material.Text
-                    import androidx.compose.runtime.Composable
-                    import androidx.compose.ui.text.font.Font
-                    import androidx.compose.ui.text.font.FontFamily
-                    import androidx.compose.ui.text.font.FontWeight
-                    import pkg.name.app.R
+  @Test
+  fun runValidation_whenMaxParallelForksIsConfiguredGlobally() {
+    val build = rule.build { androidApplication { pluginCallbacks += ConfigureMaxParallelForksCallback::class.java } }
+    val appProject = build.androidApplication()
 
-                    private val customFontFamily = FontFamily(
-                        Font(R.font.my_custom_font, FontWeight.Normal)
-                    )
+    updateReferenceImage()
 
+    val result = build.sstExecutor().run(":app:validateDebugScreenshotTest")
 
-                    @Composable
-                    fun SimpleComposableWithFont(text: String = "Hello World") {
-                        Text(text, fontFamily = customFontFamily)
-                    }
-                    """.trimIndent()
-                    )
-                    add(
-                        "src/screenshotTest/java/com/ExampleWithFontTest.kt",
-                        """
-                    package pkg.name
+    assertThat(result.stdout).contains("Forcibly setting maxParallelForks to 4 for task :app:validateDebugScreenshotTest")
 
-                    import androidx.compose.ui.tooling.preview.Preview
-                    import androidx.compose.ui.tooling.preview.PreviewParameter
-                    import androidx.compose.runtime.Composable
-                    import com.android.tools.screenshot.PreviewTest
+    val indexHtmlReport = appProject.buildDir.resolve("reports/screenshotTest/preview/debug/index.html")
+    assertThat(indexHtmlReport).exists()
 
-                    class ExampleWithFontTest {
-                        @PreviewTest
-                        @Preview(name = "simpleComposable", showBackground = true)
-                        @Composable
-                        fun simpleComposableWithFontTest() {
-                            SimpleComposableWithFont()
-                        }
-                    }""".trimIndent()
-                    )
-                }
-            }
-        }
+    val classHtmlReport = appProject.buildDir.resolve("reports/screenshotTest/preview/debug/pkg.name.ExampleTest.html")
+    assertThat(classHtmlReport).exists()
+    assertThat(classHtmlReport.readText()).contains("""<h3 class="success">simpleComposableTest_simpleComposable</h3>""")
+  }
 
-        updateReferenceImage()
-
-        val result = build.sstExecutor().run(":app:validateDebugScreenshotTest")
-
-        result.assertOutputDoesNotContain("Could not load font")
-    }
-
-    @Test
-    fun runPreviewScreenshotTestInParallel() {
-        val build = rule.build
-        updateReferenceImage()
-        build.sstExecutor()
-            .withArguments(listOf("--parallel", "--max-workers=4"))
-            .run(":app:validateDebugScreenshotTest")
-        val appProject = build.androidApplication()
-        val indexHtmlReport =
-            appProject.buildDir.resolve("reports/screenshotTest/preview/debug/index.html")
-        assertThat(indexHtmlReport).exists()
-        val classHtmlReport =
-            appProject.buildDir.resolve("reports/screenshotTest/preview/debug/pkg.name.ExampleTest.html")
-        assertThat(classHtmlReport).exists()
-        val class2HtmlReport =
-            appProject.buildDir.resolve("reports/screenshotTest/preview/debug/pkg.name.TopLevelPreviewTestKt.html")
-        assertThat(class2HtmlReport).exists()
-        assertThat(classHtmlReport.readText()).contains("""<h3 class="success">simpleComposableTest_simpleComposable</h3>""")
-        assertThat(class2HtmlReport.readText()).contains("""<h3 class="success">simpleComposableTest_3</h3>""")
-    }
-
-    @Test
-    fun runValidation_whenMaxParallelForksIsConfiguredGlobally() {
-        val build = rule.build {
-            androidApplication {
-                pluginCallbacks += ConfigureMaxParallelForksCallback::class.java
-            }
-        }
-        val appProject = build.androidApplication()
-
-        updateReferenceImage()
-
-        val result = build.sstExecutor().run(":app:validateDebugScreenshotTest")
-
-        assertThat(result.stdout).contains("Forcibly setting maxParallelForks to 4 for task :app:validateDebugScreenshotTest")
-
-        val indexHtmlReport = appProject.buildDir.resolve("reports/screenshotTest/preview/debug/index.html")
-        assertThat(indexHtmlReport).exists()
-
-        val classHtmlReport = appProject.buildDir.resolve("reports/screenshotTest/preview/debug/pkg.name.ExampleTest.html")
-        assertThat(classHtmlReport).exists()
-        assertThat(classHtmlReport.readText()).contains("""<h3 class="success">simpleComposableTest_simpleComposable</h3>""")
-    }
-
-    @Test
-    fun previewScreenshotTestDoesNotLeakMemory() {
-        rule.build {
-            androidApplication {
-                files {
-                    add(
-                        "src/screenshotTest/java/com/ExampleLargeNumberOfComposables.kt",
-                        """
+  @Test
+  fun previewScreenshotTestDoesNotLeakMemory() {
+    rule.build {
+      androidApplication {
+        files {
+          add(
+            "src/screenshotTest/java/com/ExampleLargeNumberOfComposables.kt",
+            """
                         package pkg.name
 
                         import androidx.compose.foundation.background
@@ -1033,136 +983,121 @@ class ScreenshotTest {
                                 """
                             }.joinToString("\n\n")
                         }
-                        """.trimIndent()
-                    )
-                    add(
-                        "src/screenshotTest/resources/junit-platform.properties",
-                        "junit.platform.execution.listeners.automatic.enabled=true")
-                }
-
-                pluginCallbacks += CheckMemoryUsageCallback::class.java
-            }
+                        """
+              .trimIndent(),
+          )
+          add("src/screenshotTest/resources/junit-platform.properties", "junit.platform.execution.listeners.automatic.enabled=true")
         }
 
-        val result = updateReferenceImage()
-        result.assertOutputContains("HEAP: Used:")
-        result.assertErrorDoesNotContain(UNUSUAL_HEAP_MEMORY_GROWTH_ERROR_MESSAGE)
+        pluginCallbacks += CheckMemoryUsageCallback::class.java
+      }
     }
 
-    class CheckMemoryUsageCallback: GenericCallback {
+    val result = updateReferenceImage()
+    result.assertOutputContains("HEAP: Used:")
+    result.assertErrorDoesNotContain(UNUSUAL_HEAP_MEMORY_GROWTH_ERROR_MESSAGE)
+  }
 
-        companion object {
-            const val UNUSUAL_HEAP_MEMORY_GROWTH_ERROR_MESSAGE = "Unusual heap memory usage growth detected"
-            const val HEAP_MEMORY_GROWTH_THRESHOLD_MB = 30.0
-        }
+  class CheckMemoryUsageCallback : GenericCallback {
 
-        override fun handleProject(project: Project) {
-            project.configurations.findByName("_internal-screenshot-validation-junit-engine")?.let {
-                project.dependencies.add(
-                    "_internal-screenshot-validation-junit-engine",
-                    "com.mytest.memory-printer:memory-printer:1.0"
-                )
-            }
-            project.tasks.withType(org.gradle.api.tasks.testing.Test::class.java) {
-                it.addTestOutputListener(object: TestOutputListener {
-
-                    var minHeapUsage: Double = Double.MAX_VALUE
-                    var maxHeapUsage: Double = 0.0
-
-                    override fun onOutput(
-                        testDescriptor: TestDescriptor,
-                        outputEvent: TestOutputEvent
-                    ) {
-                        val currentUsedHeapSizeMb = extractHeapUsed(outputEvent.message) ?: return
-                        minHeapUsage = min(minHeapUsage, currentUsedHeapSizeMb)
-                        maxHeapUsage = max(maxHeapUsage, currentUsedHeapSizeMb)
-                        if (maxHeapUsage - minHeapUsage > HEAP_MEMORY_GROWTH_THRESHOLD_MB) {
-                            System.err.println(UNUSUAL_HEAP_MEMORY_GROWTH_ERROR_MESSAGE)
-                            System.err.println("Heap memory usage was grown from $minHeapUsage MB to $maxHeapUsage MB")
-                        }
-                    }
-
-                    fun extractHeapUsed(input: String): Double? {
-                        val regex = """HEAP:.*?Used:\s+([0-9.]+)""".toRegex()
-                        val matchResult = regex.find(input)
-                        return matchResult?.groupValues?.get(1)?.toDoubleOrNull()
-                    }
-                })
-            }
-        }
+    companion object {
+      const val UNUSUAL_HEAP_MEMORY_GROWTH_ERROR_MESSAGE = "Unusual heap memory usage growth detected"
+      const val HEAP_MEMORY_GROWTH_THRESHOLD_MB = 30.0
     }
 
-    class CheckMemoryUsage : TestExecutionListener {
-        override fun executionFinished(
-            testIdentifier: TestIdentifier,
-            testExecutionResult: TestExecutionResult
-        ) {
-            MemoryPrinter.printMemoryUsage()
+    override fun handleProject(project: Project) {
+      project.configurations.findByName("_internal-screenshot-validation-junit-engine")?.let {
+        project.dependencies.add("_internal-screenshot-validation-junit-engine", "com.mytest.memory-printer:memory-printer:1.0")
+      }
+      project.tasks.withType(org.gradle.api.tasks.testing.Test::class.java) {
+        it.addTestOutputListener(
+          object : TestOutputListener {
 
-            // Dump heap after all test execution finished.
-            if (testIdentifier.parentId.isEmpty) {
-                MemoryPrinter.dumpHeap()
+            var minHeapUsage: Double = Double.MAX_VALUE
+            var maxHeapUsage: Double = 0.0
+
+            override fun onOutput(testDescriptor: TestDescriptor, outputEvent: TestOutputEvent) {
+              val currentUsedHeapSizeMb = extractHeapUsed(outputEvent.message) ?: return
+              minHeapUsage = min(minHeapUsage, currentUsedHeapSizeMb)
+              maxHeapUsage = max(maxHeapUsage, currentUsedHeapSizeMb)
+              if (maxHeapUsage - minHeapUsage > HEAP_MEMORY_GROWTH_THRESHOLD_MB) {
+                System.err.println(UNUSUAL_HEAP_MEMORY_GROWTH_ERROR_MESSAGE)
+                System.err.println("Heap memory usage was grown from $minHeapUsage MB to $maxHeapUsage MB")
+              }
             }
-        }
+
+            fun extractHeapUsed(input: String): Double? {
+              val regex = """HEAP:.*?Used:\s+([0-9.]+)""".toRegex()
+              val matchResult = regex.find(input)
+              return matchResult?.groupValues?.get(1)?.toDoubleOrNull()
+            }
+          }
+        )
+      }
+    }
+  }
+
+  class CheckMemoryUsage : TestExecutionListener {
+    override fun executionFinished(testIdentifier: TestIdentifier, testExecutionResult: TestExecutionResult) {
+      MemoryPrinter.printMemoryUsage()
+
+      // Dump heap after all test execution finished.
+      if (testIdentifier.parentId.isEmpty) {
+        MemoryPrinter.dumpHeap()
+      }
+    }
+  }
+
+  object MemoryPrinter {
+    private val decimalFormat = DecimalFormat("#,###.## MB")
+    private const val MB = 1024.0 * 1024.0
+    private const val HOTSPOT_BEAN_NAME = "com.sun.management:type=HotSpotDiagnostic"
+
+    /** Prints standard memory usage stats. */
+    fun printMemoryUsage() {
+      repeat(3) { System.gc() }
+
+      val memoryBean = ManagementFactory.getMemoryMXBean()
+      val heapUsage = memoryBean.heapMemoryUsage
+
+      println("HEAP: Used: ${format(heapUsage.used)} | Committed: ${format(heapUsage.committed)} | Max: ${format(heapUsage.max)}")
     }
 
-    object MemoryPrinter {
-        private val decimalFormat = DecimalFormat("#,###.## MB")
-        private const val MB = 1024.0 * 1024.0
-        private const val HOTSPOT_BEAN_NAME = "com.sun.management:type=HotSpotDiagnostic"
+    /**
+     * Dumps the heap to the system temp directory in .hprof format.
+     *
+     * @param live If true, dump only live objects (reachable). This forces a Full GC before dumping.
+     */
+    fun dumpHeap(live: Boolean = true) {
+      repeat(3) { System.gc() }
+      try {
+        // Locate the HotSpot Diagnostic MXBean
+        val server = ManagementFactory.getPlatformMBeanServer()
+        val mxBean = ManagementFactory.newPlatformMXBeanProxy(server, HOTSPOT_BEAN_NAME, HotSpotDiagnosticMXBean::class.java)
 
-        /**
-         * Prints standard memory usage stats.
-         */
-        fun printMemoryUsage() {
-            repeat(3) { System.gc() }
-
-            val memoryBean = ManagementFactory.getMemoryMXBean()
-            val heapUsage = memoryBean.heapMemoryUsage
-
-            println("HEAP: Used: ${format(heapUsage.used)} | Committed: ${format(heapUsage.committed)} | Max: ${format(heapUsage.max)}")
+        val tempDir = System.getenv("TEST_UNDECLARED_OUTPUTS_DIR") ?: System.getProperty("java.io.tmpdir")
+        val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss").format(Date())
+        val actualFileName = "heap_dump_$timestamp.hprof"
+        val file = File(tempDir, actualFileName)
+        val filePath = file.absolutePath
+        if (file.exists()) {
+          println("Warning: File $filePath already exists. Deleting it...")
+          file.delete()
         }
 
-        /**
-         * Dumps the heap to the system temp directory in .hprof format.
-         *
-         * @param live If true, dump only live objects (reachable).
-         * This forces a Full GC before dumping.
-         */
-        fun dumpHeap(live: Boolean = true) {
-            repeat(3) { System.gc() }
-            try {
-                // Locate the HotSpot Diagnostic MXBean
-                val server = ManagementFactory.getPlatformMBeanServer()
-                val mxBean = ManagementFactory.newPlatformMXBeanProxy(
-                    server,
-                    HOTSPOT_BEAN_NAME,
-                    HotSpotDiagnosticMXBean::class.java
-                )
+        println("Attempting to dump heap to: $filePath")
+        println("Freezing application for heap dump... (This may take a moment)")
 
-                val tempDir = System.getenv("TEST_UNDECLARED_OUTPUTS_DIR") ?: System.getProperty("java.io.tmpdir")
-                val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss").format(Date())
-                val actualFileName = "heap_dump_$timestamp.hprof"
-                val file = File(tempDir, actualFileName)
-                val filePath = file.absolutePath
-                if (file.exists()) {
-                    println("Warning: File $filePath already exists. Deleting it...")
-                    file.delete()
-                }
-
-                println("Attempting to dump heap to: $filePath")
-                println("Freezing application for heap dump... (This may take a moment)")
-
-                mxBean.dumpHeap(filePath, live)
-                println("Successfully dumped heap to: $filePath")
-            } catch (e: Exception) {
-                println("Failed to dump heap: ${e.message}")
-                e.printStackTrace()
-            }
-        }
-
-        private fun format(bytes: Long): String {
-            return decimalFormat.format(bytes / MB)
-        }
+        mxBean.dumpHeap(filePath, live)
+        println("Successfully dumped heap to: $filePath")
+      } catch (e: Exception) {
+        println("Failed to dump heap: ${e.message}")
+        e.printStackTrace()
+      }
     }
+
+    private fun format(bytes: Long): String {
+      return decimalFormat.format(bytes / MB)
+    }
+  }
 }

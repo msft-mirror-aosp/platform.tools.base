@@ -17,7 +17,7 @@
 package com.android.build.gradle.internal.core.dsl
 
 /**
- * Contains the final dsl info computed from the DSL object model (extension, default config,
- * build type, flavors) that are needed by test components.
+ * Contains the final dsl info computed from the DSL object model (extension, default config, build type, flavors) that are needed by test
+ * components.
  */
-interface TestComponentDslInfo: NestedComponentDslInfo
+interface TestComponentDslInfo : NestedComponentDslInfo

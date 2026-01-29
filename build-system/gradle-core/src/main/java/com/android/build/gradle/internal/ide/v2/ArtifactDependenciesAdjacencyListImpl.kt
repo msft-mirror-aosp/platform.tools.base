@@ -22,23 +22,20 @@ import com.android.builder.model.v2.ide.UnresolvedDependency
 import java.io.Serializable
 
 data class ArtifactDependenciesAdjacencyListImpl(
-    override val compileDependencies: List<Edge>,
-    override val runtimeDependencies: List<Edge>?,
-    override val unresolvedDependencies: List<UnresolvedDependency>
+  override val compileDependencies: List<Edge>,
+  override val runtimeDependencies: List<Edge>?,
+  override val unresolvedDependencies: List<UnresolvedDependency>,
 ) : ArtifactDependenciesAdjacencyList, Serializable {
 
-    companion object {
+  companion object {
 
-        @JvmStatic
-        private val serialVersionUID: Long = 1L
-    }
+    @JvmStatic private val serialVersionUID: Long = 1L
+  }
 }
 
-data class EdgeImpl(override val from: String, override val to: String)  : Edge, Serializable {
-    companion object {
+data class EdgeImpl(override val from: String, override val to: String) : Edge, Serializable {
+  companion object {
 
-        @JvmStatic
-        private val serialVersionUID: Long = 1L
-    }
+    @JvmStatic private val serialVersionUID: Long = 1L
+  }
 }
-

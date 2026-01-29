@@ -29,198 +29,139 @@ import org.junit.Test
 
 class SettingsExecutionProfileTest {
 
-    @get:Rule
-    val rule = GradleRule.from {
+  @get:Rule
+  val rule =
+    GradleRule.from {
+      settings { applyPlugin(PluginType.ANDROID_SETTINGS) }
+      androidLibrary(createMinimumProject = false) { android.namespace = "com.example.lib" }
+      androidApplication(createMinimumProject = false) {
+        android.namespace = "com.example.app"
+        files.setupMinimumManifest()
+      }
+    }
+
+  data class Profile(val name: String, val r8JvmOptions: List<String>, val r8RunInSeparateProcess: Boolean)
+
+  private val defaultProfiles: List<Profile> =
+    listOf(
+      Profile("low", listOf("-Xms200m", "-Xmx200m"), false),
+      Profile("high", listOf("-Xms800m", "-Xmx800m"), true),
+      Profile("pizza", listOf("-Xms801m", "-Xmx801m", "-XX:+HeapDumpOnOutOfMemoryError"), false),
+    )
+
+  private fun GradleSettingsDefinition.addSettingsBlock(
+    minSdk: Int = DEFAULT_MIN_SDK_VERSION,
+    compileSdk: Int = DEFAULT_COMPILE_SDK_VERSION,
+    targetSdk: Int = compileSdk,
+    execProfile: String?,
+    profileList: List<Profile> = defaultProfiles,
+  ) {
+    android {
+      this.compileSdk = compileSdk
+      this.minSdk = minSdk
+      this.targetSdk = targetSdk
+      execution {
+        profiles {
+          profileList.forEach { profile ->
+            create(profile.name) {
+              it.r8 {
+                jvmOptions += profile.r8JvmOptions
+                runInSeparateProcess = profile.r8RunInSeparateProcess
+              }
+            }
+          }
+        }
+        execProfile?.let { defaultProfile = it }
+      }
+    }
+  }
+
+  private fun ApplicationExtension.withShrinker() {
+    buildTypes { named("debug") { it.isMinifyEnabled = true } }
+  }
+
+  @Test
+  fun testInvalidProfile() {
+    val build =
+      rule.build {
+        settings { addSettingsBlock(execProfile = "invalid") }
+        androidApplication { android.withShrinker() }
+      }
+
+    val result = build.executor.expectFailure().run("assembleDebug")
+
+    result.stderr.use { ScannerSubject.assertThat(it).contains("Selected profile 'invalid' does not exist") }
+  }
+
+  @Test
+  fun testProfileOverride() {
+    val build =
+      rule.build {
         settings {
-            applyPlugin(PluginType.ANDROID_SETTINGS)
+          // First try to build with invalid profile
+          addSettingsBlock(execProfile = "invalid")
         }
-        androidLibrary(createMinimumProject = false) {
-            android.namespace = "com.example.lib"
+        androidApplication { android.withShrinker() }
+      }
+
+    var result = build.executor.expectFailure().run("assembleDebug")
+
+    result.stderr.use { ScannerSubject.assertThat(it).contains("Selected profile 'invalid' does not exist") }
+
+    // Make sure it builds when overriding the profile
+    result = build.executor.with(StringOption.EXECUTION_PROFILE_SELECTION, "low").run("clean", "assembleDebug")
+
+    result.stdout.use { ScannerSubject.assertThat(it).contains("Using execution profile from android.settings.executionProfile 'low'") }
+  }
+
+  @Test
+  fun testProfileAutoSelection() {
+    val build =
+      rule.build {
+        settings {
+          // Building with no profiles and no selection should go to default
+          addSettingsBlock(execProfile = null, profileList = listOf())
         }
-        androidApplication(createMinimumProject = false) {
-            android.namespace = "com.example.app"
-            files.setupMinimumManifest()
-        }
+        androidApplication { android.withShrinker() }
+      }
+
+    build.executor.run("assembleDebug")
+
+    // Adding one profile should auto-select it, so it should also work
+    build.reconfigureSettings { android { execution.profiles { create("profileOne") { it.r8.runInSeparateProcess = false } } } }
+    var result = build.executor.run("clean", "assembleDebug")
+
+    result.stdout.use { ScannerSubject.assertThat(it).contains("Using only execution profile 'profileOne'") }
+
+    // Adding another profile with no selection should fail
+    build.reconfigureSettings { android { execution.profiles { create("profileTwo") {} } } }
+    result = build.executor.expectFailure().run("clean", "assembleDebug")
+
+    result.stderr.use {
+      ScannerSubject.assertThat(it).contains("Found 2 execution profiles [profileOne, profileTwo], but no profile was selected.\n")
     }
 
-    data class Profile(
-        val name: String,
-        val r8JvmOptions: List<String>,
-        val r8RunInSeparateProcess: Boolean
-    )
+    // Selecting a profile through override should work
+    build.executor.with(StringOption.EXECUTION_PROFILE_SELECTION, "profileOne").run("clean", "assembleDebug")
 
-    private val defaultProfiles: List<Profile> = listOf(
-        Profile("low", listOf("-Xms200m", "-Xmx200m"), false),
-        Profile("high", listOf("-Xms800m", "-Xmx800m"), true),
-        Profile("pizza", listOf("-Xms801m", "-Xmx801m", "-XX:+HeapDumpOnOutOfMemoryError"), false),
-    )
+    // So should adding the profile selection to the settings file
+    build.reconfigureSettings { android { execution.defaultProfile = "profileTwo" } }
+    build.executor.run("clean", "assembleDebug")
+  }
 
-    private fun GradleSettingsDefinition.addSettingsBlock(
-        minSdk: Int = DEFAULT_MIN_SDK_VERSION,
-        compileSdk: Int = DEFAULT_COMPILE_SDK_VERSION,
-        targetSdk: Int = compileSdk,
-        execProfile: String?,
-        profileList: List<Profile> = defaultProfiles
-    ) {
-        android {
-            this.compileSdk = compileSdk
-            this.minSdk = minSdk
-            this.targetSdk = targetSdk
-            execution {
-                profiles {
-                    profileList.forEach { profile ->
-                        create(profile.name) {
-                            it.r8 {
-                                jvmOptions += profile.r8JvmOptions
-                                runInSeparateProcess = profile.r8RunInSeparateProcess
-                            }
-                        }
-                    }
-                }
-                execProfile?.let {
-                    defaultProfile = it
-                }
-            }
-        }
-    }
+  // regression test for b/258704137
+  @Test
+  fun testJvmOptionsAreUsed() {
+    val build =
+      rule.build {
+        settings { addSettingsBlock(execProfile = "mid", profileList = listOf(Profile("mid", listOf(":pizza/foo"), true))) }
+        androidApplication { android.withShrinker() }
+      }
 
-    private fun ApplicationExtension.withShrinker() {
-        buildTypes {
-            named("debug") {
-                it.isMinifyEnabled = true
-            }
-        }
-    }
+    val result = build.executor.expectFailure().run("clean", "minifyDebugWithR8")
 
-    @Test
-    fun testInvalidProfile() {
-        val build = rule.build {
-            settings {
-                addSettingsBlock(execProfile = "invalid")
-            }
-            androidApplication {
-                android.withShrinker()
-            }
-        }
-
-        val result = build.executor.expectFailure().run("assembleDebug")
-
-        result.stderr.use {
-            ScannerSubject.assertThat(it).contains("Selected profile 'invalid' does not exist")
-        }
-    }
-
-    @Test
-    fun testProfileOverride() {
-        val build = rule.build {
-            settings {
-                // First try to build with invalid profile
-                addSettingsBlock(execProfile = "invalid")
-            }
-            androidApplication {
-                android.withShrinker()
-            }
-        }
-
-        var result = build.executor.expectFailure().run("assembleDebug")
-
-        result.stderr.use {
-            ScannerSubject.assertThat(it).contains("Selected profile 'invalid' does not exist")
-        }
-
-        // Make sure it builds when overriding the profile
-        result = build.executor
-            .with(StringOption.EXECUTION_PROFILE_SELECTION, "low")
-            .run("clean", "assembleDebug")
-
-        result.stdout.use {
-            ScannerSubject.assertThat(it)
-                    .contains("Using execution profile from android.settings.executionProfile 'low'")
-        }
-    }
-
-    @Test
-    fun testProfileAutoSelection() {
-        val build = rule.build {
-            settings {
-                // Building with no profiles and no selection should go to default
-                addSettingsBlock(execProfile = null, profileList = listOf())
-            }
-            androidApplication {
-                android.withShrinker()
-            }
-        }
-
-        build.executor.run("assembleDebug")
-
-        // Adding one profile should auto-select it, so it should also work
-        build.reconfigureSettings {
-            android {
-                execution.profiles {
-                    create("profileOne") {
-                        it.r8.runInSeparateProcess = false
-                    }
-                }
-            }
-        }
-        var result = build.executor.run("clean", "assembleDebug")
-
-        result.stdout.use {
-            ScannerSubject.assertThat(it).contains("Using only execution profile 'profileOne'")
-        }
-
-        // Adding another profile with no selection should fail
-        build.reconfigureSettings {
-            android {
-                execution.profiles {
-                    create("profileTwo") { }
-                }
-            }
-        }
-        result = build.executor.expectFailure().run("clean", "assembleDebug")
-
-        result.stderr.use {
-            ScannerSubject.assertThat(it)
-                    .contains("Found 2 execution profiles [profileOne, profileTwo], but no profile was selected.\n")
-        }
-
-        // Selecting a profile through override should work
-        build.executor
-                .with(StringOption.EXECUTION_PROFILE_SELECTION, "profileOne")
-                .run("clean", "assembleDebug")
-
-        // So should adding the profile selection to the settings file
-        build.reconfigureSettings {
-            android {
-                execution.defaultProfile = "profileTwo"
-            }
-        }
-        build.executor.run("clean", "assembleDebug")
-    }
-
-    // regression test for b/258704137
-    @Test
-    fun testJvmOptionsAreUsed() {
-        val build = rule.build {
-            settings {
-                addSettingsBlock(
-                    execProfile = "mid",
-                    profileList = listOf(
-                        Profile("mid", listOf(":pizza/foo"), true)
-                    )
-                )
-            }
-            androidApplication {
-                android.withShrinker()
-            }
-        }
-
-        val result = build.executor.expectFailure().run("clean", "minifyDebugWithR8")
-
-        // If the jvm args used, r8 will be unable to create the separate process
-        // with invalid arguments
-        result.stderr.use {
-            ScannerSubject.assertThat(it).contains("Error: Could not find or load main class :pizza.foo")
-        }
-    }
+    // If the jvm args used, r8 will be unable to create the separate process
+    // with invalid arguments
+    result.stderr.use { ScannerSubject.assertThat(it).contains("Error: Could not find or load main class :pizza.foo") }
+  }
 }

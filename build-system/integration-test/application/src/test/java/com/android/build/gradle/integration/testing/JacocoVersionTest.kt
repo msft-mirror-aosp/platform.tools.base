@@ -18,7 +18,6 @@ package com.android.build.gradle.integration.testing
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.utils.TestFileUtils
-import com.android.build.gradle.internal.coverage.JacocoOptions
 import com.android.build.gradle.options.StringOption
 import com.android.utils.FileUtils
 import com.google.common.truth.Truth
@@ -28,78 +27,73 @@ import org.junit.Test
 
 class JacocoVersionTest {
 
-    @get:Rule
-    val project: GradleTestProject =
-        GradleTestProject.builder().fromTestProject("unitTesting").create()
+  @get:Rule val project: GradleTestProject = GradleTestProject.builder().fromTestProject("unitTesting").create()
 
-    @Test
-    fun setJacocoPluginExtensionVersionForUnitTest() {
-        TestFileUtils.appendToFile(
-            project.buildFile,
-            """
-                apply plugin: 'jacoco'
-                android.buildTypes.debug.enableUnitTestCoverage = true
+  @Test
+  fun setJacocoPluginExtensionVersionForUnitTest() {
+    TestFileUtils.appendToFile(
+      project.buildFile,
+      """
+      apply plugin: 'jacoco'
+      android.buildTypes.debug.enableUnitTestCoverage = true
 
-                task jacocoTestReport(
-                    type: JacocoReport,
-                    dependsOn: ['testDebugUnitTest', 'createDebugUnitTestCoverageReport']
-                ) {
-                    executionData.setFrom(
-                        files([
-                            "${'$'}{buildDir}/outputs/unit_test_code_coverage/debugUnitTest/testDebugUnitTest.exec"
-                        ])
-                    )
-                }
-            """.trimIndent()
-        )
+      task jacocoTestReport(
+          type: JacocoReport,
+          dependsOn: ['testDebugUnitTest', 'createDebugUnitTestCoverageReport']
+      ) {
+          executionData.setFrom(
+              files([
+                  "${'$'}{buildDir}/outputs/unit_test_code_coverage/debugUnitTest/testDebugUnitTest.exec"
+              ])
+          )
+      }
+      """
+        .trimIndent(),
+    )
 
-        // AGP default Jacoco plugin version
-        project.executor().run("jacocoTestReport")
-        val generatedJacocoReport = FileUtils.join(
-            project.buildDir, "reports", "jacoco", "jacocoTestReport", "html", "index.html"
-        )
-        val generatedCoverageReport = FileUtils.join(
-            project.buildDir, "reports", "coverage", "test", "debug", "index.html"
-        )
-        var generatedJacocoReportHtml = generatedJacocoReport.readLines().joinToString("\n")
-        var generatedCoverageReportHtml = generatedCoverageReport.readLines().joinToString("\n")
-        val jacocoVersion = JacocoPlugin.DEFAULT_JACOCO_VERSION // from Gradle
-        Truth.assertThat(generatedJacocoReportHtml).contains("JaCoCo</a> $jacocoVersion")
-        Truth.assertThat(generatedCoverageReportHtml).contains("JaCoCo</a> $jacocoVersion")
+    // AGP default Jacoco plugin version
+    project.executor().run("jacocoTestReport")
+    val generatedJacocoReport = FileUtils.join(project.buildDir, "reports", "jacoco", "jacocoTestReport", "html", "index.html")
+    val generatedCoverageReport = FileUtils.join(project.buildDir, "reports", "coverage", "test", "debug", "index.html")
+    var generatedJacocoReportHtml = generatedJacocoReport.readLines().joinToString("\n")
+    var generatedCoverageReportHtml = generatedCoverageReport.readLines().joinToString("\n")
+    val jacocoVersion = JacocoPlugin.DEFAULT_JACOCO_VERSION // from Gradle
+    Truth.assertThat(generatedJacocoReportHtml).contains("JaCoCo</a> $jacocoVersion")
+    Truth.assertThat(generatedCoverageReportHtml).contains("JaCoCo</a> $jacocoVersion")
 
-        // Test Jacoco DSL
-        TestFileUtils.appendToFile(
-            project.buildFile,
-            """
-                jacoco.toolVersion = "0.8.7"
-            """.trimIndent()
-        )
-        project.execute("jacocoTestReport")
-        generatedJacocoReportHtml = generatedJacocoReport.readLines().joinToString("\n")
-        generatedCoverageReportHtml = generatedCoverageReport.readLines().joinToString("\n")
-        Truth.assertThat(generatedJacocoReportHtml).contains("JaCoCo</a> 0.8.7")
-        Truth.assertThat(generatedCoverageReportHtml).contains("JaCoCo</a> 0.8.7")
+    // Test Jacoco DSL
+    TestFileUtils.appendToFile(
+      project.buildFile,
+      """
+      jacoco.toolVersion = "0.8.7"
+      """
+        .trimIndent(),
+    )
+    project.execute("jacocoTestReport")
+    generatedJacocoReportHtml = generatedJacocoReport.readLines().joinToString("\n")
+    generatedCoverageReportHtml = generatedCoverageReport.readLines().joinToString("\n")
+    Truth.assertThat(generatedJacocoReportHtml).contains("JaCoCo</a> 0.8.7")
+    Truth.assertThat(generatedCoverageReportHtml).contains("JaCoCo</a> 0.8.7")
 
-        // Test Android DSL
-        TestFileUtils.appendToFile(
-            project.buildFile,
-            """
+    // Test Android DSL
+    TestFileUtils.appendToFile(
+      project.buildFile,
+      """
                 android.testCoverage.jacocoVersion = "$jacocoVersion"
-            """.trimIndent()
-        )
-        project.execute("jacocoTestReport")
-        generatedJacocoReportHtml = generatedJacocoReport.readLines().joinToString("\n")
-        generatedCoverageReportHtml = generatedCoverageReport.readLines().joinToString("\n")
-        Truth.assertThat(generatedJacocoReportHtml).contains("JaCoCo</a> $jacocoVersion")
-        Truth.assertThat(generatedCoverageReportHtml).contains("JaCoCo</a> $jacocoVersion")
+            """
+        .trimIndent(),
+    )
+    project.execute("jacocoTestReport")
+    generatedJacocoReportHtml = generatedJacocoReport.readLines().joinToString("\n")
+    generatedCoverageReportHtml = generatedCoverageReport.readLines().joinToString("\n")
+    Truth.assertThat(generatedJacocoReportHtml).contains("JaCoCo</a> $jacocoVersion")
+    Truth.assertThat(generatedCoverageReportHtml).contains("JaCoCo</a> $jacocoVersion")
 
-        // Test StringOption
-        project.executor()
-            .with(StringOption.JACOCO_TOOL_VERSION, "0.8.7")
-            .run("jacocoTestReport")
-        generatedJacocoReportHtml = generatedJacocoReport.readLines().joinToString("\n")
-        generatedCoverageReportHtml = generatedCoverageReport.readLines().joinToString("\n")
-        Truth.assertThat(generatedJacocoReportHtml).contains("JaCoCo</a> 0.8.7")
-        Truth.assertThat(generatedCoverageReportHtml).contains("JaCoCo</a> 0.8.7")
-    }
+    // Test StringOption
+    project.executor().with(StringOption.JACOCO_TOOL_VERSION, "0.8.7").run("jacocoTestReport")
+    generatedJacocoReportHtml = generatedJacocoReport.readLines().joinToString("\n")
+    generatedCoverageReportHtml = generatedCoverageReport.readLines().joinToString("\n")
+    Truth.assertThat(generatedJacocoReportHtml).contains("JaCoCo</a> 0.8.7")
+    Truth.assertThat(generatedCoverageReportHtml).contains("JaCoCo</a> 0.8.7")
+  }
 }

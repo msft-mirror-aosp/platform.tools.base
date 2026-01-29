@@ -17,6 +17,7 @@
 package com.android.build.gradle.internal.services
 
 import com.android.build.gradle.internal.lint.LintFromMaven
+import java.io.File
 import org.gradle.api.Action
 import org.gradle.api.Named
 import org.gradle.api.Task
@@ -35,65 +36,59 @@ import org.gradle.api.provider.ValueSource
 import org.gradle.api.provider.ValueSourceParameters
 import org.gradle.api.provider.ValueSourceSpec
 import org.gradle.api.tasks.TaskProvider
-import java.io.File
 
 class TaskCreationServicesImpl(projectServices: ProjectServices) : BaseServicesImpl(projectServices), TaskCreationServices {
 
-    override fun fileProvider(provider: Provider<File>): Provider<RegularFile> {
-        return projectServices.projectLayout.file(provider)
-    }
+  override fun fileProvider(provider: Provider<File>): Provider<RegularFile> {
+    return projectServices.projectLayout.file(provider)
+  }
 
-    override fun files(vararg files: Any?): FileCollection {
-        return projectServices.projectLayout.files(files)
-    }
-    override fun directoryProperty(): DirectoryProperty =
-        projectServices.objectFactory.directoryProperty()
+  override fun files(vararg files: Any?): FileCollection {
+    return projectServices.projectLayout.files(files)
+  }
 
-    override fun regularFileProperty(): RegularFileProperty =
-        projectServices.objectFactory.fileProperty()
+  override fun directoryProperty(): DirectoryProperty = projectServices.objectFactory.directoryProperty()
 
-    override fun <T> listProperty(type: Class<T>): ListProperty<T> =
-        projectServices.objectFactory.listProperty(type)
+  override fun regularFileProperty(): RegularFileProperty = projectServices.objectFactory.fileProperty()
 
-    override fun <K, V> mapProperty(keyType: Class<K>, valueType: Class<V>): MapProperty<K, V> =
-        projectServices.objectFactory.mapProperty(keyType, valueType)
+  override fun <T> listProperty(type: Class<T>): ListProperty<T> = projectServices.objectFactory.listProperty(type)
 
-    override fun fileCollection(): ConfigurableFileCollection =
-        projectServices.objectFactory.fileCollection()
+  override fun <K, V> mapProperty(keyType: Class<K>, valueType: Class<V>): MapProperty<K, V> =
+    projectServices.objectFactory.mapProperty(keyType, valueType)
 
-    override fun fileCollection(vararg files: Any): ConfigurableFileCollection =
-        projectServices.objectFactory.fileCollection().from(*files)
+  override fun fileCollection(): ConfigurableFileCollection = projectServices.objectFactory.fileCollection()
 
-    override fun initializeAapt2Input(aapt2Input: Aapt2Input, task: Task) {
-        projectServices.initializeAapt2Input(aapt2Input, task)
-    }
+  override fun fileCollection(vararg files: Any): ConfigurableFileCollection = projectServices.objectFactory.fileCollection().from(*files)
 
-    override fun createEmptyTask(name: String): TaskProvider<*> =
-        projectServices.emptyTaskCreator(name)
+  override fun initializeAapt2Input(aapt2Input: Aapt2Input, task: Task) {
+    projectServices.initializeAapt2Input(aapt2Input, task)
+  }
 
-    override fun <T> provider(callable: () -> T?): Provider<T> {
-        return projectServices.providerFactory.provider(callable)
-    }
+  override fun createEmptyTask(name: String): TaskProvider<*> = projectServices.emptyTaskCreator(name)
 
-    @Suppress("UnstableApiUsage")
-    override fun <T, P : ValueSourceParameters> providerOf(
-        valueSourceType: Class<out ValueSource<T, P>>,
-        configuration: Action<in ValueSourceSpec<P>>
-    ): Provider<T> {
-        return projectServices.providerFactory.of(valueSourceType, configuration)
-    }
+  override fun <T> provider(callable: () -> T?): Provider<T> {
+    return projectServices.providerFactory.provider(callable)
+  }
 
-    override fun <T : Named> named(type: Class<T>, name: String): T =
-        projectServices.objectFactory.named(type, name)
+  @Suppress("UnstableApiUsage")
+  override fun <T, P : ValueSourceParameters> providerOf(
+    valueSourceType: Class<out ValueSource<T, P>>,
+    configuration: Action<in ValueSourceSpec<P>>,
+  ): Provider<T> {
+    return projectServices.providerFactory.of(valueSourceType, configuration)
+  }
 
-    override val lintFromMaven: LintFromMaven get() = projectServices.lintFromMaven
+  override fun <T : Named> named(type: Class<T>, name: String): T = projectServices.objectFactory.named(type, name)
 
-    override val configurations: ConfigurationContainer
-        get() = projectServices.configurationContainer
+  override val lintFromMaven: LintFromMaven
+    get() = projectServices.lintFromMaven
 
-    override val dependencies: DependencyHandler
-        get() = projectServices.dependencyHandler
+  override val configurations: ConfigurationContainer
+    get() = projectServices.configurationContainer
 
-    override val extraProperties: ExtraPropertiesExtension
-        get() = projectServices.extraProperties
+  override val dependencies: DependencyHandler
+    get() = projectServices.dependencyHandler
+
+  override val extraProperties: ExtraPropertiesExtension
+    get() = projectServices.extraProperties
 }

@@ -20,16 +20,14 @@ import com.android.build.api.dsl.MultiDexConfig
 import com.android.build.gradle.internal.services.DslServices
 import javax.inject.Inject
 
-abstract class MultiDexConfigImpl @Inject constructor(
-    val dslServices: DslServices,
-) : MultiDexConfig {
-    // to capture if enable is explicitly set in the DSL
-    internal var enableSet = false
-        private set
+abstract class MultiDexConfigImpl @Inject constructor(val dslServices: DslServices) : MultiDexConfig {
+  // to capture if enable is explicitly set in the DSL
+  internal var enableSet = false
+    private set
 
-    override var enable: Boolean = false
-        set(value) {
-            field = value
-            enableSet = true
-        }
+  override var enable: Boolean = false
+    set(value) {
+      field = value
+      enableSet = true
+    }
 }

@@ -29,204 +29,155 @@ import com.google.common.collect.ImmutableList
 import org.junit.Rule
 import org.junit.Test
 
-class HelloWorldAppAndLibModelTest: ModelComparator() {
-    @get:Rule
-    val rule = GradleRule.from {
-        androidApplication {
-            android {
-                enableKotlin = false
-            }
-            dependencies {
-                implementation(project(DEFAULT_LIB_PATH))
-            }
-        }
-        androidLibrary {
-            android {
-                enableKotlin = false
-            }
-        }
+class HelloWorldAppAndLibModelTest : ModelComparator() {
+  @get:Rule
+  val rule =
+    GradleRule.from {
+      androidApplication {
+        android { enableKotlin = false }
+        dependencies { implementation(project(DEFAULT_LIB_PATH)) }
+      }
+      androidLibrary { android { enableKotlin = false } }
     }
 
-    @Test
-    fun `test VariantDependencies`() {
-        val result = rule.build.modelBuilder
-            .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
-            .fetchModels(variantName = "debug")
+  @Test
+  fun `test VariantDependencies`() {
+    val result = rule.build.modelBuilder.ignoreSyncIssues(SyncIssue.SEVERITY_WARNING).fetchModels(variantName = "debug")
 
-        with(result).compareVariantDependencies(
-            projectAction = { getProject(DEFAULT_APP_PATH) },
-            goldenFile = "VariantDependencies"
-        )
-    }
+    with(result).compareVariantDependencies(projectAction = { getProject(DEFAULT_APP_PATH) }, goldenFile = "VariantDependencies")
+  }
 }
 
-class AppAndLibTestFixturesModelTest: ModelComparator() {
-    @get:Rule
-    val rule = GradleRule.from {
-        androidApplication {
-            android {
-                enableKotlin = false
-            }
-            dependencies {
-                implementation(project(DEFAULT_LIB_PATH))
-                androidTestImplementation(project(DEFAULT_LIB_PATH, testFixtures = true))
-            }
+class AppAndLibTestFixturesModelTest : ModelComparator() {
+  @get:Rule
+  val rule =
+    GradleRule.from {
+      androidApplication {
+        android { enableKotlin = false }
+        dependencies {
+          implementation(project(DEFAULT_LIB_PATH))
+          androidTestImplementation(project(DEFAULT_LIB_PATH, testFixtures = true))
         }
-        androidLibrary {
-            version = "1.2.3"
+      }
+      androidLibrary {
+        version = "1.2.3"
 
-            android {
-                testFixtures {
-                    enable = true
-                }
-                enableKotlin = false
-            }
+        android {
+          testFixtures { enable = true }
+          enableKotlin = false
         }
+      }
     }
 
-    @Test
-    fun `test VariantDependencies`() {
-        val result = rule.build.modelBuilder
-            .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
-            .fetchModels(variantName = "debug")
+  @Test
+  fun `test VariantDependencies`() {
+    val result = rule.build.modelBuilder.ignoreSyncIssues(SyncIssue.SEVERITY_WARNING).fetchModels(variantName = "debug")
 
-        with(result).compareVariantDependencies(
-            projectAction = { getProject(DEFAULT_APP_PATH) },
-            goldenFile = "VariantDependencies"
-        )
-    }
+    with(result).compareVariantDependencies(projectAction = { getProject(DEFAULT_APP_PATH) }, goldenFile = "VariantDependencies")
+  }
 }
 
-class AppAndJavaLibTestFixturesModelTest: ModelComparator() {
-    @get:Rule
-    val rule = GradleRule.from {
-        androidApplication {
-            android {
-                enableKotlin = false
-            }
-            dependencies {
-                implementation(project(":lib"))
-                androidTestImplementation(project(":lib", testFixtures = true))
-            }
+class AppAndJavaLibTestFixturesModelTest : ModelComparator() {
+  @get:Rule
+  val rule =
+    GradleRule.from {
+      androidApplication {
+        android { enableKotlin = false }
+        dependencies {
+          implementation(project(":lib"))
+          androidTestImplementation(project(":lib", testFixtures = true))
         }
-        genericProject(":lib") {
-            applyPlugin(PluginType.JAVA_LIBRARY)
-            applyPlugin(PluginType.JAVA_TEST_FIXTURES)
-            version = "1.2.3"
-        }
+      }
+      genericProject(":lib") {
+        applyPlugin(PluginType.JAVA_LIBRARY)
+        applyPlugin(PluginType.JAVA_TEST_FIXTURES)
+        version = "1.2.3"
+      }
     }
 
-    @Test
-    fun `test VariantDependencies`() {
-        val result = rule.build.modelBuilder
-            .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
-            .fetchModels(variantName = "debug")
+  @Test
+  fun `test VariantDependencies`() {
+    val result = rule.build.modelBuilder.ignoreSyncIssues(SyncIssue.SEVERITY_WARNING).fetchModels(variantName = "debug")
 
-        with(result).compareVariantDependencies(
-            projectAction = { getProject(DEFAULT_APP_PATH) },
-            goldenFile = "VariantDependencies"
-        )
-    }
+    with(result).compareVariantDependencies(projectAction = { getProject(DEFAULT_APP_PATH) }, goldenFile = "VariantDependencies")
+  }
 }
 
-class AppAndExternalJavaLibTestFixturesModelTest: ModelComparator() {
-    @get:Rule
-    val rule = GradleRule.from {
-        androidApplication {
-            android {
-                enableKotlin = false
-            }
-            dependencies {
-                implementation(
-                    MavenRepoGenerator.libraryWithFixtures(
-                        mavenCoordinate = "com.example:random-lib:1",
-                        packaging = "jar",
-                        mainLibrary = {
-                            artifact =
-                                TestInputsGenerator.jarWithEmptyClasses(listOf("com/example/jar/MyClass"))
-                        },
-                        fixtureLibrary = {
-                            artifact =
-                                TestInputsGenerator.jarWithEmptyClasses(listOf("com/example/jar/fixtures/MyClass"))
-                        })
-                )
+class AppAndExternalJavaLibTestFixturesModelTest : ModelComparator() {
+  @get:Rule
+  val rule =
+    GradleRule.from {
+      androidApplication {
+        android { enableKotlin = false }
+        dependencies {
+          implementation(
+            MavenRepoGenerator.libraryWithFixtures(
+              mavenCoordinate = "com.example:random-lib:1",
+              packaging = "jar",
+              mainLibrary = { artifact = TestInputsGenerator.jarWithEmptyClasses(listOf("com/example/jar/MyClass")) },
+              fixtureLibrary = { artifact = TestInputsGenerator.jarWithEmptyClasses(listOf("com/example/jar/fixtures/MyClass")) },
+            )
+          )
 
-                androidTestImplementation(
-                    externalLibrary(
-                        "com.example:random-lib:1",
-                        testFixtures = true
-                    )
-                )
-            }
+          androidTestImplementation(externalLibrary("com.example:random-lib:1", testFixtures = true))
         }
+      }
     }
 
-    @Test
-    fun `test VariantDependencies`() {
-        val result = rule.build.modelBuilder
-            .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
-            .fetchModels(variantName = "debug")
+  @Test
+  fun `test VariantDependencies`() {
+    val result = rule.build.modelBuilder.ignoreSyncIssues(SyncIssue.SEVERITY_WARNING).fetchModels(variantName = "debug")
 
-        with(result).compareVariantDependencies(
-            projectAction = { getProject(DEFAULT_APP_PATH) },
-            goldenFile = "VariantDependencies"
-        )
-    }
+    with(result).compareVariantDependencies(projectAction = { getProject(DEFAULT_APP_PATH) }, goldenFile = "VariantDependencies")
+  }
 }
 
-class AppAndExternalAarLibTestFixturesModelTest: ModelComparator() {
-    @get:Rule
-    val rule = GradleRule.from {
-        androidApplication {
-            android {
-                enableKotlin = false
-            }
-            dependencies {
-                implementation(
-                    MavenRepoGenerator.libraryWithFixtures(
-                        mavenCoordinate = "com.example:aar:1",
-                        packaging = "aar",
-                        mainLibrary = {
-                            artifact =
-                                generateAarWithContent(
-                                    packageName = "com.example.aar",
-                                    mainJar = TestInputsGenerator.jarWithEmptyClasses(ImmutableList.of("com/example/aar/AarClass")),
-                                    resources = mapOf("values/strings.xml" to """<resources><string name="aar_string">Aar String</string></resources>""".toByteArray())
-                                )
-                        },
-                        fixtureLibrary = {
-                            artifact =
-                                generateAarWithContent(
-                                    packageName = "com.example.aar.testfixtures",
-                                    mainJar = TestInputsGenerator.jarWithEmptyClasses(
-                                        ImmutableList.of(
-                                            "com/example/aar/fixtures/AarClass"
-                                        )
-                                    ),
-                                    resources = mapOf("values/strings.xml" to """<resources><string name="aar_string">Aar Fixture String</string></resources>""".toByteArray())
-                                )
-                        })
-                )
+class AppAndExternalAarLibTestFixturesModelTest : ModelComparator() {
+  @get:Rule
+  val rule =
+    GradleRule.from {
+      androidApplication {
+        android { enableKotlin = false }
+        dependencies {
+          implementation(
+            MavenRepoGenerator.libraryWithFixtures(
+              mavenCoordinate = "com.example:aar:1",
+              packaging = "aar",
+              mainLibrary = {
+                artifact =
+                  generateAarWithContent(
+                    packageName = "com.example.aar",
+                    mainJar = TestInputsGenerator.jarWithEmptyClasses(ImmutableList.of("com/example/aar/AarClass")),
+                    resources =
+                      mapOf(
+                        "values/strings.xml" to """<resources><string name="aar_string">Aar String</string></resources>""".toByteArray()
+                      ),
+                  )
+              },
+              fixtureLibrary = {
+                artifact =
+                  generateAarWithContent(
+                    packageName = "com.example.aar.testfixtures",
+                    mainJar = TestInputsGenerator.jarWithEmptyClasses(ImmutableList.of("com/example/aar/fixtures/AarClass")),
+                    resources =
+                      mapOf(
+                        "values/strings.xml" to
+                          """<resources><string name="aar_string">Aar Fixture String</string></resources>""".toByteArray()
+                      ),
+                  )
+              },
+            )
+          )
 
-                androidTestImplementation(
-                    externalLibrary(
-                        "com.example:aar:1",
-                        testFixtures = true
-                    )
-                )
-            }
+          androidTestImplementation(externalLibrary("com.example:aar:1", testFixtures = true))
         }
+      }
     }
 
-    @Test
-    fun `test VariantDependencies`() {
-        val result = rule.build.modelBuilder
-            .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
-            .fetchModels(variantName = "debug")
+  @Test
+  fun `test VariantDependencies`() {
+    val result = rule.build.modelBuilder.ignoreSyncIssues(SyncIssue.SEVERITY_WARNING).fetchModels(variantName = "debug")
 
-        with(result).compareVariantDependencies(
-            projectAction = { getProject(DEFAULT_APP_PATH) },
-            goldenFile = "VariantDependencies"
-        )
-    }
+    with(result).compareVariantDependencies(projectAction = { getProject(DEFAULT_APP_PATH) }, goldenFile = "VariantDependencies")
+  }
 }

@@ -17,7 +17,7 @@
 package com.android.build.gradle.internal.cxx.configure
 
 /**
- * The name of the default configuration subfolder leaf. It should start with dot (.) to indicate
- * that the folder contents shouldn't be checked in to source control.
+ * The name of the default configuration subfolder leaf. It should start with dot (.) to indicate that the folder contents shouldn't be
+ * checked in to source control.
  */
 const val CXX_DEFAULT_CONFIGURATION_SUBFOLDER = ".cxx"

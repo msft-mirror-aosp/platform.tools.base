@@ -31,6 +31,8 @@ import com.android.testutils.truth.DexSubject.assertThat
 import com.android.testutils.truth.DexSubject.assertThatDex
 import com.android.testutils.truth.PathSubject.assertThat
 import com.google.common.util.concurrent.MoreExecutors
+import java.io.File
+import java.nio.file.Path
 import org.gradle.api.file.RegularFile
 import org.junit.Before
 import org.junit.Rule
@@ -38,176 +40,144 @@ import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import org.mockito.kotlin.mock
 import org.objectweb.asm.Type
-import java.io.File
-import java.nio.file.Path
 
-/**
- * Tests R8's main dex rules
- */
+/** Tests R8's main dex rules */
 class R8MainDexRulesTest {
-    @get: Rule
-    val tmp: TemporaryFolder = TemporaryFolder()
-    private lateinit var outputDir: Path
-    private lateinit var outputProguard: RegularFile
+  @get:Rule val tmp: TemporaryFolder = TemporaryFolder()
+  private lateinit var outputDir: Path
+  private lateinit var outputProguard: RegularFile
 
-    @Before
-    fun setUp() {
-        outputDir = tmp.newFolder().toPath()
-        outputProguard = mock<RegularFile>()
-    }
+  @Before
+  fun setUp() {
+    outputDir = tmp.newFolder().toPath()
+    outputProguard = mock<RegularFile>()
+  }
 
-    @Test
-    fun testMainDexRules() {
-        val classes = tmp.root.toPath().resolve("classes.jar")
-        TestInputsGenerator.pathWithClasses(
-            classes,
-            listOf(Animal::class.java, CarbonForm::class.java, Toy::class.java)
-        )
+  @Test
+  fun testMainDexRules() {
+    val classes = tmp.root.toPath().resolve("classes.jar")
+    TestInputsGenerator.pathWithClasses(classes, listOf(Animal::class.java, CarbonForm::class.java, Toy::class.java))
 
-        val mainDexRuleFile = tmp.newFile()
-        mainDexRuleFile.printWriter().use {
-            it.println("-keep class " + Animal::class.java.name)
-        }
+    val mainDexRuleFile = tmp.newFile()
+    mainDexRuleFile.printWriter().use { it.println("-keep class " + Animal::class.java.name) }
 
-        runR8(
-            classes = listOf(classes.toFile()),
-            resourcesJar = tmp.root.toPath().resolve("resources.jar").also {
-                TestInputsGenerator.jarWithEmptyClasses(it, listOf())
-            },
-            mainDexRulesFiles = listOf(mainDexRuleFile),
-            minSdkVersion = 19,
-            r8Keep = "class **",
-            outputDir = outputDir,
-            proguardOutputDir = tmp.root,
-            featureJavaResourceJars = listOf(),
-            featureJavaResourceOutputDir = null
-        )
+    runR8(
+      classes = listOf(classes.toFile()),
+      resourcesJar = tmp.root.toPath().resolve("resources.jar").also { TestInputsGenerator.jarWithEmptyClasses(it, listOf()) },
+      mainDexRulesFiles = listOf(mainDexRuleFile),
+      minSdkVersion = 19,
+      r8Keep = "class **",
+      outputDir = outputDir,
+      proguardOutputDir = tmp.root,
+      featureJavaResourceJars = listOf(),
+      featureJavaResourceOutputDir = null,
+    )
 
-        val mainDex = Dex(outputDir.resolve("main").resolve("classes.dex"))
-        assertThat(mainDex)
-            .containsExactlyClassesIn(
-                listOf(
-                    Type.getDescriptor(CarbonForm::class.java),
-                    Type.getDescriptor(Animal::class.java)
-                )
-            )
+    val mainDex = Dex(outputDir.resolve("main").resolve("classes.dex"))
+    assertThat(mainDex).containsExactlyClassesIn(listOf(Type.getDescriptor(CarbonForm::class.java), Type.getDescriptor(Animal::class.java)))
 
-        val secondaryDex = Dex(outputDir.resolve("main").resolve("classes2.dex"))
-        assertThat(secondaryDex).containsExactlyClassesIn(listOf(Type.getDescriptor(Toy::class.java)))
-    }
+    val secondaryDex = Dex(outputDir.resolve("main").resolve("classes2.dex"))
+    assertThat(secondaryDex).containsExactlyClassesIn(listOf(Type.getDescriptor(Toy::class.java)))
+  }
 
-    @Test
-    fun testMonoDex() {
-        val classes = tmp.root.toPath().resolve("classes.jar")
-        TestInputsGenerator.pathWithClasses(
-            classes,
-            listOf(Animal::class.java, CarbonForm::class.java, Toy::class.java)
-        )
+  @Test
+  fun testMonoDex() {
+    val classes = tmp.root.toPath().resolve("classes.jar")
+    TestInputsGenerator.pathWithClasses(classes, listOf(Animal::class.java, CarbonForm::class.java, Toy::class.java))
 
-        val mainDexRuleFile = tmp.newFile()
-        mainDexRuleFile.printWriter().use {
-            it.println("-keep class " + CarbonForm::class.java.name)
-        }
+    val mainDexRuleFile = tmp.newFile()
+    mainDexRuleFile.printWriter().use { it.println("-keep class " + CarbonForm::class.java.name) }
 
-        runR8(
-            classes = listOf(classes.toFile()),
-            resourcesJar = tmp.root.toPath().resolve("resources.jar").also {
-                TestInputsGenerator.jarWithEmptyClasses(it, listOf())
-            },
-            mainDexRulesFiles = listOf(mainDexRuleFile),
-            minSdkVersion = 19,
-            dexingType = DexingType.MONO_DEX,
-            r8Keep = "class **",
-            outputDir = outputDir,
-            mappingFile = tmp.newFolder("mapping"),
-            proguardOutputDir = tmp.root,
-            featureJavaResourceJars = listOf(),
-            featureJavaResourceOutputDir = null
-        )
+    runR8(
+      classes = listOf(classes.toFile()),
+      resourcesJar = tmp.root.toPath().resolve("resources.jar").also { TestInputsGenerator.jarWithEmptyClasses(it, listOf()) },
+      mainDexRulesFiles = listOf(mainDexRuleFile),
+      minSdkVersion = 19,
+      dexingType = DexingType.MONO_DEX,
+      r8Keep = "class **",
+      outputDir = outputDir,
+      mappingFile = tmp.newFolder("mapping"),
+      proguardOutputDir = tmp.root,
+      featureJavaResourceJars = listOf(),
+      featureJavaResourceOutputDir = null,
+    )
 
-        assertThatDex(outputDir.resolve("main/classes.dex").toFile())
-            .containsExactlyClassesIn(
-                listOf(
-                    Type.getDescriptor(CarbonForm::class.java),
-                    Type.getDescriptor(Animal::class.java),
-                    Type.getDescriptor(Toy::class.java)
-                )
-            )
-        assertThat(outputDir.resolve("main/classes2.dex")).doesNotExist()
-    }
+    assertThatDex(outputDir.resolve("main/classes.dex").toFile())
+      .containsExactlyClassesIn(
+        listOf(Type.getDescriptor(CarbonForm::class.java), Type.getDescriptor(Animal::class.java), Type.getDescriptor(Toy::class.java))
+      )
+    assertThat(outputDir.resolve("main/classes2.dex")).doesNotExist()
+  }
 }
 
 fun runR8(
-    classes: List<File>,
-    resourcesJar: Path,
-    referencedInputs: List<File> = listOf(),
-    mainDexRulesFiles: List<File> = listOf(),
-    minSdkVersion: Int = 21,
-    dexingType: DexingType = DexingType.LEGACY_MULTIDEX,
-    r8Keep: String? = null,
-    outputDir: Path,
-    mappingFile: File = outputDir.resolve("mapping.txt").toFile(),
-    mappingPartitionFile: File = outputDir.resolve("mapping.prt").toFile(),
-    proguardOutputDir: File,
-    featureClassJars: List<File> = listOf(),
-    featureJavaResourceJars: List<File>,
-    featureDexDir: File? = null,
-    featureJavaResourceOutputDir: File?
+  classes: List<File>,
+  resourcesJar: Path,
+  referencedInputs: List<File> = listOf(),
+  mainDexRulesFiles: List<File> = listOf(),
+  minSdkVersion: Int = 21,
+  dexingType: DexingType = DexingType.LEGACY_MULTIDEX,
+  r8Keep: String? = null,
+  outputDir: Path,
+  mappingFile: File = outputDir.resolve("mapping.txt").toFile(),
+  mappingPartitionFile: File = outputDir.resolve("mapping.prt").toFile(),
+  proguardOutputDir: File,
+  featureClassJars: List<File> = listOf(),
+  featureJavaResourceJars: List<File>,
+  featureDexDir: File? = null,
+  featureJavaResourceOutputDir: File?,
 ) {
-    val proguardConfigurations: MutableList<String> = mutableListOf(
-        "-ignorewarnings")
+  val proguardConfigurations: MutableList<String> = mutableListOf("-ignorewarnings")
 
-    r8Keep?.let { proguardConfigurations.add("-keep $it") }
+  r8Keep?.let { proguardConfigurations.add("-keep $it") }
 
+  val output: File = outputDir.resolve("main").toFile()
 
-    val output: File = outputDir.resolve("main").toFile()
-
-    R8Task.shrink(
-        bootClasspath = listOf(
-            TestUtils.resolvePlatformPath("android.jar", TestUtils.TestType.AGP).toFile()
-        ),
-        mainDexListFiles = listOf(),
-        mainDexRulesFiles = mainDexRulesFiles,
-        inputProguardMapping = null,
-        proguardConfigurationFiles = listOf(),
-        proguardConfigurations = proguardConfigurations,
-        errorFormatMode = SyncOptions.ErrorFormatMode.HUMAN_READABLE,
-        legacyMultiDexEnabled = dexingType == DexingType.LEGACY_MULTIDEX,
-        referencedInputs = referencedInputs,
-        classes = classes,
-        resourcesJar = resourcesJar.toFile(),
-        mappingFile = mappingFile,
-        mappingPartitionFile = mappingPartitionFile,
-        proguardSeedsOutput = proguardOutputDir.resolve("seeds.txt"),
-        proguardUsageOutput = proguardOutputDir.resolve("usage.txt"),
-        proguardConfigurationOutput = proguardOutputDir.resolve("configuration.txt"),
-        missingKeepRulesOutput = proguardOutputDir.resolve("missing_rules.txt"),
-        output = output,
-        outputResources = outputDir.resolve("java_res.jar").toFile(),
-        mainDexListOutput = null,
-        featureClassJars = featureClassJars,
-        featureJavaResourceJars = featureJavaResourceJars,
-        featureDexDir = featureDexDir,
-        featureJavaResourceOutputDir = featureJavaResourceOutputDir,
-        libConfiguration = null,
-        inputArtProfile = null,
-        outputArtProfile = null,
-        inputProfileForDexStartupOptimization = null,
-        r8Metadata = null,
-        toolConfig = ToolConfig(
-            minSdkVersion = minSdkVersion,
-            debuggable = true,
-            disableTreeShaking = false,
-            disableMinification = true,
-            disableDesugaring = true,
-            fullMode = false,
-            strictFullModeForKeepRules = BooleanOption.R8_STRICT_FULL_MODE_FOR_KEEP_RULES.defaultValue,
-            isolatedSplits = null,
-            r8OutputType = R8OutputType.DEX,
-            mainDexListDisallowed = BooleanOption.R8_MAIN_DEX_LIST_DISALLOWED.defaultValue
-        ),
-        resourceShrinkingConfig = null,
-        partialShrinkingIncludes = null,
-        r8ThreadPool = MoreExecutors.newDirectExecutorService()
-    )
+  R8Task.shrink(
+    bootClasspath = listOf(TestUtils.resolvePlatformPath("android.jar", TestUtils.TestType.AGP).toFile()),
+    mainDexListFiles = listOf(),
+    mainDexRulesFiles = mainDexRulesFiles,
+    inputProguardMapping = null,
+    proguardConfigurationFiles = listOf(),
+    proguardConfigurations = proguardConfigurations,
+    errorFormatMode = SyncOptions.ErrorFormatMode.HUMAN_READABLE,
+    legacyMultiDexEnabled = dexingType == DexingType.LEGACY_MULTIDEX,
+    referencedInputs = referencedInputs,
+    classes = classes,
+    resourcesJar = resourcesJar.toFile(),
+    mappingFile = mappingFile,
+    mappingPartitionFile = mappingPartitionFile,
+    proguardSeedsOutput = proguardOutputDir.resolve("seeds.txt"),
+    proguardUsageOutput = proguardOutputDir.resolve("usage.txt"),
+    proguardConfigurationOutput = proguardOutputDir.resolve("configuration.txt"),
+    missingKeepRulesOutput = proguardOutputDir.resolve("missing_rules.txt"),
+    output = output,
+    outputResources = outputDir.resolve("java_res.jar").toFile(),
+    mainDexListOutput = null,
+    featureClassJars = featureClassJars,
+    featureJavaResourceJars = featureJavaResourceJars,
+    featureDexDir = featureDexDir,
+    featureJavaResourceOutputDir = featureJavaResourceOutputDir,
+    libConfiguration = null,
+    inputArtProfile = null,
+    outputArtProfile = null,
+    inputProfileForDexStartupOptimization = null,
+    r8Metadata = null,
+    toolConfig =
+      ToolConfig(
+        minSdkVersion = minSdkVersion,
+        debuggable = true,
+        disableTreeShaking = false,
+        disableMinification = true,
+        disableDesugaring = true,
+        fullMode = false,
+        strictFullModeForKeepRules = BooleanOption.R8_STRICT_FULL_MODE_FOR_KEEP_RULES.defaultValue,
+        isolatedSplits = null,
+        r8OutputType = R8OutputType.DEX,
+        mainDexListDisallowed = BooleanOption.R8_MAIN_DEX_LIST_DISALLOWED.defaultValue,
+      ),
+    resourceShrinkingConfig = null,
+    partialShrinkingIncludes = null,
+    r8ThreadPool = MoreExecutors.newDirectExecutorService(),
+  )
 }

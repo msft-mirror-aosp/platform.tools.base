@@ -27,47 +27,48 @@ import org.junit.runners.JUnit4
 @RunWith(JUnit4::class)
 class AppAndLibNoKotlinStdlibTest {
 
-    @get:Rule
-    val rule = GradleRule.configure()
-        .from {
-            androidLibrary(":lib") {
-                android {
-                    namespace = "com.android.tests.testprojecttest.lib"
-                    enableKotlin = false
-                }
-                files.add("src/main/java/com/android/tests/testprojecttest/lib/LibActivity.java",
-                    """
-                    package com.android.tests.testprojecttest.lib;
-                    import android.app.Activity;
-                    public class LibActivity extends Activity {}
-                    """.trimIndent())
-            }
-            androidApplication(":app") {
-                android {
-                    namespace = "com.android.tests.testprojecttest.app"
-                    enableKotlin = false
-                }
-                dependencies {
-                    implementation(project(":lib"))
-                }
-            }
+  @get:Rule
+  val rule =
+    GradleRule.configure().from {
+      androidLibrary(":lib") {
+        android {
+          namespace = "com.android.tests.testprojecttest.lib"
+          enableKotlin = false
         }
-
-    @Test
-    fun `ensure kotlin stdlib is not in the APK`() {
-        rule.build.executor.run("app:assembleDebug")
-
-        val appProject = rule.build.androidApplication(":app")
-        val apkPath = appProject.getApkLocationForCopy(ApkSelector.DEBUG)
-
-        Apk(apkPath.toFile()).use { apk ->
-            apk.allDexes.forEach { dex ->
-                dex.classes.keys.forEach { className ->
-                     if (className.startsWith("Lkotlin/")) {
-                         throw AssertionError("Found kotlin class: $className")
-                     }
-                }
-            }
+        files.add(
+          "src/main/java/com/android/tests/testprojecttest/lib/LibActivity.java",
+          """
+          package com.android.tests.testprojecttest.lib;
+          import android.app.Activity;
+          public class LibActivity extends Activity {}
+          """
+            .trimIndent(),
+        )
+      }
+      androidApplication(":app") {
+        android {
+          namespace = "com.android.tests.testprojecttest.app"
+          enableKotlin = false
         }
+        dependencies { implementation(project(":lib")) }
+      }
     }
+
+  @Test
+  fun `ensure kotlin stdlib is not in the APK`() {
+    rule.build.executor.run("app:assembleDebug")
+
+    val appProject = rule.build.androidApplication(":app")
+    val apkPath = appProject.getApkLocationForCopy(ApkSelector.DEBUG)
+
+    Apk(apkPath.toFile()).use { apk ->
+      apk.allDexes.forEach { dex ->
+        dex.classes.keys.forEach { className ->
+          if (className.startsWith("Lkotlin/")) {
+            throw AssertionError("Found kotlin class: $className")
+          }
+        }
+      }
+    }
+  }
 }

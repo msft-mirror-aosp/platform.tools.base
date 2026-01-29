@@ -23,22 +23,16 @@ import com.android.build.gradle.internal.services.VariantServices
 /**
  * Single set of related test sources that will be processed and packaged together.
  *
- * For instance, this can reference a host test folder, or a device test set of folders, or at the
- * simplest level, an asset test folder.
+ * For instance, this can reference a host test folder, or a device test set of folders, or at the simplest level, an asset test folder.
  *
- * A test suite can have 1 to many instances of [TestSuiteSourceCreationConfig].
- * Each instance have individual dependencies, they will be compiled and packaged (if needed)
- * separately before being provided to the configured junit engines.
+ * A test suite can have 1 to many instances of [TestSuiteSourceCreationConfig]. Each instance have individual dependencies, they will be
+ * compiled and packaged (if needed) separately before being provided to the configured junit engines.
  */
 interface TestSuiteSourceCreationConfig {
 
-    val name: String
+  val name: String
 
-    val dependencies: AgpTestSuiteDependencies
+  val dependencies: AgpTestSuiteDependencies
 
-    fun createTestSuiteSourceSet(
-        variantServices: VariantServices,
-        javaEnabled: Boolean,
-        kotlinEnabled: Boolean,
-    ): TestSuiteSourceSet
+  fun createTestSuiteSourceSet(variantServices: VariantServices, javaEnabled: Boolean, kotlinEnabled: Boolean): TestSuiteSourceSet
 }

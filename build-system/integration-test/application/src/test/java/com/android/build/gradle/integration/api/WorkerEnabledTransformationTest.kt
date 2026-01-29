@@ -21,20 +21,18 @@ import com.android.build.gradle.integration.common.fixture.app.HelloWorldAppKts
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.testutils.truth.PathSubject.assertThat
 import com.google.common.truth.Truth.assertThat
+import java.io.File
 import org.junit.Rule
 import org.junit.Test
-import java.io.File
 
 class WorkerEnabledTransformationTest {
-    @get:Rule
-    val project: GradleTestProject = GradleTestProject.builder()
-         .fromTestApp(HelloWorldAppKts.forPlugin("com.android.application"))
-         .create();
+  @get:Rule
+  val project: GradleTestProject = GradleTestProject.builder().fromTestApp(HelloWorldAppKts.forPlugin("com.android.application")).create()
 
-    @Test
-    fun workerEnabledTransformation() {
-        val copyTask =
-        """
+  @Test
+  fun workerEnabledTransformation() {
+    val copyTask =
+      """
             import java.io.Serializable
             import javax.inject.Inject
             import org.gradle.api.DefaultTask
@@ -89,10 +87,10 @@ class WorkerEnabledTransformationTest {
             }
         """
 
-        TestFileUtils.searchAndReplace(
-            project.ktsBuildFile,
-            "//import anchor",
-            """
+    TestFileUtils.searchAndReplace(
+      project.ktsBuildFile,
+      "//import anchor",
+      """
             import org.gradle.api.Plugin
             import org.gradle.api.Project
             import java.io.File
@@ -101,34 +99,36 @@ class WorkerEnabledTransformationTest {
 
             $copyTask
 
-            """.trimIndent())
-           TestFileUtils.appendToFile(project.ktsBuildFile,
             """
-               androidComponents.onVariants { variant ->
-                    val copyApksProvider = tasks.register<CopyApksTask>("copy${"$"}{variant.name}Apks")
+        .trimIndent(),
+    )
+    TestFileUtils.appendToFile(
+      project.ktsBuildFile,
+      """
+      androidComponents.onVariants { variant ->
+           val copyApksProvider = tasks.register<CopyApksTask>("copy${"$"}{variant.name}Apks")
 
-                    val transformationRequest = variant.artifacts.use(copyApksProvider)
-                        .wiredWithDirectories(
-                            CopyApksTask::apkFolder,
-                            CopyApksTask::outFolder)
-                        .toTransformMany(SingleArtifact.APK)
+           val transformationRequest = variant.artifacts.use(copyApksProvider)
+               .wiredWithDirectories(
+                   CopyApksTask::apkFolder,
+                   CopyApksTask::outFolder)
+               .toTransformMany(SingleArtifact.APK)
 
-                    copyApksProvider.configure {
-                        this.transformationRequest.set(transformationRequest)
-                    }
-               }
-            """.trimIndent())
-        project.executor().run("clean", "copydebugApks")
+           copyApksProvider.configure {
+               this.transformationRequest.set(transformationRequest)
+           }
+      }
+      """
+        .trimIndent(),
+    )
+    project.executor().run("clean", "copydebugApks")
 
-        val intermediateFolder = File(project.buildDir, "/intermediates/apk/debug/packageDebug/")
-        assertThat(intermediateFolder).exists()
-        assertThat(intermediateFolder.listFiles()?.asList()?.map { it.name }).containsExactly(
-            "project-debug.apk", BuiltArtifactsImpl.METADATA_FILE_NAME
-        )
-        val outFolder = File(project.buildDir, "/outputs/apk/debug/")
-        assertThat(outFolder).exists()
-        assertThat(outFolder.listFiles()?.asList()?.map { it.name }).containsExactly(
-            "project-debug.apk", BuiltArtifactsImpl.METADATA_FILE_NAME
-        )
-    }
+    val intermediateFolder = File(project.buildDir, "/intermediates/apk/debug/packageDebug/")
+    assertThat(intermediateFolder).exists()
+    assertThat(intermediateFolder.listFiles()?.asList()?.map { it.name })
+      .containsExactly("project-debug.apk", BuiltArtifactsImpl.METADATA_FILE_NAME)
+    val outFolder = File(project.buildDir, "/outputs/apk/debug/")
+    assertThat(outFolder).exists()
+    assertThat(outFolder.listFiles()?.asList()?.map { it.name }).containsExactly("project-debug.apk", BuiltArtifactsImpl.METADATA_FILE_NAME)
+  }
 }

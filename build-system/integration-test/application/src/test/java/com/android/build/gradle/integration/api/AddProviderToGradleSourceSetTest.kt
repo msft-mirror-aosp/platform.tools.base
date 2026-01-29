@@ -32,74 +32,56 @@ import org.junit.Rule
 import org.junit.Test
 
 class AddProviderToGradleSourceSetTest {
-    @get:Rule
-    val rule = GradleRule.from {
-        androidApplication {
-            android {
-                namespace = "com.example.api.java_res"
-                defaultConfig.applicationId = "com.example.api.java_res"
+  @get:Rule
+  val rule =
+    GradleRule.from {
+      androidApplication {
+        android {
+          namespace = "com.example.api.java_res"
+          defaultConfig.applicationId = "com.example.api.java_res"
 
-                pluginCallbacks += AddJavaResourcesWithSourceSetCallback::class.java
-            }
+          pluginCallbacks += AddJavaResourcesWithSourceSetCallback::class.java
         }
+      }
     }
 
-    @Test
-    fun disallowProvidersInSourceSet() {
-        val result = rule.build.executor
-            .expectFailure()
-            .run("tasks")
-        result.assertErrorContains("You cannot add Provider instances to the Android SourceSet API.")
-    }
+  @Test
+  fun disallowProvidersInSourceSet() {
+    val result = rule.build.executor.expectFailure().run("tasks")
+    result.assertErrorContains("You cannot add Provider instances to the Android SourceSet API.")
+  }
 
-    @Test
-    fun allowProvidersInSourceSet() {
-        val builtProject = rule.build
-        builtProject.executor
-            .with(BooleanOption.DISALLOW_PROVIDER_IN_ANDROID_SOURCE_SET, false)
-            .run("tasks")
-
-    }
+  @Test
+  fun allowProvidersInSourceSet() {
+    val builtProject = rule.build
+    builtProject.executor.with(BooleanOption.DISALLOW_PROVIDER_IN_ANDROID_SOURCE_SET, false).run("tasks")
+  }
 }
 
-abstract class AddJavaResourcesTestWriterForSourceSet: DefaultTask() {
+abstract class AddJavaResourcesTestWriterForSourceSet : DefaultTask() {
 
-    @get:Input
-    abstract val resName: Property<String>
+  @get:Input abstract val resName: Property<String>
 
-    @get:OutputDirectory
-    abstract val outputDir: DirectoryProperty
+  @get:OutputDirectory abstract val outputDir: DirectoryProperty
 
-    @TaskAction
-    fun execute() {
-        outputDir.get().asFile.mkdirs()
-        outputDir.file(resName).get().asFile.writeText("foo")
-    }
+  @TaskAction
+  fun execute() {
+    outputDir.get().asFile.mkdirs()
+    outputDir.file(resName).get().asFile.writeText("foo")
+  }
 
-    companion object {
-        fun createTask(
-            project: Project,
-            taskName: String = "writeDebugJavaResources"
-        ): TaskProvider<AddJavaResourcesTestWriterForSourceSet> =
-            project.tasks.register(
-                taskName,
-                AddJavaResourcesTestWriterForSourceSet::class.java
-            ).also {
-                it.configure { task ->
-                    task.resName.set("foo.txt")
-                }
-            }
-    }
+  companion object {
+    fun createTask(project: Project, taskName: String = "writeDebugJavaResources"): TaskProvider<AddJavaResourcesTestWriterForSourceSet> =
+      project.tasks.register(taskName, AddJavaResourcesTestWriterForSourceSet::class.java).also {
+        it.configure { task -> task.resName.set("foo.txt") }
+      }
+  }
 }
 
-class AddJavaResourcesWithSourceSetCallback: GenericCallback {
+class AddJavaResourcesWithSourceSetCallback : GenericCallback {
 
-    override fun handleProject(project: Project) {
-        val genTask = AddJavaResourcesTestWriterForSourceSet.createTask(project)
-        project.extensions.getByType(ApplicationExtension::class.java)
-            .sourceSets
-            .getByName("main")
-            .resources
-            .srcDir(genTask)
-    }
+  override fun handleProject(project: Project) {
+    val genTask = AddJavaResourcesTestWriterForSourceSet.createTask(project)
+    project.extensions.getByType(ApplicationExtension::class.java).sourceSets.getByName("main").resources.srcDir(genTask)
+  }
 }

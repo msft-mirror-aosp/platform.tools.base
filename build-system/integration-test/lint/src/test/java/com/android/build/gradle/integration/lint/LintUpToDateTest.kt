@@ -17,46 +17,39 @@ package com.android.build.gradle.integration.lint
 
 import com.android.build.gradle.integration.common.fixture.GradleTaskExecutor
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.truth.PathSubject.assertThat
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 
-/** Integration test that lint can be up-to-date  */
+/** Integration test that lint can be up-to-date */
 class LintUpToDateTest {
 
-    @get:Rule
-    val project: GradleTestProject =
-        GradleTestProject.builder()
-            .fromTestProject("lintKotlin")
-            .create()
+  @get:Rule val project: GradleTestProject = GradleTestProject.builder().fromTestProject("lintKotlin").create()
 
-    @get:Rule
-    val temporaryFolder = TemporaryFolder()
+  @get:Rule val temporaryFolder = TemporaryFolder()
 
-    @Before
-    fun disableAbortOnError() {
-        project.getSubproject(":app").buildFile
-            .appendText("\nandroid.lintOptions.abortOnError=false\n")
+  @Before
+  fun disableAbortOnError() {
+    project.getSubproject(":app").buildFile.appendText("\nandroid.lintOptions.abortOnError=false\n")
+  }
+
+  @Test
+  fun checkLintUpToDate() {
+    getExecutor().run(":app:lintDebug").apply {
+      assertTask(":app:lintReportDebug").didWork()
+      assertTask(":app:lintAnalyzeDebug").didWork()
     }
 
-    @Test
-    fun checkLintUpToDate() {
-        getExecutor().run(":app:lintDebug").apply {
-            assertTask(":app:lintReportDebug").didWork()
-            assertTask(":app:lintAnalyzeDebug").didWork()
-        }
+    val lintResults = project.file("app/build/reports/lint-results.txt")
+    assertThat(lintResults).contains("9 errors, 4 warnings")
 
-        val lintResults = project.file("app/build/reports/lint-results.txt")
-        assertThat(lintResults).contains("9 errors, 4 warnings")
-
-        getExecutor().run(":app:lintDebug").apply {
-            assertTask(":app:lintReportDebug").wasUpToDate()
-            assertTask(":app:lintAnalyzeDebug").wasUpToDate()
-        }
+    getExecutor().run(":app:lintDebug").apply {
+      assertTask(":app:lintReportDebug").wasUpToDate()
+      assertTask(":app:lintAnalyzeDebug").wasUpToDate()
     }
+  }
 
-    private fun getExecutor(): GradleTaskExecutor = project.executor()
+  private fun getExecutor(): GradleTaskExecutor = project.executor()
 }

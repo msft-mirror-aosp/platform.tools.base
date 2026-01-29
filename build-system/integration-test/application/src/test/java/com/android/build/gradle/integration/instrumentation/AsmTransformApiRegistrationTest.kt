@@ -29,75 +29,68 @@ import com.google.common.truth.Truth
 import org.junit.Rule
 import org.junit.Test
 
-/**
- * Tests the API configuration (registration order, changes in supplied parameters, ...)
- */
+/** Tests the API configuration (registration order, changes in supplied parameters, ...) */
 class AsmTransformApiRegistrationTest {
 
-    @get:Rule
-    val project = GradleTestProject.builder().fromTestProject("asmTransformApi").create()
+  @get:Rule val project = GradleTestProject.builder().fromTestProject("asmTransformApi").create()
 
-    @Test
-    fun testVisitorsAreChainedInRegistrationOrder() {
-        configureExtensionForAnnotationAddingVisitor(project)
-        configureExtensionForInterfaceAddingVisitor(project)
+  @Test
+  fun testVisitorsAreChainedInRegistrationOrder() {
+    configureExtensionForAnnotationAddingVisitor(project)
+    configureExtensionForInterfaceAddingVisitor(project)
 
-        TestFileUtils.searchAndReplace(
-                project.getSubproject(":buildSrc")
-                        .file("src/main/java/com/example/buildsrc/plugin/InstrumentationPlugin.kt"),
-                "interfaceVisitorFirst = false", "interfaceVisitorFirst = true"
-        )
+    TestFileUtils.searchAndReplace(
+      project.getSubproject(":buildSrc").file("src/main/java/com/example/buildsrc/plugin/InstrumentationPlugin.kt"),
+      "interfaceVisitorFirst = false",
+      "interfaceVisitorFirst = true",
+    )
 
-        // by reversing the order of registration, one of the visitors will throw an exception
+    // by reversing the order of registration, one of the visitors will throw an exception
 
-        val result = project.executor().expectFailure().run("app:transformDebugClassesWithAsm")
-        Truth.assertThat(result.failedTasks)
-                .containsExactly(":app:transformDebugClassesWithAsm")
-        Truth.assertThat(result.failureMessage)
-                .isEqualTo("InterfaceAddingClassVisitor shouldn't visit before AnnotationAddingClassVisitor")
-    }
+    val result = project.executor().expectFailure().run("app:transformDebugClassesWithAsm")
+    Truth.assertThat(result.failedTasks).containsExactly(":app:transformDebugClassesWithAsm")
+    Truth.assertThat(result.failureMessage).isEqualTo("InterfaceAddingClassVisitor shouldn't visit before AnnotationAddingClassVisitor")
+  }
 
-    @Test
-    fun changeInInstrumentationParametersShouldRerunInstrumentation() {
-        configureExtensionForAnnotationAddingVisitor(project)
-        configureExtensionForInterfaceAddingVisitor(project)
+  @Test
+  fun changeInInstrumentationParametersShouldRerunInstrumentation() {
+    configureExtensionForAnnotationAddingVisitor(project)
+    configureExtensionForInterfaceAddingVisitor(project)
 
-        project.executor().run(":app:assembleDebug")
+    project.executor().run(":app:assembleDebug")
 
-        TestFileUtils.searchAndReplace(
-                project.getSubproject(":app").buildFile,
-                "instrumentation.interfaceAddingConfig.enabled = true",
-                "instrumentation.interfaceAddingConfig.enabled = false"
-        )
+    TestFileUtils.searchAndReplace(
+      project.getSubproject(":app").buildFile,
+      "instrumentation.interfaceAddingConfig.enabled = true",
+      "instrumentation.interfaceAddingConfig.enabled = false",
+    )
 
-        val result = project.executor().run("assembleDebug")
+    val result = project.executor().run("assembleDebug")
 
-        Truth.assertThat(result.didWorkTasks).contains(":app:transformDebugClassesWithAsm")
+    Truth.assertThat(result.didWorkTasks).contains(":app:transformDebugClassesWithAsm")
 
-        val apk = project.getSubproject(":app").getApk(GradleTestProject.ApkType.DEBUG)
-        // app classes
-        checkClassesAreInstrumented(
-                apk = apk,
-                classesDescriptorPackagePrefix = appClassesDescriptorPrefix,
-                expectedClasses = projectClasses,
-                expectedAnnotatedMethods = mapOf(
-                        "ClassImplementsI" to listOf("f1"),
-                        "ClassExtendsOneClassAndImplementsTwoInterfaces" to listOf("f3"),
-                        "ClassExtendsAClassThatExtendsAnotherClassAndImplementsTwoInterfaces" to
-                                listOf("f4")
-                ),
-                expectedInstrumentedClasses = emptyList()
-        )
+    val apk = project.getSubproject(":app").getApk(GradleTestProject.ApkType.DEBUG)
+    // app classes
+    checkClassesAreInstrumented(
+      apk = apk,
+      classesDescriptorPackagePrefix = appClassesDescriptorPrefix,
+      expectedClasses = projectClasses,
+      expectedAnnotatedMethods =
+        mapOf(
+          "ClassImplementsI" to listOf("f1"),
+          "ClassExtendsOneClassAndImplementsTwoInterfaces" to listOf("f3"),
+          "ClassExtendsAClassThatExtendsAnotherClassAndImplementsTwoInterfaces" to listOf("f4"),
+        ),
+      expectedInstrumentedClasses = emptyList(),
+    )
 
-        // lib classes
-        checkClassesAreInstrumented(
-                apk = apk,
-                classesDescriptorPackagePrefix = libClassesDescriptorPrefix,
-                expectedClasses = libClasses,
-                expectedAnnotatedMethods = mapOf(
-                        "InterfaceExtendsI" to listOf("f3")
-                ),
-                expectedInstrumentedClasses = emptyList()
-        )
-    }
+    // lib classes
+    checkClassesAreInstrumented(
+      apk = apk,
+      classesDescriptorPackagePrefix = libClassesDescriptorPrefix,
+      expectedClasses = libClasses,
+      expectedAnnotatedMethods = mapOf("InterfaceExtendsI" to listOf("f3")),
+      expectedInstrumentedClasses = emptyList(),
+    )
+  }
 }

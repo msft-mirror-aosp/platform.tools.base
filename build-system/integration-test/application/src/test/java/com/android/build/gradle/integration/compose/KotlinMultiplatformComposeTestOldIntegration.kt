@@ -33,80 +33,80 @@ import org.junit.Test
 /** Check Compose works with KMP projects. */
 class KotlinMultiplatformComposeTestOldIntegration {
 
-    @get:Rule
-    val rule = GradleRule.configure()
-        .withGradleOptions {
-            // this is necessary because KMP does not work with project Isolation.
-            // There were some tests where it worked but that's because they used the root
-            // project, and it's fine in the root (the KMP plugin accesses things in the root
-            // folder so if it's already there it's fine)
-            withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
-        }.from {
-            androidLibrary {
-                applyPlugin(PluginType.KOTLIN_MPP, version = KOTLIN_VERSION_FOR_COMPOSE_TESTS)
-                applyPlugin(PluginType.COMPOSE_COMPILER_PLUGIN, version = KOTLIN_VERSION_FOR_COMPOSE_TESTS)
-                pluginCallbacks += Callback::class.java
-                android {
-                    defaultConfig.minSdk = 24
-                    buildFeatures {
-                        compose = true
-                    }
-                    compileOptions {
-                        sourceCompatibility = JavaVersion.VERSION_1_8
-                        targetCompatibility = JavaVersion.VERSION_1_8
-                    }
-                }
-                dependencies {
-                    implementation("androidx.compose.ui:ui-tooling:$COMPOSE_UI_VERSION")
-                    implementation("androidx.compose.material:material:$COMPOSE_UI_VERSION")
-                }
-                files.add(
-                    "src/androidMain/kotlin/com/Example.kt",
-                    //language=kotlin
-                    """
-                        package foo
-
-                        import androidx.compose.foundation.layout.Column
-                        import androidx.compose.material.Text
-                        import androidx.compose.runtime.Composable
-
-                        @Composable
-                        fun MainView() {
-                            Column {
-                                Text(text = "Hello World")
-                            }
-                        }
-                    """.trimIndent()
-                )
+  @get:Rule
+  val rule =
+    GradleRule.configure()
+      .withGradleOptions {
+        // this is necessary because KMP does not work with project Isolation.
+        // There were some tests where it worked but that's because they used the root
+        // project, and it's fine in the root (the KMP plugin accesses things in the root
+        // folder so if it's already there it's fine)
+        withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
+      }
+      .from {
+        androidLibrary {
+          applyPlugin(PluginType.KOTLIN_MPP, version = KOTLIN_VERSION_FOR_COMPOSE_TESTS)
+          applyPlugin(PluginType.COMPOSE_COMPILER_PLUGIN, version = KOTLIN_VERSION_FOR_COMPOSE_TESTS)
+          pluginCallbacks += Callback::class.java
+          android {
+            defaultConfig.minSdk = 24
+            buildFeatures { compose = true }
+            compileOptions {
+              sourceCompatibility = JavaVersion.VERSION_1_8
+              targetCompatibility = JavaVersion.VERSION_1_8
             }
-            gradleProperties {
-                add(BooleanOption.USE_NEW_DSL, false)
-                add(BooleanOption.BUILT_IN_KOTLIN, false)
+          }
+          dependencies {
+            implementation("androidx.compose.ui:ui-tooling:$COMPOSE_UI_VERSION")
+            implementation("androidx.compose.material:material:$COMPOSE_UI_VERSION")
+          }
+          files.add(
+            "src/androidMain/kotlin/com/Example.kt",
+            // language=kotlin
+            """
+            package foo
+
+            import androidx.compose.foundation.layout.Column
+            import androidx.compose.material.Text
+            import androidx.compose.runtime.Composable
+
+            @Composable
+            fun MainView() {
+                Column {
+                    Text(text = "Hello World")
+                }
             }
+            """
+              .trimIndent(),
+          )
         }
-
-    class Callback: GenericCallback {
-        override fun handleProject(project: Project) {
-            val kotlin = project.extensions.getByType(KotlinMultiplatformExtension::class.java)
-            kotlin.apply {
-                androidTarget { target ->
-                    target.compilations.all { compilation ->
-                        compilation.compilerOptions.options.jvmTarget.set(JvmTarget.JVM_1_8)
-                    }
-                }
-            }
+        gradleProperties {
+          add(BooleanOption.USE_NEW_DSL, false)
+          add(BooleanOption.BUILT_IN_KOTLIN, false)
         }
-    }
+      }
 
-    /** Regression test for b/203594737. */
-    @Test
-    fun testLibraryBuilds() {
-        rule.configure()
-            .disableBrokenNewDslOptOutChecks()
-            .disableBrokenBuiltInKotlinOptOutChecks()
-            .build
-            .executor
-            .withFailOnWarning(false) // b/455891987
-            .run(":lib:assembleDebug")
+  class Callback : GenericCallback {
+    override fun handleProject(project: Project) {
+      val kotlin = project.extensions.getByType(KotlinMultiplatformExtension::class.java)
+      kotlin.apply {
+        androidTarget { target ->
+          target.compilations.all { compilation -> compilation.compilerOptions.options.jvmTarget.set(JvmTarget.JVM_1_8) }
+        }
+      }
     }
+  }
+
+  /** Regression test for b/203594737. */
+  @Test
+  fun testLibraryBuilds() {
+    rule
+      .configure()
+      .disableBrokenNewDslOptOutChecks()
+      .disableBrokenBuiltInKotlinOptOutChecks()
+      .build
+      .executor
+      .withFailOnWarning(false) // b/455891987
+      .run(":lib:assembleDebug")
+  }
 }

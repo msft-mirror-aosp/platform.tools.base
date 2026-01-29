@@ -22,19 +22,19 @@ import com.android.build.gradle.internal.core.dsl.features.RenderscriptDslInfo
 import com.android.build.gradle.internal.services.VariantServices
 
 class RenderscriptCreationConfigImpl(
-    private val dslInfo: RenderscriptDslInfo,
-    private val internalServices: VariantServices,
-    override val renderscriptTargetApi: Int
-): RenderscriptCreationConfig {
+  private val dslInfo: RenderscriptDslInfo,
+  private val internalServices: VariantServices,
+  override val renderscriptTargetApi: Int,
+) : RenderscriptCreationConfig {
 
-    override val renderscript: Renderscript by lazy {
-        internalServices.newInstance(Renderscript::class.java).also {
-            it.supportModeEnabled.set(dslInfo.renderscriptSupportModeEnabled)
-            it.supportModeBlasEnabled.set(dslInfo.renderscriptSupportModeBlasEnabled)
-            it.ndkModeEnabled.set(dslInfo.renderscriptNdkModeEnabled)
-            it.optimLevel.set(dslInfo.renderscriptOptimLevel)
-        }
+  override val renderscript: Renderscript by lazy {
+    internalServices.newInstance(Renderscript::class.java).also {
+      it.supportModeEnabled.set(dslInfo.renderscriptSupportModeEnabled)
+      it.supportModeBlasEnabled.set(dslInfo.renderscriptSupportModeBlasEnabled)
+      it.ndkModeEnabled.set(dslInfo.renderscriptNdkModeEnabled)
+      it.optimLevel.set(dslInfo.renderscriptOptimLevel)
     }
-    override val dslRenderscriptNdkModeEnabled: Boolean
-        get() = dslInfo.renderscriptNdkModeEnabled
+  }
+  override val dslRenderscriptNdkModeEnabled: Boolean
+    get() = dslInfo.renderscriptNdkModeEnabled
 }

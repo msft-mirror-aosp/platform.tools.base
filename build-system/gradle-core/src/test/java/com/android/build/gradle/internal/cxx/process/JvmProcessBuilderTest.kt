@@ -17,44 +17,40 @@
 package com.android.build.gradle.internal.cxx.process
 
 import com.google.common.truth.Truth.assertThat
+import java.io.File
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
-import java.io.File
 
 class JvmProcessBuilderTest {
 
-    @Rule
-    @JvmField
-    val temporaryFolder = TemporaryFolder()
+  @Rule @JvmField val temporaryFolder = TemporaryFolder()
 
-    @Test
-    fun `start other process and confirm stdout`() {
-        val root = temporaryFolder.root
-        root.mkdirs()
+  @Test
+  fun `start other process and confirm stdout`() {
+    val root = temporaryFolder.root
+    root.mkdirs()
 
-        val stdout = File(root, "stdout.txt")
-        val stderr = File(root, "stderr.txt")
-        val pb = JvmProcessBuilder(PrintHelloToStdout::class)
-            .dependsOnCurrentClassPath()
-            .toProcessBuilder()
-            .directory(root)
-            .redirectOutput(ProcessBuilder.Redirect.appendTo(stdout))
-            .redirectError(ProcessBuilder.Redirect.appendTo(stderr))
-        pb.start().waitFor()
-        println(stderr.readText())
-        assertThat(stdout.readText())
-            .named(stderr.readText())
-            .contains("Hello from the other side")
-    }
+    val stdout = File(root, "stdout.txt")
+    val stderr = File(root, "stderr.txt")
+    val pb =
+      JvmProcessBuilder(PrintHelloToStdout::class)
+        .dependsOnCurrentClassPath()
+        .toProcessBuilder()
+        .directory(root)
+        .redirectOutput(ProcessBuilder.Redirect.appendTo(stdout))
+        .redirectError(ProcessBuilder.Redirect.appendTo(stderr))
+    pb.start().waitFor()
+    println(stderr.readText())
+    assertThat(stdout.readText()).named(stderr.readText()).contains("Hello from the other side")
+  }
 }
 
-
 class PrintHelloToStdout {
-    companion object {
-        @JvmStatic
-        fun main(args: Array<String>) {
-            println("Hello from the other side")
-        }
+  companion object {
+    @JvmStatic
+    fun main(args: Array<String>) {
+      println("Hello from the other side")
     }
+  }
 }

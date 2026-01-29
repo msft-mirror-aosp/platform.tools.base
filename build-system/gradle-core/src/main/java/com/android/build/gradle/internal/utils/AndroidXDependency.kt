@@ -19,33 +19,19 @@ package com.android.build.gradle.internal.utils
 import com.android.build.gradle.internal.dependency.AndroidXDependencySubstitution
 
 /**
- * An AndroidX dependency with group and module name (without a version). It also contains
- * information about the group and module name of its corresponding pre-AndroidX dependency.
+ * An AndroidX dependency with group and module name (without a version). It also contains information about the group and module name of
+ * its corresponding pre-AndroidX dependency.
  */
-data class AndroidXDependency(
-    val group: String,
-    val module: String,
-    val oldGroup: String,
-    val oldModule: String
-) {
+data class AndroidXDependency(val group: String, val module: String, val oldGroup: String, val oldModule: String) {
 
-    companion object {
+  companion object {
 
-        /**
-         * Creates an AndroidX dependency instance corresponding to the group and module name of
-         * a pre-AndroidX dependency.
-         */
-        @JvmStatic
-        fun fromPreAndroidXDependency(oldGroup: String, oldModule: String): AndroidXDependency {
-            val androidXDependencyString =
-                AndroidXDependencySubstitution.androidXMappings["$oldGroup:$oldModule"]!!
-            val groupModuleVersion = androidXDependencyString.split(':')
-            return AndroidXDependency(
-                group = groupModuleVersion[0],
-                module = groupModuleVersion[1],
-                oldGroup = oldGroup,
-                oldModule = oldModule
-            )
-        }
+    /** Creates an AndroidX dependency instance corresponding to the group and module name of a pre-AndroidX dependency. */
+    @JvmStatic
+    fun fromPreAndroidXDependency(oldGroup: String, oldModule: String): AndroidXDependency {
+      val androidXDependencyString = AndroidXDependencySubstitution.androidXMappings["$oldGroup:$oldModule"]!!
+      val groupModuleVersion = androidXDependencyString.split(':')
+      return AndroidXDependency(group = groupModuleVersion[0], module = groupModuleVersion[1], oldGroup = oldGroup, oldModule = oldModule)
     }
+  }
 }

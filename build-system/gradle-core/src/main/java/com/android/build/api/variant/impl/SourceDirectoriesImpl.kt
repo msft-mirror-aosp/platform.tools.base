@@ -19,6 +19,7 @@ package com.android.build.api.variant.impl
 import com.android.SdkConstants
 import com.android.build.api.variant.SourceDirectories
 import com.android.build.gradle.internal.services.VariantServices
+import java.io.File
 import org.gradle.api.Task
 import org.gradle.api.file.Directory
 import org.gradle.api.file.DirectoryProperty
@@ -26,88 +27,81 @@ import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.api.tasks.util.PatternFilterable
 import org.gradle.api.tasks.util.PatternSet
-import java.io.File
 
 abstract class SourceDirectoriesImpl(
-    private val _name: String,
-    private val variantServices: VariantServices,
-    private val variantDslFilters: PatternFilterable?
-): SourceDirectories {
+  private val _name: String,
+  private val variantServices: VariantServices,
+  private val variantDslFilters: PatternFilterable?,
+) : SourceDirectories {
 
-    /**
-     * Filters to use for the variant source folders only.
-     * This will be initialized from the variant DSL source folder filters if it exists or empty
-     * if it does not.
-     */
-    val filter = PatternSet().also {
-        if (variantDslFilters != null) {
-            it.setIncludes(variantDslFilters.includes)
-            it.setExcludes(variantDslFilters.excludes)
-        }
+  /**
+   * Filters to use for the variant source folders only. This will be initialized from the variant DSL source folder filters if it exists or
+   * empty if it does not.
+   */
+  val filter =
+    PatternSet().also {
+      if (variantDslFilters != null) {
+        it.setIncludes(variantDslFilters.includes)
+        it.setExcludes(variantDslFilters.excludes)
+      }
     }
 
-    override fun <T : Task> addGeneratedSourceDirectory(
-        taskProvider: TaskProvider<T>,
-        wiredWith: (T) -> DirectoryProperty
-    ) = addGeneratedSourceDirectory(taskProvider, wiredWith, DirectoryEntry.Kind.GENERIC)
+  override fun <T : Task> addGeneratedSourceDirectory(taskProvider: TaskProvider<T>, wiredWith: (T) -> DirectoryProperty) =
+    addGeneratedSourceDirectory(taskProvider, wiredWith, DirectoryEntry.Kind.GENERIC)
 
-    // Internal API used to register the KAPT/KSP generators.
-    fun <T : Task> addGeneratedSourceDirectory(
-        taskProvider: TaskProvider<T>,
-        wiredWith: (T) -> DirectoryProperty,
-        kind: DirectoryEntry.Kind
-    ) {
-        val mappedValue: Provider<Directory> = taskProvider.flatMap {
-            wiredWith(it)
-        }
-        taskProvider.configure { task ->
-            wiredWith.invoke(task).convention(
-                variantServices.projectInfo.buildDirectory.dir(
-                    "${SdkConstants.FD_GENERATED}/$_name/${taskProvider.name}"
-                )
-            )
-        }
-        addSource(
-            TaskProviderBasedDirectoryEntryImpl(
-                "$_name-${taskProvider.name}",
-                mappedValue,
-                isGenerated = true,
-                isUserAdded = true,
-                shouldBeAddedToIdeModel = true,
-                kind = kind
-            )
-        )
+  // Internal API used to register the KAPT/KSP generators.
+  fun <T : Task> addGeneratedSourceDirectory(
+    taskProvider: TaskProvider<T>,
+    wiredWith: (T) -> DirectoryProperty,
+    kind: DirectoryEntry.Kind,
+  ) {
+    val mappedValue: Provider<Directory> = taskProvider.flatMap { wiredWith(it) }
+    taskProvider.configure { task ->
+      wiredWith
+        .invoke(task)
+        .convention(variantServices.projectInfo.buildDirectory.dir("${SdkConstants.FD_GENERATED}/$_name/${taskProvider.name}"))
     }
+    addSource(
+      TaskProviderBasedDirectoryEntryImpl(
+        "$_name-${taskProvider.name}",
+        mappedValue,
+        isGenerated = true,
+        isUserAdded = true,
+        shouldBeAddedToIdeModel = true,
+        kind = kind,
+      )
+    )
+  }
 
-    override fun getName(): String = _name
+  override fun getName(): String = _name
 
-    override fun addStaticSourceDirectory(srcDir: String) {
-        val directory = variantServices.projectInfo.projectDirectory.dir(srcDir)
-        if (directory.asFile.exists() && !directory.asFile.isDirectory) {
-            throw IllegalArgumentException("$srcDir does not point to a directory")
-        }
-        addStaticSource(
-            FileBasedDirectoryEntryImpl(
-                name = "variant",
-                directory = directory.asFile,
-                filter = filter,
-                isUserAdded = true,
-                shouldBeAddedToIdeModel = true
-            )
-        )
+  override fun addStaticSourceDirectory(srcDir: String) {
+    val directory = variantServices.projectInfo.projectDirectory.dir(srcDir)
+    if (directory.asFile.exists() && !directory.asFile.isDirectory) {
+      throw IllegalArgumentException("$srcDir does not point to a directory")
     }
+    addStaticSource(
+      FileBasedDirectoryEntryImpl(
+        name = "variant",
+        directory = directory.asFile,
+        filter = filter,
+        isUserAdded = true,
+        shouldBeAddedToIdeModel = true,
+      )
+    )
+  }
 
-    /**
-     * Iterates over all sources in the right order.
-     *
-     * @param action a lambda to run on each [DirectoryEntry]
-     */
-    internal abstract fun forAllSources(action:(DirectoryEntry) -> Unit)
+  /**
+   * Iterates over all sources in the right order.
+   *
+   * @param action a lambda to run on each [DirectoryEntry]
+   */
+  internal abstract fun forAllSources(action: (DirectoryEntry) -> Unit)
 
-    internal abstract fun addSource(directoryEntry: DirectoryEntry)
+  internal abstract fun addSource(directoryEntry: DirectoryEntry)
 
-    // Adds static file directory (non generated by a Task)
-    internal abstract fun addStaticSource(directoryEntry: DirectoryEntry)
+  // Adds static file directory (non generated by a Task)
+  internal abstract fun addStaticSource(directoryEntry: DirectoryEntry)
 
-    internal abstract fun variantSourcesForModel(filter: (DirectoryEntry) -> Boolean ): Collection<File>
+  internal abstract fun variantSourcesForModel(filter: (DirectoryEntry) -> Boolean): Collection<File>
 }

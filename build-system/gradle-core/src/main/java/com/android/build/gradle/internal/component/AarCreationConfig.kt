@@ -19,8 +19,8 @@ package com.android.build.gradle.internal.component
 import com.android.build.api.variant.AarMetadata
 import org.gradle.api.provider.Property
 
-interface AarCreationConfig: ComponentCreationConfig {
-    val aarMetadata: AarMetadata
+interface AarCreationConfig : ComponentCreationConfig {
+  val aarMetadata: AarMetadata
 
-    val aarOutputFileName: Property<String>
+  val aarOutputFileName: Property<String>
 }

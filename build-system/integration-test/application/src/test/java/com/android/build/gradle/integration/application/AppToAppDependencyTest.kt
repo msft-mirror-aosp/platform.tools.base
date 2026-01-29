@@ -20,30 +20,22 @@ import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import org.junit.Rule
 import org.junit.Test
 
-/**
- * Ensure clear errors for application modules depending on other application modules.
- */
+/** Ensure clear errors for application modules depending on other application modules. */
 class AppToAppDependencyTest {
 
-    @get:Rule
-    val rule = GradleRule.from {
-        androidApplication(":appA") {
-            android {
-                namespace = "com.example.appa"
-            }
-            dependencies {
-                implementation(project(":appB"))
-            }
-        }
-        androidApplication(":appB") {
-        }
+  @get:Rule
+  val rule =
+    GradleRule.from {
+      androidApplication(":appA") {
+        android { namespace = "com.example.appa" }
+        dependencies { implementation(project(":appB")) }
+      }
+      androidApplication(":appB") {}
     }
 
-    @Test
-    fun build() {
-        val failure = rule.build.executor.expectFailure().run("assembleDebug")
-        failure.assertErrorContains(
-            "This application (com.example.appa) is not configured to use dynamic features."
-        )
-    }
+  @Test
+  fun build() {
+    val failure = rule.build.executor.expectFailure().run("assembleDebug")
+    failure.assertErrorContains("This application (com.example.appa) is not configured to use dynamic features.")
+  }
 }

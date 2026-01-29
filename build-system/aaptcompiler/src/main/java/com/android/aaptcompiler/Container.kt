@@ -25,10 +25,9 @@ import java.io.OutputStream
 /**
  * Represents and handles the output of resource compilation.
  *
- * [Container] represents a collection of the output from a single file being compiled by the
- * ResourceCompiler. These can contain multiple entries, such as multiple flattened XMLs from
- * aapt:attr outlining. The Container should only be used once the total number of required entries
- * are known.
+ * [Container] represents a collection of the output from a single file being compiled by the ResourceCompiler. These can contain multiple
+ * entries, such as multiple flattened XMLs from aapt:attr outlining. The Container should only be used once the total number of required
+ * entries are known.
  */
 class Container(val output: OutputStream, val totalEntryCount: Int) {
   private var currentEntryCount = 0
@@ -73,11 +72,9 @@ class Container(val output: OutputStream, val totalEntryCount: Int) {
     closeIfFinished()
   }
 
-  fun addFileEntry(input: InputStream, file: ResourceFile) =
-    addFileEntryImpl(input.readBytes(), file)
+  fun addFileEntry(input: InputStream, file: ResourceFile) = addFileEntryImpl(input.readBytes(), file)
 
-  fun addXmlEntry(resource: XmlResource) =
-    addFileEntryImpl(resource.xmlProto.toByteArray(), resource.file)
+  fun addXmlEntry(resource: XmlResource) = addFileEntryImpl(resource.xmlProto.toByteArray(), resource.file)
 
   private fun addFileEntryImpl(content: ByteArray, file: ResourceFile) {
     if (currentEntryCount >= totalEntryCount) {
@@ -96,8 +93,7 @@ class Container(val output: OutputStream, val totalEntryCount: Int) {
     val headerPadding = (4 - (headerSize % 4)) % 4
     val dataSize = content.size
     val dataPadding = (4 - (dataSize % 4)) % 4
-    val totalSize =
-      RES_FILE_ENTRY_HEADER_SIZE.toLong() + headerSize + headerPadding + dataSize + dataPadding
+    val totalSize = RES_FILE_ENTRY_HEADER_SIZE.toLong() + headerSize + headerPadding + dataSize + dataPadding
     codedOut.writeFixed64NoTag(totalSize)
 
     // Write the res file header size.

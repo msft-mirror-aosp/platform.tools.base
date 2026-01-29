@@ -26,43 +26,37 @@ import com.android.builder.errors.IssueReporter
 import org.gradle.api.provider.Provider
 
 internal fun TestComponentDslInfo.getTestComponentNamespace(
-    extension: InternalTestedExtension,
-    services: VariantServices
+  extension: InternalTestedExtension,
+  services: VariantServices,
 ): Provider<String> {
-    return extension.testNamespace?.let {
-        services.provider {
-            if (extension.testNamespace == extension.namespace) {
-                services.issueReporter
-                    .reportError(
-                        IssueReporter.Type.GENERIC,
-                        "namespace and testNamespace have the same value (\"$it\"), which is not allowed."
-                    )
-            }
-            it
-        }
-    } ?: extension.namespace?.let { services.provider {"$it.test" } }
-    ?: mainVariantDslInfo.namespace.map { "$it.test" }
+  return extension.testNamespace?.let {
+    services.provider {
+      if (extension.testNamespace == extension.namespace) {
+        services.issueReporter.reportError(
+          IssueReporter.Type.GENERIC,
+          "namespace and testNamespace have the same value (\"$it\"), which is not allowed.",
+        )
+      }
+      it
+    }
+  } ?: extension.namespace?.let { services.provider { "$it.test" } } ?: mainVariantDslInfo.namespace.map { "$it.test" }
 }
 
 // Special case for test components and separate test sub-projects
 internal fun ComponentDslInfo.initTestApplicationId(
-    productFlavorList: List<ProductFlavor>,
-    defaultConfig: DefaultConfig,
-    services: VariantServices,
+  productFlavorList: List<ProductFlavor>,
+  defaultConfig: DefaultConfig,
+  services: VariantServices,
 ): Provider<String> {
-    // get first non null testAppId from flavors/default config
-    val testAppIdFromFlavors =
-        productFlavorList.asSequence().map { it.testApplicationId }
-            .firstOrNull { it != null }
-            ?: defaultConfig.testApplicationId
+  // get first non null testAppId from flavors/default config
+  val testAppIdFromFlavors =
+    productFlavorList.asSequence().map { it.testApplicationId }.firstOrNull { it != null } ?: defaultConfig.testApplicationId
 
-    return if (testAppIdFromFlavors != null) {
-        services.provider { testAppIdFromFlavors }
-    } else if (this is TestComponentDslInfo) {
-        this.mainVariantDslInfo.applicationId.map {
-            "$it.test"
-        }
-    } else {
-        namespace
-    }
+  return if (testAppIdFromFlavors != null) {
+    services.provider { testAppIdFromFlavors }
+  } else if (this is TestComponentDslInfo) {
+    this.mainVariantDslInfo.applicationId.map { "$it.test" }
+  } else {
+    namespace
+  }
 }

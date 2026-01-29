@@ -16,32 +16,25 @@
 
 package com.android.build.gradle.internal.workeractions
 
-import org.gradle.workers.WorkAction
 import java.io.Serializable
+import org.gradle.workers.WorkAction
 
 /**
  * Adapted version of the Gradle's [WorkAction] for handling BuiltArtifact instances.
  *
- * This subclass of [WorkAction] receives a subclass of [DecoratedWorkParameters] as parameters
- * to the work item.
+ * This subclass of [WorkAction] receives a subclass of [DecoratedWorkParameters] as parameters to the work item.
  *
- * Subclasses must implement the [doExecute] method where the can access the parameters through the
- * [WorkAction.getParameters] method.
+ * Subclasses must implement the [doExecute] method where the can access the parameters through the [WorkAction.getParameters] method.
  */
-interface WorkActionAdapter<WorkItemParametersT>
-    : WorkAction<WorkItemParametersT>, Serializable
-        where WorkItemParametersT : DecoratedWorkParameters {
+interface WorkActionAdapter<WorkItemParametersT> : WorkAction<WorkItemParametersT>, Serializable
+  where WorkItemParametersT : DecoratedWorkParameters {
 
-    override fun execute() {
-        parameters.analyticsService.get()
-            .workerStarted(parameters.taskPath.get(), parameters.workerKey.get())
-        doExecute()
-        parameters.analyticsService.get()
-            .workerFinished(parameters.taskPath.get(), parameters.workerKey.get())
-    }
+  override fun execute() {
+    parameters.analyticsService.get().workerStarted(parameters.taskPath.get(), parameters.workerKey.get())
+    doExecute()
+    parameters.analyticsService.get().workerFinished(parameters.taskPath.get(), parameters.workerKey.get())
+  }
 
-    /**
-     * Actual implementation of the [WorkAction]
-     */
-    fun doExecute()
+  /** Actual implementation of the [WorkAction] */
+  fun doExecute()
 }

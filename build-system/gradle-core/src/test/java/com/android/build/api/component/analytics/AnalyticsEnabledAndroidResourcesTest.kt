@@ -22,93 +22,78 @@ import com.google.common.truth.Truth
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
 import org.junit.Rule
 import org.junit.Test
+import org.mockito.junit.MockitoJUnit
+import org.mockito.junit.MockitoRule
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
-import org.mockito.junit.MockitoJUnit
-import org.mockito.junit.MockitoRule
 import org.mockito.quality.Strictness
 
 class AnalyticsEnabledAndroidResourcesTest {
 
-    @get:Rule
-    val rule: MockitoRule = MockitoJUnit.rule().strictness(Strictness.STRICT_STUBS)
+  @get:Rule val rule: MockitoRule = MockitoJUnit.rule().strictness(Strictness.STRICT_STUBS)
 
-    private val delegate: AndroidResources = mock()
+  private val delegate: AndroidResources = mock()
 
-    private val stats = GradleBuildVariant.newBuilder()
-    private val proxy: AnalyticsEnabledAndroidResources by lazy {
-        AnalyticsEnabledAndroidResources(delegate, stats)
-    }
+  private val stats = GradleBuildVariant.newBuilder()
+  private val proxy: AnalyticsEnabledAndroidResources by lazy { AnalyticsEnabledAndroidResources(delegate, stats) }
 
-    @Test
-    fun ignoreAssetsPatterns() {
-        val list = FakeListProperty<String>()
-        whenever(delegate.ignoreAssetsPatterns).thenReturn(list)
-        Truth.assertThat(proxy.ignoreAssetsPatterns).isEqualTo(list)
+  @Test
+  fun ignoreAssetsPatterns() {
+    val list = FakeListProperty<String>()
+    whenever(delegate.ignoreAssetsPatterns).thenReturn(list)
+    Truth.assertThat(proxy.ignoreAssetsPatterns).isEqualTo(list)
 
-        Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
-        Truth.assertThat(
-            stats.variantApiAccess.variantPropertiesAccessList.first().type
-        ).isEqualTo(VariantPropertiesMethodType.IGNORE_ASSETS_PATTERN_VALUE)
-        verify(delegate, times(1))
-            .ignoreAssetsPatterns
-    }
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessList.first().type)
+      .isEqualTo(VariantPropertiesMethodType.IGNORE_ASSETS_PATTERN_VALUE)
+    verify(delegate, times(1)).ignoreAssetsPatterns
+  }
 
-    @Test
-    fun aaptAdditionalParameters() {
-        val list = FakeListProperty<String>()
-        whenever(delegate.aaptAdditionalParameters).thenReturn(list)
-        Truth.assertThat(proxy.aaptAdditionalParameters).isEqualTo(list)
+  @Test
+  fun aaptAdditionalParameters() {
+    val list = FakeListProperty<String>()
+    whenever(delegate.aaptAdditionalParameters).thenReturn(list)
+    Truth.assertThat(proxy.aaptAdditionalParameters).isEqualTo(list)
 
-        Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
-        Truth.assertThat(
-            stats.variantApiAccess.variantPropertiesAccessList.first().type
-        ).isEqualTo(VariantPropertiesMethodType.AAPT_ADDITIONAL_PARAMETERS_VALUE)
-        verify(delegate, times(1))
-            .aaptAdditionalParameters
-    }
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessList.first().type)
+      .isEqualTo(VariantPropertiesMethodType.AAPT_ADDITIONAL_PARAMETERS_VALUE)
+    verify(delegate, times(1)).aaptAdditionalParameters
+  }
 
-    @Test
-    fun noCompress() {
-        val list = FakeListProperty<String>()
-        whenever(delegate.noCompress).thenReturn(list)
-        Truth.assertThat(proxy.noCompress).isEqualTo(list)
+  @Test
+  fun noCompress() {
+    val list = FakeListProperty<String>()
+    whenever(delegate.noCompress).thenReturn(list)
+    Truth.assertThat(proxy.noCompress).isEqualTo(list)
 
-        Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
-        Truth.assertThat(
-            stats.variantApiAccess.variantPropertiesAccessList.first().type
-        ).isEqualTo(VariantPropertiesMethodType.NO_COMPRESS_VALUE)
-        verify(delegate, times(1))
-            .noCompress
-    }
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessList.first().type)
+      .isEqualTo(VariantPropertiesMethodType.NO_COMPRESS_VALUE)
+    verify(delegate, times(1)).noCompress
+  }
 
-    @Test
-    fun testDataBindingComponents() {
-        whenever(delegate.dataBinding).thenReturn(true)
-        Truth.assertThat(proxy.dataBinding).isEqualTo(true)
+  @Test
+  fun testDataBindingComponents() {
+    whenever(delegate.dataBinding).thenReturn(true)
+    Truth.assertThat(proxy.dataBinding).isEqualTo(true)
 
-        Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
-        Truth.assertThat(
-            stats.variantApiAccess.variantPropertiesAccessList.first().type
-        ).isEqualTo(VariantPropertiesMethodType.DATA_BINDING_VALUE)
-        verify(delegate, times(1))
-            .dataBinding
-    }
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessList.first().type)
+      .isEqualTo(VariantPropertiesMethodType.DATA_BINDING_VALUE)
+    verify(delegate, times(1)).dataBinding
+  }
 
+  @Test
+  fun testViewBindingComponents() {
+    whenever(delegate.viewBinding).thenReturn(true)
+    Truth.assertThat(proxy.viewBinding).isEqualTo(true)
 
-    @Test
-    fun testViewBindingComponents() {
-        whenever(delegate.viewBinding).thenReturn(true)
-        Truth.assertThat(proxy.viewBinding).isEqualTo(true)
-
-        Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
-        Truth.assertThat(
-            stats.variantApiAccess.variantPropertiesAccessList.first().type
-        ).isEqualTo(VariantPropertiesMethodType.VIEW_BINDING_VALUE)
-        verify(delegate, times(1))
-            .viewBinding
-    }
-
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessList.first().type)
+      .isEqualTo(VariantPropertiesMethodType.VIEW_BINDING_VALUE)
+    verify(delegate, times(1)).viewBinding
+  }
 }

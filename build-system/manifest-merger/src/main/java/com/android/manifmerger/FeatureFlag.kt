@@ -25,24 +25,25 @@ import com.android.SdkConstants
  * - `name`: The name of the feature flag (e.g., "new_ui", "experimental_feature").
  * - `value`: A boolean indicating whether the feature is enabled (`true`) or disabled (`false`).
  *
- * The `attributeValue` property provides the formatted string representation suitable for use in
- * XML attributes (e.g., "new_ui" for enabled, "!new_ui" for disabled).
+ * The `attributeValue` property provides the formatted string representation suitable for use in XML attributes (e.g., "new_ui" for
+ * enabled, "!new_ui" for disabled).
  *
  * ```
  */
 data class FeatureFlag(val name: String, val value: Boolean) {
-    companion object {
-        const val NAMESPACE_URI: String = SdkConstants.ANDROID_URI
-        const val ATTRIBUTE_NAME: String = "featureFlag"
-        const val QUALIFIED_ATTRIBUTE_NAME: String = "${SdkConstants.ANDROID_NS_NAME}:featureFlag"
-        private const val NEGATION_PREFIX: String = "!"
+  companion object {
+    const val NAMESPACE_URI: String = SdkConstants.ANDROID_URI
+    const val ATTRIBUTE_NAME: String = "featureFlag"
+    const val QUALIFIED_ATTRIBUTE_NAME: String = "${SdkConstants.ANDROID_NS_NAME}:featureFlag"
+    private const val NEGATION_PREFIX: String = "!"
 
-        fun from(value: String): FeatureFlag =
-            if (value.startsWith(NEGATION_PREFIX)) {
-                FeatureFlag(value.substring(1), false)
-            } else {
-                FeatureFlag(value, true)
-            }
-    }
-    val attributeValue = if (value) name else "!$name"
+    fun from(value: String): FeatureFlag =
+      if (value.startsWith(NEGATION_PREFIX)) {
+        FeatureFlag(value.substring(1), false)
+      } else {
+        FeatureFlag(value, true)
+      }
+  }
+
+  val attributeValue = if (value) name else "!$name"
 }

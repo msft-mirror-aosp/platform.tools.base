@@ -23,24 +23,25 @@ import java.io.File
  * Information for privacy sandbox SDK APKs.
  *
  * See https://developer.android.com/design-for-safety/privacy-sandbox for more info.
+ *
  * @since 7.5
  */
-interface PrivacySandboxSdkInfo: AndroidModel {
-    /** The task to invoke to build the privacy sandbox SDK */
-    val task: String
+interface PrivacySandboxSdkInfo : AndroidModel {
+  /** The task to invoke to build the privacy sandbox SDK */
+  val task: String
 
-    /** The location that the privacy sandbox SDKs will be extracted */
-    val outputListingFile: File
+  /** The location that the privacy sandbox SDKs will be extracted */
+  val outputListingFile: File
 
-    /** The task to invoke to generate the additional split with the uses-sdk manifest entry for deployment via APK */
-    val additionalApkSplitTask: String
+  /** The task to invoke to generate the additional split with the uses-sdk manifest entry for deployment via APK */
+  val additionalApkSplitTask: String
 
-    /** Location of the additional split for deployment via APK */
-    val additionalApkSplitFile: File
+  /** Location of the additional split for deployment via APK */
+  val additionalApkSplitFile: File
 
-    /** The task to invoke to build the privacy sandbox SDK for devices that do not support Privacy Sandbox */
-    val taskLegacy: String
+  /** The task to invoke to build the privacy sandbox SDK for devices that do not support Privacy Sandbox */
+  val taskLegacy: String
 
-    /** The location of the extracted SDK apk files */
-    val outputListingLegacyFile: File
+  /** The location of the extracted SDK apk files */
+  val outputListingLegacyFile: File
 }

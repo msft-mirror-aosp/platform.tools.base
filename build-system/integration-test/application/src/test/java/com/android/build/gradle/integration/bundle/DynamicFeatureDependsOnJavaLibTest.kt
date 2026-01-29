@@ -19,38 +19,35 @@ package com.android.build.gradle.integration.bundle
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.MinimalSubProject
 import com.android.build.gradle.integration.common.fixture.app.MultiModuleTestProject
-import com.android.build.gradle.options.BooleanOption
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 
 class DynamicFeatureDependsOnJavaLibTest {
-    @JvmField
-    @Rule
-    val tmp = TemporaryFolder()
+  @JvmField @Rule val tmp = TemporaryFolder()
 
-    val app = MinimalSubProject.app("com.example.test.app")
-        .appendToBuild("android.dynamicFeatures = [':feature']")
-    val feature = MinimalSubProject.dynamicFeature("com.example.test.feature")
-    val javaLib = MinimalSubProject.javaLibrary()
+  val app = MinimalSubProject.app("com.example.test.app").appendToBuild("android.dynamicFeatures = [':feature']")
+  val feature = MinimalSubProject.dynamicFeature("com.example.test.feature")
+  val javaLib = MinimalSubProject.javaLibrary()
 
-    @JvmField
-    @Rule
-    val project = GradleTestProject.builder()
-        .fromTestApp(
-            MultiModuleTestProject.builder()
-                .subproject(":app", app)
-                .subproject(":feature", feature)
-                .subproject(":lib", javaLib)
-                .dependency(feature, app)
-                .dependency(feature, javaLib)
-                .build()
-        )
-        .create()
+  @JvmField
+  @Rule
+  val project =
+    GradleTestProject.builder()
+      .fromTestApp(
+        MultiModuleTestProject.builder()
+          .subproject(":app", app)
+          .subproject(":feature", feature)
+          .subproject(":lib", javaLib)
+          .dependency(feature, app)
+          .dependency(feature, javaLib)
+          .build()
+      )
+      .create()
 
-    /** Regression test for b/79660649. */
-    @Test()
-    fun checkItBuilds() {
-        project.executor().run(":feature:assembleDebug")
-    }
+  /** Regression test for b/79660649. */
+  @Test()
+  fun checkItBuilds() {
+    project.executor().run(":feature:assembleDebug")
+  }
 }

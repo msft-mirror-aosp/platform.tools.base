@@ -28,66 +28,48 @@ import com.android.build.gradle.internal.utils.getOrderedFileTree
 import org.gradle.api.file.Directory
 import org.gradle.api.tasks.TaskProvider
 
-/**
- * Configuration action for a task to merge generated proguard files.
- * See [MergeFileTask] for Task implementation.
- */
-class MergeGeneratedProguardFilesCreationAction(
-    creationConfig: ComponentCreationConfig
-) : VariantTaskCreationAction<MergeFileTask, ComponentCreationConfig>(
-    creationConfig
-) {
+/** Configuration action for a task to merge generated proguard files. See [MergeFileTask] for Task implementation. */
+class MergeGeneratedProguardFilesCreationAction(creationConfig: ComponentCreationConfig) :
+  VariantTaskCreationAction<MergeFileTask, ComponentCreationConfig>(creationConfig) {
 
-    override val name: String
-            get() = computeTaskName("merge", "GeneratedProguardFiles")
-    override val type: Class<MergeFileTask>
-        get() = MergeFileTask::class.java
+  override val name: String
+    get() = computeTaskName("merge", "GeneratedProguardFiles")
 
-    override fun handleProvider(
-        taskProvider: TaskProvider<MergeFileTask>
-    ) {
-        super.handleProvider(taskProvider)
-        creationConfig.artifacts.setInitialProvider(
-            taskProvider,
-            MergeFileTask::outputFile
-        ).withName(SdkConstants.FN_PROGUARD_TXT).on(InternalArtifactType.GENERATED_PROGUARD_FILE)
-    }
+  override val type: Class<MergeFileTask>
+    get() = MergeFileTask::class.java
 
-    override fun configure(
-        task: MergeFileTask
-    ) {
-        super.configure(task)
+  override fun handleProvider(taskProvider: TaskProvider<MergeFileTask>) {
+    super.handleProvider(taskProvider)
+    creationConfig.artifacts
+      .setInitialProvider(taskProvider, MergeFileTask::outputFile)
+      .withName(SdkConstants.FN_PROGUARD_TXT)
+      .on(InternalArtifactType.GENERATED_PROGUARD_FILE)
+  }
 
-        val allClasses = creationConfig.artifacts
-            .forScope(ScopedArtifacts.Scope.PROJECT)
-            .getFinalArtifacts(ScopedArtifact.CLASSES)
+  override fun configure(task: MergeFileTask) {
+    super.configure(task)
 
-        task.inputFiles.fromDisallowChanges(
-            allClasses.getDirectories(creationConfig.services.projectInfo.projectDirectory).map {
-                it.mapNotNull { directory ->
-                    getSubFolder(
-                        directory,
-                        SdkConstants.META_INF,
-                        SdkConstants.PROGUARD_RULES_FOLDER_NAME
-                    )?.getOrderedFileTree()
-                }
-            }
-        )
-    }
+    val allClasses = creationConfig.artifacts.forScope(ScopedArtifacts.Scope.PROJECT).getFinalArtifacts(ScopedArtifact.CLASSES)
 
-    companion object {
-        internal fun getSubFolder(directory: Directory, vararg paths: String): Directory? {
-            var current = directory
-            for (path in paths) {
-                val subFolder = current.asFile.listFiles()?.firstOrNull {
-                    it.name.lowercase() == path.lowercase()
-                }
-                if (subFolder != null) {
-                    current = current.dir(subFolder.name)
-                } else
-                    return null
-            }
-            return current
+    task.inputFiles.fromDisallowChanges(
+      allClasses.getDirectories(creationConfig.services.projectInfo.projectDirectory).map {
+        it.mapNotNull { directory ->
+          getSubFolder(directory, SdkConstants.META_INF, SdkConstants.PROGUARD_RULES_FOLDER_NAME)?.getOrderedFileTree()
         }
+      }
+    )
+  }
+
+  companion object {
+    internal fun getSubFolder(directory: Directory, vararg paths: String): Directory? {
+      var current = directory
+      for (path in paths) {
+        val subFolder = current.asFile.listFiles()?.firstOrNull { it.name.lowercase() == path.lowercase() }
+        if (subFolder != null) {
+          current = current.dir(subFolder.name)
+        } else return null
+      }
+      return current
     }
+  }
 }

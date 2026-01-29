@@ -28,21 +28,16 @@ import java.nio.file.Path
  *
  * This is used by [GradleBuild.withReversibleModifications].
  */
-internal class FileChangeController: Closeable {
-    private val recorders = mutableListOf<ReversibleGradleProjectFiles>()
+internal class FileChangeController : Closeable {
+  private val recorders = mutableListOf<ReversibleGradleProjectFiles>()
 
-    /**
-     * Creates a new context for a [GradleProject]
-     */
-    fun newGradleProjectFiles(location: Path): GradleProjectFiles =
-        ReversibleGradleProjectFiles(location).also { recorders.add(it) }
+  /** Creates a new context for a [GradleProject] */
+  fun newGradleProjectFiles(location: Path): GradleProjectFiles = ReversibleGradleProjectFiles(location).also { recorders.add(it) }
 
-    fun newAndroidProjectFiles(parent: AndroidProjectFiles, location: Path): AndroidProjectFiles =
-        ReversibleAndroidProjectFiles(parent, location).also { recorders.add(it) }
+  fun newAndroidProjectFiles(parent: AndroidProjectFiles, location: Path): AndroidProjectFiles =
+    ReversibleAndroidProjectFiles(parent, location).also { recorders.add(it) }
 
-    override fun close() {
-        recorders.forEach {
-            it.revert()
-        }
-    }
+  override fun close() {
+    recorders.forEach { it.revert() }
+  }
 }

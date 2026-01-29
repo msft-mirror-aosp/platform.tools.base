@@ -27,34 +27,20 @@ import java.io.FileReader
 
 const val MINI_CONFIG_FILE_NAME = "android_gradle_build_mini.json"
 
-/**
- * Read the miniconfig corresponding to [androidGradleBuildJsonFile]. Create it if necessary.
- */
+/** Read the miniconfig corresponding to [androidGradleBuildJsonFile]. Create it if necessary. */
 fun readMiniConfigCreateIfNecessary(
-    androidGradleBuildJsonFile: File,
-    stats: GradleBuildVariant.Builder? = null,
+  androidGradleBuildJsonFile: File,
+  stats: GradleBuildVariant.Builder? = null,
 ): NativeBuildConfigValueMini {
-    val persistedMiniConfig = androidGradleBuildJsonFile.parentFile.resolve(MINI_CONFIG_FILE_NAME)
-    val result =
-        if (fileIsUpToDate(
-                androidGradleBuildJsonFile,
-                persistedMiniConfig
-            ) || !androidGradleBuildJsonFile.isFile
-        ) {
-            // The mini json has already been created for us. Just read it instead of parsing again.
-            JsonReader(FileReader(persistedMiniConfig)).use { reader ->
-                parseToMiniConfig(reader)
-            }
-        } else {
-            JsonReader(FileReader(androidGradleBuildJsonFile)).use { reader ->
-                if (stats == null) parseToMiniConfig(reader)
-                else parseToMiniConfigAndGatherStatistics(reader, stats)
-            }.also {
-                writeNativeBuildMiniConfigValueToJsonFile(
-                    persistedMiniConfig,
-                    it
-                )
-            }
-        }
-    return result
+  val persistedMiniConfig = androidGradleBuildJsonFile.parentFile.resolve(MINI_CONFIG_FILE_NAME)
+  val result =
+    if (fileIsUpToDate(androidGradleBuildJsonFile, persistedMiniConfig) || !androidGradleBuildJsonFile.isFile) {
+      // The mini json has already been created for us. Just read it instead of parsing again.
+      JsonReader(FileReader(persistedMiniConfig)).use { reader -> parseToMiniConfig(reader) }
+    } else {
+      JsonReader(FileReader(androidGradleBuildJsonFile))
+        .use { reader -> if (stats == null) parseToMiniConfig(reader) else parseToMiniConfigAndGatherStatistics(reader, stats) }
+        .also { writeNativeBuildMiniConfigValueToJsonFile(persistedMiniConfig, it) }
+    }
+  return result
 }

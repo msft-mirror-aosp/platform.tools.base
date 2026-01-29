@@ -16,26 +16,16 @@
 
 package com.android.build.gradle.tasks
 
-import com.android.build.api.component.impl.AnnotationProcessorImpl
-import com.android.build.gradle.internal.component.ComponentCreationConfig
-import com.android.build.gradle.internal.component.KmpComponentCreationConfig
 import com.android.build.gradle.internal.profile.ProfileAwareWorkAction
-import com.android.build.gradle.internal.publishing.AndroidArtifacts.ARTIFACT_TYPE
-import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactScope
-import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactType
-import com.android.build.gradle.internal.publishing.AndroidArtifacts.ConsumedConfigType
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.tasks.BuildAnalyzer
 import com.android.build.gradle.internal.tasks.NonIncrementalTask
 import com.android.build.gradle.internal.tasks.creationconfig.JavaPreCompileTaskCreationConfig
 import com.android.build.gradle.internal.tasks.factory.VariantTaskCreationAction
-import com.android.build.gradle.internal.utils.findKaptOrKspConfigurationsForVariant
 import com.android.build.gradle.internal.utils.setDisallowChanges
 import com.android.buildanalyzer.common.TaskCategory
 import com.google.common.annotations.VisibleForTesting
 import org.gradle.api.artifacts.ArtifactCollection
-import org.gradle.api.artifacts.ArtifactView
-import org.gradle.api.artifacts.Configuration
 import org.gradle.api.file.FileCollection
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.ListProperty
@@ -51,97 +41,85 @@ import org.gradle.api.tasks.TaskProvider
 @BuildAnalyzer(primaryTaskCategory = TaskCategory.JAVA, secondaryTaskCategories = [TaskCategory.COMPILATION])
 abstract class JavaPreCompileTask : NonIncrementalTask() {
 
-    private var annotationProcessorArtifacts: ArtifactCollection? = null
-    private var kspProcessorArtifacts: ArtifactCollection? = null
+  private var annotationProcessorArtifacts: ArtifactCollection? = null
+  private var kspProcessorArtifacts: ArtifactCollection? = null
 
-    @get:Optional
-    @get:Classpath
-    val annotationProcessorArtifactFiles: FileCollection?
-        get() = annotationProcessorArtifacts?.artifactFiles
+  @get:Optional
+  @get:Classpath
+  val annotationProcessorArtifactFiles: FileCollection?
+    get() = annotationProcessorArtifacts?.artifactFiles
 
-    @get:Optional
-    @get:Classpath
-    val kspProcessorArtifactFiles: FileCollection?
-        get() = kspProcessorArtifacts?.artifactFiles
+  @get:Optional
+  @get:Classpath
+  val kspProcessorArtifactFiles: FileCollection?
+    get() = kspProcessorArtifacts?.artifactFiles
 
-    @get:Input
-    abstract val annotationProcessorClassNames: ListProperty<String>
+  @get:Input abstract val annotationProcessorClassNames: ListProperty<String>
 
-    @get:OutputFile
-    abstract val annotationProcessorListFile: RegularFileProperty
+  @get:OutputFile abstract val annotationProcessorListFile: RegularFileProperty
 
-    public override fun doTaskAction() {
-        val annotationProcessorArtifacts =
-            annotationProcessorArtifacts?.artifacts?.map { SerializableArtifact(it) } ?: emptyList()
-        val kspProcessorArtifacts =
-            kspProcessorArtifacts?.artifacts?.map { SerializableArtifact(it) } ?: emptyList()
+  public override fun doTaskAction() {
+    val annotationProcessorArtifacts = annotationProcessorArtifacts?.artifacts?.map { SerializableArtifact(it) } ?: emptyList()
+    val kspProcessorArtifacts = kspProcessorArtifacts?.artifacts?.map { SerializableArtifact(it) } ?: emptyList()
 
-        workerExecutor.noIsolation().submit(JavaPreCompileWorkAction::class.java) {
-            it.initializeFromBaseTask(this)
-            it.annotationProcessorArtifacts.setDisallowChanges(annotationProcessorArtifacts)
-            it.kspProcessorArtifacts.setDisallowChanges(kspProcessorArtifacts)
-            it.annotationProcessorClassNames.setDisallowChanges(annotationProcessorClassNames)
-            it.annotationProcessorListFile.setDisallowChanges(annotationProcessorListFile)
-        }
+    workerExecutor.noIsolation().submit(JavaPreCompileWorkAction::class.java) {
+      it.initializeFromBaseTask(this)
+      it.annotationProcessorArtifacts.setDisallowChanges(annotationProcessorArtifacts)
+      it.kspProcessorArtifacts.setDisallowChanges(kspProcessorArtifacts)
+      it.annotationProcessorClassNames.setDisallowChanges(annotationProcessorClassNames)
+      it.annotationProcessorListFile.setDisallowChanges(annotationProcessorListFile)
+    }
+  }
+
+  class CreationAction(creationConfig: JavaPreCompileTaskCreationConfig) :
+    VariantTaskCreationAction<JavaPreCompileTask, JavaPreCompileTaskCreationConfig>(creationConfig) {
+
+    override val name: String
+      get() = creationConfig.computeTaskNameInternal("javaPreCompile")
+
+    override val type: Class<JavaPreCompileTask>
+      get() = JavaPreCompileTask::class.java
+
+    override fun handleProvider(taskProvider: TaskProvider<JavaPreCompileTask>) {
+      super.handleProvider(taskProvider)
+
+      creationConfig.artifacts
+        .setInitialProvider(taskProvider) { it.annotationProcessorListFile }
+        .withName(ANNOTATION_PROCESSOR_LIST_FILE_NAME)
+        .on(InternalArtifactType.ANNOTATION_PROCESSOR_LIST)
     }
 
-    class CreationAction(
-        creationConfig: JavaPreCompileTaskCreationConfig
-    ) :
-        VariantTaskCreationAction<JavaPreCompileTask, JavaPreCompileTaskCreationConfig>(creationConfig) {
+    override fun configure(task: JavaPreCompileTask) {
+      super.configure(task)
 
-        override val name: String
-            get() = creationConfig.computeTaskNameInternal("javaPreCompile")
+      task.annotationProcessorArtifacts = creationConfig.annotationProcessorArtifacts
 
-        override val type: Class<JavaPreCompileTask>
-            get() = JavaPreCompileTask::class.java
+      task.kspProcessorArtifacts = creationConfig.kspProcessorArtifacts
 
-        override fun handleProvider(taskProvider: TaskProvider<JavaPreCompileTask>) {
-            super.handleProvider(taskProvider)
-
-            creationConfig
-                .artifacts
-                .setInitialProvider(taskProvider) { it.annotationProcessorListFile }
-                .withName(ANNOTATION_PROCESSOR_LIST_FILE_NAME)
-                .on(InternalArtifactType.ANNOTATION_PROCESSOR_LIST)
-        }
-
-        override fun configure(task: JavaPreCompileTask) {
-            super.configure(task)
-
-            task.annotationProcessorArtifacts = creationConfig.annotationProcessorArtifacts
-
-            task.kspProcessorArtifacts = creationConfig.kspProcessorArtifacts
-
-            task.annotationProcessorClassNames.setDisallowChanges(
-                creationConfig.finalListOfClassNames
-            )
-        }
+      task.annotationProcessorClassNames.setDisallowChanges(creationConfig.finalListOfClassNames)
     }
+  }
 }
 
 abstract class JavaPreCompileParameters : ProfileAwareWorkAction.Parameters() {
 
-    abstract val annotationProcessorArtifacts: ListProperty<SerializableArtifact>
-    abstract val annotationProcessorClassNames: ListProperty<String>
-    abstract val annotationProcessorListFile: RegularFileProperty
-    abstract val kspProcessorArtifacts: ListProperty<SerializableArtifact>
+  abstract val annotationProcessorArtifacts: ListProperty<SerializableArtifact>
+  abstract val annotationProcessorClassNames: ListProperty<String>
+  abstract val annotationProcessorListFile: RegularFileProperty
+  abstract val kspProcessorArtifacts: ListProperty<SerializableArtifact>
 }
 
 abstract class JavaPreCompileWorkAction : ProfileAwareWorkAction<JavaPreCompileParameters>() {
 
-    override fun run() {
-        val processors =
-            detectAnnotationAndKspProcessors(
-                parameters.annotationProcessorClassNames.get(),
-                parameters.annotationProcessorArtifacts.get(),
-                parameters.kspProcessorArtifacts.get()
-            )
-        writeAnnotationProcessorsToJsonFile(
-            processors, parameters.annotationProcessorListFile.get().asFile
-        )
-    }
+  override fun run() {
+    val processors =
+      detectAnnotationAndKspProcessors(
+        parameters.annotationProcessorClassNames.get(),
+        parameters.annotationProcessorArtifacts.get(),
+        parameters.kspProcessorArtifacts.get(),
+      )
+    writeAnnotationProcessorsToJsonFile(processors, parameters.annotationProcessorListFile.get().asFile)
+  }
 }
 
-@VisibleForTesting
-const val ANNOTATION_PROCESSOR_LIST_FILE_NAME = "annotationProcessors.json"
+@VisibleForTesting const val ANNOTATION_PROCESSOR_LIST_FILE_NAME = "annotationProcessors.json"

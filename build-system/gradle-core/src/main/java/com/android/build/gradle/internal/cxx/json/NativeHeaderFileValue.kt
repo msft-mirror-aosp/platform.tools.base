@@ -18,9 +18,5 @@ package com.android.build.gradle.internal.cxx.json
 
 import java.io.File
 
-/**
- * Refers to a header file
- */
-data class NativeHeaderFileValue(
-    val header : File,
-    val workingDirectoryOrdinal : Int)
+/** Refers to a header file */
+data class NativeHeaderFileValue(val header: File, val workingDirectoryOrdinal: Int)

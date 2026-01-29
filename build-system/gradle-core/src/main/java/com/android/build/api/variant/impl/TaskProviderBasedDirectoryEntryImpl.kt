@@ -26,50 +26,37 @@ import org.gradle.api.tasks.TaskProvider
 import org.gradle.api.tasks.util.PatternFilterable
 
 /**
- * Implementation of [DirectoryEntry] based on [Provider] of [Directory] with embedded task
- * dependency. The [TaskProvider] is also provided to the constructor as creating a
- * [ConfigurableFileTree] from a [Provider] is not enough, and the [ConfigurableFileTree.builtBy]
- * must be explicitly called.
+ * Implementation of [DirectoryEntry] based on [Provider] of [Directory] with embedded task dependency. The [TaskProvider] is also provided
+ * to the constructor as creating a [ConfigurableFileTree] from a [Provider] is not enough, and the [ConfigurableFileTree.builtBy] must be
+ * explicitly called.
  */
 class TaskProviderBasedDirectoryEntryImpl(
-    override val name: String,
-    val directoryProvider: Provider<Directory>,
-    override val isGenerated: Boolean = true,
-    override val isUserAdded: Boolean = false,
-    override val shouldBeAddedToIdeModel: Boolean = false,
-    override val kind: DirectoryEntry.Kind = DirectoryEntry.Kind.GENERIC
-): DirectoryEntry {
+  override val name: String,
+  val directoryProvider: Provider<Directory>,
+  override val isGenerated: Boolean = true,
+  override val isUserAdded: Boolean = false,
+  override val shouldBeAddedToIdeModel: Boolean = false,
+  override val kind: DirectoryEntry.Kind = DirectoryEntry.Kind.GENERIC,
+) : DirectoryEntry {
 
-    /**
-     * Filters cannot be set on task provided source folders, tasks should just not create extra
-     * sources that would require filtering.
-     */
-    override val filter: PatternFilterable? = null
+  /** Filters cannot be set on task provided source folders, tasks should just not create extra sources that would require filtering. */
+  override val filter: PatternFilterable? = null
 
-    override fun asFileTree(
-            fileTreeCreator: () -> ConfigurableFileTree,
-    ): Provider<List<ConfigurableFileTree>> =
-        directoryProvider.map {
-            listOf(fileTreeCreator().setDir(directoryProvider).builtBy(directoryProvider))
-        }
+  override fun asFileTree(fileTreeCreator: () -> ConfigurableFileTree): Provider<List<ConfigurableFileTree>> =
+    directoryProvider.map { listOf(fileTreeCreator().setDir(directoryProvider).builtBy(directoryProvider)) }
 
-    override fun asFileTreeWithoutTaskDependency(
-            fileTreeCreator: () -> ConfigurableFileTree,
-    ): List<ConfigurableFileTree> =
-        listOf(fileTreeCreator().setDir(directoryProvider).builtBy(directoryProvider))
+  override fun asFileTreeWithoutTaskDependency(fileTreeCreator: () -> ConfigurableFileTree): List<ConfigurableFileTree> =
+    listOf(fileTreeCreator().setDir(directoryProvider).builtBy(directoryProvider))
 
-    override fun makeDependentOf(task: Task): Unit {
-        task.dependsOn(directoryProvider)
-    }
+  override fun makeDependentOf(task: Task): Unit {
+    task.dependsOn(directoryProvider)
+  }
 
-    override fun addTo(projectDir: Directory, listProperty: ListProperty<Directory>) {
-        listProperty.add(directoryProvider)
-    }
+  override fun addTo(projectDir: Directory, listProperty: ListProperty<Directory>) {
+    listProperty.add(directoryProvider)
+  }
 
-    override fun addTo(
-        projectDir: Directory,
-        into: ConfigurableFileCollection,
-    ) {
-        into.from(directoryProvider)
-    }
+  override fun addTo(projectDir: Directory, into: ConfigurableFileCollection) {
+    into.from(directoryProvider)
+  }
 }

@@ -23,7 +23,8 @@ import com.android.build.gradle.options.BooleanOption
  *
  * See [com.android.build.gradle.internal.dsl.decorator.annotation.RuntimeGuardedExperimentalApi]
  */
-class AgpExperimentalApiOptInRequiredException(api: String, optIn: BooleanOption) : RuntimeException(
+class AgpExperimentalApiOptInRequiredException(api: String, optIn: BooleanOption) :
+  RuntimeException(
     "API $api is experimental, and requires opt in, as it may change or break in future versions without notice.\n" +
-            "Set ${optIn.propertyName}=true in gradle.properties to enable access to this API."
-)
+      "Set ${optIn.propertyName}=true in gradle.properties to enable access to this API."
+  )

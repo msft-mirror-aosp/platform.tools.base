@@ -17,15 +17,13 @@
 package com.android.build.gradle
 
 class DecoratedApiChangesUpdater {
-    companion object {
-        @JvmStatic
-        fun main(args: Array<String>) {
-            val dslInterfaces = getDslInterfaces().map { it.load() }
-            getApiTester().updateFile(
-                "tools/base/build-system/gradle-core/src/test/resources/com/android/build/gradle"
-            ) {
-                getApiElements(it, dslInterfaces)
-            }
-        }
+  companion object {
+    @JvmStatic
+    fun main(args: Array<String>) {
+      val dslInterfaces = getDslInterfaces().map { it.load() }
+      getApiTester().updateFile("tools/base/build-system/gradle-core/src/test/resources/com/android/build/gradle") {
+        getApiElements(it, dslInterfaces)
+      }
     }
+  }
 }

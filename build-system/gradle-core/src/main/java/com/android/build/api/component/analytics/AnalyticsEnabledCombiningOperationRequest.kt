@@ -22,22 +22,20 @@ import com.android.build.gradle.internal.profile.AnalyticsUtil
 import com.android.tools.build.gradle.internal.profile.VariantPropertiesMethodType
 import com.google.wireless.android.sdk.stats.ArtifactAccess
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
-import org.gradle.api.file.FileSystemLocation
 import javax.inject.Inject
+import org.gradle.api.file.FileSystemLocation
 
-open class AnalyticsEnabledCombiningOperationRequest<FileTypeT: FileSystemLocation> @Inject constructor(
-    val delegate: CombiningOperationRequest<FileTypeT>,
-    val stats: GradleBuildVariant.Builder
-): CombiningOperationRequest<FileTypeT> {
-    override fun <ArtifactTypeT> toTransform(type: ArtifactTypeT)
-            where ArtifactTypeT : Artifact.Multiple<FileTypeT>,
-                  ArtifactTypeT : Artifact.Transformable {
-        stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
-            VariantPropertiesMethodType.TO_TRANSFORM_COMBINE_VALUE
-        stats.variantApiAccessBuilder.addArtifactAccessBuilder().also {
-            it.inputArtifactType = AnalyticsUtil.getVariantApiArtifactType(type.javaClass).number
-            it.type = ArtifactAccess.AccessType.TRANSFORM
-        }
-        delegate.toTransform(type)
+open class AnalyticsEnabledCombiningOperationRequest<FileTypeT : FileSystemLocation>
+@Inject
+constructor(val delegate: CombiningOperationRequest<FileTypeT>, val stats: GradleBuildVariant.Builder) :
+  CombiningOperationRequest<FileTypeT> {
+  override fun <ArtifactTypeT> toTransform(type: ArtifactTypeT)
+    where ArtifactTypeT : Artifact.Multiple<FileTypeT>, ArtifactTypeT : Artifact.Transformable {
+    stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type = VariantPropertiesMethodType.TO_TRANSFORM_COMBINE_VALUE
+    stats.variantApiAccessBuilder.addArtifactAccessBuilder().also {
+      it.inputArtifactType = AnalyticsUtil.getVariantApiArtifactType(type.javaClass).number
+      it.type = ArtifactAccess.AccessType.TRANSFORM
     }
+    delegate.toTransform(type)
+  }
 }

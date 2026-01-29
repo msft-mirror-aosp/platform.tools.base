@@ -23,41 +23,36 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 
-/**
- * Regression test for Issue 226200249
- */
+/** Regression test for Issue 226200249 */
 class LocaleConfigTest {
 
-    @get:Rule
-    val project =
-        GradleTestProject.builder()
-            .fromTestApp(MinimalSubProject.app("com.example.app"))
-            .create()
+  @get:Rule val project = GradleTestProject.builder().fromTestApp(MinimalSubProject.app("com.example.app")).create()
 
-    @Before
-    fun before() {
-        TestFileUtils.searchAndReplace(
-            project.file("src/main/AndroidManifest.xml"),
-            "<application />",
-            "<application android:localeConfig=\"@xml/locale_config\"/>"
-        )
-        val localeConfigFile = project.file("src/main/res/xml/locale_config.xml")
-        localeConfigFile.parentFile.mkdirs()
-        localeConfigFile.writeText(
-            """
-                <locale-config xmlns:android="http://schemas.android.com/apk/res/android">
-                    <locale android:name="en-US"/>
-                    <locale android:name="zh-TW"/>
-                    <locale android:name="pt"/>
-                    <locale android:name="fr"/>
-                    <locale android:name="zh-Hans-SG"/>
-                </locale-config>
-            """.trimIndent()
-        )
-    }
+  @Before
+  fun before() {
+    TestFileUtils.searchAndReplace(
+      project.file("src/main/AndroidManifest.xml"),
+      "<application />",
+      "<application android:localeConfig=\"@xml/locale_config\"/>",
+    )
+    val localeConfigFile = project.file("src/main/res/xml/locale_config.xml")
+    localeConfigFile.parentFile.mkdirs()
+    localeConfigFile.writeText(
+      """
+      <locale-config xmlns:android="http://schemas.android.com/apk/res/android">
+          <locale android:name="en-US"/>
+          <locale android:name="zh-TW"/>
+          <locale android:name="pt"/>
+          <locale android:name="fr"/>
+          <locale android:name="zh-Hans-SG"/>
+      </locale-config>
+      """
+        .trimIndent()
+    )
+  }
 
-    @Test
-    fun testLocaleConfig() {
-        project.executor().run("bundleDebug")
-    }
+  @Test
+  fun testLocaleConfig() {
+    project.executor().run("bundleDebug")
+  }
 }

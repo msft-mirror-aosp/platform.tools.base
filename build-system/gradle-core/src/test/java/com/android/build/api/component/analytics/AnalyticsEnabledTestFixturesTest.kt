@@ -27,58 +27,49 @@ import com.google.wireless.android.sdk.stats.GradleBuildVariant
 import org.gradle.api.provider.MapProperty
 import org.junit.Rule
 import org.junit.Test
+import org.mockito.junit.MockitoJUnit
+import org.mockito.junit.MockitoRule
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
-import org.mockito.junit.MockitoJUnit
-import org.mockito.junit.MockitoRule
 import org.mockito.quality.Strictness
 
 class AnalyticsEnabledTestFixturesTest {
 
-    @get:Rule
-    val rule: MockitoRule = MockitoJUnit.rule().strictness(Strictness.STRICT_STUBS)
+  @get:Rule val rule: MockitoRule = MockitoJUnit.rule().strictness(Strictness.STRICT_STUBS)
 
-    private val delegate: TestFixtures = mock()
+  private val delegate: TestFixtures = mock()
 
-    private val stats = GradleBuildVariant.newBuilder()
-    private val proxy: AnalyticsEnabledTestFixtures by lazy {
-        AnalyticsEnabledTestFixtures(delegate, stats, FakeObjectFactory.factory)
-    }
+  private val stats = GradleBuildVariant.newBuilder()
+  private val proxy: AnalyticsEnabledTestFixtures by lazy { AnalyticsEnabledTestFixtures(delegate, stats, FakeObjectFactory.factory) }
 
-    @Test
-    fun aarMetadata() {
-        val aarMetadata = mock<AarMetadata>()
-        whenever(aarMetadata.minCompileSdk).thenReturn(FakeGradleProperty(5))
-        whenever(delegate.aarMetadata).thenReturn(aarMetadata)
-        Truth.assertThat(proxy.aarMetadata.minCompileSdk.get()).isEqualTo(5)
+  @Test
+  fun aarMetadata() {
+    val aarMetadata = mock<AarMetadata>()
+    whenever(aarMetadata.minCompileSdk).thenReturn(FakeGradleProperty(5))
+    whenever(delegate.aarMetadata).thenReturn(aarMetadata)
+    Truth.assertThat(proxy.aarMetadata.minCompileSdk.get()).isEqualTo(5)
 
-        Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(2)
-        Truth.assertThat(
-            stats.variantApiAccess.variantPropertiesAccessList.map { it.type }
-        ).containsExactlyElementsIn(
-            listOf(
-                VariantPropertiesMethodType.VARIANT_AAR_METADATA_VALUE,
-                VariantPropertiesMethodType.VARIANT_AAR_METADATA_MIN_COMPILE_SDK_VALUE,
-            )
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(2)
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessList.map { it.type })
+      .containsExactlyElementsIn(
+        listOf(
+          VariantPropertiesMethodType.VARIANT_AAR_METADATA_VALUE,
+          VariantPropertiesMethodType.VARIANT_AAR_METADATA_MIN_COMPILE_SDK_VALUE,
         )
-        verify(delegate, times(1)).aarMetadata
-    }
+      )
+    verify(delegate, times(1)).aarMetadata
+  }
 
-    @Test
-    fun getResValues() {
-        @Suppress("UNCHECKED_CAST")
-        val map: MapProperty<ResValue.Key, ResValue> =
-            mock<MapProperty<ResValue.Key, ResValue>>()
-        whenever(delegate.resValues).thenReturn(map)
-        Truth.assertThat(proxy.resValues).isEqualTo(map)
+  @Test
+  fun getResValues() {
+    @Suppress("UNCHECKED_CAST") val map: MapProperty<ResValue.Key, ResValue> = mock<MapProperty<ResValue.Key, ResValue>>()
+    whenever(delegate.resValues).thenReturn(map)
+    Truth.assertThat(proxy.resValues).isEqualTo(map)
 
-        Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
-        Truth.assertThat(
-            stats.variantApiAccess.variantPropertiesAccessList.first().type
-        ).isEqualTo(VariantPropertiesMethodType.RES_VALUE_VALUE)
-        verify(delegate, times(1))
-            .resValues
-    }
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessList.first().type).isEqualTo(VariantPropertiesMethodType.RES_VALUE_VALUE)
+    verify(delegate, times(1)).resValues
+  }
 }

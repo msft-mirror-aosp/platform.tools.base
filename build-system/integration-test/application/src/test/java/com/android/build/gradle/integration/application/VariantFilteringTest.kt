@@ -22,22 +22,17 @@ import com.google.common.truth.Truth
 import org.junit.Rule
 import org.junit.Test
 
-/** Tests to validate the different filtering mechanisms  */
-class VariantFilteringTest: AbstractReturnGivenBuildResultTest<String,
-        VariantFilteringTest.VariantBuilder,
-        List<VariantFilteringTest.VariantInfo>>() {
+/** Tests to validate the different filtering mechanisms */
+class VariantFilteringTest :
+  AbstractReturnGivenBuildResultTest<String, VariantFilteringTest.VariantBuilder, List<VariantFilteringTest.VariantInfo>>() {
 
-    @get:Rule
-    val project =
-        GradleTestProject.builder()
-            .fromTestProject("emptyApp")
-            .addGradleProperty(BooleanOption.USE_NEW_DSL, false)
-            .create()
+  @get:Rule
+  val project = GradleTestProject.builder().fromTestProject("emptyApp").addGradleProperty(BooleanOption.USE_NEW_DSL, false).create()
 
-    @Test
-    fun `filtering via old api on abi and flavor names`() {
-        given {
-            """
+  @Test
+  fun `filtering via old api on abi and flavor names`() {
+    given {
+      """
                 |    flavorDimensions "abi", "api"
                 |    productFlavors {
                 |        x86 {
@@ -63,125 +58,133 @@ class VariantFilteringTest: AbstractReturnGivenBuildResultTest<String,
                 |        }
                 |    }
             """
-        }
-
-        expect {
-            variant { name = "x86GingerbreadDebug" }
-            variant {
-                name = "x86GingerbreadRelease"
-                unitTest = false
-                androidTest = false
-            }
-            variant { name = "mipsGingerbreadDebug" }
-            variant {
-                name = "mipsGingerbreadRelease"
-                unitTest = false
-                androidTest = false
-            }
-            variant { name = "armGingerbreadDebug" }
-            variant {
-                name = "armGingerbreadRelease"
-                unitTest = false
-                androidTest = false
-            }
-
-            variant { name = "armCupcakeDebug" }
-            variant {
-                name = "armCupcakeRelease"
-                unitTest = false
-                androidTest = false
-            }
-        }
     }
 
-    @Test
-    fun `filtering via old api on build type names`() {
-        given {
-            """
+    expect {
+      variant { name = "x86GingerbreadDebug" }
+      variant {
+        name = "x86GingerbreadRelease"
+        unitTest = false
+        androidTest = false
+      }
+      variant { name = "mipsGingerbreadDebug" }
+      variant {
+        name = "mipsGingerbreadRelease"
+        unitTest = false
+        androidTest = false
+      }
+      variant { name = "armGingerbreadDebug" }
+      variant {
+        name = "armGingerbreadRelease"
+        unitTest = false
+        androidTest = false
+      }
+
+      variant { name = "armCupcakeDebug" }
+      variant {
+        name = "armCupcakeRelease"
+        unitTest = false
+        androidTest = false
+      }
+    }
+  }
+
+  @Test
+  fun `filtering via old api on build type names`() {
+    given {
+      """
                 |    variantFilter {
                 |        if (it.buildType.name.equals("debug")) {
                 |            it.ignore = true
                 |        }
                 |    }
             """
-        }
-
-        expect {
-            variant { name = "release"
-                unitTest = false
-                androidTest = false
-            }
-        }
     }
 
-
-    // ---------------------------------------------------------------------------------------------
-
-    var androidComponentsBlock: (() -> String)? = null
-    fun withAndroidComponents(action: () -> String) {
-        androidComponentsBlock = action
-        state = TestState.GIVEN
+    expect {
+      variant {
+        name = "release"
+        unitTest = false
+        androidTest = false
+      }
     }
+  }
 
-    override fun noGivenData(): String {
-        // it's ok to not have any given data, if there is some androidComponents customization.
-        if (androidComponentsBlock!=null)
-            return ""
-        else
-            throw RuntimeException("No given data")
-    }
+  // ---------------------------------------------------------------------------------------------
 
-    override fun defaultWhen(given: String): List<VariantInfo>? {
-        project.buildFile.appendText(
-            """
+  var androidComponentsBlock: (() -> String)? = null
+
+  fun withAndroidComponents(action: () -> String) {
+    androidComponentsBlock = action
+    state = TestState.GIVEN
+  }
+
+  override fun noGivenData(): String {
+    // it's ok to not have any given data, if there is some androidComponents customization.
+    if (androidComponentsBlock != null) return "" else throw RuntimeException("No given data")
+  }
+
+  override fun defaultWhen(given: String): List<VariantInfo>? {
+    project.buildFile.appendText(
+      """
                 |android {
                 |${given.trimMargin()}
                 |}
-            """.trimMargin())
-        this.androidComponentsBlock?.let {
-            project.buildFile.appendText(
             """
+        .trimMargin()
+    )
+    this.androidComponentsBlock?.let {
+      project.buildFile.appendText(
+        """
                 |
                 |androidComponents {
                 |${it().trimMargin()}
                 |}
-            """.trimMargin())
-        }
-
-        return project.modelV2()
-            .allowOptionWarning(BooleanOption.USE_NEW_DSL)
-            .fetchModels().container.getProject().androidProject!!.variants.map {
-            VariantInfo(
-                it.name,
-                unitTest = it.unitTestArtifact != null,
-                androidTest = it.androidTestArtifact != null,
-                testFixtures = it.testFixturesArtifact != null,
-            )
-        }
+            """
+          .trimMargin()
+      )
     }
 
-    override fun compareResult(expected: List<VariantInfo>?, actual: List<VariantInfo>?, given: String) {
-        Truth.assertThat(actual).containsExactlyElementsIn(expected)
+    return project
+      .modelV2()
+      .allowOptionWarning(BooleanOption.USE_NEW_DSL)
+      .fetchModels()
+      .container
+      .getProject()
+      .androidProject!!
+      .variants
+      .map {
+        VariantInfo(
+          it.name,
+          unitTest = it.unitTestArtifact != null,
+          androidTest = it.androidTestArtifact != null,
+          testFixtures = it.testFixturesArtifact != null,
+        )
+      }
+  }
+
+  override fun compareResult(expected: List<VariantInfo>?, actual: List<VariantInfo>?, given: String) {
+    Truth.assertThat(actual).containsExactlyElementsIn(expected)
+  }
+
+  override fun instantiateResulBuilder(): VariantBuilder = VariantBuilder()
+
+  class VariantBuilder : ResultBuilder<List<VariantInfo>> {
+    private val variants = mutableListOf<VariantInfo>()
+
+    fun variant(action: VariantInfo.() -> Unit) {
+      variants.add(VariantInfo().also { action(it) })
     }
 
-    override fun instantiateResulBuilder(): VariantBuilder = VariantBuilder()
-
-    class VariantBuilder: ResultBuilder<List<VariantInfo>> {
-        private val variants = mutableListOf<VariantInfo>()
-
-        fun variant(action: VariantInfo.() -> Unit) {
-            variants.add(VariantInfo().also { action(it) })
-        }
-
-        override fun toResult(): List<VariantInfo> {
-            return variants
-        }
+    override fun toResult(): List<VariantInfo> {
+      return variants
     }
+  }
 
-    data class VariantInfo(
-        var name: String = "",
-        var unitTest: Boolean = true,
-        var androidTest: Boolean = true,
-        var testFixtures: Boolean = false,
-    )
+  data class VariantInfo(
+    var name: String = "",
+    var unitTest: Boolean = true,
+    var androidTest: Boolean = true,
+    var testFixtures: Boolean = false,
+  )
 }

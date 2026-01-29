@@ -16,9 +16,8 @@
 
 package com.android.build.gradle.internal.tasks
 
-import com.google.common.truth.Truth.assertThat
-
 import com.android.build.gradle.internal.signing.SigningConfigVersions
+import com.google.common.truth.Truth.assertThat
 import java.io.File
 import java.io.IOException
 import org.gradle.api.Project
@@ -28,68 +27,54 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 
-/** Tests for the [SigningConfigVersionsWriterTask]  */
+/** Tests for the [SigningConfigVersionsWriterTask] */
 class SigningConfigVersionsWriterTaskTest {
-    @Rule
-    @JvmField
-    var temporaryFolder = TemporaryFolder()
+  @Rule @JvmField var temporaryFolder = TemporaryFolder()
 
-    internal lateinit var project: Project
-    internal lateinit var task: SigningConfigVersionsWriterTask
-    lateinit var outputFile : File
+  internal lateinit var project: Project
+  internal lateinit var task: SigningConfigVersionsWriterTask
+  lateinit var outputFile: File
 
-    @Before
-    @Throws(IOException::class)
-    fun setUp() {
-        val testDir = temporaryFolder.newFolder()
-        outputFile = temporaryFolder.newFile()
-        project = ProjectBuilder.builder().withProjectDir(testDir).build()
+  @Before
+  @Throws(IOException::class)
+  fun setUp() {
+    val testDir = temporaryFolder.newFolder()
+    outputFile = temporaryFolder.newFile()
+    project = ProjectBuilder.builder().withProjectDir(testDir).build()
 
-        task = project.tasks.create("test", SigningConfigVersionsWriterTask::class.java)
-        task.outputFile.set(outputFile)
-    }
+    task = project.tasks.create("test", SigningConfigVersionsWriterTask::class.java)
+    task.outputFile.set(outputFile)
+  }
 
-    @Test
-    @Throws(IOException::class)
-    fun testWithOverrides() {
-        task.enableV1Signing.set(false)
-        task.enableV2Signing.set(false)
-        task.enableV3Signing.set(true)
-        task.enableV4Signing.set(true)
-        task.overrideEnableV1Signing.set(true)
-        task.overrideEnableV2Signing.set(true)
+  @Test
+  @Throws(IOException::class)
+  fun testWithOverrides() {
+    task.enableV1Signing.set(false)
+    task.enableV2Signing.set(false)
+    task.enableV3Signing.set(true)
+    task.enableV4Signing.set(true)
+    task.overrideEnableV1Signing.set(true)
+    task.overrideEnableV2Signing.set(true)
 
-        task.doTaskAction()
+    task.doTaskAction()
 
-        val loadedSigningConfigVersions = SigningConfigUtils.loadSigningConfigVersions(outputFile)
-        assertThat(loadedSigningConfigVersions).isEqualTo(
-            SigningConfigVersions(
-                enableV1Signing = true,
-                enableV2Signing = true,
-                enableV3Signing = true,
-                enableV4Signing = true
-            )
-        )
-    }
+    val loadedSigningConfigVersions = SigningConfigUtils.loadSigningConfigVersions(outputFile)
+    assertThat(loadedSigningConfigVersions)
+      .isEqualTo(SigningConfigVersions(enableV1Signing = true, enableV2Signing = true, enableV3Signing = true, enableV4Signing = true))
+  }
 
-    @Test
-    @Throws(IOException::class)
-    fun testWithoutOverrides() {
-        task.enableV1Signing.set(false)
-        task.enableV2Signing.set(false)
-        task.enableV3Signing.set(true)
-        task.enableV4Signing.set(true)
+  @Test
+  @Throws(IOException::class)
+  fun testWithoutOverrides() {
+    task.enableV1Signing.set(false)
+    task.enableV2Signing.set(false)
+    task.enableV3Signing.set(true)
+    task.enableV4Signing.set(true)
 
-        task.doTaskAction()
+    task.doTaskAction()
 
-        val loadedSigningConfigVersions = SigningConfigUtils.loadSigningConfigVersions(outputFile)
-        assertThat(loadedSigningConfigVersions).isEqualTo(
-            SigningConfigVersions(
-                enableV1Signing = false,
-                enableV2Signing = false,
-                enableV3Signing = true,
-                enableV4Signing = true
-            )
-        )
-    }
+    val loadedSigningConfigVersions = SigningConfigUtils.loadSigningConfigVersions(outputFile)
+    assertThat(loadedSigningConfigVersions)
+      .isEqualTo(SigningConfigVersions(enableV1Signing = false, enableV2Signing = false, enableV3Signing = true, enableV4Signing = true))
+  }
 }

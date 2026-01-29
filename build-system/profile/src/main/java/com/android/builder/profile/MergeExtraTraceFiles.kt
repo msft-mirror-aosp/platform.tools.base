@@ -30,35 +30,30 @@ import java.nio.file.Path
 import java.util.zip.GZIPInputStream
 import java.util.zip.GZIPOutputStream
 
-private val gson: Gson =
-    GsonBuilder().setLongSerializationPolicy(LongSerializationPolicy.STRING).create()
+private val gson: Gson = GsonBuilder().setLongSerializationPolicy(LongSerializationPolicy.STRING).create()
 
 /**
- * Merges trace events stored in files under [extraChromeTraceDir] into the given [writer]. The
- * writer should be ready to accept a stream of JSON event objects. That is, the writer should be
- * writing a JSON array when this method is invoked. The [pidOffset] is used to offset PIDs so that
- * PIDs spread among different files won't conflict with each other.
+ * Merges trace events stored in files under [extraChromeTraceDir] into the given [writer]. The writer should be ready to accept a stream of
+ * JSON event objects. That is, the writer should be writing a JSON array when this method is invoked. The [pidOffset] is used to offset
+ * PIDs so that PIDs spread among different files won't conflict with each other.
  */
-fun mergeExtraTraceFiles(
-    pidOffset: Int,
-    writer: JsonWriter,
-    extraChromeTraceDir: Path
-) {
-    var startPid = pidOffset
-    extraChromeTraceDir.toFile().listFiles()?.apply { sortBy { it.name } }?.forEach { traceFile ->
-        var maxPid = startPid
-        InputStreamReader(
-            GZIPInputStream(FileInputStream(traceFile)),
-            StandardCharsets.UTF_8
-        ).use { reader ->
-            val chromeTraceJson = gson.fromJson(reader, ChromeTraceJson::class.java)
-            chromeTraceJson.traceEvents.forEach { event ->
-                val offsetPid = event.pid + startPid
-                if (offsetPid > maxPid) maxPid = offsetPid
-                gson.toJson(event.copy(pid = offsetPid), TraceEventJson::class.java, writer)
-            }
+fun mergeExtraTraceFiles(pidOffset: Int, writer: JsonWriter, extraChromeTraceDir: Path) {
+  var startPid = pidOffset
+  extraChromeTraceDir
+    .toFile()
+    .listFiles()
+    ?.apply { sortBy { it.name } }
+    ?.forEach { traceFile ->
+      var maxPid = startPid
+      InputStreamReader(GZIPInputStream(FileInputStream(traceFile)), StandardCharsets.UTF_8).use { reader ->
+        val chromeTraceJson = gson.fromJson(reader, ChromeTraceJson::class.java)
+        chromeTraceJson.traceEvents.forEach { event ->
+          val offsetPid = event.pid + startPid
+          if (offsetPid > maxPid) maxPid = offsetPid
+          gson.toJson(event.copy(pid = offsetPid), TraceEventJson::class.java, writer)
         }
-        startPid = maxPid + 1
+      }
+      startPid = maxPid + 1
     }
 }
 
@@ -67,19 +62,17 @@ fun mergeExtraTraceFiles(
  * https://docs.google.com/document/d/1CvAClvFfyA5R-PhYUmn5OOQtYMH4h6I0nSsKchNAySU/edit#heading=h.uxpopqvbjezh
  */
 data class TraceEventJson(
-    val pid: Int,
-    val tid: Int,
-    val ts: Long,
-    val ph: String,
-    val cat: String? = null,
-    val name: String? = null,
-    val cname: String? = null,
-    val args: Map<String, String>? = null
+  val pid: Int,
+  val tid: Int,
+  val ts: Long,
+  val ph: String,
+  val cat: String? = null,
+  val name: String? = null,
+  val cname: String? = null,
+  val args: Map<String, String>? = null,
 )
 
 data class ChromeTraceJson(val traceEvents: List<TraceEventJson>) {
-    fun storeToFile(file: File) =
-        OutputStreamWriter(GZIPOutputStream(FileOutputStream(file)), StandardCharsets.UTF_8)
-            .use { gson.toJson(this, it) }
+  fun storeToFile(file: File) =
+    OutputStreamWriter(GZIPOutputStream(FileOutputStream(file)), StandardCharsets.UTF_8).use { gson.toJson(this, it) }
 }
-

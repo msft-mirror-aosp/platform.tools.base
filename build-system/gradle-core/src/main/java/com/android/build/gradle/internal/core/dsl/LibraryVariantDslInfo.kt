@@ -20,8 +20,7 @@ import com.android.build.api.dsl.AarMetadata
 import com.android.build.gradle.internal.core.dsl.features.AndroidResourcesDslInfo
 
 /**
- * Represents the dsl info for a library variant, initialized from the DSL object model
- * (extension, default config, build type, flavors)
+ * Represents the dsl info for a library variant, initialized from the DSL object model (extension, default config, build type, flavors)
  *
  * This class allows querying for the values set via the DSL model.
  *
@@ -29,18 +28,14 @@ import com.android.build.gradle.internal.core.dsl.features.AndroidResourcesDslIn
  *
  * @see [com.android.build.gradle.internal.component.LibraryCreationConfig]
  */
-interface LibraryVariantDslInfo:
-    VariantDslInfo,
-    AarProducingComponentDslInfo,
-    PublishableComponentDslInfo,
-    TestedVariantDslInfo,
-    MultiVariantComponentDslInfo {
-    val aarMetadata: AarMetadata
+interface LibraryVariantDslInfo :
+  VariantDslInfo, AarProducingComponentDslInfo, PublishableComponentDslInfo, TestedVariantDslInfo, MultiVariantComponentDslInfo {
+  val aarMetadata: AarMetadata
 
-    // TODO: Clean this up
-    val isDebuggable: Boolean
+  // TODO: Clean this up
+  val isDebuggable: Boolean
 
-    override val androidResourcesDsl: AndroidResourcesDslInfo
+  override val androidResourcesDsl: AndroidResourcesDslInfo
 
-    val isAndroidTestMultiDexEnabled: Boolean?
+  val isAndroidTestMultiDexEnabled: Boolean?
 }

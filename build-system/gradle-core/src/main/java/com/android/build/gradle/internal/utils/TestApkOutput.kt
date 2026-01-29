@@ -22,7 +22,6 @@ import com.android.build.api.variant.ApkOutput
 import com.android.build.api.variant.DeviceSpec
 import com.android.build.api.variant.impl.toSharedAndroidVersion
 import com.android.build.gradle.internal.component.TestVariantCreationConfig
-import com.android.build.gradle.internal.publishing.AndroidArtifacts
 import com.android.build.gradle.internal.testing.TestData
 import org.gradle.api.file.Directory
 import org.gradle.api.file.RegularFile
@@ -30,34 +29,38 @@ import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.ClasspathNormalizer
 import org.gradle.api.tasks.TaskInputs
 
-class TestApkOutput(variant: TestVariantCreationConfig, val deviceSpec: DeviceSpec): ApkOutput {
-    private val testingApk: Provider<Directory>
-    private val apkSources: ApkSources
-    private val deviceApkOutput: DeviceApkOutput
+class TestApkOutput(variant: TestVariantCreationConfig, val deviceSpec: DeviceSpec) : ApkOutput {
+  private val testingApk: Provider<Directory>
+  private val apkSources: ApkSources
+  private val deviceApkOutput: DeviceApkOutput
 
-    init {
-        apkSources = getApkSources(variant)
-        deviceApkOutput = DefaultDeviceApkOutput(
-            apkSources, variant.nativeBuildCreationConfig?.supportedAbis, variant.minSdk.toSharedAndroidVersion(),
-            variant.baseName, variant.services.projectInfo.path)
-        testingApk = variant.artifacts.get(SingleArtifact.APK)
-    }
+  init {
+    apkSources = getApkSources(variant)
+    deviceApkOutput =
+      DefaultDeviceApkOutput(
+        apkSources,
+        variant.nativeBuildCreationConfig?.supportedAbis,
+        variant.minSdk.toSharedAndroidVersion(),
+        variant.baseName,
+        variant.services.projectInfo.path,
+      )
+    testingApk = variant.artifacts.get(SingleArtifact.APK)
+  }
 
-    override val apkInstallGroups: List<ApkInstallGroup>
-        get() = deviceApkOutput.getApks(deviceSpec) + fetchTestingApk()
+  override val apkInstallGroups: List<ApkInstallGroup>
+    get() = deviceApkOutput.getApks(deviceSpec) + fetchTestingApk()
 
-    fun setTaskInputs(inputs: TaskInputs) {
-        val apkInputs = DefaultDeviceApkOutput.getApkInputs(apkSources, deviceSpec) + testingApk
-        inputs.files(*apkInputs.toTypedArray()).withNormalizer(ClasspathNormalizer::class.java)
-    }
+  fun setTaskInputs(inputs: TaskInputs) {
+    val apkInputs = DefaultDeviceApkOutput.getApkInputs(apkSources, deviceSpec) + testingApk
+    inputs.files(*apkInputs.toTypedArray()).withNormalizer(ClasspathNormalizer::class.java)
+  }
 
-    private fun fetchTestingApk(): ApkInstallGroup {
-        val testingApks = listOf(RegularFile { TestData.getTestingApk(testingApk.get()) })
-        return DefaultDeviceApkOutput.DefaultApkInstallGroup(testingApks, "Testing Apk")
-    }
+  private fun fetchTestingApk(): ApkInstallGroup {
+    val testingApks = listOf(RegularFile { TestData.getTestingApk(testingApk.get()) })
+    return DefaultDeviceApkOutput.DefaultApkInstallGroup(testingApks, "Testing Apk")
+  }
 
-    private fun getApkSources(variant: TestVariantCreationConfig): ApkSources {
-        return ApkSources(variant.allTestedApks)
-    }
-
+  private fun getApkSources(variant: TestVariantCreationConfig): ApkSources {
+    return ApkSources(variant.allTestedApks)
+  }
 }

@@ -29,73 +29,71 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 
-/**
- * Integration tests for fetching javadoc, source and samples.
- */
+/** Integration tests for fetching javadoc, source and samples. */
 class AdditionalArtifactsModelTest {
 
-    @get:Rule
-    val project = GradleTestProject.builder()
-            .fromTestApp(setUpTestProject())
-            .create()
+  @get:Rule val project = GradleTestProject.builder().fromTestApp(setUpTestProject()).create()
 
-    private fun setUpTestProject(): TestProject {
-        return MultiModuleTestProject.builder()
-                .subproject(APP_MODULE, HelloWorldApp.forPlugin("com.android.application"))
-                .subproject(LIBRARY_MODULE, MinimalSubProject.lib(LIBRARY_PACKAGE))
-                .build()
-    }
+  private fun setUpTestProject(): TestProject {
+    return MultiModuleTestProject.builder()
+      .subproject(APP_MODULE, HelloWorldApp.forPlugin("com.android.application"))
+      .subproject(LIBRARY_MODULE, MinimalSubProject.lib(LIBRARY_PACKAGE))
+      .build()
+  }
 
-    private lateinit var app: GradleTestProject
-    private lateinit var library: GradleTestProject
+  private lateinit var app: GradleTestProject
+  private lateinit var library: GradleTestProject
 
-    @Before
-    fun setUp() {
-        app = project.getSubproject(APP_MODULE)
-        library = project.getSubproject(LIBRARY_MODULE)
+  @Before
+  fun setUp() {
+    app = project.getSubproject(APP_MODULE)
+    library = project.getSubproject(LIBRARY_MODULE)
 
-        TestFileUtils.appendToFile(
-                project.settingsFile,
-                """
-                    dependencyResolutionManagement {
-                        repositories {
-                            maven { url = 'testrepo' }
-                        }
-                    }
-                """.trimIndent()
-        )
+    TestFileUtils.appendToFile(
+      project.settingsFile,
+      """
+      dependencyResolutionManagement {
+          repositories {
+              maven { url = 'testrepo' }
+          }
+      }
+      """
+        .trimIndent(),
+    )
 
-        TestFileUtils.appendToFile(
-                app.buildFile,
-                """
-                dependencies {
-                    implementation 'com.example.android:myLib:1.0'
-                }
-            """.trimIndent()
-        )
+    TestFileUtils.appendToFile(
+      app.buildFile,
+      """
+      dependencies {
+          implementation 'com.example.android:myLib:1.0'
+      }
+      """
+        .trimIndent(),
+    )
 
-        TestFileUtils.appendToFile(
-                library.buildFile,
-                """
-                apply plugin: 'maven-publish'
+    TestFileUtils.appendToFile(
+      library.buildFile,
+      """
+      apply plugin: 'maven-publish'
 
-                afterEvaluate {
-                    publishing {
-                        repositories {
-                            maven { url = '../testrepo' }
-                        }
-                    }
-                }
-            """.trimIndent()
-        )
-    }
+      afterEvaluate {
+          publishing {
+              repositories {
+                  maven { url = '../testrepo' }
+              }
+          }
+      }
+      """
+        .trimIndent(),
+    )
+  }
 
-    @Test
-    fun testModelFetchingArtifactsWithMultipleVariants() {
-        addPublication(DEFAULT)
-        TestFileUtils.appendToFile(
-                library.buildFile,
-                """
+  @Test
+  fun testModelFetchingArtifactsWithMultipleVariants() {
+    addPublication(DEFAULT)
+    TestFileUtils.appendToFile(
+      library.buildFile,
+      """
                 android {
                     flavorDimensions "version"
                     productFlavors {
@@ -111,49 +109,46 @@ class AdditionalArtifactsModelTest {
                         }
                     }
                 }
-            """.trimIndent()
-        )
-        TestFileUtils.appendToFile(
-                app.buildFile,
-                """
-                    android {
-                        flavorDimensions "version"
-                        productFlavors {
-                            demo { }
-                            full { }
-                        }
-                    }
-                """.trimIndent()
-        )
+            """
+        .trimIndent(),
+    )
+    TestFileUtils.appendToFile(
+      app.buildFile,
+      """
+      android {
+          flavorDimensions "version"
+          productFlavors {
+              demo { }
+              full { }
+          }
+      }
+      """
+        .trimIndent(),
+    )
 
-        library.execute("clean", "publish")
-        val result = app.modelV2()
-                .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
-                .fetchModels(variantName = "demoDebug")
+    library.execute("clean", "publish")
+    val result = app.modelV2().ignoreSyncIssues(SyncIssue.SEVERITY_WARNING).fetchModels(variantName = "demoDebug")
 
-        val variantDeps = result.container.getProject(":app").variantDependencies
-                ?: throw RuntimeException("No VariantDependencies model for :app")
+    val variantDeps =
+      result.container.getProject(":app").variantDependencies ?: throw RuntimeException("No VariantDependencies model for :app")
 
-        val lib = variantDeps.libraries.values.singleOrNull {
-            it.libraryInfo?.let { info ->
-                info.name == "myLib" && info.attributes["org.gradle.usage"]== "java-runtime"
-            } ?: false
-        }
-        Truth.assertWithMessage("myLib").that(lib).isNotNull()
-        Truth.assertThat(lib?.srcJars?.toValueString(result.normalizer)).isEqualTo(
-                "[{PROJECT}/testrepo/com/example/android/myLib/1.0/myLib-1.0-demoDebug-sources.jar{F}]"
-        )
-        Truth.assertThat(lib?.docJar?.toValueString(result.normalizer)).isEqualTo(
-                "{PROJECT}/testrepo/com/example/android/myLib/1.0/myLib-1.0-demoDebug-javadoc.jar{F}"
-        )
-    }
+    val lib =
+      variantDeps.libraries.values.singleOrNull {
+        it.libraryInfo?.let { info -> info.name == "myLib" && info.attributes["org.gradle.usage"] == "java-runtime" } ?: false
+      }
+    Truth.assertWithMessage("myLib").that(lib).isNotNull()
+    Truth.assertThat(lib?.srcJars?.toValueString(result.normalizer))
+      .isEqualTo("[{PROJECT}/testrepo/com/example/android/myLib/1.0/myLib-1.0-demoDebug-sources.jar{F}]")
+    Truth.assertThat(lib?.docJar?.toValueString(result.normalizer))
+      .isEqualTo("{PROJECT}/testrepo/com/example/android/myLib/1.0/myLib-1.0-demoDebug-javadoc.jar{F}")
+  }
 
-    @Test
-    fun testModelFetchingArtifactsWithSingleVariant() {
-        addPublication(RELEASE)
-        TestFileUtils.appendToFile(
-                library.buildFile,
-                """
+  @Test
+  fun testModelFetchingArtifactsWithSingleVariant() {
+    addPublication(RELEASE)
+    TestFileUtils.appendToFile(
+      library.buildFile,
+      """
                 android {
                     publishing {
                         singleVariant("$RELEASE") {
@@ -162,34 +157,30 @@ class AdditionalArtifactsModelTest {
                         }
                     }
                 }
-            """.trimIndent()
-        )
-        library.execute("clean", "publish")
-        val result = app.modelV2()
-                .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
-                .fetchModels(variantName = "release")
+            """
+        .trimIndent(),
+    )
+    library.execute("clean", "publish")
+    val result = app.modelV2().ignoreSyncIssues(SyncIssue.SEVERITY_WARNING).fetchModels(variantName = "release")
 
-        val variantDeps = result.container.getProject(":app").variantDependencies
-                ?: throw RuntimeException("No VariantDependencies model for :app")
+    val variantDeps =
+      result.container.getProject(":app").variantDependencies ?: throw RuntimeException("No VariantDependencies model for :app")
 
-        val lib = variantDeps.libraries.values.singleOrNull {
-            it.libraryInfo?.let { info ->
-                info.name == "myLib" && info.attributes["org.gradle.usage"]== "java-runtime"
-            } ?: false
-        }
-        Truth.assertWithMessage("myLib").that(lib).isNotNull()
-        Truth.assertThat(lib?.srcJars?.toValueString(result.normalizer)).isEqualTo(
-                "[{PROJECT}/testrepo/com/example/android/myLib/1.0/myLib-1.0-sources.jar{F}]"
-        )
-        Truth.assertThat(lib?.docJar?.toValueString(result.normalizer)).isEqualTo(
-                "{PROJECT}/testrepo/com/example/android/myLib/1.0/myLib-1.0-javadoc.jar{F}"
-        )
-    }
+    val lib =
+      variantDeps.libraries.values.singleOrNull {
+        it.libraryInfo?.let { info -> info.name == "myLib" && info.attributes["org.gradle.usage"] == "java-runtime" } ?: false
+      }
+    Truth.assertWithMessage("myLib").that(lib).isNotNull()
+    Truth.assertThat(lib?.srcJars?.toValueString(result.normalizer))
+      .isEqualTo("[{PROJECT}/testrepo/com/example/android/myLib/1.0/myLib-1.0-sources.jar{F}]")
+    Truth.assertThat(lib?.docJar?.toValueString(result.normalizer))
+      .isEqualTo("{PROJECT}/testrepo/com/example/android/myLib/1.0/myLib-1.0-javadoc.jar{F}")
+  }
 
-    private fun addPublication(componentName: String) {
-        TestFileUtils.appendToFile(
-                library.buildFile,
-                """
+  private fun addPublication(componentName: String) {
+    TestFileUtils.appendToFile(
+      library.buildFile,
+      """
                 afterEvaluate {
                     publishing {
 
@@ -204,15 +195,16 @@ class AdditionalArtifactsModelTest {
                         }
                     }
                 }
-            """.trimIndent()
-        )
-    }
+            """
+        .trimIndent(),
+    )
+  }
 
-    companion object {
-        private const val APP_MODULE = ":app"
-        private const val LIBRARY_MODULE = ":library"
-        private const val LIBRARY_PACKAGE = "com.example.lib"
-        private const val DEFAULT: String = "default"
-        private const val RELEASE: String = "release"
-    }
+  companion object {
+    private const val APP_MODULE = ":app"
+    private const val LIBRARY_MODULE = ":library"
+    private const val LIBRARY_PACKAGE = "com.example.lib"
+    private const val DEFAULT: String = "default"
+    private const val RELEASE: String = "release"
+  }
 }

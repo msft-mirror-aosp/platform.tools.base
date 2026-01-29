@@ -21,52 +21,42 @@ import com.android.build.gradle.integration.common.fixture.app.MinimalSubProject
 import com.android.build.gradle.integration.common.fixture.project.AarSelector
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.testutils.TestUtils
-import com.android.testutils.truth.ZipFileSubject
+import java.io.IOException
 import org.apache.commons.io.FileUtils
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
-import java.io.IOException
-import java.util.function.Consumer
 
 /** Tests for ML Model Binding feature in an Android library. */
 class MlModelBindingInLibTest {
-    @JvmField
-    @Rule
-    val project: GradleTestProject = builder()
-        .fromTestApp(lib("com.example.lib"))
-        .create()
+  @JvmField @Rule val project: GradleTestProject = builder().fromTestApp(lib("com.example.lib")).create()
 
-    @Before
-    @Throws(IOException::class)
-    fun setUp() {
-        val buildFile = project.buildFile
-        TestFileUtils.appendToFile(buildFile, "android.buildFeatures.mlModelBinding = true")
-        TestFileUtils.appendToFile(
-            buildFile,
-            """
+  @Before
+  @Throws(IOException::class)
+  fun setUp() {
+    val buildFile = project.buildFile
+    TestFileUtils.appendToFile(buildFile, "android.buildFeatures.mlModelBinding = true")
+    TestFileUtils.appendToFile(
+      buildFile,
+      """
                 dependencies {
                     implementation 'androidx.appcompat:appcompat:1.1.0'
                     implementation 'org.tensorflow:tensorflow-lite-support:0.2.0'
                     implementation 'org.tensorflow:tensorflow-lite-metadata:0.2.0'
                 }
-            """
-        )
-        TestFileUtils.appendToFile(project.gradlePropertiesFile, "android.useAndroidX=true")
-    }
+            """,
+    )
+    TestFileUtils.appendToFile(project.gradlePropertiesFile, "android.useAndroidX=true")
+  }
 
-    @Test
-    fun testModelClassGenerated() {
-        FileUtils.copyFile(
-            TestUtils.resolveWorkspacePath(
-                "prebuilts/tools/common/mlkit/testData/models/mobilenet_quant_metadata.tflite"
-            ).toFile(),
-            project.file("src/main/ml/model.tflite")
-        )
+  @Test
+  fun testModelClassGenerated() {
+    FileUtils.copyFile(
+      TestUtils.resolveWorkspacePath("prebuilts/tools/common/mlkit/testData/models/mobilenet_quant_metadata.tflite").toFile(),
+      project.file("src/main/ml/model.tflite"),
+    )
 
-        project.executor().run(":assembleDebug")
-        project.assertAar(AarSelector.DEBUG) {
-            mainJar().classes().containsExactly("com/example/lib/ml/Model\$")
-        }
-    }
+    project.executor().run(":assembleDebug")
+    project.assertAar(AarSelector.DEBUG) { mainJar().classes().containsExactly("com/example/lib/ml/Model\$") }
+  }
 }

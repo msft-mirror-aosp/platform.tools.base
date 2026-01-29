@@ -18,6 +18,6 @@ package com.android.build.gradle.api
 
 interface ViewBindingOptions {
 
-    /** Whether to enable view binding.  */
-    var isEnabled: Boolean
+  /** Whether to enable view binding. */
+  var isEnabled: Boolean
 }

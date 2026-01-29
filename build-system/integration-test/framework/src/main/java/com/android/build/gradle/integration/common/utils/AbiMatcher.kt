@@ -23,18 +23,18 @@ import org.hamcrest.Matcher
 
 class AbiMatcher {
 
-    companion object {
-        @JvmStatic
-        fun anyAbi(): Matcher<List<Abi>> {
-            return object : BaseMatcher<List<Abi>>() {
-                override fun matches(item: Any): Boolean {
-                    return true
-                }
-
-                override fun describeTo(description: Description) {
-                    description.appendText("All ABIs")
-                }
-            }
+  companion object {
+    @JvmStatic
+    fun anyAbi(): Matcher<List<Abi>> {
+      return object : BaseMatcher<List<Abi>>() {
+        override fun matches(item: Any): Boolean {
+          return true
         }
+
+        override fun describeTo(description: Description) {
+          description.appendText("All ABIs")
+        }
+      }
     }
+  }
 }

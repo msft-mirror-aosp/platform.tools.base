@@ -23,30 +23,26 @@ import com.android.buildanalyzer.common.TaskCategoryIssue
 import org.gradle.api.services.BuildServiceParameters
 import org.gradle.api.services.BuildServiceRegistry
 
-class BuildAnalyzerIssueReporter(
-    projectOptions: ProjectOptions,
-    buildServiceRegistry: BuildServiceRegistry
-) {
+class BuildAnalyzerIssueReporter(projectOptions: ProjectOptions, buildServiceRegistry: BuildServiceRegistry) {
 
-    private val buildAnalyzerConfiguratorService =
-        getBuildService<BuildAnalyzerConfiguratorService, BuildServiceParameters.None>(
-            buildServiceRegistry
-        ).get()
+  private val buildAnalyzerConfiguratorService =
+    getBuildService<BuildAnalyzerConfiguratorService, BuildServiceParameters.None>(buildServiceRegistry).get()
 
-    companion object {
-        private val booleanOptionBasedIssues = mapOf(
-            TaskCategoryIssue.NON_TRANSITIVE_R_CLASS_DISABLED to BooleanOption.NON_TRANSITIVE_R_CLASS,
-            TaskCategoryIssue.NON_FINAL_RES_IDS_DISABLED to BooleanOption.USE_NON_FINAL_RES_IDS,
-        )
-    }
+  companion object {
+    private val booleanOptionBasedIssues =
+      mapOf(
+        TaskCategoryIssue.NON_TRANSITIVE_R_CLASS_DISABLED to BooleanOption.NON_TRANSITIVE_R_CLASS,
+        TaskCategoryIssue.NON_FINAL_RES_IDS_DISABLED to BooleanOption.USE_NON_FINAL_RES_IDS,
+      )
+  }
 
-    init {
-        booleanOptionBasedIssues.mapNotNull { (issue, booleanOption) ->
-            issue.takeIf { !projectOptions.get(booleanOption) }
-        }.forEach(::reportIssue)
-    }
+  init {
+    booleanOptionBasedIssues
+      .mapNotNull { (issue, booleanOption) -> issue.takeIf { !projectOptions.get(booleanOption) } }
+      .forEach(::reportIssue)
+  }
 
-    fun reportIssue(issue: TaskCategoryIssue) {
-        buildAnalyzerConfiguratorService.reportBuildAnalyzerIssue(issue)
-    }
+  fun reportIssue(issue: TaskCategoryIssue) {
+    buildAnalyzerConfiguratorService.reportBuildAnalyzerIssue(issue)
+  }
 }

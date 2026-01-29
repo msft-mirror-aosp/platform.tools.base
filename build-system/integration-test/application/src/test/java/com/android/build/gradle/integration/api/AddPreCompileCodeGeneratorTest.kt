@@ -28,6 +28,7 @@ import com.android.build.gradle.integration.common.fixture.project.plugins.Libra
 import com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
 import com.android.build.gradle.integration.common.utils.getVariantByName
 import com.google.common.truth.Truth
+import java.io.File
 import org.gradle.api.DefaultTask
 import org.gradle.api.Project
 import org.gradle.api.file.DirectoryProperty
@@ -39,226 +40,191 @@ import org.junit.Rule
 import org.junit.Test
 import org.objectweb.asm.ClassWriter
 import org.objectweb.asm.Opcodes
-import java.io.File
 
 class AddPreCompileCodeGeneratorTest {
 
-    companion object {
-        fun generateKotlinFunction(packageName: String) =
-            """
+  companion object {
+    fun generateKotlinFunction(packageName: String) =
+      """
                 package com.foo.bar.app
                 class MyClass {
                     fun someFunctionUsingGeneratedAPIs() {
                         ${packageName}.GeneratorUtils.someFunction()
                     }
                 }
-            """.trimIndent()
-
-        fun generateJavaFunction(packageName: String) =
             """
+        .trimIndent()
+
+    fun generateJavaFunction(packageName: String) =
+      """
                 package com.foo.bar;
                 public class MyClass {
                     void someFunctionUsingGeneratedAPIs() {
                         ${packageName}.GeneratorUtils.someFunction();
                     }
                 }
-            """.trimIndent()
+            """
+        .trimIndent()
+  }
+
+  @get:Rule
+  val project =
+    GradleRule.from {
+      androidApplication {
+        files {
+          add("src/main/kotlin/com/foo/bar/app/MyClass.kt", generateKotlinFunction("com.foo.utils.app"))
+          add("src/main/java/com/foo/bar/app/MyClass.java", generateJavaFunction("com.foo.utils.app"))
+        }
+        pluginCallbacks += MyAppCallback::class.java
+      }
+      androidLibrary {
+        files { add("src/main/kotlin/com/foo/bar/MyClass.kt", generateKotlinFunction("com.foo.utils")) }
+        pluginCallbacks += MyLibraryCallback::class.java
+      }
+      androidLibrary(path = ":javaLib") {
+        files { add("src/main/java/com/foo/bar/MyClass.java", generateJavaFunction("com.foo.utils")) }
+        pluginCallbacks += MyLibraryCallback::class.java
+      }
     }
 
-    @get:Rule
-    val project = GradleRule.from {
-        androidApplication {
-            files {
-                add("src/main/kotlin/com/foo/bar/app/MyClass.kt",
-                    generateKotlinFunction("com.foo.utils.app")
-                    )
-                add("src/main/java/com/foo/bar/app/MyClass.java",
-                    generateJavaFunction("com.foo.utils.app"))
-            }
-            pluginCallbacks += MyAppCallback::class.java
-        }
-        androidLibrary {
-            files {
-                add("src/main/kotlin/com/foo/bar/MyClass.kt",
-                    generateKotlinFunction("com.foo.utils"))
-            }
-            pluginCallbacks += MyLibraryCallback::class.java
-        }
-        androidLibrary(path=":javaLib") {
-            files {
-                add("src/main/java/com/foo/bar/MyClass.java",
-                    generateJavaFunction("com.foo.utils")
-                )
-            }
-            pluginCallbacks += MyLibraryCallback::class.java
-        }
-    }
+  open class AbstractCallBack {
 
-    open class AbstractCallBack {
-
-        fun abstractRegistration(
-            project: Project,
-            androidComponents: AndroidComponentsExtension<*,*,*>,
-            packageName: String
-        ) {
-            androidComponents.onVariants { variant ->
-                val taskProvider = project.tasks.register<AddPreCompileGeneratedCodeTask>(
-                    "generate${variant.name}Bytecodes",
-                    AddPreCompileGeneratedCodeTask::class.java
-                ) {
-                    it.packageName.set(packageName)
-                }
-                variant.artifacts
-                    .use<AddPreCompileGeneratedCodeTask>(taskProvider)
-                    .wiredWith(AddPreCompileGeneratedCodeTask::outputDir)
-                    .toAppendTo(MultipleArtifact.PRE_COMPILATION_CLASSES)
-            }
-        }
+    fun abstractRegistration(project: Project, androidComponents: AndroidComponentsExtension<*, *, *>, packageName: String) {
+      androidComponents.onVariants { variant ->
+        val taskProvider =
+          project.tasks.register<AddPreCompileGeneratedCodeTask>(
+            "generate${variant.name}Bytecodes",
+            AddPreCompileGeneratedCodeTask::class.java,
+          ) {
+            it.packageName.set(packageName)
+          }
+        variant.artifacts
+          .use<AddPreCompileGeneratedCodeTask>(taskProvider)
+          .wiredWith(AddPreCompileGeneratedCodeTask::outputDir)
+          .toAppendTo(MultipleArtifact.PRE_COMPILATION_CLASSES)
+      }
     }
+  }
 
-    class MyAppCallback: AbstractCallBack(), ApplicationComponentCallback {
-        override fun handleExtension(
-            project: Project,
-            androidComponents: ApplicationAndroidComponentsExtension
-        ) {
-            abstractRegistration(project, androidComponents, "com/foo/utils/app/")
-        }
+  class MyAppCallback : AbstractCallBack(), ApplicationComponentCallback {
+    override fun handleExtension(project: Project, androidComponents: ApplicationAndroidComponentsExtension) {
+      abstractRegistration(project, androidComponents, "com/foo/utils/app/")
     }
+  }
 
-    class MyLibraryCallback: AbstractCallBack(), LibraryComponentCallback {
-        override fun handleExtension(
-            project: Project,
-            androidComponents: LibraryAndroidComponentsExtension
-        ) {
-            abstractRegistration(project, androidComponents, "com/foo/utils/")
-        }
+  class MyLibraryCallback : AbstractCallBack(), LibraryComponentCallback {
+    override fun handleExtension(project: Project, androidComponents: LibraryAndroidComponentsExtension) {
+      abstractRegistration(project, androidComponents, "com/foo/utils/")
     }
+  }
 
-    @Test
-    fun ensureSuccessfulCompilation() {
-        val gradleBuild = project.build
-        val result = gradleBuild.executor.run("assembleDebug")
-        Truth.assertThat(result.failedTasks).isEmpty()
-        gradleBuild.androidLibrary(":lib").assertAar(AarSelector.DEBUG) {
-            classes().contains("com/foo/utils/GeneratorUtils")
-        }
-        gradleBuild.androidLibrary(":javaLib").assertAar(AarSelector.DEBUG) {
-            classes().contains("com/foo/utils/GeneratorUtils")
-        }
-        gradleBuild.androidApplication(":app").assertApk(ApkSelector.DEBUG) {
-            classes().contains("com/foo/utils/app/GeneratorUtils")
-        }
-    }
+  @Test
+  fun ensureSuccessfulCompilation() {
+    val gradleBuild = project.build
+    val result = gradleBuild.executor.run("assembleDebug")
+    Truth.assertThat(result.failedTasks).isEmpty()
+    gradleBuild.androidLibrary(":lib").assertAar(AarSelector.DEBUG) { classes().contains("com/foo/utils/GeneratorUtils") }
+    gradleBuild.androidLibrary(":javaLib").assertAar(AarSelector.DEBUG) { classes().contains("com/foo/utils/GeneratorUtils") }
+    gradleBuild.androidApplication(":app").assertApk(ApkSelector.DEBUG) { classes().contains("com/foo/utils/app/GeneratorUtils") }
+  }
 
-    @Test
-    fun ensureAddedDirsAreInIdeModels() {
-        val gradleBuild = project.build
-        val intermediatesDir = gradleBuild.androidApplication().intermediatesDir.toFile()
-        val androidProject =
-            gradleBuild.modelBuilder.fetchModels().container.getProject(":app").androidProject!!
-        val debugArtifact = androidProject.getVariantByName("debug").mainArtifact
-        assertThat(debugArtifact.generatedClassPaths.values)
-            .containsExactly(
-                intermediatesDir.resolve("pre_compilation_classes/debug/generatedebugBytecodes")
-            )
-        val releaseArtifact = androidProject.getVariantByName("release").mainArtifact
-        assertThat(releaseArtifact.generatedClassPaths.values)
-            .containsExactly(
-                intermediatesDir.resolve("pre_compilation_classes/release/generatereleaseBytecodes")
-            )
-    }
+  @Test
+  fun ensureAddedDirsAreInIdeModels() {
+    val gradleBuild = project.build
+    val intermediatesDir = gradleBuild.androidApplication().intermediatesDir.toFile()
+    val androidProject = gradleBuild.modelBuilder.fetchModels().container.getProject(":app").androidProject!!
+    val debugArtifact = androidProject.getVariantByName("debug").mainArtifact
+    assertThat(debugArtifact.generatedClassPaths.values)
+      .containsExactly(intermediatesDir.resolve("pre_compilation_classes/debug/generatedebugBytecodes"))
+    val releaseArtifact = androidProject.getVariantByName("release").mainArtifact
+    assertThat(releaseArtifact.generatedClassPaths.values)
+      .containsExactly(intermediatesDir.resolve("pre_compilation_classes/release/generatereleaseBytecodes"))
+  }
 }
 
-/** Task to  generate a .class file that will be used during main module compilation */
-abstract class AddPreCompileGeneratedCodeTask: DefaultTask() {
+/** Task to generate a .class file that will be used during main module compilation */
+abstract class AddPreCompileGeneratedCodeTask : DefaultTask() {
 
-    @get:Input
-    abstract val packageName: Property<String>
+  @get:Input abstract val packageName: Property<String>
 
-    @get:OutputDirectory
-    abstract val outputDir: DirectoryProperty
+  @get:OutputDirectory abstract val outputDir: DirectoryProperty
 
-    @TaskAction
-    fun generate() {
-        val packageDir = File(outputDir.get().asFile, packageName.get())
-        packageDir.mkdirs()
-        File(packageDir, "GeneratorUtils.class").writeBytes(
-            generateGeneratorUtilsWithMethod(packageName.get())
-        )
-        println("Class File written at ${packageDir.absolutePath}")
-    }
-        /**
-         * Generates the bytecode for the GeneratorUtils class using ASM.
-         *
-         * The equivalent Java source is:
-         * ```java
-         * package com.foo.utils;
-         *
-         * public class GeneratorUtils {
-         *     // Default public constructor, added automatically by javac
-         *     public GeneratorUtils() {}
-         *
-         *     // The requested static method
-         *     public static void someFunction() {
-         *     }
-         * }
-         * ```
-         *
-         * @return A ByteArray containing the bytes of the generated .class file.
-         */
-        fun generateGeneratorUtilsWithMethod(packageName:String): ByteArray {
-            // 1. Create a ClassWriter.
-            // COMPUTE_FRAMES tells ASM to automatically compute stack map frames.
-            val classWriter = ClassWriter(ClassWriter.COMPUTE_FRAMES)
+  @TaskAction
+  fun generate() {
+    val packageDir = File(outputDir.get().asFile, packageName.get())
+    packageDir.mkdirs()
+    File(packageDir, "GeneratorUtils.class").writeBytes(generateGeneratorUtilsWithMethod(packageName.get()))
+    println("Class File written at ${packageDir.absolutePath}")
+  }
 
-            // 2. Define the class header for com.foo.utils.GeneratorUtils
-            classWriter.visit(
-                Opcodes.V1_8, // Java 8 bytecode version
-                Opcodes.ACC_PUBLIC + Opcodes.ACC_SUPER, // public class
-                "${packageName}GeneratorUtils", // Internal name (slashes instead of dots)
-                null, // No generic signature
-                "java/lang/Object", // Superclass
-                null  // No interfaces
-            )
+  /**
+   * Generates the bytecode for the GeneratorUtils class using ASM.
+   *
+   * The equivalent Java source is:
+   * ```java
+   * package com.foo.utils;
+   *
+   * public class GeneratorUtils {
+   *     // Default public constructor, added automatically by javac
+   *     public GeneratorUtils() {}
+   *
+   *     // The requested static method
+   *     public static void someFunction() {
+   *     }
+   * }
+   * ```
+   *
+   * @return A ByteArray containing the bytes of the generated .class file.
+   */
+  fun generateGeneratorUtilsWithMethod(packageName: String): ByteArray {
+    // 1. Create a ClassWriter.
+    // COMPUTE_FRAMES tells ASM to automatically compute stack map frames.
+    val classWriter = ClassWriter(ClassWriter.COMPUTE_FRAMES)
 
-            // 3. Create the default public constructor <init>()
-            val constructorVisitor = classWriter.visitMethod(
-                Opcodes.ACC_PUBLIC, // public
-                "<init>",           // Constructor name
-                "()V",              // Descriptor: no arguments, returns void
-                null,
-                null
-            )
-            constructorVisitor.visitCode()
-            constructorVisitor.visitVarInsn(Opcodes.ALOAD, 0) // load `this`
-            constructorVisitor.visitMethodInsn(
-                Opcodes.INVOKESPECIAL,
-                "java/lang/Object",
-                "<init>",
-                "()V",
-                false
-            )
-            constructorVisitor.visitInsn(Opcodes.RETURN)
-            constructorVisitor.visitMaxs(0, 0) // Let ASM compute max stack and locals
-            constructorVisitor.visitEnd()
+    // 2. Define the class header for com.foo.utils.GeneratorUtils
+    classWriter.visit(
+      Opcodes.V1_8, // Java 8 bytecode version
+      Opcodes.ACC_PUBLIC + Opcodes.ACC_SUPER, // public class
+      "${packageName}GeneratorUtils", // Internal name (slashes instead of dots)
+      null, // No generic signature
+      "java/lang/Object", // Superclass
+      null, // No interfaces
+    )
 
-            // 4. Create the public static method someFunction()
-            val methodVisitor = classWriter.visitMethod(
-                Opcodes.ACC_PUBLIC + Opcodes.ACC_STATIC, // public static
-                "someFunction",
-                "()V", // Descriptor: no arguments, returns void
-                null,
-                null
-            )
-            methodVisitor.visitCode()
-            // The method body is empty, so we just need to return.
-            methodVisitor.visitInsn(Opcodes.RETURN)
-            methodVisitor.visitMaxs(0, 0) // Let ASM compute max stack and locals
-            methodVisitor.visitEnd()
+    // 3. Create the default public constructor <init>()
+    val constructorVisitor =
+      classWriter.visitMethod(
+        Opcodes.ACC_PUBLIC, // public
+        "<init>", // Constructor name
+        "()V", // Descriptor: no arguments, returns void
+        null,
+        null,
+      )
+    constructorVisitor.visitCode()
+    constructorVisitor.visitVarInsn(Opcodes.ALOAD, 0) // load `this`
+    constructorVisitor.visitMethodInsn(Opcodes.INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false)
+    constructorVisitor.visitInsn(Opcodes.RETURN)
+    constructorVisitor.visitMaxs(0, 0) // Let ASM compute max stack and locals
+    constructorVisitor.visitEnd()
 
-            // 5. Finalize the class
-            classWriter.visitEnd()
+    // 4. Create the public static method someFunction()
+    val methodVisitor =
+      classWriter.visitMethod(
+        Opcodes.ACC_PUBLIC + Opcodes.ACC_STATIC, // public static
+        "someFunction",
+        "()V", // Descriptor: no arguments, returns void
+        null,
+        null,
+      )
+    methodVisitor.visitCode()
+    // The method body is empty, so we just need to return.
+    methodVisitor.visitInsn(Opcodes.RETURN)
+    methodVisitor.visitMaxs(0, 0) // Let ASM compute max stack and locals
+    methodVisitor.visitEnd()
 
-            return classWriter.toByteArray()
-        }
+    // 5. Finalize the class
+    classWriter.visitEnd()
+
+    return classWriter.toByteArray()
+  }
 }

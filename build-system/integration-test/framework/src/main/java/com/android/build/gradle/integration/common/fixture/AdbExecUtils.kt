@@ -21,38 +21,36 @@ import com.google.common.truth.Truth
 import java.nio.charset.Charset
 import java.util.concurrent.TimeUnit
 
-fun uninstallPackage(packageName: String, ignoreErrors : Boolean = false) =
-    execAdb("shell", "pm", "uninstall", packageName, ignoreErrors = ignoreErrors)
+fun uninstallPackage(packageName: String, ignoreErrors: Boolean = false) =
+  execAdb("shell", "pm", "uninstall", packageName, ignoreErrors = ignoreErrors)
 
-fun executeShellCommand(vararg cmd: String, ignoreErrors: Boolean = false)
-    = execAdb("shell", *cmd, ignoreErrors = ignoreErrors)
+fun executeShellCommand(vararg cmd: String, ignoreErrors: Boolean = false) = execAdb("shell", *cmd, ignoreErrors = ignoreErrors)
 
-fun setDeviceConfig(nameSpace: String, key:String, value:String, ignoreErrors: Boolean = false)
-    = executeShellCommand("device_config", "put", nameSpace, key, value, ignoreErrors = ignoreErrors)
+fun setDeviceConfig(nameSpace: String, key: String, value: String, ignoreErrors: Boolean = false) =
+  executeShellCommand("device_config", "put", nameSpace, key, value, ignoreErrors = ignoreErrors)
 
-fun deviceSupportsPrivacySandbox()
-    = executeShellCommand("service", "list").contains("sdk_sandbox")
+fun deviceSupportsPrivacySandbox() = executeShellCommand("service", "list").contains("sdk_sandbox")
 
 fun enablePrivacySandboxOnTestDevice() {
-    setDeviceConfig("adservices", "adservice_system_service_enabled", "false")
-    setDeviceConfig("adservices", "global_kill_switch", "false")
-    setDeviceConfig("adservices", "disable_sdk_sandbox", "false")
-    setDeviceConfig("adservices", "sdksandbox_customized_sdk_context_enabled", "true")
+  setDeviceConfig("adservices", "adservice_system_service_enabled", "false")
+  setDeviceConfig("adservices", "global_kill_switch", "false")
+  setDeviceConfig("adservices", "disable_sdk_sandbox", "false")
+  setDeviceConfig("adservices", "sdksandbox_customized_sdk_context_enabled", "true")
 }
 
-private fun execAdb(vararg  cmd: String, ignoreErrors: Boolean = false) =
-    exec(SdkHelper.getAdb().absolutePath, *cmd, ignoreErrors = ignoreErrors)
+private fun execAdb(vararg cmd: String, ignoreErrors: Boolean = false) =
+  exec(SdkHelper.getAdb().absolutePath, *cmd, ignoreErrors = ignoreErrors)
 
-private fun exec(vararg cmd: String, ignoreErrors : Boolean = false) : String {
-    val execTimeoutSeconds = 10L
-    val process = ProcessBuilder().command(*cmd).start()
-    val didFinish = process.waitFor(execTimeoutSeconds, TimeUnit.SECONDS)
-    val exitCode = process.exitValue()
+private fun exec(vararg cmd: String, ignoreErrors: Boolean = false): String {
+  val execTimeoutSeconds = 10L
+  val process = ProcessBuilder().command(*cmd).start()
+  val didFinish = process.waitFor(execTimeoutSeconds, TimeUnit.SECONDS)
+  val exitCode = process.exitValue()
 
-    if (!ignoreErrors) {
-        Truth.assertWithMessage("Execution timed out.").that(didFinish).isEqualTo(true)
-        val error = process.errorStream.bufferedReader(Charset.defaultCharset()).readText()
-        Truth.assertWithMessage("Execution failed with error: $error").that(exitCode).isEqualTo(0)
-    }
-    return process.inputStream.bufferedReader(Charset.defaultCharset()).readText()
+  if (!ignoreErrors) {
+    Truth.assertWithMessage("Execution timed out.").that(didFinish).isEqualTo(true)
+    val error = process.errorStream.bufferedReader(Charset.defaultCharset()).readText()
+    Truth.assertWithMessage("Execution failed with error: $error").that(exitCode).isEqualTo(0)
+  }
+  return process.inputStream.bufferedReader(Charset.defaultCharset()).readText()
 }

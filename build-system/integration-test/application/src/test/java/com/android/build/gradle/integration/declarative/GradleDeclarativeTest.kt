@@ -25,33 +25,30 @@ import org.junit.Rule
 import org.junit.Test
 
 class GradleDeclarativeTest {
-    @get:Rule
-    val project = GradleTestProjectBuilder()
-        .fromTestProject("gradleDeclarative")
-        .create()
+  @get:Rule val project = GradleTestProjectBuilder().fromTestProject("gradleDeclarative").create()
 
-    @Before
-    fun setAgpVersion() {
-        TestFileUtils.searchAndReplace(project.settingsFile, "dcl_plugin_version", com.android.Version.ANDROID_GRADLE_PLUGIN_VERSION)
-    }
+  @Before
+  fun setAgpVersion() {
+    TestFileUtils.searchAndReplace(project.settingsFile, "dcl_plugin_version", com.android.Version.ANDROID_GRADLE_PLUGIN_VERSION)
+  }
 
-    @Test
-    fun testLibraryAssembles() {
-        project.executor().withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON).run("clean", ":lib:assemble")
-        val debugAar = project.getSubproject("lib").getOutputFile("aar", "lib-debug.aar")
-        val releaseAar = project.getSubproject("lib").getOutputFile("aar", "lib-release.aar")
-        val benchmarkAar = project.getSubproject("lib").getOutputFile("aar", "lib-benchmark.aar")
+  @Test
+  fun testLibraryAssembles() {
+    project.executor().withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON).run("clean", ":lib:assemble")
+    val debugAar = project.getSubproject("lib").getOutputFile("aar", "lib-debug.aar")
+    val releaseAar = project.getSubproject("lib").getOutputFile("aar", "lib-release.aar")
+    val benchmarkAar = project.getSubproject("lib").getOutputFile("aar", "lib-benchmark.aar")
 
-        assertThat(debugAar.exists()).isTrue()
-        assertThat(releaseAar.exists()).isTrue()
-        assertThat(benchmarkAar.exists()).isTrue()
-    }
+    assertThat(debugAar.exists()).isTrue()
+    assertThat(releaseAar.exists()).isTrue()
+    assertThat(benchmarkAar.exists()).isTrue()
+  }
 
-    @Test
-    fun testAppAssembles() {
-        project.executor().withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON).run("clean", ":app:assemble")
-        val debugApk = project.getSubproject("app").getOutputFile("apk", "debug", "app-debug.apk")
+  @Test
+  fun testAppAssembles() {
+    project.executor().withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON).run("clean", ":app:assemble")
+    val debugApk = project.getSubproject("app").getOutputFile("apk", "debug", "app-debug.apk")
 
-        assertThat(debugApk.exists()).isTrue()
-    }
+    assertThat(debugApk.exists()).isTrue()
+  }
 }

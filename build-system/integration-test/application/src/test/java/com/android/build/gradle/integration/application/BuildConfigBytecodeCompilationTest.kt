@@ -23,18 +23,15 @@ import org.junit.Test
 // Regression test for b/363031540
 class BuildConfigBytecodeCompilationTest {
 
-    @get:Rule
-    val project = GradleTestProject.builder()
-        .fromTestProject("buildConfigBytecode")
-        .create()
+  @get:Rule val project = GradleTestProject.builder().fromTestProject("buildConfigBytecode").create()
 
-    @Test
-    fun testBuildConfigCompilation() {
-        project.execute(
-            ":app:compileDebugUnitTestJavaWithJavac",
-            ":app:compileDebugUnitTestKotlin",
-            ":app:compileDebugAndroidTestJavaWithJavac",
-            ":app:compileDebugAndroidTestKotlin"
-        )
-    }
+  @Test
+  fun testBuildConfigCompilation() {
+    project.execute(
+      ":app:compileDebugUnitTestJavaWithJavac",
+      ":app:compileDebugUnitTestKotlin",
+      ":app:compileDebugAndroidTestJavaWithJavac",
+      ":app:compileDebugAndroidTestKotlin",
+    )
+  }
 }

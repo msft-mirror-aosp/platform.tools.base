@@ -28,233 +28,224 @@ import org.junit.Rule
 import org.junit.Test
 
 /**
- * Tests the behaviour of disabling resource processing in a library module by using BuildFeatures,
- * i.e. "android.buildFeatures.androidResources = false".
+ * Tests the behaviour of disabling resource processing in a library module by using BuildFeatures, i.e.
+ * "android.buildFeatures.androidResources = false".
  *
- * This feature can be used by developers to mark a library module which does not contain resources
- * and therefore we can skip configuring all of the resource processing tasks in that module.
- * Instead we will use the GenerateEmptyResourcesFilesTask to create empty required artifacts.
+ * This feature can be used by developers to mark a library module which does not contain resources and therefore we can skip configuring
+ * all of the resource processing tasks in that module. Instead we will use the GenerateEmptyResourcesFilesTask to create empty required
+ * artifacts.
  */
 class DisableLibraryResourcesTest {
-    private val leafLib = MinimalSubProject.lib("com.example.leafLib")
-        .withFile(
-            "src/main/res/values/values.xml",
-            """
-                <resources>
-                    <string name="leaf_lib_string">hello</string>
-                </resources>""".trimIndent()
-        )
-        .withFile("src/main/res/raw/raw_file", "leafLib")
-        .withFile("src/test/java/com/example/MyTest.java",
-            //language=java
-            """
-                package com.example;
+  private val leafLib =
+    MinimalSubProject.lib("com.example.leafLib")
+      .withFile(
+        "src/main/res/values/values.xml",
+        """
+        <resources>
+            <string name="leaf_lib_string">hello</string>
+        </resources>
+        """
+          .trimIndent(),
+      )
+      .withFile("src/main/res/raw/raw_file", "leafLib")
+      .withFile(
+        "src/test/java/com/example/MyTest.java",
+        // language=java
+        """
+        package com.example;
 
-                import org.junit.Test;
+        import org.junit.Test;
 
-                public class MyTest {
-                    @Test
-                    public void check() {
-                        System.out.println("ExampleTest has some output");
-                    }
-                }
-                """.trimIndent())
-        .appendToBuild("""
-
-            dependencies {
-                testImplementation("junit:junit:4.12")
+        public class MyTest {
+            @Test
+            public void check() {
+                System.out.println("ExampleTest has some output");
             }
-
-        """.trimIndent())
-
-    private val localLib = MinimalSubProject.lib("com.example.localLib")
-        .withFile(
-            "src/main/res/values/values.xml",
-            """
-                <resources>
-                    <string name="local_lib_string">hello</string>
-                </resources>""".trimIndent()
-        )
-        .withFile("src/main/res/raw/raw_file", "localLib")
-        .appendToBuild("dependencies { api project(':leafLib') }")
-
-    private val app = MinimalSubProject.app("com.example.app")
-        .withFile(
-            "src/main/res/values/values.xml",
-            """
-                <resources>
-                    <string name="app_string">hello</string>
-                </resources>""".trimIndent()
-        )
-        .appendToBuild("dependencies { implementation project(':localLib') }")
-        .withFile("src/main/java/com/example/app/MyClass.java",
-            """
-                package com.example.app;
-
-                public class MyClass {
-                    void test() {
-                        int leafLibString = com.example.leafLib.R.string.leaf_lib_string;
-                        int rawFile = com.example.localLib.R.raw.raw_file;
-                        int localLibString = com.example.localLib.R.string.local_lib_string;
-                    }
-                }
-            """.trimIndent())
-
-    private val testApp =
-        MultiModuleTestProject.builder()
-            .subproject(":leafLib", leafLib)
-            .subproject(":localLib", localLib)
-            .subproject(":app", app)
-            .build()
-
-    @get:Rule
-    val project = GradleTestProject.builder().fromTestApp(testApp).create()
-
-    @Test
-    fun testEnabledResourcesBuild() {
-        // Tests a normal build with the resources pipeline enabled. Note the references to library
-        // resources in the app's java class.
-        val result = project.executor().run(":app:assembleDebug")
-        assertThat(result.didWorkTasks).contains(":localLib:parseDebugLocalResources")
-
-        // Sanity check that the overlay worked - local lib overrides the resource from leaf lib.
-        TruthHelper.assertThatApk(project.getSubproject("app")
-            .getApk(GradleTestProject.ApkType.DEBUG))
-            .containsFileWithContent(
-                "res/raw/raw_file",
-                "localLib"
-            )
-    }
-
-    @Test
-    fun testDisabledResourcesBuildFailsRemovedReferences() {
-        // Tests the expected behaviour of code breaking if the flag is triggered (turned off, it is
-        // turned on by default). Since the app was referencing the resources, java compilation
-        // should fail.
-        project.getSubproject("localLib").buildFile
-            .appendText("android.buildFeatures.androidResources = false")
-        val result = project.executor().expectFailure().run(":app:assembleDebug")
-        result.stderr.use {
-            ScannerSubject.assertThat(it).contains("package com.example.localLib.R does not exist")
-
-            ScannerSubject.assertThat(it).contains("com.example.localLib.R.raw.raw_file")
-            ScannerSubject.assertThat(it).contains("com.example.localLib.R.string.local_lib_string")
         }
-    }
+        """
+          .trimIndent(),
+      )
+      .appendToBuild(
+        """
 
-    @Test
-    fun testDisablingTasks() {
-        // Tests a full build with the resource processing disabled in the middle library (the leaf
-        // lib still has resource processing enabled). The app's code is modified to remove the
-        // references to resources from the middle lib.
-        project.getSubproject("localLib").buildFile
-            .appendText("android.buildFeatures.androidResources = false")
-        val appClass =
-            project.getSubproject("app").file("src/main/java/com/example/app/MyClass.java")
-        // Remove the reference in the app's class.
-        TestFileUtils.searchAndReplace(appClass, "int rawFile ","//int rawFile ")
-        TestFileUtils.searchAndReplace(appClass, "int localLibString ","//int localLibString ")
-
-        val result = project.executor().run(":app:assembleDebug")
-        // Make sure that in the local lib we called the task to generate the empty resources, and
-        // not the standard res processing tasks. For leaf lib, resource processing should be still
-        // enabled.
-        assertThat(result.didWorkTasks).contains(":localLib:generateDebugEmptyResourceFiles")
-        assertThat(result.didWorkTasks).doesNotContain(":localLib:parseDebugLocalResources")
-        assertThat(result.didWorkTasks).contains(":leafLib:parseDebugLocalResources")
-
-        // Since we've disabled resources in the local lib, but not in the leaf lib, then the raw
-        // file defined in both should have the value of the one from the leaf lib.
-        TruthHelper.assertThatApk(project.getSubproject("app")
-            .getApk(GradleTestProject.ApkType.DEBUG))
-            .containsFileWithContent(
-                "res/raw/raw_file",
-                "leafLib"
-            )
-    }
-
-    @Test
-    fun testBooleanOptionDisablesAllLibraryResources() {
-        // We should be able to use the boolean option to turn off res processing in all library
-        // modules in the current project.
-        val result = project.executor()
-            .with(BooleanOption.BUILD_FEATURE_ANDROID_RESOURCES, false)
-            .expectFailure()
-            .run(":app:assembleDebug")
-
-        result.stderr.use {
-
-            ScannerSubject.assertThat(it).contains("package com.example.leafLib.R does not exist")
-            ScannerSubject.assertThat(it).contains("com.example.leafLib.R.string.leaf_lib_string")
-
-            ScannerSubject.assertThat(it).contains("package com.example.localLib.R does not exist")
-            ScannerSubject.assertThat(it).contains("com.example.localLib.R.raw.raw_file")
-            ScannerSubject.assertThat(it).contains("com.example.localLib.R.string.local_lib_string")
+        dependencies {
+            testImplementation("junit:junit:4.12")
         }
 
-        assertThat(result.didWorkTasks).contains(":localLib:generateDebugEmptyResourceFiles")
-        assertThat(result.didWorkTasks).contains(":leafLib:generateDebugEmptyResourceFiles")
-        assertThat(result.didWorkTasks).doesNotContain(":localLib:parseDebugLocalResources")
-        assertThat(result.didWorkTasks).doesNotContain(":leafLib:parseDebugLocalResources")
+        """
+          .trimIndent()
+      )
+
+  private val localLib =
+    MinimalSubProject.lib("com.example.localLib")
+      .withFile(
+        "src/main/res/values/values.xml",
+        """
+        <resources>
+            <string name="local_lib_string">hello</string>
+        </resources>
+        """
+          .trimIndent(),
+      )
+      .withFile("src/main/res/raw/raw_file", "localLib")
+      .appendToBuild("dependencies { api project(':leafLib') }")
+
+  private val app =
+    MinimalSubProject.app("com.example.app")
+      .withFile(
+        "src/main/res/values/values.xml",
+        """
+        <resources>
+            <string name="app_string">hello</string>
+        </resources>
+        """
+          .trimIndent(),
+      )
+      .appendToBuild("dependencies { implementation project(':localLib') }")
+      .withFile(
+        "src/main/java/com/example/app/MyClass.java",
+        """
+        package com.example.app;
+
+        public class MyClass {
+            void test() {
+                int leafLibString = com.example.leafLib.R.string.leaf_lib_string;
+                int rawFile = com.example.localLib.R.raw.raw_file;
+                int localLibString = com.example.localLib.R.string.local_lib_string;
+            }
+        }
+        """
+          .trimIndent(),
+      )
+
+  private val testApp =
+    MultiModuleTestProject.builder().subproject(":leafLib", leafLib).subproject(":localLib", localLib).subproject(":app", app).build()
+
+  @get:Rule val project = GradleTestProject.builder().fromTestApp(testApp).create()
+
+  @Test
+  fun testEnabledResourcesBuild() {
+    // Tests a normal build with the resources pipeline enabled. Note the references to library
+    // resources in the app's java class.
+    val result = project.executor().run(":app:assembleDebug")
+    assertThat(result.didWorkTasks).contains(":localLib:parseDebugLocalResources")
+
+    // Sanity check that the overlay worked - local lib overrides the resource from leaf lib.
+    TruthHelper.assertThatApk(project.getSubproject("app").getApk(GradleTestProject.ApkType.DEBUG))
+      .containsFileWithContent("res/raw/raw_file", "localLib")
+  }
+
+  @Test
+  fun testDisabledResourcesBuildFailsRemovedReferences() {
+    // Tests the expected behaviour of code breaking if the flag is triggered (turned off, it is
+    // turned on by default). Since the app was referencing the resources, java compilation
+    // should fail.
+    project.getSubproject("localLib").buildFile.appendText("android.buildFeatures.androidResources = false")
+    val result = project.executor().expectFailure().run(":app:assembleDebug")
+    result.stderr.use {
+      ScannerSubject.assertThat(it).contains("package com.example.localLib.R does not exist")
+
+      ScannerSubject.assertThat(it).contains("com.example.localLib.R.raw.raw_file")
+      ScannerSubject.assertThat(it).contains("com.example.localLib.R.string.local_lib_string")
+    }
+  }
+
+  @Test
+  fun testDisablingTasks() {
+    // Tests a full build with the resource processing disabled in the middle library (the leaf
+    // lib still has resource processing enabled). The app's code is modified to remove the
+    // references to resources from the middle lib.
+    project.getSubproject("localLib").buildFile.appendText("android.buildFeatures.androidResources = false")
+    val appClass = project.getSubproject("app").file("src/main/java/com/example/app/MyClass.java")
+    // Remove the reference in the app's class.
+    TestFileUtils.searchAndReplace(appClass, "int rawFile ", "//int rawFile ")
+    TestFileUtils.searchAndReplace(appClass, "int localLibString ", "//int localLibString ")
+
+    val result = project.executor().run(":app:assembleDebug")
+    // Make sure that in the local lib we called the task to generate the empty resources, and
+    // not the standard res processing tasks. For leaf lib, resource processing should be still
+    // enabled.
+    assertThat(result.didWorkTasks).contains(":localLib:generateDebugEmptyResourceFiles")
+    assertThat(result.didWorkTasks).doesNotContain(":localLib:parseDebugLocalResources")
+    assertThat(result.didWorkTasks).contains(":leafLib:parseDebugLocalResources")
+
+    // Since we've disabled resources in the local lib, but not in the leaf lib, then the raw
+    // file defined in both should have the value of the one from the leaf lib.
+    TruthHelper.assertThatApk(project.getSubproject("app").getApk(GradleTestProject.ApkType.DEBUG))
+      .containsFileWithContent("res/raw/raw_file", "leafLib")
+  }
+
+  @Test
+  fun testBooleanOptionDisablesAllLibraryResources() {
+    // We should be able to use the boolean option to turn off res processing in all library
+    // modules in the current project.
+    val result = project.executor().with(BooleanOption.BUILD_FEATURE_ANDROID_RESOURCES, false).expectFailure().run(":app:assembleDebug")
+
+    result.stderr.use {
+      ScannerSubject.assertThat(it).contains("package com.example.leafLib.R does not exist")
+      ScannerSubject.assertThat(it).contains("com.example.leafLib.R.string.leaf_lib_string")
+
+      ScannerSubject.assertThat(it).contains("package com.example.localLib.R does not exist")
+      ScannerSubject.assertThat(it).contains("com.example.localLib.R.raw.raw_file")
+      ScannerSubject.assertThat(it).contains("com.example.localLib.R.string.local_lib_string")
     }
 
-    @Test
-    fun testDslOverridesBooleanOption() {
-        // Even when the global flag is on, we should be able to use the DSL option to turn the res
-        // processing back on in library modules.
-        project.getSubproject("localLib").buildFile
-            .appendText("android.buildFeatures.androidResources = true")
-        project.getSubproject("leafLib").buildFile
-            .appendText("${System.lineSeparator()}android.buildFeatures.androidResources = true")
+    assertThat(result.didWorkTasks).contains(":localLib:generateDebugEmptyResourceFiles")
+    assertThat(result.didWorkTasks).contains(":leafLib:generateDebugEmptyResourceFiles")
+    assertThat(result.didWorkTasks).doesNotContain(":localLib:parseDebugLocalResources")
+    assertThat(result.didWorkTasks).doesNotContain(":leafLib:parseDebugLocalResources")
+  }
 
-        val result = project.executor()
-            .with(BooleanOption.BUILD_FEATURE_ANDROID_RESOURCES, false)
-            .run(":app:assembleDebug")
+  @Test
+  fun testDslOverridesBooleanOption() {
+    // Even when the global flag is on, we should be able to use the DSL option to turn the res
+    // processing back on in library modules.
+    project.getSubproject("localLib").buildFile.appendText("android.buildFeatures.androidResources = true")
+    project.getSubproject("leafLib").buildFile.appendText("${System.lineSeparator()}android.buildFeatures.androidResources = true")
 
-        assertThat(result.didWorkTasks).doesNotContain(":localLib:generateDebugEmptyResourceFiles")
-        assertThat(result.didWorkTasks).doesNotContain(":leafLib:generateDebugEmptyResourceFiles")
-        assertThat(result.didWorkTasks).contains(":localLib:parseDebugLocalResources")
-        assertThat(result.didWorkTasks).contains(":leafLib:parseDebugLocalResources")
-    }
+    val result = project.executor().with(BooleanOption.BUILD_FEATURE_ANDROID_RESOURCES, false).run(":app:assembleDebug")
 
-    @Test
-    fun testEnablingLibraryResourcesUsingAndroidResourcesDsl() {
-        // instead of using buildFeatures, use androidResources.enable = true to enable resource processing
-        project.getSubproject("localLib").buildFile
-            .appendText("android.androidResources.enable = true")
-        project.getSubproject("leafLib").buildFile
-            .appendText("${System.lineSeparator()}android.androidResources.enable = true")
+    assertThat(result.didWorkTasks).doesNotContain(":localLib:generateDebugEmptyResourceFiles")
+    assertThat(result.didWorkTasks).doesNotContain(":leafLib:generateDebugEmptyResourceFiles")
+    assertThat(result.didWorkTasks).contains(":localLib:parseDebugLocalResources")
+    assertThat(result.didWorkTasks).contains(":leafLib:parseDebugLocalResources")
+  }
 
-        val result = project.executor()
-            .with(BooleanOption.BUILD_FEATURE_ANDROID_RESOURCES, false)
-            .run(":app:assembleDebug")
+  @Test
+  fun testEnablingLibraryResourcesUsingAndroidResourcesDsl() {
+    // instead of using buildFeatures, use androidResources.enable = true to enable resource processing
+    project.getSubproject("localLib").buildFile.appendText("android.androidResources.enable = true")
+    project.getSubproject("leafLib").buildFile.appendText("${System.lineSeparator()}android.androidResources.enable = true")
 
-        assertThat(result.didWorkTasks).doesNotContain(":localLib:generateDebugEmptyResourceFiles")
-        assertThat(result.didWorkTasks).doesNotContain(":leafLib:generateDebugEmptyResourceFiles")
-        assertThat(result.didWorkTasks).contains(":localLib:parseDebugLocalResources")
-        assertThat(result.didWorkTasks).contains(":leafLib:parseDebugLocalResources")
-    }
+    val result = project.executor().with(BooleanOption.BUILD_FEATURE_ANDROID_RESOURCES, false).run(":app:assembleDebug")
 
-    @Test
-    fun testAndroidAndUnitTests() {
-        project.executor().with(BooleanOption.BUILD_FEATURE_ANDROID_RESOURCES, false)
-            .run(":leaflib:assembleDebugAndroidTest", ":leaflib:test")
-        assertThat(project.file("leafLib/build/reports/tests/testDebugUnitTest/classes/com.example.MyTest.html").readText())
-            .contains("ExampleTest has some output")
-        // By default, only debug unit tests are run. Verify release unit tests did not run, and
-        // therefore, no test results were generated.
-        assertThat(project.file("leafLib/build/reports/tests/testReleaseUnitTest/classes/com.example.MyTest.html").exists()).isFalse()
-    }
+    assertThat(result.didWorkTasks).doesNotContain(":localLib:generateDebugEmptyResourceFiles")
+    assertThat(result.didWorkTasks).doesNotContain(":leafLib:generateDebugEmptyResourceFiles")
+    assertThat(result.didWorkTasks).contains(":localLib:parseDebugLocalResources")
+    assertThat(result.didWorkTasks).contains(":leafLib:parseDebugLocalResources")
+  }
 
-    /** Regression test for b/173134919. */
-    @Test
-    fun testAndroidAndUnitTestsSync() {
-        val androidProject = project.modelV2()
-                .with(BooleanOption.BUILD_FEATURE_ANDROID_RESOURCES, false)
-                .fetchModels()
-                .container
-                .getProject(":localLib")
-                .androidProject
-        assertThat(androidProject).isNotNull()
-    }
+  @Test
+  fun testAndroidAndUnitTests() {
+    project.executor().with(BooleanOption.BUILD_FEATURE_ANDROID_RESOURCES, false).run(":leaflib:assembleDebugAndroidTest", ":leaflib:test")
+    assertThat(project.file("leafLib/build/reports/tests/testDebugUnitTest/classes/com.example.MyTest.html").readText())
+      .contains("ExampleTest has some output")
+    // By default, only debug unit tests are run. Verify release unit tests did not run, and
+    // therefore, no test results were generated.
+    assertThat(project.file("leafLib/build/reports/tests/testReleaseUnitTest/classes/com.example.MyTest.html").exists()).isFalse()
+  }
+
+  /** Regression test for b/173134919. */
+  @Test
+  fun testAndroidAndUnitTestsSync() {
+    val androidProject =
+      project
+        .modelV2()
+        .with(BooleanOption.BUILD_FEATURE_ANDROID_RESOURCES, false)
+        .fetchModels()
+        .container
+        .getProject(":localLib")
+        .androidProject
+    assertThat(androidProject).isNotNull()
+  }
 }

@@ -52,278 +52,269 @@ import com.android.build.gradle.options.BooleanOption
 import com.android.builder.errors.IssueReporter
 import org.gradle.api.Project
 
-/** Common superclass for all [VariantFactory] implementations.  */
-abstract class BaseVariantFactory<VariantBuilderT : VariantBuilder, VariantDslInfoT : VariantDslInfo, VariantT : VariantCreationConfig>
-    (@JvmField protected val dslServices: DslServices) : VariantFactory<VariantBuilderT, VariantDslInfoT, VariantT> {
-    override fun createTestFixtures(
-        componentIdentity: ComponentIdentity,
-        buildFeatures: BuildFeatureValues,
-        dslInfo: TestFixturesComponentDslInfo,
-        variantDependencies: VariantDependencies,
-        variantSources: VariantSources,
-        paths: VariantPathHelper,
-        artifacts: ArtifactsImpl,
-        taskContainer: MutableTaskContainer,
-        mainVariant: VariantCreationConfig,
-        variantServices: VariantServices,
-        taskCreationServices: TaskCreationServices,
-        globalConfig: GlobalTaskCreationConfig
-    ): TestFixturesCreationConfig {
-        return dslServices.newInstance(
-            TestFixturesImpl::class.java,
-            componentIdentity,
-            buildFeatures,
-            dslInfo,
-            variantDependencies,
-            variantSources,
-            paths,
-            artifacts,
-            taskContainer,
-            mainVariant,
-            variantServices,
-            taskCreationServices,
-            globalConfig
-        )
+/** Common superclass for all [VariantFactory] implementations. */
+abstract class BaseVariantFactory<VariantBuilderT : VariantBuilder, VariantDslInfoT : VariantDslInfo, VariantT : VariantCreationConfig>(
+  @JvmField protected val dslServices: DslServices
+) : VariantFactory<VariantBuilderT, VariantDslInfoT, VariantT> {
+  override fun createTestFixtures(
+    componentIdentity: ComponentIdentity,
+    buildFeatures: BuildFeatureValues,
+    dslInfo: TestFixturesComponentDslInfo,
+    variantDependencies: VariantDependencies,
+    variantSources: VariantSources,
+    paths: VariantPathHelper,
+    artifacts: ArtifactsImpl,
+    taskContainer: MutableTaskContainer,
+    mainVariant: VariantCreationConfig,
+    variantServices: VariantServices,
+    taskCreationServices: TaskCreationServices,
+    globalConfig: GlobalTaskCreationConfig,
+  ): TestFixturesCreationConfig {
+    return dslServices.newInstance(
+      TestFixturesImpl::class.java,
+      componentIdentity,
+      buildFeatures,
+      dslInfo,
+      variantDependencies,
+      variantSources,
+      paths,
+      artifacts,
+      taskContainer,
+      mainVariant,
+      variantServices,
+      taskCreationServices,
+      globalConfig,
+    )
+  }
+
+  override fun createUnitTest(
+    componentIdentity: ComponentIdentity,
+    buildFeatures: BuildFeatureValues,
+    dslInfo: HostTestComponentDslInfo,
+    variantDependencies: VariantDependencies,
+    variantSources: VariantSources,
+    paths: VariantPathHelper,
+    artifacts: ArtifactsImpl,
+    variantData: TestVariantData,
+    taskContainer: MutableTaskContainer,
+    testedVariantProperties: VariantCreationConfig,
+    variantServices: VariantServices,
+    taskCreationServices: TaskCreationServices,
+    globalConfig: GlobalTaskCreationConfig,
+    hostTestBuilder: HostTestBuilderImpl,
+  ): HostTestCreationConfig {
+    return dslServices.newInstance(
+      HostTestImpl::class.java,
+      componentIdentity,
+      createUnitTestBuildFeatures(buildFeatures),
+      dslInfo,
+      variantDependencies,
+      variantSources,
+      paths,
+      artifacts,
+      variantData,
+      taskContainer,
+      testedVariantProperties,
+      variantServices,
+      taskCreationServices,
+      globalConfig,
+      hostTestBuilder,
+    )
+  }
+
+  override fun createHostTest(
+    componentIdentity: ComponentIdentity,
+    buildFeatures: BuildFeatureValues,
+    dslInfo: HostTestComponentDslInfo,
+    variantDependencies: VariantDependencies,
+    variantSources: VariantSources,
+    paths: VariantPathHelper,
+    artifacts: ArtifactsImpl,
+    variantData: TestVariantData,
+    taskContainer: MutableTaskContainer,
+    testedVariantProperties: VariantCreationConfig,
+    variantServices: VariantServices,
+    taskCreationServices: TaskCreationServices,
+    globalConfig: GlobalTaskCreationConfig,
+    hostTestBuilder: HostTestBuilderImpl,
+  ): HostTestCreationConfig {
+    return dslServices.newInstance(
+      HostTestImpl::class.java,
+      componentIdentity,
+      createUnitTestBuildFeatures(buildFeatures),
+      dslInfo,
+      variantDependencies,
+      variantSources,
+      paths,
+      artifacts,
+      variantData,
+      taskContainer,
+      testedVariantProperties,
+      variantServices,
+      taskCreationServices,
+      globalConfig,
+      hostTestBuilder,
+    )
+  }
+
+  override fun createAndroidTest(
+    componentIdentity: ComponentIdentity,
+    buildFeatures: BuildFeatureValues,
+    dslInfo: AndroidTestComponentDslInfo,
+    variantDependencies: VariantDependencies,
+    variantSources: VariantSources,
+    paths: VariantPathHelper,
+    artifacts: ArtifactsImpl,
+    variantData: TestVariantData,
+    taskContainer: MutableTaskContainer,
+    testedVariantProperties: VariantCreationConfig,
+    variantServices: VariantServices,
+    taskCreationServices: TaskCreationServices,
+    globalConfig: GlobalTaskCreationConfig,
+    deviceTestBuilder: DeviceTestBuilderImpl,
+  ): DeviceTestCreationConfig {
+    return dslServices.newInstance(
+      DeviceTestImpl::class.java,
+      componentIdentity,
+      buildFeatures,
+      dslInfo,
+      variantDependencies,
+      variantSources,
+      paths,
+      artifacts,
+      variantData,
+      taskContainer,
+      testedVariantProperties,
+      variantServices,
+      taskCreationServices,
+      globalConfig,
+      deviceTestBuilder,
+    )
+  }
+
+  override fun createVariantApi(
+    component: ComponentCreationConfig,
+    variantData: BaseVariantData,
+    readOnlyObjectProvider: ReadOnlyObjectProvider,
+  ): BaseVariantImpl? {
+    val implementationClass = variantImplementationClass
+
+    @Suppress("DEPRECATION")
+    return dslServices.newInstance(
+      implementationClass,
+      variantData,
+      component,
+      dslServices,
+      readOnlyObjectProvider,
+      dslServices.domainObjectContainer(com.android.build.VariantOutput::class.java),
+    )
+  }
+
+  override fun preVariantCallback(
+    project: Project,
+    dslExtension: CommonExtension,
+    model: VariantInputModel<DefaultConfig, BuildType, ProductFlavor, SigningConfig>,
+  ) {
+    if (project.pluginManager.hasPlugin(ANDROID_APT_PLUGIN_NAME)) {
+      dslServices.issueReporter.reportError(
+        IssueReporter.Type.INCOMPATIBLE_PLUGIN,
+        "android-apt plugin is incompatible with the Android Gradle plugin.  " +
+          "Please use 'annotationProcessor' configuration " +
+          "instead.",
+        "android-apt",
+      )
     }
 
-    override fun createUnitTest(
-        componentIdentity: ComponentIdentity,
-        buildFeatures: BuildFeatureValues,
-        dslInfo: HostTestComponentDslInfo,
-        variantDependencies: VariantDependencies,
-        variantSources: VariantSources,
-        paths: VariantPathHelper,
-        artifacts: ArtifactsImpl,
-        variantData: TestVariantData,
-        taskContainer: MutableTaskContainer,
-        testedVariantProperties: VariantCreationConfig,
-        variantServices: VariantServices,
-        taskCreationServices: TaskCreationServices,
-        globalConfig: GlobalTaskCreationConfig,
-        hostTestBuilder: HostTestBuilderImpl
-    ): HostTestCreationConfig {
-        return dslServices.newInstance(
-            HostTestImpl::class.java,
-            componentIdentity,
-            createUnitTestBuildFeatures(buildFeatures),
-            dslInfo,
-            variantDependencies,
-            variantSources,
-            paths,
-            artifacts,
-            variantData,
-            taskContainer,
-            testedVariantProperties,
-            variantServices,
-            taskCreationServices,
-            globalConfig,
-            hostTestBuilder
-        )
-    }
+    validateBuildConfig(model, dslExtension.buildFeatures.buildConfig)
+    validateResValues(model, dslExtension.buildFeatures.resValues)
+  }
 
-    override fun createHostTest(
-        componentIdentity: ComponentIdentity,
-        buildFeatures: BuildFeatureValues,
-        dslInfo: HostTestComponentDslInfo,
-        variantDependencies: VariantDependencies,
-        variantSources: VariantSources,
-        paths: VariantPathHelper,
-        artifacts: ArtifactsImpl,
-        variantData: TestVariantData,
-        taskContainer: MutableTaskContainer,
-        testedVariantProperties: VariantCreationConfig,
-        variantServices: VariantServices,
-        taskCreationServices: TaskCreationServices,
-        globalConfig: GlobalTaskCreationConfig,
-        hostTestBuilder: HostTestBuilderImpl
-    ): HostTestCreationConfig {
-        return dslServices.newInstance(
-            HostTestImpl::class.java,
-            componentIdentity,
-            createUnitTestBuildFeatures(buildFeatures),
-            dslInfo,
-            variantDependencies,
-            variantSources,
-            paths,
-            artifacts,
-            variantData,
-            taskContainer,
-            testedVariantProperties,
-            variantServices,
-            taskCreationServices,
-            globalConfig,
-            hostTestBuilder
-        )
-    }
+  private fun validateBuildConfig(model: VariantInputModel<DefaultConfig, BuildType, ProductFlavor, SigningConfig>, buildConfig: Boolean?) {
+    val finalResValues = buildConfig ?: false
 
-    override fun createAndroidTest(
-        componentIdentity: ComponentIdentity,
-        buildFeatures: BuildFeatureValues,
-        dslInfo: AndroidTestComponentDslInfo,
-        variantDependencies: VariantDependencies,
-        variantSources: VariantSources,
-        paths: VariantPathHelper,
-        artifacts: ArtifactsImpl,
-        variantData: TestVariantData,
-        taskContainer: MutableTaskContainer,
-        testedVariantProperties: VariantCreationConfig,
-        variantServices: VariantServices,
-        taskCreationServices: TaskCreationServices,
-        globalConfig: GlobalTaskCreationConfig,
-        deviceTestBuilder: DeviceTestBuilderImpl
-    ): DeviceTestCreationConfig {
-        return dslServices.newInstance(
-            DeviceTestImpl::class.java,
-            componentIdentity,
-            buildFeatures,
-            dslInfo,
-            variantDependencies,
-            variantSources,
-            paths,
-            artifacts,
-            variantData,
-            taskContainer,
-            testedVariantProperties,
-            variantServices,
-            taskCreationServices,
-            globalConfig,
-            deviceTestBuilder
-        )
-    }
+    if (!finalResValues) {
+      val issueReporter = dslServices.issueReporter
 
-    override fun createVariantApi(
-        component: ComponentCreationConfig,
-        variantData: BaseVariantData,
-        readOnlyObjectProvider: ReadOnlyObjectProvider
-    ): BaseVariantImpl? {
-        val implementationClass =
-            variantImplementationClass
-
-        @Suppress("DEPRECATION")
-        return dslServices.newInstance(
-            implementationClass,
-            variantData,
-            component,
-            dslServices,
-            readOnlyObjectProvider,
-            dslServices.domainObjectContainer(com.android.build.VariantOutput::class.java)
-        )
-    }
-
-    override fun preVariantCallback(
-        project: Project,
-        dslExtension: CommonExtension,
-        model: VariantInputModel<DefaultConfig, BuildType, ProductFlavor, SigningConfig>
-    ) {
-        if (project.pluginManager.hasPlugin(ANDROID_APT_PLUGIN_NAME)) {
-            dslServices
-                .issueReporter
-                .reportError(
-                    IssueReporter.Type.INCOMPATIBLE_PLUGIN,
-                    "android-apt plugin is incompatible with the Android Gradle plugin.  "
-                            + "Please use 'annotationProcessor' configuration "
-                            + "instead.",
-                    "android-apt"
-                )
-        }
-
-        validateBuildConfig(model, dslExtension.buildFeatures.buildConfig)
-        validateResValues(model, dslExtension.buildFeatures.resValues)
-    }
-
-    private fun validateBuildConfig(
-        model: VariantInputModel<DefaultConfig, BuildType, ProductFlavor, SigningConfig>,
-        buildConfig: Boolean?
-    ) {
-        val finalResValues = buildConfig ?: false
-
-        if (!finalResValues) {
-            val issueReporter = dslServices.issueReporter
-
-            val suggestion = """
-                To enable the feature, add the following to your module-level build.gradle:
-                `android.buildFeatures.buildConfig = true`
-                """.trimIndent()
-            if (model.defaultConfigData.defaultConfig.buildConfigFields.isNotEmpty()) {
-                issueReporter.reportError(
-                    IssueReporter.Type.GENERIC,
-                    """
+      val suggestion =
+        """
+        To enable the feature, add the following to your module-level build.gradle:
+        `android.buildFeatures.buildConfig = true`
+        """
+          .trimIndent()
+      if (model.defaultConfigData.defaultConfig.buildConfigFields.isNotEmpty()) {
+        issueReporter.reportError(
+          IssueReporter.Type.GENERIC,
+          """
                     defaultConfig contains custom BuildConfig fields, but the feature is disabled.
                     $suggestion
-                    """.trimIndent()
-                )
-            }
-
-            for (buildType in model.buildTypes.values) {
-                if (buildType.buildType.buildConfigFields.isNotEmpty()) {
-                    issueReporter.reportError(
-                        IssueReporter.Type.GENERIC,
                     """
+            .trimIndent(),
+        )
+      }
+
+      for (buildType in model.buildTypes.values) {
+        if (buildType.buildType.buildConfigFields.isNotEmpty()) {
+          issueReporter.reportError(
+            IssueReporter.Type.GENERIC,
+            """
                         Build Type '${buildType.buildType.name}' contains custom BuildConfig fields, but the feature is disabled.
                         $suggestion
-                    """.trimIndent(),
-                    )
-                }
-            }
+                    """
+              .trimIndent(),
+          )
+        }
+      }
 
-            for (productFlavor in model.productFlavors.values) {
-                if (productFlavor.productFlavor.buildConfigFields.isNotEmpty()) {
-                    issueReporter.reportError(
-                        IssueReporter.Type.GENERIC,
-                        """
+      for (productFlavor in model.productFlavors.values) {
+        if (productFlavor.productFlavor.buildConfigFields.isNotEmpty()) {
+          issueReporter.reportError(
+            IssueReporter.Type.GENERIC,
+            """
                         Product Flavor '${productFlavor.productFlavor.name}' contains custom BuildConfig fields, but the feature is disabled.
                         $suggestion
-                        """.trimIndent(),
-                    )
-                }
-            }
+                        """
+              .trimIndent(),
+          )
         }
+      }
     }
+  }
 
-    private fun validateResValues(
-        model: VariantInputModel<DefaultConfig, BuildType, ProductFlavor, SigningConfig>,
-        resValues: Boolean?
-    ) {
-        val finalResValues = resValues
-            ?: dslServices.projectOptions[BooleanOption.BUILD_FEATURE_RESVALUES]
+  private fun validateResValues(model: VariantInputModel<DefaultConfig, BuildType, ProductFlavor, SigningConfig>, resValues: Boolean?) {
+    val finalResValues = resValues ?: dslServices.projectOptions[BooleanOption.BUILD_FEATURE_RESVALUES]
 
-        if (!finalResValues) {
-            val issueReporter = dslServices.issueReporter
+    if (!finalResValues) {
+      val issueReporter = dslServices.issueReporter
 
-            if (model.defaultConfigData.defaultConfig.resValues.isNotEmpty()) {
-                issueReporter.reportError(
-                    IssueReporter.Type.GENERIC,
-                    "defaultConfig contains custom resource values, but the feature is disabled."
-                )
-            }
+      if (model.defaultConfigData.defaultConfig.resValues.isNotEmpty()) {
+        issueReporter.reportError(IssueReporter.Type.GENERIC, "defaultConfig contains custom resource values, but the feature is disabled.")
+      }
 
-            for (buildType in model.buildTypes.values) {
-                if (buildType.buildType.resValues.isNotEmpty()) {
-                    issueReporter.reportError(
-                        IssueReporter.Type.GENERIC,
-                        "Build Type ${buildType.buildType.name} contains custom resource values, but the feature is disabled.",
-                    )
-                }
-            }
-
-            for (productFlavor in model.productFlavors.values) {
-                if (productFlavor.productFlavor.resValues.isNotEmpty()) {
-                    issueReporter.reportError(
-                        IssueReporter.Type.GENERIC,
-                        "Product Flavor ${productFlavor.productFlavor.name} contains custom resource values, but the feature is disabled.",
-                    )
-                }
-            }
+      for (buildType in model.buildTypes.values) {
+        if (buildType.buildType.resValues.isNotEmpty()) {
+          issueReporter.reportError(
+            IssueReporter.Type.GENERIC,
+            "Build Type ${buildType.buildType.name} contains custom resource values, but the feature is disabled.",
+          )
         }
-    }
+      }
 
-    private fun createUnitTestBuildFeatures(
-        testedVariantBuildFeatures: BuildFeatureValues
-    ): BuildFeatureValues {
-        return UnitTestBuildFeatureValuesImpl(testedVariantBuildFeatures)
+      for (productFlavor in model.productFlavors.values) {
+        if (productFlavor.productFlavor.resValues.isNotEmpty()) {
+          issueReporter.reportError(
+            IssueReporter.Type.GENERIC,
+            "Product Flavor ${productFlavor.productFlavor.name} contains custom resource values, but the feature is disabled.",
+          )
+        }
+      }
     }
+  }
 
-    companion object {
-        private const val ANDROID_APT_PLUGIN_NAME = "com.neenbedankt.android-apt"
-    }
+  private fun createUnitTestBuildFeatures(testedVariantBuildFeatures: BuildFeatureValues): BuildFeatureValues {
+    return UnitTestBuildFeatureValuesImpl(testedVariantBuildFeatures)
+  }
+
+  companion object {
+    private const val ANDROID_APT_PLUGIN_NAME = "com.neenbedankt.android-apt"
+  }
 }

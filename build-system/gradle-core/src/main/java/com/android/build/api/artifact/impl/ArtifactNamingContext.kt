@@ -16,25 +16,24 @@
 
 package com.android.build.api.artifact.impl
 
-import org.gradle.api.Task
+import java.io.File
 import org.gradle.api.file.Directory
 import org.gradle.api.provider.Property
-import org.gradle.api.provider.Provider
-import java.io.File
 
-/**
- * Class contains file name and folders for artifact
- */
-class ArtifactNamingContext internal constructor(
-    private val finalFilename: Property<String>,
-    private val absoluteOutputLocation: String?,
-    private val buildOutputLocation: Property<Directory>?){
+/** Class contains file name and folders for artifact */
+class ArtifactNamingContext
+internal constructor(
+  private val finalFilename: Property<String>,
+  private val absoluteOutputLocation: String?,
+  private val buildOutputLocation: Property<Directory>?,
+) {
 
-    fun getFilename(): String? = finalFilename.orNull
+  fun getFilename(): String? = finalFilename.orNull
 
-    fun getOutputLocation(): File? = when {
-        absoluteOutputLocation != null -> File(absoluteOutputLocation)
-        buildOutputLocation != null -> buildOutputLocation.orNull?.asFile
-        else -> null
+  fun getOutputLocation(): File? =
+    when {
+      absoluteOutputLocation != null -> File(absoluteOutputLocation)
+      buildOutputLocation != null -> buildOutputLocation.orNull?.asFile
+      else -> null
     }
 }

@@ -21,17 +21,15 @@ import com.android.build.api.variant.TestSuiteSourceSet
 import com.android.tools.build.gradle.internal.profile.VariantPropertiesMethodType
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
 
-abstract class AnalyticsEnabledTestSuiteSourceSet protected constructor(
-    private val source: TestSuiteSourceSet,
-    private val stats: GradleBuildVariant.Builder
-): TestSuiteSourceSet {
+abstract class AnalyticsEnabledTestSuiteSourceSet
+protected constructor(private val source: TestSuiteSourceSet, private val stats: GradleBuildVariant.Builder) : TestSuiteSourceSet {
 
-    override val dependencies: AgpTestSuiteDependencies?
-        get() {
-            stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
-                VariantPropertiesMethodType.TEST_SUITE_SOURCE_DEPENDENCIES_VALUE
-            return source.dependencies
-        }
+  override val dependencies: AgpTestSuiteDependencies?
+    get() {
+      stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
+        VariantPropertiesMethodType.TEST_SUITE_SOURCE_DEPENDENCIES_VALUE
+      return source.dependencies
+    }
 
-    override fun getName(): String = source.name
+  override fun getName(): String = source.name
 }

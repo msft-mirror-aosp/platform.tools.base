@@ -18,25 +18,22 @@ package com.android.build.gradle.internal.testing.utp.worker
 
 import com.android.tools.utp.gradle.api.RunUtpWorkParameters
 import com.android.tools.utp.gradle.api.UtpAction
+import java.util.ServiceLoader
+import javax.inject.Inject
 import org.gradle.api.GradleException
 import org.gradle.api.provider.ProviderFactory
 import org.gradle.workers.WorkAction
-import java.util.ServiceLoader
-import javax.inject.Inject
 
-/**
- * Gradle WorkAction that executes the Unified Test Platform (UTP) runner.
- */
+/** Gradle WorkAction that executes the Unified Test Platform (UTP) runner. */
 abstract class RunUtpWorkAction : WorkAction<RunUtpWorkParameters> {
 
-    @get:Inject
-    abstract val provider: ProviderFactory
+  @get:Inject abstract val provider: ProviderFactory
 
-    override fun execute() {
-        val actionImpl = ServiceLoader.load(UtpAction::class.java).findFirst()
-        if (actionImpl.isEmpty) {
-            throw GradleException("UtpAction implementation class is missing.")
-        }
-        actionImpl.get().run(parameters, provider)
+  override fun execute() {
+    val actionImpl = ServiceLoader.load(UtpAction::class.java).findFirst()
+    if (actionImpl.isEmpty) {
+      throw GradleException("UtpAction implementation class is missing.")
     }
+    actionImpl.get().run(parameters, provider)
+  }
 }

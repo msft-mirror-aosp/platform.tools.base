@@ -21,124 +21,126 @@ import com.android.build.gradle.options.BooleanOption
 import com.android.tools.build.gradle.internal.profile.VariantPropertiesMethodType
 import com.google.common.truth.Truth
 import com.google.wireless.android.sdk.stats.VariantPropertiesAccess
-import org.junit.Test
 import java.io.File
 import kotlin.test.assertNotNull
+import org.junit.Test
 
-class AddCustomSourceTest: VariantApiBaseTest(TestType.Script) {
+class AddCustomSourceTest : VariantApiBaseTest(TestType.Script) {
 
-    @Test
-    fun addCustomSourceInDslType() {
-        given {
-            tasksToInvoke.addAll(listOf("sourceSets"))
-            addModule(":app") {
-                @Suppress("RemoveExplicitTypeArguments")
-                buildFile =
-                        // language=kotlin
-                    """
-                plugins {
-                        id("com.android.application")
-                        kotlin("android")
-                }
+  @Test
+  fun addCustomSourceInDslType() {
+    given {
+      tasksToInvoke.addAll(listOf("sourceSets"))
+      addModule(":app") {
+        @Suppress("RemoveExplicitTypeArguments")
+        buildFile =
+          // language=kotlin
+          """
+          plugins {
+                  id("com.android.application")
+                  kotlin("android")
+          }
 
-                android {
-                    namespace = "com.example.customSource"
-                    compileSdkVersion(29)
-                    defaultConfig {
-                        minSdkVersion(21)
-                        targetSdkVersion(29)
-                    }
+          android {
+              namespace = "com.example.customSource"
+              compileSdkVersion(29)
+              defaultConfig {
+                  minSdkVersion(21)
+                  targetSdkVersion(29)
+              }
 
-                    flavorDimensions += listOf("dim1", "dim2")
-                    productFlavors {
-                        create("a1") {
-                            dimension = "dim1"
-                        }
-                        create("b1") {
-                            dimension = "dim1"
-                        }
-                        create("a2") {
-                            dimension = "dim2"
-                        }
-                        create("b2") {
-                            dimension = "dim2"
-                        }
-                        create("c2") {
-                            dimension = "dim2"
-                        }
-                    }
-                }
+              flavorDimensions += listOf("dim1", "dim2")
+              productFlavors {
+                  create("a1") {
+                      dimension = "dim1"
+                  }
+                  create("b1") {
+                      dimension = "dim1"
+                  }
+                  create("a2") {
+                      dimension = "dim2"
+                  }
+                  create("b2") {
+                      dimension = "dim2"
+                  }
+                  create("c2") {
+                      dimension = "dim2"
+                  }
+              }
+          }
 
-                androidComponents {
-                    registerSourceType("toml")
-                }
-                """.trimIndent()
-                testingElements.addManifest( this)
-            }
-        }
-        withOptions(mapOf(BooleanOption.ENABLE_PROFILE_JSON to true))
-        withDocs {
-            index =
-                    // language=markdown
-                """
-# Add custom source folders in Kotlin
-This sample shows how to add a new custom source folders to all source sets. The source folder will
-not be used by any AGP tasks (since we do not know about it), however, it can be used by plugins and
-tasks participating into the Variant API callbacks.
-
-To register the custom sources, you just need to use
-`androidComponents { registerSourceType("toml") } `
-
-## To Run
-./gradlew sourceSets
-            """.trimIndent()
-        }
-        check {
-            assertNotNull(this)
-            Truth.assertThat(output).contains("Custom sources: [app/src/androidTest/toml]")
-            Truth.assertThat(output).contains("Custom sources: [app/src/androidTestDebug/toml]")
-            Truth.assertThat(output).contains("Custom sources: [app/src/androidTestRelease/toml]")
-            Truth.assertThat(output).contains("Custom sources: [app/src/debug/toml]")
-            Truth.assertThat(output).contains("Custom sources: [app/src/main/toml]")
-            Truth.assertThat(output).contains("Custom sources: [app/src/release/toml]")
-            // Check all single flavors:
-            Truth.assertThat(output).contains("Custom sources: [app/src/a1/toml]")
-            Truth.assertThat(output).contains("Custom sources: [app/src/b1/toml]")
-            Truth.assertThat(output).contains("Custom sources: [app/src/a2/toml]")
-            Truth.assertThat(output).contains("Custom sources: [app/src/b2/toml]")
-            Truth.assertThat(output).contains("Custom sources: [app/src/c2/toml]")
-            // Check all combined flavors:
-            Truth.assertThat(output).contains("Custom sources: [app/src/a1A2/toml]")
-            Truth.assertThat(output).contains("Custom sources: [app/src/a1B2/toml]")
-            Truth.assertThat(output).contains("Custom sources: [app/src/a1C2/toml]")
-            Truth.assertThat(output).contains("Custom sources: [app/src/b1A2/toml]")
-            Truth.assertThat(output).contains("Custom sources: [app/src/b1B2/toml]")
-            Truth.assertThat(output).contains("Custom sources: [app/src/b1C2/toml]")
-            // Check all variants:
-            Truth.assertThat(output).contains("Custom sources: [app/src/a1A2Debug/toml]")
-            Truth.assertThat(output).contains("Custom sources: [app/src/a1B2Debug/toml]")
-            Truth.assertThat(output).contains("Custom sources: [app/src/a1C2Debug/toml]")
-            Truth.assertThat(output).contains("Custom sources: [app/src/b1A2Debug/toml]")
-            Truth.assertThat(output).contains("Custom sources: [app/src/b1B2Debug/toml]")
-            Truth.assertThat(output).contains("Custom sources: [app/src/b1C2Debug/toml]")
-            Truth.assertThat(output).contains("Custom sources: [app/src/a1A2Release/toml]")
-            Truth.assertThat(output).contains("Custom sources: [app/src/a1B2Release/toml]")
-            Truth.assertThat(output).contains("Custom sources: [app/src/a1C2Release/toml]")
-            Truth.assertThat(output).contains("Custom sources: [app/src/b1A2Release/toml]")
-            Truth.assertThat(output).contains("Custom sources: [app/src/b1B2Release/toml]")
-            Truth.assertThat(output).contains("Custom sources: [app/src/b1C2Release/toml]")
-        }
+          androidComponents {
+              registerSourceType("toml")
+          }
+          """
+            .trimIndent()
+        testingElements.addManifest(this)
+      }
     }
+    withOptions(mapOf(BooleanOption.ENABLE_PROFILE_JSON to true))
+    withDocs {
+      index =
+        // language=markdown
+        """
+        # Add custom source folders in Kotlin
+        This sample shows how to add a new custom source folders to all source sets. The source folder will
+        not be used by any AGP tasks (since we do not know about it), however, it can be used by plugins and
+        tasks participating into the Variant API callbacks.
 
-    @Test
-    fun addCustomSourceInVariantTest() {
-        given {
-            tasksToInvoke.addAll(listOf("clean", ":app:debugDisplayAllSources"))
-            addModule(":app") {
-                @Suppress("RemoveExplicitTypeArguments")
-                buildFile =
-                        // language=kotlin
-                    """
+        To register the custom sources, you just need to use
+        `androidComponents { registerSourceType("toml") } `
+
+        ## To Run
+        ./gradlew sourceSets
+        """
+          .trimIndent()
+    }
+    check {
+      assertNotNull(this)
+      Truth.assertThat(output).contains("Custom sources: [app/src/androidTest/toml]")
+      Truth.assertThat(output).contains("Custom sources: [app/src/androidTestDebug/toml]")
+      Truth.assertThat(output).contains("Custom sources: [app/src/androidTestRelease/toml]")
+      Truth.assertThat(output).contains("Custom sources: [app/src/debug/toml]")
+      Truth.assertThat(output).contains("Custom sources: [app/src/main/toml]")
+      Truth.assertThat(output).contains("Custom sources: [app/src/release/toml]")
+      // Check all single flavors:
+      Truth.assertThat(output).contains("Custom sources: [app/src/a1/toml]")
+      Truth.assertThat(output).contains("Custom sources: [app/src/b1/toml]")
+      Truth.assertThat(output).contains("Custom sources: [app/src/a2/toml]")
+      Truth.assertThat(output).contains("Custom sources: [app/src/b2/toml]")
+      Truth.assertThat(output).contains("Custom sources: [app/src/c2/toml]")
+      // Check all combined flavors:
+      Truth.assertThat(output).contains("Custom sources: [app/src/a1A2/toml]")
+      Truth.assertThat(output).contains("Custom sources: [app/src/a1B2/toml]")
+      Truth.assertThat(output).contains("Custom sources: [app/src/a1C2/toml]")
+      Truth.assertThat(output).contains("Custom sources: [app/src/b1A2/toml]")
+      Truth.assertThat(output).contains("Custom sources: [app/src/b1B2/toml]")
+      Truth.assertThat(output).contains("Custom sources: [app/src/b1C2/toml]")
+      // Check all variants:
+      Truth.assertThat(output).contains("Custom sources: [app/src/a1A2Debug/toml]")
+      Truth.assertThat(output).contains("Custom sources: [app/src/a1B2Debug/toml]")
+      Truth.assertThat(output).contains("Custom sources: [app/src/a1C2Debug/toml]")
+      Truth.assertThat(output).contains("Custom sources: [app/src/b1A2Debug/toml]")
+      Truth.assertThat(output).contains("Custom sources: [app/src/b1B2Debug/toml]")
+      Truth.assertThat(output).contains("Custom sources: [app/src/b1C2Debug/toml]")
+      Truth.assertThat(output).contains("Custom sources: [app/src/a1A2Release/toml]")
+      Truth.assertThat(output).contains("Custom sources: [app/src/a1B2Release/toml]")
+      Truth.assertThat(output).contains("Custom sources: [app/src/a1C2Release/toml]")
+      Truth.assertThat(output).contains("Custom sources: [app/src/b1A2Release/toml]")
+      Truth.assertThat(output).contains("Custom sources: [app/src/b1B2Release/toml]")
+      Truth.assertThat(output).contains("Custom sources: [app/src/b1C2Release/toml]")
+    }
+  }
+
+  @Test
+  fun addCustomSourceInVariantTest() {
+    given {
+      tasksToInvoke.addAll(listOf("clean", ":app:debugDisplayAllSources"))
+      addModule(":app") {
+        @Suppress("RemoveExplicitTypeArguments")
+        buildFile =
+          // language=kotlin
+          """
                 plugins {
                         id("com.android.application")
                         kotlin("android")
@@ -201,71 +203,69 @@ To register the custom sources, you just need to use
                         }
                     }
                 }
-                """.trimIndent()
-                testingElements.addManifest( this)
-                addDirectory("src/debug/toml") { writeTomlFile(this) }
-                addDirectory("src/release/toml") { writeTomlFile(this) }
-            }
-        }
-        withOptions(mapOf(BooleanOption.ENABLE_PROFILE_JSON to true))
-        withDocs {
-            index =
-                    // language=markdown
                 """
-# Add custom source folders in Kotlin
-This sample shows how to add a new custom source folders to the Variant. Note the sources will not
-be added to the DSL and therefore to the usual src/ locations. The source folder will
-not be used by any AGP tasks (since we do not know about it), however, it can be used by plugins and
-tasks participating into the Variant API callbacks.
-
-To access the custome sources, you just need to use
-`sourceFolders.set(variant.sources.getByName("toml").getAll()`
-which can be used as [Task] input directly.
-
-To add a folder which content will be  a execution time by a [Task] execution, you need
-to use the [SourceDirectories.add] method providing a [TaskProvider] and the pointer to the output folder
-where source files will be generated and added to the compilation task.
-
-## To Run
-./gradlew :app:debugDisplayAllSources
-            """.trimIndent()
-        }
-        check {
-            assertNotNull(this)
-            Truth.assertThat(output).contains("addCustomSourceInVariantTest/app/src/debug/toml")
-            Truth.assertThat(output).contains("BUILD SUCCESSFUL")
-            super.onVariantStats {
-                super.onVariantStats {
-                    if (it.isDebug) {
-                        Truth.assertThat(it.variantApiAccess.variantPropertiesAccessList).hasSize(6)
-                        Truth.assertThat(
-                            it.variantApiAccess.variantPropertiesAccessList.map(
-                                VariantPropertiesAccess::getType
-                            )
-                        )
-                            .containsExactly(
-                                VariantPropertiesMethodType.COMPONENT_SOURCES_ACCESS_VALUE,
-                                VariantPropertiesMethodType.SOURCES_EXTRAS_ACCESS_VALUE,
-                                VariantPropertiesMethodType.COMPONENT_SOURCES_ACCESS_VALUE,
-                                VariantPropertiesMethodType.SOURCES_EXTRAS_ACCESS_VALUE,
-                                VariantPropertiesMethodType.COMPONENT_SOURCES_ACCESS_VALUE,
-                                VariantPropertiesMethodType.SOURCES_EXTRAS_ACCESS_VALUE,
-                            )
-                    }
-                }
-            }
-        }
+            .trimIndent()
+        testingElements.addManifest(this)
+        addDirectory("src/debug/toml") { writeTomlFile(this) }
+        addDirectory("src/release/toml") { writeTomlFile(this) }
+      }
     }
+    withOptions(mapOf(BooleanOption.ENABLE_PROFILE_JSON to true))
+    withDocs {
+      index =
+        // language=markdown
+        """
+        # Add custom source folders in Kotlin
+        This sample shows how to add a new custom source folders to the Variant. Note the sources will not
+        be added to the DSL and therefore to the usual src/ locations. The source folder will
+        not be used by any AGP tasks (since we do not know about it), however, it can be used by plugins and
+        tasks participating into the Variant API callbacks.
 
-    @Test
-    fun addCustomSourceTypeInDslAndVariantTest() {
-        given {
-            tasksToInvoke.addAll(listOf("clean", "sourceSets", ":app:debugDisplayAllSources"))
-            addModule(":app") {
-                @Suppress("RemoveExplicitTypeArguments")
-                buildFile =
-                        // language=kotlin
-                    """
+        To access the custome sources, you just need to use
+        `sourceFolders.set(variant.sources.getByName("toml").getAll()`
+        which can be used as [Task] input directly.
+
+        To add a folder which content will be  a execution time by a [Task] execution, you need
+        to use the [SourceDirectories.add] method providing a [TaskProvider] and the pointer to the output folder
+        where source files will be generated and added to the compilation task.
+
+        ## To Run
+        ./gradlew :app:debugDisplayAllSources
+        """
+          .trimIndent()
+    }
+    check {
+      assertNotNull(this)
+      Truth.assertThat(output).contains("addCustomSourceInVariantTest/app/src/debug/toml")
+      Truth.assertThat(output).contains("BUILD SUCCESSFUL")
+      super.onVariantStats {
+        super.onVariantStats {
+          if (it.isDebug) {
+            Truth.assertThat(it.variantApiAccess.variantPropertiesAccessList).hasSize(6)
+            Truth.assertThat(it.variantApiAccess.variantPropertiesAccessList.map(VariantPropertiesAccess::getType))
+              .containsExactly(
+                VariantPropertiesMethodType.COMPONENT_SOURCES_ACCESS_VALUE,
+                VariantPropertiesMethodType.SOURCES_EXTRAS_ACCESS_VALUE,
+                VariantPropertiesMethodType.COMPONENT_SOURCES_ACCESS_VALUE,
+                VariantPropertiesMethodType.SOURCES_EXTRAS_ACCESS_VALUE,
+                VariantPropertiesMethodType.COMPONENT_SOURCES_ACCESS_VALUE,
+                VariantPropertiesMethodType.SOURCES_EXTRAS_ACCESS_VALUE,
+              )
+          }
+        }
+      }
+    }
+  }
+
+  @Test
+  fun addCustomSourceTypeInDslAndVariantTest() {
+    given {
+      tasksToInvoke.addAll(listOf("clean", "sourceSets", ":app:debugDisplayAllSources"))
+      addModule(":app") {
+        @Suppress("RemoveExplicitTypeArguments")
+        buildFile =
+          // language=kotlin
+          """
                 plugins {
                         id("com.android.application")
                         kotlin("android")
@@ -329,181 +329,184 @@ where source files will be generated and added to the compilation task.
                         }
                     }
                 }
-                """.trimIndent()
-                testingElements.addManifest( this)
-            }
-        }
-        withOptions(mapOf(BooleanOption.ENABLE_PROFILE_JSON to true))
-        withDocs {
-            index =
-                    // language=markdown
                 """
-# Add custom source folders in Kotlin
-This sample shows how to add a new custom source folders to the Variant. The source folder will
-not be used by any AGP tasks, however, it can be used by plugins and tasks participating into the
-Variant API callbacks.
-
-To access the custome sources, you just need to use
-`sourceFolders.set(variant.sources.getByName("toml").all`
-which can be used as [Task] input directly.
-
-To add a folder which content will be  a execution time by a [Task] execution, you need
-to use the [SourceDirectories.add] method providing a [TaskProvider] and the pointer to the output folder
-where source files will be generated and added to the compilation task.
-
-## To Run
-./gradlew :app:debugDisplayAllSources
-            """.trimIndent()
-        }
-        check {
-            assertNotNull(this)
-            Truth.assertThat(output).contains("Custom sources: [app/src/androidTest/toml]")
-            Truth.assertThat(output).contains("Custom sources: [app/src/androidTestDebug/toml]")
-            Truth.assertThat(output).contains("Custom sources: [app/src/androidTestRelease/toml]")
-            Truth.assertThat(output).contains("Custom sources: [app/src/debug/toml]")
-            Truth.assertThat(output).contains("Custom sources: [app/src/main/toml]")
-            Truth.assertThat(output).contains("Custom sources: [app/src/release/toml]")
-            Truth.assertThat(output).contains("addCustomSourceTypeInDslAndVariantTest/app/src/main/toml")
-            Truth.assertThat(output).contains("addCustomSourceTypeInDslAndVariantTest/app/src/debug/toml")
-            Truth.assertThat(output).contains("addCustomSourceTypeInDslAndVariantTest/app/third_party/debug/toml")
-            Truth.assertThat(output).contains("addCustomSourceTypeInDslAndVariantTest/app/build/generated/toml/debugAddCustomSources")
-            Truth.assertThat(output).contains("BUILD SUCCESSFUL")
-            super.onVariantStats {
-                super.onVariantStats {
-                    if (it.isDebug) {
-                        Truth.assertThat(it.variantApiAccess.variantPropertiesAccessList).hasSize(6)
-                        Truth.assertThat(
-                            it.variantApiAccess.variantPropertiesAccessList.map(
-                                VariantPropertiesAccess::getType
-                            )
-                        )
-                            .containsExactly(
-                                VariantPropertiesMethodType.COMPONENT_SOURCES_ACCESS_VALUE,
-                                VariantPropertiesMethodType.SOURCES_EXTRAS_ACCESS_VALUE,
-                                VariantPropertiesMethodType.COMPONENT_SOURCES_ACCESS_VALUE,
-                                VariantPropertiesMethodType.SOURCES_EXTRAS_ACCESS_VALUE,
-                                VariantPropertiesMethodType.COMPONENT_SOURCES_ACCESS_VALUE,
-                                VariantPropertiesMethodType.SOURCES_EXTRAS_ACCESS_VALUE,
-                            )
-                    }
-                }
-            }
-        }
+            .trimIndent()
+        testingElements.addManifest(this)
+      }
     }
+    withOptions(mapOf(BooleanOption.ENABLE_PROFILE_JSON to true))
+    withDocs {
+      index =
+        // language=markdown
+        """
+        # Add custom source folders in Kotlin
+        This sample shows how to add a new custom source folders to the Variant. The source folder will
+        not be used by any AGP tasks, however, it can be used by plugins and tasks participating into the
+        Variant API callbacks.
 
-    @Test
-    fun addCustomSourceTypeRequiringMergeTest() {
-        given {
-            tasksToInvoke.addAll(listOf("debugConsumeMergedToml"))
-            addModule(":app") {
-                @Suppress("RemoveExplicitTypeArguments")
-                buildFile =
-                        // language=kotlin
-                    """
-                    plugins {
-                            id("com.android.application")
-                            kotlin("android")
-                    }
+        To access the custome sources, you just need to use
+        `sourceFolders.set(variant.sources.getByName("toml").all`
+        which can be used as [Task] input directly.
 
-                    android {
-                        namespace = "com.example.customSource"
-                        compileSdkVersion(29)
-                        defaultConfig {
-                            minSdkVersion(21)
-                        }
-                    }
+        To add a folder which content will be  a execution time by a [Task] execution, you need
+        to use the [SourceDirectories.add] method providing a [TaskProvider] and the pointer to the output folder
+        where source files will be generated and added to the compilation task.
 
-
-                    abstract class MergeTomlSources: DefaultTask() {
-
-                        @get:InputFiles
-                        abstract val sourceFolders: ListProperty<Directory>
-
-                        @get:OutputDirectory
-                        abstract val mergedFolder: DirectoryProperty
-
-                        @TaskAction
-                        fun taskAction() {
-
-                            sourceFolders.get().forEach { directory ->
-                                println("--> Got a Directory ${'$'}directory")
-                                directory.asFile.walk().forEach { sourceFile ->
-                                    println("Source: " + sourceFile.absolutePath)
-                                }
-                                println("<-- done")
-                            }
-                        }
-                    }
-
-                    abstract class ConsumeMergedToml: DefaultTask() {
-
-                        @get:InputDirectory
-                        abstract val mergedFolder: DirectoryProperty
-
-                        @TaskAction
-                        fun taskAction() {
-
-                            println("Merged folder is " + mergedFolder.get().asFile)
-                        }
-                    }
-
-
-                    androidComponents {
-                        registerSourceType("toml")
-                        onVariants { variant ->
-
-                            val outFolder = project.layout.buildDirectory.dir("intermediates/${'$'}{variant.name}/merged_toml")
-                            val mergingTask = project.tasks.register<MergeTomlSources>("${'$'}{variant.name}MergeTomlSources") {
-                                sourceFolders.set(variant.sources.getByName("toml").all)
-                                mergedFolder.set(outFolder)
-                            }
-
-
-                            val consumingTask = project.tasks.register<ConsumeMergedToml>("${'$'}{variant.name}ConsumeMergedToml") {
-                                mergedFolder.set(mergingTask.flatMap { it.mergedFolder })
-                            }
-                        }
-                    }
-                """.trimIndent()
-                testingElements.addManifest( this)
-            }
-        }
-        withOptions(mapOf(BooleanOption.ENABLE_PROFILE_JSON to true))
-        withDocs {
-            index =
-                    // language=markdown
-                """
-# Add custom source folders in Kotlin
-This sample shows how to add a new custom source folders to all source sets. The source folder will
-by any AGP tasks (since we do no know about it), however, it can be used by plugins and
-tasks participating into the Variant API callbacks.
-
-In this example, it is assumed that a merging activity has to happen before the source folders can
-be used to be added to an AGP artifact (like ASSETS for example).
-
-To register the custom sources, you just need to use
-`androidComponents { registerSourceType("toml") } `
-
-The merging activity is implemented by the :app:debugMergeTomlSources and the downstream task that
- uses the merged folder is :app:debugConsumeMergedToml
-
-## To Run
-./gradlew sourceSets
-            """.trimIndent()
-        }
-        check {
-            assertNotNull(this)
-            Truth.assertThat(output).contains("Merged folder is")
-        }
+        ## To Run
+        ./gradlew :app:debugDisplayAllSources
+        """
+          .trimIndent()
     }
-
-    fun writeTomlFile(parentDirectory: File) {
-        File(parentDirectory, "example.toml").writeText("""
-                        title = "TOML Example"
-
-                        [owner]
-                        name = "AGP Team"
-                    """.trimIndent())
+    check {
+      assertNotNull(this)
+      Truth.assertThat(output).contains("Custom sources: [app/src/androidTest/toml]")
+      Truth.assertThat(output).contains("Custom sources: [app/src/androidTestDebug/toml]")
+      Truth.assertThat(output).contains("Custom sources: [app/src/androidTestRelease/toml]")
+      Truth.assertThat(output).contains("Custom sources: [app/src/debug/toml]")
+      Truth.assertThat(output).contains("Custom sources: [app/src/main/toml]")
+      Truth.assertThat(output).contains("Custom sources: [app/src/release/toml]")
+      Truth.assertThat(output).contains("addCustomSourceTypeInDslAndVariantTest/app/src/main/toml")
+      Truth.assertThat(output).contains("addCustomSourceTypeInDslAndVariantTest/app/src/debug/toml")
+      Truth.assertThat(output).contains("addCustomSourceTypeInDslAndVariantTest/app/third_party/debug/toml")
+      Truth.assertThat(output).contains("addCustomSourceTypeInDslAndVariantTest/app/build/generated/toml/debugAddCustomSources")
+      Truth.assertThat(output).contains("BUILD SUCCESSFUL")
+      super.onVariantStats {
+        super.onVariantStats {
+          if (it.isDebug) {
+            Truth.assertThat(it.variantApiAccess.variantPropertiesAccessList).hasSize(6)
+            Truth.assertThat(it.variantApiAccess.variantPropertiesAccessList.map(VariantPropertiesAccess::getType))
+              .containsExactly(
+                VariantPropertiesMethodType.COMPONENT_SOURCES_ACCESS_VALUE,
+                VariantPropertiesMethodType.SOURCES_EXTRAS_ACCESS_VALUE,
+                VariantPropertiesMethodType.COMPONENT_SOURCES_ACCESS_VALUE,
+                VariantPropertiesMethodType.SOURCES_EXTRAS_ACCESS_VALUE,
+                VariantPropertiesMethodType.COMPONENT_SOURCES_ACCESS_VALUE,
+                VariantPropertiesMethodType.SOURCES_EXTRAS_ACCESS_VALUE,
+              )
+          }
+        }
+      }
     }
+  }
+
+  @Test
+  fun addCustomSourceTypeRequiringMergeTest() {
+    given {
+      tasksToInvoke.addAll(listOf("debugConsumeMergedToml"))
+      addModule(":app") {
+        @Suppress("RemoveExplicitTypeArguments")
+        buildFile =
+          // language=kotlin
+          """
+          plugins {
+                  id("com.android.application")
+                  kotlin("android")
+          }
+
+          android {
+              namespace = "com.example.customSource"
+              compileSdkVersion(29)
+              defaultConfig {
+                  minSdkVersion(21)
+              }
+          }
+
+
+          abstract class MergeTomlSources: DefaultTask() {
+
+              @get:InputFiles
+              abstract val sourceFolders: ListProperty<Directory>
+
+              @get:OutputDirectory
+              abstract val mergedFolder: DirectoryProperty
+
+              @TaskAction
+              fun taskAction() {
+
+                  sourceFolders.get().forEach { directory ->
+                      println("--> Got a Directory ${'$'}directory")
+                      directory.asFile.walk().forEach { sourceFile ->
+                          println("Source: " + sourceFile.absolutePath)
+                      }
+                      println("<-- done")
+                  }
+              }
+          }
+
+          abstract class ConsumeMergedToml: DefaultTask() {
+
+              @get:InputDirectory
+              abstract val mergedFolder: DirectoryProperty
+
+              @TaskAction
+              fun taskAction() {
+
+                  println("Merged folder is " + mergedFolder.get().asFile)
+              }
+          }
+
+
+          androidComponents {
+              registerSourceType("toml")
+              onVariants { variant ->
+
+                  val outFolder = project.layout.buildDirectory.dir("intermediates/${'$'}{variant.name}/merged_toml")
+                  val mergingTask = project.tasks.register<MergeTomlSources>("${'$'}{variant.name}MergeTomlSources") {
+                      sourceFolders.set(variant.sources.getByName("toml").all)
+                      mergedFolder.set(outFolder)
+                  }
+
+
+                  val consumingTask = project.tasks.register<ConsumeMergedToml>("${'$'}{variant.name}ConsumeMergedToml") {
+                      mergedFolder.set(mergingTask.flatMap { it.mergedFolder })
+                  }
+              }
+          }
+          """
+            .trimIndent()
+        testingElements.addManifest(this)
+      }
+    }
+    withOptions(mapOf(BooleanOption.ENABLE_PROFILE_JSON to true))
+    withDocs {
+      index =
+        // language=markdown
+        """
+        # Add custom source folders in Kotlin
+        This sample shows how to add a new custom source folders to all source sets. The source folder will
+        by any AGP tasks (since we do no know about it), however, it can be used by plugins and
+        tasks participating into the Variant API callbacks.
+
+        In this example, it is assumed that a merging activity has to happen before the source folders can
+        be used to be added to an AGP artifact (like ASSETS for example).
+
+        To register the custom sources, you just need to use
+        `androidComponents { registerSourceType("toml") } `
+
+        The merging activity is implemented by the :app:debugMergeTomlSources and the downstream task that
+         uses the merged folder is :app:debugConsumeMergedToml
+
+        ## To Run
+        ./gradlew sourceSets
+        """
+          .trimIndent()
+    }
+    check {
+      assertNotNull(this)
+      Truth.assertThat(output).contains("Merged folder is")
+    }
+  }
+
+  fun writeTomlFile(parentDirectory: File) {
+    File(parentDirectory, "example.toml")
+      .writeText(
+        """
+        title = "TOML Example"
+
+        [owner]
+        name = "AGP Team"
+        """
+          .trimIndent()
+      )
+  }
 }
-

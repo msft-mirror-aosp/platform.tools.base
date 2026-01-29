@@ -25,5 +25,5 @@ import com.android.build.api.dsl.DynamicFeatureExtension
  *
  * Only the Android Gradle Plugin should create instances of interfaces in com.android.build.api.variant.
  */
-interface DynamicFeatureAndroidComponentsExtension:
-    AndroidComponentsExtension<DynamicFeatureExtension, DynamicFeatureVariantBuilder, DynamicFeatureVariant>
+interface DynamicFeatureAndroidComponentsExtension :
+  AndroidComponentsExtension<DynamicFeatureExtension, DynamicFeatureVariantBuilder, DynamicFeatureVariant>

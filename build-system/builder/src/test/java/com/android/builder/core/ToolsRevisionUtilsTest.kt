@@ -17,18 +17,22 @@ package com.android.builder.core
 
 import com.android.sdklib.AndroidVersion
 import com.google.common.truth.Truth.assertThat
-import org.junit.Test
 import java.lang.reflect.Modifier
+import org.junit.Test
 
 class ToolsRevisionUtilsTest {
-    @Test
-    fun `check max recommended compile sdk version is kept up to date`() {
-        val maxVersionCode = getMaxKnownVersion()
-        assertThat(ToolsRevisionUtils.MAX_RECOMMENDED_COMPILE_SDK_VERSION.featureLevel).isAtLeast(maxVersionCode)
-    }
+  @Test
+  fun `check max recommended compile sdk version is kept up to date`() {
+    val maxVersionCode = getMaxKnownVersion()
+    assertThat(ToolsRevisionUtils.MAX_RECOMMENDED_COMPILE_SDK_VERSION.featureLevel).isAtLeast(maxVersionCode)
+  }
 
-    private fun getMaxKnownVersion() = AndroidVersion.VersionCodes::class.java.fields.asSequence()
-        .filter { Modifier.isStatic(it.modifiers) && it.type == Int::class.java }
-        .map { it.getInt(null) }
-        .maxOrNull() ?: throw AssertionError()
+  private fun getMaxKnownVersion() =
+    AndroidVersion.VersionCodes::class
+      .java
+      .fields
+      .asSequence()
+      .filter { Modifier.isStatic(it.modifiers) && it.type == Int::class.java }
+      .map { it.getInt(null) }
+      .maxOrNull() ?: throw AssertionError()
 }

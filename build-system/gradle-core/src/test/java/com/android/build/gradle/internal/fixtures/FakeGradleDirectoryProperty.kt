@@ -16,6 +16,8 @@
 
 package com.android.build.gradle.internal.fixtures
 
+import java.io.File
+import java.util.function.BiFunction
 import org.gradle.api.Transformer
 import org.gradle.api.file.Directory
 import org.gradle.api.file.DirectoryProperty
@@ -25,139 +27,134 @@ import org.gradle.api.file.RegularFile
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
 import org.gradle.api.specs.Spec
-import java.io.File
-import java.util.function.BiFunction
 
 class FakeGradleDirectoryProperty(private val directory: Directory?) : DirectoryProperty {
 
-    var isSet = false
+  var isSet = false
 
-    override fun get(): Directory = directory!!
+  override fun get(): Directory = directory!!
 
-    override fun getOrNull(): Directory? = directory
+  override fun getOrNull(): Directory? = directory
 
-    override fun getOrElse(defaultValue: Directory): Directory = directory ?: defaultValue
+  override fun getOrElse(defaultValue: Directory): Directory = directory ?: defaultValue
 
-    override fun <S : Any> map(transformer: Transformer<out S?, in Directory>): Provider<S> {
-        TODO("Not yet implemented")
-    }
+  override fun <S : Any> map(transformer: Transformer<out S?, in Directory>): Provider<S> {
+    TODO("Not yet implemented")
+  }
 
-    override fun filter(spec: Spec<in Directory>): Provider<Directory> {
-        TODO("Not yet implemented")
-    }
+  override fun filter(spec: Spec<in Directory>): Provider<Directory> {
+    TODO("Not yet implemented")
+  }
 
-    override fun <S : Any> flatMap(transformer: Transformer<out Provider<out S>?, in Directory>): Provider<S> {
-        TODO("Not yet implemented")
-    }
+  override fun <S : Any> flatMap(transformer: Transformer<out Provider<out S>?, in Directory>): Provider<S> {
+    TODO("Not yet implemented")
+  }
 
-    override fun isPresent(): Boolean {
-        return isSet
-    }
+  override fun isPresent(): Boolean {
+    return isSet
+  }
 
-    override fun orElse(value: Directory): Provider<Directory> {
-        TODO("Not yet implemented")
-    }
+  override fun orElse(value: Directory): Provider<Directory> {
+    TODO("Not yet implemented")
+  }
 
-    override fun orElse(provider: Provider<out Directory>): Provider<Directory> {
-        TODO("Not yet implemented")
-    }
+  override fun orElse(provider: Provider<out Directory>): Provider<Directory> {
+    TODO("Not yet implemented")
+  }
 
-    override fun <U : Any, R : Any> zip(
-        right: Provider<U>,
-        combiner: BiFunction<in Directory, in U, out R?>
-    ): Provider<R> {
-        TODO("Not yet implemented")
-    }
+  override fun <U : Any, R : Any> zip(right: Provider<U>, combiner: BiFunction<in Directory, in U, out R?>): Provider<R> {
+    TODO("Not yet implemented")
+  }
 
-    override fun finalizeValue() {
-        TODO("Not yet implemented")
-    }
+  override fun finalizeValue() {
+    TODO("Not yet implemented")
+  }
 
-    override fun finalizeValueOnRead() {
-        TODO("Not yet implemented")
-    }
+  override fun finalizeValueOnRead() {
+    TODO("Not yet implemented")
+  }
 
-    override fun disallowChanges() {
-        TODO("Not yet implemented")
-    }
+  override fun disallowChanges() {
+    TODO("Not yet implemented")
+  }
 
-    override fun disallowUnsafeRead() {
-        TODO("Not yet implemented")
-    }
+  override fun disallowUnsafeRead() {
+    TODO("Not yet implemented")
+  }
 
-    override fun unset(): Property<Directory> {
-        TODO("Not yet implemented")
-    }
+  override fun unset(): Property<Directory> {
+    TODO("Not yet implemented")
+  }
 
-    override fun unsetConvention(): Property<Directory> {
-        TODO("Not yet implemented")
-    }
+  override fun unsetConvention(): Property<Directory> {
+    TODO("Not yet implemented")
+  }
 
-    override fun set(file: File?) {
-        isSet = true
-    }
+  override fun set(file: File?) {
+    isSet = true
+  }
 
-    override fun set(value: Directory?) {
-        isSet = true
-    }
+  override fun set(value: Directory?) {
+    isSet = true
+  }
 
-    override fun set(provider: Provider<out Directory>) {
-        isSet = true
-    }
+  override fun set(provider: Provider<out Directory>) {
+    isSet = true
+  }
 
-    override fun value(value: Directory?): DirectoryProperty {
-        TODO("Not yet implemented")
-    }
+  override fun value(value: Directory?): DirectoryProperty {
+    TODO("Not yet implemented")
+  }
 
-    override fun value(provider: Provider<out Directory>): DirectoryProperty {
-        TODO("Not yet implemented")
-    }
+  override fun value(provider: Provider<out Directory>): DirectoryProperty {
+    TODO("Not yet implemented")
+  }
 
-    override fun convention(value: Directory?): DirectoryProperty {
-        TODO("Not yet implemented")
-    }
+  override fun convention(value: Directory?): DirectoryProperty {
+    TODO("Not yet implemented")
+  }
 
-    override fun convention(provider: Provider<out Directory>): DirectoryProperty {
-        TODO("Not yet implemented")
-    }
+  override fun convention(provider: Provider<out Directory>): DirectoryProperty {
+    TODO("Not yet implemented")
+  }
 
-    override fun getAsFile(): Provider<File> {
-        TODO("Not yet implemented")
-    }
+  override fun getAsFile(): Provider<File> {
+    TODO("Not yet implemented")
+  }
 
-    override fun fileValue(file: File?): DirectoryProperty {
-        TODO("Not yet implemented")
-    }
+  override fun fileValue(file: File?): DirectoryProperty {
+    TODO("Not yet implemented")
+  }
 
-    override fun fileProvider(provider: Provider<File>): DirectoryProperty {
-        TODO("Not yet implemented")
-    }
+  override fun fileProvider(provider: Provider<File>): DirectoryProperty {
+    TODO("Not yet implemented")
+  }
 
-    override fun getLocationOnly(): Provider<Directory> {
-        TODO("Not yet implemented")
-    }
+  override fun getLocationOnly(): Provider<Directory> {
+    TODO("Not yet implemented")
+  }
 
-    override fun getAsFileTree(): FileTree {
-        TODO("Not yet implemented")
-    }
+  override fun getAsFileTree(): FileTree {
+    TODO("Not yet implemented")
+  }
 
-    override fun dir(path: String): Provider<Directory> {
-        TODO("Not yet implemented")
-    }
+  override fun dir(path: String): Provider<Directory> {
+    TODO("Not yet implemented")
+  }
 
-    override fun dir(path: Provider<out CharSequence>): Provider<Directory> {
-        TODO("Not yet implemented")
-    }
+  override fun dir(path: Provider<out CharSequence>): Provider<Directory> {
+    TODO("Not yet implemented")
+  }
 
-    override fun file(path: String): Provider<RegularFile> {
-        TODO("Not yet implemented")
-    }
+  override fun file(path: String): Provider<RegularFile> {
+    TODO("Not yet implemented")
+  }
 
-    override fun file(path: Provider<out CharSequence>): Provider<RegularFile> {
-        TODO("Not yet implemented")
-    }
+  override fun file(path: Provider<out CharSequence>): Provider<RegularFile> {
+    TODO("Not yet implemented")
+  }
 
-    override fun files(vararg paths: Any?): FileCollection {
-        TODO("Not yet implemented")
-    }
+  override fun files(vararg paths: Any?): FileCollection {
+    TODO("Not yet implemented")
+  }
 }

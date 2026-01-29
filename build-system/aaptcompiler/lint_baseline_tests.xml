@@ -34,20 +34,4 @@
             column="5"/>
     </issue>
 
-    <issue
-        id="SuspiciousIndentation"
-        message="Suspicious indentation: This is indented but is not continuing the previous expression (`val extractor =     `...)"
-        errorLine1="      try {"
-        errorLine2="      ~~~~~">
-        <location
-            file="src/test/java/com/android/aaptcompiler/TableExtractorTest.kt"
-            line="39"
-            column="7"/>
-        <location
-            file="src/test/java/com/android/aaptcompiler/TableExtractorTest.kt"
-            line="36"
-            column="5"
-            message="Previous statement here"/>
-    </issue>
-
 </issues>

@@ -18,34 +18,32 @@ package com.android.build.gradle.integration.library
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.project.AarSelector
-import com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
 import org.junit.Rule
 import org.junit.Test
-import java.nio.file.Files
-import java.nio.file.Path
 
 /** Check the merging of proguard files in AARs. */
 class LibProguardConsumerFilesTest {
 
-    @Rule @JvmField
-    var project = GradleTestProject.builder().fromTestProject("libProguardConsumerFiles").create()
+  @Rule @JvmField var project = GradleTestProject.builder().fromTestProject("libProguardConsumerFiles").create()
 
-    @Test
-    fun checkProguardDotTxtHasBeenCorrectlyMerged() {
-        project.execute("assembleDebug", "assembleRelease")
+  @Test
+  fun checkProguardDotTxtHasBeenCorrectlyMerged() {
+    project.execute("assembleDebug", "assembleRelease")
 
-        project.assertAar(AarSelector.DEBUG) {
-            textFile("proguard.txt").isEqualTo("A")
-        }
+    project.assertAar(AarSelector.DEBUG) { textFile("proguard.txt").isEqualTo("A") }
 
-        project.assertAar(AarSelector.RELEASE) {
-            textFile("proguard.txt").isEqualTo("""
-                A
+    project.assertAar(AarSelector.RELEASE) {
+      textFile("proguard.txt")
+        .isEqualTo(
+          """
+          A
 
-                B
+          B
 
-                C
-            """.trimIndent())
-        }
+          C
+          """
+            .trimIndent()
+        )
     }
+  }
 }

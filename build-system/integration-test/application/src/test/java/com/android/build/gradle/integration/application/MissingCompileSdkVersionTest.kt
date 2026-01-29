@@ -24,104 +24,89 @@ import com.android.builder.model.SyncIssue
 import com.android.sdklib.SdkVersionInfo
 import com.android.testutils.TestUtils
 import com.android.utils.FileUtils
+import com.google.common.truth.Truth.assertThat
+import java.io.File
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
-import com.google.common.truth.Truth.assertThat
-import org.junit.Before
-import java.io.File
 
 class MissingCompileSdkVersionTest {
 
-    private lateinit var sdkHome: File
+  private lateinit var sdkHome: File
 
-    @get:Rule
-    val project = GradleTestProject.builder()
-        .fromTestApp(HelloWorldApp.forPlugin("com.android.application"))
-        .withSdk(false)
-        .create()
+  @get:Rule
+  val project = GradleTestProject.builder().fromTestApp(HelloWorldApp.forPlugin("com.android.application")).withSdk(false).create()
 
-    @Before
-    @Throws(Exception::class)
-    fun setUp() {
-        sdkHome = project.file("local-sdk-for-test")
-        FileUtils.mkdirs(sdkHome)
+  @Before
+  @Throws(Exception::class)
+  fun setUp() {
+    sdkHome = project.file("local-sdk-for-test")
+    FileUtils.mkdirs(sdkHome)
 
-        TestFileUtils.appendToFile(
-            project.localProp,
-            System.lineSeparator()
-                    + SdkConstants.SDK_DIR_PROPERTY
-                    + " = "
-                    + sdkHome.absolutePath.replace("\\", "\\\\")
-        )
+    TestFileUtils.appendToFile(
+      project.localProp,
+      System.lineSeparator() + SdkConstants.SDK_DIR_PROPERTY + " = " + sdkHome.absolutePath.replace("\\", "\\\\"),
+    )
 
-        TestFileUtils.searchAndReplace(
-            project.buildFile,
-            "compileSdkVersion = " + GradleTestProject.DEFAULT_COMPILE_SDK_VERSION,
-            ""
-        )
-    }
+    TestFileUtils.searchAndReplace(project.buildFile, "compileSdkVersion = " + GradleTestProject.DEFAULT_COMPILE_SDK_VERSION, "")
+  }
 
-    /**
-     * Tests the sync finishes successfully when compileSdkVersion is missing.
-     * It also checks that compile version is set to the default one when no SDKs are installed.
-     */
-    @Test
-    @Throws(Exception::class)
-    fun testSyncIsSuccessful() {
-        // Sync should complete successfully
-        val modelContainer =
-            project.modelV2().ignoreSyncIssues().fetchModels().container.getProject()
-        val syncIssues = modelContainer.issues?.syncIssues!!
+  /**
+   * Tests the sync finishes successfully when compileSdkVersion is missing. It also checks that compile version is set to the default one
+   * when no SDKs are installed.
+   */
+  @Test
+  @Throws(Exception::class)
+  fun testSyncIsSuccessful() {
+    // Sync should complete successfully
+    val modelContainer = project.modelV2().ignoreSyncIssues().fetchModels().container.getProject()
+    val syncIssues = modelContainer.issues?.syncIssues!!
 
-        val compileSdkNotSetSyncIssues =
-            syncIssues.filter { it.type == SyncIssue.TYPE_COMPILE_SDK_VERSION_NOT_SET }
-        assertThat(compileSdkNotSetSyncIssues).hasSize(1)
-        val compileSdkIssue = compileSdkNotSetSyncIssues.elementAt(0)
-        val issueMessage = compileSdkIssue.message.replace(project.projectDir.path, "<PATH>")
-        assertThat(issueMessage).isEqualTo("""
+    val compileSdkNotSetSyncIssues = syncIssues.filter { it.type == SyncIssue.TYPE_COMPILE_SDK_VERSION_NOT_SET }
+    assertThat(compileSdkNotSetSyncIssues).hasSize(1)
+    val compileSdkIssue = compileSdkNotSetSyncIssues.elementAt(0)
+    val issueMessage = compileSdkIssue.message.replace(project.projectDir.path, "<PATH>")
+    assertThat(issueMessage)
+      .isEqualTo(
+        """
             Android Gradle Plugin has been applied at the root build file. Please consider not applying in the root (use `apply false`). Read more https://docs.gradle.org/current/userguide/plugins.html#sec:subprojects_plugins_dsl
 
             To continue with the plugin in the resolved and applied state, specify `compileSdk` in build.gradle (<PATH>${File.separator}build.gradle).
-        """.trimIndent())
+        """
+          .trimIndent()
+      )
 
-        val missingSdkPackageSyncIssues =
-            syncIssues.filter { it.type == SyncIssue.TYPE_MISSING_SDK_PACKAGE }
-        assertThat(missingSdkPackageSyncIssues).hasSize(1)
-        val missingSdkIssue = missingSdkPackageSyncIssues.elementAt(0)
-        assertThat(missingSdkIssue.message).contains(
-            "Failed to find target with hash string 'android-${SdkVersionInfo.HIGHEST_KNOWN_STABLE_API}'"
-        )
+    val missingSdkPackageSyncIssues = syncIssues.filter { it.type == SyncIssue.TYPE_MISSING_SDK_PACKAGE }
+    assertThat(missingSdkPackageSyncIssues).hasSize(1)
+    val missingSdkIssue = missingSdkPackageSyncIssues.elementAt(0)
+    assertThat(missingSdkIssue.message)
+      .contains("Failed to find target with hash string 'android-${SdkVersionInfo.HIGHEST_KNOWN_STABLE_API}'")
 
-        assertThat(modelContainer.androidDsl?.compileTarget).isEqualTo(
-            "android-${SdkVersionInfo.HIGHEST_KNOWN_STABLE_API}"
-        )
-    }
+    assertThat(modelContainer.androidDsl?.compileTarget).isEqualTo("android-${SdkVersionInfo.HIGHEST_KNOWN_STABLE_API}")
+  }
 
-    /**
-     * Tests that compile version is set to the highest one installed.
-     */
-    @Test
-    @Throws(Exception::class)
-    fun testHighestSdkInstalledIsSelected() {
-        installPlatform("24")
-        installPlatform("23")
+  /** Tests that compile version is set to the highest one installed. */
+  @Test
+  @Throws(Exception::class)
+  fun testHighestSdkInstalledIsSelected() {
+    installPlatform("24")
+    installPlatform("23")
 
-        val model = project.modelV2().ignoreSyncIssues().fetchModels().container.getProject()
-        assertThat(model.androidDsl?.compileTarget).isEqualTo("android-24")
-    }
+    val model = project.modelV2().ignoreSyncIssues().fetchModels().container.getProject()
+    assertThat(model.androidDsl?.compileTarget).isEqualTo("android-24")
+  }
 
-    /** Tests that missing compileSdkVersion breaks the regular build. */
-    @Test
-    @Throws(Exception::class)
-    fun testRegularBuildBreaks() {
-        project.executor().expectFailure().run("assembleDebug")
-    }
+  /** Tests that missing compileSdkVersion breaks the regular build. */
+  @Test
+  @Throws(Exception::class)
+  fun testRegularBuildBreaks() {
+    project.executor().expectFailure().run("assembleDebug")
+  }
 
-    private fun installPlatform(version: String) {
-        FileUtils.copyDirectoryToDirectory(
-            TestUtils.getSdk().resolve(SdkConstants.FD_PLATFORMS).resolve("android-$version")
-                .toFile(),
-            FileUtils.join(sdkHome, SdkConstants.FD_PLATFORMS)
-        )
-    }
+  private fun installPlatform(version: String) {
+    FileUtils.copyDirectoryToDirectory(
+      TestUtils.getSdk().resolve(SdkConstants.FD_PLATFORMS).resolve("android-$version").toFile(),
+      FileUtils.join(sdkHome, SdkConstants.FD_PLATFORMS),
+    )
+  }
 }

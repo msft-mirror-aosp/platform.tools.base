@@ -20,7 +20,6 @@ package com.android.build.api.dsl
  * DSL object to configure min SDK version.
  *
  * To set min SDK version with a released API level,
- *
  * ```
  * android {
  *   defaultConfig {
@@ -45,36 +44,28 @@ package com.android.build.api.dsl
  */
 interface MinSdkSpec {
 
-    /**
-     * The min SDK version.
-     */
-    var version: MinSdkVersion?
+  /** The min SDK version. */
+  var version: MinSdkVersion?
 
-    /**
-     * To set min SDK version with a released API level, use this function to compute the
-     * [MinSdkVersion] and assign it to [MinSdkSpec.version] property.
-     */
-    fun release(version: Int): MinSdkVersion
+  /**
+   * To set min SDK version with a released API level, use this function to compute the [MinSdkVersion] and assign it to
+   * [MinSdkSpec.version] property.
+   */
+  fun release(version: Int): MinSdkVersion
 
-    /**
-     * To set min SDK version with a preview API level, use this function to compute the
-     * [MinSdkVersion] and assign it to [MinSdkSpec.version] property.
-     */
-    fun preview(codeName: String): MinSdkVersion
+  /**
+   * To set min SDK version with a preview API level, use this function to compute the [MinSdkVersion] and assign it to [MinSdkSpec.version]
+   * property.
+   */
+  fun preview(codeName: String): MinSdkVersion
 }
 
-/**
- * DSL object to represent the min SDK version.
- */
+/** DSL object to represent the min SDK version. */
 interface MinSdkVersion {
 
-    /**
-     * The API level of the min SDK version.
-     */
-    val apiLevel: Int?
+  /** The API level of the min SDK version. */
+  val apiLevel: Int?
 
-    /**
-     * The preview API level of the min SDK version.
-     */
-    val codeName: String?
+  /** The preview API level of the min SDK version. */
+  val codeName: String?
 }

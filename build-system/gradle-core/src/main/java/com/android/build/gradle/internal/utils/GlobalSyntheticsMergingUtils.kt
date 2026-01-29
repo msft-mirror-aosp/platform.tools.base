@@ -29,89 +29,87 @@ import com.android.build.gradle.internal.tasks.creationconfig.DexMergingCreation
 import org.gradle.api.file.FileCollection
 
 fun getGlobalSyntheticsInput(
-    creationConfig: ApkCreationConfig,
-    mergeAction: DexMergingAction,
-    dexingUsingArtifactTransforms: Boolean,
-    separateFileDependenciesTask: Boolean
+  creationConfig: ApkCreationConfig,
+  mergeAction: DexMergingAction,
+  dexingUsingArtifactTransforms: Boolean,
+  separateFileDependenciesTask: Boolean,
 ): FileCollection {
-    val attributes = DexingRegistration.ComponentSpecificParameters(creationConfig).getAttributes()
-    return getGlobalSyntheticsInput(creationConfig.services,
-        creationConfig.artifacts,
-        attributes,
-        creationConfig.variantDependencies,
-        mergeAction,
-        dexingUsingArtifactTransforms,
-        separateFileDependenciesTask
-    )
+  val attributes = DexingRegistration.ComponentSpecificParameters(creationConfig).getAttributes()
+  return getGlobalSyntheticsInput(
+    creationConfig.services,
+    creationConfig.artifacts,
+    attributes,
+    creationConfig.variantDependencies,
+    mergeAction,
+    dexingUsingArtifactTransforms,
+    separateFileDependenciesTask,
+  )
 }
 
-fun getGlobalSyntheticsInput(
-    creationConfig: DexMergingCreationConfig
-): FileCollection {
-    val attributes = DexingRegistration.ComponentSpecificParameters(creationConfig).getAttributes()
-    return getGlobalSyntheticsInput(creationConfig.services,
-        creationConfig.artifacts,
-        attributes,
-        creationConfig.variantDependencies,
-        creationConfig.action,
-        creationConfig.dexingUsingArtifactTransforms,
-        creationConfig.separateFileDependenciesDexingTask
-    )
+fun getGlobalSyntheticsInput(creationConfig: DexMergingCreationConfig): FileCollection {
+  val attributes = DexingRegistration.ComponentSpecificParameters(creationConfig).getAttributes()
+  return getGlobalSyntheticsInput(
+    creationConfig.services,
+    creationConfig.artifacts,
+    attributes,
+    creationConfig.variantDependencies,
+    creationConfig.action,
+    creationConfig.dexingUsingArtifactTransforms,
+    creationConfig.separateFileDependenciesDexingTask,
+  )
 }
 
 private fun getGlobalSyntheticsInput(
-    services: TaskCreationServices,
-    artifacts: ArtifactsImpl,
-    attributes: AndroidAttributes,
-    variantDependencies: VariantDependencies,
-    mergeAction: DexMergingAction,
-    dexingUsingArtifactTransforms: Boolean,
-    separateFileDependenciesTask: Boolean
+  services: TaskCreationServices,
+  artifacts: ArtifactsImpl,
+  attributes: AndroidAttributes,
+  variantDependencies: VariantDependencies,
+  mergeAction: DexMergingAction,
+  dexingUsingArtifactTransforms: Boolean,
+  separateFileDependenciesTask: Boolean,
 ): FileCollection {
-    if (mergeAction != DexMergingAction.MERGE_ALL) {
-        return services.fileCollection()
-    }
+  if (mergeAction != DexMergingAction.MERGE_ALL) {
+    return services.fileCollection()
+  }
 
-    val globals = services.fileCollection()
+  val globals = services.fileCollection()
 
+  globals.from(
+    artifacts.get(InternalArtifactType.GLOBAL_SYNTHETICS_PROJECT),
+    artifacts.get(InternalArtifactType.GLOBAL_SYNTHETICS_MIXED_SCOPE),
+  )
+  if (dexingUsingArtifactTransforms) {
     globals.from(
-        artifacts.get(InternalArtifactType.GLOBAL_SYNTHETICS_PROJECT),
-       artifacts.get(InternalArtifactType.GLOBAL_SYNTHETICS_MIXED_SCOPE)
+      variantDependencies.getArtifactFileCollection(
+        AndroidArtifacts.ConsumedConfigType.RUNTIME_CLASSPATH,
+        AndroidArtifacts.ArtifactScope.PROJECT,
+        AndroidArtifacts.ArtifactType.GLOBAL_SYNTHETICS,
+        attributes,
+      )
     )
-    if (dexingUsingArtifactTransforms) {
-        globals.from(
-            variantDependencies.getArtifactFileCollection(
-                AndroidArtifacts.ConsumedConfigType.RUNTIME_CLASSPATH,
-                AndroidArtifacts.ArtifactScope.PROJECT,
-                AndroidArtifacts.ArtifactType.GLOBAL_SYNTHETICS,
-                attributes
-            )
-        )
-        val artifactScope = if (separateFileDependenciesTask) {
-            AndroidArtifacts.ArtifactScope.REPOSITORY_MODULE
-        } else {
-            AndroidArtifacts.ArtifactScope.EXTERNAL
-        }
-        globals.from(
-            variantDependencies.getArtifactFileCollection(
-                AndroidArtifacts.ConsumedConfigType.RUNTIME_CLASSPATH,
-                artifactScope,
-                AndroidArtifacts.ArtifactType.GLOBAL_SYNTHETICS,
-                attributes
-            )
-        )
-    } else {
-        globals.from(artifacts.get(InternalArtifactType.GLOBAL_SYNTHETICS_SUBPROJECT))
-        globals.from(
-            artifacts.get(InternalArtifactType.GLOBAL_SYNTHETICS_EXTERNAL_LIB),
-            artifacts.get(InternalArtifactType.GLOBAL_SYNTHETICS_EXTERNAL_LIBS_ARTIFACT_TRANSFORM)
-        )
-    }
-    if (separateFileDependenciesTask) {
-        globals.from(
-            artifacts.get(InternalArtifactType.GLOBAL_SYNTHETICS_FILE_LIB)
-        )
-    }
-    return globals
+    val artifactScope =
+      if (separateFileDependenciesTask) {
+        AndroidArtifacts.ArtifactScope.REPOSITORY_MODULE
+      } else {
+        AndroidArtifacts.ArtifactScope.EXTERNAL
+      }
+    globals.from(
+      variantDependencies.getArtifactFileCollection(
+        AndroidArtifacts.ConsumedConfigType.RUNTIME_CLASSPATH,
+        artifactScope,
+        AndroidArtifacts.ArtifactType.GLOBAL_SYNTHETICS,
+        attributes,
+      )
+    )
+  } else {
+    globals.from(artifacts.get(InternalArtifactType.GLOBAL_SYNTHETICS_SUBPROJECT))
+    globals.from(
+      artifacts.get(InternalArtifactType.GLOBAL_SYNTHETICS_EXTERNAL_LIB),
+      artifacts.get(InternalArtifactType.GLOBAL_SYNTHETICS_EXTERNAL_LIBS_ARTIFACT_TRANSFORM),
+    )
+  }
+  if (separateFileDependenciesTask) {
+    globals.from(artifacts.get(InternalArtifactType.GLOBAL_SYNTHETICS_FILE_LIB))
+  }
+  return globals
 }
-

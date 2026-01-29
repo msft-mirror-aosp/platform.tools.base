@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 @file:JvmName("KotlinMultiplatformHierarchyDsl")
+
 package com.android.build.api
 
 import com.android.build.api.dsl.KotlinMultiplatformAndroidCompilation
@@ -25,17 +26,10 @@ import org.jetbrains.kotlin.gradle.plugin.KotlinHierarchyBuilder
 /**
  * Creates an extension for android support in applyDefaultHierarchyTemplate, for example:
  *
- * applyDefaultHierarchyTemplate {
- *   common {
- *     group("androidJvm") {
- *       withJvm()
- *       withAndroid()
- *     }
- *   }
- * }
+ * applyDefaultHierarchyTemplate { common { group("androidJvm") { withJvm() withAndroid() } } }
  */
 @OptIn(ExperimentalKotlinGradlePluginApi::class)
 @Incubating
 fun KotlinHierarchyBuilder.withAndroid() = withCompilations {
-    it is KotlinMultiplatformAndroidCompilation && it.target is KotlinMultiplatformAndroidLibraryTarget
+  it is KotlinMultiplatformAndroidCompilation && it.target is KotlinMultiplatformAndroidLibraryTarget
 }

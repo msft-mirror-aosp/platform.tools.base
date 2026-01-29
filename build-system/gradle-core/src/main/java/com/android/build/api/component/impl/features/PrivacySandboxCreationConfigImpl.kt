@@ -17,7 +17,5 @@
 package com.android.build.api.component.impl.features
 
 import com.android.build.gradle.internal.component.features.PrivacySandboxCreationConfig
-import com.android.build.gradle.internal.services.VariantServices
 
-class PrivacySandboxCreationConfigImpl: PrivacySandboxCreationConfig {
-}
+class PrivacySandboxCreationConfigImpl : PrivacySandboxCreationConfig {}

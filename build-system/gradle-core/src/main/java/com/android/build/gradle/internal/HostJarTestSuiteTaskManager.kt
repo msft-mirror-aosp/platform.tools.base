@@ -32,50 +32,56 @@ import org.gradle.api.tasks.Sync
 import org.gradle.api.tasks.TaskProvider
 
 /**
- * Task manager responsible for creating all tasks necessary to process a
- * [com.android.build.api.variant.TestSuiteSourceSet.HostJar] source set.
+ * Task manager responsible for creating all tasks necessary to process a [com.android.build.api.variant.TestSuiteSourceSet.HostJar] source
+ * set.
  */
 class HostJarTestSuiteTaskManager {
 
-    /**
-     * Creates all necessary tasks to process a
-     * [com.android.build.api.variant.TestSuiteSourceSet.HostJar] type of source set.
-     *
-     * @return the final [TaskProvider] that can be used as a dependent of the
-     * [com.android.build.gradle.tasks.TestSuiteTestTask].
-     */
-    internal fun createTasks(
-        sourceContainer: TestSuiteSourceContainer,
-        source: HostJarTestSuiteSourceSet,
-        taskFactory: TaskFactory,
-        taskCreationServices: TaskCreationServices
-    ): TaskProvider<out Task> {
+  /**
+   * Creates all necessary tasks to process a [com.android.build.api.variant.TestSuiteSourceSet.HostJar] type of source set.
+   *
+   * @return the final [TaskProvider] that can be used as a dependent of the [com.android.build.gradle.tasks.TestSuiteTestTask].
+   */
+  internal fun createTasks(
+    sourceContainer: TestSuiteSourceContainer,
+    source: HostJarTestSuiteSourceSet,
+    taskFactory: TaskFactory,
+    taskCreationServices: TaskCreationServices,
+  ): TaskProvider<out Task> {
 
-        // first process java resources.
-        val config = object: ProcessJavaResCreationConfig {
-            override val extraClasses: Collection<FileCollection>
-                get() = listOf()
-            override val useBuiltInKotlinSupport: Boolean
-                get() = false // so far, since we don't compile yet.
-            override val packageJacocoRuntime: Boolean
-                get() = false
-            override val annotationProcessorConfiguration: Configuration?
-                get() = null
-            override val sources: FlatSourceDirectoriesImpl
-                get() = source.resources as FlatSourceDirectoriesImpl
+    // first process java resources.
+    val config =
+      object : ProcessJavaResCreationConfig {
+        override val extraClasses: Collection<FileCollection>
+          get() = listOf()
 
-            override fun setJavaResTask(task: TaskProvider<out Sync>) {}
+        override val useBuiltInKotlinSupport: Boolean
+          get() = false // so far, since we don't compile yet.
 
-            override val name: String
-                get() = sourceContainer.identifier
-            override val services: TaskCreationServices
-                get() = taskCreationServices
-            override val taskContainer: MutableTaskContainer
-                get() = throw RuntimeException("Test Suites should not access the deprecated `taskContainer`")
-            override val artifacts: ArtifactsImpl
-                get() = sourceContainer.artifacts
-        }
+        override val packageJacocoRuntime: Boolean
+          get() = false
 
-        return taskFactory.register(ProcessJavaResTask.CreationAction(config))
-    }
+        override val annotationProcessorConfiguration: Configuration?
+          get() = null
+
+        override val sources: FlatSourceDirectoriesImpl
+          get() = source.resources as FlatSourceDirectoriesImpl
+
+        override fun setJavaResTask(task: TaskProvider<out Sync>) {}
+
+        override val name: String
+          get() = sourceContainer.identifier
+
+        override val services: TaskCreationServices
+          get() = taskCreationServices
+
+        override val taskContainer: MutableTaskContainer
+          get() = throw RuntimeException("Test Suites should not access the deprecated `taskContainer`")
+
+        override val artifacts: ArtifactsImpl
+          get() = sourceContainer.artifacts
+      }
+
+    return taskFactory.register(ProcessJavaResTask.CreationAction(config))
+  }
 }

@@ -19,85 +19,80 @@ package com.android.build.gradle.internal
 import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.options.ProjectOptions
 import com.google.common.base.Throwables
+import java.util.concurrent.atomic.AtomicBoolean
 import org.gradle.api.Project
 import org.gradle.api.logging.LogLevel
-import java.util.concurrent.atomic.AtomicBoolean
 
 /**
  * Adds a check to ensure dependencies are not resolved during configuration phase.
  *
  * See https://github.com/gradle/gradle/issues/2298
  */
-fun registerDependencyCheck(
-    project: Project,
-    projectOptions: ProjectOptions
-) {
-    if (skipDependencyCheck(projectOptions)) {
-        return
+fun registerDependencyCheck(project: Project, projectOptions: ProjectOptions) {
+  if (skipDependencyCheck(projectOptions)) {
+    return
+  }
+
+  val isResolutionAllowed = AtomicBoolean(false)
+  when {
+    // There are 3 main sub-phases of interest in the configuration phase:
+    //    1. Evaluation of all projects, which includes evaluation of the current project
+    //    2. Task graph creation
+    //    3. Configuration cache store time
+
+    // If configuration-on-demand is enabled and there are included builds (b/154948828),
+    // configurations may be resolved before all projects are evaluated but should not be
+    // resolved during the current project's evaluation.
+    project.gradle.startParameter.isConfigureOnDemand && project.gradle.includedBuilds.isNotEmpty() -> {
+      project.afterEvaluate { isResolutionAllowed.set(true) }
     }
 
-    val isResolutionAllowed = AtomicBoolean(false)
-    when {
-        // There are 3 main sub-phases of interest in the configuration phase:
-        //    1. Evaluation of all projects, which includes evaluation of the current project
-        //    2. Task graph creation
-        //    3. Configuration cache store time
-
-        // If configuration-on-demand is enabled and there are included builds (b/154948828),
-        // configurations may be resolved before all projects are evaluated but should not be
-        // resolved during the current project's evaluation.
-        project.gradle.startParameter.isConfigureOnDemand && project.gradle.includedBuilds.isNotEmpty() -> {
-            project.afterEvaluate { isResolutionAllowed.set(true) }
-        }
-
-        // If this project is part of a composite build, configurations may be resolved during task
-        // graph creation but should not be resolved during all projects' evaluation.
-        project.gradle.parent != null || project.gradle.includedBuilds.isNotEmpty() -> {
-            project.gradle.projectsEvaluated { isResolutionAllowed.set(true) }
-        }
-
-        // In all other cases, configurations may be resolved during configuration cache store time
-        // or execution time but should not be resolved during all projects' evaluation and task
-        // graph creation
-        else -> project.gradle.taskGraph.whenReady { isResolutionAllowed.set(true) }
+    // If this project is part of a composite build, configurations may be resolved during task
+    // graph creation but should not be resolved during all projects' evaluation.
+    project.gradle.parent != null || project.gradle.includedBuilds.isNotEmpty() -> {
+      project.gradle.projectsEvaluated { isResolutionAllowed.set(true) }
     }
 
-    val failIfResolvedEarly = projectOptions[BooleanOption.DISALLOW_DEPENDENCY_RESOLUTION_AT_CONFIGURATION]
+    // In all other cases, configurations may be resolved during configuration cache store time
+    // or execution time but should not be resolved during all projects' evaluation and task
+    // graph creation
+    else -> project.gradle.taskGraph.whenReady { isResolutionAllowed.set(true) }
+  }
 
-    project.configurations.configureEach { configuration ->
-        configuration.incoming.beforeResolve {
-            if (isResolutionAllowed.get()) {
-                return@beforeResolve
-            }
-            if (configuration.name == "classpath") {
-                return@beforeResolve
-            }
+  val failIfResolvedEarly = projectOptions[BooleanOption.DISALLOW_DEPENDENCY_RESOLUTION_AT_CONFIGURATION]
 
-            val errorMessage = errorMessage(configurationName = configuration.name)
-            if (failIfResolvedEarly) {
-                error(errorMessage)
-            } else {
-                project.logger.warn("$errorMessage\nRun with --info for a stacktrace.")
-                // TODO b/80230357: Heuristically sanitized stacktrace to show what triggered the resolution.
-                if (project.logger.isEnabled(LogLevel.INFO)) {
-                    project.logger.info(
-                        Throwables.getStackTraceAsString(RuntimeException(errorMessage))
-                    )
-                }
-            }
+  project.configurations.configureEach { configuration ->
+    configuration.incoming.beforeResolve {
+      if (isResolutionAllowed.get()) {
+        return@beforeResolve
+      }
+      if (configuration.name == "classpath") {
+        return@beforeResolve
+      }
+
+      val errorMessage = errorMessage(configurationName = configuration.name)
+      if (failIfResolvedEarly) {
+        error(errorMessage)
+      } else {
+        project.logger.warn("$errorMessage\nRun with --info for a stacktrace.")
+        // TODO b/80230357: Heuristically sanitized stacktrace to show what triggered the resolution.
+        if (project.logger.isEnabled(LogLevel.INFO)) {
+          project.logger.info(Throwables.getStackTraceAsString(RuntimeException(errorMessage)))
         }
+      }
     }
+  }
 }
 
 private fun skipDependencyCheck(projectOptions: ProjectOptions): Boolean {
-    return projectOptions[BooleanOption.IDE_BUILD_MODEL_ONLY]
-        || projectOptions[BooleanOption.IDE_BUILD_MODEL_ONLY_V2]
+  return projectOptions[BooleanOption.IDE_BUILD_MODEL_ONLY] || projectOptions[BooleanOption.IDE_BUILD_MODEL_ONLY_V2]
 }
 
 private fun errorMessage(configurationName: String): String {
-    return """
+  return """
     Configuration '$configurationName' was resolved during configuration time.
     This is a build performance and scalability issue.
     See https://github.com/gradle/gradle/issues/2298
-    """.trimIndent()
+    """
+    .trimIndent()
 }

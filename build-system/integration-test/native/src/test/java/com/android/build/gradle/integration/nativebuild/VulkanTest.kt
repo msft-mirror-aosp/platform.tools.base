@@ -25,24 +25,26 @@ import org.junit.Rule
 import org.junit.Test
 
 class VulkanTest {
-    @get:Rule
-    val project = GradleTestProject.builder()
-        .setCmakeVersion(CMakeVersion.DEFAULT.sdkFolderName)
-        .setSideBySideNdkVersion(DEFAULT_NDK_SIDE_BY_SIDE_VERSION)
-        .setWithCmakeDirInLocalProp(true)
-        .fromTestProject("vulkan").create()
+  @get:Rule
+  val project =
+    GradleTestProject.builder()
+      .setCmakeVersion(CMakeVersion.DEFAULT.sdkFolderName)
+      .setSideBySideNdkVersion(DEFAULT_NDK_SIDE_BY_SIDE_VERSION)
+      .setWithCmakeDirInLocalProp(true)
+      .fromTestProject("vulkan")
+      .create()
 
-    @Test
-    fun assembleDebug() {
-        project.executor().with(BooleanOption.CUSTOM_SHADER_PATH_REQUIRED, false).run("assembleDebug")
+  @Test
+  fun assembleDebug() {
+    project.executor().with(BooleanOption.CUSTOM_SHADER_PATH_REQUIRED, false).run("assembleDebug")
 
-        project.getApk(GradleTestProject.ApkType.DEBUG).use { apk ->
-            assertThat(apk).containsFile("lib/x86/libvktuts.so")
-            assertThat(apk).containsFile("lib/x86_64/libvktuts.so")
-            assertThat(apk).containsFile("lib/armeabi-v7a/libvktuts.so")
-            assertThat(apk).containsFile("lib/arm64-v8a/libvktuts.so")
-            assertThat(apk).containsFile("assets/shaders/tri.vert.spv")
-            assertThat(apk).containsFile("assets/shaders/tri.frag.spv")
-        }
+    project.getApk(GradleTestProject.ApkType.DEBUG).use { apk ->
+      assertThat(apk).containsFile("lib/x86/libvktuts.so")
+      assertThat(apk).containsFile("lib/x86_64/libvktuts.so")
+      assertThat(apk).containsFile("lib/armeabi-v7a/libvktuts.so")
+      assertThat(apk).containsFile("lib/arm64-v8a/libvktuts.so")
+      assertThat(apk).containsFile("assets/shaders/tri.vert.spv")
+      assertThat(apk).containsFile("assets/shaders/tri.frag.spv")
     }
+  }
 }

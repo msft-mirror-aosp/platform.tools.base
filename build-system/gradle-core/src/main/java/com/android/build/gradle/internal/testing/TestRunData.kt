@@ -17,32 +17,19 @@
 package com.android.build.gradle.internal.testing
 
 import java.io.File
-import org.gradle.api.file.Directory
 import java.io.Serializable
+import org.gradle.api.file.Directory
 
-/**
- * Implementation of the TestRunData for use by
- * Custom Managed Device Types
- */
+/** Implementation of the TestRunData for use by Custom Managed Device Types */
 data class TestRunData(
-
-    override val variantName: String,
-
-    override val testRunId: String,
-
-    override val deviceName: String,
-
-    override val outputDirectory: Directory,
-
-    override val coverageOutputDirectory: Directory,
-
-    override val additionalTestOutputDir: Directory?,
-
-    override val additionalInstallOptions: List<String>,
-
-    override val helperApks: Set<File>,
-
-    override val projectPath: String,
-
-    override val testData: StaticTestData
-): com.android.build.api.instrumentation.manageddevice.TestRunData, Serializable
+  override val variantName: String,
+  override val testRunId: String,
+  override val deviceName: String,
+  override val outputDirectory: Directory,
+  override val coverageOutputDirectory: Directory,
+  override val additionalTestOutputDir: Directory?,
+  override val additionalInstallOptions: List<String>,
+  override val helperApks: Set<File>,
+  override val projectPath: String,
+  override val testData: StaticTestData,
+) : com.android.build.api.instrumentation.manageddevice.TestRunData, Serializable

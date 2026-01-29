@@ -16,8 +16,5 @@
 
 package com.android.build.api.variant
 
-/**
- * Build-time properties for packaging native libraries (.so) inside a tested APK [Component].
- */
-interface JniLibsTestedApkPackaging : JniLibsTestedComponentPackaging, JniLibsApkPackaging {
-}
+/** Build-time properties for packaging native libraries (.so) inside a tested APK [Component]. */
+interface JniLibsTestedApkPackaging : JniLibsTestedComponentPackaging, JniLibsApkPackaging {}

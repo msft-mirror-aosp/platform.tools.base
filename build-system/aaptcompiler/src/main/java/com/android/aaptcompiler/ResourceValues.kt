@@ -23,7 +23,6 @@ import com.android.aaptcompiler.android.hostToDevice
 import com.android.utils.ILogger
 import java.io.File
 
-
 open class Value {
   var source: Source = Source.EMPTY
   var comment = ""
@@ -37,10 +36,8 @@ abstract class Item : Value() {
   abstract fun flatten(): ResValue?
 }
 
-/**
- * An ID resource. Has no real value, just a place holder.
- */
-class Id: Item() {
+/** An ID resource. Has no real value, just a place holder. */
+class Id : Item() {
   init {
     weak = true
   }
@@ -63,18 +60,16 @@ class Id: Item() {
 /**
  * A reference to another resource. This maps to android::Res_value::TYPE_REFERENCE.
  *
- * A reference can be symbolic (with the name set to a valid resource name) or be
- * numeric (the id is set to a valid resource ID).
+ * A reference can be symbolic (with the name set to a valid resource name) or be numeric (the id is set to a valid resource ID).
  */
-
-class Reference(var name: ResourceName = ResourceName.EMPTY): Item() {
+class Reference(var name: ResourceName = ResourceName.EMPTY) : Item() {
   enum class Type {
     RESOURCE,
-    ATTRIBUTE
+    ATTRIBUTE,
   }
 
-  var id : Int? = null
-  var referenceType : Reference.Type = Reference.Type.RESOURCE
+  var id: Int? = null
+  var referenceType: Reference.Type = Reference.Type.RESOURCE
   var isPrivate = false
   var isDynamic = false
   // Only used for macros, which can contain any format type
@@ -84,17 +79,16 @@ class Reference(var name: ResourceName = ResourceName.EMPTY): Item() {
 
   override fun flatten(): ResValue? {
     if (name?.type == AaptResourceType.MACRO) {
-        return null
+      return null
     }
     val resId = id ?: 0
     val dynamic = resId.isValidDynamicId() && isDynamic
 
-    val dataType = when {
-      referenceType == Reference.Type.RESOURCE ->
-        if (dynamic) ResValue.DataType.DYNAMIC_REFERENCE else ResValue.DataType.REFERENCE
-      else ->
-        if (dynamic) ResValue.DataType.DYNAMIC_ATTRIBUTE else ResValue.DataType.ATTRIBUTE
-    }
+    val dataType =
+      when {
+        referenceType == Reference.Type.RESOURCE -> if (dynamic) ResValue.DataType.DYNAMIC_REFERENCE else ResValue.DataType.REFERENCE
+        else -> if (dynamic) ResValue.DataType.DYNAMIC_ATTRIBUTE else ResValue.DataType.ATTRIBUTE
+      }
 
     return ResValue(dataType, resId.hostToDevice())
   }
@@ -123,7 +117,7 @@ class Reference(var name: ResourceName = ResourceName.EMPTY): Item() {
   }
 }
 
-class FileReference(val path: StringPool.Ref): Item() {
+class FileReference(val path: StringPool.Ref) : Item() {
   // Handle to the file object from which this file can be read. This is only transient, and not
   // persisted in any format.
   var file: File? = null
@@ -134,8 +128,7 @@ class FileReference(val path: StringPool.Ref): Item() {
 
   override fun equals(other: Any?): Boolean {
     if (other is FileReference) {
-      return path.value() == other.path.value() &&
-        type == other.type
+      return path.value() == other.path.value() && type == other.type
     }
     return false
   }
@@ -154,7 +147,7 @@ class FileReference(val path: StringPool.Ref): Item() {
   }
 }
 
-data class BinaryPrimitive(val resValue: ResValue): Item() {
+data class BinaryPrimitive(val resValue: ResValue) : Item() {
   override fun flatten(): ResValue? {
     return ResValue(resValue.dataType, resValue.data.hostToDevice())
   }
@@ -167,7 +160,7 @@ data class BinaryPrimitive(val resValue: ResValue): Item() {
   }
 }
 
-data class AttributeResource(var typeMask: Int = 0, val logger: ILogger? = null): Value() {
+data class AttributeResource(var typeMask: Int = 0, val logger: ILogger? = null) : Value() {
   data class Symbol(val symbol: Reference, val value: Int, val type: Byte)
 
   var minInt = Int.MIN_VALUE
@@ -232,8 +225,10 @@ data class AttributeResource(var typeMask: Int = 0, val logger: ILogger? = null)
   fun isCompatibleWith(other: AttributeResource): Boolean {
     // if the high bits are set on any of these attribute type masks, then they are incompatible.
     // We don't check that flags and enums are identical.
-    if ((typeMask and Resources.Attribute.FormatFlags.ANY_VALUE.inv()) != 0 ||
-      (other.typeMask and Resources.Attribute.FormatFlags.ANY_VALUE.inv()) != 0) {
+    if (
+      (typeMask and Resources.Attribute.FormatFlags.ANY_VALUE.inv()) != 0 ||
+        (other.typeMask and Resources.Attribute.FormatFlags.ANY_VALUE.inv()) != 0
+    ) {
       return false
     }
 
@@ -245,39 +240,32 @@ data class AttributeResource(var typeMask: Int = 0, val logger: ILogger? = null)
   }
 }
 
-private fun maskToString(typeMask: Int, target: Int, success: String) =
-  if ((typeMask and target) == target) success else ""
+private fun maskToString(typeMask: Int, target: Int, success: String) = if ((typeMask and target) == target) success else ""
 
 private fun maskToString(typeMask: Int): String {
   val result = StringBuilder()
   result.append(maskToString(typeMask, Resources.Attribute.FormatFlags.BOOLEAN_VALUE, "| boolean"))
   result.append(maskToString(typeMask, Resources.Attribute.FormatFlags.COLOR_VALUE, "| color"))
-  result.append(
-    maskToString(typeMask, Resources.Attribute.FormatFlags.DIMENSION_VALUE, "| dimension"))
+  result.append(maskToString(typeMask, Resources.Attribute.FormatFlags.DIMENSION_VALUE, "| dimension"))
   result.append(maskToString(typeMask, Resources.Attribute.FormatFlags.ENUM_VALUE, "| enum"))
   result.append(maskToString(typeMask, Resources.Attribute.FormatFlags.FLAGS_VALUE, "| flags"))
   result.append(maskToString(typeMask, Resources.Attribute.FormatFlags.FLOAT_VALUE, "| float"))
-  result.append(
-    maskToString(typeMask, Resources.Attribute.FormatFlags.FRACTION_VALUE, "| fraction"))
-  result.append(
-    maskToString(typeMask, Resources.Attribute.FormatFlags.INTEGER_VALUE, "| integer"))
-  result.append(
-    maskToString(typeMask, Resources.Attribute.FormatFlags.REFERENCE_VALUE, "| reference"))
-  result.append(
-    maskToString(typeMask, Resources.Attribute.FormatFlags.STRING_VALUE, "| string"))
+  result.append(maskToString(typeMask, Resources.Attribute.FormatFlags.FRACTION_VALUE, "| fraction"))
+  result.append(maskToString(typeMask, Resources.Attribute.FormatFlags.INTEGER_VALUE, "| integer"))
+  result.append(maskToString(typeMask, Resources.Attribute.FormatFlags.REFERENCE_VALUE, "| reference"))
+  result.append(maskToString(typeMask, Resources.Attribute.FormatFlags.STRING_VALUE, "| string"))
   return if (result.isNotEmpty()) result.substring(2) else ""
 }
 
 data class UntranslatableSection(var startIndex: Int, var endIndex: Int = startIndex) {
-  fun shift(offset : Int): UntranslatableSection {
+  fun shift(offset: Int): UntranslatableSection {
     return UntranslatableSection(startIndex + offset, endIndex + offset)
   }
 }
 
-
 /**
- * A raw, unprocessed string. This may contain quotations, escape sequences, and whitespace. This
- * shall *NOT* end up in the final resource table.
+ * A raw, unprocessed string. This may contain quotations, escape sequences, and whitespace. This shall *NOT* end up in the final resource
+ * table.
  */
 class RawString(val value: StringPool.Ref) : Item() {
   override fun equals(other: Any?): Boolean {
@@ -300,14 +288,12 @@ class RawString(val value: StringPool.Ref) : Item() {
 }
 
 /**
- * A processed string resource. Unlike [StyledString], the string does not contain any spans, and
- * is represented a single string.
+ * A processed string resource. Unlike [StyledString], the string does not contain any spans, and is represented a single string.
  *
  * @param ref The reference to this basic string in the associated [StringPool].
  * @param untranslatables The list of indexed sections of this string that should not be translated.
  */
-class BasicString(
-  val ref: StringPool.Ref, val untranslatables: List<UntranslatableSection> = listOf()) : Item() {
+class BasicString(val ref: StringPool.Ref, val untranslatables: List<UntranslatableSection> = listOf()) : Item() {
 
   override fun toString(): String {
     return ref.value()
@@ -339,19 +325,14 @@ class BasicString(
 /**
  * A processed string resource with xml spans. For example: "Hello <b>world!</b>"
  *
- * @param ref The reference to this StyledString in the associated [StringPool]. Use
- * [spans] to find the spans associated with this string.
- * @param untranslatableSections The list of indexed sections of this string that should not be
- * translated.
+ * @param ref The reference to this StyledString in the associated [StringPool]. Use [spans] to find the spans associated with this string.
+ * @param untranslatableSections The list of indexed sections of this string that should not be translated.
  */
-class StyledString(
-  val ref: StringPool.StyleRef,
-  val untranslatableSections: List<UntranslatableSection>) : Item() {
+class StyledString(val ref: StringPool.StyleRef, val untranslatableSections: List<UntranslatableSection>) : Item() {
 
   override fun equals(other: Any?): Boolean {
     if (other is StyledString) {
-      return ref.value() == other.ref.value() &&
-        ref.spans() == other.ref.spans()
+      return ref.value() == other.ref.value() && ref.spans() == other.ref.spans()
     }
     return false
   }
@@ -374,9 +355,8 @@ class StyledString(
   fun spans() = ref.spans()
 }
 
-class ArrayResource: Value() {
+class ArrayResource : Value() {
   val elements = mutableListOf<Item>()
-
 
   override fun equals(other: Any?): Boolean {
     if (other is ArrayResource) {
@@ -396,7 +376,7 @@ class ArrayResource: Value() {
   }
 }
 
-class Style: Value() {
+class Style : Value() {
   data class Entry(val key: Reference, val value: Item?)
 
   var parent: Reference? = null
@@ -412,9 +392,8 @@ class Style: Value() {
     newStyle.parentInferred = parentInferred
     newStyle.comment = comment
     newStyle.source = source
-    for (entry in entries){
-      newStyle.entries.add(
-        Entry(entry.key, entry.value?.clone(pool)))
+    for (entry in entries) {
+      newStyle.entries.add(Entry(entry.key, entry.value?.clone(pool)))
     }
     return newStyle
   }
@@ -481,7 +460,7 @@ class Style: Value() {
   }
 
   override fun toString(): String {
-    val sb = StringBuilder(parent?.name.toString() +"\n")
+    val sb = StringBuilder(parent?.name.toString() + "\n")
     for (entry in entries) {
       sb.appendln(entry.key.name.toString() + "    " + entry.value?.toString())
     }
@@ -489,8 +468,8 @@ class Style: Value() {
   }
 }
 
-class Plural: Value() {
-  enum class Type{
+class Plural : Value() {
+  enum class Type {
     ZERO,
     ONE,
     TWO,
@@ -528,7 +507,7 @@ class Plural: Value() {
   }
 }
 
-class Styleable: Value() {
+class Styleable : Value() {
   val entries = mutableListOf<Reference>()
 
   override fun equals(other: Any?): Boolean {
@@ -540,22 +519,19 @@ class Styleable: Value() {
 }
 
 class Macro(
-    var rawValue: String? = null,
-    var styleString: StyleString? = null,
-    var untranslatables: List<UntranslatableSection> = listOf(),
-    var aliasNamespaces: List<Namespace> = listOf()): Value() {
+  var rawValue: String? = null,
+  var styleString: StyleString? = null,
+  var untranslatables: List<UntranslatableSection> = listOf(),
+  var aliasNamespaces: List<Namespace> = listOf(),
+) : Value() {
 
-    class Namespace(
-        var alias: String? = null,
-        var packageName: String? = null,
-        var isPrivate: Boolean = false) {
+  class Namespace(var alias: String? = null, var packageName: String? = null, var isPrivate: Boolean = false) {
 
-        override fun equals(other: Any?): Boolean {
-            if (other is Namespace) {
-                return alias == other.alias && packageName == other.packageName
-                        && isPrivate == isPrivate
-            }
-            return false
-        }
+    override fun equals(other: Any?): Boolean {
+      if (other is Namespace) {
+        return alias == other.alias && packageName == other.packageName && isPrivate == isPrivate
+      }
+      return false
     }
+  }
 }

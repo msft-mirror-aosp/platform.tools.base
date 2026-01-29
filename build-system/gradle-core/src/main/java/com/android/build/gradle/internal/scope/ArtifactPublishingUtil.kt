@@ -15,6 +15,7 @@
  */
 
 @file:JvmName("ArtifactPublishingUtil")
+
 package com.android.build.gradle.internal.scope
 
 import com.android.build.gradle.internal.component.ComponentCreationConfig
@@ -44,107 +45,80 @@ import org.gradle.api.provider.Provider
  */
 @JvmOverloads
 fun publishArtifactToConfiguration(
-    configuration: Configuration,
-    file: Any,
-    artifactType: AndroidArtifacts.ArtifactType,
-    attributes: AndroidAttributes? = null
+  configuration: Configuration,
+  file: Any,
+  artifactType: AndroidArtifacts.ArtifactType,
+  attributes: AndroidAttributes? = null,
 ) {
-    val type = artifactType.type
-    configuration
-        .outgoing
-        .variants { variants: NamedDomainObjectContainer<ConfigurationVariant> ->
-            variants.create(
-                getConfigurationVariantName(artifactType, attributes)
-            ) { variant ->
-                variant.artifact(
-                    file
-                ) { artifact ->
-                    artifact.type = type
-                }
-                variant.attributes.let { container ->
-                    attributes?.addAttributesToContainer(container)
-                }
-            }
-        }
+  val type = artifactType.type
+  configuration.outgoing.variants { variants: NamedDomainObjectContainer<ConfigurationVariant> ->
+    variants.create(getConfigurationVariantName(artifactType, attributes)) { variant ->
+      variant.artifact(file) { artifact -> artifact.type = type }
+      variant.attributes.let { container -> attributes?.addAttributesToContainer(container) }
+    }
+  }
 }
 
 @JvmOverloads
 fun publishArtifactToDefaultVariant(
-    configuration: Configuration,
-    file: Any,
-    artifactType: AndroidArtifacts.ArtifactType,
-    classifier: String? = null
+  configuration: Configuration,
+  file: Any,
+  artifactType: AndroidArtifacts.ArtifactType,
+  classifier: String? = null,
 ) {
-    val type = artifactType.type
+  val type = artifactType.type
 
-    configuration.outgoing.artifact(
-        file
-    ) { artifact ->
-        artifact.type = type
-        classifier?.let { artifact.classifier = classifier }
-    }
+  configuration.outgoing.artifact(file) { artifact ->
+    artifact.type = type
+    classifier?.let { artifact.classifier = classifier }
+  }
 }
 
 /**
- * This method creates a unique ConfigurationVariant name based on the artifactType and
- * attributeMap, which is important because all items in a NamedDomainObjectContainer must have
- * unique names.
+ * This method creates a unique ConfigurationVariant name based on the artifactType and attributeMap, which is important because all items
+ * in a NamedDomainObjectContainer must have unique names.
  */
-private fun getConfigurationVariantName(
-    artifactType: AndroidArtifacts.ArtifactType,
-    attributes: AndroidAttributes?
-): String {
-    return artifactType.type + (attributes?.toAttributeMapString() ?: "")
+private fun getConfigurationVariantName(artifactType: AndroidArtifacts.ArtifactType, attributes: AndroidAttributes?): String {
+  return artifactType.type + (attributes?.toAttributeMapString() ?: "")
 }
 
-/** Publish intermediate artifacts in the BuildArtifactsHolder based on PublishingSpecs.  */
-fun publishBuildArtifacts(
-    creationConfig: ComponentCreationConfig,
-    publishInfo: VariantPublishingInfo?
-) {
-    for (outputSpec in PublishingSpecs.getVariantPublishingSpec(creationConfig.componentType).outputs) {
-        val buildArtifactType = outputSpec.outputType
-        // Gradle only support publishing single file.  Therefore, unless Gradle starts
-        // supporting publishing multiple files, PublishingSpecs should not contain any
-        // OutputSpec with an appendable ArtifactType.
-        if (BuildArtifactSpec.has(buildArtifactType) && BuildArtifactSpec.get(buildArtifactType).appendable) {
-            throw RuntimeException(
-                "Appendable ArtifactType '${buildArtifactType.name()}' cannot be published."
-            )
-        }
-        val artifactProvider = creationConfig.artifacts.get(buildArtifactType)
-        val artifactContainer = creationConfig.artifacts.getArtifactContainer(buildArtifactType)
-        if (!artifactContainer.needInitialProducer().get()) {
-            val isPublicationConfigs =
-                outputSpec.publishedConfigTypes.any { it.isPublicationConfig }
-
-            if (isPublicationConfigs) {
-                val components = publishInfo!!.components
-                for(component in components) {
-                    publishIntermediateArtifact(
-                        creationConfig,
-                        artifactProvider,
-                        outputSpec.artifactType,
-                        outputSpec.publishedConfigTypes.map {
-                            PublishedConfigSpec(it, component) }.toSet(),
-                        outputSpec.libraryElements?.let {
-                            creationConfig.services.named(LibraryElements::class.java, it)
-                        }
-                    )
-                }
-            } else {
-                publishIntermediateArtifact(
-                    creationConfig,
-                    artifactProvider,
-                    outputSpec.artifactType,
-                    outputSpec.publishedConfigTypes.map { PublishedConfigSpec(it) }.toSet(),
-                    outputSpec.libraryElements?.let {
-                        creationConfig.services.named(LibraryElements::class.java, it)
-                    }
-                )
-            }
-        }
+/** Publish intermediate artifacts in the BuildArtifactsHolder based on PublishingSpecs. */
+fun publishBuildArtifacts(creationConfig: ComponentCreationConfig, publishInfo: VariantPublishingInfo?) {
+  for (outputSpec in PublishingSpecs.getVariantPublishingSpec(creationConfig.componentType).outputs) {
+    val buildArtifactType = outputSpec.outputType
+    // Gradle only support publishing single file.  Therefore, unless Gradle starts
+    // supporting publishing multiple files, PublishingSpecs should not contain any
+    // OutputSpec with an appendable ArtifactType.
+    if (BuildArtifactSpec.has(buildArtifactType) && BuildArtifactSpec.get(buildArtifactType).appendable) {
+      throw RuntimeException("Appendable ArtifactType '${buildArtifactType.name()}' cannot be published.")
     }
+    val artifactProvider = creationConfig.artifacts.get(buildArtifactType)
+    val artifactContainer = creationConfig.artifacts.getArtifactContainer(buildArtifactType)
+    if (!artifactContainer.needInitialProducer().get()) {
+      val isPublicationConfigs = outputSpec.publishedConfigTypes.any { it.isPublicationConfig }
+
+      if (isPublicationConfigs) {
+        val components = publishInfo!!.components
+        for (component in components) {
+          publishIntermediateArtifact(
+            creationConfig,
+            artifactProvider,
+            outputSpec.artifactType,
+            outputSpec.publishedConfigTypes.map { PublishedConfigSpec(it, component) }.toSet(),
+            outputSpec.libraryElements?.let { creationConfig.services.named(LibraryElements::class.java, it) },
+          )
+        }
+      } else {
+        publishIntermediateArtifact(
+          creationConfig,
+          artifactProvider,
+          outputSpec.artifactType,
+          outputSpec.publishedConfigTypes.map { PublishedConfigSpec(it) }.toSet(),
+          outputSpec.libraryElements?.let { creationConfig.services.named(LibraryElements::class.java, it) },
+        )
+      }
+    }
+  }
 }
 
 /**
@@ -156,54 +130,50 @@ fun publishBuildArtifacts(
  * @param libraryElements the artifact's library elements
  */
 private fun publishIntermediateArtifact(
-    creationConfig: ComponentCreationConfig,
-    artifact: Provider<out FileSystemLocation>,
-    artifactType: AndroidArtifacts.ArtifactType,
-    configSpecs: Set<PublishedConfigSpec>,
-    libraryElements: LibraryElements?
+  creationConfig: ComponentCreationConfig,
+  artifact: Provider<out FileSystemLocation>,
+  artifactType: AndroidArtifacts.ArtifactType,
+  configSpecs: Set<PublishedConfigSpec>,
+  libraryElements: LibraryElements?,
 ) {
-    Preconditions.checkState(configSpecs.isNotEmpty())
-    for (configSpec in configSpecs) {
-        val config = creationConfig.variantDependencies.getElements(configSpec)
-        val configType = configSpec.configType
-        if (config != null) {
-            if (configType.isPublicationConfig) {
-                var classifier: String? = null
-                val isSourcePublication = configType == AndroidArtifacts.PublishedConfigType.SOURCE_PUBLICATION
-                val isJavaDocPublication =
-                    configType == AndroidArtifacts.PublishedConfigType.JAVA_DOC_PUBLICATION
-                if (configSpec.isClassifierRequired) {
-                    classifier = if (isSourcePublication) {
-                        creationConfig.name + "-" + DocsType.SOURCES
-                    } else if (isJavaDocPublication) {
-                        creationConfig.name + "-" + DocsType.JAVADOC
-                    } else {
-                        creationConfig.name
-                    }
-                } else if (creationConfig.componentType.isTestFixturesComponent) {
-                    classifier = testFixturesClassifier
-                } else if (isSourcePublication) {
-                    classifier = DocsType.SOURCES
-                } else if (isJavaDocPublication) {
-                    classifier = DocsType.JAVADOC
-                }
-                publishArtifactToDefaultVariant(config, artifact, artifactType, classifier)
+  Preconditions.checkState(configSpecs.isNotEmpty())
+  for (configSpec in configSpecs) {
+    val config = creationConfig.variantDependencies.getElements(configSpec)
+    val configType = configSpec.configType
+    if (config != null) {
+      if (configType.isPublicationConfig) {
+        var classifier: String? = null
+        val isSourcePublication = configType == AndroidArtifacts.PublishedConfigType.SOURCE_PUBLICATION
+        val isJavaDocPublication = configType == AndroidArtifacts.PublishedConfigType.JAVA_DOC_PUBLICATION
+        if (configSpec.isClassifierRequired) {
+          classifier =
+            if (isSourcePublication) {
+              creationConfig.name + "-" + DocsType.SOURCES
+            } else if (isJavaDocPublication) {
+              creationConfig.name + "-" + DocsType.JAVADOC
             } else {
-                publishArtifactToConfiguration(
-                    config,
-                    artifact,
-                    artifactType,
-                    artifactType.getAttributes(
-                        namedAttributes = libraryElements?.let {
-                            mapOf(
-                                LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE to libraryElements
-                            )
-                        }
-                    ) { type, name ->
-                        creationConfig.services.named(type, name)
-                    }
-                )
+              creationConfig.name
             }
+        } else if (creationConfig.componentType.isTestFixturesComponent) {
+          classifier = testFixturesClassifier
+        } else if (isSourcePublication) {
+          classifier = DocsType.SOURCES
+        } else if (isJavaDocPublication) {
+          classifier = DocsType.JAVADOC
         }
+        publishArtifactToDefaultVariant(config, artifact, artifactType, classifier)
+      } else {
+        publishArtifactToConfiguration(
+          config,
+          artifact,
+          artifactType,
+          artifactType.getAttributes(
+            namedAttributes = libraryElements?.let { mapOf(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE to libraryElements) }
+          ) { type, name ->
+            creationConfig.services.named(type, name)
+          },
+        )
+      }
     }
+  }
 }

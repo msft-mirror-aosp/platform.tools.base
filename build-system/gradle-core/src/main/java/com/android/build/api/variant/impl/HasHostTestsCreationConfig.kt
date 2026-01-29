@@ -20,14 +20,9 @@ import com.android.build.gradle.internal.component.HostTestCreationConfig
 
 interface HasHostTestsCreationConfig {
 
-    /**
-     * Internal version of the public API that hold an internal type.
-     */
-    val hostTests: Map<String, HostTestCreationConfig>
+  /** Internal version of the public API that hold an internal type. */
+  val hostTests: Map<String, HostTestCreationConfig>
 
-    /**
-     * Add a new element to [hostTests], provided a test type name and the test
-     * component/variant.
-     */
-    fun addTestComponent(testTypeName: String, testComponent: HostTestCreationConfig)
+  /** Add a new element to [hostTests], provided a test type name and the test component/variant. */
+  fun addTestComponent(testTypeName: String, testComponent: HostTestCreationConfig)
 }

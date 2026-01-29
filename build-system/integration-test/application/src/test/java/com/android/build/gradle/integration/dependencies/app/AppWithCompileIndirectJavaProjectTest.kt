@@ -28,80 +28,67 @@ import org.junit.Test
 
 class AppWithCompileIndirectJavaProjectTest : ModelComparator() {
 
-    @get:Rule
-    val rule = GradleRule.from {
-        androidApplication {
-            android {
-                enableKotlin = false
-            }
-            dependencies {
-                implementation(project(DEFAULT_LIB_PATH))
-                runtimeOnly("com.google.guava:guava:19.0")
-            }
+  @get:Rule
+  val rule =
+    GradleRule.from {
+      androidApplication {
+        android { enableKotlin = false }
+        dependencies {
+          implementation(project(DEFAULT_LIB_PATH))
+          runtimeOnly("com.google.guava:guava:19.0")
         }
-        androidLibrary {
-            android {
-                enableKotlin = false
-            }
-            dependencies {
-                api(project(":jar"))
-            }
-            files.add(
-                "src/main/java/com/example/android/multiproject/library/PersonView.java",
-                //language=java
-                """
-                    package com.example.android.multiproject.library;
-                    public class PersonView {}
-                """.trimIndent()
-            )
-        }
-        genericProject(":jar") {
-            applyPlugin(PluginType.JAVA_LIBRARY)
-            dependencies {
-                api("com.google.guava:guava:19.0")
-            }
-            files.add(
-                "src/main/java/com/example/android/multiproject/person/People.java",
-                //language=java
-                """
-                    package com.example.android.multiproject.person;
-                    public class People {}
-                """.trimIndent()
-            )
-        }
-    }
-
-    @Test
-    fun `test VariantDependencies model`() {
-        val result = rule.build
-            .modelBuilder
-            .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
-            .fetchModels(variantName = "debug")
-
-        with(result).compareVariantDependencies(
-            projectAction = { getProject(DEFAULT_APP_PATH) },
-            goldenFile = "app_VariantDependencies"
+      }
+      androidLibrary {
+        android { enableKotlin = false }
+        dependencies { api(project(":jar")) }
+        files.add(
+          "src/main/java/com/example/android/multiproject/library/PersonView.java",
+          // language=java
+          """
+          package com.example.android.multiproject.library;
+          public class PersonView {}
+          """
+            .trimIndent(),
         )
-        with(result).compareVariantDependencies(
-            projectAction = { getProject(DEFAULT_LIB_PATH) },
-            goldenFile = "library_VariantDependencies"
+      }
+      genericProject(":jar") {
+        applyPlugin(PluginType.JAVA_LIBRARY)
+        dependencies { api("com.google.guava:guava:19.0") }
+        files.add(
+          "src/main/java/com/example/android/multiproject/person/People.java",
+          // language=java
+          """
+          package com.example.android.multiproject.person;
+          public class People {}
+          """
+            .trimIndent(),
+        )
+      }
+    }
+
+  @Test
+  fun `test VariantDependencies model`() {
+    val result = rule.build.modelBuilder.ignoreSyncIssues(SyncIssue.SEVERITY_WARNING).fetchModels(variantName = "debug")
+
+    with(result).compareVariantDependencies(projectAction = { getProject(DEFAULT_APP_PATH) }, goldenFile = "app_VariantDependencies")
+    with(result).compareVariantDependencies(projectAction = { getProject(DEFAULT_LIB_PATH) }, goldenFile = "library_VariantDependencies")
+  }
+
+  @Test
+  fun checkPackagedJar() {
+    val build = rule.build
+    build.executor.run(":app:assembleDebug")
+
+    build.androidApplication().assertApk(ApkSelector.DEBUG) {
+      classes()
+        .containsExactly(
+          "com/example/android/multiproject/person/People",
+          "com/example/android/multiproject/library/PersonView",
+          "pkg/name/app/R",
+          "pkg/name/lib/R",
+          "com/google/common/",
+          "com/google/thirdparty/",
         )
     }
-
-    @Test
-    fun checkPackagedJar() {
-        val build = rule.build
-        build.executor.run(":app:assembleDebug")
-
-        build.androidApplication().assertApk(ApkSelector.DEBUG) {
-            classes().containsExactly(
-                "com/example/android/multiproject/person/People",
-                "com/example/android/multiproject/library/PersonView",
-                "pkg/name/app/R",
-                "pkg/name/lib/R",
-                "com/google/common/",
-                "com/google/thirdparty/"
-            )
-        }
-    }
+  }
 }

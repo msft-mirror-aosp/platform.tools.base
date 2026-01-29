@@ -28,18 +28,20 @@ import org.junit.Test
 
 class LintStandaloneModelTest {
 
-    private val javaToolchain = """
-        java {
-            toolchain {
-                languageVersion = JavaLanguageVersion.of(17)
-            }
+  private val javaToolchain =
+    """
+    java {
+        toolchain {
+            languageVersion = JavaLanguageVersion.of(17)
         }
-    """.trimIndent()
+    }
+    """
+      .trimIndent()
 
-    private val javaLib1 =
-        MinimalSubProject.javaLibrary()
-            .appendToBuild(
-                """
+  private val javaLib1 =
+    MinimalSubProject.javaLibrary()
+      .appendToBuild(
+        """
                     apply plugin: 'com.android.lint'
 
                     $javaToolchain
@@ -49,84 +51,77 @@ class LintStandaloneModelTest {
                         testImplementation 'junit:junit:4.12'
                         implementation 'com.android.support:appcompat-v7:${SUPPORT_LIB_VERSION}'
                     }
-                """.trimIndent()
-            )
+                """
+          .trimIndent()
+      )
 
-    private val javaLib2 = MinimalSubProject.javaLibrary().appendToBuild(javaToolchain)
-    private val javaLib3 = MinimalSubProject.javaLibrary().appendToBuild(javaToolchain)
+  private val javaLib2 = MinimalSubProject.javaLibrary().appendToBuild(javaToolchain)
+  private val javaLib3 = MinimalSubProject.javaLibrary().appendToBuild(javaToolchain)
 
-    @get:Rule
-    val project: GradleTestProject =
-        GradleTestProject.builder()
-            .withName("project")
-            .fromTestApp(
-                MultiModuleTestProject.builder()
-                    .subproject(":java-lib1", javaLib1)
-                    .subproject(":java-lib2", javaLib2)
-                    .subproject(":java-lib3", javaLib3)
-                    .dependency("implementation", javaLib1, javaLib2)
-                    .dependency("compileOnly", javaLib1, javaLib3)
-                    .build()
-            )
-            .create()
+  @get:Rule
+  val project: GradleTestProject =
+    GradleTestProject.builder()
+      .withName("project")
+      .fromTestApp(
+        MultiModuleTestProject.builder()
+          .subproject(":java-lib1", javaLib1)
+          .subproject(":java-lib2", javaLib2)
+          .subproject(":java-lib3", javaLib3)
+          .dependency("implementation", javaLib1, javaLib2)
+          .dependency("compileOnly", javaLib1, javaLib3)
+          .build()
+      )
+      .create()
 
-    @Test
-    fun testLintModel() {
-        project.executor()
-            .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
-            .with(BooleanOption.LINT_ANALYSIS_PER_COMPONENT, false)
-            .run("clean", ":java-lib1:lint")
+  @Test
+  fun testLintModel() {
+    project
+      .executor()
+      .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
+      .with(BooleanOption.LINT_ANALYSIS_PER_COMPONENT, false)
+      .run("clean", ":java-lib1:lint")
 
-        checkLintModels(
-            project = project,
-            lintModelDir = FileUtils.join(
-                project.getSubproject("java-lib1").intermediatesDir,
-                "lintAnalyzeJvm",
-                "android-lint-model"
-            ).toPath(),
-            modelSnapshotResourceRelativePath = "standalone/perComponent_false/javalib/lintAnalyzeJvm",
-            "main-artifact-dependencies.xml",
-            "main-artifact-libraries.xml",
-            "main-testArtifact-dependencies.xml",
-            "main-testArtifact-libraries.xml",
-            "main.xml",
-            "module.xml",
-        )
-    }
+    checkLintModels(
+      project = project,
+      lintModelDir = FileUtils.join(project.getSubproject("java-lib1").intermediatesDir, "lintAnalyzeJvm", "android-lint-model").toPath(),
+      modelSnapshotResourceRelativePath = "standalone/perComponent_false/javalib/lintAnalyzeJvm",
+      "main-artifact-dependencies.xml",
+      "main-artifact-libraries.xml",
+      "main-testArtifact-dependencies.xml",
+      "main-testArtifact-libraries.xml",
+      "main.xml",
+      "module.xml",
+    )
+  }
 
-    @Test
-    fun testLintModelWithPerComponentAnalysis() {
-        project.executor()
-            .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
-            .with(BooleanOption.LINT_ANALYSIS_PER_COMPONENT, true)
-            .run("clean", ":java-lib1:lint")
+  @Test
+  fun testLintModelWithPerComponentAnalysis() {
+    project
+      .executor()
+      .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
+      .with(BooleanOption.LINT_ANALYSIS_PER_COMPONENT, true)
+      .run("clean", ":java-lib1:lint")
 
-        checkLintModels(
-            project = project,
-            lintModelDir = FileUtils.join(
-                project.getSubproject("java-lib1").intermediatesDir,
-                "lintAnalyzeJvmMain",
-                "android-lint-model"
-            ).toPath(),
-            modelSnapshotResourceRelativePath = "standalone/perComponent_true/javalib/lintAnalyzeJvmMain",
-            "main-artifact-dependencies.xml",
-            "main-artifact-libraries.xml",
-            "main.xml",
-            "module.xml",
-        )
+    checkLintModels(
+      project = project,
+      lintModelDir =
+        FileUtils.join(project.getSubproject("java-lib1").intermediatesDir, "lintAnalyzeJvmMain", "android-lint-model").toPath(),
+      modelSnapshotResourceRelativePath = "standalone/perComponent_true/javalib/lintAnalyzeJvmMain",
+      "main-artifact-dependencies.xml",
+      "main-artifact-libraries.xml",
+      "main.xml",
+      "module.xml",
+    )
 
-        checkLintModels(
-            project = project,
-            lintModelDir = FileUtils.join(
-                project.getSubproject("java-lib1").intermediatesDir,
-                "lintAnalyzeJvmTest",
-                "android-lint-model"
-            ).toPath(),
-            modelSnapshotResourceRelativePath = "standalone/perComponent_true/javalib/lintAnalyzeJvmTest",
-            "main-artifact-dependencies.xml",
-            "main-artifact-libraries.xml",
-            "main.xml",
-            "module.xml",
-        )
-    }
+    checkLintModels(
+      project = project,
+      lintModelDir =
+        FileUtils.join(project.getSubproject("java-lib1").intermediatesDir, "lintAnalyzeJvmTest", "android-lint-model").toPath(),
+      modelSnapshotResourceRelativePath = "standalone/perComponent_true/javalib/lintAnalyzeJvmTest",
+      "main-artifact-dependencies.xml",
+      "main-artifact-libraries.xml",
+      "main.xml",
+      "module.xml",
+    )
+  }
 }

@@ -22,56 +22,47 @@ import com.google.common.truth.Truth
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
 import org.junit.Rule
 import org.junit.Test
+import org.mockito.junit.MockitoJUnit
+import org.mockito.junit.MockitoRule
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
-import org.mockito.kotlin.whenever
-import org.mockito.junit.MockitoJUnit
-import org.mockito.junit.MockitoRule
 import org.mockito.quality.Strictness
 
 class AnalyticsEnabledDeviceTestBuilderTest {
 
-    @get:Rule
-    val rule: MockitoRule = MockitoJUnit.rule().strictness(Strictness.STRICT_STUBS)
+  @get:Rule val rule: MockitoRule = MockitoJUnit.rule().strictness(Strictness.STRICT_STUBS)
 
-    private val delegate: DeviceTestBuilder = mock()
+  private val delegate: DeviceTestBuilder = mock()
 
-    private val stats = GradleBuildVariant.newBuilder()
-    private val proxy: AnalyticsEnabledDeviceTestBuilder by lazy {
-        AnalyticsEnabledDeviceTestBuilder(delegate, stats)
-    }
+  private val stats = GradleBuildVariant.newBuilder()
+  private val proxy: AnalyticsEnabledDeviceTestBuilder by lazy { AnalyticsEnabledDeviceTestBuilder(delegate, stats) }
 
-    @Test
-    fun testEnable() {
-        proxy.enable = true
+  @Test
+  fun testEnable() {
+    proxy.enable = true
 
-        Truth.assertThat(stats.variantApiAccess.variantAccessCount).isEqualTo(1)
-        Truth.assertThat(
-            stats.variantApiAccess.variantAccessList.first().type
-        ).isEqualTo(VariantMethodType.ANDROID_TEST_ENABLED_VALUE)
-        verify(delegate, times(1)).enable = true
-    }
+    Truth.assertThat(stats.variantApiAccess.variantAccessCount).isEqualTo(1)
+    Truth.assertThat(stats.variantApiAccess.variantAccessList.first().type).isEqualTo(VariantMethodType.ANDROID_TEST_ENABLED_VALUE)
+    verify(delegate, times(1)).enable = true
+  }
 
-    @Test
-    fun testEnableMultiDex() {
-        proxy.enableMultiDex = true
+  @Test
+  fun testEnableMultiDex() {
+    proxy.enableMultiDex = true
 
-        Truth.assertThat(stats.variantApiAccess.variantAccessCount).isEqualTo(1)
-        Truth.assertThat(
-            stats.variantApiAccess.variantAccessList.first().type
-        ).isEqualTo(VariantMethodType.ENABLE_MULTI_DEX_VALUE)
-        verify(delegate, times(1)).enableMultiDex = true
-    }
+    Truth.assertThat(stats.variantApiAccess.variantAccessCount).isEqualTo(1)
+    Truth.assertThat(stats.variantApiAccess.variantAccessList.first().type).isEqualTo(VariantMethodType.ENABLE_MULTI_DEX_VALUE)
+    verify(delegate, times(1)).enableMultiDex = true
+  }
 
-    @Test
-    fun testEnableCoverage() {
-        proxy.enableCodeCoverage = true
+  @Test
+  fun testEnableCoverage() {
+    proxy.enableCodeCoverage = true
 
-        Truth.assertThat(stats.variantApiAccess.variantAccessCount).isEqualTo(1)
-        Truth.assertThat(
-            stats.variantApiAccess.variantAccessList.first().type
-        ).isEqualTo(VariantMethodType.DEVICE_TEST_ENABLE_CODE_COVERAGE_VALUE)
-        verify(delegate, times(1)).enableCodeCoverage = true
-    }
+    Truth.assertThat(stats.variantApiAccess.variantAccessCount).isEqualTo(1)
+    Truth.assertThat(stats.variantApiAccess.variantAccessList.first().type)
+      .isEqualTo(VariantMethodType.DEVICE_TEST_ENABLE_CODE_COVERAGE_VALUE)
+    verify(delegate, times(1)).enableCodeCoverage = true
+  }
 }

@@ -23,24 +23,22 @@ import org.gradle.api.provider.Property
 import org.gradle.workers.WorkAction
 import org.gradle.workers.WorkParameters
 
-/**
- * A Gradle work action to run Android instrumentation tests.
- */
+/** A Gradle work action to run Android instrumentation tests. */
 // TODO(b/476442048): Delete this work action in favor of JUnit test engine.
 abstract class AndroidTestWorkAction : WorkAction<AndroidTestWorkAction.Parameters> {
-    interface Parameters : WorkParameters {
-        val adbExecutable: RegularFileProperty
-        val aaptExecutable: RegularFileProperty
-        val deviceSerial: Property<String>
-        val deviceApiLevel: Property<Int>
-        val instrumentationRunnerClass: Property<String>
-        val instrumentationTargetPackageId: Property<String>
-        val testedApks: ConfigurableFileCollection
-        val testUtilApks: ConfigurableFileCollection
-        val apkInstallTimeOutInMs: Property<Integer>
-        val apkInstallOptions: ListProperty<String>
-        val uninstallApksAfterTests: Property<Boolean>
-    }
+  interface Parameters : WorkParameters {
+    val adbExecutable: RegularFileProperty
+    val aaptExecutable: RegularFileProperty
+    val deviceSerial: Property<String>
+    val deviceApiLevel: Property<Int>
+    val instrumentationRunnerClass: Property<String>
+    val instrumentationTargetPackageId: Property<String>
+    val testedApks: ConfigurableFileCollection
+    val testUtilApks: ConfigurableFileCollection
+    val apkInstallTimeOutInMs: Property<Integer>
+    val apkInstallOptions: ListProperty<String>
+    val uninstallApksAfterTests: Property<Boolean>
+  }
 
-    override fun execute() {}
+  override fun execute() {}
 }

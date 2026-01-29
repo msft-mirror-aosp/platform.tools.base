@@ -16,7 +16,5 @@
 
 package com.android.build.api.variant
 
-/**
- * Configuration-time properties [ComponentBuilder] that produce Test APKs.
- */
-interface GeneratesTestApkBuilder: GeneratesApkBuilder { }
+/** Configuration-time properties [ComponentBuilder] that produce Test APKs. */
+interface GeneratesTestApkBuilder : GeneratesApkBuilder {}

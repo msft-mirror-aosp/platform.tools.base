@@ -16,58 +16,57 @@
 
 package com.android.build.gradle.integration.common.utils
 
-import java.io.File
 import com.android.testutils.TestUtils
-import org.junit.Assert.fail
+import java.io.File
 import java.nio.file.Path
-
+import org.junit.Assert.fail
 
 /**
  * Checks for a 1-1 mapping between source files and bazel targets
  *
- * @param sourceDirRelativePath the relative path of the source directory from the workspace
- *     root. All .kt and .java files in this directory or any subdirectory will be checked for
- *     a corresponding bazel target.
- * @param bazelFileRelativePath the relative path of the bazel build file from the workspace
- *     root
- * @param ignoredBazelTargets the list of any bazel targets that should be ignored when checking
- *     for a 1-1 mapping between source files and bazel targets.
- * @param ignoreTestSourceFiles the list of any source files that should be ignored when checking
- *     for a 1-1 mapping between source files and bazel targets.
+ * @param sourceDirRelativePath the relative path of the source directory from the workspace root. All .kt and .java files in this directory
+ *   or any subdirectory will be checked for a corresponding bazel target.
+ * @param bazelFileRelativePath the relative path of the bazel build file from the workspace root
+ * @param ignoredBazelTargets the list of any bazel targets that should be ignored when checking for a 1-1 mapping between source files and
+ *   bazel targets.
+ * @param ignoreTestSourceFiles the list of any source files that should be ignored when checking for a 1-1 mapping between source files and
+ *   bazel targets.
  */
 fun checkBazelTargetsMatchTestSourceFiles(
-    sourceDirRelativePath: String,
-    bazelFileRelativePath: String,
-    ignoredBazelTargets: List<String> = emptyList(),
-    ignoreTestSourceFiles: List<String> = emptyList()
+  sourceDirRelativePath: String,
+  bazelFileRelativePath: String,
+  ignoredBazelTargets: List<String> = emptyList(),
+  ignoreTestSourceFiles: List<String> = emptyList(),
 ) {
 
-    val workspaceRoot: Path = TestUtils.getWorkspaceRoot()
-    val sourceDir: File = workspaceRoot.resolve(sourceDirRelativePath).toFile()
-    val bazelFile: File = workspaceRoot.resolve(bazelFileRelativePath).toFile()
+  val workspaceRoot: Path = TestUtils.getWorkspaceRoot()
+  val sourceDir: File = workspaceRoot.resolve(sourceDirRelativePath).toFile()
+  val bazelFile: File = workspaceRoot.resolve(bazelFileRelativePath).toFile()
 
-    val testFileNames =
-        sourceDir.walk()
-            .filter { it.extension == "kt" || it.extension == "java" }
-            .map { it.nameWithoutExtension }
-            .filterNot { ignoreTestSourceFiles.contains(it) }
-            .toList()
+  val testFileNames =
+    sourceDir
+      .walk()
+      .filter { it.extension == "kt" || it.extension == "java" }
+      .map { it.nameWithoutExtension }
+      .filterNot { ignoreTestSourceFiles.contains(it) }
+      .toList()
 
-    val bazelTargets =
-        bazelFile.readLines()
-            .filter { it.contains(Regex("\\bname = \"")) }
-            .map { it.split("\"")[1] }
-            .filterNot { ignoredBazelTargets.contains(it) }
+  val bazelTargets =
+    bazelFile
+      .readLines()
+      .filter { it.contains(Regex("\\bname = \"")) }
+      .map { it.split("\"")[1] }
+      .filterNot { ignoredBazelTargets.contains(it) }
 
-    val missingTargets = testFileNames.filterNot { bazelTargets.contains(it) }
+  val missingTargets = testFileNames.filterNot { bazelTargets.contains(it) }
 
-    if (missingTargets.isNotEmpty()) {
-        fail("Missing expected Bazel targets: ${missingTargets.joinToString(", ")}")
-    }
+  if (missingTargets.isNotEmpty()) {
+    fail("Missing expected Bazel targets: ${missingTargets.joinToString(", ")}")
+  }
 
-    val missingTestFiles = bazelTargets.filterNot { testFileNames.contains(it) }
+  val missingTestFiles = bazelTargets.filterNot { testFileNames.contains(it) }
 
-    if (missingTestFiles.isNotEmpty()) {
-        fail("Missing expected test files: ${missingTestFiles.joinToString(", ")}")
-    }
+  if (missingTestFiles.isNotEmpty()) {
+    fail("Missing expected test files: ${missingTestFiles.joinToString(", ")}")
+  }
 }

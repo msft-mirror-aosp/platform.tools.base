@@ -26,48 +26,38 @@ import com.android.utils.cxx.CxxDiagnosticCode.BUILD_SETTINGS_JSON_EMPTY
 import com.google.gson.Gson
 import java.io.File
 
-/**
- * Given a json string construct a [BuildSettingsConfiguration].
- */
+/** Given a json string construct a [BuildSettingsConfiguration]. */
 fun createBuildSettingsFromJson(json: String): BuildSettingsConfiguration {
-    return try {
-        val settings = Gson().fromJson(json, BuildSettingsConfiguration::class.java)
+  return try {
+    val settings = Gson().fromJson(json, BuildSettingsConfiguration::class.java)
 
-        // Null checks are required here because Gson deserialization may return null
-        if (settings != null) {
-            BuildSettingsConfiguration(environmentVariables = settings.environmentVariables
-                ?.filterNotNull()
-                ?.filter { !it.name.isNullOrBlank() }
-                ?: emptyList()
-            )
-        } else {
-            errorln(BUILD_SETTINGS_JSON_EMPTY, "Json is empty")
-            BuildSettingsConfiguration()
-        }
-
-    } catch (e: Throwable) {
-        errorln(BUILD_SETTINGS_GENERIC, e.message ?: e.cause?.message ?: e.javaClass.name)
-        BuildSettingsConfiguration()
-    }
-}
-
-/**
- * Given a file with json construct [BuildSettingsConfiguration].
- */
-fun createBuildSettingsFromFile(jsonFile: File): BuildSettingsConfiguration {
-    return if (jsonFile.exists()) {
-        PassThroughPrefixingLoggingEnvironment(file = jsonFile).use {
-            return createBuildSettingsFromJson(jsonFile.readText())
-        }
+    // Null checks are required here because Gson deserialization may return null
+    if (settings != null) {
+      BuildSettingsConfiguration(
+        environmentVariables = settings.environmentVariables?.filterNotNull()?.filter { !it.name.isNullOrBlank() } ?: emptyList()
+      )
     } else {
-        BuildSettingsConfiguration()
+      errorln(BUILD_SETTINGS_JSON_EMPTY, "Json is empty")
+      BuildSettingsConfiguration()
     }
+  } catch (e: Throwable) {
+    errorln(BUILD_SETTINGS_GENERIC, e.message ?: e.cause?.message ?: e.javaClass.name)
+    BuildSettingsConfiguration()
+  }
 }
 
-/**
- * Converts [BuildSettingsConfiguration] into a name:value Map.
- * Omits environment variables with no name provided.
- */
+/** Given a file with json construct [BuildSettingsConfiguration]. */
+fun createBuildSettingsFromFile(jsonFile: File): BuildSettingsConfiguration {
+  return if (jsonFile.exists()) {
+    PassThroughPrefixingLoggingEnvironment(file = jsonFile).use {
+      return createBuildSettingsFromJson(jsonFile.readText())
+    }
+  } else {
+    BuildSettingsConfiguration()
+  }
+}
+
+/** Converts [BuildSettingsConfiguration] into a name:value Map. Omits environment variables with no name provided. */
 fun BuildSettingsConfiguration.getEnvironmentVariableMap(): Map<String, String> {
-    return environmentVariables.associateBy({ it.name }, { it.value ?: "" })
+  return environmentVariables.associateBy({ it.name }, { it.value ?: "" })
 }

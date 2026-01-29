@@ -22,9 +22,9 @@ package com.android.builder.model.v2.ide
  * @since 4.2
  */
 enum class ProjectType {
-    APPLICATION,
-    LIBRARY,
-    DYNAMIC_FEATURE,
-    TEST,
-    FUSED_LIBRARY,
+  APPLICATION,
+  LIBRARY,
+  DYNAMIC_FEATURE,
+  TEST,
+  FUSED_LIBRARY,
 }

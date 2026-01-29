@@ -23,31 +23,27 @@ import org.junit.Assume.assumeTrue
 import org.junit.Rule
 import org.junit.Test
 
-/**
- * Regression test for http://b/183952598, composite builds and Java 9+ language features.
- */
+/** Regression test for http://b/183952598, composite builds and Java 9+ language features. */
 class Java11CompositeBuildTest {
 
-    @get:Rule
-    val project =
-            GradleTestProject.builder()
-                    .fromTestProject("simpleCompositeBuild")
-                    .withDependencyChecker(false)
-                    .create()
+  @get:Rule val project = GradleTestProject.builder().fromTestProject("simpleCompositeBuild").withDependencyChecker(false).create()
 
-    @Test
-    fun testTaskGraphComputedSuccessfully() {
-        assumeTrue(TestUtils.runningWithJdk11Plus(System.getProperty("java.version")))
+  @Test
+  fun testTaskGraphComputedSuccessfully() {
+    assumeTrue(TestUtils.runningWithJdk11Plus(System.getProperty("java.version")))
 
-        project.getSubproject("app").buildFile.appendText("""
+    project
+      .getSubproject("app")
+      .buildFile
+      .appendText(
+        """
 
-            android.compileOptions.sourceCompatibility 11
-            android.compileOptions.targetCompatibility 11
-        """.trimIndent())
+        android.compileOptions.sourceCompatibility 11
+        android.compileOptions.targetCompatibility 11
+        """
+          .trimIndent()
+      )
 
-        project.executor()
-                .with(BooleanOption.INCLUDE_DEPENDENCY_INFO_IN_APKS, false)
-                .withArgument("--dry-run")
-                .run("build")
-    }
+    project.executor().with(BooleanOption.INCLUDE_DEPENDENCY_INFO_IN_APKS, false).withArgument("--dry-run").run("build")
+  }
 }

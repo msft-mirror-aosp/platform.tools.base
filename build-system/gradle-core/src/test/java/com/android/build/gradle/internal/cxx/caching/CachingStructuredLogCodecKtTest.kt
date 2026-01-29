@@ -21,37 +21,40 @@ import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 
 class CachingStructuredLogCodecKtTest {
-    @Test
-    fun `round trip ObjectFileCacheEvent through encode and decode`() {
-        val expected = ObjectFileCacheEvent.newBuilder()
-            .setOutcome(ObjectFileCacheEvent.Outcome.LOADED)
-            .setKeyDisplayName("key-display-name")
-            .setKeyHashCode("key-hash-code")
-            .setCompilation(Compilation.newBuilder()
-                .setWorkingDirectory("working-directory")
-                .setObjectFile("object-file")
-                .setObjectFileKey(ObjectFileKey.newBuilder()
-                    .addAllDependencies(listOf("dependency-1", "dependency-2"))
-                    .setDependencyKey(DependenciesKey.newBuilder()
-                        .setSourceFile("source-file")
-                        .addAllCompilerFlags(listOf("flag-1", "flag-2"))
-                    )
+  @Test
+  fun `round trip ObjectFileCacheEvent through encode and decode`() {
+    val expected =
+      ObjectFileCacheEvent.newBuilder()
+        .setOutcome(ObjectFileCacheEvent.Outcome.LOADED)
+        .setKeyDisplayName("key-display-name")
+        .setKeyHashCode("key-hash-code")
+        .setCompilation(
+          Compilation.newBuilder()
+            .setWorkingDirectory("working-directory")
+            .setObjectFile("object-file")
+            .setObjectFileKey(
+              ObjectFileKey.newBuilder()
+                .addAllDependencies(listOf("dependency-1", "dependency-2"))
+                .setDependencyKey(DependenciesKey.newBuilder().setSourceFile("source-file").addAllCompilerFlags(listOf("flag-1", "flag-2")))
+            )
+        )
+        .setHashedCompilation(
+          Compilation.newBuilder()
+            .setWorkingDirectory("hashed-working-directory")
+            .setObjectFile("hashed-object-file")
+            .setObjectFileKey(
+              ObjectFileKey.newBuilder()
+                .addAllDependencies(listOf("hashed-dependency-1", "dependency-2"))
+                .setDependencyKey(
+                  DependenciesKey.newBuilder()
+                    .setSourceFile("hashed-source-file")
+                    .addAllCompilerFlags(listOf("hashed-flag-1", "hashed-flag-2"))
                 )
             )
-            .setHashedCompilation(Compilation.newBuilder()
-                .setWorkingDirectory("hashed-working-directory")
-                .setObjectFile("hashed-object-file")
-                .setObjectFileKey(ObjectFileKey.newBuilder()
-                    .addAllDependencies(listOf("hashed-dependency-1", "dependency-2"))
-                    .setDependencyKey(DependenciesKey.newBuilder()
-                        .setSourceFile("hashed-source-file")
-                        .addAllCompilerFlags(listOf("hashed-flag-1", "hashed-flag-2"))
-                    )
-                )
-            )
-            .build()
-        val strings = StringTable()
-        val actual = expected.encode(strings).decode(strings)
-        assertThat(actual).isEqualTo(expected)
-    }
+        )
+        .build()
+    val strings = StringTable()
+    val actual = expected.encode(strings).decode(strings)
+    assertThat(actual).isEqualTo(expected)
+  }
 }

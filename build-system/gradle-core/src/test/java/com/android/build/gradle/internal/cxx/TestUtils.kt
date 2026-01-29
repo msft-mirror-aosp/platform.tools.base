@@ -18,7 +18,6 @@ package com.android.build.gradle.internal.cxx
 
 import com.android.utils.cxx.CxxDiagnosticCode
 
-/**
- * Produce a code like [CXX1425] to use when checking test messages.
- */
-val CxxDiagnosticCode.codeText : String get() = "[CXX${errorCode}]"
+/** Produce a code like [CXX1425] to use when checking test messages. */
+val CxxDiagnosticCode.codeText: String
+  get() = "[CXX${errorCode}]"

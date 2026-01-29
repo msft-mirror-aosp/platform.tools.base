@@ -18,121 +18,103 @@ package com.android.build.gradle.integration.dependencies
 
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_LIB_PATH
-import com.google.common.truth.Truth
+import kotlin.test.assertFailsWith
 import org.gradle.api.internal.tasks.TaskDependencyResolveException
 import org.gradle.tooling.BuildException
 import org.junit.Rule
 import org.junit.Test
-import kotlin.test.assertFailsWith
 
 class MisplacedMissingDimensionStrategyTest {
 
-    @get:Rule
-    val rule = GradleRule.from {
-        androidApplication {
-            dependencies {
-                implementation(project(DEFAULT_LIB_PATH))
-            }
-        }
-        androidLibrary {
-            android {
-                defaultConfig {
-                    missingDimensionStrategy("libdim", "foo")
-                    flavorDimensions += "libdim"
+  @get:Rule
+  val rule =
+    GradleRule.from {
+      androidApplication { dependencies { implementation(project(DEFAULT_LIB_PATH)) } }
+      androidLibrary {
+        android {
+          defaultConfig {
+            missingDimensionStrategy("libdim", "foo")
+            flavorDimensions += "libdim"
 
-                    productFlavors {
-                        create("foo") {
-                            it.dimension = "libdim"
-                        }
-                        create("bar") {
-                            it.dimension = "libdim"
-                        }
-                    }
-                }
+            productFlavors {
+              create("foo") { it.dimension = "libdim" }
+              create("bar") { it.dimension = "libdim" }
             }
+          }
         }
+      }
     }
 
-    @Test
-    fun checkCorrectError() {
-        val build = rule.build
-        val exception = assertFailsWith(BuildException::class) {
-            build.executor.run(":app:assembleDebug")
-        }
+  @Test
+  fun checkCorrectError() {
+    val build = rule.build
+    val exception = assertFailsWith(BuildException::class) { build.executor.run(":app:assembleDebug") }
 
-        exception.checkCause(TaskDependencyResolveException::class.java)
-    }
+    exception.checkCause(TaskDependencyResolveException::class.java)
+  }
 }
 
 /**
- * Context: b/460094802.
- * This test is verifying the fix of the wrong behavior of variant attributes matching when using
- * ProductFlavors' MissingDimensionStrategy.
- * When there is a dimension mismatch between ":app" and ":lib", and ":app" specifies missingDimensionStrategy
- * we end up prioritizing matching a ProductFlavor with same name as the consumer's.
+ * Context: b/460094802. This test is verifying the fix of the wrong behavior of variant attributes matching when using ProductFlavors'
+ * MissingDimensionStrategy. When there is a dimension mismatch between ":app" and ":lib", and ":app" specifies missingDimensionStrategy we
+ * end up prioritizing matching a ProductFlavor with same name as the consumer's.
  */
 class MisplacedMissingDimensionStrategyWrongBehaviorTest {
 
-    @get:Rule
-    val rule = GradleRule.from {
-        androidApplication {
-            android {
-                    flavorDimensions += "color"
+  @get:Rule
+  val rule =
+    GradleRule.from {
+      androidApplication {
+        android {
+          flavorDimensions += "color"
 
-                    productFlavors {
-                        create("foo") {
-                            it.dimension = "color"
-                            it.isDefault = true
-                            // This here will fail build (as expected). Because the
-                            // missingDimensionStrategy doesn't list any of the flavors that exist
-                            // in the library, the build should fail as there is an
-                            // ambiguous match of variant in the dependency on the library.
-                            it.missingDimensionStrategy("colorLib", "wrong")
-                        }
-                        create("loo") {}
-                    }
+          productFlavors {
+            create("foo") {
+              it.dimension = "color"
+              it.isDefault = true
+              // This here will fail build (as expected). Because the
+              // missingDimensionStrategy doesn't list any of the flavors that exist
+              // in the library, the build should fail as there is an
+              // ambiguous match of variant in the dependency on the library.
+              it.missingDimensionStrategy("colorLib", "wrong")
             }
-            dependencies {
-                implementation(project(DEFAULT_LIB_PATH))
-            }
+            create("loo") {}
+          }
         }
-        androidLibrary {
-            android {
-                    flavorDimensions += "colorLib"
+        dependencies { implementation(project(DEFAULT_LIB_PATH)) }
+      }
+      androidLibrary {
+        android {
+          flavorDimensions += "colorLib"
 
-                    productFlavors {
-                        create("foo") {
-                            it.isDefault = true
-                        }
-                        create("loo") {
-                            it.dimension = "colorLib"
-                        }
-                    }
-            }
+          productFlavors {
+            create("foo") { it.isDefault = true }
+            create("loo") { it.dimension = "colorLib" }
+          }
         }
+      }
     }
 
-    @Test
-    fun checkCorrectError() {
-        val build = rule.build
-        val exception = build.executor.expectFailure().run(":app:assembleFooDebug").exception
-        exception?.checkCause(TaskDependencyResolveException::class.java)
-    }
+  @Test
+  fun checkCorrectError() {
+    val build = rule.build
+    val exception = build.executor.expectFailure().run(":app:assembleFooDebug").exception
+    exception?.checkCause(TaskDependencyResolveException::class.java)
+  }
 }
 
-
 fun <T : Throwable> Exception.checkCause(causeClass: Class<T>) {
-    val eName = causeClass.name
-    var theCause: Throwable? = cause
-    while (theCause != null) {
-        // must compare fqcn as the actual class is coming via RMI and is not going to match the
-        // one that is loaded in the test.
-        if (theCause.javaClass.name == eName) {
-            return
-        }
-
-        theCause = theCause.cause
+  val eName = causeClass.name
+  var theCause: Throwable? = cause
+  while (theCause != null) {
+    // must compare fqcn as the actual class is coming via RMI and is not going to match the
+    // one that is loaded in the test.
+    if (theCause.javaClass.name == eName) {
+      return
     }
 
-    throw RuntimeException("Not true that cause is of type $causeClass", this)
+    theCause = theCause.cause
+  }
+
+  throw RuntimeException("Not true that cause is of type $causeClass", this)
 }

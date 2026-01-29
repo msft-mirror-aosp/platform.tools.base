@@ -25,18 +25,13 @@ import java.lang.reflect.Method
  *
  * This is only to be used with [NamedDomainObjectContainerProxy.pathToInstance]
  */
-class ContainerItemProxy(
-    private val itemName: String,
-    private val pathToParent: String) : InvocationHandler {
-    override fun invoke(
-        proxy: Any,
-        method: Method,
-        args: Array<out Any?>
-    ): Any = if (method.name == "toString" && args.size == 1) {
-        // this must be a call to toString(StringHandler
-        val stringHandler = args.first() as StringHandler
-        """$pathToParent.getByName(${stringHandler.quoteString(itemName)})"""
+class ContainerItemProxy(private val itemName: String, private val pathToParent: String) : InvocationHandler {
+  override fun invoke(proxy: Any, method: Method, args: Array<out Any?>): Any =
+    if (method.name == "toString" && args.size == 1) {
+      // this must be a call to toString(StringHandler
+      val stringHandler = args.first() as StringHandler
+      """$pathToParent.getByName(${stringHandler.quoteString(itemName)})"""
     } else {
-        throw RuntimeException("Normal Method calls not Supported on ItemProxy")
+      throw RuntimeException("Normal Method calls not Supported on ItemProxy")
     }
 }

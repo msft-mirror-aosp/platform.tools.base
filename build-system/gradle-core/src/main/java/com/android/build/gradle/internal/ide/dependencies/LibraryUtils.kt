@@ -15,6 +15,7 @@
  */
 
 @file:JvmName("LibraryUtils")
+
 package com.android.build.gradle.internal.ide.dependencies
 
 import com.android.build.gradle.internal.attributes.VariantAttr
@@ -25,33 +26,23 @@ import org.gradle.api.artifacts.component.ProjectComponentIdentifier
 import org.gradle.api.artifacts.result.ResolvedArtifactResult
 
 fun ResolvedArtifactResult.getVariantName(): String? {
-    return variant.attributes.getAttribute(VariantAttr.ATTRIBUTE)?.name
+  return variant.attributes.getAttribute(VariantAttr.ATTRIBUTE)?.name
 }
 
-/**
- * Checks if the resolved artifact is produced from a local project with testFixtures capability.
- */
+/** Checks if the resolved artifact is produced from a local project with testFixtures capability. */
 fun ResolvedArtifactResult.hasProjectTestFixturesCapability(): Boolean {
-    if (id.componentIdentifier !is ProjectComponentIdentifier) {
-        return false
-    }
-    return variant.capabilities.any {
-        it.isProjectTestFixturesCapability(
-            (id.componentIdentifier as ProjectComponentIdentifier).projectName
-        )
-    }
+  if (id.componentIdentifier !is ProjectComponentIdentifier) {
+    return false
+  }
+  return variant.capabilities.any { it.isProjectTestFixturesCapability((id.componentIdentifier as ProjectComponentIdentifier).projectName) }
 }
 
-/**
- * Checks if the resolved artifact is coming from an external library with testFixtures capability.
- */
+/** Checks if the resolved artifact is coming from an external library with testFixtures capability. */
 fun ResolvedArtifactResult.hasLibraryTestFixturesCapability(): Boolean {
-    if (id.componentIdentifier !is ModuleComponentIdentifier) {
-        return false
-    }
-    return variant.capabilities.any {
-        it.isLibraryTestFixturesCapability(
-            libraryName = (id.componentIdentifier as ModuleComponentIdentifier).module
-        )
-    }
+  if (id.componentIdentifier !is ModuleComponentIdentifier) {
+    return false
+  }
+  return variant.capabilities.any {
+    it.isLibraryTestFixturesCapability(libraryName = (id.componentIdentifier as ModuleComponentIdentifier).module)
+  }
 }

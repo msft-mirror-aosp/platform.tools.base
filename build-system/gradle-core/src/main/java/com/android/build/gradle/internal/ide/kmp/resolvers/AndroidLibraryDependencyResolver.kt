@@ -36,124 +36,106 @@ import org.jetbrains.kotlin.gradle.idea.tcs.IdeaKotlinResolvedBinaryDependency
 import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSet
 import org.jetbrains.kotlin.gradle.plugin.ide.IdeAdditionalArtifactResolver
 
-/**
- * An implementation of [IdeAdditionalArtifactResolver] that adds extra data to binary dependencies
- * that are android (aars).
- */
+/** An implementation of [IdeAdditionalArtifactResolver] that adds extra data to binary dependencies that are android (aars). */
 @OptIn(ExternalKotlinTargetApi::class)
 internal class AndroidLibraryDependencyResolver(
-    libraryResolver: LibraryResolver,
-    sourceSetToCreationConfigMap: Lazy<Map<KotlinSourceSet, KmpComponentCreationConfig>>,
-    val configType: AndroidArtifacts.ConsumedConfigType
-): IdeAdditionalArtifactResolver, BaseIdeDependencyResolver(
-    libraryResolver,
-    sourceSetToCreationConfigMap
-) {
+  libraryResolver: LibraryResolver,
+  sourceSetToCreationConfigMap: Lazy<Map<KotlinSourceSet, KmpComponentCreationConfig>>,
+  val configType: AndroidArtifacts.ConsumedConfigType,
+) : IdeAdditionalArtifactResolver, BaseIdeDependencyResolver(libraryResolver, sourceSetToCreationConfigMap) {
 
-    override fun resolve(sourceSet: KotlinSourceSet, dependencies: Set<IdeaKotlinDependency>) {
-        val component = sourceSetToCreationConfigMap.value[sourceSet] ?: return
+  override fun resolve(sourceSet: KotlinSourceSet, dependencies: Set<IdeaKotlinDependency>) {
+    val component = sourceSetToCreationConfigMap.value[sourceSet] ?: return
 
-        libraryResolver.registerSourceSetArtifacts(sourceSet, configType)
+    libraryResolver.registerSourceSetArtifacts(sourceSet, configType)
 
-        val artifacts =
-            getArtifactsForComponent(
-                component,
-                AndroidArtifacts.ArtifactType.CLASSES_JAR,
-                configType
-            ) { it !is ProjectComponentIdentifier && it !is OpaqueComponentArtifactIdentifier }
+    val artifacts =
+      getArtifactsForComponent(component, AndroidArtifacts.ArtifactType.CLASSES_JAR, configType) {
+        it !is ProjectComponentIdentifier && it !is OpaqueComponentArtifactIdentifier
+      }
 
-        val localFileArtifacts =
-            getArtifactsForComponent(
-                component,
-                AndroidArtifacts.ArtifactType.AAR_OR_JAR,
-                configType
-            ) { it is OpaqueComponentArtifactIdentifier }.artifacts
+    val localFileArtifacts =
+      getArtifactsForComponent(component, AndroidArtifacts.ArtifactType.AAR_OR_JAR, configType) { it is OpaqueComponentArtifactIdentifier }
+        .artifacts
 
-        val libraryDependencies = dependencies.filterIsInstance<IdeaKotlinResolvedBinaryDependency>()
+    val libraryDependencies = dependencies.filterIsInstance<IdeaKotlinResolvedBinaryDependency>()
 
-        val libraries = artifacts.artifacts.mapNotNull { artifact ->
-            val coordinates = if (artifact.variant.owner is ModuleComponentIdentifier) {
-                ArtifactCoordinates(
-                    (artifact.variant.owner as ModuleComponentIdentifier),
-                    artifact.variant.capabilities,
-                    artifact.variant.attributes,
-                )
+    val libraries =
+      artifacts.artifacts
+        .mapNotNull { artifact ->
+          val coordinates =
+            if (artifact.variant.owner is ModuleComponentIdentifier) {
+              ArtifactCoordinates(
+                (artifact.variant.owner as ModuleComponentIdentifier),
+                artifact.variant.capabilities,
+                artifact.variant.attributes,
+              )
             } else {
-                return@mapNotNull null
+              return@mapNotNull null
             }
 
-            val library = libraryResolver.getLibrary(
-                artifact.variant,
-                sourceSet,
-                configType
-            )
-            if (library?.type == LibraryType.ANDROID_LIBRARY) {
-                coordinates to library
-            } else {
-                null
-            }
-        }.toMap()
-
-        libraryDependencies.forEach { dependency ->
-            if (dependency.coordinates == null) {
-                return@forEach
-            }
-            val library = libraries[ArtifactCoordinates(dependency.coordinates!!)] ?:
-                // Check if this is a local file dependency
-                localFileArtifacts.find { artifact ->
-                    dependency.classpath.contains(artifact.file)
-                }?.let { artifact ->
-                    libraryResolver.getLibrary(
-                        artifact.variant,
-                        sourceSet,
-                        configType
-                    )?.takeIf { it.type == LibraryType.ANDROID_LIBRARY }
-                } ?: return@forEach
-
-            dependency.extras[androidDependencyKey] =
-                DependencyInfo.newBuilder()
-                    .setLibrary(
-                        // The key is redundant since we depend on the kotlin definition.
-                        library.convert().clearKey()
-                    )
-                    .build()
+          val library = libraryResolver.getLibrary(artifact.variant, sourceSet, configType)
+          if (library?.type == LibraryType.ANDROID_LIBRARY) {
+            coordinates to library
+          } else {
+            null
+          }
         }
+        .toMap()
+
+    libraryDependencies.forEach { dependency ->
+      if (dependency.coordinates == null) {
+        return@forEach
+      }
+      val library =
+        libraries[ArtifactCoordinates(dependency.coordinates!!)]
+          ?:
+          // Check if this is a local file dependency
+          localFileArtifacts
+            .find { artifact -> dependency.classpath.contains(artifact.file) }
+            ?.let { artifact ->
+              libraryResolver.getLibrary(artifact.variant, sourceSet, configType)?.takeIf { it.type == LibraryType.ANDROID_LIBRARY }
+            }
+          ?: return@forEach
+
+      dependency.extras[androidDependencyKey] =
+        DependencyInfo.newBuilder()
+          .setLibrary(
+            // The key is redundant since we depend on the kotlin definition.
+            library.convert().clearKey()
+          )
+          .build()
     }
+  }
 
-    data class ArtifactCoordinates(
-        private val group: String,
-        private val module: String,
-        private val version: String?,
-        private val capabilities: Set<String>,
-        private val attributes: Map<String, String>
-    ) {
+  data class ArtifactCoordinates(
+    private val group: String,
+    private val module: String,
+    private val version: String?,
+    private val capabilities: Set<String>,
+    private val attributes: Map<String, String>,
+  ) {
 
-        constructor(
-            kotlinCoordinates: IdeaKotlinBinaryCoordinates
-        ): this(
-            group = kotlinCoordinates.group,
-            module = kotlinCoordinates.module,
-            version = kotlinCoordinates.version,
-            capabilities = kotlinCoordinates.capabilities.map {
-                "${it.group}:${it.name}:${it.version}"
-            }.toSet(),
-            attributes = kotlinCoordinates.attributes.toImmutableMap(),
-        )
+    constructor(
+      kotlinCoordinates: IdeaKotlinBinaryCoordinates
+    ) : this(
+      group = kotlinCoordinates.group,
+      module = kotlinCoordinates.module,
+      version = kotlinCoordinates.version,
+      capabilities = kotlinCoordinates.capabilities.map { "${it.group}:${it.name}:${it.version}" }.toSet(),
+      attributes = kotlinCoordinates.attributes.toImmutableMap(),
+    )
 
-        constructor(
-            identifier: ModuleComponentIdentifier,
-            capabilities: List<Capability>,
-            attributes: AttributeContainer
-        ): this(
-            group = identifier.group,
-            module = identifier.module,
-            version = identifier.version,
-            capabilities = capabilities.map {
-                "${it.group}:${it.name}:${it.version}"
-            }.toSet(),
-            attributes = attributes.keySet().associate {
-                it.name to attributes.getAttribute(it).toString()
-            },
-        )
-    }
+    constructor(
+      identifier: ModuleComponentIdentifier,
+      capabilities: List<Capability>,
+      attributes: AttributeContainer,
+    ) : this(
+      group = identifier.group,
+      module = identifier.module,
+      version = identifier.version,
+      capabilities = capabilities.map { "${it.group}:${it.name}:${it.version}" }.toSet(),
+      attributes = attributes.keySet().associate { it.name to attributes.getAttribute(it).toString() },
+    )
+  }
 }

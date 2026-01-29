@@ -23,40 +23,33 @@ import com.android.utils.FileUtils
 import org.junit.Rule
 import org.junit.Test
 
-class KotlinMultiplatformMetadataSnapshotTest: BaseModelComparator {
+class KotlinMultiplatformMetadataSnapshotTest : BaseModelComparator {
 
-    @get:Rule
-    val project = GradleTestProjectBuilder()
-        .fromTestProject("kotlinMultiplatform")
-        .create()
+  @get:Rule val project = GradleTestProjectBuilder().fromTestProject("kotlinMultiplatform").create()
 
-    @Test
-    fun testKotlinToolingMetadataOutput() {
-        KmpModelComparator(
-            project = project,
-            testClass = this,
-            modelSnapshotTask = "buildKotlinToolingMetadata",
-            taskOutputsLocator = { projectPath ->
-                FileUtils.join(
-                    project.getSubproject(projectPath).buildDir,
-                    "kotlinToolingMetadata",
-                ).listFiles()!!.toList()
-            },
-        ).fetchAndCompareModels(listOf(":kmpFirstLib", ":kmpSecondLib"))
-    }
+  @Test
+  fun testKotlinToolingMetadataOutput() {
+    KmpModelComparator(
+        project = project,
+        testClass = this,
+        modelSnapshotTask = "buildKotlinToolingMetadata",
+        taskOutputsLocator = { projectPath ->
+          FileUtils.join(project.getSubproject(projectPath).buildDir, "kotlinToolingMetadata").listFiles()!!.toList()
+        },
+      )
+      .fetchAndCompareModels(listOf(":kmpFirstLib", ":kmpSecondLib"))
+  }
 
-    @Test
-    fun testKotlinProjectStructureMetadataOutput() {
-        KmpModelComparator(
-            project = project,
-            testClass = this,
-            modelSnapshotTask = "generateProjectStructureMetadata",
-            taskOutputsLocator = { projectPath ->
-                FileUtils.join(
-                    project.getSubproject(projectPath).buildDir,
-                    "kotlinProjectStructureMetadata",
-                ).listFiles()!!.toList()
-            },
-        ).fetchAndCompareModels(listOf(":kmpFirstLib", ":kmpSecondLib"))
-    }
+  @Test
+  fun testKotlinProjectStructureMetadataOutput() {
+    KmpModelComparator(
+        project = project,
+        testClass = this,
+        modelSnapshotTask = "generateProjectStructureMetadata",
+        taskOutputsLocator = { projectPath ->
+          FileUtils.join(project.getSubproject(projectPath).buildDir, "kotlinProjectStructureMetadata").listFiles()!!.toList()
+        },
+      )
+      .fetchAndCompareModels(listOf(":kmpFirstLib", ":kmpSecondLib"))
+  }
 }

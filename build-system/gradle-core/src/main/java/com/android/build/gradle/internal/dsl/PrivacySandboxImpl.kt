@@ -22,11 +22,11 @@ import com.android.build.gradle.internal.services.DslServices
 import com.android.build.gradle.options.BooleanOption
 import javax.inject.Inject
 
-abstract class PrivacySandboxImpl @Inject constructor(private val dslServices: DslServices): PrivacySandbox {
+abstract class PrivacySandboxImpl @Inject constructor(private val dslServices: DslServices) : PrivacySandbox {
 
-    @WithLazyInitialization
-    @Suppress("unused") // the call is injected by DslDecorator
-    protected fun lazyInit() {
-        enable = dslServices.projectOptions.get(BooleanOption.PRIVACY_SANDBOX_SDK_SUPPORT)
-    }
+  @WithLazyInitialization
+  @Suppress("unused") // the call is injected by DslDecorator
+  protected fun lazyInit() {
+    enable = dslServices.projectOptions.get(BooleanOption.PRIVACY_SANDBOX_SDK_SUPPORT)
+  }
 }

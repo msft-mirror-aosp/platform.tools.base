@@ -16,9 +16,7 @@
 
 package com.android.build.gradle.options
 
-/**
- * An interface for an object that has a planned future stage.
- */
+/** An interface for an object that has a planned future stage. */
 interface HasFutureStage {
-    val futureStage: FutureStage?
+  val futureStage: FutureStage?
 }

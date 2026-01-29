@@ -38,13 +38,10 @@ import com.android.build.gradle.internal.component.features.OptimizationCreation
  * ```
  */
 interface OptimizationTaskCreationAction {
-    val optimizationCreationConfig: OptimizationCreationConfig
+  val optimizationCreationConfig: OptimizationCreationConfig
 }
 
-class OptimizationTaskCreationActionImpl(
-    creationConfig: ConsumableCreationConfig
-): OptimizationTaskCreationAction {
+class OptimizationTaskCreationActionImpl(creationConfig: ConsumableCreationConfig) : OptimizationTaskCreationAction {
 
-    override val optimizationCreationConfig: OptimizationCreationConfig =
-        creationConfig.optimizationCreationConfig
+  override val optimizationCreationConfig: OptimizationCreationConfig = creationConfig.optimizationCreationConfig
 }

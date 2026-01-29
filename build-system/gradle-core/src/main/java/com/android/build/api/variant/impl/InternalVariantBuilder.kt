@@ -22,7 +22,5 @@ import com.google.wireless.android.sdk.stats.GradleBuildVariant
 
 interface InternalVariantBuilder {
 
-    fun <T: VariantBuilder> createUserVisibleVariantObject(
-        projectServices: ProjectServices,
-        stats: GradleBuildVariant.Builder?): T
+  fun <T : VariantBuilder> createUserVisibleVariantObject(projectServices: ProjectServices, stats: GradleBuildVariant.Builder?): T
 }

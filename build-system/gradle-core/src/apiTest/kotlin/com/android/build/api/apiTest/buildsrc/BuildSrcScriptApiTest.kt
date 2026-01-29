@@ -1,4 +1,3 @@
-
 /*
  * Copyright (C) 2020 The Android Open Source Project
  *
@@ -18,15 +17,11 @@ package com.android.build.api.apiTest.buildsrc
 
 import com.android.build.api.apiTest.VariantApiBaseTest
 
-/**
- * Parent class for all buildSrc related tests with common behaviors.
- */
-open class BuildSrcScriptApiTest: VariantApiBaseTest(
-    TestType.BuildSrc
-) {
-    protected fun addCommonBuildFile(givenBuilder: GivenBuilder, androidBlock: String? = null) {
-        givenBuilder.buildFile =
-            """
+/** Parent class for all buildSrc related tests with common behaviors. */
+open class BuildSrcScriptApiTest : VariantApiBaseTest(TestType.BuildSrc) {
+  protected fun addCommonBuildFile(givenBuilder: GivenBuilder, androidBlock: String? = null) {
+    givenBuilder.buildFile =
+      """
             plugins {
                     id("com.android.application")
                     kotlin("android")
@@ -37,6 +32,7 @@ open class BuildSrcScriptApiTest: VariantApiBaseTest(
             android { ${testingElements.addCommonAndroidBuildLogic()}
                 ${androidBlock ?: ""}
             }
-            """.trimIndent()
-    }
+            """
+        .trimIndent()
+  }
 }

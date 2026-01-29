@@ -27,50 +27,37 @@ import java.nio.file.Path
 
 @GradleDefinitionDsl
 interface JavaLibraryProjectDefinition : GradleProjectDefinition {
-    /** executes the lambda that adds/updates/removes files from the project */
-    fun files(action: GradleProjectFiles.() -> Unit)
+  /** executes the lambda that adds/updates/removes files from the project */
+  fun files(action: GradleProjectFiles.() -> Unit)
 }
 
-interface JavaLibraryProject: GradleProject<JavaLibraryProjectDefinition>
+interface JavaLibraryProject : GradleProject<JavaLibraryProjectDefinition>
 
-internal class JavaLibraryProjectDefinitionImpl(path: String) :
-    GradleProjectDefinitionImpl(path), JavaLibraryProjectDefinition {
+internal class JavaLibraryProjectDefinitionImpl(path: String) : GradleProjectDefinitionImpl(path), JavaLibraryProjectDefinition {
 
-    init {
-        applyPlugin(PluginType.JAVA_LIBRARY)
+  init {
+    applyPlugin(PluginType.JAVA_LIBRARY)
+  }
+
+  override fun files(action: GradleProjectFiles.() -> Unit) {
+    action(files)
+  }
+
+  override fun writeExtension(writer: BuildWriter, location: Path) {
+    writer.apply {
+      block("jar") { dslRecorder.writeContent(this) }
+      emptyLine()
     }
-
-    override fun files(action: GradleProjectFiles.() -> Unit) {
-        action(files)
-    }
-
-    override fun writeExtension(writer: BuildWriter, location: Path) {
-        writer.apply {
-            block("jar") {
-                dslRecorder.writeContent(this)
-            }
-            emptyLine()
-        }
-    }
+  }
 }
 
-internal class JavaLibraryProjectImpl(
-    location: Path,
-    projectDefinition: JavaLibraryProjectDefinition
-) : GradleProjectImpl<JavaLibraryProjectDefinition>(location, projectDefinition),
-    JavaLibraryProject {
+internal class JavaLibraryProjectImpl(location: Path, projectDefinition: JavaLibraryProjectDefinition) :
+  GradleProjectImpl<JavaLibraryProjectDefinition>(location, projectDefinition), JavaLibraryProject {
 
-    override fun getReversibleInstance(fileChangeController: FileChangeController)
-    : GradleProject<JavaLibraryProjectDefinition> {
-        return ReversibleJavaLibraryProject(this, fileChangeController)
-    }
+  override fun getReversibleInstance(fileChangeController: FileChangeController): GradleProject<JavaLibraryProjectDefinition> {
+    return ReversibleJavaLibraryProject(this, fileChangeController)
+  }
 }
 
-internal open class ReversibleJavaLibraryProject(
-    parentProject: JavaLibraryProject,
-    fileChangeController: FileChangeController,
-) : ReversibleGradleProject<JavaLibraryProject,
-        JavaLibraryProjectDefinition>(
-    parentProject,
-    fileChangeController
-), JavaLibraryProject
+internal open class ReversibleJavaLibraryProject(parentProject: JavaLibraryProject, fileChangeController: FileChangeController) :
+  ReversibleGradleProject<JavaLibraryProject, JavaLibraryProjectDefinition>(parentProject, fileChangeController), JavaLibraryProject

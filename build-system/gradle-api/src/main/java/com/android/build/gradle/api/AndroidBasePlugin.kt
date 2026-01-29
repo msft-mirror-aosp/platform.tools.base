@@ -23,13 +23,10 @@ import org.gradle.api.Project
 /**
  * Common plugin applied by all plugins that have a [CommonExtension]
  *
- *
- * The purpose of this no-op plugin is to allow other plugin authors to determine if an Android
- * plugin with a [CommonExtension] was applied.
- *
+ * The purpose of this no-op plugin is to allow other plugin authors to determine if an Android plugin with a [CommonExtension] was applied.
  *
  * This is tied to the `com.android.base` plugin ID.
  */
 class AndroidBasePlugin : Plugin<Project> {
-    override fun apply(project: Project) {}
+  override fun apply(project: Project) {}
 }

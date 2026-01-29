@@ -17,93 +17,81 @@
 package com.android.build.gradle.internal.cxx.logging
 
 import com.android.build.gradle.internal.cxx.logging.LoggingMessage.LoggingLevel
-import com.android.build.gradle.internal.cxx.logging.LoggingMessage.LoggingLevel.ERROR
 import com.android.build.gradle.internal.cxx.logging.LoggingMessage.LoggingLevel.BUG
+import com.android.build.gradle.internal.cxx.logging.LoggingMessage.LoggingLevel.ERROR
 import com.android.build.gradle.internal.cxx.logging.LoggingMessage.LoggingLevel.INFO
 import com.android.build.gradle.internal.cxx.logging.LoggingMessage.LoggingLevel.LIFECYCLE
 import com.android.build.gradle.internal.cxx.logging.LoggingMessage.LoggingLevel.WARN
 import com.android.build.gradle.internal.cxx.string.StringDecoder
 import com.android.build.gradle.internal.cxx.string.StringEncoder
-import com.android.utils.cxx.CxxDiagnosticCode
 import com.android.utils.cxx.CxxBugDiagnosticCode
+import com.android.utils.cxx.CxxDiagnosticCode
 
-/**
- * Helper function to create [LoggingMessage].
- */
+/** Helper function to create [LoggingMessage]. */
 fun createLoggingMessage(
-    level : LoggingLevel,
-    message : String,
-    tag : String = "",
-    file : String = "",
-    diagnosticCode: Int = 0
-) : LoggingMessage {
-    return LoggingMessage.newBuilder()
-        .setLevel(level)
-        .setMessage(message)
-        .setTag(tag)
-        .setFile(file)
-        .setDiagnosticCode(diagnosticCode)
-        .build()
+  level: LoggingLevel,
+  message: String,
+  tag: String = "",
+  file: String = "",
+  diagnosticCode: Int = 0,
+): LoggingMessage {
+  return LoggingMessage.newBuilder().setLevel(level).setMessage(message).setTag(tag).setFile(file).setDiagnosticCode(diagnosticCode).build()
+}
+
+/** Given a [LoggingMessage] use the given [StringEncoder] to convert to an [EncodedLoggingMessage] that has strings encoded as ints. */
+fun LoggingMessage.encode(encoder: StringEncoder): EncodedLoggingMessage {
+  return EncodedLoggingMessage.newBuilder()
+    .setLevel(level)
+    .setMessageId(encoder.encode(message))
+    .setTagId(encoder.encode(tag))
+    .setFileId(encoder.encode(file))
+    .setDiagnosticCode(diagnosticCode)
+    .build()
 }
 
 /**
- * Given a [LoggingMessage] use the given [StringEncoder] to convert
- * to an [EncodedLoggingMessage] that has strings encoded as ints.
+ * Given an [EncodedLoggingMessage], which has strings represented as ints, use the given [StringDecoder] to convert to a [LoggingMessage]
+ * that has instantiated strings.
  */
-fun LoggingMessage.encode(encoder : StringEncoder) : EncodedLoggingMessage {
-    return EncodedLoggingMessage.newBuilder()
-        .setLevel(level)
-        .setMessageId(encoder.encode(message))
-        .setTagId(encoder.encode(tag))
-        .setFileId(encoder.encode(file))
-        .setDiagnosticCode(diagnosticCode)
-        .build()
+fun EncodedLoggingMessage.decode(decoder: StringDecoder): LoggingMessage {
+  return LoggingMessage.newBuilder()
+    .setLevel(level)
+    .setMessage(decoder.decode(messageId))
+    .setTag(decoder.decode(tagId))
+    .setFile(decoder.decode(fileId))
+    .setDiagnosticCode(diagnosticCode)
+    .build()
 }
 
-/**
- * Given an [EncodedLoggingMessage], which has strings represented as ints, use
- * the given [StringDecoder] to convert to a [LoggingMessage] that has
- * instantiated strings.
- */
-fun EncodedLoggingMessage.decode(decoder : StringDecoder) : LoggingMessage {
-    return LoggingMessage.newBuilder()
-        .setLevel(level)
-        .setMessage(decoder.decode(messageId))
-        .setTag(decoder.decode(tagId))
-        .setFile(decoder.decode(fileId))
-        .setDiagnosticCode(diagnosticCode)
-        .build()
-}
+fun decodeLoggingMessage(encoded: EncodedLoggingMessage, decoder: StringDecoder) = encoded.decode(decoder)
 
-fun decodeLoggingMessage(
-    encoded : EncodedLoggingMessage,
-    decoder : StringDecoder) = encoded.decode(decoder)
-
-fun LoggingMessage.text() : String {
-    val codeHeader = when(diagnosticCode) {
-        0 -> "C/C++: "
-        else -> when(level) {
-            BUG -> "[bug $diagnosticCode] "
-            else -> "[CXX$diagnosticCode] "
+fun LoggingMessage.text(): String {
+  val codeHeader =
+    when (diagnosticCode) {
+      0 -> "C/C++: "
+      else ->
+        when (level) {
+          BUG -> "[bug $diagnosticCode] "
+          else -> "[CXX$diagnosticCode] "
         }
     }
-    return when {
-        (file.isBlank() && tag.isBlank()) -> "$codeHeader$message"
-        (file.isNotBlank() && tag.isBlank()) -> "$codeHeader$file : $message"
-        (file.isBlank() && tag.isNotBlank()) -> "$codeHeader$tag : $message"
-        else -> "$codeHeader$file $tag : $message"
-    }
+  return when {
+    (file.isBlank() && tag.isBlank()) -> "$codeHeader$message"
+    (file.isNotBlank() && tag.isBlank()) -> "$codeHeader$file : $message"
+    (file.isBlank() && tag.isNotBlank()) -> "$codeHeader$tag : $message"
+    else -> "$codeHeader$file $tag : $message"
+  }
 }
 
 fun bugRecordOf(message: String, diagnosticCode: CxxBugDiagnosticCode) =
-    createLoggingMessage(BUG, message, diagnosticCode = diagnosticCode.bugNumber)
+  createLoggingMessage(BUG, message, diagnosticCode = diagnosticCode.bugNumber)
 
 fun errorRecordOf(message: String, diagnosticCode: CxxDiagnosticCode) =
-    createLoggingMessage(ERROR, message, diagnosticCode = diagnosticCode.errorCode)
+  createLoggingMessage(ERROR, message, diagnosticCode = diagnosticCode.errorCode)
 
 fun warnRecordOf(message: String, diagnosticCode: CxxDiagnosticCode?) =
-    createLoggingMessage(WARN, message, diagnosticCode = diagnosticCode?.warningCode?:0)
+  createLoggingMessage(WARN, message, diagnosticCode = diagnosticCode?.warningCode ?: 0)
 
 fun lifecycleRecordOf(message: String) = createLoggingMessage(LIFECYCLE, message)
-fun infoRecordOf(message: String) = createLoggingMessage(INFO, message)
 
+fun infoRecordOf(message: String) = createLoggingMessage(INFO, message)

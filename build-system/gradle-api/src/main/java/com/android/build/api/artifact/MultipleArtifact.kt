@@ -26,72 +26,44 @@ import org.gradle.api.file.RegularFile
  *
  * This type inherits [Artifact.Multiple]. For single artifacts, see [SingleArtifact].
  *
- * All methods in [Artifacts] should be supported with any subclass of this
- * class.
+ * All methods in [Artifacts] should be supported with any subclass of this class.
  */
-sealed class MultipleArtifact<FileTypeT : FileSystemLocation>(
-    kind: ArtifactKind<FileTypeT>,
-    category: Category =  Category.INTERMEDIATES,
-) : Artifact.Multiple<FileTypeT>(kind, category) {
+sealed class MultipleArtifact<FileTypeT : FileSystemLocation>(kind: ArtifactKind<FileTypeT>, category: Category = Category.INTERMEDIATES) :
+  Artifact.Multiple<FileTypeT>(kind, category) {
 
-    /**
-     * Text files with additional ProGuard rules to be used to determine which classes are compiled
-     * into the main dex file.
-     *
-     * If set, rules from these files are used in combination with the default rules used by the
-     * build system.
-     *
-     * Initialized from DSL [com.android.build.api.dsl.VariantDimension.multiDexKeepProguard]
-     */
-    object MULTIDEX_KEEP_PROGUARD:
-            MultipleArtifact<RegularFile>(FILE, Category.SOURCES),
-            Replaceable,
-            Transformable
+  /**
+   * Text files with additional ProGuard rules to be used to determine which classes are compiled into the main dex file.
+   *
+   * If set, rules from these files are used in combination with the default rules used by the build system.
+   *
+   * Initialized from DSL [com.android.build.api.dsl.VariantDimension.multiDexKeepProguard]
+   */
+  object MULTIDEX_KEEP_PROGUARD : MultipleArtifact<RegularFile>(FILE, Category.SOURCES), Replaceable, Transformable
 
-    /**
-     * Directories with native debug metadata
-     *
-     * If set, the debug metadata files(with extension .dbg) are combined with extracted debug
-     * metadata and packaged together.
-     *
-     */
-    object NATIVE_DEBUG_METADATA:
-            MultipleArtifact<Directory>(DIRECTORY),
-            Replaceable,
-            Appendable,
-            Transformable
+  /**
+   * Directories with native debug metadata
+   *
+   * If set, the debug metadata files(with extension .dbg) are combined with extracted debug metadata and packaged together.
+   */
+  object NATIVE_DEBUG_METADATA : MultipleArtifact<Directory>(DIRECTORY), Replaceable, Appendable, Transformable
 
-    /**
-     * Directories with debug symbol table
-     *
-     * If set, the debug symbol table files(with extension .sym) are combined with extracted
-     * debug symbol tables and packaged together.
-     *
-     */
-    object NATIVE_SYMBOL_TABLES:
-            MultipleArtifact<Directory>(DIRECTORY),
-            Replaceable,
-            Appendable,
-            Transformable
+  /**
+   * Directories with debug symbol table
+   *
+   * If set, the debug symbol table files(with extension .sym) are combined with extracted debug symbol tables and packaged together.
+   */
+  object NATIVE_SYMBOL_TABLES : MultipleArtifact<Directory>(DIRECTORY), Replaceable, Appendable, Transformable
 
-    /**
-     * Directories containing generated code that will be added to compile classpath for the
-     * module.
-     *
-     * It is not possible to register such code generator through the DSL, one must use this
-     * Variant API.
-     *
-     * Classes added to this artifact will be used to compile Java classes and Kotlin classes
-     * present in the module. This is however limited to using the built-in kotlin compiler and
-     * is not available when using the deprecated KAGP plugin from JetBrains.
-     *
-     * Classes added to this artifacts will also be added to the [ScopedArtifact.CLASSES] for the
-     * [com.android.build.api.variant.ScopedArtifacts.Scope.PROJECT] scope.
-     */
-    @Incubating
-    object PRE_COMPILATION_CLASSES:
-            MultipleArtifact<Directory>(ArtifactKind.DIRECTORY),
-            Replaceable,
-            Appendable,
-            Transformable
+  /**
+   * Directories containing generated code that will be added to compile classpath for the module.
+   *
+   * It is not possible to register such code generator through the DSL, one must use this Variant API.
+   *
+   * Classes added to this artifact will be used to compile Java classes and Kotlin classes present in the module. This is however limited
+   * to using the built-in kotlin compiler and is not available when using the deprecated KAGP plugin from JetBrains.
+   *
+   * Classes added to this artifacts will also be added to the [ScopedArtifact.CLASSES] for the
+   * [com.android.build.api.variant.ScopedArtifacts.Scope.PROJECT] scope.
+   */
+  @Incubating object PRE_COMPILATION_CLASSES : MultipleArtifact<Directory>(ArtifactKind.DIRECTORY), Replaceable, Appendable, Transformable
 }

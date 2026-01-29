@@ -24,51 +24,47 @@ import com.android.testutils.TestInputsGenerator
 import com.android.testutils.generateAarWithContent
 import org.junit.Test
 
-class AarApiJarModelTest : ReferenceModelComparator(
-    referenceConfig = {
-        androidApplication {
-            HelloWorldAndroid.setupJava(files)
-        }
-    },
+class AarApiJarModelTest :
+  ReferenceModelComparator(
+    referenceConfig = { androidApplication { HelloWorldAndroid.setupJava(files) } },
     deltaConfig = {
-        androidApplication {
-            dependencies {
-                implementation(
-                    MavenRepoGenerator.Library(
-                        "com.example:myaar:1",
-                        "aar",
-                        generateAarWithContent(
-                            packageName = "com.example.myaar",
-                            mainJar = TestInputsGenerator.jarWithEmptyClasses(listOf("com/example/MainClass")),
-                            secondaryJars = mapOf(
-                                "impl1.jar" to TestInputsGenerator.jarWithEmptyClasses(listOf("com/example/Impl1")),
-                                "impl2.jar" to TestInputsGenerator.jarWithEmptyClasses(listOf("com/example/Impl2"))
-                            ),
-                            apiJar = TestInputsGenerator.jarWithEmptyClasses(listOf("com/example/ApiClass"))
-                        )
-                    )
-                )
-            }
+      androidApplication {
+        dependencies {
+          implementation(
+            MavenRepoGenerator.Library(
+              "com.example:myaar:1",
+              "aar",
+              generateAarWithContent(
+                packageName = "com.example.myaar",
+                mainJar = TestInputsGenerator.jarWithEmptyClasses(listOf("com/example/MainClass")),
+                secondaryJars =
+                  mapOf(
+                    "impl1.jar" to TestInputsGenerator.jarWithEmptyClasses(listOf("com/example/Impl1")),
+                    "impl2.jar" to TestInputsGenerator.jarWithEmptyClasses(listOf("com/example/Impl2")),
+                  ),
+                apiJar = TestInputsGenerator.jarWithEmptyClasses(listOf("com/example/ApiClass")),
+              ),
+            )
+          )
         }
+      }
     },
-    syncOptions = {
-        ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
-    },
-    variantName = "debug"
-) {
+    syncOptions = { ignoreSyncIssues(SyncIssue.SEVERITY_WARNING) },
+    variantName = "debug",
+  ) {
 
-    @Test
-    fun `test AndroidProject model`() {
-        ensureAndroidProjectDeltaIsEmpty()
-    }
+  @Test
+  fun `test AndroidProject model`() {
+    ensureAndroidProjectDeltaIsEmpty()
+  }
 
-    @Test
-    fun `test AndroidDsl model`() {
-        ensureAndroidDslDeltaIsEmpty()
-    }
+  @Test
+  fun `test AndroidDsl model`() {
+    ensureAndroidDslDeltaIsEmpty()
+  }
 
-    @Test
-    fun `test dependencies model`() {
-        compareVariantDependenciesWith(goldenFileSuffix = "WithAar")
-    }
+  @Test
+  fun `test dependencies model`() {
+    compareVariantDependenciesWith(goldenFileSuffix = "WithAar")
+  }
 }

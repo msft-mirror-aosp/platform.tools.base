@@ -15,6 +15,7 @@
  */
 
 @file:JvmName("EmulatorUtils")
+
 package com.android.build.gradle.integration.connected.utils
 
 import com.android.testutils.TestUtils
@@ -24,28 +25,24 @@ import org.junit.rules.ExternalResource
 /**
  * Path to the executable that the avd rule generates.
  *
- * <p>The executable is the script that starts and stops emulators and must be used to launch
- * the emulator.
+ * <p>The executable is the script that starts and stops emulators and must be used to launch the emulator.
  */
 private val EMULATOR_SCRIPT = System.getProperty("EMULATOR_SCRIPT_PATH")
 
 /**
  * Port at which to open the emulator.
  *
- * <p>On RBE, bazel launches the emulator in a sandbox, so you can use any port you want. If you
- * launch multiple emulators from the same test, then use different ports for each of those
- * emulators.
+ * <p>On RBE, bazel launches the emulator in a sandbox, so you can use any port you want. If you launch multiple emulators from the same
+ * test, then use different ports for each of those emulators.
  */
 private const val PORT = 5554
 
-/**
- * Return an [Emulator] using default port 5554
- */
+/** Return an [Emulator] using default port 5554 */
 fun getEmulator(): ExternalResource {
-    if (TestUtils.runningFromBazel()) {
-        return Emulator(EMULATOR_SCRIPT, PORT)
-    } else {
-        // Don't manage the emulator when running from Gradle for now
-        return object : ExternalResource() {}
-    }
+  if (TestUtils.runningFromBazel()) {
+    return Emulator(EMULATOR_SCRIPT, PORT)
+  } else {
+    // Don't manage the emulator when running from Gradle for now
+    return object : ExternalResource() {}
+  }
 }

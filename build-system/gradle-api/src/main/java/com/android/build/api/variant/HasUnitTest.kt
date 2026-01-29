@@ -16,12 +16,8 @@
 
 package com.android.build.api.variant
 
-/**
- * [Variant] that optionally have [UnitTest] component.
- */
+/** [Variant] that optionally have [UnitTest] component. */
 interface HasUnitTest {
-    /**
-     * Variant's [UnitTest], or null if the unit tests for this variant are disabled.
-     */
-    val unitTest: UnitTest?
+  /** Variant's [UnitTest], or null if the unit tests for this variant are disabled. */
+  val unitTest: UnitTest?
 }

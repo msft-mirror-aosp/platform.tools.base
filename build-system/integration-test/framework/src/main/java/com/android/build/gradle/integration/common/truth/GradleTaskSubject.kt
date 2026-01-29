@@ -16,9 +16,9 @@
 
 package com.android.build.gradle.integration.common.truth
 
+import com.android.build.gradle.integration.common.truth.impl.GradleTaskSubject as GradleTaskSubjectImpl
 import com.google.common.truth.Subject.Factory
 import com.google.common.truth.Truth
-import com.android.build.gradle.integration.common.truth.impl.GradleTaskSubject as GradleTaskSubjectImpl
 
 /**
  * a Truth subject to validate the execution outcome of a Gadle Task.
@@ -26,26 +26,28 @@ import com.android.build.gradle.integration.common.truth.impl.GradleTaskSubject 
  * This is accessed via [com.android.build.gradle.integration.common.fixture.GradleBuildResult.assertTask]
  */
 interface GradleTaskSubject {
-    companion object {
-        internal fun assertThat(
-            taskInfo: TaskStateList.TaskInfo,
-            withInfo: String? = null
-        ): GradleTaskSubject = Truth.assertAbout(executionStates(withInfo)).that(taskInfo)
+  companion object {
+    internal fun assertThat(taskInfo: TaskStateList.TaskInfo, withInfo: String? = null): GradleTaskSubject =
+      Truth.assertAbout(executionStates(withInfo)).that(taskInfo)
 
-        internal fun executionStates(info: String? = null): Factory<GradleTaskSubjectImpl, TaskStateList.TaskInfo> {
-            return Factory<GradleTaskSubjectImpl, TaskStateList.TaskInfo> { metadata, actual ->
-                GradleTaskSubjectImpl(metadata, actual, info)
-            }
-        }
+    internal fun executionStates(info: String? = null): Factory<GradleTaskSubjectImpl, TaskStateList.TaskInfo> {
+      return Factory<GradleTaskSubjectImpl, TaskStateList.TaskInfo> { metadata, actual -> GradleTaskSubjectImpl(metadata, actual, info) }
     }
+  }
 
-    fun hasState(state: TaskStateList.ExecutionState?)
-    fun wasUpToDate()
-    fun wasFromCache()
-    fun didWork()
-    fun wasSkipped()
-    fun failed()
-    fun ranBefore(taskName: String)
-    fun ranAfter(taskName: String)
+  fun hasState(state: TaskStateList.ExecutionState?)
+
+  fun wasUpToDate()
+
+  fun wasFromCache()
+
+  fun didWork()
+
+  fun wasSkipped()
+
+  fun failed()
+
+  fun ranBefore(taskName: String)
+
+  fun ranAfter(taskName: String)
 }
-

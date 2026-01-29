@@ -17,18 +17,13 @@ package com.android.build.api.dsl
 
 import org.gradle.api.provider.Property
 
-/**
- * Extension properties for the Asset Pack plugin.
- */
+/** Extension properties for the Asset Pack plugin. */
 interface AssetPackExtension {
-    /**
-     * The split name to assign to the asset pack.
-     */
-    val packName: Property<String>
-    /**
-     * Contains the dynamic delivery settings for the asset pack.
-     */
-    val dynamicDelivery: DynamicDelivery
-    /** @see dynamicDelivery */
-    fun dynamicDelivery(action: DynamicDelivery.() -> Unit)
+  /** The split name to assign to the asset pack. */
+  val packName: Property<String>
+  /** Contains the dynamic delivery settings for the asset pack. */
+  val dynamicDelivery: DynamicDelivery
+
+  /** @see dynamicDelivery */
+  fun dynamicDelivery(action: DynamicDelivery.() -> Unit)
 }

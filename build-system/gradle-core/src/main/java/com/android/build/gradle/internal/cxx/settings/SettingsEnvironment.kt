@@ -15,41 +15,27 @@
  */
 
 package com.android.build.gradle.internal.cxx.settings
+
 import com.google.gson.annotations.JsonAdapter
 
-/**
- * Schema of 'environments' element from CMakeSettings.json.
- */
+/** Schema of 'environments' element from CMakeSettings.json. */
 @JsonAdapter(SettingsEnvironmentSerializer::class)
 data class SettingsEnvironment(
-    /**
-     * A way to categorize a list of “environment” groups. Allows it to be
-     * referenced later.
-     * Example: ‘env’ which would be referenced later as ‘env.variablename’.
-     * Default is ‘env’ if not specified.
-     */
-    val namespace: String = "",
+  /**
+   * A way to categorize a list of “environment” groups. Allows it to be referenced later. Example: ‘env’ which would be referenced later as
+   * ‘env.variablename’. Default is ‘env’ if not specified.
+   */
+  val namespace: String = "",
 
-    /**
-     * A unique identifier for this group of variables. Allows the group to be
-     * inherited later in an 'inheritEnvironments' entry.
-     */
-    val environment: String = "",
+  /** A unique identifier for this group of variables. Allows the group to be inherited later in an 'inheritEnvironments' entry. */
+  val environment: String = "",
 
-    /**
-     * The priority of these variables when evaluating them. Higher number
-     * items are evaluated first.
-     */
-    val groupPriority: Int? = null,
+  /** The priority of these variables when evaluating them. Higher number items are evaluated first. */
+  val groupPriority: Int? = null,
 
-    /**
-     * A set of environments that are inherited by this group.
-     * Any custom environment can be used.
-     */
-    val inheritEnvironments: List<String> = listOf(),
+  /** A set of environments that are inherited by this group. Any custom environment can be used. */
+  val inheritEnvironments: List<String> = listOf(),
 
-    /**
-     * Environment properties.
-     */
-    val properties : Map<String, String> = mapOf()
+  /** Environment properties. */
+  val properties: Map<String, String> = mapOf(),
 )

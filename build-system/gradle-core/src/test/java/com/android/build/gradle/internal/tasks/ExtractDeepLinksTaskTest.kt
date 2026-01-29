@@ -21,120 +21,108 @@ import com.android.build.gradle.internal.fixtures.FakeGradleWorkExecutor
 import com.android.build.gradle.internal.fixtures.FakeNoOpAnalyticsService
 import com.android.build.gradle.tasks.ExtractDeepLinksTask
 import com.android.testutils.truth.PathSubject
+import java.io.File
+import javax.inject.Inject
 import org.gradle.testfixtures.ProjectBuilder
 import org.gradle.workers.WorkerExecutor
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
-import java.io.File
-import javax.inject.Inject
 
-/**
- * Unit tests for [ExtractDeepLinksTask].
- */
+/** Unit tests for [ExtractDeepLinksTask]. */
 class ExtractDeepLinksTaskTest {
 
-    @get: Rule
-    val temporaryFolder = TemporaryFolder()
+  @get:Rule val temporaryFolder = TemporaryFolder()
 
-    private lateinit var task: ExtractDeepLinksTask
-    private lateinit var outputFile: File
-    private lateinit var navigationDir: File
+  private lateinit var task: ExtractDeepLinksTask
+  private lateinit var outputFile: File
+  private lateinit var navigationDir: File
 
-    abstract class TaskForTest @Inject constructor(testWorkerExecutor: WorkerExecutor) :
-        ExtractDeepLinksTask() {
-        override val workerExecutor = testWorkerExecutor
-    }
+  abstract class TaskForTest @Inject constructor(testWorkerExecutor: WorkerExecutor) : ExtractDeepLinksTask() {
+    override val workerExecutor = testWorkerExecutor
+  }
 
-    @Before
-    fun setUp() {
-        val project = ProjectBuilder.builder().withProjectDir(temporaryFolder.root).build()
-        task = project.tasks.register(
-            "extractDeepLinksTask",
-            TaskForTest::class.java,
-            FakeGradleWorkExecutor(project.objects, temporaryFolder.newFolder())
-        ).get()
-        task.analyticsService.set(FakeNoOpAnalyticsService())
-        outputFile = temporaryFolder.newFile()
-        navigationDir = temporaryFolder.newFolder()
-    }
+  @Before
+  fun setUp() {
+    val project = ProjectBuilder.builder().withProjectDir(temporaryFolder.root).build()
+    task =
+      project.tasks
+        .register("extractDeepLinksTask", TaskForTest::class.java, FakeGradleWorkExecutor(project.objects, temporaryFolder.newFolder()))
+        .get()
+    task.analyticsService.set(FakeNoOpAnalyticsService())
+    outputFile = temporaryFolder.newFile()
+    navigationDir = temporaryFolder.newFolder()
+  }
 
-    @Test
-    fun testApplicationBasic() {
-        val hostPlaceholder = "\${host}"
-        val schemePlaceholder = "\${scheme}"
-        val appIdPlaceholder = "\${applicationId}"
-        File(navigationDir, "navigation.xml").writeText(
-            """
+  @Test
+  fun testApplicationBasic() {
+    val hostPlaceholder = "\${host}"
+    val schemePlaceholder = "\${scheme}"
+    val appIdPlaceholder = "\${applicationId}"
+    File(navigationDir, "navigation.xml")
+      .writeText(
+        """
                 <navigation xmlns:app="http://schemas.android.com/apk/res-auto">
                     <deepLink
                         app:uri="$schemePlaceholder://$hostPlaceholder/$appIdPlaceholder"/>
                 </navigation>
-            """.trimIndent()
-        )
-        task.navFilesFolders.add(FakeGradleDirectory(navigationDir))
-        task.manifestPlaceholders.putAll(
-            mapOf(
-                "host" to "my.host.example.com",
-                "scheme" to "myScheme"
-            )
-        )
-        task.forAar.set(false)
-        task.finalNavigationTransformation.set(true)
-        task.applicationId.set("com.example.app")
-        task.navigationJson.set(outputFile)
-        task.taskAction()
-
-        PathSubject.assertThat(outputFile).exists()
-        PathSubject.assertThat(outputFile).contains("my.host.example.com")
-        PathSubject.assertThat(outputFile).contains("myScheme")
-        PathSubject.assertThat(outputFile).contains("com.example.app")
-        PathSubject.assertThat(outputFile).contains("\"mDescription\": \"navigation.xml\"")
-        PathSubject.assertThat(outputFile).doesNotContain(navigationDir.name)
-    }
-
-    @Test
-    fun testLibraryBasic() {
-        val hostPlaceholder = "\${host}"
-        val schemePlaceholder = "\${scheme}"
-        val appIdPlaceholder = "\${applicationId}"
-        File(navigationDir, "navigation.xml").writeText(
             """
+          .trimIndent()
+      )
+    task.navFilesFolders.add(FakeGradleDirectory(navigationDir))
+    task.manifestPlaceholders.putAll(mapOf("host" to "my.host.example.com", "scheme" to "myScheme"))
+    task.forAar.set(false)
+    task.finalNavigationTransformation.set(true)
+    task.applicationId.set("com.example.app")
+    task.navigationJson.set(outputFile)
+    task.taskAction()
+
+    PathSubject.assertThat(outputFile).exists()
+    PathSubject.assertThat(outputFile).contains("my.host.example.com")
+    PathSubject.assertThat(outputFile).contains("myScheme")
+    PathSubject.assertThat(outputFile).contains("com.example.app")
+    PathSubject.assertThat(outputFile).contains("\"mDescription\": \"navigation.xml\"")
+    PathSubject.assertThat(outputFile).doesNotContain(navigationDir.name)
+  }
+
+  @Test
+  fun testLibraryBasic() {
+    val hostPlaceholder = "\${host}"
+    val schemePlaceholder = "\${scheme}"
+    val appIdPlaceholder = "\${applicationId}"
+    File(navigationDir, "navigation.xml")
+      .writeText(
+        """
                 <navigation xmlns:app="http://schemas.android.com/apk/res-auto">
                     <deepLink
                         app:uri="$schemePlaceholder://$hostPlaceholder/$appIdPlaceholder"/>
                 </navigation>
-            """.trimIndent()
-        )
-        task.navFilesFolders.add(FakeGradleDirectory(navigationDir))
-        task.manifestPlaceholders.putAll(
-            mapOf(
-                "host" to "my.host.example.com",
-                "scheme" to "myScheme"
-            )
-        )
-        task.forAar.set(false)
-        task.finalNavigationTransformation.set(false)
-        task.navigationJson.set(outputFile)
-        task.taskAction()
+            """
+          .trimIndent()
+      )
+    task.navFilesFolders.add(FakeGradleDirectory(navigationDir))
+    task.manifestPlaceholders.putAll(mapOf("host" to "my.host.example.com", "scheme" to "myScheme"))
+    task.forAar.set(false)
+    task.finalNavigationTransformation.set(false)
+    task.navigationJson.set(outputFile)
+    task.taskAction()
 
-        PathSubject.assertThat(outputFile).exists()
-        PathSubject.assertThat(outputFile).contains("my.host.example.com")
-        PathSubject.assertThat(outputFile).contains("myScheme")
-        PathSubject.assertThat(outputFile).contains(appIdPlaceholder)
-        PathSubject.assertThat(outputFile).doesNotContain(navigationDir.name)
-    }
+    PathSubject.assertThat(outputFile).exists()
+    PathSubject.assertThat(outputFile).contains("my.host.example.com")
+    PathSubject.assertThat(outputFile).contains("myScheme")
+    PathSubject.assertThat(outputFile).contains(appIdPlaceholder)
+    PathSubject.assertThat(outputFile).doesNotContain(navigationDir.name)
+  }
 
+  @Test
+  fun testNoOutputWhenForAarAndNoInputNavigationXmls() {
+    task.navFilesFolders.add(FakeGradleDirectory(navigationDir))
+    task.forAar.set(true)
+    task.finalNavigationTransformation.set(false)
+    task.navigationJson.set(outputFile)
+    task.taskAction()
 
-    @Test
-    fun testNoOutputWhenForAarAndNoInputNavigationXmls() {
-        task.navFilesFolders.add(FakeGradleDirectory(navigationDir))
-        task.forAar.set(true)
-        task.finalNavigationTransformation.set(false)
-        task.navigationJson.set(outputFile)
-        task.taskAction()
-
-        PathSubject.assertThat(outputFile).doesNotExist()
-    }
+    PathSubject.assertThat(outputFile).doesNotExist()
+  }
 }

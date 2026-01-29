@@ -17,7 +17,6 @@
 package com.android.build.gradle.integration.resources
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.fixture.SUPPORT_LIB_VERSION
 import com.android.build.gradle.integration.common.fixture.app.MinimalSubProject
 import com.android.build.gradle.integration.common.fixture.app.MultiModuleTestProject
 import com.android.build.gradle.integration.common.utils.TestFileUtils
@@ -26,52 +25,56 @@ import com.android.testutils.truth.ZipFileSubject.assertThat
 import org.junit.Rule
 import org.junit.Test
 
-/**
- * Sanity tests for the new compile R class flow pipeline with non-transitive R classes.
- */
+/** Sanity tests for the new compile R class flow pipeline with non-transitive R classes. */
 class NonTransitiveCompileRClassFlowTest {
 
-    private val lib1 = MinimalSubProject.lib("com.example.lib1")
-        .withFile(
-            "src/main/res/values/values.xml",
-            """<resources>
-                   <string name="lib1String">Lib1 string</string>
-                   <attr name="lib1attr" format="reference"/>
-               </resources>""".trimMargin()
-        )
-        .withFile(
-            "src/main/java/com/example/lib1/Example.java",
-            """package com.example.lib1;
+  private val lib1 =
+    MinimalSubProject.lib("com.example.lib1")
+      .withFile(
+        "src/main/res/values/values.xml",
+        """
+        |<resources>
+        |                   <string name="lib1String">Lib1 string</string>
+        |                   <attr name="lib1attr" format="reference"/>
+        |               </resources>
+        """
+          .trimMargin(),
+      )
+      .withFile(
+        "src/main/java/com/example/lib1/Example.java",
+        """package com.example.lib1;
                     public class Example {
                         public static final int LIB1_STRING = R.string.lib1String;
                         public static final int SUPPORT_LIB_STRING = com.google.android.material.R.string.appbar_scrolling_view_behavior;
-                    }"""
-        )
+                    }""",
+      )
 
-    private val lib2 = MinimalSubProject.lib("com.example.lib2")
-        .withFile(
-            "src/main/res/values/values.xml",
-            """<resources>
+  private val lib2 =
+    MinimalSubProject.lib("com.example.lib2")
+      .withFile(
+        "src/main/res/values/values.xml",
+        """<resources>
                         <string name="lib2String">Lib2 string</string>
                         <string name="reference">@string/lib1String</string>
                         <color name="lib2color"/>
-                    </resources>"""
-        )
-        .withFile(
-            "src/main/java/com/example/lib2/Example.java",
-            """package com.example.lib2;
+                    </resources>""",
+      )
+      .withFile(
+        "src/main/java/com/example/lib2/Example.java",
+        """package com.example.lib2;
                     public class Example {
                         public static final int LIB2_STRING = R.string.lib2String;
                         public static final int LIB1_STRING = com.example.lib1.R.string.lib1String;
                         public static final int SUPPORT_LIB_STRING = com.google.android.material.R.string.appbar_scrolling_view_behavior;
-                    }"""
-        )
+                    }""",
+      )
 
-    /** Included to make sure that the ids on an app compilation R class are constant expressions */
-    private val app = MinimalSubProject.app("com.example.app")
-        .withFile(
-            "src/main/java/com/example/app/Example.java",
-            """package com.example.app;
+  /** Included to make sure that the ids on an app compilation R class are constant expressions */
+  private val app =
+    MinimalSubProject.app("com.example.app")
+      .withFile(
+        "src/main/java/com/example/app/Example.java",
+        """package com.example.app;
                     public class Example {
                         public void checkLibRFilesConstant() {
                             int x = com.example.lib2.R.string.lib2String;
@@ -80,74 +83,63 @@ class NonTransitiveCompileRClassFlowTest {
                             }
                         }
                     }
-                    """
-        )
+                    """,
+      )
 
-    private val testApp =
-        MultiModuleTestProject.builder()
-            .subproject(":lib1", lib1)
-            .subproject(":lib2", lib2)
-            .subproject(":app", app)
-            .dependency(lib1, "com.google.android.material:material:1.9.0")
-            .dependency(lib2, lib1)
-            .dependency(app, lib2)
-            .build()
+  private val testApp =
+    MultiModuleTestProject.builder()
+      .subproject(":lib1", lib1)
+      .subproject(":lib2", lib2)
+      .subproject(":app", app)
+      .dependency(lib1, "com.google.android.material:material:1.9.0")
+      .dependency(lib2, lib1)
+      .dependency(app, lib2)
+      .build()
 
-    @get:Rule
-    val project = GradleTestProject.builder().fromTestApp(testApp)
-        // consider using default heap size when b/339837484 is resolved
-        .withHeap("2048m")
-        .create()
+  @get:Rule
+  val project =
+    GradleTestProject.builder()
+      .fromTestApp(testApp)
+      // consider using default heap size when b/339837484 is resolved
+      .withHeap("2048m")
+      .create()
 
-    @Test
-    fun runtimeRClassFlowTestWithNonTransitive() {
+  @Test
+  fun runtimeRClassFlowTestWithNonTransitive() {
 
-        val tasks = listOf(
-            ":app:assembleDebug",
-            ":app:assembleDebugAndroidTest",
-            ":lib1:assembleDebugAndroidTest",
-            ":lib2:assembleDebug",
-            ":lib2:assembleDebugAndroidTest"
-        )
+    val tasks =
+      listOf(
+        ":app:assembleDebug",
+        ":app:assembleDebugAndroidTest",
+        ":lib1:assembleDebugAndroidTest",
+        ":lib2:assembleDebug",
+        ":lib2:assembleDebugAndroidTest",
+      )
 
-        // Need to change the dependency on the support lib implementation to api.
-        TestFileUtils.searchAndReplace(
-            project.file("lib1/build.gradle"),
-            "implementation '",
-            "api '"
-        )
-        TestFileUtils.searchAndReplace(
-            project.file("lib2/build.gradle"),
-            "implementation",
-            "api"
-        )
+    // Need to change the dependency on the support lib implementation to api.
+    TestFileUtils.searchAndReplace(project.file("lib1/build.gradle"), "implementation '", "api '")
+    TestFileUtils.searchAndReplace(project.file("lib2/build.gradle"), "implementation", "api")
 
-        val lib2RJar = project.getSubproject("lib2")
-            .getIntermediateFile("compile_r_class_jar", "debug", "generateDebugRFile", "R.jar")
+    val lib2RJar = project.getSubproject("lib2").getIntermediateFile("compile_r_class_jar", "debug", "generateDebugRFile", "R.jar")
 
-        project.executor()
-            .with(BooleanOption.NON_TRANSITIVE_R_CLASS, true)
-            .run(tasks)
-        assertThat(lib2RJar) {
-            // It shouldn't contain any other R classes other than the local one
-            it.doesNotContain("com/example/lib1/R.class")
-            it.contains("com/example/lib2/R.class")
-            // The R class should only have local resources
-            it.contains("com/example/lib2/R\$color.class")
-            it.doesNotContain("com/example/lib2/R\$attr.class")
-        }
-
-        project.executor()
-            .with(BooleanOption.NON_TRANSITIVE_R_CLASS, false)
-            .run(tasks)
-        assertThat(lib2RJar) {
-            // It shouldn't contain any other R classes other than the local one
-            it.doesNotContain("com/example/lib1/R.class")
-            it.contains("com/example/lib2/R.class")
-            // The R class should contain all resources
-            it.contains("com/example/lib2/R\$color.class")
-            it.contains("com/example/lib2/R\$attr.class")
-        }
+    project.executor().with(BooleanOption.NON_TRANSITIVE_R_CLASS, true).run(tasks)
+    assertThat(lib2RJar) {
+      // It shouldn't contain any other R classes other than the local one
+      it.doesNotContain("com/example/lib1/R.class")
+      it.contains("com/example/lib2/R.class")
+      // The R class should only have local resources
+      it.contains("com/example/lib2/R\$color.class")
+      it.doesNotContain("com/example/lib2/R\$attr.class")
     }
-}
 
+    project.executor().with(BooleanOption.NON_TRANSITIVE_R_CLASS, false).run(tasks)
+    assertThat(lib2RJar) {
+      // It shouldn't contain any other R classes other than the local one
+      it.doesNotContain("com/example/lib1/R.class")
+      it.contains("com/example/lib2/R.class")
+      // The R class should contain all resources
+      it.contains("com/example/lib2/R\$color.class")
+      it.contains("com/example/lib2/R\$attr.class")
+    }
+  }
+}

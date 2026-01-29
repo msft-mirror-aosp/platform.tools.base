@@ -19,14 +19,11 @@ package com.android.builder.model.v2.models
 /**
  * Defines all dependencies for a test suite.
  *
- * Each test suite can have 1 to many source folders, and each source folder can have its
- * own set of dependencies. Use [TestSuiteSource.name] and [BaseTestSuiteSourceIdentity.name] to
- * match sources and sources dependencies.
+ * Each test suite can have 1 to many source folders, and each source folder can have its own set of dependencies. Use
+ * [TestSuiteSource.name] and [BaseTestSuiteSourceIdentity.name] to match sources and sources dependencies.
  */
 interface TestSuiteDependencies {
 
-    /**
-     * The collection of dependencies per test sources.
-     */
-    val sourcesDependencies: Collection<TestSuiteSourceDependencies>
+  /** The collection of dependencies per test sources. */
+  val sourcesDependencies: Collection<TestSuiteSourceDependencies>
 }

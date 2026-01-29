@@ -21,24 +21,22 @@ import org.w3c.dom.Element
 import org.w3c.dom.NodeList
 
 internal val NodeList.elements: List<Element>
-    get() = (0 until length).mapNotNull { item(it) as? Element }
+  get() = (0 until length).mapNotNull { item(it) as? Element }
 
 internal fun findProperty(propertiesNode: Element?, key: String): String? {
-    if (propertiesNode == null) return null
-    return propertiesNode.getElementsByTagName(TAG_PROPERTY).elements
-        .find { it.getAttribute(ATTR_NAME) == key }
-        ?.getAttribute(ATTR_VALUE)
+  if (propertiesNode == null) return null
+  return propertiesNode.getElementsByTagName(TAG_PROPERTY).elements.find { it.getAttribute(ATTR_NAME) == key }?.getAttribute(ATTR_VALUE)
 }
 
 internal fun parseSingleCounter(counters: List<Element>, type: String): CoverageInfo {
-    val counter = counters.find { it.getAttribute(ATTR_TYPE) == type } ?: return CoverageInfo(0, 0, 0)
-    val missed = counter.getAttribute(ATTR_MISSED).toInt()
-    val covered = counter.getAttribute(ATTR_COVERED).toInt()
-    val total = missed + covered
-    return CoverageInfo(calculatePercent(covered, total), covered, total)
+  val counter = counters.find { it.getAttribute(ATTR_TYPE) == type } ?: return CoverageInfo(0, 0, 0)
+  val missed = counter.getAttribute(ATTR_MISSED).toInt()
+  val covered = counter.getAttribute(ATTR_COVERED).toInt()
+  val total = missed + covered
+  return CoverageInfo(calculatePercent(covered, total), covered, total)
 }
 
 internal fun calculatePercent(covered: Int, total: Int): Int {
-    if (total == 0) return 0
-    return (covered * 100) / total
+  if (total == 0) return 0
+  return (covered * 100) / total
 }

@@ -21,27 +21,35 @@ import org.junit.Test
 
 class MergeSettingsKtTest {
 
-    @Test
-    fun mergeCMakeSettings() {
-        val s1 = createSettingsFromJsonString("""
-            {
-             "environments": [ { "environment": "e1" } ],
-              "configurations": [ { name: "c1" } ]
-             }
-        """.trimIndent())
-        val s2 = createSettingsFromJsonString("""
-            {
-             "environments": [ { "environment": "e2" } ],
-              "configurations": [ { name: "c2" } ]
-             }
-        """.trimIndent())
+  @Test
+  fun mergeCMakeSettings() {
+    val s1 =
+      createSettingsFromJsonString(
+        """
+        {
+         "environments": [ { "environment": "e1" } ],
+          "configurations": [ { name: "c1" } ]
+         }
+        """
+          .trimIndent()
+      )
+    val s2 =
+      createSettingsFromJsonString(
+        """
+        {
+         "environments": [ { "environment": "e2" } ],
+          "configurations": [ { name: "c2" } ]
+         }
+        """
+          .trimIndent()
+      )
 
-        val merged = mergeSettings(s1, s2)
-        Truth.assertThat(merged.configurations).hasSize(2)
-        Truth.assertThat(merged.environments).hasSize(2)
-        Truth.assertThat(merged.environments[0].environment).isEqualTo("e1")
-        Truth.assertThat(merged.environments[1].environment).isEqualTo("e2")
-        Truth.assertThat(merged.configurations[0].name).isEqualTo("c1")
-        Truth.assertThat(merged.configurations[1].name).isEqualTo("c2")
-    }
+    val merged = mergeSettings(s1, s2)
+    Truth.assertThat(merged.configurations).hasSize(2)
+    Truth.assertThat(merged.environments).hasSize(2)
+    Truth.assertThat(merged.environments[0].environment).isEqualTo("e1")
+    Truth.assertThat(merged.environments[1].environment).isEqualTo("e2")
+    Truth.assertThat(merged.configurations[0].name).isEqualTo("c1")
+    Truth.assertThat(merged.configurations[1].name).isEqualTo("c2")
+  }
 }

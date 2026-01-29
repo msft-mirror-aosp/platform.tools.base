@@ -23,60 +23,39 @@ import com.android.builder.model.v2.AndroidModel
  *
  * This is basically the source set information.
  */
-interface BasicVariant: AndroidModel {
-    /**
-     * The name of the variant.
-     */
-    val name: String
+interface BasicVariant : AndroidModel {
+  /** The name of the variant. */
+  val name: String
 
-    /**
-     * The main artifact for this variant.
-     */
-    val mainArtifact: BasicArtifact
+  /** The main artifact for this variant. */
+  val mainArtifact: BasicArtifact
 
-    /**
-     * The AndroidTest artifact for this variant, if applicable.
-     */
-    @Deprecated("Contained in deviceTestArtifacts")
-    val androidTestArtifact: BasicArtifact?
+  /** The AndroidTest artifact for this variant, if applicable. */
+  @Deprecated("Contained in deviceTestArtifacts") val androidTestArtifact: BasicArtifact?
 
-    /**
-     * The device test components for this variant, e.g., androidTest
-     */
-    val deviceTestArtifacts: Map<String, BasicArtifact>
+  /** The device test components for this variant, e.g., androidTest */
+  val deviceTestArtifacts: Map<String, BasicArtifact>
 
-    /**
-     * The Unit Test artifact for this variant, if applicable.
-     */
-    @Deprecated("Contained in hostTestArtifacts")
-    val unitTestArtifact: BasicArtifact?
+  /** The Unit Test artifact for this variant, if applicable. */
+  @Deprecated("Contained in hostTestArtifacts") val unitTestArtifact: BasicArtifact?
 
-    /**
-     * The host test components for this variant, e.g., unitTest
-     */
-    val hostTestArtifacts: Map<String, BasicArtifact>
+  /** The host test components for this variant, e.g., unitTest */
+  val hostTestArtifacts: Map<String, BasicArtifact>
 
-    /**
-     * The test suite components for this variant
-     */
-    val testSuiteArtifacts: Map<String, BasicTestSuiteArtifact>
+  /** The test suite components for this variant */
+  val testSuiteArtifacts: Map<String, BasicTestSuiteArtifact>
 
-    /**
-     * The TestFixtures artifact for this variant, if applicable.
-     */
-    val testFixturesArtifact: BasicArtifact?
+  /** The TestFixtures artifact for this variant, if applicable. */
+  val testFixturesArtifact: BasicArtifact?
 
-    /**
-     * The build type name.
-     *
-     * If null, no build type is associated with the variant (this generally means that no build
-     * types exist, which can only happen for libraries)
-     */
-    val buildType: String?
+  /**
+   * The build type name.
+   *
+   * If null, no build type is associated with the variant (this generally means that no build types exist, which can only happen for
+   * libraries)
+   */
+  val buildType: String?
 
-    /**
-     * The flavors for this variants. This can be empty if no flavors are configured.
-     */
-    val productFlavors: List<String>
+  /** The flavors for this variants. This can be empty if no flavors are configured. */
+  val productFlavors: List<String>
 }
-

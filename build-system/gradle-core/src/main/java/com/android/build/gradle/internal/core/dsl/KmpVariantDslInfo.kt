@@ -19,22 +19,17 @@ package com.android.build.gradle.internal.core.dsl
 import com.android.build.api.dsl.AarMetadata
 
 /**
- * Represents the dsl info for the kotlin multiplatform android main variant, initialized from the
- * extension.
+ * Represents the dsl info for the kotlin multiplatform android main variant, initialized from the extension.
  *
  * This class allows querying for the values set via the DSL model.
  *
  * @see [com.android.build.gradle.internal.component.KmpCreationConfig]
  */
 // TODO: think about extending LibraryVariantDslInfo if possible to simplify some logic down the line
-interface KmpVariantDslInfo:
-    VariantDslInfo,
-    KmpComponentDslInfo,
-    TestedVariantDslInfo,
-    AarProducingComponentDslInfo {
+interface KmpVariantDslInfo : VariantDslInfo, KmpComponentDslInfo, TestedVariantDslInfo, AarProducingComponentDslInfo {
 
-    val aarMetadata: AarMetadata
-    val enabledUnitTest: Boolean
-    val enableAndroidTest: Boolean
-    val androidTestMultiDexEnabled: Boolean?
+  val aarMetadata: AarMetadata
+  val enabledUnitTest: Boolean
+  val enableAndroidTest: Boolean
+  val androidTestMultiDexEnabled: Boolean?
 }

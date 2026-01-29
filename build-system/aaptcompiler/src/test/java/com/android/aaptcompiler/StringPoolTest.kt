@@ -3,10 +3,9 @@ package com.android.aaptcompiler
 import com.android.aaptcompiler.android.ResStringPool
 import com.android.aaptcompiler.buffer.BigBuffer
 import com.google.common.truth.Truth
-import org.junit.Ignore
-import org.junit.Test
 import java.nio.ByteBuffer
 import kotlin.test.assertFailsWith
+import org.junit.Test
 
 class StringPoolTest {
 
@@ -258,31 +257,28 @@ class StringPoolTest {
     Truth.assertThat(utf16Style[1].lastChar).isEqualTo(3)
   }
 
-    @Test
-    fun testMaxEncodingLengthUTF8() {
-      val pool1 = StringPool()
-      pool1.makeRef("Why, hello!")
-      var utf8Buffer = BigBuffer(1024)
-      pool1.flattenUtf8(utf8Buffer, null)
-      val utf8Test = ResStringPool.get(ByteBuffer.wrap(utf8Buffer.toBytes()), utf8Buffer.size)
+  @Test
+  fun testMaxEncodingLengthUTF8() {
+    val pool1 = StringPool()
+    pool1.makeRef("Why, hello!")
+    var utf8Buffer = BigBuffer(1024)
+    pool1.flattenUtf8(utf8Buffer, null)
+    val utf8Test = ResStringPool.get(ByteBuffer.wrap(utf8Buffer.toBytes()), utf8Buffer.size)
 
-      Truth.assertThat(utf8Test.strings).hasSize(1)
-      Truth.assertThat(utf8Test.strings[0]).isEqualTo("Why, hello!")
+    Truth.assertThat(utf8Test.strings).hasSize(1)
+    Truth.assertThat(utf8Test.strings[0]).isEqualTo("Why, hello!")
 
-      val pool2 = StringPool()
-      val superLongString = String(CharArray(33000) {'a'})
+    val pool2 = StringPool()
+    val superLongString = String(CharArray(33000) { 'a' })
 
-      pool2.makeRef("This fits1")
-      pool2.makeRef(superLongString)
-      pool2.makeRef("This fits2")
+    pool2.makeRef("This fits1")
+    pool2.makeRef(superLongString)
+    pool2.makeRef("This fits2")
 
-      utf8Buffer = BigBuffer(1024)
-      val utf8Exception = assertFailsWith<Exception> {
-          pool2.flattenUtf8(utf8Buffer, null)
-      }
-      Truth.assertThat(utf8Exception.message).contains(
-          "String of size 33000 bytes is too large to encode using UTF-8 (32767 bytes).")
-    }
+    utf8Buffer = BigBuffer(1024)
+    val utf8Exception = assertFailsWith<Exception> { pool2.flattenUtf8(utf8Buffer, null) }
+    Truth.assertThat(utf8Exception.message).contains("String of size 33000 bytes is too large to encode using UTF-8 (32767 bytes).")
+  }
 
   @Test
   fun testMaxEncodingLengthUTF16() {
@@ -301,7 +297,7 @@ class StringPoolTest {
     Truth.assertThat(utf16Test.strings[0]).isEqualTo("Why, hello!")
 
     val pool2 = StringPool()
-    val superLongString = String(CharArray(33000) {'a'})
+    val superLongString = String(CharArray(33000) { 'a' })
 
     pool2.makeRef("This fits1")
     pool2.makeRef(superLongString)
@@ -318,10 +314,11 @@ class StringPoolTest {
   }
 
   companion object {
-    const val LONG_STRING = "バッテリーを長持ちさせるため、バッテリーセーバーは端末のパフォーマンスを抑" +
-      "え、バイブレーション、位置情報サービス、大半のバックグラウンドデータを制限" +
-      "します。メール、SMSや、同期を使 " +
-      "用するその他のアプリは、起動しても更新されないことがあります。バッテリーセ" +
-      "ーバーは端末の充電中は自動的にOFFになります。"
+    const val LONG_STRING =
+      "バッテリーを長持ちさせるため、バッテリーセーバーは端末のパフォーマンスを抑" +
+        "え、バイブレーション、位置情報サービス、大半のバックグラウンドデータを制限" +
+        "します。メール、SMSや、同期を使 " +
+        "用するその他のアプリは、起動しても更新されないことがあります。バッテリーセ" +
+        "ーバーは端末の充電中は自動的にOFFになります。"
   }
 }

@@ -18,21 +18,21 @@ package com.android.build.api.apiTest.groovy
 
 import com.android.build.api.apiTest.VariantApiBaseTest
 import com.google.common.truth.Truth
-import org.gradle.testkit.runner.TaskOutcome
-import org.junit.Test
 import java.io.File
 import kotlin.test.assertNotNull
+import org.gradle.testkit.runner.TaskOutcome
+import org.junit.Test
 
-class SetApplicationIdTest: VariantApiBaseTest(TestType.Script, ScriptingLanguage.Groovy) {
+class SetApplicationIdTest : VariantApiBaseTest(TestType.Script, ScriptingLanguage.Groovy) {
 
-    @Test
-    fun setCustomApplicationIdFromTask() {
-        given {
-            tasksToInvoke.add(":app:assembleDebug")
+  @Test
+  fun setCustomApplicationIdFromTask() {
+    given {
+      tasksToInvoke.add(":app:assembleDebug")
 
-            addModule(":app") {
-                buildFile =
-                    """
+      addModule(":app") {
+        buildFile =
+          """
                 plugins {
                     id 'com.android.application'
                 }
@@ -64,43 +64,42 @@ class SetApplicationIdTest: VariantApiBaseTest(TestType.Script, ScriptingLanguag
                         })
                     }
                 }
-                """.trimIndent()
-
-                testingElements.addManifest(this)
-                testingElements.addMainActivity(this)
-            }
-        }
-        withDocs {
-            index =
-                    // language=markdown
                 """
-# Demonstrate how to set a variant applicationId from a Task.
+            .trimIndent()
 
-This sample shows how to create a Task which will output a file containing a single String. The
-produced file will then be used to set the variant's applicationId using the file content.
-Please note, the applicationId will only be known at execution time.
-
-## To Run
-./gradlew assembleDebug
-            """.trimIndent()
-        }
-        check {
-            assertNotNull(this)
-            Truth.assertThat(output).contains("BUILD SUCCESSFUL")
-            arrayOf(
-                ":app:debugAppIdProducerTask",
-            ).forEach {
-                val task = task(it)
-                assertNotNull(task)
-                Truth.assertThat(task.outcome).isEqualTo(TaskOutcome.SUCCESS)
-            }
-            // test the merged manifest and make sure it contains the right application.
-            val manifestFile =
-                File(testProjectDir.root, "${testName.methodName}/app/build/intermediates/merged_manifests/debug/AndroidManifest.xml")
-            println(manifestFile.absolutePath)
-            Truth.assertThat(manifestFile.exists()).isTrue()
-            Truth.assertThat(manifestFile.readText()).contains("" +
-                    """package="set.from.task.debugAppIdProducerTask"""")
-        }
+        testingElements.addManifest(this)
+        testingElements.addMainActivity(this)
+      }
     }
+    withDocs {
+      index =
+        // language=markdown
+        """
+        # Demonstrate how to set a variant applicationId from a Task.
+
+        This sample shows how to create a Task which will output a file containing a single String. The
+        produced file will then be used to set the variant's applicationId using the file content.
+        Please note, the applicationId will only be known at execution time.
+
+        ## To Run
+        ./gradlew assembleDebug
+        """
+          .trimIndent()
+    }
+    check {
+      assertNotNull(this)
+      Truth.assertThat(output).contains("BUILD SUCCESSFUL")
+      arrayOf(":app:debugAppIdProducerTask").forEach {
+        val task = task(it)
+        assertNotNull(task)
+        Truth.assertThat(task.outcome).isEqualTo(TaskOutcome.SUCCESS)
+      }
+      // test the merged manifest and make sure it contains the right application.
+      val manifestFile =
+        File(testProjectDir.root, "${testName.methodName}/app/build/intermediates/merged_manifests/debug/AndroidManifest.xml")
+      println(manifestFile.absolutePath)
+      Truth.assertThat(manifestFile.exists()).isTrue()
+      Truth.assertThat(manifestFile.readText()).contains("" + """package="set.from.task.debugAppIdProducerTask"""")
+    }
+  }
 }

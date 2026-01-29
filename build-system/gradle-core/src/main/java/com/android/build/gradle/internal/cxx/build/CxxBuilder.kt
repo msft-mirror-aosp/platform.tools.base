@@ -17,11 +17,8 @@
 package com.android.build.gradle.internal.cxx.build
 
 import org.gradle.process.ExecOperations
-import java.io.File
 
-/**
- * Represents a C/C++ build operation independent of a Gradle task.
- */
+/** Represents a C/C++ build operation independent of a Gradle task. */
 interface CxxBuilder {
-    fun build(ops: ExecOperations)
+  fun build(ops: ExecOperations)
 }

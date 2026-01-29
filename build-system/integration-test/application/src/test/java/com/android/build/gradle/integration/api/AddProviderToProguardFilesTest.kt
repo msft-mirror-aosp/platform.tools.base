@@ -30,59 +30,51 @@ import org.junit.Rule
 import org.junit.Test
 
 class AddProviderToProguardFilesTest {
-    @get:Rule
-    val rule = GradleRule.from {
-        androidApplication {
-            android {
-                namespace = "com.example.api.java_res"
-                defaultConfig.applicationId = "com.example.api.java_res"
-                pluginCallbacks += AddProviderToProguardFiles::class.java
-            }
+  @get:Rule
+  val rule =
+    GradleRule.from {
+      androidApplication {
+        android {
+          namespace = "com.example.api.java_res"
+          defaultConfig.applicationId = "com.example.api.java_res"
+          pluginCallbacks += AddProviderToProguardFiles::class.java
         }
+      }
     }
 
-    @Test
-    fun expectFailure() {
-        val buildResult = rule.build.executor.expectFailure().run("assembleDebug")
-        Truth.assertThat(buildResult.stderrAsText).contains(
-            BooleanOption.DISALLOW_PROVIDER_IN_ANDROID_SOURCE_SET.propertyName
-        )
-    }
+  @Test
+  fun expectFailure() {
+    val buildResult = rule.build.executor.expectFailure().run("assembleDebug")
+    Truth.assertThat(buildResult.stderrAsText).contains(BooleanOption.DISALLOW_PROVIDER_IN_ANDROID_SOURCE_SET.propertyName)
+  }
 
-    @Test
-    fun allowProviderTest() {
-        val buildResult = rule.build.executor
-            .with(BooleanOption.DISALLOW_PROVIDER_IN_ANDROID_SOURCE_SET, false)
-            .run("assembleDebug")
-        Truth.assertThat(buildResult.exception).isNull()
-    }
+  @Test
+  fun allowProviderTest() {
+    val buildResult = rule.build.executor.with(BooleanOption.DISALLOW_PROVIDER_IN_ANDROID_SOURCE_SET, false).run("assembleDebug")
+    Truth.assertThat(buildResult.exception).isNull()
+  }
 }
 
 abstract class CreateConsumerProguardFile : DefaultTask() {
-    @get:OutputFile
-    abstract val proguardFile: RegularFileProperty
-    @TaskAction
-    fun create() {
-        proguardFile.asFile.get().apply {
-            parentFile.mkdirs()
-            writeText("#generated file")
-        }
+  @get:OutputFile abstract val proguardFile: RegularFileProperty
+
+  @TaskAction
+  fun create() {
+    proguardFile.asFile.get().apply {
+      parentFile.mkdirs()
+      writeText("#generated file")
     }
+  }
 }
 
-class AddProviderToProguardFiles: ApplicationComponentCallback {
+class AddProviderToProguardFiles : ApplicationComponentCallback {
 
-    override fun handleExtension(
-        project: Project,
-        androidComponents: ApplicationAndroidComponentsExtension
-    ) {
-        val generateTask = project.tasks.register("GenerateProguardFile", CreateConsumerProguardFile::class.java) {
-                it.proguardFile.set(project.layout.buildDirectory.file("generated/proguardFile.pro"))
-        }
+  override fun handleExtension(project: Project, androidComponents: ApplicationAndroidComponentsExtension) {
+    val generateTask =
+      project.tasks.register("GenerateProguardFile", CreateConsumerProguardFile::class.java) {
+        it.proguardFile.set(project.layout.buildDirectory.file("generated/proguardFile.pro"))
+      }
 
-        androidComponents.finalizeDsl {
-            it.defaultConfig.proguardFile(generateTask.flatMap { task -> task.proguardFile })
-        }
-    }
-
+    androidComponents.finalizeDsl { it.defaultConfig.proguardFile(generateTask.flatMap { task -> task.proguardFile }) }
+  }
 }

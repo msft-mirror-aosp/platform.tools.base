@@ -25,269 +25,277 @@ import com.android.build.api.dsl.Optimization
 import com.android.build.api.dsl.ProductFlavor
 import com.android.build.api.dsl.Shaders
 import com.android.build.api.dsl.VectorDrawables
-import org.gradle.api.plugins.ExtensionContainer
 import java.io.File
+import org.gradle.api.plugins.ExtensionContainer
 
 /**
- * Implemented manually due to the conflict between [setDimension] and [dimension] that breaks
- * the normal Java Proxy feature (class is considered broken)
+ * Implemented manually due to the conflict between [setDimension] and [dimension] that breaks the normal Java Proxy feature (class is
+ * considered broken)
  */
 @Suppress("UNCHECKED_CAST", "OVERRIDE_DEPRECATION")
-open class UnusableProductFlavorProxy(): ProductFlavor {
+open class UnusableProductFlavorProxy() : ProductFlavor {
 
-    override var dimension: String?
-        get() = throwUnusableError("ProductFlavor.dimension")
-        set(value) {
-            throwUnusableError("ProductFlavor.dimension")
-        }
-
-    override val matchingFallbacks: MutableList<String>
-        get() = throwUnusableError("ProductFlavor.matchingFallbacks")
-
-    override fun setMatchingFallbacks(vararg fallbacks: String) {
-        throwUnusableError("ProductFlavor.setMatchingFallbacks")
+  override var dimension: String?
+    get() = throwUnusableError("ProductFlavor.dimension")
+    set(value) {
+      throwUnusableError("ProductFlavor.dimension")
     }
 
-    override fun setMatchingFallbacks(fallbacks: List<String>) {
-        throwUnusableError("ProductFlavor.setMatchingFallbacks")
+  override val matchingFallbacks: MutableList<String>
+    get() = throwUnusableError("ProductFlavor.matchingFallbacks")
+
+  override fun setMatchingFallbacks(vararg fallbacks: String) {
+    throwUnusableError("ProductFlavor.setMatchingFallbacks")
+  }
+
+  override fun setMatchingFallbacks(fallbacks: List<String>) {
+    throwUnusableError("ProductFlavor.setMatchingFallbacks")
+  }
+
+  override fun getName(): String {
+    throwUnusableError("ProductFlavor.getName")
+  }
+
+  override var testApplicationId: String?
+    get() = throwUnusableError("ProductFlavor.testApplicationId")
+    set(value) {
+      throwUnusableError("ProductFlavor.testApplicationId")
     }
 
-    override fun getName(): String {
-        throwUnusableError("ProductFlavor.getName")
+  override var minSdk: Int?
+    get() = throwUnusableError("ProductFlavor.minSdk")
+    set(value) {
+      throwUnusableError("ProductFlavor.minSdk")
     }
 
-    override var testApplicationId: String?
-        get() = throwUnusableError("ProductFlavor.testApplicationId")
-        set(value) {
-            throwUnusableError("ProductFlavor.testApplicationId")
-        }
-    override var minSdk: Int?
-        get() = throwUnusableError("ProductFlavor.minSdk")
-        set(value) {
-            throwUnusableError("ProductFlavor.minSdk")
-        }
+  override fun minSdk(action: MinSdkSpec.() -> Unit) {
+    throwUnusableError("ProductFlavor.minSdk")
+  }
 
-    override fun minSdk(action: MinSdkSpec.() -> Unit) {
-        throwUnusableError("ProductFlavor.minSdk")
+  override fun setMinSdkVersion(minSdkVersion: Int) {
+    throwUnusableError("ProductFlavor.setMinSdkVersion")
+  }
+
+  override fun setMinSdkVersion(minSdkVersion: String?) {
+    throwUnusableError("ProductFlavor.setMinSdkVersion")
+  }
+
+  override fun minSdkVersion(minSdkVersion: Int) {
+    throwUnusableError("ProductFlavor.minSdkVersion")
+  }
+
+  override fun minSdkVersion(minSdkVersion: String?) {
+    throwUnusableError("ProductFlavor.minSdkVersion")
+  }
+
+  override var minSdkPreview: String?
+    get() = throwUnusableError("ProductFlavor.minSdkPreview")
+    set(value) {
+      throwUnusableError("ProductFlavor.minSdkPreview")
     }
 
-    override fun setMinSdkVersion(minSdkVersion: Int) {
-        throwUnusableError("ProductFlavor.setMinSdkVersion")
+  override var renderscriptTargetApi: Int?
+    get() = throwUnusableError("ProductFlavor.renderscriptTargetApi")
+    set(value) {
+      throwUnusableError("ProductFlavor.renderscriptTargetApi")
     }
 
-    override fun setMinSdkVersion(minSdkVersion: String?) {
-        throwUnusableError("ProductFlavor.setMinSdkVersion")
+  override var renderscriptSupportModeEnabled: Boolean?
+    get() = throwUnusableError("ProductFlavor.renderscriptSupportModeEnabled")
+    set(value) {
+      throwUnusableError("ProductFlavor.renderscriptSupportModeEnabled")
     }
 
-    override fun minSdkVersion(minSdkVersion: Int) {
-        throwUnusableError("ProductFlavor.minSdkVersion")
+  override var renderscriptSupportModeBlasEnabled: Boolean?
+    get() = throwUnusableError("ProductFlavor.renderscriptSupportModeBlasEnabled")
+    set(value) {
+      throwUnusableError("ProductFlavor.renderscriptSupportModeBlasEnabled")
     }
 
-    override fun minSdkVersion(minSdkVersion: String?) {
-        throwUnusableError("ProductFlavor.minSdkVersion")
+  override var renderscriptNdkModeEnabled: Boolean?
+    get() = throwUnusableError("ProductFlavor.renderscriptNdkModeEnabled")
+    set(value) {
+      throwUnusableError("ProductFlavor.renderscriptNdkModeEnabled")
     }
 
-    override var minSdkPreview: String?
-        get() = throwUnusableError("ProductFlavor.minSdkPreview")
-        set(value) {
-            throwUnusableError("ProductFlavor.minSdkPreview")
-        }
-    override var renderscriptTargetApi: Int?
-        get() = throwUnusableError("ProductFlavor.renderscriptTargetApi")
-        set(value) {
-            throwUnusableError("ProductFlavor.renderscriptTargetApi")
-        }
-    override var renderscriptSupportModeEnabled: Boolean?
-        get() = throwUnusableError("ProductFlavor.renderscriptSupportModeEnabled")
-        set(value) {
-            throwUnusableError("ProductFlavor.renderscriptSupportModeEnabled")
-        }
-    override var renderscriptSupportModeBlasEnabled: Boolean?
-        get() = throwUnusableError("ProductFlavor.renderscriptSupportModeBlasEnabled")
-        set(value) {
-            throwUnusableError("ProductFlavor.renderscriptSupportModeBlasEnabled")
-        }
-    override var renderscriptNdkModeEnabled: Boolean?
-        get() = throwUnusableError("ProductFlavor.renderscriptNdkModeEnabled")
-        set(value) {
-            throwUnusableError("ProductFlavor.renderscriptNdkModeEnabled")
-        }
-    override var testInstrumentationRunner: String?
-        get() = throwUnusableError("ProductFlavor.testInstrumentationRunner")
-        set(value) {
-            throwUnusableError("ProductFlavor.testInstrumentationRunner")
-        }
-    override val testInstrumentationRunnerArguments: MutableMap<String, String>
-        get() = throwUnusableError("ProductFlavor.testInstrumentationRunnerArguments")
-
-    override fun testInstrumentationRunnerArgument(key: String, value: String) {
-        throwUnusableError("ProductFlavor.testInstrumentationRunnerArgument")
+  override var testInstrumentationRunner: String?
+    get() = throwUnusableError("ProductFlavor.testInstrumentationRunner")
+    set(value) {
+      throwUnusableError("ProductFlavor.testInstrumentationRunner")
     }
 
-    override fun setTestInstrumentationRunnerArguments(testInstrumentationRunnerArguments: MutableMap<String, String>): Any? {
-        throwUnusableError("ProductFlavor.setTestInstrumentationRunnerArguments")
+  override val testInstrumentationRunnerArguments: MutableMap<String, String>
+    get() = throwUnusableError("ProductFlavor.testInstrumentationRunnerArguments")
+
+  override fun testInstrumentationRunnerArgument(key: String, value: String) {
+    throwUnusableError("ProductFlavor.testInstrumentationRunnerArgument")
+  }
+
+  override fun setTestInstrumentationRunnerArguments(testInstrumentationRunnerArguments: MutableMap<String, String>): Any? {
+    throwUnusableError("ProductFlavor.setTestInstrumentationRunnerArguments")
+  }
+
+  override fun testInstrumentationRunnerArguments(args: Map<String, String>) {
+    throwUnusableError("ProductFlavor.testInstrumentationRunnerArguments")
+  }
+
+  override var testHandleProfiling: Boolean?
+    get() = throwUnusableError("ProductFlavor.testHandleProfiling")
+    set(value) {
+      throwUnusableError("ProductFlavor.testHandleProfiling")
     }
 
-    override fun testInstrumentationRunnerArguments(args: Map<String, String>) {
-        throwUnusableError("ProductFlavor.testInstrumentationRunnerArguments")    }
+  override fun setTestHandleProfiling(testHandleProfiling: Boolean): Any? {
+    throwUnusableError("ProductFlavor.setTestHandleProfiling")
+  }
 
-    override var testHandleProfiling: Boolean?
-        get() = throwUnusableError("ProductFlavor.testHandleProfiling")
-        set(value) {
-            throwUnusableError("ProductFlavor.testHandleProfiling")
-        }
-
-    override fun setTestHandleProfiling(testHandleProfiling: Boolean): Any? {
-        throwUnusableError("ProductFlavor.setTestHandleProfiling")
+  override var testFunctionalTest: Boolean?
+    get() = throwUnusableError("ProductFlavor.testFunctionalTest")
+    set(value) {
+      throwUnusableError("ProductFlavor.testFunctionalTest")
     }
 
-    override var testFunctionalTest: Boolean?
-        get() = throwUnusableError("ProductFlavor.testFunctionalTest")
-        set(value) {
-            throwUnusableError("ProductFlavor.testFunctionalTest")
-        }
+  override fun setTestFunctionalTest(testFunctionalTest: Boolean): Any? {
+    throwUnusableError("ProductFlavor.setTestFunctionalTest")
+  }
 
-    override fun setTestFunctionalTest(testFunctionalTest: Boolean): Any? {
-        throwUnusableError("ProductFlavor.setTestFunctionalTest")
+  override val resourceConfigurations: MutableSet<String>
+    get() = throwUnusableError("ProductFlavor.resourceConfigurations")
+
+  override fun resConfigs(config: Collection<String>) {
+    throwUnusableError("ProductFlavor.resConfigs")
+  }
+
+  override fun resConfigs(vararg config: String) {
+    throwUnusableError("ProductFlavor.resConfigs")
+  }
+
+  override fun resConfig(config: String) {
+    throwUnusableError("ProductFlavor.resConfig")
+  }
+
+  override val vectorDrawables: VectorDrawables
+    get() = throwUnusableError("ProductFlavor.vectorDrawables")
+
+  override fun vectorDrawables(action: VectorDrawables.() -> Unit) {
+    throwUnusableError("ProductFlavor.vectorDrawables")
+  }
+
+  override var wearAppUnbundled: Boolean?
+    get() = throwUnusableError("ProductFlavor.wearAppUnbundled")
+    set(value) {
+      throwUnusableError("ProductFlavor.wearAppUnbundled")
     }
 
-    override val resourceConfigurations: MutableSet<String>
-        get() = throwUnusableError("ProductFlavor.resourceConfigurations")
+  override fun missingDimensionStrategy(dimension: String, requestedValue: String) {
+    throwUnusableError("ProductFlavor.missingDimensionStrategy")
+  }
 
-    override fun resConfigs(config: Collection<String>) {
-        throwUnusableError("ProductFlavor.resConfigs")
+  override fun missingDimensionStrategy(dimension: String, vararg requestedValues: String) {
+    throwUnusableError("ProductFlavor.missingDimensionStrategy")
+  }
+
+  override fun missingDimensionStrategy(dimension: String, requestedValues: List<String>) {
+    throwUnusableError("ProductFlavor.missingDimensionStrategy")
+  }
+
+  override fun initWith(that: BaseFlavor) {
+    throwUnusableError("ProductFlavor.initWith")
+  }
+
+  override var multiDexKeepProguard: File?
+    get() = throwUnusableError("ProductFlavor.multiDexKeepProguard")
+    set(value) {
+      throwUnusableError("ProductFlavor.multiDexKeepProguard")
     }
 
-    override fun resConfigs(vararg config: String) {
-        throwUnusableError("ProductFlavor.resConfigs")
+  override var multiDexKeepFile: File?
+    get() = throwUnusableError("ProductFlavor.multiDexKeepFile")
+    set(value) {
+      throwUnusableError("ProductFlavor.multiDexKeepFile")
     }
 
-    override fun resConfig(config: String) {
-        throwUnusableError("ProductFlavor.resConfig")
-    }
+  override val ndk: Ndk
+    get() = throwUnusableError("ProductFlavor.ndk")
 
-    override val vectorDrawables: VectorDrawables
-        get() = throwUnusableError("ProductFlavor.vectorDrawables")
+  override fun ndk(action: Ndk.() -> Unit) {
+    throwUnusableError("ProductFlavor.ndk")
+  }
 
-    override fun vectorDrawables(action: VectorDrawables.() -> Unit) {
-        throwUnusableError("ProductFlavor.vectorDrawables")
-    }
+  override val proguardFiles: MutableList<File>
+    get() = throwUnusableError("ProductFlavor.proguardFiles")
 
-    override var wearAppUnbundled: Boolean?
-        get() = throwUnusableError("ProductFlavor.wearAppUnbundled")
-        set(value) {
-            throwUnusableError("ProductFlavor.wearAppUnbundled")
-        }
+  override fun proguardFile(proguardFile: Any): Any {
+    throwUnusableError("ProductFlavor.proguardFile")
+  }
 
-    override fun missingDimensionStrategy(dimension: String, requestedValue: String) {
-        throwUnusableError("ProductFlavor.missingDimensionStrategy")
-    }
+  override fun proguardFiles(vararg files: Any): Any {
+    throwUnusableError("ProductFlavor.proguardFiles")
+  }
 
-    override fun missingDimensionStrategy(dimension: String, vararg requestedValues: String) {
-        throwUnusableError("ProductFlavor.missingDimensionStrategy")
-    }
+  override fun setProguardFiles(proguardFileIterable: Iterable<*>): Any {
+    throwUnusableError("ProductFlavor.setProguardFiles")
+  }
 
-    override fun missingDimensionStrategy(dimension: String, requestedValues: List<String>) {
-        throwUnusableError("ProductFlavor.missingDimensionStrategy")
-    }
+  override val testProguardFiles: MutableList<File>
+    get() = throwUnusableError("ProductFlavor.testProguardFiles")
 
-    override fun initWith(that: BaseFlavor) {
-        throwUnusableError("ProductFlavor.initWith")
-    }
+  override fun testProguardFile(proguardFile: Any): Any {
+    throwUnusableError("ProductFlavor.testProguardFile")
+  }
 
-    override var multiDexKeepProguard: File?
-        get() = throwUnusableError("ProductFlavor.multiDexKeepProguard")
-        set(value) {
-            throwUnusableError("ProductFlavor.multiDexKeepProguard")
-        }
-    override var multiDexKeepFile: File?
-        get() = throwUnusableError("ProductFlavor.multiDexKeepFile")
-        set(value) {
-            throwUnusableError("ProductFlavor.multiDexKeepFile")
-        }
-    override val ndk: Ndk
-        get() = throwUnusableError("ProductFlavor.ndk")
+  override fun testProguardFiles(vararg proguardFiles: Any): Any {
+    throwUnusableError("ProductFlavor.testProguardFiles")
+  }
 
-    override fun ndk(action: Ndk.() -> Unit) {
-        throwUnusableError("ProductFlavor.ndk")
-    }
+  override val manifestPlaceholders: MutableMap<String, Any>
+    get() = throwUnusableError("ProductFlavor.manifestPlaceholders")
 
-    override val proguardFiles: MutableList<File>
-        get() = throwUnusableError("ProductFlavor.proguardFiles")
+  override fun addManifestPlaceholders(manifestPlaceholders: Map<String, Any>) {
+    throwUnusableError("ProductFlavor.addManifestPlaceholders")
+  }
 
+  override fun setManifestPlaceholders(manifestPlaceholders: Map<String, Any>): Void? {
+    throwUnusableError("ProductFlavor.setManifestPlaceholders")
+  }
 
-    override fun proguardFile(proguardFile: Any): Any {
-        throwUnusableError("ProductFlavor.proguardFile")
-    }
+  override val javaCompileOptions: JavaCompileOptions
+    get() = throwUnusableError("ProductFlavor.javaCompileOptions")
 
-    override fun proguardFiles(vararg files: Any): Any {
-        throwUnusableError("ProductFlavor.proguardFiles")
-    }
+  override fun javaCompileOptions(action: JavaCompileOptions.() -> Unit) {
+    throwUnusableError("ProductFlavor.minSdk")
+  }
 
-    override fun setProguardFiles(proguardFileIterable: Iterable<*>): Any {
-        throwUnusableError("ProductFlavor.setProguardFiles")
-    }
+  override val shaders: Shaders
+    get() = throwUnusableError("ProductFlavor.shaders")
 
-    override val testProguardFiles: MutableList<File>
-        get() = throwUnusableError("ProductFlavor.testProguardFiles")
+  override fun shaders(action: Shaders.() -> Unit) {
+    throwUnusableError("ProductFlavor.shaders")
+  }
 
+  override val externalNativeBuild: ExternalNativeBuildFlags
+    get() = throwUnusableError("ProductFlavor.externalNativeBuild")
 
-    override fun testProguardFile(proguardFile: Any): Any {
-        throwUnusableError("ProductFlavor.testProguardFile")
-    }
+  override fun externalNativeBuild(action: ExternalNativeBuildFlags.() -> Unit) {
+    throwUnusableError("ProductFlavor.externalNativeBuild")
+  }
 
-    override fun testProguardFiles(vararg proguardFiles: Any): Any {
-        throwUnusableError("ProductFlavor.testProguardFiles")
-    }
+  override fun buildConfigField(type: String, name: String, value: String) {
+    throwUnusableError("ProductFlavor.buildConfigField")
+  }
 
-    override val manifestPlaceholders: MutableMap<String, Any>
-        get() = throwUnusableError("ProductFlavor.manifestPlaceholders")
+  override fun resValue(type: String, name: String, value: String) {
+    throwUnusableError("ProductFlavor.resValue")
+  }
 
-    override fun addManifestPlaceholders(manifestPlaceholders: Map<String, Any>) {
-        throwUnusableError("ProductFlavor.addManifestPlaceholders")
-    }
+  override val optimization: Optimization
+    get() = throwUnusableError("ProductFlavor.optimization")
 
-    override fun setManifestPlaceholders(manifestPlaceholders: Map<String, Any>): Void? {
-        throwUnusableError("ProductFlavor.setManifestPlaceholders")
-    }
+  override fun optimization(action: Optimization.() -> Unit) {
+    throwUnusableError("ProductFlavor.optimization")
+  }
 
-    override val javaCompileOptions: JavaCompileOptions
-        get() = throwUnusableError("ProductFlavor.javaCompileOptions")
-
-    override fun javaCompileOptions(action: JavaCompileOptions.() -> Unit) {
-        throwUnusableError("ProductFlavor.minSdk")
-    }
-
-    override val shaders: Shaders
-        get() = throwUnusableError("ProductFlavor.shaders")
-
-    override fun shaders(action: Shaders.() -> Unit) {
-        throwUnusableError("ProductFlavor.shaders")
-    }
-
-    override val externalNativeBuild: ExternalNativeBuildFlags
-        get() = throwUnusableError("ProductFlavor.externalNativeBuild")
-
-    override fun externalNativeBuild(action: ExternalNativeBuildFlags.() -> Unit) {
-        throwUnusableError("ProductFlavor.externalNativeBuild")
-    }
-
-    override fun buildConfigField(type: String, name: String, value: String) {
-        throwUnusableError("ProductFlavor.buildConfigField")
-    }
-
-    override fun resValue(type: String, name: String, value: String) {
-        throwUnusableError("ProductFlavor.resValue")
-    }
-
-    override val optimization: Optimization
-        get() = throwUnusableError("ProductFlavor.optimization")
-
-    override fun optimization(action: Optimization.() -> Unit) {
-        throwUnusableError("ProductFlavor.optimization")
-    }
-
-    override fun getExtensions(): ExtensionContainer {
-        throwUnusableError("ProductFlavor.getExtensions")
-    }
+  override fun getExtensions(): ExtensionContainer {
+    throwUnusableError("ProductFlavor.getExtensions")
+  }
 }

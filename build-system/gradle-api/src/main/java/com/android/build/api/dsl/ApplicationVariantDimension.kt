@@ -24,37 +24,30 @@ import org.gradle.declarative.dsl.model.annotations.Restricted
  * That is, [ApplicationBuildType] and [ApplicationProductFlavor] and [ApplicationDefaultConfig].
  */
 interface ApplicationVariantDimension : VariantDimension {
-    /**
-     * Application id suffix. It is appended to the "base" application id when calculating the final
-     * application id for a variant.
-     *
-     * In case there are product flavor dimensions specified, the final application id suffix
-     * will contain the suffix from the default product flavor, followed by the suffix from product
-     * flavor of the first dimension, second dimension and so on. All of these will have a dot in
-     * between e.g. &quot;defaultSuffix.dimension1Suffix.dimensions2Suffix&quot;.
-     */
-    @get:Restricted
-    var applicationIdSuffix: String?
+  /**
+   * Application id suffix. It is appended to the "base" application id when calculating the final application id for a variant.
+   *
+   * In case there are product flavor dimensions specified, the final application id suffix will contain the suffix from the default product
+   * flavor, followed by the suffix from product flavor of the first dimension, second dimension and so on. All of these will have a dot in
+   * between e.g. &quot;defaultSuffix.dimension1Suffix.dimensions2Suffix&quot;.
+   */
+  @get:Restricted var applicationIdSuffix: String?
 
-    /**
-     * Version name suffix. It is appended to the "base" version name when calculating the final
-     * version name for a variant.
-     *
-     * In case there are product flavor dimensions specified, the final version name suffix will
-     * contain the suffix from the default product flavor, followed by the suffix from product
-     * flavor of the first dimension, second dimension and so on.
-     */
-    @get:Restricted
-    var versionNameSuffix: String?
+  /**
+   * Version name suffix. It is appended to the "base" version name when calculating the final version name for a variant.
+   *
+   * In case there are product flavor dimensions specified, the final version name suffix will contain the suffix from the default product
+   * flavor, followed by the suffix from product flavor of the first dimension, second dimension and so on.
+   */
+  @get:Restricted var versionNameSuffix: String?
 
-    /**
-     * Returns whether multi-dex is enabled.
-     *
-     * This can be null if the flag is not set, in which case the default value is used.
-     */
-    @get:Restricted
-    var multiDexEnabled: Boolean?
+  /**
+   * Returns whether multi-dex is enabled.
+   *
+   * This can be null if the flag is not set, in which case the default value is used.
+   */
+  @get:Restricted var multiDexEnabled: Boolean?
 
-    /** The associated signing config or null if none are set on the variant dimension. */
-    var signingConfig: ApkSigningConfig?
+  /** The associated signing config or null if none are set on the variant dimension. */
+  var signingConfig: ApkSigningConfig?
 }

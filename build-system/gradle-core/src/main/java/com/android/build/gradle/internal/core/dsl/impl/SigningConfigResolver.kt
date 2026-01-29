@@ -26,48 +26,48 @@ import com.android.build.gradle.options.BooleanOption
 import com.android.builder.core.BuilderConstants
 
 class SigningConfigResolver(
-    val dslSigningConfig: SigningConfig?,
-    val signingConfigOverride: SigningConfig?,
-    val debugSigningConfig: SigningConfig?,
-    val services: BaseServices
+  val dslSigningConfig: SigningConfig?,
+  val signingConfigOverride: SigningConfig?,
+  val debugSigningConfig: SigningConfig?,
+  val services: BaseServices,
 ) {
-    companion object {
-        fun create(
-            buildType: BuildType,
-            mergedFlavor: MergedFlavor,
-            signingConfigOverride: SigningConfig?,
-            extension: CommonExtension,
-            services: BaseServices
-        ): SigningConfigResolver {
-            val dslSigningConfig = (buildType as? ApplicationBuildType)?.signingConfig
-                ?: mergedFlavor.signingConfig
+  companion object {
+    fun create(
+      buildType: BuildType,
+      mergedFlavor: MergedFlavor,
+      signingConfigOverride: SigningConfig?,
+      extension: CommonExtension,
+      services: BaseServices,
+    ): SigningConfigResolver {
+      val dslSigningConfig = (buildType as? ApplicationBuildType)?.signingConfig ?: mergedFlavor.signingConfig
 
-            val singingConfigOverride = signingConfigOverride?.let {
-                // use enableV1 and enableV2 from the DSL if the override values are null
-                if (it.enableV1Signing == null) {
-                    it.enableV1Signing = dslSigningConfig?.enableV1Signing
-                }
-                if (it.enableV2Signing == null) {
-                    it.enableV2Signing = dslSigningConfig?.enableV2Signing
-                }
-                // use enableV3 and enableV4 from the DSL because they're not injectable
-                it.enableV3Signing = dslSigningConfig?.enableV3Signing
-                it.enableV4Signing = dslSigningConfig?.enableV4Signing
-                it
-            }
-            val debugConfig = extension.signingConfigs.findByName(BuilderConstants.DEBUG) as SigningConfig?
-            return SigningConfigResolver(dslSigningConfig as SigningConfig?, singingConfigOverride, debugConfig, services)
+      val singingConfigOverride =
+        signingConfigOverride?.let {
+          // use enableV1 and enableV2 from the DSL if the override values are null
+          if (it.enableV1Signing == null) {
+            it.enableV1Signing = dslSigningConfig?.enableV1Signing
+          }
+          if (it.enableV2Signing == null) {
+            it.enableV2Signing = dslSigningConfig?.enableV2Signing
+          }
+          // use enableV3 and enableV4 from the DSL because they're not injectable
+          it.enableV3Signing = dslSigningConfig?.enableV3Signing
+          it.enableV4Signing = dslSigningConfig?.enableV4Signing
+          it
         }
+      val debugConfig = extension.signingConfigs.findByName(BuilderConstants.DEBUG) as SigningConfig?
+      return SigningConfigResolver(dslSigningConfig as SigningConfig?, singingConfigOverride, debugConfig, services)
     }
+  }
 
-    fun resolveConfig(profileable: Boolean?, debuggable: Boolean?): SigningConfig? {
-        return signingConfigOverride
-            ?: if (services.projectOptions[BooleanOption.ENABLE_DEFAULT_DEBUG_SIGNING_CONFIG] &&
-                dslSigningConfig == null &&
-                (profileable == true || debuggable == true)
-            ) {
-                return debugSigningConfig
-            } else dslSigningConfig
-    }
-
+  fun resolveConfig(profileable: Boolean?, debuggable: Boolean?): SigningConfig? {
+    return signingConfigOverride
+      ?: if (
+        services.projectOptions[BooleanOption.ENABLE_DEFAULT_DEBUG_SIGNING_CONFIG] &&
+          dslSigningConfig == null &&
+          (profileable == true || debuggable == true)
+      ) {
+        return debugSigningConfig
+      } else dslSigningConfig
+  }
 }

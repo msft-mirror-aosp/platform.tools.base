@@ -39,125 +39,111 @@ import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
 
 open class AndroidResourcesCreationConfigImpl(
-    private val component: ComponentCreationConfig,
-    private val dslInfo: ComponentDslInfo,
-    private val androidResourcesDsl: AndroidResourcesDslInfo,
-    private val internalServices: VariantServices,
-): AndroidResourcesCreationConfig {
+  private val component: ComponentCreationConfig,
+  private val dslInfo: ComponentDslInfo,
+  private val androidResourcesDsl: AndroidResourcesDslInfo,
+  private val internalServices: VariantServices,
+) : AndroidResourcesCreationConfig {
 
-    override val pseudoLocalesEnabled: Property<Boolean> by lazy {
-        internalServices.newPropertyBackingDeprecatedApi(
-            Boolean::class.java,
-            androidResourcesDsl.isPseudoLocalesEnabled
+  override val pseudoLocalesEnabled: Property<Boolean> by lazy {
+    internalServices.newPropertyBackingDeprecatedApi(Boolean::class.java, androidResourcesDsl.isPseudoLocalesEnabled)
+  }
+
+  override val isCrunchPngs: Boolean
+    get() {
+      // If set for this build type, respect that.
+      val buildTypeOverride = androidResourcesDsl.isCrunchPngs
+      if (buildTypeOverride != null) {
+        return buildTypeOverride
+      }
+      // Otherwise, if set globally, respect that.
+      val globalOverride = (androidResourcesDsl.androidResources as AaptOptions).cruncherEnabledOverride
+
+      // If not overridden, use the default from the build type.
+      return globalOverride ?: androidResourcesDsl.isCrunchPngsDefault
+    }
+
+  override val isPrecompileDependenciesResourcesEnabled: Boolean
+    get() = internalServices.projectOptions[BooleanOption.PRECOMPILE_DEPENDENCIES_RESOURCES]
+
+  override val resourceConfigurations: Set<String>
+    get() = androidResourcesDsl.resourceConfigurations
+
+  override val vectorDrawables: VectorDrawablesOptions
+    get() = androidResourcesDsl.vectorDrawables
+
+  override val useResourceShrinker: Boolean
+    get() {
+      if (
+        component !is ConsumableCreationConfig ||
+          !component.optimizationCreationConfig.resourcesShrink ||
+          dslInfo.componentType.isForTesting
+      ) {
+        return false
+      }
+      if (!component.optimizationCreationConfig.minifiedEnabled) {
+        internalServices.issueReporter.reportError(
+          IssueReporter.Type.GENERIC,
+          "Removing unused resources requires unused code shrinking to be turned on. See " +
+            "http://d.android.com/r/tools/shrink-resources.html " +
+            "for more information.",
         )
+        return false
+      }
+      return true
     }
 
-    override val isCrunchPngs: Boolean
-        get() {
-            // If set for this build type, respect that.
-            val buildTypeOverride = androidResourcesDsl.isCrunchPngs
-            if (buildTypeOverride != null) {
-                return buildTypeOverride
-            }
-            // Otherwise, if set globally, respect that.
-            val globalOverride = (androidResourcesDsl.androidResources as AaptOptions).cruncherEnabledOverride
+  override val compiledRClassArtifact: Provider<RegularFile>
+    get() {
 
-            // If not overridden, use the default from the build type.
-            return globalOverride ?: androidResourcesDsl.isCrunchPngsDefault
-        }
+      val useCompileRClassInApp = internalServices.projectOptions[BooleanOption.ENABLE_APP_COMPILE_TIME_R_CLASS]
+      return when (val componentType = dslInfo.componentType) {
+        ComponentTypeImpl.ANDROID_TEST,
+        ComponentTypeImpl.TEST_APK -> getRJarForTestApks(useCompileRClassInApp)
 
-    override val isPrecompileDependenciesResourcesEnabled: Boolean
-        get() = internalServices.projectOptions[BooleanOption.PRECOMPILE_DEPENDENCIES_RESOURCES]
-
-    override val resourceConfigurations: Set<String>
-        get() = androidResourcesDsl.resourceConfigurations
-    override val vectorDrawables: VectorDrawablesOptions
-        get() = androidResourcesDsl.vectorDrawables
-
-    override val useResourceShrinker: Boolean
-        get() {
-            if (component !is ConsumableCreationConfig ||
-                !component.optimizationCreationConfig.resourcesShrink ||
-                dslInfo.componentType.isForTesting) {
-                return false
-            }
-            if (!component.optimizationCreationConfig.minifiedEnabled) {
-                internalServices
-                    .issueReporter
-                    .reportError(
-                        IssueReporter.Type.GENERIC,
-                        "Removing unused resources requires unused code shrinking to be turned on. See "
-                                + "http://d.android.com/r/tools/shrink-resources.html "
-                                + "for more information.")
-                return false
-            }
-            return true
-        }
-
-    override val compiledRClassArtifact: Provider<RegularFile>
-        get() {
-
-            val useCompileRClassInApp =
-                internalServices.projectOptions[BooleanOption.ENABLE_APP_COMPILE_TIME_R_CLASS]
-            return when (val componentType = dslInfo.componentType) {
-                ComponentTypeImpl.ANDROID_TEST, ComponentTypeImpl.TEST_APK -> getRJarForTestApks(
-                    useCompileRClassInApp
-                )
-
-                ComponentTypeImpl.UNIT_TEST, ComponentTypeImpl.SCREENSHOT_TEST -> getRJarForHostTests()
-                else -> {
-                    if (componentType.isAar || useCompileRClassInApp) {
-                        component.artifacts.get(COMPILE_R_CLASS_JAR)
-                    } else {
-                        Preconditions.checkState(
-                            componentType.isApk,
-                            "Expected APK type but found: $componentType"
-                        )
-                        component.artifacts.get(COMPILE_AND_RUNTIME_R_CLASS_JAR)
-                    }
-                }
-            }
-        }
-
-
-    override fun getCompiledRClasses(
-        configType: ConsumedConfigType
-    ): FileCollection {
-        return internalServices.fileCollection(when (configType) {
-            ConsumedConfigType.COMPILE_CLASSPATH -> compiledRClassArtifact
-            ConsumedConfigType.RUNTIME_CLASSPATH -> component.artifacts.get(COMPILE_AND_RUNTIME_R_CLASS_JAR)
-            else -> throw GradleException("Unsupported ConsumedConfigType value: $configType")
-        })
-    }
-
-    private fun getRJarForTestApks(useCompileRClassInApp: Boolean): Provider<RegularFile> {
-        return if (useCompileRClassInApp) {
+        ComponentTypeImpl.UNIT_TEST,
+        ComponentTypeImpl.SCREENSHOT_TEST -> getRJarForHostTests()
+        else -> {
+          if (componentType.isAar || useCompileRClassInApp) {
             component.artifacts.get(COMPILE_R_CLASS_JAR)
-        } else {
-            component.artifacts.get(
-                COMPILE_AND_RUNTIME_R_CLASS_JAR
-            )
+          } else {
+            Preconditions.checkState(componentType.isApk, "Expected APK type but found: $componentType")
+            component.artifacts.get(COMPILE_AND_RUNTIME_R_CLASS_JAR)
+          }
         }
+      }
     }
 
-    private fun getRJarForHostTests(): Provider<RegularFile> {
-        Preconditions.checkState(
-            component is HostTestCreationConfig &&
-                    (component.componentType === ComponentTypeImpl.UNIT_TEST
-                            || component.componentType === ComponentTypeImpl.SCREENSHOT_TEST),
-            "Expected host test type but found: ${component.componentType}"
-        )
-        val mainVariant = (component as HostTestCreationConfig).mainVariant
-        return if (mainVariant.componentType.isAar) {
-            component.artifacts.get(COMPILE_AND_RUNTIME_R_CLASS_JAR)
-        } else {
-            Preconditions.checkState(
-                mainVariant.componentType.isApk,
-                "Expected APK type but found: " + mainVariant.componentType
-            )
-            mainVariant
-                .artifacts
-                .get(COMPILE_AND_RUNTIME_R_CLASS_JAR)
-        }
+  override fun getCompiledRClasses(configType: ConsumedConfigType): FileCollection {
+    return internalServices.fileCollection(
+      when (configType) {
+        ConsumedConfigType.COMPILE_CLASSPATH -> compiledRClassArtifact
+        ConsumedConfigType.RUNTIME_CLASSPATH -> component.artifacts.get(COMPILE_AND_RUNTIME_R_CLASS_JAR)
+        else -> throw GradleException("Unsupported ConsumedConfigType value: $configType")
+      }
+    )
+  }
+
+  private fun getRJarForTestApks(useCompileRClassInApp: Boolean): Provider<RegularFile> {
+    return if (useCompileRClassInApp) {
+      component.artifacts.get(COMPILE_R_CLASS_JAR)
+    } else {
+      component.artifacts.get(COMPILE_AND_RUNTIME_R_CLASS_JAR)
     }
+  }
+
+  private fun getRJarForHostTests(): Provider<RegularFile> {
+    Preconditions.checkState(
+      component is HostTestCreationConfig &&
+        (component.componentType === ComponentTypeImpl.UNIT_TEST || component.componentType === ComponentTypeImpl.SCREENSHOT_TEST),
+      "Expected host test type but found: ${component.componentType}",
+    )
+    val mainVariant = (component as HostTestCreationConfig).mainVariant
+    return if (mainVariant.componentType.isAar) {
+      component.artifacts.get(COMPILE_AND_RUNTIME_R_CLASS_JAR)
+    } else {
+      Preconditions.checkState(mainVariant.componentType.isApk, "Expected APK type but found: " + mainVariant.componentType)
+      mainVariant.artifacts.get(COMPILE_AND_RUNTIME_R_CLASS_JAR)
+    }
+  }
 }

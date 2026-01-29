@@ -22,34 +22,32 @@ import com.android.build.gradle.internal.core.MergedFlavor
 import com.android.build.gradle.internal.core.dsl.features.DexingDslInfo
 import java.io.File
 
-class DexingDslInfoImpl(
-    private val buildTypeObj: BuildType,
-    private val mergedFlavor: MergedFlavor
-): DexingDslInfo {
+class DexingDslInfoImpl(private val buildTypeObj: BuildType, private val mergedFlavor: MergedFlavor) : DexingDslInfo {
 
-    // Only require specific multidex opt-in for legacy multidex.
-    override val isMultiDexEnabled: Boolean?
-        get() {
-            // Only require specific multidex opt-in for legacy multidex.
-            return (buildTypeObj as? ApplicationBuildType)?.multiDexEnabled
-                ?: mergedFlavor.multiDexEnabled
-        }
-    override val multiDexKeepProguard: File?
-        get() {
-            var value = buildTypeObj.multiDexKeepProguard
-            if (value != null) {
-                return value
-            }
-            value = mergedFlavor.multiDexKeepProguard
-            return value
-        }
-    override val multiDexKeepFile: File?
-        get() {
-            var value = buildTypeObj.multiDexKeepFile
-            if (value != null) {
-                return value
-            }
-            value = mergedFlavor.multiDexKeepFile
-            return value
-        }
+  // Only require specific multidex opt-in for legacy multidex.
+  override val isMultiDexEnabled: Boolean?
+    get() {
+      // Only require specific multidex opt-in for legacy multidex.
+      return (buildTypeObj as? ApplicationBuildType)?.multiDexEnabled ?: mergedFlavor.multiDexEnabled
+    }
+
+  override val multiDexKeepProguard: File?
+    get() {
+      var value = buildTypeObj.multiDexKeepProguard
+      if (value != null) {
+        return value
+      }
+      value = mergedFlavor.multiDexKeepProguard
+      return value
+    }
+
+  override val multiDexKeepFile: File?
+    get() {
+      var value = buildTypeObj.multiDexKeepFile
+      if (value != null) {
+        return value
+      }
+      value = mergedFlavor.multiDexKeepFile
+      return value
+    }
 }

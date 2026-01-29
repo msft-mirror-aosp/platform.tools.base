@@ -21,39 +21,37 @@ import org.junit.Rule
 import org.junit.Test
 
 class KotlinMultiplatformDexingTest {
-    @get:Rule
-    val rule = GradleRule.from {
-        androidKotlinMultiplatformLibrary(":library") {
-            android {
-                withDeviceTestBuilder {}
-            }
-            files {
-                add("src/androidDeviceTest/java/AndroidDeviceTest.kt", """
-                    package foo.bar
+  @get:Rule
+  val rule =
+    GradleRule.from {
+      androidKotlinMultiplatformLibrary(":library") {
+        android { withDeviceTestBuilder {} }
+        files {
+          add(
+            "src/androidDeviceTest/java/AndroidDeviceTest.kt",
+            """
+            package foo.bar
 
-                    class AndroidDeviceTest {}
-                """.trimIndent())
-            }
+            class AndroidDeviceTest {}
+            """
+              .trimIndent(),
+          )
         }
+      }
     }
 
-    // regression test for b/460470375
-    @Test
-    fun testDesugarGraphFoundInSecondRun() {
-        val dexTask = ":library:dexBuilderAndroidDeviceTest"
+  // regression test for b/460470375
+  @Test
+  fun testDesugarGraphFoundInSecondRun() {
+    val dexTask = ":library:dexBuilderAndroidDeviceTest"
 
-        rule.build.executor
-            .withArgument("--no-build-cache")
-            .run(dexTask)
+    rule.build.executor.withArgument("--no-build-cache").run(dexTask)
 
-        val library = rule.build.kotlinMultiplatformLibrary(":library")
-        library.files.update("src/androidDeviceTest/java/AndroidDeviceTest.kt")
-            .moveTo("src/androidDeviceTest/kotlin/AndroidDeviceTest.kt")
+    val library = rule.build.kotlinMultiplatformLibrary(":library")
+    library.files.update("src/androidDeviceTest/java/AndroidDeviceTest.kt").moveTo("src/androidDeviceTest/kotlin/AndroidDeviceTest.kt")
 
-        val result = rule.build.executor
-            .withArgument("--no-build-cache")
-            .run(dexTask)
+    val result = rule.build.executor.withArgument("--no-build-cache").run(dexTask)
 
-        result.assertOutputDoesNotContain("Failed to read desugaring graph")
-    }
+    result.assertOutputDoesNotContain("Failed to read desugaring graph")
+  }
 }

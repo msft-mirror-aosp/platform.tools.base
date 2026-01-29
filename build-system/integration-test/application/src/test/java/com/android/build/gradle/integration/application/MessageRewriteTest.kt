@@ -21,73 +21,76 @@ import com.android.build.gradle.integration.common.truth.ScannerSubject
 import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.TestUtils
 import com.android.utils.FileUtils
+import java.util.Scanner
 import org.junit.Rule
 import org.junit.Test
-import java.util.Scanner
 
-/** Tests the error message rewriting logic.  */
+/** Tests the error message rewriting logic. */
 class MessageRewriteTest {
 
-    @get:Rule
-    val project = GradleTestProject.builder().fromTestProject("flavoredlib").create()
+  @get:Rule val project = GradleTestProject.builder().fromTestProject("flavoredlib").create()
 
-    @Test
-    fun invalidAppLayoutFile() {
-        project.executor().run("assembleDebug")
-        project.getSubproject(":app").mainResDir.resolve("layout/main.xml").let {
-            it.writeText(it.readText().replace("</LinearLayout>", ""))
-            TestUtils.waitForFileSystemTick()
-        }
-        project.executor()
-            .with(BooleanOption.IDE_INVOKED_FROM_IDE, true)
-            .expectFailure()
-            .run("assembleF1Debug")
-            .let { result ->
-                val path = FileUtils.join("app", "src", "main", "res", "layout", "main.xml")
-                checkPathInOutput(path, result.stdout)
-            }
+  @Test
+  fun invalidAppLayoutFile() {
+    project.executor().run("assembleDebug")
+    project.getSubproject(":app").mainResDir.resolve("layout/main.xml").let {
+      it.writeText(it.readText().replace("</LinearLayout>", ""))
+      TestUtils.waitForFileSystemTick()
     }
-
-    @Test
-    fun nonExistentResourceReferenceInAppLayout() {
-        project.getSubproject(":app").mainResDir.resolve("layout/main.xml").let {
-            it.writeText(it.readText().replace("@string/app_string", "@string/agloe"))
-            TestUtils.waitForFileSystemTick()
-        }
-        project.executor().expectFailure().run("assembleDebug").let { result ->
-            val path = FileUtils.join("app", "src", "main", "res", "layout", "main.xml")
-            checkPathInOutput(path, result.stdout)
-        }
+    project.executor().with(BooleanOption.IDE_INVOKED_FROM_IDE, true).expectFailure().run("assembleF1Debug").let { result ->
+      val path = FileUtils.join("app", "src", "main", "res", "layout", "main.xml")
+      checkPathInOutput(path, result.stdout)
     }
+  }
 
-    @Test
-    fun nonExistentResourceReferenceInAppValues() {
-        project.getSubproject(":app").mainResDir.resolve("values/strings.xml").let {
-            it.writeText(it.readText().replace("string", ""))
-            TestUtils.waitForFileSystemTick()
-        }
-        project.executor().expectFailure().run("assembleDebug").let { result ->
-            val path = FileUtils.join("app", "src", "main", "res", "values", "strings.xml")
-            checkPathInOutput(path, result.stderr)
-        }
+  @Test
+  fun nonExistentResourceReferenceInAppLayout() {
+    project.getSubproject(":app").mainResDir.resolve("layout/main.xml").let {
+      it.writeText(it.readText().replace("@string/app_string", "@string/agloe"))
+      TestUtils.waitForFileSystemTick()
     }
-
-    @Test
-    fun nonExistentResourceReferenceInLibLayout() {
-        project.getSubproject(":lib").projectDir.resolve("src/flavor1/res/layout/lib_main.xml").let {
-            it.writeText(it.readText().replace("@string/lib_string", "@string/agloe"))
-            TestUtils.waitForFileSystemTick()
-        }
-        project.executor().expectFailure().run(":app:assembleDebug").let { result ->
-            // b/206624424 - Errors in libraries currently (and incorrectly) rewrite as
-            // the packaged res for full builds and merged intermediate filepaths for incremental
-            // builds.
-            val path = FileUtils.join("lib", "build", "intermediates", "packaged_res",
-                "flavor1Debug", "packageFlavor1DebugResources", "layout", "lib_main.xml")
-            checkPathInOutput(path, result.stdout)
-        }
+    project.executor().expectFailure().run("assembleDebug").let { result ->
+      val path = FileUtils.join("app", "src", "main", "res", "layout", "main.xml")
+      checkPathInOutput(path, result.stdout)
     }
+  }
 
-    private fun checkPathInOutput(path: String, output: Scanner) =
-        output.use { out -> ScannerSubject.assertThat(out).contains(path) }
+  @Test
+  fun nonExistentResourceReferenceInAppValues() {
+    project.getSubproject(":app").mainResDir.resolve("values/strings.xml").let {
+      it.writeText(it.readText().replace("string", ""))
+      TestUtils.waitForFileSystemTick()
+    }
+    project.executor().expectFailure().run("assembleDebug").let { result ->
+      val path = FileUtils.join("app", "src", "main", "res", "values", "strings.xml")
+      checkPathInOutput(path, result.stderr)
+    }
+  }
+
+  @Test
+  fun nonExistentResourceReferenceInLibLayout() {
+    project.getSubproject(":lib").projectDir.resolve("src/flavor1/res/layout/lib_main.xml").let {
+      it.writeText(it.readText().replace("@string/lib_string", "@string/agloe"))
+      TestUtils.waitForFileSystemTick()
+    }
+    project.executor().expectFailure().run(":app:assembleDebug").let { result ->
+      // b/206624424 - Errors in libraries currently (and incorrectly) rewrite as
+      // the packaged res for full builds and merged intermediate filepaths for incremental
+      // builds.
+      val path =
+        FileUtils.join(
+          "lib",
+          "build",
+          "intermediates",
+          "packaged_res",
+          "flavor1Debug",
+          "packageFlavor1DebugResources",
+          "layout",
+          "lib_main.xml",
+        )
+      checkPathInOutput(path, result.stdout)
+    }
+  }
+
+  private fun checkPathInOutput(path: String, output: Scanner) = output.use { out -> ScannerSubject.assertThat(out).contains(path) }
 }

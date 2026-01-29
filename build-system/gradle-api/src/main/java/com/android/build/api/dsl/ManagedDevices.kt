@@ -23,26 +23,25 @@ import org.gradle.api.NamedDomainObjectContainer
 /** Options for Managed Devices */
 interface ManagedDevices {
 
-    /**
-     * List of test devices for this project for use with the Unified Test Platform
-     *
-     * These APIs are experimental and may change without notice.
-     */
-    val allDevices: ExtensiblePolymorphicDomainObjectContainer<Device>
+  /**
+   * List of test devices for this project for use with the Unified Test Platform
+   *
+   * These APIs are experimental and may change without notice.
+   */
+  val allDevices: ExtensiblePolymorphicDomainObjectContainer<Device>
 
-    /**
-     * Convenience container for specifying managed devices of type [ManagedVirtualDevice].
-     *
-     * This list is managed in sync with [allDevices]. [ManagedVirtualDevice] definitions added or
-     * removed in this container are correspondingly handled in [allDevices], and vice versa.
-     */
-    @get: Incubating
-    val localDevices: NamedDomainObjectContainer<ManagedVirtualDevice>
+  /**
+   * Convenience container for specifying managed devices of type [ManagedVirtualDevice].
+   *
+   * This list is managed in sync with [allDevices]. [ManagedVirtualDevice] definitions added or removed in this container are
+   * correspondingly handled in [allDevices], and vice versa.
+   */
+  @get:Incubating val localDevices: NamedDomainObjectContainer<ManagedVirtualDevice>
 
-    /**
-     * List of DeviceGroups to create tasks for.
-     *
-     * These APIs are experimental and may change without notice.
-     */
-    val groups: NamedDomainObjectContainer<DeviceGroup>
+  /**
+   * List of DeviceGroups to create tasks for.
+   *
+   * These APIs are experimental and may change without notice.
+   */
+  val groups: NamedDomainObjectContainer<DeviceGroup>
 }

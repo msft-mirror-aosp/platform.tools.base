@@ -16,62 +16,50 @@
 
 package com.android.build.api.variant
 
+import java.io.Serializable
 import org.gradle.api.Incubating
 import org.gradle.api.file.RegularFile
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.MapProperty
 import org.gradle.api.provider.Property
-import java.io.Serializable
 
 /**
  * Model for Device Test components that contains build-time properties
  *
- * This object is accessible on subtypes of [Variant] that implement [HasDeviceTests], via
- * [HasDeviceTests.deviceTests]. It is also part of [Variant.nestedComponents].
+ * This object is accessible on subtypes of [Variant] that implement [HasDeviceTests], via [HasDeviceTests.deviceTests]. It is also part of
+ * [Variant.nestedComponents].
  *
- * The presence of this component in a variant is controlled by
- * [HasDeviceTestsBuilder.deviceTests] and [DeviceTestBuilder.enable] which is accessible on
- * subtypes of [VariantBuilder] that implement [HasDeviceTestsBuilder]
+ * The presence of this component in a variant is controlled by [HasDeviceTestsBuilder.deviceTests] and [DeviceTestBuilder.enable] which is
+ * accessible on subtypes of [VariantBuilder] that implement [HasDeviceTestsBuilder]
  */
-interface DeviceTest: GeneratesTestApk, HasAndroidResources, TestComponent {
+interface DeviceTest : GeneratesTestApk, HasAndroidResources, TestComponent {
 
-    /**
-     * Variant's application ID as present in the final manifest file of the APK.
-     */
-    @get:Incubating
-    override val applicationId: Property<String>
+  /** Variant's application ID as present in the final manifest file of the APK. */
+  @get:Incubating override val applicationId: Property<String>
 
-    /**
-     * Variant's signingConfig, initialized by the corresponding DSL element.
-     * @return Variant's config or null if the variant is not configured for signing.
-     */
-    @get:Incubating
-    val signingConfig: SigningConfig?
+  /**
+   * Variant's signingConfig, initialized by the corresponding DSL element.
+   *
+   * @return Variant's config or null if the variant is not configured for signing.
+   */
+  @get:Incubating val signingConfig: SigningConfig?
 
-    /**
-     * Variant's [BuildConfigField] which will be generated in the BuildConfig class.
-     */
-    @get:Incubating
-    val buildConfigFields: MapProperty<String, BuildConfigField<out Serializable>>?
+  /** Variant's [BuildConfigField] which will be generated in the BuildConfig class. */
+  @get:Incubating val buildConfigFields: MapProperty<String, BuildConfigField<out Serializable>>?
 
-    /**
-     * List of proguard configuration files for this variant. The list is initialized from the
-     * corresponding DSL element, and cannot be queried at configuration time. At configuration time,
-     * you can only add new elements to the list.
-     */
-    @get:Incubating
-    val proguardFiles: ListProperty<RegularFile>
+  /**
+   * List of proguard configuration files for this variant. The list is initialized from the corresponding DSL element, and cannot be
+   * queried at configuration time. At configuration time, you can only add new elements to the list.
+   */
+  @get:Incubating val proguardFiles: ListProperty<RegularFile>
 
-    /**
-     * Whether test coverage is enabled for this device test.
-     *
-     * If enabled, this uses Jacoco to capture coverage and creates a report in the build
-     * directory.
-     *
-     * You cannot change the value any longer, to change it, please use
-     * [DeviceTestBuilder.enableCodeCoverage] in the [AndroidComponentsExtension.beforeVariants]
-     * callback.
-     */
-    @get:Incubating
-    val codeCoverageEnabled: Boolean
+  /**
+   * Whether test coverage is enabled for this device test.
+   *
+   * If enabled, this uses Jacoco to capture coverage and creates a report in the build directory.
+   *
+   * You cannot change the value any longer, to change it, please use [DeviceTestBuilder.enableCodeCoverage] in the
+   * [AndroidComponentsExtension.beforeVariants] callback.
+   */
+  @get:Incubating val codeCoverageEnabled: Boolean
 }

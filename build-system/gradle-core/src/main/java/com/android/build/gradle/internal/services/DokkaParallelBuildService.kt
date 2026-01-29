@@ -21,18 +21,18 @@ import org.gradle.api.services.BuildService
 import org.gradle.api.services.BuildServiceParameters
 
 /**
- * [DokkaParallelBuildService] is to limit the number of workers in Javadoc generation task to one
- * in order to avoid thread safety issue in dokka-core. See https://github.com/Kotlin/dokka/issues/2308
+ * [DokkaParallelBuildService] is to limit the number of workers in Javadoc generation task to one in order to avoid thread safety issue in
+ * dokka-core. See https://github.com/Kotlin/dokka/issues/2308
  */
 abstract class DokkaParallelBuildService : BuildService<BuildServiceParameters.None> {
-    class RegistrationAction(project: Project) :
-        ServiceRegistrationAction<DokkaParallelBuildService, BuildServiceParameters.None>(
-            project,
-            DokkaParallelBuildService::class.java,
-            MAX_WORKER_NUMBER
-        ) {
-        override fun configure(parameters: BuildServiceParameters.None) {}
-    }
+  class RegistrationAction(project: Project) :
+    ServiceRegistrationAction<DokkaParallelBuildService, BuildServiceParameters.None>(
+      project,
+      DokkaParallelBuildService::class.java,
+      MAX_WORKER_NUMBER,
+    ) {
+    override fun configure(parameters: BuildServiceParameters.None) {}
+  }
 }
 
 private const val MAX_WORKER_NUMBER = 1

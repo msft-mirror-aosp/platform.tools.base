@@ -23,22 +23,17 @@ import com.android.tools.build.gradle.internal.profile.VariantPropertiesMethodTy
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
 import javax.inject.Inject
 
-open class AnalyticsEnabledPackaging @Inject constructor(
-        open val delegate: Packaging,
-        val stats: GradleBuildVariant.Builder
-) : Packaging {
+open class AnalyticsEnabledPackaging @Inject constructor(open val delegate: Packaging, val stats: GradleBuildVariant.Builder) : Packaging {
 
-    override val jniLibs: JniLibsPackaging
-        get() {
-            stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
-                VariantPropertiesMethodType.JNI_LIBS_PACKAGING_OPTIONS_VALUE
-            return delegate.jniLibs
-        }
+  override val jniLibs: JniLibsPackaging
+    get() {
+      stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type = VariantPropertiesMethodType.JNI_LIBS_PACKAGING_OPTIONS_VALUE
+      return delegate.jniLibs
+    }
 
-    override val resources: ResourcesPackaging
-        get() {
-            stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
-                VariantPropertiesMethodType.RESOURCES_PACKAGING_OPTIONS_VALUE
-            return delegate.resources
-        }
+  override val resources: ResourcesPackaging
+    get() {
+      stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type = VariantPropertiesMethodType.RESOURCES_PACKAGING_OPTIONS_VALUE
+      return delegate.resources
+    }
 }

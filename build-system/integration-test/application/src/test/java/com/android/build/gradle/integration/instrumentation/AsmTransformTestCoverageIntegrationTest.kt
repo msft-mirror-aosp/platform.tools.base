@@ -26,73 +26,59 @@ import com.google.common.truth.Truth
 import org.junit.Rule
 import org.junit.Test
 
-/**
- * Tests integration between the asm transform pipeline and jacoco.
- */
+/** Tests integration between the asm transform pipeline and jacoco. */
 class AsmTransformTestCoverageIntegrationTest {
 
-    @get:Rule
-    val project = GradleTestProject.builder().fromTestProject("asmTransformApi").create()
+  @get:Rule val project = GradleTestProject.builder().fromTestProject("asmTransformApi").create()
 
-    @Test
-    fun runUnitTestsWithCoverage() {
-        AsmApiApiTestUtils.configureExtensionForAnnotationAddingVisitor(project)
-        AsmApiApiTestUtils.configureExtensionForInterfaceAddingVisitor(project)
+  @Test
+  fun runUnitTestsWithCoverage() {
+    AsmApiApiTestUtils.configureExtensionForAnnotationAddingVisitor(project)
+    AsmApiApiTestUtils.configureExtensionForInterfaceAddingVisitor(project)
 
-        project.executor().run(":app:createDebugUnitTestCoverageReport")
+    project.executor().run(":app:createDebugUnitTestCoverageReport")
 
-        val generatedCoverageReport = FileUtils.join(
-            project.getSubproject(":app").buildDir,
-            "reports",
-            "coverage",
-            "test",
-            "debug",
-            "index.html"
-        )
-        Truth.assertThat(generatedCoverageReport.exists()).isTrue()
+    val generatedCoverageReport =
+      FileUtils.join(project.getSubproject(":app").buildDir, "reports", "coverage", "test", "debug", "index.html")
+    Truth.assertThat(generatedCoverageReport.exists()).isTrue()
 
-        val debug =
-            project.modelV2()
-                .fetchModels("debug").container.getProject(":app").androidProject!!.variants.first { it.name == "debug" }
-        assertThat(debug.mainArtifact.bytecodeTransformations).containsExactly(
-            BytecodeTransformation.JACOCO_INSTRUMENTATION,
-            BytecodeTransformation.ASM_API_PROJECT,
-            BytecodeTransformation.ASM_API_ALL,
-            BytecodeTransformation.MODIFIES_PROJECT_CLASS_FILES,
-        )
-        assertThat(debug.androidTestArtifact!!.bytecodeTransformations).isEmpty()
-        assertThat(debug.unitTestArtifact!!.bytecodeTransformations).containsExactly(
-            BytecodeTransformation.MODIFIES_PROJECT_CLASS_FILES,
-            BytecodeTransformation.ASM_API_PROJECT,
-        )
-    }
+    val debug = project.modelV2().fetchModels("debug").container.getProject(":app").androidProject!!.variants.first { it.name == "debug" }
+    assertThat(debug.mainArtifact.bytecodeTransformations)
+      .containsExactly(
+        BytecodeTransformation.JACOCO_INSTRUMENTATION,
+        BytecodeTransformation.ASM_API_PROJECT,
+        BytecodeTransformation.ASM_API_ALL,
+        BytecodeTransformation.MODIFIES_PROJECT_CLASS_FILES,
+      )
+    assertThat(debug.androidTestArtifact!!.bytecodeTransformations).isEmpty()
+    assertThat(debug.unitTestArtifact!!.bytecodeTransformations)
+      .containsExactly(BytecodeTransformation.MODIFIES_PROJECT_CLASS_FILES, BytecodeTransformation.ASM_API_PROJECT)
+  }
 
-    /** regression test for b/197065758 */
-    @Test
-    fun testKotlinInlineFunction() {
-        AsmApiApiTestUtils.configureExtensionForAnnotationAddingVisitor(project)
-        AsmApiApiTestUtils.configureExtensionForInterfaceAddingVisitor(project)
+  /** regression test for b/197065758 */
+  @Test
+  fun testKotlinInlineFunction() {
+    AsmApiApiTestUtils.configureExtensionForAnnotationAddingVisitor(project)
+    AsmApiApiTestUtils.configureExtensionForInterfaceAddingVisitor(project)
 
-        TestFileUtils.searchAndReplace(
-            project.getSubproject(":app")
-                .file("src/main/java/com/example/myapplication/ClassImplementsI.kt"),
-            "fun f2() {}",
-            """
-                fun f2() {}
-                inline fun inlineMethod(crossinline predicate: (String) -> Boolean): Boolean {
-                    return predicate.invoke("test")
-                }
-            """.trimIndent()
-        )
+    TestFileUtils.searchAndReplace(
+      project.getSubproject(":app").file("src/main/java/com/example/myapplication/ClassImplementsI.kt"),
+      "fun f2() {}",
+      """
+      fun f2() {}
+      inline fun inlineMethod(crossinline predicate: (String) -> Boolean): Boolean {
+          return predicate.invoke("test")
+      }
+      """
+        .trimIndent(),
+    )
 
-        TestFileUtils.searchAndReplace(
-            project.getSubproject(":app")
-                .file("src/test/java/com/example/test/UnitTest.kt"),
-            "obj.f2()",
-            "assertTrue(obj.inlineMethod { it == \"test\" })"
-        )
+    TestFileUtils.searchAndReplace(
+      project.getSubproject(":app").file("src/test/java/com/example/test/UnitTest.kt"),
+      "obj.f2()",
+      "assertTrue(obj.inlineMethod { it == \"test\" })",
+    )
 
-        project.executor().run(":app:testDebugUnitTest")
-    }
+    project.executor().run(":app:testDebugUnitTest")
+  }
 }
-

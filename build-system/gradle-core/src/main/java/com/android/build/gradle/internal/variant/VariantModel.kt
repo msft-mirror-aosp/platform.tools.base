@@ -16,7 +16,6 @@
 
 package com.android.build.gradle.internal.variant
 
-import com.android.build.api.artifact.impl.ArtifactsImpl
 import com.android.build.gradle.internal.SdkComponentsBuildService.VersionedSdkLoader
 import com.android.build.gradle.internal.component.TestComponentCreationConfig
 import com.android.build.gradle.internal.component.TestSuiteCreationConfig
@@ -34,51 +33,45 @@ import org.gradle.api.file.RegularFile
 import org.gradle.api.provider.Provider
 
 /**
- * Configuration object for the model builder. This contains everything that they need, and nothing
- * else.
+ * Configuration object for the model builder. This contains everything that they need, and nothing else.
  *
- * This will contain variant information, and their inputs. It can also compute the default variant
- * to be used during sync.
+ * This will contain variant information, and their inputs. It can also compute the default variant to be used during sync.
  *
  * It will contain some global DSL elements that needs to be access to put them in the model.
  *
  * Finally, this contains some utility objects, like ProjectOptions
  */
 interface VariantModel {
-    val projectType: ProjectType
-    val projectTypeV1: Int
+  val projectType: ProjectType
+  val projectTypeV1: Int
 
-    val inputs: VariantInputModel<DefaultConfig, BuildType, ProductFlavor, SigningConfig>
+  val inputs: VariantInputModel<DefaultConfig, BuildType, ProductFlavor, SigningConfig>
 
-    /**
-     * the main variants. This is the output of the plugin (apk, aar, etc...) and does not
-     * include the test components (android test, unit test)
-     */
-    val variants: List<VariantCreationConfig>
+  /**
+   * the main variants. This is the output of the plugin (apk, aar, etc...) and does not include the test components (android test, unit
+   * test)
+   */
+  val variants: List<VariantCreationConfig>
 
-    /**
-     * the test components (android test, unit test)
-     */
-    val testComponents: List<TestComponentCreationConfig>
+  /** the test components (android test, unit test) */
+  val testComponents: List<TestComponentCreationConfig>
 
-    /**
-     * the declared test suites
-     */
-    val testSuites: List<TestSuiteCreationConfig>
+  /** the declared test suites */
+  val testSuites: List<TestSuiteCreationConfig>
 
-    val defaultVariant: String?
+  val defaultVariant: String?
 
-    val buildFeatures: BuildFeatureValues
+  val buildFeatures: BuildFeatureValues
 
-    // utility objects and methods
+  // utility objects and methods
 
-    val syncIssueReporter: SyncIssueReporter
+  val syncIssueReporter: SyncIssueReporter
 
-    val projectOptions: ProjectOptions
+  val projectOptions: ProjectOptions
 
-    val mockableJarArtifact: FileCollection
+  val mockableJarArtifact: FileCollection
 
-    val filteredBootClasspath: Provider<List<RegularFile>>
+  val filteredBootClasspath: Provider<List<RegularFile>>
 
-    val versionedSdkLoader: Provider<VersionedSdkLoader>
+  val versionedSdkLoader: Provider<VersionedSdkLoader>
 }

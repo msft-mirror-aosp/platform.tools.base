@@ -22,7 +22,7 @@ import com.android.builder.model.v2.AndroidModel
  *
  * @since 4.2
  */
-interface ViewBindingOptions: AndroidModel {
-    /** Whether to enable view binding.  */
-    val isEnabled: Boolean
+interface ViewBindingOptions : AndroidModel {
+  /** Whether to enable view binding. */
+  val isEnabled: Boolean
 }

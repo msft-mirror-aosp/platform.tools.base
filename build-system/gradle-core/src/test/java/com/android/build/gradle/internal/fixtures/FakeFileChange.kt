@@ -16,22 +16,24 @@
 
 package com.android.build.gradle.internal.fixtures
 
+import java.io.File
 import org.gradle.api.file.FileType
 import org.gradle.work.ChangeType
 import org.gradle.work.FileChange
-import java.io.File
 
-class FakeFileChange @JvmOverloads constructor(
-    private val file: File,
-    private val changeType: ChangeType = ChangeType.REMOVED,
-    private val fileType: FileType = FileType.FILE,
-    private val normalizedPath: String = file.canonicalPath
+class FakeFileChange
+@JvmOverloads
+constructor(
+  private val file: File,
+  private val changeType: ChangeType = ChangeType.REMOVED,
+  private val fileType: FileType = FileType.FILE,
+  private val normalizedPath: String = file.canonicalPath,
 ) : FileChange {
-    override fun getChangeType(): ChangeType = changeType
+  override fun getChangeType(): ChangeType = changeType
 
-    override fun getFile(): File = file
+  override fun getFile(): File = file
 
-    override fun getFileType(): FileType = fileType
+  override fun getFileType(): FileType = fileType
 
-    override fun getNormalizedPath(): String = normalizedPath
+  override fun getNormalizedPath(): String = normalizedPath
 }

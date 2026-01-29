@@ -22,235 +22,211 @@ import com.android.build.gradle.integration.common.fixture.project.GradleBuild
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition.Companion.DEFAULT_COMPILE_SDK_VERSION
 import com.android.build.gradle.integration.common.runner.FilterableParameterized
-import com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
 import com.android.build.gradle.integration.common.truth.ScannerSubject.Companion.assertThat
+import com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
+import java.util.zip.ZipEntry.DEFLATED
+import java.util.zip.ZipEntry.STORED
 import org.gradle.api.JavaVersion
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
-import java.util.zip.ZipEntry.DEFLATED
-import java.util.zip.ZipEntry.STORED
 
 /**
- * sourceManifestvalue and expectedMergedManifestValue refer to the value of
- * android:extractNativeLibs in the source and merged manifests, respectively. If null, no such
- * attribute is written or expected in the manifests.
+ * sourceManifestvalue and expectedMergedManifestValue refer to the value of android:extractNativeLibs in the source and merged manifests,
+ * respectively. If null, no such attribute is written or expected in the manifests.
  *
- * useLegacyPackaging refers to the value of PackagingOptions.jniLibs.useLegacyPackaging specified
- * via the DSL. If null, no such value is specified.
+ * useLegacyPackaging refers to the value of PackagingOptions.jniLibs.useLegacyPackaging specified via the DSL. If null, no such value is
+ * specified.
  */
 @RunWith(FilterableParameterized::class)
 class ExtractNativeLibsPackagingTest(
-    private val sourceManifestValue: Boolean?,
-    private val minSdk: Int,
-    compileSdk: Int,
-    private val useLegacyPackaging: Boolean?,
-    private val expectedMergedManifestValue: Boolean?,
-    private val expectedCompression: Int,
-    private val customJavaVersion: JavaVersion?
+  private val sourceManifestValue: Boolean?,
+  private val minSdk: Int,
+  compileSdk: Int,
+  private val useLegacyPackaging: Boolean?,
+  private val expectedMergedManifestValue: Boolean?,
+  private val expectedCompression: Int,
+  private val customJavaVersion: JavaVersion?,
 ) {
 
-    companion object {
-        @JvmStatic
-        @Parameterized.Parameters(name = "extractNativeLibs_{0}_minSdk_{1}_compileSdk_{2}_useLegacyPackaging_{3}_expectedMergedManifestValue_{4}_expectedCompression_{5}_customJavaVersion_{6}")
-        fun parameters() = listOf(
-            arrayOf(true, 22, DEFAULT_COMPILE_SDK_VERSION, true, true, DEFLATED, null),
-            arrayOf(true, 22, DEFAULT_COMPILE_SDK_VERSION, false, true, DEFLATED, null),
-            arrayOf(true, 22, DEFAULT_COMPILE_SDK_VERSION, null, true, DEFLATED, null),
-            arrayOf(true, 23, DEFAULT_COMPILE_SDK_VERSION, true, true, DEFLATED, null),
-            arrayOf(true, 23, DEFAULT_COMPILE_SDK_VERSION, false, true, DEFLATED, null),
-            arrayOf(true, 23, DEFAULT_COMPILE_SDK_VERSION, null, true, DEFLATED, null),
-            arrayOf(false, 22, DEFAULT_COMPILE_SDK_VERSION, true, false, STORED, null),
-            arrayOf(false, 22, DEFAULT_COMPILE_SDK_VERSION, false, false, STORED, null),
-            arrayOf(false, 22, DEFAULT_COMPILE_SDK_VERSION, null, false, STORED, null),
-            arrayOf(false, 23, DEFAULT_COMPILE_SDK_VERSION, true, false, STORED, null),
-            arrayOf(false, 23, DEFAULT_COMPILE_SDK_VERSION, false, false, STORED, null),
-            arrayOf(false, 23, DEFAULT_COMPILE_SDK_VERSION, null, false, STORED, null),
-            arrayOf(null, 22, DEFAULT_COMPILE_SDK_VERSION, true, true, DEFLATED, null),
-            arrayOf(null, 22, DEFAULT_COMPILE_SDK_VERSION, false, false, STORED, null),
-            arrayOf(null, 22, DEFAULT_COMPILE_SDK_VERSION, null, true, DEFLATED, null),
-            arrayOf(null, 23, DEFAULT_COMPILE_SDK_VERSION, true, true, DEFLATED, null),
-            arrayOf(null, 23, DEFAULT_COMPILE_SDK_VERSION, false, false, STORED, null),
-            arrayOf(null, 23, DEFAULT_COMPILE_SDK_VERSION, null, false, STORED, null),
-            // test case with older compile SDK that doesn't recognize android:extractNativeLibs.
-            arrayOf(null, 22, 21, null, null, DEFLATED, JavaVersion.VERSION_1_8)
-        )
+  companion object {
+    @JvmStatic
+    @Parameterized.Parameters(
+      name =
+        "extractNativeLibs_{0}_minSdk_{1}_compileSdk_{2}_useLegacyPackaging_{3}_expectedMergedManifestValue_{4}_expectedCompression_{5}_customJavaVersion_{6}"
+    )
+    fun parameters() =
+      listOf(
+        arrayOf(true, 22, DEFAULT_COMPILE_SDK_VERSION, true, true, DEFLATED, null),
+        arrayOf(true, 22, DEFAULT_COMPILE_SDK_VERSION, false, true, DEFLATED, null),
+        arrayOf(true, 22, DEFAULT_COMPILE_SDK_VERSION, null, true, DEFLATED, null),
+        arrayOf(true, 23, DEFAULT_COMPILE_SDK_VERSION, true, true, DEFLATED, null),
+        arrayOf(true, 23, DEFAULT_COMPILE_SDK_VERSION, false, true, DEFLATED, null),
+        arrayOf(true, 23, DEFAULT_COMPILE_SDK_VERSION, null, true, DEFLATED, null),
+        arrayOf(false, 22, DEFAULT_COMPILE_SDK_VERSION, true, false, STORED, null),
+        arrayOf(false, 22, DEFAULT_COMPILE_SDK_VERSION, false, false, STORED, null),
+        arrayOf(false, 22, DEFAULT_COMPILE_SDK_VERSION, null, false, STORED, null),
+        arrayOf(false, 23, DEFAULT_COMPILE_SDK_VERSION, true, false, STORED, null),
+        arrayOf(false, 23, DEFAULT_COMPILE_SDK_VERSION, false, false, STORED, null),
+        arrayOf(false, 23, DEFAULT_COMPILE_SDK_VERSION, null, false, STORED, null),
+        arrayOf(null, 22, DEFAULT_COMPILE_SDK_VERSION, true, true, DEFLATED, null),
+        arrayOf(null, 22, DEFAULT_COMPILE_SDK_VERSION, false, false, STORED, null),
+        arrayOf(null, 22, DEFAULT_COMPILE_SDK_VERSION, null, true, DEFLATED, null),
+        arrayOf(null, 23, DEFAULT_COMPILE_SDK_VERSION, true, true, DEFLATED, null),
+        arrayOf(null, 23, DEFAULT_COMPILE_SDK_VERSION, false, false, STORED, null),
+        arrayOf(null, 23, DEFAULT_COMPILE_SDK_VERSION, null, false, STORED, null),
+        // test case with older compile SDK that doesn't recognize android:extractNativeLibs.
+        arrayOf(null, 22, 21, null, null, DEFLATED, JavaVersion.VERSION_1_8),
+      )
+  }
+
+  private val extractNativeLibsAttribute =
+    when (sourceManifestValue) {
+      true -> "android:extractNativeLibs=\"true\""
+      false -> "android:extractNativeLibs=\"false\""
+      null -> ""
     }
 
-    private val extractNativeLibsAttribute = when (sourceManifestValue) {
-        true -> "android:extractNativeLibs=\"true\""
-        false -> "android:extractNativeLibs=\"false\""
-        null -> ""
-    }
-
-    @get:Rule
-    val rule = GradleRule.from {
-        androidApplication(createMinimumProject = false) {
-            android {
-                namespace = "com.example"
-                this.compileSdk = compileSdk
-                defaultConfig {
-                    minSdk = this@ExtractNativeLibsPackagingTest.minSdk
-                }
-                packaging {
-                    jniLibs {
-                        // if the value is null we want to use AGP's default.
-                        this@ExtractNativeLibsPackagingTest.useLegacyPackaging?.let {
-                            useLegacyPackaging = it
-                        }
-                    }
-                }
-                if (customJavaVersion != null) {
-                    compileOptions {
-                        sourceCompatibility = customJavaVersion
-                        targetCompatibility = customJavaVersion
-                    }
-                }
+  @get:Rule
+  val rule =
+    GradleRule.from {
+      androidApplication(createMinimumProject = false) {
+        android {
+          namespace = "com.example"
+          this.compileSdk = compileSdk
+          defaultConfig { minSdk = this@ExtractNativeLibsPackagingTest.minSdk }
+          packaging {
+            jniLibs {
+              // if the value is null we want to use AGP's default.
+              this@ExtractNativeLibsPackagingTest.useLegacyPackaging?.let { useLegacyPackaging = it }
             }
-            files {
-                add(
-                    "src/main/AndroidManifest.xml",
-                    //language=XML
-                    """
+          }
+          if (customJavaVersion != null) {
+            compileOptions {
+              sourceCompatibility = customJavaVersion
+              targetCompatibility = customJavaVersion
+            }
+          }
+        }
+        files {
+          add(
+            "src/main/AndroidManifest.xml",
+            // language=XML
+            """
                         <manifest xmlns:android="http://schemas.android.com/apk/res/android">
                             <application $extractNativeLibsAttribute/>
-                        </manifest>""".trimIndent()
-                )
-                add(
-                    "src/androidTest/AndroidManifest.xml",
-                    //language=XML
-                    """
+                        </manifest>"""
+              .trimIndent(),
+          )
+          add(
+            "src/androidTest/AndroidManifest.xml",
+            // language=XML
+            """
                         <manifest xmlns:android="http://schemas.android.com/apk/res/android">
                             <application $extractNativeLibsAttribute/>
-                        </manifest>""".trimIndent()
-                )
-                add("src/main/jniLibs/x86/fake.so", "foo".repeat(100))
-                add("src/androidTest/jniLibs/x86/fake.so", "foo".repeat(100))
-            }
+                        </manifest>"""
+              .trimIndent(),
+          )
+          add("src/main/jniLibs/x86/fake.so", "foo".repeat(100))
+          add("src/androidTest/jniLibs/x86/fake.so", "foo".repeat(100))
         }
-        androidTest(createMinimumProject = false) {
-            android {
-                namespace = "com.example"
-                this.compileSdk = compileSdk
-                defaultConfig {
-                    minSdk = this@ExtractNativeLibsPackagingTest.minSdk
-                }
+      }
+      androidTest(createMinimumProject = false) {
+        android {
+          namespace = "com.example"
+          this.compileSdk = compileSdk
+          defaultConfig { minSdk = this@ExtractNativeLibsPackagingTest.minSdk }
 
-                targetProjectPath = ":app"
+          targetProjectPath = ":app"
 
-                packaging {
-                    jniLibs {
-                        // if the value is null we want to use AGP's default.
-                        this@ExtractNativeLibsPackagingTest.useLegacyPackaging?.let {
-                            useLegacyPackaging = it
-                        }
-                    }
-                }
-
-                if (customJavaVersion != null) {
-                    compileOptions {
-                        sourceCompatibility = customJavaVersion
-                        targetCompatibility = customJavaVersion
-                    }
-                }
+          packaging {
+            jniLibs {
+              // if the value is null we want to use AGP's default.
+              this@ExtractNativeLibsPackagingTest.useLegacyPackaging?.let { useLegacyPackaging = it }
             }
-            files {
-                add(
-                    "src/main/AndroidManifest.xml",
-                    //language=XML
-                    """
+          }
+
+          if (customJavaVersion != null) {
+            compileOptions {
+              sourceCompatibility = customJavaVersion
+              targetCompatibility = customJavaVersion
+            }
+          }
+        }
+        files {
+          add(
+            "src/main/AndroidManifest.xml",
+            // language=XML
+            """
                         <manifest xmlns:android="http://schemas.android.com/apk/res/android">
                             <application $extractNativeLibsAttribute/>
-                        </manifest>""".trimIndent()
-                )
-                add("src/main/jniLibs/x86/fake.so", "foo".repeat(100))
-            }
+                        </manifest>"""
+              .trimIndent(),
+          )
+          add("src/main/jniLibs/x86/fake.so", "foo".repeat(100))
         }
+      }
     }
 
-    @Test
-    fun testNativeLibPackagedCorrectly_app() {
-        val build = rule.build
-        checkNativeLibPackagedCorrectly(
-            build,
-            build.androidApplication(),
-            ":app:assembleDebug",
-            ApkSelector.DEBUG
-        )
-    }
+  @Test
+  fun testNativeLibPackagedCorrectly_app() {
+    val build = rule.build
+    checkNativeLibPackagedCorrectly(build, build.androidApplication(), ":app:assembleDebug", ApkSelector.DEBUG)
+  }
 
-    @Test
-    fun testNativeLibPackagedCorrectly_androidTest() {
-        val build = rule.build
-        checkNativeLibPackagedCorrectly(
-            build,
-            build.androidApplication(),
-            ":app:assembleAndroidTest",
-            ApkSelector.ANDROIDTEST_DEBUG
-        )
-    }
+  @Test
+  fun testNativeLibPackagedCorrectly_androidTest() {
+    val build = rule.build
+    checkNativeLibPackagedCorrectly(build, build.androidApplication(), ":app:assembleAndroidTest", ApkSelector.ANDROIDTEST_DEBUG)
+  }
 
-    @Test
-    fun testNativeLibPackagedCorrectly_testModule() {
-        val build = rule.build
-        checkNativeLibPackagedCorrectly(
-            build,
-            build.androidTest(),
-            ":test:assembleDebug",
-            ApkSelector.DEBUG
-        )
-    }
+  @Test
+  fun testNativeLibPackagedCorrectly_testModule() {
+    val build = rule.build
+    checkNativeLibPackagedCorrectly(build, build.androidTest(), ":test:assembleDebug", ApkSelector.DEBUG)
+  }
 
-    private fun checkNativeLibPackagedCorrectly(
-        build: GradleBuild,
-        project: GeneratesApk,
-        task: String,
-        apkSelector: ApkSelector
-    ) {
-        val resolvedUseLegacyPackaging: Boolean = useLegacyPackaging ?: (minSdk < 23)
-        when {
-            resolvedUseLegacyPackaging && expectedCompression == STORED -> {
-                val result = build.executor.expectFailure().run(task)
-                assertThat(result.stderrAsText).contains(
-                    "Avoid setting android:extractNativeLibs=\"false\" explicitly in AndroidManifest.xml"
-                )
-            }
-            !resolvedUseLegacyPackaging && expectedCompression == DEFLATED -> {
-                val result = build.executor.expectFailure().run(task)
-                assertThat(result.stderrAsText).contains(
-                    "Avoid setting android:extractNativeLibs=\"true\" explicitly in AndroidManifest.xml"
-                )
-            }
-            else -> {
-                val result = build.executor.run(task)
-                assertThat(result.stdout).doesNotContain("PackagingOptions.jniLibs.useLegacyPackaging")
+  private fun checkNativeLibPackagedCorrectly(build: GradleBuild, project: GeneratesApk, task: String, apkSelector: ApkSelector) {
+    val resolvedUseLegacyPackaging: Boolean = useLegacyPackaging ?: (minSdk < 23)
+    when {
+      resolvedUseLegacyPackaging && expectedCompression == STORED -> {
+        val result = build.executor.expectFailure().run(task)
+        assertThat(result.stderrAsText).contains("Avoid setting android:extractNativeLibs=\"false\" explicitly in AndroidManifest.xml")
+      }
+      !resolvedUseLegacyPackaging && expectedCompression == DEFLATED -> {
+        val result = build.executor.expectFailure().run(task)
+        assertThat(result.stderrAsText).contains("Avoid setting android:extractNativeLibs=\"true\" explicitly in AndroidManifest.xml")
+      }
+      else -> {
+        val result = build.executor.run(task)
+        assertThat(result.stdout).doesNotContain("PackagingOptions.jniLibs.useLegacyPackaging")
 
-                result.stdout.use {
-                    if (sourceManifestValue != null) {
-                        assertThat(it).contains("android:extractNativeLibs should not be specified")
-                    } else {
-                        assertThat(it).doesNotContain("android:extractNativeLibs should not be specified")
-                    }
-                }
-
-                project.assertApk(apkSelector) {
-                    // check merged manifest
-                    manifest().apply {
-                        when (expectedMergedManifestValue) {
-                            null -> {
-                                doesNotContain("http://schemas.android.com/apk/res/android:extractNativeLibs")
-                            }
-                            else -> {
-                                contains("http://schemas.android.com/apk/res/android:extractNativeLibs=$expectedMergedManifestValue")
-                            }
-                        }
-                    }
-
-                    // check compression
-                    zipEntry("lib/x86/fake.so").hasCompressionMethod(expectedCompression)
-                }
-            }
+        result.stdout.use {
+          if (sourceManifestValue != null) {
+            assertThat(it).contains("android:extractNativeLibs should not be specified")
+          } else {
+            assertThat(it).doesNotContain("android:extractNativeLibs should not be specified")
+          }
         }
+
+        project.assertApk(apkSelector) {
+          // check merged manifest
+          manifest().apply {
+            when (expectedMergedManifestValue) {
+              null -> {
+                doesNotContain("http://schemas.android.com/apk/res/android:extractNativeLibs")
+              }
+              else -> {
+                contains("http://schemas.android.com/apk/res/android:extractNativeLibs=$expectedMergedManifestValue")
+              }
+            }
+          }
+
+          // check compression
+          zipEntry("lib/x86/fake.so").hasCompressionMethod(expectedCompression)
+        }
+      }
     }
+  }
 }

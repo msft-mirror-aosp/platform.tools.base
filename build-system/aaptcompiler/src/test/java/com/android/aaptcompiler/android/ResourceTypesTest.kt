@@ -7,10 +7,7 @@ class ResourceTypesTest {
 
   private fun testStringToIntCase(input: String, expectedValue: Int, expectedHex: Boolean = false) {
     val result = stringToInt(input)
-    val expectedOutput =
-      ResValue(
-        if(expectedHex) ResValue.DataType.INT_HEX else ResValue.DataType.INT_DEC,
-        expectedValue)
+    val expectedOutput = ResValue(if (expectedHex) ResValue.DataType.INT_HEX else ResValue.DataType.INT_DEC, expectedValue)
     Truth.assertThat(result).isEqualTo(expectedOutput)
   }
 
@@ -81,15 +78,15 @@ class ResourceTypesTest {
     expectedMantissa: Int,
     expectedUnitType: Int,
     expectedFormat: Int,
-    isFraction: Boolean = false) {
+    isFraction: Boolean = false,
+  ) {
 
     val result = stringToFloat(input)
-    val expectedValue = (expectedUnitType shl ResValue.ComplexFormat.UNIT_SHIFT) or
-      (expectedFormat shl ResValue.ComplexFormat.RADIX_SHIFT) or
-      (expectedMantissa shl ResValue.ComplexFormat.MANTISSA_SHIFT)
-    val expectedOutput = ResValue(
-      if(isFraction) ResValue.DataType.FRACTION else ResValue.DataType.DIMENSION,
-      expectedValue)
+    val expectedValue =
+      (expectedUnitType shl ResValue.ComplexFormat.UNIT_SHIFT) or
+        (expectedFormat shl ResValue.ComplexFormat.RADIX_SHIFT) or
+        (expectedMantissa shl ResValue.ComplexFormat.MANTISSA_SHIFT)
+    val expectedOutput = ResValue(if (isFraction) ResValue.DataType.FRACTION else ResValue.DataType.DIMENSION, expectedValue)
 
     Truth.assertThat(result).isEqualTo(expectedOutput)
   }
@@ -154,44 +151,25 @@ class ResourceTypesTest {
     testStringToFloatCaseFloat("0xa.fP2", 43.75f)
 
     // Fixed Point Cases:
-    testStringToFloatCaseFixed(
-      "0px",
-      0,
-      ResValue.ComplexFormat.UNIT_PX,
-      ResValue.ComplexFormat.RADIX_23p0)
-    testStringToFloatCaseFixed(
-      "10dp",
-      10,
-      ResValue.ComplexFormat.UNIT_DIP,
-      ResValue.ComplexFormat.RADIX_23p0)
-    testStringToFloatCaseFixed(
-      "10dip",
-      10,
-      ResValue.ComplexFormat.UNIT_DIP,
-      ResValue.ComplexFormat.RADIX_23p0)
+    testStringToFloatCaseFixed("0px", 0, ResValue.ComplexFormat.UNIT_PX, ResValue.ComplexFormat.RADIX_23p0)
+    testStringToFloatCaseFixed("10dp", 10, ResValue.ComplexFormat.UNIT_DIP, ResValue.ComplexFormat.RADIX_23p0)
+    testStringToFloatCaseFixed("10dip", 10, ResValue.ComplexFormat.UNIT_DIP, ResValue.ComplexFormat.RADIX_23p0)
     testStringToFloatCaseFixed(
       ".5in",
       // mantissa = 0x0.8 << 23
       0x400000,
       ResValue.ComplexFormat.UNIT_IN,
-      ResValue.ComplexFormat.RADIX_0p23)
-    testStringToFloatCaseFixed(
-      "0x10sp",
-      16,
-      ResValue.ComplexFormat.UNIT_SP,
-      ResValue.ComplexFormat.RADIX_23p0)
+      ResValue.ComplexFormat.RADIX_0p23,
+    )
+    testStringToFloatCaseFixed("0x10sp", 16, ResValue.ComplexFormat.UNIT_SP, ResValue.ComplexFormat.RADIX_23p0)
     testStringToFloatCaseFixed(
       // Specifying the exponent "p" should allow dp to be used as a unit.
       "0x10p0dp",
       16,
       ResValue.ComplexFormat.UNIT_DIP,
-      ResValue.ComplexFormat.RADIX_23p0)
-    testStringToFloatCaseFixed(
-      "100%",
-      1,
-      ResValue.ComplexFormat.UNIT_FRACTION,
       ResValue.ComplexFormat.RADIX_23p0,
-      true)
+    )
+    testStringToFloatCaseFixed("100%", 1, ResValue.ComplexFormat.UNIT_FRACTION, ResValue.ComplexFormat.RADIX_23p0, true)
     // Test some 8p15 fixed point cases.
     testStringToFloatCaseFixed(
       "520%p",
@@ -199,74 +177,55 @@ class ResourceTypesTest {
       0x29999,
       ResValue.ComplexFormat.UNIT_FRACTION_PARENT,
       ResValue.ComplexFormat.RADIX_8p15,
-      true)
-    testStringToFloatCaseFixed(
-      "3375%",
-      0x10e000,
-      ResValue.ComplexFormat.UNIT_FRACTION,
-      ResValue.ComplexFormat.RADIX_8p15,
-      true)
+      true,
+    )
+    testStringToFloatCaseFixed("3375%", 0x10e000, ResValue.ComplexFormat.UNIT_FRACTION, ResValue.ComplexFormat.RADIX_8p15, true)
     // Test some 16p7 fixed point cases
     testStringToFloatCaseFixed(
       "256.5px",
       // 256.5 << 7
       0x8040,
       ResValue.ComplexFormat.UNIT_PX,
-      ResValue.ComplexFormat.RADIX_16p7)
+      ResValue.ComplexFormat.RADIX_16p7,
+    )
     testStringToFloatCaseFixed(
       "-500.125pt",
       // 24 bit 2's complement of 0xfa10
       0xff05f0,
       ResValue.ComplexFormat.UNIT_PT,
-      ResValue.ComplexFormat.RADIX_16p7)
+      ResValue.ComplexFormat.RADIX_16p7,
+    )
     // Min value checks
     testStringToFloatCaseFixed(
       // 1 * 2^(-23)
       "0x1p-23mm",
       1,
       ResValue.ComplexFormat.UNIT_MM,
-      ResValue.ComplexFormat.RADIX_0p23)
+      ResValue.ComplexFormat.RADIX_0p23,
+    )
     // test rounding of fixed point
     testStringToFloatCaseFixed(
       // 1 * 2^(-24) should round up to 1 * 2^(-23)
       "0x1p-24mm",
       1,
       ResValue.ComplexFormat.UNIT_MM,
-      ResValue.ComplexFormat.RADIX_0p23)
+      ResValue.ComplexFormat.RADIX_0p23,
+    )
     testStringToFloatCaseFixed(
       // -1 * 2^(-24)
       "-0x1p-24in",
       -1 and ResValue.ComplexFormat.MANTISSA_MASK,
       ResValue.ComplexFormat.UNIT_IN,
-      ResValue.ComplexFormat.RADIX_0p23)
-    testStringToFloatCaseFixed(
-      "0.2mm",
-      0x19999a,
-      ResValue.ComplexFormat.UNIT_MM,
-      ResValue.ComplexFormat.RADIX_0p23)
+      ResValue.ComplexFormat.RADIX_0p23,
+    )
+    testStringToFloatCaseFixed("0.2mm", 0x19999a, ResValue.ComplexFormat.UNIT_MM, ResValue.ComplexFormat.RADIX_0p23)
     // Test overflow of fixed points.
-    testStringToFloatCaseFixed(
-      "0x7fffffmm",
-      0x7fffff,
-      ResValue.ComplexFormat.UNIT_MM,
-      ResValue.ComplexFormat.RADIX_23p0)
+    testStringToFloatCaseFixed("0x7fffffmm", 0x7fffff, ResValue.ComplexFormat.UNIT_MM, ResValue.ComplexFormat.RADIX_23p0)
     // Positive overflow bleeds into negative values
-    testStringToFloatCaseFixed(
-      "0x1p23pt",
-      0x800000,
-      ResValue.ComplexFormat.UNIT_PT,
-      ResValue.ComplexFormat.RADIX_23p0)
+    testStringToFloatCaseFixed("0x1p23pt", 0x800000, ResValue.ComplexFormat.UNIT_PT, ResValue.ComplexFormat.RADIX_23p0)
     // Test underflow of fixed points.
-    testStringToFloatCaseFixed(
-      "-0x800000mm",
-      0x800000,
-      ResValue.ComplexFormat.UNIT_MM,
-      ResValue.ComplexFormat.RADIX_23p0)
+    testStringToFloatCaseFixed("-0x800000mm", 0x800000, ResValue.ComplexFormat.UNIT_MM, ResValue.ComplexFormat.RADIX_23p0)
     // Negative underflow bleeds into positive values.
-    testStringToFloatCaseFixed(
-      "-0x800001pt",
-      0x7fffff,
-      ResValue.ComplexFormat.UNIT_PT,
-      ResValue.ComplexFormat.RADIX_23p0)
+    testStringToFloatCaseFixed("-0x800001pt", 0x7fffff, ResValue.ComplexFormat.UNIT_PT, ResValue.ComplexFormat.RADIX_23p0)
   }
 }

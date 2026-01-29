@@ -20,45 +20,28 @@ import com.android.build.gradle.internal.cxx.io.writeTextIfDifferent
 import com.google.gson.GsonBuilder
 import java.io.File
 
-/**
- * Convert a value into a JSON string.
- */
-fun <T> jsonStringOf(value : T) = GsonBuilder()
-    .registerTypeAdapter(File::class.java, PlainFileGsonTypeAdaptor())
-    .setPrettyPrinting()
-    .create()
-    .toJson(value)!!
+/** Convert a value into a JSON string. */
+fun <T> jsonStringOf(value: T) =
+  GsonBuilder().registerTypeAdapter(File::class.java, PlainFileGsonTypeAdaptor()).setPrettyPrinting().create().toJson(value)!!
 
-/**
- * Write a value to a file as JSON.
- */
-fun <T> writeJsonFile(file : File, value : T) {
-    val parent = file.parentFile
-    if (!parent.exists()) parent.mkdirs()
-    file.writeText(jsonStringOf(value))
+/** Write a value to a file as JSON. */
+fun <T> writeJsonFile(file: File, value: T) {
+  val parent = file.parentFile
+  if (!parent.exists()) parent.mkdirs()
+  file.writeText(jsonStringOf(value))
 }
 
-/**
- * Write a value to a file as JSON. Only write if it changed.
- */
-fun <T> writeJsonFileIfDifferent(file : File, value : T) {
-    val parent = file.parentFile
-    if (!parent.exists()) parent.mkdirs()
-    file.writeTextIfDifferent(jsonStringOf(value))
+/** Write a value to a file as JSON. Only write if it changed. */
+fun <T> writeJsonFileIfDifferent(file: File, value: T) {
+  val parent = file.parentFile
+  if (!parent.exists()) parent.mkdirs()
+  file.writeTextIfDifferent(jsonStringOf(value))
 }
 
-/**
- * Read a value of specific type from a JSON file.
- */
-inline fun <reified T> readJsonFile(file : File) = readJsonFile(file, T::class.java)
+/** Read a value of specific type from a JSON file. */
+inline fun <reified T> readJsonFile(file: File) = readJsonFile(file, T::class.java)
 
-/**
- * Read a value of specific type from a JSON file.
- */
-fun <T> readJsonFile(file : File, type : Class<T>) : T {
-    return GsonBuilder()
-        .registerTypeAdapter(File::class.java, PlainFileGsonTypeAdaptor())
-        .create()
-        .fromJson(file.readText(), type)
+/** Read a value of specific type from a JSON file. */
+fun <T> readJsonFile(file: File, type: Class<T>): T {
+  return GsonBuilder().registerTypeAdapter(File::class.java, PlainFileGsonTypeAdaptor()).create().fromJson(file.readText(), type)
 }
-

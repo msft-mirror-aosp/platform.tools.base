@@ -20,36 +20,25 @@ import com.android.build.gradle.integration.common.fixture.model.ReferenceModelC
 import com.android.builder.model.v2.ide.SyncIssue
 import org.junit.Test
 
-class EnabledAidlInAppModelTest: ReferenceModelComparator(
-    referenceConfig = {
-        androidApplication { }
-    },
-    deltaConfig = {
-        androidApplication {
-            android {
-                buildFeatures {
-                    aidl = true
-                }
-            }
-        }
-    },
-    syncOptions = {
-        ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
-    }
-) {
+class EnabledAidlInAppModelTest :
+  ReferenceModelComparator(
+    referenceConfig = { androidApplication {} },
+    deltaConfig = { androidApplication { android { buildFeatures { aidl = true } } } },
+    syncOptions = { ignoreSyncIssues(SyncIssue.SEVERITY_WARNING) },
+  ) {
 
-    @Test
-    fun `test BasicAndroidProject model`() {
-        compareBasicAndroidProjectWith(goldenFileSuffix = "BasicAndroidProject")
-    }
+  @Test
+  fun `test BasicAndroidProject model`() {
+    compareBasicAndroidProjectWith(goldenFileSuffix = "BasicAndroidProject")
+  }
 
-    @Test
-    fun `test AndroidProject model`() {
-        compareAndroidProjectWith(goldenFileSuffix = "AndroidProject")
-    }
+  @Test
+  fun `test AndroidProject model`() {
+    compareAndroidProjectWith(goldenFileSuffix = "AndroidProject")
+  }
 
-    @Test
-    fun `test AndroidDsl model`() {
-        ensureAndroidDslDeltaIsEmpty()
-    }
+  @Test
+  fun `test AndroidDsl model`() {
+    ensureAndroidDslDeltaIsEmpty()
+  }
 }

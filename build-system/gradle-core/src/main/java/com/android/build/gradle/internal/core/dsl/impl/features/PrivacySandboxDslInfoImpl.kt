@@ -23,15 +23,15 @@ import com.android.build.api.dsl.LibraryExtension
 import com.android.build.api.dsl.TestExtension
 import com.android.build.gradle.internal.core.dsl.features.PrivacySandboxDslInfo
 
-class PrivacySandboxDslInfoImpl(private val extension: CommonExtension): PrivacySandboxDslInfo {
-    override val enable: Boolean
-        get() {
-            return when(extension) {
-                is ApplicationExtension -> extension.privacySandbox.enable
-                is LibraryExtension -> extension.privacySandbox.enable
-                is DynamicFeatureExtension -> extension.privacySandbox.enable
-                is TestExtension -> extension.privacySandbox.enable
-                else -> false
-            }
-        }
+class PrivacySandboxDslInfoImpl(private val extension: CommonExtension) : PrivacySandboxDslInfo {
+  override val enable: Boolean
+    get() {
+      return when (extension) {
+        is ApplicationExtension -> extension.privacySandbox.enable
+        is LibraryExtension -> extension.privacySandbox.enable
+        is DynamicFeatureExtension -> extension.privacySandbox.enable
+        is TestExtension -> extension.privacySandbox.enable
+        else -> false
+      }
+    }
 }

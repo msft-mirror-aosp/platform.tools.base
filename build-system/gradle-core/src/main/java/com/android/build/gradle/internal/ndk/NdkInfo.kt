@@ -20,61 +20,59 @@ import com.android.build.gradle.tasks.NativeBuildSystem
 import com.android.sdklib.AndroidVersion
 import java.io.File
 
-/**
- * Interface describing the NDK.
- */
+/** Interface describing the NDK. */
 interface NdkInfo {
 
-    val default32BitsAbis: Collection<String>
+  val default32BitsAbis: Collection<String>
 
-    val defaultAbis: Collection<String>
+  val defaultAbis: Collection<String>
 
-    val supported32BitsAbis: Collection<String>
+  val supported32BitsAbis: Collection<String>
 
-    val supportedAbis: Collection<String>
+  val supportedAbis: Collection<String>
 
-    val supportedStls: Collection<Stl>
+  val supportedStls: Collection<Stl>
 
-    fun findSuitablePlatformVersion(
-        abi: String,
-        androidVersion: AndroidVersion?,
-        ignoreMinSdkVersionFromDsl: Any?,
-        ignoreMinSdkVersionFromProperty: String?
-    ): Int
+  fun findSuitablePlatformVersion(
+    abi: String,
+    androidVersion: AndroidVersion?,
+    ignoreMinSdkVersionFromDsl: Any?,
+    ignoreMinSdkVersionFromProperty: String?,
+  ): Int
 
-    /** Return the executable for removing debug symbols from a shared object.  */
-    fun getStripExecutable(abi: String): File
+  /** Return the executable for removing debug symbols from a shared object. */
+  fun getStripExecutable(abi: String): File
 
-    /** Return the executable for extracting debug metadata from a shared object.  */
-    fun getObjcopyExecutable(abi: String): File
+  /** Return the executable for extracting debug metadata from a shared object. */
+  fun getObjcopyExecutable(abi: String): File
 
-    /** Returns the default STL for the given build system. */
-    fun getDefaultStl(buildSystem: NativeBuildSystem): Stl
+  /** Returns the default STL for the given build system. */
+  fun getDefaultStl(buildSystem: NativeBuildSystem): Stl
 
-    /** Returns the STL shared object file matching the given STL/ABI pair. */
-    fun getStlSharedObjectFile(stl: Stl, abi: String): File
+  /** Returns the STL shared object file matching the given STL/ABI pair. */
+  fun getStlSharedObjectFile(stl: Stl, abi: String): File
 
-    /**
-     * Returns a list of shared STL libraries to be included in the APK for the given configuration.
-     *
-     * @param stl A nullable string matching the APP_STL argument to ndk-build (or ANDROID_STL for
-     *            CMake). If null, the default STL for the given NDK is used.
-     * @param abis The collection of ABIs to return libraries for.
-     */
-    fun getStlSharedObjectFiles(stl: Stl, abis: Collection<String>): Map<String, File> {
-        // Static STLs, system STLs, and non-STLs do not need to be packaged.
-        if (!stl.requiresPackaging) {
-            return emptyMap()
-        }
-
-        return abis.map { it to getStlSharedObjectFile(stl, it) }.toMap()
+  /**
+   * Returns a list of shared STL libraries to be included in the APK for the given configuration.
+   *
+   * @param stl A nullable string matching the APP_STL argument to ndk-build (or ANDROID_STL for CMake). If null, the default STL for the
+   *   given NDK is used.
+   * @param abis The collection of ABIs to return libraries for.
+   */
+  fun getStlSharedObjectFiles(stl: Stl, abis: Collection<String>): Map<String, File> {
+    // Static STLs, system STLs, and non-STLs do not need to be packaged.
+    if (!stl.requiresPackaging) {
+      return emptyMap()
     }
 
-    /**
-     * Validates that the described NDK is valid.
-     *
-     * Performs a sanity check that the pointed-to NDK contains all the expected pieces. If any
-     * issues are found, an error message is returned. If no issues are found, null is returned.
-     */
-    fun validate(): String?
+    return abis.map { it to getStlSharedObjectFile(stl, it) }.toMap()
+  }
+
+  /**
+   * Validates that the described NDK is valid.
+   *
+   * Performs a sanity check that the pointed-to NDK contains all the expected pieces. If any issues are found, an error message is
+   * returned. If no issues are found, null is returned.
+   */
+  fun validate(): String?
 }

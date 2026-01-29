@@ -33,65 +33,49 @@ import org.jetbrains.kotlin.gradle.InternalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.dsl.ExplicitApiMode
 import org.jetbrains.kotlin.gradle.plugin.sources.android.AndroidVariantType
 
-/**
- * Creation config for all kotlin tasks' configuration.
- */
-interface BuiltInKotlinCreationConfig: TaskCreationConfig {
+/** Creation config for all kotlin tasks' configuration. */
+interface BuiltInKotlinCreationConfig : TaskCreationConfig {
 
-    val kotlin: FlatSourceDirectoriesImpl?
+  val kotlin: FlatSourceDirectoriesImpl?
 
-    val java: FlatSourceDirectoriesImpl?
+  val java: FlatSourceDirectoriesImpl?
 
-    /**
-     * runs [action] passing the [Sources.java] internal representation if not null.
-     * If null, action is not run.
-     */
-    fun java(action: (FlatSourceDirectoriesImpl) -> Unit)
+  /** runs [action] passing the [Sources.java] internal representation if not null. If null, action is not run. */
+  fun java(action: (FlatSourceDirectoriesImpl) -> Unit)
 
-    /**
-     * runs [action] passing the [Sources.kotlin] internal representation if not null.
-     * If null, action is not run.
-     */
-    fun kotlin(action: (FlatSourceDirectoriesImpl) -> Unit)
+  /** runs [action] passing the [Sources.kotlin] internal representation if not null. If null, action is not run. */
+  fun kotlin(action: (FlatSourceDirectoriesImpl) -> Unit)
 
-    val bootClasspath: Provider<List<RegularFile>>
+  val bootClasspath: Provider<List<RegularFile>>
 
-    fun getAnnotationProcessorJars(): FileCollection
+  fun getAnnotationProcessorJars(): FileCollection
 
-    /**
-     * Get the compile classpath for compiling sources in this component
-     */
-    fun getJavaClasspath(
-        configType: AndroidArtifacts.ConsumedConfigType,
-        classesType: AndroidArtifacts.ArtifactType,
-        generatedBytecodeKey: Any? = null
-    ): FileCollection
+  /** Get the compile classpath for compiling sources in this component */
+  fun getJavaClasspath(
+    configType: AndroidArtifacts.ConsumedConfigType,
+    classesType: AndroidArtifacts.ArtifactType,
+    generatedBytecodeKey: Any? = null,
+  ): FileCollection
 
-    val builtInKotlinSupportMode: BuiltInKotlinSupportMode
-    val builtInKaptSupportMode: BuiltInKaptSupportMode
+  val builtInKotlinSupportMode: BuiltInKotlinSupportMode
+  val builtInKaptSupportMode: BuiltInKaptSupportMode
 
-    /**
-     * Returns the directory for the [internalArtifactType] if built-in KAPT support is enabled, or
-     * null if not.
-     */
-    fun getBuiltInKaptArtifact(
-        internalArtifactType: InternalArtifactType<Directory>
-    ): Provider<Directory>?
+  /** Returns the directory for the [internalArtifactType] if built-in KAPT support is enabled, or null if not. */
+  fun getBuiltInKaptArtifact(internalArtifactType: InternalArtifactType<Directory>): Provider<Directory>?
 
-    val targetCompatibility: JavaVersion
+  val targetCompatibility: JavaVersion
 
-    val kaptSourceOutputDir: Provider<Directory>
+  val kaptSourceOutputDir: Provider<Directory>
 
-    val kaptKotlinSourceOutputDir: Provider<Directory>
+  val kaptKotlinSourceOutputDir: Provider<Directory>
 
-    fun getExplicitApiMode(): ExplicitApiMode?
+  fun getExplicitApiMode(): ExplicitApiMode?
 
-    @OptIn(InternalKotlinGradlePluginApi::class)
-    fun toAndroidVariantType(): AndroidVariantType
+  @OptIn(InternalKotlinGradlePluginApi::class) fun toAndroidVariantType(): AndroidVariantType
 
-    val sourceCompatibility: JavaVersion
+  val sourceCompatibility: JavaVersion
 
-    val annotationProcessor: AnnotationProcessor
+  val annotationProcessor: AnnotationProcessor
 
-    fun setupFriends(friendPaths: ConfigurableFileCollection)
+  fun setupFriends(friendPaths: ConfigurableFileCollection)
 }

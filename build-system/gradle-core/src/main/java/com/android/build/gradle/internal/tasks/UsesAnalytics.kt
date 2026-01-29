@@ -26,16 +26,15 @@ import org.gradle.api.tasks.Internal
 /** Common interface for tasks that use [AnalyticsService]. */
 interface UsesAnalytics {
 
-    @get:Internal
-    val analyticsService: Property<AnalyticsService>
+  @get:Internal val analyticsService: Property<AnalyticsService>
 
-    object ConfigureAction {
+  object ConfigureAction {
 
-        fun <TaskT> configure(task: TaskT) where TaskT: Task, TaskT: UsesAnalytics {
-            getBuildService<AnalyticsService, AnalyticsService.Params>(task.project.gradle.sharedServices).let {
-                task.analyticsService.setDisallowChanges(it)
-                task.usesService(it)
-            }
-        }
+    fun <TaskT> configure(task: TaskT) where TaskT : Task, TaskT : UsesAnalytics {
+      getBuildService<AnalyticsService, AnalyticsService.Params>(task.project.gradle.sharedServices).let {
+        task.analyticsService.setDisallowChanges(it)
+        task.usesService(it)
+      }
     }
+  }
 }

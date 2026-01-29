@@ -23,33 +23,36 @@ import com.android.tools.apk.analyzer.AaptInvoker
 import com.android.tools.apk.analyzer.ApkAnalyzerImpl
 import com.android.tools.build.gradle.internal.profile.VariantPropertiesMethodType
 import com.google.common.truth.Truth
-import com.google.wireless.android.sdk.stats.ArtifactAccess
 import com.google.wireless.android.sdk.stats.VariantPropertiesAccess
-import org.junit.Test
-import org.mockito.Mockito
-import org.mockito.kotlin.mock
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.PrintStream
 import kotlin.test.assertNotNull
+import org.junit.Test
+import org.mockito.kotlin.mock
 
-class AllClassesTests: VariantApiBaseTest(TestType.Script, ScriptingLanguage.Groovy) {
+class AllClassesTests : VariantApiBaseTest(TestType.Script, ScriptingLanguage.Groovy) {
 
-    @Test
-    fun getAllClassesTest() {
-        given {
-            tasksToInvoke.addAll(listOf("clean", ":app:debugGetAllClasses"))
-            addModule(":app") {
-                addSource("src/main/java/com/android/api/tests/SomeSource.java", """
-                    package com.android.api.tests;
+  @Test
+  fun getAllClassesTest() {
+    given {
+      tasksToInvoke.addAll(listOf("clean", ":app:debugGetAllClasses"))
+      addModule(":app") {
+        addSource(
+          "src/main/java/com/android/api/tests/SomeSource.java",
+          """
+          package com.android.api.tests;
 
-                    class SomeSource {
-                        void doSomething() {
-                            System.out.println("Something !");
-                        }
-                    }
-                """.trimIndent())
-                buildFile = """
+          class SomeSource {
+              void doSomething() {
+                  System.out.println("Something !");
+              }
+          }
+          """
+            .trimIndent(),
+        )
+        buildFile =
+          """
             plugins {
                 id 'com.android.application'
             }
@@ -74,79 +77,83 @@ class AllClassesTests: VariantApiBaseTest(TestType.Script, ScriptingLanguage.Gro
                         )
                 })
             }
-                """.trimIndent()
-
-                testingElements.addManifest(this)
-            }
-        }
-        withOptions(mapOf(BooleanOption.ENABLE_PROFILE_JSON to true))
-        withDocs {
-            index =
-                    // language=markdown
                 """
-# Scoped Artifacts toGet example in Groovy
-This sample shows how to obtain all the classes that will be used to create the dex files.
-There are two lists that need to be used to obtain the complete set of classes because some
-classes are present as .class files in directories and others are present in jar files.
-Therefore, you must process both [ListProperty] of [Directory] and [RegularFile] to get the full
-list.
+            .trimIndent()
 
-The [onVariants] block will wire the [GetAllClassesTask] input properties (allJars and allDirectories)
-by using the [ScopedArtifactsOperation.toGet] method with the right [ScopedArtifact].
-`
-    variant.artifacts.forScope(ScopedArtifacts.Scope.PROJECT)
-        .use(taskProvider)
-        .toGet(
-            ScopedArtifact.CLASSES.INSTANCE,
-            { it.allJars },
-            { it.allDirectories }
-        )
-`
-## To Run
-./gradlew debugGetAllClasses
-expected result : a list of classes and jar files.
-            """.trimIndent()
-        }
-        check {
-            assertNotNull(this)
-            Truth.assertThat(output).contains("Directory : ")
-            Truth.assertThat(output).contains("SomeSource.class")
-            Truth.assertThat(output).contains("JarFile")
-            Truth.assertThat(output).contains("R.jar")
-            Truth.assertThat(output).contains("BUILD SUCCESSFUL")
-            super.onVariantStats {
-                if (it.isDebug) {
-                    Truth.assertThat(it.variantApiAccess.variantPropertiesAccessList).hasSize(3)
-                    Truth.assertThat(it.variantApiAccess.getVariantPropertiesAccess(0).type)
-                        .isEqualTo(VariantPropertiesMethodType.ARTIFACTS_VALUE)
-                    Truth.assertThat(it.variantApiAccess.getVariantPropertiesAccess(1).type)
-                        .isEqualTo(VariantPropertiesMethodType.FOR_SCOPE_VALUE)
-                    Truth.assertThat(it.variantApiAccess.getVariantPropertiesAccess(2).type)
-                        .isEqualTo(VariantPropertiesMethodType.SCOPED_ARTIFACTS_TO_GET_VALUE)
-                }
-            }
-        }
+        testingElements.addManifest(this)
+      }
     }
+    withOptions(mapOf(BooleanOption.ENABLE_PROFILE_JSON to true))
+    withDocs {
+      index =
+        // language=markdown
+        """
+        # Scoped Artifacts toGet example in Groovy
+        This sample shows how to obtain all the classes that will be used to create the dex files.
+        There are two lists that need to be used to obtain the complete set of classes because some
+        classes are present as .class files in directories and others are present in jar files.
+        Therefore, you must process both [ListProperty] of [Directory] and [RegularFile] to get the full
+        list.
 
-    @Test
-    fun modifyProjectClasses() {
-        given {
-            tasksToInvoke.addAll(listOf("clean", ":app:assembleDebug"))
-            addClasspath("org.javassist:javassist:3.26.0-GA")
-            addModule(":app") {
-                addSource("src/main/java/com/android/api/tests/SomeSource.java", """
-                    package com.android.api.tests;
+        The [onVariants] block will wire the [GetAllClassesTask] input properties (allJars and allDirectories)
+        by using the [ScopedArtifactsOperation.toGet] method with the right [ScopedArtifact].
+        `
+            variant.artifacts.forScope(ScopedArtifacts.Scope.PROJECT)
+                .use(taskProvider)
+                .toGet(
+                    ScopedArtifact.CLASSES.INSTANCE,
+                    { it.allJars },
+                    { it.allDirectories }
+                )
+        `
+        ## To Run
+        ./gradlew debugGetAllClasses
+        expected result : a list of classes and jar files.
+        """
+          .trimIndent()
+    }
+    check {
+      assertNotNull(this)
+      Truth.assertThat(output).contains("Directory : ")
+      Truth.assertThat(output).contains("SomeSource.class")
+      Truth.assertThat(output).contains("JarFile")
+      Truth.assertThat(output).contains("R.jar")
+      Truth.assertThat(output).contains("BUILD SUCCESSFUL")
+      super.onVariantStats {
+        if (it.isDebug) {
+          Truth.assertThat(it.variantApiAccess.variantPropertiesAccessList).hasSize(3)
+          Truth.assertThat(it.variantApiAccess.getVariantPropertiesAccess(0).type).isEqualTo(VariantPropertiesMethodType.ARTIFACTS_VALUE)
+          Truth.assertThat(it.variantApiAccess.getVariantPropertiesAccess(1).type).isEqualTo(VariantPropertiesMethodType.FOR_SCOPE_VALUE)
+          Truth.assertThat(it.variantApiAccess.getVariantPropertiesAccess(2).type)
+            .isEqualTo(VariantPropertiesMethodType.SCOPED_ARTIFACTS_TO_GET_VALUE)
+        }
+      }
+    }
+  }
 
-                    class SomeSource {
-                        public String toString() {
-                            return "Something !";
-                        }
-                    }
-                """.trimIndent())
-                @Suppress("RemoveExplicitTypeArguments")
-                buildFile =
-                        // language=java
-                    """
+  @Test
+  fun modifyProjectClasses() {
+    given {
+      tasksToInvoke.addAll(listOf("clean", ":app:assembleDebug"))
+      addClasspath("org.javassist:javassist:3.26.0-GA")
+      addModule(":app") {
+        addSource(
+          "src/main/java/com/android/api/tests/SomeSource.java",
+          """
+          package com.android.api.tests;
+
+          class SomeSource {
+              public String toString() {
+                  return "Something !";
+              }
+          }
+          """
+            .trimIndent(),
+        )
+        @Suppress("RemoveExplicitTypeArguments")
+        buildFile =
+          // language=java
+          """
             plugins {
                 id 'com.android.application'
             }
@@ -254,97 +261,99 @@ expected result : a list of classes and jar files.
                         .toTransform(ScopedArtifact.CLASSES.INSTANCE,  { it.getAllJars() }, { it.getAllDirectories() }, { it.getOutput() })
                 })
             }
-        """.trimIndent()
-                testingElements.addManifest(this)
-            }
-        }
-        withOptions(mapOf(BooleanOption.ENABLE_PROFILE_JSON to true))
-        withDocs {
-            index =
-                    // language=markdown
-                """
-# Scoped Artifacts to transform project classes in Groovy
-This sample shows how to transform all the classes that will be used to create the dex files.
-There are two lists that need to be used to obtain the complete set of classes because some
-classes are present as .class files in directories and others are present in jar files.
-Therefore, you must process both [ListProperty] of [Directory] and [RegularFile] to get the full
-list.
-
-The Variant API provides a convenient API to transform bytecodes based on ASM but this example
-is using javassist to show how this can be done using a different bytecode enhancer.
-
-The [onVariants] block will wire the [ModifyClassesTask] input properties [allJars] and
-[allDirectories] to the [output] folder
-`
-    variant.artifacts
-        .forScope(ScopedArtifacts.Scope.PROJECT)
-        .use(taskProvider)
-        .toTransform(
-            ScopedArtifact.CLASSES.INSTANCE,
-            { it.getAllJars() },
-            { it.getAllDirectories() },
-            { it.getOutput() })
-`
-to transform [ScopedArtifact.CLASSES]
-
-## To Run
-./gradlew :app:assembleDebug
-expected result : a list of classes and jar files.
-            """.trimIndent()
-        }
-        check {
-            assertNotNull(this)
-            Truth.assertThat(output).contains("SomeSource.class")
-            Truth.assertThat(output).contains("interface class com.android.api.tests.SomeInterface")
-            Truth.assertThat(output).contains("BUILD SUCCESSFUL")
-            super.onVariantStats {
-                if (it.isDebug) {
-                    Truth.assertThat(it.variantApiAccess.variantPropertiesAccessList).hasSize(3)
-                    Truth.assertThat(it.variantApiAccess.getVariantPropertiesAccess(0).type)
-                        .isEqualTo(VariantPropertiesMethodType.ARTIFACTS_VALUE)
-                    Truth.assertThat(it.variantApiAccess.getVariantPropertiesAccess(1).type)
-                        .isEqualTo(VariantPropertiesMethodType.FOR_SCOPE_VALUE)
-                    Truth.assertThat(it.variantApiAccess.getVariantPropertiesAccess(2).type)
-                        .isEqualTo(VariantPropertiesMethodType.SCOPED_ARTIFACTS_TO_TRANSFORM_VALUE)
-                }
-            }
-            val outFolder = File(testProjectDir.root, "${testName.methodName}/app/build/outputs/apk/debug/")
-            Truth.assertThat(outFolder.listFiles()?.asList()?.map { it.name }).containsExactly(
-                "app-debug.apk", BuiltArtifactsImpl.METADATA_FILE_NAME
-            )
-            // check that resulting APK contains the newly added interface
-            val apk = File(outFolder, "app-debug.apk").toPath()
-            val byteArrayOutputStream = object : ByteArrayOutputStream() {
-                @Synchronized
-                override fun toString(): String =
-                    super.toString().replace(System.getProperty("line.separator"), "\n")
-            }
-            val ps = PrintStream(byteArrayOutputStream)
-            val apkAnalyzer = ApkAnalyzerImpl(ps, mock<AaptInvoker>())
-            apkAnalyzer.dexCode(apk, "com.android.api.tests.SomeInterface", null, null, null)
-            Truth.assertThat(byteArrayOutputStream.toString()).contains("SomeInterface")
-        }
+        """
+            .trimIndent()
+        testingElements.addManifest(this)
+      }
     }
+    withOptions(mapOf(BooleanOption.ENABLE_PROFILE_JSON to true))
+    withDocs {
+      index =
+        // language=markdown
+        """
+        # Scoped Artifacts to transform project classes in Groovy
+        This sample shows how to transform all the classes that will be used to create the dex files.
+        There are two lists that need to be used to obtain the complete set of classes because some
+        classes are present as .class files in directories and others are present in jar files.
+        Therefore, you must process both [ListProperty] of [Directory] and [RegularFile] to get the full
+        list.
 
-    @Test
-    fun replaceProjectClasses() {
-        given {
-            tasksToInvoke.addAll(listOf("clean", ":app:assembleDebug"))
-            addClasspath("org.javassist:javassist:3.26.0-GA")
-            addModule(":app") {
-                addSource("src/main/java/com/android/api/tests/SomeSource.java", """
-                    package com.android.api.tests;
+        The Variant API provides a convenient API to transform bytecodes based on ASM but this example
+        is using javassist to show how this can be done using a different bytecode enhancer.
 
-                    class SomeSource {
-                        public String toString() {
-                            return "Something !";
-                        }
-                    }
-                """.trimIndent())
-                @Suppress("RemoveExplicitTypeArguments")
-                buildFile =
-                        // language=java
-                    """
+        The [onVariants] block will wire the [ModifyClassesTask] input properties [allJars] and
+        [allDirectories] to the [output] folder
+        `
+            variant.artifacts
+                .forScope(ScopedArtifacts.Scope.PROJECT)
+                .use(taskProvider)
+                .toTransform(
+                    ScopedArtifact.CLASSES.INSTANCE,
+                    { it.getAllJars() },
+                    { it.getAllDirectories() },
+                    { it.getOutput() })
+        `
+        to transform [ScopedArtifact.CLASSES]
+
+        ## To Run
+        ./gradlew :app:assembleDebug
+        expected result : a list of classes and jar files.
+        """
+          .trimIndent()
+    }
+    check {
+      assertNotNull(this)
+      Truth.assertThat(output).contains("SomeSource.class")
+      Truth.assertThat(output).contains("interface class com.android.api.tests.SomeInterface")
+      Truth.assertThat(output).contains("BUILD SUCCESSFUL")
+      super.onVariantStats {
+        if (it.isDebug) {
+          Truth.assertThat(it.variantApiAccess.variantPropertiesAccessList).hasSize(3)
+          Truth.assertThat(it.variantApiAccess.getVariantPropertiesAccess(0).type).isEqualTo(VariantPropertiesMethodType.ARTIFACTS_VALUE)
+          Truth.assertThat(it.variantApiAccess.getVariantPropertiesAccess(1).type).isEqualTo(VariantPropertiesMethodType.FOR_SCOPE_VALUE)
+          Truth.assertThat(it.variantApiAccess.getVariantPropertiesAccess(2).type)
+            .isEqualTo(VariantPropertiesMethodType.SCOPED_ARTIFACTS_TO_TRANSFORM_VALUE)
+        }
+      }
+      val outFolder = File(testProjectDir.root, "${testName.methodName}/app/build/outputs/apk/debug/")
+      Truth.assertThat(outFolder.listFiles()?.asList()?.map { it.name })
+        .containsExactly("app-debug.apk", BuiltArtifactsImpl.METADATA_FILE_NAME)
+      // check that resulting APK contains the newly added interface
+      val apk = File(outFolder, "app-debug.apk").toPath()
+      val byteArrayOutputStream =
+        object : ByteArrayOutputStream() {
+          @Synchronized override fun toString(): String = super.toString().replace(System.getProperty("line.separator"), "\n")
+        }
+      val ps = PrintStream(byteArrayOutputStream)
+      val apkAnalyzer = ApkAnalyzerImpl(ps, mock<AaptInvoker>())
+      apkAnalyzer.dexCode(apk, "com.android.api.tests.SomeInterface", null, null, null)
+      Truth.assertThat(byteArrayOutputStream.toString()).contains("SomeInterface")
+    }
+  }
+
+  @Test
+  fun replaceProjectClasses() {
+    given {
+      tasksToInvoke.addAll(listOf("clean", ":app:assembleDebug"))
+      addClasspath("org.javassist:javassist:3.26.0-GA")
+      addModule(":app") {
+        addSource(
+          "src/main/java/com/android/api/tests/SomeSource.java",
+          """
+          package com.android.api.tests;
+
+          class SomeSource {
+              public String toString() {
+                  return "Something !";
+              }
+          }
+          """
+            .trimIndent(),
+        )
+        @Suppress("RemoveExplicitTypeArguments")
+        buildFile =
+          // language=java
+          """
             plugins {
                 id 'com.android.application'
             }
@@ -400,87 +409,88 @@ expected result : a list of classes and jar files.
                         )
                 })
             }
-        """.trimIndent()
-                testingElements.addManifest(this)
-            }
-        }
-        withOptions(mapOf(BooleanOption.ENABLE_PROFILE_JSON to true))
-        withDocs {
-            index =
-                    // language=markdown
-                """
-# Scoped Artifacts toReplace Project classes in Groovy
-This sample shows how to replace all the project classes that will be used to create the dex files.
-
-The [onVariants] block will wire [ReplaceClassesTask]'s [output] folder to contain all the new
-project classes :
-`
-    variant.artifacts.forScope(ScopedArtifacts.Scope.PROJECT)
-        .use(taskProvider)
-        .toReplace(
-            ScopedArtifact.CLASSES.INSTANCE,
-            { it.getOutput() }
-`
-
-## To Run
-./gradlew :app:assembleDebug
-expected result : all .class files are provided by the [ReplaceClassesTask] will be packaged in the
-resulting APK
-            """.trimIndent()
-        }
-        check {
-            assertNotNull(this)
-            Truth.assertThat(output).contains("interface class com.android.api.tests.SomeInterface")
-            Truth.assertThat(output).contains("BUILD SUCCESSFUL")
-            super.onVariantStats {
-                if (it.isDebug) {
-                    Truth.assertThat(it.variantApiAccess.variantPropertiesAccessList).hasSize(3)
-                    Truth.assertThat(it.variantApiAccess.getVariantPropertiesAccess(0).type)
-                        .isEqualTo(VariantPropertiesMethodType.ARTIFACTS_VALUE)
-                    Truth.assertThat(it.variantApiAccess.getVariantPropertiesAccess(1).type)
-                        .isEqualTo(VariantPropertiesMethodType.FOR_SCOPE_VALUE)
-                    Truth.assertThat(it.variantApiAccess.getVariantPropertiesAccess(2).type)
-                        .isEqualTo(VariantPropertiesMethodType.SCOPED_ARTIFACTS_TO_REPLACE_VALUE)
-                }
-            }
-            val outFolder = File(testProjectDir.root, "${testName.methodName}/app/build/outputs/apk/debug/")
-            Truth.assertThat(outFolder.listFiles()?.asList()?.map { it.name }).containsExactly(
-                "app-debug.apk", BuiltArtifactsImpl.METADATA_FILE_NAME
-            )
-            // check that resulting APK contains the newly added interface
-            val apk = File(outFolder, "app-debug.apk").toPath()
-            val byteArrayOutputStream = object : ByteArrayOutputStream() {
-                @Synchronized
-                override fun toString(): String =
-                    super.toString().replace(System.getProperty("line.separator"), "\n")
-            }
-            val ps = PrintStream(byteArrayOutputStream)
-            val apkAnalyzer = ApkAnalyzerImpl(ps, mock<AaptInvoker>())
-            apkAnalyzer.dexCode(apk, "com.android.api.tests.SomeInterface", null, null, null)
-            Truth.assertThat(byteArrayOutputStream.toString()).contains("SomeInterface")
-        }
+        """
+            .trimIndent()
+        testingElements.addManifest(this)
+      }
     }
+    withOptions(mapOf(BooleanOption.ENABLE_PROFILE_JSON to true))
+    withDocs {
+      index =
+        // language=markdown
+        """
+        # Scoped Artifacts toReplace Project classes in Groovy
+        This sample shows how to replace all the project classes that will be used to create the dex files.
 
+        The [onVariants] block will wire [ReplaceClassesTask]'s [output] folder to contain all the new
+        project classes :
+        `
+            variant.artifacts.forScope(ScopedArtifacts.Scope.PROJECT)
+                .use(taskProvider)
+                .toReplace(
+                    ScopedArtifact.CLASSES.INSTANCE,
+                    { it.getOutput() }
+        `
 
-    @Test
-    fun appendToProjectClasses() {
-        given {
-            tasksToInvoke.addAll(listOf("clean", ":app:assembleDebug"))
-            addClasspath("org.javassist:javassist:3.26.0-GA")
-            addModule(":app") {
-                addSource("src/main/java/com/android/api/tests/SomeSource.java", """
-                    package com.android.api.tests;
+        ## To Run
+        ./gradlew :app:assembleDebug
+        expected result : all .class files are provided by the [ReplaceClassesTask] will be packaged in the
+        resulting APK
+        """
+          .trimIndent()
+    }
+    check {
+      assertNotNull(this)
+      Truth.assertThat(output).contains("interface class com.android.api.tests.SomeInterface")
+      Truth.assertThat(output).contains("BUILD SUCCESSFUL")
+      super.onVariantStats {
+        if (it.isDebug) {
+          Truth.assertThat(it.variantApiAccess.variantPropertiesAccessList).hasSize(3)
+          Truth.assertThat(it.variantApiAccess.getVariantPropertiesAccess(0).type).isEqualTo(VariantPropertiesMethodType.ARTIFACTS_VALUE)
+          Truth.assertThat(it.variantApiAccess.getVariantPropertiesAccess(1).type).isEqualTo(VariantPropertiesMethodType.FOR_SCOPE_VALUE)
+          Truth.assertThat(it.variantApiAccess.getVariantPropertiesAccess(2).type)
+            .isEqualTo(VariantPropertiesMethodType.SCOPED_ARTIFACTS_TO_REPLACE_VALUE)
+        }
+      }
+      val outFolder = File(testProjectDir.root, "${testName.methodName}/app/build/outputs/apk/debug/")
+      Truth.assertThat(outFolder.listFiles()?.asList()?.map { it.name })
+        .containsExactly("app-debug.apk", BuiltArtifactsImpl.METADATA_FILE_NAME)
+      // check that resulting APK contains the newly added interface
+      val apk = File(outFolder, "app-debug.apk").toPath()
+      val byteArrayOutputStream =
+        object : ByteArrayOutputStream() {
+          @Synchronized override fun toString(): String = super.toString().replace(System.getProperty("line.separator"), "\n")
+        }
+      val ps = PrintStream(byteArrayOutputStream)
+      val apkAnalyzer = ApkAnalyzerImpl(ps, mock<AaptInvoker>())
+      apkAnalyzer.dexCode(apk, "com.android.api.tests.SomeInterface", null, null, null)
+      Truth.assertThat(byteArrayOutputStream.toString()).contains("SomeInterface")
+    }
+  }
 
-                    class SomeSource {
-                        public String toString() {
-                            return "Something !";
-                        }
-                    }
-                """.trimIndent())
-                @Suppress("RemoveExplicitTypeArguments")
-                buildFile =
-                        // language=java
-                    """
+  @Test
+  fun appendToProjectClasses() {
+    given {
+      tasksToInvoke.addAll(listOf("clean", ":app:assembleDebug"))
+      addClasspath("org.javassist:javassist:3.26.0-GA")
+      addModule(":app") {
+        addSource(
+          "src/main/java/com/android/api/tests/SomeSource.java",
+          """
+          package com.android.api.tests;
+
+          class SomeSource {
+              public String toString() {
+                  return "Something !";
+              }
+          }
+          """
+            .trimIndent(),
+        )
+        @Suppress("RemoveExplicitTypeArguments")
+        buildFile =
+          // language=java
+          """
             plugins {
                 id 'com.android.application'
             }
@@ -523,73 +533,72 @@ resulting APK
                         )
                 })
             }
-        """.trimIndent()
-                testingElements.addManifest(this)
-            }
-        }
-        withOptions(mapOf(BooleanOption.ENABLE_PROFILE_JSON to true))
-        withDocs {
-            index =
-                    // language=markdown
-                """
-# append ScopedArtifact in Kotlin
-This sample shows how to add new classes to the project.
-There are two lists that need to be used to obtain the complete set of classes because some
-classes are present as .class files in directories and others are present in jar files.
-Therefore, you must query both [ListProperty] of [Directory] and [RegularFile] to get the full list.
-
-In this example, we only query the [ListProperty] of [Directory] to invoke some bytecode
-instrumentation on classes.
-
-The Variant API provides a convenient API to transform bytecodes based on ASM but this example
-is using javassist to show how this can be done using a different bytecode enhancer.
-
-
-The [onVariants] block will wire the [AddClassesTask]'s [output] folder to append
-`toAppend(
-    ScopedArtifact.CLASSES,
-    taskProvider.flatMap(AddClassesTask::getOutput)
-)
-`
-
-## To Run
-./gradlew :app:assembleDebug
-expected result : a list of classes and jar files.
-            """.trimIndent()
-        }
-        check {
-            assertNotNull(this)
-            Truth.assertThat(output).contains("interface class com.android.api.tests.SomeInterface")
-            Truth.assertThat(output).contains("BUILD SUCCESSFUL")
-            super.onVariantStats {
-                if (it.isDebug) {
-                    Truth.assertThat(it.variantApiAccess.variantPropertiesAccessList).hasSize(3)
-                    Truth.assertThat(it.variantApiAccess.variantPropertiesAccessList
-                        .map(VariantPropertiesAccess::getType))
-                        .containsExactly(
-                            VariantPropertiesMethodType.ARTIFACTS_VALUE,
-                            VariantPropertiesMethodType.FOR_SCOPE_VALUE,
-                            VariantPropertiesMethodType.SCOPED_ARTIFACTS_APPEND_VALUE,
-                        )
-                }
-            }
-            val outFolder = File(testProjectDir.root, "${testName.methodName}/app/build/outputs/apk/debug/")
-            Truth.assertThat(outFolder.listFiles()?.asList()?.map { it.name }).containsExactly(
-                "app-debug.apk", BuiltArtifactsImpl.METADATA_FILE_NAME
-            )
-            // check that resulting APK contains the newly added interface
-            val apk = File(outFolder, "app-debug.apk").toPath()
-            val byteArrayOutputStream = object : ByteArrayOutputStream() {
-                @Synchronized
-                override fun toString(): String =
-                    super.toString().replace(System.getProperty("line.separator"), "\n")
-            }
-            val ps = PrintStream(byteArrayOutputStream)
-            val apkAnalyzer = ApkAnalyzerImpl(ps, mock<AaptInvoker>())
-            apkAnalyzer.dexCode(apk, "com.android.api.tests.SomeSource", null, null, null)
-            apkAnalyzer.dexCode(apk, "com.android.api.tests.SomeInterface", null, null, null)
-            Truth.assertThat(byteArrayOutputStream.toString()).contains("SomeSource")
-            Truth.assertThat(byteArrayOutputStream.toString()).contains("SomeInterface")
-        }
+        """
+            .trimIndent()
+        testingElements.addManifest(this)
+      }
     }
+    withOptions(mapOf(BooleanOption.ENABLE_PROFILE_JSON to true))
+    withDocs {
+      index =
+        // language=markdown
+        """
+        # append ScopedArtifact in Kotlin
+        This sample shows how to add new classes to the project.
+        There are two lists that need to be used to obtain the complete set of classes because some
+        classes are present as .class files in directories and others are present in jar files.
+        Therefore, you must query both [ListProperty] of [Directory] and [RegularFile] to get the full list.
+
+        In this example, we only query the [ListProperty] of [Directory] to invoke some bytecode
+        instrumentation on classes.
+
+        The Variant API provides a convenient API to transform bytecodes based on ASM but this example
+        is using javassist to show how this can be done using a different bytecode enhancer.
+
+
+        The [onVariants] block will wire the [AddClassesTask]'s [output] folder to append
+        `toAppend(
+            ScopedArtifact.CLASSES,
+            taskProvider.flatMap(AddClassesTask::getOutput)
+        )
+        `
+
+        ## To Run
+        ./gradlew :app:assembleDebug
+        expected result : a list of classes and jar files.
+        """
+          .trimIndent()
+    }
+    check {
+      assertNotNull(this)
+      Truth.assertThat(output).contains("interface class com.android.api.tests.SomeInterface")
+      Truth.assertThat(output).contains("BUILD SUCCESSFUL")
+      super.onVariantStats {
+        if (it.isDebug) {
+          Truth.assertThat(it.variantApiAccess.variantPropertiesAccessList).hasSize(3)
+          Truth.assertThat(it.variantApiAccess.variantPropertiesAccessList.map(VariantPropertiesAccess::getType))
+            .containsExactly(
+              VariantPropertiesMethodType.ARTIFACTS_VALUE,
+              VariantPropertiesMethodType.FOR_SCOPE_VALUE,
+              VariantPropertiesMethodType.SCOPED_ARTIFACTS_APPEND_VALUE,
+            )
+        }
+      }
+      val outFolder = File(testProjectDir.root, "${testName.methodName}/app/build/outputs/apk/debug/")
+      Truth.assertThat(outFolder.listFiles()?.asList()?.map { it.name })
+        .containsExactly("app-debug.apk", BuiltArtifactsImpl.METADATA_FILE_NAME)
+      // check that resulting APK contains the newly added interface
+      val apk = File(outFolder, "app-debug.apk").toPath()
+      val byteArrayOutputStream =
+        object : ByteArrayOutputStream() {
+          @Synchronized override fun toString(): String = super.toString().replace(System.getProperty("line.separator"), "\n")
+        }
+      val ps = PrintStream(byteArrayOutputStream)
+      val apkAnalyzer = ApkAnalyzerImpl(ps, mock<AaptInvoker>())
+      apkAnalyzer.dexCode(apk, "com.android.api.tests.SomeSource", null, null, null)
+      apkAnalyzer.dexCode(apk, "com.android.api.tests.SomeInterface", null, null, null)
+      Truth.assertThat(byteArrayOutputStream.toString()).contains("SomeSource")
+      Truth.assertThat(byteArrayOutputStream.toString()).contains("SomeInterface")
+    }
+  }
 }

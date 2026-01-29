@@ -18,7 +18,7 @@ package com.android.builder.model.v2.models
 
 import com.android.builder.model.v2.ide.ArtifactDependenciesAdjacencyList
 
-interface TestSuiteSourceDependenciesAdjacencyList: BaseTestSuiteSourceIdentity {
+interface TestSuiteSourceDependenciesAdjacencyList : BaseTestSuiteSourceIdentity {
 
-    val artifactDependencies: ArtifactDependenciesAdjacencyList
+  val artifactDependencies: ArtifactDependenciesAdjacencyList
 }

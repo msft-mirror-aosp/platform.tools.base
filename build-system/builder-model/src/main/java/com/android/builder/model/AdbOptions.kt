@@ -16,14 +16,12 @@
 
 package com.android.builder.model
 
-/**
- * Options for adb.
- */
+/** Options for adb. */
 interface AdbOptions {
 
-    /** The time out used for all adb operations. */
-    val timeOutInMs: Int
+  /** The time out used for all adb operations. */
+  val timeOutInMs: Int
 
-    /** The list of APK installation options. */
-    val installOptions: Collection<String>?
+  /** The list of APK installation options. */
+  val installOptions: Collection<String>?
 }

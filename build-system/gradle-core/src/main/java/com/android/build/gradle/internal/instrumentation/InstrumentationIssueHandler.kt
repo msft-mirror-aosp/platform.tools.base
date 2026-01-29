@@ -16,29 +16,25 @@
 
 package com.android.build.gradle.internal.instrumentation
 
-import org.gradle.api.logging.Logging
-import org.objectweb.asm.Type
 import java.io.Closeable
 import java.util.Collections
-import kotlin.math.min
+import org.gradle.api.logging.Logging
+import org.objectweb.asm.Type
 
-class InstrumentationIssueHandler: Closeable {
-    private val classesNotOnClasspath = Collections.synchronizedSet(mutableSetOf<String>())
-    private val logger = Logging.getLogger(this::class.java)
+class InstrumentationIssueHandler : Closeable {
+  private val classesNotOnClasspath = Collections.synchronizedSet(mutableSetOf<String>())
+  private val logger = Logging.getLogger(this::class.java)
 
-    fun warnAboutClassNotOnTheClasspath(classInternalName: String) {
-        classesNotOnClasspath.add(classInternalName)
-    }
+  fun warnAboutClassNotOnTheClasspath(classInternalName: String) {
+    classesNotOnClasspath.add(classInternalName)
+  }
 
-    override fun close() {
-        if (classesNotOnClasspath.isNotEmpty()) {
-            val classesToReport =
-                classesNotOnClasspath
-                    .take(MAX_NUMBER_OF_CLASSES_TO_REPORT)
-                    .map { Type.getObjectType(it).className }
+  override fun close() {
+    if (classesNotOnClasspath.isNotEmpty()) {
+      val classesToReport = classesNotOnClasspath.take(MAX_NUMBER_OF_CLASSES_TO_REPORT).map { Type.getObjectType(it).className }
 
-            logger.warn(
-                """
+      logger.warn(
+        """
                     ASM Instrumentation process wasn't able to resolve some classes, this means that
                     the instrumented classes might contain corrupt stack frames. Make sure the
                     dependencies that contain these classes are on the runtime or the provided
@@ -50,13 +46,14 @@ class InstrumentationIssueHandler: Closeable {
                     ${if (classesNotOnClasspath.size > MAX_NUMBER_OF_CLASSES_TO_REPORT) {
                         "-- ${classesNotOnClasspath.size - MAX_NUMBER_OF_CLASSES_TO_REPORT} more classes --\n"
                     } else ""}
-                """.trimIndent()
-            )
-            classesNotOnClasspath.clear()
-        }
+                """
+          .trimIndent()
+      )
+      classesNotOnClasspath.clear()
     }
+  }
 
-    companion object {
-        const val MAX_NUMBER_OF_CLASSES_TO_REPORT = 10
-    }
+  companion object {
+    const val MAX_NUMBER_OF_CLASSES_TO_REPORT = 10
+  }
 }

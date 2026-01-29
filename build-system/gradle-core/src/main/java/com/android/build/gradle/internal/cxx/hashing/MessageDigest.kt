@@ -20,27 +20,23 @@ import java.io.ByteArrayInputStream
 import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
 
-/**
- * Apply [String] to the [MessageDigest] hash.
- */
-fun MessageDigest.update(string : String) {
-    val stream = ByteArrayInputStream(string.toByteArray(StandardCharsets.UTF_8))
-    val block = ByteArray(16)
-    var length = stream.read(block)
-    while (length > 0) {
-        update(block, 0, length)
-        length = stream.read(block)
-    }
+/** Apply [String] to the [MessageDigest] hash. */
+fun MessageDigest.update(string: String) {
+  val stream = ByteArrayInputStream(string.toByteArray(StandardCharsets.UTF_8))
+  val block = ByteArray(16)
+  var length = stream.read(block)
+  while (length > 0) {
+    update(block, 0, length)
+    length = stream.read(block)
+  }
 }
 
-/**
- * Convert [MessageDigest] to base-36 [String].
- */
+/** Convert [MessageDigest] to base-36 [String]. */
 fun MessageDigest.toBase36(): String {
-    val sb = StringBuilder()
-    for (byte in digest()) {
-        val signExtended = byte - Byte.MIN_VALUE
-        sb.append(signExtended.toString(Character.MAX_RADIX))
-    }
-    return sb.toString()
+  val sb = StringBuilder()
+  for (byte in digest()) {
+    val signExtended = byte - Byte.MIN_VALUE
+    sb.append(signExtended.toString(Character.MAX_RADIX))
+  }
+  return sb.toString()
 }

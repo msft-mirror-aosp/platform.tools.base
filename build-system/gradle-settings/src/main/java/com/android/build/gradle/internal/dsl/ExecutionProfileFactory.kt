@@ -20,11 +20,10 @@ import com.android.build.api.dsl.ExecutionProfile
 import org.gradle.api.NamedDomainObjectFactory
 import org.gradle.api.model.ObjectFactory
 
-/** Factory to create ExecutionProfileExtension object using an [ObjectFactory] to add the DSL methods.  */
-class ExecutionProfileFactory(private val objectFactory: ObjectFactory) :
-    NamedDomainObjectFactory<ExecutionProfile> {
+/** Factory to create ExecutionProfileExtension object using an [ObjectFactory] to add the DSL methods. */
+class ExecutionProfileFactory(private val objectFactory: ObjectFactory) : NamedDomainObjectFactory<ExecutionProfile> {
 
-    override fun create(name: String): ExecutionProfile {
-        return objectFactory.newInstance(ExecutionProfileImpl::class.java, name, objectFactory)
-    }
+  override fun create(name: String): ExecutionProfile {
+    return objectFactory.newInstance(ExecutionProfileImpl::class.java, name, objectFactory)
+  }
 }

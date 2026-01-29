@@ -20,13 +20,13 @@ import com.android.ide.common.blame.MessageReceiver
 
 /** Parameters required for dexing (with D8). */
 class DexParameters(
-    val minSdkVersion: Int,
-    val debuggable: Boolean,
-    val dexPerClass: Boolean,
-    val withDesugaring: Boolean,
-    val desugarBootclasspath: com.android.builder.dexing.r8.ClassFileProviderFactory,
-    val desugarClasspath: com.android.builder.dexing.r8.ClassFileProviderFactory,
-    val coreLibDesugarConfig: String?,
-    val enableApiModeling: Boolean,
-    val messageReceiver: MessageReceiver
+  val minSdkVersion: Int,
+  val debuggable: Boolean,
+  val dexPerClass: Boolean,
+  val withDesugaring: Boolean,
+  val desugarBootclasspath: com.android.builder.dexing.r8.ClassFileProviderFactory,
+  val desugarClasspath: com.android.builder.dexing.r8.ClassFileProviderFactory,
+  val coreLibDesugarConfig: String?,
+  val enableApiModeling: Boolean,
+  val messageReceiver: MessageReceiver,
 )

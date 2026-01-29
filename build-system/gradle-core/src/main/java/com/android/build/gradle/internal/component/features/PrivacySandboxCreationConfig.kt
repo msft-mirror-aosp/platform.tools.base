@@ -16,6 +16,4 @@
 
 package com.android.build.gradle.internal.component.features
 
-interface PrivacySandboxCreationConfig {
-
-}
+interface PrivacySandboxCreationConfig {}

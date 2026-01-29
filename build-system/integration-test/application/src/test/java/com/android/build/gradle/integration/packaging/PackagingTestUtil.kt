@@ -22,107 +22,79 @@ import com.android.build.gradle.integration.common.fixture.project.GeneratesAar
 import com.android.build.gradle.integration.common.fixture.project.GeneratesApk
 import com.android.build.gradle.integration.common.output.AbstractAndroidArchiveSubject
 
-internal data class StringWithContent(
-    val name: String,
-    val content: String
-)
+internal data class StringWithContent(val name: String, val content: String)
 
 internal fun String.withContent(content: String) = StringWithContent(this, content)
 
 /**
  * Checks the DEBUG apk has the specific list of x86 jni libraries. The list must be exhaustive.
  *
- * @param itemList a list of items that must be present in the android archive. The list
- * can either contain [String] to just validate presence, or [StringWithContent] to validate
- * presence and content.
+ * @param itemList a list of items that must be present in the android archive. The list can either contain [String] to just validate
+ *   presence, or [StringWithContent] to validate presence and content.
  */
-internal fun GeneratesApk.checkApkJniLibs(
-    vararg itemList: Any
-) {
-    checkApkJniLibsForAbi("x86", *itemList)
+internal fun GeneratesApk.checkApkJniLibs(vararg itemList: Any) {
+  checkApkJniLibsForAbi("x86", *itemList)
 }
 
 /**
- * Checks the DEBUG apk has the specific list of jni libraries, for a given abi.
- * The list must be exhaustive.
+ * Checks the DEBUG apk has the specific list of jni libraries, for a given abi. The list must be exhaustive.
  *
  * @param abi the abi to check
- * @param itemList a list of items that must be present in the android archive. The list
- * can either contain [String] to just validate presence, or [StringWithContent] to validate
- * presence and content.
+ * @param itemList a list of items that must be present in the android archive. The list can either contain [String] to just validate
+ *   presence, or [StringWithContent] to validate presence and content.
  */
-internal fun GeneratesApk.checkApkJniLibsForAbi(
-    abi: String,
-    vararg itemList: Any
-) {
-    assertApk(ApkSelector.DEBUG) {
-        checkJniContent(abi, *itemList)
-    }
+internal fun GeneratesApk.checkApkJniLibsForAbi(abi: String, vararg itemList: Any) {
+  assertApk(ApkSelector.DEBUG) { checkJniContent(abi, *itemList) }
 }
 
 /**
- * Checks the DEBUG test apk has the specific list of x86 jni libraries. The list must be
- * exhaustive.
+ * Checks the DEBUG test apk has the specific list of x86 jni libraries. The list must be exhaustive.
  *
- * @param itemList a list of items that must be present in the android archive. The list
- * can either contain [String] to just validate presence, or [StringWithContent] to validate
- * presence and content.
+ * @param itemList a list of items that must be present in the android archive. The list can either contain [String] to just validate
+ *   presence, or [StringWithContent] to validate presence and content.
  */
-internal fun GeneratesApk.checkTestApkJniLibs(
-    vararg itemList: Any
-) {
-    assertApk(ApkSelector.ANDROIDTEST_DEBUG) {
-        checkJniContent("x86", *itemList)
-    }
+internal fun GeneratesApk.checkTestApkJniLibs(vararg itemList: Any) {
+  assertApk(ApkSelector.ANDROIDTEST_DEBUG) { checkJniContent("x86", *itemList) }
 }
 
 /**
  * Checks the DEBUG aar has the specific list of x86 jni libraries. The list must be exhaustive.
  *
- * @param itemList a list of items that must be present in the android archive. The list
- * can either contain [String] to just validate presence, or [StringWithContent] to validate
- * presence and content.
+ * @param itemList a list of items that must be present in the android archive. The list can either contain [String] to just validate
+ *   presence, or [StringWithContent] to validate presence and content.
  */
-internal fun GeneratesAar.checkAarJniLibs(
-    vararg itemList: Any
-) {
-    this.assertAar(AarSelector.DEBUG) {
-        checkJniContent("x86", *itemList)
-    }
+internal fun GeneratesAar.checkAarJniLibs(vararg itemList: Any) {
+  this.assertAar(AarSelector.DEBUG) { checkJniContent("x86", *itemList) }
 }
 
 /**
- * Checks the android archive has the specific list of jni libraries, for a given abi.
- * The list must be exhaustive.
+ * Checks the android archive has the specific list of jni libraries, for a given abi. The list must be exhaustive.
  *
  * @param this@checkAar the project
  * @param abi the abi to check
- * @param itemList a list of items that must be present in the android archive. The list
- * can either contain [String] to just validate presence, or [StringWithContent] to validate
- * presence and content.
+ * @param itemList a list of items that must be present in the android archive. The list can either contain [String] to just validate
+ *   presence, or [StringWithContent] to validate presence and content.
  */
-internal fun AbstractAndroidArchiveSubject<*, *>.checkJniContent(
-    abi: String,
-    vararg itemList: Any,
-) {
-    jniLibs().abi(abi) {
-        if (itemList.isEmpty()) {
-            isEmpty()
-        } else {
-            val itemsWithContent = itemList.mapNotNull { it as? StringWithContent }
-            val itemNames = itemList.map {
-                when (it) {
-                    is StringWithContent -> it.name
-                    is String -> it
-                    else -> throw RuntimeException("Unexpected type in itemList: ${it.javaClass}")
-                }
-            }
-
-            // check the list
-            containsExactly(itemNames)
-            for (item in itemsWithContent) {
-                bytesOf(item.name).isEqualTo(item.content.toByteArray())
-            }
+internal fun AbstractAndroidArchiveSubject<*, *>.checkJniContent(abi: String, vararg itemList: Any) {
+  jniLibs().abi(abi) {
+    if (itemList.isEmpty()) {
+      isEmpty()
+    } else {
+      val itemsWithContent = itemList.mapNotNull { it as? StringWithContent }
+      val itemNames =
+        itemList.map {
+          when (it) {
+            is StringWithContent -> it.name
+            is String -> it
+            else -> throw RuntimeException("Unexpected type in itemList: ${it.javaClass}")
+          }
         }
+
+      // check the list
+      containsExactly(itemNames)
+      for (item in itemsWithContent) {
+        bytesOf(item.name).isEqualTo(item.content.toByteArray())
+      }
     }
+  }
 }

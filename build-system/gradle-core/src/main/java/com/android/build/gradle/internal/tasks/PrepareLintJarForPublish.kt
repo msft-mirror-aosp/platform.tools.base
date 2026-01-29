@@ -38,53 +38,48 @@ import org.gradle.work.DisableCachingByDefault
 /**
  * Task that takes the configuration result, and check that it's correct.
  *
- * <p>Then copies it in the build folder to (re)publish it. This is not super efficient but because
- * publishing is done at config time when we don't know yet what lint.jar file we're going to
- * publish, we have to do this.
+ * <p>Then copies it in the build folder to (re)publish it. This is not super efficient but because publishing is done at config time when
+ * we don't know yet what lint.jar file we're going to publish, we have to do this.
  */
 @DisableCachingByDefault
 @BuildAnalyzer(primaryTaskCategory = TaskCategory.LINT)
 abstract class PrepareLintJarForPublish : NonIncrementalGlobalTask() {
 
-    @get:InputFiles
-    @get:PathSensitive(PathSensitivity.NONE)
-    abstract val lintChecks: ConfigurableFileCollection
+  @get:InputFiles @get:PathSensitive(PathSensitivity.NONE) abstract val lintChecks: ConfigurableFileCollection
 
-    @get:OutputFile
-    abstract val outputLintJar: RegularFileProperty
+  @get:OutputFile abstract val outputLintJar: RegularFileProperty
 
-    companion object {
-        const val NAME = "prepareLintJarForPublish"
+  companion object {
+    const val NAME = "prepareLintJarForPublish"
+  }
+
+  override fun doTaskAction() {
+    workerExecutor.noIsolation().submit(PublishLintJarWorkerRunnable::class.java) {
+      it.initializeWith(projectPath, path, analyticsService)
+      it.files.from(lintChecks)
+      it.outputLintJar.set(outputLintJar)
+    }
+  }
+
+  class CreationAction(private val creationConfig: GlobalTaskCreationConfig) : GlobalTaskCreationAction<PrepareLintJarForPublish>() {
+
+    override val name = NAME
+    override val type = PrepareLintJarForPublish::class.java
+
+    override fun handleProvider(taskProvider: TaskProvider<PrepareLintJarForPublish>) {
+      super.handleProvider(taskProvider)
+      creationConfig.globalArtifacts
+        .setInitialProvider(taskProvider, PrepareLintJarForPublish::outputLintJar)
+        .withName(FN_LINT_JAR)
+        .on(InternalArtifactType.LINT_PUBLISH_JAR)
     }
 
-    override fun doTaskAction() {
-        workerExecutor.noIsolation().submit(PublishLintJarWorkerRunnable::class.java) {
-            it.initializeWith(projectPath, path, analyticsService)
-            it.files.from(lintChecks)
-            it.outputLintJar.set(outputLintJar)
-        }
+    override fun configure(task: PrepareLintJarForPublish) {
+      super.configure(task)
+
+      task.lintChecks.fromDisallowChanges(creationConfig.getPublishedCustomLintChecks())
     }
-
-    class CreationAction(private val creationConfig: GlobalTaskCreationConfig) :
-        GlobalTaskCreationAction<PrepareLintJarForPublish>() {
-
-        override val name = NAME
-        override val type = PrepareLintJarForPublish::class.java
-
-        override fun handleProvider(taskProvider: TaskProvider<PrepareLintJarForPublish>) {
-            super.handleProvider(taskProvider)
-            creationConfig.globalArtifacts.setInitialProvider(
-                    taskProvider,
-                    PrepareLintJarForPublish::outputLintJar
-            ).withName(FN_LINT_JAR).on(InternalArtifactType.LINT_PUBLISH_JAR)
-        }
-
-        override fun configure(task: PrepareLintJarForPublish) {
-            super.configure(task)
-
-            task.lintChecks.fromDisallowChanges(creationConfig.getPublishedCustomLintChecks())
-        }
-    }
+  }
 }
 
 /**
@@ -93,17 +88,9 @@ abstract class PrepareLintJarForPublish : NonIncrementalGlobalTask() {
  * @return the resolved lint.jar ArtifactFile from the lint publishing configuration
  */
 fun GlobalTaskCreationConfig.getPublishedCustomLintChecks(): FileCollection {
-    // Query for JAR instead of PROCESSED_JAR as lint.jar doesn't need processing
-    val attributes =
-        Action { container: AttributeContainer ->
-            container.attribute(
-                AndroidArtifacts.ARTIFACT_TYPE, AndroidArtifacts.ArtifactType.JAR.type
-            )
-        }
-    return lintPublish
-        .incoming
-        .artifactView { it.attributes(attributes) }
-        .artifacts
-        .artifactFiles
+  // Query for JAR instead of PROCESSED_JAR as lint.jar doesn't need processing
+  val attributes = Action { container: AttributeContainer ->
+    container.attribute(AndroidArtifacts.ARTIFACT_TYPE, AndroidArtifacts.ArtifactType.JAR.type)
+  }
+  return lintPublish.incoming.artifactView { it.attributes(attributes) }.artifacts.artifactFiles
 }
-

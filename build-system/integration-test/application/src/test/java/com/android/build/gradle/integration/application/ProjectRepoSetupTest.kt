@@ -25,32 +25,25 @@ import org.junit.Test
 
 class ProjectRepoSetupTest {
 
-    @get:Rule
-    val rule = GradleRule.fromProject(BasicSpec()) {
-        androidApplication(":app") {
-            repositories {
-                flatDir {
-                    dirs += "libs"
-                }
-            }
-        }
-    }
+  @get:Rule val rule = GradleRule.fromProject(BasicSpec()) { androidApplication(":app") { repositories { flatDir { dirs += "libs" } } } }
 
-    @Test
-    fun testFlatDirWarning() {
-        val build = rule.build
+  @Test
+  fun testFlatDirWarning() {
+    val build = rule.build
 
-        build.executor.run("clean", "assembleDebug")
-        val onlyModel = build.modelBuilder
-                .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
-                .fetchModels()
-                .container
-        Truth.assertThat(onlyModel.getProject().issues!!.syncIssues.stream()
-                .map(SyncIssue::message)
-                .filter { syncIssues: String ->
-                    syncIssues.contains("flatDir")
-                }
-                .count().toInt())
-                .isEqualTo(1)
-    }
+    build.executor.run("clean", "assembleDebug")
+    val onlyModel = build.modelBuilder.ignoreSyncIssues(SyncIssue.SEVERITY_WARNING).fetchModels().container
+    Truth.assertThat(
+        onlyModel
+          .getProject()
+          .issues!!
+          .syncIssues
+          .stream()
+          .map(SyncIssue::message)
+          .filter { syncIssues: String -> syncIssues.contains("flatDir") }
+          .count()
+          .toInt()
+      )
+      .isEqualTo(1)
+  }
 }

@@ -16,4 +16,8 @@
 
 package com.android.build.gradle.internal.core
 
-enum class NativeBuiltType { CMAKE, NDK_BUILD, NINJA }
+enum class NativeBuiltType {
+  CMAKE,
+  NDK_BUILD,
+  NINJA,
+}

@@ -23,42 +23,34 @@ import org.gradle.api.Plugin
 import org.gradle.api.Project
 
 /**
- * A Custom plugin to be used with [LegacyLibraryCallback] in projects created
- * by [GradleRule].
+ * A Custom plugin to be used with [LegacyLibraryCallback] in projects created by [GradleRule].
  *
- * Do not extend this. Instead, implement [LegacyLibraryCallback] and register the implementation
- * class to [com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectDefinition.pluginCallbacks]
+ * Do not extend this. Instead, implement [LegacyLibraryCallback] and register the implementation class to
+ * [com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectDefinition.pluginCallbacks]
  *
  * This class is automatically decorated to call the callback at runtime.
  */
-abstract class LegacyLibraryCallbackPlugin: Plugin<Project> {
-    override fun apply(target: Project) {
-        target.plugins.withType(LibraryPlugin::class.java) {
-            val androidExtension = target.extensions.getByType(com.android.build.api.dsl.LibraryExtension::class.java)
+abstract class LegacyLibraryCallbackPlugin : Plugin<Project> {
+  override fun apply(target: Project) {
+    target.plugins.withType(LibraryPlugin::class.java) {
+      val androidExtension = target.extensions.getByType(com.android.build.api.dsl.LibraryExtension::class.java)
 
-            val androidExtensionImpl = androidExtension as LibraryExtension
-            handleExtension(target, androidExtensionImpl)
-        }
+      val androidExtensionImpl = androidExtension as LibraryExtension
+      handleExtension(target, androidExtensionImpl)
     }
+  }
 
-    abstract fun handleExtension(
-        project: Project,
-        extension: LibraryExtension
-    )
+  abstract fun handleExtension(project: Project, extension: LibraryExtension)
 }
 
 /**
- * interface to implement to provide custom plugin logic to a [GradleRule] project
- * of type Android Library
+ * interface to implement to provide custom plugin logic to a [GradleRule] project of type Android Library
  *
  * This allows using the legacy DSL using internal types rather than the public extension
  */
-interface LegacyLibraryCallback: PluginCallback {
-    fun handleExtension(
-        project: Project,
-        extension: LibraryExtension
-    )
+interface LegacyLibraryCallback : PluginCallback {
+  fun handleExtension(project: Project, extension: LibraryExtension)
 
-    override val requiresOldVariantApi: Boolean
-        get() = true
+  override val requiresOldVariantApi: Boolean
+    get() = true
 }

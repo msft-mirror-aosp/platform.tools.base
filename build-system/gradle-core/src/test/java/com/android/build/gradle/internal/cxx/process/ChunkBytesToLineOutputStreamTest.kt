@@ -18,52 +18,59 @@ package com.android.build.gradle.internal.cxx.process
 
 import com.android.utils.cxx.process.LineOutputStream
 import com.google.common.truth.Truth.assertThat
-import org.junit.Test
 import java.io.PrintWriter
+import org.junit.Test
 
 class ChunkBytesToLineOutputStreamTest {
 
-    @Test
-    fun basic() {
-        val sb = StringBuilder()
-        val out = ChunkBytesToLineOutputStream(
-            "",
-            object: LineOutputStream {
-                override fun consume(line: String) { sb.append("->$line<-") }
-                override fun close() { }
-            }
-        )
-        PrintWriter(out).use { p -> p.println("Hello") }
-        assertThat(sb.toString()).isEqualTo("->Hello<-")
-    }
+  @Test
+  fun basic() {
+    val sb = StringBuilder()
+    val out =
+      ChunkBytesToLineOutputStream(
+        "",
+        object : LineOutputStream {
+          override fun consume(line: String) {
+            sb.append("->$line<-")
+          }
 
-    @Test
-    fun fuzz() {
-        for (lf in listOf("\r", "\n", "\r\n")) {
-            val string = "a{lf}bb{lf}ccc{lf}dddd{lf}"
-            val replaced = string.replace("{lf}", lf)
+          override fun close() {}
+        },
+      )
+    PrintWriter(out).use { p -> p.println("Hello") }
+    assertThat(sb.toString()).isEqualTo("->Hello<-")
+  }
 
+  @Test
+  fun fuzz() {
+    for (lf in listOf("\r", "\n", "\r\n")) {
+      val string = "a{lf}bb{lf}ccc{lf}dddd{lf}"
+      val replaced = string.replace("{lf}", lf)
 
-            for (i in 0 until replaced.length) {
-                val left = replaced.substring(0..i)
-                val right = replaced.substring(i+1 until replaced.length)
-                for (start in 1..100) {
-                    val sb = StringBuilder()
-                    val out = ChunkBytesToLineOutputStream(
-                        "@",
-                        object: LineOutputStream {
-                            override fun consume(line: String) { sb.append("->$line<-") }
-                            override fun close() { }
-                        },
-                        start
-                    )
-                    PrintWriter(out).use { p ->
-                        p.print(left)
-                        p.print(right)
-                    }
-                    assertThat(sb.toString()).isEqualTo("->@a<-->@bb<-->@ccc<-->@dddd<-")
+      for (i in 0 until replaced.length) {
+        val left = replaced.substring(0..i)
+        val right = replaced.substring(i + 1 until replaced.length)
+        for (start in 1..100) {
+          val sb = StringBuilder()
+          val out =
+            ChunkBytesToLineOutputStream(
+              "@",
+              object : LineOutputStream {
+                override fun consume(line: String) {
+                  sb.append("->$line<-")
                 }
-            }
+
+                override fun close() {}
+              },
+              start,
+            )
+          PrintWriter(out).use { p ->
+            p.print(left)
+            p.print(right)
+          }
+          assertThat(sb.toString()).isEqualTo("->@a<-->@bb<-->@ccc<-->@dddd<-")
         }
+      }
     }
+  }
 }

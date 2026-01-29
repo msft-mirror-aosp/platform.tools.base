@@ -21,19 +21,18 @@ import org.junit.Test
 
 class BazelTargetTest {
 
-    /**
-     * Regression test for b/171017713.
-     *
-     * This test prevents someone adding a new test file without also adding a corresponding bazel
-     * target.
-     */
-    @Test
-    fun testBazelTargetsMatchTestSourceFiles() {
-        checkBazelTargetsMatchTestSourceFiles(
-            "tools/base/build-system/integration-test/native/src/test",
-            "tools/base/build-system/integration-test/native/BUILD.bazel",
-            ignoredBazelTargets = listOf("all_test_files", "prebuilts"),
-            ignoreTestSourceFiles = listOf("AbstractModuleToModuleDepsTest")
-        )
-    }
+  /**
+   * Regression test for b/171017713.
+   *
+   * This test prevents someone adding a new test file without also adding a corresponding bazel target.
+   */
+  @Test
+  fun testBazelTargetsMatchTestSourceFiles() {
+    checkBazelTargetsMatchTestSourceFiles(
+      "tools/base/build-system/integration-test/native/src/test",
+      "tools/base/build-system/integration-test/native/BUILD.bazel",
+      ignoredBazelTargets = listOf("all_test_files", "prebuilts"),
+      ignoreTestSourceFiles = listOf("AbstractModuleToModuleDepsTest"),
+    )
+  }
 }

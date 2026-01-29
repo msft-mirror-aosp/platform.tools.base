@@ -26,51 +26,46 @@ import org.junit.Test
 import org.junit.rules.ExternalResource
 
 class BasicConnectedTest {
-    companion object {
-        @JvmField
-        @ClassRule
-        val emulator: ExternalResource = getEmulator()
-    }
+  companion object {
+    @JvmField @ClassRule val emulator: ExternalResource = getEmulator()
+  }
 
-    @get:Rule
-    val rule = GradleRule.fromProject(BasicSpec()) {
-        androidApplication(":app") {
-            android {
-                installation {
-                    // fail fast (30s) if no response
-                    timeOutInMs = 30000
-                }
-            }
+  @get:Rule
+  val rule =
+    GradleRule.fromProject(BasicSpec()) {
+      androidApplication(":app") {
+        android {
+          installation {
+            // fail fast (30s) if no response
+            timeOutInMs = 30000
+          }
         }
+      }
     }
 
-    fun GradleBuild.uninstall() {
-        // run the uninstall tasks in order to (1) make sure nothing is installed at the beginning
-        // of each test and (2) check the adb connection before taking the time to build anything.
-        this.executor.run("uninstallAll")
-    }
+  fun GradleBuild.uninstall() {
+    // run the uninstall tasks in order to (1) make sure nothing is installed at the beginning
+    // of each test and (2) check the adb connection before taking the time to build anything.
+    this.executor.run("uninstallAll")
+  }
 
-    @Test
-    @Throws(Exception::class)
-    fun install() {
-        val build = rule.build {
-            gradleProperties {
-                add(BooleanOption.PRIVACY_SANDBOX_SDK_SUPPORT, false)
-            }
-        }
+  @Test
+  @Throws(Exception::class)
+  fun install() {
+    val build = rule.build { gradleProperties { add(BooleanOption.PRIVACY_SANDBOX_SDK_SUPPORT, false) } }
 
-        build.uninstall()
+    build.uninstall()
 
-        build.executor.run("installDebug", "uninstallAll")
-        // b/37498215 - Try again.  Behavior may be different when tasks are up-to-date.
-        build.executor.run("installDebug", "uninstallAll")
-    }
+    build.executor.run("installDebug", "uninstallAll")
+    // b/37498215 - Try again.  Behavior may be different when tasks are up-to-date.
+    build.executor.run("installDebug", "uninstallAll")
+  }
 
-    @Test
-    @Throws(Exception::class)
-    fun connectedCheck() {
-        val build = rule.build
-        build.uninstall()
-        build.executor.run("connectedCheck")
-    }
+  @Test
+  @Throws(Exception::class)
+  fun connectedCheck() {
+    val build = rule.build
+    build.uninstall()
+    build.executor.run("connectedCheck")
+  }
 }

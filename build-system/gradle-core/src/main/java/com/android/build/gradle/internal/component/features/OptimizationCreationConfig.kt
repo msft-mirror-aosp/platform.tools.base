@@ -19,50 +19,37 @@ package com.android.build.gradle.internal.component.features
 import org.gradle.api.file.RegularFile
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Provider
-import java.io.File
 
 /**
  * Creation config for components that support minification/shrinking.
  *
  * To use this in a task that requires minification support, use
- * [com.android.build.gradle.internal.tasks.factory.features.OptimizationTaskCreationAction].
- * Otherwise, access the nullable property on the component
- * [com.android.build.gradle.internal.component.ConsumableCreationConfig.optimizationCreationConfig].
+ * [com.android.build.gradle.internal.tasks.factory.features.OptimizationTaskCreationAction]. Otherwise, access the nullable property on the
+ * component [com.android.build.gradle.internal.component.ConsumableCreationConfig.optimizationCreationConfig].
  */
 interface OptimizationCreationConfig {
 
-    val proguardFiles: ListProperty<RegularFile>
+  val proguardFiles: ListProperty<RegularFile>
 
-    /** Consumer Proguard files with task dependencies. */
-    val consumerProguardFiles: ListProperty<RegularFile>
+  /** Consumer Proguard files with task dependencies. */
+  val consumerProguardFiles: ListProperty<RegularFile>
 
-    /**
-     * Returns the component ids of those library dependencies whose keep rules are ignored when
-     * building the project.
-     */
-    val ignoreFromInKeepRules: Provider<List<String>>
+  /** Returns the component ids of those library dependencies whose keep rules are ignored when building the project. */
+  val ignoreFromInKeepRules: Provider<List<String>>
 
-    /**
-     * Returns whether to ignore all keep rules from external library dependencies.
-     */
-    val ignoreFromAllExternalDependenciesInKeepRules: Boolean
+  /** Returns whether to ignore all keep rules from external library dependencies. */
+  val ignoreFromAllExternalDependenciesInKeepRules: Boolean
 
-    /**
-     * Returns the external dependencies to ignore in baseline profiles.
-     */
-    val ignoreFromInBaselineProfile: Provider<Set<String>>
+  /** Returns the external dependencies to ignore in baseline profiles. */
+  val ignoreFromInBaselineProfile: Provider<Set<String>>
 
-    /**
-     * Returns whether to ignore all external dependencies in baseline profiles.
-     */
-    val ignoreFromAllExternalDependenciesInBaselineProfile: Boolean
+  /** Returns whether to ignore all external dependencies in baseline profiles. */
+  val ignoreFromAllExternalDependenciesInBaselineProfile: Boolean
 
-    val minifiedEnabled: Boolean
-    val resourcesShrink: Boolean
+  val minifiedEnabled: Boolean
+  val resourcesShrink: Boolean
 
-    /**
-     * New optimization API that enables gradual R8
-     */
-    val applicationOptimizationEnabled: Boolean
-    val includePackages: Provider<Set<String>>
+  /** New optimization API that enables gradual R8 */
+  val applicationOptimizationEnabled: Boolean
+  val includePackages: Provider<Set<String>>
 }

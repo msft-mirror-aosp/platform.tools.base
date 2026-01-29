@@ -21,4 +21,4 @@ import com.android.build.gradle.internal.services.DslServices
 import javax.inject.Inject
 
 abstract class DynamicFeatureInstallationImpl @Inject constructor(dslServices: DslServices) :
-    DynamicFeatureInstallation, AdbOptions(dslServices)
+  DynamicFeatureInstallation, AdbOptions(dslServices)

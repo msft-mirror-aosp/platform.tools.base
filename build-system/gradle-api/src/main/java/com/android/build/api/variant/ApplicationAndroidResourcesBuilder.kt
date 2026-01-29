@@ -19,17 +19,13 @@ package com.android.build.api.variant
 import org.gradle.api.Incubating
 
 /**
- * Build-time properties for Android Resources inside a [Component].
- * Specialization of [AndroidResourcesBuilder] for modules that applied the `com.android.application` plugin.
+ * Build-time properties for Android Resources inside a [Component]. Specialization of [AndroidResourcesBuilder] for modules that applied
+ * the `com.android.application` plugin.
  *
  * This is accessed via [ApplicationVariantBuilder.androidResources]
  */
 @Incubating
-interface ApplicationAndroidResourcesBuilder: AndroidResourcesBuilder {
-    /**
-     * Property that automatically generates locale config when enabled.
-     */
-    @get:Incubating
-    @set:Incubating
-    var generateLocaleConfig: Boolean
+interface ApplicationAndroidResourcesBuilder : AndroidResourcesBuilder {
+  /** Property that automatically generates locale config when enabled. */
+  @get:Incubating @set:Incubating var generateLocaleConfig: Boolean
 }

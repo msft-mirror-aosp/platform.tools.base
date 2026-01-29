@@ -16,61 +16,56 @@
 
 package com.android.build.gradle.internal.services
 
+import java.util.concurrent.ConcurrentHashMap
 import org.gradle.api.Project
 import org.gradle.api.services.BuildService
 import org.gradle.api.services.BuildServiceParameters
-import java.util.concurrent.ConcurrentHashMap
 
-/**
- * *Global* [BuildService] (see [GlobalServiceRegistrationAction]), which allows running an action
- * only once per build.
- */
+/** *Global* [BuildService] (see [GlobalServiceRegistrationAction]), which allows running an action only once per build. */
 interface RunOnceBuildService {
 
-    /**
-     * Runs the action with the given [name] and [scope] only once (i.e., if the same action was
-     * already performed before, calling this method will be a no-op).
-     *
-     * The [scope] is used to prevent two unrelated actions having the same name by accident. It is
-     * usually the fully qualified name of the containing class of the action.
-     */
-    fun runOnce(name: String, scope: String, action: () -> Unit) {
-        if (getOrSetActionPerformed(name, scope)) return
-        action()
-    }
+  /**
+   * Runs the action with the given [name] and [scope] only once (i.e., if the same action was already performed before, calling this method
+   * will be a no-op).
+   *
+   * The [scope] is used to prevent two unrelated actions having the same name by accident. It is usually the fully qualified name of the
+   * containing class of the action.
+   */
+  fun runOnce(name: String, scope: String, action: () -> Unit) {
+    if (getOrSetActionPerformed(name, scope)) return
+    action()
+  }
 
-    /**
-     * Returns `true` if the action with the given [name] and [scope] has been performed. Otherwise,
-     * set the action as performed, and return `false` (subsequent calls to this method for that
-     * action will return `true`).
-     *
-     * The [scope] is used to prevent two unrelated actions having the same name by accident. It is
-     * usually the fully qualified name of the containing class of the action.
-     */
-    fun getOrSetActionPerformed(name: String, scope: String): Boolean
+  /**
+   * Returns `true` if the action with the given [name] and [scope] has been performed. Otherwise, set the action as performed, and return
+   * `false` (subsequent calls to this method for that action will return `true`).
+   *
+   * The [scope] is used to prevent two unrelated actions having the same name by accident. It is usually the fully qualified name of the
+   * containing class of the action.
+   */
+  fun getOrSetActionPerformed(name: String, scope: String): Boolean
 }
 
-/**
- * *Global* [BuildService] (see [GlobalServiceRegistrationAction]), which allows running an action
- * only once per build.
- */
+/** *Global* [BuildService] (see [GlobalServiceRegistrationAction]), which allows running an action only once per build. */
 abstract class RunOnceBuildServiceImpl : BuildService<BuildServiceParameters.None>, RunOnceBuildService {
 
-    private data class ActionName(val name: String, val scope: String)
+  private data class ActionName(val name: String, val scope: String)
 
-    private val performedActions = ConcurrentHashMap.newKeySet<ActionName>()
+  private val performedActions = ConcurrentHashMap.newKeySet<ActionName>()
 
-    override fun getOrSetActionPerformed(name: String, scope: String): Boolean {
-        return !performedActions.add(ActionName(name, scope))
+  override fun getOrSetActionPerformed(name: String, scope: String): Boolean {
+    return !performedActions.add(ActionName(name, scope))
+  }
+
+  class RegistrationAction(project: Project) :
+    GlobalServiceRegistrationAction<RunOnceBuildService, RunOnceBuildServiceImpl, BuildServiceParameters.None>(
+      project,
+      RunOnceBuildService::class.java,
+      RunOnceBuildServiceImpl::class.java,
+    ) {
+
+    override fun configure(parameters: BuildServiceParameters.None) {
+      // Do nothing
     }
-
-    class RegistrationAction(project: Project)
-        : GlobalServiceRegistrationAction<RunOnceBuildService, RunOnceBuildServiceImpl, BuildServiceParameters.None>(
-            project, RunOnceBuildService::class.java, RunOnceBuildServiceImpl::class.java) {
-
-        override fun configure(parameters: BuildServiceParameters.None) {
-            // Do nothing
-        }
-    }
-
+  }
 }

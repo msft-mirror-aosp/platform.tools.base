@@ -21,6 +21,7 @@ import com.android.build.gradle.internal.testing.utp.worker.RunUtpWorkAction
 import com.android.tools.utp.gradle.api.RunUtpWorkParameters
 import com.android.tools.utp.gradle.api.UtpDependencies
 import com.google.common.truth.Truth.assertThat
+import java.io.File
 import org.gradle.workers.WorkQueue
 import org.gradle.workers.WorkerExecutor
 import org.junit.Before
@@ -32,63 +33,55 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
-import java.io.File
 
 private const val TEST_RESULT_EXIT_CODE_FILE_NAME = "test-result-exit-code.txt"
 
-/**
- * Unit tests for UtpTestUtils.kt.
- */
+/** Unit tests for UtpTestUtils.kt. */
 class UtpTestUtilsTest {
-    @get:Rule
-    val temporaryFolderRule = TemporaryFolder()
+  @get:Rule val temporaryFolderRule = TemporaryFolder()
 
-    private val mockUtpDependencies: UtpDependencies = mock(defaultAnswer = RETURNS_DEEP_STUBS)
-    private val mockWorkerExecutor: WorkerExecutor = mock()
-    private val mockVersionedSdkLoader: SdkComponentsBuildService.VersionedSdkLoader = mock()
-    private val mockWorkQueue: WorkQueue = mock()
+  private val mockUtpDependencies: UtpDependencies = mock(defaultAnswer = RETURNS_DEEP_STUBS)
+  private val mockWorkerExecutor: WorkerExecutor = mock()
+  private val mockVersionedSdkLoader: SdkComponentsBuildService.VersionedSdkLoader = mock()
+  private val mockWorkQueue: WorkQueue = mock()
 
-    @Before
-    fun setupMocks() {
-        whenever(mockWorkerExecutor.classLoaderIsolation(any()))
-            .thenReturn(mockWorkQueue)
+  @Before
+  fun setupMocks() {
+    whenever(mockWorkerExecutor.classLoaderIsolation(any())).thenReturn(mockWorkQueue)
+  }
+
+  private fun runUtp(expectedResultCode: Int = 0): Boolean {
+    val utpResultDir = temporaryFolderRule.newFolder()
+
+    val config: RunUtpWorkParameters.UtpRunConfig = mock(defaultAnswer = RETURNS_DEEP_STUBS)
+    whenever(config.utpResultProtoOutputFile.asFile.get()).thenReturn(File(utpResultDir, TEST_RESULT_EXIT_CODE_FILE_NAME))
+
+    whenever(mockWorkQueue.submit(eq(RunUtpWorkAction::class.java), any())).then {
+      File(utpResultDir, TEST_RESULT_EXIT_CODE_FILE_NAME).writeBytes(expectedResultCode.toString().toByteArray())
     }
 
-    private fun runUtp(
-        expectedResultCode: Int = 0,
-    ): Boolean {
-        val utpResultDir = temporaryFolderRule.newFolder()
+    return runUtpTestSuiteAndWait(
+      listOf(config),
+      mockWorkerExecutor,
+      "projectName",
+      "variantName",
+      utpResultDir,
+      mockUtpDependencies,
+      mockVersionedSdkLoader,
+    )
+  }
 
-        val config: RunUtpWorkParameters.UtpRunConfig = mock(defaultAnswer = RETURNS_DEEP_STUBS)
-        whenever(config.utpResultProtoOutputFile.asFile.get()).thenReturn(File(utpResultDir, TEST_RESULT_EXIT_CODE_FILE_NAME))
+  @Test
+  fun runSuccessfully() {
+    val results = runUtp()
 
-        whenever(mockWorkQueue.submit(eq(RunUtpWorkAction::class.java), any())).then {
-            File(utpResultDir, TEST_RESULT_EXIT_CODE_FILE_NAME)
-                .writeBytes(expectedResultCode.toString().toByteArray())
-        }
+    assertThat(results).isTrue()
+  }
 
-        return runUtpTestSuiteAndWait(
-            listOf(config),
-            mockWorkerExecutor,
-            "projectName",
-            "variantName",
-            utpResultDir,
-            mockUtpDependencies,
-            mockVersionedSdkLoader,
-        )
-    }
+  @Test
+  fun runSuccessfullyButTestFailed() {
+    val results = runUtp(expectedResultCode = 1)
 
-    @Test
-    fun runSuccessfully() {
-        val results = runUtp()
-
-        assertThat(results).isTrue()
-    }
-
-    @Test
-    fun runSuccessfullyButTestFailed() {
-        val results = runUtp(expectedResultCode = 1)
-
-        assertThat(results).isFalse()
-    }
+    assertThat(results).isFalse()
+  }
 }

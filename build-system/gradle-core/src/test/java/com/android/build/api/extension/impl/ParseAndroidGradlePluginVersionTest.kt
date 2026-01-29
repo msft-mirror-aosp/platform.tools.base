@@ -21,36 +21,32 @@ import com.android.build.api.extension.impl.CurrentAndroidGradlePluginVersion.CU
 import com.android.build.api.extension.impl.CurrentAndroidGradlePluginVersion.parseAndroidGradlePluginVersion
 import com.google.common.truth.Expect
 import com.google.common.truth.Truth.assertThat
+import kotlin.test.assertFailsWith
 import org.junit.Rule
 import org.junit.Test
-import kotlin.test.assertFailsWith
 
 class ParseAndroidGradlePluginVersionTest {
 
-    @get:Rule
-    val expect = Expect.create()
+  @get:Rule val expect = Expect.create()
 
-    @Test
-    fun parseVersion() {
-        expect.that(parseAndroidGradlePluginVersion("4.0.0-alpha04")).isEqualTo(AndroidPluginVersion(4, 0).alpha(4))
-        expect.that(parseAndroidGradlePluginVersion("4.0.0-beta02")).isEqualTo(AndroidPluginVersion(4, 0).beta(2))
-        expect.that(parseAndroidGradlePluginVersion("4.0.0-rc01")).isEqualTo(AndroidPluginVersion(4, 0).rc(1))
-        expect.that(parseAndroidGradlePluginVersion("4.0.0-dev")).isEqualTo(AndroidPluginVersion(4, 0).dev())
-        expect.that(parseAndroidGradlePluginVersion("4.0.0")).isEqualTo(AndroidPluginVersion(4, 0))
-        expect.that(parseAndroidGradlePluginVersion("4.0.1")).isEqualTo(AndroidPluginVersion(4, 0, 1))
-        expect.that(parseAndroidGradlePluginVersion("4.1.0")).isEqualTo(AndroidPluginVersion(4, 1, 0))
-    }
+  @Test
+  fun parseVersion() {
+    expect.that(parseAndroidGradlePluginVersion("4.0.0-alpha04")).isEqualTo(AndroidPluginVersion(4, 0).alpha(4))
+    expect.that(parseAndroidGradlePluginVersion("4.0.0-beta02")).isEqualTo(AndroidPluginVersion(4, 0).beta(2))
+    expect.that(parseAndroidGradlePluginVersion("4.0.0-rc01")).isEqualTo(AndroidPluginVersion(4, 0).rc(1))
+    expect.that(parseAndroidGradlePluginVersion("4.0.0-dev")).isEqualTo(AndroidPluginVersion(4, 0).dev())
+    expect.that(parseAndroidGradlePluginVersion("4.0.0")).isEqualTo(AndroidPluginVersion(4, 0))
+    expect.that(parseAndroidGradlePluginVersion("4.0.1")).isEqualTo(AndroidPluginVersion(4, 0, 1))
+    expect.that(parseAndroidGradlePluginVersion("4.1.0")).isEqualTo(AndroidPluginVersion(4, 1, 0))
+  }
 
-    @Test
-    fun parseInvalidVersion() {
-        assertFailsWith<IllegalArgumentException> {
-            parseAndroidGradlePluginVersion("4.0.0-foo05")
-        }
-    }
+  @Test
+  fun parseInvalidVersion() {
+    assertFailsWith<IllegalArgumentException> { parseAndroidGradlePluginVersion("4.0.0-foo05") }
+  }
 
-
-    @Test
-    fun `current android gradle plugin version`() {
-        assertThat(CURRENT_AGP_VERSION).isNotNull()
-    }
+  @Test
+  fun `current android gradle plugin version`() {
+    assertThat(CURRENT_AGP_VERSION).isNotNull()
+  }
 }

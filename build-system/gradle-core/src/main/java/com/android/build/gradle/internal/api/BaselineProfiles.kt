@@ -19,25 +19,15 @@ package com.android.build.gradle.internal.api
 import java.io.File
 
 class BaselineProfiles {
-    companion object {
+  companion object {
 
-        /**
-         * Returns true if the file should be merged as part of the human readable art profile
-         * merging.
-         */
-        fun shouldBeMergedIntoArtProfile(file: File): Boolean =
-            file.name != StartupProfileFileName
+    /** Returns true if the file should be merged as part of the human readable art profile merging. */
+    fun shouldBeMergedIntoArtProfile(file: File): Boolean = file.name != StartupProfileFileName
 
-        /**
-         * File name for files containing human readable instructions for the baseline binary
-         * generation.
-         */
-        const val BaselineProfileFileName = "baseline-prof.txt"
+    /** File name for files containing human readable instructions for the baseline binary generation. */
+    const val BaselineProfileFileName = "baseline-prof.txt"
 
-        /**
-         * File name for files containing list of classes used during startup to optimize dex layout
-         * during R8 minification.
-         */
-        const val StartupProfileFileName = "startup-prof.txt"
-    }
+    /** File name for files containing list of classes used during startup to optimize dex layout during R8 minification. */
+    const val StartupProfileFileName = "startup-prof.txt"
+  }
 }

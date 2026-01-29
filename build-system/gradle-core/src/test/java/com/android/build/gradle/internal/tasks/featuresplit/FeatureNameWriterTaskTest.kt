@@ -17,46 +17,42 @@
 package com.android.build.gradle.internal.tasks.featuresplit
 
 import com.google.common.truth.Truth.assertThat
-
 import java.io.File
 import java.io.IOException
 import org.apache.commons.io.FileUtils
 import org.gradle.api.Project
 import org.gradle.testfixtures.ProjectBuilder
-import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
-import java.util.function.Supplier
 
-/** Tests for the [FeatureNameWriterTask]  */
+/** Tests for the [FeatureNameWriterTask] */
 class FeatureNameWriterTaskTest {
-    @get:Rule
-    val temporaryFolder = TemporaryFolder()
+  @get:Rule val temporaryFolder = TemporaryFolder()
 
-    internal lateinit var project: Project
-    internal lateinit var task: FeatureNameWriterTask
-    internal lateinit var outputFile: File
+  internal lateinit var project: Project
+  internal lateinit var task: FeatureNameWriterTask
+  internal lateinit var outputFile: File
 
-    @Before
-    @Throws(IOException::class)
-    fun setUp() {
-        val testDir = temporaryFolder.newFolder()
-        outputFile = temporaryFolder.newFile()
-        project = ProjectBuilder.builder().withProjectDir(testDir).build()
+  @Before
+  @Throws(IOException::class)
+  fun setUp() {
+    val testDir = temporaryFolder.newFolder()
+    outputFile = temporaryFolder.newFile()
+    project = ProjectBuilder.builder().withProjectDir(testDir).build()
 
-        task = project.tasks.create("test", FeatureNameWriterTask::class.java)
-        task.outputFile.set(outputFile)
-    }
+    task = project.tasks.create("test", FeatureNameWriterTask::class.java)
+    task.outputFile.set(outputFile)
+  }
 
-    @Test
-    @Throws(IOException::class)
-    fun testTask() {
-        task.featureName.set("someFeature")
-        task.doTaskAction()
-        assertThat(outputFile.exists()).isTrue()
+  @Test
+  @Throws(IOException::class)
+  fun testTask() {
+    task.featureName.set("someFeature")
+    task.doTaskAction()
+    assertThat(outputFile.exists()).isTrue()
 
-        assertThat(FileUtils.readFileToString(outputFile)).isEqualTo("someFeature")
-    }
+    assertThat(FileUtils.readFileToString(outputFile)).isEqualTo("someFeature")
+  }
 }

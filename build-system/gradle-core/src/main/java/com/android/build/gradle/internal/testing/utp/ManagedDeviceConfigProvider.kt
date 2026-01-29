@@ -19,42 +19,32 @@ package com.android.build.gradle.internal.testing.utp
 import com.android.builder.testing.api.DeviceConfigProvider
 
 /**
- * Implementation of [DeviceConfigProvider] using a [UtpManagedDevice] defined from the
- * Virtual managed device dsl.
+ * Implementation of [DeviceConfigProvider] using a [UtpManagedDevice] defined from the Virtual managed device dsl.
  *
- * The device config provider is meant to have the equivalent of an "empty" configuration
- * with the noticeable exception of api level and the device abi. This allows the config
- * to match with the default Apk for the device.
+ * The device config provider is meant to have the equivalent of an "empty" configuration with the noticeable exception of api level and the
+ * device abi. This allows the config to match with the default Apk for the device.
  */
 class ManagedDeviceConfigProvider(val device: UtpManagedDevice) : DeviceConfigProvider {
 
-    override fun getConfigFor(abi: String?): String = requireNotNull(abi)
+  override fun getConfigFor(abi: String?): String = requireNotNull(abi)
 
-    /**
-     * Returns -1, stating that the config has no density value.
-     */
-    override fun getDensity(): Int = -1
+  /** Returns -1, stating that the config has no density value. */
+  override fun getDensity(): Int = -1
 
-    /**
-     * Returns null, stating the config has no language value.
-     */
-    override fun getLanguage(): String? = null
+  /** Returns null, stating the config has no language value. */
+  override fun getLanguage(): String? = null
 
-    /**
-     * Returns null, stating the config has no language splits value.
-     */
-    override fun getLanguageSplits(): MutableSet<String>? = null
+  /** Returns null, stating the config has no language splits value. */
+  override fun getLanguageSplits(): MutableSet<String>? = null
 
-    /**
-     * Returns null, stating the config has no region value.
-     */
-    override fun getRegion(): String? = null
+  /** Returns null, stating the config has no region value. */
+  override fun getRegion(): String? = null
 
-    override fun getAbis(): MutableList<String> = mutableListOf(device.testedAbi)
+  override fun getAbis(): MutableList<String> = mutableListOf(device.testedAbi)
 
-    override fun getApiCodeName(): String? = null
+  override fun getApiCodeName(): String? = null
 
-    override fun getApiLevel(): Int = device.api
+  override fun getApiLevel(): Int = device.api
 
-    override fun getSupportsPrivacySandbox(): Boolean = false
+  override fun getSupportsPrivacySandbox(): Boolean = false
 }

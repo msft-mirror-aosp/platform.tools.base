@@ -16,27 +16,17 @@
 
 package com.android.build.api.instrumentation
 
-/**
- * Data about the class to be instrumented.
- */
+/** Data about the class to be instrumented. */
 interface ClassData {
-    /**
-     * Fully qualified name of the class.
-     */
-    val className: String
+  /** Fully qualified name of the class. */
+  val className: String
 
-    /**
-     * List of the annotations the class has.
-     */
-    val classAnnotations: List<String>
+  /** List of the annotations the class has. */
+  val classAnnotations: List<String>
 
-    /**
-     * List of all the interfaces that this class or a superclass of this class implements.
-     */
-    val interfaces: List<String>
+  /** List of all the interfaces that this class or a superclass of this class implements. */
+  val interfaces: List<String>
 
-    /**
-     * List of all the super classes that this class or a super class of this class extends.
-     */
-    val superClasses: List<String>
+  /** List of all the super classes that this class or a super class of this class extends. */
+  val superClasses: List<String>
 }

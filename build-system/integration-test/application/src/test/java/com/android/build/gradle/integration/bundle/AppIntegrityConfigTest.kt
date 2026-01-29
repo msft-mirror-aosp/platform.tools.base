@@ -24,74 +24,62 @@ import com.android.testutils.truth.PathSubject.assertThat
 import com.android.testutils.truth.ZipFileSubject.assertThat
 import com.android.utils.FileUtils
 import com.google.common.truth.Truth.assertThat
-import org.junit.Rule
-import org.junit.Test
 import java.io.File
 import java.nio.file.Files
+import org.junit.Rule
+import org.junit.Test
 
 class AppIntegrityConfigTest {
 
-    @get:Rule
-    var project = GradleTestProject.builder()
-        .fromTestApp(
-            MinimalSubProject.app("com.example.test")
-                .appendToBuild("android.bundle.integrityConfigDir = file('protection_config')")
-                .withFile(
-                    "protection_config/IntegrityConfig.xml",
-                    """<IntegrityConfig>
+  @get:Rule
+  var project =
+    GradleTestProject.builder()
+      .fromTestApp(
+        MinimalSubProject.app("com.example.test")
+          .appendToBuild("android.bundle.integrityConfigDir = file('protection_config')")
+          .withFile(
+            "protection_config/IntegrityConfig.xml",
+            """<IntegrityConfig>
                                     <EmulatorCheck enabled="false"/>
-                               </IntegrityConfig>"""
-                )
-        )
-        .withName("integrity-test").create()
+                               </IntegrityConfig>""",
+          )
+      )
+      .withName("integrity-test")
+      .create()
 
-    @Test
-    fun testBuildBundle() {
-        val entry = "/BUNDLE-METADATA/com.google.play.apps.integrity/AppIntegrityConfig.pb"
+  @Test
+  fun testBuildBundle() {
+    val entry = "/BUNDLE-METADATA/com.google.play.apps.integrity/AppIntegrityConfig.pb"
 
-        project.execute(":bundleDebug")
+    project.execute(":bundleDebug")
 
-        val bundleFile = getBundleFile()
-        assertThat(bundleFile).exists()
-        assertThat(bundleFile) { it.contains(entry) }
-        Zip(bundleFile).use {
-            val configFile =
-                it.getEntry("/BUNDLE-METADATA/com.google.play.apps.integrity/AppIntegrityConfig.pb")
+    val bundleFile = getBundleFile()
+    assertThat(bundleFile).exists()
+    assertThat(bundleFile) { it.contains(entry) }
+    Zip(bundleFile).use {
+      val configFile = it.getEntry("/BUNDLE-METADATA/com.google.play.apps.integrity/AppIntegrityConfig.pb")
 
-            val config =
-                AppIntegrityConfigOuterClass.AppIntegrityConfig.parseFrom(
-                    Files.readAllBytes(configFile)
-                )
-            val expectedConfig = AppIntegrityConfigOuterClass.AppIntegrityConfig.newBuilder()
-                .setEnabled(true)
-                .setLicenseCheck(
-                    AppIntegrityConfigOuterClass.LicenseCheck.newBuilder()
-                        .setEnabled(false)
-                        .setPolicy(
-                            AppIntegrityConfigOuterClass.Policy.newBuilder().setAction(
-                                AppIntegrityConfigOuterClass.Policy.Action.WARN
-                            )
-                        )
-                )
-                .setInstallerCheck(
-                    AppIntegrityConfigOuterClass.InstallerCheck.newBuilder()
-                        .setEnabled(true)
-                        .setPolicy(
-                            AppIntegrityConfigOuterClass.Policy.newBuilder().setAction(
-                                AppIntegrityConfigOuterClass.Policy.Action.WARN
-                            )
-                        )
-                ).setEmulatorCheck(
-                    AppIntegrityConfigOuterClass.EmulatorCheck.newBuilder().setEnabled(false)
-                ).build()
-            assertThat(config).isEqualTo(expectedConfig);
-        }
+      val config = AppIntegrityConfigOuterClass.AppIntegrityConfig.parseFrom(Files.readAllBytes(configFile))
+      val expectedConfig =
+        AppIntegrityConfigOuterClass.AppIntegrityConfig.newBuilder()
+          .setEnabled(true)
+          .setLicenseCheck(
+            AppIntegrityConfigOuterClass.LicenseCheck.newBuilder()
+              .setEnabled(false)
+              .setPolicy(AppIntegrityConfigOuterClass.Policy.newBuilder().setAction(AppIntegrityConfigOuterClass.Policy.Action.WARN))
+          )
+          .setInstallerCheck(
+            AppIntegrityConfigOuterClass.InstallerCheck.newBuilder()
+              .setEnabled(true)
+              .setPolicy(AppIntegrityConfigOuterClass.Policy.newBuilder().setAction(AppIntegrityConfigOuterClass.Policy.Action.WARN))
+          )
+          .setEmulatorCheck(AppIntegrityConfigOuterClass.EmulatorCheck.newBuilder().setEnabled(false))
+          .build()
+      assertThat(config).isEqualTo(expectedConfig)
     }
+  }
 
-    private fun getBundleFile(): File {
-        return File(
-            project.buildDir,
-            FileUtils.join("outputs", "bundle", "debug", "${project.name}-debug.aab")
-        )
-    }
+  private fun getBundleFile(): File {
+    return File(project.buildDir, FileUtils.join("outputs", "bundle", "debug", "${project.name}-debug.aab"))
+  }
 }

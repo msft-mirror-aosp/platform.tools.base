@@ -58,860 +58,667 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 
 @RunWith(Parameterized::class)
-class VariantDslInfoTest2(
-    private val componentType: ComponentType
-): AbstractBuildGivenBuildExpectTest<
-            VariantDslInfoTest2.GivenData,
-            VariantDslInfoTest2.ResultData>() {
+class VariantDslInfoTest2(private val componentType: ComponentType) :
+  AbstractBuildGivenBuildExpectTest<VariantDslInfoTest2.GivenData, VariantDslInfoTest2.ResultData>() {
 
-    companion object {
-        @JvmStatic
-        @Parameterized.Parameters(name = "Component type: {0}")
-        fun parameters() = listOf(
-            ComponentTypeImpl.BASE_APK,
-            ComponentTypeImpl.OPTIONAL_APK,
-            ComponentTypeImpl.LIBRARY
-        )
+  companion object {
+    @JvmStatic
+    @Parameterized.Parameters(name = "Component type: {0}")
+    fun parameters() = listOf(ComponentTypeImpl.BASE_APK, ComponentTypeImpl.OPTIONAL_APK, ComponentTypeImpl.LIBRARY)
 
-        private const val DEFAULT_NAMESPACE = "com.example.namespace"
+    private const val DEFAULT_NAMESPACE = "com.example.namespace"
+  }
+
+  @Test
+  fun `versionCode from defaultConfig`() {
+    assumeTrue(componentType == ComponentTypeImpl.BASE_APK)
+    given {
+      // no specific manifest info
+      manifestData {}
+
+      defaultConfig { versionCode = 12 }
     }
 
-    @Test
-    fun `versionCode from defaultConfig`() {
-        assumeTrue(componentType == ComponentTypeImpl.BASE_APK)
-        given {
-            // no specific manifest info
-            manifestData {  }
+    expect { versionCode = 12 }
+  }
 
-            defaultConfig {
-                versionCode = 12
-            }
-        }
+  @Test
+  fun `versionCode from manifest`() {
+    assumeTrue(componentType == ComponentTypeImpl.BASE_APK)
+    given { manifestData { versionCode = 12 } }
 
-        expect {
-            versionCode = 12
-        }
+    expect { versionCode = 12 }
+  }
+
+  @Test
+  fun `versionCode defaultConfig overrides manifest`() {
+    assumeTrue(componentType == ComponentTypeImpl.BASE_APK)
+    given {
+      manifestData { versionCode = 12 }
+
+      defaultConfig { versionCode = 13 }
     }
 
-    @Test
-    fun `versionCode from manifest`() {
-        assumeTrue(componentType == ComponentTypeImpl.BASE_APK)
-        given {
-            manifestData {
-                versionCode = 12
-            }
-        }
+    expect { versionCode = 13 }
+  }
 
-        expect {
-            versionCode = 12
-        }
+  @Test
+  fun `versionCode from flavor overrides all`() {
+    assumeTrue(componentType == ComponentTypeImpl.BASE_APK)
+    given {
+      manifestData { versionCode = 12 }
+
+      defaultConfig { versionCode = 13 }
+      productFlavors {
+        create("higherPriority") { versionCode = 20 }
+        create("lowerPriority") { versionCode = 14 }
+      }
     }
 
-    @Test
-    fun `versionCode defaultConfig overrides manifest`() {
-        assumeTrue(componentType == ComponentTypeImpl.BASE_APK)
-        given {
-            manifestData {
-                versionCode = 12
-            }
+    expect { versionCode = 20 }
+  }
 
-            defaultConfig {
-                versionCode = 13
-            }
-        }
+  @Test
+  fun `versionName from defaultConfig`() {
+    assumeTrue(componentType == ComponentTypeImpl.BASE_APK)
+    given {
+      // no specific manifest info
+      manifestData {}
 
-        expect {
-            versionCode = 13
-        }
+      defaultConfig { versionName = "foo" }
     }
 
-    @Test
-    fun `versionCode from flavor overrides all`() {
-        assumeTrue(componentType == ComponentTypeImpl.BASE_APK)
-        given {
-            manifestData {
-                versionCode = 12
-            }
+    expect { versionName = "foo" }
+  }
 
-            defaultConfig {
-                versionCode = 13
-            }
-            productFlavors {
-                create("higherPriority") {
-                    versionCode = 20
-                }
-                create("lowerPriority") {
-                    versionCode = 14
-                }
-            }
-        }
+  @Test
+  fun `versionName from manifest`() {
+    assumeTrue(componentType == ComponentTypeImpl.BASE_APK)
+    given { manifestData { versionName = "foo" } }
 
-        expect {
-            versionCode = 20
-        }
+    expect { versionName = "foo" }
+  }
+
+  @Test
+  fun `versionName defaultConfig overrides manifest`() {
+    assumeTrue(componentType == ComponentTypeImpl.BASE_APK)
+    given {
+      manifestData { versionName = "foo" }
+
+      defaultConfig { versionName = "bar" }
     }
 
-    @Test
-    fun `versionName from defaultConfig`() {
-        assumeTrue(componentType == ComponentTypeImpl.BASE_APK)
-        given {
-            // no specific manifest info
-            manifestData { }
+    expect { versionName = "bar" }
+  }
 
-            defaultConfig {
-                versionName = "foo"
-            }
-        }
+  @Test
+  fun `versionName from flavor overrides all`() {
+    assumeTrue(componentType == ComponentTypeImpl.BASE_APK)
+    given {
+      manifestData { versionName = "foo" }
 
-        expect {
-            versionName = "foo"
-        }
+      defaultConfig { versionName = "bar3" }
+      productFlavors {
+        create("higherPriority") { versionName = "bar1" }
+        create("lowerPriority") { versionName = "bar2" }
+      }
     }
 
-    @Test
-    fun `versionName from manifest`() {
-        assumeTrue(componentType == ComponentTypeImpl.BASE_APK)
-        given {
-            manifestData {
-                versionName = "foo"
-            }
-        }
+    expect { versionName = "bar1" }
+  }
 
-        expect {
-            versionName = "foo"
-        }
+  @Test
+  fun `versionName from manifest with suffix from defaultConfig`() {
+    assumeTrue(componentType == ComponentTypeImpl.BASE_APK)
+    given {
+      manifestData { versionName = "foo" }
+
+      defaultConfig { versionNameSuffix = "-bar" }
     }
 
-    @Test
-    fun `versionName defaultConfig overrides manifest`() {
-        assumeTrue(componentType == ComponentTypeImpl.BASE_APK)
-        given {
-            manifestData {
-                versionName = "foo"
-            }
+    expect { versionName = "foo-bar" }
+  }
 
-            defaultConfig {
-                versionName = "bar"
-            }
-        }
+  @Test
+  fun `versionName from manifest with full suffix`() {
+    assumeTrue(componentType == ComponentTypeImpl.BASE_APK)
+    given {
+      manifestData { versionName = "foo" }
 
-        expect {
-            versionName = "bar"
-        }
+      defaultConfig { versionNameSuffix = "-bar1" }
+      productFlavors {
+        create("higherPriority") { versionNameSuffix = "-bar3" }
+        create("lowerPriority") { versionNameSuffix = "-bar2" }
+      }
+
+      buildType { versionNameSuffix = "-bar4" }
     }
 
-    @Test
-    fun `versionName from flavor overrides all`() {
-        assumeTrue(componentType == ComponentTypeImpl.BASE_APK)
-        given {
-            manifestData {
-                versionName = "foo"
-            }
+    expect { versionName = "foo-bar1-bar3-bar2-bar4" }
+  }
 
-            defaultConfig {
-                versionName = "bar3"
-            }
-            productFlavors {
-                create("higherPriority") {
-                    versionName = "bar1"
-                }
-                create("lowerPriority") {
-                    versionName = "bar2"
-                }
-            }
-        }
+  @Test
+  fun `instrumentationRunner defaults`() {
+    given {
+      // no specific manifest info
+      manifestData {}
+      testManifestData {}
 
-        expect {
-            versionName = "bar1"
-        }
+      componentType = ComponentTypeImpl.ANDROID_TEST
     }
 
-    @Test
-    fun `versionName from manifest with suffix from defaultConfig`() {
-        assumeTrue(componentType == ComponentTypeImpl.BASE_APK)
-        given {
-            manifestData {
-                versionName = "foo"
-            }
+    expect { instrumentationRunner = "androidx.test.runner.AndroidJUnitRunner" }
+  }
 
-            defaultConfig {
-                versionNameSuffix = "-bar"
-            }
-        }
+  @Test
+  fun `instrumentationRunner defaults with legacy multidex`() {
+    given {
+      // no specific manifest info
+      manifestData {}
+      testManifestData {}
 
-        expect {
-            versionName = "foo-bar"
-        }
+      componentType = ComponentTypeImpl.ANDROID_TEST
+
+      defaultConfig {
+        minSdk = 20
+        multiDexEnabled = true
+      }
+
+      dexingType = DexingType.LEGACY_MULTIDEX
     }
 
-    @Test
-    fun `versionName from manifest with full suffix`() {
-        assumeTrue(componentType == ComponentTypeImpl.BASE_APK)
-        given {
-            manifestData {
-                versionName = "foo"
-            }
+    expect { instrumentationRunner = "androidx.test.runner.AndroidJUnitRunner" }
+  }
 
-            defaultConfig {
-                versionNameSuffix = "-bar1"
-            }
-            productFlavors {
-                create("higherPriority") {
-                    versionNameSuffix = "-bar3"
-                }
-                create("lowerPriority") {
-                    versionNameSuffix = "-bar2"
-                }
-            }
+  @Test
+  fun `instrumentationRunner from defaultConfig`() {
+    given {
+      // no specific manifest info
+      manifestData {}
+      testManifestData {}
 
-            buildType {
-                versionNameSuffix = "-bar4"
-            }
-        }
+      componentType = ComponentTypeImpl.ANDROID_TEST
 
-        expect {
-            versionName = "foo-bar1-bar3-bar2-bar4"
-        }
+      defaultConfig { testInstrumentationRunner = "foo" }
     }
 
-    @Test
-    fun `instrumentationRunner defaults`() {
-        given {
-            // no specific manifest info
-            manifestData { }
-            testManifestData { }
+    expect { instrumentationRunner = "foo" }
+  }
 
-            componentType = ComponentTypeImpl.ANDROID_TEST
-        }
+  @Test
+  fun `instrumentationRunner from manifest`() {
+    given {
+      manifestData {}
+      testManifestData { instrumentationRunner = "foo" }
 
-        expect {
-            instrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        }
+      componentType = ComponentTypeImpl.ANDROID_TEST
     }
 
-    @Test
-    fun `instrumentationRunner defaults with legacy multidex`() {
-        given {
-            // no specific manifest info
-            manifestData { }
-            testManifestData { }
+    expect { instrumentationRunner = "foo" }
+  }
 
-            componentType = ComponentTypeImpl.ANDROID_TEST
+  @Test
+  fun `instrumentationRunner defaultConfig overrides manifest`() {
+    given {
+      manifestData {}
+      testManifestData { instrumentationRunner = "foo" }
 
-            defaultConfig {
-                minSdk = 20
-                multiDexEnabled = true
-            }
+      componentType = ComponentTypeImpl.ANDROID_TEST
 
-            dexingType = DexingType.LEGACY_MULTIDEX
-        }
-
-        expect {
-            instrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        }
+      defaultConfig { testInstrumentationRunner = "bar" }
     }
 
-    @Test
-    fun `instrumentationRunner from defaultConfig`() {
-        given {
-            // no specific manifest info
-            manifestData { }
-            testManifestData { }
+    expect { instrumentationRunner = "bar" }
+  }
 
-            componentType = ComponentTypeImpl.ANDROID_TEST
+  @Test
+  fun `instrumentationRunner from flavor overrides all`() {
+    given {
+      manifestData {}
+      testManifestData { instrumentationRunner = "foo" }
 
-            defaultConfig {
-                testInstrumentationRunner = "foo"
-            }
-        }
+      componentType = ComponentTypeImpl.ANDROID_TEST
 
-        expect {
-            instrumentationRunner = "foo"
-        }
+      defaultConfig { testInstrumentationRunner = "bar3" }
+      productFlavors {
+        create("higherPriority") { testInstrumentationRunner = "bar1" }
+        create("lowerPriority") { testInstrumentationRunner = "bar2" }
+      }
     }
 
-    @Test
-    fun `instrumentationRunner from manifest`() {
-        given {
-            manifestData { }
-            testManifestData {
-                instrumentationRunner = "foo"
-            }
+    expect { instrumentationRunner = "bar1" }
+  }
 
-            componentType = ComponentTypeImpl.ANDROID_TEST
-        }
+  @Test
+  fun `handleProfiling defaults`() {
+    given {
+      // no specific manifest info
+      manifestData {}
+      testManifestData {}
 
-        expect {
-            instrumentationRunner = "foo"
-        }
+      componentType = ComponentTypeImpl.ANDROID_TEST
     }
 
-    @Test
-    fun `instrumentationRunner defaultConfig overrides manifest`() {
-        given {
-            manifestData { }
-            testManifestData {
-                instrumentationRunner = "foo"
-            }
+    expect { handleProfiling = false }
+  }
 
-            componentType = ComponentTypeImpl.ANDROID_TEST
+  @Test
+  fun `handleProfiling from defaultConfig`() {
+    given {
+      // no specific manifest info
+      manifestData {}
+      testManifestData {}
 
-            defaultConfig {
-                testInstrumentationRunner = "bar"
-            }
-        }
+      componentType = ComponentTypeImpl.ANDROID_TEST
 
-        expect {
-            instrumentationRunner = "bar"
-        }
+      defaultConfig { testHandleProfiling = true }
     }
 
-    @Test
-    fun `instrumentationRunner from flavor overrides all`() {
-        given {
-            manifestData { }
-            testManifestData {
-                instrumentationRunner = "foo"
-            }
+    expect { handleProfiling = true }
+  }
 
-            componentType = ComponentTypeImpl.ANDROID_TEST
+  @Test
+  fun `handleProfiling from manifest`() {
+    given {
+      manifestData {}
+      testManifestData { handleProfiling = true }
 
-            defaultConfig {
-                testInstrumentationRunner = "bar3"
-            }
-            productFlavors {
-                create("higherPriority") {
-                    testInstrumentationRunner = "bar1"
-                }
-                create("lowerPriority") {
-                    testInstrumentationRunner = "bar2"
-                }
-            }
-        }
-
-        expect {
-            instrumentationRunner = "bar1"
-        }
+      componentType = ComponentTypeImpl.ANDROID_TEST
     }
 
-    @Test
-    fun `handleProfiling defaults`() {
-        given {
-            // no specific manifest info
-            manifestData { }
-            testManifestData { }
+    expect { handleProfiling = true }
+  }
 
-            componentType = ComponentTypeImpl.ANDROID_TEST
-        }
+  @Test
+  fun `handleProfiling defaultConfig overrides manifest`() {
+    given {
+      manifestData {}
+      testManifestData { handleProfiling = true }
 
-        expect {
-            handleProfiling = false
-        }
+      componentType = ComponentTypeImpl.ANDROID_TEST
+
+      defaultConfig { testHandleProfiling = false }
     }
 
-    @Test
-    fun `handleProfiling from defaultConfig`() {
-        given {
-            // no specific manifest info
-            manifestData { }
-            testManifestData { }
+    expect { handleProfiling = false }
+  }
 
-            componentType = ComponentTypeImpl.ANDROID_TEST
+  @Test
+  fun `handleProfiling from flavor overrides all`() {
+    given {
+      manifestData {}
+      testManifestData { handleProfiling = true }
 
-            defaultConfig {
-                testHandleProfiling = true
-            }
-        }
+      componentType = ComponentTypeImpl.ANDROID_TEST
 
-        expect {
-            handleProfiling = true
-        }
+      defaultConfig { testHandleProfiling = true }
+      productFlavors {
+        create("higherPriority") { testHandleProfiling = false }
+        create("lowerPriority") { testHandleProfiling = false }
+      }
     }
 
-    @Test
-    fun `handleProfiling from manifest`() {
-        given {
-            manifestData { }
-            testManifestData {
-                handleProfiling = true
-            }
+    expect { handleProfiling = false }
+  }
 
-            componentType = ComponentTypeImpl.ANDROID_TEST
-        }
+  @Test
+  fun `functionalTest defaults`() {
+    given {
+      // no specific manifest info
+      manifestData {}
+      testManifestData {}
 
-        expect {
-            handleProfiling = true
-        }
+      componentType = ComponentTypeImpl.ANDROID_TEST
     }
 
-    @Test
-    fun `handleProfiling defaultConfig overrides manifest`() {
-        given {
-            manifestData { }
-            testManifestData {
-                handleProfiling = true
-            }
+    expect { functionalTest = false }
+  }
 
-            componentType = ComponentTypeImpl.ANDROID_TEST
+  @Test
+  fun `functionalTest from defaultConfig`() {
+    given {
+      // no specific manifest info
+      manifestData {}
+      testManifestData {}
 
-            defaultConfig {
-                testHandleProfiling = false
-            }
-        }
+      componentType = ComponentTypeImpl.ANDROID_TEST
 
-        expect {
-            handleProfiling = false
-        }
+      defaultConfig { testFunctionalTest = true }
     }
 
-    @Test
-    fun `handleProfiling from flavor overrides all`() {
-        given {
-            manifestData { }
-            testManifestData {
-                handleProfiling = true
-            }
+    expect { functionalTest = true }
+  }
 
-            componentType = ComponentTypeImpl.ANDROID_TEST
+  @Test
+  fun `functionalTest from manifest`() {
+    given {
+      manifestData {}
+      testManifestData { functionalTest = true }
 
-            defaultConfig {
-                testHandleProfiling = true
-            }
-            productFlavors {
-                create("higherPriority") {
-                    testHandleProfiling = false
-                }
-                create("lowerPriority") {
-                    testHandleProfiling = false
-                }
-            }
-        }
-
-        expect {
-            handleProfiling = false
-        }
+      componentType = ComponentTypeImpl.ANDROID_TEST
     }
 
-    @Test
-    fun `functionalTest defaults`() {
-        given {
-            // no specific manifest info
-            manifestData { }
-            testManifestData { }
+    expect { functionalTest = true }
+  }
 
-            componentType = ComponentTypeImpl.ANDROID_TEST
-        }
+  @Test
+  fun `functionalTest defaultConfig overrides manifest`() {
+    given {
+      manifestData {}
+      testManifestData { functionalTest = true }
 
-        expect {
-            functionalTest = false
-        }
+      componentType = ComponentTypeImpl.ANDROID_TEST
+
+      defaultConfig { testFunctionalTest = false }
     }
 
-    @Test
-    fun `functionalTest from defaultConfig`() {
-        given {
-            // no specific manifest info
-            manifestData { }
-            testManifestData { }
+    expect { functionalTest = false }
+  }
 
-            componentType = ComponentTypeImpl.ANDROID_TEST
+  @Test
+  fun `functionalTest from flavor overrides all`() {
+    given {
+      manifestData {}
+      testManifestData { functionalTest = true }
 
-            defaultConfig {
-                testFunctionalTest = true
-            }
-        }
+      componentType = ComponentTypeImpl.ANDROID_TEST
 
-        expect {
-            functionalTest = true
-        }
+      defaultConfig { testFunctionalTest = true }
+      productFlavors {
+        create("higherPriority") { testFunctionalTest = false }
+        create("lowerPriority") { testFunctionalTest = false }
+      }
     }
 
-    @Test
-    fun `functionalTest from manifest`() {
-        given {
-            manifestData { }
-            testManifestData {
-                functionalTest = true
-            }
+    expect { functionalTest = false }
+  }
 
-            componentType = ComponentTypeImpl.ANDROID_TEST
-        }
+  @Test
+  fun `namespace from DSL overrides manifest`() {
+    given {
+      manifestData { packageName = "com.example.fromManifest" }
 
-        expect {
-            functionalTest = true
-        }
+      namespace = "com.example.fromDsl"
     }
 
-    @Test
-    fun `functionalTest defaultConfig overrides manifest`() {
-        given {
-            manifestData { }
-            testManifestData {
-                functionalTest = true
-            }
+    expect { namespace = "com.example.fromDsl" }
+  }
 
-            componentType = ComponentTypeImpl.ANDROID_TEST
+  @Test
+  fun `testNamespace from DSL overrides namespace and manifest`() {
+    given {
+      manifestData { packageName = "com.example.fromManifest" }
+      testManifestData { packageName = "com.example.fromTestManifest" }
 
-            defaultConfig {
-                testFunctionalTest = false
-            }
-        }
+      componentType = ComponentTypeImpl.ANDROID_TEST
 
-        expect {
-            functionalTest = false
-        }
+      testNamespace = "com.example.testNamespace"
     }
 
-    @Test
-    fun `functionalTest from flavor overrides all`() {
-        given {
-            manifestData { }
-            testManifestData {
-                functionalTest = true
-            }
+    expect { namespace = "com.example.testNamespace" }
+  }
 
-            componentType = ComponentTypeImpl.ANDROID_TEST
+  @Test
+  fun `testNamespace derived from namespace`() {
+    given {
+      manifestData { packageName = "com.example.fromManifest" }
+      testManifestData { packageName = "com.example.fromTestManifest" }
 
-            defaultConfig {
-                testFunctionalTest = true
-            }
-            productFlavors {
-                create("higherPriority") {
-                    testFunctionalTest = false
-                }
-                create("lowerPriority") {
-                    testFunctionalTest = false
-                }
-            }
-        }
+      componentType = ComponentTypeImpl.ANDROID_TEST
 
-        expect {
-            functionalTest = false
-        }
+      defaultConfig { applicationId = "com.applicationId" }
     }
 
-    @Test
-    fun `namespace from DSL overrides manifest`() {
-        given {
-            manifestData {
-                packageName = "com.example.fromManifest"
-            }
+    expect { namespace = "${DEFAULT_NAMESPACE}.test" }
+  }
 
-            namespace = "com.example.fromDsl"
-        }
+  // ---------------------------------------------------------------------------------------------
 
-        expect {
-            namespace = "com.example.fromDsl"
+  @get:Rule val exceptionRule: ExpectedException = ExpectedException.none()
+
+  private val projectServices = createProjectServices()
+  private val services = createVariantPropertiesApiServices(projectServices)
+  private val dslServices: DslServices = createDslServices(projectServices)
+  private val buildDirectory: DirectoryProperty = mock()
+
+  override fun instantiateGiven() = GivenData(componentType, dslServices)
+
+  override fun instantiateResult() = ResultData()
+
+  private fun configureExtension(extension: InternalTestedExtension, given: GivenData) {
+    whenever(extension.namespace).thenReturn(given.namespace)
+    if (given.componentType.isTestComponent) {
+      whenever(extension.testNamespace).thenReturn(given.testNamespace)
+    }
+  }
+
+  override fun defaultWhen(given: GivenData): ResultData {
+    val componentIdentity = mock<ComponentIdentity>()
+    whenever(componentIdentity.name).thenReturn("compIdName")
+
+    val extension: InternalTestedExtension =
+      when (given.mainComponentType) {
+        ComponentTypeImpl.BASE_APK -> mock<InternalApplicationExtension>().also { configureExtension(it, given) }
+        ComponentTypeImpl.LIBRARY -> mock<InternalLibraryExtension>().also { configureExtension(it, given) }
+        ComponentTypeImpl.OPTIONAL_APK -> mock<InternalDynamicFeatureExtension>().also { configureExtension(it, given) }
+        else -> {
+          throw RuntimeException("Unexpected type")
         }
+      }
+
+    val mainVariant =
+      when (given.mainComponentType) {
+        ComponentTypeImpl.BASE_APK -> {
+          ApplicationVariantDslInfoImpl(
+            componentIdentity = componentIdentity,
+            componentType = given.mainComponentType,
+            defaultConfig = given.defaultConfig,
+            buildTypeObj = given.buildType,
+            productFlavorList = given.flavors,
+            dataProvider = DirectManifestDataProvider(given.manifestData, projectServices),
+            services = services,
+            buildDirectory = buildDirectory,
+            publishInfo = VariantPublishingInfo(emptyList()),
+            extension = extension as InternalApplicationExtension,
+            signingConfigOverride = null,
+          )
+        }
+        ComponentTypeImpl.LIBRARY -> {
+          LibraryVariantDslInfoImpl(
+            componentIdentity = componentIdentity,
+            componentType = given.mainComponentType,
+            defaultConfig = given.defaultConfig,
+            buildTypeObj = given.buildType,
+            productFlavorList = given.flavors,
+            dataProvider = DirectManifestDataProvider(given.manifestData, projectServices),
+            services = services,
+            buildDirectory = buildDirectory,
+            publishInfo = VariantPublishingInfo(emptyList()),
+            extension = extension as InternalLibraryExtension,
+          )
+        }
+        ComponentTypeImpl.OPTIONAL_APK -> {
+          DynamicFeatureVariantDslInfoImpl(
+            componentIdentity = componentIdentity,
+            componentType = given.mainComponentType,
+            defaultConfig = given.defaultConfig,
+            buildTypeObj = given.buildType,
+            productFlavorList = given.flavors,
+            dataProvider = DirectManifestDataProvider(given.manifestData, projectServices),
+            services = services,
+            buildDirectory = buildDirectory,
+            extension = extension as InternalDynamicFeatureExtension,
+          )
+        }
+        else -> {
+          throw RuntimeException("Unexpected type")
+        }
+      }
+
+    val dslInfo =
+      when (given.componentType) {
+        ComponentTypeImpl.ANDROID_TEST -> {
+          AndroidTestComponentDslInfoImpl(
+            componentIdentity = componentIdentity,
+            componentType = given.mainComponentType,
+            defaultConfig = given.defaultConfig,
+            buildTypeObj = given.buildType,
+            productFlavorList = given.flavors,
+            dataProvider = DirectManifestDataProvider(given.testManifestData, projectServices),
+            mainVariantDslInfo = mainVariant,
+            signingConfigOverride = null,
+            services = services,
+            buildDirectory = buildDirectory,
+            extension = extension,
+          )
+        }
+        ComponentTypeImpl.BASE_APK -> {
+          mainVariant
+        }
+        else -> {
+          throw RuntimeException("Unexpected type")
+        }
+      }
+
+    return instantiateResult().also {
+      if (convertAction != null) {
+        convertAction?.invoke(it, dslInfo)
+      } else {
+        it.versionCode = (dslInfo as? ApplicationVariantDslInfo)?.versionCode?.orNull ?: -1
+        it.versionName = (dslInfo as? ApplicationVariantDslInfo)?.versionName?.orNull ?: ""
+        // only query these if this is not a test.
+        if (dslInfo is AndroidTestComponentDslInfo) {
+          it.instrumentationRunner = dslInfo.getInstrumentationRunner(given.dexingType).orNull
+          it.handleProfiling = dslInfo.handleProfiling.get()
+          it.functionalTest = dslInfo.functionalTest.get()
+        }
+        it.namespace = dslInfo.namespace.get()
+      }
+    }
+  }
+
+  override fun initResultDefaults(given: GivenData, result: ResultData) {
+    // if the variant type is a test, then make sure that the result is initialized
+    // with the right defaults.
+    if (given.componentType.isForTesting) {
+      result.instrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+      result.handleProfiling = false // DEFAULT_HANDLE_PROFILING
+      result.functionalTest = false // DEFAULT_FUNCTIONAL_TEST
+      result.namespace = "${DEFAULT_NAMESPACE}.test"
+    } else {
+      result.namespace = DEFAULT_NAMESPACE
+    }
+  }
+
+  /** optional conversion action from variantDslInfo to result Builder. */
+  private var convertAction: (ResultData.(variantInfo: ComponentDslInfo) -> Unit)? = null
+
+  /**
+   * registers a custom conversion from variantDslInfo to ResultBuilder. This avoid having to use when {} which requires implementing all
+   * that defaultWhen() does.
+   */
+  private fun convertToResult(action: ResultData.(variantInfo: ComponentDslInfo) -> Unit) {
+    convertAction = action
+  }
+
+  class GivenData(val mainComponentType: ComponentType, private val dslServices: DslServices) {
+    /** the manifest data that represents values coming from the manifest file */
+    val manifestData = ManifestData()
+
+    /** Configures the manifest data. */
+    fun manifestData(action: ManifestData.() -> Unit) {
+      action(manifestData)
     }
 
-    @Test
-    fun `testNamespace from DSL overrides namespace and manifest`() {
-        given {
-            manifestData {
-                packageName = "com.example.fromManifest"
-            }
-            testManifestData {
-                packageName = "com.example.fromTestManifest"
-            }
+    /** the manifest data that represents values coming from the test manifest file */
+    val testManifestData = ManifestData()
 
-            componentType = ComponentTypeImpl.ANDROID_TEST
-
-            testNamespace = "com.example.testNamespace"
-        }
-
-        expect {
-            namespace = "com.example.testNamespace"
-        }
+    /** Configures the manifest data. */
+    fun testManifestData(action: ManifestData.() -> Unit) {
+      action(testManifestData)
     }
 
-    @Test
-    fun `testNamespace derived from namespace`() {
-        given {
-            manifestData {
-                packageName = "com.example.fromManifest"
-            }
-            testManifestData {
-                packageName = "com.example.fromTestManifest"
-            }
+    /** Variant type for the test */
+    var componentType = ComponentTypeImpl.BASE_APK
 
-            componentType = ComponentTypeImpl.ANDROID_TEST
+    var dexingType = DexingType.NATIVE_MULTIDEX
 
-            defaultConfig {
-                applicationId = "com.applicationId"
-            }
-        }
+    var namespace: String = DEFAULT_NAMESPACE
+    var testNamespace: String? = null
 
-        expect {
-            namespace = "${DEFAULT_NAMESPACE}.test"
-        }
+    /** default Config values */
+    val defaultConfig: DefaultConfig = dslServices.newDecoratedInstance(DefaultConfig::class.java, BuilderConstants.MAIN, dslServices)
+
+    /** configures the default config */
+    fun defaultConfig(action: DefaultConfig.() -> Unit) {
+      action(defaultConfig)
     }
 
-    // ---------------------------------------------------------------------------------------------
+    val buildType: BuildType = dslServices.newDecoratedInstance(BuildType::class.java, "Build-Type", dslServices, componentType)
 
-    @get:Rule
-    val exceptionRule : ExpectedException = ExpectedException.none()
-
-    private val projectServices = createProjectServices()
-    private val services = createVariantPropertiesApiServices(projectServices)
-    private val dslServices: DslServices = createDslServices(projectServices)
-    private val buildDirectory: DirectoryProperty = mock()
-
-    override fun instantiateGiven() = GivenData(componentType, dslServices)
-    override fun instantiateResult() = ResultData()
-
-    private fun configureExtension(
-        extension: InternalTestedExtension,
-        given: GivenData
-    ) {
-        whenever(extension.namespace).thenReturn(given.namespace)
-        if (given.componentType.isTestComponent) {
-            whenever(extension.testNamespace).thenReturn(given.testNamespace)
-        }
+    fun buildType(action: BuildType.() -> Unit) {
+      action(buildType)
     }
 
-    override fun defaultWhen(given: GivenData): ResultData {
-        val componentIdentity = mock<ComponentIdentity>()
-        whenever(componentIdentity.name).thenReturn("compIdName")
+    private val productFlavors: ContainerImpl<ProductFlavor> = ContainerImpl { name ->
+      dslServices.newDecoratedInstance(ProductFlavor::class.java, name, dslServices)
+    }
+    val flavors: List<ProductFlavor>
+      get() = productFlavors.values.toList()
 
-        val extension: InternalTestedExtension = when (given.mainComponentType) {
-            ComponentTypeImpl.BASE_APK ->
-                mock<InternalApplicationExtension>().also {
-                    configureExtension(it, given)
-                }
-            ComponentTypeImpl.LIBRARY ->
-                mock<InternalLibraryExtension>().also {
-                    configureExtension(it, given)
-                }
-            ComponentTypeImpl.OPTIONAL_APK ->
-                mock<InternalDynamicFeatureExtension>().also {
-                    configureExtension(it, given)
-                }
-            else -> {
-                throw RuntimeException("Unexpected type")
-            }
-        }
+    /** add/configures flavors. The earlier items have higher priority over the later ones. */
+    fun productFlavors(action: Container<ProductFlavor>.() -> Unit) {
+      action(productFlavors)
+    }
+  }
 
-        val mainVariant = when (given.mainComponentType) {
-            ComponentTypeImpl.BASE_APK -> {
-                ApplicationVariantDslInfoImpl(
-                    componentIdentity = componentIdentity,
-                    componentType = given.mainComponentType,
-                    defaultConfig = given.defaultConfig,
-                    buildTypeObj = given.buildType,
-                    productFlavorList = given.flavors,
-                    dataProvider = DirectManifestDataProvider(given.manifestData, projectServices),
-                    services = services,
-                    buildDirectory = buildDirectory,
-                    publishInfo = VariantPublishingInfo(emptyList()),
-                    extension = extension as InternalApplicationExtension,
-                    signingConfigOverride = null,
-                )
-            }
-            ComponentTypeImpl.LIBRARY -> {
-                LibraryVariantDslInfoImpl(
-                    componentIdentity = componentIdentity,
-                    componentType = given.mainComponentType,
-                    defaultConfig = given.defaultConfig,
-                    buildTypeObj = given.buildType,
-                    productFlavorList = given.flavors,
-                    dataProvider = DirectManifestDataProvider(given.manifestData, projectServices),
-                    services = services,
-                    buildDirectory = buildDirectory,
-                    publishInfo = VariantPublishingInfo(emptyList()),
-                    extension = extension as InternalLibraryExtension,
-                )
-            }
-            ComponentTypeImpl.OPTIONAL_APK -> {
-                DynamicFeatureVariantDslInfoImpl(
-                    componentIdentity = componentIdentity,
-                    componentType = given.mainComponentType,
-                    defaultConfig = given.defaultConfig,
-                    buildTypeObj = given.buildType,
-                    productFlavorList = given.flavors,
-                    dataProvider = DirectManifestDataProvider(given.manifestData, projectServices),
-                    services = services,
-                    buildDirectory = buildDirectory,
-                    extension = extension as InternalDynamicFeatureExtension,
-                )
-            }
-            else -> {
-                throw RuntimeException("Unexpected type")
-            }
-        }
+  class ResultData(
+    var versionCode: Int = -1,
+    var versionName: String = "",
+    var instrumentationRunner: String? = null,
+    var handleProfiling: Boolean? = null,
+    var functionalTest: Boolean? = null,
+    var namespace: String? = null,
+  ) {
+    override fun equals(other: Any?): Boolean {
+      if (this === other) return true
+      if (javaClass != other?.javaClass) return false
 
-        val dslInfo = when (given.componentType) {
-            ComponentTypeImpl.ANDROID_TEST -> {
-                AndroidTestComponentDslInfoImpl(
-                    componentIdentity = componentIdentity,
-                    componentType = given.mainComponentType,
-                    defaultConfig = given.defaultConfig,
-                    buildTypeObj = given.buildType,
-                    productFlavorList = given.flavors,
-                    dataProvider = DirectManifestDataProvider(given.testManifestData, projectServices),
-                    mainVariantDslInfo = mainVariant,
-                    signingConfigOverride = null,
-                    services = services,
-                    buildDirectory = buildDirectory,
-                    extension = extension,
-                )
-            }
-            ComponentTypeImpl.BASE_APK -> {
-                mainVariant
-            }
-            else -> {
-                throw RuntimeException("Unexpected type")
-            }
-        }
+      other as ResultData
 
-        return instantiateResult().also {
-            if (convertAction != null) {
-                convertAction?.invoke(it, dslInfo)
-            } else {
-                it.versionCode = (dslInfo as? ApplicationVariantDslInfo)?.versionCode?.orNull ?: -1
-                it.versionName = (dslInfo as? ApplicationVariantDslInfo)?.versionName?.orNull ?: ""
-                // only query these if this is not a test.
-                if (dslInfo is AndroidTestComponentDslInfo) {
-                    it.instrumentationRunner = dslInfo.getInstrumentationRunner(given.dexingType).orNull
-                    it.handleProfiling = dslInfo.handleProfiling.get()
-                    it.functionalTest = dslInfo.functionalTest.get()
-                }
-                it.namespace = dslInfo.namespace.get()
-            }
-        }
+      if (versionCode != other.versionCode) return false
+      if (versionName != other.versionName) return false
+      if (instrumentationRunner != other.instrumentationRunner) return false
+      if (handleProfiling != other.handleProfiling) return false
+      if (functionalTest != other.functionalTest) return false
+      if (namespace != other.namespace) return false
+
+      return true
     }
 
-    override fun initResultDefaults(given: GivenData, result: ResultData) {
-        // if the variant type is a test, then make sure that the result is initialized
-        // with the right defaults.
-        if (given.componentType.isForTesting) {
-            result.instrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-            result.handleProfiling = false // DEFAULT_HANDLE_PROFILING
-            result.functionalTest = false //DEFAULT_FUNCTIONAL_TEST
-            result.namespace = "${DEFAULT_NAMESPACE}.test"
-        } else {
-            result.namespace = DEFAULT_NAMESPACE
-        }
+    override fun hashCode(): Int {
+      var result = versionCode ?: 0
+      result = 31 * result + (versionName?.hashCode() ?: 0)
+      result = 31 * result + (instrumentationRunner?.hashCode() ?: 0)
+      result = 31 * result + (handleProfiling?.hashCode() ?: 0)
+      result = 31 * result + (functionalTest?.hashCode() ?: 0)
+      result = 31 * result + (namespace?.hashCode() ?: 0)
+      return result
     }
 
-    /** optional conversion action from variantDslInfo to result Builder. */
-    private var convertAction: (ResultData.(variantInfo: ComponentDslInfo) -> Unit)? = null
-
-    /**
-     * registers a custom conversion from variantDslInfo to ResultBuilder.
-     * This avoid having to use when {} which requires implementing all that defaultWhen()
-     * does.
-     */
-    private fun convertToResult(action: ResultData.(variantInfo: ComponentDslInfo) -> Unit) {
-        convertAction = action
+    override fun toString(): String {
+      return "ResultData(versionCode=$versionCode, versionName=$versionName, instrumentationRunner=$instrumentationRunner, handleProfiling=$handleProfiling, functionalTest=$functionalTest, namespace=$namespace)"
     }
+  }
 
-    class GivenData(
-        val mainComponentType: ComponentType,
-        private val dslServices: DslServices
-    ) {
-        /** the manifest data that represents values coming from the manifest file */
-        val manifestData = ManifestData()
+  /**
+   * Use the ManifestData provider in the given as a ManifestDataProvider in order to instantiate the ManifestBackedVariantValues object.
+   */
+  class DirectManifestDataProvider(data: ManifestData, projectServices: ProjectServices) : ManifestDataProvider {
 
-        /** Configures the manifest data. */
-        fun manifestData(action: ManifestData.() -> Unit) {
-            action(manifestData)
-        }
+    override val manifestData: Provider<ManifestData> = projectServices.providerFactory.provider { data }
 
-        /** the manifest data that represents values coming from the test manifest file */
-        val testManifestData = ManifestData()
-
-        /** Configures the manifest data. */
-        fun testManifestData(action: ManifestData.() -> Unit) {
-            action(testManifestData)
-        }
-
-        /** Variant type for the test */
-        var componentType = ComponentTypeImpl.BASE_APK
-
-        var dexingType = DexingType.NATIVE_MULTIDEX
-
-        var namespace: String = DEFAULT_NAMESPACE
-        var testNamespace: String? = null
-
-        /** default Config values */
-        val defaultConfig: DefaultConfig = dslServices.newDecoratedInstance(DefaultConfig::class.java, BuilderConstants.MAIN, dslServices)
-
-        /** configures the default config */
-        fun defaultConfig(action: DefaultConfig.() -> Unit) {
-            action(defaultConfig)
-        }
-
-        val buildType: BuildType = dslServices.newDecoratedInstance(BuildType::class.java, "Build-Type", dslServices, componentType)
-
-        fun buildType(action: BuildType.() -> Unit) {
-            action(buildType)
-        }
-
-        private val productFlavors: ContainerImpl<ProductFlavor> = ContainerImpl { name ->
-            dslServices.newDecoratedInstance(ProductFlavor::class.java, name, dslServices)
-        }
-        val flavors: List<ProductFlavor>
-            get() = productFlavors.values.toList()
-
-        /**
-         * add/configures flavors. The earlier items have higher priority over the later ones.
-         */
-        fun productFlavors(action: Container<ProductFlavor>.() -> Unit) {
-            action(productFlavors)
-        }
-    }
-
-    class ResultData(
-        var versionCode: Int = -1,
-        var versionName: String = "",
-        var instrumentationRunner: String? = null,
-        var handleProfiling: Boolean? = null,
-        var functionalTest: Boolean? = null,
-        var namespace: String? = null
-    ) {
-        override fun equals(other: Any?): Boolean {
-            if (this === other) return true
-            if (javaClass != other?.javaClass) return false
-
-            other as ResultData
-
-            if (versionCode != other.versionCode) return false
-            if (versionName != other.versionName) return false
-            if (instrumentationRunner != other.instrumentationRunner) return false
-            if (handleProfiling != other.handleProfiling) return false
-            if (functionalTest != other.functionalTest) return false
-            if (namespace != other.namespace) return false
-
-            return true
-        }
-
-        override fun hashCode(): Int {
-            var result = versionCode ?: 0
-            result = 31 * result + (versionName?.hashCode() ?: 0)
-            result = 31 * result + (instrumentationRunner?.hashCode() ?: 0)
-            result = 31 * result + (handleProfiling?.hashCode() ?: 0)
-            result = 31 * result + (functionalTest?.hashCode() ?: 0)
-            result = 31 * result + (namespace?.hashCode() ?: 0)
-            return result
-        }
-
-        override fun toString(): String {
-            return "ResultData(versionCode=$versionCode, versionName=$versionName, instrumentationRunner=$instrumentationRunner, handleProfiling=$handleProfiling, functionalTest=$functionalTest, namespace=$namespace)"
-        }
-    }
-
-    /**
-     * Use the ManifestData provider in the given as a ManifestDataProvider in order to
-     * instantiate the ManifestBackedVariantValues object.
-     */
-    class DirectManifestDataProvider(data: ManifestData, projectServices: ProjectServices) :
-        ManifestDataProvider {
-
-        override val manifestData: Provider<ManifestData> =
-            projectServices.providerFactory.provider { data }
-
-        override val manifestLocation: String
-            get() = "manifest-location"
-    }
+    override val manifestLocation: String
+      get() = "manifest-location"
+  }
 }

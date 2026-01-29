@@ -22,47 +22,41 @@ import com.android.build.api.variant.TestSuiteSourceSet
 import com.android.build.gradle.internal.api.TestApkTestSuiteSourceSet
 import com.android.build.gradle.internal.services.VariantServices
 import com.android.build.gradle.internal.testsuites.TestSuiteSourceCreationConfig
+import javax.inject.Inject
 import org.gradle.api.Action
 import org.gradle.api.file.Directory
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.model.ObjectFactory
-import javax.inject.Inject
 
-open class TestSuiteTestApkSpecImpl @Inject internal constructor(
-    objects: ObjectFactory,
-    name: String,
-    projectDirectory: Directory,
-    buildDirectory: DirectoryProperty
-): AbstractTestSuiteSpecImpl(name, projectDirectory, buildDirectory), TestSuiteTestApkSpec, TestSuiteSourceCreationConfig {
+open class TestSuiteTestApkSpecImpl
+@Inject
+internal constructor(objects: ObjectFactory, name: String, projectDirectory: Directory, buildDirectory: DirectoryProperty) :
+  AbstractTestSuiteSpecImpl(name, projectDirectory, buildDirectory), TestSuiteTestApkSpec, TestSuiteSourceCreationConfig {
 
-    /**
-     * PUBLIC APIs
-     */
-    override val dependencies: AgpTestSuiteDependencies = objects.newInstance(AgpTestSuiteDependencies::class.java)
+  /** PUBLIC APIs */
+  override val dependencies: AgpTestSuiteDependencies = objects.newInstance(AgpTestSuiteDependencies::class.java)
 
-    fun dependencies(action:Action<AgpTestSuiteDependencies>) {
-        dependencies { action.execute(this) }
-    }
+  fun dependencies(action: Action<AgpTestSuiteDependencies>) {
+    dependencies { action.execute(this) }
+  }
 
-    override fun dependencies(action: AgpTestSuiteDependencies.() -> Unit) {
-        action.invoke(dependencies)
-    }
+  override fun dependencies(action: AgpTestSuiteDependencies.() -> Unit) {
+    action.invoke(dependencies)
+  }
 
-    /**
-     * INTERNAL APIs
-     */
-    override fun createTestSuiteSourceSet(
-        variantServices: VariantServices,
-        javaEnabled: Boolean,
-        kotlinEnabled: Boolean
-    ): TestSuiteSourceSet {
-        return TestApkTestSuiteSourceSet(
-            sourceSetName = name,
-            variantServices = variantServices,
-            userAddedSourceSets = userAddedSourcesSets,
-            javaEnabled = javaEnabled,
-            kotlinEnabled = kotlinEnabled,
-            dependencies = dependencies,
-        )
-    }
+  /** INTERNAL APIs */
+  override fun createTestSuiteSourceSet(
+    variantServices: VariantServices,
+    javaEnabled: Boolean,
+    kotlinEnabled: Boolean,
+  ): TestSuiteSourceSet {
+    return TestApkTestSuiteSourceSet(
+      sourceSetName = name,
+      variantServices = variantServices,
+      userAddedSourceSets = userAddedSourcesSets,
+      javaEnabled = javaEnabled,
+      kotlinEnabled = kotlinEnabled,
+      dependencies = dependencies,
+    )
+  }
 }

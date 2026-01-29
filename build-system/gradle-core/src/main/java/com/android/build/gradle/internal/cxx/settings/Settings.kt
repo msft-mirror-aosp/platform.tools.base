@@ -16,16 +16,9 @@
 
 package com.android.build.gradle.internal.cxx.settings
 
-/**
- * Content of a CMakeSettings.json file or ConfigurationSettings.json.
- */
-data class Settings(
-    val environments: List<SettingsEnvironment> = listOf(),
-    val configurations: List<SettingsConfiguration> = listOf()
-)
+/** Content of a CMakeSettings.json file or ConfigurationSettings.json. */
+data class Settings(val environments: List<SettingsEnvironment> = listOf(), val configurations: List<SettingsConfiguration> = listOf())
 
-/**
- * Get a named [SettingsConfiguration] if present.
- */
-fun Settings.getConfiguration(configurationName : String) : SettingsConfiguration? =
-    configurations.firstOrNull { it.name == configurationName }
+/** Get a named [SettingsConfiguration] if present. */
+fun Settings.getConfiguration(configurationName: String): SettingsConfiguration? =
+  configurations.firstOrNull { it.name == configurationName }

@@ -17,5 +17,5 @@
 package com.android.build.gradle.internal.core.dsl.features
 
 interface PrivacySandboxDslInfo {
-    val enable: Boolean
+  val enable: Boolean
 }

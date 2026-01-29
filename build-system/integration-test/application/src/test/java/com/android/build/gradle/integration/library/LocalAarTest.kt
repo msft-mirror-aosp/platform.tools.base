@@ -23,24 +23,17 @@ import org.junit.Test
 
 class LocalAarTest : ModelComparator() {
 
-    @get:Rule
-    val project = GradleTestProject.builder()
-        .fromTestProject("localAarTest")
-        .disableBuiltInKotlin()
-        .create()
+  @get:Rule val project = GradleTestProject.builder().fromTestProject("localAarTest").disableBuiltInKotlin().create()
 
-    @Test
-    fun `test VariantDependencies model`() {
-        val result = project.modelV2()
-            .fetchModels(variantName = "debug")
+  @Test
+  fun `test VariantDependencies model`() {
+    val result = project.modelV2().fetchModels(variantName = "debug")
 
-        with(result).compareVariantDependencies(
-            projectAction = { getProject(":app") }, goldenFile = "app_VariantDependencies"
-        )
-    }
+    with(result).compareVariantDependencies(projectAction = { getProject(":app") }, goldenFile = "app_VariantDependencies")
+  }
 
-    @Test
-    fun lint() {
-        project.executor().run("lint")
-    }
+  @Test
+  fun lint() {
+    project.executor().run("lint")
+  }
 }

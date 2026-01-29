@@ -25,11 +25,11 @@ import org.gradle.api.provider.SetProperty
  */
 interface JniLibsTestedComponentPackaging : JniLibsPackaging {
 
-    /**
-     * The set of test-only patterns. Native libraries matching any of these patterns do not get
-     * packaged in the main APK or AAR, but they are included in the test APK.
-     *
-     * Example: `packaging.jniLibs.testOnly.add("**`/`testOnly.so")`
-     */
-    val testOnly: SetProperty<String>
+  /**
+   * The set of test-only patterns. Native libraries matching any of these patterns do not get packaged in the main APK or AAR, but they are
+   * included in the test APK.
+   *
+   * Example: `packaging.jniLibs.testOnly.add("**`/`testOnly.so")`
+   */
+  val testOnly: SetProperty<String>
 }

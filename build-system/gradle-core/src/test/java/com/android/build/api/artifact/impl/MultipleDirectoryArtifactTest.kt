@@ -19,47 +19,47 @@ package com.android.build.api.artifact.impl
 import org.gradle.api.file.Directory
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.FileSystemLocationProperty
-import org.gradle.api.file.RegularFile
-import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.tasks.OutputFile
 import org.junit.Test
 
-class MultipleDirectoryArtifactTest : AbstractMultipleArtifactTest<Directory>(
-{ objectFactory -> objectFactory.listProperty(Directory::class.java)},
-{ directory, name -> directory.dir(name) },
-{ tasks, name -> tasks.register(name, SingleDirectoryArtifactTest.DirectoryProducerTask::class.java)}) {
+class MultipleDirectoryArtifactTest :
+  AbstractMultipleArtifactTest<Directory>(
+    { objectFactory -> objectFactory.listProperty(Directory::class.java) },
+    { directory, name -> directory.dir(name) },
+    { tasks, name -> tasks.register(name, SingleDirectoryArtifactTest.DirectoryProducerTask::class.java) },
+  ) {
 
-    abstract class InitialProducerTask: MultipleProducerTask<Directory>()
-    abstract class MultipleFileProducerTask: MultipleArtifactTransformTask<Directory>() {
-        @get:OutputFile
-        abstract override val transformedOutput: DirectoryProperty
-    }
+  abstract class InitialProducerTask : MultipleProducerTask<Directory>()
 
-    @Test
-    fun testReplace() {
-        super.testReplace(
-            { tasks, taskName -> tasks.register(taskName, InitialProducerTask::class.java)} ,
-            { tasks, taskName -> tasks.register(taskName, MultipleFileProducerTask::class.java) }
-        )
-    }
+  abstract class MultipleFileProducerTask : MultipleArtifactTransformTask<Directory>() {
+    @get:OutputFile abstract override val transformedOutput: DirectoryProperty
+  }
 
-    @Test
-    fun testAddAndReplace() {
-        super.testAddAndReplace(
-            { tasks, taskName -> tasks.register(taskName, InitialProducerTask::class.java)} ,
-            { tasks, taskName -> tasks.register(taskName, MultipleFileProducerTask::class.java) }
-        )
-    }
+  @Test
+  fun testReplace() {
+    super.testReplace(
+      { tasks, taskName -> tasks.register(taskName, InitialProducerTask::class.java) },
+      { tasks, taskName -> tasks.register(taskName, MultipleFileProducerTask::class.java) },
+    )
+  }
 
-    @Test
-    fun testTransform() {
-        super.testTransform(
-            { tasks, taskName -> tasks.register(taskName, InitialProducerTask::class.java)} ,
-            { tasks, taskName -> tasks.register(taskName, MultipleFileProducerTask::class.java) }
-        )
-    }
+  @Test
+  fun testAddAndReplace() {
+    super.testAddAndReplace(
+      { tasks, taskName -> tasks.register(taskName, InitialProducerTask::class.java) },
+      { tasks, taskName -> tasks.register(taskName, MultipleFileProducerTask::class.java) },
+    )
+  }
 
-    override val fileSystemLocationAllocator: (objects: ObjectFactory) -> FileSystemLocationProperty<Directory>
-        get() = { objects -> objects.directoryProperty() }
+  @Test
+  fun testTransform() {
+    super.testTransform(
+      { tasks, taskName -> tasks.register(taskName, InitialProducerTask::class.java) },
+      { tasks, taskName -> tasks.register(taskName, MultipleFileProducerTask::class.java) },
+    )
+  }
+
+  override val fileSystemLocationAllocator: (objects: ObjectFactory) -> FileSystemLocationProperty<Directory>
+    get() = { objects -> objects.directoryProperty() }
 }

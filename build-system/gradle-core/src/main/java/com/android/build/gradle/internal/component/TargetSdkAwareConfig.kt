@@ -18,10 +18,8 @@ package com.android.build.gradle.internal.component
 
 import com.android.build.api.variant.AndroidVersion
 
-/**
- * Interface for configurations that are aware of the target SDK.
- */
+/** Interface for configurations that are aware of the target SDK. */
 interface TargetSdkAwareConfig {
-    val targetSdk: AndroidVersion
-    val targetSdkOverride: AndroidVersion?
+  val targetSdk: AndroidVersion
+  val targetSdkOverride: AndroidVersion?
 }

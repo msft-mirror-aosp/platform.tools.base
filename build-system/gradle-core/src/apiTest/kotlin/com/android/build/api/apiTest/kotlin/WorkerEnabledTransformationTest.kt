@@ -19,19 +19,20 @@ package com.android.build.api.apiTest.kotlin
 import com.android.build.api.apiTest.VariantApiBaseTest
 import com.android.build.api.variant.impl.BuiltArtifactsImpl
 import com.google.common.truth.Truth
-import org.gradle.testkit.runner.TaskOutcome
-import org.junit.Test
 import java.io.File
 import kotlin.test.assertNotNull
+import org.gradle.testkit.runner.TaskOutcome
+import org.junit.Test
 
-class WorkerEnabledTransformationTest: VariantApiBaseTest(TestType.Script) {
-    @Test
-    fun workerEnabledTransformation() {
-        given {
-            tasksToInvoke.add(":app:copyDebugApks")
-            addModule(":app") {
-                // language=kotlin
-                buildFile = """
+class WorkerEnabledTransformationTest : VariantApiBaseTest(TestType.Script) {
+  @Test
+  fun workerEnabledTransformation() {
+    given {
+      tasksToInvoke.add(":app:copyDebugApks")
+      addModule(":app") {
+        // language=kotlin
+        buildFile =
+          """
             plugins {
                     id("com.android.application")
                     kotlin("android")
@@ -69,20 +70,20 @@ class WorkerEnabledTransformationTest: VariantApiBaseTest(TestType.Script) {
                     }
                 }
             }
-                """.trimIndent()
-                testingElements.addManifest(this)
-            }
-        }
-        check {
-            assertNotNull(this)
-            Truth.assertThat(output).contains("BUILD SUCCESSFUL")
-            val task = task(":app:copydebugApks")
-            assertNotNull(task)
-            Truth.assertThat(task.outcome).isEqualTo(TaskOutcome.SUCCESS)
-            val outFolder = File(testProjectDir.root, "${testName.methodName}/app/build/intermediates/apk/debug/packageDebug/")
-            Truth.assertThat(outFolder.listFiles()?.asList()?.map { it.name }).containsExactly(
-                "app-debug.apk", BuiltArtifactsImpl.METADATA_FILE_NAME
-            )
-        }
+                """
+            .trimIndent()
+        testingElements.addManifest(this)
+      }
     }
+    check {
+      assertNotNull(this)
+      Truth.assertThat(output).contains("BUILD SUCCESSFUL")
+      val task = task(":app:copydebugApks")
+      assertNotNull(task)
+      Truth.assertThat(task.outcome).isEqualTo(TaskOutcome.SUCCESS)
+      val outFolder = File(testProjectDir.root, "${testName.methodName}/app/build/intermediates/apk/debug/packageDebug/")
+      Truth.assertThat(outFolder.listFiles()?.asList()?.map { it.name })
+        .containsExactly("app-debug.apk", BuiltArtifactsImpl.METADATA_FILE_NAME)
+    }
+  }
 }

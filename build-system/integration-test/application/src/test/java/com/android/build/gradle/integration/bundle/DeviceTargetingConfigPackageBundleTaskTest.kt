@@ -31,22 +31,15 @@ import com.android.testutils.truth.ZipFileSubject.assertThat
 import com.android.tools.build.bundletool.model.AppBundle
 import com.google.common.base.Throwables
 import com.google.common.truth.Truth.assertThat
-import java.nio.file.Files
 import java.util.zip.ZipFile
 import org.junit.Rule
 import org.junit.Test
 
 class DeviceTargetingConfigPackageBundleTaskTest {
 
-  private val app =
-    MinimalSubProject.app("com.example.test")
-      .withFile("src/main/config.xml", CONFIG_XML)
+  private val app = MinimalSubProject.app("com.example.test").withFile("src/main/config.xml", CONFIG_XML)
 
-  @get:Rule
-  val project =
-    GradleTestProject.builder()
-      .fromTestApp(MultiModuleTestProject.builder().subproject(":app", app).build())
-      .create()
+  @get:Rule val project = GradleTestProject.builder().fromTestApp(MultiModuleTestProject.builder().subproject(":app", app).build()).create()
 
   @Test
   fun testDeviceTargetingConfig_enabled() {
@@ -54,20 +47,20 @@ class DeviceTargetingConfigPackageBundleTaskTest {
       .getSubproject(":app")
       .buildFile
       .appendText(
-          """
-          android {
-            bundle {
-              deviceGroup {
-                enableSplit = true
-                defaultGroup = 'test_group'
-              }
-              deviceTargetingConfig = file('src/main/config.xml')
+        """
+        android {
+          bundle {
+            deviceGroup {
+              enableSplit = true
+              defaultGroup = 'test_group'
             }
+            deviceTargetingConfig = file('src/main/config.xml')
           }
-          """.trimIndent())
-    project.executor()
-            .with(BooleanOption.ENABLE_DEVICE_TARGETING_CONFIG_API, true)
-            .run(":app:bundleDebug")
+        }
+        """
+          .trimIndent()
+      )
+    project.executor().with(BooleanOption.ENABLE_DEVICE_TARGETING_CONFIG_API, true).run(":app:bundleDebug")
 
     val bundleFile = project.locateBundleFileViaModel("debug", ":app")
 
@@ -77,19 +70,18 @@ class DeviceTargetingConfigPackageBundleTaskTest {
     ZipFile(bundleFile).use { zip ->
       val configEntry = zip.getEntry(METADATA_ENTRY)
       val configProto = DeviceGroupConfig.parseFrom(zip.getInputStream(configEntry))
-      assertThat(configProto).isEqualTo(EXPECTED_PROTO);
+      assertThat(configProto).isEqualTo(EXPECTED_PROTO)
 
       val appBundle = AppBundle.buildFromZip(zip)
 
       val splitsConfigBuilder = Config.SplitsConfig.newBuilder()
       splitsConfigBuilder
-          .addSplitDimensionBuilder()
-          .setValue(Config.SplitDimension.Value.DEVICE_GROUP)
-          .suffixStrippingBuilder
-          .setEnabled(true)
-          .setDefaultSuffix("test_group")
-      assertThat(appBundle.bundleConfig.optimizations.splitsConfig)
-          .isEqualTo(splitsConfigBuilder.build())
+        .addSplitDimensionBuilder()
+        .setValue(Config.SplitDimension.Value.DEVICE_GROUP)
+        .suffixStrippingBuilder
+        .setEnabled(true)
+        .setDefaultSuffix("test_group")
+      assertThat(appBundle.bundleConfig.optimizations.splitsConfig).isEqualTo(splitsConfigBuilder.build())
     }
   }
 
@@ -99,26 +91,23 @@ class DeviceTargetingConfigPackageBundleTaskTest {
       .getSubproject(":app")
       .buildFile
       .appendText(
-          """
-          android {
-            bundle {
-              deviceGroup {
-                enableSplit = true
-                defaultGroup = 'UNKNOWN_group'
-              }
-              deviceTargetingConfig = file('src/main/config.xml')
+        """
+        android {
+          bundle {
+            deviceGroup {
+              enableSplit = true
+              defaultGroup = 'UNKNOWN_group'
             }
+            deviceTargetingConfig = file('src/main/config.xml')
           }
-          """.trimIndent())
-    val failure = project.executor()
-            .with(BooleanOption.ENABLE_DEVICE_TARGETING_CONFIG_API, true)
-            .expectFailure()
-            .run(":app:bundleDebug")
+        }
+        """
+          .trimIndent()
+      )
+    val failure = project.executor().with(BooleanOption.ENABLE_DEVICE_TARGETING_CONFIG_API, true).expectFailure().run(":app:bundleDebug")
 
     val exception = Throwables.getRootCause(failure.exception!!)
-    assertThat(exception).hasMessageThat()
-        .contains(
-            "device group [UNKNOWN_group] which is not in the list [test_group, other]")
+    assertThat(exception).hasMessageThat().contains("device group [UNKNOWN_group] which is not in the list [test_group, other]")
   }
 
   @Test
@@ -127,18 +116,19 @@ class DeviceTargetingConfigPackageBundleTaskTest {
       .getSubproject(":app")
       .buildFile
       .appendText(
-          """
-          android {
-            bundle {
-              deviceTargetingConfig = file('src/main/config.xml')
-            }
+        """
+        android {
+          bundle {
+            deviceTargetingConfig = file('src/main/config.xml')
           }
-          """.trimIndent())
+        }
+        """
+          .trimIndent()
+      )
     val failure = project.executor().expectFailure().run(":app:bundleDebug")
 
     val exception = Throwables.getRootCause(failure.exception!!)
-    assertThat(exception).hasMessageThat()
-        .contains("deviceTargetingConfig is not enabled")
+    assertThat(exception).hasMessageThat().contains("deviceTargetingConfig is not enabled")
   }
 
   @Test
@@ -147,20 +137,21 @@ class DeviceTargetingConfigPackageBundleTaskTest {
       .getSubproject(":app")
       .buildFile
       .appendText(
-          """
-          android {
-            bundle {
-              deviceGroup {
-                enableSplit = true
-              }
+        """
+        android {
+          bundle {
+            deviceGroup {
+              enableSplit = true
             }
           }
-          """.trimIndent())
+        }
+        """
+          .trimIndent()
+      )
     val failure = project.executor().expectFailure().run(":app:bundleDebug")
 
     val exception = Throwables.getRootCause(failure.exception!!)
-    assertThat(exception).hasMessageThat()
-        .contains("deviceGroup splits is not enabled")
+    assertThat(exception).hasMessageThat().contains("deviceGroup splits is not enabled")
   }
 
   @Test
@@ -171,21 +162,17 @@ class DeviceTargetingConfigPackageBundleTaskTest {
 
     assertThat(bundleFile).isNotNull()
     assertThat(bundleFile.toPath()).exists()
-    assertThat(bundleFile) {
-      it.doesNotContain(METADATA_ENTRY)
-    }
+    assertThat(bundleFile) { it.doesNotContain(METADATA_ENTRY) }
 
     ZipFile(bundleFile).use { zip ->
       val appBundle = AppBundle.buildFromZip(zip)
 
-      assertThat(appBundle.bundleConfig.optimizations.splitsConfig)
-          .isEqualTo(Config.SplitsConfig.getDefaultInstance())
+      assertThat(appBundle.bundleConfig.optimizations.splitsConfig).isEqualTo(Config.SplitsConfig.getDefaultInstance())
     }
   }
 
   companion object {
-    private val METADATA_ENTRY =
-      "BUNDLE-METADATA/com.android.tools.build.bundletool/DeviceGroupConfig.pb"
+    private val METADATA_ENTRY = "BUNDLE-METADATA/com.android.tools.build.bundletool/DeviceGroupConfig.pb"
 
     private val CONFIG_XML =
       """
@@ -201,17 +188,17 @@ class DeviceTargetingConfigPackageBundleTaskTest {
       </config:device-targeting-config>
       """
 
-    private val EXPECTED_PROTO = DeviceGroupConfig.newBuilder()
-      .addDeviceGroups(
-        DeviceGroup.newBuilder()
-          .setName("test_group")
-          .addDeviceSelectors(
-            DeviceSelector.newBuilder()
-              .setDeviceRam(DeviceRam.newBuilder().setMinBytes(12345678L))
-              .addIncludedDeviceIds(
-                DeviceId.newBuilder()
-                  .setBuildBrand("google")
-                  .setBuildDevice("husky"))))
-      .build()
+    private val EXPECTED_PROTO =
+      DeviceGroupConfig.newBuilder()
+        .addDeviceGroups(
+          DeviceGroup.newBuilder()
+            .setName("test_group")
+            .addDeviceSelectors(
+              DeviceSelector.newBuilder()
+                .setDeviceRam(DeviceRam.newBuilder().setMinBytes(12345678L))
+                .addIncludedDeviceIds(DeviceId.newBuilder().setBuildBrand("google").setBuildDevice("husky"))
+            )
+        )
+        .build()
   }
 }

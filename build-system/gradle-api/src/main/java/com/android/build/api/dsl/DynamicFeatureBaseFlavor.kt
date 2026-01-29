@@ -17,11 +17,8 @@
 package com.android.build.api.dsl
 
 /**
- * Shared properties between DSL objects [DynamicFeatureProductFlavor] and
- * [DynamicFeatureDefaultConfig]
+ * Shared properties between DSL objects [DynamicFeatureProductFlavor] and [DynamicFeatureDefaultConfig]
  *
  * See [ProductFlavor] and [DefaultConfig] for more information.
  */
-interface DynamicFeatureBaseFlavor :
-    BaseFlavor,
-    DynamicFeatureVariantDimension
+interface DynamicFeatureBaseFlavor : BaseFlavor, DynamicFeatureVariantDimension

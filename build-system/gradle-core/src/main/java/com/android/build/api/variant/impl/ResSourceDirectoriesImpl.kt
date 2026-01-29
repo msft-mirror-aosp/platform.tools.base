@@ -19,8 +19,5 @@ package com.android.build.api.variant.impl
 import com.android.build.gradle.internal.services.VariantServices
 import org.gradle.api.tasks.util.PatternFilterable
 
-class ResSourceDirectoriesImpl(
-    _name: String,
-    val variantServices: VariantServices,
-    variantDslFilters: PatternFilterable?,
-) : LayeredSourceDirectoriesImpl(_name, variantServices, variantDslFilters)
+class ResSourceDirectoriesImpl(_name: String, val variantServices: VariantServices, variantDslFilters: PatternFilterable?) :
+  LayeredSourceDirectoriesImpl(_name, variantServices, variantDslFilters)

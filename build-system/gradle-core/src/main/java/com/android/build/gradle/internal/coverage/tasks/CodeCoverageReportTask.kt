@@ -1,4 +1,4 @@
- /* Copyright (C) 2025 The Android Open Source Project
+/* Copyright (C) 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -11,7 +11,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
-  */
+ */
 
 package com.android.build.gradle.internal.coverage.tasks
 
@@ -23,6 +23,7 @@ import com.android.build.gradle.internal.tasks.NonIncrementalGlobalTask
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationAction
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfig
 import com.android.buildanalyzer.common.TaskCategory
+import java.io.File
 import org.gradle.api.file.Directory
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.RegularFileProperty
@@ -36,91 +37,67 @@ import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.internal.logging.ConsoleRenderer
-import java.io.File
 
 @CacheableTask
 @BuildAnalyzer(primaryTaskCategory = TaskCategory.TEST)
-abstract class CodeCoverageReportTask: NonIncrementalGlobalTask() {
+abstract class CodeCoverageReportTask : NonIncrementalGlobalTask() {
 
-    @get:InputFiles
-    @get:PathSensitive(PathSensitivity.RELATIVE)
-    abstract val coverageXmlReports: ListProperty<Directory>
+  @get:InputFiles @get:PathSensitive(PathSensitivity.RELATIVE) abstract val coverageXmlReports: ListProperty<Directory>
 
-    @get:OutputDirectory
-    abstract val htmlReportDir: DirectoryProperty
+  @get:OutputDirectory abstract val htmlReportDir: DirectoryProperty
 
-    @get:Internal
-    abstract val rootProjectName: Property<String>
+  @get:Internal abstract val rootProjectName: Property<String>
 
-    @get:Internal
-    abstract val rootProjectDir: RegularFileProperty
+  @get:Internal abstract val rootProjectDir: RegularFileProperty
 
-    override fun doTaskAction() {
-        val inputDirectories: List<File> = coverageXmlReports.get().map { it.asFile }
+  override fun doTaskAction() {
+    val inputDirectories: List<File> = coverageXmlReports.get().map { it.asFile }
 
-        CodeCoverageReportOrchestrator.orchestrate(
-            inputDirectories,
-            htmlReportDir,
-            rootProjectName.get(),
-            rootProjectDir.get().asFile
-        )
+    CodeCoverageReportOrchestrator.orchestrate(inputDirectories, htmlReportDir, rootProjectName.get(), rootProjectDir.get().asFile)
 
-        val reportLocation =
-            ConsoleRenderer().asClickableFileUrl(File(htmlReportDir.get().asFile, "index.html"))
-        logger.lifecycle("View coverage report at $reportLocation")
+    val reportLocation = ConsoleRenderer().asClickableFileUrl(File(htmlReportDir.get().asFile, "index.html"))
+    logger.lifecycle("View coverage report at $reportLocation")
+  }
+
+  class AggregatedCoverageReportCreationAction(creationConfig: GlobalTaskCreationConfig) :
+    BaseCoverageReportCreationAction(creationConfig) {
+    override val name = "createAggregatedCoverageReport"
+    override val artifactType = InternalMultipleArtifactType.AGGREGATED_CODE_COVERAGE_DATA
+
+    override fun handleProvider(taskProvider: TaskProvider<CodeCoverageReportTask>) {
+      super.handleProvider(taskProvider)
+
+      creationConfig.globalArtifacts
+        .setInitialProvider(taskProvider, CodeCoverageReportTask::htmlReportDir)
+        .on(InternalArtifactType.AGGREGATED_CODE_COVERAGE_HTML_REPORT)
     }
+  }
 
-    class AggregatedCoverageReportCreationAction(
-        creationConfig: GlobalTaskCreationConfig
-    ): BaseCoverageReportCreationAction(creationConfig) {
-        override val name = "createAggregatedCoverageReport"
-        override val artifactType = InternalMultipleArtifactType.AGGREGATED_CODE_COVERAGE_DATA
+  class CoverageReportCreationAction(creationConfig: GlobalTaskCreationConfig) : BaseCoverageReportCreationAction(creationConfig) {
+    override val name = "createCoverageReport"
+    override val artifactType = InternalMultipleArtifactType.CODE_COVERAGE_DATA
 
-        override fun handleProvider(taskProvider: TaskProvider<CodeCoverageReportTask>) {
-            super.handleProvider(taskProvider)
+    override fun handleProvider(taskProvider: TaskProvider<CodeCoverageReportTask>) {
+      super.handleProvider(taskProvider)
 
-            creationConfig
-                .globalArtifacts
-                .setInitialProvider(
-                    taskProvider,
-                    CodeCoverageReportTask::htmlReportDir
-                )
-                .on(InternalArtifactType.AGGREGATED_CODE_COVERAGE_HTML_REPORT)
-        }
+      creationConfig.globalArtifacts
+        .setInitialProvider(taskProvider, CodeCoverageReportTask::htmlReportDir)
+        .on(InternalArtifactType.CODE_COVERAGE_HTML_REPORT)
     }
+  }
 
-    class CoverageReportCreationAction(
-        creationConfig: GlobalTaskCreationConfig
-    ): BaseCoverageReportCreationAction(creationConfig) {
-        override val name = "createCoverageReport"
-        override val artifactType = InternalMultipleArtifactType.CODE_COVERAGE_DATA
+  abstract class BaseCoverageReportCreationAction(val creationConfig: GlobalTaskCreationConfig) :
+    GlobalTaskCreationAction<CodeCoverageReportTask>() {
 
-        override fun handleProvider(taskProvider: TaskProvider<CodeCoverageReportTask>) {
-            super.handleProvider(taskProvider)
+    abstract val artifactType: InternalMultipleArtifactType<Directory>
+    override val type = CodeCoverageReportTask::class.java
 
-            creationConfig
-                .globalArtifacts
-                .setInitialProvider(
-                    taskProvider,
-                    CodeCoverageReportTask::htmlReportDir
-                )
-                .on(InternalArtifactType.CODE_COVERAGE_HTML_REPORT)
-        }
+    override fun configure(task: CodeCoverageReportTask) {
+      super.configure(task)
+
+      task.coverageXmlReports.set(creationConfig.globalArtifacts.getAll(artifactType))
+      task.rootProjectName.set(creationConfig.services.projectInfo.rootProjectName)
+      task.rootProjectDir.set(creationConfig.services.projectInfo.rootDir)
     }
-
-    abstract class BaseCoverageReportCreationAction(
-        val creationConfig: GlobalTaskCreationConfig
-    ): GlobalTaskCreationAction<CodeCoverageReportTask>() {
-
-        abstract val artifactType: InternalMultipleArtifactType<Directory>
-        override val type = CodeCoverageReportTask::class.java
-
-        override fun configure(task: CodeCoverageReportTask) {
-            super.configure(task)
-
-            task.coverageXmlReports.set(creationConfig.globalArtifacts.getAll(artifactType))
-            task.rootProjectName.set(creationConfig.services.projectInfo.rootProjectName)
-            task.rootProjectDir.set(creationConfig.services.projectInfo.rootDir)
-        }
-    }
+  }
 }

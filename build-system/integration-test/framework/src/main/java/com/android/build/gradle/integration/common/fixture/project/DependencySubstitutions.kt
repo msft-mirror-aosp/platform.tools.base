@@ -23,44 +23,43 @@ import com.android.build.gradle.integration.common.fixture.project.builder.Proje
 /** Builder for defining multiple dependency substitution rules. */
 @GradleDefinitionDsl
 interface DependencySubstitutionsBuilder {
-    fun substitute(coordinates: Substitution): Substitution
+  fun substitute(coordinates: Substitution): Substitution
 
-    fun module(moduleCoordinates: String): Substitution
+  fun module(moduleCoordinates: String): Substitution
 
-    fun project(projectPath: String, testFixtures: Boolean = false): Substitution
+  fun project(projectPath: String, testFixtures: Boolean = false): Substitution
 }
 
 /** Builder for defining a single substitution rule. Only supports and exposes "using" for now. */
 @GradleDefinitionDsl
 sealed interface Substitution {
-    var using: Substitution
+  var using: Substitution
 
-    fun using(coordinates: Substitution)
+  fun using(coordinates: Substitution)
 }
 
 sealed class SubstitutionImpl : Substitution {
-    data class Project(val projectDependency: ProjectDependencyBuilder) : SubstitutionImpl()
-    data class Module(val moduleCoordinates: String) : SubstitutionImpl()
-    override lateinit var using: Substitution
+  data class Project(val projectDependency: ProjectDependencyBuilder) : SubstitutionImpl()
 
-    override fun using(coordinates: Substitution) {
-        using = coordinates
-    }
+  data class Module(val moduleCoordinates: String) : SubstitutionImpl()
+
+  override lateinit var using: Substitution
+
+  override fun using(coordinates: Substitution) {
+    using = coordinates
+  }
 }
 
 internal class DependencySubstitutionsBuilderImpl : DependencySubstitutionsBuilder {
-    val substitutions = mutableListOf<Substitution>()
+  val substitutions = mutableListOf<Substitution>()
 
-    override fun substitute(coordinates: Substitution): Substitution {
-        substitutions.add(coordinates)
-        return coordinates
-    }
+  override fun substitute(coordinates: Substitution): Substitution {
+    substitutions.add(coordinates)
+    return coordinates
+  }
 
-    override fun project(projectPath: String, testFixtures: Boolean) =
-        SubstitutionImpl.Project(ProjectDependencyBuilderImpl(projectPath, testFixtures))
+  override fun project(projectPath: String, testFixtures: Boolean) =
+    SubstitutionImpl.Project(ProjectDependencyBuilderImpl(projectPath, testFixtures))
 
-
-    override fun module(moduleCoordinates: String) =
-        SubstitutionImpl.Module(moduleCoordinates)
+  override fun module(moduleCoordinates: String) = SubstitutionImpl.Module(moduleCoordinates)
 }
-

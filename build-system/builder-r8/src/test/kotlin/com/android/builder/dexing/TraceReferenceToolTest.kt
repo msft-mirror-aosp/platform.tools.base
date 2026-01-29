@@ -19,88 +19,81 @@ package com.android.builder.dexing
 import com.android.builder.dexing.testdata.ClassWithDesugarLibraryApi
 import com.android.testutils.TestInputsGenerator
 import com.android.testutils.TestUtils
+import kotlin.io.path.createDirectory
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
-import kotlin.io.path.createDirectory
 
 class TraceReferenceToolTest {
-    @get:Rule
-    val tmp = TemporaryFolder()
+  @get:Rule val tmp = TemporaryFolder()
 
-    @Test
-    fun testKeepRuleGeneration() {
-        // run r8 to generate dex files
-        val programJar = tmp.root.toPath().resolve("program.jar")
-        TestInputsGenerator.pathWithClasses(
-            programJar,
-            listOf(ClassWithDesugarLibraryApi::class.java)
-        )
-        val dexOutput = tmp.root.toPath().resolve("output").also { it.createDirectory() }
+  @Test
+  fun testKeepRuleGeneration() {
+    // run r8 to generate dex files
+    val programJar = tmp.root.toPath().resolve("program.jar")
+    TestInputsGenerator.pathWithClasses(programJar, listOf(ClassWithDesugarLibraryApi::class.java))
+    val dexOutput = tmp.root.toPath().resolve("output").also { it.createDirectory() }
 
-        val toolConfig = ToolConfig(
-            minSdkVersion = 21,
-            debuggable = true,
-            disableTreeShaking = true,
-            disableMinification = true,
-            disableDesugaring = true,
-            fullMode = true,
-            strictFullModeForKeepRules = true,
-            isolatedSplits = null,
-            r8OutputType = R8OutputType.DEX,
-            mainDexListDisallowed = true // Default behaviour as in BooleanOption.R8_MAIN_DEX_LIST_DISALLOWED
-        )
-        val mainDexConfig = MainDexListConfig(listOf(), listOf())
-        val fakeOutput = tmp.newFolder().resolve("fake_output.txt").toPath()
-        val emptyProguardOutputFiles =
-                ProguardOutputFiles(fakeOutput, fakeOutput, fakeOutput, fakeOutput, fakeOutput, fakeOutput)
-        val proguardConfig =
-                ProguardConfig(listOf(), null, listOf(), emptyProguardOutputFiles)
-        val androidJar = TestUtils.resolvePlatformPath("android.jar", TestUtils.TestType.AGP)
-        val javaRes = tmp.root.toPath().resolve("javaResources")
+    val toolConfig =
+      ToolConfig(
+        minSdkVersion = 21,
+        debuggable = true,
+        disableTreeShaking = true,
+        disableMinification = true,
+        disableDesugaring = true,
+        fullMode = true,
+        strictFullModeForKeepRules = true,
+        isolatedSplits = null,
+        r8OutputType = R8OutputType.DEX,
+        mainDexListDisallowed = true, // Default behaviour as in BooleanOption.R8_MAIN_DEX_LIST_DISALLOWED
+      )
+    val mainDexConfig = MainDexListConfig(listOf(), listOf())
+    val fakeOutput = tmp.newFolder().resolve("fake_output.txt").toPath()
+    val emptyProguardOutputFiles = ProguardOutputFiles(fakeOutput, fakeOutput, fakeOutput, fakeOutput, fakeOutput, fakeOutput)
+    val proguardConfig = ProguardConfig(listOf(), null, listOf(), emptyProguardOutputFiles)
+    val androidJar = TestUtils.resolvePlatformPath("android.jar", TestUtils.TestType.AGP)
+    val javaRes = tmp.root.toPath().resolve("javaResources")
 
-        runR8(
-            inputClasses = listOf(programJar),
-            output = dexOutput,
-            inputJavaResJar = tmp.root.toPath().resolve("java_resources.jar").also {
-                TestInputsGenerator.jarWithEmptyClasses(it, listOf())
-            },
-            javaResourcesJar = javaRes,
-            libraries = listOf(),
-            classpath = listOf(androidJar),
-            toolConfig = toolConfig,
-            proguardConfig = proguardConfig,
-            mainDexListConfig = mainDexConfig,
-            resourceShrinkingConfig = null,
-            messageReceiver = NoOpMessageReceiver(),
-            featureClassJars = listOf(),
-            featureJavaResourceJars = listOf(),
-            featureDexDir = null,
-            featureJavaResourceOutputDir = null
-        )
+    runR8(
+      inputClasses = listOf(programJar),
+      output = dexOutput,
+      inputJavaResJar = tmp.root.toPath().resolve("java_resources.jar").also { TestInputsGenerator.jarWithEmptyClasses(it, listOf()) },
+      javaResourcesJar = javaRes,
+      libraries = listOf(),
+      classpath = listOf(androidJar),
+      toolConfig = toolConfig,
+      proguardConfig = proguardConfig,
+      mainDexListConfig = mainDexConfig,
+      resourceShrinkingConfig = null,
+      messageReceiver = NoOpMessageReceiver(),
+      featureClassJars = listOf(),
+      featureJavaResourceJars = listOf(),
+      featureDexDir = null,
+      featureJavaResourceOutputDir = null,
+    )
 
-        // run l8 to generate the desugared desugar library
-        val desugaredDesugarLib = tmp.root.toPath().resolve("desugaredDesugarLib")
+    // run l8 to generate the desugared desugar library
+    val desugaredDesugarLib = tmp.root.toPath().resolve("desugaredDesugarLib")
 
-        runL8(
-            listOf(TestUtils.getDesugarLibJar()),
-            desugaredDesugarLib,
-            TestUtils.getDesugarLibConfigContent(),
-            listOf(androidJar),
-            21,
-            KeepRulesConfig(emptyList(), emptyList()),
-            true,
-            L8OutputMode.ClassFile
-        )
+    runL8(
+      listOf(TestUtils.getDesugarLibJar()),
+      desugaredDesugarLib,
+      TestUtils.getDesugarLibConfigContent(),
+      listOf(androidJar),
+      21,
+      KeepRulesConfig(emptyList(), emptyList()),
+      true,
+      L8OutputMode.ClassFile,
+    )
 
-        // run trace reference tool to generate keep rules
-        val keepRuleOutput = tmp.root.toPath().resolve("keepRule")
-        runTraceReferenceTool(
-            listOf(androidJar),
-            listOf(desugaredDesugarLib.resolve("desugared-desugar-lib.jar")),
-            listOf(dexOutput.resolve("classes.dex")),
-            keepRuleOutput
-        )
-        check(keepRuleOutput.toFile().exists())
-    }
+    // run trace reference tool to generate keep rules
+    val keepRuleOutput = tmp.root.toPath().resolve("keepRule")
+    runTraceReferenceTool(
+      listOf(androidJar),
+      listOf(desugaredDesugarLib.resolve("desugared-desugar-lib.jar")),
+      listOf(dexOutput.resolve("classes.dex")),
+      keepRuleOutput,
+    )
+    check(keepRuleOutput.toFile().exists())
+  }
 }

@@ -19,14 +19,14 @@ package com.android.build.gradle.internal.core.dsl.features
 import java.io.File
 
 /**
- * Contains the final dsl info computed from the DSL object model (extension, default config,
- * build type, flavors) that are needed by components that produce dex files.
+ * Contains the final dsl info computed from the DSL object model (extension, default config, build type, flavors) that are needed by
+ * components that produce dex files.
  */
 interface DexingDslInfo {
-    // Only require specific multidex opt-in for legacy multidex.
-    val isMultiDexEnabled: Boolean?
+  // Only require specific multidex opt-in for legacy multidex.
+  val isMultiDexEnabled: Boolean?
 
-    val multiDexKeepProguard: File?
+  val multiDexKeepProguard: File?
 
-    val multiDexKeepFile: File?
+  val multiDexKeepFile: File?
 }

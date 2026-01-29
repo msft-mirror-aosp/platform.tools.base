@@ -22,17 +22,16 @@ import com.android.build.api.artifact.impl.ArtifactsImpl
 import com.android.build.api.artifact.impl.SingleInitialProviderRequestImpl
 import com.android.build.gradle.internal.dependency.PluginConfigurations
 import com.android.build.gradle.internal.fixtures.FakeConfigurableFileCollection
-import com.android.build.gradle.internal.fixtures.FakeGradleDirectoryProperty
 import com.android.build.gradle.internal.fusedlibrary.FusedLibraryGlobalScope
 import com.android.build.gradle.internal.fusedlibrary.FusedLibraryGlobalScopeImpl
 import com.android.build.gradle.internal.fusedlibrary.FusedLibraryInternalArtifactType
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
 import com.google.common.truth.Truth
+import java.io.File
 import org.gradle.api.Project
 import org.gradle.api.artifacts.Configuration
 import org.gradle.api.artifacts.DependencySet
 import org.gradle.api.artifacts.FileCollectionDependency
-import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.RegularFile
 import org.gradle.testfixtures.ProjectBuilder
 import org.junit.Rule
@@ -40,67 +39,53 @@ import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
-import java.io.File
 
 internal class FusedLibraryBundleTest {
-    @Rule
-    @JvmField var temporaryFolder = TemporaryFolder()
+  @Rule @JvmField var temporaryFolder = TemporaryFolder()
 
-    val build: File by lazy {
-        temporaryFolder.newFolder("build")
-    }
+  val build: File by lazy { temporaryFolder.newFolder("build") }
 
-    @Test
-    fun testAarBundle() {
-        testCreationConfig<FusedLibraryBundleAar, FusedLibraryBundleAar.CreationAction>(
-            "test.aar"
-        )
-    }
+  @Test
+  fun testAarBundle() {
+    testCreationConfig<FusedLibraryBundleAar, FusedLibraryBundleAar.CreationAction>("test.aar")
+  }
 
-    inline fun <reified T: FusedLibraryBundle, reified U: FusedLibraryBundle.CreationAction<T>> testCreationConfig(
-        archiveFileName: String,
-    ) {
-        val project: Project = ProjectBuilder.builder().withProjectDir(temporaryFolder.root).build()
-        val taskProvider = project.tasks.register("bundle", T::class.java)
+  inline fun <reified T : FusedLibraryBundle, reified U : FusedLibraryBundle.CreationAction<T>> testCreationConfig(
+    archiveFileName: String
+  ) {
+    val project: Project = ProjectBuilder.builder().withProjectDir(temporaryFolder.root).build()
+    val taskProvider = project.tasks.register("bundle", T::class.java)
 
-        val variantScope = mock<FusedLibraryGlobalScopeImpl>()
-        val artifacts = mock<ArtifactsImpl>()
-        val incomingConfigurations = mock<PluginConfigurations>()
-        val configuration = mock<Configuration>()
-        val dependencySet = mock<DependencySet>()
-        val fileCollectionDependency = mock<FileCollectionDependency>()
+    val variantScope = mock<FusedLibraryGlobalScopeImpl>()
+    val artifacts = mock<ArtifactsImpl>()
+    val incomingConfigurations = mock<PluginConfigurations>()
+    val configuration = mock<Configuration>()
+    val dependencySet = mock<DependencySet>()
+    val fileCollectionDependency = mock<FileCollectionDependency>()
 
-        whenever(variantScope.artifacts).thenReturn(artifacts)
-        whenever(variantScope.projectLayout).thenReturn(project.layout)
-        whenever(variantScope.incomingConfigurations).thenReturn(incomingConfigurations)
-        whenever(incomingConfigurations.getByConfigType(
-            AndroidArtifacts.ConsumedConfigType.RUNTIME_CLASSPATH)).thenReturn(configuration)
+    whenever(variantScope.artifacts).thenReturn(artifacts)
+    whenever(variantScope.projectLayout).thenReturn(project.layout)
+    whenever(variantScope.incomingConfigurations).thenReturn(incomingConfigurations)
+    whenever(incomingConfigurations.getByConfigType(AndroidArtifacts.ConsumedConfigType.RUNTIME_CLASSPATH)).thenReturn(configuration)
 
-        whenever(configuration.allDependencies).thenReturn(dependencySet)
-        whenever(fileCollectionDependency.files).thenReturn(
-            FakeConfigurableFileCollection(File("someJar.jar")))
-        whenever(dependencySet.iterator())
-            .thenReturn(mutableSetOf(fileCollectionDependency).iterator())
+    whenever(configuration.allDependencies).thenReturn(dependencySet)
+    whenever(fileCollectionDependency.files).thenReturn(FakeConfigurableFileCollection(File("someJar.jar")))
+    whenever(dependencySet.iterator()).thenReturn(mutableSetOf(fileCollectionDependency).iterator())
 
-        val request = mock<SingleInitialProviderRequestImpl<T, RegularFile>>()
+    val request = mock<SingleInitialProviderRequestImpl<T, RegularFile>>()
 
-        whenever(artifacts.setInitialProvider(taskProvider, FusedLibraryBundle::outputFile))
-                .thenReturn(request)
-        whenever(artifacts.get(FusedLibraryInternalArtifactType.DEPENDENCY_VALIDATION))
-            .thenReturn(project.layout.buildDirectory.dir(
-                FusedLibraryInternalArtifactType.DEPENDENCY_VALIDATION.getFolderName()
-            ))
+    whenever(artifacts.setInitialProvider(taskProvider, FusedLibraryBundle::outputFile)).thenReturn(request)
+    whenever(artifacts.get(FusedLibraryInternalArtifactType.DEPENDENCY_VALIDATION))
+      .thenReturn(project.layout.buildDirectory.dir(FusedLibraryInternalArtifactType.DEPENDENCY_VALIDATION.getFolderName()))
 
-        val creationAction = U::class.java.getDeclaredConstructor(FusedLibraryGlobalScope::class.java)
-            .newInstance(variantScope)
-        creationAction.handleProvider(taskProvider)
+    val creationAction = U::class.java.getDeclaredConstructor(FusedLibraryGlobalScope::class.java).newInstance(variantScope)
+    creationAction.handleProvider(taskProvider)
 
-        val task = taskProvider.get()
-        creationAction.configure(task)
+    val task = taskProvider.get()
+    creationAction.configure(task)
 
-        Truth.assertThat(task.destinationDirectory.get().asFile.absolutePath).isEqualTo(
-            project.layout.buildDirectory.dir("$FD_OUTPUTS/$EXT_AAR").get().asFile.absolutePath
-        )
-        Truth.assertThat(task.archiveFileName.get()).isEqualTo(archiveFileName)
-    }
+    Truth.assertThat(task.destinationDirectory.get().asFile.absolutePath)
+      .isEqualTo(project.layout.buildDirectory.dir("$FD_OUTPUTS/$EXT_AAR").get().asFile.absolutePath)
+    Truth.assertThat(task.archiveFileName.get()).isEqualTo(archiveFileName)
+  }
 }

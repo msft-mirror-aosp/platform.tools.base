@@ -26,6 +26,8 @@ import com.android.sdklib.internal.avd.AvdManager
 import com.android.utils.ILogger
 import com.google.common.truth.Truth.assertThat
 import com.google.common.util.concurrent.MoreExecutors
+import java.io.File
+import java.io.InputStream
 import org.gradle.api.file.Directory
 import org.gradle.api.provider.Provider
 import org.junit.Assert.assertThrows
@@ -41,254 +43,217 @@ import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
-import java.io.File
-import java.io.InputStream
 
 @RunWith(JUnit4::class)
 class AvdSnapshotHandlerTest {
 
-    @get:Rule
-    val tmpFolder = TemporaryFolder()
+  @get:Rule val tmpFolder = TemporaryFolder()
 
-    private val mockAdbHelper: AdbHelper = mock()
+  private val mockAdbHelper: AdbHelper = mock()
 
-    private val mockAvdManager: AvdManager = mock()
+  private val mockAvdManager: AvdManager = mock()
 
-    private val mockAvdInfo: AvdInfo = mock()
+  private val mockAvdInfo: AvdInfo = mock()
 
-    private val mockLogger: ILogger = mock()
+  private val mockLogger: ILogger = mock()
 
-    private val emulatorDirectoryProvider: Provider<Directory> = mock()
+  private val emulatorDirectoryProvider: Provider<Directory> = mock()
 
-    private val emulatorDir: Directory = mock()
+  private val emulatorDir: Directory = mock()
 
-    private val qemuExecutor: QemuExecutor = mock()
+  private val qemuExecutor: QemuExecutor = mock()
 
-    private val emulatorDirectory: File by lazy(LazyThreadSafetyMode.NONE) { tmpFolder.newFolder() }
-    private val avdDirectory: File by lazy(LazyThreadSafetyMode.NONE) { tmpFolder.newFolder() }
+  private val emulatorDirectory: File by lazy(LazyThreadSafetyMode.NONE) { tmpFolder.newFolder() }
+  private val avdDirectory: File by lazy(LazyThreadSafetyMode.NONE) { tmpFolder.newFolder() }
 
-    @Before
-    fun setupMocks() {
-        whenever(emulatorDirectoryProvider.orNull).thenReturn(emulatorDir)
-        whenever(emulatorDir.asFile).thenReturn(emulatorDirectory)
-        whenever(
-            mockAdbHelper.findDeviceSerialWithId(
-                any(),
-                any()
-            )
-        ).thenReturn("myTestDeviceSerial")
-        whenever(mockAdbHelper.isBootCompleted(any(), any())).thenReturn(true)
-        whenever(mockAdbHelper.isPackageManagerStarted(any(), any())).thenReturn(true)
-        whenever(mockAvdManager.getAvd(any(), any())).thenReturn(mockAvdInfo)
-        val dataFolder = tmpFolder.newFolder()
-        whenever(mockAvdInfo.dataFolderPath).thenReturn(dataFolder.toPath())
-    }
+  @Before
+  fun setupMocks() {
+    whenever(emulatorDirectoryProvider.orNull).thenReturn(emulatorDir)
+    whenever(emulatorDir.asFile).thenReturn(emulatorDirectory)
+    whenever(mockAdbHelper.findDeviceSerialWithId(any(), any())).thenReturn("myTestDeviceSerial")
+    whenever(mockAdbHelper.isBootCompleted(any(), any())).thenReturn(true)
+    whenever(mockAdbHelper.isPackageManagerStarted(any(), any())).thenReturn(true)
+    whenever(mockAvdManager.getAvd(any(), any())).thenReturn(mockAvdInfo)
+    val dataFolder = tmpFolder.newFolder()
+    whenever(mockAvdInfo.dataFolderPath).thenReturn(dataFolder.toPath())
+  }
 
-    private fun createMockProcessBuilder(
-        stdout: String = "",
-        env: MutableMap<String, String> = mutableMapOf(),
-        returnDeadProcess: Boolean = false
-    ): ProcessBuilder {
-        val mockProcessBuilder = mock<ProcessBuilder>()
-        val mockProcess = mock<Process>()
-        whenever(mockProcessBuilder.start()).thenReturn(mockProcess)
-        whenever(mockProcessBuilder.environment()).thenReturn(env)
-        whenever(mockProcess.inputStream).thenReturn(stdout.byteInputStream())
-        whenever(mockProcess.errorStream).thenReturn(InputStream.nullInputStream())
-        whenever(mockProcess.waitFor(any(), any())).thenReturn(true)
-        whenever(mockProcess.isAlive).thenReturn(!returnDeadProcess)
-        return mockProcessBuilder
-    }
+  private fun createMockProcessBuilder(
+    stdout: String = "",
+    env: MutableMap<String, String> = mutableMapOf(),
+    returnDeadProcess: Boolean = false,
+  ): ProcessBuilder {
+    val mockProcessBuilder = mock<ProcessBuilder>()
+    val mockProcess = mock<Process>()
+    whenever(mockProcessBuilder.start()).thenReturn(mockProcess)
+    whenever(mockProcessBuilder.environment()).thenReturn(env)
+    whenever(mockProcess.inputStream).thenReturn(stdout.byteInputStream())
+    whenever(mockProcess.errorStream).thenReturn(InputStream.nullInputStream())
+    whenever(mockProcess.waitFor(any(), any())).thenReturn(true)
+    whenever(mockProcess.isAlive).thenReturn(!returnDeadProcess)
+    return mockProcessBuilder
+  }
 
-    @Test
-    fun generateSnapshot() {
-        val env = mutableMapOf<String, String>()
-        val handler = AvdSnapshotHandler(
-            showFullEmulatorKernelLogging = true,
-            "auto-no-window",
-            deviceBootAndSnapshotCheckTimeoutSec = 1234,
-            mockAdbHelper,
-            emulatorDirectoryProvider,
-            qemuExecutor,
-            extraWaitAfterBootCompleteMs = 0L,
-            MoreExecutors.newDirectExecutorService(),
-            { _ -> EmulatorVersionMetadata(true) }
-        ) { commands ->
-            if (commands.contains("-check-snapshot-loadable")) {
-                createMockProcessBuilder(stdout = "Loadable")
-            } else {
-                createMockProcessBuilder(env = env)
-            }
+  @Test
+  fun generateSnapshot() {
+    val env = mutableMapOf<String, String>()
+    val handler =
+      AvdSnapshotHandler(
+        showFullEmulatorKernelLogging = true,
+        "auto-no-window",
+        deviceBootAndSnapshotCheckTimeoutSec = 1234,
+        mockAdbHelper,
+        emulatorDirectoryProvider,
+        qemuExecutor,
+        extraWaitAfterBootCompleteMs = 0L,
+        MoreExecutors.newDirectExecutorService(),
+        { _ -> EmulatorVersionMetadata(true) },
+      ) { commands ->
+        if (commands.contains("-check-snapshot-loadable")) {
+          createMockProcessBuilder(stdout = "Loadable")
+        } else {
+          createMockProcessBuilder(env = env)
         }
+      }
 
-        handler.generateSnapshot(
-            "myTestAvdName",
-            avdDirectory,
-            mockAvdManager,
-            mockLogger
-        )
+    handler.generateSnapshot("myTestAvdName", avdDirectory, mockAvdManager, mockLogger)
 
-        assertThat(env).containsEntry("ANDROID_EMULATOR_WAIT_TIME_BEFORE_KILL", "1234")
-    }
+    assertThat(env).containsEntry("ANDROID_EMULATOR_WAIT_TIME_BEFORE_KILL", "1234")
+  }
 
-    @Test
-    fun generateSnapshot_failedWhenInvalidSnapshotCreation() {
-        val handler = AvdSnapshotHandler(
-            showFullEmulatorKernelLogging = true,
-            "auto-no-window",
-            deviceBootAndSnapshotCheckTimeoutSec = 1234,
-            mockAdbHelper,
-            emulatorDirectoryProvider,
-            qemuExecutor,
-            extraWaitAfterBootCompleteMs = 0L,
-            MoreExecutors.newDirectExecutorService(),
-            { _ -> EmulatorVersionMetadata(true) }
-        ) { _ -> createMockProcessBuilder() }
+  @Test
+  fun generateSnapshot_failedWhenInvalidSnapshotCreation() {
+    val handler =
+      AvdSnapshotHandler(
+        showFullEmulatorKernelLogging = true,
+        "auto-no-window",
+        deviceBootAndSnapshotCheckTimeoutSec = 1234,
+        mockAdbHelper,
+        emulatorDirectoryProvider,
+        qemuExecutor,
+        extraWaitAfterBootCompleteMs = 0L,
+        MoreExecutors.newDirectExecutorService(),
+        { _ -> EmulatorVersionMetadata(true) },
+      ) { _ ->
+        createMockProcessBuilder()
+      }
 
-        val e = assertThrows(EmulatorSnapshotCannotCreatedException::class.java) {
-            handler.generateSnapshot(
-                "myTestAvdName",
-                avdDirectory,
-                mockAvdManager,
-                mockLogger
-            )
+    val e =
+      assertThrows(EmulatorSnapshotCannotCreatedException::class.java) {
+        handler.generateSnapshot("myTestAvdName", avdDirectory, mockAvdManager, mockLogger)
+      }
+
+    assertThat(e)
+      .hasMessageThat()
+      .contains("Snapshot setup for myTestAvdName ran successfully, " + "but the snapshot failed to be created.")
+
+    // Ensure that snapshot that was created was deleted and logged appropriately.
+    verify(mockLogger).warning(contains("Deleting unbootable snapshot for device: myTestAvdName"))
+    verify(qemuExecutor).deleteSnapshot(eq("myTestAvdName"), any(), eq("default_boot"), any())
+  }
+
+  @Test
+  fun generateSnapshot_failedWhenEmulatorUnexpectedlyCloses() {
+    // have boot not be complete when emulator is closed
+    whenever(mockAdbHelper.isBootCompleted(any(), any())).thenReturn(false)
+    whenever(mockAdbHelper.isPackageManagerStarted(any(), any())).thenReturn(false)
+
+    val emulatorError =
+      "ERROR   | Not enough space to create userdata partition. " +
+        "Available: 7177.093750 MB at /path/to/myTestAvdName.avd, need 7372.800000 MB."
+
+    val handler =
+      AvdSnapshotHandler(
+        showFullEmulatorKernelLogging = true,
+        "auto-no-window",
+        deviceBootAndSnapshotCheckTimeoutSec = 1234,
+        mockAdbHelper,
+        emulatorDirectoryProvider,
+        qemuExecutor,
+        extraWaitAfterBootCompleteMs = 0L,
+        MoreExecutors.newDirectExecutorService(),
+        { _ -> EmulatorVersionMetadata(true) },
+      ) { commands ->
+        assertThat(commands).contains("-verbose")
+        assertThat(commands).contains("-show-kernel")
+        if (commands.contains("-check-snapshot-loadable")) {
+          // Shouldn't hit this mock as the snapshot creation will fail
+          createMockProcessBuilder(stdout = "Loadable")
+        } else {
+          createMockProcessBuilder(
+            stdout = emulatorError,
+            // have emulator be closed immediately when snapshot is created.
+            returnDeadProcess = true,
+          )
         }
+      }
 
-        assertThat(e).hasMessageThat().contains(
-            "Snapshot setup for myTestAvdName ran successfully, " +
-                    "but the snapshot failed to be created."
-        )
+    val e =
+      assertThrows(EmulatorStartFailedException::class.java) {
+        handler.generateSnapshot("myTestAvdName", avdDirectory, mockAvdManager, mockLogger)
+      }
 
-        // Ensure that snapshot that was created was deleted and logged appropriately.
-        verify(mockLogger)
-            .warning(contains("Deleting unbootable snapshot for device: myTestAvdName"))
-        verify(qemuExecutor).deleteSnapshot(
-            eq("myTestAvdName"),
-            any(),
-            eq("default_boot"),
-            any()
-        )
-    }
+    assertThat(e).hasMessageThat().contains("Unable to start Android emulator for myTestAvdName.")
+    assertThat(e).hasMessageThat().contains(emulatorError)
 
-    @Test
-    fun generateSnapshot_failedWhenEmulatorUnexpectedlyCloses() {
-        // have boot not be complete when emulator is closed
-        whenever(mockAdbHelper.isBootCompleted(any(), any())).thenReturn(false)
-        whenever(mockAdbHelper.isPackageManagerStarted(any(), any())).thenReturn(false)
-
-        val emulatorError = "ERROR   | Not enough space to create userdata partition. " +
-                "Available: 7177.093750 MB at /path/to/myTestAvdName.avd, need 7372.800000 MB."
-
-        val handler = AvdSnapshotHandler(
-            showFullEmulatorKernelLogging = true,
-            "auto-no-window",
-            deviceBootAndSnapshotCheckTimeoutSec = 1234,
-            mockAdbHelper,
-            emulatorDirectoryProvider,
-            qemuExecutor,
-            extraWaitAfterBootCompleteMs = 0L,
-            MoreExecutors.newDirectExecutorService(),
-            { _ -> EmulatorVersionMetadata(true) }
-        ) { commands ->
-            assertThat(commands).contains("-verbose")
-            assertThat(commands).contains("-show-kernel")
-            if (commands.contains("-check-snapshot-loadable")) {
-                // Shouldn't hit this mock as the snapshot creation will fail
-                createMockProcessBuilder(stdout = "Loadable")
-            } else {
-                createMockProcessBuilder(
-                    stdout = emulatorError,
-                    // have emulator be closed immediately when snapshot is created.
-                    returnDeadProcess = true
-                )
-            }
+    // Should work when full kernel logging is disabled as well.
+    val handlerNoKernel =
+      AvdSnapshotHandler(
+        showFullEmulatorKernelLogging = false,
+        "auto-no-window",
+        deviceBootAndSnapshotCheckTimeoutSec = 1234,
+        mockAdbHelper,
+        emulatorDirectoryProvider,
+        qemuExecutor,
+        extraWaitAfterBootCompleteMs = 0L,
+        MoreExecutors.newDirectExecutorService(),
+        { _ -> EmulatorVersionMetadata(true) },
+      ) { commands ->
+        // disabling full kernel logging should disable verbose logging in setup actions.
+        assertThat(commands).doesNotContain("-verbose")
+        // still show error kernel messages
+        assertThat(commands).contains("-show-kernel")
+        if (commands.contains("-check-snapshot-loadable")) {
+          // Shouldn't hit this mock as the snapshot creation will fail
+          createMockProcessBuilder(stdout = "Loadable")
+        } else {
+          createMockProcessBuilder(
+            stdout = emulatorError,
+            // have emulator be closed immediately when snapshot is created.
+            returnDeadProcess = true,
+          )
         }
+      }
 
-        val e = assertThrows(EmulatorStartFailedException::class.java) {
-            handler.generateSnapshot(
-                "myTestAvdName",
-                avdDirectory,
-                mockAvdManager,
-                mockLogger
-            )
-        }
+    val eNoKernel =
+      assertThrows(EmulatorStartFailedException::class.java) {
+        handlerNoKernel.generateSnapshot("myTestAvdName", avdDirectory, mockAvdManager, mockLogger)
+      }
 
-        assertThat(e).hasMessageThat().contains(
-            "Unable to start Android emulator for myTestAvdName."
-        )
-        assertThat(e).hasMessageThat().contains(
-            emulatorError
-        )
+    assertThat(eNoKernel).hasMessageThat().contains("Unable to start Android emulator for myTestAvdName.")
+    assertThat(eNoKernel).hasMessageThat().contains(emulatorError)
+  }
 
-        // Should work when full kernel logging is disabled as well.
-        val handlerNoKernel = AvdSnapshotHandler(
-            showFullEmulatorKernelLogging = false,
-            "auto-no-window",
-            deviceBootAndSnapshotCheckTimeoutSec = 1234,
-            mockAdbHelper,
-            emulatorDirectoryProvider,
-            qemuExecutor,
-            extraWaitAfterBootCompleteMs = 0L,
-            MoreExecutors.newDirectExecutorService(),
-            { _ -> EmulatorVersionMetadata(true) }
-        ) { commands ->
-            // disabling full kernel logging should disable verbose logging in setup actions.
-            assertThat(commands).doesNotContain("-verbose")
-            // still show error kernel messages
-            assertThat(commands).contains("-show-kernel")
-            if (commands.contains("-check-snapshot-loadable")) {
-                // Shouldn't hit this mock as the snapshot creation will fail
-                createMockProcessBuilder(stdout = "Loadable")
-            } else {
-                createMockProcessBuilder(
-                    stdout = emulatorError,
-                    // have emulator be closed immediately when snapshot is created.
-                    returnDeadProcess = true
-                )
-            }
-        }
+  @Test
+  fun startEmulatorThenStop() {
+    val handler =
+      AvdSnapshotHandler(
+        showFullEmulatorKernelLogging = true,
+        "auto-no-window",
+        deviceBootAndSnapshotCheckTimeoutSec = 1234,
+        mockAdbHelper,
+        emulatorDirectoryProvider,
+        qemuExecutor,
+        extraWaitAfterBootCompleteMs = 0L,
+        MoreExecutors.newDirectExecutorService(),
+        { _ -> EmulatorVersionMetadata(true) },
+      ) { _ ->
+        createMockProcessBuilder()
+      }
 
-        val eNoKernel = assertThrows(EmulatorStartFailedException::class.java) {
-            handlerNoKernel.generateSnapshot(
-                "myTestAvdName",
-                avdDirectory,
-                mockAvdManager,
-                mockLogger
-            )
-        }
+    var onDeviceReadyIsCalled = false
+    handler.startEmulatorThenStop(createSnapshot = false, "myTestAvdName", avdDirectory, mockLogger) { onDeviceReadyIsCalled = true }
 
-        assertThat(eNoKernel).hasMessageThat().contains(
-            "Unable to start Android emulator for myTestAvdName."
-        )
-        assertThat(eNoKernel).hasMessageThat().contains(
-            emulatorError
-        )
-    }
-
-    @Test
-    fun startEmulatorThenStop() {
-        val handler = AvdSnapshotHandler(
-            showFullEmulatorKernelLogging = true,
-            "auto-no-window",
-            deviceBootAndSnapshotCheckTimeoutSec = 1234,
-            mockAdbHelper,
-            emulatorDirectoryProvider,
-            qemuExecutor,
-            extraWaitAfterBootCompleteMs = 0L,
-            MoreExecutors.newDirectExecutorService(),
-            { _ -> EmulatorVersionMetadata(true) }
-        ) { _ -> createMockProcessBuilder() }
-
-        var onDeviceReadyIsCalled = false
-        handler.startEmulatorThenStop(
-            createSnapshot = false,
-            "myTestAvdName",
-            avdDirectory,
-            mockLogger
-        ) {
-            onDeviceReadyIsCalled = true
-        }
-
-        assertThat(onDeviceReadyIsCalled).isTrue()
-    }
+    assertThat(onDeviceReadyIsCalled).isTrue()
+  }
 }

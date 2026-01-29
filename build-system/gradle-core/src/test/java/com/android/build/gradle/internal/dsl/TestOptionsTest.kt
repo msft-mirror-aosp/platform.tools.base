@@ -25,60 +25,50 @@ import org.junit.Test
 
 class TestOptionsTest {
 
-    private lateinit var testOptionsWrapper: TestOptionsWrapper
-    private val dslServices: DslServices = createDslServices()
+  private lateinit var testOptionsWrapper: TestOptionsWrapper
+  private val dslServices: DslServices = createDslServices()
 
-    private fun testOptions(action: TestOptions.() -> Unit) = testOptionsWrapper.testOptions(action)
-    private val testOptions get() = testOptionsWrapper.testOptions
+  private fun testOptions(action: TestOptions.() -> Unit) = testOptionsWrapper.testOptions(action)
 
-    interface TestOptionsWrapper {
-        val testOptions: TestOptions
-        fun testOptions(action: TestOptions.() -> Unit)
-    }
+  private val testOptions
+    get() = testOptionsWrapper.testOptions
 
-    @Before
-    fun init() {
-        testOptionsWrapper = dslServices.newDecoratedInstance(TestOptionsWrapper::class.java, dslServices)
-    }
+  interface TestOptionsWrapper {
+    val testOptions: TestOptions
 
+    fun testOptions(action: TestOptions.() -> Unit)
+  }
 
-    @Test
-    fun testTargetSdk() {
-        testOptions {
-            targetSdk = 36
-        }
-        assertThat(testOptions.targetSdk).named("testOptions.targetSdk").isEqualTo(36)
-        assertThat(testOptions.targetSdkPreview).named("testOptions.targetSdkPreview").isNull()
-    }
+  @Before
+  fun init() {
+    testOptionsWrapper = dslServices.newDecoratedInstance(TestOptionsWrapper::class.java, dslServices)
+  }
 
-    @Test
-    fun testTargetSdkPreview() {
-        testOptions {
-            targetSdkPreview = "Baklava"
-        }
-        assertThat(testOptions.targetSdk).named("testOptions.targetSdk").isEqualTo(35)
-        assertThat(testOptions.targetSdkPreview).named("testOptions.targetSdkPreview").isEqualTo("Baklava")
-    }
+  @Test
+  fun testTargetSdk() {
+    testOptions { targetSdk = 36 }
+    assertThat(testOptions.targetSdk).named("testOptions.targetSdk").isEqualTo(36)
+    assertThat(testOptions.targetSdkPreview).named("testOptions.targetSdkPreview").isNull()
+  }
 
-    @Test
-    fun testTargetSdkSpec() {
-        testOptions {
-            targetSdk {
-                version = release(36)
-            }
-        }
-        assertThat(testOptions.targetSdk).named("testOptions.targetSdk").isEqualTo(36)
-        assertThat(testOptions.targetSdkPreview).named("testOptions.targetSdkPreview").isNull()
-    }
+  @Test
+  fun testTargetSdkPreview() {
+    testOptions { targetSdkPreview = "Baklava" }
+    assertThat(testOptions.targetSdk).named("testOptions.targetSdk").isEqualTo(35)
+    assertThat(testOptions.targetSdkPreview).named("testOptions.targetSdkPreview").isEqualTo("Baklava")
+  }
 
-    @Test
-    fun testTargetSdkSpecPreview() {
-        testOptions {
-            targetSdk {
-                version = preview("Baklava")
-            }
-        }
-        assertThat(testOptions.targetSdk).named("testOptions.targetSdk").isEqualTo(35)
-        assertThat(testOptions.targetSdkPreview).named("testOptions.targetSdkPreview").isEqualTo("Baklava")
-    }
+  @Test
+  fun testTargetSdkSpec() {
+    testOptions { targetSdk { version = release(36) } }
+    assertThat(testOptions.targetSdk).named("testOptions.targetSdk").isEqualTo(36)
+    assertThat(testOptions.targetSdkPreview).named("testOptions.targetSdkPreview").isNull()
+  }
+
+  @Test
+  fun testTargetSdkSpecPreview() {
+    testOptions { targetSdk { version = preview("Baklava") } }
+    assertThat(testOptions.targetSdk).named("testOptions.targetSdk").isEqualTo(35)
+    assertThat(testOptions.targetSdkPreview).named("testOptions.targetSdkPreview").isEqualTo("Baklava")
+  }
 }

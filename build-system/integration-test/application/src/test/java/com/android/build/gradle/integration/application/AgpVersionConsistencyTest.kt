@@ -29,74 +29,78 @@ import org.junit.Test
 /** Test to make sure that build fails if different versions of AGP are applied across project. */
 class AgpVersionConsistencyTest {
 
-    @get:Rule
-    val project = GradleTestProject.builder()
-        .fromTestApp(
-            MultiModuleTestProject(
-                mapOf(
-                    "androidLib1" to MinimalSubProject.lib("com.example.androidLib1"),
-                    "androidLib2" to MinimalSubProject.lib("com.example.androidLib2")
-                )
-            )
-        ).create()
-
-    @Test
-    fun testBuildConfiguration() {
-        // do not add any buildscript dependencies, those are added per project
-        project.buildFile.writeText(
-            """
-            apply from: "../commonHeader.gradle"
-        """.trimIndent()
+  @get:Rule
+  val project =
+    GradleTestProject.builder()
+      .fromTestApp(
+        MultiModuleTestProject(
+          mapOf(
+            "androidLib1" to MinimalSubProject.lib("com.example.androidLib1"),
+            "androidLib2" to MinimalSubProject.lib("com.example.androidLib2"),
+          )
         )
-        addDirectClasspath("androidLib1", Version.ANDROID_GRADLE_PLUGIN_VERSION)
-        addDirectClasspath("androidLib2", DIFFERENT_AGP)
+      )
+      .create()
 
-        TestFileUtils.appendToFile(
-            project.getSubproject("androidLib1").buildFile,
-            """
-                dependencies {
-                    implementation project(":androidLib2")
-                }
-            """.trimIndent()
-        )
+  @Test
+  fun testBuildConfiguration() {
+    // do not add any buildscript dependencies, those are added per project
+    project.buildFile.writeText(
+      """
+      apply from: "../commonHeader.gradle"
+      """
+        .trimIndent()
+    )
+    addDirectClasspath("androidLib1", Version.ANDROID_GRADLE_PLUGIN_VERSION)
+    addDirectClasspath("androidLib2", DIFFERENT_AGP)
 
-        TestFileUtils.appendToFile(
-            project.getSubproject("androidLib2").buildFile,
-            """
+    TestFileUtils.appendToFile(
+      project.getSubproject("androidLib1").buildFile,
+      """
+      dependencies {
+          implementation project(":androidLib2")
+      }
+      """
+        .trimIndent(),
+    )
+
+    TestFileUtils.appendToFile(
+      project.getSubproject("androidLib2").buildFile,
+      """
                 android {
                     buildToolsVersion '$CURRENT_BUILD_TOOLS_VERSION'
                 }
-            """.trimIndent()
-        )
-
-        // allow known configuration cache issue from DIFFERENT_AGP version (b/278767328)
-        TestFileUtils.appendToFile(
-            project.gradlePropertiesFile,
             """
-                org.gradle.configuration-cache.inputs.unsafe.ignore.file-system-checks=**/analytics.settings
-            """.trimIndent()
-        )
+        .trimIndent(),
+    )
 
-        val result = project.executor()
-            .withFailOnWarning(false)
-            .expectFailure()
-            .run("androidLib1:mergeDebugAssets")
+    // allow known configuration cache issue from DIFFERENT_AGP version (b/278767328)
+    TestFileUtils.appendToFile(
+      project.gradlePropertiesFile,
+      """
+      org.gradle.configuration-cache.inputs.unsafe.ignore.file-system-checks=**/analytics.settings
+      """
+        .trimIndent(),
+    )
 
-        val expectationAlternatives = listOf(
-            """Using different versions of the Android Gradle plugin ($DIFFERENT_AGP, ${Version.ANDROID_GRADLE_PLUGIN_VERSION}) in the same build is not allowed.""",
-            """Using different versions of the Android Gradle plugin (${Version.ANDROID_GRADLE_PLUGIN_VERSION}, $DIFFERENT_AGP) in the same build is not allowed.""",
-        )
+    val result = project.executor().withFailOnWarning(false).expectFailure().run("androidLib1:mergeDebugAssets")
 
-        assertThat(expectationAlternatives.any { result.stderrAsText.contains(it) })
-            .named("Result contains one of %s", expectationAlternatives)
-            .isTrue()
-    }
+    val expectationAlternatives =
+      listOf(
+        """Using different versions of the Android Gradle plugin ($DIFFERENT_AGP, ${Version.ANDROID_GRADLE_PLUGIN_VERSION}) in the same build is not allowed.""",
+        """Using different versions of the Android Gradle plugin (${Version.ANDROID_GRADLE_PLUGIN_VERSION}, $DIFFERENT_AGP) in the same build is not allowed.""",
+      )
 
-    private fun addDirectClasspath(name: String, agpVersion: String) {
-        project.getSubproject(name).buildFile.also {
-            val currentBuild = it.readText()
-            it.writeText(
-                """
+    assertThat(expectationAlternatives.any { result.stderrAsText.contains(it) })
+      .named("Result contains one of %s", expectationAlternatives)
+      .isTrue()
+  }
+
+  private fun addDirectClasspath(name: String, agpVersion: String) {
+    project.getSubproject(name).buildFile.also {
+      val currentBuild = it.readText()
+      it.writeText(
+        """
                 |buildscript {
                 |  apply from: "../../commonLocalRepo.gradle", to: it
                 |  dependencies {
@@ -104,12 +108,13 @@ class AgpVersionConsistencyTest {
                 |  }
                 |}
                 |$currentBuild
-            """.trimMargin()
-            )
-        }
+            """
+          .trimMargin()
+      )
     }
+  }
 
-    companion object {
-        private const val DIFFERENT_AGP = "8.12.0"
-    }
+  companion object {
+    private const val DIFFERENT_AGP = "8.12.0"
+  }
 }

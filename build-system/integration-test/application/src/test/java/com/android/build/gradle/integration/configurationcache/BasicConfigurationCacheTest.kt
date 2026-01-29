@@ -22,113 +22,104 @@ import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.truth.PathSubject.assertThat
 import com.google.common.truth.Truth
+import java.util.regex.Pattern
+import kotlin.streams.asSequence
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
-import java.util.regex.Pattern
-import kotlin.streams.asSequence
 
 class BasicConfigurationCacheTest {
 
-    @get:Rule
-    val rule = GradleRule.from {
-        androidApplication {  }
-        androidLibrary {  }
-        androidTest {
-            android {
-                targetProjectPath = ":app"
-            }
+  @get:Rule
+  val rule =
+    GradleRule.from {
+      androidApplication {}
+      androidLibrary {}
+      androidTest { android { targetProjectPath = ":app" } }
+    }
+
+  @Before
+  fun setUp() {
+    rule.getMainBuildDirectory().resolve(".gradle/configuration-cache").toFile().deleteRecursively()
+  }
+
+  @Test
+  fun testUpToDate() {
+    executor().run("assemble")
+    assertThat(rule.build.directory.resolve(".gradle/configuration-cache")).isDirectory()
+    val result = executor().run("assemble")
+    // AndroidLintTextOutputTask always run
+    Truth.assertThat(result.didWorkTasks).containsExactly(":app:lintVitalRelease")
+  }
+
+  @Test
+  fun testCleanBuild() {
+    executor().run("assemble")
+    executor().run("clean")
+    executor().run("assemble")
+  }
+
+  @Test
+  fun testWhenInvokedFromTheIde() {
+    executor().with(BooleanOption.IDE_INVOKED_FROM_IDE, true).run("assemble")
+
+    assertThat(rule.build.directory.resolve(".gradle/configuration-cache")).isDirectory()
+    executor().run("clean")
+    executor().with(BooleanOption.IDE_INVOKED_FROM_IDE, true).run("assemble")
+  }
+
+  /** Regression test for b/146659187. */
+  @Test
+  fun testWithJniMerging() {
+    rule.build.androidApplication().files.add("src/main/jniLibs/subDir/empty.so", "foo")
+    executor().run(":app:mergeDebugJniLibFolders")
+    executor().run("clean")
+    executor().run(":app:mergeDebugJniLibFolders")
+  }
+
+  @Test
+  fun testAndroidTestBuild() {
+    executor().run(":app:assembleDebugAndroidTest")
+    executor().run("clean")
+    executor().run(":app:assembleDebugAndroidTest")
+  }
+
+  /** Regression test for b/300617088. */
+  @Test
+  fun testStableConfigurationCacheFeatureFlag() {
+    rule.build { settings { enableFeaturePreview("STABLE_CONFIGURATION_CACHE") } }
+
+    val result = executor().withFailOnWarning(false).withArgument("--warning-mode=all").run("assemble")
+
+    val violations =
+      result.stdout
+        .findAll(usesServiceWarningRegex)
+        .asSequence()
+        .map {
+          val buildService = it.group(1).substringBeforeLast("_")
+          val task = it.group(2)
+          "$buildService is used by $task"
         }
-    }
+        .sorted()
+        .toList()
 
-    @Before
-    fun setUp() {
-        rule.getMainBuildDirectory().resolve(".gradle/configuration-cache").toFile().deleteRecursively()
-    }
+    Truth.assertThat(violations).isEmpty()
+  }
 
-    @Test
-    fun testUpToDate() {
-        executor().run("assemble")
-        assertThat(rule.build.directory.resolve(".gradle/configuration-cache")).isDirectory()
-        val result = executor().run("assemble")
-        // AndroidLintTextOutputTask always run
-        Truth.assertThat(result.didWorkTasks).containsExactly(":app:lintVitalRelease")
-    }
+  /**
+   * Regex to capture warnings about Task.usesService
+   * (https://docs.gradle.org/current/userguide/configuration_cache.html#config_cache:stable). Example warning:
+   * > > Build service 'com.android.build.gradle.internal.services.SymbolTableBuildService_a3ab9d9e-ea4f-497b-a09a-35aa9e17dcdb' > is being
+   * > used by task ':app:processDebugResources' without the corresponding declaration via 'Task#usesService'.
+   */
+  private val usesServiceWarningRegex
+    get() = Pattern.compile("Build service '([^']+)' is being used by task '([^']+)'")
 
-    @Test
-    fun testCleanBuild() {
-        executor().run("assemble")
-        executor().run("clean")
-        executor().run("assemble")
-    }
+  @Test
+  fun testWithProjectIsolation() {
+    executor().run("assemble")
+  }
 
-    @Test
-    fun testWhenInvokedFromTheIde() {
-        executor()
-            .with(BooleanOption.IDE_INVOKED_FROM_IDE, true)
-            .run("assemble")
-
-        assertThat(rule.build.directory.resolve(".gradle/configuration-cache")).isDirectory()
-        executor().run("clean")
-        executor()
-            .with(BooleanOption.IDE_INVOKED_FROM_IDE, true)
-            .run("assemble")
-    }
-
-    /** Regression test for b/146659187. */
-    @Test
-    fun testWithJniMerging() {
-        rule.build.androidApplication().files.add("src/main/jniLibs/subDir/empty.so", "foo")
-        executor().run(":app:mergeDebugJniLibFolders")
-        executor().run("clean")
-        executor().run(":app:mergeDebugJniLibFolders")
-    }
-
-    @Test
-    fun testAndroidTestBuild() {
-        executor().run(":app:assembleDebugAndroidTest")
-        executor().run("clean")
-        executor().run(":app:assembleDebugAndroidTest")
-    }
-
-    /** Regression test for b/300617088. */
-    @Test
-    fun testStableConfigurationCacheFeatureFlag() {
-        rule.build {
-            settings {
-                enableFeaturePreview("STABLE_CONFIGURATION_CACHE")
-            }
-        }
-
-        val result = executor().withFailOnWarning(false).withArgument("--warning-mode=all").run("assemble")
-
-        val violations = result.stdout.findAll(usesServiceWarningRegex).asSequence()
-            .map {
-                val buildService = it.group(1).substringBeforeLast("_")
-                val task = it.group(2)
-                "$buildService is used by $task"
-            }.sorted().toList()
-
-        Truth.assertThat(violations).isEmpty()
-    }
-
-    /**
-     * Regex to capture warnings about Task.usesService (https://docs.gradle.org/current/userguide/configuration_cache.html#config_cache:stable).
-     * Example warning:
-     *    > Build service 'com.android.build.gradle.internal.services.SymbolTableBuildService_a3ab9d9e-ea4f-497b-a09a-35aa9e17dcdb'
-     *    > is being used by task ':app:processDebugResources' without the corresponding declaration via 'Task#usesService'.
-     */
-    private val usesServiceWarningRegex
-        get() = Pattern.compile("Build service '([^']+)' is being used by task '([^']+)'")
-
-    @Test
-    fun testWithProjectIsolation() {
-        executor().run("assemble")
-    }
-
-    private fun executor(): GradleTaskExecutor =
-        rule.build
-            .executor
-            .withLoggingLevel(LoggingLevel.LIFECYCLE)
-            .with(BooleanOption.INCLUDE_DEPENDENCY_INFO_IN_APKS, false)
+  private fun executor(): GradleTaskExecutor =
+    rule.build.executor.withLoggingLevel(LoggingLevel.LIFECYCLE).with(BooleanOption.INCLUDE_DEPENDENCY_INFO_IN_APKS, false)
 }

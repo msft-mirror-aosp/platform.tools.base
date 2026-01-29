@@ -19,63 +19,53 @@ package com.android.build.gradle.internal.manifest
 import com.android.build.gradle.internal.services.ProjectServices
 import com.android.builder.errors.EvalIssueException
 import com.android.builder.errors.IssueReporter
+import java.util.concurrent.atomic.AtomicBoolean
 import org.gradle.api.file.RegularFile
 import org.gradle.api.provider.Provider
-import java.util.concurrent.atomic.AtomicBoolean
 
-/**
- * a lazy manifest parser that can create a `Provider<ManifestData>`
- */
+/** a lazy manifest parser that can create a `Provider<ManifestData>` */
 class LazyManifestParser(
-    private val manifestFile: Provider<RegularFile>,
-    private val manifestFileRequired: Boolean,
-    private val manifestParsingAllowed: Provider<Boolean>,
-    projectServices: ProjectServices,
-): ManifestDataProvider {
+  private val manifestFile: Provider<RegularFile>,
+  private val manifestFileRequired: Boolean,
+  private val manifestParsingAllowed: Provider<Boolean>,
+  projectServices: ProjectServices,
+) : ManifestDataProvider {
 
-    val logger = projectServices.logger
-    var rawManifestData: ManifestData? = null
-    val manifestDataCalculated = AtomicBoolean(false)
-    val issueReporter: IssueReporter =
-        // if we are in standard mode, use the logger directly as projectServices.issueReporter
-        // is not compatible with configuration cache.
-        if (projectServices.issueReporter.isInStandardEvaluationMode()) {
-            object : IssueReporter() {
-                val issues = mutableSetOf<Type>()
-                override fun reportIssue(
-                    type: Type,
-                    severity: Severity,
-                    exception: EvalIssueException
-                ) {
-                    issues.add(type)
-                    if (severity == Severity.ERROR) {
-                        logger.error(exception.message)
-                    } else {
-                        logger.warn(exception.message)
-                    }
-                }
+  val logger = projectServices.logger
+  var rawManifestData: ManifestData? = null
+  val manifestDataCalculated = AtomicBoolean(false)
+  val issueReporter: IssueReporter =
+    // if we are in standard mode, use the logger directly as projectServices.issueReporter
+    // is not compatible with configuration cache.
+    if (projectServices.issueReporter.isInStandardEvaluationMode()) {
+      object : IssueReporter() {
+        val issues = mutableSetOf<Type>()
 
-                override fun hasIssue(type: Type): Boolean = issues.contains(type)
-            }
-        } else projectServices.issueReporter
-
-    override val manifestData: Provider<ManifestData> =
-        projectServices.providerFactory.of(ManifestValueSource::class.java) {
-             it.parameters.manifestFile.set(manifestFile)
-        }.map {
-            if (!manifestDataCalculated.get()) {
-                manifestDataCalculated.set(true)
-                rawManifestData = parseManifest(
-                    it,
-                    manifestFile.get().asFile.absolutePath,
-                    manifestFileRequired,
-                    manifestParsingAllowed,
-                    issueReporter,
-                )
-            }
-            rawManifestData?: ManifestData("fake.package.name.for.sync")
+        override fun reportIssue(type: Type, severity: Severity, exception: EvalIssueException) {
+          issues.add(type)
+          if (severity == Severity.ERROR) {
+            logger.error(exception.message)
+          } else {
+            logger.warn(exception.message)
+          }
         }
 
-    override val manifestLocation: String
-        get() = manifestFile.get().asFile.absolutePath
+        override fun hasIssue(type: Type): Boolean = issues.contains(type)
+      }
+    } else projectServices.issueReporter
+
+  override val manifestData: Provider<ManifestData> =
+    projectServices.providerFactory
+      .of(ManifestValueSource::class.java) { it.parameters.manifestFile.set(manifestFile) }
+      .map {
+        if (!manifestDataCalculated.get()) {
+          manifestDataCalculated.set(true)
+          rawManifestData =
+            parseManifest(it, manifestFile.get().asFile.absolutePath, manifestFileRequired, manifestParsingAllowed, issueReporter)
+        }
+        rawManifestData ?: ManifestData("fake.package.name.for.sync")
+      }
+
+  override val manifestLocation: String
+    get() = manifestFile.get().asFile.absolutePath
 }

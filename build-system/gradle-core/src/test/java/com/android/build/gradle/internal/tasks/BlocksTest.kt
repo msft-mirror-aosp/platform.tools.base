@@ -19,56 +19,60 @@ package com.android.build.gradle.internal.tasks
 import com.android.build.gradle.internal.fixtures.FakeNoOpAnalyticsService
 import com.google.common.truth.Truth.assertThat
 import com.google.wireless.android.sdk.stats.GradleBuildProfileSpan
-import org.junit.Test
 import java.lang.IllegalArgumentException
 import java.lang.IllegalStateException
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.test.fail
+import org.junit.Test
 
 class BlocksTest {
 
-    private class BlocksTestClass(val called: AtomicBoolean) {
+  private class BlocksTestClass(val called: AtomicBoolean) {
 
-        @Throws(IllegalArgumentException::class)
-        fun methodNotThrowing() {
-            called.set(true)
-        }
-
-        @Throws(IllegalArgumentException::class)
-        fun methodThrowing() {
-            throw IllegalStateException("Thrown")
-        }
-
-        @Throws(IllegalArgumentException::class)
-        fun methodWithReturnNotThrowing(): Int {
-            called.set(true)
-            return 101
-        }
-
-        @Throws(IllegalArgumentException::class)
-        fun methodWithReturnThrowing(): Int {
-            throw IllegalStateException("Thrown")
-        }
+    @Throws(IllegalArgumentException::class)
+    fun methodNotThrowing() {
+      called.set(true)
     }
 
-    private val called= AtomicBoolean(false)
-    private val testClass= BlocksTestClass(called)
-
-    @Test
-    fun testRecordSpan() {
-        Blocks.recordSpan<Exception>("bar",
-            GradleBuildProfileSpan.ExecutionType.TASK_EXECUTION_ALL_PHASES,
-            FakeNoOpAnalyticsService(),
-            testClass::methodNotThrowing)
-        assertThat(called.get()).isTrue()
+    @Throws(IllegalArgumentException::class)
+    fun methodThrowing() {
+      throw IllegalStateException("Thrown")
     }
 
-    @Test(expected = IllegalStateException::class)
-    fun testThrowingBlock() {
-        Blocks.recordSpan<Exception>("bar",
-            GradleBuildProfileSpan.ExecutionType.TASK_EXECUTION_ALL_PHASES,
-            FakeNoOpAnalyticsService(),
-            testClass::methodThrowing)
-        fail("should not reach this statement")
+    @Throws(IllegalArgumentException::class)
+    fun methodWithReturnNotThrowing(): Int {
+      called.set(true)
+      return 101
     }
+
+    @Throws(IllegalArgumentException::class)
+    fun methodWithReturnThrowing(): Int {
+      throw IllegalStateException("Thrown")
+    }
+  }
+
+  private val called = AtomicBoolean(false)
+  private val testClass = BlocksTestClass(called)
+
+  @Test
+  fun testRecordSpan() {
+    Blocks.recordSpan<Exception>(
+      "bar",
+      GradleBuildProfileSpan.ExecutionType.TASK_EXECUTION_ALL_PHASES,
+      FakeNoOpAnalyticsService(),
+      testClass::methodNotThrowing,
+    )
+    assertThat(called.get()).isTrue()
+  }
+
+  @Test(expected = IllegalStateException::class)
+  fun testThrowingBlock() {
+    Blocks.recordSpan<Exception>(
+      "bar",
+      GradleBuildProfileSpan.ExecutionType.TASK_EXECUTION_ALL_PHASES,
+      FakeNoOpAnalyticsService(),
+      testClass::methodThrowing,
+    )
+    fail("should not reach this statement")
+  }
 }

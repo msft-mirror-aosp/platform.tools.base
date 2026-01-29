@@ -18,10 +18,10 @@ package com.android.build.api.variant
 
 import org.gradle.api.Incubating
 
-/**
- * Type of a source abstraction.
- */
+/** Type of a source abstraction. */
 @Incubating
 enum class TestSuiteSourceType {
-    ASSETS, HOST_JAR, TEST_APK
+  ASSETS,
+  HOST_JAR,
+  TEST_APK,
 }

@@ -28,17 +28,13 @@ import org.junit.Test
 
 class SeparateTestWithAarDependencyTest : ModelComparator() {
 
-    @get:Rule
-    val project = GradleTestProject.builder()
-        .fromTestProject("separateTestModule")
-        .disableBuiltInKotlin()
-        .create()
+  @get:Rule val project = GradleTestProject.builder().fromTestProject("separateTestModule").disableBuiltInKotlin().create()
 
-    @Before
-    fun setUp() {
-        TestFileUtils.appendToFile(
-            project.getSubproject(":app").buildFile,
-            """
+  @Before
+  fun setUp() {
+    TestFileUtils.appendToFile(
+      project.getSubproject(":app").buildFile,
+      """
                 apply plugin: "com.android.application"
                 android {
                     compileSdkVersion ${GradleTestProject.DEFAULT_COMPILE_SDK_VERSION}
@@ -52,35 +48,28 @@ class SeparateTestWithAarDependencyTest : ModelComparator() {
                         api 'androidx.media:media:1.6.0'
                     }
                 }
-            """.trimIndent())
-    }
+            """
+        .trimIndent(),
+    )
+  }
 
-    @Test
-    fun `test VariantDependencies model`() {
-        val result = project.modelV2()
-                .fetchModels(variantName = "debug")
+  @Test
+  fun `test VariantDependencies model`() {
+    val result = project.modelV2().fetchModels(variantName = "debug")
 
-        with(result).compareVariantDependencies(
-            projectAction = { getProject(":test") }, goldenFile = "test_VariantDependencies"
-        )
-    }
+    with(result).compareVariantDependencies(projectAction = { getProject(":test") }, goldenFile = "test_VariantDependencies")
+  }
 
-    @Test
-    fun checkTestApk() {
-        project.executor().run("assembleDebug")
-        val apk: Apk = project.getSubproject("test").getApk(GradleTestProject.ApkType.DEBUG)
+  @Test
+  fun checkTestApk() {
+    project.executor().run("assembleDebug")
+    val apk: Apk = project.getSubproject("test").getApk(GradleTestProject.ApkType.DEBUG)
 
-        assertThatApk(apk)
-            .named("Test app shouldn't contain app code")
-            .doesNotContainClass("Lcom/android/tests/basic/Main;")
-        assertThatApk(apk)
-            .named("Test app shouldn't contain app layout")
-            .doesNotContainResource("layout/main.xml")
-        assertThatApk(apk)
-            .named("Test app shouldn't contain app dependency code")
-            .doesNotContainClass("Landroid/support/v7/app/ActionBar;")
-        assertThatApk(apk)
-            .named("Test app shouldn't contain app dependency resources")
-            .doesNotContainResource("layout/abc_action_bar_title_item.xml")
-    }
+    assertThatApk(apk).named("Test app shouldn't contain app code").doesNotContainClass("Lcom/android/tests/basic/Main;")
+    assertThatApk(apk).named("Test app shouldn't contain app layout").doesNotContainResource("layout/main.xml")
+    assertThatApk(apk).named("Test app shouldn't contain app dependency code").doesNotContainClass("Landroid/support/v7/app/ActionBar;")
+    assertThatApk(apk)
+      .named("Test app shouldn't contain app dependency resources")
+      .doesNotContainResource("layout/abc_action_bar_title_item.xml")
+  }
 }

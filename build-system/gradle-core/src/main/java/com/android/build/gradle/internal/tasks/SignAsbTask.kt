@@ -16,17 +16,13 @@
 
 package com.android.build.gradle.internal.tasks
 
-import com.android.build.gradle.internal.dsl.isPresent
-import com.android.build.gradle.internal.services.getBuildService
-import com.android.build.gradle.internal.signing.SigningConfigData
 import com.android.build.gradle.internal.signing.SigningConfigDataProvider
-import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationAction
-import com.android.build.gradle.internal.tasks.factory.TaskCreationAction
-import com.android.build.gradle.internal.utils.setDisallowChanges
 import com.android.buildanalyzer.common.TaskCategory
 import com.android.builder.internal.packaging.AabFlinger
 import com.android.ide.common.signing.KeystoreHelper
 import com.android.utils.FileUtils
+import java.util.Locale
+import java.util.zip.Deflater
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.InputFiles
@@ -34,48 +30,38 @@ import org.gradle.api.tasks.Nested
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
-import org.gradle.api.tasks.TaskProvider
 import org.gradle.work.DisableCachingByDefault
-import java.util.Locale
-import java.util.zip.Deflater
 
 @DisableCachingByDefault
 @BuildAnalyzer(primaryTaskCategory = TaskCategory.BUNDLE_PACKAGING)
 abstract class SignAsbTask : NonIncrementalGlobalTask() {
 
-    @get:InputFiles
-    @get:PathSensitive(PathSensitivity.NAME_ONLY)
-    abstract val inputAsb: RegularFileProperty
+  @get:InputFiles @get:PathSensitive(PathSensitivity.NAME_ONLY) abstract val inputAsb: RegularFileProperty
 
-    @get:Nested
-    abstract val signingConfig: Property<SigningConfigDataProvider>
+  @get:Nested abstract val signingConfig: Property<SigningConfigDataProvider>
 
-    @get:OutputFile
-    abstract val outputSignedAsb: RegularFileProperty
+  @get:OutputFile abstract val outputSignedAsb: RegularFileProperty
 
-    override fun doTaskAction() {
-        signingConfig.get().let {
-            it.signingConfigData.orNull?.let { signingConfig ->
-                val certificateInfo = KeystoreHelper.getCertificateInfo(
-                        signingConfig.storeType,
-                        signingConfig.storeFile,
-                        signingConfig.storePassword,
-                        signingConfig.keyPassword,
-                        signingConfig.keyAlias
-                )
-                AabFlinger(
-                        outputFile = outputSignedAsb.asFile.get(),
-                        signerName = signingConfig.keyAlias?.uppercase(Locale.US)!!,
-                        privateKey = certificateInfo.key,
-                        certificates = listOf(certificateInfo.certificate),
-                        minSdkVersion = 18 // So that RSA + SHA256 are used
-                ).use { aabFlinger ->
-                    aabFlinger.writeZip(
-                            inputAsb.get().asFile,
-                            Deflater.DEFAULT_COMPRESSION
-                    )
-                }
-            } ?: FileUtils.copyFile(inputAsb.get().asFile, outputSignedAsb.get().asFile)
-        }
+  override fun doTaskAction() {
+    signingConfig.get().let {
+      it.signingConfigData.orNull?.let { signingConfig ->
+        val certificateInfo =
+          KeystoreHelper.getCertificateInfo(
+            signingConfig.storeType,
+            signingConfig.storeFile,
+            signingConfig.storePassword,
+            signingConfig.keyPassword,
+            signingConfig.keyAlias,
+          )
+        AabFlinger(
+            outputFile = outputSignedAsb.asFile.get(),
+            signerName = signingConfig.keyAlias?.uppercase(Locale.US)!!,
+            privateKey = certificateInfo.key,
+            certificates = listOf(certificateInfo.certificate),
+            minSdkVersion = 18, // So that RSA + SHA256 are used
+          )
+          .use { aabFlinger -> aabFlinger.writeZip(inputAsb.get().asFile, Deflater.DEFAULT_COMPRESSION) }
+      } ?: FileUtils.copyFile(inputAsb.get().asFile, outputSignedAsb.get().asFile)
     }
+  }
 }

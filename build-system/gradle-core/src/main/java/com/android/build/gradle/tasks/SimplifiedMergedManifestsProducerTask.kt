@@ -27,6 +27,7 @@ import com.android.build.gradle.internal.tasks.BuildAnalyzer
 import com.android.build.gradle.internal.tasks.factory.VariantTaskCreationAction
 import com.android.build.gradle.internal.utils.setDisallowChanges
 import com.android.buildanalyzer.common.TaskCategory
+import java.io.File
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.Property
@@ -37,74 +38,55 @@ import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.work.DisableCachingByDefault
-import java.io.File
 
 /**
- * Task is a simple alternative to ProcessMultiApkApplicationManifest.
- * In case we have dynamic feature, MERGED_MANIFEST still needs
- * to be consumed internally in order for external users to be able to transform
- * it using the Variant APIs.
+ * Task is a simple alternative to ProcessMultiApkApplicationManifest. In case we have dynamic feature, MERGED_MANIFEST still needs to be
+ * consumed internally in order for external users to be able to transform it using the Variant APIs.
  */
 @DisableCachingByDefault(because = DisabledCachingReason.COPY_TASK)
 @BuildAnalyzer(primaryTaskCategory = TaskCategory.MANIFEST)
-abstract class SimplifiedMergedManifestsProducerTask: ManifestProcessorTask() {
-    @get:PathSensitive(PathSensitivity.NAME_ONLY)
-    @get:InputFile
-    abstract val mainMergedManifest: RegularFileProperty
+abstract class SimplifiedMergedManifestsProducerTask : ManifestProcessorTask() {
+  @get:PathSensitive(PathSensitivity.NAME_ONLY) @get:InputFile abstract val mainMergedManifest: RegularFileProperty
 
-    @get:OutputDirectory
-    abstract val manifestOutputDirectory: DirectoryProperty
+  @get:OutputDirectory abstract val manifestOutputDirectory: DirectoryProperty
 
-    @get:Input
-    abstract val applicationId: Property<String>
+  @get:Input abstract val applicationId: Property<String>
 
-    override fun doTaskAction() {
-        val outputFile = File(
-            manifestOutputDirectory.get().asFile,
-            SdkConstants.ANDROID_MANIFEST_XML
-        )
-        mainMergedManifest.get().asFile.copyTo(outputFile, overwrite = true)
+  override fun doTaskAction() {
+    val outputFile = File(manifestOutputDirectory.get().asFile, SdkConstants.ANDROID_MANIFEST_XML)
+    mainMergedManifest.get().asFile.copyTo(outputFile, overwrite = true)
 
-        BuiltArtifactsImpl(
-            artifactType = InternalArtifactType.MERGED_MANIFESTS,
-            applicationId = applicationId.get(),
-            variantName = variantName,
-            elements = listOf(
-                BuiltArtifactImpl.make(
-                    outputFile = outputFile.absolutePath
-                )
-            )
-        ).save(manifestOutputDirectory.get())
+    BuiltArtifactsImpl(
+        artifactType = InternalArtifactType.MERGED_MANIFESTS,
+        applicationId = applicationId.get(),
+        variantName = variantName,
+        elements = listOf(BuiltArtifactImpl.make(outputFile = outputFile.absolutePath)),
+      )
+      .save(manifestOutputDirectory.get())
+  }
+
+  class CreationAction(creationConfig: ApkCreationConfig) :
+    VariantTaskCreationAction<SimplifiedMergedManifestsProducerTask, ApkCreationConfig>(creationConfig) {
+    override val name: String
+      get() = computeTaskName("copy", "MergedManifest")
+
+    override val type: Class<SimplifiedMergedManifestsProducerTask>
+      get() = SimplifiedMergedManifestsProducerTask::class.java
+
+    override fun handleProvider(taskProvider: TaskProvider<SimplifiedMergedManifestsProducerTask>) {
+      super.handleProvider(taskProvider)
+      creationConfig.taskContainer.processManifestTask = taskProvider
+      creationConfig.artifacts
+        .setInitialProvider(taskProvider, SimplifiedMergedManifestsProducerTask::manifestOutputDirectory)
+        .on(InternalArtifactType.MERGED_MANIFESTS)
     }
 
-    class CreationAction(
-        creationConfig: ApkCreationConfig
-    ) : VariantTaskCreationAction<SimplifiedMergedManifestsProducerTask, ApkCreationConfig>(creationConfig) {
-        override val name: String
-            get() = computeTaskName("copy", "MergedManifest")
-        override val type: Class<SimplifiedMergedManifestsProducerTask>
-            get() = SimplifiedMergedManifestsProducerTask::class.java
+    override fun configure(task: SimplifiedMergedManifestsProducerTask) {
+      super.configure(task)
 
-        override fun handleProvider(taskProvider: TaskProvider<SimplifiedMergedManifestsProducerTask>) {
-            super.handleProvider(taskProvider)
-            creationConfig.taskContainer.processManifestTask = taskProvider
-            creationConfig.artifacts.setInitialProvider(
-                taskProvider,
-                SimplifiedMergedManifestsProducerTask::manifestOutputDirectory
-            ).on(InternalArtifactType.MERGED_MANIFESTS)
-        }
+      creationConfig.artifacts.setTaskInputToFinalProduct(SingleArtifact.MERGED_MANIFEST, task.mainMergedManifest)
 
-        override fun configure(task: SimplifiedMergedManifestsProducerTask) {
-            super.configure(task)
-
-            creationConfig
-                .artifacts
-                .setTaskInputToFinalProduct(
-                    SingleArtifact.MERGED_MANIFEST,
-                    task.mainMergedManifest
-                )
-
-            task.applicationId.setDisallowChanges(creationConfig.applicationId)
-        }
+      task.applicationId.setDisallowChanges(creationConfig.applicationId)
     }
+  }
 }

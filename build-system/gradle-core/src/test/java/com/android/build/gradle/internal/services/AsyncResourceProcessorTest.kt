@@ -23,98 +23,88 @@ import com.android.testutils.concurrency.OnDemandExecutorService
 import com.google.common.io.Closer
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
-import org.junit.After
-import org.junit.Test
 import java.io.Closeable
 import java.util.concurrent.ForkJoinPool
 import java.util.concurrent.atomic.AtomicInteger
+import org.junit.After
+import org.junit.Test
 
 class AsyncResourceProcessorTest {
 
-    private val closer = Closer.create()
-    private val executor = OnDemandExecutorService()
-    val forkJoinPool: ForkJoinPool by lazy {
-        ForkJoinPool(2).also { closer.register(Closeable { it.shutdown() }) }
+  private val closer = Closer.create()
+  private val executor = OnDemandExecutorService()
+  val forkJoinPool: ForkJoinPool by lazy { ForkJoinPool(2).also { closer.register(Closeable { it.shutdown() }) } }
+  // Instantiate build service outside of test cases to avoid build errors swallowed
+  // in FolkJoinTask see b/232575232
+  private val analyticsService = FakeNoOpAnalyticsService()
+
+  @After
+  fun close() {
+    closer.close()
+  }
+
+  @Test
+  fun smokeTest() {
+    val counter = AtomicInteger()
+
+    createAsyncResourceProcessor(counter).use { processor ->
+      processor.submit(analyticsService) { it.incrementAndGet() }
+      assertThat(counter.get()).isEqualTo(0)
+      executor.run(1)
+      assertThat(counter.get()).isEqualTo(1)
     }
-    // Instantiate build service outside of test cases to avoid build errors swallowed
-    // in FolkJoinTask see b/232575232
-    private val analyticsService = FakeNoOpAnalyticsService()
+  }
 
-    @After
-    fun close() {
-        closer.close()
-    }
+  /** This test simulates what the verify library resources task does */
+  @Test
+  fun testCloseAwaitsExecutionCompletion() {
+    val counter = AtomicInteger()
 
-    @Test
-    fun smokeTest() {
-        val counter = AtomicInteger()
+    // Steps for the processor to go through.
+    val compileSubmitted = BooleanLatch()
+    val awaitComplete = BooleanLatch()
+    val linkSubmitted = BooleanLatch()
+    val processorClosed = BooleanLatch()
 
-        createAsyncResourceProcessor(counter).use { processor ->
-            processor.submit(analyticsService) {
-                it.incrementAndGet()
-            }
-            assertThat(counter.get()).isEqualTo(0)
-            executor.run(1)
-            assertThat(counter.get()).isEqualTo(1)
-        }
-    }
+    forkJoinPool.submit {
+      createAsyncResourceProcessor(counter).use { processor ->
+        processor.submit(analyticsService) { it.incrementAndGet() }
+        compileSubmitted.signal()
+        Thread.yield()
 
-    /** This test simulates what the verify library resources task does */
-    @Test
-    fun testCloseAwaitsExecutionCompletion() {
-        val counter = AtomicInteger()
+        processor.await()
+        awaitComplete.signal()
+        Thread.yield()
 
-        // Steps for the processor to go through.
-        val compileSubmitted = BooleanLatch()
-        val awaitComplete = BooleanLatch()
-        val linkSubmitted = BooleanLatch()
-        val processorClosed = BooleanLatch()
-
-        forkJoinPool.submit {
-            createAsyncResourceProcessor(counter).use { processor ->
-                processor.submit(analyticsService) {
-                    it.incrementAndGet()
-                }
-                compileSubmitted.signal()
-                Thread.yield()
-
-                processor.await()
-                awaitComplete.signal()
-                Thread.yield()
-
-                processor.submit(analyticsService) {
-                   it.incrementAndGet()
-                }
-                linkSubmitted.signal()
-                Thread.yield()
-            }
-            processorClosed.signal()
-            Thread.yield()
-        }
-
-        compileSubmitted.await()
-        assertWithMessage("processor await should be blocked on executor running").that(
-            awaitComplete.isSignalled
-        ).isFalse()
-        assertThat(counter.get()).isEqualTo(0)
-        executor.runAll()
-        assertThat(counter.get()).isEqualTo(1)
-        awaitComplete.await()
-        assertThat(counter.get()).isEqualTo(1)
-        linkSubmitted.await()
-        assertThat(counter.get()).isEqualTo(1)
-        executor.runAll()
-        assertThat(counter.get()).isEqualTo(2)
-        processorClosed.await()
-        assertThat(counter.get()).isEqualTo(2)
+        processor.submit(analyticsService) { it.incrementAndGet() }
+        linkSubmitted.signal()
+        Thread.yield()
+      }
+      processorClosed.signal()
+      Thread.yield()
     }
 
-    private fun createAsyncResourceProcessor(counter: AtomicInteger): AsyncResourceProcessor<AtomicInteger> {
-        return AsyncResourceProcessor(
-            owner = "testTask",
-            executor = executor,
-            service = counter,
-            errorFormatMode = SyncOptions.ErrorFormatMode.HUMAN_READABLE
-        )
-    }
+    compileSubmitted.await()
+    assertWithMessage("processor await should be blocked on executor running").that(awaitComplete.isSignalled).isFalse()
+    assertThat(counter.get()).isEqualTo(0)
+    executor.runAll()
+    assertThat(counter.get()).isEqualTo(1)
+    awaitComplete.await()
+    assertThat(counter.get()).isEqualTo(1)
+    linkSubmitted.await()
+    assertThat(counter.get()).isEqualTo(1)
+    executor.runAll()
+    assertThat(counter.get()).isEqualTo(2)
+    processorClosed.await()
+    assertThat(counter.get()).isEqualTo(2)
+  }
+
+  private fun createAsyncResourceProcessor(counter: AtomicInteger): AsyncResourceProcessor<AtomicInteger> {
+    return AsyncResourceProcessor(
+      owner = "testTask",
+      executor = executor,
+      service = counter,
+      errorFormatMode = SyncOptions.ErrorFormatMode.HUMAN_READABLE,
+    )
+  }
 }

@@ -18,8 +18,8 @@ package com.android.builder.model.v2.ide
 
 import com.android.builder.model.v2.AndroidModel
 
-interface ArtifactDependenciesFlatList: AndroidModel {
-    val compileDependencies: List<String>
-    val runtimeDependencies: List<String>?
-    val unresolvedDependencies: List<UnresolvedDependency>
+interface ArtifactDependenciesFlatList : AndroidModel {
+  val compileDependencies: List<String>
+  val runtimeDependencies: List<String>?
+  val unresolvedDependencies: List<UnresolvedDependency>
 }

@@ -21,6 +21,7 @@ import com.android.build.gradle.internal.component.ComponentCreationConfig
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.tasks.databinding.DATA_BINDING_TRIGGER_CLASS
 import com.android.build.gradle.internal.utils.setDisallowChanges
+import javax.inject.Inject
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.Property
@@ -30,63 +31,47 @@ import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
-import javax.inject.Inject
 
 /**
  * Delegate to handle the list of excluded classes when data binding is on.
  *
- * An instance of this class should be a [org.gradle.api.tasks.Nested] field on the task, as well
- * as an [org.gradle.api.tasks.Optional] since this is only active if databinding or viewbinding
- * is enabled.
+ * An instance of this class should be a [org.gradle.api.tasks.Nested] field on the task, as well as an [org.gradle.api.tasks.Optional]
+ * since this is only active if databinding or viewbinding is enabled.
  *
- * Configuration of the [Property] of [DataBindingExcludeDelegate] on the task is done via
- * [configureFrom].
+ * Configuration of the [Property] of [DataBindingExcludeDelegate] on the task is done via [configureFrom].
  */
-abstract class DataBindingExcludeDelegate @Inject constructor(
-    @get:Input
-    val databindingEnabled: Boolean
-) {
+abstract class DataBindingExcludeDelegate @Inject constructor(@get:Input val databindingEnabled: Boolean) {
 
-    @get:InputFile
-    @get:Optional
-    @get:PathSensitive(PathSensitivity.NONE)
-    abstract val exportClassListLocation: RegularFileProperty
+  @get:InputFile @get:Optional @get:PathSensitive(PathSensitivity.NONE) abstract val exportClassListLocation: RegularFileProperty
 
-    @get:InputDirectory
-    @get:PathSensitive(PathSensitivity.RELATIVE)
-    abstract val dependencyArtifactsDir: DirectoryProperty
+  @get:InputDirectory @get:PathSensitive(PathSensitivity.RELATIVE) abstract val dependencyArtifactsDir: DirectoryProperty
 
-    internal fun getExcludedClassList(packageName: String): List<String> {
-        if (!databindingEnabled) {
-            return listOf()
-        }
-
-        return DataBindingBuilder.getJarExcludeList(
-            packageName,
-            DATA_BINDING_TRIGGER_CLASS,
-            exportClassListLocation.orNull?.asFile,
-            dependencyArtifactsDir.get().asFile);
+  internal fun getExcludedClassList(packageName: String): List<String> {
+    if (!databindingEnabled) {
+      return listOf()
     }
+
+    return DataBindingBuilder.getJarExcludeList(
+      packageName,
+      DATA_BINDING_TRIGGER_CLASS,
+      exportClassListLocation.orNull?.asFile,
+      dependencyArtifactsDir.get().asFile,
+    )
+  }
 }
 
 fun Property<DataBindingExcludeDelegate>.configureFrom(creationConfig: ComponentCreationConfig) {
-    // if databinding is not enabled. Do not set this delegate.
-    // this means the delegate probably needs to be @Optional
-    if (!creationConfig.buildFeatures.dataBinding) {
-        return
+  // if databinding is not enabled. Do not set this delegate.
+  // this means the delegate probably needs to be @Optional
+  if (!creationConfig.buildFeatures.dataBinding) {
+    return
+  }
+
+  setDisallowChanges(
+    creationConfig.services.newInstance(DataBindingExcludeDelegate::class.java, creationConfig.buildFeatures.dataBinding).also {
+      it.dependencyArtifactsDir.setDisallowChanges(creationConfig.artifacts.get(InternalArtifactType.DATA_BINDING_DEPENDENCY_ARTIFACTS))
+
+      it.exportClassListLocation.setDisallowChanges(creationConfig.artifacts.get(InternalArtifactType.DATA_BINDING_EXPORT_CLASS_LIST))
     }
-
-    setDisallowChanges(creationConfig.services.newInstance(
-        DataBindingExcludeDelegate::class.java,
-        creationConfig.buildFeatures.dataBinding
-    ).also {
-        it.dependencyArtifactsDir.setDisallowChanges(
-            creationConfig.artifacts.get(InternalArtifactType.DATA_BINDING_DEPENDENCY_ARTIFACTS)
-        )
-
-        it.exportClassListLocation.setDisallowChanges(
-            creationConfig.artifacts.get(InternalArtifactType.DATA_BINDING_EXPORT_CLASS_LIST)
-        )
-    })
+  )
 }
-

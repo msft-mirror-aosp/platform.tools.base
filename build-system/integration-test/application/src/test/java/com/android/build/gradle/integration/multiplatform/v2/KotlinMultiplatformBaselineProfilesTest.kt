@@ -26,49 +26,39 @@ import org.junit.Rule
 import org.junit.Test
 
 class KotlinMultiplatformBaselineProfilesTest {
-    @get:Rule
-    val project = GradleTestProjectBuilder()
-        .fromTestProject("kotlinMultiplatform")
-        .create()
+  @get:Rule val project = GradleTestProjectBuilder().fromTestProject("kotlinMultiplatform").create()
 
-    @Before
-    fun setUp() {
-        FileUtils.writeToFile(
-            project.getSubproject("kmpFirstLib").file("src/androidMain/baselineProfiles/baseline-prof.txt"),
-            """
-                Lcom/example/kmpfirstlib/*;
-            """.trimIndent()
-        )
+  @Before
+  fun setUp() {
+    FileUtils.writeToFile(
+      project.getSubproject("kmpFirstLib").file("src/androidMain/baselineProfiles/baseline-prof.txt"),
+      """
+      Lcom/example/kmpfirstlib/*;
+      """
+        .trimIndent(),
+    )
+  }
+
+  @Test
+  fun testKmpBaselineProfileProcessingTaskExecuted() {
+    val result = executor().run(":kmpFirstLib:assemble")
+    Truth.assertThat(result.didWorkTasks).containsAtLeastElementsIn(listOf(":kmpFirstLib:prepareAndroidMainArtProfile"))
+  }
+
+  @Test
+  fun testLibraryAarContents() {
+    executor().run(":kmpFirstLib:assemble")
+
+    project.getSubproject("kmpFirstLib").assertAar(AarSelector.NO_BUILD_TYPE) {
+      textFile(SdkConstants.FN_ART_PROFILE).contains("Lcom/example/kmpfirstlib/*;")
     }
+  }
 
-    @Test
-    fun testKmpBaselineProfileProcessingTaskExecuted() {
-        val result = executor().run(":kmpFirstLib:assemble")
-        Truth.assertThat(result.didWorkTasks).containsAtLeastElementsIn(
-            listOf(
-                ":kmpFirstLib:prepareAndroidMainArtProfile",
-            )
-        )
-    }
+  @Test
+  fun testAppConsumingKmpLibraryRunsPrepareArtProfileTask() {
+    val result = executor().run(":app:mergeDebugArtProfile")
+    Truth.assertThat(result.didWorkTasks).containsAtLeastElementsIn(listOf(":kmpFirstLib:prepareAndroidMainArtProfile"))
+  }
 
-    @Test
-    fun testLibraryAarContents() {
-        executor().run(":kmpFirstLib:assemble")
-
-        project.getSubproject("kmpFirstLib").assertAar(AarSelector.NO_BUILD_TYPE) {
-            textFile(SdkConstants.FN_ART_PROFILE).contains("Lcom/example/kmpfirstlib/*;")
-        }
-    }
-
-    @Test
-    fun testAppConsumingKmpLibraryRunsPrepareArtProfileTask() {
-        val result = executor().run(":app:mergeDebugArtProfile")
-        Truth.assertThat(result.didWorkTasks).containsAtLeastElementsIn(
-            listOf(
-                ":kmpFirstLib:prepareAndroidMainArtProfile",
-            )
-        )
-    }
-
-    private fun executor() = project.executor().withFailOnWarning(false) // b/455891987
+  private fun executor() = project.executor().withFailOnWarning(false) // b/455891987
 }

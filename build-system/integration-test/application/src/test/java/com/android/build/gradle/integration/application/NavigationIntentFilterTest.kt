@@ -25,175 +25,168 @@ import com.android.build.gradle.integration.common.fixture.app.MinimalSubProject
 import com.android.build.gradle.integration.common.fixture.app.MultiModuleTestProject
 import com.android.build.gradle.integration.common.fixture.project.AarSelector
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition.Companion.DEFAULT_COMPILE_SDK_VERSION
-import com.android.build.gradle.integration.common.truth.ScannerSubject
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.truth.PathSubject
 import com.android.utils.FileUtils
-import org.junit.Before
+import java.io.File
 import org.junit.Rule
 import org.junit.Test
-import java.io.File
 
 class NavigationIntentFilterTest {
-    private val app =
-        MinimalSubProject.app("com.example.app")
-            .withFile(
-                "src/main/AndroidManifest.xml",
-                """
-                    <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-                        <application>
-                            <activity android:name="MyActivity" android:exported="true">
-                                <nav-graph android:value="@navigation/nav_app"/>
-                                <nav-graph android:value="@navigation/nav_lib"/>
-                            </activity>
-                        </application>
-                    </manifest>
-                """.trimMargin()
-            )
-            .withFile(
-                "src/main/res/navigation/nav_app.xml",
-                populateNavAppContent(
-                    action = "android.intent.action.APP_ACTION",
-                    mimeType ="app/image/jpg"
-                )
-            )
+  private val app =
+    MinimalSubProject.app("com.example.app")
+      .withFile(
+        "src/main/AndroidManifest.xml",
+        """
+        |                    <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+        |                        <application>
+        |                            <activity android:name="MyActivity" android:exported="true">
+        |                                <nav-graph android:value="@navigation/nav_app"/>
+        |                                <nav-graph android:value="@navigation/nav_lib"/>
+        |                            </activity>
+        |                        </application>
+        |                    </manifest>
+        """
+          .trimMargin(),
+      )
+      .withFile(
+        "src/main/res/navigation/nav_app.xml",
+        populateNavAppContent(action = "android.intent.action.APP_ACTION", mimeType = "app/image/jpg"),
+      )
 
-    private val lib =
-        MinimalSubProject.lib("com.example.lib")
-            .withFile(
-                "src/main/res/navigation/nav_lib.xml",
-                populateNavLibContent(
-                    action = "android.intent.action.LIB_ACTION",
-                    mimeType = "lib/image/jpg"
-                )
-            )
+  private val lib =
+    MinimalSubProject.lib("com.example.lib")
+      .withFile(
+        "src/main/res/navigation/nav_lib.xml",
+        populateNavLibContent(action = "android.intent.action.LIB_ACTION", mimeType = "lib/image/jpg"),
+      )
 
-    private fun populateNavAppContent(action: String?, mimeType: String?): String {
-        val actionString = if (action != null) "app:action=\"$action\"" else ""
-        val mimeTypeString = if (mimeType != null) "app:mimeType=\"$mimeType\"" else ""
-        return """
+  private fun populateNavAppContent(action: String?, mimeType: String?): String {
+    val actionString = if (action != null) "app:action=\"$action\"" else ""
+    val mimeTypeString = if (mimeType != null) "app:mimeType=\"$mimeType\"" else ""
+    return """
             <navigation xmlns:app="http://schemas.android.com/apk/res-auto">
                 <deepLink
                     $actionString
                     $mimeTypeString
                     app:uri="http://app.example.com"/>
             </navigation>
-        """.trimIndent()
-    }
+        """
+      .trimIndent()
+  }
 
-    private fun populateNavLibContent(action: String?, mimeType: String?): String {
-        val actionString = if (action != null) "app:action=\"$action\"" else ""
-        val mimeTypeString = if (mimeType != null) "app:mimeType=\"$mimeType\"" else ""
-        return """
+  private fun populateNavLibContent(action: String?, mimeType: String?): String {
+    val actionString = if (action != null) "app:action=\"$action\"" else ""
+    val mimeTypeString = if (mimeType != null) "app:mimeType=\"$mimeType\"" else ""
+    return """
             <navigation xmlns:app="http://schemas.android.com/apk/res-auto">
                 <deepLink
                     $actionString
                     $mimeTypeString
                     app:uri="http://lib.example.com"/>
             </navigation>
-        """.trimIndent()
-    }
-
-    @get:Rule
-    val project =
-        GradleTestProject.builder()
-            .fromTestApp(
-                MultiModuleTestProject.builder()
-                    .subproject(":app", app)
-                    .subproject(":lib", lib)
-                    .dependency(app, lib)
-                    .dependency(app, "androidx.navigation:navigation-fragment:2.5.2")
-                    .dependency(lib, "androidx.navigation:navigation-fragment:2.5.2")
-                    .build()
-            )
-            .create()
-
-    private val executor: GradleTaskExecutor
-        get() = project.executor().with(BooleanOption.DEFAULT_TARGET_SDK_TO_COMPILE_SDK_IF_UNSET, true)
-
-    @Test
-    fun testNavigationIntentActionAndMimeType() {
-        executor.run(":app:assembleDebug")
-        val mergedManifest =
-            project.file(
-                "app/build/${SdkConstants.FD_INTERMEDIATES}/${SingleArtifact.MERGED_MANIFEST.getFolderName()}/debug/processDebugMainManifest/AndroidManifest.xml"
-            )
-        PathSubject.assertThat(mergedManifest)
-            .contentWithUnixLineSeparatorsIsExactly(expectedMergedManifestContent)
-    }
-
-    /**
-     * Similar to [testNavigationIntentActionAndMimeType], but we first build an AAR from lib.
-     */
-    @Test
-    fun testNavigationIntentActionAndMimeType_withAarDependency() {
-        // Add a directory and build.gradle file for the AAR.
-        val libAarDir = File(project.projectDir, "lib-aar").also { it.mkdirs() }
-        File(libAarDir, "build.gradle").writeText(
-            """
-                configurations.maybeCreate("default")
-                artifacts.add("default", file('lib.aar'))
-            """.trimIndent()
-        )
-        // Build AAR, check that it has expected navigation.json entry, and copy it to libAarDir.
-        executor.run(":lib:assembleDebug")
-
-        project.getSubproject("lib").assertAar(AarSelector.DEBUG) {
-            textFile(FN_NAVIGATION_JSON).isNotEmpty()
-        }
-        val aarPath = project.getSubproject("lib").getAarLocationForCopy(AarSelector.DEBUG)
-        FileUtils.copyFile(aarPath.toFile(), File(libAarDir, "lib.aar"))
-
-        // Update the app's build.gradle and the settings.gradle.
-        TestFileUtils.searchAndReplace(
-            project.getSubproject("app").buildFile,
-            "implementation project(':lib')",
-            "implementation project(':lib-aar')",
-        )
-        TestFileUtils.appendToFile(project.settingsFile, "include ':lib-aar'")
-
-        // Finally, build the APK and check the contents of the merged manifest.
-        executor.run(":app:assembleDebug")
-        val mergedManifest =
-            project.file(
-                "app/build/${SdkConstants.FD_INTERMEDIATES}/${SingleArtifact.MERGED_MANIFEST.getFolderName()}/debug/processDebugMainManifest/AndroidManifest.xml"
-            )
-        PathSubject.assertThat(mergedManifest)
-            .contentWithUnixLineSeparatorsIsExactly(expectedMergedManifestContent)
-    }
-
-    @Test
-    fun testNavigationWithDefaultAndEmptyAction() {
-        val navAppFile =
-            project.getSubproject(":app").file("src/main/res/navigation/nav_app.xml")
-        val navLibFile =
-            project.getSubproject(":lib").file("src/main/res/navigation/nav_lib.xml")
-        FileUtils.writeToFile(navAppFile, populateNavAppContent(
-            action = "", // should result in no action
-            mimeType = "app/image/jpg"
-        ))
-        FileUtils.writeToFile(navLibFile, populateNavLibContent(
-            action = null, // should result in default "VIEW" action
-            mimeType = null // should result in no mimeType
-        ))
-        executor.run(":app:assembleDebug")
-        val mergedManifest =
-            project.file(
-                "app/build/${SdkConstants.FD_INTERMEDIATES}/${SingleArtifact.MERGED_MANIFEST.getFolderName()}/debug/processDebugMainManifest/AndroidManifest.xml"
-            )
-        // Validate there is only one occurrence of VIEW action in the merged manifest
-        PathSubject.assertThat(mergedManifest).containsExactlyOnce(
-            "<action android:name=\"android.intent.action.VIEW\" />")
-        // Validate there is only one occurrence of mimeType in the merged manifest
-        PathSubject.assertThat(mergedManifest).containsExactlyOnce(
-            "<data android:mimeType=\"app/image/jpg\" />")
-        // Validate the APP_ACTION does not exist in merged manifest
-        PathSubject.assertThat(mergedManifest).doesNotContain("APP_ACTION")
-    }
-
-    private val expectedMergedManifestContent: String =
         """
+      .trimIndent()
+  }
+
+  @get:Rule
+  val project =
+    GradleTestProject.builder()
+      .fromTestApp(
+        MultiModuleTestProject.builder()
+          .subproject(":app", app)
+          .subproject(":lib", lib)
+          .dependency(app, lib)
+          .dependency(app, "androidx.navigation:navigation-fragment:2.5.2")
+          .dependency(lib, "androidx.navigation:navigation-fragment:2.5.2")
+          .build()
+      )
+      .create()
+
+  private val executor: GradleTaskExecutor
+    get() = project.executor().with(BooleanOption.DEFAULT_TARGET_SDK_TO_COMPILE_SDK_IF_UNSET, true)
+
+  @Test
+  fun testNavigationIntentActionAndMimeType() {
+    executor.run(":app:assembleDebug")
+    val mergedManifest =
+      project.file(
+        "app/build/${SdkConstants.FD_INTERMEDIATES}/${SingleArtifact.MERGED_MANIFEST.getFolderName()}/debug/processDebugMainManifest/AndroidManifest.xml"
+      )
+    PathSubject.assertThat(mergedManifest).contentWithUnixLineSeparatorsIsExactly(expectedMergedManifestContent)
+  }
+
+  /** Similar to [testNavigationIntentActionAndMimeType], but we first build an AAR from lib. */
+  @Test
+  fun testNavigationIntentActionAndMimeType_withAarDependency() {
+    // Add a directory and build.gradle file for the AAR.
+    val libAarDir = File(project.projectDir, "lib-aar").also { it.mkdirs() }
+    File(libAarDir, "build.gradle")
+      .writeText(
+        """
+        configurations.maybeCreate("default")
+        artifacts.add("default", file('lib.aar'))
+        """
+          .trimIndent()
+      )
+    // Build AAR, check that it has expected navigation.json entry, and copy it to libAarDir.
+    executor.run(":lib:assembleDebug")
+
+    project.getSubproject("lib").assertAar(AarSelector.DEBUG) { textFile(FN_NAVIGATION_JSON).isNotEmpty() }
+    val aarPath = project.getSubproject("lib").getAarLocationForCopy(AarSelector.DEBUG)
+    FileUtils.copyFile(aarPath.toFile(), File(libAarDir, "lib.aar"))
+
+    // Update the app's build.gradle and the settings.gradle.
+    TestFileUtils.searchAndReplace(
+      project.getSubproject("app").buildFile,
+      "implementation project(':lib')",
+      "implementation project(':lib-aar')",
+    )
+    TestFileUtils.appendToFile(project.settingsFile, "include ':lib-aar'")
+
+    // Finally, build the APK and check the contents of the merged manifest.
+    executor.run(":app:assembleDebug")
+    val mergedManifest =
+      project.file(
+        "app/build/${SdkConstants.FD_INTERMEDIATES}/${SingleArtifact.MERGED_MANIFEST.getFolderName()}/debug/processDebugMainManifest/AndroidManifest.xml"
+      )
+    PathSubject.assertThat(mergedManifest).contentWithUnixLineSeparatorsIsExactly(expectedMergedManifestContent)
+  }
+
+  @Test
+  fun testNavigationWithDefaultAndEmptyAction() {
+    val navAppFile = project.getSubproject(":app").file("src/main/res/navigation/nav_app.xml")
+    val navLibFile = project.getSubproject(":lib").file("src/main/res/navigation/nav_lib.xml")
+    FileUtils.writeToFile(
+      navAppFile,
+      populateNavAppContent(
+        action = "", // should result in no action
+        mimeType = "app/image/jpg",
+      ),
+    )
+    FileUtils.writeToFile(
+      navLibFile,
+      populateNavLibContent(
+        action = null, // should result in default "VIEW" action
+        mimeType = null, // should result in no mimeType
+      ),
+    )
+    executor.run(":app:assembleDebug")
+    val mergedManifest =
+      project.file(
+        "app/build/${SdkConstants.FD_INTERMEDIATES}/${SingleArtifact.MERGED_MANIFEST.getFolderName()}/debug/processDebugMainManifest/AndroidManifest.xml"
+      )
+    // Validate there is only one occurrence of VIEW action in the merged manifest
+    PathSubject.assertThat(mergedManifest).containsExactlyOnce("<action android:name=\"android.intent.action.VIEW\" />")
+    // Validate there is only one occurrence of mimeType in the merged manifest
+    PathSubject.assertThat(mergedManifest).containsExactlyOnce("<data android:mimeType=\"app/image/jpg\" />")
+    // Validate the APP_ACTION does not exist in merged manifest
+    PathSubject.assertThat(mergedManifest).doesNotContain("APP_ACTION")
+  }
+
+  private val expectedMergedManifestContent: String =
+    """
             <?xml version="1.0" encoding="utf-8"?>
             <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                 package="com.example.app"
@@ -243,5 +236,6 @@ class NavigationIntentFilterTest {
                 </application>
 
             </manifest>
-        """.trimIndent()
+        """
+      .trimIndent()
 }

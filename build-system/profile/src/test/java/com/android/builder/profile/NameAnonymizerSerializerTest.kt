@@ -20,28 +20,27 @@ import org.junit.Test
 
 class NameAnonymizerSerializerTest {
 
-    @Test
-    fun anonymizeVariant() {
-        val nameAnonymizer = NameAnonymizer()
+  @Test
+  fun anonymizeVariant() {
+    val nameAnonymizer = NameAnonymizer()
 
-        val projectA = nameAnonymizer.anonymizeProjectPath(":a")
-        val projectB = nameAnonymizer.anonymizeProjectPath(":b")
+    val projectA = nameAnonymizer.anonymizeProjectPath(":a")
+    val projectB = nameAnonymizer.anonymizeProjectPath(":b")
 
-        val projectAVariantDebug = nameAnonymizer.anonymizeVariant(":a", "debug")
-        val projectAVariantRelease = nameAnonymizer.anonymizeVariant(":a", "release")
-        val projectBVariantRelease = nameAnonymizer.anonymizeVariant(":b", "release")
-        val projectBVariantDebug = nameAnonymizer.anonymizeVariant(":b", "debug")
+    val projectAVariantDebug = nameAnonymizer.anonymizeVariant(":a", "debug")
+    val projectAVariantRelease = nameAnonymizer.anonymizeVariant(":a", "release")
+    val projectBVariantRelease = nameAnonymizer.anonymizeVariant(":b", "release")
+    val projectBVariantDebug = nameAnonymizer.anonymizeVariant(":b", "debug")
 
-
-        val serialized: String = NameAnonymizerSerializer().toJson(nameAnonymizer)
-        println("Serialized $serialized")
-        val deserialized = NameAnonymizerSerializer().fromJson(serialized)
-        // Run in a different order to check that the ids are reloaded correctly.
-        assertThat(deserialized.anonymizeProjectPath(":b")).isEqualTo(projectB)
-        assertThat(deserialized.anonymizeProjectPath(":a")).isEqualTo(projectA)
-        assertThat(deserialized.anonymizeVariant(":b", "debug")).isEqualTo(projectBVariantDebug)
-        assertThat(deserialized.anonymizeVariant(":b", "release")).isEqualTo(projectBVariantRelease)
-        assertThat(deserialized.anonymizeVariant(":a", "debug")).isEqualTo(projectAVariantDebug)
-        assertThat(deserialized.anonymizeVariant(":a", "release")).isEqualTo(projectAVariantRelease)
-    }
+    val serialized: String = NameAnonymizerSerializer().toJson(nameAnonymizer)
+    println("Serialized $serialized")
+    val deserialized = NameAnonymizerSerializer().fromJson(serialized)
+    // Run in a different order to check that the ids are reloaded correctly.
+    assertThat(deserialized.anonymizeProjectPath(":b")).isEqualTo(projectB)
+    assertThat(deserialized.anonymizeProjectPath(":a")).isEqualTo(projectA)
+    assertThat(deserialized.anonymizeVariant(":b", "debug")).isEqualTo(projectBVariantDebug)
+    assertThat(deserialized.anonymizeVariant(":b", "release")).isEqualTo(projectBVariantRelease)
+    assertThat(deserialized.anonymizeVariant(":a", "debug")).isEqualTo(projectAVariantDebug)
+    assertThat(deserialized.anonymizeVariant(":a", "release")).isEqualTo(projectAVariantRelease)
+  }
 }

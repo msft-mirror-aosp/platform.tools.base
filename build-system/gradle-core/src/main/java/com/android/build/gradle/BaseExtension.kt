@@ -56,9 +56,9 @@ import com.android.builder.model.SourceProvider
 import com.android.builder.testing.api.DeviceProvider
 import com.android.builder.testing.api.TestServer
 import com.android.repository.Revision
-import com.google.common.collect.ImmutableList
 import com.google.common.collect.Lists
 import com.google.wireless.android.sdk.stats.GradleBuildProject
+import java.io.File
 import org.gradle.api.Action
 import org.gradle.api.GradleException
 import org.gradle.api.Incubating
@@ -68,24 +68,18 @@ import org.gradle.api.logging.Logger
 import org.gradle.api.logging.Logging
 import org.gradle.api.tasks.SourceSet
 import org.gradle.declarative.dsl.model.annotations.Restricted
-import java.io.File
 
 /**
  * Base extension for all Android plugins.
  *
  * You don't use this extension directly. Instead, use one of the following:
- *
- * * [ApplicationExtension]: `android` extension for the `com.android.application` plugin
- *         used to create an Android app.
+ * * [ApplicationExtension]: `android` extension for the `com.android.application` plugin used to create an Android app.
  * * [LibraryExtension]: `android` extension for the `com.android.library` plugin used to
- *         [create an Android library](https://developer.android.com/studio/projects/android-library.html)
- * * [TestExtension]: `android` extension for the `com.android.test` plugin used to create
- *         a separate android test project.
- * * [DynamicFeatureExtension]: `android` extension for the `com.android.dynamic-feature` plugin
- *         used to create dynamic features.
+ *   [create an Android library](https://developer.android.com/studio/projects/android-library.html)
+ * * [TestExtension]: `android` extension for the `com.android.test` plugin used to create a separate android test project.
+ * * [DynamicFeatureExtension]: `android` extension for the `com.android.dynamic-feature` plugin used to create dynamic features.
  *
  * The following applies the Android plugin to an app project `build.gradle` file:
- *
  * ```
  * // Applies the application plugin and makes the 'android' block available to specify
  * // Android-specific build options.
@@ -98,402 +92,364 @@ import java.io.File
 // All the public methods are meant to be exposed in the DSL. We can't use lambdas in this class
 // (yet), because the DSL reference generator doesn't understand them.
 @Deprecated(
-    message = "Replaced by com.android.build.api.dsl.CommonExtension.\n" +
-            "This class is not used for the public extensions in AGP when android.newDsl=true, which is the default in AGP 9.0, and will be removed in AGP 10.0.",
-    replaceWith = ReplaceWith("com.android.build.api.dsl.CommonExtension")
+  message =
+    "Replaced by com.android.build.api.dsl.CommonExtension.\n" +
+      "This class is not used for the public extensions in AGP when android.newDsl=true, which is the default in AGP 9.0, and will be removed in AGP 10.0.",
+  replaceWith = ReplaceWith("com.android.build.api.dsl.CommonExtension"),
 )
-abstract class BaseExtension protected constructor(
-    protected val dslServices: DslServices,
-    protected val bootClasspathConfig: BootClasspathConfig,
-    /** All build outputs for all variants, can be used by users to customize a build output. */
-    override val buildOutputs: NamedDomainObjectContainer<BaseVariantOutput>,
-    private val sourceSetManager: SourceSetManager,
-    private val isBaseModule: Boolean,
-    private val stats: GradleBuildProject.Builder?
+abstract class BaseExtension
+protected constructor(
+  protected val dslServices: DslServices,
+  protected val bootClasspathConfig: BootClasspathConfig,
+  /** All build outputs for all variants, can be used by users to customize a build output. */
+  override val buildOutputs: NamedDomainObjectContainer<BaseVariantOutput>,
+  private val sourceSetManager: SourceSetManager,
+  private val isBaseModule: Boolean,
+  private val stats: GradleBuildProject.Builder?,
 ) : AndroidConfig, Lockable {
 
-    private var hasOldVariantApiUsage: Boolean = false
+  private var hasOldVariantApiUsage: Boolean = false
 
-    private val _dexOptions = dslServices.newInstance(DexOptions::class.java)
+  private val _dexOptions = dslServices.newInstance(DexOptions::class.java)
 
-    @Deprecated("Using dexOptions is obsolete.")
-    override val dexOptions: DexOptions
-        get() {
-            dslServices.deprecationReporter.reportObsoleteUsage(
-                "dexOptions",
-                DeprecationReporter.DeprecationTarget.DEX_OPTIONS
-            )
-            return _dexOptions
-        }
-
-    private val deviceProviderList: MutableList<DeviceProvider> = Lists.newArrayList()
-    private val testServerList: MutableList<TestServer> = Lists.newArrayList()
-
-    @get:Incubating
-    abstract val composeOptions: ComposeOptions
-
-    abstract override val dataBinding: DataBindingOptions
-    abstract val viewBinding: ViewBindingOptionsImpl
-
-    override var defaultPublishConfig: String = "release"
-        set(_) {
-            dslServices.deprecationReporter.reportObsoleteUsage(
-                    "defaultPublishConfig",
-                    DeprecationReporter.DeprecationTarget.DEFAULT_PUBLISH_CONFIG
-            )
-        }
-
-    override var variantFilter: Action<VariantFilter>? = null
-
-    protected val logger: Logger = Logging.getLogger(this::class.java)
-
-    private var isWritable = true
-
-    /**
-     * Disallow further modification on the extension.
-     */
-    fun disableWrite() {
-        isWritable = false
-        lock()
+  @Deprecated("Using dexOptions is obsolete.")
+  override val dexOptions: DexOptions
+    get() {
+      dslServices.deprecationReporter.reportObsoleteUsage("dexOptions", DeprecationReporter.DeprecationTarget.DEX_OPTIONS)
+      return _dexOptions
     }
 
-    protected fun recordOldVariantApiUsage() {
-        stats?.oldVariantApiInUse = true
-        hasOldVariantApiUsage = true
+  private val deviceProviderList: MutableList<DeviceProvider> = Lists.newArrayList()
+  private val testServerList: MutableList<TestServer> = Lists.newArrayList()
+
+  @get:Incubating abstract val composeOptions: ComposeOptions
+
+  abstract override val dataBinding: DataBindingOptions
+  abstract val viewBinding: ViewBindingOptionsImpl
+
+  override var defaultPublishConfig: String = "release"
+    set(_) {
+      dslServices.deprecationReporter.reportObsoleteUsage(
+        "defaultPublishConfig",
+        DeprecationReporter.DeprecationTarget.DEFAULT_PUBLISH_CONFIG,
+      )
     }
 
-    fun hasOldVariantApiUsage() : Boolean {
-        return hasOldVariantApiUsage
+  override var variantFilter: Action<VariantFilter>? = null
+
+  protected val logger: Logger = Logging.getLogger(this::class.java)
+
+  private var isWritable = true
+
+  /** Disallow further modification on the extension. */
+  fun disableWrite() {
+    isWritable = false
+    lock()
+  }
+
+  protected fun recordOldVariantApiUsage() {
+    stats?.oldVariantApiInUse = true
+    hasOldVariantApiUsage = true
+  }
+
+  fun hasOldVariantApiUsage(): Boolean {
+    return hasOldVariantApiUsage
+  }
+
+  protected fun checkWritability() {
+    if (!isWritable) {
+      throw GradleException(
+        "Android tasks have already been created.\n" +
+          "This happens when calling android.applicationVariants,\n" +
+          "android.libraryVariants or android.testVariants.\n" +
+          "Once these methods are called, it is not possible to\n" +
+          "continue configuring the model."
+      )
+    }
+  }
+
+  /** For groovy only (so `compileSdkVersion=2` works) */
+  fun setCompileSdkVersion(apiLevel: Int) {
+    compileSdkVersion(apiLevel)
+  }
+
+  open fun buildToolsVersion(version: String) {
+    buildToolsVersion = version
+  }
+
+  open fun flavorDimensions(vararg dimensions: String) {
+    checkWritability()
+    flavorDimensionList.clear()
+    flavorDimensionList.addAll(dimensions)
+  }
+
+  abstract fun sourceSets(action: Action<NamedDomainObjectContainer<AndroidSourceSet>>)
+
+  abstract fun aaptOptions(action: Action<AaptOptions>)
+
+  /**
+   * Specifies options for the DEX tool, such as enabling library pre-dexing.
+   *
+   * For more information about the properties you can configure in this block, see [DexOptions].
+   */
+  @Deprecated("Setting dexOptions is obsolete.")
+  fun dexOptions(action: Action<DexOptions>) {
+    checkWritability()
+    action.execute(dexOptions)
+  }
+
+  abstract fun lintOptions(action: Action<LintOptions>)
+
+  abstract fun externalNativeBuild(action: Action<ExternalNativeBuild>)
+
+  /**
+   * Specifies options for how the Android plugin should run local and instrumented tests.
+   *
+   * For more information about the properties you can configure in this block, see [TestOptions].
+   */
+  abstract fun testOptions(action: Action<TestOptions>)
+
+  abstract fun compileOptions(action: Action<CompileOptions>)
+
+  abstract fun packagingOptions(action: Action<PackagingOptions>)
+
+  abstract fun jacoco(action: Action<JacocoOptions>)
+
+  /**
+   * Specifies options for the [Android Debug Bridge (ADB)](https://developer.android.com/studio/command-line/adb.html), such as APK
+   * installation options.
+   *
+   * For more information about the properties you can configure in this block, see [AdbOptions].
+   */
+  abstract fun adbOptions(action: Action<AdbOptions>)
+
+  abstract fun splits(action: Action<Splits>)
+
+  /**
+   * Specifies options for the [Data Binding Library](https://developer.android.com/topic/libraries/data-binding/index.html).
+   *
+   * For more information about the properties you can configure in this block, see [DataBindingOptions]
+   */
+  abstract fun dataBinding(action: Action<DataBindingOptions>)
+
+  /**
+   * Specifies options for the View Binding lLibrary.
+   *
+   * For more information about the properties you can configure in this block, see [ViewBindingOptions].
+   */
+  abstract fun viewBinding(action: Action<ViewBindingOptionsImpl>)
+
+  fun deviceProvider(deviceProvider: DeviceProvider) {
+    checkWritability()
+    deviceProviderList.add(deviceProvider)
+  }
+
+  override val deviceProviders: List<DeviceProvider>
+    get() = deviceProviderList
+
+  fun testServer(testServer: TestServer) {
+    checkWritability()
+    testServerList.add(testServer)
+  }
+
+  override val testServers: List<TestServer>
+    get() = testServerList
+
+  open fun defaultPublishConfig(value: String) {
+    defaultPublishConfig = value
+  }
+
+  fun setPublishNonDefault(publishNonDefault: Boolean) {
+    logger.warn("publishNonDefault is deprecated and has no effect anymore. All variants are now published.")
+  }
+
+  @Deprecated("Use AndroidComponentsExtension.beforeVariants API to disable specific variants")
+  open fun variantFilter(variantFilter: Action<VariantFilter>) {
+    this.variantFilter = variantFilter
+  }
+
+  open fun resourcePrefix(prefix: String) {
+    resourcePrefix = prefix
+  }
+
+  abstract fun addVariant(variant: BaseVariant)
+
+  fun registerArtifactType(name: String, isTest: Boolean, artifactType: Int) {}
+
+  fun registerBuildTypeSourceProvider(name: String, buildType: BuildType, sourceProvider: SourceProvider) {}
+
+  fun registerProductFlavorSourceProvider(name: String, productFlavor: ProductFlavor, sourceProvider: SourceProvider) {}
+
+  fun registerJavaArtifact(
+    name: String,
+    variant: BaseVariant,
+    assembleTaskName: String,
+    javaCompileTaskName: String,
+    generatedSourceFolders: MutableCollection<File>,
+    ideSetupTaskNames: Iterable<String>,
+    configuration: Configuration,
+    classesFolder: File,
+    javaResourceFolder: File,
+    sourceProvider: SourceProvider,
+  ) {}
+
+  fun registerMultiFlavorSourceProvider(name: String, flavorName: String, sourceProvider: SourceProvider) {}
+
+  @NonNull
+  fun wrapJavaSourceSet(sourceSet: SourceSet): SourceProvider {
+    return SourceSetSourceProviderWrapper(sourceSet)
+  }
+
+  /**
+   * The path to the Android SDK that Gradle uses for this project.
+   *
+   * To learn more about downloading and installing the Android SDK, read
+   * [Update Your Tools with the SDK Manager](https://developer.android.com/studio/intro/update.html#sdk-manager)
+   */
+  val sdkDirectory: File
+    get() {
+      return dslServices.sdkComponents.flatMap { it.sdkDirectoryProvider }.get().asFile
     }
 
-    protected fun checkWritability() {
-        if (!isWritable) {
-            throw GradleException(
-                "Android tasks have already been created.\n" +
-                        "This happens when calling android.applicationVariants,\n" +
-                        "android.libraryVariants or android.testVariants.\n" +
-                        "Once these methods are called, it is not possible to\n" +
-                        "continue configuring the model."
-            )
-        }
+  /**
+   * The path to the [Android NDK](https://developer.android.com/ndk/index.html) that Gradle uses for this project.
+   *
+   * You can install the Android NDK by either [using the SDK manager](https://developer.android.com/studio/intro/update.html#sdk-manager)
+   * or downloading [the standalone NDK package](https://developer.android.com/ndk/downloads/index.html).
+   */
+  val ndkDirectory: File
+    get() {
+      // do not call this method from within the plugin code as it forces part of SDK initialization.
+      return dslServices.sdkComponents.map { it.versionedNdkHandler(ndkVersion, ndkPath).ndkPlatform.getOrThrow().ndkDirectory }.get()
     }
 
-    /** For groovy only (so `compileSdkVersion=2` works) */
-    fun setCompileSdkVersion(apiLevel: Int) {
-        compileSdkVersion(apiLevel)
+  // do not call this method from within the plugin code as it forces SDK initialization.
+  // once this method is removed, remember to protect the bootClasspathConfig.bootClasspath against
+  // unsafe read.
+  override val bootClasspath: List<File>
+    get() =
+      try {
+        bootClasspathConfig.bootClasspath.get().map { it.asFile }
+      } catch (e: IllegalStateException) {
+        listOf()
+      }
+
+  /**
+   * The path to the [Android Debug Bridge (ADB)](https://developer.android.com/studio/command-line/adb.html) executable from the Android
+   * SDK.
+   */
+  @Suppress("DEPRECATION")
+  val adbExecutable: File
+    get() {
+      return dslServices.versionedSdkLoaderService.versionedSdkLoader.flatMap { it.adbExecutableProvider }.get().asFile
     }
 
-    open fun buildToolsVersion(version: String) {
-        buildToolsVersion = version
+  /** This property is deprecated. Instead, use [adbExecutable]. */
+  @Deprecated("This property is deprecated", ReplaceWith("adbExecutable"))
+  val adbExe: File
+    get() {
+      return adbExecutable
     }
 
-    open fun flavorDimensions(vararg dimensions: String) {
-        checkWritability()
-        flavorDimensionList.clear()
-        flavorDimensionList.addAll(dimensions)
-    }
-
-    abstract fun sourceSets(action: Action<NamedDomainObjectContainer<AndroidSourceSet>>)
-
-    abstract fun aaptOptions(action: Action<AaptOptions>)
-
-    /**
-     * Specifies options for the DEX tool, such as enabling library pre-dexing.
-     *
-     * For more information about the properties you can configure in this block, see [DexOptions].
-     */
-    @Deprecated("Setting dexOptions is obsolete.")
-    fun dexOptions(action: Action<DexOptions>) {
-        checkWritability()
-        action.execute(dexOptions)
-    }
-
-    abstract fun lintOptions(action: Action<LintOptions>)
-
-    abstract fun externalNativeBuild(action: Action<ExternalNativeBuild>)
-
-    /**
-     * Specifies options for how the Android plugin should run local and instrumented tests.
-     *
-     * For more information about the properties you can configure in this block, see [TestOptions].
-     */
-    abstract fun testOptions(action: Action<TestOptions>)
-
-    abstract fun compileOptions(action: Action<CompileOptions>)
-
-    abstract fun packagingOptions(action: Action<PackagingOptions>)
-
-    abstract fun jacoco(action: Action<JacocoOptions>)
-
-    /**
-     * Specifies options for the
-     * [Android Debug Bridge (ADB)](https://developer.android.com/studio/command-line/adb.html),
-     * such as APK installation options.
-     *
-     * For more information about the properties you can configure in this block, see [AdbOptions].
-     */
-    abstract fun adbOptions(action: Action<AdbOptions>)
-
-    abstract fun splits(action: Action<Splits>)
-
-    /**
-     * Specifies options for the
-     * [Data Binding Library](https://developer.android.com/topic/libraries/data-binding/index.html).
-     *
-     * For more information about the properties you can configure in this block, see [DataBindingOptions]
-     */
-    abstract fun dataBinding(action: Action<DataBindingOptions>)
-
-    /**
-     * Specifies options for the View Binding lLibrary.
-     *
-     * For more information about the properties you can configure in this block, see [ViewBindingOptions].
-     */
-    abstract fun viewBinding(action: Action<ViewBindingOptionsImpl>)
-
-    fun deviceProvider(deviceProvider: DeviceProvider) {
-        checkWritability()
-        deviceProviderList.add(deviceProvider)
-    }
-
-    override val deviceProviders: List<DeviceProvider>
-        get() = deviceProviderList
-
-    fun testServer(testServer: TestServer) {
-        checkWritability()
-        testServerList.add(testServer)
-    }
-
-    override val testServers: List<TestServer>
-        get() = testServerList
-
-    open fun defaultPublishConfig(value: String) {
-        defaultPublishConfig = value
-    }
-
-    fun setPublishNonDefault(publishNonDefault: Boolean) {
-        logger.warn("publishNonDefault is deprecated and has no effect anymore. All variants are now published.")
-    }
-
-    @Deprecated("Use AndroidComponentsExtension.beforeVariants API to disable specific variants")
-    open fun variantFilter(variantFilter: Action<VariantFilter>) {
-        this.variantFilter = variantFilter
-    }
-
-    open fun resourcePrefix(prefix: String) {
-        resourcePrefix = prefix
-    }
-
-    abstract fun addVariant(variant: BaseVariant)
-
-    fun registerArtifactType(name: String, isTest: Boolean, artifactType: Int) {
-    }
-
-    fun registerBuildTypeSourceProvider(
-        name: String,
-        buildType: BuildType,
-        sourceProvider: SourceProvider
+  open fun getDefaultProguardFile(name: String): File {
+    if (
+      dslServices.projectOptions[BooleanOption.R8_PROGUARD_ANDROID_TXT_DISALLOWED] &&
+        name == ProguardFiles.ProguardFile.DONT_OPTIMIZE.fileName
     ) {
+      dslServices.issueReporter.reportError(IssueReporter.Type.GENERIC, ProguardFiles.DONTOPTIMIZE_DISALLOWED_MESSAGE)
     }
-
-    fun registerProductFlavorSourceProvider(
-        name: String,
-        productFlavor: ProductFlavor,
-        sourceProvider: SourceProvider
-    ) {
+    if (!ProguardFiles.KNOWN_FILE_NAMES.contains(name)) {
+      dslServices.issueReporter.reportError(IssueReporter.Type.GENERIC, ProguardFiles.UNKNOWN_FILENAME_MESSAGE)
     }
+    return ProguardFiles.getDefaultProguardFile(name, dslServices.buildDirectory)
+  }
 
-    fun registerJavaArtifact(
-        name: String,
-        variant: BaseVariant,
-        assembleTaskName: String,
-        javaCompileTaskName: String,
-        generatedSourceFolders: MutableCollection<File>,
-        ideSetupTaskNames: Iterable<String>,
-        configuration: Configuration,
-        classesFolder: File,
-        javaResourceFolder: File,
-        sourceProvider: SourceProvider
-    ) {
+  // ---------------
+  // TEMP for compatibility
 
-    }
+  /** {@inheritDoc} */
+  override var generatePureSplits: Boolean
+    get() = false
+    set(_) = logger.warn("generatePureSplits is deprecated and has no effect anymore. Use bundletool to generate configuration splits.")
 
-    fun registerMultiFlavorSourceProvider(
-        name: String,
-        flavorName: String,
-        sourceProvider: SourceProvider
-    ) {
-    }
+  @get:Suppress("WrongTerminology")
+  @Deprecated("Use aidlPackagedList instead", ReplaceWith("aidlPackagedList"))
+  override val aidlPackageWhiteList: MutableCollection<String>?
+    get() = aidlPackagedList
 
-    @NonNull
-    fun wrapJavaSourceSet(sourceSet: SourceSet): SourceProvider {
-        return SourceSetSourceProviderWrapper(sourceSet)
-    }
+  override val aidlPackagedList: MutableCollection<String>?
+    get() = throw GradleException("aidlPackagedList is not supported.")
 
-    /**
-     * The path to the Android SDK that Gradle uses for this project.
-     *
-     * To learn more about downloading and installing the Android SDK, read
-     * [Update Your Tools with the SDK Manager](https://developer.android.com/studio/intro/update.html#sdk-manager)
-     */
-    val sdkDirectory: File
-        get() {
-            return dslServices.sdkComponents.flatMap { it.sdkDirectoryProvider }.get().asFile
-        }
+  // For compatibility with FeatureExtension.
+  override val baseFeature: Boolean
+    get() = isBaseModule
 
-    /**
-     * The path to the [Android NDK](https://developer.android.com/ndk/index.html) that Gradle uses for this project.
-     *
-     * You can install the Android NDK by either
-     * [using the SDK manager](https://developer.android.com/studio/intro/update.html#sdk-manager)
-     * or downloading
-     * [the standalone NDK package](https://developer.android.com/ndk/downloads/index.html).
-     */
-    val ndkDirectory: File
-        get() {
-        // do not call this method from within the plugin code as it forces part of SDK initialization.
-            return dslServices.sdkComponents.map {
-                it.versionedNdkHandler(
-                    ndkVersion,
-                    ndkPath
-                ).ndkPlatform.getOrThrow().ndkDirectory
-            }.get()
-    }
+  @Incubating abstract fun composeOptions(action: Action<ComposeOptions>)
 
-    // do not call this method from within the plugin code as it forces SDK initialization.
-    // once this method is removed, remember to protect the bootClasspathConfig.bootClasspath against
-    // unsafe read.
-    override val bootClasspath: List<File>
-        get() = try {
-            bootClasspathConfig.bootClasspath.get().map { it.asFile }
-        } catch (e: IllegalStateException) {
-            listOf()
-        }
+  abstract fun compileSdkVersion(version: String)
 
-    /**
-     * The path to the
-     * [Android Debug Bridge (ADB)](https://developer.android.com/studio/command-line/adb.html)
-     * executable from the Android SDK.
-     */
-    @Suppress("DEPRECATION")
-    val adbExecutable: File
-        get() {
-            return dslServices.versionedSdkLoaderService.versionedSdkLoader.flatMap {
-                it.adbExecutableProvider }.get().asFile
-        }
+  abstract fun compileSdkVersion(apiLevel: Int)
 
-    /** This property is deprecated. Instead, use [adbExecutable]. */
-    @Deprecated("This property is deprecated", ReplaceWith("adbExecutable"))
-    val adbExe: File
-        get() {
-            return adbExecutable
-        }
+  // Kept for binary and source compatibility until the old DSL interfaces can go away.
+  abstract override val flavorDimensionList: MutableList<String>
 
-    open fun getDefaultProguardFile(name: String): File {
-        if (dslServices.projectOptions[BooleanOption.R8_PROGUARD_ANDROID_TXT_DISALLOWED] &&
-            name == ProguardFiles.ProguardFile.DONT_OPTIMIZE.fileName
-        ) {
-            dslServices
-                .issueReporter
-                .reportError(
-                    IssueReporter.Type.GENERIC, ProguardFiles.DONTOPTIMIZE_DISALLOWED_MESSAGE
-                )
-        }
-        if (!ProguardFiles.KNOWN_FILE_NAMES.contains(name)) {
-            dslServices
-                .issueReporter
-                .reportError(
-                    IssueReporter.Type.GENERIC, ProguardFiles.UNKNOWN_FILENAME_MESSAGE
-                )
-        }
-        return ProguardFiles.getDefaultProguardFile(name, dslServices.buildDirectory)
-    }
+  abstract override var resourcePrefix: String?
 
-    // ---------------
-    // TEMP for compatibility
+  abstract override var ndkVersion: String
 
-    /** {@inheritDoc} */
-    override var generatePureSplits: Boolean
-        get() = false
-        set(_) = logger.warn(
-            "generatePureSplits is deprecated and has no effect anymore. Use bundletool to generate configuration splits."
-        )
+  abstract var ndkPath: String?
 
-    @get:Suppress("WrongTerminology")
-    @Deprecated("Use aidlPackagedList instead", ReplaceWith("aidlPackagedList"))
-    override val aidlPackageWhiteList: MutableCollection<String>?
-        get() = aidlPackagedList
+  abstract override var buildToolsVersion: String
 
-    override val aidlPackagedList: MutableCollection<String>?
-        get() = throw GradleException("aidlPackagedList is not supported.")
+  abstract override val buildToolsRevision: Revision
 
-    // For compatibility with FeatureExtension.
-    override val baseFeature: Boolean
-        get() = isBaseModule
+  abstract override val libraryRequests: MutableCollection<LibraryRequest>
 
-    @Incubating
-    abstract fun composeOptions(action: Action<ComposeOptions>)
+  abstract fun useLibrary(name: String)
 
-    abstract fun compileSdkVersion(version: String)
+  abstract fun useLibrary(name: String, required: Boolean)
 
-    abstract fun compileSdkVersion(apiLevel: Int)
+  abstract override val aaptOptions: AaptOptions
 
-    // Kept for binary and source compatibility until the old DSL interfaces can go away.
-    abstract override val flavorDimensionList: MutableList<String>
+  abstract override val adbOptions: AdbOptions
 
-    abstract override var resourcePrefix: String?
+  abstract override val buildTypes: NamedDomainObjectContainer<out BuildType>
 
-    abstract override var ndkVersion: String
+  abstract fun buildTypes(action: Action<in NamedDomainObjectContainer<BuildType>>)
 
-    abstract var ndkPath: String?
+  abstract override val compileOptions: CompileOptions
 
-    abstract override var buildToolsVersion: String
+  abstract override var compileSdkVersion: String?
 
-    abstract override val buildToolsRevision: Revision
+  abstract override val defaultConfig: DefaultConfig
 
-    abstract override val libraryRequests: MutableCollection<LibraryRequest>
+  abstract fun defaultConfig(action: Action<DefaultConfig>)
 
-    abstract fun useLibrary(name: String)
-    abstract fun useLibrary(name: String, required: Boolean)
+  abstract override val externalNativeBuild: ExternalNativeBuild
 
-    abstract override val aaptOptions: AaptOptions
+  abstract override val jacoco: JacocoOptions
 
-    abstract override val adbOptions: AdbOptions
+  abstract override val lintOptions: LintOptions
 
-    abstract override val buildTypes: NamedDomainObjectContainer<out BuildType>
-    abstract fun buildTypes(action: Action<in NamedDomainObjectContainer<BuildType>>)
+  abstract override val packagingOptions: PackagingOptions
 
-    abstract override val compileOptions: CompileOptions
+  abstract override val productFlavors: NamedDomainObjectContainer<out ProductFlavor>
 
-    abstract override var compileSdkVersion: String?
+  abstract fun productFlavors(action: Action<NamedDomainObjectContainer<ProductFlavor>>)
 
-    abstract override val defaultConfig: DefaultConfig
-    abstract fun defaultConfig(action: Action<DefaultConfig>)
+  abstract override val signingConfigs: NamedDomainObjectContainer<SigningConfig>
 
-    abstract override val externalNativeBuild: ExternalNativeBuild
+  abstract fun signingConfigs(action: Action<NamedDomainObjectContainer<SigningConfig>>)
 
-    abstract override val jacoco: JacocoOptions
+  abstract override val sourceSets: NamedDomainObjectContainer<AndroidSourceSet>
 
-    abstract override val lintOptions: LintOptions
+  abstract override val splits: Splits
 
-    abstract override val packagingOptions: PackagingOptions
+  abstract override val testOptions: TestOptions
 
-    abstract override val productFlavors: NamedDomainObjectContainer<out ProductFlavor>
-    abstract fun productFlavors(action: Action<NamedDomainObjectContainer<ProductFlavor>>)
+  // these are indirectly implemented by extensions when they implement the new public
+  // extension interfaces via delegates.
+  abstract val buildFeatures: BuildFeatures
 
-    abstract override val signingConfigs: NamedDomainObjectContainer<SigningConfig>
-    abstract fun signingConfigs(action: Action<NamedDomainObjectContainer<SigningConfig>>)
-
-    abstract override val sourceSets: NamedDomainObjectContainer<AndroidSourceSet>
-
-    abstract override val splits: Splits
-
-    abstract override val testOptions: TestOptions
-
-    // these are indirectly implemented by extensions when they implement the new public
-    // extension interfaces via delegates.
-    abstract val buildFeatures: BuildFeatures
-
-    @get:Restricted
-    abstract var namespace: String?
+  @get:Restricted abstract var namespace: String?
 }

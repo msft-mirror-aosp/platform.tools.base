@@ -19,45 +19,38 @@ package com.android.build.api.component.analytics
 import com.android.build.api.variant.SigningConfig
 import com.android.tools.build.gradle.internal.profile.VariantPropertiesMethodType
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
-import org.gradle.api.provider.Property
 import javax.inject.Inject
+import org.gradle.api.provider.Property
 
-open class AnalyticsEnabledSigningConfig@Inject constructor(
-    val delegate: SigningConfig,
-    val stats: GradleBuildVariant.Builder
-): SigningConfig {
+open class AnalyticsEnabledSigningConfig @Inject constructor(val delegate: SigningConfig, val stats: GradleBuildVariant.Builder) :
+  SigningConfig {
 
-    override fun setConfig(signingConfig: com.android.build.api.dsl.SigningConfig) {
-        stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
-            VariantPropertiesMethodType.SIGNING_CONFIG_SET_CONFIG_VALUE
-        delegate.setConfig(signingConfig)
+  override fun setConfig(signingConfig: com.android.build.api.dsl.SigningConfig) {
+    stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type = VariantPropertiesMethodType.SIGNING_CONFIG_SET_CONFIG_VALUE
+    delegate.setConfig(signingConfig)
+  }
+
+  override val enableV1Signing: Property<Boolean>
+    get() {
+      stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type = VariantPropertiesMethodType.SIGNING_CONFIG_ENABLE_V1_VALUE
+      return delegate.enableV1Signing
     }
 
-    override val enableV1Signing: Property<Boolean>
-        get() {
-            stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
-                VariantPropertiesMethodType.SIGNING_CONFIG_ENABLE_V1_VALUE
-            return delegate.enableV1Signing
-        }
+  override val enableV2Signing: Property<Boolean>
+    get() {
+      stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type = VariantPropertiesMethodType.SIGNING_CONFIG_ENABLE_V2_VALUE
+      return delegate.enableV2Signing
+    }
 
-    override val enableV2Signing: Property<Boolean>
-        get() {
-            stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
-                VariantPropertiesMethodType.SIGNING_CONFIG_ENABLE_V2_VALUE
-            return delegate.enableV2Signing
-        }
+  override val enableV3Signing: Property<Boolean>
+    get() {
+      stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type = VariantPropertiesMethodType.SIGNING_CONFIG_ENABLE_V3_VALUE
+      return delegate.enableV3Signing
+    }
 
-    override val enableV3Signing: Property<Boolean>
-        get() {
-            stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
-                VariantPropertiesMethodType.SIGNING_CONFIG_ENABLE_V3_VALUE
-            return delegate.enableV3Signing
-        }
-
-    override val enableV4Signing: Property<Boolean>
-        get() {
-            stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
-                VariantPropertiesMethodType.SIGNING_CONFIG_ENABLE_V4_VALUE
-            return delegate.enableV4Signing
-        }
+  override val enableV4Signing: Property<Boolean>
+    get() {
+      stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type = VariantPropertiesMethodType.SIGNING_CONFIG_ENABLE_V4_VALUE
+      return delegate.enableV4Signing
+    }
 }

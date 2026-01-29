@@ -22,6 +22,7 @@ import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition.Companion.DEFAULT_COMPILE_SDK_VERSION
 import com.android.build.gradle.integration.common.fixture.project.plugins.AndroidKotlinMultiplatformLibraryComponentCallback
 import com.android.build.gradle.integration.common.output.AarSubject
+import java.io.File
 import org.gradle.api.DefaultTask
 import org.gradle.api.Project
 import org.gradle.api.file.DirectoryProperty
@@ -29,99 +30,80 @@ import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.TaskAction
 import org.junit.Rule
 import org.junit.Test
-import java.io.File
 
 class KotlinMultiplatformGeneratedKotlinSourcesTest {
-    @get:Rule
-    val rule = GradleRule.from {
-        androidKotlinMultiplatformLibrary(":kmpLib", createMinimumProject = false) {
-            android {
-                namespace = "com.mylibrary.foo"
-                compileSdk = DEFAULT_COMPILE_SDK_VERSION
-            }
-
-            pluginCallbacks += Callback::class.java
+  @get:Rule
+  val rule =
+    GradleRule.from {
+      androidKotlinMultiplatformLibrary(":kmpLib", createMinimumProject = false) {
+        android {
+          namespace = "com.mylibrary.foo"
+          compileSdk = DEFAULT_COMPILE_SDK_VERSION
         }
+
+        pluginCallbacks += Callback::class.java
+      }
     }
 
-    class Callback: AndroidKotlinMultiplatformLibraryComponentCallback {
-        override fun handleExtension(
-            project: Project,
-            extension: KotlinMultiplatformAndroidComponentsExtension
-        ) {
-            extension.onVariants { variant ->
-                val creationTask = project.tasks.register(
-                    "create${variant.name}KotlinGenerator",
-                    AddKotlinSources::class.java
-                ) {
-                    it.outputDirectory.set(
-                        File(
-                            project.layout.buildDirectory.asFile.get(),
-                            "kotlin_generated_sources"
-                        )
-                    )
-                }
+  class Callback : AndroidKotlinMultiplatformLibraryComponentCallback {
+    override fun handleExtension(project: Project, extension: KotlinMultiplatformAndroidComponentsExtension) {
+      extension.onVariants { variant ->
+        val creationTask =
+          project.tasks.register("create${variant.name}KotlinGenerator", AddKotlinSources::class.java) {
+            it.outputDirectory.set(File(project.layout.buildDirectory.asFile.get(), "kotlin_generated_sources"))
+          }
 
-                // use addGeneratedSourceDirectory to add generated directories
-                variant.sources.kotlin?.addGeneratedSourceDirectory(creationTask) {
-                    it.outputDirectory
-                }
+        // use addGeneratedSourceDirectory to add generated directories
+        variant.sources.kotlin?.addGeneratedSourceDirectory(creationTask) { it.outputDirectory }
 
-                val staticKotlinSourcePath = "src/${variant.name}/static"
-                val outputFile = File(
-                    File(project.projectDir, staticKotlinSourcePath),
-                    "com/mylibrary/foo/Bar.kt"
-                )
-                outputFile.parentFile.mkdirs()
-                outputFile.writeText("""
+        val staticKotlinSourcePath = "src/${variant.name}/static"
+        val outputFile = File(File(project.projectDir, staticKotlinSourcePath), "com/mylibrary/foo/Bar.kt")
+        outputFile.parentFile.mkdirs()
+        outputFile.writeText(
+          """
                     package com.mylibrary.foo
 
                     class Bar {
                         fun message(): String = "a Bar instance"
                     }
-                    """)
+                    """
+        )
 
-                // use addStaticSourceDirectory to add static directories
-                variant.sources.kotlin?.addStaticSourceDirectory(staticKotlinSourcePath)
-            }
-        }
+        // use addStaticSourceDirectory to add static directories
+        variant.sources.kotlin?.addStaticSourceDirectory(staticKotlinSourcePath)
+      }
     }
+  }
 
-    @Test
-    fun testGeneratedKotlinSources() {
-        val build = rule.build
-        build.executor
-            .withFailOnWarning(false) // b/455891987
-            .run(":kmpLib:assembleAndroidMain")
+  @Test
+  fun testGeneratedKotlinSources() {
+    val build = rule.build
+    build.executor
+      .withFailOnWarning(false) // b/455891987
+      .run(":kmpLib:assembleAndroidMain")
 
-        val action: AarSubject.() -> Unit = {
-            mainJar {
-                classes().containsExactly(
-                    "com/mylibrary/foo/Bar",
-                    "com/mylibrary/foo/Foo",
-                )
-            }
-        }
+    val action: AarSubject.() -> Unit = { mainJar { classes().containsExactly("com/mylibrary/foo/Bar", "com/mylibrary/foo/Foo") } }
 
-        build.kotlinMultiplatformLibrary(":kmpLib").assertAar(AarSelector.NO_BUILD_TYPE, action)
-    }
+    build.kotlinMultiplatformLibrary(":kmpLib").assertAar(AarSelector.NO_BUILD_TYPE, action)
+  }
 }
 
-abstract class AddKotlinSources: DefaultTask() {
+abstract class AddKotlinSources : DefaultTask() {
 
-    @get:OutputDirectory
-    abstract val outputDirectory: DirectoryProperty
+  @get:OutputDirectory abstract val outputDirectory: DirectoryProperty
 
-    @TaskAction
-    fun taskAction() {
-        val outputFile = File(outputDirectory.asFile.get(), "com/mylibrary/foo/Foo.kt")
-        outputFile.parentFile.mkdirs()
-        outputFile.writeText("""
+  @TaskAction
+  fun taskAction() {
+    val outputFile = File(outputDirectory.asFile.get(), "com/mylibrary/foo/Foo.kt")
+    outputFile.parentFile.mkdirs()
+    outputFile.writeText(
+      """
         package com.mylibrary.foo
 
         class Foo {
             fun message(): String = "a Foo instance"
         }
-        """)
-    }
+        """
+    )
+  }
 }

@@ -16,30 +16,28 @@
 
 package com.android.builder.utils
 
-import com.android.builder.utils.isValidZipEntryName
-import com.android.builder.utils.isValidZipEntryPath
 import com.google.common.truth.Truth.assertThat
-import org.junit.Test
 import java.io.File
 import java.util.zip.ZipEntry
+import org.junit.Test
 
 /** Unit tests for [AndroidXDependency]. */
 class ZipEntryUtilsTest {
 
-    @Test
-    fun testZipEntryNameValidation() {
-        val invalidEntry = ZipEntry("../../../mybadfile.txt")
-        val validEntry = ZipEntry("good/file/path/file.txt")
-        assertThat(isValidZipEntryName(validEntry)).isTrue()
-        assertThat(isValidZipEntryName(invalidEntry)).isFalse()
-    }
+  @Test
+  fun testZipEntryNameValidation() {
+    val invalidEntry = ZipEntry("../../../mybadfile.txt")
+    val validEntry = ZipEntry("good/file/path/file.txt")
+    assertThat(isValidZipEntryName(validEntry)).isTrue()
+    assertThat(isValidZipEntryName(invalidEntry)).isFalse()
+  }
 
-    @Test
-    fun testZipEntryPathValidation() {
-        val outputDir = File("/tmp/output/")
-        val validFile = File("/tmp/output/someFile.txt")
-        val invalidFile = File("/tmp/output/../../../../someFile.txt")
-        assertThat(isValidZipEntryPath(validFile, outputDir)).isTrue()
-        assertThat(isValidZipEntryPath(invalidFile, outputDir)).isFalse()
-    }
+  @Test
+  fun testZipEntryPathValidation() {
+    val outputDir = File("/tmp/output/")
+    val validFile = File("/tmp/output/someFile.txt")
+    val invalidFile = File("/tmp/output/../../../../someFile.txt")
+    assertThat(isValidZipEntryPath(validFile, outputDir)).isTrue()
+    assertThat(isValidZipEntryPath(invalidFile, outputDir)).isFalse()
+  }
 }

@@ -22,7 +22,7 @@ import com.android.builder.model.v2.AndroidModel
  *
  * @since 4.2
  */
-interface VectorDrawablesOptions: AndroidModel {
-    val generatedDensities: Set<String>?
-    val useSupportLibrary: Boolean?
+interface VectorDrawablesOptions : AndroidModel {
+  val generatedDensities: Set<String>?
+  val useSupportLibrary: Boolean?
 }

@@ -25,36 +25,29 @@ import java.io.File
 /**
  * Generates backported desugared methods handled by D8, which will be consumed by Lint.
  *
- * Note: minSdkVersion should be the value specified from DSL which is the also one we pass to lint,
- * rather than [DexingCreationConfig.minSdkVersionForDexing] which is affected by the device.
+ * Note: minSdkVersion should be the value specified from DSL which is the also one we pass to lint, rather than
+ * [DexingCreationConfig.minSdkVersionForDexing] which is affected by the device.
  */
 object D8DesugaredMethodsGenerator {
-    fun generate(
-        coreLibDesugarConfig: String?,
-        bootclasspath: Set<File>,
-        minSdkVersion: Int,
-    ): List<String> {
-        val consumer = CustomStringConsumer()
-        val commandBuilder = BackportedMethodListCommand.builder()
+  fun generate(coreLibDesugarConfig: String?, bootclasspath: Set<File>, minSdkVersion: Int): List<String> {
+    val consumer = CustomStringConsumer()
+    val commandBuilder = BackportedMethodListCommand.builder()
 
-        if (coreLibDesugarConfig != null) {
-            commandBuilder
-                .addDesugaredLibraryConfiguration(coreLibDesugarConfig)
-                .addLibraryFiles(bootclasspath.map { it.toPath() })
-        }
-
-        BackportedMethodList.run(
-            commandBuilder.setConsumer(consumer).setMinApiLevel(minSdkVersion).build())
-        return consumer.strings
+    if (coreLibDesugarConfig != null) {
+      commandBuilder.addDesugaredLibraryConfiguration(coreLibDesugarConfig).addLibraryFiles(bootclasspath.map { it.toPath() })
     }
 
-    private class CustomStringConsumer : StringConsumer {
-        val strings = mutableListOf<String>()
+    BackportedMethodList.run(commandBuilder.setConsumer(consumer).setMinApiLevel(minSdkVersion).build())
+    return consumer.strings
+  }
 
-        override fun accept(string: String, handler: DiagnosticsHandler) {
-            strings.add(string)
-        }
+  private class CustomStringConsumer : StringConsumer {
+    val strings = mutableListOf<String>()
 
-        override fun finished(handler: DiagnosticsHandler) {}
+    override fun accept(string: String, handler: DiagnosticsHandler) {
+      strings.add(string)
     }
+
+    override fun finished(handler: DiagnosticsHandler) {}
+  }
 }

@@ -35,123 +35,105 @@ import org.mockito.quality.Strictness
 
 class HostJarTestSuiteSourceSetTest {
 
+  @get:Rule val rule: MockitoRule = MockitoJUnit.rule().strictness(Strictness.STRICT_STUBS)
 
-    @get:Rule
-    val rule: MockitoRule = MockitoJUnit.rule().strictness(Strictness.STRICT_STUBS)
+  @get:Rule val tmpFolder: TemporaryFolder = TemporaryFolder()
 
-    @get:Rule
-    val tmpFolder: TemporaryFolder = TemporaryFolder()
+  @Mock lateinit var dependencies: AgpTestSuiteDependencies
 
-    @Mock
-    lateinit var dependencies: AgpTestSuiteDependencies
+  lateinit var variantServices: VariantServices
+  lateinit var project: Project
 
-    lateinit var variantServices: VariantServices
-    lateinit var project: Project
+  @Before
+  fun init() {
+    project = ProjectBuilder.builder().withProjectDir(tmpFolder.newFolder()).build()
+    variantServices = VariantServicesImpl(createProjectServices(project), true)
+    includeAndroidResources = project.objects.property(Boolean::class.java).also { it.set(false) }
+  }
 
-    @Before
-    fun init() {
-        project = ProjectBuilder.builder()
-            .withProjectDir(tmpFolder.newFolder())
-            .build()
-        variantServices = VariantServicesImpl(
-            createProjectServices(project),
-            true
-        )
-        includeAndroidResources =
-            project.objects.property(Boolean::class.java).also { it.set(false) }
-    }
+  private lateinit var includeAndroidResources: Property<Boolean>
 
-    private lateinit var includeAndroidResources: Property<Boolean>
+  @Test
+  fun testKotlinDisabled() {
+    val sourceSet =
+      HostJarTestSuiteSourceSet(
+        sourceSetName = "test",
+        variantServices = variantServices,
+        userAddedSourceSets = emptyList(),
+        javaEnabled = true,
+        kotlinEnabled = false,
+        includeAndroidResources = includeAndroidResources,
+        dependencies = dependencies,
+      )
+    Truth.assertThat(sourceSet.kotlin).isNull()
+  }
 
-    @Test
-    fun testKotlinDisabled() {
-        val sourceSet = HostJarTestSuiteSourceSet(
-            sourceSetName = "test",
-            variantServices = variantServices,
-            userAddedSourceSets = emptyList(),
-            javaEnabled = true,
-            kotlinEnabled = false,
-            includeAndroidResources = includeAndroidResources,
-            dependencies = dependencies,
-        )
-        Truth.assertThat(sourceSet.kotlin).isNull()
-    }
+  @Test
+  fun testJavaDisabled() {
+    val sourceSet =
+      HostJarTestSuiteSourceSet(
+        sourceSetName = "test",
+        variantServices = variantServices,
+        userAddedSourceSets = emptyList(),
+        javaEnabled = false,
+        kotlinEnabled = true,
+        includeAndroidResources = includeAndroidResources,
+        dependencies = dependencies,
+      )
+    Truth.assertThat(sourceSet.java).isNull()
+  }
 
-    @Test
-    fun testJavaDisabled() {
-        val sourceSet = HostJarTestSuiteSourceSet(
-            sourceSetName = "test",
-            variantServices = variantServices,
-            userAddedSourceSets = emptyList(),
-            javaEnabled = false,
-            kotlinEnabled = true,
-            includeAndroidResources = includeAndroidResources,
-            dependencies = dependencies,
-            )
-        Truth.assertThat(sourceSet.java).isNull()
-    }
+  @Test
+  fun testDefaultCase() {
+    val sourceSet =
+      HostJarTestSuiteSourceSet(
+        sourceSetName = "test",
+        variantServices = variantServices,
+        userAddedSourceSets = emptyList(),
+        javaEnabled = true,
+        kotlinEnabled = true,
+        includeAndroidResources = includeAndroidResources,
+        dependencies = dependencies,
+      )
+    Truth.assertThat(sourceSet.kotlin).isNotNull()
+    Truth.assertThat(sourceSet.java).isNotNull()
+  }
 
-    @Test
-    fun testDefaultCase() {
-        val sourceSet = HostJarTestSuiteSourceSet(
-            sourceSetName = "test",
-            variantServices = variantServices,
-            userAddedSourceSets = emptyList(),
-            javaEnabled = true,
-            kotlinEnabled = true,
-            includeAndroidResources = includeAndroidResources,
-            dependencies = dependencies,
-            )
-        Truth.assertThat(sourceSet.kotlin).isNotNull()
-        Truth.assertThat(sourceSet.java).isNotNull()
-    }
+  @Test
+  fun testDefaultSourceSet() {
+    val sourceSet =
+      HostJarTestSuiteSourceSet(
+        sourceSetName = "test",
+        variantServices = variantServices,
+        userAddedSourceSets = emptyList(),
+        javaEnabled = true,
+        kotlinEnabled = true,
+        includeAndroidResources = includeAndroidResources,
+        dependencies = dependencies,
+      )
+    Truth.assertThat(sourceSet.kotlin?.all?.get()).containsExactly(project.layout.projectDirectory.dir("src/test/kotlin"))
+    Truth.assertThat(sourceSet.java?.all?.get()).containsExactly(project.layout.projectDirectory.dir("src/test/java"))
+    Truth.assertThat(sourceSet.resources.all.get()).containsExactly(project.layout.projectDirectory.dir("src/test/resources"))
+  }
 
-    @Test
-    fun testDefaultSourceSet() {
-        val sourceSet = HostJarTestSuiteSourceSet(
-            sourceSetName = "test",
-            variantServices = variantServices,
-            userAddedSourceSets = emptyList(),
-            javaEnabled = true,
-            kotlinEnabled = true,
-            includeAndroidResources = includeAndroidResources,
-            dependencies = dependencies,
-            )
-        Truth.assertThat(sourceSet.kotlin?.all?.get()).containsExactly(
-            project.layout.projectDirectory.dir("src/test/kotlin")
-        )
-        Truth.assertThat(sourceSet.java?.all?.get()).containsExactly(
-            project.layout.projectDirectory.dir("src/test/java")
-        )
-        Truth.assertThat(sourceSet.resources.all.get()).containsExactly(
-            project.layout.projectDirectory.dir("src/test/resources")
-        )
-    }
-
-    @Test
-    fun testUserAddedSourceSet() {
-        val userAddedSourceSet = tmpFolder.newFolder("userAdded")
-        val dir = project.layout.projectDirectory.dir(userAddedSourceSet.absolutePath)
-        val sourceSet = HostJarTestSuiteSourceSet(
-            sourceSetName = "test",
-            variantServices = variantServices,
-            userAddedSourceSets = listOf(dir),
-            javaEnabled = true,
-            kotlinEnabled = true,
-            includeAndroidResources = includeAndroidResources,
-            dependencies = dependencies,
-            )
-        Truth.assertThat(sourceSet.kotlin?.all?.get()).containsExactly(
-            project.layout.projectDirectory.dir("src/test/kotlin"),
-            dir.dir("kotlin")
-        )
-        Truth.assertThat(sourceSet.java?.all?.get()).containsExactly(
-            project.layout.projectDirectory.dir("src/test/java"),
-            dir.dir("java")
-        )
-        Truth.assertThat(sourceSet.resources.all.get()).containsExactly(
-            project.layout.projectDirectory.dir("src/test/resources"),
-            dir.dir("resources")
-        )
-    }
+  @Test
+  fun testUserAddedSourceSet() {
+    val userAddedSourceSet = tmpFolder.newFolder("userAdded")
+    val dir = project.layout.projectDirectory.dir(userAddedSourceSet.absolutePath)
+    val sourceSet =
+      HostJarTestSuiteSourceSet(
+        sourceSetName = "test",
+        variantServices = variantServices,
+        userAddedSourceSets = listOf(dir),
+        javaEnabled = true,
+        kotlinEnabled = true,
+        includeAndroidResources = includeAndroidResources,
+        dependencies = dependencies,
+      )
+    Truth.assertThat(sourceSet.kotlin?.all?.get())
+      .containsExactly(project.layout.projectDirectory.dir("src/test/kotlin"), dir.dir("kotlin"))
+    Truth.assertThat(sourceSet.java?.all?.get()).containsExactly(project.layout.projectDirectory.dir("src/test/java"), dir.dir("java"))
+    Truth.assertThat(sourceSet.resources.all.get())
+      .containsExactly(project.layout.projectDirectory.dir("src/test/resources"), dir.dir("resources"))
+  }
 }

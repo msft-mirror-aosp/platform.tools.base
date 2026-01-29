@@ -16,53 +16,42 @@
 
 package com.android.build.gradle.internal.cxx.settings
 
-/**
- * Convenience class for pairing [Macro] with their string value.
- */
-class NameTable(vararg pairs : Pair<Macro, String?>) {
-    private val table = mutableMapOf<Macro, String>()
+/** Convenience class for pairing [Macro] with their string value. */
+class NameTable(vararg pairs: Pair<Macro, String?>) {
+  private val table = mutableMapOf<Macro, String>()
 
-    init {
-        addAll(*pairs)
-    }
+  init {
+    addAll(*pairs)
+  }
 
-    /**
-     * Set a sing [Macro] value.
-     */
-    operator fun set(key : Macro, value: String?) {
-        if (value == null) return
-        if (key.ref == value) return
-        table[key] = value
-    }
+  /** Set a sing [Macro] value. */
+  operator fun set(key: Macro, value: String?) {
+    if (value == null) return
+    if (key.ref == value) return
+    table[key] = value
+  }
 
-    /**
-     * Set multiple [Macro] values at once.
-     */
-    fun addAll(vararg pairs: Pair<Macro, String?>) {
-        addAll(pairs.toList())
-    }
+  /** Set multiple [Macro] values at once. */
+  fun addAll(vararg pairs: Pair<Macro, String?>) {
+    addAll(pairs.toList())
+  }
 
-    /**
-     * Set multiple [Macro] values at once. Ignore null values.
-     */
-    fun addAll(pairs: List<Pair<Macro, String?>>) {
-        pairs.forEach { (key, value) -> set(key, value) }
-    }
+  /** Set multiple [Macro] values at once. Ignore null values. */
+  fun addAll(pairs: List<Pair<Macro, String?>>) {
+    pairs.forEach { (key, value) -> set(key, value) }
+  }
 
-    /**
-     * For all of the recorded macros, break them out by their individual environments.
-     */
-    fun environments() = table
-        .toList()
-        .groupBy { (macro,_) -> macro.environment }
-        .map { (environment, properties) ->
-            SettingsEnvironment(
-                    namespace = environment.namespace,
-                    environment = environment.environment,
-                    inheritEnvironments = environment.inheritEnvironments.map { it.environment },
-                    properties = properties
-                            .map { (macro, property) -> Pair(macro.tag, property) }
-                            .toMap()
-            )
-        }
+  /** For all of the recorded macros, break them out by their individual environments. */
+  fun environments() =
+    table
+      .toList()
+      .groupBy { (macro, _) -> macro.environment }
+      .map { (environment, properties) ->
+        SettingsEnvironment(
+          namespace = environment.namespace,
+          environment = environment.environment,
+          inheritEnvironments = environment.inheritEnvironments.map { it.environment },
+          properties = properties.map { (macro, property) -> Pair(macro.tag, property) }.toMap(),
+        )
+      }
 }

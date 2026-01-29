@@ -23,7 +23,7 @@ import com.android.build.gradle.options.BooleanOption
  *
  * The DSL decorator will automatically generate the code to check the given BooleanOption is enabled.
  *
- * Ro avoid needing to hide this on the definitions, for now anything managed that should be runtime guarded is
- * annotated in overrides in the internal interfaces.
+ * Ro avoid needing to hide this on the definitions, for now anything managed that should be runtime guarded is annotated in overrides in
+ * the internal interfaces.
  */
 annotation class RuntimeGuardedExperimentalApi(val enableFlag: BooleanOption)

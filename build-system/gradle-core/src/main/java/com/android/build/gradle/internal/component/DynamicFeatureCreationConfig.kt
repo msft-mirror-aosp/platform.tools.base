@@ -19,13 +19,13 @@ package com.android.build.gradle.internal.component
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
 
-interface DynamicFeatureCreationConfig: VariantCreationConfig, ApkCreationConfig {
+interface DynamicFeatureCreationConfig : VariantCreationConfig, ApkCreationConfig {
 
-    val featureName: Provider<String>
-    val resOffset: Provider<Int>
+  val featureName: Provider<String>
+  val resOffset: Provider<Int>
 
-    val baseModuleDebuggable: Provider<Boolean>
-    val baseModuleVersionCode: Property<Int>
-    val baseModuleVersionName: Property<String>
-    val baseModuleLocaleFilters: Provider<List<String>>
+  val baseModuleDebuggable: Provider<Boolean>
+  val baseModuleVersionCode: Property<Int>
+  val baseModuleVersionName: Property<String>
+  val baseModuleLocaleFilters: Provider<List<String>>
 }

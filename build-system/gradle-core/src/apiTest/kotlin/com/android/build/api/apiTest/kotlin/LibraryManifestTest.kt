@@ -24,24 +24,23 @@ import com.android.build.api.variant.impl.BuiltArtifactsLoaderImpl
 import com.android.tools.apk.analyzer.AaptInvoker
 import com.android.tools.apk.analyzer.ApkAnalyzerImpl
 import com.google.common.truth.Truth.assertThat
-import org.gradle.testkit.runner.TaskOutcome
-import org.junit.Test
-import org.mockito.Mockito
-import org.mockito.kotlin.mock
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.PrintStream
 import java.util.Locale
 import kotlin.test.assertNotNull
+import org.gradle.testkit.runner.TaskOutcome
+import org.junit.Test
+import org.mockito.kotlin.mock
 
-class LibraryManifestTest: VariantApiBaseTest(TestType.Script, ScriptingLanguage.Kotlin) {
-    @Test
-    fun libraryManifestTransformerTest() {
-        given {
-            addModule(":module") {
-                buildFile =
-                    // language=kotlin
-                    """
+class LibraryManifestTest : VariantApiBaseTest(TestType.Script, ScriptingLanguage.Kotlin) {
+  @Test
+  fun libraryManifestTransformerTest() {
+    given {
+      addModule(":module") {
+        buildFile =
+          // language=kotlin
+          """
             plugins {
                     id("com.android.library")
                     kotlin("android")
@@ -63,13 +62,14 @@ class LibraryManifestTest: VariantApiBaseTest(TestType.Script, ScriptingLanguage
                         .toTransform(com.android.build.api.artifact.SingleArtifact.MERGED_MANIFEST)
                 }
             }
-            """.trimIndent()
-                testingElements.addLibraryManifest(this)
-            }
-            addModule(":app") {
-                buildFile =
-                        // language=kotlin
-                    """
+            """
+            .trimIndent()
+        testingElements.addLibraryManifest(this)
+      }
+      addModule(":app") {
+        buildFile =
+          // language=kotlin
+          """
             plugins {
                     id("com.android.application")
                     kotlin("android")
@@ -80,47 +80,45 @@ class LibraryManifestTest: VariantApiBaseTest(TestType.Script, ScriptingLanguage
             dependencies {
                 api(project(":module"))
             }
-            """.trimIndent()
-                testingElements.addManifest(this)
-            }
-        }
-        check {
-            assertNotNull(this)
-            assertThat(output).contains("BUILD SUCCESSFUL")
-            arrayOf(
-                ":app:processDebugMainManifest",
-                ":module:debugManifestUpdater"
-            ).forEach {
-                val task = task(it)
-                assertNotNull(task)
-                assertThat(task.outcome).isEqualTo(TaskOutcome.SUCCESS)
-            }
-        }
-
-        // post build activity, find the APK, load its merged manifest file and ensure that
-        // the manually added permission made to the final merged manifest.
-        val apkFolder = File(super.testProjectDir.root,
-            "libraryManifestTransformerTest/app/build/"
-                    + Artifact.Category.OUTPUTS.name.lowercase(Locale.US)
-                    + "/"
-                    + SingleArtifact.APK.getFolderName()
-                    + "/debug")
-        val byteArrayOutputStream = object : ByteArrayOutputStream() {
-            @Synchronized
-            override fun toString(): String =
-                super.toString().replace(System.getProperty("line.separator"), "\n")
-        }
-        val ps = PrintStream(byteArrayOutputStream)
-        val apkAnalyzer = ApkAnalyzerImpl(ps, mock<AaptInvoker>())
-        val builtArtifacts = BuiltArtifactsLoaderImpl.loadFromFile(
-            File(apkFolder, BuiltArtifactsImpl.METADATA_FILE_NAME)
-        )
-            ?: throw RuntimeException("Cannot load APKs")
-        if (builtArtifacts.elements.size != 1)
-            throw RuntimeException("Expected one APK !")
-        val apk = File(builtArtifacts.elements.single().outputFile).toPath()
-        apkAnalyzer.resXml(apk, "/AndroidManifest.xml")
-        val manifest = byteArrayOutputStream.toString()
-        assertThat(manifest).contains("android:name=\"android.permission.INTERNET\"")
+            """
+            .trimIndent()
+        testingElements.addManifest(this)
+      }
     }
+    check {
+      assertNotNull(this)
+      assertThat(output).contains("BUILD SUCCESSFUL")
+      arrayOf(":app:processDebugMainManifest", ":module:debugManifestUpdater").forEach {
+        val task = task(it)
+        assertNotNull(task)
+        assertThat(task.outcome).isEqualTo(TaskOutcome.SUCCESS)
+      }
+    }
+
+    // post build activity, find the APK, load its merged manifest file and ensure that
+    // the manually added permission made to the final merged manifest.
+    val apkFolder =
+      File(
+        super.testProjectDir.root,
+        "libraryManifestTransformerTest/app/build/" +
+          Artifact.Category.OUTPUTS.name.lowercase(Locale.US) +
+          "/" +
+          SingleArtifact.APK.getFolderName() +
+          "/debug",
+      )
+    val byteArrayOutputStream =
+      object : ByteArrayOutputStream() {
+        @Synchronized override fun toString(): String = super.toString().replace(System.getProperty("line.separator"), "\n")
+      }
+    val ps = PrintStream(byteArrayOutputStream)
+    val apkAnalyzer = ApkAnalyzerImpl(ps, mock<AaptInvoker>())
+    val builtArtifacts =
+      BuiltArtifactsLoaderImpl.loadFromFile(File(apkFolder, BuiltArtifactsImpl.METADATA_FILE_NAME))
+        ?: throw RuntimeException("Cannot load APKs")
+    if (builtArtifacts.elements.size != 1) throw RuntimeException("Expected one APK !")
+    val apk = File(builtArtifacts.elements.single().outputFile).toPath()
+    apkAnalyzer.resXml(apk, "/AndroidManifest.xml")
+    val manifest = byteArrayOutputStream.toString()
+    assertThat(manifest).contains("android:name=\"android.permission.INTERNET\"")
+  }
 }

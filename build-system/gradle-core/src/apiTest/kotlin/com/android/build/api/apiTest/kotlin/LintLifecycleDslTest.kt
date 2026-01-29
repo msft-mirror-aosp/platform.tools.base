@@ -18,27 +18,27 @@ package com.android.build.api.apiTest.kotlin
 
 import com.android.build.api.apiTest.VariantApiBaseTest
 import com.google.common.truth.Truth
-import org.junit.Test
 import kotlin.test.assertNotNull
+import org.junit.Test
 
-class LintLifecycleDslTest: VariantApiBaseTest(TestType.Script, ScriptingLanguage.Kotlin) {
+class LintLifecycleDslTest : VariantApiBaseTest(TestType.Script, ScriptingLanguage.Kotlin) {
 
-    @Test
-    fun lintOptionsCustomizationInLintPlugin() {
-        lintOptionsCustomization("com.android.lint")
-    }
+  @Test
+  fun lintOptionsCustomizationInLintPlugin() {
+    lintOptionsCustomization("com.android.lint")
+  }
 
-    @Test
-    fun lintOptionsCustomizationInAndroidPlugin() {
-        lintOptionsCustomization("com.android.library")
-    }
+  @Test
+  fun lintOptionsCustomizationInAndroidPlugin() {
+    lintOptionsCustomization("com.android.library")
+  }
 
-    private fun lintOptionsCustomization(pluginType: String) {
-        given {
-            addModule(":module") {
-                buildFile =
-                        // language=kotlin
-                    """
+  private fun lintOptionsCustomization(pluginType: String) {
+    given {
+      addModule(":module") {
+        buildFile =
+          // language=kotlin
+          """
                         plugins {
                                 kotlin("jvm")
                                 id("$pluginType")
@@ -47,13 +47,14 @@ class LintLifecycleDslTest: VariantApiBaseTest(TestType.Script, ScriptingLanguag
                         lintLifecycle {
                             finalizeDsl { lint -> lint.enable.plusAssign("StopShip") }
                         }
-                        """.trimIndent()
-                addStopShipCode(this)
-            }
-            addModule(":app") {
-                buildFile =
-                        // language=kotlin
-                    """
+                        """
+            .trimIndent()
+        addStopShipCode(this)
+      }
+      addModule(":app") {
+        buildFile =
+          // language=kotlin
+          """
             plugins {
                     id("com.android.application")
                     kotlin("android")
@@ -64,24 +65,25 @@ class LintLifecycleDslTest: VariantApiBaseTest(TestType.Script, ScriptingLanguag
             dependencies {
                 api(project(":module"))
             }
-            """.trimIndent()
-                testingElements.addManifest(this)
-                addApplicationSources(this)
-            }
-        }
-        check {
-            assertNotNull(this)
-            Truth.assertThat(output).contains("BUILD SUCCESSFUL")
-        }
+            """
+            .trimIndent()
+        testingElements.addManifest(this)
+        addApplicationSources(this)
+      }
     }
+    check {
+      assertNotNull(this)
+      Truth.assertThat(output).contains("BUILD SUCCESSFUL")
+    }
+  }
 
-    @Test
-    fun lintOptionsCustomizationInApp() {
-        given {
-            addModule(":app") {
-                buildFile =
-                        // language=kotlin
-                    """
+  @Test
+  fun lintOptionsCustomizationInApp() {
+    given {
+      addModule(":app") {
+        buildFile =
+          // language=kotlin
+          """
                         plugins {
                                 id("com.android.application")
                                 kotlin("android")
@@ -92,41 +94,47 @@ class LintLifecycleDslTest: VariantApiBaseTest(TestType.Script, ScriptingLanguag
                         lintLifecycle {
                             finalizeDsl { lint -> lint.enable.plusAssign("StopShip") }
                         }
-                    """.trimIndent()
-            testingElements.addManifest(this)
-            addStopShipCode(this)
-            addApplicationSources(this)
-            }
-        }
-        check {
-            assertNotNull(this)
-            Truth.assertThat(output).contains("BUILD SUCCESSFUL")
-        }
+                    """
+            .trimIndent()
+        testingElements.addManifest(this)
+        addStopShipCode(this)
+        addApplicationSources(this)
+      }
     }
-
-    private fun addStopShipCode(givenBuilder: GivenBuilder) {
-        givenBuilder.addSource("src/main/kotlin/com/example/foo/SomeClass.kt", """
-                package com.example.foo
-
-                class SomeClass {
-                    // STOPSHIP
-                    val foo = System.currentTimeMillis()
-                }
-                """.trimIndent()
-        )
+    check {
+      assertNotNull(this)
+      Truth.assertThat(output).contains("BUILD SUCCESSFUL")
     }
+  }
 
-    private fun addApplicationSources(givenBuilder: GivenBuilder) {
-        givenBuilder.addSource(
-            "src/main/kotlin/com/android/build/example/minimal/MainActivity.kt",
-            //language=kotlin
-            """
-            package com.android.build.example.minimal
+  private fun addStopShipCode(givenBuilder: GivenBuilder) {
+    givenBuilder.addSource(
+      "src/main/kotlin/com/example/foo/SomeClass.kt",
+      """
+      package com.example.foo
 
-            import android.app.Activity
+      class SomeClass {
+          // STOPSHIP
+          val foo = System.currentTimeMillis()
+      }
+      """
+        .trimIndent(),
+    )
+  }
 
-            class MainActivity : Activity() {
-            }
-            """.trimIndent())
-    }
+  private fun addApplicationSources(givenBuilder: GivenBuilder) {
+    givenBuilder.addSource(
+      "src/main/kotlin/com/android/build/example/minimal/MainActivity.kt",
+      // language=kotlin
+      """
+      package com.android.build.example.minimal
+
+      import android.app.Activity
+
+      class MainActivity : Activity() {
+      }
+      """
+        .trimIndent(),
+    )
+  }
 }

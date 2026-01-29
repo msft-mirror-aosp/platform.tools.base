@@ -21,5 +21,5 @@ import com.squareup.javapoet.MethodSpec
 
 /** Injects code block into method based on [TensorInfo]. */
 abstract class CodeBlockInjector : CodeInjector<MethodSpec.Builder, TensorInfo> {
-    abstract override fun inject(methodBuilder: MethodSpec.Builder, tensorInfo: TensorInfo)
+  abstract override fun inject(methodBuilder: MethodSpec.Builder, tensorInfo: TensorInfo)
 }

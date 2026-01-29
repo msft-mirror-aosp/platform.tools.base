@@ -17,7 +17,7 @@
 package com.android.build.gradle.tasks
 
 /**
- * Annotation that indicates that an output artifact from a task is replacing existing artifacts
- * of the same artifact type or adding the artifact if it does not yet exist
+ * Annotation that indicates that an output artifact from a task is replacing existing artifacts of the same artifact type or adding the
+ * artifact if it does not yet exist
  */
 annotation class Replace(val out: String = "out")

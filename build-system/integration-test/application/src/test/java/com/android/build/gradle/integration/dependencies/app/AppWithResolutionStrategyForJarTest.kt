@@ -26,51 +26,46 @@ import org.junit.Test
 
 class AppWithResolutionStrategyForJarTest : ModelComparator() {
 
-    @get:Rule
-    val project = GradleTestProject.builder()
-        .fromTestProject("projectWithModules")
-        .disableBuiltInKotlin()
-        .create()
+  @get:Rule val project = GradleTestProject.builder().fromTestProject("projectWithModules").disableBuiltInKotlin().create()
 
-    @Before
-    fun setUp() {
-        project.setIncludedProjects("app", "library")
-        TestFileUtils.appendToFile(
-            project.getSubproject("app").buildFile,
-            """
-                dependencies {
-                    implementation project(":library")
-                }
-                configurations { debugCompileClasspath }
-                configurations.debugCompileClasspath {
-                  resolutionStrategy {
-                    eachDependency { DependencyResolveDetails details ->
-                      if (details.requested.name == "guava") {
-                        details.useVersion "18.0"
-                      }
-                    }
-                  }
-                }
-            """.trimIndent())
+  @Before
+  fun setUp() {
+    project.setIncludedProjects("app", "library")
+    TestFileUtils.appendToFile(
+      project.getSubproject("app").buildFile,
+      """
+      dependencies {
+          implementation project(":library")
+      }
+      configurations { debugCompileClasspath }
+      configurations.debugCompileClasspath {
+        resolutionStrategy {
+          eachDependency { DependencyResolveDetails details ->
+            if (details.requested.name == "guava") {
+              details.useVersion "18.0"
+            }
+          }
+        }
+      }
+      """
+        .trimIndent(),
+    )
 
-        TestFileUtils.appendToFile(
-            project.getSubproject("library").buildFile,
-            """
-                dependencies {
-                    api "com.google.guava:guava:19.0"
-                }
-            """.trimIndent())
-    }
+    TestFileUtils.appendToFile(
+      project.getSubproject("library").buildFile,
+      """
+      dependencies {
+          api "com.google.guava:guava:19.0"
+      }
+      """
+        .trimIndent(),
+    )
+  }
 
-    @Test
-    fun `test VariantDependencies model`() {
-        val result =
-            project.modelV2()
-                .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
-                .fetchModels(variantName = "debug")
+  @Test
+  fun `test VariantDependencies model`() {
+    val result = project.modelV2().ignoreSyncIssues(SyncIssue.SEVERITY_WARNING).fetchModels(variantName = "debug")
 
-        with(result).compareVariantDependencies(
-            projectAction = { getProject(":app") }, goldenFile = "app_VariantDependencies"
-        )
-    }
+    with(result).compareVariantDependencies(projectAction = { getProject(":app") }, goldenFile = "app_VariantDependencies")
+  }
 }

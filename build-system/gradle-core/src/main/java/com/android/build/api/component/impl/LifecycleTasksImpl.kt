@@ -20,40 +20,34 @@ import com.android.build.api.variant.LifecycleTasks
 import com.google.common.annotations.VisibleForTesting
 import org.gradle.api.Task
 
-class LifecycleTasksImpl: LifecycleTasks {
+class LifecycleTasksImpl : LifecycleTasks {
 
-    private enum class LifecycleEvent {
-        PRE_BUILD,
-        APK_INSTALLATION,
-    }
-    private val registeredDependents = mutableMapOf<LifecycleEvent, MutableList<Any>>()
+  private enum class LifecycleEvent {
+    PRE_BUILD,
+    APK_INSTALLATION,
+  }
 
-    internal fun invokePreBuildActions(task: Task) {
-        invokeActions(LifecycleEvent.PRE_BUILD, task)
-    }
+  private val registeredDependents = mutableMapOf<LifecycleEvent, MutableList<Any>>()
 
-    internal fun invokeApkInstallationActions(task: Task) {
-        invokeActions(LifecycleEvent.APK_INSTALLATION, task)
-    }
+  internal fun invokePreBuildActions(task: Task) {
+    invokeActions(LifecycleEvent.PRE_BUILD, task)
+  }
 
-    @VisibleForTesting
-    internal fun hasPreBuildActions() = !registeredDependents.get(LifecycleEvent.PRE_BUILD).isNullOrEmpty()
+  internal fun invokeApkInstallationActions(task: Task) {
+    invokeActions(LifecycleEvent.APK_INSTALLATION, task)
+  }
 
-    private fun invokeActions(event: LifecycleEvent, task: Task) {
-        registeredDependents.get(event)?.let { taskDependencies ->
-            task.dependsOn(*taskDependencies.toTypedArray())
-        }
-    }
+  @VisibleForTesting internal fun hasPreBuildActions() = !registeredDependents.get(LifecycleEvent.PRE_BUILD).isNullOrEmpty()
 
-    override fun registerPreBuild(vararg objects: Any) {
-        registeredDependents.getOrPut(
-            LifecycleEvent.PRE_BUILD
-        ) { mutableListOf() }.addAll(objects)
-    }
+  private fun invokeActions(event: LifecycleEvent, task: Task) {
+    registeredDependents.get(event)?.let { taskDependencies -> task.dependsOn(*taskDependencies.toTypedArray()) }
+  }
 
-    override fun registerPreInstallation(vararg objects: Any) {
-        registeredDependents.getOrPut(
-            LifecycleEvent.APK_INSTALLATION
-        ) { mutableListOf() }.addAll(objects)
-    }
+  override fun registerPreBuild(vararg objects: Any) {
+    registeredDependents.getOrPut(LifecycleEvent.PRE_BUILD) { mutableListOf() }.addAll(objects)
+  }
+
+  override fun registerPreInstallation(vararg objects: Any) {
+    registeredDependents.getOrPut(LifecycleEvent.APK_INSTALLATION) { mutableListOf() }.addAll(objects)
+  }
 }

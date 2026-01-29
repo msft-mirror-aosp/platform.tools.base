@@ -21,66 +21,43 @@ import org.objectweb.asm.Handle
 import org.objectweb.asm.MethodVisitor
 import org.objectweb.asm.Type
 
-/**
- * Method visitor to gather references to other types.
- */
-class ReferenceMethodVisitor: MethodVisitor(ASM_API_VERSION) {
+/** Method visitor to gather references to other types. */
+class ReferenceMethodVisitor : MethodVisitor(ASM_API_VERSION) {
 
-    internal val references = mutableSetOf<String>()
+  internal val references = mutableSetOf<String>()
 
-    override fun visitTypeInsn(opcode: Int, type: String?) {
-        type?.let { references += it}
-        super.visitTypeInsn(opcode, type)
+  override fun visitTypeInsn(opcode: Int, type: String?) {
+    type?.let { references += it }
+    super.visitTypeInsn(opcode, type)
+  }
+
+  override fun visitFieldInsn(opcode: Int, owner: String?, name: String?, descriptor: String?) {
+    descriptor?.fromDescriptorToType()?.let { references += it }
+    owner?.let { references += it }
+    super.visitFieldInsn(opcode, owner, name, descriptor)
+  }
+
+  override fun visitMethodInsn(opcode: Int, owner: String?, name: String?, descriptor: String?, isInterface: Boolean) {
+    owner?.let { references += it }
+    descriptor?.fromSignatureToTypes()?.let { references += it }
+    super.visitMethodInsn(opcode, owner, name, descriptor, isInterface)
+  }
+
+  override fun visitInvokeDynamicInsn(
+    name: String?,
+    descriptor: String?,
+    bootstrapMethodHandle: Handle?,
+    vararg bootstrapMethodArguments: Any?,
+  ) {
+    descriptor?.fromSignatureToTypes()?.let { references += it }
+
+    super.visitInvokeDynamicInsn(name, descriptor, bootstrapMethodHandle, *bootstrapMethodArguments)
+  }
+
+  override fun visitLdcInsn(value: Any?) {
+    if (value is Type) {
+      value.descriptor.fromDescriptorToType()?.let { references += it }
     }
-
-    override fun visitFieldInsn(opcode: Int, owner: String?, name: String?, descriptor: String?) {
-        descriptor?.fromDescriptorToType()?.let {
-            references += it
-        }
-        owner?.let {
-            references += it
-        }
-        super.visitFieldInsn(opcode, owner, name, descriptor)
-    }
-
-    override fun visitMethodInsn(
-        opcode: Int,
-        owner: String?,
-        name: String?,
-        descriptor: String?,
-        isInterface: Boolean
-    ) {
-        owner?.let {
-            references += it
-        }
-        descriptor?.fromSignatureToTypes()?.let {
-            references += it
-        }
-        super.visitMethodInsn(opcode, owner, name, descriptor, isInterface)
-    }
-
-    override fun visitInvokeDynamicInsn(
-        name: String?,
-        descriptor: String?,
-        bootstrapMethodHandle: Handle?,
-        vararg bootstrapMethodArguments: Any?
-    ) {
-        descriptor?.fromSignatureToTypes()?.let {
-            references += it
-        }
-
-        super.visitInvokeDynamicInsn(
-            name,
-            descriptor,
-            bootstrapMethodHandle,
-            *bootstrapMethodArguments
-        )
-    }
-
-    override fun visitLdcInsn(value: Any?) {
-        if (value is Type) {
-            value.descriptor.fromDescriptorToType()?.let { references += it }
-        }
-        super.visitLdcInsn(value)
-    }
+    super.visitLdcInsn(value)
+  }
 }

@@ -23,49 +23,37 @@ import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 
-/**
- * Set up a basic environment that will result in a CMake [CxxModuleModel]
- */
-open class BasicCmakeMock(createFakeNinja : Boolean = true) : BasicModuleModelMock() {
+/** Set up a basic environment that will result in a CMake [CxxModuleModel] */
+open class BasicCmakeMock(createFakeNinja: Boolean = true) : BasicModuleModelMock() {
 
-    // Walk all vals in the model and invoke them
-    val module by lazy {
-        createCxxModuleModel(
-            sdkComponents,
-            configurationParameters,
-        )
-    }
-    val variant by lazy { createCxxVariantModel(configurationParameters, module) }
-    val abi by lazy { createCxxAbiModel(sdkComponents, configurationParameters, variant, "x86") }
-    val riscvAbi by lazy { createCxxAbiModel(sdkComponents, configurationParameters, variant, "riscv64" ) }
+  // Walk all vals in the model and invoke them
+  val module by lazy { createCxxModuleModel(sdkComponents, configurationParameters) }
+  val variant by lazy { createCxxVariantModel(configurationParameters, module) }
+  val abi by lazy { createCxxAbiModel(sdkComponents, configurationParameters, variant, "x86") }
+  val riscvAbi by lazy { createCxxAbiModel(sdkComponents, configurationParameters, variant, "riscv64") }
 
-    init {
-        doReturn(makeSetProperty(setOf())).whenever(variantExternalNativeBuild).abiFilters
-        doReturn(makeListProperty(listOf("-DCMAKE_ARG=1"))).whenever(variantExternalNativeBuild).arguments
-        doReturn(makeListProperty(listOf("-DC_FLAG_DEFINED"))).whenever(variantExternalNativeBuild).cFlags
-        doReturn(makeListProperty(listOf("-DCPP_FLAG_DEFINED"))).whenever(variantExternalNativeBuild).cppFlags
-        doReturn(makeSetProperty(setOf<String>())).whenever(variantExternalNativeBuild).targets
-        val makefile = join(allPlatformsProjectRootDir, "CMakeLists.txt")
-        doReturn(makefile).whenever(cmake).path
-        projectRootDir.mkdirs()
-        makefile.writeText("# written by ${BasicCmakeMock::class}")
-        if (createFakeNinja) {
-            // Create the ninja executable files so that the macro expansion can succeed
-            cmakeDir.apply { mkdirs() }.apply {
-                resolve("ninja").writeText("whatever")
-                resolve("ninja.exe").writeText("whatever")
-            }
+  init {
+    doReturn(makeSetProperty(setOf())).whenever(variantExternalNativeBuild).abiFilters
+    doReturn(makeListProperty(listOf("-DCMAKE_ARG=1"))).whenever(variantExternalNativeBuild).arguments
+    doReturn(makeListProperty(listOf("-DC_FLAG_DEFINED"))).whenever(variantExternalNativeBuild).cFlags
+    doReturn(makeListProperty(listOf("-DCPP_FLAG_DEFINED"))).whenever(variantExternalNativeBuild).cppFlags
+    doReturn(makeSetProperty(setOf<String>())).whenever(variantExternalNativeBuild).targets
+    val makefile = join(allPlatformsProjectRootDir, "CMakeLists.txt")
+    doReturn(makefile).whenever(cmake).path
+    projectRootDir.mkdirs()
+    makefile.writeText("# written by ${BasicCmakeMock::class}")
+    if (createFakeNinja) {
+      // Create the ninja executable files so that the macro expansion can succeed
+      cmakeDir
+        .apply { mkdirs() }
+        .apply {
+          resolve("ninja").writeText("whatever")
+          resolve("ninja.exe").writeText("whatever")
         }
     }
+  }
 
-    private fun makeListProperty(values: List<String>): ListProperty<*> =
-        mock<ListProperty<*>>().also {
-            doReturn(values).whenever(it).get()
-        }
+  private fun makeListProperty(values: List<String>): ListProperty<*> = mock<ListProperty<*>>().also { doReturn(values).whenever(it).get() }
 
-    private fun makeSetProperty(values: Set<String>): SetProperty<*> =
-            mock<SetProperty<*>>().also {
-                doReturn(values).whenever(it).get()
-            }
-
+  private fun makeSetProperty(values: Set<String>): SetProperty<*> = mock<SetProperty<*>>().also { doReturn(values).whenever(it).get() }
 }

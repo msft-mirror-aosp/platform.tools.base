@@ -18,92 +18,76 @@ package com.android.build.gradle.internal.cxx.collections
 import java.util.BitSet
 
 /**
- * Methods for dealing with directed graphs of the form Map<Int, IntSet>.
- * Where,
+ * Methods for dealing with directed graphs of the form Map<Int, IntSet>. Where,
  * - Key is the node
- * - Value is the children
- * IntArray is used because it uses JVM's native Integer array and avoids boxing and unboxing.
+ * - Value is the children IntArray is used because it uses JVM's native Integer array and avoids boxing and unboxing.
  */
 
-/**
- * Helper function to construct a graph.
- */
-fun graphOf(vararg nodes : Pair<Int, Set<Int>>) : Map<Int, IntArray> {
-    return nodes.associate { it.first to it.second.toIntArray() }
+/** Helper function to construct a graph. */
+fun graphOf(vararg nodes: Pair<Int, Set<Int>>): Map<Int, IntArray> {
+  return nodes.associate { it.first to it.second.toIntArray() }
 }
 
 /**
  * Traverse a graph breadth-first starting with [ancestor].
  *
- * When used for interpreting build.ninja, this function returns the inputs needed to produce
- * a given output. So, for example:
+ * When used for interpreting build.ninja, this function returns the inputs needed to produce a given output. So, for example:
  *
- *   build source.o : COMPILE source.cpp
- *   build libfoo.so : LINK source.o
- *   build foo : phony libfoo.so
+ * build source.o : COMPILE source.cpp build libfoo.so : LINK source.o build foo : phony libfoo.so
  *
  * When called with graph.breadthFirst("libfoo.so"), the result is:
  *
- *   ibfoo.so, source.o, source.cpp
+ * ibfoo.so, source.o, source.cpp
  *
  * That is, all the targets that contribute to "libfoo.so" directly or indirectly.
  */
-fun Map<Int, IntArray>.breadthFirst(ancestor : Int) : Sequence<Int> = sequence {
-    val seen = BitSet(keys.size) // Use Bits because 'seen' is dense.
-    val stack = mutableListOf(ancestor)
-    while (stack.isNotEmpty()) {
-        val current = stack[0]
-        stack.removeAt(0)
-        if (seen[current]) continue
-        seen.set(current)
-        yield(current)
-        if (!contains(current)) continue
-        stack.addAll(getValue(current).asIterable())
-    }
+fun Map<Int, IntArray>.breadthFirst(ancestor: Int): Sequence<Int> = sequence {
+  val seen = BitSet(keys.size) // Use Bits because 'seen' is dense.
+  val stack = mutableListOf(ancestor)
+  while (stack.isNotEmpty()) {
+    val current = stack[0]
+    stack.removeAt(0)
+    if (seen[current]) continue
+    seen.set(current)
+    yield(current)
+    if (!contains(current)) continue
+    stack.addAll(getValue(current).asIterable())
+  }
 }
 
 /**
- * Yield each ancestor of any [descendants] along with all of its [descendants]..
- * A node is considered an ancestor and descendant of itself.
+ * Yield each ancestor of any [descendants] along with all of its [descendants].. A node is considered an ancestor and descendant of itself.
  *
- * When used for interpreting build.ninja, this function finds all the targets that eventually
- * lead to a given output file. For example,
+ * When used for interpreting build.ninja, this function finds all the targets that eventually lead to a given output file. For example,
  *
- *   build libfoo.so : LINK source.o
- *   build foo : phony libfoo.so
+ * build libfoo.so : LINK source.o build foo : phony libfoo.so
  *
  * When called with graph.ancestors("libfoo.so"), the result is:
  *
- *   libfoo.so -> libfoo.so
- *   foo -> libfoo.so
+ * libfoo.so -> libfoo.so foo -> libfoo.so
  *
  * That is, all the targets that produce "libfoo.so" directly or indirectly.
  */
-fun Map<Int, IntArray>.ancestors(descendants : Set<Int>)
-    : Sequence<Pair<Int, IntArray>> = sequence {
-    val seen = mutableMapOf<Int, IntArray>()
-    for (terminal in descendants) {
-        seen[terminal] = intArrayOf(terminal)
-        yield(terminal to intArrayOf(terminal))
+fun Map<Int, IntArray>.ancestors(descendants: Set<Int>): Sequence<Pair<Int, IntArray>> = sequence {
+  val seen = mutableMapOf<Int, IntArray>()
+  for (terminal in descendants) {
+    seen[terminal] = intArrayOf(terminal)
+    yield(terminal to intArrayOf(terminal))
+  }
+  var more = true
+  while (more) {
+    more = false
+    for ((node, children) in asIterable()) {
+      // Skip if we've seen it before
+      if (seen.containsKey(node)) continue
+      // Skip if there are any children that have not been visited yet
+      if (children.any { !seen.containsKey(it) && containsKey(it) }) continue
+      val expanded = children.filter { seen.containsKey(it) }.flatMap { seen.getValue(it).asIterable() }.toSortedSet().toIntArray()
+      seen[node] = expanded
+      if (expanded.isNotEmpty()) {
+        yield(node to expanded)
+      }
+      more = true
     }
-    var more = true
-    while (more) {
-        more = false
-        for ((node, children) in asIterable()) {
-            // Skip if we've seen it before
-            if (seen.containsKey(node)) continue
-            // Skip if there are any children that have not been visited yet
-            if (children.any { !seen.containsKey(it) && containsKey(it) }) continue
-            val expanded = children
-                .filter { seen.containsKey(it) }
-                .flatMap { seen.getValue(it).asIterable() }
-                .toSortedSet()
-                .toIntArray()
-            seen[node] = expanded
-            if (expanded.isNotEmpty()) {
-                yield(node to expanded)
-            }
-            more = true
-        }
-    }
+  }
 }

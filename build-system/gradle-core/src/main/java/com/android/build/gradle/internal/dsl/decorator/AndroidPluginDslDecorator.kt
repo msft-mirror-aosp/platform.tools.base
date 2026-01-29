@@ -43,17 +43,22 @@ import com.android.build.api.dsl.ConfigurableFiles
 import com.android.build.api.dsl.ConsumerKeepRules
 import com.android.build.api.dsl.DataBinding
 import com.android.build.api.dsl.DependenciesInfo
+import com.android.build.api.dsl.DependencySelection
 import com.android.build.api.dsl.DexPackaging
 import com.android.build.api.dsl.ExternalNativeBuild
 import com.android.build.api.dsl.FusedLibraryExtension
+import com.android.build.api.dsl.JUnitEngineSpec
 import com.android.build.api.dsl.JavaCompileOptions
 import com.android.build.api.dsl.JniLibsPackaging
-import com.android.build.api.dsl.JUnitEngineSpec
 import com.android.build.api.dsl.KeepRules
 import com.android.build.api.dsl.KmpOptimization
+import com.android.build.api.dsl.LibraryAndroidResources
 import com.android.build.api.dsl.LibraryKeepRules
 import com.android.build.api.dsl.LibraryPublishing
 import com.android.build.api.dsl.Lint
+import com.android.build.api.dsl.MaxSdkSpec
+import com.android.build.api.dsl.MaxSdkVersion
+import com.android.build.api.dsl.MinSdkSpec
 import com.android.build.api.dsl.MultiDexConfig
 import com.android.build.api.dsl.NdkBuild
 import com.android.build.api.dsl.Optimization
@@ -63,19 +68,15 @@ import com.android.build.api.dsl.ResourcesPackaging
 import com.android.build.api.dsl.SigningConfig
 import com.android.build.api.dsl.Split
 import com.android.build.api.dsl.Splits
-import com.android.build.api.dsl.VcsInfo
-import com.android.build.api.dsl.ViewBinding
-import com.android.build.api.dsl.LibraryAndroidResources
-import com.android.build.api.dsl.DependencySelection
-import com.android.build.api.dsl.MaxSdkSpec
-import com.android.build.api.dsl.MaxSdkVersion
-import com.android.build.api.dsl.MinSdkSpec
 import com.android.build.api.dsl.TargetSdkSpec
 import com.android.build.api.dsl.TargetSdkVersion
 import com.android.build.api.dsl.TestOptions
+import com.android.build.api.dsl.VcsInfo
+import com.android.build.api.dsl.ViewBinding
 import com.android.build.gradle.internal.dsl.AarMetadataImpl
 import com.android.build.gradle.internal.dsl.AbiSplitOptions
 import com.android.build.gradle.internal.dsl.AndroidTestImpl
+import com.android.build.gradle.internal.dsl.AnnotationProcessorOptions as AnnotationProcessorOptionsImpl
 import com.android.build.gradle.internal.dsl.ApplicationPublishingImpl
 import com.android.build.gradle.internal.dsl.AssetPackBundleExtensionImpl
 import com.android.build.gradle.internal.dsl.BundleOptions
@@ -94,30 +95,30 @@ import com.android.build.gradle.internal.dsl.ConfigurableFilesImpl
 import com.android.build.gradle.internal.dsl.ConsumerKeepRulesImpl
 import com.android.build.gradle.internal.dsl.DataBindingOptions
 import com.android.build.gradle.internal.dsl.DependenciesInfoImpl
+import com.android.build.gradle.internal.dsl.DependencySelectionImpl
 import com.android.build.gradle.internal.dsl.DexPackagingImpl
+import com.android.build.gradle.internal.dsl.ExternalNativeBuild as ExternalNativeBuildImpl
 import com.android.build.gradle.internal.dsl.FusedLibraryExtensionImpl
+import com.android.build.gradle.internal.dsl.JavaCompileOptions as JavaCompileOptionsImpl
 import com.android.build.gradle.internal.dsl.JniLibsPackagingImpl
 import com.android.build.gradle.internal.dsl.KmpOptimizationImpl
 import com.android.build.gradle.internal.dsl.LibraryAndroidResourcesImpl
 import com.android.build.gradle.internal.dsl.LibraryKeepRulesImpl
 import com.android.build.gradle.internal.dsl.LibraryPublishingImpl
 import com.android.build.gradle.internal.dsl.LintImpl
-import com.android.build.gradle.internal.dsl.DependencySelectionImpl
 import com.android.build.gradle.internal.dsl.MultiDexConfigImpl
 import com.android.build.gradle.internal.dsl.NdkBuildOptions
-import com.android.build.gradle.internal.dsl.PrivacySandboxImpl
 import com.android.build.gradle.internal.dsl.OptimizationImpl
+import com.android.build.gradle.internal.dsl.PrivacySandboxImpl
 import com.android.build.gradle.internal.dsl.ResourcesPackagingImpl
 import com.android.build.gradle.internal.dsl.SplitOptions
 import com.android.build.gradle.internal.dsl.VcsInfoImpl
 import com.android.build.gradle.internal.dsl.ViewBindingOptionsImpl
 import org.gradle.api.JavaVersion
-import com.android.build.gradle.internal.dsl.AnnotationProcessorOptions as AnnotationProcessorOptionsImpl
-import com.android.build.gradle.internal.dsl.ExternalNativeBuild as ExternalNativeBuildImpl
-import com.android.build.gradle.internal.dsl.JavaCompileOptions as JavaCompileOptionsImpl
 
 /** The list of all the supported property types for the production AGP */
-val AGP_SUPPORTED_PROPERTY_TYPES: List<SupportedPropertyType> = listOf(
+val AGP_SUPPORTED_PROPERTY_TYPES: List<SupportedPropertyType> =
+  listOf(
     SupportedPropertyType.Var.String,
     SupportedPropertyType.Var.Boolean,
     SupportedPropertyType.Var.NullableBoolean,
@@ -129,11 +130,9 @@ val AGP_SUPPORTED_PROPERTY_TYPES: List<SupportedPropertyType> = listOf(
     SupportedPropertyType.Var.Custom(TargetSdkVersion::class.java),
     SupportedPropertyType.Var.Custom(MaxSdkVersion::class.java),
     SupportedPropertyType.Var.Custom(TargetSdkVersion::class.java),
-
     SupportedPropertyType.Collection.List,
     SupportedPropertyType.Collection.Set,
     SupportedPropertyType.Collection.Map,
-
     SupportedPropertyType.Block(AarMetadata::class.java, AarMetadataImpl::class.java),
     SupportedPropertyType.Block(AbiSplit::class.java, AbiSplitOptions::class.java),
     SupportedPropertyType.Block(AndroidTest::class.java, AndroidTestImpl::class.java),
@@ -190,12 +189,11 @@ val AGP_SUPPORTED_PROPERTY_TYPES: List<SupportedPropertyType> = listOf(
 
     // FusedLibrary Extensions.
     SupportedPropertyType.Block(FusedLibraryExtension::class.java, FusedLibraryExtensionImpl::class.java),
-    )
+  )
 
 /**
  * The DSL decorator in this classloader in AGP.
  *
- * This is a static field, rather than a build service as it shares its lifetime with
- * the classloader that AGP is loaded in.
+ * This is a static field, rather than a build service as it shares its lifetime with the classloader that AGP is loaded in.
  */
 val androidPluginDslDecorator = DslDecorator(AGP_SUPPORTED_PROPERTY_TYPES)

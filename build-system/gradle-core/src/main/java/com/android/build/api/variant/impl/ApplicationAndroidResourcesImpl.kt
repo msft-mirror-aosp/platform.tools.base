@@ -22,14 +22,16 @@ import com.android.build.gradle.internal.scope.BuildFeatureValues
 import org.gradle.api.provider.SetProperty
 
 class ApplicationAndroidResourcesImpl(
-    genericAndroidResourcesImpl: AndroidResources,
-    buildFeatures: BuildFeatureValues,
-    override val generateLocaleConfig: Boolean,
-    override val localeFilters: SetProperty<String>
-): ApplicationAndroidResources, AndroidResourcesImpl(
+  genericAndroidResourcesImpl: AndroidResources,
+  buildFeatures: BuildFeatureValues,
+  override val generateLocaleConfig: Boolean,
+  override val localeFilters: SetProperty<String>,
+) :
+  ApplicationAndroidResources,
+  AndroidResourcesImpl(
     genericAndroidResourcesImpl.ignoreAssetsPatterns,
     genericAndroidResourcesImpl.aaptAdditionalParameters,
     genericAndroidResourcesImpl.noCompress,
     viewBinding = buildFeatures.viewBinding,
-    dataBinding = buildFeatures.dataBinding
-)
+    dataBinding = buildFeatures.dataBinding,
+  )

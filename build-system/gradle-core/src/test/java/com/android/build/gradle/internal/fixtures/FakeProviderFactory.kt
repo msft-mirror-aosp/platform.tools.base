@@ -21,39 +21,32 @@ import org.gradle.api.file.RegularFile
 import org.gradle.api.provider.Provider
 import org.gradle.api.provider.ProviderFactory
 
-class FakeProviderFactory(
-    private val originalFactory: ProviderFactory,
-    private val gradleProperties: Map<String, Any>
-) : ProviderFactory by originalFactory {
+class FakeProviderFactory(private val originalFactory: ProviderFactory, private val gradleProperties: Map<String, Any>) :
+  ProviderFactory by originalFactory {
 
-    override fun gradleProperty(propertyName: String): Provider<String> {
-        if (gradleProperties.containsKey(propertyName)) {
-            return originalFactory.provider { gradleProperties.getValue(propertyName).toString() }
-        } else {
-            return originalFactory.provider { null }
-        }
+  override fun gradleProperty(propertyName: String): Provider<String> {
+    if (gradleProperties.containsKey(propertyName)) {
+      return originalFactory.provider { gradleProperties.getValue(propertyName).toString() }
+    } else {
+      return originalFactory.provider { null }
     }
+  }
 
-    override fun gradlePropertiesPrefixedBy(propertyNamePrefix: String): Provider<Map<String, String>> {
-        val prefixedProperties = mutableMapOf<String, String>()
-        gradleProperties.forEach { entry ->
-            if (entry.key.startsWith(propertyNamePrefix)) {
-                prefixedProperties.put(entry.key, entry.value.toString())
-            }
-        }
-        return factory.provider {
-            prefixedProperties
-        }
+  override fun gradlePropertiesPrefixedBy(propertyNamePrefix: String): Provider<Map<String, String>> {
+    val prefixedProperties = mutableMapOf<String, String>()
+    gradleProperties.forEach { entry ->
+      if (entry.key.startsWith(propertyNamePrefix)) {
+        prefixedProperties.put(entry.key, entry.value.toString())
+      }
     }
+    return factory.provider { prefixedProperties }
+  }
 
-    override fun fileContents(file: Provider<RegularFile>): FileContents {
-        return FakeFileContents(file.get().asFile)
-    }
+  override fun fileContents(file: Provider<RegularFile>): FileContents {
+    return FakeFileContents(file.get().asFile)
+  }
 
-    companion object {
-        @JvmStatic
-        val factory: ProviderFactory by lazy {
-            ProjectFactory.project.providers
-        }
-    }
+  companion object {
+    @JvmStatic val factory: ProviderFactory by lazy { ProjectFactory.project.providers }
+  }
 }

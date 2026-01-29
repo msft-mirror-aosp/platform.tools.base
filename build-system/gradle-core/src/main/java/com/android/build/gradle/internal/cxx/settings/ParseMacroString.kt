@@ -16,97 +16,93 @@
 
 package com.android.build.gradle.internal.cxx.settings
 
-import com.android.build.gradle.internal.cxx.settings.Token.*
 import com.android.build.gradle.internal.cxx.settings.State.*
+import com.android.build.gradle.internal.cxx.settings.Token.*
 
 /**
  * Tokenize a CMakeSettings.json string, for example:
  *
  *      "${gradle.sdkDir}/ndk/${ndk.version}"
  *
- * Tokens are:
- *  [LiteralToken] - A literal string value. "/ndk/" in the example above
- *  [MacroToken] - A susbsitution macro. "gradle.sdkdir" and "ndk.version"
- *    above.
+ * Tokens are: [LiteralToken] - A literal string value. "/ndk/" in the example above [MacroToken] - A susbsitution macro. "gradle.sdkdir"
+ * and "ndk.version" above.
  */
-fun tokenizeMacroString(value : String, receive: (Token) -> Unit ) {
-    var index = 0
-    val sb = StringBuilder()
-    var state = PARSING_LITERAL
-    while(index < value.length) {
-        val c = value[index]
-        state = when(state) {
-            PARSING_LITERAL -> {
-                when(c) {
-                    '$' -> PARSING_LITERAL_SAW_DOLLAR
-                    else -> {
-                        sb.append(c)
-                        PARSING_LITERAL
-                    }
-                }
+fun tokenizeMacroString(value: String, receive: (Token) -> Unit) {
+  var index = 0
+  val sb = StringBuilder()
+  var state = PARSING_LITERAL
+  while (index < value.length) {
+    val c = value[index]
+    state =
+      when (state) {
+        PARSING_LITERAL -> {
+          when (c) {
+            '$' -> PARSING_LITERAL_SAW_DOLLAR
+            else -> {
+              sb.append(c)
+              PARSING_LITERAL
             }
-            PARSING_LITERAL_SAW_DOLLAR -> {
-                when(c) {
-                    '{' -> {
-                        if (sb.isNotEmpty()) {
-                            receive(LiteralToken(sb.toString()))
-                            sb.setLength(0)
-                        }
-                        PARSING_MACRO
-                    }
-                    '$' -> {
-                        sb.append("$")
-                        PARSING_LITERAL_SAW_DOLLAR
-                    }
-                    else -> {
-                        sb.append("$$c")
-                        PARSING_LITERAL
-                    }
-                }
-            }
-            PARSING_MACRO -> {
-                when(c) {
-                    '}' -> {
-                        receive(MacroToken(sb.toString()))
-                        sb.setLength(0)
-                        PARSING_LITERAL
-                    }
-                    else -> {
-                        sb.append(c)
-                        PARSING_MACRO
-                    }
-                }
-            }
+          }
         }
-        ++index
-    }
-    when(state) {
-        PARSING_LITERAL_SAW_DOLLAR -> receive(LiteralToken("$sb$"))
-        PARSING_MACRO -> receive(LiteralToken("\${$sb"))
-        else ->
-            if (sb.isNotEmpty()) {
-                receive(LiteralToken("$sb"))
+        PARSING_LITERAL_SAW_DOLLAR -> {
+          when (c) {
+            '{' -> {
+              if (sb.isNotEmpty()) {
+                receive(LiteralToken(sb.toString()))
+                sb.setLength(0)
+              }
+              PARSING_MACRO
             }
-    }
+            '$' -> {
+              sb.append("$")
+              PARSING_LITERAL_SAW_DOLLAR
+            }
+            else -> {
+              sb.append("$$c")
+              PARSING_LITERAL
+            }
+          }
+        }
+        PARSING_MACRO -> {
+          when (c) {
+            '}' -> {
+              receive(MacroToken(sb.toString()))
+              sb.setLength(0)
+              PARSING_LITERAL
+            }
+            else -> {
+              sb.append(c)
+              PARSING_MACRO
+            }
+          }
+        }
+      }
+    ++index
+  }
+  when (state) {
+    PARSING_LITERAL_SAW_DOLLAR -> receive(LiteralToken("$sb$"))
+    PARSING_MACRO -> receive(LiteralToken("\${$sb"))
+    else ->
+      if (sb.isNotEmpty()) {
+        receive(LiteralToken("$sb"))
+      }
+  }
 }
 
-/**
- * The tokens that may be returned by [tokenizeMacroString].
- */
+/** The tokens that may be returned by [tokenizeMacroString]. */
 sealed class Token {
-    data class LiteralToken(val literal : String) : Token() {
-        override fun toString() = literal
-    }
-    data class MacroToken(val macro : String) : Token() {
-        override fun toString() = macro
-    }
+  data class LiteralToken(val literal: String) : Token() {
+    override fun toString() = literal
+  }
+
+  data class MacroToken(val macro: String) : Token() {
+    override fun toString() = macro
+  }
 }
 
-/**
- * Internal state of the tokenizer.
- */
+/** Internal state of the tokenizer. */
 private enum class State {
-    PARSING_LITERAL,
-    PARSING_LITERAL_SAW_DOLLAR,
-    PARSING_MACRO
+  PARSING_LITERAL,
+  PARSING_LITERAL_SAW_DOLLAR,
+  PARSING_MACRO,
 }

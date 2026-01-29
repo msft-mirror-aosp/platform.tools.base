@@ -16,26 +16,20 @@
 
 package com.android.build.api.variant.impl
 
+import java.io.File
 import org.gradle.api.file.Directory
 import org.gradle.api.file.RegularFile
 import org.gradle.api.provider.Provider
-import java.io.File
 
-/**
- * Abstraction of a source file within the Variant object model.
- */
+/** Abstraction of a source file within the Variant object model. */
 class FileBasedFileEntry(
-        override val name: String,
-        private val file: File,
-        override val isUserAdded: Boolean = false,
-        override val shouldBeAddedToIdeModel: Boolean = false,
-): FileEntry {
+  override val name: String,
+  private val file: File,
+  override val isUserAdded: Boolean = false,
+  override val shouldBeAddedToIdeModel: Boolean = false,
+) : FileEntry {
 
-    override val isGenerated: Boolean = false
-    override fun asFile(
-            projectDir: Provider<Directory>
-    ): Provider<RegularFile> =
-            projectDir.map {
-                it.file(file.absolutePath)
-            }
+  override val isGenerated: Boolean = false
+
+  override fun asFile(projectDir: Provider<Directory>): Provider<RegularFile> = projectDir.map { it.file(file.absolutePath) }
 }

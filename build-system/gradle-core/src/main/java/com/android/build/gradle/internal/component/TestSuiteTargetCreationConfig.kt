@@ -18,10 +18,8 @@ package com.android.build.gradle.internal.component
 
 import com.android.build.api.variant.TestSuiteTarget
 
-interface TestSuiteTargetCreationConfig: TestSuiteTarget {
+interface TestSuiteTargetCreationConfig : TestSuiteTarget {
 
-    /**
-     * Test task name, within the current project scope.
-     */
-    val testTaskName: String
+  /** Test task name, within the current project scope. */
+  val testTaskName: String
 }

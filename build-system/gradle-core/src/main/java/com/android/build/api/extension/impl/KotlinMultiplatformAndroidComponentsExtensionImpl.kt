@@ -25,97 +25,87 @@ import com.android.build.api.variant.KotlinMultiplatformAndroidVariant
 import com.android.build.api.variant.KotlinMultiplatformAndroidVariantBuilder
 import com.android.build.api.variant.VariantSelector
 import com.android.build.gradle.internal.services.DslServices
-import com.android.builder.errors.IssueReporter
+import javax.inject.Inject
 import org.gradle.api.Action
 import org.gradle.api.artifacts.Configuration
-import javax.inject.Inject
 
-open class KotlinMultiplatformAndroidComponentsExtensionImpl@Inject constructor(
-    val dslServices: DslServices,
-    sdkComponents: SdkComponents,
-    managedDeviceRegistry: ManagedDeviceRegistry,
-    private val variantApiOperations: VariantApiOperationsRegistrar<KotlinMultiplatformAndroidLibraryExtension, KotlinMultiplatformAndroidVariantBuilder, KotlinMultiplatformAndroidVariant>,
-    kmpExtension: KotlinMultiplatformAndroidLibraryExtension,
-    private val androidTargetProvider: () -> KotlinMultiplatformAndroidLibraryTarget
-) : KotlinMultiplatformAndroidComponentsExtension,
-    AndroidComponentsExtensionImpl<KotlinMultiplatformAndroidLibraryExtension, KotlinMultiplatformAndroidVariantBuilder, KotlinMultiplatformAndroidVariant>(
-        dslServices,
-        sdkComponents,
-        managedDeviceRegistry,
-        variantApiOperations,
-        kmpExtension
-    ) {
-    override fun beforeVariants(
-        selector: VariantSelector,
-        callback: (KotlinMultiplatformAndroidVariantBuilder) -> Unit
-    ) {
-        variantApiOperations.variantBuilderOperations
-            .addPublicOperation({ callback.invoke(it) }, "beforeVariants", selector)
+open class KotlinMultiplatformAndroidComponentsExtensionImpl
+@Inject
+constructor(
+  val dslServices: DslServices,
+  sdkComponents: SdkComponents,
+  managedDeviceRegistry: ManagedDeviceRegistry,
+  private val variantApiOperations:
+    VariantApiOperationsRegistrar<
+      KotlinMultiplatformAndroidLibraryExtension,
+      KotlinMultiplatformAndroidVariantBuilder,
+      KotlinMultiplatformAndroidVariant,
+    >,
+  kmpExtension: KotlinMultiplatformAndroidLibraryExtension,
+  private val androidTargetProvider: () -> KotlinMultiplatformAndroidLibraryTarget,
+) :
+  KotlinMultiplatformAndroidComponentsExtension,
+  AndroidComponentsExtensionImpl<
+    KotlinMultiplatformAndroidLibraryExtension,
+    KotlinMultiplatformAndroidVariantBuilder,
+    KotlinMultiplatformAndroidVariant,
+  >(dslServices, sdkComponents, managedDeviceRegistry, variantApiOperations, kmpExtension) {
+  override fun beforeVariants(selector: VariantSelector, callback: (KotlinMultiplatformAndroidVariantBuilder) -> Unit) {
+    variantApiOperations.variantBuilderOperations.addPublicOperation({ callback.invoke(it) }, "beforeVariants", selector)
+  }
+
+  override fun beforeVariants(selector: VariantSelector, callback: Action<KotlinMultiplatformAndroidVariantBuilder>) {
+    variantApiOperations.variantBuilderOperations.addPublicOperation(callback, "beforeVariants", selector)
+  }
+
+  override fun registerConfigurations(lowercaseAffix: String, useLegacyPrefix: Boolean) {
+    androidTargetProvider.invoke().compilations.forEach { compilation ->
+      val configurationName = getConfigurationName(lowercaseAffix, useLegacyPrefix, compilation.componentName)
+      dslServices.configurations.maybeCreate(configurationName).apply {
+        isCanBeResolved = false
+        isCanBeConsumed = false
+      }
     }
+  }
 
-    override fun beforeVariants(
-        selector: VariantSelector,
-        callback: Action<KotlinMultiplatformAndroidVariantBuilder>
-    ) {
-        variantApiOperations.variantBuilderOperations
-            .addPublicOperation(callback, "beforeVariants", selector)
-    }
-
-    override fun registerConfigurations(lowercaseAffix: String, useLegacyPrefix: Boolean) {
-         androidTargetProvider.invoke().compilations.forEach { compilation ->
-         val configurationName =
-             getConfigurationName(lowercaseAffix, useLegacyPrefix, compilation.componentName)
-         dslServices.configurations
-             .maybeCreate(configurationName)
-             .apply {
-                 isCanBeResolved = false
-                 isCanBeConsumed = false
-             }
+  override fun getOperationCallback(
+    resolvableConfigurationNameMapper: (String) -> String,
+    globalConfiguration: Configuration?,
+    lowercaseAffix: String,
+    useLegacyPrefix: Boolean,
+  ): (KotlinMultiplatformAndroidVariant) -> Unit {
+    val callback: (KotlinMultiplatformAndroidVariant) -> Unit = { variant ->
+      val variantResolvableConfiguration =
+        dslServices.configurations.maybeCreate(resolvableConfigurationNameMapper(variant.name)).apply {
+          isCanBeResolved = true
+          isCanBeConsumed = false
         }
-     }
 
-    override fun getOperationCallback(
-        resolvableConfigurationNameMapper: (String) -> String,
-        globalConfiguration: Configuration?,
-        lowercaseAffix: String,
-        useLegacyPrefix: Boolean
-    ): (KotlinMultiplatformAndroidVariant) -> Unit {
-        val callback: (KotlinMultiplatformAndroidVariant) -> Unit = { variant ->
-            val variantResolvableConfiguration =
-                dslServices.configurations
-                    .maybeCreate(resolvableConfigurationNameMapper(variant.name))
-                    .apply {
-                        isCanBeResolved = true
-                        isCanBeConsumed = false
-                    }
+      if (globalConfiguration?.allDependencies?.isNotEmpty() == true) {
+        variantResolvableConfiguration.extendsFrom(globalConfiguration)
+      }
 
-            if (globalConfiguration?.allDependencies?.isNotEmpty() == true) {
-                variantResolvableConfiguration.extendsFrom(globalConfiguration)
-            }
+      dslServices.configurations
+        .findByName(getConfigurationName(lowercaseAffix, useLegacyPrefix, variant.name))
+        ?.takeIf { it.allDependencies.isNotEmpty() }
+        ?.let { variantResolvableConfiguration.extendsFrom(it) }
 
-            dslServices.configurations
-                .findByName(getConfigurationName(lowercaseAffix, useLegacyPrefix, variant.name))
-                ?.takeIf { it.allDependencies.isNotEmpty() }
-                ?.let { variantResolvableConfiguration.extendsFrom(it) }
-
-            variant.nestedComponents.forEach { component ->
-                val componentResolvableConfiguration =
-                    dslServices.configurations
-                        .maybeCreate(resolvableConfigurationNameMapper(component.name))
-                        .apply {
-                            isCanBeResolved = true
-                            isCanBeConsumed = false
-                        }
-                if (globalConfiguration?.allDependencies?.isNotEmpty() == true) {
-                    componentResolvableConfiguration.extendsFrom(globalConfiguration)
-                }
-
-                dslServices.configurations
-                    .findByName(getConfigurationName(lowercaseAffix, useLegacyPrefix, component.name))
-                    ?.takeIf { it.allDependencies.isNotEmpty() }
-                    ?.let { componentResolvableConfiguration.extendsFrom(it) }
-            }
+      variant.nestedComponents.forEach { component ->
+        val componentResolvableConfiguration =
+          dslServices.configurations.maybeCreate(resolvableConfigurationNameMapper(component.name)).apply {
+            isCanBeResolved = true
+            isCanBeConsumed = false
+          }
+        if (globalConfiguration?.allDependencies?.isNotEmpty() == true) {
+          componentResolvableConfiguration.extendsFrom(globalConfiguration)
         }
-        return callback
+
+        dslServices.configurations
+          .findByName(getConfigurationName(lowercaseAffix, useLegacyPrefix, component.name))
+          ?.takeIf { it.allDependencies.isNotEmpty() }
+          ?.let { componentResolvableConfiguration.extendsFrom(it) }
+      }
     }
+    return callback
+  }
 }

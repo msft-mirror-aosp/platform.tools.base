@@ -27,32 +27,28 @@ import org.gradle.api.Plugin
 import org.gradle.api.Project
 
 class AssetPackPlugin : Plugin<Project> {
-    override fun apply(project: Project) {
-        val extension = project.extensions.create(AssetPackExtension::class.java, "assetPack", AssetPackExtensionImpl::class.java)
+  override fun apply(project: Project) {
+    val extension = project.extensions.create(AssetPackExtension::class.java, "assetPack", AssetPackExtensionImpl::class.java)
 
-        val manifestGenerationTaskProvider = project.tasks.register(
-            "generateAssetPackManifest",
-            AssetPackManifestGenerationTask::class.java
-        ) { manifestGenerationTask ->
-            UsesAnalytics.ConfigureAction.configure(manifestGenerationTask)
-            manifestGenerationTask.manifestFile.setDisallowChanges(
-                project.layout.buildDirectory.get().dir(
-                    SdkConstants.FD_INTERMEDIATES
-                ).dir("asset_pack_manifest").file(SdkConstants.FN_ANDROID_MANIFEST_XML)
-            )
-            manifestGenerationTask.aiPack.setDisallowChanges(false)
-            manifestGenerationTask.packName.setDisallowChanges(extension.packName)
-            manifestGenerationTask.deliveryType.setDisallowChanges(extension.dynamicDelivery.deliveryType)
-            manifestGenerationTask.instantDeliveryType.setDisallowChanges(extension.dynamicDelivery.instantDeliveryType)
-        }
+    val manifestGenerationTaskProvider =
+      project.tasks.register("generateAssetPackManifest", AssetPackManifestGenerationTask::class.java) { manifestGenerationTask ->
+        UsesAnalytics.ConfigureAction.configure(manifestGenerationTask)
+        manifestGenerationTask.manifestFile.setDisallowChanges(
+          project.layout.buildDirectory
+            .get()
+            .dir(SdkConstants.FD_INTERMEDIATES)
+            .dir("asset_pack_manifest")
+            .file(SdkConstants.FN_ANDROID_MANIFEST_XML)
+        )
+        manifestGenerationTask.aiPack.setDisallowChanges(false)
+        manifestGenerationTask.packName.setDisallowChanges(extension.packName)
+        manifestGenerationTask.deliveryType.setDisallowChanges(extension.dynamicDelivery.deliveryType)
+        manifestGenerationTask.instantDeliveryType.setDisallowChanges(extension.dynamicDelivery.instantDeliveryType)
+      }
 
-        project.configurations.maybeRegister("packElements") {
-            isCanBeConsumed = true
-        }
-        project.configurations.maybeRegister("manifestElements") {
-            isCanBeConsumed = true
-        }
-        project.artifacts.add("manifestElements", manifestGenerationTaskProvider.flatMap { it.manifestFile })
-        project.artifacts.add("packElements", project.layout.projectDirectory.dir("src/main/assets"))
-    }
+    project.configurations.maybeRegister("packElements") { isCanBeConsumed = true }
+    project.configurations.maybeRegister("manifestElements") { isCanBeConsumed = true }
+    project.artifacts.add("manifestElements", manifestGenerationTaskProvider.flatMap { it.manifestFile })
+    project.artifacts.add("packElements", project.layout.projectDirectory.dir("src/main/assets"))
+  }
 }

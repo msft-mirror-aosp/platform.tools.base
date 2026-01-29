@@ -36,91 +36,78 @@ import kotlin.io.path.writeBytes
  * This class represents non Android projects that don't have their own custom interfaces
  */
 @GradleDefinitionDsl
-interface GenericProjectDefinition: GradleProjectDefinition {
-    /** executes the lambda that adds/updates/removes files from the project */
-    fun files(action: GradleProjectFiles.() -> Unit)
+interface GenericProjectDefinition : GradleProjectDefinition {
+  /** executes the lambda that adds/updates/removes files from the project */
+  fun files(action: GradleProjectFiles.() -> Unit)
 
-    /**
-     * Wraps a library binary with a module
-     */
-    fun wrap(library: ByteArray, fileName: String)
+  /** Wraps a library binary with a module */
+  fun wrap(library: ByteArray, fileName: String)
 }
 
-/**
- * Default implementation for [GenericProjectDefinition]
- */
-internal open class GenericProjectDefinitionImpl(path: String): GradleProjectDefinitionImpl(path),
-    GenericProjectDefinition {
+/** Default implementation for [GenericProjectDefinition] */
+internal open class GenericProjectDefinitionImpl(path: String) : GradleProjectDefinitionImpl(path), GenericProjectDefinition {
 
-    private val wrappedLibraries = mutableListOf<Pair<String, ByteArray>>()
+  private val wrappedLibraries = mutableListOf<Pair<String, ByteArray>>()
 
-    override fun applyPlugin(type: PluginType, version: String?, applyFirst: Boolean) {
-        if (type.isAndroid) {
-            throw RuntimeException("Do not use genericProject for Android Plugins")
-        }
-        super.applyPlugin(type, version, applyFirst)
+  override fun applyPlugin(type: PluginType, version: String?, applyFirst: Boolean) {
+    if (type.isAndroid) {
+      throw RuntimeException("Do not use genericProject for Android Plugins")
     }
+    super.applyPlugin(type, version, applyFirst)
+  }
 
-    override fun <T> applyPlugin(
-        type: PluginType.PluginTypeWithExtension<T>,
-        version: String?,
-        applyFirst: Boolean,
-        action: (T.() -> Unit)?
-    ) {
-        if (type.isAndroid) {
-            throw RuntimeException("Do not use genericProject for Android Plugins")
-        }
-        super.applyPlugin(type, version, applyFirst, action)
+  override fun <T> applyPlugin(
+    type: PluginType.PluginTypeWithExtension<T>,
+    version: String?,
+    applyFirst: Boolean,
+    action: (T.() -> Unit)?,
+  ) {
+    if (type.isAndroid) {
+      throw RuntimeException("Do not use genericProject for Android Plugins")
     }
+    super.applyPlugin(type, version, applyFirst, action)
+  }
 
-    override fun replaceAppliedPlugin(type: PluginType, version: String) {
-        if (type.isAndroid) {
-            throw RuntimeException("Do not use genericProject for Android Plugins")
-        }
-        super.replaceAppliedPlugin(type, version)
+  override fun replaceAppliedPlugin(type: PluginType, version: String) {
+    if (type.isAndroid) {
+      throw RuntimeException("Do not use genericProject for Android Plugins")
     }
+    super.replaceAppliedPlugin(type, version)
+  }
 
-    override fun files (action: GradleProjectFiles.() -> Unit) {
-        action(files)
+  override fun files(action: GradleProjectFiles.() -> Unit) {
+    action(files)
+  }
+
+  override fun wrap(library: ByteArray, fileName: String) {
+    wrappedLibraries.add(fileName to library)
+  }
+
+  override fun writeExtension(writer: BuildWriter, location: Path) {
+    if (wrappedLibraries.isEmpty()) return
+
+    writer.method("configurations.create", "default")
+
+    for ((fileName, libraryBinary) in wrappedLibraries) {
+      location.resolve(fileName).writeBytes(libraryBinary)
+      writer.method("artifacts.add", listOf("default", writer.rawMethod("file", fileName)), isVarArg = false)
     }
-
-    override fun wrap(library: ByteArray, fileName: String) {
-        wrappedLibraries.add(fileName to library)
-    }
-
-    override fun writeExtension(writer: BuildWriter, location: Path) {
-        if (wrappedLibraries.isEmpty()) return
-
-        writer.method("configurations.create", "default")
-
-        for ((fileName, libraryBinary) in wrappedLibraries) {
-            location.resolve(fileName).writeBytes(libraryBinary)
-            writer.method("artifacts.add", listOf("default", writer.rawMethod("file", fileName)), isVarArg = false)
-        }
-    }
+  }
 }
 
 /**
  * a subproject part of a [GradleBuild].
  *
  * This class represents non Android projects that don't have their own custom interfaces
- *
  */
-interface GenericProject: GradleProject<GenericProjectDefinition>
+interface GenericProject : GradleProject<GenericProjectDefinition>
 
-/**
- * Default implementation of [GenericProject]
- */
-internal class GenericProjectImpl(
-    location: Path,
-    projectDefinition: GenericProjectDefinition,
-) : GradleProjectImpl<GenericProjectDefinition>(
-    location,
-    projectDefinition,
-), GenericProject {
+/** Default implementation of [GenericProject] */
+internal class GenericProjectImpl(location: Path, projectDefinition: GenericProjectDefinition) :
+  GradleProjectImpl<GenericProjectDefinition>(location, projectDefinition), GenericProject {
 
-    override fun getReversibleInstance(fileChangeController: FileChangeController): GenericProject =
-        ReversibleGenericProject(this, fileChangeController)
+  override fun getReversibleInstance(fileChangeController: FileChangeController): GenericProject =
+    ReversibleGenericProject(this, fileChangeController)
 }
 
 /**
@@ -128,13 +115,7 @@ internal class GenericProjectImpl(
  *
  * Returned by [ReversibleGradleBuild] when used with [GradleBuild.withReversibleModifications]
  *
- * This is simply a wrapper on a normal [GenericProject] object, that replaces the [GradleProjectFiles]
- * with [ReversibleProjectFiles]
+ * This is simply a wrapper on a normal [GenericProject] object, that replaces the [GradleProjectFiles] with [ReversibleProjectFiles]
  */
-internal open class ReversibleGenericProject(
-    parentProject: GenericProject,
-    fileChangeController: FileChangeController,
-): ReversibleGradleProject<GenericProject, GenericProjectDefinition>(
-    parentProject,
-    fileChangeController
-), GenericProject
+internal open class ReversibleGenericProject(parentProject: GenericProject, fileChangeController: FileChangeController) :
+  ReversibleGradleProject<GenericProject, GenericProjectDefinition>(parentProject, fileChangeController), GenericProject

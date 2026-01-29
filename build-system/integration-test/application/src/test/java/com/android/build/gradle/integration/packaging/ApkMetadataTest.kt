@@ -27,20 +27,19 @@ import org.junit.rules.TemporaryFolder
 
 class ApkMetadataTest {
 
-    @get:Rule
-    val project = EmptyActivityProjectBuilder().build()
+  @get:Rule val project = EmptyActivityProjectBuilder().build()
 
-    @get:Rule
-    val tmpDir = TemporaryFolder()
+  @get:Rule val tmpDir = TemporaryFolder()
 
-    @Test
-    fun testApkMetadataContents() {
-        project.execute("assembleDebug")
+  @Test
+  fun testApkMetadataContents() {
+    project.execute("assembleDebug")
 
-        val apkFile = project.getSubproject("app").getApkAsFile(DEBUG)
-        val apkMetadataFile = apkFile.parentFile.resolve(BuiltArtifactsImpl.METADATA_FILE_NAME)
-        assertThat(apkMetadataFile.readText()).isEqualTo(
-            """
+    val apkFile = project.getSubproject("app").getApkAsFile(DEBUG)
+    val apkMetadataFile = apkFile.parentFile.resolve(BuiltArtifactsImpl.METADATA_FILE_NAME)
+    assertThat(apkMetadataFile.readText())
+      .isEqualTo(
+        """
             {
               "version": 3,
               "artifactType": {
@@ -62,7 +61,8 @@ class ApkMetadataTest {
               "elementType": "File",
               "minSdkVersionForDexing": $DEFAULT_MIN_SDK_VERSION
             }
-            """.trimIndent()
-        )
-    }
+            """
+          .trimIndent()
+      )
+  }
 }

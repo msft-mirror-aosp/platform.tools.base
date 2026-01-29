@@ -20,39 +20,32 @@ import com.android.builder.model.v2.AndroidModel
 import java.io.File
 
 enum class NativeBuildSystem {
-    NDK_BUILD, CMAKE, NINJA
+  NDK_BUILD,
+  CMAKE,
+  NINJA,
 }
 
-/**
- * Response returned by Gradle to Android Studio containing information about an Android module that
- * contains native code.
- */
+/** Response returned by Gradle to Android Studio containing information about an Android module that contains native code. */
 interface NativeModule : AndroidModel {
 
-    /** The name of the module. For example "HelloWorld.app". */
-    val name: String
+  /** The name of the module. For example "HelloWorld.app". */
+  val name: String
 
-    /** Variants in this module. */
-    val variants: List<NativeVariant>
+  /** Variants in this module. */
+  val variants: List<NativeVariant>
 
-    /** The native build system used by this module. */
-    val nativeBuildSystem: NativeBuildSystem
+  /** The native build system used by this module. */
+  val nativeBuildSystem: NativeBuildSystem
 
-    /**
-     * The version of NDK used to build the native part of this module. For example "21.1.6352462".
-     */
-    val ndkVersion: String
+  /** The version of NDK used to build the native part of this module. For example "21.1.6352462". */
+  val ndkVersion: String
 
-    /**
-     * The NDK version used by this Android Gradle Plugin if the build author has not specified
-     * a different version in [ndkVersion]. For example "21.1.6352462".
-     * This is constant for any particular Android Gradle Plugin Version.
-     */
-    val defaultNdkVersion: String
+  /**
+   * The NDK version used by this Android Gradle Plugin if the build author has not specified a different version in [ndkVersion]. For
+   * example "21.1.6352462". This is constant for any particular Android Gradle Plugin Version.
+   */
+  val defaultNdkVersion: String
 
-    /**
-     * The absolute path of the root external build file. For example,
-     * "<project root>/app/src/main/cpp/CMakeLists.txt".
-     */
-    val externalNativeBuildFile: File
+  /** The absolute path of the root external build file. For example, "<project root>/app/src/main/cpp/CMakeLists.txt". */
+  val externalNativeBuildFile: File
 }

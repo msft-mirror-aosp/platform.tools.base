@@ -19,47 +19,43 @@ package com.android.build.gradle.internal.tasks
 import com.android.build.gradle.internal.fixtures.FakeNoOpAnalyticsService
 import com.android.build.gradle.internal.utils.setDisallowChanges
 import com.google.common.truth.Truth.assertThat
+import java.util.concurrent.atomic.AtomicBoolean
+import javax.inject.Inject
 import org.gradle.testfixtures.ProjectBuilder
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
-import java.util.concurrent.atomic.AtomicBoolean
-import javax.inject.Inject
 
-/**
- * Tests for [AndroidVariantTask]
- */
+/** Tests for [AndroidVariantTask] */
 class AndroidVariantTaskTest {
 
-    @get:Rule
-    val temporaryFolder= TemporaryFolder()
+  @get:Rule val temporaryFolder = TemporaryFolder()
 
-    private val called= AtomicBoolean(false)
-    lateinit var task: TestTask
+  private val called = AtomicBoolean(false)
+  lateinit var task: TestTask
 
-    abstract class TestTask @Inject constructor(
-        private val called: AtomicBoolean): AndroidVariantTask() {
+  abstract class TestTask @Inject constructor(private val called: AtomicBoolean) : AndroidVariantTask() {
 
-        fun entryPoint() {
-            recordTaskAction { actualAction() }
-        }
-
-        private fun actualAction() {
-            called.set(true)
-        }
+    fun entryPoint() {
+      recordTaskAction { actualAction() }
     }
 
-    @Before
-    fun setup() {
-        val project = ProjectBuilder.builder().withProjectDir(temporaryFolder.newFolder()).build()
-        task = project.tasks.create("test", TestTask::class.java, called)
-        task.analyticsService.setDisallowChanges(FakeNoOpAnalyticsService())
+    private fun actualAction() {
+      called.set(true)
     }
+  }
 
-    @Test
-    fun testRecordMethodCall() {
-        task.entryPoint()
-        assertThat(called.get()).isTrue()
-    }
+  @Before
+  fun setup() {
+    val project = ProjectBuilder.builder().withProjectDir(temporaryFolder.newFolder()).build()
+    task = project.tasks.create("test", TestTask::class.java, called)
+    task.analyticsService.setDisallowChanges(FakeNoOpAnalyticsService())
+  }
+
+  @Test
+  fun testRecordMethodCall() {
+    task.entryPoint()
+    assertThat(called.get()).isTrue()
+  }
 }

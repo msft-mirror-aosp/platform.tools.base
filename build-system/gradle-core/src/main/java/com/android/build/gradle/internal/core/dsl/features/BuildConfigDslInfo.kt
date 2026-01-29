@@ -20,18 +20,16 @@ import com.android.build.api.variant.BuildConfigField
 import java.io.Serializable
 
 /**
- * Contains the final dsl info computed from the DSL object model (extension, default config,
- * build type, flavors) that are needed by components that support build config.
+ * Contains the final dsl info computed from the DSL object model (extension, default config, build type, flavors) that are needed by
+ * components that support build config.
  */
 interface BuildConfigDslInfo {
-    /**
-     * Returns a list of items for the BuildConfig class.
-     *
-     *
-     * Items can be either fields (instance of [com.android.builder.model.ClassField]) or
-     * comments (instance of String).
-     *
-     * @return a list of items.
-     */
-    fun getBuildConfigFields(): Map<String, BuildConfigField<out Serializable>>
+  /**
+   * Returns a list of items for the BuildConfig class.
+   *
+   * Items can be either fields (instance of [com.android.builder.model.ClassField]) or comments (instance of String).
+   *
+   * @return a list of items.
+   */
+  fun getBuildConfigFields(): Map<String, BuildConfigField<out Serializable>>
 }

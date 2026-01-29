@@ -24,6 +24,7 @@ import com.android.build.gradle.internal.scope.ProjectInfo
 import com.android.build.gradle.internal.services.BuiltInKotlinServices.AvailabilityReason
 import com.android.build.gradle.internal.utils.setDisallowChanges
 import com.android.build.gradle.options.ProjectOptions
+import java.io.File
 import org.gradle.api.Task
 import org.gradle.api.artifacts.ConfigurationContainer
 import org.gradle.api.artifacts.dsl.DependencyHandler
@@ -37,67 +38,65 @@ import org.gradle.api.services.BuildServiceRegistry
 import org.gradle.api.tasks.TaskProvider
 import org.jetbrains.kotlin.gradle.dsl.KotlinAndroidProjectExtension
 import org.jetbrains.kotlin.gradle.plugin.KotlinBaseApiPlugin
-import java.io.File
 
 /**
- * Service object for the project, containing a bunch of project-provided items that can be exposed
- * to different stages of the plugin work.
+ * Service object for the project, containing a bunch of project-provided items that can be exposed to different stages of the plugin work.
  *
- * This is not meant to be exposed directly to most classes. It's meant to be a convenient storage for
- * all these objects so that they don't have to be recreated or passed to methods/constructors
- * all the time.
+ * This is not meant to be exposed directly to most classes. It's meant to be a convenient storage for all these objects so that they don't
+ * have to be recreated or passed to methods/constructors all the time.
  *
- * Stage-specific services should expose only part of what these objects expose, based on the need
- * of the context.
+ * Stage-specific services should expose only part of what these objects expose, based on the need of the context.
  */
-class ProjectServices constructor(
-    val issueReporter: SyncIssueReporter,
-    val deprecationReporter: DeprecationReporter,
-    val objectFactory: ObjectFactory,
-    val logger: Logger,
-    val providerFactory: ProviderFactory,
-    val projectLayout: ProjectLayout,
-    val projectOptions: ProjectOptions,
-    val buildServiceRegistry: BuildServiceRegistry,
-    val lintFromMaven: LintFromMaven,
-    private val aapt2FromMaven: Aapt2FromMaven? = null,
-    private val maxWorkerCount: Int,
-    val projectInfo: ProjectInfo,
-    val fileResolver: (Any) -> File,
-    val configurationContainer: ConfigurationContainer,
-    val dependencyHandler: DependencyHandler,
-    val extraProperties: ExtraPropertiesExtension,
-    val emptyTaskCreator: (String) -> TaskProvider<*>,
-    val plugins: PluginManager,
+class ProjectServices
+constructor(
+  val issueReporter: SyncIssueReporter,
+  val deprecationReporter: DeprecationReporter,
+  val objectFactory: ObjectFactory,
+  val logger: Logger,
+  val providerFactory: ProviderFactory,
+  val projectLayout: ProjectLayout,
+  val projectOptions: ProjectOptions,
+  val buildServiceRegistry: BuildServiceRegistry,
+  val lintFromMaven: LintFromMaven,
+  private val aapt2FromMaven: Aapt2FromMaven? = null,
+  private val maxWorkerCount: Int,
+  val projectInfo: ProjectInfo,
+  val fileResolver: (Any) -> File,
+  val configurationContainer: ConfigurationContainer,
+  val dependencyHandler: DependencyHandler,
+  val extraProperties: ExtraPropertiesExtension,
+  val emptyTaskCreator: (String) -> TaskProvider<*>,
+  val plugins: PluginManager,
 ) {
-    fun initializeAapt2Input(
-        aapt2Input: Aapt2Input,
-        task: Task? // null iff the caller is a transform
-    ) {
-        if (task != null) {
-            aapt2Input.initializeAapt2DaemonBuildService(task)
-            aapt2Input.initializeAapt2ThreadPoolBuildService(task)
-        } else {
-            aapt2Input.aapt2DaemonBuildService.setDisallowChanges(getBuildService(buildServiceRegistry))
-            aapt2Input.aapt2ThreadPoolBuildService.setDisallowChanges(getBuildService(buildServiceRegistry))
-        }
-        aapt2Input.binaryDirectory.from(aapt2FromMaven?.aapt2Directory)
-        aapt2Input.binaryDirectory.disallowChanges()
-        aapt2Input.version.setDisallowChanges(aapt2FromMaven?.version)
-        aapt2Input.maxWorkerCount.setDisallowChanges(maxWorkerCount)
-        aapt2Input.maxAapt2Daemons.setDisallowChanges(computeMaxAapt2Daemons(projectOptions))
+  fun initializeAapt2Input(
+    aapt2Input: Aapt2Input,
+    task: Task?, // null iff the caller is a transform
+  ) {
+    if (task != null) {
+      aapt2Input.initializeAapt2DaemonBuildService(task)
+      aapt2Input.initializeAapt2ThreadPoolBuildService(task)
+    } else {
+      aapt2Input.aapt2DaemonBuildService.setDisallowChanges(getBuildService(buildServiceRegistry))
+      aapt2Input.aapt2ThreadPoolBuildService.setDisallowChanges(getBuildService(buildServiceRegistry))
     }
+    aapt2Input.binaryDirectory.from(aapt2FromMaven?.aapt2Directory)
+    aapt2Input.binaryDirectory.disallowChanges()
+    aapt2Input.version.setDisallowChanges(aapt2FromMaven?.version)
+    aapt2Input.maxWorkerCount.setDisallowChanges(maxWorkerCount)
+    aapt2Input.maxAapt2Daemons.setDisallowChanges(computeMaxAapt2Daemons(projectOptions))
+  }
 
-    val builtInKotlinServices: BuiltInKotlinServices
-        get() = _builtInKotlinServices ?: error("BuiltInKotlinServices is not available because initBuiltInKotlinServices() is not yet called")
+  val builtInKotlinServices: BuiltInKotlinServices
+    get() = _builtInKotlinServices ?: error("BuiltInKotlinServices is not available because initBuiltInKotlinServices() is not yet called")
 
-    private var _builtInKotlinServices: BuiltInKotlinServices? = null
+  private var _builtInKotlinServices: BuiltInKotlinServices? = null
 
-    fun initBuiltInKotlinServices(reason: AvailabilityReason) {
-        _builtInKotlinServices = BuiltInKotlinServices.createFromPlugin(
-            reason = reason,
-            kotlinBaseApiPlugin = projectInfo.getPlugin(KotlinBaseApiPlugin::class.java),
-            kotlinAndroidProjectExtension = projectInfo.getExtension(KotlinAndroidProjectExtension::class.java),
-        )
-    }
+  fun initBuiltInKotlinServices(reason: AvailabilityReason) {
+    _builtInKotlinServices =
+      BuiltInKotlinServices.createFromPlugin(
+        reason = reason,
+        kotlinBaseApiPlugin = projectInfo.getPlugin(KotlinBaseApiPlugin::class.java),
+        kotlinAndroidProjectExtension = projectInfo.getExtension(KotlinAndroidProjectExtension::class.java),
+      )
+  }
 }

@@ -21,52 +21,50 @@ import com.android.build.gradle.internal.fixtures.FakeLogger
 import com.android.build.gradle.internal.services.createDslServices
 import com.android.builder.core.BuilderConstants
 import com.android.testutils.truth.PathSubject.assertThat
-import com.google.common.truth.Truth
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 
 internal class DefaultConfigTest {
-    private val dslServices = createDslServices()
+  private val dslServices = createDslServices()
 
-    @Test
-    fun buildConfigFieldOverride() {
-        val someFlavor = defaultConfig()
+  @Test
+  fun buildConfigFieldOverride() {
+    val someFlavor = defaultConfig()
 
-        assertThat(someFlavor).isNotNull()
-        someFlavor.buildConfigField("String", "name", "sensitiveValue")
-        someFlavor.buildConfigField("String", "name", "sensitiveValue")
-        val messages = (dslServices.logger as FakeLogger).infos
-        assertThat(messages).hasSize(1)
-        assertThat(messages[0]).doesNotContain("sensitiveValue")
+    assertThat(someFlavor).isNotNull()
+    someFlavor.buildConfigField("String", "name", "sensitiveValue")
+    someFlavor.buildConfigField("String", "name", "sensitiveValue")
+    val messages = (dslServices.logger as FakeLogger).infos
+    assertThat(messages).hasSize(1)
+    assertThat(messages[0]).doesNotContain("sensitiveValue")
+  }
+
+  @Test
+  fun resValueOverride() {
+    val someFlavor = defaultConfig()
+
+    assertThat(someFlavor).isNotNull()
+    someFlavor.resValue("String", "name", "sensitiveValue")
+    someFlavor.resValue("String", "name", "sensitiveValue")
+    val messages = (dslServices.logger as FakeLogger).infos
+    assertThat(messages).hasSize(1)
+    assertThat(messages[0]).doesNotContain("sensitiveValue")
+  }
+
+  @Test
+  fun setProguardFilesTest() {
+    val flavor: ApplicationBaseFlavor = defaultConfig()
+    flavor.apply {
+      // Check set replaces
+      proguardFiles += dslServices.file("replaced")
+      setProguardFiles(listOf("test"))
+      assertThat(proguardFiles).hasSize(1)
+      assertThat(proguardFiles.single()).hasName("test")
+      // Check set self doesn't clear
+      setProguardFiles(proguardFiles)
+      assertThat(proguardFiles.single()).hasName("test")
     }
+  }
 
-    @Test
-    fun resValueOverride() {
-        val someFlavor = defaultConfig()
-
-        assertThat(someFlavor).isNotNull()
-        someFlavor.resValue("String", "name", "sensitiveValue")
-        someFlavor.resValue("String", "name", "sensitiveValue")
-        val messages = (dslServices.logger as FakeLogger).infos
-        assertThat(messages).hasSize(1)
-        assertThat(messages[0]).doesNotContain("sensitiveValue")
-    }
-
-    @Test
-    fun setProguardFilesTest() {
-        val flavor: ApplicationBaseFlavor = defaultConfig()
-        flavor.apply {
-            // Check set replaces
-            proguardFiles += dslServices.file("replaced")
-            setProguardFiles(listOf("test"))
-            assertThat(proguardFiles).hasSize(1)
-            assertThat(proguardFiles.single()).hasName("test")
-            // Check set self doesn't clear
-            setProguardFiles(proguardFiles)
-            assertThat(proguardFiles.single()).hasName("test")
-        }
-    }
-
-    private fun defaultConfig() =
-        dslServices.newDecoratedInstance(DefaultConfig::class.java, BuilderConstants.MAIN, dslServices)
+  private fun defaultConfig() = dslServices.newDecoratedInstance(DefaultConfig::class.java, BuilderConstants.MAIN, dslServices)
 }

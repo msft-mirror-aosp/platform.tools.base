@@ -32,99 +32,82 @@ import org.junit.Rule
 import org.junit.Test
 
 /** Regression test for b/232075280. */
-class CyclicPomDependencyTest: ModelComparator() {
+class CyclicPomDependencyTest : ModelComparator() {
 
-    abstract class TestCallback(
-        private val libName: String,
-        private val dependencyName: String
-    ): GenericCallback {
+  abstract class TestCallback(private val libName: String, private val dependencyName: String) : GenericCallback {
 
-        override fun handleProject(project: Project) {
-            project.group = "com.foo"
-            project.version = "1.0"
+    override fun handleProject(project: Project) {
+      project.group = "com.foo"
+      project.version = "1.0"
 
-            val customPublishing = project.configurations.create("customPublishing")
-            customPublishing.isCanBeConsumed = true
-            customPublishing.isCanBeResolved = false
-            customPublishing.attributes.attribute(
-                TargetJvmEnvironment.TARGET_JVM_ENVIRONMENT_ATTRIBUTE,
-                project.objects.named(TargetJvmEnvironment::class.java, TargetJvmEnvironment.STANDARD_JVM)
-            )
-            project.dependencies.add("customPublishing", "com.foo:$dependencyName:1.0")
-            customPublishing.outgoing.artifact(project.tasks.getByName("jar"))
+      val customPublishing = project.configurations.create("customPublishing")
+      customPublishing.isCanBeConsumed = true
+      customPublishing.isCanBeResolved = false
+      customPublishing.attributes.attribute(
+        TargetJvmEnvironment.TARGET_JVM_ENVIRONMENT_ATTRIBUTE,
+        project.objects.named(TargetJvmEnvironment::class.java, TargetJvmEnvironment.STANDARD_JVM),
+      )
+      project.dependencies.add("customPublishing", "com.foo:$dependencyName:1.0")
+      customPublishing.outgoing.artifact(project.tasks.getByName("jar"))
 
-            abstract class FactoryAccessor {
-                @javax.inject.Inject
-                abstract fun getFactory(): SoftwareComponentFactory
-            }
+      abstract class FactoryAccessor {
+        @javax.inject.Inject abstract fun getFactory(): SoftwareComponentFactory
+      }
 
-            val factoryAccessor = project.objects.newInstance(FactoryAccessor::class.java)
-            val component = factoryAccessor.getFactory().adhoc("custom")
-            component.addVariantsFromConfiguration(customPublishing) {}
-            project.components.add(component)
+      val factoryAccessor = project.objects.newInstance(FactoryAccessor::class.java)
+      val component = factoryAccessor.getFactory().adhoc("custom")
+      component.addVariantsFromConfiguration(customPublishing) {}
+      project.components.add(component)
 
-            project.tasks.withType(GenerateModuleMetadata::class.java) {
-                it.enabled = false
-            }
+      project.tasks.withType(GenerateModuleMetadata::class.java) { it.enabled = false }
 
-            val publishing = project.extensions.findByType(PublishingExtension::class.java)
-                ?: throw RuntimeException("Could not find extension of type PublishingExtension")
+      val publishing =
+        project.extensions.findByType(PublishingExtension::class.java)
+          ?: throw RuntimeException("Could not find extension of type PublishingExtension")
 
-            publishing.apply {
-                repositories {
-                    it.maven {
-                        it.url = project.uri(project.projectDir.parentFile.resolve("repo"))
-                    }
-                }
-                publications.create("mavenJava", MavenPublication::class.java) {
-                    it.artifactId = libName
-                    it.from(component)
-                }
-            }
+      publishing.apply {
+        repositories { it.maven { it.url = project.uri(project.projectDir.parentFile.resolve("repo")) } }
+        publications.create("mavenJava", MavenPublication::class.java) {
+          it.artifactId = libName
+          it.from(component)
         }
+      }
+    }
+  }
+
+  class Bar1Callback : TestCallback(libName = "bar1", dependencyName = "bar2")
+
+  class Bar2Callback : TestCallback(libName = "bar2", dependencyName = "bar1")
+
+  @get:Rule
+  val rule =
+    GradleRule.from {
+      androidApplication {
+        android { enableKotlin = false }
+        dependencies { implementation("com.foo:bar1:1.0") }
+      }
+      genericProject(":bar1") {
+        applyPlugin(PluginType.JAVA_LIBRARY)
+        applyPlugin(PluginType.MAVEN_PUBLISH)
+        pluginCallbacks += Bar1Callback::class.java
+      }
+      genericProject(":bar2") {
+        applyPlugin(PluginType.JAVA_LIBRARY)
+        applyPlugin(PluginType.MAVEN_PUBLISH)
+        pluginCallbacks += Bar2Callback::class.java
+      }
+      settings { addRepository("repo") }
+      gradleProperties {
+        // b/308936442
+        add(BooleanOption.PRIVACY_SANDBOX_SDK_SUPPORT, false)
+      }
     }
 
-    class Bar1Callback: TestCallback(libName = "bar1", dependencyName = "bar2")
-    class Bar2Callback: TestCallback(libName = "bar2", dependencyName = "bar1")
+  @Test
+  fun `test models`() {
+    rule.build.executor.run(":bar1:publish", ":bar2:publish")
+    val result = rule.build.modelBuilder.ignoreSyncIssues(SyncIssue.SEVERITY_WARNING).fetchModels(variantName = "debug")
 
-    @get:Rule
-    val rule = GradleRule.from {
-        androidApplication {
-            android {
-                enableKotlin = false
-            }
-            dependencies {
-                implementation("com.foo:bar1:1.0")
-            }
-        }
-        genericProject(":bar1") {
-            applyPlugin(PluginType.JAVA_LIBRARY)
-            applyPlugin(PluginType.MAVEN_PUBLISH)
-            pluginCallbacks += Bar1Callback::class.java
-        }
-        genericProject(":bar2") {
-            applyPlugin(PluginType.JAVA_LIBRARY)
-            applyPlugin(PluginType.MAVEN_PUBLISH)
-            pluginCallbacks += Bar2Callback::class.java
-        }
-        settings {
-            addRepository("repo")
-        }
-        gradleProperties {
-            // b/308936442
-            add(BooleanOption.PRIVACY_SANDBOX_SDK_SUPPORT, false)
-        }
-    }
-
-
-    @Test
-    fun `test models`() {
-        rule.build.executor.run(":bar1:publish", ":bar2:publish")
-        val result = rule.build
-            .modelBuilder
-            .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
-            .fetchModels(variantName = "debug")
-
-        with(result).compareVariantDependencies(goldenFile = "VariantDependencies")
-    }
+    with(result).compareVariantDependencies(goldenFile = "VariantDependencies")
+  }
 }

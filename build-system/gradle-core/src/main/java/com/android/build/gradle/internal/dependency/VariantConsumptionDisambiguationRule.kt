@@ -18,10 +18,10 @@ package com.android.build.gradle.internal.dependency
 
 import com.android.build.api.attributes.BuildTypeAttr
 import com.android.build.api.attributes.ProductFlavorAttr
+import javax.inject.Inject
 import org.gradle.api.Named
 import org.gradle.api.attributes.AttributeDisambiguationRule
 import org.gradle.api.attributes.MultipleCandidatesDetails
-import javax.inject.Inject
 
 /**
  * A matching fallback rule that tries to select a variant dimension based on the given fallbacks.
@@ -29,66 +29,51 @@ import javax.inject.Inject
  * @param consumerFallbacks a map from the value of the consumer to the matching fallbacks.
  * @param globalFallbacks a list of global fallbacks that apply to all consumers.
  */
-abstract class VariantConsumptionDisambiguationRule<T: Named> protected constructor(
-    private val consumerFallbacks: Map<String, List<String>> = emptyMap(),
-    private val globalFallbacks: List<String> = emptyList()
-): AttributeDisambiguationRule<T> {
+abstract class VariantConsumptionDisambiguationRule<T : Named>
+protected constructor(
+  private val consumerFallbacks: Map<String, List<String>> = emptyMap(),
+  private val globalFallbacks: List<String> = emptyList(),
+) : AttributeDisambiguationRule<T> {
 
-    private fun maybeMatch(
-        details: MultipleCandidatesDetails<T>,
-        candidates: Map<String, T>,
-        fallbacks: List<String>
-    ): Boolean {
-        fallbacks.forEach { fallback ->
-            candidates[fallback]?.let {
-                details.closestMatch(it)
-                return true
-            }
+  private fun maybeMatch(details: MultipleCandidatesDetails<T>, candidates: Map<String, T>, fallbacks: List<String>): Boolean {
+    fallbacks.forEach { fallback ->
+      candidates[fallback]?.let {
+        details.closestMatch(it)
+        return true
+      }
+    }
+    return false
+  }
+
+  override fun execute(details: MultipleCandidatesDetails<T>) {
+    val consumerValue = details.consumerValue
+    val candidates = details.candidateValues.associateBy { it.name }
+
+    if (consumerValue != null) {
+      if (candidates.containsKey(consumerValue.name)) {
+        details.closestMatch(consumerValue)
+        return
+      }
+
+      consumerFallbacks[consumerValue.name]?.let {
+        if (maybeMatch(details, candidates, it)) {
+          return
         }
-        return false
+      }
     }
 
-    override fun execute(details: MultipleCandidatesDetails<T>) {
-        val consumerValue = details.consumerValue
-        val candidates = details.candidateValues.associateBy { it.name }
-
-        if (consumerValue != null) {
-            if (candidates.containsKey(consumerValue.name)) {
-                details.closestMatch(consumerValue)
-                return
-            }
-
-            consumerFallbacks[consumerValue.name]?.let {
-                if (maybeMatch(details, candidates, it)) {
-                    return
-                }
-            }
-        }
-
-        maybeMatch(details, candidates, globalFallbacks)
-    }
+    maybeMatch(details, candidates, globalFallbacks)
+  }
 }
 
-class MultiVariantBuildTypeRule @Inject constructor(
-    val fallbacks: Map<String, List<String>>
-): VariantConsumptionDisambiguationRule<BuildTypeAttr>(
-    consumerFallbacks = fallbacks
-)
+class MultiVariantBuildTypeRule @Inject constructor(val fallbacks: Map<String, List<String>>) :
+  VariantConsumptionDisambiguationRule<BuildTypeAttr>(consumerFallbacks = fallbacks)
 
-class MultiVariantProductFlavorRule @Inject constructor(
-    val fallbacks: Map<String, List<String>>
-): VariantConsumptionDisambiguationRule<ProductFlavorAttr>(
-    consumerFallbacks = fallbacks
-)
+class MultiVariantProductFlavorRule @Inject constructor(val fallbacks: Map<String, List<String>>) :
+  VariantConsumptionDisambiguationRule<ProductFlavorAttr>(consumerFallbacks = fallbacks)
 
-class SingleVariantBuildTypeRule @Inject constructor(
-    val fallbacks: List<String>
-): VariantConsumptionDisambiguationRule<BuildTypeAttr>(
-    globalFallbacks = fallbacks
-)
+class SingleVariantBuildTypeRule @Inject constructor(val fallbacks: List<String>) :
+  VariantConsumptionDisambiguationRule<BuildTypeAttr>(globalFallbacks = fallbacks)
 
-class SingleVariantProductFlavorRule @Inject constructor(
-    val fallbacks: List<String>
-): VariantConsumptionDisambiguationRule<ProductFlavorAttr>(
-    globalFallbacks = fallbacks
-)
+class SingleVariantProductFlavorRule @Inject constructor(val fallbacks: List<String>) :
+  VariantConsumptionDisambiguationRule<ProductFlavorAttr>(globalFallbacks = fallbacks)

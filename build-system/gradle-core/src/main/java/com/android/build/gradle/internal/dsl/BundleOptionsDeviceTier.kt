@@ -18,4 +18,4 @@ package com.android.build.gradle.internal.dsl
 
 import com.android.build.api.dsl.BundleDeviceTier
 
-abstract class BundleOptionsDeviceTier: BundleDeviceTier
+abstract class BundleOptionsDeviceTier : BundleDeviceTier

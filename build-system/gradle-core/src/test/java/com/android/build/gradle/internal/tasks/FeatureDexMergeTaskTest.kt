@@ -22,47 +22,53 @@ import com.android.build.gradle.internal.fixtures.FakeNoOpAnalyticsService
 import com.android.build.gradle.internal.fixtures.FakeObjectFactory
 import com.android.build.gradle.internal.profile.AnalyticsService
 import com.google.common.truth.Truth
+import java.io.File
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.provider.Property
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
-import java.io.File
 
 class FeatureDexMergeTaskTest {
 
-    @get:Rule
-    val temporaryFolder = TemporaryFolder()
+  @get:Rule val temporaryFolder = TemporaryFolder()
 
-    @Test
-    fun testBasicFunction() {
-        val inputFolder = temporaryFolder.newFolder()
-        val outputFolder = temporaryFolder.newFolder()
-        inputFolder.resolve("dex1").writeText("foo")
-        inputFolder.resolve("dex2").writeText("bar")
-        executeWorkerAction(inputFolder, outputFolder)
-        Truth.assertThat(outputFolder.resolve("0.dex").isFile).isTrue()
-        Truth.assertThat(outputFolder.resolve("1.dex").isFile).isTrue()
-        Truth.assertThat(outputFolder.list().size).isEqualTo(2)
-    }
+  @Test
+  fun testBasicFunction() {
+    val inputFolder = temporaryFolder.newFolder()
+    val outputFolder = temporaryFolder.newFolder()
+    inputFolder.resolve("dex1").writeText("foo")
+    inputFolder.resolve("dex2").writeText("bar")
+    executeWorkerAction(inputFolder, outputFolder)
+    Truth.assertThat(outputFolder.resolve("0.dex").isFile).isTrue()
+    Truth.assertThat(outputFolder.resolve("1.dex").isFile).isTrue()
+    Truth.assertThat(outputFolder.list().size).isEqualTo(2)
+  }
 
-    private fun executeWorkerAction(inputDir: File, outputDir: File) {
-        object : FeatureDexMergeWorkAction() {
-            override fun getParameters() = object : Params() {
-                override val dexDirs: ConfigurableFileCollection
-                    get() = FakeConfigurableFileCollection(inputDir)
-                override val outputDir: DirectoryProperty
-                    get() = FakeObjectFactory.factory.directoryProperty().fileValue(outputDir)
-                override val projectPath: Property<String>
-                    get() = FakeGradleProperty("projectName")
-                override val taskOwner: Property<String>
-                    get() = FakeGradleProperty("taskOwner")
-                override val workerKey: Property<String>
-                    get() = FakeGradleProperty("workerKey")
-                override val analyticsService: Property<AnalyticsService>
-                    get() = FakeGradleProperty(FakeNoOpAnalyticsService())
-            }
-        }.execute()
-    }
+  private fun executeWorkerAction(inputDir: File, outputDir: File) {
+    object : FeatureDexMergeWorkAction() {
+        override fun getParameters() =
+          object : Params() {
+            override val dexDirs: ConfigurableFileCollection
+              get() = FakeConfigurableFileCollection(inputDir)
+
+            override val outputDir: DirectoryProperty
+              get() = FakeObjectFactory.factory.directoryProperty().fileValue(outputDir)
+
+            override val projectPath: Property<String>
+              get() = FakeGradleProperty("projectName")
+
+            override val taskOwner: Property<String>
+              get() = FakeGradleProperty("taskOwner")
+
+            override val workerKey: Property<String>
+              get() = FakeGradleProperty("workerKey")
+
+            override val analyticsService: Property<AnalyticsService>
+              get() = FakeGradleProperty(FakeNoOpAnalyticsService())
+          }
+      }
+      .execute()
+  }
 }

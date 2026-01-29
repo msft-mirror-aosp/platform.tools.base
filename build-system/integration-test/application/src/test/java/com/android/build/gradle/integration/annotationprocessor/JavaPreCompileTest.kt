@@ -32,41 +32,37 @@ import org.junit.runners.Parameterized
 @RunWith(FilterableParameterized::class)
 class JavaPreCompileTest(private val useKapt: Boolean) {
 
-    companion object {
+  companion object {
 
-        @Parameterized.Parameters(name = "useKapt_{0}")
-        @JvmStatic
-        fun parameters() = listOf(true, false)
-    }
+    @Parameterized.Parameters(name = "useKapt_{0}") @JvmStatic fun parameters() = listOf(true, false)
+  }
 
-    @get:Rule
-    val project = EmptyActivityProjectBuilder()
-        .apply { useKotlin = useKapt }
-        .disableBuiltInKotlin()
-        .build()
+  @get:Rule val project = EmptyActivityProjectBuilder().apply { useKotlin = useKapt }.disableBuiltInKotlin().build()
 
-    @Before
-    fun setUp() {
-        val annotationProcessorConfig = if (useKapt) "kapt" else "annotationProcessor"
-        TestFileUtils.appendToFile(
-            project.getSubproject("app").buildFile,
-            """
+  @Before
+  fun setUp() {
+    val annotationProcessorConfig = if (useKapt) "kapt" else "annotationProcessor"
+    TestFileUtils.appendToFile(
+      project.getSubproject("app").buildFile,
+      """
             dependencies {
                 compileOnly "com.google.auto.service:auto-service:1.0-rc2"
                 $annotationProcessorConfig "com.google.auto.service:auto-service:1.0-rc2"
             }
-            """.trimIndent()
-        )
-    }
+            """
+        .trimIndent(),
+    )
+  }
 
-    @Test
-    fun `check output`() {
-        project.executor().run(":app:javaPreCompileDebug")
+  @Test
+  fun `check output`() {
+    project.executor().run(":app:javaPreCompileDebug")
 
-        val annotationProcessorList =
-            ANNOTATION_PROCESSOR_LIST.getOutputDir(project.getSubproject("app").buildDir)
-                .resolve("debug/javaPreCompileDebug/$ANNOTATION_PROCESSOR_LIST_FILE_NAME").readText()
-        assertThat(annotationProcessorList).isEqualTo(
-            "{\"auto-service-1.0-rc2.jar (com.google.auto.service:auto-service:1.0-rc2)\":\"NON_INCREMENTAL_AP\"}")
-    }
+    val annotationProcessorList =
+      ANNOTATION_PROCESSOR_LIST.getOutputDir(project.getSubproject("app").buildDir)
+        .resolve("debug/javaPreCompileDebug/$ANNOTATION_PROCESSOR_LIST_FILE_NAME")
+        .readText()
+    assertThat(annotationProcessorList)
+      .isEqualTo("{\"auto-service-1.0-rc2.jar (com.google.auto.service:auto-service:1.0-rc2)\":\"NON_INCREMENTAL_AP\"}")
+  }
 }

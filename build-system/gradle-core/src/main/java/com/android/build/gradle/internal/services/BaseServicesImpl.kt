@@ -22,34 +22,33 @@ import com.android.build.gradle.internal.utils.GradleEnvironmentProvider
 import com.android.build.gradle.internal.utils.GradleEnvironmentProviderImpl
 import com.android.build.gradle.options.ProjectOptions
 import com.android.builder.errors.IssueReporter
-import org.gradle.api.services.BuildServiceRegistry
 import java.io.File
+import org.gradle.api.services.BuildServiceRegistry
 
-/**
- * Impl for BaseScope over a [ProjectServices]
- */
-open class BaseServicesImpl(protected val projectServices: ProjectServices):
-    BaseServices {
+/** Impl for BaseScope over a [ProjectServices] */
+open class BaseServicesImpl(protected val projectServices: ProjectServices) : BaseServices {
 
-    final override fun <T> newInstance(type: Class<T>, vararg args: Any?): T = projectServices.objectFactory.newInstance(type, *args)
+  final override fun <T> newInstance(type: Class<T>, vararg args: Any?): T = projectServices.objectFactory.newInstance(type, *args)
 
-    final override fun file(file: Any): File = projectServices.fileResolver.invoke(file)
+  final override fun file(file: Any): File = projectServices.fileResolver.invoke(file)
 
-    final override val issueReporter: IssueReporter
-        get() = projectServices.issueReporter
-    final override val deprecationReporter: DeprecationReporter
-        get() = projectServices.deprecationReporter
-    final override val projectOptions: ProjectOptions
-        get() = projectServices.projectOptions
-    final override val buildServiceRegistry: BuildServiceRegistry
-        get() = projectServices.buildServiceRegistry
+  final override val issueReporter: IssueReporter
+    get() = projectServices.issueReporter
 
-    final override val gradleEnvironmentProvider: GradleEnvironmentProvider =
-        GradleEnvironmentProviderImpl(projectServices.providerFactory)
+  final override val deprecationReporter: DeprecationReporter
+    get() = projectServices.deprecationReporter
 
-    final override val projectInfo: ProjectInfo
-        get() = projectServices.projectInfo
+  final override val projectOptions: ProjectOptions
+    get() = projectServices.projectOptions
 
-    final override val builtInKotlinServices: BuiltInKotlinServices
-        get() = projectServices.builtInKotlinServices
+  final override val buildServiceRegistry: BuildServiceRegistry
+    get() = projectServices.buildServiceRegistry
+
+  final override val gradleEnvironmentProvider: GradleEnvironmentProvider = GradleEnvironmentProviderImpl(projectServices.providerFactory)
+
+  final override val projectInfo: ProjectInfo
+    get() = projectServices.projectInfo
+
+  final override val builtInKotlinServices: BuiltInKotlinServices
+    get() = projectServices.builtInKotlinServices
 }

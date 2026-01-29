@@ -19,20 +19,20 @@ import com.android.build.api.dsl.ExternalNativeBuild
 import com.android.build.gradle.internal.model.CoreExternalNativeBuild
 import org.gradle.api.Action
 
-/** See [com.android.build.api.dsl.ExternalNativeBuild]  */
-abstract class ExternalNativeBuild: CoreExternalNativeBuild, ExternalNativeBuild {
-    abstract override val ndkBuild: NdkBuildOptions
-    abstract override val cmake: CmakeOptions
+/** See [com.android.build.api.dsl.ExternalNativeBuild] */
+abstract class ExternalNativeBuild : CoreExternalNativeBuild, ExternalNativeBuild {
+  abstract override val ndkBuild: NdkBuildOptions
+  abstract override val cmake: CmakeOptions
 
-    /* Not directly in interface as having a non-void return type is unconventional */
-    fun ndkBuild(action: Action<NdkBuildOptions>): NdkBuildOptions {
-        action.execute(ndkBuild)
-        return ndkBuild
-    }
+  /* Not directly in interface as having a non-void return type is unconventional */
+  fun ndkBuild(action: Action<NdkBuildOptions>): NdkBuildOptions {
+    action.execute(ndkBuild)
+    return ndkBuild
+  }
 
-    /* Not directly in interface as having a non-void return type is unconventional */
-    fun cmake(action: Action<CmakeOptions>): CmakeOptions {
-        action.execute(cmake)
-        return cmake
-    }
+  /* Not directly in interface as having a non-void return type is unconventional */
+  fun cmake(action: Action<CmakeOptions>): CmakeOptions {
+    action.execute(cmake)
+    return cmake
+  }
 }

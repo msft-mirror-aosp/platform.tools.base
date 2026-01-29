@@ -26,178 +26,136 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 
-class HelloWorldCompositeModelTest: ModelComparator() {
-    @get:Rule
-    val rule = GradleRule.from {
-        androidApplication {
-            android {
-                enableKotlin = false
-            }
-            dependencies {
-                implementation("com.composite-build:lib:1.2")
-            }
+class HelloWorldCompositeModelTest : ModelComparator() {
+  @get:Rule
+  val rule =
+    GradleRule.from {
+      androidApplication {
+        android { enableKotlin = false }
+        dependencies { implementation("com.composite-build:lib:1.2") }
+      }
+      includedBuild("other-build") {
+        includedBuild("nested-build") {
+          androidLibrary(":anotherLib") {
+            android { enableKotlin = false }
+            group = "com.nested-build"
+            version = "1.3"
+          }
         }
-        includedBuild("other-build") {
-            includedBuild("nested-build") {
-                androidLibrary(":anotherLib") {
-                    android {
-                        enableKotlin = false
-                    }
-                    group = "com.nested-build"
-                    version = "1.3"
-                }
-            }
-            androidLibrary(":lib") {
-                android {
-                    enableKotlin = false
-                }
-                group = "com.composite-build"
-                version = "1.2"
-            }
+        androidLibrary(":lib") {
+          android { enableKotlin = false }
+          group = "com.composite-build"
+          version = "1.2"
         }
+      }
     }
 
-    private lateinit var result: ModelBuilderV2.FetchResult<ModelContainerV2>
+  private lateinit var result: ModelBuilderV2.FetchResult<ModelContainerV2>
 
-    @Before
-    fun setup() {
-        result = rule.build.modelBuilder
-            .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
-            .fetchModels(variantName = "debug")
-    }
+  @Before
+  fun setup() {
+    result = rule.build.modelBuilder.ignoreSyncIssues(SyncIssue.SEVERITY_WARNING).fetchModels(variantName = "debug")
+  }
 
-    @Test
-    fun `test includedBuild BasicAndroidProject`() {
-        with(result).compareBasicAndroidProject(
-            projectAction = { getProject(":lib", ":other-build") },
-            goldenFile = "BasicAndroidProject"
-        )
-    }
+  @Test
+  fun `test includedBuild BasicAndroidProject`() {
+    with(result).compareBasicAndroidProject(projectAction = { getProject(":lib", ":other-build") }, goldenFile = "BasicAndroidProject")
+  }
 
-    @Test
-    fun `test nested includedBuild BasicAndroidProject`() {
-        with(result).compareBasicAndroidProject(
-            projectAction = { getProject(":anotherLib", ":other-build:nested-build") },
-            goldenFile = "BasicAndroidProject2"
-        )
-    }
+  @Test
+  fun `test nested includedBuild BasicAndroidProject`() {
+    with(result)
+      .compareBasicAndroidProject(
+        projectAction = { getProject(":anotherLib", ":other-build:nested-build") },
+        goldenFile = "BasicAndroidProject2",
+      )
+  }
 
-    @Test
-    fun `test includedBuild AndroidProject`() {
-        with(result).compareAndroidProject(
-            projectAction = { getProject(":lib", ":other-build") },
-            goldenFile = "AndroidProject"
-        )
-    }
+  @Test
+  fun `test includedBuild AndroidProject`() {
+    with(result).compareAndroidProject(projectAction = { getProject(":lib", ":other-build") }, goldenFile = "AndroidProject")
+  }
 
-    @Test
-    fun `test VariantDependencies`() {
-        with(result).compareVariantDependencies(
-            projectAction = { getProject(":app") },
-            goldenFile = "VariantDependencies"
-        )
-    }
+  @Test
+  fun `test VariantDependencies`() {
+    with(result).compareVariantDependencies(projectAction = { getProject(":app") }, goldenFile = "VariantDependencies")
+  }
 }
 
-class CompositeBuildWithSameNameTest: ModelComparator() {
+class CompositeBuildWithSameNameTest : ModelComparator() {
 
-    @get:Rule
-    val rule = GradleRule.from {
-        androidApplication {
-            android {
-                enableKotlin = false
-            }
-            dependencies {
-                implementation("com.androidlib:lib:1.0")
-                implementation("com.javalib:lib:1.0")
-            }
+  @get:Rule
+  val rule =
+    GradleRule.from {
+      androidApplication {
+        android { enableKotlin = false }
+        dependencies {
+          implementation("com.androidlib:lib:1.0")
+          implementation("com.javalib:lib:1.0")
         }
-        includedBuild("includedBuild1") {
-            androidLibrary(":lib") {
-                android {
-                    enableKotlin = false
-                }
-                group = "com.androidlib"
-                version = "1.0"
-            }
+      }
+      includedBuild("includedBuild1") {
+        androidLibrary(":lib") {
+          android { enableKotlin = false }
+          group = "com.androidlib"
+          version = "1.0"
         }
-        includedBuild("includedBuild2") {
-            genericProject(":lib") {
-                applyPlugin(PluginType.JAVA_LIBRARY)
-                group = "com.javalib"
-                version = "1.0"
-            }
+      }
+      includedBuild("includedBuild2") {
+        genericProject(":lib") {
+          applyPlugin(PluginType.JAVA_LIBRARY)
+          group = "com.javalib"
+          version = "1.0"
         }
+      }
     }
 
-    private lateinit var result: ModelBuilderV2.FetchResult<ModelContainerV2>
+  private lateinit var result: ModelBuilderV2.FetchResult<ModelContainerV2>
 
-    @Before
-    fun setup() {
-        result = rule.build.modelBuilder
-            .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
-            .fetchModels(variantName = "debug")
-    }
+  @Before
+  fun setup() {
+    result = rule.build.modelBuilder.ignoreSyncIssues(SyncIssue.SEVERITY_WARNING).fetchModels(variantName = "debug")
+  }
 
-    @Test
-    fun `test VariantDependencies`() {
-        with(result).compareVariantDependencies(
-            projectAction = { getProject(":app") },
-            goldenFile = "VariantDependencies"
-        )
-    }
+  @Test
+  fun `test VariantDependencies`() {
+    with(result).compareVariantDependencies(projectAction = { getProject(":app") }, goldenFile = "VariantDependencies")
+  }
 }
 
-class DependencySubstitutionInCompositeModelTest: ModelComparator() {
-    @get:Rule
-    val rule = GradleRule.from {
-        androidApplication {
-            android {
-                enableKotlin = false
-            }
-            dependencies {
-                implementation("com.example.included:lib:1.0")
-            }
+class DependencySubstitutionInCompositeModelTest : ModelComparator() {
+  @get:Rule
+  val rule =
+    GradleRule.from {
+      androidApplication {
+        android { enableKotlin = false }
+        dependencies { implementation("com.example.included:lib:1.0") }
+      }
+      includedBuild("includedBuild") {
+        androidLibrary(":lib") {
+          android { enableKotlin = false }
+
+          group = "com.example.included"
+          version = "1.0"
         }
-        includedBuild("includedBuild") {
-            androidLibrary(":lib") {
-                android {
-                    enableKotlin = false
-                }
-
-                group = "com.example.included"
-                version = "1.0"
-            }
-            settings {
-                dependencySubstitution {
-                    substitute(module("com.example.included:lib")).using(project(":lib"))
-                }
-            }
-        }
+        settings { dependencySubstitution { substitute(module("com.example.included:lib")).using(project(":lib")) } }
+      }
     }
 
-    private lateinit var result: ModelBuilderV2.FetchResult<ModelContainerV2>
+  private lateinit var result: ModelBuilderV2.FetchResult<ModelContainerV2>
 
-    @Before
-    fun setup() {
-        result = rule.build.modelBuilder
-            .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
-            .fetchModels(variantName = "debug")
-    }
+  @Before
+  fun setup() {
+    result = rule.build.modelBuilder.ignoreSyncIssues(SyncIssue.SEVERITY_WARNING).fetchModels(variantName = "debug")
+  }
 
-    @Test
-    fun `test VariantDependencies`() {
-        with(result).compareVariantDependencies(
-            projectAction = { getProject(":app") },
-            goldenFile = "VariantDependencies"
-        )
-    }
+  @Test
+  fun `test VariantDependencies`() {
+    with(result).compareVariantDependencies(projectAction = { getProject(":app") }, goldenFile = "VariantDependencies")
+  }
 
-    @Test
-    fun `test ProjectGraph`() {
-        with(result).compareProjectGraph(
-            projectAction = { getProject(":app") },
-            goldenFile = "ProjectGraph"
-        )
-    }
+  @Test
+  fun `test ProjectGraph`() {
+    with(result).compareProjectGraph(projectAction = { getProject(":app") }, goldenFile = "ProjectGraph")
+  }
 }

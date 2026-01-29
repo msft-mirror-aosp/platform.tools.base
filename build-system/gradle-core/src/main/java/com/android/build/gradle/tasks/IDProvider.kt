@@ -21,5 +21,4 @@ package com.android.build.gradle.tasks
  *
  * @param fieldName is the annotation field containing the actual artifact id.
  */
-@Target(AnnotationTarget.ANNOTATION_CLASS)
-annotation class IDProvider(val fieldName:String = "value")
+@Target(AnnotationTarget.ANNOTATION_CLASS) annotation class IDProvider(val fieldName: String = "value")

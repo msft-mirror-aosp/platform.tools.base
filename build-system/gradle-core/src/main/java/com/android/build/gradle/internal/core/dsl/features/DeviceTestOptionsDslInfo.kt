@@ -20,15 +20,15 @@ import com.android.build.api.dsl.EmulatorControl
 import com.android.build.api.dsl.ManagedDevices
 
 /**
- * Contains the final dsl info computed from the extension level DSL object model that are needed
- * by components that configure and run instrumentation tests
+ * Contains the final dsl info computed from the extension level DSL object model that are needed by components that configure and run
+ * instrumentation tests
  */
-interface DeviceTestOptionsDslInfo: TestOptionsDslInfo {
-    val animationsDisabled: Boolean
-    val execution: String
-    val resultsDir: String?
-    val reportDir: String?
-    val managedDevices: ManagedDevices
-    val emulatorControl: EmulatorControl
-    val codeCoverageEnabled:Boolean
+interface DeviceTestOptionsDslInfo : TestOptionsDslInfo {
+  val animationsDisabled: Boolean
+  val execution: String
+  val resultsDir: String?
+  val reportDir: String?
+  val managedDevices: ManagedDevices
+  val emulatorControl: EmulatorControl
+  val codeCoverageEnabled: Boolean
 }

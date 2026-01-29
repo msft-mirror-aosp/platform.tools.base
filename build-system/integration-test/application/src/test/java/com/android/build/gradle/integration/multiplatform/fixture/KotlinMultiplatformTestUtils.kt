@@ -17,140 +17,132 @@
 package com.android.build.gradle.integration.multiplatform.fixture
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.fixture.ModelContainerV2
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 
-
 internal fun GradleTestProject.publishLibs(
-    publishAndroidLib: Boolean = true,
-    publishKmpJvmOnly: Boolean = true,
-    publishKmpFirstLib: Boolean = true,
-    publishKmpSecondLib: Boolean = true,
-    publishKmpLibraryPlugin: Boolean = true,
+  publishAndroidLib: Boolean = true,
+  publishKmpJvmOnly: Boolean = true,
+  publishKmpFirstLib: Boolean = true,
+  publishKmpSecondLib: Boolean = true,
+  publishKmpLibraryPlugin: Boolean = true,
 ) {
-    TestFileUtils.appendToFile(
-        settingsFile,
-        """
-            dependencyResolutionManagement {
-                repositories {
-                    maven {
-                        url = 'testRepo'
-                    }
-                }
+  TestFileUtils.appendToFile(
+    settingsFile,
+    """
+    dependencyResolutionManagement {
+        repositories {
+            maven {
+                url = 'testRepo'
             }
-        """.trimIndent()
+        }
+    }
+    """
+      .trimIndent(),
+  )
+
+  if (publishKmpSecondLib) {
+    TestFileUtils.searchAndReplace(
+      getSubproject("kmpFirstLib").ktsBuildFile,
+      "project(\":kmpSecondLib\")",
+      "\"com.example:kmpSecondLib-android:1.0\"",
+    )
+  }
+
+  if (publishKmpLibraryPlugin) {
+    TestFileUtils.searchAndReplace(
+      getSubproject("kmpSecondLib").ktsBuildFile,
+      "project(\":kmpLibraryPlugin\")",
+      "\"com.example:kmpLibraryPlugin:1.0\"",
+    )
+  }
+
+  if (publishAndroidLib) {
+    TestFileUtils.searchAndReplace(getSubproject("kmpFirstLib").ktsBuildFile, "project(\":androidLib\")", "\"com.example:androidLib:1.0\"")
+  }
+
+  if (publishKmpJvmOnly) {
+    TestFileUtils.searchAndReplace(getSubproject("kmpFirstLib").ktsBuildFile, "project(\":kmpJvmOnly\")", "\"com.example:kmpJvmOnly:1.0\"")
+  }
+
+  if (publishKmpFirstLib) {
+    TestFileUtils.searchAndReplace(
+      getSubproject("app").ktsBuildFile,
+      "project(\":kmpFirstLib\")",
+      "\"com.example:kmpFirstLib-android:1.0\"",
+    )
+  }
+
+  val projectsToPublish =
+    listOfNotNull(
+      "androidLib".takeIf { publishAndroidLib },
+      "kmpJvmOnly".takeIf { publishKmpJvmOnly },
+      "kmpLibraryPlugin".takeIf { publishKmpLibraryPlugin },
+      "kmpSecondLib".takeIf { publishKmpSecondLib },
+      "kmpFirstLib".takeIf { publishKmpFirstLib },
     )
 
-    if (publishKmpSecondLib) {
-        TestFileUtils.searchAndReplace(
-            getSubproject("kmpFirstLib").ktsBuildFile,
-            "project(\":kmpSecondLib\")",
-            "\"com.example:kmpSecondLib-android:1.0\""
-        )
-    }
+  projectsToPublish.forEach { projectName ->
+    TestFileUtils.searchAndReplace(getSubproject(projectName).ktsBuildFile, "plugins {", "plugins {\n  id(\"maven-publish\")")
 
-    if (publishKmpLibraryPlugin) {
-        TestFileUtils.searchAndReplace(
-            getSubproject("kmpSecondLib").ktsBuildFile,
-            "project(\":kmpLibraryPlugin\")",
-            "\"com.example:kmpLibraryPlugin:1.0\""
-        )
-    }
-
-    if (publishAndroidLib) {
-        TestFileUtils.searchAndReplace(
-            getSubproject("kmpFirstLib").ktsBuildFile,
-            "project(\":androidLib\")",
-            "\"com.example:androidLib:1.0\""
-        )
-    }
-
-    if (publishKmpJvmOnly) {
-        TestFileUtils.searchAndReplace(
-            getSubproject("kmpFirstLib").ktsBuildFile,
-            "project(\":kmpJvmOnly\")",
-            "\"com.example:kmpJvmOnly:1.0\""
-        )
-    }
-
-    if (publishKmpFirstLib) {
-        TestFileUtils.searchAndReplace(
-            getSubproject("app").ktsBuildFile,
-            "project(\":kmpFirstLib\")",
-            "\"com.example:kmpFirstLib-android:1.0\""
-        )
-    }
-
-    val projectsToPublish = listOfNotNull(
-        "androidLib".takeIf { publishAndroidLib },
-        "kmpJvmOnly".takeIf { publishKmpJvmOnly },
-        "kmpLibraryPlugin".takeIf { publishKmpLibraryPlugin },
-        "kmpSecondLib".takeIf { publishKmpSecondLib },
-        "kmpFirstLib".takeIf { publishKmpFirstLib },
+    TestFileUtils.appendToFile(
+      getSubproject(projectName).ktsBuildFile,
+      """
+      group = "com.example"
+      version = "1.0"
+      publishing {
+        repositories {
+          maven {
+            url = uri("../testRepo")
+          }
+        }
+      }
+      """
+        .trimIndent(),
     )
+  }
 
-    projectsToPublish.forEach { projectName ->
-        TestFileUtils.searchAndReplace(
-            getSubproject(projectName).ktsBuildFile,
-            "plugins {",
-            "plugins {\n  id(\"maven-publish\")"
-        )
+  if (publishAndroidLib) {
+    // set up publishing for android lib
+    TestFileUtils.appendToFile(
+      getSubproject("androidLib").ktsBuildFile,
+      """
+      android {
+        publishing {
+          multipleVariants("all") {
+            allVariants()
+          }
+        }
+      }
 
-        TestFileUtils.appendToFile(getSubproject(projectName).ktsBuildFile,
-            """
-                    group = "com.example"
-                    version = "1.0"
-                    publishing {
-                      repositories {
-                        maven {
-                          url = uri("../testRepo")
-                        }
-                      }
-                    }
-                """.trimIndent()
-        )
-    }
+      afterEvaluate {
+        publishing {
+          publications {
+            create<MavenPublication>("all") {
+              from(components["all"])
+            }
+          }
+        }
+      }
+      """
+        .trimIndent(),
+    )
+  }
 
-    if (publishAndroidLib) {
-        // set up publishing for android lib
-        TestFileUtils.appendToFile(
-            getSubproject("androidLib").ktsBuildFile,
-            """
-                android {
-                  publishing {
-                    multipleVariants("all") {
-                      allVariants()
-                    }
-                  }
-                }
+  if (publishKmpLibraryPlugin) {
+    TestFileUtils.appendToFile(
+      getSubproject("kmpLibraryPlugin").ktsBuildFile,
+      """
+      kotlin {
+          androidTarget { publishAllLibraryVariants() }
+      }
+      """
+        .trimIndent(),
+    )
+  }
 
-                afterEvaluate {
-                  publishing {
-                    publications {
-                      create<MavenPublication>("all") {
-                        from(components["all"])
-                      }
-                    }
-                  }
-                }
-            """.trimIndent()
-        )
-    }
-
-    if (publishKmpLibraryPlugin) {
-        TestFileUtils.appendToFile(
-            getSubproject("kmpLibraryPlugin").ktsBuildFile,
-            """
-                kotlin {
-                    androidTarget { publishAllLibraryVariants() }
-                }
-            """.trimIndent()
-        )
-    }
-
-    projectsToPublish.forEach {
-        executor()
-            .withFailOnWarning(false) // b/455891987
-            .run(":$it:publish")
-    }
+  projectsToPublish.forEach {
+    executor()
+      .withFailOnWarning(false) // b/455891987
+      .run(":$it:publish")
+  }
 }

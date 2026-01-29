@@ -23,60 +23,49 @@ import org.junit.Test
 
 class LintEnvironmentVariablesTest {
 
-    @get:Rule
-    val project: GradleTestProject =
-        GradleTestProject.builder()
-            .fromTestApp(HelloWorldApp.forPlugin("com.android.application"))
-            .create()
+  @get:Rule
+  val project: GradleTestProject = GradleTestProject.builder().fromTestApp(HelloWorldApp.forPlugin("com.android.application")).create()
 
-    @Test
-    fun checkLintNotUpToDate() {
-        project.executor().run(":lintDebug").apply {
-            assertTask(":lintAnalyzeDebug").didWork()
-            assertTask(":lintReportDebug").didWork()
-        }
-
-        // check that the lint tasks are up-to-date if nothing changes
-        project.executor().run(":lintDebug").apply {
-            assertTask(":lintAnalyzeDebug").wasUpToDate()
-            assertTask(":lintReportDebug").wasUpToDate()
-        }
-
-        val environmentVariables =
-            listOf(
-                "ANDROID_LINT_INCLUDE_LDPI",
-                "ANDROID_LINT_MAX_DEPTH",
-                "ANDROID_LINT_MAX_VIEW_COUNT",
-                "ANDROID_LINT_NULLNESS_IGNORE_DEPRECATED"
-            )
-
-        for (environmentVariable in environmentVariables) {
-            // check that the lint tasks are not up-to-date if we set the environment variable
-            project.executor()
-                .withEnvironmentVariables(mapOf(environmentVariable to "foo"))
-                .run(":lintDebug")
-                .apply {
-                    assertTask(":lintAnalyzeDebug", withInfo="$environmentVariable=foo").didWork()
-                    assertTask(":lintReportDebug", withInfo="$environmentVariable=foo").didWork()
-                }
-
-            // run build without any environment variables before testing the next one
-            project.executor().run(":lintDebug")
-        }
-
-        val reportTaskEnvironmentVariables =
-            listOf(
-                "LINT_HTML_PREFS",
-                "LINT_XML_ROOT"
-            )
-
-        for (environmentVariable in reportTaskEnvironmentVariables) {
-            // check that the lint reporting task is not up-to-date if we set the environment
-            // variable (the lint analysis task should be up-to-date)
-            project.executor()
-                .withEnvironmentVariables(mapOf(environmentVariable to "foo"))
-                .run(":lintDebug")
-                .apply { assertTask(":lintReportDebug").didWork() }
-        }
+  @Test
+  fun checkLintNotUpToDate() {
+    project.executor().run(":lintDebug").apply {
+      assertTask(":lintAnalyzeDebug").didWork()
+      assertTask(":lintReportDebug").didWork()
     }
+
+    // check that the lint tasks are up-to-date if nothing changes
+    project.executor().run(":lintDebug").apply {
+      assertTask(":lintAnalyzeDebug").wasUpToDate()
+      assertTask(":lintReportDebug").wasUpToDate()
+    }
+
+    val environmentVariables =
+      listOf(
+        "ANDROID_LINT_INCLUDE_LDPI",
+        "ANDROID_LINT_MAX_DEPTH",
+        "ANDROID_LINT_MAX_VIEW_COUNT",
+        "ANDROID_LINT_NULLNESS_IGNORE_DEPRECATED",
+      )
+
+    for (environmentVariable in environmentVariables) {
+      // check that the lint tasks are not up-to-date if we set the environment variable
+      project.executor().withEnvironmentVariables(mapOf(environmentVariable to "foo")).run(":lintDebug").apply {
+        assertTask(":lintAnalyzeDebug", withInfo = "$environmentVariable=foo").didWork()
+        assertTask(":lintReportDebug", withInfo = "$environmentVariable=foo").didWork()
+      }
+
+      // run build without any environment variables before testing the next one
+      project.executor().run(":lintDebug")
+    }
+
+    val reportTaskEnvironmentVariables = listOf("LINT_HTML_PREFS", "LINT_XML_ROOT")
+
+    for (environmentVariable in reportTaskEnvironmentVariables) {
+      // check that the lint reporting task is not up-to-date if we set the environment
+      // variable (the lint analysis task should be up-to-date)
+      project.executor().withEnvironmentVariables(mapOf(environmentVariable to "foo")).run(":lintDebug").apply {
+        assertTask(":lintReportDebug").didWork()
+      }
+    }
+  }
 }

@@ -21,9 +21,9 @@ import java.io.File
 import java.io.Serializable
 
 data class NativeAbiImpl(
-    override val name: String,
-    override val sourceFlagsFile: File,
-    override val symbolFolderIndexFile: File,
-    override val buildFileIndexFile: File,
-    override val additionalProjectFilesIndexFile: File
+  override val name: String,
+  override val sourceFlagsFile: File,
+  override val symbolFolderIndexFile: File,
+  override val buildFileIndexFile: File,
+  override val additionalProjectFilesIndexFile: File,
 ) : NativeAbi, Serializable

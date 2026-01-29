@@ -18,8 +18,6 @@ package com.android.build.gradle.internal.fixtures
 
 import org.gradle.api.artifacts.component.BuildIdentifier
 
-data class FakeBuildIdentifier(
-    private val _buildPath: String = "defaultBuildPath"
-): BuildIdentifier {
-    override fun getBuildPath(): String = _buildPath
+data class FakeBuildIdentifier(private val _buildPath: String = "defaultBuildPath") : BuildIdentifier {
+  override fun getBuildPath(): String = _buildPath
 }

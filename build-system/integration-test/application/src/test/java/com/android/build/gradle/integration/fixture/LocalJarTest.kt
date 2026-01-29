@@ -23,34 +23,32 @@ import org.junit.Test
 
 class LocalJarTest {
 
-    @get:Rule
-    val rule = GradleRule.from {
-        androidApplication {
-            dependencies {
-                implementation(localJar("libfoo.jar") {
-                    addClasses(Foo::class.java)
-                    addEmptyClasses("com/example/Bar")
-                    addTextFile("com/example/foo.txt", "content")
-                })
+  @get:Rule
+  val rule =
+    GradleRule.from {
+      androidApplication {
+        dependencies {
+          implementation(
+            localJar("libfoo.jar") {
+              addClasses(Foo::class.java)
+              addEmptyClasses("com/example/Bar")
+              addTextFile("com/example/foo.txt", "content")
             }
+          )
         }
+      }
     }
 
-    @Test
-    fun testLocalJar() {
-        val build = rule.build
-        val app = build.androidApplication()
+  @Test
+  fun testLocalJar() {
+    val build = rule.build
+    val app = build.androidApplication()
 
-        ZipSubject.assertThat(app.resolve("libs/libfoo.jar")) {
-            containsExactly(
-                "com/android/build/gradle/integration/fixture/Foo.class",
-                "com/example/Bar.class",
-                "com/example/foo.txt"
-            )
-            textFile("com/example/foo.txt").isEqualTo("content")
-        }
+    ZipSubject.assertThat(app.resolve("libs/libfoo.jar")) {
+      containsExactly("com/android/build/gradle/integration/fixture/Foo.class", "com/example/Bar.class", "com/example/foo.txt")
+      textFile("com/example/foo.txt").isEqualTo("content")
     }
+  }
 }
 
-class Foo {
-}
+class Foo {}

@@ -22,5 +22,5 @@ package com.android.build.api.dsl
  * TODO LINK
  */
 interface PrivacySandbox {
-    var enable: Boolean
+  var enable: Boolean
 }

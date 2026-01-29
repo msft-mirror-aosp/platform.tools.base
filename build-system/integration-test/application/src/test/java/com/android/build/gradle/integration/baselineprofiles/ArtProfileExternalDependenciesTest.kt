@@ -30,29 +30,24 @@ import org.junit.Rule
 import org.junit.Test
 
 class ArtProfileExternalDependenciesTest {
-    private val activityDependency = "androidx.activity:activity-compose:1.5.1"
-    private val fragmentDependency = "androidx.fragment:fragment:1.4.1"
-    private val baselineProfileContent =
-        """
-            HSPLcom/google/Foo;->mainMethod(II)I
-            HSPLcom/google/Foo;->mainMethod-name-with-hyphens(II)I
-        """.trimIndent()
+  private val activityDependency = "androidx.activity:activity-compose:1.5.1"
+  private val fragmentDependency = "androidx.fragment:fragment:1.4.1"
+  private val baselineProfileContent =
+    """
+    HSPLcom/google/Foo;->mainMethod(II)I
+    HSPLcom/google/Foo;->mainMethod-name-with-hyphens(II)I
+    """
+      .trimIndent()
 
-    private val app =
-        HelloWorldApp.forPluginWithNamespace("com.android.application", "com.example.app")
+  private val app = HelloWorldApp.forPluginWithNamespace("com.android.application", "com.example.app")
 
-    @get:Rule
-    val project = GradleTestProject.builder()
-        .fromTestApp(
-            MultiModuleTestProject.builder()
-                .subproject(":app", app)
-                .build()
-        ).create()
+  @get:Rule val project = GradleTestProject.builder().fromTestApp(MultiModuleTestProject.builder().subproject(":app", app).build()).create()
 
-    @Before
-    fun setUp() {
-        TestFileUtils.appendToFile(project.getSubproject("app").buildFile,
-            """
+  @Before
+  fun setUp() {
+    TestFileUtils.appendToFile(
+      project.getSubproject("app").buildFile,
+      """
                 android {
                     defaultConfig {
                         minSdkVersion = 28
@@ -63,37 +58,42 @@ class ArtProfileExternalDependenciesTest {
                     implementation '$activityDependency'
                     implementation '$fragmentDependency'
                 }
-            """.trimIndent()
-        )
-
-        TestFileUtils.appendToFile(project.file("gradle.properties"),
             """
-                android.useAndroidX=true
-            """.trimIndent()
-        )
+        .trimIndent(),
+    )
 
-        FileUtils.createFile(
-            project.file("app/src/main/baselineProfiles/file.txt"), baselineProfileContent)
-    }
+    TestFileUtils.appendToFile(
+      project.file("gradle.properties"),
+      """
+      android.useAndroidX=true
+      """
+        .trimIndent(),
+    )
 
-    @Test
-    fun testIgnoreFrom() {
-        project.executor().run("assembleRelease")
+    FileUtils.createFile(project.file("app/src/main/baselineProfiles/file.txt"), baselineProfileContent)
+  }
 
-        val mergedFile = FileUtils.join(
-            project.getSubproject("app").buildDir,
-            SdkConstants.FD_INTERMEDIATES,
-            InternalArtifactType.MERGED_ART_PROFILE.getFolderName(),
-            "release",
-            "mergeReleaseArtProfile",
-            SdkConstants.FN_ART_PROFILE)
+  @Test
+  fun testIgnoreFrom() {
+    project.executor().run("assembleRelease")
 
-        Truth.assertThat(mergedFile.readText()).contains(baselineProfileContent)
-        Truth.assertThat(mergedFile.readText()).contains("HSPLandroidx/compose/")
-        Truth.assertThat(mergedFile.readText()).contains("HSPLandroidx/fragment/")
+    val mergedFile =
+      FileUtils.join(
+        project.getSubproject("app").buildDir,
+        SdkConstants.FD_INTERMEDIATES,
+        InternalArtifactType.MERGED_ART_PROFILE.getFolderName(),
+        "release",
+        "mergeReleaseArtProfile",
+        SdkConstants.FN_ART_PROFILE,
+      )
 
-        TestFileUtils.appendToFile(project.getSubproject("app").buildFile,
-            """
+    Truth.assertThat(mergedFile.readText()).contains(baselineProfileContent)
+    Truth.assertThat(mergedFile.readText()).contains("HSPLandroidx/compose/")
+    Truth.assertThat(mergedFile.readText()).contains("HSPLandroidx/fragment/")
+
+    TestFileUtils.appendToFile(
+      project.getSubproject("app").buildFile,
+      """
 
                 android {
                     buildTypes {
@@ -106,75 +106,81 @@ class ArtProfileExternalDependenciesTest {
                         }
                     }
                 }
-            """.trimIndent()
-        )
-
-        project.executor().run("assembleRelease")
-
-        Truth.assertThat(mergedFile.readText()).contains(baselineProfileContent)
-        Truth.assertThat(mergedFile.readText()).contains("HSPLandroidx/compose/")
-        Truth.assertThat(mergedFile.readText()).doesNotContain("HSPLandroidx/fragment/")
-    }
-
-    @Test
-    fun testIgnoreFromAllExternalDependencies() {
-        TestFileUtils.appendToFile(project.getSubproject("app").buildFile,
             """
+        .trimIndent(),
+    )
 
-                android {
-                    buildTypes {
-                        release {
-                            optimization {
-                                baselineProfile {
-                                    ignoreFromAllExternalDependencies = true
-                                }
-                            }
-                        }
-                    }
-                }
-            """.trimIndent()
-        )
+    project.executor().run("assembleRelease")
 
-        project.executor().run("assembleRelease")
+    Truth.assertThat(mergedFile.readText()).contains(baselineProfileContent)
+    Truth.assertThat(mergedFile.readText()).contains("HSPLandroidx/compose/")
+    Truth.assertThat(mergedFile.readText()).doesNotContain("HSPLandroidx/fragment/")
+  }
 
-        val mergedFile = FileUtils.join(
-            project.getSubproject("app").buildDir,
-            SdkConstants.FD_INTERMEDIATES,
-            InternalArtifactType.MERGED_ART_PROFILE.getFolderName(),
-            "release",
-            "mergeReleaseArtProfile",
-            SdkConstants.FN_ART_PROFILE)
+  @Test
+  fun testIgnoreFromAllExternalDependencies() {
+    TestFileUtils.appendToFile(
+      project.getSubproject("app").buildFile,
+      """
 
-        Truth.assertThat(mergedFile.readText()).contains(baselineProfileContent)
-        Truth.assertThat(mergedFile.readText()).doesNotContain("HSPLandroidx/compose/")
-        Truth.assertThat(mergedFile.readText()).doesNotContain("HSPLandroidx/fragment/")
+      android {
+          buildTypes {
+              release {
+                  optimization {
+                      baselineProfile {
+                          ignoreFromAllExternalDependencies = true
+                      }
+                  }
+              }
+          }
+      }
+      """
+        .trimIndent(),
+    )
+
+    project.executor().run("assembleRelease")
+
+    val mergedFile =
+      FileUtils.join(
+        project.getSubproject("app").buildDir,
+        SdkConstants.FD_INTERMEDIATES,
+        InternalArtifactType.MERGED_ART_PROFILE.getFolderName(),
+        "release",
+        "mergeReleaseArtProfile",
+        SdkConstants.FN_ART_PROFILE,
+      )
+
+    Truth.assertThat(mergedFile.readText()).contains(baselineProfileContent)
+    Truth.assertThat(mergedFile.readText()).doesNotContain("HSPLandroidx/compose/")
+    Truth.assertThat(mergedFile.readText()).doesNotContain("HSPLandroidx/fragment/")
+  }
+
+  @Test
+  fun testIgnoreFromDependencyNotFound() {
+    TestFileUtils.appendToFile(
+      project.getSubproject("app").buildFile,
+      """
+
+      android {
+          buildTypes {
+              release {
+                  optimization {
+                      baselineProfile {
+                          ignoreFrom += "Unknown Dependency 1"
+                          ignoreFrom += "Unknown Dependency 2"
+                      }
+                  }
+              }
+          }
+      }
+      """
+        .trimIndent(),
+    )
+
+    val result = project.executor().run("assembleRelease")
+    result.stdout.use {
+      ScannerSubject.assertThat(it)
+        .contains("Baseline profiles from [Unknown Dependency 1, Unknown Dependency 2] " + "are specified to be ignored")
     }
-
-    @Test
-    fun testIgnoreFromDependencyNotFound() {
-        TestFileUtils.appendToFile(project.getSubproject("app").buildFile,
-            """
-
-                android {
-                    buildTypes {
-                        release {
-                            optimization {
-                                baselineProfile {
-                                    ignoreFrom += "Unknown Dependency 1"
-                                    ignoreFrom += "Unknown Dependency 2"
-                                }
-                            }
-                        }
-                    }
-                }
-            """.trimIndent()
-        )
-
-        val result = project.executor().run("assembleRelease")
-        result.stdout.use {
-            ScannerSubject.assertThat(it).contains(
-                "Baseline profiles from [Unknown Dependency 1, Unknown Dependency 2] " +
-                        "are specified to be ignored")
-        }
-    }
+  }
 }

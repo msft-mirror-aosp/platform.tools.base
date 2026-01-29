@@ -23,47 +23,47 @@ import com.android.build.gradle.integration.common.fixture.project.builder.Local
 /**
  * Entry point for creating a GradleRule.
  *
- * This can be queried from the [GradleRule] companion class or via [GradleRule.configure]
- * (which returns [GradleRuleBuilder])
+ * This can be queried from the [GradleRule] companion class or via [GradleRule.configure] (which returns [GradleRuleBuilder])
  */
 interface GradleRuleEntryPoint {
-    /**
-     * Returns a [GradleRule] for a synthetic project configured with the [GradleBuildDefinition].
-     *
-     * To configure the rule, use [configure] instead
-     *
-     * @param folderName the name of the folder containing the build.
-     * @param logicalName The logical name of the build in gradle. This impact the groupId information of the subprojects. if null, same as folder name
-     * @param configAction the action to configure the build
-     */
-    fun from(
-        folderName: String = GradleBuildDefinition.DEFAULT_BUILD_NAME,
-        logicalName: String? = null,
-        configAction: GradleBuildDefinition.() -> Unit
-    ): GradleRule
+  /**
+   * Returns a [GradleRule] for a synthetic project configured with the [GradleBuildDefinition].
+   *
+   * To configure the rule, use [configure] instead
+   *
+   * @param folderName the name of the folder containing the build.
+   * @param logicalName The logical name of the build in gradle. This impact the groupId information of the subprojects. if null, same as
+   *   folder name
+   * @param configAction the action to configure the build
+   */
+  fun from(
+    folderName: String = GradleBuildDefinition.DEFAULT_BUILD_NAME,
+    logicalName: String? = null,
+    configAction: GradleBuildDefinition.() -> Unit,
+  ): GradleRule
 
-    /**
-     * Returns a [GradleRule] for a project configured from both an on-disk test project and
-     * a [GradleBuildDefinition].
-     *
-     * To configure the rule, use [configure] instead
-     *
-     * @param testProjectName the name of the on-disk test project.
-     * @param folderName the name of the folder containing the build.
-     * @param logicalName The logical name of the build in gradle. This impact the groupId information of the subprojects. if null, same as folder name
-     * @param configAction the action to configure the build
-     */
-    fun fromProject(
-        testProjectName: String,
-        folderName: String = GradleBuildDefinition.DEFAULT_BUILD_NAME,
-        logicalName: String? = null,
-        configAction: GradleBuildDefinition.() -> Unit
-    ): GradleRule
+  /**
+   * Returns a [GradleRule] for a project configured from both an on-disk test project and a [GradleBuildDefinition].
+   *
+   * To configure the rule, use [configure] instead
+   *
+   * @param testProjectName the name of the on-disk test project.
+   * @param folderName the name of the folder containing the build.
+   * @param logicalName The logical name of the build in gradle. This impact the groupId information of the subprojects. if null, same as
+   *   folder name
+   * @param configAction the action to configure the build
+   */
+  fun fromProject(
+    testProjectName: String,
+    folderName: String = GradleBuildDefinition.DEFAULT_BUILD_NAME,
+    logicalName: String? = null,
+    configAction: GradleBuildDefinition.() -> Unit,
+  ): GradleRule
 
-    fun fromProject(
-        testProjectSpec: LocalTestProjectSpec,
-        folderName: String = GradleBuildDefinition.DEFAULT_BUILD_NAME,
-        logicalName: String? = null,
-        configAction: (GradleBuildDefinition.() -> Unit)? = null
-    ): GradleRule
+  fun fromProject(
+    testProjectSpec: LocalTestProjectSpec,
+    folderName: String = GradleBuildDefinition.DEFAULT_BUILD_NAME,
+    logicalName: String? = null,
+    configAction: (GradleBuildDefinition.() -> Unit)? = null,
+  ): GradleRule
 }

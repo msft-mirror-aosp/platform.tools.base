@@ -19,31 +19,29 @@ package com.android.build.api.component.analytics
 import com.android.build.api.variant.AarMetadata
 import com.android.tools.build.gradle.internal.profile.VariantPropertiesMethodType
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
-import org.gradle.api.provider.Property
 import javax.inject.Inject
+import org.gradle.api.provider.Property
 
-open class AnalyticsEnabledAarMetadata @Inject constructor(
-    val delegate: AarMetadata,
-    val stats: GradleBuildVariant.Builder): AarMetadata {
+open class AnalyticsEnabledAarMetadata @Inject constructor(val delegate: AarMetadata, val stats: GradleBuildVariant.Builder) : AarMetadata {
 
-    override val minCompileSdk: Property<Int>
-        get() {
-            stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
-                VariantPropertiesMethodType.VARIANT_AAR_METADATA_MIN_COMPILE_SDK_VALUE
-            return delegate.minCompileSdk
-        }
+  override val minCompileSdk: Property<Int>
+    get() {
+      stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
+        VariantPropertiesMethodType.VARIANT_AAR_METADATA_MIN_COMPILE_SDK_VALUE
+      return delegate.minCompileSdk
+    }
 
-    override val minCompileSdkExtension: Property<Int>
-        get() {
-            stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
-                VariantPropertiesMethodType.VARIANT_AAR_METADATA_MIN_COMPILE_SDK_EXTENSION_VALUE
-            return delegate.minCompileSdkExtension
-        }
+  override val minCompileSdkExtension: Property<Int>
+    get() {
+      stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
+        VariantPropertiesMethodType.VARIANT_AAR_METADATA_MIN_COMPILE_SDK_EXTENSION_VALUE
+      return delegate.minCompileSdkExtension
+    }
 
-    override val minAgpVersion: Property<String>
-        get() {
-            stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
-                VariantPropertiesMethodType.VARIANT_AAR_METADATA_MIN_AGP_VERSION_VALUE
-            return delegate.minAgpVersion
-        }
+  override val minAgpVersion: Property<String>
+    get() {
+      stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
+        VariantPropertiesMethodType.VARIANT_AAR_METADATA_MIN_AGP_VERSION_VALUE
+      return delegate.minAgpVersion
+    }
 }

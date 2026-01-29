@@ -58,9 +58,6 @@ import com.google.api.services.toolresults.model.TestSuiteOverview
 import com.google.api.services.toolresults.model.ToolOutputReference
 import com.google.firebase.testlab.gradle.TestLabGradlePluginExtension
 import com.google.gson.GsonBuilder
-import org.gradle.api.Project
-import org.junit.Rule
-import org.junit.Test
 import java.io.ByteArrayInputStream
 import java.io.File
 import java.io.InputStream
@@ -69,487 +66,492 @@ import java.io.PipedOutputStream
 import java.util.LinkedList
 import java.util.Queue
 import java.util.zip.GZIPOutputStream
+import org.gradle.api.Project
+import org.junit.Rule
+import org.junit.Test
 
 class FirebaseTestLabIntegrationTest {
 
-    @get:Rule
-    val rule: GradleRule = GradleRule.from {
-        simpleProject()
-        androidApplication {
-            applyPlugin(FirebaseTestLabPlugin) {
-                serviceAccountCredentials.set(File("credentialFile.json"))
-                managedDevices.create("myFtlDevice1") {
-                    it.device = "testFtlDeviceId1"
-                    it.apiLevel = 32
-                }
-                managedDevices.create("myFtlDevice2") {
-                    it.device = "invalidDeviceId"
-                    it.apiLevel = 30
-                }
+  @get:Rule
+  val rule: GradleRule =
+    GradleRule.from {
+      simpleProject()
+      androidApplication {
+        applyPlugin(FirebaseTestLabPlugin) {
+          serviceAccountCredentials.set(File("credentialFile.json"))
+          managedDevices.create("myFtlDevice1") {
+            it.device = "testFtlDeviceId1"
+            it.apiLevel = 32
+          }
+          managedDevices.create("myFtlDevice2") {
+            it.device = "invalidDeviceId"
+            it.apiLevel = 30
+          }
+        }
+        files {
+          add(
+            "credentialFile.json",
+            """
+            {
+                "client_id": "test_client_id",
+                "client_secret": "test_client_secret",
+                "quota_project_id": "test_quota_project_id",
+                "refresh_token": "test_refresh_token",
+                "type": "authorized_user"
             }
-            files {
-                add(
-                    "credentialFile.json", """
-                    {
-                        "client_id": "test_client_id",
-                        "client_secret": "test_client_secret",
-                        "quota_project_id": "test_quota_project_id",
-                        "refresh_token": "test_refresh_token",
-                        "type": "authorized_user"
-                    }
-                """.trimIndent()
+            """
+              .trimIndent(),
+          )
+        }
+        pluginCallbacks += RegisterFakeHttpHandlerCallback::class.java
+      }
+    }
+
+  private val executor: GradleTaskExecutor
+    get() = rule.build.executor.withEnableInfoLogging(false)
+
+  private object FirebaseTestLabPlugin :
+    PluginTypeWithExtension<TestLabGradlePluginExtension>(
+      id = "com.google.firebase.testlab",
+      version = "+",
+      artifact = "com.google.firebase.testlab:testlab-gradle-plugin",
+      hasMarker = false,
+      extensionName = "firebaseTestLab",
+      extensionType = TestLabGradlePluginExtension::class.java,
+    )
+
+  class RegisterFakeHttpHandlerCallback : GenericCallback {
+
+    override fun handleProject(project: Project) {
+      project.afterEvaluate {
+        // Remove FTL service before injecting our modded version
+        project.gradle.sharedServices.registrations.apply {
+          remove(getByName(TestLabBuildService.RegistrationAction.getBuildServiceName(TestLabBuildService::class.java, project)))
+        }
+
+        // Inject FTL build service with FakeHttpHandler so that it does not send server calls to the real FTL server
+        project.gradle.sharedServices.registerIfAbsent(
+          TestLabBuildService.RegistrationAction.getBuildServiceName(TestLabBuildService::class.java, project),
+          TestLabBuildService::class.java,
+        ) {
+          TestLabBuildService.RegistrationAction(project).configure(it.parameters, FakeHttpHandler())
+          it.parameters.offlineMode.set(false)
+        }
+      }
+    }
+  }
+
+  // Contains required information for a mocked HTTP response
+  data class HttpResponseData(
+    // Contains the gzipped content of the response
+    val inputStream: InputStream =
+      object : InputStream() {
+        override fun read(): Int = 0
+      },
+    val statusCode: Int = HttpStatusCodes.STATUS_CODE_NOT_FOUND,
+    val headerCount: Int = 0,
+    val reasonPhrase: String = "",
+    val contentEncodingString: String = "gzip",
+  )
+
+  // Holds global variables and utility functions since defining top level variables
+  // in the build file will cause serialization errors when passing TestHttpHandler to parameter.
+  class TestUtils {
+
+    companion object {
+
+      val testLogger = LoggerWrapper.getLogger(FakeHttpHandler::class.java)
+      private val gson = GsonBuilder().setPrettyPrinting().create()
+
+      // Convert class to JSON and write to InputStream in gzip format.
+      private fun writeObjectToGzip(value: Any): InputStream {
+        val pipedInput = PipedInputStream()
+        val pipedOutput = PipedOutputStream(pipedInput)
+        val gzipOutputStream = GZIPOutputStream(pipedOutput)
+
+        // Convert class to JSON and write to the GZIPOutputStream object.
+        gzipOutputStream.write(gson.toJson(value).toByteArray())
+        gzipOutputStream.close()
+
+        return ByteArrayInputStream(pipedInput.readBytes())
+      }
+
+      private val testAndroidDeviceCatalog: AndroidDeviceCatalog =
+        AndroidDeviceCatalog()
+          .setModels(
+            listOf(
+              AndroidModel()
+                .setId("testFtlDeviceId1")
+                .setBrand("Google")
+                .setFormFactor("phone")
+                .setSupportedVersionIds(listOf("33", "32"))
+                .setSupportedAbis(listOf("x86_32", "arm64")),
+              AndroidModel()
+                .setId("testFtlDeviceId2")
+                .setBrand("Google")
+                .setFormFactor("tablet")
+                .setSupportedVersionIds(listOf("31", "30"))
+                .setSupportedAbis(listOf("x86_64", "x86s")),
+            )
+          )
+          .setVersions(listOf(AndroidVersion().setId("33ID").setApiLevel(33), AndroidVersion().setId("30ID").setApiLevel(30)))
+          .setRuntimeConfiguration(
+            AndroidRuntimeConfiguration()
+              .setOrientations(
+                listOf(Orientation().setId("vertical").setName("vertical"), Orientation().setId("horizontal").setName("horizontal"))
+              )
+              .setLocales(listOf(Locale().setId("English").setName("EnglishName"), Locale().setId("Chinese").setName("ChineseName")))
+          )
+
+      val testAndroidDeviceCatalogData =
+        HttpResponseData(
+          inputStream = writeObjectToGzip(TestEnvironmentCatalog().setAndroidDeviceCatalog(testAndroidDeviceCatalog)),
+          statusCode = HttpStatusCodes.STATUS_CODE_OK,
+        )
+
+      private const val defaultBucketName = "defaultBucketName"
+
+      private const val testProjectId = "test_quota_project_id"
+
+      val testInitializeSettingsData =
+        HttpResponseData(
+          inputStream = writeObjectToGzip(ProjectSettings().setName(testProjectId).setDefaultBucket(defaultBucketName)),
+          statusCode = HttpStatusCodes.STATUS_CODE_OK,
+        )
+
+      val getOrCreateHistoryData =
+        HttpResponseData(
+          inputStream =
+            writeObjectToGzip(
+              ListHistoriesResponse()
+                .setHistories(
+                  listOf(
+                    History().setHistoryId("testHistoryId1").setName("testHistoryName1"),
+                    History().setHistoryId("testHistoryId2").setName("testHistoryName2"),
+                  )
                 )
+            ),
+          statusCode = HttpStatusCodes.STATUS_CODE_OK,
+        )
+
+      private val sharedStorageObject = StorageObject().setName("testStorageObject").setBucket(defaultBucketName)
+
+      val retrieveSharedFileAndroidDebugData =
+        HttpResponseData(inputStream = writeObjectToGzip(sharedStorageObject), statusCode = HttpStatusCodes.STATUS_CODE_OK)
+
+      val retrieveSharedFileAppData =
+        HttpResponseData(inputStream = writeObjectToGzip(sharedStorageObject), statusCode = HttpStatusCodes.STATUS_CODE_OK)
+
+      val testMatrixData =
+        HttpResponseData(
+          inputStream = writeObjectToGzip(TestMatrix().setTestMatrixId("testMatrixId").setProjectId(testProjectId)),
+          statusCode = HttpStatusCodes.STATUS_CODE_OK,
+        )
+
+      private val testMatrixGenerator: (String) -> TestMatrix = { state ->
+        TestMatrix()
+          .setTestMatrixId("testMatrixId")
+          .setProjectId(testProjectId)
+          .setState(state)
+          .setTestExecutions(
+            listOf(
+              TestExecution()
+                .setTestDetails(TestDetails().setProgressMessages(listOf("Starting Android test.", "test message 1", "test message 2")))
+                .setToolResultsStep(
+                  ToolResultsStep()
+                    .setProjectId(testProjectId)
+                    .setStepId("testStepId")
+                    .setHistoryId("testHistoryId")
+                    .setExecutionId("testExecutionId")
+                )
+            )
+          )
+          .setResultStorage(ResultStorage().set("resultsUrl", "fake results URL for result storage/details"))
+      }
+
+      val runningTestResultData =
+        HttpResponseData(inputStream = writeObjectToGzip(testMatrixGenerator("RUNNING")), statusCode = HttpStatusCodes.STATUS_CODE_OK)
+
+      val pendingTestResultData =
+        HttpResponseData(inputStream = writeObjectToGzip(testMatrixGenerator("PENDING")), statusCode = HttpStatusCodes.STATUS_CODE_OK)
+
+      val validatingTestResultData =
+        HttpResponseData(inputStream = writeObjectToGzip(testMatrixGenerator("VALIDATING")), statusCode = HttpStatusCodes.STATUS_CODE_OK)
+
+      val finishedTestResultData =
+        HttpResponseData(inputStream = writeObjectToGzip(testMatrixGenerator("FINISHED")), statusCode = HttpStatusCodes.STATUS_CODE_OK)
+
+      val testExecutionStepData =
+        HttpResponseData(
+          inputStream =
+            writeObjectToGzip(
+              Step()
+                .setTestExecutionStep(
+                  TestExecutionStep().apply {
+                    this.testSuiteOverviews =
+                      listOf(TestSuiteOverview().setXmlSource(FileReference().setFileUri("testSuiteOverViewXmlFileUri")))
+                  }
+                )
+                .setOutcome(Outcome().setSummary("success"))
+                .setName("testStepName")
+            ),
+          statusCode = HttpStatusCodes.STATUS_CODE_OK,
+        )
+
+      val stepThumbnailsResponseData =
+        HttpResponseData(
+          inputStream =
+            writeObjectToGzip(
+              ListStepThumbnailsResponse()
+                .setThumbnails(
+                  listOf(Image().setSourceImage(ToolOutputReference().setOutput(FileReference().setFileUri("testThumbnailsImageFileUri"))))
+                )
+            ),
+          statusCode = HttpStatusCodes.STATUS_CODE_OK,
+        )
+
+      val requestTestCasesData =
+        HttpResponseData(
+          inputStream =
+            writeObjectToGzip(
+              ToolResultsManager.TestCases().apply {
+                this.testCases =
+                  listOf(
+                    ToolResultsManager.TestCase().apply {
+                      this.testCaseId = "testCaseId"
+                      this.status = "passed"
+                      this.testCaseReference =
+                        ToolResultsManager.TestCaseReference().apply {
+                          this.className = "testClassName"
+                          this.name = "testCaseReferenceName"
+                        }
+                      this.toolOutputs = listOf(ToolOutputReference().setOutput(FileReference().setFileUri("logcat")))
+                    }
+                  )
+              }
+            ),
+          statusCode = HttpStatusCodes.STATUS_CODE_OK,
+        )
+
+      // Contains all HTTP request and response pair
+      enum class RequestResponseResource(private val responseElement: RequestResponseElement) {
+
+        TEST_CATALOG(
+          RequestResponseElement(
+            Regex("^GET https://testing\\.googleapis\\.com/v1/testEnvironmentCatalog/ANDROID\\?projectId=test_quota_project_id$"),
+            listOf(testAndroidDeviceCatalogData),
+          )
+        ),
+        INITIALIZE_SETTINGS(
+          RequestResponseElement(
+            Regex("^POST https://www\\.googleapis\\.com/toolresults/v1beta3/projects/test_quota_project_id:initializeSettings$"),
+            listOf(testInitializeSettingsData),
+          )
+        ),
+        GET_HISTORY_LIST(
+          RequestResponseElement(
+            Regex(
+              "^GET https://www\\.googleapis\\.com/toolresults/v1beta3/projects/test_quota_project_id/histories\\?filterByName=pkg\\.name\\.app$"
+            ),
+            listOf(getOrCreateHistoryData),
+          )
+        ),
+        RETRIEVE_HISTORY_ANDROID_DEBUG(
+          RequestResponseElement(
+            Regex("^GET https://www\\.googleapis\\.com/storage/v1/b/defaultBucketName/o/:app.*debug-androidTest\\.apk$"),
+            listOf(retrieveSharedFileAndroidDebugData),
+          )
+        ),
+        RETRIEVE_HISTORY_APP(
+          RequestResponseElement(
+            Regex("^GET https://www\\.googleapis\\.com/storage/v1/b/defaultBucketName/o/:app.*debug\\.apk$"),
+            listOf(retrieveSharedFileAppData),
+          )
+        ),
+        CREATE_TEST_MATRIX(
+          RequestResponseElement(
+            Regex("^POST https://testing\\.googleapis\\.com/v1/projects/test_quota_project_id/testMatrices\\?requestId=.*"),
+            listOf(testMatrixData),
+          )
+        ),
+        WAIT_FOR_TEST_RESULTS(
+          RequestResponseElement(
+            Regex("^GET https://testing\\.googleapis\\.com/v1/projects/test_quota_project_id/testMatrices/testMatrixId$"),
+            listOf(pendingTestResultData, runningTestResultData, validatingTestResultData, finishedTestResultData),
+          )
+        ),
+        REQUEST_TEST_RESULT(
+          RequestResponseElement(
+            Regex(
+              "^GET https://www\\.googleapis\\.com/toolresults/v1beta3/projects/test_quota_project_id/histories/testHistoryId/executions/testExecutionId/steps/testStepId$"
+            ),
+            listOf(testExecutionStepData),
+          )
+        ),
+        REQUEST_THUMBNAILS(
+          RequestResponseElement(
+            Regex(
+              "^GET https://www\\.googleapis\\.com/toolresults/v1beta3/projects/test_quota_project_id/histories/testHistoryId/executions/testExecutionId/steps/testStepId/thumbnails$"
+            ),
+            listOf(stepThumbnailsResponseData),
+          )
+        ),
+        REQUEST_TEST_CASES(
+          RequestResponseElement(
+            Regex(
+              "^GET https://toolResults\\.googleapis\\.com/toolresults/v1beta3/projects/test_quota_project_id/histories/testHistoryId/executions/testExecutionId/steps/testStepId/testCases$"
+            ),
+            listOf(requestTestCasesData),
+          )
+        );
+
+        /**
+         * Holds server call request url regex and corresponding responses.
+         *
+         * @param urlRegex starts with server call method, followed by a space and ends with the request URL address. This is a regex since
+         *   we want to be able to match runtime generated URLs
+         * @param responseList contains all responses associated with urlRegex. Responses are returned in FIFO queue order, i.e. items with
+         *   smaller indexes are returned first. This way we can control what to return when there's duplicated calls and check for
+         *   undesired server calls.
+         */
+        private class RequestResponseElement(val urlRegex: Regex, responseList: List<HttpResponseData>) {
+
+          private val responseCount = responseList.size
+          private val responseQueue: Queue<HttpResponseData> = LinkedList(responseList)
+
+          fun getData(): HttpResponseData {
+            testLogger.warning("$urlRegex is hit")
+            return try {
+              responseQueue.remove()
+            } catch (e: NoSuchElementException) {
+              throw RuntimeException("Unexpected call to ${urlRegex}. Already called it $responseCount times.")
             }
-            pluginCallbacks += RegisterFakeHttpHandlerCallback::class.java
+          }
         }
-    }
-
-    private val executor: GradleTaskExecutor
-        get() = rule.build.executor.withEnableInfoLogging(false)
-
-    private object FirebaseTestLabPlugin : PluginTypeWithExtension<TestLabGradlePluginExtension>(
-        id = "com.google.firebase.testlab",
-        version = "+",
-        artifact = "com.google.firebase.testlab:testlab-gradle-plugin",
-        hasMarker = false,
-        extensionName = "firebaseTestLab",
-        extensionType = TestLabGradlePluginExtension::class.java
-    )
-
-    class RegisterFakeHttpHandlerCallback : GenericCallback {
-
-        override fun handleProject(project: Project) {
-            project.afterEvaluate {
-                // Remove FTL service before injecting our modded version
-                project.gradle.sharedServices.registrations.apply {
-                    remove(
-                        getByName(
-                            TestLabBuildService.RegistrationAction.getBuildServiceName(
-                                TestLabBuildService::class.java, project
-                            )
-                        )
-                    )
-                }
-
-                // Inject FTL build service with FakeHttpHandler so that it does not send server calls to the real FTL server
-                project.gradle.sharedServices.registerIfAbsent(
-                    TestLabBuildService.RegistrationAction.getBuildServiceName(
-                        TestLabBuildService::class.java, project
-                    ), TestLabBuildService::class.java
-                ) {
-                    TestLabBuildService.RegistrationAction(project)
-                        .configure(it.parameters, FakeHttpHandler())
-                    it.parameters.offlineMode.set(false)
-                }
-            }
-        }
-    }
-
-    // Contains required information for a mocked HTTP response
-    data class HttpResponseData(
-        // Contains the gzipped content of the response
-        val inputStream: InputStream = object : InputStream() {
-            override fun read(): Int = 0
-        },
-        val statusCode: Int = HttpStatusCodes.STATUS_CODE_NOT_FOUND,
-        val headerCount: Int = 0,
-        val reasonPhrase: String = "",
-        val contentEncodingString: String = "gzip",
-    )
-
-    // Holds global variables and utility functions since defining top level variables
-    // in the build file will cause serialization errors when passing TestHttpHandler to parameter.
-    class TestUtils {
 
         companion object {
 
-            val testLogger = LoggerWrapper.getLogger(FakeHttpHandler::class.java)
-            private val gson = GsonBuilder().setPrettyPrinting().create()
-
-            // Convert class to JSON and write to InputStream in gzip format.
-            private fun writeObjectToGzip(value: Any): InputStream {
-                val pipedInput = PipedInputStream()
-                val pipedOutput = PipedOutputStream(pipedInput)
-                val gzipOutputStream = GZIPOutputStream(pipedOutput)
-
-                // Convert class to JSON and write to the GZIPOutputStream object.
-                gzipOutputStream.write(gson.toJson(value).toByteArray())
-                gzipOutputStream.close()
-
-                return ByteArrayInputStream(pipedInput.readBytes())
-            }
-
-            private val testAndroidDeviceCatalog: AndroidDeviceCatalog =
-                AndroidDeviceCatalog().setModels(
-                    listOf(
-                        AndroidModel().setId("testFtlDeviceId1").setBrand("Google")
-                            .setFormFactor("phone").setSupportedVersionIds(
-                                listOf("33", "32")
-                            ).setSupportedAbis(listOf("x86_32", "arm64")),
-                        AndroidModel().setId("testFtlDeviceId2").setBrand("Google")
-                            .setFormFactor("tablet").setSupportedVersionIds(
-                                listOf("31", "30")
-                            ).setSupportedAbis(listOf("x86_64", "x86s")),
-                    )
-                ).setVersions(
-                    listOf(
-                        AndroidVersion().setId("33ID").setApiLevel(33),
-                        AndroidVersion().setId("30ID").setApiLevel(30),
-                    )
-                ).setRuntimeConfiguration(
-                    AndroidRuntimeConfiguration().setOrientations(
-                        listOf(
-                            Orientation().setId("vertical").setName("vertical"),
-                            Orientation().setId("horizontal").setName("horizontal")
-                        )
-                    ).setLocales(
-                        listOf(
-                            Locale().setId("English").setName("EnglishName"),
-                            Locale().setId("Chinese").setName("ChineseName")
-                        )
-                    )
-                )
-
-            val testAndroidDeviceCatalogData = HttpResponseData(
-                inputStream = writeObjectToGzip(
-                    TestEnvironmentCatalog().setAndroidDeviceCatalog(
-                        testAndroidDeviceCatalog
-                    )
-                ), statusCode = HttpStatusCodes.STATUS_CODE_OK
-            )
-
-            private const val defaultBucketName = "defaultBucketName"
-
-            private const val testProjectId = "test_quota_project_id"
-
-            val testInitializeSettingsData = HttpResponseData(
-                inputStream = writeObjectToGzip(
-                    ProjectSettings().setName(testProjectId).setDefaultBucket(defaultBucketName)
-                ), statusCode = HttpStatusCodes.STATUS_CODE_OK
-            )
-
-            val getOrCreateHistoryData = HttpResponseData(
-                inputStream = writeObjectToGzip(
-                    ListHistoriesResponse().setHistories(
-                        listOf(
-                            History().setHistoryId("testHistoryId1").setName("testHistoryName1"),
-                            History().setHistoryId("testHistoryId2").setName("testHistoryName2")
-                        )
-                    )
-                ), statusCode = HttpStatusCodes.STATUS_CODE_OK
-            )
-
-            private val sharedStorageObject =
-                StorageObject().setName("testStorageObject").setBucket(defaultBucketName)
-
-            val retrieveSharedFileAndroidDebugData = HttpResponseData(
-                inputStream = writeObjectToGzip(sharedStorageObject),
-                statusCode = HttpStatusCodes.STATUS_CODE_OK
-            )
-
-            val retrieveSharedFileAppData = HttpResponseData(
-                inputStream = writeObjectToGzip(sharedStorageObject),
-                statusCode = HttpStatusCodes.STATUS_CODE_OK
-            )
-
-            val testMatrixData = HttpResponseData(
-                inputStream = writeObjectToGzip(
-                    TestMatrix().setTestMatrixId("testMatrixId").setProjectId(testProjectId)
-                ), statusCode = HttpStatusCodes.STATUS_CODE_OK
-            )
-
-            private val testMatrixGenerator: (String) -> TestMatrix = { state ->
-                TestMatrix().setTestMatrixId("testMatrixId")
-                    .setProjectId(testProjectId)
-                    .setState(state)
-                    .setTestExecutions(
-                        listOf(
-                            TestExecution().setTestDetails(
-                                TestDetails().setProgressMessages(
-                                    listOf(
-                                        "Starting Android test.",
-                                        "test message 1",
-                                        "test message 2"
-                                    )
-                                )
-                            ).setToolResultsStep(
-                                ToolResultsStep().setProjectId(testProjectId)
-                                    .setStepId("testStepId")
-                                    .setHistoryId("testHistoryId")
-                                    .setExecutionId("testExecutionId")
-                            )
-                        )
-                    )
-                    .setResultStorage(
-                        ResultStorage().set(
-                            "resultsUrl",
-                            "fake results URL for result storage/details"
-                        )
-                    )
-            }
-
-            val runningTestResultData = HttpResponseData(
-                inputStream = writeObjectToGzip(
-                    testMatrixGenerator("RUNNING")
-                ), statusCode = HttpStatusCodes.STATUS_CODE_OK
-            )
-
-            val pendingTestResultData = HttpResponseData(
-                inputStream = writeObjectToGzip(
-                    testMatrixGenerator("PENDING")
-                ), statusCode = HttpStatusCodes.STATUS_CODE_OK
-            )
-
-            val validatingTestResultData = HttpResponseData(
-                inputStream = writeObjectToGzip(
-                    testMatrixGenerator("VALIDATING")
-                ), statusCode = HttpStatusCodes.STATUS_CODE_OK
-            )
-
-            val finishedTestResultData = HttpResponseData(
-                inputStream = writeObjectToGzip(
-                    testMatrixGenerator("FINISHED")
-                ), statusCode = HttpStatusCodes.STATUS_CODE_OK
-            )
-
-            val testExecutionStepData = HttpResponseData(
-                inputStream = writeObjectToGzip(Step().setTestExecutionStep(TestExecutionStep().apply {
-                    this.testSuiteOverviews =
-                        listOf(TestSuiteOverview().setXmlSource(FileReference().setFileUri("testSuiteOverViewXmlFileUri")))
-                }).setOutcome(Outcome().setSummary("success")).setName("testStepName")),
-                statusCode = HttpStatusCodes.STATUS_CODE_OK
-            )
-
-            val stepThumbnailsResponseData = HttpResponseData(
-                inputStream = writeObjectToGzip(
-                    ListStepThumbnailsResponse().setThumbnails(
-                        listOf(
-                            Image().setSourceImage(
-                                ToolOutputReference().setOutput(FileReference().setFileUri("testThumbnailsImageFileUri"))
-                            )
-                        )
-                    )
-                ), statusCode = HttpStatusCodes.STATUS_CODE_OK
-            )
-
-            val requestTestCasesData = HttpResponseData(
-                inputStream = writeObjectToGzip(ToolResultsManager.TestCases().apply {
-                    this.testCases = listOf(ToolResultsManager.TestCase().apply {
-                        this.testCaseId = "testCaseId"
-                        this.status = "passed"
-                        this.testCaseReference = ToolResultsManager.TestCaseReference().apply {
-                            this.className = "testClassName"
-                            this.name = "testCaseReferenceName"
-                        }
-                        this.toolOutputs =
-                            listOf(ToolOutputReference().setOutput(FileReference().setFileUri("logcat")))
-                    })
-                }), statusCode = HttpStatusCodes.STATUS_CODE_OK
-            )
-
-            // Contains all HTTP request and response pair
-            enum class RequestResponseResource(private val responseElement: RequestResponseElement) {
-
-                TEST_CATALOG(
-                    RequestResponseElement(
-                        Regex("^GET https://testing\\.googleapis\\.com/v1/testEnvironmentCatalog/ANDROID\\?projectId=test_quota_project_id$"),
-                        listOf(testAndroidDeviceCatalogData)
-                    )
-                ),
-                INITIALIZE_SETTINGS(
-                    RequestResponseElement(
-                        Regex("^POST https://www\\.googleapis\\.com/toolresults/v1beta3/projects/test_quota_project_id:initializeSettings$"),
-                        listOf(testInitializeSettingsData)
-                    )
-                ),
-                GET_HISTORY_LIST(
-                    RequestResponseElement(
-                        Regex("^GET https://www\\.googleapis\\.com/toolresults/v1beta3/projects/test_quota_project_id/histories\\?filterByName=pkg\\.name\\.app$"),
-                        listOf(getOrCreateHistoryData)
-                    )
-                ),
-                RETRIEVE_HISTORY_ANDROID_DEBUG(
-                    RequestResponseElement(
-                        Regex("^GET https://www\\.googleapis\\.com/storage/v1/b/defaultBucketName/o/:app.*debug-androidTest\\.apk$"),
-                        listOf(retrieveSharedFileAndroidDebugData)
-                    )
-                ),
-                RETRIEVE_HISTORY_APP(
-                    RequestResponseElement(
-                        Regex("^GET https://www\\.googleapis\\.com/storage/v1/b/defaultBucketName/o/:app.*debug\\.apk$"),
-                        listOf(retrieveSharedFileAppData)
-                    )
-                ),
-                CREATE_TEST_MATRIX(
-                    RequestResponseElement(
-                        Regex("^POST https://testing\\.googleapis\\.com/v1/projects/test_quota_project_id/testMatrices\\?requestId=.*"),
-                        listOf(testMatrixData)
-                    )
-                ),
-                WAIT_FOR_TEST_RESULTS(
-                    RequestResponseElement(
-                        Regex("^GET https://testing\\.googleapis\\.com/v1/projects/test_quota_project_id/testMatrices/testMatrixId$"),
-                        listOf(
-                            pendingTestResultData,
-                            runningTestResultData,
-                            validatingTestResultData,
-                            finishedTestResultData,
-                        )
-                    )
-                ),
-                REQUEST_TEST_RESULT(
-                    RequestResponseElement(
-                        Regex("^GET https://www\\.googleapis\\.com/toolresults/v1beta3/projects/test_quota_project_id/histories/testHistoryId/executions/testExecutionId/steps/testStepId$"),
-                        listOf(testExecutionStepData)
-                    )
-                ),
-                REQUEST_THUMBNAILS(
-                    RequestResponseElement(
-                        Regex("^GET https://www\\.googleapis\\.com/toolresults/v1beta3/projects/test_quota_project_id/histories/testHistoryId/executions/testExecutionId/steps/testStepId/thumbnails$"),
-                        listOf(stepThumbnailsResponseData)
-                    )
-                ),
-                REQUEST_TEST_CASES(
-                    RequestResponseElement(
-                        Regex("^GET https://toolResults\\.googleapis\\.com/toolresults/v1beta3/projects/test_quota_project_id/histories/testHistoryId/executions/testExecutionId/steps/testStepId/testCases$"),
-                        listOf(requestTestCasesData)
-                    )
-                );
-
-                /** Holds server call request url regex and corresponding responses.
-                 *
-                 * @param urlRegex starts with server call method, followed by a space and ends with the
-                 * request URL address. This is a regex since we want to be able to match runtime
-                 * generated URLs
-                 * @param responseList contains all responses associated with urlRegex. Responses are
-                 * returned in FIFO queue order, i.e. items with smaller indexes are returned first.
-                 * This way we can control what to return when there's duplicated calls and check for
-                 * undesired server calls.
-                 */
-                private class RequestResponseElement(
-                    val urlRegex: Regex, responseList: List<HttpResponseData>
-                ) {
-
-                    private val responseCount = responseList.size
-                    private val responseQueue: Queue<HttpResponseData> = LinkedList(responseList)
-                    fun getData(): HttpResponseData {
-                        testLogger.warning("$urlRegex is hit")
-                        return try {
-                            responseQueue.remove()
-                        } catch (e: NoSuchElementException) {
-                            throw RuntimeException("Unexpected call to ${urlRegex}. Already called it $responseCount times.")
-                        }
-                    }
+          fun getData(methodUrlString: String): HttpResponseData {
+            return entries
+              .filter { it.responseElement.urlRegex.matches(methodUrlString) }
+              .let { allMatches ->
+                if (allMatches.size != 1) {
+                  throw RuntimeException("No response found for $methodUrlString")
                 }
-
-                companion object {
-
-                    fun getData(methodUrlString: String): HttpResponseData {
-                        return entries
-                            .filter { it.responseElement.urlRegex.matches(methodUrlString) }
-                            .let { allMatches ->
-                                if (allMatches.size != 1) {
-                                    throw RuntimeException("No response found for $methodUrlString")
-                                }
-                                allMatches.first().responseElement.getData()
-                            }
-                    }
-                }
-            }
+                allMatches.first().responseElement.getData()
+              }
+          }
         }
+      }
+    }
+  }
+
+  class FakeLowLevelHttpResponse(
+    methodUrlString: String,
+    private val myHttpResponseData: HttpResponseData = RequestResponseResource.getData(methodUrlString),
+  ) : LowLevelHttpResponse() {
+
+    override fun getContent(): InputStream = myHttpResponseData.inputStream
+
+    override fun getContentEncoding(): String = myHttpResponseData.contentEncodingString
+
+    override fun getContentLength(): Long = 0
+
+    override fun getContentType(): String? = null
+
+    override fun getStatusLine(): String {
+      throw RuntimeException("Not yet implemented")
     }
 
-    class FakeLowLevelHttpResponse(
-        methodUrlString: String,
-        private val myHttpResponseData: HttpResponseData = RequestResponseResource.getData(
-            methodUrlString
+    override fun getStatusCode(): Int = myHttpResponseData.statusCode
+
+    override fun getReasonPhrase(): String = myHttpResponseData.reasonPhrase
+
+    override fun getHeaderCount(): Int = myHttpResponseData.headerCount
+
+    override fun getHeaderName(p0: Int): String {
+      throw RuntimeException("Not yet implemented")
+    }
+
+    override fun getHeaderValue(p0: Int): String {
+      throw RuntimeException("Not yet implemented")
+    }
+  }
+
+  class FakeLowLevelHttpRequest(private val methodUrlString: String) : LowLevelHttpRequest() {
+
+    override fun addHeader(p0: String?, p1: String?) = Unit
+
+    override fun execute(): LowLevelHttpResponse {
+      return FakeLowLevelHttpResponse(methodUrlString)
+    }
+  }
+
+  class FakeHttpHandler : TestLabBuildService.HttpHandler() {
+
+    override fun createCredential(credentialFile: File): GoogleCredential =
+      object : GoogleCredential() {
+        override fun initialize(request: HttpRequest?) {
+          TestUtils.testLogger.warning("Fake credential initialized")
+        }
+      }
+
+    override fun createHttpTransport(): HttpTransport =
+      object : HttpTransport() {
+        override fun buildRequest(method: String?, url: String?): LowLevelHttpRequest {
+          return FakeLowLevelHttpRequest("$method $url")
+        }
+      }
+  }
+
+  @Test
+  fun runDebugAndroidTestSuccess() {
+    val result = executor.run(":app:myFtlDevice1DebugAndroidTest")
+    result.stdout.use {
+      // Check if we actually initiated FTL plugin
+      assertThat(it).contains("> Task :app:myFtlDevice1DebugAndroidTest")
+      // Plugin invokes credential check
+      assertThat(it).contains("Fake credential initialized")
+      assertThat(it)
+        .contains("^POST https://www\\.googleapis\\.com/toolresults/v1beta3/projects/test_quota_project_id:initializeSettings\$ is hit")
+      // Verifies that test request is sent to FTL server
+      //            assertThat(it).contains("Firebase Testlab Test for myFtlDevice1: Starting Android test.")
+      assertThat(it)
+        .contains(
+          "Test request for device myFtlDevice1 has been submitted to Firebase TestLab: fake results URL for result storage/details"
         )
-    ) : LowLevelHttpResponse() {
-
-        override fun getContent(): InputStream = myHttpResponseData.inputStream
-
-        override fun getContentEncoding(): String = myHttpResponseData.contentEncodingString
-
-        override fun getContentLength(): Long = 0
-
-        override fun getContentType(): String? = null
-
-        override fun getStatusLine(): String {
-            throw RuntimeException("Not yet implemented")
-        }
-
-        override fun getStatusCode(): Int = myHttpResponseData.statusCode
-
-        override fun getReasonPhrase(): String = myHttpResponseData.reasonPhrase
-
-        override fun getHeaderCount(): Int = myHttpResponseData.headerCount
-
-        override fun getHeaderName(p0: Int): String {
-            throw RuntimeException("Not yet implemented")
-        }
-
-        override fun getHeaderValue(p0: Int): String {
-            throw RuntimeException("Not yet implemented")
-        }
+      // TODO(b/293338525) enable additional check once this bug is resolved
+      //            assertThat(it).contains("Test execution: RUNNING")
+      assertThat(it).contains("Firebase Testlab Test for myFtlDevice1: state FINISHED")
+      // Verifies that we are obtaining test results
+      assertThat(it)
+        .contains(
+          "^GET https://www\\.googleapis\\.com/toolresults/v1beta3/projects/test_quota_project_id/histories/testHistoryId/executions/testExecutionId/steps/testStepId\$ is hit"
+        )
+      assertThat(it)
+        .contains(
+          "^GET https://www\\.googleapis\\.com/toolresults/v1beta3/projects/test_quota_project_id/histories/testHistoryId/executions/testExecutionId/steps/testStepId/thumbnails\$ is hit"
+        )
+      assertThat(it)
+        .contains(
+          "^GET https://toolResults\\.googleapis\\.com/toolresults/v1beta3/projects/test_quota_project_id/histories/testHistoryId/executions/testExecutionId/steps/testStepId/testCases\$ is hit"
+        )
+      assertThat(it).contains("BUILD SUCCESSFUL in")
     }
+  }
 
-    class FakeLowLevelHttpRequest(private val methodUrlString: String) : LowLevelHttpRequest() {
-
-        override fun addHeader(p0: String?, p1: String?) = Unit
-
-        override fun execute(): LowLevelHttpResponse {
-            return FakeLowLevelHttpResponse(methodUrlString)
-        }
+  @Test
+  fun runDebugAndroidTestFail_deviceIdNotFoundInAndroidCatalog() {
+    val result = executor.expectFailure().run(":app:myFtlDevice2DebugAndroidTest")
+    result.stderr.use {
+      // Check if we actually initiated FTL plugin
+      assertThat(it)
+        .contains(
+          "> A failure occurred while executing com.android.build.gradle.internal.tasks.ManagedDeviceSetupTask\$SetupTaskWorkAction"
+        )
+      // Check if FTL plugin recognize that invalidDeviceId is not in AndroidDeviceCatalog
+      assertThat(it).contains("> Device: invalidDeviceId is not a valid input. Available devices for API level 30 are:")
+      assertThat(it).contains("[testFtlDeviceId2 (null)]")
     }
-
-    class FakeHttpHandler : TestLabBuildService.HttpHandler() {
-
-        override fun createCredential(credentialFile: File): GoogleCredential =
-            object : GoogleCredential() {
-                override fun initialize(request: HttpRequest?) {
-                    TestUtils.testLogger.warning("Fake credential initialized")
-                }
-            }
-
-        override fun createHttpTransport(): HttpTransport = object : HttpTransport() {
-            override fun buildRequest(method: String?, url: String?): LowLevelHttpRequest {
-                return FakeLowLevelHttpRequest("$method $url")
-            }
-        }
-    }
-
-    @Test
-    fun runDebugAndroidTestSuccess() {
-        val result = executor.run(":app:myFtlDevice1DebugAndroidTest")
-        result.stdout.use {
-            // Check if we actually initiated FTL plugin
-            assertThat(it).contains("> Task :app:myFtlDevice1DebugAndroidTest")
-            // Plugin invokes credential check
-            assertThat(it).contains("Fake credential initialized")
-            assertThat(it).contains("^POST https://www\\.googleapis\\.com/toolresults/v1beta3/projects/test_quota_project_id:initializeSettings\$ is hit")
-            // Verifies that test request is sent to FTL server
-//            assertThat(it).contains("Firebase Testlab Test for myFtlDevice1: Starting Android test.")
-            assertThat(it).contains("Test request for device myFtlDevice1 has been submitted to Firebase TestLab: fake results URL for result storage/details")
-            // TODO(b/293338525) enable additional check once this bug is resolved
-//            assertThat(it).contains("Test execution: RUNNING")
-            assertThat(it).contains("Firebase Testlab Test for myFtlDevice1: state FINISHED")
-            // Verifies that we are obtaining test results
-            assertThat(it).contains("^GET https://www\\.googleapis\\.com/toolresults/v1beta3/projects/test_quota_project_id/histories/testHistoryId/executions/testExecutionId/steps/testStepId\$ is hit")
-            assertThat(it).contains("^GET https://www\\.googleapis\\.com/toolresults/v1beta3/projects/test_quota_project_id/histories/testHistoryId/executions/testExecutionId/steps/testStepId/thumbnails\$ is hit")
-            assertThat(it).contains("^GET https://toolResults\\.googleapis\\.com/toolresults/v1beta3/projects/test_quota_project_id/histories/testHistoryId/executions/testExecutionId/steps/testStepId/testCases\$ is hit")
-            assertThat(it).contains("BUILD SUCCESSFUL in")
-        }
-    }
-
-    @Test
-    fun runDebugAndroidTestFail_deviceIdNotFoundInAndroidCatalog() {
-        val result = executor.expectFailure().run(":app:myFtlDevice2DebugAndroidTest")
-        result.stderr.use {
-            // Check if we actually initiated FTL plugin
-            assertThat(it).contains("> A failure occurred while executing com.android.build.gradle.internal.tasks.ManagedDeviceSetupTask\$SetupTaskWorkAction")
-            // Check if FTL plugin recognize that invalidDeviceId is not in AndroidDeviceCatalog
-            assertThat(it).contains("> Device: invalidDeviceId is not a valid input. Available devices for API level 30 are:")
-            assertThat(it).contains("[testFtlDeviceId2 (null)]")
-        }
-    }
+  }
 }

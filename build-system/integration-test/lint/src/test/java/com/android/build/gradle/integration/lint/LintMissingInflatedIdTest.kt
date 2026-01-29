@@ -27,12 +27,12 @@ import org.junit.Test
 
 class LintMissingInflatedIdTest {
 
-    private val app =
-        MinimalSubProject.app("com.example.app")
-            .withFile(
-                "src/main/res/layout/app_main.xml",
-                // language=XML
-                """<?xml version="1.0" encoding="utf-8"?>
+  private val app =
+    MinimalSubProject.app("com.example.app")
+      .withFile(
+        "src/main/res/layout/app_main.xml",
+        // language=XML
+        """<?xml version="1.0" encoding="utf-8"?>
                 <LinearLayout
                         xmlns:android="http://schemas.android.com/apk/res/android"
                         android:orientation="vertical"
@@ -43,11 +43,12 @@ class LintMissingInflatedIdTest {
                             android:layout_height="wrap_content"
                             android:text="foo"
                             android:id="@+id/text" />
-                </LinearLayout>""")
-            .withFile(
-                "src/main/java/com/example/app/MainActivity.java",
-                // language=java
-                """package com.example.app;
+                </LinearLayout>""",
+      )
+      .withFile(
+        "src/main/java/com/example/app/MainActivity.java",
+        // language=java
+        """package com.example.app;
 
                 import android.app.Activity;
                 import android.os.Bundle;
@@ -61,25 +62,27 @@ class LintMissingInflatedIdTest {
                         setContentView(R.layout.app_main);
                         TextView tv = (TextView) findViewById(R.id.text);
                     }
-                }""")
-            .appendToBuild(
-                // language=groovy
-                """
-                    android {
-                        lint {
-                            error "LintWarning"
-                            enable "MissingInflatedId"
-                        }
-                    }
-                """.trimIndent()
-            )
+                }""",
+      )
+      .appendToBuild(
+        // language=groovy
+        """
+        android {
+            lint {
+                error "LintWarning"
+                enable "MissingInflatedId"
+            }
+        }
+        """
+          .trimIndent()
+      )
 
-    private val lib =
-        MinimalSubProject.lib("com.example.lib")
-            .withFile(
-                "src/main/res/layout/lib_main.xml",
-                // language=XML
-                """<?xml version="1.0" encoding="utf-8"?>
+  private val lib =
+    MinimalSubProject.lib("com.example.lib")
+      .withFile(
+        "src/main/res/layout/lib_main.xml",
+        // language=XML
+        """<?xml version="1.0" encoding="utf-8"?>
                 <LinearLayout
                         xmlns:android="http://schemas.android.com/apk/res/android"
                         android:orientation="vertical"
@@ -90,48 +93,40 @@ class LintMissingInflatedIdTest {
                             android:layout_height="wrap_content"
                             android:text="bar"
                             android:id="@+id/text" />
-                </LinearLayout>""")
+                </LinearLayout>""",
+      )
 
-    @get:Rule
-    val project: GradleTestProject =
-        GradleTestProject.builder()
-            .fromTestApp(
-                MultiModuleTestProject.builder()
-                    .subproject(":app", app)
-                    .subproject(":lib", lib)
-                    .dependency(app, lib)
-                    .build()
-            )
-            .create()
+  @get:Rule
+  val project: GradleTestProject =
+    GradleTestProject.builder()
+      .fromTestApp(MultiModuleTestProject.builder().subproject(":app", app).subproject(":lib", lib).dependency(app, lib).build())
+      .create()
 
-    /**
-     * Regression test for b/299602350.
-     *
-     * Test the case of the MissingInflatedIdDetector running on an app with a library module
-     * dependency. Previously, this would cause a LintWarning because the library module would write
-     * a resources.xml file, and then the app would try but fail to deserialize the library module's
-     * resources.xml file.
-     */
-    @Test
-    fun testNoLintWarningFromMissingInflatedIdDetector() {
-        // First check that running lint analysis on lib causes the lint-resources.xml file to be
-        // written
-        project.executor().run(":lib:lintAnalyzeDebug")
-        val libLintResourcesXml =
-            FileUtils.join(
-                project.getSubproject(":lib")
-                    .getIntermediateFile(LINT_PARTIAL_RESULTS.getFolderName()),
-                "debug",
-                "lintAnalyzeDebug",
-                "out",
-                "lint-resources.xml"
-            )
-        PathSubject.assertThat(libLintResourcesXml).exists()
-        // Check for the expected lib-specific path variable
-        PathSubject.assertThat(libLintResourcesXml)
-            .contains(":lib*debug*MAIN*sourceProvider*0*resDir*0")
-        // Check that :app:lintDebug runs successfully even though there's a lib-specific path
-        // variable in lib's lint-resources.xml
-        project.executor().run(":app:lintDebug")
-    }
+  /**
+   * Regression test for b/299602350.
+   *
+   * Test the case of the MissingInflatedIdDetector running on an app with a library module dependency. Previously, this would cause a
+   * LintWarning because the library module would write a resources.xml file, and then the app would try but fail to deserialize the library
+   * module's resources.xml file.
+   */
+  @Test
+  fun testNoLintWarningFromMissingInflatedIdDetector() {
+    // First check that running lint analysis on lib causes the lint-resources.xml file to be
+    // written
+    project.executor().run(":lib:lintAnalyzeDebug")
+    val libLintResourcesXml =
+      FileUtils.join(
+        project.getSubproject(":lib").getIntermediateFile(LINT_PARTIAL_RESULTS.getFolderName()),
+        "debug",
+        "lintAnalyzeDebug",
+        "out",
+        "lint-resources.xml",
+      )
+    PathSubject.assertThat(libLintResourcesXml).exists()
+    // Check for the expected lib-specific path variable
+    PathSubject.assertThat(libLintResourcesXml).contains(":lib*debug*MAIN*sourceProvider*0*resDir*0")
+    // Check that :app:lintDebug runs successfully even though there's a lib-specific path
+    // variable in lib's lint-resources.xml
+    project.executor().run(":app:lintDebug")
+  }
 }

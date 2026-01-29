@@ -24,6 +24,8 @@ import com.android.builder.testing.api.DeviceConnector
 import com.android.mockito.kotlin.whenever
 import com.android.tools.utp.gradle.api.RunUtpWorkParameters
 import com.google.common.truth.Truth.assertThat
+import java.io.File
+import kotlin.reflect.jvm.javaMethod
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.Provider
 import org.gradle.workers.WorkerExecutor
@@ -38,122 +40,110 @@ import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
-import java.io.File
-import kotlin.reflect.jvm.javaMethod
 
-/**
- * Unit tests for [UtpTestRunner].
- */
+/** Unit tests for [UtpTestRunner]. */
 class UtpTestRunnerTest {
-    @get:Rule val temporaryFolderRule = TemporaryFolder()
+  @get:Rule val temporaryFolderRule = TemporaryFolder()
 
-    private val mockWorkerExecutor: WorkerExecutor = mock(defaultAnswer = RETURNS_DEEP_STUBS)
-    private val mockObjectFactory: ObjectFactory = mock()
-    private val mockVersionedSdkLoader: SdkComponentsBuildService.VersionedSdkLoader = mock()
-    private val mockAdbHelper: AdbHelper = mock()
-    private val mockTestData: StaticTestData = mock()
-    private val mockAppApk: File = mock()
-    private val mockDevice: DeviceConnector = mock()
+  private val mockWorkerExecutor: WorkerExecutor = mock(defaultAnswer = RETURNS_DEEP_STUBS)
+  private val mockObjectFactory: ObjectFactory = mock()
+  private val mockVersionedSdkLoader: SdkComponentsBuildService.VersionedSdkLoader = mock()
+  private val mockAdbHelper: AdbHelper = mock()
+  private val mockTestData: StaticTestData = mock()
+  private val mockAppApk: File = mock()
+  private val mockDevice: DeviceConnector = mock()
 
-    private lateinit var resultsDirectory: File
-    private lateinit var jvmExecutable: File
+  private lateinit var resultsDirectory: File
+  private lateinit var jvmExecutable: File
 
-    private val runnerConfigsCaptor = argumentCaptor<List<RunUtpWorkParameters.UtpRunConfig>>()
+  private val runnerConfigsCaptor = argumentCaptor<List<RunUtpWorkParameters.UtpRunConfig>>()
 
-    @Before
-    fun setupMocks() {
-        jvmExecutable = temporaryFolderRule.newFile()
+  @Before
+  fun setupMocks() {
+    jvmExecutable = temporaryFolderRule.newFile()
 
-        whenever(mockObjectFactory.newInstance(
-            eq(RunUtpWorkParameters.UtpRunConfig::class.java))
-        ).thenReturn(mock(defaultAnswer = RETURNS_DEEP_STUBS))
+    whenever(mockObjectFactory.newInstance(eq(RunUtpWorkParameters.UtpRunConfig::class.java)))
+      .thenReturn(mock(defaultAnswer = RETURNS_DEEP_STUBS))
 
-        whenever(mockDevice.name).thenReturn("mockDeviceName")
-        whenever(mockDevice.serialNumber).thenReturn("mockDeviceSerialNumber")
-        whenever(mockDevice.apiLevel).thenReturn(28)
-        whenever(mockTestData.minSdkVersion).thenReturn(AndroidVersionImpl(28))
-        whenever(mockTestData.testedApkFinder).thenReturn { listOf(mockAppApk) }
+    whenever(mockDevice.name).thenReturn("mockDeviceName")
+    whenever(mockDevice.serialNumber).thenReturn("mockDeviceSerialNumber")
+    whenever(mockDevice.apiLevel).thenReturn(28)
+    whenever(mockTestData.minSdkVersion).thenReturn(AndroidVersionImpl(28))
+    whenever(mockTestData.testedApkFinder).thenReturn { listOf(mockAppApk) }
 
-        val adbHelperProvider: Provider<AdbHelper> = mock()
-        whenever(adbHelperProvider.get()).thenReturn(mockAdbHelper)
-        whenever(mockVersionedSdkLoader.adbHelper).thenReturn(adbHelperProvider)
+    val adbHelperProvider: Provider<AdbHelper> = mock()
+    whenever(adbHelperProvider.get()).thenReturn(mockAdbHelper)
+    whenever(mockVersionedSdkLoader.adbHelper).thenReturn(adbHelperProvider)
+  }
+
+  private fun runUtp(result: Boolean): Boolean {
+    val runner =
+      UtpTestRunner(
+        mock(),
+        mockWorkerExecutor,
+        mockObjectFactory,
+        mock(),
+        mock(),
+        mockVersionedSdkLoader,
+        mock(),
+        useOrchestrator = false,
+        forceCompilation = false,
+        uninstallIncompatibleApks = false,
+        null,
+        false,
+        false,
+      )
+
+    resultsDirectory = temporaryFolderRule.newFolder("results")
+
+    mockStatic(::runUtpTestSuiteAndWait.javaMethod!!.declaringClass).use { mockedStatic ->
+      mockedStatic
+        .whenever<Boolean> { runUtpTestSuiteAndWait(runnerConfigsCaptor.capture(), any(), any(), any(), any(), any(), any()) }
+        .thenReturn(result)
+
+      return runner.runTests(
+        "projectName",
+        "variantName",
+        mockTestData,
+        setOf(mock()),
+        listOf(mockDevice),
+        0,
+        setOf(),
+        resultsDirectory,
+        false,
+        null,
+        temporaryFolderRule.newFolder("coverageDir"),
+        mock(),
+      )
     }
+  }
 
-    private fun runUtp(result: Boolean): Boolean {
-        val runner = UtpTestRunner(
-            mock(),
-            mockWorkerExecutor,
-            mockObjectFactory,
-            mock(),
-            mock(),
-            mockVersionedSdkLoader,
-            mock(),
-            useOrchestrator = false,
-            forceCompilation = false,
-            uninstallIncompatibleApks = false,
-            null,
-            false,
-            false,
-        )
+  @Test
+  fun runUtpAndPassed() {
+    val result = runUtp(result = true)
 
-        resultsDirectory = temporaryFolderRule.newFolder("results")
+    assertThat(runnerConfigsCaptor.firstValue).hasSize(1)
+    assertThat(result).isTrue()
+  }
 
-        mockStatic(::runUtpTestSuiteAndWait.javaMethod!!.declaringClass).use { mockedStatic ->
-            mockedStatic.whenever<Boolean> {
-                runUtpTestSuiteAndWait(
-                    runnerConfigsCaptor.capture(),
-                    any(),
-                    any(),
-                    any(),
-                    any(),
-                    any(),
-                    any(),
-                )
-            }.thenReturn(result)
+  @Test
+  fun runUtpAndFailed() {
+    val result = runUtp(result = false)
 
-            return runner.runTests(
-                "projectName",
-                "variantName",
-                mockTestData,
-                setOf(mock()),
-                listOf(mockDevice),
-                0,
-                setOf(),
-                resultsDirectory,
-                false,
-                null,
-                temporaryFolderRule.newFolder("coverageDir"),
-                mock(),
-            )
-        }
-    }
+    assertThat(runnerConfigsCaptor.firstValue).hasSize(1)
+    assertThat(result).isFalse()
+  }
 
-    @Test
-    fun runUtpAndPassed() {
-        val result = runUtp(result = true)
+  @Test
+  fun runTestsFiltersManagedDevices() {
+    // Ensure all devices are determined to be managed devices.
+    whenever(mockAdbHelper.isManagedDevice(any(), any())).thenReturn(true)
 
-        assertThat(runnerConfigsCaptor.firstValue).hasSize(1)
-        assertThat(result).isTrue()
-    }
+    val result = runUtp(result = true)
 
-    @Test
-    fun runUtpAndFailed() {
-        val result = runUtp(result = false)
-
-        assertThat(runnerConfigsCaptor.firstValue).hasSize(1)
-        assertThat(result).isFalse()
-    }
-
-    @Test
-    fun runTestsFiltersManagedDevices() {
-        // Ensure all devices are determined to be managed devices.
-        whenever(mockAdbHelper.isManagedDevice(any(), any())).thenReturn(true)
-
-        val result = runUtp(result = true)
-
-        // Since the only available devices will only be managed devices, we expect no tests to
-        // be run.
-        assertThat(runnerConfigsCaptor.firstValue).hasSize(0)
-        assertThat(result).isTrue()
-    }
+    // Since the only available devices will only be managed devices, we expect no tests to
+    // be run.
+    assertThat(runnerConfigsCaptor.firstValue).hasSize(0)
+    assertThat(result).isTrue()
+  }
 }

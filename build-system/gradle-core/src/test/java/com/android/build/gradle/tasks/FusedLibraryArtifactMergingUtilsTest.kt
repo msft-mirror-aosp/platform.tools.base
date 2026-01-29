@@ -21,65 +21,45 @@ import org.junit.Test
 
 internal class FusedLibraryArtifactMergingUtilsTest {
 
-    @Test
-    fun testDesugarJdkLibIdMerging_emptyList() {
-        val result = buildDesugaredJdkLibCoordinate(emptyList())
-        assertThat(result).isNull()
-    }
+  @Test
+  fun testDesugarJdkLibIdMerging_emptyList() {
+    val result = buildDesugaredJdkLibCoordinate(emptyList())
+    assertThat(result).isNull()
+  }
 
-    @Test
-    fun testDesugarJdkLibIdMerging_singleElement() {
-        val result = buildDesugaredJdkLibCoordinate(listOf("com.android.tools:desugar_jdk_libs:1.0.0"))
-        assertThat(result).isEqualTo("com.android.tools:desugar_jdk_libs:1.0.0")
-    }
+  @Test
+  fun testDesugarJdkLibIdMerging_singleElement() {
+    val result = buildDesugaredJdkLibCoordinate(listOf("com.android.tools:desugar_jdk_libs:1.0.0"))
+    assertThat(result).isEqualTo("com.android.tools:desugar_jdk_libs:1.0.0")
+  }
 
-    @Test
-    fun testDesugarJdkLibIdMerging_multipleElements() {
-        val result = buildDesugaredJdkLibCoordinate(
-            listOf(
-                "com.android.tools:desugar_jdk_libs:1.0.0",
-                "com.android.tools:desugar_jdk_libs:1.1.0"
-            )
-        )
-        assertThat(result).isEqualTo("com.android.tools:desugar_jdk_libs:1.1.0")
-    }
+  @Test
+  fun testDesugarJdkLibIdMerging_multipleElements() {
+    val result =
+      buildDesugaredJdkLibCoordinate(listOf("com.android.tools:desugar_jdk_libs:1.0.0", "com.android.tools:desugar_jdk_libs:1.1.0"))
+    assertThat(result).isEqualTo("com.android.tools:desugar_jdk_libs:1.1.0")
+  }
 
-    @Test
-    fun testDesugarJdkLibIdMerging_multipleElementsWithDifferentArtifactIds() {
-        val result = buildDesugaredJdkLibCoordinate(
-            listOf(
-                "com.android.tools:desugar_jdk_libs:1.0.0",
-                "com.android.tools:desugar_jdk_libs_nio:1.0.0"
-            )
-        )
-        assertThat(result).isEqualTo("com.android.tools:desugar_jdk_libs_nio:1.0.0")
-    }
+  @Test
+  fun testDesugarJdkLibIdMerging_multipleElementsWithDifferentArtifactIds() {
+    val result =
+      buildDesugaredJdkLibCoordinate(listOf("com.android.tools:desugar_jdk_libs:1.0.0", "com.android.tools:desugar_jdk_libs_nio:1.0.0"))
+    assertThat(result).isEqualTo("com.android.tools:desugar_jdk_libs_nio:1.0.0")
+  }
 
-    @Test
-    fun testDesugarJdkLibIdMerging_multipleElementsWithDifferentArtifactIds_and_selects_highestVersion() {
-        val result = buildDesugaredJdkLibCoordinate(
-            listOf(
-                "com.android.tools:desugar_jdk_libs:1.1.0",
-                "com.android.tools:desugar_jdk_libs_nio:1.0.0"
-            )
-        )
-        assertThat(result).isEqualTo("com.android.tools:desugar_jdk_libs_nio:1.1.0")
-    }
+  @Test
+  fun testDesugarJdkLibIdMerging_multipleElementsWithDifferentArtifactIds_and_selects_highestVersion() {
+    val result =
+      buildDesugaredJdkLibCoordinate(listOf("com.android.tools:desugar_jdk_libs:1.1.0", "com.android.tools:desugar_jdk_libs_nio:1.0.0"))
+    assertThat(result).isEqualTo("com.android.tools:desugar_jdk_libs_nio:1.1.0")
+  }
 
-    @Test
-    fun testDesugarLibIdMerging_invalidCoordinate_noVersion() {
-        var result = buildDesugaredJdkLibCoordinate(
-            listOf(
-                "com.android.tools:desugar_jdk_libs",
-                "com.android.tools:desugar_jdk_libs_nio:1.0.0"
-            )
-        )
-        assertThat(result).isEqualTo("com.android.tools:desugar_jdk_libs_nio:1.0.0")
-        result = buildDesugaredJdkLibCoordinate(
-            listOf(
-                "com.android.tools:desugar_jdk_libs",
-            )
-        )
-        assertThat(result).isEqualTo(null)
-    }
+  @Test
+  fun testDesugarLibIdMerging_invalidCoordinate_noVersion() {
+    var result =
+      buildDesugaredJdkLibCoordinate(listOf("com.android.tools:desugar_jdk_libs", "com.android.tools:desugar_jdk_libs_nio:1.0.0"))
+    assertThat(result).isEqualTo("com.android.tools:desugar_jdk_libs_nio:1.0.0")
+    result = buildDesugaredJdkLibCoordinate(listOf("com.android.tools:desugar_jdk_libs"))
+    assertThat(result).isEqualTo(null)
+  }
 }

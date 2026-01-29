@@ -18,63 +18,37 @@ package com.android.build.gradle.internal.cxx.prefab
 
 import com.android.build.gradle.internal.cxx.json.readMiniConfigCreateIfNecessary
 
-/**
- * Strip the ABIs from the given publication leaving the publication as header-only.
- */
-fun PrefabPublication.copyAsHeaderOnly() : PrefabPublication {
-    return copy(
-        packageInfo = packageInfo.copy(
-            modules = packageInfo.modules.map { module ->
-                module.copy(
-                    abis = listOf()
-                )
-            }
-        )
-    )
+/** Strip the ABIs from the given publication leaving the publication as header-only. */
+fun PrefabPublication.copyAsHeaderOnly(): PrefabPublication {
+  return copy(packageInfo = packageInfo.copy(modules = packageInfo.modules.map { module -> module.copy(abis = listOf()) }))
 }
 
-/**
- * Strip all but one ABI from the publication.
- */
-fun PrefabPublication.copyAsSingleAbi(abiName : String) : PrefabPublication {
-    return copy(
-        packageInfo = packageInfo.copy(
-            modules = packageInfo.modules.map { module ->
-                module.copy(
-                    abis = module.abis.filter { abi -> abi.abiName == abiName }
-                )
-            }
-        )
-    )
+/** Strip all but one ABI from the publication. */
+fun PrefabPublication.copyAsSingleAbi(abiName: String): PrefabPublication {
+  return copy(
+    packageInfo =
+      packageInfo.copy(
+        modules = packageInfo.modules.map { module -> module.copy(abis = module.abis.filter { abi -> abi.abiName == abiName }) }
+      )
+  )
 }
 
-/**
- * Copy this [PrefabPublication] and add then names of the libraries (.so or .a) for each ABI
- * and module combination.
- */
-fun PrefabPublication.copyWithLibraryInformationAdded() : PrefabPublication {
-    fun PrefabModulePublication.patchLibraryType() : PrefabModulePublication {
-        if (abis.isEmpty()) return this
-        val abiLibraries = abis
-            .mapNotNull { abi ->
-                readMiniConfigCreateIfNecessary(abi.abiAndroidGradleBuildJsonFile)
-                    .libraries
-                    .values
-                    .singleOrNull { it.artifactName == moduleName }
-                    ?.output
-                    ?.let { abi to it }
-            }
+/** Copy this [PrefabPublication] and add then names of the libraries (.so or .a) for each ABI and module combination. */
+fun PrefabPublication.copyWithLibraryInformationAdded(): PrefabPublication {
+  fun PrefabModulePublication.patchLibraryType(): PrefabModulePublication {
+    if (abis.isEmpty()) return this
+    val abiLibraries =
+      abis.mapNotNull { abi ->
+        readMiniConfigCreateIfNecessary(abi.abiAndroidGradleBuildJsonFile)
+          .libraries
+          .values
+          .singleOrNull { it.artifactName == moduleName }
+          ?.output
+          ?.let { abi to it }
+      }
 
-        return copy(
-            abis = abiLibraries.map { (abi, library) ->
-                abi.copy(abiLibrary = library.absoluteFile)
-            })
-    }
+    return copy(abis = abiLibraries.map { (abi, library) -> abi.copy(abiLibrary = library.absoluteFile) })
+  }
 
-    return copy(
-        packageInfo = packageInfo.copy(
-            modules = packageInfo.modules.map { it.patchLibraryType() }
-        )
-    )
+  return copy(packageInfo = packageInfo.copy(modules = packageInfo.modules.map { it.patchLibraryType() }))
 }
-

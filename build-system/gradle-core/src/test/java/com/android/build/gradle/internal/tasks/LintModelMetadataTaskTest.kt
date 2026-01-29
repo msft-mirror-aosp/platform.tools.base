@@ -23,71 +23,56 @@ import com.android.build.gradle.internal.fixtures.FakeGradleWorkExecutor
 import com.android.build.gradle.internal.fixtures.FakeNoOpAnalyticsService
 import com.android.testutils.truth.PathSubject.assertThat
 import com.google.common.truth.Truth.assertThat
+import java.io.File
+import java.util.Properties
+import javax.inject.Inject
 import org.gradle.testfixtures.ProjectBuilder
 import org.gradle.workers.WorkerExecutor
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
-import java.io.File
-import java.util.Properties
-import javax.inject.Inject
 
-/**
- * Unit tests for [LintModelMetadataTask].
- */
+/** Unit tests for [LintModelMetadataTask]. */
 class LintModelMetadataTaskTest {
 
-    @get: Rule
-    val temporaryFolder = TemporaryFolder()
+  @get:Rule val temporaryFolder = TemporaryFolder()
 
-    private lateinit var task: LintModelMetadataTask
-    private lateinit var outputFile: File
+  private lateinit var task: LintModelMetadataTask
+  private lateinit var outputFile: File
 
-    abstract class TaskForTest @Inject constructor(testWorkerExecutor: WorkerExecutor) :
-        LintModelMetadataTask() {
-        override val workerExecutor = testWorkerExecutor
-    }
+  abstract class TaskForTest @Inject constructor(testWorkerExecutor: WorkerExecutor) : LintModelMetadataTask() {
+    override val workerExecutor = testWorkerExecutor
+  }
 
-    @Before
-    fun setUp() {
-        val project = ProjectBuilder.builder().withProjectDir(temporaryFolder.root).build()
-        task = project.tasks.register(
-            "lintModelMetadataTask",
-            TaskForTest::class.java,
-            FakeGradleWorkExecutor(project.objects, temporaryFolder.newFolder())
-        ).get()
-        task.analyticsService.set(FakeNoOpAnalyticsService())
-        outputFile = temporaryFolder.newFile()
-    }
+  @Before
+  fun setUp() {
+    val project = ProjectBuilder.builder().withProjectDir(temporaryFolder.root).build()
+    task =
+      project.tasks
+        .register("lintModelMetadataTask", TaskForTest::class.java, FakeGradleWorkExecutor(project.objects, temporaryFolder.newFolder()))
+        .get()
+    task.analyticsService.set(FakeNoOpAnalyticsService())
+    outputFile = temporaryFolder.newFile()
+  }
 
-    @Test
-    fun testBasic() {
-        task.outputFile.set(outputFile)
-        task.mavenArtifactId.set("foo")
-        task.mavenGroupId.set("foo.bar")
-        task.mavenVersion.set("1.0.0")
-        task.taskAction()
+  @Test
+  fun testBasic() {
+    task.outputFile.set(outputFile)
+    task.mavenArtifactId.set("foo")
+    task.mavenGroupId.set("foo.bar")
+    task.mavenVersion.set("1.0.0")
+    task.taskAction()
 
-        checkOutputFile(
-            outputFile,
-            mavenArtifactId = "foo",
-            mavenGroupId = "foo.bar",
-            mavenVersion = "1.0.0"
-        )
-    }
+    checkOutputFile(outputFile, mavenArtifactId = "foo", mavenGroupId = "foo.bar", mavenVersion = "1.0.0")
+  }
 
-    private fun checkOutputFile(
-        file: File,
-        mavenArtifactId: String,
-        mavenGroupId: String,
-        mavenVersion: String
-    ) {
-        assertThat(file).exists()
-        val properties = Properties()
-        file.inputStream().use { properties.load(it) }
-        assertThat(properties.getProperty(MAVEN_ARTIFACT_ID_PROPERTY)).isEqualTo(mavenArtifactId)
-        assertThat(properties.getProperty(MAVEN_GROUP_ID_PROPERTY)).isEqualTo(mavenGroupId)
-        assertThat(properties.getProperty(MAVEN_VERSION_PROPERTY)).isEqualTo(mavenVersion)
-    }
+  private fun checkOutputFile(file: File, mavenArtifactId: String, mavenGroupId: String, mavenVersion: String) {
+    assertThat(file).exists()
+    val properties = Properties()
+    file.inputStream().use { properties.load(it) }
+    assertThat(properties.getProperty(MAVEN_ARTIFACT_ID_PROPERTY)).isEqualTo(mavenArtifactId)
+    assertThat(properties.getProperty(MAVEN_GROUP_ID_PROPERTY)).isEqualTo(mavenGroupId)
+    assertThat(properties.getProperty(MAVEN_VERSION_PROPERTY)).isEqualTo(mavenVersion)
+  }
 }

@@ -23,65 +23,65 @@ import com.android.testutils.truth.PathSubject.assertThat
 import org.junit.Rule
 import org.junit.Test
 
-/**
- * Integration test running lint on generated sources
- */
+/** Integration test running lint on generated sources */
 class LintGeneratedSourcesTest {
 
-    @get:Rule
-    val project: GradleTestProject =
-        GradleTestProject.builder()
-            .fromTestApp(
-                MinimalSubProject.app("com.example.app")
-                    .appendToBuild(
-                        """
-                            android {
-                                buildFeatures {
-                                    buildConfig = true
-                                }
-                                lint {
-                                    abortOnError = false
-                                    textOutput = file("lint-results.txt")
-                                    ignoreTestSources = true
-                                    checkGeneratedSources = true
-                                    enable('StopShip')
-                                }
-                            }
+  @get:Rule
+  val project: GradleTestProject =
+    GradleTestProject.builder()
+      .fromTestApp(
+        MinimalSubProject.app("com.example.app")
+          .appendToBuild(
+            """
+            android {
+                buildFeatures {
+                    buildConfig = true
+                }
+                lint {
+                    abortOnError = false
+                    textOutput = file("lint-results.txt")
+                    ignoreTestSources = true
+                    checkGeneratedSources = true
+                    enable('StopShip')
+                }
+            }
 
-                            // Add a STOPSHIP comment to a generated source file
-                            androidComponents {
-                                onVariants(selector().all(), { variant ->
-                                    variant.buildConfigFields.put(
-                                        "FOO",
-                                        new com.android.build.api.variant.BuildConfigField(
-                                            "String",
-                                            "\"foo\"",
-                                            "STOPSHIP"
-                                        )
-                                    )
-                                })
-                            }
-                        """.trimIndent()
+            // Add a STOPSHIP comment to a generated source file
+            androidComponents {
+                onVariants(selector().all(), { variant ->
+                    variant.buildConfigFields.put(
+                        "FOO",
+                        new com.android.build.api.variant.BuildConfigField(
+                            "String",
+                            "\"foo\"",
+                            "STOPSHIP"
+                        )
                     )
-            ).create()
+                })
+            }
+            """
+              .trimIndent()
+          )
+      )
+      .create()
 
-    /** Test that changes to generated sources cause the lint tasks to re-run as expected. */
-    @Test
-    fun testNotUpToDate() {
-        project.executor().run("clean", "lintRelease").apply {
-            assertTask(":lintReportRelease").didWork()
-            assertTask(":lintAnalyzeRelease").didWork()
-        }
-        val lintReport = project.file("lint-results.txt")
-        assertThat(lintReport).exists()
-        assertThat(lintReport).contains("StopShip")
-
-        TestFileUtils.searchAndReplace(project.buildFile, "STOPSHIP", "comment")
-        project.executor().run("lintRelease").apply {
-            assertTask(":lintReportRelease").didWork()
-            assertTask(":lintAnalyzeRelease").didWork()
-        }
-        assertThat(lintReport).exists()
-        assertThat(lintReport).doesNotContain("StopShip")
+  /** Test that changes to generated sources cause the lint tasks to re-run as expected. */
+  @Test
+  fun testNotUpToDate() {
+    project.executor().run("clean", "lintRelease").apply {
+      assertTask(":lintReportRelease").didWork()
+      assertTask(":lintAnalyzeRelease").didWork()
     }
+    val lintReport = project.file("lint-results.txt")
+    assertThat(lintReport).exists()
+    assertThat(lintReport).contains("StopShip")
+
+    TestFileUtils.searchAndReplace(project.buildFile, "STOPSHIP", "comment")
+    project.executor().run("lintRelease").apply {
+      assertTask(":lintReportRelease").didWork()
+      assertTask(":lintAnalyzeRelease").didWork()
+    }
+    assertThat(lintReport).exists()
+    assertThat(lintReport).doesNotContain("StopShip")
+  }
 }

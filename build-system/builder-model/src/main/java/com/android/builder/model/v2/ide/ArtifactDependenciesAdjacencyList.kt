@@ -18,13 +18,13 @@ package com.android.builder.model.v2.ide
 
 import com.android.builder.model.v2.AndroidModel
 
-interface ArtifactDependenciesAdjacencyList: AndroidModel {
-    val compileDependencies: List<Edge>
-    val runtimeDependencies: List<Edge>?
-    val unresolvedDependencies: List<UnresolvedDependency>
+interface ArtifactDependenciesAdjacencyList : AndroidModel {
+  val compileDependencies: List<Edge>
+  val runtimeDependencies: List<Edge>?
+  val unresolvedDependencies: List<UnresolvedDependency>
 }
 
 interface Edge : AndroidModel {
-    val from: String
-    val to: String
+  val from: String
+  val to: String
 }

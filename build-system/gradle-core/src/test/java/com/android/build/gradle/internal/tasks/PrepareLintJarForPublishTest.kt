@@ -19,52 +19,51 @@ package com.android.build.gradle.internal.tasks
 import com.android.build.gradle.internal.fixtures.FakeGradleWorkExecutor
 import com.android.build.gradle.internal.fixtures.FakeNoOpAnalyticsService
 import com.android.testutils.truth.PathSubject.assertThat
+import javax.inject.Inject
 import org.gradle.api.Project
 import org.gradle.testfixtures.ProjectBuilder
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
-import javax.inject.Inject
 
 class PrepareLintJarForPublishTest {
-    @Rule
-    @JvmField
-    val tmpDir = TemporaryFolder()
+  @Rule @JvmField val tmpDir = TemporaryFolder()
 
-    private lateinit var project: Project
+  private lateinit var project: Project
 
-    abstract class PrepareLintJarForPublishForTest @Inject constructor(fakeExecutor: FakeGradleWorkExecutor) :
-            PrepareLintJarForPublish() {
+  abstract class PrepareLintJarForPublishForTest @Inject constructor(fakeExecutor: FakeGradleWorkExecutor) : PrepareLintJarForPublish() {
 
-        override val workerExecutor = fakeExecutor
+    override val workerExecutor = fakeExecutor
+  }
+
+  @Before
+  fun setUp() {
+    project = ProjectBuilder.builder().withProjectDir(tmpDir.newFolder()).build()
+  }
+
+  /** Regression test for b/163039193. */
+  @Test
+  fun checkRunnableCanRunTwice() {
+    val inputJar = tmpDir.newFile("input.jar")
+    val outputLocation = tmpDir.root.resolve("outputDir/output.jar")
+    val task =
+      project.tasks.register(
+        "publish",
+        PrepareLintJarForPublishForTest::class.java,
+        FakeGradleWorkExecutor(project.objects, tmpDir.newFolder()),
+      )
+    task.configure {
+      it.lintChecks.from(inputJar)
+      it.outputLintJar.set(outputLocation)
+      it.analyticsService.set(FakeNoOpAnalyticsService())
     }
 
-    @Before
-    fun setUp() {
-        project = ProjectBuilder.builder().withProjectDir(tmpDir.newFolder()).build()
-    }
+    task.get().taskAction()
+    assertThat(outputLocation).exists()
 
-    /** Regression test for b/163039193. */
-    @Test
-    fun checkRunnableCanRunTwice() {
-        val inputJar = tmpDir.newFile("input.jar")
-        val outputLocation = tmpDir.root.resolve("outputDir/output.jar")
-        val task =
-                project.tasks.register("publish",
-                        PrepareLintJarForPublishForTest::class.java,
-                        FakeGradleWorkExecutor(project.objects, tmpDir.newFolder()))
-        task.configure {
-            it.lintChecks.from(inputJar)
-            it.outputLintJar.set(outputLocation)
-            it.analyticsService.set(FakeNoOpAnalyticsService())
-        }
-
-        task.get().taskAction()
-        assertThat(outputLocation).exists()
-
-        // Make sure we can run second time.
-        task.get().taskAction()
-        assertThat(outputLocation).exists()
-    }
+    // Make sure we can run second time.
+    task.get().taskAction()
+    assertThat(outputLocation).exists()
+  }
 }

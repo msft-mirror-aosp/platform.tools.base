@@ -36,60 +36,51 @@ import org.gradle.work.DisableCachingByDefault
 @BuildAnalyzer(primaryTaskCategory = TaskCategory.COMPILED_CLASSES, secondaryTaskCategories = [TaskCategory.ZIPPING])
 abstract class SourceJarTask : Jar(), VariantTask {
 
-    @Internal
-    override lateinit var variantName: String
+  @Internal override lateinit var variantName: String
 
-    class CreationAction(
-        creationConfig: ComponentCreationConfig
-    ) : VariantTaskCreationAction<SourceJarTask, ComponentCreationConfig>(
-        creationConfig
-    ) {
+  class CreationAction(creationConfig: ComponentCreationConfig) :
+    VariantTaskCreationAction<SourceJarTask, ComponentCreationConfig>(creationConfig) {
 
-        override val type: Class<SourceJarTask>
-            get() = SourceJarTask::class.java
+    override val type: Class<SourceJarTask>
+      get() = SourceJarTask::class.java
 
-        override val name: String
-            get() = computeTaskName("source", "Jar")
+    override val name: String
+      get() = computeTaskName("source", "Jar")
 
-        override fun handleProvider(
-            taskProvider: TaskProvider<SourceJarTask>
-        ) {
-            super.handleProvider(taskProvider)
-            creationConfig.artifacts.setInitialProvider(taskProvider,
-                // since the path to the file is set in the configure below, pass an empty property.
-                { it.project.objects.fileProperty() },
-                SourceJarTask::getArchiveFile
-            )
-                .on(InternalArtifactType.SOURCE_JAR)
-        }
-
-        override fun configure(task: SourceJarTask) {
-            super.configure(task)
-
-            task.duplicatesStrategy = DuplicatesStrategy.FAIL
-            task.isReproducibleFileOrder = true
-            task.isPreserveFileTimestamps = false
-
-            task.from(computeJavaSource(creationConfig, includeKotlinSources = true))
-            creationConfig.sources.kotlin { kotlinSources ->
-                task.from(
-                    task.project.files(kotlinSources.all).asFileTree.matching(
-                        PatternSet().include("**/*.kt")
-                    )
-                )
-            }
-
-            val outputFile =
-                InternalArtifactType.SOURCE_JAR
-                    .getOutputPath(
-                        creationConfig.artifacts.buildDirectory,
-                        creationConfig.name,
-                        "${creationConfig.name}-${DocsType.SOURCES}.jar"
-                    )
-
-            task.archiveFileName.set(outputFile.name)
-            task.destinationDirectory.set(outputFile.parentFile)
-            task.archiveExtension.set(SdkConstants.EXT_JAR)
-        }
+    override fun handleProvider(taskProvider: TaskProvider<SourceJarTask>) {
+      super.handleProvider(taskProvider)
+      creationConfig.artifacts
+        .setInitialProvider(
+          taskProvider,
+          // since the path to the file is set in the configure below, pass an empty property.
+          { it.project.objects.fileProperty() },
+          SourceJarTask::getArchiveFile,
+        )
+        .on(InternalArtifactType.SOURCE_JAR)
     }
+
+    override fun configure(task: SourceJarTask) {
+      super.configure(task)
+
+      task.duplicatesStrategy = DuplicatesStrategy.FAIL
+      task.isReproducibleFileOrder = true
+      task.isPreserveFileTimestamps = false
+
+      task.from(computeJavaSource(creationConfig, includeKotlinSources = true))
+      creationConfig.sources.kotlin { kotlinSources ->
+        task.from(task.project.files(kotlinSources.all).asFileTree.matching(PatternSet().include("**/*.kt")))
+      }
+
+      val outputFile =
+        InternalArtifactType.SOURCE_JAR.getOutputPath(
+          creationConfig.artifacts.buildDirectory,
+          creationConfig.name,
+          "${creationConfig.name}-${DocsType.SOURCES}.jar",
+        )
+
+      task.archiveFileName.set(outputFile.name)
+      task.destinationDirectory.set(outputFile.parentFile)
+      task.archiveExtension.set(SdkConstants.EXT_JAR)
+    }
+  }
 }

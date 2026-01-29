@@ -17,9 +17,8 @@
 package com.android.build.gradle.internal.core.dsl
 
 /**
- * Represents the dsl info for a component which runs on the host,
- * such as unit tests, initialized from the DSL object model
- * (extension, default config, build type, flavors)
+ * Represents the dsl info for a component which runs on the host, such as unit tests, initialized from the DSL object model (extension,
+ * default config, build type, flavors)
  *
  * This class allows querying for the values set via the DSL model.
  *
@@ -27,4 +26,4 @@ package com.android.build.gradle.internal.core.dsl
  *
  * @see [com.android.build.gradle.internal.component.HostTestCreationConfig]
  */
-interface HostTestComponentDslInfo: TestComponentDslInfo
+interface HostTestComponentDslInfo : TestComponentDslInfo

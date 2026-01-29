@@ -32,61 +32,69 @@ import org.junit.runners.Parameterized
  */
 @RunWith(Parameterized::class)
 class RiscvModuleToModuleDepsTest(
-    appBuildSystem: BuildSystemConfig,
-    libBuildSystem: BuildSystemConfig,
-    appUsesPrefabTag: String,
-    libUsesPrefabPublishTag: String,
-    libExtension: String,
-    appStlTag: String,
-    libStlTag: String,
-    outputStructureType: OutputStructureType,
-    headerType: HeaderType
-): AbstractModuleToModuleDepsTest(appBuildSystem, libBuildSystem, appUsesPrefabTag,
-    libUsesPrefabPublishTag, libExtension, appStlTag, libStlTag, outputStructureType, headerType) {
+  appBuildSystem: BuildSystemConfig,
+  libBuildSystem: BuildSystemConfig,
+  appUsesPrefabTag: String,
+  libUsesPrefabPublishTag: String,
+  libExtension: String,
+  appStlTag: String,
+  libStlTag: String,
+  outputStructureType: OutputStructureType,
+  headerType: HeaderType,
+) :
+  AbstractModuleToModuleDepsTest(
+    appBuildSystem,
+    libBuildSystem,
+    appUsesPrefabTag,
+    libUsesPrefabPublishTag,
+    libExtension,
+    appStlTag,
+    libStlTag,
+    outputStructureType,
+    headerType,
+  ) {
 
-    @get:Rule
-    val project =
-        GradleTestProject.builder()
-            .fromTestApp(multiModule)
-            .setSideBySideNdkVersion(DEFAULT_NDK_SIDE_BY_SIDE_VERSION)
-            .create()
-    companion object {
-        @Parameterized.Parameters(
-            name = "app.so={0}{2}{5} lib{4}={1}{3}{6}{7}{8}"
-        )
-        @JvmStatic
-        fun data(): Array<Array<Any?>> = AbstractModuleToModuleDepsTest.data()
-    }
+  @get:Rule
+  val project = GradleTestProject.builder().fromTestApp(multiModule).setSideBySideNdkVersion(DEFAULT_NDK_SIDE_BY_SIDE_VERSION).create()
 
-    @Before
-    fun setUp() {
-        setupProject(
-            DEFAULT_NDK_SIDE_BY_SIDE_VERSION,
-            appAbiFilters = """
-            ndk {
-                abiFilters "riscv64"
-            }
-            """.trimIndent(),
-            libAbiFilters = """
-            ndk {
-                abiFilters "x86", "arm64-v8a", "armeabi-v7a", "riscv64", "x86_64"
-            }
-            """.trimIndent()
-        )
-    }
+  companion object {
+    @Parameterized.Parameters(name = "app.so={0}{2}{5} lib{4}={1}{3}{6}{7}{8}")
+    @JvmStatic
+    fun data(): Array<Array<Any?>> = AbstractModuleToModuleDepsTest.data()
+  }
 
+  @Before
+  fun setUp() {
+    setupProject(
+      DEFAULT_NDK_SIDE_BY_SIDE_VERSION,
+      appAbiFilters =
+        """
+        ndk {
+            abiFilters "riscv64"
+        }
+        """
+          .trimIndent(),
+      libAbiFilters =
+        """
+        ndk {
+            abiFilters "x86", "arm64-v8a", "armeabi-v7a", "riscv64", "x86_64"
+        }
+        """
+          .trimIndent(),
+    )
+  }
 
-    @Test
-    fun `app configure`() {
-        AssumeUtil.assumeIsLinux()
-        testAppConfigure("riscv64")
-    }
+  @Test
+  fun `app configure`() {
+    AssumeUtil.assumeIsLinux()
+    testAppConfigure("riscv64")
+  }
 
-    @Test
-    fun `app build`() {
-        AssumeUtil.assumeIsLinux()
-        testAppBuild("riscv64")
-    }
+  @Test
+  fun `app build`() {
+    AssumeUtil.assumeIsLinux()
+    testAppBuild("riscv64")
+  }
 
-    override fun getTestProject(): GradleTestProject = project
+  override fun getTestProject(): GradleTestProject = project
 }

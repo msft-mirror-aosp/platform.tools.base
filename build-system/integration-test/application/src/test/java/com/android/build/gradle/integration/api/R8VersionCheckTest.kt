@@ -27,40 +27,41 @@ import org.junit.Test
 
 class R8VersionCheckTest {
 
-    @get:Rule
-    val project = GradleTestProject.builder()
-        .fromTestApp(
-            MultiModuleTestProject.builder()
-                .subproject("lib", MinimalSubProject.lib("com.example.lib"))
-                .build()
-        )
-        .create()
+  @get:Rule
+  val project =
+    GradleTestProject.builder()
+      .fromTestApp(MultiModuleTestProject.builder().subproject("lib", MinimalSubProject.lib("com.example.lib")).build())
+      .create()
 
-    @Test
-    fun `test warning when project contains R8 version lower than AGP`() {
-        TestFileUtils.appendToFile(
-            project.buildFile,
-            """
-                buildscript {
-                    dependencies {
-                        classpath 'com.android.tools:r8:8.2.47'
-                    }
-                }
-                """.trimIndent()
-        )
+  @Test
+  fun `test warning when project contains R8 version lower than AGP`() {
+    TestFileUtils.appendToFile(
+      project.buildFile,
+      """
+      buildscript {
+          dependencies {
+              classpath 'com.android.tools:r8:8.2.47'
+          }
+      }
+      """
+        .trimIndent(),
+    )
 
-        val syncIssueMessages = project.syncIssueMessages
-        assertThat(syncIssueMessages).hasSize(1)
+    val syncIssueMessages = project.syncIssueMessages
+    assertThat(syncIssueMessages).hasSize(1)
 
-        val issueMessage = syncIssueMessages.first()
-        assertThat(issueMessage).isEqualTo("Your project includes version 8.2.47 of R8, " +
-                "while Android Gradle Plugin was shipped with ${ShrinkerVersion.R8.asString()}. " +
-                "This can lead to unexpected issues.")
-    }
+    val issueMessage = syncIssueMessages.first()
+    assertThat(issueMessage)
+      .isEqualTo(
+        "Your project includes version 8.2.47 of R8, " +
+          "while Android Gradle Plugin was shipped with ${ShrinkerVersion.R8.asString()}. " +
+          "This can lead to unexpected issues."
+      )
+  }
 }
 
 val GradleTestProject.syncIssueMessages: List<String>
-    get() {
-        val model = modelV2().ignoreSyncIssues().fetchModels().container.getProject()
-        return model.issues?.syncIssues?.map { it.message }?.toList().orEmpty()
-    }
+  get() {
+    val model = modelV2().ignoreSyncIssues().fetchModels().container.getProject()
+    return model.issues?.syncIssues?.map { it.message }?.toList().orEmpty()
+  }

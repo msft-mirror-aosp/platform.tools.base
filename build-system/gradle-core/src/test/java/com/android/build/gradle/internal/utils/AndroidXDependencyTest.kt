@@ -22,15 +22,12 @@ import org.junit.Test
 /** Unit tests for [AndroidXDependency]. */
 class AndroidXDependencyTest {
 
-    @Test
-    fun testAndroidXDependency() {
-        val androidXDependency = AndroidXDependency.fromPreAndroidXDependency(
-            "com.android.support",
-            "support-annotations"
-        )
-        assertThat(androidXDependency.group).isEqualTo("androidx.annotation")
-        assertThat(androidXDependency.module).isEqualTo("annotation")
-        assertThat(androidXDependency.oldGroup).isEqualTo("com.android.support")
-        assertThat(androidXDependency.oldModule).isEqualTo("support-annotations")
-    }
+  @Test
+  fun testAndroidXDependency() {
+    val androidXDependency = AndroidXDependency.fromPreAndroidXDependency("com.android.support", "support-annotations")
+    assertThat(androidXDependency.group).isEqualTo("androidx.annotation")
+    assertThat(androidXDependency.module).isEqualTo("annotation")
+    assertThat(androidXDependency.oldGroup).isEqualTo("com.android.support")
+    assertThat(androidXDependency.oldModule).isEqualTo("support-annotations")
+  }
 }

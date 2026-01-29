@@ -25,34 +25,28 @@ import com.android.build.gradle.internal.services.VariantServices
 import java.io.File
 
 internal class AssetsTestSuiteSourceSet(
-    private val sourceSetName: String,
-    variantServices: VariantServices,
-    override val dependencies: AgpTestSuiteDependencies?,
-): TestSuiteSourceSet.Assets {
+  private val sourceSetName: String,
+  variantServices: VariantServices,
+  override val dependencies: AgpTestSuiteDependencies?,
+) : TestSuiteSourceSet.Assets {
 
-    override fun getName(): String = sourceSetName
+  override fun getName(): String = sourceSetName
 
-    private val assetsSourcesFolder = FlatSourceDirectoriesImpl(
-        sourceSetName,
-        variantServices,
-        null,
-    ).also {
-        it.addSource(
-            FileBasedDirectoryEntryImpl(
-                name = sourceSetName,
-                directory = File(
-                    variantServices.projectInfo.projectDirectory.asFile,
-                    "src/$sourceSetName"
-                ),
-                filter = null,
-                isUserAdded = false,
-                shouldBeAddedToIdeModel = true
-            )
+  private val assetsSourcesFolder =
+    FlatSourceDirectoriesImpl(sourceSetName, variantServices, null).also {
+      it.addSource(
+        FileBasedDirectoryEntryImpl(
+          name = sourceSetName,
+          directory = File(variantServices.projectInfo.projectDirectory.asFile, "src/$sourceSetName"),
+          filter = null,
+          isUserAdded = false,
+          shouldBeAddedToIdeModel = true,
         )
+      )
     }
 
-    override fun get(): FlatSourceDirectoriesImpl = assetsSourcesFolder
+  override fun get(): FlatSourceDirectoriesImpl = assetsSourcesFolder
 
-    override val type: TestSuiteSourceType
-        get() = TestSuiteSourceType.ASSETS
+  override val type: TestSuiteSourceType
+    get() = TestSuiteSourceType.ASSETS
 }

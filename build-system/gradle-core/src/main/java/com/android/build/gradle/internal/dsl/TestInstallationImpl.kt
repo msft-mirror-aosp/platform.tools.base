@@ -20,5 +20,4 @@ import com.android.build.api.dsl.TestInstallation
 import com.android.build.gradle.internal.services.DslServices
 import javax.inject.Inject
 
-abstract class TestInstallationImpl @Inject constructor(dslServices: DslServices) :
-    TestInstallation, AdbOptions(dslServices)
+abstract class TestInstallationImpl @Inject constructor(dslServices: DslServices) : TestInstallation, AdbOptions(dslServices)

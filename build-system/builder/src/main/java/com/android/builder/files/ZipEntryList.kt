@@ -24,106 +24,92 @@ import com.google.gson.stream.JsonWriter
 import java.io.File
 
 /**
- * Represents a single file in a zip archive. The available arguments of [name], [crc] and [size]
- * are enough to identify files that have been changed, for the purpose of incremental build.
+ * Represents a single file in a zip archive. The available arguments of [name], [crc] and [size] are enough to identify files that have
+ * been changed, for the purpose of incremental build.
  */
 data class ZipEntry(val name: String, val crc: Long, val size: Long)
 
 /**
- * Represents all files in a zip archive, enough to recognize what files have been added, removed
- * or changed - for the purpose of incremental build. Actual file content (zip payload) is not
- * persisted.
+ * Represents all files in a zip archive, enough to recognize what files have been added, removed or changed - for the purpose of
+ * incremental build. Actual file content (zip payload) is not persisted.
  */
 data class ZipEntryList(val entries: Map<String, ZipEntry>) {
 
-    fun toByteArray() = ZipEntryListAdapter.toJson(this).toByteArray()
+  fun toByteArray() = ZipEntryListAdapter.toJson(this).toByteArray()
 
-    companion object {
+  companion object {
 
-        /**
-         * Creates a representation of entries from a zip archive, omitting the payload.
-         *
-         * @param file a zip archive, source for creating a snapshot of entries.
-         * @throws IllegalStateException if the [file] is not a valid zip archive.
-         */
-        fun fromZip(file: File): ZipEntryList =
-            ZipMap.from(file.toPath()).entries
-                .filterNot { (_, entry) ->
-                    entry.isDirectory
-                }.let {
-                    fromEntries(it)
-                }
+    /**
+     * Creates a representation of entries from a zip archive, omitting the payload.
+     *
+     * @param file a zip archive, source for creating a snapshot of entries.
+     * @throws IllegalStateException if the [file] is not a valid zip archive.
+     */
+    fun fromZip(file: File): ZipEntryList =
+      ZipMap.from(file.toPath()).entries.filterNot { (_, entry) -> entry.isDirectory }.let { fromEntries(it) }
 
-        /**
-         * Reads a [com.android.builder.files.ZipEntryList] that has been persisted in a file.
-         *
-         * @param file contains a serialized representation of a [com.android.builder.files.ZipEntryList]
-         * @throws IllegalArgumentException when [file] is not a proper result of [com.android.builder.files.ZipEntryList]
-         *        serialization.
-         */
-        fun deserializeFile(file: File): ZipEntryList {
-            return ZipEntryListAdapter.fromJson(file.readText())
-        }
-
-        private fun fromEntries(map: Map<String, Entry>): ZipEntryList {
-            return map.mapValues { entry ->
-                ZipEntry(
-                    entry.value.name, entry.value.crc.toLong(), entry.value.uncompressedSize
-                )
-            }.let {
-                ZipEntryList(it)
-            }
-        }
+    /**
+     * Reads a [com.android.builder.files.ZipEntryList] that has been persisted in a file.
+     *
+     * @param file contains a serialized representation of a [com.android.builder.files.ZipEntryList]
+     * @throws IllegalArgumentException when [file] is not a proper result of [com.android.builder.files.ZipEntryList] serialization.
+     */
+    fun deserializeFile(file: File): ZipEntryList {
+      return ZipEntryListAdapter.fromJson(file.readText())
     }
+
+    private fun fromEntries(map: Map<String, Entry>): ZipEntryList {
+      return map
+        .mapValues { entry -> ZipEntry(entry.value.name, entry.value.crc.toLong(), entry.value.uncompressedSize) }
+        .let { ZipEntryList(it) }
+    }
+  }
 }
 
 private object ZipEntryListAdapter : TypeAdapter<ZipEntryList>() {
 
-    override fun write(
-        writer: JsonWriter?,
-        zipEntryList: ZipEntryList?
-    ) {
-        if (writer == null) return
-        with(writer) {
-            beginArray()
-            zipEntryList?.entries?.forEach { (key, value) ->
-                beginObject()
-                name("key").value(key)
-                name("name").value(value.name)
-                name("size").value(value.size)
-                name("crc").value(value.crc)
-                endObject()
-            }
-            endArray()
-        }
+  override fun write(writer: JsonWriter?, zipEntryList: ZipEntryList?) {
+    if (writer == null) return
+    with(writer) {
+      beginArray()
+      zipEntryList?.entries?.forEach { (key, value) ->
+        beginObject()
+        name("key").value(key)
+        name("name").value(value.name)
+        name("size").value(value.size)
+        name("crc").value(value.crc)
+        endObject()
+      }
+      endArray()
     }
+  }
 
-    override fun read(reader: JsonReader): ZipEntryList {
-        reader.beginArray()
-        val output = mutableMapOf<String, ZipEntry>()
-        while (reader.hasNext()) {
-            reader.beginObject()
-            var key: String? = null
-            var name: String? = null
-            var crc: Long = 0L
-            var size: Long = 0L
+  override fun read(reader: JsonReader): ZipEntryList {
+    reader.beginArray()
+    val output = mutableMapOf<String, ZipEntry>()
+    while (reader.hasNext()) {
+      reader.beginObject()
+      var key: String? = null
+      var name: String? = null
+      var crc: Long = 0L
+      var size: Long = 0L
 
-            while (reader.hasNext()) {
-                when (reader.nextName()) {
-                    "key" -> key = reader.nextString()
-                    "name" -> name = reader.nextString()
-                    "crc" -> crc = reader.nextLong()
-                    "size" -> size = reader.nextLong()
-                    else -> throw IllegalArgumentException("Unexpected field")
-                }
-            }
-            reader.endObject()
-
-            if (key != null && name != null) {
-                output[key] = ZipEntry(name = name, crc = crc, size = size)
-            }
+      while (reader.hasNext()) {
+        when (reader.nextName()) {
+          "key" -> key = reader.nextString()
+          "name" -> name = reader.nextString()
+          "crc" -> crc = reader.nextLong()
+          "size" -> size = reader.nextLong()
+          else -> throw IllegalArgumentException("Unexpected field")
         }
-        reader.endArray()
-        return ZipEntryList(output)
+      }
+      reader.endObject()
+
+      if (key != null && name != null) {
+        output[key] = ZipEntry(name = name, crc = crc, size = size)
+      }
     }
+    reader.endArray()
+    return ZipEntryList(output)
+  }
 }

@@ -21,19 +21,20 @@ package com.android.build.api.variant
  * See [Component] and [Variant] for more information.
  */
 @Suppress("DEPRECATION")
-interface LibraryVariant : Variant,
-    GeneratesAar,
-    HasDeviceTests,
-    HasAndroidTest,
-    HasHostTests,
-    HasUnitTest,
-    HasTestFixtures,
-    CanMinifyCode,
-    CanProduceConsumerProguardFiles {
+interface LibraryVariant :
+  Variant,
+  GeneratesAar,
+  HasDeviceTests,
+  HasAndroidTest,
+  HasHostTests,
+  HasUnitTest,
+  HasTestFixtures,
+  CanMinifyCode,
+  CanProduceConsumerProguardFiles {
 
-    /**
-     * Variant specific settings for the renderscript compiler. This will return null when
-     * [com.android.build.api.dsl.BuildFeatures.renderScript] is false.
-     */
-    val renderscript: Renderscript?
+  /**
+   * Variant specific settings for the renderscript compiler. This will return null when
+   * [com.android.build.api.dsl.BuildFeatures.renderScript] is false.
+   */
+  val renderscript: Renderscript?
 }

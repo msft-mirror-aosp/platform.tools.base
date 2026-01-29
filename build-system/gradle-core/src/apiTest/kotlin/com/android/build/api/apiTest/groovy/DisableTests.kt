@@ -18,17 +18,18 @@ package com.android.build.api.apiTest.groovy
 
 import com.android.build.api.apiTest.VariantApiBaseTest
 import com.google.common.truth.Truth
-import org.junit.Test
 import kotlin.test.assertNotNull
+import org.junit.Test
 
-class DisableTests: VariantApiBaseTest(TestType.Script, ScriptingLanguage.Groovy) {
-    @Test
-    fun disableUnitTest() {
-        given {
-            tasksToInvoke.add("tasks")
+class DisableTests : VariantApiBaseTest(TestType.Script, ScriptingLanguage.Groovy) {
+  @Test
+  fun disableUnitTest() {
+    given {
+      tasksToInvoke.add("tasks")
 
-            addModule(":app") {
-                buildFile = """
+      addModule(":app") {
+        buildFile =
+          """
             plugins {
                 id 'com.android.application'
             }
@@ -50,37 +51,40 @@ class DisableTests: VariantApiBaseTest(TestType.Script, ScriptingLanguage.Groovy
                     }
                 })
             }
-                """.trimIndent()
-
-                testingElements.addManifest(this)
-            }
-        }
-        withDocs {
-            index =
-                    // language=markdown
                 """
-# Test get operation
+            .trimIndent()
 
-This sample shows how to use the get operation, which provides the final version of the artifact.
-It shows the location of the apk for the all variants.
-
-## To Run
-./gradlew debugDisplayApks
-            """.trimIndent()
-        }
-        check {
-            assertNotNull(this)
-            Truth.assertThat(output).contains("BUILD SUCCESSFUL")
-        }
+        testingElements.addManifest(this)
+      }
     }
+    withDocs {
+      index =
+        // language=markdown
+        """
+        # Test get operation
 
-    @Test
-    fun disableAndroidTest() {
-        given {
-            tasksToInvoke.add("tasks")
+        This sample shows how to use the get operation, which provides the final version of the artifact.
+        It shows the location of the apk for the all variants.
 
-            addModule(":app") {
-                buildFile = """
+        ## To Run
+        ./gradlew debugDisplayApks
+        """
+          .trimIndent()
+    }
+    check {
+      assertNotNull(this)
+      Truth.assertThat(output).contains("BUILD SUCCESSFUL")
+    }
+  }
+
+  @Test
+  fun disableAndroidTest() {
+    given {
+      tasksToInvoke.add("tasks")
+
+      addModule(":app") {
+        buildFile =
+          """
             plugins {
                 id 'com.android.application'
             }
@@ -102,28 +106,29 @@ It shows the location of the apk for the all variants.
                     }
                 })
             }
-                """.trimIndent()
-
-                testingElements.addManifest(this)
-            }
-        }
-        withDocs {
-            index =
-                    // language=markdown
                 """
-# Test get operation
+            .trimIndent()
 
-This sample shows how to use the get operation, which provides the final version of the artifact.
-It shows the location of the apk for the all variants.
-
-## To Run
-./gradlew debugDisplayApks
-            """.trimIndent()
-        }
-        check {
-            assertNotNull(this)
-            Truth.assertThat(output).contains("BUILD SUCCESSFUL")
-        }
+        testingElements.addManifest(this)
+      }
     }
-}
+    withDocs {
+      index =
+        // language=markdown
+        """
+        # Test get operation
 
+        This sample shows how to use the get operation, which provides the final version of the artifact.
+        It shows the location of the apk for the all variants.
+
+        ## To Run
+        ./gradlew debugDisplayApks
+        """
+          .trimIndent()
+    }
+    check {
+      assertNotNull(this)
+      Truth.assertThat(output).contains("BUILD SUCCESSFUL")
+    }
+  }
+}

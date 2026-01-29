@@ -19,15 +19,14 @@ package com.android.build.gradle.integration.common.fixture.project.options
 /**
  * A option object that can be merged into another one.
  *
- * This is used for overriding project options when using
- * [com.android.build.gradle.integration.common.fixture.project.GradleRule].
+ * This is used for overriding project options when using [com.android.build.gradle.integration.common.fixture.project.GradleRule].
  */
 interface MergeableOptions<T> {
 
-    /**
-     * Merge another option onto this one.
-     *
-     * The `other` option has been set after the receiver and therefore is of higher priority.
-     */
-    fun mergeWith(other: T)
+  /**
+   * Merge another option onto this one.
+   *
+   * The `other` option has been set after the receiver and therefore is of higher priority.
+   */
+  fun mergeWith(other: T)
 }

@@ -19,7 +19,6 @@ import com.android.build.gradle.internal.tasks.mlkit.codegen.ClassNames
 import com.android.build.gradle.internal.tasks.mlkit.codegen.getIdentifierFromFileName
 import com.android.build.gradle.internal.tasks.mlkit.codegen.getOutputParameterType
 import com.android.build.gradle.internal.tasks.mlkit.codegen.getOutputParameterTypeName
-import com.android.build.gradle.internal.tasks.mlkit.codegen.getProcessorName
 import com.android.tools.mlkit.MlNames
 import com.android.tools.mlkit.TensorInfo
 import com.squareup.javapoet.MethodSpec
@@ -28,23 +27,20 @@ import javax.lang.model.element.Modifier
 
 /** Injects a getter method to get List<String>. */
 class ValueLabelsGetMethodInjector : MethodInjector() {
-    override fun inject(classBuilder: TypeSpec.Builder, tensorInfo: TensorInfo) {
-        val returnType = getOutputParameterType(tensorInfo)
-        val methodSpec = MethodSpec.methodBuilder(
-            MlNames.formatGetterName(
-                tensorInfo.identifierName, getOutputParameterTypeName(tensorInfo)
-            )
+  override fun inject(classBuilder: TypeSpec.Builder, tensorInfo: TensorInfo) {
+    val returnType = getOutputParameterType(tensorInfo)
+    val methodSpec =
+      MethodSpec.methodBuilder(MlNames.formatGetterName(tensorInfo.identifierName, getOutputParameterTypeName(tensorInfo)))
+        .addModifiers(Modifier.PRIVATE)
+        .addAnnotation(ClassNames.NON_NULL)
+        .returns(returnType)
+        .addStatement(
+          "return \$T.mapValueToLabels(\$L, \$L, 0)",
+          ClassNames.LABEL_UTIL,
+          tensorInfo.identifierName,
+          getIdentifierFromFileName(tensorInfo.fileName),
         )
-            .addModifiers(Modifier.PRIVATE)
-            .addAnnotation(ClassNames.NON_NULL)
-            .returns(returnType)
-            .addStatement(
-                "return \$T.mapValueToLabels(\$L, \$L, 0)",
-                ClassNames.LABEL_UTIL,
-                tensorInfo.identifierName,
-                getIdentifierFromFileName(tensorInfo.fileName)
-            )
-            .build()
-        classBuilder.addMethod(methodSpec)
-    }
+        .build()
+    classBuilder.addMethod(methodSpec)
+  }
 }

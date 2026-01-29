@@ -23,156 +23,154 @@ import com.android.testutils.TestInputsGenerator
 import com.android.testutils.truth.PathSubject.assertThat
 import com.android.utils.FileUtils
 import com.google.common.collect.ImmutableList
+import java.io.File
 import org.junit.Rule
 import org.junit.Test
-import java.io.File
 
 class DynamicAppPackageDependenciesTest {
-    @Rule
-    @JvmField
-    val project = GradleTestProject.builder()
-        .withGradleBuildCacheDirectory(File("local-build-cache"))
-        .fromTestProject("dynamicApp").create()
+  @Rule
+  @JvmField
+  val project = GradleTestProject.builder().withGradleBuildCacheDirectory(File("local-build-cache")).fromTestProject("dynamicApp").create()
 
-    /** Regression test for http://b/150438232. */
-    @Test
-    fun testPackagedDependenciesCaching() {
-        project.executor().withArgument("--build-cache").run("assembleDebug")
+  /** Regression test for http://b/150438232. */
+  @Test
+  fun testPackagedDependenciesCaching() {
+    project.executor().withArgument("--build-cache").run("assembleDebug")
 
-        project.executor().withArgument("--build-cache").run("clean")
-        project.executor().withArgument("--build-cache").run("assembleDebug")
+    project.executor().withArgument("--build-cache").run("clean")
+    project.executor().withArgument("--build-cache").run("assembleDebug")
 
-        val feature1Dependencies = project.getSubproject("feature1").getIntermediateFile(
-            InternalArtifactType.PACKAGED_DEPENDENCIES.getFolderName(),
-            "debug/generateDebugFeatureTransitiveDeps/deps.txt"
+    val feature1Dependencies =
+      project
+        .getSubproject("feature1")
+        .getIntermediateFile(
+          InternalArtifactType.PACKAGED_DEPENDENCIES.getFolderName(),
+          "debug/generateDebugFeatureTransitiveDeps/deps.txt",
         )
-        assertThat(feature1Dependencies).contains("feature1::debug")
+    assertThat(feature1Dependencies).contains("feature1::debug")
 
-        val feature2Dependencies = project.getSubproject("feature2").getIntermediateFile(
-            InternalArtifactType.PACKAGED_DEPENDENCIES.getFolderName(),
-            "debug/generateDebugFeatureTransitiveDeps/deps.txt"
+    val feature2Dependencies =
+      project
+        .getSubproject("feature2")
+        .getIntermediateFile(
+          InternalArtifactType.PACKAGED_DEPENDENCIES.getFolderName(),
+          "debug/generateDebugFeatureTransitiveDeps/deps.txt",
         )
-        assertThat(feature2Dependencies).contains("feature2::debug")
+    assertThat(feature2Dependencies).contains("feature2::debug")
 
-        project.executor()
-            .withArgument("--build-cache")
-            .run(":app:generateReleaseFeatureTransitiveDeps")
-            .apply {
-                assertTask(":app:generateReleaseFeatureTransitiveDeps").didWork()
-            }
+    project.executor().withArgument("--build-cache").run(":app:generateReleaseFeatureTransitiveDeps").apply {
+      assertTask(":app:generateReleaseFeatureTransitiveDeps").didWork()
+    }
+  }
+
+  /** Regression test for http://b/248576022 */
+  @Test
+  fun testPackagingOfDifferentVersionsOfTheSameArtifact() {
+    TestFileUtils.appendToFile(
+      project.getSubproject("app").buildFile,
+      """
+      dependencies {
+        api 'com.google.guava:guava:19.0'
+      }
+      """
+        .trimIndent(),
+    )
+    TestFileUtils.appendToFile(
+      project.getSubproject("feature1").buildFile,
+      """
+      dependencies {
+        api 'com.google.guava:guava:20.0'
+      }
+      """
+        .trimIndent(),
+    )
+
+    project.executor().run(":feature1:generateDebugFeatureTransitiveDeps")
+
+    val feature1Dependencies =
+      project
+        .getSubproject("feature1")
+        .getIntermediateFile(
+          InternalArtifactType.PACKAGED_DEPENDENCIES.getFolderName(),
+          "debug/generateDebugFeatureTransitiveDeps/deps.txt",
+        )
+    assertThat(feature1Dependencies).doesNotContain("guava")
+  }
+
+  /** regression test for b/295205663 */
+  @Test
+  fun testExclusionOfLocalFileDependency() {
+    // Add a local jar
+    FileUtils.join(project.projectDir, "libs", "local.jar").apply {
+      parentFile.mkdirs()
+      writeBytes(TestInputsGenerator.jarWithEmptyClasses(ImmutableList.of("com/example/jar/JarClass")))
     }
 
-    /**
-     * Regression test for http://b/248576022
-     */
-    @Test
-    fun testPackagingOfDifferentVersionsOfTheSameArtifact() {
-        TestFileUtils.appendToFile(
-            project.getSubproject("app").buildFile,
-            """
-                dependencies {
-                  api 'com.google.guava:guava:19.0'
-                }
-            """.trimIndent()
-        )
-        TestFileUtils.appendToFile(
-            project.getSubproject("feature1").buildFile,
-            """
-                dependencies {
-                  api 'com.google.guava:guava:20.0'
-                }
-            """.trimIndent()
-        )
+    TestFileUtils.appendToFile(
+      project.getSubproject("app").buildFile,
+      // language=groovy
+      """
+      dependencies {
+        implementation files("../libs/local.jar")
+      }
 
-        project.executor().run(":feature1:generateDebugFeatureTransitiveDeps")
+      android {
+          buildTypes {
+             debug {
+                  minifyEnabled = true
+              }
+          }
+      }
 
-        val feature1Dependencies = project.getSubproject("feature1").getIntermediateFile(
-            InternalArtifactType.PACKAGED_DEPENDENCIES.getFolderName(),
-            "debug/generateDebugFeatureTransitiveDeps/deps.txt"
-        )
-        assertThat(feature1Dependencies).doesNotContain("guava")
-    }
+      import kotlin.Unit
 
-    /**
-     * regression test for b/295205663
-     */
-    @Test
-    fun testExclusionOfLocalFileDependency() {
-        // Add a local jar
-        FileUtils.join(
-            project.projectDir,
-            "libs",
-            "local.jar"
-        ).apply {
-            parentFile.mkdirs()
-            writeBytes(
-                TestInputsGenerator.jarWithEmptyClasses(ImmutableList.of("com/example/jar/JarClass"))
-            )
-        }
+      import com.android.build.api.instrumentation.AsmClassVisitorFactory
+      import com.android.build.api.instrumentation.ClassData
+      import com.android.build.api.instrumentation.ClassContext
+      import com.android.build.api.instrumentation.InstrumentationParameters
+      import com.android.build.api.instrumentation.InstrumentationScope
 
-        TestFileUtils.appendToFile(
-            project.getSubproject("app").buildFile,
-            //language=groovy
-            """
-                dependencies {
-                  implementation files("../libs/local.jar")
-                }
+      import org.objectweb.asm.ClassVisitor
+      import org.objectweb.asm.util.TraceClassVisitor
 
-                android {
-                    buildTypes {
-                       debug {
-                            minifyEnabled = true
-                        }
-                    }
-                }
+      abstract class ClassVisitorFactory
+              implements AsmClassVisitorFactory<InstrumentationParameters.None> {
 
-                import kotlin.Unit
+          @Override
+          ClassVisitor createClassVisitor(
+                  ClassContext classContext, ClassVisitor nextClassVisitor) {
+              return new TraceClassVisitor(nextClassVisitor, new PrintWriter(
+                      new StringWriter()
+              ))
+          }
 
-                import com.android.build.api.instrumentation.AsmClassVisitorFactory
-                import com.android.build.api.instrumentation.ClassData
-                import com.android.build.api.instrumentation.ClassContext
-                import com.android.build.api.instrumentation.InstrumentationParameters
-                import com.android.build.api.instrumentation.InstrumentationScope
+          @Override
+          boolean isInstrumentable(ClassData classData) {
+              return true
+          }
+      }
 
-                import org.objectweb.asm.ClassVisitor
-                import org.objectweb.asm.util.TraceClassVisitor
+      androidComponents {
+          onVariants(selector().all(), { variant ->
+              variant.instrumentation.transformClassesWith(
+                      ClassVisitorFactory.class,
+                      InstrumentationScope.ALL,
+                      params -> Unit.INSTANCE)
+          })
+      }
+      """
+        .trimIndent(),
+    )
+    TestFileUtils.appendToFile(
+      project.getSubproject("feature1").buildFile,
+      """
+      dependencies {
+        implementation files("../libs/local.jar")
+      }
+      """
+        .trimIndent(),
+    )
 
-                abstract class ClassVisitorFactory
-                        implements AsmClassVisitorFactory<InstrumentationParameters.None> {
-
-                    @Override
-                    ClassVisitor createClassVisitor(
-                            ClassContext classContext, ClassVisitor nextClassVisitor) {
-                        return new TraceClassVisitor(nextClassVisitor, new PrintWriter(
-                                new StringWriter()
-                        ))
-                    }
-
-                    @Override
-                    boolean isInstrumentable(ClassData classData) {
-                        return true
-                    }
-                }
-
-                androidComponents {
-                    onVariants(selector().all(), { variant ->
-                        variant.instrumentation.transformClassesWith(
-                                ClassVisitorFactory.class,
-                                InstrumentationScope.ALL,
-                                params -> Unit.INSTANCE)
-                    })
-                }
-            """.trimIndent()
-        )
-        TestFileUtils.appendToFile(
-            project.getSubproject("feature1").buildFile,
-            """
-                dependencies {
-                  implementation files("../libs/local.jar")
-                }
-            """.trimIndent()
-        )
-
-        project.executor().run("assembleDebug")
-    }
+    project.executor().run("assembleDebug")
+  }
 }

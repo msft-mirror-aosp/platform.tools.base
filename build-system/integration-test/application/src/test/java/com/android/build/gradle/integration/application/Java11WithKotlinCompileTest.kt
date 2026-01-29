@@ -26,26 +26,20 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 
-/**
- * Tests on building a project with Java 9+ source code and kotlin source code
- */
+/** Tests on building a project with Java 9+ source code and kotlin source code */
 class Java11WithKotlinCompileTest {
 
-    @get:Rule
-    val project =
-        GradleTestProject.builder()
-            .fromTestProject("kotlinApp")
-            .create()
+  @get:Rule val project = GradleTestProject.builder().fromTestProject("kotlinApp").create()
 
-    @Before
-    fun setUp() {
-        Assume.assumeTrue(TestUtils.runningWithJdk11Plus(System.getProperty("java.version")))
+  @Before
+  fun setUp() {
+    Assume.assumeTrue(TestUtils.runningWithJdk11Plus(System.getProperty("java.version")))
 
-        val app = project.getSubproject("app")
+    val app = project.getSubproject("app")
 
-        TestFileUtils.appendToFile(
-            app.buildFile,
-            """
+    TestFileUtils.appendToFile(
+      app.buildFile,
+      """
 
                 android {
                     compileSdkVersion $DEFAULT_COMPILE_SDK_VERSION
@@ -55,50 +49,54 @@ class Java11WithKotlinCompileTest {
                         targetCompatibility JavaVersion.VERSION_11
                     }
                 }
-            """.trimIndent()
-        )
-
-        val javaSourceFile = FileUtils.join(app.mainSrcDir, "com/example/android/Foo.java")
-        javaSourceFile.parentFile.mkdirs()
-        TestFileUtils.appendToFile(
-            javaSourceFile,
             """
-                package com.example.android;
+        .trimIndent(),
+    )
 
-                public class Foo {
-                    public void java11Feature() {
-                        //Local-variable syntax for lambda parameters is the language feature available from Java 11
-                        java.util.function.Function<Integer, String> foo = (var input) -> input.toString();
-                    }
+    val javaSourceFile = FileUtils.join(app.mainSrcDir, "com/example/android/Foo.java")
+    javaSourceFile.parentFile.mkdirs()
+    TestFileUtils.appendToFile(
+      javaSourceFile,
+      """
+      package com.example.android;
 
-                    public void invokeKotlinFunction() {
-                        new com.example.android.kotlin.MainActivity().kotlinFunction();
-                    }
-                }
-            """.trimIndent()
-        )
+      public class Foo {
+          public void java11Feature() {
+              //Local-variable syntax for lambda parameters is the language feature available from Java 11
+              java.util.function.Function<Integer, String> foo = (var input) -> input.toString();
+          }
 
-        TestFileUtils.addMethod(
-                FileUtils.join(app.getMainSrcDir("kotlin"), "com/example/android/kotlin/MainActivity.kt"),
-                """
-                    fun invokeJavaFunction() {
-                        com.example.android.Foo().java11Feature()
-                    }
-                """.trimIndent()
-        )
+          public void invokeKotlinFunction() {
+              new com.example.android.kotlin.MainActivity().kotlinFunction();
+          }
+      }
+      """
+        .trimIndent(),
+    )
 
-        TestFileUtils.addMethod(
-                FileUtils.join(app.getMainSrcDir("kotlin"), "com/example/android/kotlin/MainActivity.kt"),
-                """
-                    fun kotlinFunction() {
-                        val foo = "bar"
-                    }
-                """.trimIndent()
-        )
-    }
+    TestFileUtils.addMethod(
+      FileUtils.join(app.getMainSrcDir("kotlin"), "com/example/android/kotlin/MainActivity.kt"),
+      """
+      fun invokeJavaFunction() {
+          com.example.android.Foo().java11Feature()
+      }
+      """
+        .trimIndent(),
+    )
 
-    @Test
-    fun testCompilation() {
-        project.executor().run("app:assembleDebug")
-    }
+    TestFileUtils.addMethod(
+      FileUtils.join(app.getMainSrcDir("kotlin"), "com/example/android/kotlin/MainActivity.kt"),
+      """
+      fun kotlinFunction() {
+          val foo = "bar"
+      }
+      """
+        .trimIndent(),
+    )
+  }
+
+  @Test
+  fun testCompilation() {
+    project.executor().run("app:assembleDebug")
+  }
 }

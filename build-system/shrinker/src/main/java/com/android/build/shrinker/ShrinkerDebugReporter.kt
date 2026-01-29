@@ -20,55 +20,52 @@ import java.io.File
 import java.io.PrintWriter
 
 interface ShrinkerDebugReporter : AutoCloseable {
-    fun debug(f: () -> String)
-    fun info(f: () -> String)
+  fun debug(f: () -> String)
+
+  fun info(f: () -> String)
 }
 
 object NoDebugReporter : ShrinkerDebugReporter {
-    override fun debug(f: () -> String) = Unit
+  override fun debug(f: () -> String) = Unit
 
-    override fun info(f: () -> String) = Unit
+  override fun info(f: () -> String) = Unit
 
-    override fun close() = Unit
+  override fun close() = Unit
 }
 
-class FileReporter(
-    reportFile: File
-) : ShrinkerDebugReporter {
-    private val writer: PrintWriter = reportFile.let { PrintWriter(it) }
-    override fun debug(f: () -> String) {
-        writer.println(f())
-    }
+class FileReporter(reportFile: File) : ShrinkerDebugReporter {
+  private val writer: PrintWriter = reportFile.let { PrintWriter(it) }
 
-    override fun info(f: () -> String) {
-        writer.println(f())
-    }
+  override fun debug(f: () -> String) {
+    writer.println(f())
+  }
 
-    override fun close() {
-        writer.close()
-    }
+  override fun info(f: () -> String) {
+    writer.println(f())
+  }
+
+  override fun close() {
+    writer.close()
+  }
 }
 
-class LoggerAndFileDebugReporter(
-    private val logDebug: (String) -> Unit,
-    private val logInfo: (String) -> Unit,
-    reportFile: File?
-) : ShrinkerDebugReporter {
-    private val writer: PrintWriter? = reportFile?.let { PrintWriter(it) }
+class LoggerAndFileDebugReporter(private val logDebug: (String) -> Unit, private val logInfo: (String) -> Unit, reportFile: File?) :
+  ShrinkerDebugReporter {
+  private val writer: PrintWriter? = reportFile?.let { PrintWriter(it) }
 
-    override fun debug(f: () -> String) {
-        val message = f()
-        writer?.println(message)
-        logDebug(message)
-    }
+  override fun debug(f: () -> String) {
+    val message = f()
+    writer?.println(message)
+    logDebug(message)
+  }
 
-    override fun info(f: () -> String) {
-        val message = f()
-        writer?.println(message)
-        logInfo(message)
-    }
+  override fun info(f: () -> String) {
+    val message = f()
+    writer?.println(message)
+    logInfo(message)
+  }
 
-    override fun close() {
-        writer?.close()
-    }
+  override fun close() {
+    writer?.close()
+  }
 }

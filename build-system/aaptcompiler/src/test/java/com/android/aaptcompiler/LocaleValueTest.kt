@@ -2,8 +2,8 @@ package com.android.aaptcompiler
 
 import com.android.aaptcompiler.android.ResTableConfig
 import com.google.common.truth.Truth
-import org.junit.Test
 import java.nio.charset.StandardCharsets
+import org.junit.Test
 
 class LocaleValueTest {
 
@@ -35,7 +35,7 @@ class LocaleValueTest {
     testLanguage("land", "", true)
     testLanguage("fr-land", "fr")
 
-    testLanguageRegion("fr-rCA", "fr","CA")
+    testLanguageRegion("fr-rCA", "fr", "CA")
   }
 
   @Test
@@ -47,11 +47,10 @@ class LocaleValueTest {
 
     val resTableConfig = ResTableConfig()
     locale.writeTo(resTableConfig)
-    Truth.assertThat(resTableConfig.language.toString(StandardCharsets.UTF_8))
-        .isEqualTo("be")
+    Truth.assertThat(resTableConfig.language.toString(StandardCharsets.UTF_8)).isEqualTo("be")
     Truth.assertThat(resTableConfig.localeVariant)
-        // bytearray is utf-8 representation of 'tarask' followed by two null values
-        // as it is 6 bytes in length but represented by 8 bytes.
-        .isEqualTo(byteArrayOf(116, 97, 114, 97, 115, 107, 0, 0))
+      // bytearray is utf-8 representation of 'tarask' followed by two null values
+      // as it is 6 bytes in length but represented by 8 bytes.
+      .isEqualTo(byteArrayOf(116, 97, 114, 97, 115, 107, 0, 0))
   }
 }

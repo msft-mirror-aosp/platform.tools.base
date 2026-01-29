@@ -18,51 +18,41 @@ package com.android.build.gradle.internal
 
 import com.android.build.api.artifact.impl.InternalScopedArtifacts
 import com.android.build.gradle.internal.component.HostTestCreationConfig
-import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfig
 import org.gradle.api.Project
 
-class ScreenshotTestTaskManager(
-    project: Project,
-    globalConfig: GlobalTaskCreationConfig
-): HostTestTaskManager(project, globalConfig) {
+class ScreenshotTestTaskManager(project: Project, globalConfig: GlobalTaskCreationConfig) : HostTestTaskManager(project, globalConfig) {
 
-    fun createTopLevelTasks() {
-        // Create top level screenshot test tasks.
-        super.createTopLevelTasksCore(
-            Companion.SCREENSHOT_TEST_EXECUTION_TASK_NAME,
-            "Run screenshot tests for all variants."
-        )
-    }
+  fun createTopLevelTasks() {
+    // Create top level screenshot test tasks.
+    super.createTopLevelTasksCore(Companion.SCREENSHOT_TEST_EXECUTION_TASK_NAME, "Run screenshot tests for all variants.")
+  }
 
-    /** Creates the tasks to build screenshot tests.  */
-    fun createTasks(screenshotTestCreationConfig: HostTestCreationConfig) {
-        val taskContainer = screenshotTestCreationConfig.taskContainer
-        val testedVariant = screenshotTestCreationConfig.mainVariant
-        createAnchorTasks(screenshotTestCreationConfig)
+  /** Creates the tasks to build screenshot tests. */
+  fun createTasks(screenshotTestCreationConfig: HostTestCreationConfig) {
+    val taskContainer = screenshotTestCreationConfig.taskContainer
+    val testedVariant = screenshotTestCreationConfig.mainVariant
+    createAnchorTasks(screenshotTestCreationConfig)
 
-        // Create all current streams (dependencies mostly at this point)
-        createDependencyStreams(screenshotTestCreationConfig)
+    // Create all current streams (dependencies mostly at this point)
+    createDependencyStreams(screenshotTestCreationConfig)
 
-        // process java resources
-        createProcessJavaResTask(screenshotTestCreationConfig)
+    // process java resources
+    createProcessJavaResTask(screenshotTestCreationConfig)
 
-        setupAndroidRequiredTasks(testedVariant, screenshotTestCreationConfig)
+    setupAndroidRequiredTasks(testedVariant, screenshotTestCreationConfig)
 
-        setupCompilationTaskDependencies(screenshotTestCreationConfig, taskContainer)
+    setupCompilationTaskDependencies(screenshotTestCreationConfig, taskContainer)
 
-        setupAssembleTasks(screenshotTestCreationConfig, taskContainer, ASSEMBLE_SCREENSHOT_TEST)
+    setupAssembleTasks(screenshotTestCreationConfig, taskContainer, ASSEMBLE_SCREENSHOT_TEST)
 
-        setupJavaCompilationTasks(screenshotTestCreationConfig, taskContainer, testedVariant)
+    setupJavaCompilationTasks(screenshotTestCreationConfig, taskContainer, testedVariant)
 
-        maybeCreateTransformClassesWithAsmTask(screenshotTestCreationConfig)
+    maybeCreateTransformClassesWithAsmTask(screenshotTestCreationConfig)
 
-        setupLintTasks(screenshotTestCreationConfig)
+    setupLintTasks(screenshotTestCreationConfig)
+  }
 
-    }
-
-    override val javaResMergingScopes = setOf(
-        InternalScopedArtifacts.InternalScope.SUB_PROJECTS,
-        InternalScopedArtifacts.InternalScope.EXTERNAL_LIBS,
-    )
+  override val javaResMergingScopes =
+    setOf(InternalScopedArtifacts.InternalScope.SUB_PROJECTS, InternalScopedArtifacts.InternalScope.EXTERNAL_LIBS)
 }

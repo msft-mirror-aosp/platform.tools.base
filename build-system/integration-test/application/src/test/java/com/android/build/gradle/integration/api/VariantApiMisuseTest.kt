@@ -23,17 +23,13 @@ import org.junit.Rule
 import org.junit.Test
 
 class VariantApiMisuseTest {
-    @get:Rule
-    val project =
-        GradleTestProject.builder()
-            .fromTestApp(HelloWorldApp.forPlugin("com.android.application"))
-            .create()
+  @get:Rule val project = GradleTestProject.builder().fromTestApp(HelloWorldApp.forPlugin("com.android.application")).create()
 
-    @Test
-    fun noWiringTest() {
-        TestFileUtils.appendToFile(
-            project.buildFile,
-            """
+  @Test
+  fun noWiringTest() {
+    TestFileUtils.appendToFile(
+      project.buildFile,
+      """
 apply from: "../commonHeader.gradle"
 buildscript { apply from: "../commonBuildScript.gradle" }
 
@@ -60,18 +56,22 @@ androidComponents {
       artifacts.use(outputTask)
     })
 }
-""")
-        project.executor().expectFailure().run("clean", "debugSomeTask").assertErrorContains(
-            "Task debugSomeTask was passed to Artifacts::use method without wiring any input " +
-                    "and/or output to an artifact."
-        )
-    }
+""",
+    )
+    project
+      .executor()
+      .expectFailure()
+      .run("clean", "debugSomeTask")
+      .assertErrorContains(
+        "Task debugSomeTask was passed to Artifacts::use method without wiring any input " + "and/or output to an artifact."
+      )
+  }
 
-    @Test
-    fun wiredOutputWithoutOperation() {
-        TestFileUtils.appendToFile(
-                project.buildFile,
-                """
+  @Test
+  fun wiredOutputWithoutOperation() {
+    TestFileUtils.appendToFile(
+      project.buildFile,
+      """
 apply from: "../commonHeader.gradle"
 buildscript { apply from: "../commonBuildScript.gradle" }
 
@@ -97,18 +97,20 @@ androidComponents {
           artifacts.use(outputTask).wiredWith({ it.getOutputDir })
     })
 }
-""")
-        project.executor().expectFailure().run("clean", "debugSomeTask").assertErrorContains(
-            "was wired with an output but neither toAppend, toCreate, toListenTo methods were " +
-                    "invoked."
-        )
-    }
+""",
+    )
+    project
+      .executor()
+      .expectFailure()
+      .run("clean", "debugSomeTask")
+      .assertErrorContains("was wired with an output but neither toAppend, toCreate, toListenTo methods were " + "invoked.")
+  }
 
-    @Test
-    fun wiredInputAndOutputDirectoriesWithoutTransform() {
-        TestFileUtils.appendToFile(
-                project.buildFile,
-                """
+  @Test
+  fun wiredInputAndOutputDirectoriesWithoutTransform() {
+    TestFileUtils.appendToFile(
+      project.buildFile,
+      """
 apply from: "../commonHeader.gradle"
 buildscript { apply from: "../commonBuildScript.gradle" }
 
@@ -136,18 +138,20 @@ androidComponents {
           artifacts.use(outputTask).wiredWithDirectories({ it.getInputDir }, { it.getOutputDir })
     })
 }
-""")
-        project.executor().expectFailure().run("clean", "debugSomeTask").assertErrorContains(
-            "was wired with an Input and an Output but " +
-                    "toTransform or toTransformMany methods were never invoked"
-        )
-    }
+""",
+    )
+    project
+      .executor()
+      .expectFailure()
+      .run("clean", "debugSomeTask")
+      .assertErrorContains("was wired with an Input and an Output but " + "toTransform or toTransformMany methods were never invoked")
+  }
 
-    @Test
-    fun wiredInputAndOutputFilesWithoutTransform() {
-        TestFileUtils.appendToFile(
-            project.buildFile,
-            """
+  @Test
+  fun wiredInputAndOutputFilesWithoutTransform() {
+    TestFileUtils.appendToFile(
+      project.buildFile,
+      """
 apply from: "../commonHeader.gradle"
 buildscript { apply from: "../commonBuildScript.gradle" }
 
@@ -175,17 +179,20 @@ androidComponents {
       artifacts.use(outputTask).wiredWithFiles({ it.getInputFile }, { it.getOutputFile })
     })
 }
-""")
-        project.executor().expectFailure().run("clean", "debugSomeTask").assertErrorContains(
-            "was wired with an Input and an Output but toTransform method was never invoked"
-        )
-    }
+""",
+    )
+    project
+      .executor()
+      .expectFailure()
+      .run("clean", "debugSomeTask")
+      .assertErrorContains("was wired with an Input and an Output but toTransform method was never invoked")
+  }
 
-    @Test
-    fun wiredInputAndOutputWithoutCombine() {
-        TestFileUtils.appendToFile(
-            project.buildFile,
-            """
+  @Test
+  fun wiredInputAndOutputWithoutCombine() {
+    TestFileUtils.appendToFile(
+      project.buildFile,
+      """
 apply from: "../commonHeader.gradle"
 buildscript { apply from: "../commonBuildScript.gradle" }
 
@@ -213,10 +220,12 @@ androidComponents {
           artifacts.use(outputTask).wiredWith({ it.getInputDirs }, { it.getOutputDir })
     })
 }
-""")
-        project.executor().expectFailure().run("clean", "debugSomeTask").assertErrorContains(
-            "was wired to combine multiple inputs into an output but " +
-                    "toTransform method was never invoked"
-        )
-    }
+""",
+    )
+    project
+      .executor()
+      .expectFailure()
+      .run("clean", "debugSomeTask")
+      .assertErrorContains("was wired to combine multiple inputs into an output but " + "toTransform method was never invoked")
+  }
 }

@@ -20,67 +20,57 @@ import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.MinimalSubProject
 import com.android.build.gradle.integration.common.fixture.app.MultiModuleTestProject
 import com.android.build.gradle.integration.common.truth.forEachLine
+import java.util.Scanner
 import junit.framework.TestCase.fail
 import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
-import java.util.Scanner
 
 class LegacyConfigurationTest {
 
-    private val app = MinimalSubProject.app("com.example.app")
-    private val lib = MinimalSubProject.lib("com.example.lib")
+  private val app = MinimalSubProject.app("com.example.app")
+  private val lib = MinimalSubProject.lib("com.example.lib")
 
-    @get:Rule
-    val project: GradleTestProject =
-        GradleTestProject.builder()
-            .fromTestApp(
-                MultiModuleTestProject.builder()
-                    .subproject(":app", app)
-                    .subproject(":lib", lib)
-                    .dependency(app, lib)
-                    .build()
-            ).create()
+  @get:Rule
+  val project: GradleTestProject =
+    GradleTestProject.builder()
+      .fromTestApp(MultiModuleTestProject.builder().subproject(":app", app).subproject(":lib", lib).dependency(app, lib).build())
+      .create()
 
-    /** Check for legacy configuration warnings. Regression test for b/268760654. */
-    @Test
-    fun testNoLegacyConfigurations() {
-        val result = project.executor().run("assemble", "lint")
-        val warning = "legacy configuration"
-        val warnings =
-            result.stderr.getConfigurationWarnings(warning) +
-                    result.stdout.getConfigurationWarnings(warning)
-        if (warnings.isNotEmpty()) {
-            fail("Unexpected warning(s):\n${warnings.joinToString(separator = "\n")}")
-        }
+  /** Check for legacy configuration warnings. Regression test for b/268760654. */
+  @Test
+  fun testNoLegacyConfigurations() {
+    val result = project.executor().run("assemble", "lint")
+    val warning = "legacy configuration"
+    val warnings = result.stderr.getConfigurationWarnings(warning) + result.stdout.getConfigurationWarnings(warning)
+    if (warnings.isNotEmpty()) {
+      fail("Unexpected warning(s):\n${warnings.joinToString(separator = "\n")}")
     }
+  }
 
-    /** Check for incorrect combination warnings. Regression test for b/268760654. */
-    @Ignore("b/268760654")
-    @Test
-    fun testNoIncorrectConfigurations() {
-        val result = project.executor().run("assemble", "lint")
-        val warning = "This combination is incorrect"
-        val warnings =
-            result.stderr.getConfigurationWarnings(warning) +
-                    result.stdout.getConfigurationWarnings(warning)
-        if (warnings.isNotEmpty()) {
-            fail("Unexpected warning(s):\n${warnings.joinToString(separator = "\n")}")
-        }
+  /** Check for incorrect combination warnings. Regression test for b/268760654. */
+  @Ignore("b/268760654")
+  @Test
+  fun testNoIncorrectConfigurations() {
+    val result = project.executor().run("assemble", "lint")
+    val warning = "This combination is incorrect"
+    val warnings = result.stderr.getConfigurationWarnings(warning) + result.stdout.getConfigurationWarnings(warning)
+    if (warnings.isNotEmpty()) {
+      fail("Unexpected warning(s):\n${warnings.joinToString(separator = "\n")}")
     }
+  }
 
-    /**
-     * Returns a list of scanner lines containing the given [warning], or an empty list if no lines
-     * contain the given warning. Warnings for Gradle's classpath configuration are ignored.
-     */
-    private fun Scanner.getConfigurationWarnings(warning: String): List<String> {
-        val warnings = mutableListOf<String>()
-        this.forEachLine {
-            if (!it.contains(":classpath ") && it.contains(warning)) {
-                warnings.add(it)
-            }
-        }
-        return warnings.toList()
+  /**
+   * Returns a list of scanner lines containing the given [warning], or an empty list if no lines contain the given warning. Warnings for
+   * Gradle's classpath configuration are ignored.
+   */
+  private fun Scanner.getConfigurationWarnings(warning: String): List<String> {
+    val warnings = mutableListOf<String>()
+    this.forEachLine {
+      if (!it.contains(":classpath ") && it.contains(warning)) {
+        warnings.add(it)
+      }
     }
+    return warnings.toList()
+  }
 }
-

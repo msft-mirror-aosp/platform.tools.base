@@ -26,32 +26,41 @@ import com.android.build.gradle.internal.plugins.KotlinMultiplatformAndroidPlugi
 import com.android.build.gradle.internal.utils.createTargetSdkVersion
 import com.android.builder.core.DefaultApiVersion
 
-internal class KmpDeviceTestOptionsDslInfoImpl(
-    private val extension: KotlinMultiplatformAndroidLibraryExtensionImpl,
-): DeviceTestOptionsDslInfo {
-    private val testOnDeviceConfig
-        get() = extension.androidTestOnDeviceOptions ?: throw RuntimeException(
-            "Android tests on device are not enabled. (use `kotlin.${KotlinMultiplatformAndroidPlugin.ANDROID_EXTENSION_ON_KOTLIN_EXTENSION_NAME}.withDeviceTest {}` to enable)"
+internal class KmpDeviceTestOptionsDslInfoImpl(private val extension: KotlinMultiplatformAndroidLibraryExtensionImpl) :
+  DeviceTestOptionsDslInfo {
+  private val testOnDeviceConfig
+    get() =
+      extension.androidTestOnDeviceOptions
+        ?: throw RuntimeException(
+          "Android tests on device are not enabled. (use `kotlin.${KotlinMultiplatformAndroidPlugin.ANDROID_EXTENSION_ON_KOTLIN_EXTENSION_NAME}.withDeviceTest {}` to enable)"
         )
-    override val animationsDisabled: Boolean
-        get() = testOnDeviceConfig.animationsDisabled
-    override val execution: String
-        get() = testOnDeviceConfig.execution
 
-    override val resultsDir: String?
-        get() = null
-    override val reportDir: String?
-        get() = null
-    override val managedDevices: ManagedDevices
-        get() = testOnDeviceConfig.managedDevices
-    override val emulatorControl: EmulatorControl
-        get() = testOnDeviceConfig.emulatorControl
-    override val targetSdkVersion: AndroidVersion?
-        get() = testOnDeviceConfig.run { createTargetSdkVersion(_targetSdk?.apiLevel, _targetSdk?.codeName) } ?: compileSdk
-    override val codeCoverageEnabled: Boolean
-        get() = extension.androidTestOnJvmOptions!!.enableCoverage
+  override val animationsDisabled: Boolean
+    get() = testOnDeviceConfig.animationsDisabled
 
-    private val compileSdk: AndroidVersion?
-        get() = extension.compileSdk?.let(::AndroidVersionImpl)
-            ?: extension.compileSdkPreview?.let { AndroidVersionImpl(DefaultApiVersion(it).apiLevel, it) }
+  override val execution: String
+    get() = testOnDeviceConfig.execution
+
+  override val resultsDir: String?
+    get() = null
+
+  override val reportDir: String?
+    get() = null
+
+  override val managedDevices: ManagedDevices
+    get() = testOnDeviceConfig.managedDevices
+
+  override val emulatorControl: EmulatorControl
+    get() = testOnDeviceConfig.emulatorControl
+
+  override val targetSdkVersion: AndroidVersion?
+    get() = testOnDeviceConfig.run { createTargetSdkVersion(_targetSdk?.apiLevel, _targetSdk?.codeName) } ?: compileSdk
+
+  override val codeCoverageEnabled: Boolean
+    get() = extension.androidTestOnJvmOptions!!.enableCoverage
+
+  private val compileSdk: AndroidVersion?
+    get() =
+      extension.compileSdk?.let(::AndroidVersionImpl)
+        ?: extension.compileSdkPreview?.let { AndroidVersionImpl(DefaultApiVersion(it).apiLevel, it) }
 }

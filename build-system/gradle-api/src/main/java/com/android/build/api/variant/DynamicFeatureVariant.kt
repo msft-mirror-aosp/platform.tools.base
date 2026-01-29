@@ -21,15 +21,8 @@ package com.android.build.api.variant
  * See [Component] and [Variant] for more information.
  */
 @Suppress("DEPRECATION")
-interface DynamicFeatureVariant : Variant,
-    GeneratesApk,
-    HasDeviceTests,
-    HasAndroidTest,
-    HasUnitTest,
-    HasTestFixtures {
+interface DynamicFeatureVariant : Variant, GeneratesApk, HasDeviceTests, HasAndroidTest, HasUnitTest, HasTestFixtures {
 
-    /**
-     * Variant's packagingOptions, initialized by the corresponding global DSL element.
-     */
-    override val packaging: TestedApkPackaging
+  /** Variant's packagingOptions, initialized by the corresponding global DSL element. */
+  override val packaging: TestedApkPackaging
 }

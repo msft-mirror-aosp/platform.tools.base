@@ -22,7 +22,6 @@ import com.android.build.gradle.integration.common.fixture.app.LayoutFileBuilder
 import com.android.build.gradle.integration.common.fixture.app.ManifestFileBuilder
 import com.android.build.gradle.integration.common.fixture.app.MinimalSubProject
 import com.android.build.gradle.integration.common.fixture.app.MultiModuleTestProject
-import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.truth.PathSubject.assertThat
 import org.junit.Rule
 import org.junit.Test
@@ -47,40 +46,30 @@ private const val FAKE_CLASS_PATH = "my.imaginary.class"
 private const val KEEP_RULE = "-keep class $FAKE_CLASS_PATH"
 
 @RunWith(Parameterized::class)
-class MergeGeneratedProguardFilesTest(
-    annotateMainActivity: Boolean,
-    annotateDependency: Boolean) {
-    private val annotationPackagePath = ANNOTATION_PACKAGE.replace('.', '/')
-    private val mainPackagePath = NAMESPACE.replace('.', '/')
-    private val libPath = LIB_PACKAGE.replace('.', '/')
+class MergeGeneratedProguardFilesTest(annotateMainActivity: Boolean, annotateDependency: Boolean) {
+  private val annotationPackagePath = ANNOTATION_PACKAGE.replace('.', '/')
+  private val mainPackagePath = NAMESPACE.replace('.', '/')
+  private val libPath = LIB_PACKAGE.replace('.', '/')
 
-    companion object {
-        @JvmStatic
-        @Parameterized.Parameters(name = "main annotated: {0}, library annotated: {1}")
-        fun getConfigurations(): Collection<Array<Boolean>> =
-            listOf(
-                arrayOf(true, false),
-                arrayOf(false, true)
-            )
-    }
+  companion object {
+    @JvmStatic
+    @Parameterized.Parameters(name = "main annotated: {0}, library annotated: {1}")
+    fun getConfigurations(): Collection<Array<Boolean>> = listOf(arrayOf(true, false), arrayOf(false, true))
+  }
 
-    private val app =
-        MinimalSubProject.app(NAMESPACE)
-            .withFile(
-                "src/main/res/layout/$LAYOUT_NAME.xml",
-                with(LayoutFileBuilder()) {
-                    build()
-                }
-            )
-            .withFile(
-                "src/main/AndroidManifest.xml",
-                with(ManifestFileBuilder()) {
-                    addApplicationTag(MAIN_ACTIVITY)
-                    build()
-                })
-            .withFile(
-                "src/main/java/$mainPackagePath/$MAIN_ACTIVITY.java",
-                """
+  private val app =
+    MinimalSubProject.app(NAMESPACE)
+      .withFile("src/main/res/layout/$LAYOUT_NAME.xml", with(LayoutFileBuilder()) { build() })
+      .withFile(
+        "src/main/AndroidManifest.xml",
+        with(ManifestFileBuilder()) {
+          addApplicationTag(MAIN_ACTIVITY)
+          build()
+        },
+      )
+      .withFile(
+        "src/main/java/$mainPackagePath/$MAIN_ACTIVITY.java",
+        """
                 package $NAMESPACE;
                 import androidx.appcompat.app.AppCompatActivity;
                 import android.os.Bundle;
@@ -96,10 +85,12 @@ class MergeGeneratedProguardFilesTest(
                         new Dummy();
                     }
                 }
-                """.trimIndent())
-            .withFile(
-                "build.gradle",
                 """
+          .trimIndent(),
+      )
+      .withFile(
+        "build.gradle",
+        """
                 apply plugin: 'com.android.application'
 
                 android {
@@ -124,12 +115,14 @@ class MergeGeneratedProguardFilesTest(
                     ${if(annotateMainActivity) "compileOnly project('$ANNOTATION_MODULE')" else ""}
                     ${if(annotateMainActivity) "annotationProcessor project('$ANNOTATION_MODULE')" else ""}
                 }
-                """.trimIndent())
-    private val proguardRuleGenerator =
-        MinimalSubProject.javaLibrary()
-            .withFile(
-                "src/main/java/$annotationPackagePath/$ANNOTATION.java",
                 """
+          .trimIndent(),
+      )
+  private val proguardRuleGenerator =
+    MinimalSubProject.javaLibrary()
+      .withFile(
+        "src/main/java/$annotationPackagePath/$ANNOTATION.java",
+        """
                 package $ANNOTATION_PACKAGE;
 
                 import java.lang.annotation.ElementType;
@@ -141,10 +134,12 @@ class MergeGeneratedProguardFilesTest(
                 @Target(ElementType.TYPE)
                 public @interface $ANNOTATION {
                 }
-                """.trimIndent())
-            .withFile(
-                "src/main/java/$annotationPackagePath/$ANNOTATION_PROCESSOR.java",
                 """
+          .trimIndent(),
+      )
+      .withFile(
+        "src/main/java/$annotationPackagePath/$ANNOTATION_PROCESSOR.java",
+        """
                 package $ANNOTATION_PACKAGE;
 
                 import static javax.tools.StandardLocation.CLASS_OUTPUT;
@@ -187,57 +182,62 @@ class MergeGeneratedProguardFilesTest(
                         return false;
                     }
                 }
-                """.trimIndent())
-            .withFile(
-                "src/main/resources/META-INF/services/javax.annotation.processing.Processor",
                 """
+          .trimIndent(),
+      )
+      .withFile(
+        "src/main/resources/META-INF/services/javax.annotation.processing.Processor",
+        """
                 $ANNOTATION_PACKAGE.$ANNOTATION_PROCESSOR
-                """.trimIndent())
-    val lib =
-        MinimalSubProject.lib(LIB_PACKAGE)
-            .withFile(
-                "src/main/java/$libPath/Dummy.java",
                 """
+          .trimIndent(),
+      )
+  val lib =
+    MinimalSubProject.lib(LIB_PACKAGE)
+      .withFile(
+        "src/main/java/$libPath/Dummy.java",
+        """
                 package $LIB_PACKAGE;
 
                 ${if(annotateDependency) "@$ANNOTATION_PACKAGE.$ANNOTATION" else ""}
                 public class Dummy {
                 }
-                """.trimIndent())
-            .appendToBuild(
                 """
+          .trimIndent(),
+      )
+      .appendToBuild(
+        """
                 dependencies {
                     ${if(annotateDependency) "compileOnly project('$ANNOTATION_MODULE')" else ""}
                     ${if(annotateDependency) "annotationProcessor project('$ANNOTATION_MODULE')" else ""}
                 }
-                """)
+                """
+      )
 
-    @Rule
-    @JvmField
-    val project =
-            GradleTestProject.builder().fromTestApp(
-                    MultiModuleTestProject.builder()
-                            .subproject(":app", app)
-                            .subproject(ANNOTATION_MODULE, proguardRuleGenerator)
-                            .subproject(":lib", lib)
-                            .build()
-            )
-                    .create()
+  @Rule
+  @JvmField
+  val project =
+    GradleTestProject.builder()
+      .fromTestApp(
+        MultiModuleTestProject.builder()
+          .subproject(":app", app)
+          .subproject(ANNOTATION_MODULE, proguardRuleGenerator)
+          .subproject(":lib", lib)
+          .build()
+      )
+      .create()
 
-    @get:Rule
-    val tmp = TemporaryFolder()
+  @get:Rule val tmp = TemporaryFolder()
 
-    @Test
-    fun testGeneratedProGuardFilesPropagatedToR8() {
+  @Test
+  fun testGeneratedProGuardFilesPropagatedToR8() {
 
-        val configFile = tmp.newFile()
+    val configFile = tmp.newFile()
 
-        project.getSubproject("app")
-            .file("proguard-rules.pro")
-            .writeText("-printconfiguration ${configFile.absolutePath}")
+    project.getSubproject("app").file("proguard-rules.pro").writeText("-printconfiguration ${configFile.absolutePath}")
 
-        project.execute("clean", ":app:assembleDebug")
+    project.execute("clean", ":app:assembleDebug")
 
-        assertThat(configFile).contains(KEEP_RULE)
-    }
+    assertThat(configFile).contains(KEEP_RULE)
+  }
 }

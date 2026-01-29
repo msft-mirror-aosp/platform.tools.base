@@ -16,20 +16,17 @@
 
 package com.android.build.api.dsl
 
-/**
- * Options to build a [KotlinMultiplatformAndroidCompilation] object.
- */
+/** Options to build a [KotlinMultiplatformAndroidCompilation] object. */
 interface KotlinMultiplatformAndroidCompilationBuilder {
-    /**
-     * The name of the sourceSet tree that would be used to infer the dependencies between
-     * sourceSets. For example, setting the sourceSetTreeName to `test` means that compilation will
-     * include the `commonTest` sourceSet, and setting it to `integrationTest` means that the
-     * compilation will include the `commonIntegrationTest` sourceSet if exists.
-     *
-     * Setting this value to `null` means that this compilation is not part of any sourceSet trees
-     * and the kotlin plugin will not include any common test sourceSets in this compilation.
-     *
-     * @see [org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension.targetHierarchy]
-     */
-    var sourceSetTreeName: String?
+  /**
+   * The name of the sourceSet tree that would be used to infer the dependencies between sourceSets. For example, setting the
+   * sourceSetTreeName to `test` means that compilation will include the `commonTest` sourceSet, and setting it to `integrationTest` means
+   * that the compilation will include the `commonIntegrationTest` sourceSet if exists.
+   *
+   * Setting this value to `null` means that this compilation is not part of any sourceSet trees and the kotlin plugin will not include any
+   * common test sourceSets in this compilation.
+   *
+   * @see [org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension.targetHierarchy]
+   */
+  var sourceSetTreeName: String?
 }

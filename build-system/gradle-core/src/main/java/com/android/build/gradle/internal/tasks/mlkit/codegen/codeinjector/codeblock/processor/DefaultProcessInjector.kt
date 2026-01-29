@@ -23,12 +23,7 @@ import com.squareup.javapoet.MethodSpec
 
 /** Injector to inject default process code, which is just a reassign. */
 class DefaultProcessInjector : CodeBlockInjector() {
-    override fun inject(methodBuilder: MethodSpec.Builder, tensorInfo: TensorInfo) {
-        methodBuilder.addStatement(
-            "\$T \$L = \$L",
-            ClassNames.TENSOR_BUFFER,
-            getProcessedTypeName(tensorInfo),
-            tensorInfo.identifierName
-        )
-    }
+  override fun inject(methodBuilder: MethodSpec.Builder, tensorInfo: TensorInfo) {
+    methodBuilder.addStatement("\$T \$L = \$L", ClassNames.TENSOR_BUFFER, getProcessedTypeName(tensorInfo), tensorInfo.identifierName)
+  }
 }

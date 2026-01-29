@@ -28,122 +28,129 @@ import com.android.build.gradle.internal.instrumentation.ASM_API_VERSION
 import com.android.testutils.truth.DexClassSubject.assertThat
 import com.android.utils.FileUtils
 import com.google.common.truth.Truth
+import java.io.File
+import java.io.IOException
+import java.util.zip.ZipEntry
+import java.util.zip.ZipFile
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.objectweb.asm.ClassReader
 import org.objectweb.asm.tree.ClassNode
-import java.io.File
-import java.io.IOException
-import java.util.zip.ZipEntry
-import java.util.zip.ZipFile
 
 class JacocoScopedArtifactsTest {
-    @JvmField
-    @Rule
-    val project: GradleTestProject = builder().fromTestApp(MinimalSubProject.app("com.example.app"))
-        .withPluginManagementBlock(true).create()
+  @JvmField
+  @Rule
+  val project: GradleTestProject = builder().fromTestApp(MinimalSubProject.app("com.example.app")).withPluginManagementBlock(true).create()
 
-    @Before
-    fun setUp() {
-        project.buildFile.delete()
+  @Before
+  fun setUp() {
+    project.buildFile.delete()
 
-        project.file("build.gradle.kts").writeText(
-                // language=kotlin
-            """
-                import com.android.build.api.variant.ScopedArtifacts
-                import com.android.build.api.artifact.ScopedArtifact
-                import java.util.jar.JarEntry
-                import java.util.jar.JarFile
-                import java.util.jar.JarOutputStream
-                import java.util.jar.JarInputStream
+    project
+      .file("build.gradle.kts")
+      .writeText(
+        // language=kotlin
+        """
+        import com.android.build.api.variant.ScopedArtifacts
+        import com.android.build.api.artifact.ScopedArtifact
+        import java.util.jar.JarEntry
+        import java.util.jar.JarFile
+        import java.util.jar.JarOutputStream
+        import java.util.jar.JarInputStream
 
-                apply(from = "../commonHeader.gradle")
-                plugins {
-                    id("com.android.application")
+        apply(from = "../commonHeader.gradle")
+        plugins {
+            id("com.android.application")
+        }
+
+        android {
+            namespace = "com.example.app"
+            compileSdkVersion(30)
+            buildTypes {
+                debug {
+                    enableAndroidTestCoverage = true
                 }
+            }
+        }
 
-                android {
-                    namespace = "com.example.app"
-                    compileSdkVersion(30)
-                    buildTypes {
-                        debug {
-                            enableAndroidTestCoverage = true
-                        }
-                    }
-                }
+        abstract class ValidateScopedArtifactsTask : DefaultTask() {
+            @get:InputFiles
+            abstract val directories: ListProperty<Directory>
 
-                abstract class ValidateScopedArtifactsTask : DefaultTask() {
-                    @get:InputFiles
-                    abstract val directories: ListProperty<Directory>
+            @get:InputFiles
+            abstract val jars: ListProperty<RegularFile>
 
-                    @get:InputFiles
-                    abstract val jars: ListProperty<RegularFile>
+            @TaskAction
+            fun action() {
+                val locations = directories.get().map { it.toString() } + jars.get().map { it.toString() }
+                System.out.println("Scoped artifacts: " + locations.joinToString(File.pathSeparator))
+            }
+        }
 
-                    @TaskAction
-                    fun action() {
-                        val locations = directories.get().map { it.toString() } + jars.get().map { it.toString() }
-                        System.out.println("Scoped artifacts: " + locations.joinToString(File.pathSeparator))
-                    }
-                }
+        abstract class TransformScopedArtifactsTask : DefaultTask() {
+            @get:InputFiles
+            abstract val directories: ListProperty<Directory>
 
-                abstract class TransformScopedArtifactsTask : DefaultTask() {
-                    @get:InputFiles
-                    abstract val directories: ListProperty<Directory>
+            @get:InputFiles
+            abstract val jars: ListProperty<RegularFile>
 
-                    @get:InputFiles
-                    abstract val jars: ListProperty<RegularFile>
+            @get:OutputFile
+            abstract val outputJar: RegularFileProperty
 
-                    @get:OutputFile
-                    abstract val outputJar: RegularFileProperty
-
-                    @TaskAction
-                    fun action() {
-                        val locations = directories.get().map { it.toString() } + jars.get().map { it.toString() }
-                        System.out.println("Scoped artifacts: " + locations.joinToString(File.pathSeparator))
-                        val jarEntries = mutableSetOf<String>()
-                        JarOutputStream(outputJar.get().asFile.outputStream().buffered()).use { out ->
-                            for (jar in jars.get()) {
-                                val inputStream = JarInputStream(jar.asFile.inputStream().buffered())
-                                while (true) {
-                                    val entry = inputStream.nextEntry ?: break
-                                    if (!jarEntries.contains(entry.name)) {
-                                        jarEntries.add(entry.name)
-                                        out.putNextEntry(JarEntry(entry.name))
-                                        inputStream.copyTo(out)
-                                    }
-                                }
-                            }
-                            for (dir in directories.get()) {
-                                val root = dir.asFile
-                                val dir = root.walk().forEach { file ->
-                                    if (file.isFile()) {
-                                        out.putNextEntry(JarEntry(root.toPath().relativize(file.toPath()).toString()))
-                                        file.inputStream().use { it.copyTo(out) }
-                                    }
-                                }
+            @TaskAction
+            fun action() {
+                val locations = directories.get().map { it.toString() } + jars.get().map { it.toString() }
+                System.out.println("Scoped artifacts: " + locations.joinToString(File.pathSeparator))
+                val jarEntries = mutableSetOf<String>()
+                JarOutputStream(outputJar.get().asFile.outputStream().buffered()).use { out ->
+                    for (jar in jars.get()) {
+                        val inputStream = JarInputStream(jar.asFile.inputStream().buffered())
+                        while (true) {
+                            val entry = inputStream.nextEntry ?: break
+                            if (!jarEntries.contains(entry.name)) {
+                                jarEntries.add(entry.name)
+                                out.putNextEntry(JarEntry(entry.name))
+                                inputStream.copyTo(out)
                             }
                         }
                     }
+                    for (dir in directories.get()) {
+                        val root = dir.asFile
+                        val dir = root.walk().forEach { file ->
+                            if (file.isFile()) {
+                                out.putNextEntry(JarEntry(root.toPath().relativize(file.toPath()).toString()))
+                                file.inputStream().use { it.copyTo(out) }
+                            }
+                        }
+                    }
                 }
+            }
+        }
 
-                dependencies {
-                    implementation("com.google.guava:guava:19.0")
-                }
-            """.trimIndent()
-        )
+        dependencies {
+            implementation("com.google.guava:guava:19.0")
+        }
+        """
+          .trimIndent()
+      )
 
-        FileUtils.createFile(project.file("src/main/java/com/example/app/Example.java"),
-            """
-                package com.example.app;
+    FileUtils.createFile(
+      project.file("src/main/java/com/example/app/Example.java"),
+      """
+      package com.example.app;
 
-                public class Example {
-                }
-            """.trimIndent())
-    }
+      public class Example {
+      }
+      """
+        .trimIndent(),
+    )
+  }
 
-    private fun `add reader`(scope: ScopedArtifacts.Scope) {
-        project.file("build.gradle.kts").appendText(
+  private fun `add reader`(scope: ScopedArtifacts.Scope) {
+    project
+      .file("build.gradle.kts")
+      .appendText(
         """
 
               androidComponents {
@@ -162,13 +169,16 @@ class JacocoScopedArtifactsTest {
                             )
                     }
                 }
-        """.trimIndent())
+        """
+          .trimIndent()
+      )
+  }
 
-    }
-
-    private fun `add transformation`(scope: ScopedArtifacts.Scope) {
-        project.file("build.gradle.kts").appendText(
-                """
+  private fun `add transformation`(scope: ScopedArtifacts.Scope) {
+    project
+      .file("build.gradle.kts")
+      .appendText(
+        """
 
                androidComponents {
                     onVariants { variant ->
@@ -187,111 +197,108 @@ class JacocoScopedArtifactsTest {
                             )
                     }
                 }
-        """.trimIndent())
+        """
+          .trimIndent()
+      )
+  }
 
+  @Test
+  fun validateProjectClassesRead() {
+    `add reader`(ScopedArtifacts.Scope.PROJECT)
+    validateClassesBeforeAndAfterInstrumentation()
+  }
+
+  @Test
+  fun validateAllClassesRead() {
+    `add reader`(ScopedArtifacts.Scope.ALL)
+    validateClassesBeforeAndAfterInstrumentation()
+  }
+
+  @Test
+  fun validateProjectClassesInstrumentation() {
+    `add transformation`(ScopedArtifacts.Scope.PROJECT)
+    val result = project.executor().run("assembleDebug", "debugTransformScopedArtifacts")
+    validateScopedClassesAreNotInstrumented(result)
+    validateApkIsInstrumented()
+  }
+
+  @Test
+  fun validateAllClassesInstrumentation() {
+    `add transformation`(ScopedArtifacts.Scope.ALL)
+    val result = project.executor().run("assembleDebug", "debugTransformScopedArtifacts")
+    validateScopedClassesAreNotInstrumented(result)
+    validateApkIsInstrumented()
+  }
+
+  private fun validateApkIsInstrumented() {
+    project.getApk(GradleTestProject.ApkType.DEBUG).use { mainApk ->
+      assertThat(mainApk.getClass("Lcom/example/app/Example;")).hasMethod("\$jacocoInit")
+      assertThat(mainApk.getClass("Lcom/google/common/collect/ImmutableList;")).hasMethod("\$jacocoInit")
     }
+  }
 
-    @Test
-    fun validateProjectClassesRead() {
-        `add reader`(ScopedArtifacts.Scope.PROJECT)
-        validateClassesBeforeAndAfterInstrumentation()
+  private fun validateClassesBeforeAndAfterInstrumentation() {
+    val result = project.executor().run("assembleDebug", "debugValidateScopedArtifacts")
+    validateScopedClassesAreNotInstrumented(result)
+    validateApkIsInstrumented()
+
+    val classesFolder = FileUtils.join(project.buildDir, SdkConstants.FD_INTERMEDIATES, "classes/debug/jacocoDebug")
+
+    val dirFile = FileUtils.join(classesFolder, "dirs/com/example/app/Example.class")
+    validateDirectoryClass(jacocoPresent = true, dirFile)
+
+    val jarFile = FileUtils.join(classesFolder, "jars/0.jar")
+    validateJarClass(jarFile, "com/example/app/R.class", expectJacoco = false)
+  }
+
+  private fun validateScopedClassesAreNotInstrumented(buildResult: GradleBuildResult) {
+    ScannerSubject.assertThat(buildResult.stdout).contains("Scoped artifacts: ")
+    var artifacts = ""
+    val output = buildResult.stdout
+    while (output.hasNextLine()) {
+      val line = output.nextLine()
+      if (line.contains("Scoped artifacts: ")) {
+        artifacts = line.substringAfter("Scoped artifacts: ")
+      }
     }
-
-    @Test
-    fun validateAllClassesRead() {
-        `add reader`(ScopedArtifacts.Scope.ALL)
-        validateClassesBeforeAndAfterInstrumentation()
+    Truth.assertThat(artifacts).isNotEmpty()
+    val artifactPaths = artifacts.split(File.pathSeparator)
+    artifactPaths.forEach { path ->
+      if (path.endsWith("R.jar")) {
+        validateJarClass(File(path), "com/example/app/R.class", expectJacoco = false)
+      } else if (path.endsWith("classes")) {
+        val dirFile = FileUtils.join(File(path), "com/example/app/Example.class")
+        validateDirectoryClass(jacocoPresent = false, dirFile)
+      }
     }
+  }
 
-    @Test
-    fun validateProjectClassesInstrumentation() {
-        `add transformation`(ScopedArtifacts.Scope.PROJECT)
-        val result = project.executor().run("assembleDebug", "debugTransformScopedArtifacts")
-        validateScopedClassesAreNotInstrumented(result)
-        validateApkIsInstrumented()
+  private fun validateDirectoryClass(jacocoPresent: Boolean, classFile: File) {
+    val classReader = ClassReader(classFile.readBytes())
+    val classNode = ClassNode(ASM_API_VERSION)
+    classReader.accept(classNode, 0)
+    if (jacocoPresent) {
+      Truth.assertThat(classNode.methods.firstOrNull { it.name == "\$jacocoInit" }).isNotNull()
+    } else {
+      Truth.assertThat(classNode.fields).isEmpty()
     }
+  }
 
-    @Test
-    fun validateAllClassesInstrumentation() {
-        `add transformation`(ScopedArtifacts.Scope.ALL)
-        val result = project.executor().run("assembleDebug", "debugTransformScopedArtifacts")
-        validateScopedClassesAreNotInstrumented(result)
-        validateApkIsInstrumented()
+  private fun validateJarClass(classFile: File, clazz: String, expectJacoco: Boolean) {
+    val zipFile = ZipFile(classFile)
+    try {
+      val entry: ZipEntry = zipFile.getEntry(clazz)
+      TruthHelper.assertThat(entry).named("R.class entry").isNotNull()
+      val classReader = ClassReader(zipFile.getInputStream(entry))
+      val classNode = ClassNode(ASM_API_VERSION)
+      classReader.accept(classNode, 0)
+      if (expectJacoco) {
+        Truth.assertThat(classNode.methods.firstOrNull { it.name == "\$jacocoInit" }).isNotNull()
+      } else {
+        Truth.assertThat(classNode.fields).isEmpty()
+      }
+    } catch (exception: IOException) {
+      error(exception)
     }
-
-    private fun validateApkIsInstrumented() {
-        project.getApk(GradleTestProject.ApkType.DEBUG).use { mainApk ->
-            assertThat(mainApk.getClass("Lcom/example/app/Example;")).hasMethod("\$jacocoInit")
-            assertThat(mainApk.getClass("Lcom/google/common/collect/ImmutableList;")).hasMethod("\$jacocoInit")
-        }
-    }
-
-    private fun validateClassesBeforeAndAfterInstrumentation() {
-        val result = project.executor().run("assembleDebug", "debugValidateScopedArtifacts")
-        validateScopedClassesAreNotInstrumented(result)
-        validateApkIsInstrumented()
-
-        val classesFolder = FileUtils.join(
-            project.buildDir,
-            SdkConstants.FD_INTERMEDIATES,
-            "classes/debug/jacocoDebug"
-        )
-
-        val dirFile = FileUtils.join(classesFolder, "dirs/com/example/app/Example.class")
-        validateDirectoryClass(jacocoPresent = true, dirFile)
-
-        val jarFile = FileUtils.join(classesFolder, "jars/0.jar")
-        validateJarClass(jarFile, "com/example/app/R.class", expectJacoco = false)
-    }
-
-    private fun validateScopedClassesAreNotInstrumented(buildResult: GradleBuildResult) {
-        ScannerSubject.assertThat(buildResult.stdout).contains("Scoped artifacts: ")
-        var artifacts = ""
-        val output = buildResult.stdout
-        while (output.hasNextLine()) {
-            val line = output.nextLine()
-            if (line.contains("Scoped artifacts: ")) {
-                artifacts = line.substringAfter("Scoped artifacts: ")
-            }
-        }
-        Truth.assertThat(artifacts).isNotEmpty()
-        val artifactPaths = artifacts.split(File.pathSeparator)
-        artifactPaths.forEach { path ->
-            if (path.endsWith("R.jar")) {
-                validateJarClass(File(path), "com/example/app/R.class", expectJacoco = false)
-            } else if (path.endsWith("classes")) {
-                val dirFile = FileUtils.join(File(path), "com/example/app/Example.class")
-                validateDirectoryClass(jacocoPresent = false, dirFile)
-            }
-        }
-    }
-
-    private fun validateDirectoryClass(jacocoPresent: Boolean, classFile: File) {
-        val classReader = ClassReader(classFile.readBytes())
-        val classNode = ClassNode(ASM_API_VERSION)
-        classReader.accept(classNode, 0)
-        if (jacocoPresent) {
-            Truth.assertThat(classNode.methods.firstOrNull { it.name == "\$jacocoInit"  }).isNotNull()
-        } else {
-            Truth.assertThat(classNode.fields).isEmpty()
-        }
-    }
-
-    private fun validateJarClass(classFile: File, clazz: String, expectJacoco: Boolean) {
-        val zipFile = ZipFile(classFile)
-        try {
-            val entry: ZipEntry = zipFile.getEntry(clazz)
-            TruthHelper.assertThat(entry).named("R.class entry").isNotNull()
-            val classReader = ClassReader(zipFile.getInputStream(entry))
-            val classNode = ClassNode(ASM_API_VERSION)
-            classReader.accept(classNode, 0)
-            if (expectJacoco) {
-                Truth.assertThat(classNode.methods.firstOrNull { it.name == "\$jacocoInit"  }).isNotNull()
-            } else {
-                Truth.assertThat(classNode.fields).isEmpty()
-            }
-        } catch (exception: IOException) {
-            error(exception)
-        }
-    }
+  }
 }

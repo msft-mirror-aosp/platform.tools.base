@@ -35,115 +35,83 @@ import org.junit.Test
 
 class MappingFileAccessTest {
 
-    @get:Rule
-    val rule = GradleRule.fromProject(BasicSpec()) {
-        androidApplication(":app") {
-            android {
-                buildTypes {
-                    named("release") {
-                        it.isMinifyEnabled = true
-                    }
-                }
-            }
+  @get:Rule
+  val rule =
+    GradleRule.fromProject(BasicSpec()) {
+      androidApplication(":app") {
+        android { buildTypes { named("release") { it.isMinifyEnabled = true } } }
 
-            pluginCallbacks += AppVariantCallback::class.java
-        }
-        gradleProperties {
-            add(BooleanOption.USE_NEW_DSL, false)
-        }
+        pluginCallbacks += AppVariantCallback::class.java
+      }
+      gradleProperties { add(BooleanOption.USE_NEW_DSL, false) }
     }
 
-    class AppVariantCallback: LegacyApplicationCallback {
-        override fun handleExtension(
-            project: Project,
-            extension: BaseAppModuleExtension
-        ) {
-            extension.applicationVariants.all { variant ->
-                if (variant.buildType.name == "release") {
-                    variant as InstallableVariantImpl
-                    val mappingFile = variant.getFinalArtifact(com.android.build.api.artifact.SingleArtifact.OBFUSCATION_MAPPING_FILE)
-                    println("Creating mapping task for " + variant.name)
-                    val mappingTask = project.tasks.register(
-                        "hello" + variant.name.capitalize(),
-                        MappingFileUserTask::class.java
-                    ) {
-                        it.mappingFile.set(mappingFile)
-                    }
-                    variant.register(mappingTask.get())
-                } else {
-                    println("Not creating mapping task for " + variant.name)
-                }
-            }
+  class AppVariantCallback : LegacyApplicationCallback {
+    override fun handleExtension(project: Project, extension: BaseAppModuleExtension) {
+      extension.applicationVariants.all { variant ->
+        if (variant.buildType.name == "release") {
+          variant as InstallableVariantImpl
+          val mappingFile = variant.getFinalArtifact(com.android.build.api.artifact.SingleArtifact.OBFUSCATION_MAPPING_FILE)
+          println("Creating mapping task for " + variant.name)
+          val mappingTask =
+            project.tasks.register("hello" + variant.name.capitalize(), MappingFileUserTask::class.java) { it.mappingFile.set(mappingFile) }
+          variant.register(mappingTask.get())
+        } else {
+          println("Not creating mapping task for " + variant.name)
         }
+      }
     }
+  }
 
-    @Test
-    fun assembleTest() {
-        val buildResult = rule.build.executor.run("clean", "assemble")
-        assertThat(buildResult.tasks).contains(":app:helloRelease")
-        assertThat(buildResult.tasks).doesNotContain(":app:helloDebug")
+  @Test
+  fun assembleTest() {
+    val buildResult = rule.build.executor.run("clean", "assemble")
+    assertThat(buildResult.tasks).contains(":app:helloRelease")
+    assertThat(buildResult.tasks).doesNotContain(":app:helloDebug")
 
-        buildResult.stdout.use {
-            ScannerSubject.assertThat(it)
-                .contains("helloRelease task mapping file exists is true")
-        }
+    buildResult.stdout.use { ScannerSubject.assertThat(it).contains("helloRelease task mapping file exists is true") }
+  }
+
+  @Test
+  fun bundleTest() {
+    val buildResult = rule.build.executor.run("clean", "bundle")
+    assertThat(buildResult.tasks).contains(":app:helloRelease")
+    assertThat(buildResult.tasks).doesNotContain(":app:helloDebug")
+
+    buildResult.stdout.use { ScannerSubject.assertThat(it).contains("helloRelease task mapping file exists is true") }
+  }
+
+  @Test
+  fun useMappingFileSpecificApi() {
+    val build = rule.build { androidApplication(":app") { pluginCallbacks += MappingFileSpecificApiCallback::class.java } }
+
+    build.executor.run("mappingFileRelease").apply {
+      assertTask(":app:mappingFileRelease").didWork()
+      assertTask(":app:minifyReleaseWithR8").didWork()
     }
+  }
 
-    @Test
-    fun bundleTest() {
-        val buildResult = rule.build.executor.run("clean", "bundle")
-        assertThat(buildResult.tasks).contains(":app:helloRelease")
-        assertThat(buildResult.tasks).doesNotContain(":app:helloDebug")
-
-        buildResult.stdout.use {
-            ScannerSubject.assertThat(it)
-                .contains("helloRelease task mapping file exists is true")
+  class MappingFileSpecificApiCallback : LegacyApplicationCallback {
+    override fun handleExtension(project: Project, extension: BaseAppModuleExtension) {
+      extension.applicationVariants.all { variant ->
+        if (variant.buildType.isMinifyEnabled) {
+          project.tasks.register("mappingFile" + variant.name.capitalize(), MappingFileUserTask::class.java) {
+            it.mappingFile.set(variant.mappingFileProvider)
+          }
         }
+      }
     }
-
-    @Test
-    fun useMappingFileSpecificApi() {
-        val build = rule.build {
-            androidApplication(":app") {
-                pluginCallbacks += MappingFileSpecificApiCallback::class.java
-            }
-        }
-
-        build.executor.run("mappingFileRelease").apply {
-            assertTask(":app:mappingFileRelease").didWork()
-            assertTask(":app:minifyReleaseWithR8").didWork()
-        }
-    }
-
-    class MappingFileSpecificApiCallback: LegacyApplicationCallback {
-        override fun handleExtension(
-            project: Project,
-            extension: BaseAppModuleExtension
-        ) {
-            extension.applicationVariants.all { variant ->
-                if (variant.buildType.isMinifyEnabled) {
-                    project.tasks.register(
-                        "mappingFile" + variant.name.capitalize(),
-                        MappingFileUserTask::class.java
-                    ) {
-                        it.mappingFile.set(variant.mappingFileProvider)
-                    }
-                }
-            }
-        }
-    }
-
+  }
 }
 
 abstract class MappingFileUserTask : DefaultTask() {
 
-    @get:InputFiles
-    abstract val mappingFile: Property<FileCollection>
+  @get:InputFiles abstract val mappingFile: Property<FileCollection>
 
-    @TaskAction
-    fun taskAction() {
-        val file = mappingFile.get().singleFile
-        println("MappingFileTask $file")
-        println("$name task mapping file exists is ${file.exists()}")
-    }
+  @TaskAction
+  fun taskAction() {
+    val file = mappingFile.get().singleFile
+    println("MappingFileTask $file")
+    println("$name task mapping file exists is ${file.exists()}")
+  }
 }

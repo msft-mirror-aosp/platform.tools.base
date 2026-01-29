@@ -21,32 +21,28 @@ import com.android.build.gradle.internal.core.NativeBuiltType
 import com.android.build.gradle.internal.dsl.CoreExternalNativeBuildOptions
 
 /**
- * Contains the final dsl info computed from the DSL object model (extension, default config,
- * build type, flavors) that are needed by components that support native builds.
+ * Contains the final dsl info computed from the DSL object model (extension, default config, build type, flavors) that are needed by
+ * components that support native builds.
  */
 interface NativeBuildDslInfo {
-    val nativeBuildSystem: NativeBuiltType?
+  val nativeBuildSystem: NativeBuiltType?
 
-    val ndkConfig: MergedNdkConfig
+  val ndkConfig: MergedNdkConfig
 
-    val externalNativeBuildOptions: CoreExternalNativeBuildOptions
+  val externalNativeBuildOptions: CoreExternalNativeBuildOptions
 
-    /**
-     * Returns the ABI filters associated with the artifact.
-     * Default set is full set of possible ABIs. So if user does not specify filter explicitly
-     * "x86", "x86_64", "armeabi-v7a", "arm64-v8a" will be added.
-     *
-     * If the list contains values, then the artifact only contains these ABIs and excludes
-     * others.
-     */
-    val supportedAbis: Set<String>
+  /**
+   * Returns the ABI filters associated with the artifact. Default set is full set of possible ABIs. So if user does not specify filter
+   * explicitly "x86", "x86_64", "armeabi-v7a", "arm64-v8a" will be added.
+   *
+   * If the list contains values, then the artifact only contains these ABIs and excludes others.
+   */
+  val supportedAbis: Set<String>
 
-    /**
-     * Returns the ABI filters associated with the artifact, or empty set if there are no filters.
-     */
-    val userDefinedAbis: Set<String>
+  /** Returns the ABI filters associated with the artifact, or empty set if there are no filters. */
+  val userDefinedAbis: Set<String>
 
-    val isJniDebuggable: Boolean
+  val isJniDebuggable: Boolean
 
-    val externalNativeExperimentalProperties: Map<String, Any>
+  val externalNativeExperimentalProperties: Map<String, Any>
 }

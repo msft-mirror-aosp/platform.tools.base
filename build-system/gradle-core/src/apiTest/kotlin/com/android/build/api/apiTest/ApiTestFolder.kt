@@ -16,35 +16,32 @@
 
 package com.android.build.api.apiTest
 
-import org.junit.rules.TemporaryFolder
 import java.io.File
 import java.io.IOException
+import org.junit.rules.TemporaryFolder
 
 // specialization of [TemporaryFolder] to keep the folder after test execution and generate
 // extra documentation artifacts.
-class ApiTestFolder(
-    private val parentFolder: File,
-    private val folderName: String
-): TemporaryFolder(parentFolder) {
+class ApiTestFolder(private val parentFolder: File, private val folderName: String) : TemporaryFolder(parentFolder) {
 
-    var folder: File? = null
+  var folder: File? = null
 
-    override fun after() {
-        // do not delete !
-    }
+  override fun after() {
+    // do not delete !
+  }
 
-    override fun getRoot(): File {
-        return folder ?: throw RuntimeException("the temporary folder has not yet been created")
-    }
+  override fun getRoot(): File {
+    return folder ?: throw RuntimeException("the temporary folder has not yet been created")
+  }
 
-    override fun create() {
-        folder = createTemporaryFolderIn(parentFolder, folderName)
-    }
+  override fun create() {
+    folder = createTemporaryFolderIn(parentFolder, folderName)
+  }
 
-    @Throws(IOException::class)
-    private fun createTemporaryFolderIn(parentFolder: File, folderName: String): File? {
-        val createdFolder = File(parentFolder, folderName)
-        createdFolder.mkdirs()
-        return createdFolder
-    }
+  @Throws(IOException::class)
+  private fun createTemporaryFolderIn(parentFolder: File, folderName: String): File? {
+    val createdFolder = File(parentFolder, folderName)
+    createdFolder.mkdirs()
+    return createdFolder
+  }
 }

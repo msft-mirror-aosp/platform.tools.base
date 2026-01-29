@@ -27,81 +27,77 @@ import org.junit.Test
 
 class KotlinMultiplatformAndroidAnnotationsZipTest {
 
-    @get:Rule
-    val project = GradleTestProjectBuilder()
-        .fromTestProject("kotlinMultiplatform")
-        .create()
+  @get:Rule val project = GradleTestProjectBuilder().fromTestProject("kotlinMultiplatform").create()
 
-    @Before
-    fun setUp() {
-        TestFileUtils.appendToFile(
-            project.getSubproject("kmpFirstLib").ktsBuildFile,
-            """
-                kotlin.androidLibrary {
-                   withJava()
-                }
-                dependencies {
-                    add("commonMainImplementation", "androidx.annotation:annotation:1.1.0")
-                }
-            """.trimIndent())
+  @Before
+  fun setUp() {
+    TestFileUtils.appendToFile(
+      project.getSubproject("kmpFirstLib").ktsBuildFile,
+      """
+      kotlin.androidLibrary {
+         withJava()
+      }
+      dependencies {
+          add("commonMainImplementation", "androidx.annotation:annotation:1.1.0")
+      }
+      """
+        .trimIndent(),
+    )
 
-        FileUtils.writeToFile(
-            project.getSubproject("kmpFirstLib")
-                .file("src/commonMain/java/ViewCompatShims.java"),
-            """
-                package com.example.kmpfirstlib;
+    FileUtils.writeToFile(
+      project.getSubproject("kmpFirstLib").file("src/commonMain/java/ViewCompatShims.java"),
+      """
+      package com.example.kmpfirstlib;
 
-                import androidx.annotation.IntDef;
+      import androidx.annotation.IntDef;
 
-                import java.lang.annotation.Retention;
-                import java.lang.annotation.RetentionPolicy;
+      import java.lang.annotation.Retention;
+      import java.lang.annotation.RetentionPolicy;
 
-                public class ViewCompatShims {
-                    @IntDef({
-                            IMPORTANT_FOR_CONTENT_CAPTURE_AUTO,
-                            IMPORTANT_FOR_CONTENT_CAPTURE_YES,
-                            IMPORTANT_FOR_CONTENT_CAPTURE_NO,
-                            IMPORTANT_FOR_CONTENT_CAPTURE_YES_EXCLUDE_DESCENDANTS,
-                            IMPORTANT_FOR_CONTENT_CAPTURE_NO_EXCLUDE_DESCENDANTS,
-                    })
-                    @Retention(RetentionPolicy.SOURCE)
-                    private @interface ImportantForContentCapture {}
+      public class ViewCompatShims {
+          @IntDef({
+                  IMPORTANT_FOR_CONTENT_CAPTURE_AUTO,
+                  IMPORTANT_FOR_CONTENT_CAPTURE_YES,
+                  IMPORTANT_FOR_CONTENT_CAPTURE_NO,
+                  IMPORTANT_FOR_CONTENT_CAPTURE_YES_EXCLUDE_DESCENDANTS,
+                  IMPORTANT_FOR_CONTENT_CAPTURE_NO_EXCLUDE_DESCENDANTS,
+          })
+          @Retention(RetentionPolicy.SOURCE)
+          private @interface ImportantForContentCapture {}
 
-                    public static final int IMPORTANT_FOR_CONTENT_CAPTURE_AUTO = 0x0;
-                    public static final int IMPORTANT_FOR_CONTENT_CAPTURE_YES = 0x1;
-                    public static final int IMPORTANT_FOR_CONTENT_CAPTURE_NO = 0x2;
-                    public static final int IMPORTANT_FOR_CONTENT_CAPTURE_YES_EXCLUDE_DESCENDANTS = 0x4;
-                    public static final int IMPORTANT_FOR_CONTENT_CAPTURE_NO_EXCLUDE_DESCENDANTS = 0x8;
+          public static final int IMPORTANT_FOR_CONTENT_CAPTURE_AUTO = 0x0;
+          public static final int IMPORTANT_FOR_CONTENT_CAPTURE_YES = 0x1;
+          public static final int IMPORTANT_FOR_CONTENT_CAPTURE_NO = 0x2;
+          public static final int IMPORTANT_FOR_CONTENT_CAPTURE_YES_EXCLUDE_DESCENDANTS = 0x4;
+          public static final int IMPORTANT_FOR_CONTENT_CAPTURE_NO_EXCLUDE_DESCENDANTS = 0x8;
 
-                    public static void setImportantForContentCapture(String s,
-                            @ImportantForContentCapture int mode) {
-                            System.out.println(s + mode);
-                    }
-                }
-            """.trimIndent()
-        )
-    }
+          public static void setImportantForContentCapture(String s,
+                  @ImportantForContentCapture int mode) {
+                  System.out.println(s + mode);
+          }
+      }
+      """
+        .trimIndent(),
+    )
+  }
 
-    @Test
-    fun testExtractAnnotationsTaskRuns() {
-        val result = project.executor()
-            .withFailOnWarning(false) // b/455891987
-            .run(":kmpFirstLib:bundleAndroidMainAar")
-        Truth.assertThat(result.didWorkTasks).containsAtLeastElementsIn(
-            listOf(
-                ":kmpFirstLib:extractAndroidMainAnnotations"
-            )
-        )
-    }
+  @Test
+  fun testExtractAnnotationsTaskRuns() {
+    val result =
+      project
+        .executor()
+        .withFailOnWarning(false) // b/455891987
+        .run(":kmpFirstLib:bundleAndroidMainAar")
+    Truth.assertThat(result.didWorkTasks).containsAtLeastElementsIn(listOf(":kmpFirstLib:extractAndroidMainAnnotations"))
+  }
 
-    @Test
-    fun testLibraryAarContents() {
-        project.executor()
-            .withFailOnWarning(false) // b/455891987
-            .run(":kmpFirstLib:bundleAndroidMainAar")
+  @Test
+  fun testLibraryAarContents() {
+    project
+      .executor()
+      .withFailOnWarning(false) // b/455891987
+      .run(":kmpFirstLib:bundleAndroidMainAar")
 
-        project.getSubproject("kmpFirstLib").assertAar(AarSelector.NO_BUILD_TYPE) {
-            contains("annotations.zip")
-        }
-    }
+    project.getSubproject("kmpFirstLib").assertAar(AarSelector.NO_BUILD_TYPE) { contains("annotations.zip") }
+  }
 }

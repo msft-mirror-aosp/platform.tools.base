@@ -21,20 +21,16 @@ import com.android.tools.build.gradle.internal.profile.VariantPropertiesMethodTy
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
 import javax.inject.Inject
 
-open class AnalyticsEnabledLifecycleTasks @Inject constructor(
-    open val delegate: LifecycleTasks,
-    val stats: GradleBuildVariant.Builder,
-): LifecycleTasks {
+open class AnalyticsEnabledLifecycleTasks @Inject constructor(open val delegate: LifecycleTasks, val stats: GradleBuildVariant.Builder) :
+  LifecycleTasks {
 
-    override fun registerPreBuild(vararg objects: Any) {
-        stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
-            VariantPropertiesMethodType.REGISTER_PRE_BUILD_VALUE
-        delegate.registerPreBuild(*objects)
-    }
+  override fun registerPreBuild(vararg objects: Any) {
+    stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type = VariantPropertiesMethodType.REGISTER_PRE_BUILD_VALUE
+    delegate.registerPreBuild(*objects)
+  }
 
-    override fun registerPreInstallation(vararg objects: Any) {
-        stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
-            VariantPropertiesMethodType.REGISTER_APK_INSTALLATION_VALUE
-        delegate.registerPreInstallation(*objects)
-    }
+  override fun registerPreInstallation(vararg objects: Any) {
+    stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type = VariantPropertiesMethodType.REGISTER_APK_INSTALLATION_VALUE
+    delegate.registerPreInstallation(*objects)
+  }
 }

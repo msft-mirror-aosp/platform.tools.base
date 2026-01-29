@@ -23,17 +23,15 @@ package com.android.build.api.variant.impl
  */
 class DeferredActionManager {
 
-    val registeredListeners = mutableListOf<() -> Unit>()
+  val registeredListeners = mutableListOf<() -> Unit>()
 
-    @Synchronized
-    fun addAction(action: () -> Unit) {
-        registeredListeners.add(action)
-    }
+  @Synchronized
+  fun addAction(action: () -> Unit) {
+    registeredListeners.add(action)
+  }
 
-    @Synchronized
-    fun executeActions() {
-        registeredListeners.forEach { action ->
-            action()
-        }
-    }
+  @Synchronized
+  fun executeActions() {
+    registeredListeners.forEach { action -> action() }
+  }
 }

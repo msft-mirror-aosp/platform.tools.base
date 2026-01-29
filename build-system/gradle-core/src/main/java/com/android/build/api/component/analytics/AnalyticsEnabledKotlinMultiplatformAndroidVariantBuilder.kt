@@ -20,11 +20,8 @@ import com.android.build.api.variant.KotlinMultiplatformAndroidVariantBuilder
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
 import javax.inject.Inject
 
-/**
- * Shim object for [KotlinMultiplatformAndroidVariantBuilder] that records all mutating accesses to the analytics.
- */
-open class AnalyticsEnabledKotlinMultiplatformAndroidVariantBuilder @Inject constructor(
-    override val delegate: KotlinMultiplatformAndroidVariantBuilder,
-    stats: GradleBuildVariant.Builder
-) : AnalyticsEnabledLibraryVariantBuilder(delegate, stats),
-    KotlinMultiplatformAndroidVariantBuilder
+/** Shim object for [KotlinMultiplatformAndroidVariantBuilder] that records all mutating accesses to the analytics. */
+open class AnalyticsEnabledKotlinMultiplatformAndroidVariantBuilder
+@Inject
+constructor(override val delegate: KotlinMultiplatformAndroidVariantBuilder, stats: GradleBuildVariant.Builder) :
+  AnalyticsEnabledLibraryVariantBuilder(delegate, stats), KotlinMultiplatformAndroidVariantBuilder

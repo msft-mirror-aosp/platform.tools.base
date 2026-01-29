@@ -31,7 +31,8 @@ import com.squareup.javapoet.TypeName
 import com.squareup.javapoet.TypeSpec
 import javax.lang.model.element.Modifier
 
-/** Injects getter methods for tensor groups. It will generate code with following format:
+/**
+ * Injects getter methods for tensor groups. It will generate code with following format:
  * <pre>
  *     public List<TensorGroupObject> getTensorGroupNameList {
  *         // If type1 has advanced support, we can get a list
@@ -51,114 +52,94 @@ import javax.lang.model.element.Modifier
  *
  * </pre>
  */
-class GroupGetMethodInjector(private val metadata: ClassMetadata) :
-    CodeInjector<TypeSpec.Builder, ModelInfo> {
-    override fun inject(classBuilder: TypeSpec.Builder, modelInfo: ModelInfo) {
-        for (tensorGroupInfo in modelInfo.outputTensorGroups) {
-            val outputType: TypeName = ClassName.get(metadata.packageName, metadata.className)
-                .nestedClass(tensorGroupInfo.identifierName.usLocaleCapitalize())
-            val outputListType: TypeName = ParameterizedTypeName.get(ClassNames.LIST, outputType)
-            val methodSpecBuilder = MethodSpec.methodBuilder(
-                MlNames.formatGroupGetterName(tensorGroupInfo.identifierName)
-            )
-                .addModifiers(Modifier.PUBLIC)
-                .addAnnotation(ClassNames.NON_NULL)
-                .returns(outputListType)
+class GroupGetMethodInjector(private val metadata: ClassMetadata) : CodeInjector<TypeSpec.Builder, ModelInfo> {
+  override fun inject(classBuilder: TypeSpec.Builder, modelInfo: ModelInfo) {
+    for (tensorGroupInfo in modelInfo.outputTensorGroups) {
+      val outputType: TypeName =
+        ClassName.get(metadata.packageName, metadata.className).nestedClass(tensorGroupInfo.identifierName.usLocaleCapitalize())
+      val outputListType: TypeName = ParameterizedTypeName.get(ClassNames.LIST, outputType)
+      val methodSpecBuilder =
+        MethodSpec.methodBuilder(MlNames.formatGroupGetterName(tensorGroupInfo.identifierName))
+          .addModifiers(Modifier.PUBLIC)
+          .addAnnotation(ClassNames.NON_NULL)
+          .returns(outputListType)
 
-            val tensorInfos: List<TensorInfo> =
-                modelInfo.outputs.filter { tensorGroupInfo.tensorNames.contains(it.name) }
+      val tensorInfos: List<TensorInfo> = modelInfo.outputs.filter { tensorGroupInfo.tensorNames.contains(it.name) }
 
-            for (tensorInfo in tensorInfos) {
-                methodSpecBuilder.addStatement(
-                    "\$T \$L = \$L",
-                    getParameterType(tensorInfo),
-                    tensorInfo.identifierName,
-                    getTensorInitStatement(tensorInfo)
-                )
-            }
+      for (tensorInfo in tensorInfos) {
+        methodSpecBuilder.addStatement(
+          "\$T \$L = \$L",
+          getParameterType(tensorInfo),
+          tensorInfo.identifierName,
+          getTensorInitStatement(tensorInfo),
+        )
+      }
 
-            //TODO(b/155690627): Add assertion here to check all tensors has same size.
+      // TODO(b/155690627): Add assertion here to check all tensors has same size.
 
-            methodSpecBuilder.addStatement(
-                "\$T \$L = new \$T<>()",
-                outputListType,
-                tensorGroupInfo.identifierName,
-                ClassNames.ARRAY_LIST
-            )
-                .beginControlFlow(
-                    "for (int i = 0; i < \$L; i++)",
-                    getTensorSizeInitStatement(tensorInfos[0])
-                )
-                .addStatement(
-                    "\$L.add(new \$T(\$L))",
-                    tensorGroupInfo.identifierName,
-                    outputType,
-                    getGroupParameterListStatement(tensorInfos)
-                )
-                .endControlFlow()
-                .addStatement("return \$L", tensorGroupInfo.identifierName)
+      methodSpecBuilder
+        .addStatement("\$T \$L = new \$T<>()", outputListType, tensorGroupInfo.identifierName, ClassNames.ARRAY_LIST)
+        .beginControlFlow("for (int i = 0; i < \$L; i++)", getTensorSizeInitStatement(tensorInfos[0]))
+        .addStatement("\$L.add(new \$T(\$L))", tensorGroupInfo.identifierName, outputType, getGroupParameterListStatement(tensorInfos))
+        .endControlFlow()
+        .addStatement("return \$L", tensorGroupInfo.identifierName)
 
-            classBuilder.addMethod(methodSpecBuilder.build())
-        }
+      classBuilder.addMethod(methodSpecBuilder.build())
+    }
+  }
+
+  private companion object {
+    fun getParameterType(tensorInfo: TensorInfo): TypeName {
+      return if (tensorInfo.contentType == TensorInfo.ContentType.BOUNDING_BOX) {
+        ClassNames.RECTF_LIST
+      } else if (tensorInfo.fileType == TensorInfo.FileType.TENSOR_VALUE_LABELS) {
+        ClassNames.STRING_LIST
+      } else if (tensorInfo.dataType == TensorInfo.DataType.FLOAT32) {
+        ArrayTypeName.of(TypeName.FLOAT)
+      } else {
+        ArrayTypeName.of(TypeName.INT)
+      }
     }
 
-    private companion object {
-        fun getParameterType(tensorInfo: TensorInfo): TypeName {
-            return if (tensorInfo.contentType == TensorInfo.ContentType.BOUNDING_BOX) {
-                ClassNames.RECTF_LIST
-            } else if (tensorInfo.fileType == TensorInfo.FileType.TENSOR_VALUE_LABELS) {
-                ClassNames.STRING_LIST
-            } else if (tensorInfo.dataType == TensorInfo.DataType.FLOAT32) {
-                ArrayTypeName.of(TypeName.FLOAT)
-            } else {
-                ArrayTypeName.of(TypeName.INT)
-            }
+    fun getTensorInitStatement(tensorInfo: TensorInfo): String {
+      val stringBuilder = StringBuilder(MlNames.formatGetterName(tensorInfo.identifierName, getOutputParameterTypeName(tensorInfo) + "()"))
+      if (!isParameterArrayList(tensorInfo)) {
+        if (tensorInfo.dataType == TensorInfo.DataType.FLOAT32) {
+          stringBuilder.append(".getFloatArray()")
+        } else {
+          stringBuilder.append(".getIntArray()")
         }
+      }
 
-        fun getTensorInitStatement(tensorInfo: TensorInfo): String {
-            val stringBuilder = StringBuilder(
-                MlNames.formatGetterName(
-                    tensorInfo.identifierName, getOutputParameterTypeName(tensorInfo) + "()"
-                )
-            )
-            if (!isParameterArrayList(tensorInfo)) {
-                if (tensorInfo.dataType == TensorInfo.DataType.FLOAT32) {
-                    stringBuilder.append(".getFloatArray()")
-                } else {
-                    stringBuilder.append(".getIntArray()")
-                }
-            }
-
-            return stringBuilder.toString()
-        }
-
-        fun getTensorSizeInitStatement(tensorInfo: TensorInfo): String {
-            val stringBuilder = StringBuilder(tensorInfo.identifierName)
-            if (isParameterArrayList(tensorInfo)) {
-                stringBuilder.append(".size()")
-            } else {
-                stringBuilder.append(".length")
-            }
-            return stringBuilder.toString()
-        }
-
-        fun isParameterArrayList(tensorInfo: TensorInfo): Boolean {
-            return tensorInfo.contentType == TensorInfo.ContentType.BOUNDING_BOX
-                    || tensorInfo.fileType == TensorInfo.FileType.TENSOR_VALUE_LABELS
-        }
-
-        fun getGroupParameterListStatement(tensorInfos: List<TensorInfo>): String {
-            val stringBuilder = StringBuilder()
-            for (tensorInfo in tensorInfos) {
-                if (isParameterArrayList(tensorInfo)) {
-                    stringBuilder.append(String.format("%s.get(i), ", tensorInfo.identifierName))
-                } else {
-                    stringBuilder.append(String.format("%s[i], ", tensorInfo.identifierName))
-                }
-            }
-            stringBuilder.deleteCharAt(stringBuilder.length - 2)
-
-            return stringBuilder.toString()
-        }
+      return stringBuilder.toString()
     }
+
+    fun getTensorSizeInitStatement(tensorInfo: TensorInfo): String {
+      val stringBuilder = StringBuilder(tensorInfo.identifierName)
+      if (isParameterArrayList(tensorInfo)) {
+        stringBuilder.append(".size()")
+      } else {
+        stringBuilder.append(".length")
+      }
+      return stringBuilder.toString()
+    }
+
+    fun isParameterArrayList(tensorInfo: TensorInfo): Boolean {
+      return tensorInfo.contentType == TensorInfo.ContentType.BOUNDING_BOX || tensorInfo.fileType == TensorInfo.FileType.TENSOR_VALUE_LABELS
+    }
+
+    fun getGroupParameterListStatement(tensorInfos: List<TensorInfo>): String {
+      val stringBuilder = StringBuilder()
+      for (tensorInfo in tensorInfos) {
+        if (isParameterArrayList(tensorInfo)) {
+          stringBuilder.append(String.format("%s.get(i), ", tensorInfo.identifierName))
+        } else {
+          stringBuilder.append(String.format("%s[i], ", tensorInfo.identifierName))
+        }
+      }
+      stringBuilder.deleteCharAt(stringBuilder.length - 2)
+
+      return stringBuilder.toString()
+    }
+  }
 }

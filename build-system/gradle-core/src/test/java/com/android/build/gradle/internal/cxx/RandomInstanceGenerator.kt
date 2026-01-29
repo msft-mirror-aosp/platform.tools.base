@@ -22,7 +22,6 @@ import com.android.build.gradle.internal.cxx.settings.BuildSettingsConfiguration
 import com.android.build.gradle.internal.cxx.settings.EnvironmentVariable
 import com.android.build.gradle.internal.ndk.AbiInfo
 import com.android.repository.Revision
-import org.gradle.api.file.FileCollection
 import java.io.File
 import java.lang.RuntimeException
 import java.lang.reflect.ParameterizedType
@@ -30,215 +29,278 @@ import java.lang.reflect.Type
 import java.lang.reflect.WildcardType
 import java.util.Random
 import kotlin.math.abs
+import org.gradle.api.file.FileCollection
 
 /**
- * Test helper class. Used to generate a random instance of a given class.
- * Useful for automatically testing data classes when new fields are added.
+ * Test helper class. Used to generate a random instance of a given class. Useful for automatically testing data classes when new fields are
+ * added.
  */
 @Suppress("UNCHECKED_CAST")
-class RandomInstanceGenerator(val seed : Long = 192L) {
-    private val defaultSequenceLength = 100
-    private val random = Random(seed)
-    private val factoryMap = mutableMapOf<Type, (RandomInstanceGenerator) -> Any?>()
-    private val supports64Bits = listOf("arm64-v8a", "x86_64", "riscv64")
+class RandomInstanceGenerator(val seed: Long = 192L) {
+  private val defaultSequenceLength = 100
+  private val random = Random(seed)
+  private val factoryMap = mutableMapOf<Type, (RandomInstanceGenerator) -> Any?>()
+  private val supports64Bits = listOf("arm64-v8a", "x86_64", "riscv64")
 
-    init {
-        // Revision can't handle negative values
-        provide(Revision::class.java) { revision() }
-        provide(String::class.java) { string() }
-        provide(Int::class.java) { int() }
-        provide(java.lang.Integer::class.java) { int() }
-        provide(Boolean::class.java) { boolean() }
-        provide(AbiInfo::class.java) {
-            val abi = synthetic(Abi::class.java)
-            AbiInfo(
-                name = abi.tag,
-                bitness = if (supports64Bits.contains(abi.tag)) 64 else 32,
-                isDefault = boolean(),
-                isDeprecated = boolean(),
-                architecture = string(),
-                triple = string(),
-                llvmTriple = string()
-            )
-        }
-        provide(File::class.java) { file() }
-        provideNull(FileCollection::class.java)
-        provide(BuildSettingsConfiguration::class.java) { buildSettings() }
+  init {
+    // Revision can't handle negative values
+    provide(Revision::class.java) { revision() }
+    provide(String::class.java) { string() }
+    provide(Int::class.java) { int() }
+    provide(java.lang.Integer::class.java) { int() }
+    provide(Boolean::class.java) { boolean() }
+    provide(AbiInfo::class.java) {
+      val abi = synthetic(Abi::class.java)
+      AbiInfo(
+        name = abi.tag,
+        bitness = if (supports64Bits.contains(abi.tag)) 64 else 32,
+        isDefault = boolean(),
+        isDeprecated = boolean(),
+        architecture = string(),
+        triple = string(),
+        llvmTriple = string(),
+      )
     }
-    fun <T> oneOf(vararg creators : () -> T) = sample(creators.toList())()
-    fun <T> makeListOf(create : ()->T) = (0 until sample(LIST_SIZE_DOMAIN)).map { create() }
-    fun file() = File(string().trimEnd('/', '\\'))
-    fun string() = (0 until sample(LIST_SIZE_DOMAIN)).joinToString("") { sample(SEGMENT_DOMAIN) }
-    fun strings(sequenceLength : Int = defaultSequenceLength) = (0 until sequenceLength).map { string() }
-    fun cmakeSettingsJson() = sample(PARSABLE_CMAKE_SETTINGS_JSON_DOMAIN)
-    fun cmakeSettingsJsons(sequenceLength : Int = defaultSequenceLength) = (0 until sequenceLength).map { cmakeSettingsJson() }
+    provide(File::class.java) { file() }
+    provideNull(FileCollection::class.java)
+    provide(BuildSettingsConfiguration::class.java) { buildSettings() }
+  }
 
-    fun nullableString(chanceOfNull : Int = 5) : String? {
-        val roll = abs(int()) % 100
-        return if (roll < chanceOfNull) null else string()
+  fun <T> oneOf(vararg creators: () -> T) = sample(creators.toList())()
+
+  fun <T> makeListOf(create: () -> T) = (0 until sample(LIST_SIZE_DOMAIN)).map { create() }
+
+  fun file() = File(string().trimEnd('/', '\\'))
+
+  fun string() = (0 until sample(LIST_SIZE_DOMAIN)).joinToString("") { sample(SEGMENT_DOMAIN) }
+
+  fun strings(sequenceLength: Int = defaultSequenceLength) = (0 until sequenceLength).map { string() }
+
+  fun cmakeSettingsJson() = sample(PARSABLE_CMAKE_SETTINGS_JSON_DOMAIN)
+
+  fun cmakeSettingsJsons(sequenceLength: Int = defaultSequenceLength) = (0 until sequenceLength).map { cmakeSettingsJson() }
+
+  fun nullableString(chanceOfNull: Int = 5): String? {
+    val roll = abs(int()) % 100
+    return if (roll < chanceOfNull) null else string()
+  }
+
+  private fun unsignedInt() = sample(UNSIGNED_INT_DOMAIN)
+
+  fun int() = sample(INT_DOMAIN)
+
+  fun boolean() = sample(BOOLEAN_DOMAIN)
+
+  fun revision() = Revision(unsignedInt(), unsignedInt(), unsignedInt(), unsignedInt())
+
+  private fun <T> sample(domain: List<T>): T {
+    val i: Long = random.nextInt().toLong()
+    val a: Long = abs(i)
+    val m: Long = a % domain.size
+    if (m < 0) {
+      error("how?")
     }
-    private fun unsignedInt() = sample(UNSIGNED_INT_DOMAIN)
-    fun int() = sample(INT_DOMAIN)
-    fun boolean() = sample(BOOLEAN_DOMAIN)
-    fun revision() = Revision(unsignedInt(), unsignedInt(), unsignedInt(), unsignedInt())
-    private fun <T> sample(domain : List<T>) : T {
-        val i : Long = random.nextInt().toLong()
-        val a : Long = abs(i)
-        val m : Long = a % domain.size
-        if (m < 0) {
-            error("how?")
-        }
-        return domain[m.toInt()]
-    }
-    fun list(type: Type) = (0 until sample(LIST_SIZE_DOMAIN)).map { syntheticOfType(type) }
-    fun set(type: Type) = list(type).toSet()
-    fun map(key: Type, value: Type) =
-        (0 until sample(LIST_SIZE_DOMAIN))
-            .map { syntheticOfType(key) to syntheticOfType(value) }
-            .toMap()
-    private fun buildSettings() = BuildSettingsConfiguration(
-        (0 until sample(LIST_SIZE_DOMAIN)).map {
-            EnvironmentVariable(
-                name = string(),
-                value = sample(listOf(string(), null))
-            )
-        }
+    return domain[m.toInt()]
+  }
+
+  fun list(type: Type) = (0 until sample(LIST_SIZE_DOMAIN)).map { syntheticOfType(type) }
+
+  fun set(type: Type) = list(type).toSet()
+
+  fun map(key: Type, value: Type) = (0 until sample(LIST_SIZE_DOMAIN)).map { syntheticOfType(key) to syntheticOfType(value) }.toMap()
+
+  private fun buildSettings() =
+    BuildSettingsConfiguration(
+      (0 until sample(LIST_SIZE_DOMAIN)).map { EnvironmentVariable(name = string(), value = sample(listOf(string(), null))) }
     )
 
-    /**
-     * Add a new factory for the given type.
-     */
-    fun provide(type : Type, factory: (RandomInstanceGenerator) -> Any) : RandomInstanceGenerator {
-        factoryMap[type] = factory
-        return this
+  /** Add a new factory for the given type. */
+  fun provide(type: Type, factory: (RandomInstanceGenerator) -> Any): RandomInstanceGenerator {
+    factoryMap[type] = factory
+    return this
+  }
+
+  /** Add a new factory for the given type. */
+  private fun provideNull(type: Type): RandomInstanceGenerator {
+    factoryMap[type] = { null }
+    return this
+  }
+
+  /** Invoke to create a random instance of T. */
+  fun <T> synthetic(type: Class<T>): T {
+    if (factoryMap.containsKey(type)) {
+      return factoryMap[type]!!(this) as T
     }
 
-    /**
-     * Add a new factory for the given type.
-     */
-    private fun provideNull(type : Type) : RandomInstanceGenerator {
-        factoryMap[type] = { null }
-        return this
+    if (type.isEnum) {
+      return type.enumConstants.toList().shuffled(random)[0]
     }
 
+    val constructor =
+      type.constructors.filter { !it.isSynthetic }.maxByOrNull { it.parameterCount }
+        ?: throw RuntimeException("No usable constructor ${type.name}: " + "${type.constructors.map { it.toGenericString() }}")
 
-    /**
-     * Invoke to create a random instance of T.
-     */
-    fun <T> synthetic(type: Class<T>): T {
-        if (factoryMap.containsKey(type)) {
-            return factoryMap[type]!!(this) as T
+    val params = constructor.genericParameterTypes.map { syntheticOfType(it) }.toTypedArray()
+    return constructor.newInstance(*params) as T
+  }
+
+  /** Invoke to create a random instance of T. */
+  fun <T> synthetics(type: Class<T>, sequenceLength: Int = defaultSequenceLength) = (0 until sequenceLength).map { synthetic(type) }
+
+  private fun syntheticOfType(type: Type): Any? {
+    return when (type) {
+      is Class<*> -> synthetic(type)
+      is ParameterizedType ->
+        when (type.rawType) {
+          List::class.java -> list(type.actualTypeArguments[0])
+          Map::class.java -> map(type.actualTypeArguments[0], type.actualTypeArguments[1])
+          Set::class.java -> set(type.actualTypeArguments[0])
+          else -> throw RuntimeException(type.toString())
         }
-
-        if (type.isEnum) {
-            return type.enumConstants.toList().shuffled(random)[0]
+      is WildcardType -> {
+        if (type.upperBounds.isEmpty()) {
+          throw RuntimeException()
         }
-
-        val constructor = type.constructors
-            .filter { !it.isSynthetic }
-            .maxByOrNull { it.parameterCount }
-            ?: throw RuntimeException("No usable constructor ${type.name}: " +
-                    "${type.constructors.map { it.toGenericString() }}")
-
-        val params = constructor.genericParameterTypes
-            .map { syntheticOfType(it) }
-            .toTypedArray()
-        return constructor.newInstance(*params) as T
+        syntheticOfType(type.upperBounds[0])
+      }
+      else -> throw RuntimeException(type.typeName ?: type.toString())
     }
+  }
 
-    /**
-     * Invoke to create a random instance of T.
-     */
-    fun <T> synthetics(
-        type: Class<T>,
-        sequenceLength : Int = defaultSequenceLength) =
-        (0 until sequenceLength).map { synthetic(type) }
+  companion object {
+    private val HUMAN_READABLE_SEGMENT_DOMAIN =
+      listOf(
+        "*",
+        "\'",
+        "\"",
+        "0",
+        ".",
+        ",",
+        ";",
+        "<",
+        ">",
+        "&",
+        "{",
+        "}",
+        "a",
+        "A",
+        "花",
+        "_",
+        "I",
+        "$",
+        "[",
+        "]",
+        " ",
+        "\\",
+        "/",
+        "^",
+        "\\\\",
+        "//",
+        "\n",
+        "&",
+        "&&",
+        "bar&",
+        "bar&&",
+        "bar\"&\"",
+        "bar\"&&\"",
+        "bar^&",
+        "bar^&^&",
+        "^&",
+        "\"&\"",
+        "\t",
+        "a\\\\\\\\\\\\b",
+        "a\\\\\\\\\"b\" c",
+        "?",
+      )
+    private val VERSION_DOMAIN = listOf("17", "17.1", "17.1.2", "17.1.2-")
+    private val POSIX_FILE_PATHS_DOMAIN = listOf("", "/", "/usr", "/usr/")
+    private val NINJA_DOMAIN =
+      listOf(
+        "# comment",
+        "include",
+        "subninja",
+        "build",
+        "rule",
+        "pool",
+        "default",
+        "description",
+        "comment",
+        "generator",
+        "restat",
+        "deps",
+        "depfile",
+        "CLEAN",
+        "HELP",
+        "ninja_required_version",
+        "rules.ninja",
+        "phony",
+        "libnative-lib.so",
+        "native-lib",
+        "\n  ",
+        "prop = x",
+        "\n  restat = 1",
+        "RULE input.txt\n",
+        "build output.txt: ",
+        "|",
+        "||",
+        "=",
+        ":",
+        "\n  ",
+        "\\",
+        "/",
+        "C${'$'}:/",
+      )
+    private val CLANG_STDOUT_DOMAIN =
+      listOf(
+        "1 warning.",
+        "2 warnings.",
+        "1 error.",
+        "2 errors.",
+        "1 warning and 1 error",
+        "1 warning and 2 errors.",
+        "2 warnings and 1 error.",
+        "2 warnings and 2 errors.",
+        "In file included from file.h:1:2",
+        "clang: error: linker command failed with exit code ",
+        "/f.c:1:2: error: b",
+        "/f.c:1:2: warning: b",
+        "/f.c:1:2: note: b",
+        "ld: fatal error: f.so: open: Invalid argument",
+        "[x86] Compile x",
+        "ninja: build stopped.",
+        "clang++ --target=android",
+        "ninja: Entering directory `/some/dir'",
+        "ninja: Entering directory `",
+        "'",
+        "ninja: Entering directory '",
+        " error:",
+        " warn:",
+        " note:",
+        "/f.c:1:2:",
+        "ld:",
+        " and ",
+        "> Task :app:buildCMakeDebug[x86]",
+        "> Task :app:configureNdkBuildRelease[x86_64]",
+        "BUILD FAILED in 1s",
+      )
+    private val COMMAND_LINE_DOMAIN =
+      listOf("B", "D", "H", "G", "W", "help", "?").flatMap { expandCommandLine(it) }.flatMap { expandPropertyEquals(it) }
+    val SEGMENT_DOMAIN =
+      listOf("\u0000", "\u0000") +
+        HUMAN_READABLE_SEGMENT_DOMAIN +
+        COMMAND_LINE_DOMAIN +
+        VERSION_DOMAIN +
+        POSIX_FILE_PATHS_DOMAIN +
+        NINJA_DOMAIN +
+        CLANG_STDOUT_DOMAIN
+    val LIST_SIZE_DOMAIN = listOf(0, 1, 2, 3, 10, 50)
+    val BOOLEAN_DOMAIN = listOf(true, false)
+    val UNSIGNED_INT_DOMAIN = listOf(0, 1, 32, 64, 256, Int.MAX_VALUE)
+    val INT_DOMAIN = UNSIGNED_INT_DOMAIN + UNSIGNED_INT_DOMAIN.map { -it }
 
+    private fun expandCommandLine(value: String) = listOf("-$value", "--$value", " -$value", " --$value", "-$value ", "--$value ")
 
-    private fun syntheticOfType(type: Type): Any? {
-        return when (type) {
-            is Class<*> -> synthetic(type)
-            is ParameterizedType -> when (type.rawType) {
-                List::class.java -> list(type.actualTypeArguments[0])
-                Map::class.java -> map(type.actualTypeArguments[0], type.actualTypeArguments[1])
-                Set::class.java -> set(type.actualTypeArguments[0])
-                else -> throw RuntimeException(type.toString())
-            }
-            is WildcardType -> {
-                if (type.upperBounds.isEmpty()) {
-                    throw RuntimeException()
-                }
-                syntheticOfType(type.upperBounds[0])
-            }
-            else -> throw RuntimeException(type.typeName ?: type.toString())
-        }
-    }
-
-    companion object {
-        private val HUMAN_READABLE_SEGMENT_DOMAIN = listOf(
-            "*", "\'", "\"", "0", ".", ",", ";", "<", ">", "&", "{", "}",
-            "a", "A", "花", "_", "I", "$", "[", "]", " ", "\\", "/", "^",
-            "\\\\", "//", "\n", "&", "&&", "bar&", "bar&&", "bar\"&\"",
-            "bar\"&&\"", "bar^&", "bar^&^&", "^&", "\"&\"", "\t",
-            "a\\\\\\\\\\\\b", "a\\\\\\\\\"b\" c", "?"
-        )
-        private val VERSION_DOMAIN = listOf(
-            "17", "17.1", "17.1.2", "17.1.2-"
-        )
-        private val POSIX_FILE_PATHS_DOMAIN = listOf(
-            "", "/", "/usr", "/usr/"
-        )
-        private val NINJA_DOMAIN = listOf(
-            "# comment", "include", "subninja", "build", "rule", "pool", "default",
-            "description", "comment", "generator", "restat", "deps", "depfile",
-            "CLEAN", "HELP", "ninja_required_version", "rules.ninja", "phony",
-            "libnative-lib.so", "native-lib", "\n  ", "prop = x", "\n  restat = 1",
-            "RULE input.txt\n", "build output.txt: ",
-            "|", "||", "=", ":", "\n  ", "\\", "/", "C${'$'}:/"
-        )
-        private val CLANG_STDOUT_DOMAIN = listOf(
-            "1 warning.", "2 warnings.", "1 error.", "2 errors.",
-            "1 warning and 1 error", "1 warning and 2 errors.",
-            "2 warnings and 1 error.", "2 warnings and 2 errors.",
-            "In file included from file.h:1:2",
-            "clang: error: linker command failed with exit code ",
-            "/f.c:1:2: error: b",
-            "/f.c:1:2: warning: b",
-            "/f.c:1:2: note: b",
-            "ld: fatal error: f.so: open: Invalid argument",
-            "[x86] Compile x",
-            "ninja: build stopped.",
-            "clang++ --target=android",
-            "ninja: Entering directory `/some/dir'",
-            "ninja: Entering directory `", "'",
-            "ninja: Entering directory '",
-            " error:", " warn:", " note:",
-            "/f.c:1:2:", "ld:", " and ",
-            "> Task :app:buildCMakeDebug[x86]",
-            "> Task :app:configureNdkBuildRelease[x86_64]",
-            "BUILD FAILED in 1s"
-        )
-        private val COMMAND_LINE_DOMAIN =
-            listOf("B", "D", "H", "G", "W", "help", "?")
-                .flatMap { expandCommandLine(it) }
-                .flatMap { expandPropertyEquals(it) }
-        val SEGMENT_DOMAIN = listOf("\u0000", "\u0000") +
-                HUMAN_READABLE_SEGMENT_DOMAIN +
-                COMMAND_LINE_DOMAIN +
-                VERSION_DOMAIN +
-                POSIX_FILE_PATHS_DOMAIN +
-                NINJA_DOMAIN +
-                CLANG_STDOUT_DOMAIN
-        val LIST_SIZE_DOMAIN = listOf(0, 1, 2, 3, 10, 50)
-        val BOOLEAN_DOMAIN = listOf(true, false)
-        val UNSIGNED_INT_DOMAIN = listOf(0, 1, 32, 64, 256, Int.MAX_VALUE)
-        val INT_DOMAIN = UNSIGNED_INT_DOMAIN + UNSIGNED_INT_DOMAIN.map { -it }
-
-        private fun expandCommandLine(value : String) =
-            listOf("-$value", "--$value", " -$value", " --$value", "-$value ", "--$value ")
-
-        private fun expandPropertyEquals(value : String) =
-                listOf(value, "$value$C_TEST_WAS_RUN=", "$value $C_TEST_WAS_RUN=",
-                    "$value$C_TEST_WAS_RUN =", "$value $C_TEST_WAS_RUN =")
-    }
+    private fun expandPropertyEquals(value: String) =
+      listOf(value, "$value$C_TEST_WAS_RUN=", "$value $C_TEST_WAS_RUN=", "$value$C_TEST_WAS_RUN =", "$value $C_TEST_WAS_RUN =")
+  }
 }

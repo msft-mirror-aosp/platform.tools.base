@@ -17,114 +17,103 @@
 package com.android.build.gradle.integration.bundle
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.truth.ScannerSubject
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.utils.FileUtils
 import com.google.common.collect.ImmutableSet
 import com.google.common.truth.Truth.assertThat
+import java.nio.file.Files
 import org.junit.Rule
 import org.junit.Test
-import java.nio.file.Files
 
 class DynamicFeatureLocalesTest {
 
-    @get:Rule
-    val project: GradleTestProject = GradleTestProject.builder()
-        .fromTestProject("dynamicApp")
-        .create()
+  @get:Rule val project: GradleTestProject = GradleTestProject.builder().fromTestProject("dynamicApp").create()
 
-    private fun addLocale(
-        project: GradleTestProject,
-        locale: String,
-        feature: Boolean = false
-    ) {
-        val file = project.file("src/main/res/values-$locale/strings.xml")
-        file.parentFile.mkdirs()
-        val str = if (feature) {
-            "<string name=\"unused_from_feature1\">Placeholder</string>"
-        } else {
-            "<string name=\"button_name\">String from base</string>"
-        }
-        file.writeText(
-            // language=xml
-            """
+  private fun addLocale(project: GradleTestProject, locale: String, feature: Boolean = false) {
+    val file = project.file("src/main/res/values-$locale/strings.xml")
+    file.parentFile.mkdirs()
+    val str =
+      if (feature) {
+        "<string name=\"unused_from_feature1\">Placeholder</string>"
+      } else {
+        "<string name=\"button_name\">String from base</string>"
+      }
+    file.writeText(
+      // language=xml
+      """
             <?xml version="1.0" encoding="utf-8"?>
             <resources>
                 $str
             </resources>
-            """.trimIndent()
-        )
-    }
-
-    private fun GradleTestProject.withLocales(
-        appLocales: List<String>,
-        dynamicFeatureLocales: List<String>
-    ): GradleTestProject {
-        appLocales.forEach {
-            addLocale(this.getSubproject("app"), it)
-        }
-        dynamicFeatureLocales.forEach {
-            addLocale(this.getSubproject("feature1"), it, feature = true)
-        }
-        return this
-    }
-
-    @Test
-    fun dynamicFeatureUsesAppLocaleFilters() {
-        project.getSubproject("app").buildFile.appendText(
             """
-                android.androidResources.localeFilters += ["de", "es-rES", "b+zh+Hant+TW"]
-            """.trimIndent()
-        )
-        project.withLocales(
-            appLocales = listOf("es", "zh"),
-            dynamicFeatureLocales = listOf("de", "b+zh+Hant+TW", "es-rES", "ar", "pt-rBR")
-        ).executor().run(":app:makeApkFromBundleForDebug")
-        val apksFromBundle = FileUtils.createZipFilesystem(
-            project.getSubproject("app").getIntermediateFile(
-                "apks_from_bundle",
-                "debug",
-                "makeApkFromBundleForDebug",
-                "bundle.apks"
-            ).toPath()
-        ).use { apks ->
-            Files.list(apks.getPath("splits/")).use {
-                it.map { file -> file.fileName.toString() }.collect(ImmutableSet.toImmutableSet())
-            }
-        }
-        assertThat(apksFromBundle).containsExactly(
-            // defaults
-            "base-master.apk",
-            "base-master_2.apk",
-            "base-master_3.apk",
-            "feature1-master.apk",
-            "feature1-master_2.apk",
-            "feature1-master_3.apk",
-            "feature2-master.apk",
-            "feature2-master_2.apk",
-            "feature2-master_3.apk",
-            // these are the locales specified in the localeFilters DSL
-            "base-es.apk",
-            "base-es_2.apk",
-            "base-es_3.apk",
-            "feature1-de.apk",
-            "feature1-de_2.apk",
-            "feature1-de_3.apk",
-            "feature1-es.apk",
-            "feature1-es_2.apk",
-            "feature1-es_3.apk",
-            "feature1-zh.apk",
-            "feature1-zh_2.apk",
-            "feature1-zh_3.apk"
-        )
+        .trimIndent()
+    )
+  }
 
-        TestFileUtils.searchAndReplace(
-            project.getSubproject("app").buildFile,
-            "android.androidResources.localeFilters += [\"de\", \"es-rES\", \"b+zh+Hant+TW\"]",
-            "android.androidResources.localeFilters += [\"round\"]"
+  private fun GradleTestProject.withLocales(appLocales: List<String>, dynamicFeatureLocales: List<String>): GradleTestProject {
+    appLocales.forEach { addLocale(this.getSubproject("app"), it) }
+    dynamicFeatureLocales.forEach { addLocale(this.getSubproject("feature1"), it, feature = true) }
+    return this
+  }
+
+  @Test
+  fun dynamicFeatureUsesAppLocaleFilters() {
+    project
+      .getSubproject("app")
+      .buildFile
+      .appendText(
+        """
+        android.androidResources.localeFilters += ["de", "es-rES", "b+zh+Hant+TW"]
+        """
+          .trimIndent()
+      )
+    project
+      .withLocales(appLocales = listOf("es", "zh"), dynamicFeatureLocales = listOf("de", "b+zh+Hant+TW", "es-rES", "ar", "pt-rBR"))
+      .executor()
+      .run(":app:makeApkFromBundleForDebug")
+    val apksFromBundle =
+      FileUtils.createZipFilesystem(
+          project.getSubproject("app").getIntermediateFile("apks_from_bundle", "debug", "makeApkFromBundleForDebug", "bundle.apks").toPath()
         )
-        project.executor().expectFailure().run(":feature1:assembleDebug").assertErrorContains(
-            "The locale in localeFilters \"round\" is invalid."
-        )
-    }
+        .use { apks ->
+          Files.list(apks.getPath("splits/")).use { it.map { file -> file.fileName.toString() }.collect(ImmutableSet.toImmutableSet()) }
+        }
+    assertThat(apksFromBundle)
+      .containsExactly(
+        // defaults
+        "base-master.apk",
+        "base-master_2.apk",
+        "base-master_3.apk",
+        "feature1-master.apk",
+        "feature1-master_2.apk",
+        "feature1-master_3.apk",
+        "feature2-master.apk",
+        "feature2-master_2.apk",
+        "feature2-master_3.apk",
+        // these are the locales specified in the localeFilters DSL
+        "base-es.apk",
+        "base-es_2.apk",
+        "base-es_3.apk",
+        "feature1-de.apk",
+        "feature1-de_2.apk",
+        "feature1-de_3.apk",
+        "feature1-es.apk",
+        "feature1-es_2.apk",
+        "feature1-es_3.apk",
+        "feature1-zh.apk",
+        "feature1-zh_2.apk",
+        "feature1-zh_3.apk",
+      )
+
+    TestFileUtils.searchAndReplace(
+      project.getSubproject("app").buildFile,
+      "android.androidResources.localeFilters += [\"de\", \"es-rES\", \"b+zh+Hant+TW\"]",
+      "android.androidResources.localeFilters += [\"round\"]",
+    )
+    project
+      .executor()
+      .expectFailure()
+      .run(":feature1:assembleDebug")
+      .assertErrorContains("The locale in localeFilters \"round\" is invalid.")
+  }
 }
