@@ -25,9 +25,7 @@ class ClassesTest(archive: DexArchiveBase) : MultipleDexVersionTestBase(archive)
   fun testClassesRetrievalNonExistent() {
     val noClassesRetrieved = archive.container.dexFiles.all { it.classes.isEmpty() }
     Assert.assertFalse(noClassesRetrieved)
-    Assert.assertThrows(java.lang.IllegalStateException::class.java) {
-      archive.retrieveClass("Foo")
-    }
+    Assert.assertThrows(java.lang.IllegalStateException::class.java) { archive.retrieveClass("Foo") }
   }
 
   @Test
@@ -58,12 +56,7 @@ class ClassesTest(archive: DexArchiveBase) : MultipleDexVersionTestBase(archive)
     val m = clazz.methods["o(LLLL)"]!!
     val p = m.params
     Assert.assertEquals(m.returnType, "Ljava/lang/Object;")
-    Assert.assertTrue(
-      p.sorted()
-        .containsAll(
-          listOf("Ljava/lang/Object;", "Ljava/lang/String;", "Lcom/pkg/ClassInPackage;").sorted()
-        )
-    )
+    Assert.assertTrue(p.sorted().containsAll(listOf("Ljava/lang/Object;", "Ljava/lang/String;", "Lcom/pkg/ClassInPackage;").sorted()))
   }
 
   @Test

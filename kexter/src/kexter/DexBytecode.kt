@@ -17,9 +17,8 @@
 package kexter
 
 /**
- * A representation of ART bytecode, typically found in classesXX.dex files inside an apk, or
- * directly returned by JDWP Method.Bytecodes command, see more details here:
- * https://docs.oracle.com/javase/8/docs/platform/jpda/jdwp/jdwp-protocol.html#JDWP_Method_Bytecodes
+ * A representation of ART bytecode, typically found in classesXX.dex files inside an apk, or directly returned by JDWP Method.Bytecodes
+ * command, see more details here: https://docs.oracle.com/javase/8/docs/platform/jpda/jdwp/jdwp-protocol.html#JDWP_Method_Bytecodes
  */
 interface DexBytecode {
 
@@ -34,11 +33,7 @@ interface DexBytecode {
   val debugInfo: DexMethodDebugInfo
 
   companion object {
-    fun fromBytes(
-      bytes: ByteArray,
-      debugInfo: DexMethodDebugInfo = DexMethodDebugInfo(),
-      logger: Logger = Logger(),
-    ): DexBytecode {
+    fun fromBytes(bytes: ByteArray, debugInfo: DexMethodDebugInfo = DexMethodDebugInfo(), logger: Logger = Logger()): DexBytecode {
       return kexter.core.DexBytecodeImpl(bytes, debugInfo, logger)
     }
   }

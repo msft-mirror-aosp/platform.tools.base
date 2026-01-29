@@ -18,18 +18,12 @@ package kexter
 
 /** A representation of an encoded method that is present in a class section of a dex file */
 interface DexEncodedMethod : DexMethod {
-  /**
-   * A direct method is invoked without walking the inheritance chain of an object. DEX separate
-   * direct and indirect methods.
-   */
+  /** A direct method is invoked without walking the inheritance chain of an object. DEX separate direct and indirect methods. */
   val isDirect: Boolean
 
   /** The bytecode of this method. The content will be an empty list if this method is native. */
   val byteCode: DexBytecode
 
-  /**
-   * A native method does not have bytecode [byteCode] returns a DexBytecode with empty list of
-   * instructions.
-   */
+  /** A native method does not have bytecode [byteCode] returns a DexBytecode with empty list of instructions. */
   val isNative: Boolean
 }

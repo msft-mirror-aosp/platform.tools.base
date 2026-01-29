@@ -64,8 +64,7 @@ open class DexArchiveBase(private val archiveName: String) {
   }
 
   internal fun getDex(className: String): Dex {
-    return container.getDexFileWithClass(className)
-      ?: throw IllegalStateException("Unable to find class $className")
+    return container.getDexFileWithClass(className) ?: throw IllegalStateException("Unable to find class $className")
   }
 
   override fun toString(): String {

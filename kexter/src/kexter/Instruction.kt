@@ -29,11 +29,9 @@ sealed class Instruction(val opcode: Opcode, val index: UInt, val payload: ByteA
   }
 }
 
-class InstructionImpl(opcode: Opcode, index: UInt, payload: ByteArray) :
-  Instruction(opcode, index, payload)
+class InstructionImpl(opcode: Opcode, index: UInt, payload: ByteArray) : Instruction(opcode, index, payload)
 
-class InvokeInstruction(opcode: Opcode, index: UInt, payload: ByteArray) :
-  Instruction(opcode, index, payload) {
+class InvokeInstruction(opcode: Opcode, index: UInt, payload: ByteArray) : Instruction(opcode, index, payload) {
 
   /*
    * According to https://source.android.com/docs/core/runtime/dalvik-bytecode

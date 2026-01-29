@@ -39,7 +39,6 @@ internal class MethodIds(private val span: Span, private val dex: DexImpl) {
   }
 
   private companion object {
-    val ENTRY_SIZE =
-      UShort.SIZE_BYTES.toUInt() + UShort.SIZE_BYTES.toUInt() + UInt.SIZE_BYTES.toUInt()
+    val ENTRY_SIZE = UShort.SIZE_BYTES.toUInt() + UShort.SIZE_BYTES.toUInt() + UInt.SIZE_BYTES.toUInt()
   }
 }

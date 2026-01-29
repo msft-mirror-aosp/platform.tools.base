@@ -53,9 +53,7 @@ class DexDumper {
           logger.debug("")
 
           logger.debug("$prefix        LineTable (${bc.debugInfo.lineTable.size}):")
-          bc.debugInfo.lineTable.forEach { lt ->
-            logger.debug("$prefix        [idx=${lt.index}, ln${lt.lineNumber}]")
-          }
+          bc.debugInfo.lineTable.forEach { lt -> logger.debug("$prefix        [idx=${lt.index}, ln${lt.lineNumber}]") }
           logger.debug("")
         }
       }

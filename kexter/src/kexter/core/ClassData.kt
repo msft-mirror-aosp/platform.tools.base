@@ -25,11 +25,7 @@ internal data class EncodedField(val fieldIndex: UInt, val accessFlags: UInt) {
   }
 }
 
-internal data class EncodedMethod(
-  val methodIndex: UInt,
-  val accessFlags: UInt,
-  val codeOffset: UInt,
-) {
+internal data class EncodedMethod(val methodIndex: UInt, val accessFlags: UInt, val codeOffset: UInt) {
 
   companion object {
     fun fromReader(reader: DexReader, previousMethodIndex: UInt): EncodedMethod {

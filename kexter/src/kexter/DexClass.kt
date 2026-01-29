@@ -28,9 +28,8 @@ interface DexClass {
   val fields: Map<String, DexField>
 
   /**
-   * All methods of this class, indexed by their <NAME><DESCRIPTOR>. Note that the descriptor does
-   * not use JVM format but ART "shorty notation" described here:
-   * https://source.android.com/docs/core/runtime/dex-format#used-by-proto_id_item e.g.: equals(ZL)
+   * All methods of this class, indexed by their <NAME><DESCRIPTOR>. Note that the descriptor does not use JVM format but ART "shorty
+   * notation" described here: https://source.android.com/docs/core/runtime/dex-format#used-by-proto_id_item e.g.: equals(ZL)
    */
   val methods: Map<String, DexEncodedMethod>
 }

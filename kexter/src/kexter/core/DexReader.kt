@@ -42,8 +42,7 @@ private fun ByteArray.getIntAt(index: UInt): Int {
 
 private fun ByteArray.getUShortAt(index: UInt): UShort {
   val idx = index.toIntThrowing()
-  return (((this[idx + 1].toUInt() and 0xFFu) shl 8) or ((this[idx + 0].toUInt() and 0xFFu) shl 0))
-    .toUShort()
+  return (((this[idx + 1].toUInt() and 0xFFu) shl 8) or ((this[idx + 0].toUInt() and 0xFFu) shl 0)).toUShort()
 }
 
 // https://source.android.com/docs/core/runtime/dex-format#leb128

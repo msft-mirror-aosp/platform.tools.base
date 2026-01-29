@@ -23,11 +23,8 @@ import kexter.Instruction
 import kexter.Logger
 import kexter.Opcode
 
-internal class DexBytecodeImpl(
-  override val bytes: ByteArray,
-  override val debugInfo: DexMethodDebugInfo,
-  private val logger: Logger,
-) : DexBytecode {
+internal class DexBytecodeImpl(override val bytes: ByteArray, override val debugInfo: DexMethodDebugInfo, private val logger: Logger) :
+  DexBytecode {
   override val instructions by lazy((LazyThreadSafetyMode.NONE)) { retrieveInstructions() }
 
   private fun retrieveInstructions(): List<Instruction> {
@@ -64,26 +61,20 @@ internal class DexBytecodeImpl(
         }
         SPARSE_SWITCH_IDENTITY -> {
           val size = reader.ushort()
-          UShort.SIZE_BYTES.toUInt() +
-            size * Int.SIZE_BYTES.toUInt() +
-            size * Int.SIZE_BYTES.toUInt()
+          UShort.SIZE_BYTES.toUInt() + size * Int.SIZE_BYTES.toUInt() + size * Int.SIZE_BYTES.toUInt()
         }
         FILL_ARRAY_DATA_IDENTITY -> {
           val elementWidth = reader.ushort()
           val size = reader.uint()
 
           // Account for padding because dex instructions must be aligned.
-          var totalSize =
-            UShort.SIZE_BYTES.toUInt() + UInt.SIZE_BYTES.toUInt() + size * elementWidth
+          var totalSize = UShort.SIZE_BYTES.toUInt() + UInt.SIZE_BYTES.toUInt() + size * elementWidth
           if (totalSize.mod(2u) == 1u) {
             totalSize += 1u
           }
           return totalSize
         }
-        else ->
-          throw IllegalStateException(
-            "Bad pseudo-code identity  (${ "0x%02x".format( identity.toInt())})"
-          )
+        else -> throw IllegalStateException("Bad pseudo-code identity  (${ "0x%02x".format( identity.toInt())})")
       }
     return size
   }
@@ -108,9 +99,6 @@ internal class DexBytecodeImpl(
       } else {
         UInt.MAX_VALUE
       }
-    return instructions
-      .stream()
-      .filter { e -> (startBc..<endBc).contains(e.index) }
-      .collect(Collectors.toList())
+    return instructions.stream().filter { e -> (startBc..<endBc).contains(e.index) }.collect(Collectors.toList())
   }
 }
