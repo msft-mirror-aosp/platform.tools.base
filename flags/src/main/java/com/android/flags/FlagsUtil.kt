@@ -16,13 +16,13 @@
 package com.android.flags
 
 /**
- * Utility method that calls [callback] and returns its result when this flag is enabled.
- * If the flag is false, [callback] will not be called and the method will return null.
+ * Utility method that calls [callback] and returns its result when this flag is enabled. If the flag is false, [callback] will not be
+ * called and the method will return null.
  */
 fun <T> Flag<Boolean>.ifEnabled(callback: () -> T): T? = if (get()) callback() else null
 
 /**
- * Utility method that calls [callback] and returns its result when this flag is disabled.
- * If the flag is true, [callback] will not be called and the method will return null.
+ * Utility method that calls [callback] and returns its result when this flag is disabled. If the flag is true, [callback] will not be
+ * called and the method will return null.
  */
 fun <T> Flag<Boolean>.ifDisabled(callback: () -> T): T? = if (!get()) callback() else null

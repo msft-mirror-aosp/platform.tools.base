@@ -31,10 +31,13 @@ class FlagsUtilTest {
 
     assertNull(flagBoolFalse.ifEnabled { fail("The callback should not run for a flag set to false") })
     var isExecuted = false
-    assertEquals(12, flagBoolTrue.ifEnabled {
-      isExecuted = true
-      12
-    })
+    assertEquals(
+      12,
+      flagBoolTrue.ifEnabled {
+        isExecuted = true
+        12
+      },
+    )
     assertTrue("ifEnabled should have executed the callback", isExecuted)
   }
 
@@ -47,10 +50,13 @@ class FlagsUtilTest {
 
     assertNull(flagBoolTrue.ifDisabled { fail("The callback should not run for a flag set to true") })
     var isExecuted = false
-    assertEquals(12, flagBoolFalse.ifDisabled {
-      isExecuted = true
-      12
-    })
+    assertEquals(
+      12,
+      flagBoolFalse.ifDisabled {
+        isExecuted = true
+        12
+      },
+    )
     assertTrue("ifDisabled should have executed the callback", isExecuted)
   }
 }
