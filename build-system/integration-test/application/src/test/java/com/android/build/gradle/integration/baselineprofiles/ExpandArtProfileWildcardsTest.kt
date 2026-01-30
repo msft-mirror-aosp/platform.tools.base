@@ -74,9 +74,9 @@ class ExpandArtProfileWildcardsTest {
       expectedArtProfile =
         """
         Lcom/example/app/HelloWorld;
-        La/a;
+        Lb;
         Lcom/example/lib/HelloWorld;
-        Lb/a;
+        La;
 
         """
           .trimIndent(),

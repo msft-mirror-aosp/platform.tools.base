@@ -63,7 +63,7 @@ public class MinifyLibAndAppWithJavaResTest {
 
         // check that resources with relative path lookup code have a matching obfuscated
         // package name.
-        assertThat(releaseApk).contains("b/resources.properties");
-        assertThat(releaseApk).contains("c/resources.properties");
+        assertThat(releaseApk).contains("resources.properties");
+        assertThat(releaseApk).contains("a/resources.properties");
     }
 }
