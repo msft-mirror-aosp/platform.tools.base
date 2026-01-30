@@ -114,8 +114,8 @@ data class AvdInfo(
     }
 
   /** The ABI type of the AVD. */
-  val abiType: String
-    get() = this.properties[ConfigKey.ABI_TYPE]!!
+  val abiType: String?
+    get() = this.properties[ConfigKey.ABI_TYPE]
 
   /** Returns true if this AVD supports Google Play Store */
   fun hasPlayStore(): Boolean {
@@ -151,8 +151,15 @@ data class AvdInfo(
         AvdStatus.ERROR_CONFIG -> "Missing config.ini file in $dataFolderPath"
         AvdStatus.ERROR_PROPERTIES -> "Failed to parse properties from $configFile"
         AvdStatus.ERROR_IMAGE_MISSING -> {
-          val tag = if (SystemImageTags.DEFAULT_TAG == this.tag) "" else (this.tag.getDisplay() + " ")
-          "Missing system image for $tag$abiType $displayName."
+          val tag =
+            if (SystemImageTags.DEFAULT_TAG == this.tag) "" else (this.tag.getDisplay() + " ")
+          this.tag
+          val image = properties[ConfigKey.IMAGES_1]
+          if (image == null) "System image missing in configuration"
+          else {
+            val path = image.removePrefix("system-images").trim('/', '\\')
+            "Missing system image $path."
+          }
         }
         AvdStatus.ERROR_DEVICE_MISSING ->
           "${properties[ConfigKey.DEVICE_MANUFACTURER]} ${properties[ConfigKey.DEVICE_NAME]} no longer exists as a device"
