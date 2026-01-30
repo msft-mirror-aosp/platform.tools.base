@@ -24,6 +24,7 @@ import com.android.SdkConstants.MIN_ANDROID_GRADLE_PLUGIN_VERSION_PROPERTY
 import com.android.SdkConstants.MIN_COMPILE_SDK_EXTENSION_PROPERTY
 import com.android.SdkConstants.MIN_COMPILE_SDK_PROPERTY
 import com.android.Version
+import com.android.build.gradle.internal.dsl.CompileSdkVersionImpl
 import com.android.build.gradle.internal.fixtures.FakeGradleWorkExecutor
 import com.android.build.gradle.internal.fixtures.FakeNoOpAnalyticsService
 import com.android.ide.common.repository.AgpVersion
@@ -74,10 +75,10 @@ class AarMetadataTaskTest {
         task.output.set(outputFile)
         task.aarFormatVersion.set(AarMetadataTask.AAR_FORMAT_VERSION)
         task.aarMetadataVersion.set(AarMetadataTask.AAR_METADATA_VERSION)
-        task.minCompileSdk.set(28)
-        task.minCompileSdkExtension.set(1)
+        task.minCompileSdkVersion.set(
+            CompileSdkVersionImpl(apiLevel = 28, sdkExtension = 1, codeName = "Tiramisu")
+        )
         task.minAgpVersion.set("7.0.0")
-        task.forceCompileSdkPreview.set("Tiramisu")
         task.coreLibraryDesugaringEnabled.set(true)
         task.taskAction()
 
@@ -98,8 +99,7 @@ class AarMetadataTaskTest {
         task.output.set(outputFile)
         task.aarFormatVersion.set(AarMetadataTask.AAR_FORMAT_VERSION)
         task.aarMetadataVersion.set(AarMetadataTask.AAR_METADATA_VERSION)
-        task.minCompileSdk.set(28)
-        task.minCompileSdkExtension.set(1)
+        task.minCompileSdkVersion.set(CompileSdkVersionImpl(apiLevel = 28, sdkExtension = 1))
         task.minAgpVersion.set("7.0.0-beta01")
         task.coreLibraryDesugaringEnabled.set(false)
         try {
@@ -119,8 +119,7 @@ class AarMetadataTaskTest {
         task.output.set(outputFile)
         task.aarFormatVersion.set(AarMetadataTask.AAR_FORMAT_VERSION)
         task.aarMetadataVersion.set(AarMetadataTask.AAR_METADATA_VERSION)
-        task.minCompileSdk.set(28)
-        task.minCompileSdkExtension.set(1)
+        task.minCompileSdkVersion.set(CompileSdkVersionImpl(apiLevel = 28, sdkExtension = 1))
         task.minAgpVersion.set("10000.0.0")
         task.coreLibraryDesugaringEnabled.set(false)
         try {

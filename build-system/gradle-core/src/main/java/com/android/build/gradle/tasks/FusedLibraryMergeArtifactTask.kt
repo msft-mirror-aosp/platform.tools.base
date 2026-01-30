@@ -22,6 +22,8 @@ import com.android.SdkConstants.FD_JNI
 import com.android.SdkConstants.FN_NAVIGATION_JSON
 import com.android.SdkConstants.FN_PROGUARD_TXT
 import com.android.build.api.artifact.Artifact
+import com.android.build.api.dsl.CompileSdkVersion
+import com.android.build.gradle.internal.dsl.CompileSdkVersionImpl
 import com.android.build.gradle.internal.fusedlibrary.FusedLibraryConstants
 import com.android.build.gradle.internal.fusedlibrary.FusedLibraryGlobalScope
 import com.android.build.gradle.internal.fusedlibrary.FusedLibraryInternalArtifactType.*
@@ -134,8 +136,8 @@ abstract class FusedLibraryMergeArtifactTask : NonIncrementalGlobalTask() {
                     ArtifactType.AAR_METADATA -> {
                         writeMergedMetadata(inputFiles, output.get().asFile,
                             aarMetadataInputs.minAgpVersion.orNull,
-                            aarMetadataInputs.minCompileSdk.orNull,
-                            aarMetadataInputs.minCompileSdkExtension.orNull)
+                            aarMetadataInputs.minCompileSdkVersion.map { it.apiLevel }.orNull,
+                            aarMetadataInputs.minCompileSdkVersion.map { it.sdkExtension }.orNull)
                     }
                     ArtifactType.ASSETS -> {
                         val aarOutputAssetsOutputDir = output.get().asFile
@@ -287,12 +289,12 @@ abstract class FusedLibraryMergeArtifactTask : NonIncrementalGlobalTask() {
                     creationConfig.aarMetadata.minAgpVersion?.let {
                         task.aarMetadataInputs.minAgpVersion.setDisallowChanges(it)
                     }
-                    creationConfig.aarMetadata.minCompileSdk?.let {
-                        task.aarMetadataInputs.minCompileSdk.setDisallowChanges(it)
-                    }
-                    creationConfig.aarMetadata.minCompileSdkExtension?.let {
-                        task.aarMetadataInputs.minCompileSdkExtension.setDisallowChanges(it)
-                    }
+                    task.aarMetadataInputs.minCompileSdkVersion.setDisallowChanges(
+                        CompileSdkVersionImpl(
+                            apiLevel = creationConfig.aarMetadata.minCompileSdk,
+                            sdkExtension = creationConfig.aarMetadata.minCompileSdkExtension
+                        )
+                    )
                 }
                 ArtifactType.JNI -> {
                     task.jniExcludes.setDisallowChanges(
@@ -318,11 +320,7 @@ abstract class FusedLibraryMergeArtifactTask : NonIncrementalGlobalTask() {
 
         @get:Input
         @get:Optional
-        abstract val minCompileSdk: Property<Int>
-
-        @get:Input
-        @get:Optional
-        abstract val minCompileSdkExtension: Property<Int>
+        abstract val minCompileSdkVersion: Property<CompileSdkVersion>
 
         @get:Input
         @get:Optional

@@ -22,6 +22,7 @@ import com.android.build.api.dsl.CompileSdkVersion
 import com.android.build.gradle.internal.services.DslServices
 import com.android.sdklib.SdkVersionInfo
 import org.gradle.api.Action
+import java.io.Serializable
 import javax.inject.Inject
 
 abstract class CompileSdkSpecImpl @Inject constructor(private val dslService: DslServices): CompileSdkSpec {
@@ -75,7 +76,7 @@ internal data class CompileSdkVersionImpl(
     override val codeName: String? = null,
     override val addonName: String? = null,
     override val vendorName: String? = null,
-): CompileSdkVersion {
+): CompileSdkVersion, Serializable {
     fun isAddon() = vendorName != null && addonName != null
 
     // Converts to the string representation of the Android version

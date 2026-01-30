@@ -24,9 +24,13 @@ import com.android.SdkConstants.MIN_COMPILE_SDK_PROPERTY
 import com.android.SdkConstants.MIN_ANDROID_GRADLE_PLUGIN_VERSION_PROPERTY
 import com.android.SdkConstants.DESUGAR_JDK_LIB_PROPERTY
 import com.android.Version.ANDROID_GRADLE_PLUGIN_VERSION
+import com.android.build.api.dsl.CompileSdkVersion
 import com.android.build.gradle.internal.component.AarCreationConfig
+import com.android.build.gradle.internal.dsl.CompileSdkVersionImpl
 import com.android.build.gradle.internal.profile.ProfileAwareWorkAction
 import com.android.build.gradle.internal.scope.InternalArtifactType
+import com.android.build.gradle.internal.tasks.AarMetadataTask.Companion.DEFAULT_MIN_COMPILE_SDK_EXTENSION
+import com.android.build.gradle.internal.tasks.AarMetadataTask.Companion.DEFAULT_MIN_COMPILE_SDK_VERSION
 import com.android.build.gradle.internal.tasks.factory.VariantTaskCreationAction
 import com.android.build.gradle.internal.utils.getDesugarLibDependencyGraph
 import com.android.build.gradle.internal.utils.parseTargetHash
@@ -70,23 +74,7 @@ abstract class AarMetadataTask : NonIncrementalTask() {
      * The minimum SDK API-level any consuming module must be compiled against to use this library.
      */
     @get:Input
-    abstract val minCompileSdk: Property<Int>
-
-    /**
-     * The codename of the SDK being compiled against (if it's a preview version); e.g., "Tiramisu".
-     * If present, any consuming module must be compiled against an SDK with the exact same
-     * codename.
-     */
-    @get:Input
-    @get:Optional
-    abstract val forceCompileSdkPreview: Property<String>
-
-    /**
-     * The minimum SDK extension version any consuming module must be compiled against to use this
-     * library.
-     */
-    @get:Input
-    abstract val minCompileSdkExtension: Property<Int>
+    abstract val minCompileSdkVersion: Property<CompileSdkVersion>
 
     @get:Input
     abstract val minAgpVersion: Property<String>
@@ -104,10 +92,8 @@ abstract class AarMetadataTask : NonIncrementalTask() {
             it.output.set(output)
             it.aarFormatVersion.set(aarFormatVersion)
             it.aarMetadataVersion.set(aarMetadataVersion)
-            it.minCompileSdk.set(minCompileSdk)
+            it.minCompileSdkVersion.set(minCompileSdkVersion)
             it.minAgpVersion.set(minAgpVersion)
-            it.forceCompileSdkPreview.set(forceCompileSdkPreview)
-            it.minCompileSdkExtension.set(minCompileSdkExtension)
             it.coreLibraryDesugaringEnabled.set(coreLibraryDesugaringEnabled)
             desugarJdkLibDependencyGraph.orNull?.dependencies?.firstOrNull()?.requested?.let { id ->
                 if (id is ModuleComponentSelector) {
@@ -143,14 +129,18 @@ abstract class AarMetadataTask : NonIncrementalTask() {
 
             task.aarFormatVersion.setDisallowChanges(AAR_FORMAT_VERSION)
             task.aarMetadataVersion.setDisallowChanges(AAR_METADATA_VERSION)
-            task.minCompileSdk.setDisallowChanges(creationConfig.aarMetadata.minCompileSdk)
+            task.minCompileSdkVersion.convention(
+                creationConfig.aarMetadata.minCompileSdk.zip(
+                    creationConfig.aarMetadata.minCompileSdkExtension
+                ) { api, extension ->
+                    CompileSdkVersionImpl(
+                        apiLevel = api,
+                        sdkExtension = extension,
+                        codeName = parseTargetHash(creationConfig.global.compileSdkHashString).codeName
+                    )
+                }
+            )
             task.minAgpVersion.setDisallowChanges(creationConfig.aarMetadata.minAgpVersion)
-            task.forceCompileSdkPreview.setDisallowChanges(
-                parseTargetHash(creationConfig.global.compileSdkHashString).codeName
-            )
-            task.minCompileSdkExtension.setDisallowChanges(
-                creationConfig.aarMetadata.minCompileSdkExtension
-            )
             task.coreLibraryDesugaringEnabled.setDisallowChanges(
                 creationConfig.global.compileOptions.isCoreLibraryDesugaringEnabled
             )
@@ -175,7 +165,7 @@ abstract class AarMetadataTask : NonIncrementalTask() {
 }
 
 /** [WorkAction] to write AAR metadata file */
-abstract class AarMetadataWorkAction: ProfileAwareWorkAction<AarMetadataWorkParameters>() {
+abstract class AarMetadataWorkAction : ProfileAwareWorkAction<AarMetadataWorkParameters>() {
 
     override fun run() {
         val minAgpVersion = parameters.minAgpVersion.get()
@@ -197,10 +187,10 @@ abstract class AarMetadataWorkAction: ProfileAwareWorkAction<AarMetadataWorkPara
             parameters.output.get().asFile,
             parameters.aarFormatVersion.get(),
             parameters.aarMetadataVersion.get(),
-            parameters.minCompileSdk.get(),
-            parameters.minCompileSdkExtension.get(),
+            parameters.minCompileSdkVersion.map { it.apiLevel }.orNull ?: DEFAULT_MIN_COMPILE_SDK_VERSION,
+            parameters.minCompileSdkVersion.map { it.sdkExtension }.orNull ?: DEFAULT_MIN_COMPILE_SDK_EXTENSION,
             parameters.minAgpVersion.get(),
-            parameters.forceCompileSdkPreview.orNull,
+            parameters.minCompileSdkVersion.map { it.codeName }.orNull,
             parameters.coreLibraryDesugaringEnabled.get(),
             parameters.desugarJdkLibId.orNull
         )
@@ -208,14 +198,12 @@ abstract class AarMetadataWorkAction: ProfileAwareWorkAction<AarMetadataWorkPara
 }
 
 /** [WorkParameters] for [AarMetadataWorkAction] */
-abstract class AarMetadataWorkParameters: ProfileAwareWorkAction.Parameters() {
+abstract class AarMetadataWorkParameters : ProfileAwareWorkAction.Parameters() {
     abstract val output: RegularFileProperty
     abstract val aarFormatVersion: Property<String>
     abstract val aarMetadataVersion: Property<String>
-    abstract val minCompileSdk: Property<Int>
+    abstract val minCompileSdkVersion: Property<CompileSdkVersion>
     abstract val minAgpVersion: Property<String>
-    abstract val forceCompileSdkPreview: Property<String>
-    abstract val minCompileSdkExtension: Property<Int>
     abstract val coreLibraryDesugaringEnabled: Property<Boolean>
     abstract val desugarJdkLibId: Property<String>
 }
