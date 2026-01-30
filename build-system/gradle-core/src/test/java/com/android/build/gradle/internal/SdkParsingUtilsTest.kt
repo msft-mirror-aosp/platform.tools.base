@@ -372,8 +372,8 @@ class SdkParsingUtilsTest {
 
             This Android Gradle plugin (7.0.0-beta01) was tested up to compile SDK version 30.
 
-            If you are already using the latest preview version of the Android Gradle plugin,
-            you may need to wait until a newer version with support for compile SDK preview version "S" is available.
+            While it may work as expected, you might encounter compatibility issues.
+            If you do, please check for a newer version of the Android Gradle plugin.
 
             For more information refer to the compatibility table:
             https://d.android.com/r/tools/api-level-support
@@ -426,8 +426,8 @@ class SdkParsingUtilsTest {
 
             This Android Gradle plugin (8.13.0-alpha01) was tested up to compile SDK version 36.1.
 
-            If you are already using the latest preview version of the Android Gradle plugin,
-            you may need to wait until a newer version with support for compile SDK preview version "C" is available.
+            While it may work as expected, you might encounter compatibility issues.
+            If you do, please check for a newer version of the Android Gradle plugin.
 
             For more information refer to the compatibility table:
             https://d.android.com/r/tools/api-level-support
@@ -455,8 +455,8 @@ class SdkParsingUtilsTest {
 
             This Android Gradle plugin (7.0.0-beta01) was tested up to compile SDK version 30 (and compile SDK preview version "S").
 
-            If you are already using the latest preview version of the Android Gradle plugin,
-            you may need to wait until a newer version with support for compile SDK preview version "S2" is available.
+            While it may work as expected, you might encounter compatibility issues.
+            If you do, please check for a newer version of the Android Gradle plugin.
 
             For more information refer to the compatibility table:
             https://d.android.com/r/tools/api-level-support
