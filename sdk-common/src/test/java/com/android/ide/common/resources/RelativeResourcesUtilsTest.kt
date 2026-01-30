@@ -48,17 +48,17 @@ class RelativeResourcesUtilsTest {
 
   @Test
   fun `test should convert absolute path with spaces in path to relative path format`() {
-    val testAbsoluteFile = File(FileUtils.join("usr", "a", "b", "myproject", "app", "src", "foo debug", "res", "layout", "my_layout.xml"))
-    val packageName = "com.foobar.myproject.app"
+    val testAbsoluteFile = File(FileUtils.join("usr", "a", "b", "my project", "app", "src", "foo debug", "res", "layout", "my_layout.xml"))
+    val packageName = "com.foobar.my project.app"
     val sourceSets =
       listOf(
-        File(FileUtils.join("usr", "a", "b", "myproject", "app", "src", "main", "res")),
-        File(FileUtils.join("usr", "a", "b", "myproject", "app", "src", "foo debug", "res")),
+        File(FileUtils.join("usr", "a", "b", "my project", "app", "src", "main", "res")),
+        File(FileUtils.join("usr", "a", "b", "my project", "app", "src", "foo debug", "res")),
       )
     val identifiedSourceSetMap = getIdentifiedSourceSetMap(sourceSets, packageName, ":app")
     val expected = getRelativeSourceSetPath(testAbsoluteFile, identifiedSourceSetMap)
     // Ordinal value is 0 due to invariantPath sorting in getIdentifiedSourceSetMap
-    assertThat(expected).isEqualTo("com.foobar.myproject.app-foo_debug-0:/layout/my_layout.xml")
+    assertThat(expected).isEqualTo("com.foobar.my_project.app-foo_debug-0:/layout/my_layout.xml")
   }
 
   @Test(expected = IllegalArgumentException::class)
