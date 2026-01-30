@@ -120,6 +120,7 @@ class FakeAdbServer private constructor(var features: Set<String> = DEFAULT_FEAT
   // Device ip address to DeviceState. Device may or may not currently be connected to adb.
   private val mNetworkDevices: MutableMap<String, DeviceState> = HashMap()
   private val mMdnsServices: MutableSet<MdnsService> = HashSet()
+  var mdnsEnabled = true
 
   /**
    * Grabs the DeviceStateChangeHub from the server. This should only be used for implementations for handlers that inherit from
@@ -610,8 +611,14 @@ class FakeAdbServer private constructor(var features: Set<String> = DEFAULT_FEAT
       return mServer
     }
 
-    fun setFeatures(features: Set<String>) {
+    fun setFeatures(features: Set<String>): Builder {
       mServer.features = features
+      return this
+    }
+
+    fun setMdnsEnabled(mdnsEnabled: Boolean): Builder {
+      mServer.mdnsEnabled = mdnsEnabled
+      return this
     }
   }
 
