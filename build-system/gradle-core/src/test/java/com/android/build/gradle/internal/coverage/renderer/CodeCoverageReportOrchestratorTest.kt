@@ -3,7 +3,7 @@
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
- * You may obtain a copy of the at
+ * You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -94,12 +94,13 @@ class CodeCoverageReportOrchestratorTest {
         .trimIndent()
     )
 
-    CodeCoverageReportOrchestrator.orchestrate(
+    val result = CodeCoverageReportOrchestrator.orchestrate(
       inputDirectories = listOf(inputDir),
       htmlReportDir = mockReportDirProperty,
       rootProjectName = "TestRootProject",
       rootProjectDir = projectBaseDir,
     )
+    assertThat(result).isTrue()
 
     val reportDataFile = File(outputDir, "data/report-data.js")
     assertThat(reportDataFile.exists()).isTrue()
@@ -134,24 +135,20 @@ class CodeCoverageReportOrchestratorTest {
 
   @Test
   fun `orchestrate with empty input creates directories but no data files`() {
-    CodeCoverageReportOrchestrator.orchestrate(
+    val result = CodeCoverageReportOrchestrator.orchestrate(
       inputDirectories = listOf(inputDir),
       htmlReportDir = mockReportDirProperty,
       rootProjectName = "TestRootProject",
       rootProjectDir = projectBaseDir,
     )
 
-    val reportDataFile = File(outputDir, "data/report-data.js")
-    assertThat(reportDataFile.exists()).isTrue()
+    assertThat(result).isFalse()
 
-    val report =
-      Gson().fromJson(reportDataFile.readText().removePrefix("const fullReport = ").removeSuffix(";"), CoverageReport::class.java)
-
-    assertThat(report.name).isEqualTo("TestRootProject")
-    assertThat(report.modules).isEmpty()
-    assertThat(report.numberOfTestsSuites).isEqualTo(0)
-
-    assertThat(File(outputDir, "index.html").exists()).isTrue()
+    assertThat(File(outputDir, "data").exists()).isFalse()
+    assertThat(File(outputDir, "sourcefiles").exists()).isFalse()
+    assertThat(File(outputDir, "index.html").exists()).isFalse()
+    assertThat(File(outputDir, "css").exists()).isFalse()
+    assertThat(File(outputDir, "javascript").exists()).isFalse()
   }
 
   @Test

@@ -53,10 +53,19 @@ abstract class CodeCoverageReportTask : NonIncrementalGlobalTask() {
   override fun doTaskAction() {
     val inputDirectories: List<File> = coverageXmlReports.get().map { it.asFile }
 
-    CodeCoverageReportOrchestrator.orchestrate(inputDirectories, htmlReportDir, rootProjectName.get(), rootProjectDir.get().asFile)
+    val successfulReportGeneration : Boolean = CodeCoverageReportOrchestrator.orchestrate(inputDirectories, htmlReportDir, rootProjectName.get(), rootProjectDir.get().asFile)
 
-    val reportLocation = ConsoleRenderer().asClickableFileUrl(File(htmlReportDir.get().asFile, "index.html"))
-    logger.lifecycle("View coverage report at $reportLocation")
+    if(successfulReportGeneration) {
+      val reportLocation =
+        ConsoleRenderer().asClickableFileUrl(File(htmlReportDir.get().asFile, "index.html"))
+      logger.lifecycle("View coverage report at $reportLocation")
+    } else {
+      logger.lifecycle(
+        "No code coverage data found. The code coverage report is not generated. " +
+          "This can happen if code coverage support is not enabled, " +
+          "or if the tests did not execute any source code."
+      )
+    }
   }
 
   class AggregatedCoverageReportCreationAction(creationConfig: GlobalTaskCreationConfig) :

@@ -249,6 +249,24 @@ class CodeCoverageReportTest {
     PathSubject.assertThat(indexFile).isFile()
   }
 
+  @Test
+  fun testCreateCoverageReportWithCoverageDisabled() {
+    val app = rule.build.androidApplication(":app")
+    app.reconfigure {
+      android.buildTypes {
+        named("debug") {
+          it.enableUnitTestCoverage = false
+          it.enableAndroidTestCoverage = false
+        }
+      }
+    }
+
+    val result = rule.build.executor.run(":app:createCoverageReport")
+
+    result.assertOutputContains("No code coverage data found.")
+    result.assertOutputDoesNotContain("View coverage report at")
+  }
+
   private fun verifyHtmlReport(
     outputDir: File,
     expectedProjectName: String,
