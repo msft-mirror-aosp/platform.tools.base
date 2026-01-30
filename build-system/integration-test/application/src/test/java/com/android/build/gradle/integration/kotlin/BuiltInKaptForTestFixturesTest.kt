@@ -16,7 +16,6 @@
 
 package com.android.build.gradle.integration.kotlin
 
-import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
 import com.android.build.gradle.integration.common.fixture.GradleProject
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.AnnotationProcessorLib
@@ -98,10 +97,7 @@ class BuiltInKaptForTestFixturesTest {
                 """
         .trimIndent(),
     )
-    project
-      .executor()
-      .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.PROJECT_ISOLATION)
-      .run("app:assembleDebugTestFixtures")
+    project.executor().run("app:assembleDebugTestFixtures")
     app.assertAar(AarSelector.DEBUG.forTestFixtures()) {
       mainJar().classes().containsExactly("com/example/FooStringValue", "com/example/Foo\$\$InnerClass", "com/example/Foo")
     }
@@ -126,7 +122,6 @@ class BuiltInKaptForTestFixturesTest {
     )
     project
       .executor()
-      .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
       .withFailOnWarning(true)
       .with(BooleanOption.ENABLE_LEGACY_API, true)
       .with(BooleanOption.USE_NEW_DSL, false)
@@ -157,7 +152,7 @@ class BuiltInKaptForTestFixturesTest {
     )
     TestFileUtils.appendToFile(project.gradlePropertiesFile, "org.gradle.caching=true")
 
-    val executor = project.executor().withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
+    val executor = project.executor()
     // test for caching when useBuildCache = true
     assertThat(executor.run("app:assembleDebugTestFixtures").didWorkTasks).contains(":app:kaptDebugTestFixturesKotlin")
     assertThat(executor.run("clean", "app:assembleDebugTestFixtures").fromCacheTasks).contains(":app:kaptDebugTestFixturesKotlin")
@@ -193,12 +188,7 @@ class BuiltInKaptForTestFixturesTest {
     TestFileUtils.appendToFile(project.gradlePropertiesFile, "org.gradle.caching=true")
 
     val executor =
-      project
-        .executor()
-        .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
-        .withFailOnWarning(true)
-        .with(BooleanOption.ENABLE_LEGACY_API, true)
-        .with(BooleanOption.USE_NEW_DSL, false)
+      project.executor().withFailOnWarning(true).with(BooleanOption.ENABLE_LEGACY_API, true).with(BooleanOption.USE_NEW_DSL, false)
     // test for caching when useBuildCache = true
     assertThat(executor.run("app:assembleDebugTestFixtures").didWorkTasks).contains(":app:kaptDebugTestFixturesKotlin")
     assertThat(executor.run("clean", "app:assembleDebugTestFixtures").fromCacheTasks).contains(":app:kaptDebugTestFixturesKotlin")

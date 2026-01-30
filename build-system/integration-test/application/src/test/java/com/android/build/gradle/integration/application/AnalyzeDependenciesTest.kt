@@ -1,7 +1,6 @@
 package com.android.build.gradle.integration.application
 
 import com.android.build.gradle.integration.application.testData.EnumClass
-import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.MinimalSubProject
 import com.android.build.gradle.integration.common.fixture.app.MultiModuleTestProject
@@ -235,10 +234,7 @@ class AnalyzeDependenciesTest {
   @Test
   fun `Verify correct dependencies report is produced, only considering class and resource references`() {
     val buildType = "debug"
-    project
-      .executor()
-      .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
-      .run(":app:assemble${buildType.usLocaleCapitalize()}", ":app:analyze${buildType.usLocaleCapitalize()}Dependencies")
+    project.executor().run(":app:assemble${buildType.usLocaleCapitalize()}", ":app:analyze${buildType.usLocaleCapitalize()}Dependencies")
 
     val dependencyAnalysisReport =
       project

@@ -35,7 +35,6 @@ import com.android.build.api.dsl.MinSdkSpec
 import com.android.build.api.dsl.MinSdkVersion
 import com.android.build.api.dsl.TargetSdkSpec
 import com.android.build.api.dsl.TargetSdkVersion
-import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.MultiModuleTestProject
 import com.android.build.gradle.integration.common.utils.TestFileUtils
@@ -144,7 +143,6 @@ class AllDslMethodsTest(
   fun configureAllProjects() {
     project
       .executor()
-      .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
       .withFailOnWarning(false) // b/455891987
       // Workaround for b/382709449
       .withAdhocJvmArgument("-XX:CompileCommand=exclude,org.jetbrains.kotlin.serialization.deserialization.TypeDeserializer::simpleType")

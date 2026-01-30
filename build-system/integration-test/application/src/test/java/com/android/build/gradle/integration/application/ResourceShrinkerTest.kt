@@ -17,7 +17,6 @@
 package com.android.build.gradle.integration.application
 
 import com.android.SdkConstants
-import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.GradleTestProject.ApkType.Companion.DEBUG
 import com.android.build.gradle.integration.common.fixture.GradleTestProject.ApkType.Companion.RELEASE
@@ -84,10 +83,7 @@ class ResourceShrinkerTest(private val r8OptimizedShrinking: Boolean) {
 
   @Test
   fun `shrink resources for APKs`() {
-    project
-      .executor()
-      .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
-      .run(":assembleRelease", ":webview:assembleRelease", ":keep:assembleRelease", ":assembleDebug")
+    project.executor().run(":assembleRelease", ":webview:assembleRelease", ":keep:assembleRelease", ":assembleDebug")
 
     // Check that unused resources are replaced in shrunk apk.
     val removedFiles =
@@ -310,7 +306,6 @@ class ResourceShrinkerTest(private val r8OptimizedShrinking: Boolean) {
   fun `shrink resources for bundles`() {
     project
       .executor()
-      .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
       .run(":bundleRelease", ":packageDebugUniversalApk", ":packageReleaseUniversalApk", ":webview:bundleRelease", ":keep:bundleRelease")
 
     // Check that unused resources are replaced in shrunk bundle.
@@ -511,7 +506,7 @@ class ResourceShrinkerTest(private val r8OptimizedShrinking: Boolean) {
         "  }\n"
     )
 
-    project.executor().withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON).run(":abisplits:assembleRelease")
+    project.executor().run(":abisplits:assembleRelease")
 
     // Check that unused resources are removed from all split APKs, including universal APK
     for (split in listOf("universal", "arm64-v8a", "armeabi-v7a", "x86", "x86_64")) {

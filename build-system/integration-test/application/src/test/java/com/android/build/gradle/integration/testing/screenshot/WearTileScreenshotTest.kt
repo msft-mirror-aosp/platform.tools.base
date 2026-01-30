@@ -16,7 +16,6 @@
 
 package com.android.build.gradle.integration.testing.screenshot
 
-import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
 import com.android.build.gradle.integration.common.fixture.GradleTaskExecutor
 import com.android.build.gradle.integration.common.fixture.LoggingLevel
 import com.android.build.gradle.integration.common.fixture.project.GradleBuild
@@ -205,8 +204,7 @@ class WearTileScreenshotTest {
     }
 
   // custom executor configuration for screenshotTesting (sst)
-  private fun GradleBuild.sstExecutor(): GradleTaskExecutor =
-    executor.withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON).withLoggingLevel(LoggingLevel.LIFECYCLE)
+  private fun GradleBuild.sstExecutor(): GradleTaskExecutor = executor.withLoggingLevel(LoggingLevel.LIFECYCLE)
 
   private fun updateReferenceImage(buildType: String = "debug", flavor: String = "", projectName: String = "app") {
     val build = rule.build
