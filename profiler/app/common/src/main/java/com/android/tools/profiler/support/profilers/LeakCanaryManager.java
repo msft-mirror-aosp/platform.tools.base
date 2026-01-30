@@ -30,6 +30,7 @@ import java.lang.reflect.Method;
  * A helper class that acts as a bridge between the native profiler agent (perfa) and the
  * Studio-LeakCanary library in the app.
  */
+@Keep
 public class LeakCanaryManager {
 
     private static final String TAG = "studio.profiler";
@@ -44,11 +45,69 @@ public class LeakCanaryManager {
 
     public static final String START_LISTENING_INTENT = "studio.leakcanary.START_LISTENING";
 
+    private static final String LEAKCANARY_CLASS_NAME = "leakcanary.AppWatcher";
+
+    private static final int DEFAULT_RETAINED_VISIBLE_THRESHOLD = 5;
+
     private static Context sApplicationContext;
 
     private static BroadcastReceiver sObjectCountReceiver;
 
     private static native boolean sendObjectCountNative(int count);
+
+    /** Called from the profiler agent (perfa.cc) via JNI to check for LeakCanary's presence. */
+    @Keep
+    @SuppressWarnings("unused") // Called via JNI
+    public static boolean isPresent() {
+        Context context = getApplicationContext();
+        if (context == null) {
+            Log.d(TAG, "LeakCanary class check: Could not get Application instance.");
+            return true;
+        }
+
+        try {
+            Class.forName(LEAKCANARY_CLASS_NAME, false, context.getClassLoader());
+            return true;
+        } catch (ClassNotFoundException e) {
+            // We are certain that LeakCanary is not present.
+            Log.e(TAG, "LeakCanary class check: FAILED. AppWatcher class not found.");
+            return false;
+        } catch (Exception e) {
+            Log.d(TAG, "LeakCanary class check: FAILED with exception.", e);
+            return true;
+        }
+    }
+
+    /** Called from the profiler agent (perfa.cc) via JNI to get the retained visible threshold. */
+    @Keep
+    @SuppressWarnings("unused") // Called via JNI
+    public static int getRetainedVisibleThreshold() {
+        Context context = getApplicationContext();
+        if (context == null) {
+            Log.w(TAG, "Could not get application context to retrieve LeakCanary threshold.");
+            return DEFAULT_RETAINED_VISIBLE_THRESHOLD;
+        }
+
+        try {
+            ClassLoader classLoader = context.getClassLoader();
+            Class<?> leakCanaryClass = Class.forName("leakcanary.LeakCanary", false, classLoader);
+            java.lang.reflect.Field instanceField = leakCanaryClass.getField("INSTANCE");
+            Object leakCanaryInstance = instanceField.get(null);
+            Method getConfigMethod = leakCanaryClass.getMethod("getConfig");
+            Object config = getConfigMethod.invoke(leakCanaryInstance);
+            Method getThresholdMethod = config.getClass().getMethod("getRetainedVisibleThreshold");
+            return (int) getThresholdMethod.invoke(config);
+        } catch (ClassNotFoundException e) {
+            Log.e(TAG, "LeakCanary class not found when getting threshold.", e);
+        } catch (NoSuchFieldException e) {
+            Log.e(TAG, "INSTANCE field not found in LeakCanary class.", e);
+        } catch (NoSuchMethodException e) {
+            Log.e(TAG, "Method not found when getting threshold.", e);
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to get LeakCanary threshold", e);
+        }
+        return DEFAULT_RETAINED_VISIBLE_THRESHOLD;
+    }
 
     /** Broadcasts the heap dump completion signal to the app. Called via JNI. */
     @Keep

@@ -310,11 +310,10 @@ void InitializeProfiler(JavaVM* vm, jvmtiEnv* jvmti_env,
         JNIEnv* jni_env = GetThreadLocalJNI(vm);
         jclass support_class_raw = jni_env->FindClass(
             "com/android/tools/profiler/support/profilers/"
-            "LeakCanaryPresenceChecker");
+            "LeakCanaryManager");
 
         if (support_class_raw == nullptr) {
-          Log::E(Log::Tag::PROFILER,
-                 "LeakCanaryPresenceChecker class not found.");
+          Log::E(Log::Tag::PROFILER, "LeakCanaryManager class not found.");
           jni_env->ExceptionClear();
           return;
         }
@@ -326,7 +325,7 @@ void InitializeProfiler(JavaVM* vm, jvmtiEnv* jvmti_env,
 
         if (check_method == nullptr) {
           Log::E(Log::Tag::PROFILER,
-                 "LeakCanaryPresenceChecker.isPresent method not found.");
+                 "LeakCanaryManager.isPresent method not found.");
           jni_env->ExceptionClear();
           return;
         }
@@ -352,6 +351,60 @@ void InitializeProfiler(JavaVM* vm, jvmtiEnv* jvmti_env,
               if (!status.ok()) {
                 Log::E(Log::Tag::PROFILER,
                        "Failed to send LeakCanary presence check event. Error: "
+                       "%s",
+                       status.error_message().c_str());
+              }
+              return status;
+            }});
+      });
+
+  Agent::Instance().RegisterCommandHandler(
+      Command::GET_LEAKCANARY_THRESHOLD, [vm](const Command* command) -> void {
+        JNIEnv* jni_env = GetThreadLocalJNI(vm);
+        jclass support_class_raw = jni_env->FindClass(
+            "com/android/tools/profiler/support/profilers/"
+            "LeakCanaryManager");
+
+        if (support_class_raw == nullptr) {
+          Log::E(Log::Tag::PROFILER, "LeakCanaryManager class not found.");
+          jni_env->ExceptionClear();
+          return;
+        }
+
+        ScopedLocalRef<jclass> support_class(jni_env, support_class_raw);
+
+        jmethodID get_threshold_method = jni_env->GetStaticMethodID(
+            support_class.get(), "getRetainedVisibleThreshold", "()I");
+
+        if (get_threshold_method == nullptr) {
+          Log::E(Log::Tag::PROFILER,
+                 "LeakCanaryManager.getRetainedVisibleThreshold method "
+                 "not found.");
+          jni_env->ExceptionClear();
+          return;
+        }
+
+        jint threshold = jni_env->CallStaticIntMethod(support_class.get(),
+                                                      get_threshold_method);
+
+        Event event;
+        event.set_pid(getpid());
+        event.set_timestamp(SteadyClock().GetCurrentTime());
+        event.set_command_id(command->command_id());
+        event.set_kind(Event::LEAKCANARY_THRESHOLD);
+        event.mutable_leakcanary_threshold()->set_threshold(threshold);
+
+        SendEventRequest request;
+        *request.mutable_event() = event;
+        Agent::Instance().SubmitAgentTasks(
+            {[request](AgentService::Stub& stub,
+                       ClientContext& context) mutable {
+              profiler::proto::EmptyResponse response;
+              grpc::Status status =
+                  stub.SendEvent(&context, request, &response);
+              if (!status.ok()) {
+                Log::E(Log::Tag::PROFILER,
+                       "Failed to send LeakCanary threshold event. Error: "
                        "%s",
                        status.error_message().c_str());
               }
