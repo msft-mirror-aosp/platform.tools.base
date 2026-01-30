@@ -235,7 +235,12 @@ enum class BooleanOption(
   ENABLE_NATIVE_COMPILER_SETTINGS_CACHE("android.enableNativeCompilerSettingsCache", false, FeatureStage.Experimental),
   ENABLE_CMAKE_BUILD_COHABITATION("android.enableCmakeBuildCohabitation", false, FeatureStage.Experimental),
   ENABLE_PROGUARD_RULES_EXTRACTION("android.proguard.enableRulesExtraction", true, FeatureStage.Experimental),
-
+  ENABLE_JAVA_RESOURCE_OPTIMIZATIONS(
+    "android.experimental.enableJavaResourceOptimizations",
+    false,
+    FeatureStage.Experimental,
+    FutureStage(Version.VERSION_10_0, true, FeatureStage.SoftlyEnforced(VERSION_10_0)),
+  ),
   /**
    * Disables all constraints overriding all the other related flags.
    *
