@@ -1,0 +1,17 @@
+# This .gitignore handles files generated when opening this directory
+# as a standalone Android Studio project for local AAR testing.
+
+# Ignore Gradle build output
+build/
+
+# Ignore IDE configuration
+.idea/
+*.iml
+
+# Ignore Gradle wrapper and scripts (since we use the root ones or local ones)
+gradle/
+gradlew
+gradlew.bat
+
+# Ignore local configuration
+local.properties
