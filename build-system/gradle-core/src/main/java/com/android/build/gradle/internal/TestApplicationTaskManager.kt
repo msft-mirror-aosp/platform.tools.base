@@ -31,6 +31,7 @@ import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.tasks.CheckTestedAppObfuscation
 import com.android.build.gradle.tasks.ManifestProcessorTask
 import com.android.build.gradle.tasks.ProcessTestManifest
+import com.android.build.gradle.tasks.ProcessTestManifestPackaging
 import com.android.build.gradle.tasks.TestSuiteTestTask
 import com.android.builder.core.ComponentType
 import com.google.common.base.Preconditions
@@ -124,6 +125,7 @@ class TestApplicationTaskManager(
   override fun createMergeManifestTasks(creationConfig: ApkCreationConfig): TaskProvider<out ManifestProcessorTask> {
     val taskConfig = forTestComponent(creationConfig as TestVariantCreationConfig)
 
+    taskFactory.register(ProcessTestManifestPackaging.CreationAction(taskConfig))
     return taskFactory.register(ProcessTestManifest.CreationAction(taskConfig))
   }
 }

@@ -47,8 +47,6 @@ sealed class SingleArtifact<T : FileSystemLocation>(
   /**
    * Merged manifest file that will be used in the APK, Bundle and InstantApp packages. This will only be available on modules applying one
    * of the following plugins : com.android.application com.android.dynamic-feature com.android.library com.android.test
-   *
-   * For each module, unit test and android test variants will not have a manifest file available.
    */
   object MERGED_MANIFEST : SingleArtifact<RegularFile>(FILE, Category.INTERMEDIATES, "AndroidManifest.xml"), Replaceable, Transformable
 

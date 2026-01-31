@@ -178,6 +178,7 @@ import com.android.build.gradle.tasks.ProcessManifestForMetadataFeatureTask
 import com.android.build.gradle.tasks.ProcessMultiApkApplicationManifest
 import com.android.build.gradle.tasks.ProcessPackagedManifestTask
 import com.android.build.gradle.tasks.ProcessTestManifest
+import com.android.build.gradle.tasks.ProcessTestManifestPackaging
 import com.android.build.gradle.tasks.RenderscriptCompile
 import com.android.build.gradle.tasks.ShaderCompile
 import com.android.build.gradle.tasks.SimplifiedMergedManifestsProducerTask
@@ -407,8 +408,8 @@ abstract class TaskManager(@JvmField protected val project: Project, @JvmField p
 
   protected fun createProcessTestManifestTask(creationConfig: TestCreationConfig) {
     val taskConfig = forTestComponent(creationConfig)
-
     taskFactory.register(ProcessTestManifest.CreationAction(taskConfig))
+    taskFactory.register(ProcessTestManifestPackaging.CreationAction(taskConfig))
   }
 
   protected fun createRenderscriptTask(creationConfig: ConsumableCreationConfig) {

@@ -96,6 +96,7 @@ class NoOpIncrementalBuildMinifyTest {
             ":mergeDebugAndroidTestAssets",
             ":mergeDebugAndroidTestJavaResource",
             ":mergeDebugAndroidTestJniLibFolders",
+            ":mergeDebugAndroidTestManifest",
             ":mergeDebugAndroidTestResources",
             ":mergeDebugJniLibFolders",
             ":mergeDebugResources",
