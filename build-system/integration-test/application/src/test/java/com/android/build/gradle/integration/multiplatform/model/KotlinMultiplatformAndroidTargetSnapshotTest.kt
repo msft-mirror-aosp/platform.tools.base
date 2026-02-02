@@ -30,6 +30,7 @@ class KotlinMultiplatformAndroidTargetSnapshotTest : BaseModelComparator {
   val project =
     GradleTestProjectBuilder()
       .fromTestProject("kotlinMultiplatform")
+      .withIncludedBuilds("build-logic")
       .addGradleProperties("${BooleanOption.R8_PROGUARD_ANDROID_TXT_DISALLOWED.propertyName}=true")
       .create()
 
@@ -43,6 +44,6 @@ class KotlinMultiplatformAndroidTargetSnapshotTest : BaseModelComparator {
           FileUtils.join(project.getSubproject(projectPath).buildDir, "ide", "targets").listFiles()!!.toList()
         },
       )
-      .fetchAndCompareModels(listOf(":kmpFirstLib", ":kmpSecondLib"))
+      .fetchAndCompareModels(listOf(":kmpFirstLib", ":kmpSecondLib", ":build-logic:lib-foo"))
   }
 }
