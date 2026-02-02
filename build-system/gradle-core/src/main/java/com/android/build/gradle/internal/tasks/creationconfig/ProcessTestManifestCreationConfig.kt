@@ -64,6 +64,10 @@ interface ProcessTestManifestCreationConfig : TaskCreationConfig {
   val manifestFile: File
   val manifestOverlayFiles: Provider<List<File>>
 
+  // manifests for main variant that is APK for HostedTests
+  val mainManifestFile: File?
+  val mainManifestOverlayFiles: Provider<List<File>>?
+
   // artifacts for main variant that is APK for HostedTests
   val testedApkVariantArtifacts: ArtifactsImpl?
 
@@ -105,6 +109,12 @@ fun forTestComponent(creationConfig: TestCreationConfig): ProcessTestManifestCre
 
       override val instrumentationRunner: Provider<String>
         get() = creationConfig.emptyProvider()
+
+      override val mainManifestFile: File
+        get() = creationConfig.mainVariant.sources.manifestFile
+
+      override val mainManifestOverlayFiles: Provider<List<File>>
+        get() = creationConfig.mainVariant.sources.manifestOverlayFiles
 
       override val testedApkVariantArtifacts: ArtifactsImpl
         get() = creationConfig.mainVariant.artifacts
@@ -180,6 +190,12 @@ abstract class BaseProcessTestManifestCreationConfig(val creationConfig: Compone
 
   override val manifestOverlayFiles: Provider<List<File>>
     get() = creationConfig.sources.manifestOverlayFiles
+
+  override val mainManifestFile: File?
+    get() = null
+
+  override val mainManifestOverlayFiles: Provider<List<File>>?
+    get() = null
 
   override val minSdk: String
     get() = creationConfig.minSdk.getApiString()

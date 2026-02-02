@@ -114,6 +114,9 @@ abstract class ProcessTestManifest : ManifestProcessorTask() {
       functionalTest.orNull,
       testLabel.orNull?.let { it.ifEmpty { null } },
       if (testManifestFile.get().asFile.isFile) testManifestFile.get().asFile else null,
+      manifestOverlayFilePaths.get(),
+      mainManifestFile.orNull,
+      mainManifestOverlayFilePaths.get(),
       testedAppManifestFile.orNull?.asFile,
       computeProviders(),
       placeholdersValues.get(),
@@ -168,6 +171,9 @@ abstract class ProcessTestManifest : ManifestProcessorTask() {
     functionalTest: Boolean?,
     testLabel: String?,
     testManifestFile: File?,
+    testManifestOverlays: List<File>,
+    appMainManifestFile: File?,
+    appManifestOverlays: List<File>,
     testedAppManifestFile: File?,
     manifestProviders: List<ManifestProvider?>,
     manifestPlaceholders: Map<String?, Any?>,
@@ -218,36 +224,47 @@ abstract class ProcessTestManifest : ManifestProcessorTask() {
         )
       }
 
-      // There can be three types of input that combine into making the main manifest and
-      // its overlays :
-      // 1. the `testManifestFile` which is the main source file (possibly nonexistent)
-      // 2. the overlays coming from the build-type/product flavor specific source folders.
-      // 3. generated manifest files added through the variant API as a Variant specific source
-      // (1), (2) and (3) can all be null/empty or nonexistent in the file system.
-      // In case (1) does not exist, we still need to do the merging if (2) or (3) exists and
-      // in that case, we consider that the first overlay becomes the main Manifest (variant one),
-      // and we remove it from the list of overlays.
-      val overlays: List<File> = manifestOverlayFilePaths.get().filter(File::isFile)
+      // COMBINE ALL SOURCE MANIFESTS IN CORRECT PRIORITY ORDER
+      // Priority (high to low):
+      // 1. Test Overlays
+      // 2. Test Main
+      // 3. App Overlays
+      // 4. App Main
+      val allSources = mutableListOf<File>()
+      allSources.addAll(testManifestOverlays.filter { it.isFile })
+      if (testManifestFile != null && testManifestFile.exists()) {
+        allSources.add(testManifestFile)
+      }
+      allSources.addAll(appManifestOverlays.filter { it.isFile })
+      if (appMainManifestFile != null && appMainManifestFile.exists()) {
+        allSources.add(appMainManifestFile)
+      }
+
       // Pair of main manifest (possibly null or nonexistent) and overlays (possibly empty)
+      // ManifestMerger2 treats the FIRST in overlays as HIGHEST priority.
+      // So if allSources is [O1, O2, Base], then O1 > O2 > Base.
       val mainManifestAndOverlays: Pair<File?, List<File>> =
-        if (testManifestFile == null || !testManifestFile.exists()) {
-          Pair(overlays.firstOrNull(), if (overlays.isNotEmpty()) overlays.drop(1) else emptyList())
+        if (allSources.isEmpty()) {
+          Pair(null, emptyList())
         } else {
-          Pair(testManifestFile, overlays)
+          Pair(allSources.last(), allSources.dropLast(1))
         }
 
-      val mainManifestFile = mainManifestAndOverlays.first
-      if (mainManifestFile != null && mainManifestFile.exists()) {
+      val mainManifestFileToUse = mainManifestAndOverlays.first
+      if (mainManifestFileToUse != null || testedAppManifestFile != null) {
+        val baseFile = mainManifestFileToUse ?: generatedTestManifest
         val intermediateInvoker =
-          ManifestMerger2.newMerger(mainManifestFile, logger, ManifestMerger2.MergeType.APPLICATION)
+          ManifestMerger2.newMerger(baseFile, logger, ManifestMerger2.MergeType.APPLICATION)
             .setPlaceHolderValues(manifestPlaceholders)
             .addFlavorAndBuildTypeManifests(*mainManifestAndOverlays.second.toTypedArray())
             .apply {
-              if (testedAppManifestFile != null) {
+              if (mainManifestFileToUse != null) {
+                addLibraryManifest(generatedTestManifest)
+              }
+              if (appMainManifestFile == null && testedAppManifestFile != null) {
                 addLibraryManifest(testedAppManifestFile)
               }
             }
-            .addLibraryManifest(generatedTestManifest)
             .addAllowedNonUniqueNamespace(namespace)
             .setOverride(ManifestSystemProperty.Document.PACKAGE, testApplicationId)
             .setOverride(ManifestSystemProperty.UsesSdk.MIN_SDK_VERSION, minSdkVersion)
@@ -395,6 +412,12 @@ abstract class ProcessTestManifest : ManifestProcessorTask() {
   @get:InputFiles // Note: The files may not exist
   abstract val manifestOverlayFilePaths: ListProperty<File>
 
+  @get:PathSensitive(PathSensitivity.RELATIVE) @get:Optional @get:InputFile abstract val mainManifestFile: Property<File>
+
+  @get:PathSensitive(PathSensitivity.RELATIVE)
+  @get:InputFiles // Note: The files may not exist
+  abstract val mainManifestOverlayFilePaths: ListProperty<File>
+
   @get:Input @get:Optional abstract val compileSdk: Property<Int>
 
   /**
@@ -449,6 +472,9 @@ abstract class ProcessTestManifest : ManifestProcessorTask() {
       task.testManifestFile.set(creationConfig.manifestFile)
       task.testManifestFile.disallowChanges()
       task.manifestOverlayFilePaths.setDisallowChanges(creationConfig.manifestOverlayFiles)
+      creationConfig.mainManifestFile?.let { task.mainManifestFile.set(it) }
+      task.mainManifestFile.disallowChanges()
+      creationConfig.mainManifestOverlayFiles?.let { task.mainManifestOverlayFilePaths.setDisallowChanges(it) }
       task.tmpDir.setDisallowChanges(creationConfig.paths.intermediatesDir("tmp", "manifest", creationConfig.dirName))
       task.minSdkVersion.setDisallowChanges(creationConfig.minSdk)
       task.targetSdkVersion.setDisallowChanges(creationConfig.targetSdkVersion)

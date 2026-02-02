@@ -651,4 +651,63 @@ class ProcessTestManifestTest {
       }
     }
   }
+
+  @Test
+  fun testUnitTestManifestRespectsAppToolsReplaceWithConflict() {
+    val build =
+      rule.build {
+        androidLibrary(":libA") {
+          android { namespace = "com.example.libA" }
+          files
+            .update("src/main/AndroidManifest.xml")
+            .replaceWith(
+              """
+              <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+                  <application android:label="LibA" />
+              </manifest>
+              """
+                .trimIndent()
+            )
+        }
+        androidLibrary(":libB") {
+          android { namespace = "com.example.libB" }
+          files
+            .update("src/main/AndroidManifest.xml")
+            .replaceWith(
+              """
+              <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+                  <application android:label="LibB" />
+              </manifest>
+              """
+                .trimIndent()
+            )
+        }
+        androidApplication(":app") {
+          android {
+            namespace = "com.example.app"
+            testOptions { unitTests { isIncludeAndroidResources = true } }
+          }
+          dependencies {
+            implementation(project(":libA"))
+            implementation(project(":libB"))
+          }
+          files
+            .update("src/main/AndroidManifest.xml")
+            .replaceWith(
+              """
+              <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+                          xmlns:tools="http://schemas.android.com/tools">
+                  <application
+                      android:label="App"
+                      tools:replace="android:label" />
+              </manifest>
+              """
+                .trimIndent()
+            )
+        }
+      }
+
+    val result = build.executor.run(":app:processDebugUnitTestManifest")
+    assertTrue { result.failedTasks.isEmpty() }
+  }
 }
