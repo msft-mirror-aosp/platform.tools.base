@@ -41525,12 +41525,42 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "androidx.tracing.tracing-desktop_2.0.0-alpha01",
+    pom = "repository/androidx/tracing/tracing-desktop/2.0.0-alpha01/tracing-desktop-2.0.0-alpha01.pom",
+    repo_root_path = "repository",
+    repo_path = "androidx/tracing/tracing-desktop/2.0.0-alpha01",
+    deps = [
+        "androidx.collection.collection-jvm_1.4.5",
+        "org.jetbrains.kotlinx.kotlinx-coroutines-core_1.9.0",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.0.21",
+        "androidx.annotation.annotation-jvm_1.9.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "androidx.tracing.tracing-perfetto-handshake_1.0.0-beta02",
     pom = "repository/androidx/tracing/tracing-perfetto-handshake/1.0.0-beta02/tracing-perfetto-handshake-1.0.0-beta02.pom",
     repo_root_path = "repository",
     repo_path = "androidx/tracing/tracing-perfetto-handshake/1.0.0-beta02",
     deps = [
         "androidx.annotation.annotation_1.3.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "androidx.tracing.tracing-wire-desktop_2.0.0-alpha01",
+    pom = "repository/androidx/tracing/tracing-wire-desktop/2.0.0-alpha01/tracing-wire-desktop-2.0.0-alpha01.pom",
+    repo_root_path = "repository",
+    repo_path = "androidx/tracing/tracing-wire-desktop/2.0.0-alpha01",
+    deps = [
+        "org.jetbrains.kotlinx.kotlinx-coroutines-core_1.9.0",
+        "com.squareup.okio.okio-jvm_3.9.1",
+        "androidx.tracing.tracing-desktop_2.0.0-alpha01",
+        "com.squareup.wire.wire-runtime-jvm_5.4.0",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.0.21",
+        "androidx.annotation.annotation-jvm_1.7.0",
     ],
     visibility = ["//visibility:public"],
 )
@@ -76031,6 +76061,17 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "com.squareup.okio.okio-jvm_3.9.1",
+    pom = "repository/com/squareup/okio/okio-jvm/3.9.1/okio-jvm-3.9.1.pom",
+    repo_root_path = "repository",
+    repo_path = "com/squareup/okio/okio-jvm/3.9.1",
+    deps = [
+        "org.jetbrains.kotlin.kotlin-stdlib_1.9.25",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "com.squareup.okio.okio_1.15.0",
     pom = "repository/com/squareup/okio/okio/1.15.0/okio-1.15.0.pom",
     repo_root_path = "repository",
@@ -76152,6 +76193,18 @@ maven_artifact(
     repo_path = "com/squareup/retrofit2/retrofit/2.9.0",
     deps = [
         "com.squareup.okhttp3.okhttp_3.14.9",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.squareup.wire.wire-runtime-jvm_5.4.0",
+    pom = "repository/com/squareup/wire/wire-runtime-jvm/5.4.0/wire-runtime-jvm-5.4.0.pom",
+    repo_root_path = "repository",
+    repo_path = "com/squareup/wire/wire-runtime-jvm/5.4.0",
+    deps = [
+        "com.squareup.okio.okio-jvm_3.9.1",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.0.21",
     ],
     visibility = ["//visibility:public"],
 )
@@ -90517,6 +90570,17 @@ maven_artifact(
     pom = "repository/org/jetbrains/kotlin/kotlin-stdlib/1.9.24/kotlin-stdlib-1.9.24.pom",
     repo_root_path = "repository",
     repo_path = "org/jetbrains/kotlin/kotlin-stdlib/1.9.24",
+    deps = [
+        "org.jetbrains.annotations_13.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.jetbrains.kotlin.kotlin-stdlib_1.9.25",
+    pom = "repository/org/jetbrains/kotlin/kotlin-stdlib/1.9.25/kotlin-stdlib-1.9.25.pom",
+    repo_root_path = "repository",
+    repo_path = "org/jetbrains/kotlin/kotlin-stdlib/1.9.25",
     deps = [
         "org.jetbrains.annotations_13.0",
     ],
