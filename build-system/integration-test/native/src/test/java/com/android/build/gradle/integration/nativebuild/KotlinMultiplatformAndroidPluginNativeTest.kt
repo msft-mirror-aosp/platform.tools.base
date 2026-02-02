@@ -16,7 +16,6 @@
 
 package com.android.build.gradle.integration.nativebuild
 
-import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
 import com.android.build.gradle.integration.common.fixture.GradleTaskExecutor
 import com.android.build.gradle.integration.common.fixture.GradleTestProjectBuilder
 import com.android.build.gradle.integration.common.fixture.project.ApkSelector
@@ -232,9 +231,6 @@ class KotlinMultiplatformAndroidPluginNativeTest {
   }
 
   private fun executor(): GradleTaskExecutor {
-    return project
-      .executor()
-      .withFailOnWarning(false) // b/455891987
-      .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
+    return project.executor().withFailOnWarning(false) // b/455891987
   }
 }

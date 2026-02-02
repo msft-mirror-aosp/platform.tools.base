@@ -16,7 +16,6 @@
 
 package com.android.build.gradle.integration.publishing
 
-import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
 import com.android.build.gradle.integration.common.fixture.model.normalizeVersionsOfCommonDependencies
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
@@ -36,34 +35,24 @@ class KotlinMultiplatformPublishingTest {
 
   @get:Rule
   val rule =
-    GradleRule.configure()
-      .disableBrokenBuiltInKotlinOptOutChecks()
-      .disableBrokenNewDslOptOutChecks()
-      .withGradleOptions {
-        // this is necessary because KMP does not work with project Isolation.
-        // There were some tests where it worked but that's because they used the root
-        // project, and it's fine in the root (the KMP plugin accesses things in the root
-        // folder so if it's already there it's fine)
-        withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
-      }
-      .from {
-        androidLibrary {
-          applyPlugin(PluginType.KOTLIN_MPP)
-          applyPlugin(PluginType.MAVEN_PUBLISH)
-          pluginCallbacks += Callback::class.java
+    GradleRule.configure().disableBrokenBuiltInKotlinOptOutChecks().disableBrokenNewDslOptOutChecks().from {
+      androidLibrary {
+        applyPlugin(PluginType.KOTLIN_MPP)
+        applyPlugin(PluginType.MAVEN_PUBLISH)
+        pluginCallbacks += Callback::class.java
 
-          android {
-            defaultConfig.minSdk = 24
+        android {
+          defaultConfig.minSdk = 24
 
-            group = "com.example"
-            version = "0.1.2"
-          }
-        }
-        gradleProperties {
-          add(BooleanOption.BUILT_IN_KOTLIN, false)
-          add(BooleanOption.USE_NEW_DSL, false)
+          group = "com.example"
+          version = "0.1.2"
         }
       }
+      gradleProperties {
+        add(BooleanOption.BUILT_IN_KOTLIN, false)
+        add(BooleanOption.USE_NEW_DSL, false)
+      }
+    }
 
   class Callback : GenericCallback {
     override fun handleProject(project: Project) {

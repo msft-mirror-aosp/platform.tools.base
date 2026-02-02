@@ -17,7 +17,6 @@
 package com.android.build.gradle.integration.api
 
 import com.android.build.api.variant.ApplicationAndroidComponentsExtension
-import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
 import com.android.build.gradle.integration.common.fixture.project.ApkSelector
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.plugins.ApplicationComponentCallback
@@ -106,7 +105,7 @@ class SourceSetsTest {
 
     val app = build.androidApplication()
 
-    val result = build.executor.withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON).run("clean", ":app:mergeDebugAssets")
+    val result = build.executor.run("clean", ":app:mergeDebugAssets")
     Truth.assertThat(result.failedTasks).isEmpty()
     // check the file got merged
     Truth.assertThat(build.androidApplication().intermediatesDir.resolve("assets/debug/mergeDebugAssets/file.txt").toFile().exists())
@@ -144,10 +143,7 @@ class SourceSetsTest {
         gradleProperties { add(BooleanOption.USE_NEW_DSL, false) }
       }
 
-    build.executor
-      .with(BooleanOption.DISALLOW_PROVIDER_IN_ANDROID_SOURCE_SET, false)
-      .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
-      .run(":app:mapDebugSourceSetPaths")
+    build.executor.with(BooleanOption.DISALLOW_PROVIDER_IN_ANDROID_SOURCE_SET, false).run(":app:mapDebugSourceSetPaths")
 
     val content =
       build

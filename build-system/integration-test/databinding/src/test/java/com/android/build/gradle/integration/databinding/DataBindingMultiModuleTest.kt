@@ -16,7 +16,6 @@
 
 package com.android.build.gradle.integration.databinding
 
-import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
 import com.android.build.gradle.integration.common.fixture.GradleTaskExecutor
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.runner.FilterableParameterized
@@ -143,7 +142,7 @@ class DataBindingMultiModuleTest(useAndroidX: Boolean) {
   }
 
   private fun executor(): GradleTaskExecutor {
-    return project.executor().withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
+    return project.executor()
   }
 
   private fun createAdapterInInherited(attributeName: String): File {

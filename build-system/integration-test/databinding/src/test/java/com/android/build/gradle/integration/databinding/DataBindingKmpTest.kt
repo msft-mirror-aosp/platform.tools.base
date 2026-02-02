@@ -16,7 +16,6 @@
 
 package com.android.build.gradle.integration.databinding
 
-import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition.Companion.DEFAULT_COMPILE_SDK_VERSION
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
@@ -32,108 +31,98 @@ import org.junit.Test
 class DataBindingKmpTest {
   @get:Rule
   val rule =
-    GradleRule.configure()
-      .disableBrokenBuiltInKotlinOptOutChecks()
-      .disableBrokenNewDslOptOutChecks()
-      .withGradleOptions {
-        // this is necessary because KMP does not work with project Isolation.
-        // There were some tests where it worked but that's because they used the root
-        // project, and it's fine in the root (the KMP plugin accesses things in the root
-        // folder so if it's already there it's fine)
-        withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
-      }
-      .from {
-        androidLibrary(":app", createMinimumProject = false) {
-          applyPlugin(PluginType.KOTLIN_MPP)
-          applyPlugin(PluginType.KAPT)
-          pluginCallbacks += Callback::class.java
-          android {
-            compileSdk = DEFAULT_COMPILE_SDK_VERSION
-            namespace = "com.example.app"
-            buildFeatures { dataBinding = true }
-          }
-          dependencies { implementation(project(":lib")) }
-          files {
-            setupMinimumManifest()
-            add(
-              "src/main/java/com/example/app/MainActivity.java",
-              // language=java
-              """
-              package com.example.app;
-
-              import android.os.Bundle;
-              import android.app.Activity;
-              import androidx.databinding.DataBindingUtil;
-              import com.example.lib.LibData;
-              import com.example.app.databinding.ActivityMainBinding;
-
-              public class MainActivity extends Activity {
-
-                  @Override
-                  protected void onCreate(Bundle savedInstanceState) {
-                      super.onCreate(savedInstanceState);
-
-                      ActivityMainBinding binding = DataBindingUtil.setContentView(this, R.layout.activity_main);
-                      binding.setLibData(new LibData());
-                  }
-              }
-              """
-                .trimIndent(),
-            )
-            add(
-              "src/main/res/layout/activity_main.xml",
-              // language=xml
-              """
-              <?xml version="1.0" encoding="utf-8"?>
-              <layout xmlns:android="http://schemas.android.com/apk/res/android">
-                  <data>
-                      <variable name="libData" type="com.example.lib.LibData" />
-                  </data>
-                  <TextView
-                      android:layout_width="wrap_content"
-                      android:layout_height="wrap_content"
-                      android:dataFromLib="@{libData}" />
-              </layout>
-              """
-                .trimIndent(),
-            )
-          }
+    GradleRule.configure().disableBrokenBuiltInKotlinOptOutChecks().disableBrokenNewDslOptOutChecks().from {
+      androidLibrary(":app", createMinimumProject = false) {
+        applyPlugin(PluginType.KOTLIN_MPP)
+        applyPlugin(PluginType.KAPT)
+        pluginCallbacks += Callback::class.java
+        android {
+          compileSdk = DEFAULT_COMPILE_SDK_VERSION
+          namespace = "com.example.app"
+          buildFeatures { dataBinding = true }
         }
-        androidLibrary(":lib", createMinimumProject = false) {
-          applyPlugin(PluginType.KOTLIN_MPP)
-          applyPlugin(PluginType.KAPT)
-          pluginCallbacks += Callback::class.java
-          android {
-            compileSdk = DEFAULT_COMPILE_SDK_VERSION
-            namespace = "com.example.lib"
-            buildFeatures { dataBinding = true }
-          }
-          files.add(
-            "src/main/java/com/example/lib/LibData.java",
+        dependencies { implementation(project(":lib")) }
+        files {
+          setupMinimumManifest()
+          add(
+            "src/main/java/com/example/app/MainActivity.java",
             // language=java
             """
-            package com.example.lib;
+            package com.example.app;
 
-            import android.widget.TextView;
-            import androidx.databinding.BindingAdapter;
+            import android.os.Bundle;
+            import android.app.Activity;
+            import androidx.databinding.DataBindingUtil;
+            import com.example.lib.LibData;
+            import com.example.app.databinding.ActivityMainBinding;
 
-            public class LibData {
-                public final String greetings = "Hello from lib!";
+            public class MainActivity extends Activity {
 
-                @BindingAdapter("android:dataFromLib")
-                public static void bindLibData(TextView textView, LibData libData) {
-                    textView.setText(libData.greetings);
+                @Override
+                protected void onCreate(Bundle savedInstanceState) {
+                    super.onCreate(savedInstanceState);
+
+                    ActivityMainBinding binding = DataBindingUtil.setContentView(this, R.layout.activity_main);
+                    binding.setLibData(new LibData());
                 }
             }
             """
               .trimIndent(),
           )
-        }
-        gradleProperties {
-          add(BooleanOption.BUILT_IN_KOTLIN, false)
-          add(BooleanOption.USE_NEW_DSL, false)
+          add(
+            "src/main/res/layout/activity_main.xml",
+            // language=xml
+            """
+            <?xml version="1.0" encoding="utf-8"?>
+            <layout xmlns:android="http://schemas.android.com/apk/res/android">
+                <data>
+                    <variable name="libData" type="com.example.lib.LibData" />
+                </data>
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:dataFromLib="@{libData}" />
+            </layout>
+            """
+              .trimIndent(),
+          )
         }
       }
+      androidLibrary(":lib", createMinimumProject = false) {
+        applyPlugin(PluginType.KOTLIN_MPP)
+        applyPlugin(PluginType.KAPT)
+        pluginCallbacks += Callback::class.java
+        android {
+          compileSdk = DEFAULT_COMPILE_SDK_VERSION
+          namespace = "com.example.lib"
+          buildFeatures { dataBinding = true }
+        }
+        files.add(
+          "src/main/java/com/example/lib/LibData.java",
+          // language=java
+          """
+          package com.example.lib;
+
+          import android.widget.TextView;
+          import androidx.databinding.BindingAdapter;
+
+          public class LibData {
+              public final String greetings = "Hello from lib!";
+
+              @BindingAdapter("android:dataFromLib")
+              public static void bindLibData(TextView textView, LibData libData) {
+                  textView.setText(libData.greetings);
+              }
+          }
+          """
+            .trimIndent(),
+        )
+      }
+      gradleProperties {
+        add(BooleanOption.BUILT_IN_KOTLIN, false)
+        add(BooleanOption.USE_NEW_DSL, false)
+      }
+    }
 
   class Callback : GenericCallback {
     override fun handleProject(project: Project) {

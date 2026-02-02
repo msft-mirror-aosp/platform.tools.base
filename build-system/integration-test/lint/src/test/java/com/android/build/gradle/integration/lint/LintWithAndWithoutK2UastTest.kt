@@ -17,7 +17,6 @@
 package com.android.build.gradle.integration.lint
 
 import com.android.Version
-import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.MinimalSubProject
 import com.android.build.gradle.integration.common.fixture.app.MultiModuleTestProject
@@ -92,7 +91,6 @@ class LintWithAndWithoutK2UastTest(private val runLintInProcess: Boolean) {
   fun testLintWithAndWithoutK2Uast() {
     project
       .executor()
-      .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
       .with(BooleanOption.RUN_LINT_IN_PROCESS, runLintInProcess)
       .with(LINT_RESERVED_MEMORY_PER_TASK, "256M")
       .run("clean", "lint")
@@ -144,7 +142,6 @@ class LintWithAndWithoutK2UastTest(private val runLintInProcess: Boolean) {
     val result =
       project
         .executor()
-        .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
         .with(BooleanOption.RUN_LINT_IN_PROCESS, runLintInProcess)
         .with(LINT_RESERVED_MEMORY_PER_TASK, "256M")
         .run("clean", "lint")

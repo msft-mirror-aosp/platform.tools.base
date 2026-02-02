@@ -16,7 +16,6 @@
 
 package com.android.build.gradle.integration.ndk
 
-import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
 import com.android.build.gradle.integration.common.fixture.GradleTaskExecutor
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.GradleTestProject.Companion.DEFAULT_NDK_SIDE_BY_SIDE_VERSION
@@ -163,6 +162,6 @@ class PrefabTest(private val buildSystem: NativeBuildSystem, val cmakeVersion: S
   }
 
   private fun executor(project: GradleTestProject): GradleTaskExecutor {
-    return project.executor().withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
+    return project.executor()
   }
 }

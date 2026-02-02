@@ -16,7 +16,6 @@
 
 package com.android.build.gradle.integration.lint
 
-import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
 import com.android.build.gradle.integration.common.fixture.GradleTaskExecutor
 import com.android.build.gradle.integration.common.fixture.GradleTestProjectBuilder
 import com.android.build.gradle.integration.common.truth.ScannerSubject.Companion.assertThat
@@ -638,7 +637,6 @@ class KotlinMultiplatformAndroidLintTest(private val lintAnalysisPerComponent: B
     return project
       .executor()
       .withFailOnWarning(false) // b/455891987
-      .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
       .with(LINT_ANALYSIS_PER_COMPONENT, lintAnalysisPerComponent)
       .with(LINT_RESERVED_MEMORY_PER_TASK, "256M")
   }

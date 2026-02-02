@@ -16,7 +16,6 @@
 
 package com.android.build.gradle.integration.multiplatform.v2
 
-import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
 import com.android.build.gradle.integration.common.fixture.project.GradleBuild
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition.Companion.DEFAULT_COMPILE_SDK_VERSION
@@ -39,24 +38,22 @@ class KotlinMultiplatformPublishingTest {
 
   @get:Rule
   val rule =
-    GradleRule.configure()
-      .withGradleOptions { withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON) }
-      .from {
-        settings { addRepository("repo") }
-        // Simple producer using new AGP-KMP plugin, exposing android and common target by
-        // default
-        androidKotlinMultiplatformLibrary(":producer") {
-          applyPlugin(PluginType.MAVEN_PUBLISH)
-          group = "com.example.producer"
-          version = "1.0"
+    GradleRule.configure().from {
+      settings { addRepository("repo") }
+      // Simple producer using new AGP-KMP plugin, exposing android and common target by
+      // default
+      androidKotlinMultiplatformLibrary(":producer") {
+        applyPlugin(PluginType.MAVEN_PUBLISH)
+        group = "com.example.producer"
+        version = "1.0"
 
-          android {
-            namespace = "com.example.producer"
-            compileSdk = DEFAULT_COMPILE_SDK_VERSION
-          }
-          pluginCallbacks += PublisherCallback::class.java
+        android {
+          namespace = "com.example.producer"
+          compileSdk = DEFAULT_COMPILE_SDK_VERSION
         }
+        pluginCallbacks += PublisherCallback::class.java
       }
+    }
 
   @Test
   fun `test AGP-KMP consumer`() {

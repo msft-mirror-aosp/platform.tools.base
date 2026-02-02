@@ -16,7 +16,6 @@
 
 package com.android.build.gradle.integration.lint
 
-import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
 import com.android.build.gradle.integration.common.fixture.project.GenericProjectDefinition
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.KotlinMultiplatformDefinition
@@ -332,115 +331,113 @@ class LintAlignUastWithLanguageVersionTest(private val useBuiltInKotlinSupport: 
 
   /** Creates a multi-module android project */
   private fun createGradleRule() =
-    GradleRule.configure()
-      .withGradleOptions { withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON) }
-      .from {
-        val kotlinPlugin =
-          if (useBuiltInKotlinSupport) {
-            PluginType.ANDROID_BUILT_IN_KOTLIN
-          } else {
-            PluginType.KOTLIN_ANDROID
-          }
-
-        androidApplication(":app") {
-          applyPlugin(kotlinPlugin)
-
-          android {
-            dynamicFeatures += listOf(":feature")
-            lint {
-              checkDependencies = true
-              textOutput = File("lint-report.txt")
-              checkAllWarnings = true
-              checkTestSources = true
-            }
-          }
-
-          kotlin { jvmToolchain(17) }
-
-          dependencies {
-            implementation(project(":lib"))
-            implementation(project(":java-lib"))
-            implementation(project(":kotlin-lib"))
-            implementation(project(":kmp-android-lib"))
-            implementation(project(":kmp-jvm-lib"))
-            implementation("org.jetbrains.kotlin:kotlin-stdlib:${TestUtils.KOTLIN_VERSION_FOR_TESTS}")
-            androidTestImplementation("org.jetbrains.kotlin:kotlin-stdlib:${TestUtils.KOTLIN_VERSION_FOR_TESTS}")
-          }
-
-          files.add(
-            "src/main/kotlin/com/example/ExampleClass.kt",
-            // language=kotlin
-            """
-            package com.example
-
-            class ExampleClass
-            """
-              .trimIndent(),
-          )
+    GradleRule.configure().from {
+      val kotlinPlugin =
+        if (useBuiltInKotlinSupport) {
+          PluginType.ANDROID_BUILT_IN_KOTLIN
+        } else {
+          PluginType.KOTLIN_ANDROID
         }
 
-        androidLibrary(":lib") {
-          applyPlugin(kotlinPlugin)
-          android {
-            lint {
-              checkAllWarnings = true
-              checkTestSources = true
-            }
-          }
+      androidApplication(":app") {
+        applyPlugin(kotlinPlugin)
 
-          dependencies {
-            implementation("org.jetbrains.kotlin:kotlin-stdlib:${TestUtils.KOTLIN_VERSION_FOR_TESTS}")
-            androidTestImplementation("org.jetbrains.kotlin:kotlin-stdlib:${TestUtils.KOTLIN_VERSION_FOR_TESTS}")
-          }
-        }
-
-        androidFeature(":feature") {
-          applyPlugin(kotlinPlugin)
-          android {
-            lint {
-              checkAllWarnings = true
-              checkTestSources = true
-            }
-          }
-
-          dependencies {
-            implementation(project(":app"))
-            implementation("org.jetbrains.kotlin:kotlin-stdlib:${TestUtils.KOTLIN_VERSION_FOR_TESTS}")
-            androidTestImplementation("org.jetbrains.kotlin:kotlin-stdlib:${TestUtils.KOTLIN_VERSION_FOR_TESTS}")
-          }
-        }
-
-        genericProject(":java-lib") {
-          applyPlugin(PluginType.JAVA_LIBRARY)
-          applyPlugin(PluginType.LINT) {
+        android {
+          dynamicFeatures += listOf(":feature")
+          lint {
+            checkDependencies = true
+            textOutput = File("lint-report.txt")
             checkAllWarnings = true
             checkTestSources = true
           }
         }
 
-        genericProject(":kotlin-lib") {
-          applyPlugin(PluginType.KOTLIN_JVM) {}
-          applyPlugin(PluginType.LINT) {
+        kotlin { jvmToolchain(17) }
+
+        dependencies {
+          implementation(project(":lib"))
+          implementation(project(":java-lib"))
+          implementation(project(":kotlin-lib"))
+          implementation(project(":kmp-android-lib"))
+          implementation(project(":kmp-jvm-lib"))
+          implementation("org.jetbrains.kotlin:kotlin-stdlib:${TestUtils.KOTLIN_VERSION_FOR_TESTS}")
+          androidTestImplementation("org.jetbrains.kotlin:kotlin-stdlib:${TestUtils.KOTLIN_VERSION_FOR_TESTS}")
+        }
+
+        files.add(
+          "src/main/kotlin/com/example/ExampleClass.kt",
+          // language=kotlin
+          """
+          package com.example
+
+          class ExampleClass
+          """
+            .trimIndent(),
+        )
+      }
+
+      androidLibrary(":lib") {
+        applyPlugin(kotlinPlugin)
+        android {
+          lint {
             checkAllWarnings = true
             checkTestSources = true
           }
         }
 
-        // kmpAndroidLib is a KMP library with only an android target (no jvm targets)
-        androidKotlinMultiplatformLibrary(":kmp-android-lib") { applyPlugin(PluginType.LINT) }
-
-        // kmpJvmLib is a KMP library with only a jvm target (no android target)
-        kotlinMultiplatformLibrary(":kmp-jvm-lib") {
-          applyPlugin(PluginType.LINT)
-
-          kotlin { jvm() }
-        }
-
-        gradleProperties {
-          add(BooleanOption.BUILT_IN_KOTLIN, useBuiltInKotlinSupport)
-          add(BooleanOption.USE_NEW_DSL, useBuiltInKotlinSupport)
+        dependencies {
+          implementation("org.jetbrains.kotlin:kotlin-stdlib:${TestUtils.KOTLIN_VERSION_FOR_TESTS}")
+          androidTestImplementation("org.jetbrains.kotlin:kotlin-stdlib:${TestUtils.KOTLIN_VERSION_FOR_TESTS}")
         }
       }
+
+      androidFeature(":feature") {
+        applyPlugin(kotlinPlugin)
+        android {
+          lint {
+            checkAllWarnings = true
+            checkTestSources = true
+          }
+        }
+
+        dependencies {
+          implementation(project(":app"))
+          implementation("org.jetbrains.kotlin:kotlin-stdlib:${TestUtils.KOTLIN_VERSION_FOR_TESTS}")
+          androidTestImplementation("org.jetbrains.kotlin:kotlin-stdlib:${TestUtils.KOTLIN_VERSION_FOR_TESTS}")
+        }
+      }
+
+      genericProject(":java-lib") {
+        applyPlugin(PluginType.JAVA_LIBRARY)
+        applyPlugin(PluginType.LINT) {
+          checkAllWarnings = true
+          checkTestSources = true
+        }
+      }
+
+      genericProject(":kotlin-lib") {
+        applyPlugin(PluginType.KOTLIN_JVM) {}
+        applyPlugin(PluginType.LINT) {
+          checkAllWarnings = true
+          checkTestSources = true
+        }
+      }
+
+      // kmpAndroidLib is a KMP library with only an android target (no jvm targets)
+      androidKotlinMultiplatformLibrary(":kmp-android-lib") { applyPlugin(PluginType.LINT) }
+
+      // kmpJvmLib is a KMP library with only a jvm target (no android target)
+      kotlinMultiplatformLibrary(":kmp-jvm-lib") {
+        applyPlugin(PluginType.LINT)
+
+        kotlin { jvm() }
+      }
+
+      gradleProperties {
+        add(BooleanOption.BUILT_IN_KOTLIN, useBuiltInKotlinSupport)
+        add(BooleanOption.USE_NEW_DSL, useBuiltInKotlinSupport)
+      }
+    }
 
   /** Adds source set language versions and expected language versions to [project] */
   private fun GradleBuildDefinition.addLanguageVersionsToProject(

@@ -15,7 +15,6 @@
  */
 package com.android.build.gradle.integration.lint
 
-import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
 import com.android.build.gradle.integration.common.fixture.DESUGAR_DEPENDENCY_VERSION
 import com.android.build.gradle.integration.common.fixture.GradleTaskExecutor
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
@@ -330,6 +329,6 @@ class LintModelPerComponentIntegrationTest {
   }
 
   private fun executor(): GradleTaskExecutor {
-    return project.executor().withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
+    return project.executor()
   }
 }

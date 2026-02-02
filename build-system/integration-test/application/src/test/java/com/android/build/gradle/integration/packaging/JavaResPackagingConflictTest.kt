@@ -16,7 +16,6 @@
 
 package com.android.build.gradle.integration.packaging
 
-import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition
 import com.android.builder.merge.DuplicateRelativeFileException
@@ -92,12 +91,7 @@ class JavaResPackagingConflictWithIncludedBuildTest {
     library2.files.add("src/main/resources/foo.txt", "lib2_content")
     library3.files.add("src/main/resources/foo.txt", "lib3_content")
 
-    val result =
-      build.executor
-        // PROJECT_ISOLATION mode is not supported with includedBuilds
-        .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
-        .expectFailure()
-        .run(":app:mergeDebugJavaResource")
+    val result = build.executor.expectFailure().run(":app:mergeDebugJavaResource")
 
     val originCause = findCause(result.exception!!)
     Truth.assertThat(originCause).named("Cause as DuplicateRelativeFileException").isNotNull()
