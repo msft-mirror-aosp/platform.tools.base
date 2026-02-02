@@ -16,7 +16,6 @@
 
 package com.android.build.gradle.integration.application
 
-import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.AnnotationProcessorLib
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
@@ -132,11 +131,7 @@ dependencies {
 
   @Test
   fun checkIncrementalCompilation() {
-    project
-      .executor()
-      .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
-      .with(BooleanOption.ENABLE_LEGACY_API, true)
-      .run(":lib-compiler:jar", ":app:assembleDebug")
+    project.executor().with(BooleanOption.ENABLE_LEGACY_API, true).run(":lib-compiler:jar", ":app:assembleDebug")
     val app = project.getSubproject(":app")
     val apk = app.getApk(GradleTestProject.ApkType.DEBUG)
     TruthHelper.assertThat(apk).containsClass("Lcom/example/helloworld/HelloWorldStringValue;")
@@ -144,11 +139,7 @@ dependencies {
 
     // Modify the main file and rerun compilation. (b/65519025)
     TestFileUtils.addMethod(app.file("src/main/java/com/example/helloworld/HelloWorld.java"), "void foo() {}")
-    project
-      .executor()
-      .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
-      .with(BooleanOption.ENABLE_LEGACY_API, true)
-      .run(":app:assembleDebug")
+    project.executor().with(BooleanOption.ENABLE_LEGACY_API, true).run(":app:assembleDebug")
     TruthHelper.assertThat(apk).containsClass("Lcom/example/helloworld/HelloWorldStringValue;")
     TruthHelper.assertThat(apk).containsClass("Lcom/example/helloworld/HelloWorld\$\$InnerClass;")
   }

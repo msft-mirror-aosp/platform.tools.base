@@ -17,7 +17,6 @@
 package com.android.build.gradle.integration.compose
 
 import com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryTarget
-import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
 import com.android.build.gradle.integration.common.fixture.project.plugins.KotlinMultiplatformCallback
@@ -35,41 +34,33 @@ class KotlinMultiplatformComposeTestNewIntegration {
 
   @get:Rule
   val rule =
-    GradleRule.Companion.configure()
-      .withGradleOptions {
-        // this is necessary because KMP does not work with project Isolation.
-        // There were some tests where it worked but that's because they used the root
-        // project, and it's fine in the root (the KMP plugin accesses things in the root
-        // folder so if it's already there it's fine)
-        withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
+    GradleRule.Companion.configure().from {
+      androidKotlinMultiplatformLibrary(":library") {
+        applyPlugin(PluginType.COMPOSE_COMPILER_PLUGIN, version = TestUtils.KOTLIN_VERSION_FOR_COMPOSE_TESTS)
+
+        pluginCallbacks += SetCompilationCompilerOptionsCallback::class.java
+        android { androidResources.enable = true }
+        files.add(
+          "src/androidMain/kotlin/com/Example.kt",
+          // language=kotlin
+          """
+          package foo
+
+          import androidx.compose.foundation.layout.Column
+          import androidx.compose.material.Text
+          import androidx.compose.runtime.Composable
+
+          @Composable
+          fun MainView() {
+              Column {
+                  Text(text = "Hello World")
+              }
+          }
+          """
+            .trimIndent(),
+        )
       }
-      .from {
-        androidKotlinMultiplatformLibrary(":library") {
-          applyPlugin(PluginType.COMPOSE_COMPILER_PLUGIN, version = TestUtils.KOTLIN_VERSION_FOR_COMPOSE_TESTS)
-
-          pluginCallbacks += SetCompilationCompilerOptionsCallback::class.java
-          android { androidResources.enable = true }
-          files.add(
-            "src/androidMain/kotlin/com/Example.kt",
-            // language=kotlin
-            """
-            package foo
-
-            import androidx.compose.foundation.layout.Column
-            import androidx.compose.material.Text
-            import androidx.compose.runtime.Composable
-
-            @Composable
-            fun MainView() {
-                Column {
-                    Text(text = "Hello World")
-                }
-            }
-            """
-              .trimIndent(),
-          )
-        }
-      }
+    }
 
   class SetCompilationCompilerOptionsCallback : KotlinMultiplatformCallback {
     override fun handleExtension(project: Project, extension: KotlinMultiplatformExtension) {

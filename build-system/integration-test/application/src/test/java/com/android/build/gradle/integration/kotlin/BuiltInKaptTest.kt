@@ -16,7 +16,6 @@
 
 package com.android.build.gradle.integration.kotlin
 
-import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
 import com.android.build.gradle.integration.common.fixture.GradleProject
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.GradleTestProject.ApkType.Companion.ANDROIDTEST_DEBUG
@@ -318,7 +317,7 @@ class BuiltInKaptTest {
         .trimIndent(),
     )
 
-    project.executor().withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON).run("app:assembleDebug")
+    project.executor().run("app:assembleDebug")
   }
 
   @Test
@@ -337,7 +336,7 @@ class BuiltInKaptTest {
     )
     TestFileUtils.appendToFile(project.gradlePropertiesFile, "org.gradle.caching=true")
 
-    val executor = project.executor().withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
+    val executor = project.executor()
     // test for caching when useBuildCache = true
     executor.run("app:kaptDebugKotlin")
     assertThat(project.buildResult.didWorkTasks).contains(":app:kaptDebugKotlin")

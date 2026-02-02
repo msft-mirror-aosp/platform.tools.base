@@ -17,7 +17,6 @@
 package com.android.build.gradle.integration.application
 
 import com.android.SdkConstants
-import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
 import com.android.build.gradle.integration.common.fixture.GradleTaskExecutor
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.MinimalSubProject
@@ -823,7 +822,7 @@ class MinifyFeaturesTest {
 }
                     """
       )
-    val output = executor().withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON).run("tasks")
+    val output = executor().run("tasks")
     output.stdout.use {
       ScannerSubject.assertThat(it).contains("beforeVariants.appMinified=true")
       ScannerSubject.assertThat(it).contains("beforeVariants.appMinifiedEnabled=false")

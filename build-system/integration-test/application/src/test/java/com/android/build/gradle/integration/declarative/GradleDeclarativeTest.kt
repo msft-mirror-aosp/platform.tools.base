@@ -16,7 +16,6 @@
 
 package com.android.build.gradle.integration.declarative
 
-import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
 import com.android.build.gradle.integration.common.fixture.GradleTestProjectBuilder
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.google.common.truth.Truth.assertThat
@@ -34,7 +33,7 @@ class GradleDeclarativeTest {
 
   @Test
   fun testLibraryAssembles() {
-    project.executor().withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON).run("clean", ":lib:assemble")
+    project.executor().run("clean", ":lib:assemble")
     val debugAar = project.getSubproject("lib").getOutputFile("aar", "lib-debug.aar")
     val releaseAar = project.getSubproject("lib").getOutputFile("aar", "lib-release.aar")
     val benchmarkAar = project.getSubproject("lib").getOutputFile("aar", "lib-benchmark.aar")
@@ -46,7 +45,7 @@ class GradleDeclarativeTest {
 
   @Test
   fun testAppAssembles() {
-    project.executor().withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON).run("clean", ":app:assemble")
+    project.executor().run("clean", ":app:assemble")
     val debugApk = project.getSubproject("app").getOutputFile("apk", "debug", "app-debug.apk")
 
     assertThat(debugApk.exists()).isTrue()

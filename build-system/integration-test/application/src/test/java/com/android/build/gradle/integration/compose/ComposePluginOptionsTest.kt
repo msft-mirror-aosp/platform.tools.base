@@ -16,7 +16,6 @@
 
 package com.android.build.gradle.integration.compose
 
-import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
 import com.android.build.gradle.integration.common.fixture.project.plugins.GenericCallback
@@ -98,12 +97,10 @@ class ComposePluginOptionsTest {
   /** Regression test for b/362780328. */
   @Test
   fun `test include source information by default`() {
-    val debugResult =
-      rule.build.executor.withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON).run(":app:compileDebugKotlin")
+    val debugResult = rule.build.executor.run(":app:compileDebugKotlin")
     ScannerSubject.assertThat(debugResult.stdout).contains("androidx.compose.compiler.plugins.kotlin.sourceInformation=true")
 
-    val releaseResult =
-      rule.build.executor.withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON).run(":app:compileReleaseKotlin")
+    val releaseResult = rule.build.executor.run(":app:compileReleaseKotlin")
     ScannerSubject.assertThat(releaseResult.stdout).contains("androidx.compose.compiler.plugins.kotlin.sourceInformation=true")
   }
 
@@ -111,10 +108,10 @@ class ComposePluginOptionsTest {
   @Test
   fun `test exclude source information via DSL`() {
     val build = rule.build { androidApplication { pluginCallbacks += CompilerOptionsCallback::class.java } }
-    val debugResult = build.executor.withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON).run(":app:compileDebugKotlin")
+    val debugResult = build.executor.run(":app:compileDebugKotlin")
     ScannerSubject.assertThat(debugResult.stdout).contains("androidx.compose.compiler.plugins.kotlin.sourceInformation=false")
 
-    val releaseResult = build.executor.withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON).run(":app:compileReleaseKotlin")
+    val releaseResult = build.executor.run(":app:compileReleaseKotlin")
     ScannerSubject.assertThat(releaseResult.stdout).contains("androidx.compose.compiler.plugins.kotlin.sourceInformation=false")
   }
 
