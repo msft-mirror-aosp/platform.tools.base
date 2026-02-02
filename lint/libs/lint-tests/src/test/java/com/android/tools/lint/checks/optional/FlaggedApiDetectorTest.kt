@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 20233 The Android Open Source Project
+ * Copyright (C) 2023 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import com.android.tools.lint.checks.infrastructure.TestFile
 import com.android.tools.lint.checks.infrastructure.TestFiles
 import com.android.tools.lint.checks.infrastructure.TestFiles.binaryStub
 import com.android.tools.lint.checks.infrastructure.TestFiles.java
+import com.android.tools.lint.checks.infrastructure.TestFiles.xml
 import com.android.tools.lint.checks.infrastructure.TestLintTask
 import com.android.tools.lint.checks.infrastructure.TestMode
 import com.android.tools.lint.detector.api.Detector
@@ -82,6 +83,22 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
             """
           )
           .indented(),
+        java(
+            """
+            package test.pkg;
+            import test.api.MyApi;
+            import com.example.foobar.Flags;
+            import android.annotation.RequiresFlag;
+
+            public class Test2 {
+              @RequiresFlag(Flags.FLAG_FOOBAR)
+              public void test(MyApi api) {
+                api.apiMethod(); // OK
+              }
+            }
+            """
+          )
+          .indented(),
         // Generated
         java(
             """
@@ -95,17 +112,18 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
           )
           .indented(),
         flaggedApiAnnotationStub,
+        requiresFlagAnnotationStub,
       )
       .run()
       .expect(
         """
-        src/test/pkg/Test.java:11: Error: Method apiMethod() is a flagged API and should be inside an if (Flags.foobar()) check (or annotate the surrounding method test with @FlaggedApi(Flags.FLAG_FOOBAR) to transfer requirement to caller) [FlaggedApi]
+        src/test/pkg/Test.java:11: Error: Method apiMethod() is a flagged API and should be inside an if (Flags.foobar()) check (or annotate the surrounding method test with @RequiresFlag(Flags.FLAG_FOOBAR) to transfer requirement to caller) [FlaggedApi]
             api.apiMethod(); // ERROR 1
             ~~~~~~~~~~~~~~~
-        src/test/pkg/Test.java:12: Error: Field apiField is a flagged API and should be inside an if (Flags.foobar()) check (or annotate the surrounding method test with @FlaggedApi(Flags.FLAG_FOOBAR) to transfer requirement to caller) [FlaggedApi]
+        src/test/pkg/Test.java:12: Error: Field apiField is a flagged API and should be inside an if (Flags.foobar()) check (or annotate the surrounding method test with @RequiresFlag(Flags.FLAG_FOOBAR) to transfer requirement to caller) [FlaggedApi]
             int val = api.apiField; // ERROR 2
                           ~~~~~~~~
-        src/test/pkg/Test.java:13: Error: Class MyApi is a flagged API and should be inside an if (Flags.foobar()) check (or annotate the surrounding method test with @FlaggedApi(Flags.FLAG_FOOBAR) to transfer requirement to caller) [FlaggedApi]
+        src/test/pkg/Test.java:13: Error: Class MyApi is a flagged API and should be inside an if (Flags.foobar()) check (or annotate the surrounding method test with @RequiresFlag(Flags.FLAG_FOOBAR) to transfer requirement to caller) [FlaggedApi]
             Object o = MyApi.class; // ERROR 3
                        ~~~~~~~~~~~
         3 errors, 0 warnings
@@ -219,10 +237,10 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
       .run()
       .expect(
         """
-        src/test/pkg/Test.java:6: Error: Method apiMethod() is a flagged API and should be inside an if (ExportedFlags.disabledro()) check (or annotate the surrounding method test with @FlaggedApi(ExportedFlags.disabledRo) to transfer requirement to caller) [FlaggedApi]
+        src/test/pkg/Test.java:6: Error: Method apiMethod() is a flagged API and should be inside an if (ExportedFlags.disabledro()) check (or annotate the surrounding method test with @RequiresFlag(ExportedFlags.disabledRo) to transfer requirement to caller) [FlaggedApi]
             api.apiMethod(); // ERROR 1
             ~~~~~~~~~~~~~~~
-        src/test/pkg/Test.java:9: Error: Field apiField is a flagged API and should be inside an if (ExportedFlags.disabledro()) check (or annotate the surrounding method test with @FlaggedApi(ExportedFlags.disabledRo) to transfer requirement to caller) [FlaggedApi]
+        src/test/pkg/Test.java:9: Error: Field apiField is a flagged API and should be inside an if (ExportedFlags.disabledro()) check (or annotate the surrounding method test with @RequiresFlag(ExportedFlags.disabledRo) to transfer requirement to caller) [FlaggedApi]
               int val = api.apiField; // ERROR 2
                             ~~~~~~~~
         2 errors
@@ -331,13 +349,13 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
       .run()
       .expect(
         """
-        src/test/pkg/Test.java:11: Error: Method apiMethod() is a flagged API and should be inside an if (Flags.disabledRo()) check (or annotate the surrounding method test with @FlaggedApi(Flags.FLAG_DISABLED_RO) to transfer requirement to caller) [FlaggedApi]
+        src/test/pkg/Test.java:11: Error: Method apiMethod() is a flagged API and should be inside an if (Flags.disabledRo()) check (or annotate the surrounding method test with @RequiresFlag(Flags.FLAG_DISABLED_RO) to transfer requirement to caller) [FlaggedApi]
             api.apiMethod(); // ERROR 1
             ~~~~~~~~~~~~~~~
-        src/test/pkg/Test.java:12: Error: Field apiField is a flagged API and should be inside an if (Flags.disabledRo()) check (or annotate the surrounding method test with @FlaggedApi(Flags.FLAG_DISABLED_RO) to transfer requirement to caller) [FlaggedApi]
+        src/test/pkg/Test.java:12: Error: Field apiField is a flagged API and should be inside an if (Flags.disabledRo()) check (or annotate the surrounding method test with @RequiresFlag(Flags.FLAG_DISABLED_RO) to transfer requirement to caller) [FlaggedApi]
             int val = api.apiField; // ERROR 2
                           ~~~~~~~~
-        src/test/pkg/Test.java:13: Error: Class MyApi is a flagged API and should be inside an if (Flags.disabledRo()) check (or annotate the surrounding method test with @FlaggedApi(Flags.FLAG_DISABLED_RO) to transfer requirement to caller) [FlaggedApi]
+        src/test/pkg/Test.java:13: Error: Class MyApi is a flagged API and should be inside an if (Flags.disabledRo()) check (or annotate the surrounding method test with @RequiresFlag(Flags.FLAG_DISABLED_RO) to transfer requirement to caller) [FlaggedApi]
             Object o = MyApi.class; // ERROR 3
                        ~~~~~~~~~~~
         3 errors, 0 warnings
@@ -416,7 +434,7 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
       .run()
       .expect(
         """
-        src/test/pkg/Test.java:10: Error: Method apiMethod() is a flagged API and should be inside an if (Flags.enabledFixedRo()) check (or annotate the surrounding method test with @FlaggedApi(Flags.FLAG_ENABLED_FIXED_RO) to transfer requirement to caller) [FlaggedApi]
+        src/test/pkg/Test.java:10: Error: Method apiMethod() is a flagged API and should be inside an if (Flags.enabledFixedRo()) check (or annotate the surrounding method test with @RequiresFlag(Flags.FLAG_ENABLED_FIXED_RO) to transfer requirement to caller) [FlaggedApi]
             api.apiMethod(); // ERROR 1
             ~~~~~~~~~~~~~~~
         1 errors, 0 warnings
@@ -491,7 +509,7 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
       .run()
       .expect(
         """
-        src/test/api/Test.java:8: Error: Method apiMethod() is a flagged API and should be inside an if (Flags.foobar()) check (or annotate the surrounding method apiMethod with @FlaggedApi(Flags.FLAG_FOOBAR) to transfer requirement to caller) [FlaggedApi]
+        src/test/api/Test.java:8: Error: Method apiMethod() is a flagged API and should be inside an if (Flags.foobar()) check (or annotate the surrounding method apiMethod with @RequiresFlag(Flags.FLAG_FOOBAR) to transfer requirement to caller) [FlaggedApi]
               api.apiMethod(); // ERROR: Flagged, but different API so still an error
               ~~~~~~~~~~~~~~~
         1 errors, 0 warnings
@@ -588,7 +606,7 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
       .run()
       .expect(
         """
-        src/test/pkg/JavaTest.java:21: Error: Method flaggedApi() is a flagged API and should be inside an if (Flags.myFlag()) check (or annotate the surrounding method inner with @FlaggedApi(Flags.FLAG_MY_FLAG) to transfer requirement to caller) [FlaggedApi]
+        src/test/pkg/JavaTest.java:21: Error: Method flaggedApi() is a flagged API and should be inside an if (Flags.myFlag()) check (or annotate the surrounding method inner with @RequiresFlag(Flags.FLAG_MY_FLAG) to transfer requirement to caller) [FlaggedApi]
                 Foo.flaggedApi(); // ERROR
                 ~~~~~~~~~~~~~~~~
         1 errors, 0 warnings
@@ -861,10 +879,10 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
       .run()
       .expect(
         """
-        src/test/pkg/JavaTest.java:29: Error: Method Foo() is a flagged API and should be inside an if (Flags.myFlag()) check (or annotate the surrounding method testEarlyReturn with @FlaggedApi(Flags.FLAG_MY_FLAG) to transfer requirement to caller) [FlaggedApi]
+        src/test/pkg/JavaTest.java:29: Error: Method Foo() is a flagged API and should be inside an if (Flags.myFlag()) check (or annotate the surrounding method testEarlyReturn with @RequiresFlag(Flags.FLAG_MY_FLAG) to transfer requirement to caller) [FlaggedApi]
                 Foo f = new Foo(); // ERROR 1
                         ~~~~~~~~~
-        src/test/pkg/JavaTest.java:30: Error: Method someMethod() is a flagged API and should be inside an if (Flags.myFlag()) check (or annotate the surrounding method testEarlyReturn with @FlaggedApi(Flags.FLAG_MY_FLAG) to transfer requirement to caller) [FlaggedApi]
+        src/test/pkg/JavaTest.java:30: Error: Method someMethod() is a flagged API and should be inside an if (Flags.myFlag()) check (or annotate the surrounding method testEarlyReturn with @RequiresFlag(Flags.FLAG_MY_FLAG) to transfer requirement to caller) [FlaggedApi]
                 f.someMethod();    // ERROR 2
                 ~~~~~~~~~~~~~~
         2 errors, 0 warnings
@@ -1081,13 +1099,13 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
     // No warnings by default
     MainTest.checkDriver(
       """
-      src/test/pkg/Test.java:11: Error: Method apiMethod() is a flagged API and should be inside an if (Flags.foobar()) check (or annotate the surrounding method test with @FlaggedApi(Flags.FLAG_FOOBAR) to transfer requirement to caller) [FlaggedApi]
+      src/test/pkg/Test.java:11: Error: Method apiMethod() is a flagged API and should be inside an if (Flags.foobar()) check (or annotate the surrounding method test with @RequiresFlag(Flags.FLAG_FOOBAR) to transfer requirement to caller) [FlaggedApi]
           api.apiMethod(); // ERROR 1
           ~~~~~~~~~~~~~~~
-      src/test/pkg/Test.java:12: Error: Field apiField is a flagged API and should be inside an if (Flags.foobar()) check (or annotate the surrounding method test with @FlaggedApi(Flags.FLAG_FOOBAR) to transfer requirement to caller) [FlaggedApi]
+      src/test/pkg/Test.java:12: Error: Field apiField is a flagged API and should be inside an if (Flags.foobar()) check (or annotate the surrounding method test with @RequiresFlag(Flags.FLAG_FOOBAR) to transfer requirement to caller) [FlaggedApi]
           int val = api.apiField; // ERROR 2
                         ~~~~~~~~
-      src/test/pkg/Test.java:13: Error: Class MyApi is a flagged API and should be inside an if (Flags.foobar()) check (or annotate the surrounding method test with @FlaggedApi(Flags.FLAG_FOOBAR) to transfer requirement to caller) [FlaggedApi]
+      src/test/pkg/Test.java:13: Error: Class MyApi is a flagged API and should be inside an if (Flags.foobar()) check (or annotate the surrounding method test with @RequiresFlag(Flags.FLAG_FOOBAR) to transfer requirement to caller) [FlaggedApi]
           Object o = MyApi.class; // ERROR 3
                      ~~~~~~~~~~~
       3 errors
@@ -1125,13 +1143,13 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
 
     MainTest.checkDriver(
       """
-      src/test/pkg/Test.java:11: Error: Method apiMethod() is a flagged API and should be inside an if (Flags.foobar()) check (or annotate the surrounding method test with @FlaggedApi(Flags.FLAG_FOOBAR) to transfer requirement to caller) [FlaggedApi]
+      src/test/pkg/Test.java:11: Error: Method apiMethod() is a flagged API and should be inside an if (Flags.foobar()) check (or annotate the surrounding method test with @RequiresFlag(Flags.FLAG_FOOBAR) to transfer requirement to caller) [FlaggedApi]
           api.apiMethod(); // ERROR 1
           ~~~~~~~~~~~~~~~
-      src/test/pkg/Test.java:12: Error: Field apiField is a flagged API and should be inside an if (Flags.foobar()) check (or annotate the surrounding method test with @FlaggedApi(Flags.FLAG_FOOBAR) to transfer requirement to caller) [FlaggedApi]
+      src/test/pkg/Test.java:12: Error: Field apiField is a flagged API and should be inside an if (Flags.foobar()) check (or annotate the surrounding method test with @RequiresFlag(Flags.FLAG_FOOBAR) to transfer requirement to caller) [FlaggedApi]
           int val = api.apiField; // ERROR 2
                         ~~~~~~~~
-      src/test/pkg/Test.java:13: Error: Class MyApi is a flagged API and should be inside an if (Flags.foobar()) check (or annotate the surrounding method test with @FlaggedApi(Flags.FLAG_FOOBAR) to transfer requirement to caller) [FlaggedApi]
+      src/test/pkg/Test.java:13: Error: Class MyApi is a flagged API and should be inside an if (Flags.foobar()) check (or annotate the surrounding method test with @RequiresFlag(Flags.FLAG_FOOBAR) to transfer requirement to caller) [FlaggedApi]
           Object o = MyApi.class; // ERROR 3
                      ~~~~~~~~~~~
       3 errors
@@ -1148,13 +1166,13 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
     // Redundantly also add the --include-aosp-issues to verify that we don't duplicate the warnings
     MainTest.checkDriver(
       """
-      src/test/pkg/Test.java:11: Error: Method apiMethod() is a flagged API and should be inside an if (Flags.foobar()) check (or annotate the surrounding method test with @FlaggedApi(Flags.FLAG_FOOBAR) to transfer requirement to caller) [FlaggedApi]
+      src/test/pkg/Test.java:11: Error: Method apiMethod() is a flagged API and should be inside an if (Flags.foobar()) check (or annotate the surrounding method test with @RequiresFlag(Flags.FLAG_FOOBAR) to transfer requirement to caller) [FlaggedApi]
           api.apiMethod(); // ERROR 1
           ~~~~~~~~~~~~~~~
-      src/test/pkg/Test.java:12: Error: Field apiField is a flagged API and should be inside an if (Flags.foobar()) check (or annotate the surrounding method test with @FlaggedApi(Flags.FLAG_FOOBAR) to transfer requirement to caller) [FlaggedApi]
+      src/test/pkg/Test.java:12: Error: Field apiField is a flagged API and should be inside an if (Flags.foobar()) check (or annotate the surrounding method test with @RequiresFlag(Flags.FLAG_FOOBAR) to transfer requirement to caller) [FlaggedApi]
           int val = api.apiField; // ERROR 2
                         ~~~~~~~~
-      src/test/pkg/Test.java:13: Error: Class MyApi is a flagged API and should be inside an if (Flags.foobar()) check (or annotate the surrounding method test with @FlaggedApi(Flags.FLAG_FOOBAR) to transfer requirement to caller) [FlaggedApi]
+      src/test/pkg/Test.java:13: Error: Class MyApi is a flagged API and should be inside an if (Flags.foobar()) check (or annotate the surrounding method test with @RequiresFlag(Flags.FLAG_FOOBAR) to transfer requirement to caller) [FlaggedApi]
           Object o = MyApi.class; // ERROR 3
                      ~~~~~~~~~~~
       3 errors
@@ -1261,13 +1279,13 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
       .run()
       .expect(
         """
-        src/test/pkg/Test.java:11: Error: Method apiMethod() is a flagged API and should be inside an if (Flags.foobar()) check (or annotate the surrounding method test with @FlaggedApi(Flags.FLAG_FOOBAR) to transfer requirement to caller) [FlaggedApi]
+        src/test/pkg/Test.java:11: Error: Method apiMethod() is a flagged API and should be inside an if (Flags.foobar()) check (or annotate the surrounding method test with @RequiresFlag(Flags.FLAG_FOOBAR) to transfer requirement to caller) [FlaggedApi]
             api.apiMethod(); // ERROR 1
             ~~~~~~~~~~~~~~~
-        src/test/pkg/Test.java:12: Error: Field apiField is a flagged API and should be inside an if (Flags.foobar()) check (or annotate the surrounding method test with @FlaggedApi(Flags.FLAG_FOOBAR) to transfer requirement to caller) [FlaggedApi]
+        src/test/pkg/Test.java:12: Error: Field apiField is a flagged API and should be inside an if (Flags.foobar()) check (or annotate the surrounding method test with @RequiresFlag(Flags.FLAG_FOOBAR) to transfer requirement to caller) [FlaggedApi]
             int val = api.apiField; // ERROR 2
                           ~~~~~~~~
-        src/test/pkg/Test.java:13: Error: Class MyApi is a flagged API and should be inside an if (Flags.foobar()) check (or annotate the surrounding method test with @FlaggedApi(Flags.FLAG_FOOBAR) to transfer requirement to caller) [FlaggedApi]
+        src/test/pkg/Test.java:13: Error: Class MyApi is a flagged API and should be inside an if (Flags.foobar()) check (or annotate the surrounding method test with @RequiresFlag(Flags.FLAG_FOOBAR) to transfer requirement to caller) [FlaggedApi]
             Object o = MyApi.class; // ERROR 3
                        ~~~~~~~~~~~
         3 errors
@@ -1409,10 +1427,10 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
       )
       .expect(
         """
-        src/test/pkg/Test.java:9: Error: Method newUnfinalizedMethod() is a flagged API and should be inside an if (Flags.foobar()) check (or annotate the surrounding method test with @FlaggedApi(Flags.FLAG_FOOBAR) to transfer requirement to caller) [FlaggedApi]
+        src/test/pkg/Test.java:9: Error: Method newUnfinalizedMethod() is a flagged API and should be inside an if (Flags.foobar()) check (or annotate the surrounding method test with @RequiresFlag(Flags.FLAG_FOOBAR) to transfer requirement to caller) [FlaggedApi]
             fooManager.newUnfinalizedMethod(); // ERROR 1 (FlaggedApi)
             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        src/test/pkg/Test.java:20: Error: Method newUnfinalizedMethod() is a flagged API and should be inside an if (Flags.foobar()) check (or annotate the surrounding method test with @FlaggedApi(Flags.FLAG_FOOBAR) to transfer requirement to caller) [FlaggedApi]
+        src/test/pkg/Test.java:20: Error: Method newUnfinalizedMethod() is a flagged API and should be inside an if (Flags.foobar()) check (or annotate the surrounding method test with @RequiresFlag(Flags.FLAG_FOOBAR) to transfer requirement to caller) [FlaggedApi]
               fooManager.newUnfinalizedMethod(); // ERROR 2 (FlaggedAPi)
               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         src/test/pkg/Test.java:24: Error: Call requires API level 37 (current min is 30): test.api.FooManager#newFinalizedMethod [NewApi]
@@ -1427,6 +1445,70 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
         5 errors
         """
       )
+  }
+
+  fun testBaseline() {
+    lint()
+      .files(
+        java(
+            """
+            package test.pkg;
+            import test.api.MyApi;
+
+            public class Test {
+              public void test(MyApi api) {
+                api.apiMethod();
+              }
+            }
+            """
+          )
+          .indented(),
+        java(
+            """
+            package test.api;
+            import android.annotation.FlaggedApi;
+            import com.example.foobar.Flags;
+
+            @RequiresFlag(Flags.FLAG_FOOBAR)
+            public class MyApi {
+              public void apiMethod() { }
+            }
+            """
+          )
+          .indented(),
+        java(
+            """
+            package com.example.foobar;
+            public class Flags {
+                public static final String FLAG_FOOBAR = "com.example.foobar.foobar";
+                public static boolean foobar() { return true; }
+            }
+            """
+          )
+          .indented(),
+        flaggedApiAnnotationStub,
+        requiresFlagAnnotationStub,
+      )
+      .baseline(
+        xml(
+          "lint-baseline.xml",
+          """
+          <issues format="5">
+              <issue
+                  id="FlaggedApi"
+                  message="Method apiMethod() is a flagged API and should be inside an if (Flags.foobar()) check (or annotate the surrounding method test with @FlaggedApi(Flags.FLAG_FOOBAR) to transfer requirement to caller)"
+                  errorLine1="    api.apiMethod();"
+                  errorLine2="    ~~~~~~~~~~~~~~~">
+                  <location
+                      file="src/test/pkg/Test.java"
+                      line="6"/>
+              </issue>
+          </issues>
+          """,
+        )
+      )
+      .run()
+      .expectClean()
   }
 }
 
@@ -1448,6 +1530,30 @@ private val flaggedApiAnnotationStub: TestFile =
       @Target({TYPE, METHOD, CONSTRUCTOR, FIELD, ANNOTATION_TYPE})
       @Retention(RetentionPolicy.CLASS)
       public @interface FlaggedApi {
+          String value();
+      }
+      """
+    )
+    .indented()
+
+private val requiresFlagAnnotationStub: TestFile =
+  java(
+      """
+      package android.annotation;
+
+      import static java.lang.annotation.ElementType.ANNOTATION_TYPE;
+      import static java.lang.annotation.ElementType.CONSTRUCTOR;
+      import static java.lang.annotation.ElementType.FIELD;
+      import static java.lang.annotation.ElementType.METHOD;
+      import static java.lang.annotation.ElementType.TYPE;
+
+      import java.lang.annotation.Retention;
+      import java.lang.annotation.RetentionPolicy;
+      import java.lang.annotation.Target;
+
+      @Target({TYPE, METHOD, CONSTRUCTOR, FIELD, ANNOTATION_TYPE})
+      @Retention(RetentionPolicy.CLASS)
+      public @interface RequiresFlag {
           String value();
       }
       """
