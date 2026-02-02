@@ -109,18 +109,18 @@ import org.xmlpull.v1.XmlPullParserException
  */
 open class LintXmlConfiguration
 protected constructor(
-    configurations: ConfigurationHierarchy,
-    val configFile: File,
-    dir: File? = configFile.parentFile,
-    override var fileLevel: Boolean = true,
+  configurations: ConfigurationHierarchy,
+  val configFile: File,
+  dir: File? = configFile.parentFile,
+  override var fileLevel: Boolean = true,
 ) : Configuration(configurations) {
   init {
     this.dir = dir
   }
 
   protected constructor(
-      configurations: ConfigurationHierarchy,
-      project: Project,
+    configurations: ConfigurationHierarchy,
+    project: Project,
   ) : this(configurations, project.dir.getLintXmlFile(), project.dir, true)
 
   private var bulkEditing = false
@@ -149,25 +149,23 @@ protected constructor(
    * issue id in the data class itself; the issue id's are used as map keys instead.
    */
   data class IssueData(
-      /** Severity of the issue. */
-      var severity: Severity? = null,
-      /** Paths (optionally with glob patterns) to treat as ignored/suppressed. */
-      var paths: MutableList<String>? = null,
-      /** Regular expressions to match against the message and location of errors to suppress or ignore issues. */
-      var patterns: MutableList<Pattern>? = null,
-      /** Optional parameters to the issue checker, defined by the detector. */
-      var options: MutableMap<String, String>? = null,
-      /**
-       * Whether this issue should always be analyzed, even if in test sources (where [LintDriver.checkTestSources] is false, the default)
-       */
-      var appliesToTests: Boolean = false,
+    /** Severity of the issue. */
+    var severity: Severity? = null,
+    /** Paths (optionally with glob patterns) to treat as ignored/suppressed. */
+    var paths: MutableList<String>? = null,
+    /** Regular expressions to match against the message and location of errors to suppress or ignore issues. */
+    var patterns: MutableList<Pattern>? = null,
+    /** Optional parameters to the issue checker, defined by the detector. */
+    var options: MutableMap<String, String>? = null,
+    /** Whether this issue should always be analyzed, even if in test sources (where [LintDriver.checkTestSources] is false, the default) */
+    var appliesToTests: Boolean = false,
   ) {
     /** Returns true if there is no significant configuration for this issue (so can be skipped in serialization) */
     fun isEmpty(): Boolean {
       return severity == null &&
-          (paths == null || paths!!.isEmpty()) &&
-          (patterns == null || patterns!!.isEmpty()) &&
-          (options == null || options!!.isEmpty())
+        (paths == null || paths!!.isEmpty()) &&
+        (patterns == null || patterns!!.isEmpty()) &&
+        (options == null || options!!.isEmpty())
     }
 
     // For debugging only
@@ -291,16 +289,11 @@ protected constructor(
 
     val location = getLocation { element ->
       element.tagName == TAG_OPTION &&
-          element.getAttribute(ATTR_NAME) == option.name &&
-          (element.parentNode as? Element)?.getAttribute(ATTR_ID) == option.issue.id
+        element.getAttribute(ATTR_NAME) == option.name &&
+        (element.parentNode as? Element)?.getAttribute(ATTR_ID) == option.issue.id
     }
 
-    report(
-        client = client,
-        issue = IssueRegistry.LINT_ERROR,
-        message = message,
-        location = location,
-    )
+    report(client = client, issue = IssueRegistry.LINT_ERROR, message = message, location = location)
   }
 
   override fun getOption(option: Option): Any? {
@@ -315,10 +308,7 @@ protected constructor(
               // Validate here on read instead of when the XML file is initially parsed because
               // we don't know the associated Issue to look up options for during lint.xml parsing
               // (for third party loaded lint checks)
-              reportOptionValidationError(
-                  option,
-                  "Option value must be `true` or `false` (was $valueString)",
-              )
+              reportOptionValidationError(option, "Option value must be `true` or `false` (was $valueString)")
               option.defaultValue
             }
           }
@@ -331,10 +321,7 @@ protected constructor(
             }
             value
           } catch (_: NumberFormatException) {
-            reportOptionValidationError(
-                option,
-                "${option.name} must be an integer (was $valueString)",
-            )
+            reportOptionValidationError(option, "${option.name} must be an integer (was $valueString)")
             option.defaultValue
           }
         }
@@ -398,11 +385,11 @@ protected constructor(
   /** Sets the given File option to the given value. Intended for [LintFix] usage. */
   fun setFileOption(issue: Issue, name: String, value: File?) {
     val relative =
-        if (value != null && value.isAbsolute) {
-          client.getRelativePath(configFile.parentFile, value)
-        } else {
-          null
-        }
+      if (value != null && value.isAbsolute) {
+        client.getRelativePath(configFile.parentFile, value)
+      } else {
+        null
+      }
     if (relative != null) {
       setOption(issue, name, relative.replace('\\', '/'))
     } else {
@@ -487,21 +474,11 @@ protected constructor(
     return issueMap!!
   }
 
-  private fun isPatternIgnored(
-      id: String,
-      message: String,
-      location: Location,
-      context: Context,
-  ): Boolean {
+  private fun isPatternIgnored(id: String, message: String, location: Location, context: Context): Boolean {
     return checkIgnored(id) { data -> isPatternIgnored(data, message, location, context) }
   }
 
-  private fun isPatternIgnored(
-      issueData: IssueData,
-      message: String,
-      location: Location,
-      context: Context,
-  ): Boolean {
+  private fun isPatternIgnored(issueData: IssueData, message: String, location: Location, context: Context): Boolean {
     val regexps = issueData.patterns
     if (regexps == null || regexps.isEmpty()) {
       return false
@@ -553,11 +530,7 @@ protected constructor(
     return false
   }
 
-  override fun addConfiguredIssues(
-      targetMap: MutableMap<String, Severity>,
-      registry: IssueRegistry,
-      specificOnly: Boolean,
-  ) {
+  override fun addConfiguredIssues(targetMap: MutableMap<String, Severity>, registry: IssueRegistry, specificOnly: Boolean) {
     parent?.addConfiguredIssues(targetMap, registry, specificOnly)
 
     val issueMaps = getIssueMaps()
@@ -579,12 +552,7 @@ protected constructor(
     overrides?.addConfiguredIssues(targetMap, registry, specificOnly)
   }
 
-  override fun getLocalIssueConfigLocation(
-      issue: String,
-      specificOnly: Boolean,
-      severityOnly: Boolean,
-      source: Configuration,
-  ): Location? {
+  override fun getLocalIssueConfigLocation(issue: String, specificOnly: Boolean, severityOnly: Boolean, source: Configuration): Location? {
     val issueMaps = getIssueMaps()
 
     for (issueMap in issueMaps) {
@@ -610,11 +578,7 @@ protected constructor(
     return parent?.getLocalIssueConfigLocation(issue, specificOnly, severityOnly, source)
   }
 
-  override fun getDefinedSeverity(
-      issue: Issue,
-      source: Configuration,
-      visibleDefault: Severity,
-  ): Severity? {
+  override fun getDefinedSeverity(issue: Issue, source: Configuration, visibleDefault: Severity): Severity? {
     if (issue.suppressNames != null && !issue.suppressNames.contains(issue.id)) {
       // Not allowed to suppress this issue via lint.xml.
       // Consider reporting this as well (not easy here since we don't have
@@ -634,21 +598,21 @@ protected constructor(
     val issueMaps = getIssueMaps()
     for (issueMap in issueMaps) {
       val severity =
-          issueMap[issue.id]?.severity
-              ?: issueMap[issue.category.name]?.severity // id's can also refer to categories
-              ?: issueMap[issue.category.fullName]?.severity
-              ?: run { // recursively
-                var currentCategory = issue.category.parent
-                var s: Severity? = null
-                while (currentCategory != null) {
-                  s = issueMap[currentCategory.name]?.severity
-                  if (s != null) {
-                    break
-                  }
-                  currentCategory = currentCategory.parent
-                }
-                s
+        issueMap[issue.id]?.severity
+          ?: issueMap[issue.category.name]?.severity // id's can also refer to categories
+          ?: issueMap[issue.category.fullName]?.severity
+          ?: run { // recursively
+            var currentCategory = issue.category.parent
+            var s: Severity? = null
+            while (currentCategory != null) {
+              s = issueMap[currentCategory.name]?.severity
+              if (s != null) {
+                break
               }
+              currentCategory = currentCategory.parent
+            }
+            s
+          }
       if (severity != null) {
         return severity
       }
@@ -706,23 +670,23 @@ protected constructor(
   }
 
   private fun reportError(
-      message: String,
-      parser: XmlPullParser? = null,
-      exception: XmlPullParserException? = null,
-      location: Location? =
-          when {
-            parser != null -> getLocation(parser)
-            exception != null -> getLocation(exception)
-            else -> Location.create(configFile)
-          },
-      severity: Severity = Severity.WARNING,
+    message: String,
+    parser: XmlPullParser? = null,
+    exception: XmlPullParserException? = null,
+    location: Location? =
+      when {
+        parser != null -> getLocation(parser)
+        exception != null -> getLocation(exception)
+        else -> Location.create(configFile)
+      },
+    severity: Severity = Severity.WARNING,
   ) {
     report(
-        client = client,
-        issue = if (severity.isError) IssueRegistry.LINT_ERROR else IssueRegistry.LINT_WARNING,
-        message = message,
-        location = location,
-        driver = null,
+      client = client,
+      issue = if (severity.isError) IssueRegistry.LINT_ERROR else IssueRegistry.LINT_WARNING,
+      message = message,
+      location = location,
+      driver = null,
     )
   }
 
@@ -771,8 +735,8 @@ protected constructor(
                     fileClients = value
                     if (i > 0) {
                       reportError(
-                          "$ATTR_IN for the whole " + "file, if specified, must always be the " + "first attribute in <$TAG_LINT>",
-                          parser,
+                        "$ATTR_IN for the whole " + "file, if specified, must always be the " + "first attribute in <$TAG_LINT>",
+                        parser,
                       )
                     } else if (value == VALUE_ALL) {
                       reportError("$VALUE_ALL not supported for $ATTR_IN", parser)
@@ -794,10 +758,7 @@ protected constructor(
                   "lintJar",
                   "lintJars" -> {
                     if (fileLevel) {
-                      reportError(
-                          "`lintJar` can only be specified for lint.xml files at the module level or higher",
-                          parser,
-                      )
+                      reportError("`lintJar` can only be specified for lint.xml files at the module level or higher", parser)
                     } else if (applies()) {
                       // Using ; instead of File.pathSeparator here
                       // because we want to handle both Windows and
@@ -806,17 +767,17 @@ protected constructor(
                       // and frequently contains : in paths, such as C:\),
                       // to be split on the : on Linux/Mac.
                       lintJars =
-                          value
-                              .split(';')
-                              .map { path ->
-                                val file = File(path)
-                                val absolute = if (file.isAbsolute) file else File(configFile.parentFile, path)
-                                if (!absolute.exists()) {
-                                  reportError("lintJar $absolute does not exist")
-                                }
-                                absolute
-                              }
-                              .toList()
+                        value
+                          .split(';')
+                          .map { path ->
+                            val file = File(path)
+                            val absolute = if (file.isAbsolute) file else File(configFile.parentFile, path)
+                            if (!absolute.exists()) {
+                              reportError("lintJar $absolute does not exist")
+                            }
+                            absolute
+                          }
+                          .toList()
                     }
                   }
                   else -> reportError("Unexpected attribute `$name`", parser)
@@ -840,10 +801,7 @@ protected constructor(
                     // in order to not drop anything when writing configs
                     // back out
                     if (fileClients != null) {
-                      reportError(
-                          "If you specify `$ATTR_IN` on the root <$TAG_LINT> element you cannot specify it anywhere else",
-                          parser,
-                      )
+                      reportError("If you specify `$ATTR_IN` on the root <$TAG_LINT> element you cannot specify it anywhere else", parser)
                     } else if (value == VALUE_ALL) {
                       reportError("$VALUE_ALL not supported for $ATTR_IN", parser)
                     }
@@ -858,29 +816,25 @@ protected constructor(
                     appliesToTests = value.toBoolean()
                     if (fileLevel) {
                       reportError(
-                          "The `tests` attribute can only be specified for lint.xml files at the module level or higher",
-                          parser,
-                          severity = Severity.WARNING,
+                        "The `tests` attribute can only be specified for lint.xml files at the module level or higher",
+                        parser,
+                        severity = Severity.WARNING,
                       )
                     }
                   }
-                  else ->
-                      reportError(
-                          "Unexpected attribute `$name`, expected `$ATTR_ID`, `$ATTR_IN` or `$ATTR_SEVERITY`",
-                          parser,
-                      )
+                  else -> reportError("Unexpected attribute `$name`, expected `$ATTR_ID`, `$ATTR_IN` or `$ATTR_SEVERITY`", parser)
                 }
               }
               if (idString.isEmpty()) {
                 reportError("Missing required issue `id` attribute", parser)
               } else if (severityString.isNotEmpty()) {
                 val severity =
-                    Severity.fromName(severityString)
-                        ?: if (severityString == "hide" || severityString == "hidden") {
-                          Severity.IGNORE
-                        } else if (severityString == "info" || severityString == "information") {
-                          Severity.INFORMATIONAL
-                        } else null
+                  Severity.fromName(severityString)
+                    ?: if (severityString == "hide" || severityString == "hidden") {
+                      Severity.IGNORE
+                    } else if (severityString == "info" || severityString == "information") {
+                      Severity.INFORMATIONAL
+                    } else null
                 if (severity != null) {
                   // TODO: If !projectLevel and we're turning on a check
                   // here, report a warning that this can only be done at
@@ -911,11 +865,7 @@ protected constructor(
                   when (name) {
                     ATTR_PATH -> path = value
                     ATTR_REGEXP -> regexp = value
-                    else ->
-                        reportError(
-                            "Unexpected attribute `$name`, expected `$ATTR_PATH` or `$ATTR_REGEXP`",
-                            parser,
-                        )
+                    else -> reportError("Unexpected attribute `$name`, expected `$ATTR_PATH` or `$ATTR_REGEXP`", parser)
                   }
                 }
                 if (path.isEmpty()) {
@@ -928,22 +878,14 @@ protected constructor(
                   // Normalize path format to File.separator. Also
                   // handle the file format containing / or \.
                   path =
-                      if (File.separatorChar == '/') {
-                        path.replace('\\', '/')
-                      } else {
-                        path.replace('/', File.separatorChar)
-                      }
+                    if (File.separatorChar == '/') {
+                      path.replace('\\', '/')
+                    } else {
+                      path.replace('/', File.separatorChar)
+                    }
                   if (path.indexOf('*') != -1) {
                     // Convert glob path to pattern
-                    addRegexp(
-                        parser,
-                        idString,
-                        idList,
-                        n,
-                        SdkUtils.globToRegexp(path),
-                        fileClients,
-                        issueClients,
-                    )
+                    addRegexp(parser, idString, idList, n, SdkUtils.globToRegexp(path), fileClients, issueClients)
                   } else {
                     addPaths(idList, n, path, fileClients, issueClients)
                   }
@@ -963,18 +905,11 @@ protected constructor(
                   when (name) {
                     ATTR_NAME -> optionKey = value
                     ATTR_VALUE -> optionValue = value
-                    else ->
-                        reportError(
-                            "Unexpected attribute `$name`, expected `$ATTR_NAME` or `$ATTR_VALUE`",
-                            parser,
-                        )
+                    else -> reportError("Unexpected attribute `$name`, expected `$ATTR_NAME` or `$ATTR_VALUE`", parser)
                   }
                 }
                 if (optionKey.isEmpty() || optionValue.isEmpty()) {
-                  reportError(
-                      "Must specify both $ATTR_NAME and $ATTR_VALUE in <$TAG_OPTION>",
-                      parser,
-                  )
+                  reportError("Must specify both $ATTR_NAME and $ATTR_VALUE in <$TAG_OPTION>", parser)
                 } else {
                   // If it's a path?
                   addOption(idList, optionKey, optionValue, fileClients, issueClients)
@@ -982,10 +917,10 @@ protected constructor(
               }
             }
             else ->
-                reportError(
-                    "Unsupported tag <`${parser.name}`>, expected one of `$TAG_LINT`, `$TAG_ISSUE`, `$TAG_IGNORE` or `$TAG_OPTION`",
-                    parser,
-                )
+              reportError(
+                "Unsupported tag <`${parser.name}`>, expected one of `$TAG_LINT`, `$TAG_ISSUE`, `$TAG_IGNORE` or `$TAG_OPTION`",
+                parser,
+              )
           }
         } else if (eventType == XmlPullParser.END_TAG) {
           if (parser.name == TAG_ISSUE) {
@@ -1005,7 +940,7 @@ protected constructor(
       // so strip that out to ensure stable output
       val index = detail.indexOf(" (position:")
       val message =
-          "Failed parsing ${configFile.name}: ${
+        "Failed parsing ${configFile.name}: ${
             if (index != -1) detail.substring(0, index) else detail}"
       reportError(message, exception = e)
     }
@@ -1044,11 +979,7 @@ protected constructor(
    * match. Note also that the [client] string can be a comma separated list, and this method will return true if **any** of the items
    * match.
    */
-  private fun isApplicableClient(
-      client: String?,
-      checkEquals: Boolean = true,
-      checkOther: Boolean = true,
-  ): Boolean {
+  private fun isApplicableClient(client: String?, checkEquals: Boolean = true, checkOther: Boolean = true): Boolean {
     client ?: return true
 
     if (client.contains(',')) {
@@ -1072,12 +1003,7 @@ protected constructor(
   }
 
   /** When parsing an XML file an element can reference multiple id's; this method sets the given severity to all the referenced id's. */
-  private fun addSeverity(
-      idList: Iterable<String>,
-      severity: Severity,
-      fileClients: String?,
-      issueClients: String?,
-  ) {
+  private fun addSeverity(idList: Iterable<String>, severity: Severity, fileClients: String?, issueClients: String?) {
     val issueMap = getOrCreateIssueMap(issueClients ?: fileClients)
     for (id in idList) {
       val data = issueMap[id] ?: IssueData().also { issueMap[id] = it }
@@ -1088,13 +1014,7 @@ protected constructor(
   /**
    * When parsing an XML file an element can reference multiple id's; this method adds the given suppress path to all the referenced id's.
    */
-  private fun addPaths(
-      ids: Iterable<String>,
-      n: Int,
-      path: String,
-      fileClients: String?,
-      issueClients: String?,
-  ) {
+  private fun addPaths(ids: Iterable<String>, n: Int, path: String, fileClients: String?, issueClients: String?) {
     val issueMap = getOrCreateIssueMap(issueClients ?: fileClients)
     for (id in ids) {
       val data = issueMap[id] ?: IssueData().also { issueMap[id] = it }
@@ -1108,13 +1028,13 @@ protected constructor(
    * referenced id's.
    */
   private fun addRegexp(
-      parser: XmlPullParser,
-      idList: String,
-      ids: Iterable<String>,
-      n: Int,
-      regexp: String,
-      fileClients: String?,
-      issueClients: String?,
+    parser: XmlPullParser,
+    idList: String,
+    ids: Iterable<String>,
+    n: Int,
+    regexp: String,
+    fileClients: String?,
+    issueClients: String?,
   ) {
     try {
       val issueMap = getOrCreateIssueMap(issueClients ?: fileClients)
@@ -1129,29 +1049,19 @@ protected constructor(
     }
   }
 
-  private fun addOption(
-      ids: Iterable<String>,
-      key: String,
-      value: String,
-      fileClients: String? = null,
-      issueClients: String? = null,
-  ) {
+  private fun addOption(ids: Iterable<String>, key: String, value: String, fileClients: String? = null, issueClients: String? = null) {
     val issueMap = getOrCreateIssueMap(issueClients ?: fileClients)
     for (id in ids) {
       val data = issueMap[id] ?: IssueData().also { issueMap[id] = it }
       val options =
-          data.options
-              // LinkedHashMap: preserve lint.xml order
-              ?: LinkedHashMap<String, String>().also { data.options = it }
+        data.options
+          // LinkedHashMap: preserve lint.xml order
+          ?: LinkedHashMap<String, String>().also { data.options = it }
       options[key] = value
     }
   }
 
-  private fun addAppliesToTests(
-      ids: Iterable<String>,
-      fileClients: String? = null,
-      issueClients: String? = null,
-  ) {
+  private fun addAppliesToTests(ids: Iterable<String>, fileClients: String? = null, issueClients: String? = null) {
     val issueMap = getOrCreateIssueMap(issueClients ?: fileClients)
     for (id in ids) {
       val data = issueMap[id] ?: IssueData().also { issueMap[id] = it }
@@ -1256,17 +1166,17 @@ protected constructor(
       abortOnError?.let { writeAttribute(writer, "abortOnError", it.toString()) }
       lintJars?.let {
         writeAttribute(
-            writer,
-            "lintJars",
-            it.joinToString(";") { f ->
-              val lintPath = f.path
-              val xmlPath = configFile.parentFile?.path ?: ""
-              if (lintPath.startsWith(xmlPath) && lintPath != xmlPath && lintPath[xmlPath.length] == File.separatorChar) {
-                lintPath.substring(xmlPath.length + 1).replace(File.separatorChar, '/')
-              } else {
-                lintPath.replace(File.separatorChar, '/')
-              }
-            },
+          writer,
+          "lintJars",
+          it.joinToString(";") { f ->
+            val lintPath = f.path
+            val xmlPath = configFile.parentFile?.path ?: ""
+            if (lintPath.startsWith(xmlPath) && lintPath != xmlPath && lintPath[xmlPath.length] == File.separatorChar) {
+              lintPath.substring(xmlPath.length + 1).replace(File.separatorChar, '/')
+            } else {
+              lintPath.replace(File.separatorChar, '/')
+            }
+          },
         )
       }
       writer.write(">\n")
@@ -1416,16 +1326,16 @@ protected constructor(
     get() = _baselineFile
     set(value) {
       _baselineFile =
-          if (value != null && !value.isAbsolute) {
-            val dir = configFile.parentFile
-            if (dir != null) {
-              File(dir, value.path)
-            } else {
-              value
-            }
+        if (value != null && !value.isAbsolute) {
+          val dir = configFile.parentFile
+          if (dir != null) {
+            File(dir, value.path)
           } else {
             value
           }
+        } else {
+          value
+        }
     }
 
   /**
@@ -1434,13 +1344,7 @@ protected constructor(
    */
   private var validated = false
 
-  override fun validateIssueIds(
-      client: LintClient,
-      driver: LintDriver,
-      project: Project?,
-      registry: IssueRegistry,
-      allowed: Set<String>,
-  ) {
+  override fun validateIssueIds(client: LintClient, driver: LintDriver, project: Project?, registry: IssueRegistry, allowed: Set<String>) {
     parent?.validateIssueIds(client, driver, project, registry, allowed)
     if (validated) {
       return
@@ -1455,12 +1359,12 @@ protected constructor(
   }
 
   private fun validateIssueIds(
-      client: LintClient,
-      driver: LintDriver,
-      project: Project?,
-      registry: IssueRegistry,
-      map: MutableMap<String, IssueData>,
-      allowed: Set<String>,
+    client: LintClient,
+    driver: LintDriver,
+    project: Project?,
+    registry: IssueRegistry,
+    map: MutableMap<String, IssueData>,
+    allowed: Set<String>,
   ) {
     for (id in map.keys.toList()) {
       if (id == SUPPRESS_ALL) {
@@ -1564,11 +1468,7 @@ protected constructor(
      * @return a new configuration
      */
     @JvmStatic
-    fun create(
-        configurations: ConfigurationHierarchy,
-        lintFile: File,
-        contents: CharSequence,
-    ): LintXmlConfiguration {
+    fun create(configurations: ConfigurationHierarchy, lintFile: File, contents: CharSequence): LintXmlConfiguration {
       val config = LintXmlConfiguration(configurations, lintFile)
       val parser = KXmlParser()
       parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, true)

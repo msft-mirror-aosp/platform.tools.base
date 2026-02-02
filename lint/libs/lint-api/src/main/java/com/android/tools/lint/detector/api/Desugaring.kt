@@ -46,27 +46,12 @@ enum class Desugaring(val constant: Int) {
     @JvmField val NONE: Set<Desugaring> = EnumSet.noneOf(Desugaring::class.java)
 
     /** Default assumed desugaring (used in all recent versions of Gradle, Bazel, etc); does not include [JAVA_8_LIBRARY] */
-    @JvmField
-    val DEFAULT: Set<Desugaring> =
-        EnumSet.of(
-            LAMBDAS,
-            METHOD_REFERENCES,
-            TYPE_ANNOTATIONS,
-            INTERFACE_METHODS,
-            TRY_WITH_RESOURCES,
-        )
+    @JvmField val DEFAULT: Set<Desugaring> = EnumSet.of(LAMBDAS, METHOD_REFERENCES, TYPE_ANNOTATIONS, INTERFACE_METHODS, TRY_WITH_RESOURCES)
 
     /** Full desugaring. */
     @JvmField
     val FULL: Set<Desugaring> =
-        EnumSet.of(
-            LAMBDAS,
-            METHOD_REFERENCES,
-            TYPE_ANNOTATIONS,
-            INTERFACE_METHODS,
-            TRY_WITH_RESOURCES,
-            JAVA_8_LIBRARY,
-        )
+      EnumSet.of(LAMBDAS, METHOD_REFERENCES, TYPE_ANNOTATIONS, INTERFACE_METHODS, TRY_WITH_RESOURCES, JAVA_8_LIBRARY)
 
     fun fromConstant(constant: Int): Desugaring {
       return when (constant) {

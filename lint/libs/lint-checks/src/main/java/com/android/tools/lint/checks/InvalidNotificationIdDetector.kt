@@ -40,20 +40,20 @@ class InvalidNotificationIdDetector : Detector(), SourceCodeScanner {
     /** Invalid */
     @JvmField
     val ISSUE =
-        Issue.create(
-            id = "NotificationId0",
-            briefDescription = "Notification Id is 0",
-            explanation =
-                """
+      Issue.create(
+        id = "NotificationId0",
+        briefDescription = "Notification Id is 0",
+        explanation =
+          """
                 The notification id **cannot** be 0; using 0 here can make the service not run in \
                 the foreground.
                 """,
-            category = Category.CORRECTNESS,
-            priority = 6,
-            severity = Severity.ERROR,
-            androidSpecific = true,
-            implementation = IMPLEMENTATION,
-        )
+        category = Category.CORRECTNESS,
+        priority = 6,
+        severity = Severity.ERROR,
+        androidSpecific = true,
+        implementation = IMPLEMENTATION,
+      )
   }
 
   override fun getApplicableMethodNames(): List<String> = listOf("startForeground")

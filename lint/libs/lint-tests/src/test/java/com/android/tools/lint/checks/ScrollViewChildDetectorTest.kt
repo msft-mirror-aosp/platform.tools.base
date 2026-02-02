@@ -25,10 +25,10 @@ class ScrollViewChildDetectorTest : AbstractCheckTest() {
 
   fun testDocumentationExample() {
     lint()
-        .files(
-            xml(
-                    "res/layout/wrong_dimension.xml",
-                    """
+      .files(
+        xml(
+            "res/layout/wrong_dimension.xml",
+            """
                 <HorizontalScrollView
                     xmlns:android="http://schemas.android.com/apk/res/android"
 
@@ -41,27 +41,27 @@ class ScrollViewChildDetectorTest : AbstractCheckTest() {
 
                 </HorizontalScrollView>
                 """,
-                )
-                .indented()
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented()
+      )
+      .run()
+      .expect(
+        """
             res/layout/wrong_dimension.xml:8: Warning: This LinearLayout should use android:layout_width="wrap_content" [ScrollViewSize]
                     android:layout_width="match_parent"
                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             0 errors, 1 warnings
             """
-        )
+      )
   }
 
   fun testWebViewChild() {
     // Regression test for https://issuetracker.google.com/37090639
     lint()
-        .files(
-            xml(
-                    "res/layout/layout.xml",
-                    """
+      .files(
+        xml(
+            "res/layout/layout.xml",
+            """
             <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
@@ -98,10 +98,10 @@ class ScrollViewChildDetectorTest : AbstractCheckTest() {
                 </ScrollView>
             </LinearLayout>
             """,
-                )
-                .indented()
-        )
-        .run()
-        .expectClean()
+          )
+          .indented()
+      )
+      .run()
+      .expectClean()
   }
 }

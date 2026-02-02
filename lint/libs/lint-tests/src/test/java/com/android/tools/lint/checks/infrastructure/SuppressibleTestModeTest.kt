@@ -69,10 +69,10 @@ class SuppressibleTestModeTest {
   @Test
   fun testXml1() {
     val files =
-        listOf(
-            xml(
-                    "res/menu/menu.xml",
-                    """
+      listOf(
+        xml(
+            "res/menu/menu.xml",
+            """
                     <menu xmlns:android="http://schemas.android.com/apk/res/android" xmlns:tools="http://schemas.android.com/tools">
                         <item
                             android:id="@+id/item1"
@@ -87,11 +87,11 @@ class SuppressibleTestModeTest {
                         </item>
                     </menu>
                     """,
-                )
-                .indented(),
-            xml(
-                    "res/values/duplicate-strings.xml",
-                    """
+          )
+          .indented(),
+        xml(
+            "res/values/duplicate-strings.xml",
+            """
                     <resources>
                         <string name="app_name">App Name</string>
                         <string name="hello_world">Hello world!</string>
@@ -100,11 +100,11 @@ class SuppressibleTestModeTest {
 
                     </resources>
                     """,
-                )
-                .indented(),
-        )
+          )
+          .indented(),
+      )
     val output =
-        """
+      """
             res/values/duplicate-strings.xml:4: Error: app_name has already been defined in this folder [DuplicateDefinition]
                 <string name="app_name">App Name 1</string>
                         ~~~~~~~~~~~~~~~
@@ -146,41 +146,41 @@ class SuppressibleTestModeTest {
             1 errors, 2 warnings
             """
     check(
-        output,
-        files,
-        """
-        res/menu/menu.xml:
-        @@ -2,3 +2,3 @@
-             <item
-        -        android:id="@+id/item1"
-        +        tools:ignore="HardcodedText" android:id="@+id/item1"
-                 android:icon="@drawable/icon1"
-        @@ -7,3 +7,3 @@
-             <item
-        -        android:id="@+id/item2"
-        +        tools:ignore="HardcodedText" android:id="@+id/item2"
-                 android:icon="@drawable/icon2"
-        res/values/duplicate-strings.xml:
-        @@ -1,5 +1,5 @@
-        -<resources>
-        +<resources xmlns:tools="http://schemas.android.com/tools">
-             <string name="app_name">App Name</string>
-             <string name="hello_world">Hello world!</string>
-        -    <string name="app_name">App Name 1</string>
-        +    <string tools:ignore="DuplicateDefinition" name="app_name">App Name 1</string>
-             <string name="app_name2">App Name 2</string>
-        """
-            .trimIndent(),
+      output,
+      files,
+      """
+      res/menu/menu.xml:
+      @@ -2,3 +2,3 @@
+           <item
+      -        android:id="@+id/item1"
+      +        tools:ignore="HardcodedText" android:id="@+id/item1"
+               android:icon="@drawable/icon1"
+      @@ -7,3 +7,3 @@
+           <item
+      -        android:id="@+id/item2"
+      +        tools:ignore="HardcodedText" android:id="@+id/item2"
+               android:icon="@drawable/icon2"
+      res/values/duplicate-strings.xml:
+      @@ -1,5 +1,5 @@
+      -<resources>
+      +<resources xmlns:tools="http://schemas.android.com/tools">
+           <string name="app_name">App Name</string>
+           <string name="hello_world">Hello world!</string>
+      -    <string name="app_name">App Name 1</string>
+      +    <string tools:ignore="DuplicateDefinition" name="app_name">App Name 1</string>
+           <string name="app_name2">App Name 2</string>
+      """
+        .trimIndent(),
     )
   }
 
   @Test
   fun testXml2() {
     val testFiles =
-        listOf(
-            xml(
-                    "res/xml/nfc_tech_list_formatted.xml",
-                    """
+      listOf(
+        xml(
+            "res/xml/nfc_tech_list_formatted.xml",
+            """
                 <resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2" >
 
                     <!-- capture anything using NfcF -->
@@ -191,21 +191,21 @@ class SuppressibleTestModeTest {
                     </tech-list>
                 </resources>
                 """,
-                )
-                .indented()
-        )
+          )
+          .indented()
+      )
     val output =
-        """
-        res/xml/nfc_tech_list_formatted.xml:6: Error: There should not be any whitespace inside <tech> elements [NfcTechWhitespace]
-        android.nfc.tech.NfcA
-        ~~~~~~~~~~~~~~~~~~~~~
-        1 errors, 0 warnings
-        """
-            .trimIndent()
+      """
+      res/xml/nfc_tech_list_formatted.xml:6: Error: There should not be any whitespace inside <tech> elements [NfcTechWhitespace]
+      android.nfc.tech.NfcA
+      ~~~~~~~~~~~~~~~~~~~~~
+      1 errors, 0 warnings
+      """
+        .trimIndent()
     check(
-        output,
-        testFiles,
-        """
+      output,
+      testFiles,
+      """
       res/xml/nfc_tech_list_formatted.xml:
       @@ -1,2 +1,2 @@
       -<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2" >
@@ -224,10 +224,10 @@ class SuppressibleTestModeTest {
   @Test
   fun testXmlExistingIgnore() {
     val testFiles =
-        listOf(
-            xml(
-                    "res/values-nb/strings.xml",
-                    """
+      listOf(
+        xml(
+            "res/values-nb/strings.xml",
+            """
                 <resources
                     xmlns:android="https://schemas.android.com/apk/res/android"
                     xmlns:tools="http://schemas.android.com/tools"
@@ -235,24 +235,24 @@ class SuppressibleTestModeTest {
                     <string name="bar">Bar</string>
                 </resources>
                 """,
-                )
-                .indented()
-        )
+          )
+          .indented()
+      )
     val output =
-        """
-        res/values-nb/strings.xml:1: Error: Suspicious namespace: should start with http:// [NamespaceTypo]
-        <resources     xmlns:android="https://schemas.android.com/apk/res/android"
-                                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        res/values-nb/strings.xml:2: Error: Suspicious namespace: should start with http:// [NamespaceTypo]
-            xmlns:tools="https://schemas.android.com/tools"
-                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        2 errors, 0 warnings
-        """
-            .trimIndent()
+      """
+      res/values-nb/strings.xml:1: Error: Suspicious namespace: should start with http:// [NamespaceTypo]
+      <resources     xmlns:android="https://schemas.android.com/apk/res/android"
+                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      res/values-nb/strings.xml:2: Error: Suspicious namespace: should start with http:// [NamespaceTypo]
+          xmlns:tools="https://schemas.android.com/tools"
+                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      2 errors, 0 warnings
+      """
+        .trimIndent()
     check(
-        output,
-        testFiles,
-        """
+      output,
+      testFiles,
+      """
       res/values-nb/strings.xml:
       @@ -3,3 +3,3 @@
            xmlns:tools="http://schemas.android.com/tools"
@@ -266,10 +266,10 @@ class SuppressibleTestModeTest {
   @Test
   fun testJava1() {
     val testFiles =
-        listOf(
-            java(
-                    "src/test/pkg/AlarmTest.java",
-                    """
+      listOf(
+        java(
+            "src/test/pkg/AlarmTest.java",
+            """
                     package test.pkg;
 
                     import android.app.AlarmManager;
@@ -293,30 +293,30 @@ class SuppressibleTestModeTest {
                         }
                     }
                     """,
-                )
-                .indented()
-        )
+          )
+          .indented()
+      )
     val output =
-        """
-        src/test/pkg/AlarmTest.java:9: Warning: Value will be forced up to 5000 as of Android 5.1; don't rely on this to be exact [ShortAlarm]
-                alarmManager.setRepeating(AlarmManager.ELAPSED_REALTIME, 50, 10, null); // ERROR
-                                                                         ~~
-        src/test/pkg/AlarmTest.java:9: Warning: Value will be forced up to 60000 as of Android 5.1; don't rely on this to be exact [ShortAlarm]
-                alarmManager.setRepeating(AlarmManager.ELAPSED_REALTIME, 50, 10, null); // ERROR
-                                                                             ~~
-        src/test/pkg/AlarmTest.java:11: Warning: Value will be forced up to 60000 as of Android 5.1; don't rely on this to be exact [ShortAlarm]
-                        OtherClass.MY_INTERVAL, null);                          // ERROR
-                        ~~~~~~~~~~~~~~~~~~~~~~
-        src/test/pkg/AlarmTest.java:16: Warning: Value will be forced up to 60000 as of Android 5.1; don't rely on this to be exact [ShortAlarm]
-                alarmManager.setRepeating(AlarmManager.ELAPSED_REALTIME, 5000, interval2, null); // ERROR
-                                                                               ~~~~~~~~~
-        0 errors, 4 warnings
-        """
-            .trimIndent()
+      """
+      src/test/pkg/AlarmTest.java:9: Warning: Value will be forced up to 5000 as of Android 5.1; don't rely on this to be exact [ShortAlarm]
+              alarmManager.setRepeating(AlarmManager.ELAPSED_REALTIME, 50, 10, null); // ERROR
+                                                                       ~~
+      src/test/pkg/AlarmTest.java:9: Warning: Value will be forced up to 60000 as of Android 5.1; don't rely on this to be exact [ShortAlarm]
+              alarmManager.setRepeating(AlarmManager.ELAPSED_REALTIME, 50, 10, null); // ERROR
+                                                                           ~~
+      src/test/pkg/AlarmTest.java:11: Warning: Value will be forced up to 60000 as of Android 5.1; don't rely on this to be exact [ShortAlarm]
+                      OtherClass.MY_INTERVAL, null);                          // ERROR
+                      ~~~~~~~~~~~~~~~~~~~~~~
+      src/test/pkg/AlarmTest.java:16: Warning: Value will be forced up to 60000 as of Android 5.1; don't rely on this to be exact [ShortAlarm]
+              alarmManager.setRepeating(AlarmManager.ELAPSED_REALTIME, 5000, interval2, null); // ERROR
+                                                                             ~~~~~~~~~
+      0 errors, 4 warnings
+      """
+        .trimIndent()
     check(
-        output,
-        testFiles,
-        """
+      output,
+      testFiles,
+      """
       src/test/pkg/AlarmTest.java:
       @@ -5,3 +5,3 @@
        public class AlarmTest {
@@ -330,9 +330,9 @@ class SuppressibleTestModeTest {
   @Test
   fun testJavaMultipleIds() {
     val testFiles =
-        listOf(
-            java(
-                    """
+      listOf(
+        java(
+            """
                 package test.pkg;
                 import android.content.Context;
                 import android.telephony.TelephonyManager;
@@ -345,27 +345,27 @@ class SuppressibleTestModeTest {
                     }
                 }
                """
-                )
-                .indented()
-        )
+          )
+          .indented()
+      )
     val output =
-        """
-        src/test/pkg/TestReflection.java:8: Error: Reflective access to NETWORK_TYPES is forbidden when targeting API 28 and above [BlockedPrivateApi]
-                    Field deniedField = TelephonyManager.class.getDeclaredField("NETWORK_TYPES"); // ERROR 1
-                                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        src/test/pkg/TestReflection.java:9: Error: Reflective access to OTASP_NEEDED will throw an exception when targeting API 28 and above [SoonBlockedPrivateApi]
-                    Field maybeField = TelephonyManager.class.getDeclaredField("OTASP_NEEDED"); // ERROR 2
-                                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        src/test/pkg/TestReflection.java:9: Error: Reflective access to OTASP_NEEDED will throw an exception when targeting API 28 and above [BlockedPrivateApi]
-                    Field maybeField = TelephonyManager.class.getDeclaredField("OTASP_NEEDED"); // ERROR 2
-                                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        2 errors, 0 warnings
-        """
-            .trimIndent()
+      """
+      src/test/pkg/TestReflection.java:8: Error: Reflective access to NETWORK_TYPES is forbidden when targeting API 28 and above [BlockedPrivateApi]
+                  Field deniedField = TelephonyManager.class.getDeclaredField("NETWORK_TYPES"); // ERROR 1
+                                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      src/test/pkg/TestReflection.java:9: Error: Reflective access to OTASP_NEEDED will throw an exception when targeting API 28 and above [SoonBlockedPrivateApi]
+                  Field maybeField = TelephonyManager.class.getDeclaredField("OTASP_NEEDED"); // ERROR 2
+                                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      src/test/pkg/TestReflection.java:9: Error: Reflective access to OTASP_NEEDED will throw an exception when targeting API 28 and above [BlockedPrivateApi]
+                  Field maybeField = TelephonyManager.class.getDeclaredField("OTASP_NEEDED"); // ERROR 2
+                                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      2 errors, 0 warnings
+      """
+        .trimIndent()
     check(
-        output,
-        testFiles,
-        """
+      output,
+      testFiles,
+      """
       test/pkg/TestReflection.java:
       @@ -7,4 +7,4 @@
                TelephonyManager tm = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
@@ -382,9 +382,9 @@ class SuppressibleTestModeTest {
   @Test
   fun testJavaExistingSuppress() {
     val testFiles =
-        listOf(
-            java(
-                    """
+      listOf(
+        java(
+            """
                 package test.pkg;
 
                 import static android.os.PowerManager.ACQUIRE_CAUSES_WAKEUP;
@@ -404,21 +404,21 @@ class SuppressibleTestModeTest {
                     }
                 }
                """
-                )
-                .indented()
-        )
+          )
+          .indented()
+      )
     val output =
-        """
-        src/test/pkg/PowerManagerFlagTest.java:15: Warning: Should not set both PARTIAL_WAKE_LOCK and ACQUIRE_CAUSES_WAKEUP. If you do not want the screen to turn on, get rid of ACQUIRE_CAUSES_WAKEUP [Wakelock]
-                pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK|ACQUIRE_CAUSES_WAKEUP, "Test"); // Bad
-                   ~~~~~~~~~~~
-        0 errors, 1 warnings
-        """
-            .trimIndent()
+      """
+      src/test/pkg/PowerManagerFlagTest.java:15: Warning: Should not set both PARTIAL_WAKE_LOCK and ACQUIRE_CAUSES_WAKEUP. If you do not want the screen to turn on, get rid of ACQUIRE_CAUSES_WAKEUP [Wakelock]
+              pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK|ACQUIRE_CAUSES_WAKEUP, "Test"); // Bad
+                 ~~~~~~~~~~~
+      0 errors, 1 warnings
+      """
+        .trimIndent()
     check(
-        output,
-        testFiles,
-        """
+      output,
+      testFiles,
+      """
       test/pkg/PowerManagerFlagTest.java:
       @@ -9,3 +9,3 @@
        public class PowerManagerFlagTest {
@@ -432,9 +432,9 @@ class SuppressibleTestModeTest {
   @Test
   fun testKotlin() {
     val testFiles =
-        listOf(
-            kotlin(
-                    """
+      listOf(
+        kotlin(
+            """
                 package test.pkg
                 import java.io.File
                 class KotlinSuppressTest(val var1: String, file: File) {
@@ -458,87 +458,87 @@ class SuppressibleTestModeTest {
                 }
                 fun String.myMethod(): String = this
                 """
-                )
-                .indented()
-        )
+          )
+          .indented()
+      )
     val output =
-        """
-        src/test/pkg/KotlinSuppressTest.kt:1: Warning: Warning message here [TestId1]
-        package test.pkg
-                ~~~~~~~~
-        src/test/pkg/KotlinSuppressTest.kt:2: Warning: Warning message here [TestId2]
-        import java.io.File
-               ~~~~~~~~~~~~
-        src/test/pkg/KotlinSuppressTest.kt:3: Warning: Warning message here [TestId3]
-        class KotlinSuppressTest(val var1: String, file: File) {
-              ~~~~~~~~~~~~~~~~~~
-        src/test/pkg/KotlinSuppressTest.kt:3: Warning: Warning message here [TestId4]
-        class KotlinSuppressTest(val var1: String, file: File) {
-                                     ~~~~
-        src/test/pkg/KotlinSuppressTest.kt:3: Warning: Warning message here [TestId5]
-        class KotlinSuppressTest(val var1: String, file: File) {
-                                                   ~~~~
-        src/test/pkg/KotlinSuppressTest.kt:4: Warning: Warning message here [TestId6]
-            var property1 = 5
-                ~~~~~~~~~
-        src/test/pkg/KotlinSuppressTest.kt:5: Warning: Warning message here [TestId7]
-            var property2: String get() = ""
-                ~~~~~~~~~
-        src/test/pkg/KotlinSuppressTest.kt:5: Warning: Warning message here [TestId8]
-            var property2: String get() = ""
-                                  ~~~
-        src/test/pkg/KotlinSuppressTest.kt:6: Warning: Warning message here [TestId9]
-                set(value) {}
-                ~~~
-        src/test/pkg/KotlinSuppressTest.kt:8: Warning: Warning message here [TestId10]
-        fun methodTest(pair: Pair<String,String>) {
-            ~~~~~~~~~~
-        src/test/pkg/KotlinSuppressTest.kt:8: Warning: Warning message here [TestId11]
-        fun methodTest(pair: Pair<String,String>) {
-                       ~~~~
-        src/test/pkg/KotlinSuppressTest.kt:8: Warning: Warning message here [TestId12]
-        fun methodTest(pair: Pair<String,String>) {
-                             ~~~~
-        src/test/pkg/KotlinSuppressTest.kt:9: Warning: Warning message here [TestId13]
-            var test = 5
-                ~~~~
-        src/test/pkg/KotlinSuppressTest.kt:10: Warning: Warning message here [TestId14]
-            methodTest(pair)
-            ~~~~~~~~~~
-        src/test/pkg/KotlinSuppressTest.kt:10: Warning: Warning message here [TestId15]
-            methodTest(pair)
-                       ~~~~
-        src/test/pkg/KotlinSuppressTest.kt:11: Warning: Warning message here [TestId16]
-            val (x,y) = pair
-                 ~
-        src/test/pkg/KotlinSuppressTest.kt:12: Warning: Warning message here [TestId17]
-            val c = object : Runnable {
-                    ~~~~~~
-        src/test/pkg/KotlinSuppressTest.kt:13: Warning: Warning message here [TestId18]
-                override fun run() {
-                             ~~~
-        src/test/pkg/KotlinSuppressTest.kt:14: Warning: Warning message here [TestId19]
-                    methodTest(pair)
-                    ~~~~~~~~~~
-        src/test/pkg/KotlinSuppressTest.kt:17: Warning: Warning message here [TestId20]
-            val a = { i: Int -> i + 1 }
-                      ~~~~~~
-        src/test/pkg/KotlinSuppressTest.kt:17: Warning: Warning message here [TestId21]
-            val a = { i: Int -> i + 1 }
-                                ~~~~~
-        src/test/pkg/KotlinSuppressTest.kt:18: Warning: Warning message here [TestId22]
-            "foo".myMethod().myMethod()
+      """
+      src/test/pkg/KotlinSuppressTest.kt:1: Warning: Warning message here [TestId1]
+      package test.pkg
+              ~~~~~~~~
+      src/test/pkg/KotlinSuppressTest.kt:2: Warning: Warning message here [TestId2]
+      import java.io.File
+             ~~~~~~~~~~~~
+      src/test/pkg/KotlinSuppressTest.kt:3: Warning: Warning message here [TestId3]
+      class KotlinSuppressTest(val var1: String, file: File) {
+            ~~~~~~~~~~~~~~~~~~
+      src/test/pkg/KotlinSuppressTest.kt:3: Warning: Warning message here [TestId4]
+      class KotlinSuppressTest(val var1: String, file: File) {
+                                   ~~~~
+      src/test/pkg/KotlinSuppressTest.kt:3: Warning: Warning message here [TestId5]
+      class KotlinSuppressTest(val var1: String, file: File) {
+                                                 ~~~~
+      src/test/pkg/KotlinSuppressTest.kt:4: Warning: Warning message here [TestId6]
+          var property1 = 5
+              ~~~~~~~~~
+      src/test/pkg/KotlinSuppressTest.kt:5: Warning: Warning message here [TestId7]
+          var property2: String get() = ""
+              ~~~~~~~~~
+      src/test/pkg/KotlinSuppressTest.kt:5: Warning: Warning message here [TestId8]
+          var property2: String get() = ""
+                                ~~~
+      src/test/pkg/KotlinSuppressTest.kt:6: Warning: Warning message here [TestId9]
+              set(value) {}
+              ~~~
+      src/test/pkg/KotlinSuppressTest.kt:8: Warning: Warning message here [TestId10]
+      fun methodTest(pair: Pair<String,String>) {
+          ~~~~~~~~~~
+      src/test/pkg/KotlinSuppressTest.kt:8: Warning: Warning message here [TestId11]
+      fun methodTest(pair: Pair<String,String>) {
+                     ~~~~
+      src/test/pkg/KotlinSuppressTest.kt:8: Warning: Warning message here [TestId12]
+      fun methodTest(pair: Pair<String,String>) {
+                           ~~~~
+      src/test/pkg/KotlinSuppressTest.kt:9: Warning: Warning message here [TestId13]
+          var test = 5
+              ~~~~
+      src/test/pkg/KotlinSuppressTest.kt:10: Warning: Warning message here [TestId14]
+          methodTest(pair)
+          ~~~~~~~~~~
+      src/test/pkg/KotlinSuppressTest.kt:10: Warning: Warning message here [TestId15]
+          methodTest(pair)
+                     ~~~~
+      src/test/pkg/KotlinSuppressTest.kt:11: Warning: Warning message here [TestId16]
+          val (x,y) = pair
+               ~
+      src/test/pkg/KotlinSuppressTest.kt:12: Warning: Warning message here [TestId17]
+          val c = object : Runnable {
+                  ~~~~~~
+      src/test/pkg/KotlinSuppressTest.kt:13: Warning: Warning message here [TestId18]
+              override fun run() {
+                           ~~~
+      src/test/pkg/KotlinSuppressTest.kt:14: Warning: Warning message here [TestId19]
+                  methodTest(pair)
                   ~~~~~~~~~~
-        src/test/pkg/KotlinSuppressTest.kt:20: Warning: Warning message here [TestId23]
-                .myMethod().lowercase()
-                            ~~~~~~~~~
-        0 errors, 23 warnings
-        """
-            .trimIndent()
+      src/test/pkg/KotlinSuppressTest.kt:17: Warning: Warning message here [TestId20]
+          val a = { i: Int -> i + 1 }
+                    ~~~~~~
+      src/test/pkg/KotlinSuppressTest.kt:17: Warning: Warning message here [TestId21]
+          val a = { i: Int -> i + 1 }
+                              ~~~~~
+      src/test/pkg/KotlinSuppressTest.kt:18: Warning: Warning message here [TestId22]
+          "foo".myMethod().myMethod()
+                ~~~~~~~~~~
+      src/test/pkg/KotlinSuppressTest.kt:20: Warning: Warning message here [TestId23]
+              .myMethod().lowercase()
+                          ~~~~~~~~~
+      0 errors, 23 warnings
+      """
+        .trimIndent()
     check(
-        output,
-        testFiles,
-        """
+      output,
+      testFiles,
+      """
       test/pkg/KotlinSuppressTest.kt:
       @@ -1,14 +1,15 @@
       -package test.pkg
@@ -578,9 +578,9 @@ class SuppressibleTestModeTest {
   @Test
   fun testKotlinSuppress() {
     val testFiles =
-        listOf(
-            kotlin(
-                    """
+      listOf(
+        kotlin(
+            """
                 package test.pkg
                 //noinspection test1
                 import java.io.File
@@ -592,42 +592,42 @@ class SuppressibleTestModeTest {
                     @Suppress("test1", "test2") fun test3() {}
                 }
                 """
-                )
-                .indented()
-        )
+          )
+          .indented()
+      )
     val output =
-        """
-        src/test/pkg/KotlinSuppressTest2.kt:3: Warning: Warning message here [TestId]
-        import java.io.File
-               ~~~~~~~~~~~~
-        src/test/pkg/KotlinSuppressTest2.kt:4: Warning: Warning message here [TestId]
-        import java.util.Base64
-               ~~~~~~~~~~~~~~~~
-        src/test/pkg/KotlinSuppressTest2.kt:6: Warning: Warning message here [TestId]
-            fun test1() {}
-                ~~~~~
-        src/test/pkg/KotlinSuppressTest2.kt:7: Warning: Warning message here [TestId]
-            fun test1b() {}
-                ~~~~~~
-        src/test/pkg/KotlinSuppressTest2.kt:7: Warning: Warning message here [TestId2]
-            fun test1b() {}
-                ~~~~~~
-        src/test/pkg/KotlinSuppressTest2.kt:8: Warning: Warning message here [TestId]
-            @Suppress("test1") fun test2() {}
-                                   ~~~~~
-        src/test/pkg/KotlinSuppressTest2.kt:9: Warning: Warning message here [TestId]
-            @Suppress("test1", "test2") fun test3() {}
-                                            ~~~~~
-        src/test/pkg/KotlinSuppressTest2.kt:9: Warning: Warning message here [TestId2]
-            @Suppress("test1", "test2") fun test3() {}
-                                            ~~~~~
-        0 errors, 6 warnings
-        """
-            .trimIndent()
+      """
+      src/test/pkg/KotlinSuppressTest2.kt:3: Warning: Warning message here [TestId]
+      import java.io.File
+             ~~~~~~~~~~~~
+      src/test/pkg/KotlinSuppressTest2.kt:4: Warning: Warning message here [TestId]
+      import java.util.Base64
+             ~~~~~~~~~~~~~~~~
+      src/test/pkg/KotlinSuppressTest2.kt:6: Warning: Warning message here [TestId]
+          fun test1() {}
+              ~~~~~
+      src/test/pkg/KotlinSuppressTest2.kt:7: Warning: Warning message here [TestId]
+          fun test1b() {}
+              ~~~~~~
+      src/test/pkg/KotlinSuppressTest2.kt:7: Warning: Warning message here [TestId2]
+          fun test1b() {}
+              ~~~~~~
+      src/test/pkg/KotlinSuppressTest2.kt:8: Warning: Warning message here [TestId]
+          @Suppress("test1") fun test2() {}
+                                 ~~~~~
+      src/test/pkg/KotlinSuppressTest2.kt:9: Warning: Warning message here [TestId]
+          @Suppress("test1", "test2") fun test3() {}
+                                          ~~~~~
+      src/test/pkg/KotlinSuppressTest2.kt:9: Warning: Warning message here [TestId2]
+          @Suppress("test1", "test2") fun test3() {}
+                                          ~~~~~
+      0 errors, 6 warnings
+      """
+        .trimIndent()
     check(
-        output,
-        testFiles,
-        """
+      output,
+      testFiles,
+      """
       test/pkg/KotlinSuppressTest2.kt:
       @@ -1,10 +1,11 @@
        package test.pkg
@@ -655,9 +655,9 @@ class SuppressibleTestModeTest {
     // Make sure that for comments, we use a //noinspection suppression on the line
     // above instead of going to an outer modifier list owner.
     val testFiles =
-        listOf(
-            java(
-                    """
+      listOf(
+        java(
+            """
                 package test.pkg;
                 public class Hidden1 {
                     // STOPSHIP
@@ -665,10 +665,10 @@ class SuppressibleTestModeTest {
                     String x = "STOPSHIP"; // OK
                 }
                 """
-                )
-                .indented(),
-            kotlin(
-                    """
+          )
+          .indented(),
+        kotlin(
+            """
                 package test.pkg
                 class Hidden2 {
                     // STOPSHIP
@@ -676,30 +676,30 @@ class SuppressibleTestModeTest {
                     var x = "STOPSHIP" // OK
                 }
                 """
-                )
-                .indented(),
-        )
+          )
+          .indented(),
+      )
     val output =
-        """
-        src/test/pkg/Hidden1.java:3: Error: STOPSHIP comment found; points to code which must be fixed prior to release [StopShip]
-            // STOPSHIP
-               ~~~~~~~~
-        src/test/pkg/Hidden1.java:4: Error: STOPSHIP comment found; points to code which must be fixed prior to release [StopShip]
-            /* We must STOPSHIP! */
-                       ~~~~~~~~
-        src/test/pkg/Hidden2.kt:3: Error: STOPSHIP comment found; points to code which must be fixed prior to release [StopShip]
-            // STOPSHIP
-               ~~~~~~~~
-        src/test/pkg/Hidden2.kt:4: Error: STOPSHIP comment found; points to code which must be fixed prior to release [StopShip]
-            /* We must STOPSHIP! */
-                       ~~~~~~~~
-        4 errors, 0 warnings
-        """
-            .trimIndent()
+      """
+      src/test/pkg/Hidden1.java:3: Error: STOPSHIP comment found; points to code which must be fixed prior to release [StopShip]
+          // STOPSHIP
+             ~~~~~~~~
+      src/test/pkg/Hidden1.java:4: Error: STOPSHIP comment found; points to code which must be fixed prior to release [StopShip]
+          /* We must STOPSHIP! */
+                     ~~~~~~~~
+      src/test/pkg/Hidden2.kt:3: Error: STOPSHIP comment found; points to code which must be fixed prior to release [StopShip]
+          // STOPSHIP
+             ~~~~~~~~
+      src/test/pkg/Hidden2.kt:4: Error: STOPSHIP comment found; points to code which must be fixed prior to release [StopShip]
+          /* We must STOPSHIP! */
+                     ~~~~~~~~
+      4 errors, 0 warnings
+      """
+        .trimIndent()
     check(
-        output,
-        testFiles,
-        """
+      output,
+      testFiles,
+      """
       test/pkg/Hidden1.java:
       @@ -2,3 +2,5 @@
        public class Hidden1 {
@@ -722,9 +722,9 @@ class SuppressibleTestModeTest {
   fun testLambda() {
     // b/258962911
     val testFiles =
-        listOf(
-            java(
-                    """
+      listOf(
+        java(
+            """
                 package test.pkg;
                 class Bar {
                     public void test() {
@@ -741,10 +741,10 @@ class SuppressibleTestModeTest {
                     }
                 }
                 """
-                )
-                .indented(),
-            kotlin(
-                    """
+          )
+          .indented(),
+        kotlin(
+            """
                 package test.pkg
 
                 class Bar2 {
@@ -762,30 +762,30 @@ class SuppressibleTestModeTest {
                     }
                 }
                 """
-                )
-                .indented(),
-        )
+          )
+          .indented(),
+      )
     val output =
-        """
-        src/test/pkg/Bar.java:4: Warning: Warning message here [TestId]
-                Bar.create(param -> null);
-                           ~~~~~~~~~~~~~
-        src/test/pkg/Bar.java:5: Warning: Warning message here [TestId]
-                Bar.create(param -> null);
-                           ~~~~~
-        src/test/pkg/Bar2.kt:5: Warning: Warning message here [TestId]
-                create { param: Any? -> null }
-                         ~~~~~~~~~~~~~~~~~~~
-        src/test/pkg/Bar2.kt:6: Warning: Warning message here [TestId]
-                create { param: Any? -> null }
+      """
+      src/test/pkg/Bar.java:4: Warning: Warning message here [TestId]
+              Bar.create(param -> null);
+                         ~~~~~~~~~~~~~
+      src/test/pkg/Bar.java:5: Warning: Warning message here [TestId]
+              Bar.create(param -> null);
                          ~~~~~
-        0 errors, 4 warnings
-        """
-            .trimIndent()
+      src/test/pkg/Bar2.kt:5: Warning: Warning message here [TestId]
+              create { param: Any? -> null }
+                       ~~~~~~~~~~~~~~~~~~~
+      src/test/pkg/Bar2.kt:6: Warning: Warning message here [TestId]
+              create { param: Any? -> null }
+                       ~~~~~
+      0 errors, 4 warnings
+      """
+        .trimIndent()
     check(
-        output,
-        testFiles,
-        """
+      output,
+      testFiles,
+      """
       test/pkg/Bar.java:
       @@ -2,3 +2,3 @@
        class Bar {
@@ -806,30 +806,30 @@ class SuppressibleTestModeTest {
   fun test289695599() {
     // b/289695599
     val testFiles =
-        listOf(
-            java(
-                    """
+      listOf(
+        java(
+            """
             package foo;
 
             @Module @SuppressWarnings public interface MyModule {
             }
             """
-                )
-                .indented()
-        )
+          )
+          .indented()
+      )
     val output =
-        """
-        src/foo/MyModule.java:3: Warning: Annotations are in wrong order. Should be @SuppressWarnings @Module [WrongAnnotationOrder]
-        @Module @SuppressWarnings public interface MyModule {
-                                                   ~~~~~~~~
-        0 errors, 1 warnings
-        """
-            .trimIndent()
+      """
+      src/foo/MyModule.java:3: Warning: Annotations are in wrong order. Should be @SuppressWarnings @Module [WrongAnnotationOrder]
+      @Module @SuppressWarnings public interface MyModule {
+                                                 ~~~~~~~~
+      0 errors, 1 warnings
+      """
+        .trimIndent()
     check(
-        output,
-        testFiles,
-        // The source code is broken; don't attempt to fix it
-        "foo/MyModule.java:",
+      output,
+      testFiles,
+      // The source code is broken; don't attempt to fix it
+      "foo/MyModule.java:",
     )
   }
 
@@ -837,9 +837,9 @@ class SuppressibleTestModeTest {
   fun testAnonymousObject() {
     // b/406739378
     val testFiles =
-        listOf(
-            kotlin(
-                    """
+      listOf(
+        kotlin(
+            """
             package test.pkg
 
             open class Foo {
@@ -857,33 +857,33 @@ class SuppressibleTestModeTest {
               }
             }
           """
-                )
-                .indented()
-        )
+          )
+          .indented()
+      )
     val output =
-        """
-        src/test/pkg/Foo.kt:5: Warning: Warning message here [TestId]
-                  val x = object : Foo() {} // OK
-                          ~~~~~~~~~~~~~~~~~
-        src/test/pkg/Foo.kt:6: Warning: Warning message here [TestId]
-                  return object : Foo() {} // Nope
-                         ~~~~~~~~~~~~~~~~~
-        src/test/pkg/Foo.kt:9: Warning: Warning message here [TestId]
-                  return object : Foo() { // Nope
-                         ~~~~~~~~~~~~~~
-        src/test/pkg/Foo.kt:11: Warning: Warning message here [TestId]
-                      val foo = object : Foo() {} // OK
-                                ~~~~~~~~~~~~~~~~~
-        src/test/pkg/Foo.kt:12: Warning: Warning message here [TestId]
-                      return foo // Nope
-                      ~~~~~~~~~~
-        """
-            .trimIndent()
+      """
+      src/test/pkg/Foo.kt:5: Warning: Warning message here [TestId]
+                val x = object : Foo() {} // OK
+                        ~~~~~~~~~~~~~~~~~
+      src/test/pkg/Foo.kt:6: Warning: Warning message here [TestId]
+                return object : Foo() {} // Nope
+                       ~~~~~~~~~~~~~~~~~
+      src/test/pkg/Foo.kt:9: Warning: Warning message here [TestId]
+                return object : Foo() { // Nope
+                       ~~~~~~~~~~~~~~
+      src/test/pkg/Foo.kt:11: Warning: Warning message here [TestId]
+                    val foo = object : Foo() {} // OK
+                              ~~~~~~~~~~~~~~~~~
+      src/test/pkg/Foo.kt:12: Warning: Warning message here [TestId]
+                    return foo // Nope
+                    ~~~~~~~~~~
+      """
+        .trimIndent()
     check(
-        output,
-        testFiles,
-        // Don't attempt to put annotation on a label-able expression
-        """
+      output,
+      testFiles,
+      // Don't attempt to put annotation on a label-able expression
+      """
       test/pkg/Foo.kt:
       @@ -4,3 +4,3 @@
          open fun getFoo() : Foo {

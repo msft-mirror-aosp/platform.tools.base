@@ -62,16 +62,16 @@ class ViewBindingTypeDetector : LayoutDetector(), XmlScanner {
 
     @JvmField
     val ISSUE =
-        Issue.create(
-            id = "ViewBindingType",
-            briefDescription = "`tools:viewBindingType` issues",
-            explanation = "All issues related to using the View Binding `tools:viewBindingType` attribute.",
-            category = Category.CORRECTNESS,
-            priority = 1,
-            severity = Severity.ERROR,
-            androidSpecific = true,
-            implementation = IMPLEMENTATION,
-        )
+      Issue.create(
+        id = "ViewBindingType",
+        briefDescription = "`tools:viewBindingType` issues",
+        explanation = "All issues related to using the View Binding `tools:viewBindingType` attribute.",
+        category = Category.CORRECTNESS,
+        priority = 1,
+        severity = Severity.ERROR,
+        androidSpecific = true,
+        implementation = IMPLEMENTATION,
+      )
   }
 
   override fun getApplicableAttributes(): Collection<String> = listOf(ATTR_VIEW_BINDING_TYPE)
@@ -82,46 +82,34 @@ class ViewBindingTypeDetector : LayoutDetector(), XmlScanner {
     }
     val isDataBindingLayout = context.document.documentElement.tagName == TAG_LAYOUT
     if (isDataBindingLayout) {
-      context.report(
-          Incident(
-              ISSUE,
-              "`tools:viewBindingType` is not applicable in data binding layouts.",
-              context.getLocation(attribute),
-          )
-      )
+      context.report(Incident(ISSUE, "`tools:viewBindingType` is not applicable in data binding layouts.", context.getLocation(attribute)))
     } else {
       val element = attribute.ownerElement
       val tagName = element.tagName
       if (tagName == TAG_INCLUDE) {
-        context.report(
-            Incident(
-                ISSUE,
-                "`tools:viewBindingType` is not applicable on `<$tagName>` tags.",
-                context.getLocation(attribute),
-            )
-        )
+        context.report(Incident(ISSUE, "`tools:viewBindingType` is not applicable on `<$tagName>` tags.", context.getLocation(attribute)))
       } else {
         val typeTag = attribute.value
         val evaluator = context.evaluator
         val psiClass = findViewForTag(typeTag, evaluator)
         if (psiClass == null || !evaluator.extendsClass(psiClass, CLASS_VIEW)) {
           context.report(
-              Incident(
-                  ISSUE,
-                  "`tools:viewBindingType` (`$typeTag`) must refer to a class that inherits from `$CLASS_VIEW`",
-                  context.getLocation(attribute),
-              )
+            Incident(
+              ISSUE,
+              "`tools:viewBindingType` (`$typeTag`) must refer to a class that inherits from `$CLASS_VIEW`",
+              context.getLocation(attribute),
+            )
           )
         } else {
           // If here, the attribute is locally valid and defined in a valid location
           val idAttribute = element.getAttributeNodeNS(ANDROID_URI, ATTR_ID)
           if (idAttribute == null) {
             context.report(
-                Incident(
-                    ISSUE,
-                    "`tools:viewBindingType` should be defined on a tag that also defines an `android:id`. Otherwise, its value won't have any effect.",
-                    context.getLocation(attribute),
-                )
+              Incident(
+                ISSUE,
+                "`tools:viewBindingType` should be defined on a tag that also defines an `android:id`. Otherwise, its value won't have any effect.",
+                context.getLocation(attribute),
+              )
             )
           } else {
             // Make sure this type definition is valid
@@ -130,11 +118,11 @@ class ViewBindingTypeDetector : LayoutDetector(), XmlScanner {
             val tagClass = findViewForTag(tagView, evaluator)
             if (typeClass != null && tagClass != null && !evaluator.extendsClass(tagClass, typeClass)) {
               context.report(
-                  Incident(
-                      ISSUE,
-                      "`tools:viewBindingType` (`$typeTag`) is not compatible (i.e. a match or superclass) with its tag (`$tagView`).",
-                      context.getLocation(attribute),
-                  )
+                Incident(
+                  ISSUE,
+                  "`tools:viewBindingType` (`$typeTag`) is not compatible (i.e. a match or superclass) with its tag (`$tagView`).",
+                  context.getLocation(attribute),
+                )
               )
             } else {
               // Make sure the binding type is consistent for this id across variations of this
@@ -147,16 +135,11 @@ class ViewBindingTypeDetector : LayoutDetector(), XmlScanner {
     }
   }
 
-  private fun checkConsistentAcrossLayouts(
-      context: XmlContext,
-      idAttribute: Attr,
-      evaluator: JavaEvaluator,
-      element: Element,
-  ) {
+  private fun checkConsistentAcrossLayouts(context: XmlContext, idAttribute: Attr, evaluator: JavaEvaluator, element: Element) {
     val client = context.client
     val resources =
-        if (context.isGlobalAnalysis()) client.getResources(context.mainProject, LOCAL_DEPENDENCIES)
-        else client.getResources(context.project, PROJECT_ONLY)
+      if (context.isGlobalAnalysis()) client.getResources(context.mainProject, LOCAL_DEPENDENCIES)
+      else client.getResources(context.project, PROJECT_ONLY)
     val resourceUrl = ResourceUrl.parse(idAttribute.value)
     if (resourceUrl != null && resourceUrl.type == ResourceType.ID && !resourceUrl.isFramework) {
       val id = resourceUrl.name
@@ -175,11 +158,11 @@ class ViewBindingTypeDetector : LayoutDetector(), XmlScanner {
           val location = context.getLocation(element)
           attachLocations(context, location, id, layout)
           context.report(
-              Incident(
-                  ISSUE,
-                  "`tools:viewBindingType` is not defined consistently, with the following types resolved across layouts: ${views.joinToString { "`$it`" }}",
-                  location,
-              )
+            Incident(
+              ISSUE,
+              "`tools:viewBindingType` is not defined consistently, with the following types resolved across layouts: ${views.joinToString { "`$it`" }}",
+              location,
+            )
           )
         }
       }
@@ -261,10 +244,7 @@ class ViewBindingTypeDetector : LayoutDetector(), XmlScanner {
   // Cache for getViewBindingTypesForId
   private var layoutToBindingIdPairs: MutableMap<PathString, Multimap<String, String>>? = null
 
-  private fun getViewBindingTypesForId(
-      context: Context,
-      file: PathString,
-  ): Multimap<String, String>? {
+  private fun getViewBindingTypesForId(context: Context, file: PathString): Multimap<String, String>? {
     if (!file.fileName.endsWith(DOT_XML)) {
       return null
     }

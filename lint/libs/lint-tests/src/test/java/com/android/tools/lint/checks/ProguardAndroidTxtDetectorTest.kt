@@ -26,10 +26,10 @@ class ProguardAndroidTxtDetectorTest : AbstractCheckTest() {
   /** Used to generate documentation */
   fun testDocumentationExample() {
     lint()
-        .files(
-            gradle(
-                    "build.gradle",
-                    """
+      .files(
+        gradle(
+            "build.gradle",
+            """
                apply plugin: 'com.android.application'
 
                android {
@@ -40,34 +40,34 @@ class ProguardAndroidTxtDetectorTest : AbstractCheckTest() {
                  }
                }
            """,
-                )
-                .indented()
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented()
+      )
+      .run()
+      .expect(
+        """
             build.gradle:6: Warning: Avoid getDefaultProguardFile('proguard-android.txt') [ProguardAndroidTxtUsage]
                   proguardFiles(getDefaultProguardFile('proguard-android.txt'), 'custom.pro')
                                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             0 errors, 1 warnings
         """
-        )
-        .expectFixDiffs(
-            """
+      )
+      .expectFixDiffs(
+        """
           Fix for build.gradle line 6: Replace with proguard-android-optimize.txt:
           @@ -6 +6 @@
           -      proguardFiles(getDefaultProguardFile('proguard-android.txt'), 'custom.pro')
           +      proguardFiles(getDefaultProguardFile('proguard-android-optimize.txt'), 'custom.pro')
         """
-        )
+      )
   }
 
   fun testForProguardAndroidTxt() {
     lint()
-        .files(
-            gradle(
-                    "build.gradle",
-                    """
+      .files(
+        gradle(
+            "build.gradle",
+            """
                apply plugin: 'com.android.application'
 
                android {
@@ -81,12 +81,12 @@ class ProguardAndroidTxtDetectorTest : AbstractCheckTest() {
                  }
                }
            """,
-                )
-                .indented()
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented()
+      )
+      .run()
+      .expect(
+        """
             build.gradle:6: Warning: Avoid getDefaultProguardFile('proguard-android.txt') [ProguardAndroidTxtUsage]
                   proguardFiles(getDefaultProguardFile('proguard-android.txt'), 'custom.pro')
                                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -101,9 +101,9 @@ class ProguardAndroidTxtDetectorTest : AbstractCheckTest() {
                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             0 errors, 4 warnings
         """
-        )
-        .expectFixDiffs(
-            """
+      )
+      .expectFixDiffs(
+        """
           Fix for build.gradle line 6: Replace with proguard-android-optimize.txt:
           @@ -6 +6 @@
           -      proguardFiles(getDefaultProguardFile('proguard-android.txt'), 'custom.pro')
@@ -121,14 +121,14 @@ class ProguardAndroidTxtDetectorTest : AbstractCheckTest() {
           -      proguardFile getDefaultProguardFile("proguard-android.txt") // test unneeded templating
           +      proguardFile getDefaultProguardFile("proguard-android-optimize.txt") // test unneeded templating
         """
-        )
+      )
 
     // validate no warning shown for other proguard file usages
     lint()
-        .files(
-            gradle(
-                    "build.gradle",
-                    """
+      .files(
+        gradle(
+            "build.gradle",
+            """
                apply plugin: 'com.android.application'
 
                android {
@@ -143,20 +143,20 @@ class ProguardAndroidTxtDetectorTest : AbstractCheckTest() {
                  }
                }
           """,
-                )
-                .indented()
-        )
-        .run()
-        .expectClean()
+          )
+          .indented()
+      )
+      .run()
+      .expectClean()
   }
 
   fun testForAcceptableProguardConfigs() {
     // validate no warning shown for other proguard file usages
     lint()
-        .files(
-            gradle(
-                    "build.gradle",
-                    """
+      .files(
+        gradle(
+            "build.gradle",
+            """
                apply plugin: 'com.android.application'
 
                android {
@@ -171,10 +171,10 @@ class ProguardAndroidTxtDetectorTest : AbstractCheckTest() {
                  }
                }
           """,
-                )
-                .indented()
-        )
-        .run()
-        .expectClean()
+          )
+          .indented()
+      )
+      .run()
+      .expectClean()
   }
 }

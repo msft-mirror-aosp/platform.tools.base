@@ -46,12 +46,7 @@ class ShortcutUsageDetector : Detector(), SourceCodeScanner {
   private var numSetOrAddDynamicShortcutsCalls = 0
 
   override fun getApplicableMethodNames(): List<String>? {
-    return listOf(
-        "addDynamicShortcuts",
-        "setDynamicShortcuts",
-        "pushDynamicShortcut",
-        "reportShortcutUsed",
-    )
+    return listOf("addDynamicShortcuts", "setDynamicShortcuts", "pushDynamicShortcut", "reportShortcutUsed")
   }
 
   override fun visitMethodCall(context: JavaContext, node: UCallExpression, method: PsiMethod) {
@@ -90,18 +85,18 @@ class ShortcutUsageDetector : Detector(), SourceCodeScanner {
       for (key in perModuleLintMap) {
         val url = "https://developer.android.com/develop/ui/views/launch/shortcuts/managing-shortcuts#track-usage"
         context.report(
-            Incident(context)
-                .issue(ISSUE)
-                .location(perModuleLintMap.getLocation(key)!!)
-                .message(
-                    "Calling this method indicates use of dynamic shortcuts, but " +
-                        "there are no calls to methods that track shortcut usage, such " +
-                        "as `pushDynamicShortcut` or `reportShortcutUsed`. Calling these " +
-                        "methods is recommended, as they track shortcut usage and allow " +
-                        "launchers to adjust which shortcuts appear based on activation " +
-                        "history. Please see $url"
-                )
-                .fix(fix().url(url).build())
+          Incident(context)
+            .issue(ISSUE)
+            .location(perModuleLintMap.getLocation(key)!!)
+            .message(
+              "Calling this method indicates use of dynamic shortcuts, but " +
+                "there are no calls to methods that track shortcut usage, such " +
+                "as `pushDynamicShortcut` or `reportShortcutUsed`. Calling these " +
+                "methods is recommended, as they track shortcut usage and allow " +
+                "launchers to adjust which shortcuts appear based on activation " +
+                "history. Please see $url"
+            )
+            .fix(fix().url(url).build())
         )
       }
     }
@@ -128,19 +123,19 @@ class ShortcutUsageDetector : Detector(), SourceCodeScanner {
 
     @JvmField
     val ISSUE =
-        Issue.create(
-            id = "ReportShortcutUsage",
-            briefDescription = "Report shortcut usage",
-            explanation =
-                """
+      Issue.create(
+        id = "ReportShortcutUsage",
+        briefDescription = "Report shortcut usage",
+        explanation =
+          """
                 Reporting shortcut usage is important to improving the ranking of shortcuts
                 """,
-            category = Category.USABILITY,
-            priority = 2,
-            severity = Severity.INFORMATIONAL,
-            implementation = Implementation(ShortcutUsageDetector::class.java, EnumSet.of(Scope.ALL_JAVA_FILES)),
-            androidSpecific = true,
-            moreInfo = "https://developer.android.com/develop/ui/views/launch/shortcuts/managing-shortcuts",
-        )
+        category = Category.USABILITY,
+        priority = 2,
+        severity = Severity.INFORMATIONAL,
+        implementation = Implementation(ShortcutUsageDetector::class.java, EnumSet.of(Scope.ALL_JAVA_FILES)),
+        androidSpecific = true,
+        moreInfo = "https://developer.android.com/develop/ui/views/launch/shortcuts/managing-shortcuts",
+      )
   }
 }

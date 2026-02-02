@@ -27,9 +27,9 @@ class UastImplementationDetectorTest : AbstractCheckTest() {
 
   fun testDocumentationExample() {
     lint()
-        .files(
-            kotlin(
-                    """
+      .files(
+        kotlin(
+            """
                 /* Copyright (C) 2021 The Android Open Source Project */
                 package test.pkg
 
@@ -129,14 +129,14 @@ class UastImplementationDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-                )
-                .indented(),
-            *getLintClassPath(),
-        )
-        .skipTestModes(TestMode.IMPORT_ALIAS)
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+        *getLintClassPath(),
+      )
+      .skipTestModes(TestMode.IMPORT_ALIAS)
+      .run()
+      .expect(
+        """
                 src/test/pkg/UastImplementationDetectorTestInput.kt:19: Warning: org.jetbrains.uast.kotlin.KotlinUField is UAST implementation. Consider using one of its corresponding UAST interfaces: UVariableEx, UVariable, UDeclaration, UAnnotated, UDeclarationEx, UAnchorOwner, UFieldEx, UField [UastImplementation]
                 import org.jetbrains.uast.kotlin.KotlinUField // ERROR 1
                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -172,6 +172,6 @@ class UastImplementationDetectorTest : AbstractCheckTest() {
                                           ~~~~~~~~~~~~~~~~~~~~~~~
                 0 errors, 11 warnings
                 """
-        )
+      )
   }
 }

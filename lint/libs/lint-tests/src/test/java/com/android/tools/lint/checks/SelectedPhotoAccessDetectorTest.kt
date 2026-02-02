@@ -24,9 +24,9 @@ class SelectedPhotoAccessDetectorTest : AbstractCheckTest() {
 
   fun testDocumentationExample() {
     lint()
-        .files(
-            manifest(
-                    """
+      .files(
+        manifest(
+            """
                   <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     xmlns:tools="http://schemas.android.com/tools"
                     package="foo.bar"
@@ -51,12 +51,12 @@ class SelectedPhotoAccessDetectorTest : AbstractCheckTest() {
                 </manifest>
 
                 """
-                )
-                .indented()
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented()
+      )
+      .run()
+      .expect(
+        """
               AndroidManifest.xml:11: Warning: Your app is currently not handling Selected Photos Access introduced in Android 14+ [SelectedPhotoAccess]
                   <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" android:minSdkVersion="33" />
                                                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -65,14 +65,14 @@ class SelectedPhotoAccessDetectorTest : AbstractCheckTest() {
                                                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
               0 errors, 2 warnings
             """
-        )
+      )
   }
 
   fun testPermissionIsPresent() {
     lint()
-        .files(
-            manifest(
-                    """
+      .files(
+        manifest(
+            """
                   <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     xmlns:tools="http://schemas.android.com/tools"
                     package="foo.bar"
@@ -91,18 +91,18 @@ class SelectedPhotoAccessDetectorTest : AbstractCheckTest() {
                 </manifest>
 
                 """
-                )
-                .indented()
-        )
-        .run()
-        .expectClean()
+          )
+          .indented()
+      )
+      .run()
+      .expectClean()
   }
 
   fun testSdk32() {
     lint()
-        .files(
-            manifest(
-                    """
+      .files(
+        manifest(
+            """
                   <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     xmlns:tools="http://schemas.android.com/tools"
                     package="foo.bar"
@@ -120,10 +120,10 @@ class SelectedPhotoAccessDetectorTest : AbstractCheckTest() {
                 </manifest>
 
                 """
-                )
-                .indented()
-        )
-        .run()
-        .expectClean()
+          )
+          .indented()
+      )
+      .run()
+      .expectClean()
   }
 }

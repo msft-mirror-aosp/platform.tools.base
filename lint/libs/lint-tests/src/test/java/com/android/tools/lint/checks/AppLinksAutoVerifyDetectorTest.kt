@@ -24,10 +24,10 @@ class AppLinksAutoVerifyDetectorTest : AbstractCheckTest() {
 
   fun testOk() {
     lint()
-        .files(
-            xml(
-                "AndroidManifest.xml",
-                """<?xml version="1.0" encoding="utf-8"?>
+      .files(
+        xml(
+          "AndroidManifest.xml",
+          """<?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.helloworld" >
 
@@ -48,11 +48,11 @@ class AppLinksAutoVerifyDetectorTest : AbstractCheckTest() {
 
 </manifest>
 """,
-            )
         )
-        .networkData(
-            "http://example.com/.well-known/assetlinks.json", // language=JSON
-            """[{
+      )
+      .networkData(
+        "http://example.com/.well-known/assetlinks.json", // language=JSON
+        """[{
   "relation": ["delegate_permission/common.handle_all_urls"],
   "target": {
     "namespace": "android_app",
@@ -61,9 +61,9 @@ class AppLinksAutoVerifyDetectorTest : AbstractCheckTest() {
     ["14:6D:E9:83:C5:73:06:50:D8:EE:B9:95:2F:34:FC:64:16:A0:83:42:E6:1D:BE:A8:8A:04:96:B2:3F:CF:44:E5"]
   }
 }]""",
-        )
-        .run()
-        .expectClean()
+      )
+      .run()
+      .expectClean()
   }
 
   fun testRedirect() {
@@ -74,10 +74,10 @@ class AppLinksAutoVerifyDetectorTest : AbstractCheckTest() {
 
     // https://issuetracker.google.com/260129624
     lint()
-        .files(
-            xml(
-                "AndroidManifest.xml",
-                """<?xml version="1.0" encoding="utf-8"?>
+      .files(
+        xml(
+          "AndroidManifest.xml",
+          """<?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.dropbox.links" >
 
@@ -98,14 +98,14 @@ class AppLinksAutoVerifyDetectorTest : AbstractCheckTest() {
 
 </manifest>
 """,
-            )
         )
-        .networkData("http://links.dropbox.com/.well-known/assetlinks.json", 301, headers)
-        .networkData(
-            "https://links.dropbox.com/.well-known/assetlinks.json", // Not the real data from that
-            // link!
-            // language=JSON
-            """[{
+      )
+      .networkData("http://links.dropbox.com/.well-known/assetlinks.json", 301, headers)
+      .networkData(
+        "https://links.dropbox.com/.well-known/assetlinks.json", // Not the real data from that
+        // link!
+        // language=JSON
+        """[{
   "relation": ["delegate_permission/common.handle_all_urls"],
   "target": {
     "namespace": "android_app",
@@ -114,23 +114,23 @@ class AppLinksAutoVerifyDetectorTest : AbstractCheckTest() {
     ["14:6D:E9:83:C5:73:06:50:D8:EE:B9:95:2F:34:FC:64:16:A0:83:42:E6:1D:BE:A8:8A:04:96:B2:3F:CF:44:E5"]
   }
 }]""",
-        )
-        .run()
-        .expectClean()
+      )
+      .run()
+      .expectClean()
   }
 
   fun testInvalidPackage() {
     val expected =
-        """AndroidManifest.xml:12: Error: This host does not support app links to your app. Checks the Digital Asset Links JSON file: http://example.com/.well-known/assetlinks.json [AppLinksAutoVerify]
+      """AndroidManifest.xml:12: Error: This host does not support app links to your app. Checks the Digital Asset Links JSON file: http://example.com/.well-known/assetlinks.json [AppLinksAutoVerify]
                     android:host="example.com"
                     ~~~~~~~~~~~~~~~~~~~~~~~~~~
 1 errors, 0 warnings
 """
     lint()
-        .files(
-            xml(
-                "AndroidManifest.xml",
-                """<?xml version="1.0" encoding="utf-8"?>
+      .files(
+        xml(
+          "AndroidManifest.xml",
+          """<?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.helloworld" >
 
@@ -151,11 +151,11 @@ class AppLinksAutoVerifyDetectorTest : AbstractCheckTest() {
 
 </manifest>
 """,
-            )
         )
-        .networkData(
-            "http://example.com/.well-known/assetlinks.json", // language=JSON
-            """[{
+      )
+      .networkData(
+        "http://example.com/.well-known/assetlinks.json", // language=JSON
+        """[{
   "relation": ["delegate_permission/common.handle_all_urls"],
   "target": {
     "namespace": "android_app",
@@ -164,23 +164,23 @@ class AppLinksAutoVerifyDetectorTest : AbstractCheckTest() {
     ["14:6D:E9:83:C5:73:06:50:D8:EE:B9:95:2F:34:FC:64:16:A0:83:42:E6:1D:BE:A8:8A:04:96:B2:3F:CF:44:E5"]
   }
 }]""",
-        )
-        .run()
-        .expect(expected)
+      )
+      .run()
+      .expect(expected)
   }
 
   fun testNotAppTarget() {
     val expected =
-        """AndroidManifest.xml:12: Error: This host does not support app links to your app. Checks the Digital Asset Links JSON file: http://example.com/.well-known/assetlinks.json [AppLinksAutoVerify]
+      """AndroidManifest.xml:12: Error: This host does not support app links to your app. Checks the Digital Asset Links JSON file: http://example.com/.well-known/assetlinks.json [AppLinksAutoVerify]
                     android:host="example.com"
                     ~~~~~~~~~~~~~~~~~~~~~~~~~~
 1 errors, 0 warnings
 """
     lint()
-        .files(
-            xml(
-                "AndroidManifest.xml",
-                """<?xml version="1.0" encoding="utf-8"?>
+      .files(
+        xml(
+          "AndroidManifest.xml",
+          """<?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.helloworld" >
 
@@ -201,11 +201,11 @@ class AppLinksAutoVerifyDetectorTest : AbstractCheckTest() {
 
 </manifest>
 """,
-            )
         )
-        .networkData(
-            "http://example.com/.well-known/assetlinks.json", // language=JSON
-            """[{
+      )
+      .networkData(
+        "http://example.com/.well-known/assetlinks.json", // language=JSON
+        """[{
   "relation": ["delegate_permission/common.handle_all_urls"],
   "target": {
     "namespace": "web",
@@ -214,23 +214,23 @@ class AppLinksAutoVerifyDetectorTest : AbstractCheckTest() {
     ["14:6D:E9:83:C5:73:06:50:D8:EE:B9:95:2F:34:FC:64:16:A0:83:42:E6:1D:BE:A8:8A:04:96:B2:3F:CF:44:E5"]
   }
 }]""",
-        )
-        .run()
-        .expect(expected)
+      )
+      .run()
+      .expect(expected)
   }
 
   fun testHttpResponseError() {
     val expected =
-        """AndroidManifest.xml:12: Warning: HTTP request for Digital Asset Links JSON file http://example.com/.well-known/assetlinks.json fails. HTTP response code: 404 [AppLinksAutoVerify]
+      """AndroidManifest.xml:12: Warning: HTTP request for Digital Asset Links JSON file http://example.com/.well-known/assetlinks.json fails. HTTP response code: 404 [AppLinksAutoVerify]
                     android:host="example.com"
                     ~~~~~~~~~~~~~~~~~~~~~~~~~~
 0 errors, 1 warnings
 """
     lint()
-        .files(
-            xml(
-                "AndroidManifest.xml",
-                """<?xml version="1.0" encoding="utf-8"?>
+      .files(
+        xml(
+          "AndroidManifest.xml",
+          """<?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.helloworld" >
 
@@ -251,25 +251,25 @@ class AppLinksAutoVerifyDetectorTest : AbstractCheckTest() {
 
 </manifest>
 """,
-            )
         )
-        .networkData("http://example.com/.well-known/assetlinks.json", 404)
-        .run()
-        .expect(expected)
+      )
+      .networkData("http://example.com/.well-known/assetlinks.json", 404)
+      .run()
+      .expect(expected)
   }
 
   fun testFailedHttpConnection() {
     val expected =
-        """AndroidManifest.xml:12: Warning: Connection to Digital Asset Links JSON file http://example.com/.well-known/assetlinks.json fails [AppLinksAutoVerify]
+      """AndroidManifest.xml:12: Warning: Connection to Digital Asset Links JSON file http://example.com/.well-known/assetlinks.json fails [AppLinksAutoVerify]
                     android:host="example.com"
                     ~~~~~~~~~~~~~~~~~~~~~~~~~~
 0 errors, 1 warnings
 """
     lint()
-        .files(
-            xml(
-                "AndroidManifest.xml",
-                """<?xml version="1.0" encoding="utf-8"?>
+      .files(
+        xml(
+          "AndroidManifest.xml",
+          """<?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.helloworld" >
 
@@ -290,28 +290,25 @@ class AppLinksAutoVerifyDetectorTest : AbstractCheckTest() {
 
 </manifest>
 """,
-            )
         )
-        .networkData(
-            "http://example.com/.well-known/assetlinks.json",
-            AppLinksAutoVerifyDetector.STATUS_HTTP_CONNECT_FAIL,
-        )
-        .run()
-        .expect(expected)
+      )
+      .networkData("http://example.com/.well-known/assetlinks.json", AppLinksAutoVerifyDetector.STATUS_HTTP_CONNECT_FAIL)
+      .run()
+      .expect(expected)
   }
 
   fun testMalformedUrl() {
     val expected =
-        """AndroidManifest.xml:12: Error: Malformed URL of Digital Asset Links JSON file: http://example.com/.well-known/assetlinks.json. An unknown protocol is specified [AppLinksAutoVerify]
+      """AndroidManifest.xml:12: Error: Malformed URL of Digital Asset Links JSON file: http://example.com/.well-known/assetlinks.json. An unknown protocol is specified [AppLinksAutoVerify]
                     android:host="example.com"
                     ~~~~~~~~~~~~~~~~~~~~~~~~~~
 1 errors, 0 warnings
 """
     lint()
-        .files(
-            xml(
-                "AndroidManifest.xml",
-                """<?xml version="1.0" encoding="utf-8"?>
+      .files(
+        xml(
+          "AndroidManifest.xml",
+          """<?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.helloworld" >
 
@@ -332,28 +329,25 @@ class AppLinksAutoVerifyDetectorTest : AbstractCheckTest() {
 
 </manifest>
 """,
-            )
         )
-        .networkData(
-            "http://example.com/.well-known/assetlinks.json",
-            AppLinksAutoVerifyDetector.STATUS_MALFORMED_URL,
-        )
-        .run()
-        .expect(expected)
+      )
+      .networkData("http://example.com/.well-known/assetlinks.json", AppLinksAutoVerifyDetector.STATUS_MALFORMED_URL)
+      .run()
+      .expect(expected)
   }
 
   fun testUnknownHost() {
     val expected =
-        """AndroidManifest.xml:12: Warning: Unknown host: http://example.com. Check if the host exists, and check your network connection [AppLinksAutoVerify]
+      """AndroidManifest.xml:12: Warning: Unknown host: http://example.com. Check if the host exists, and check your network connection [AppLinksAutoVerify]
                     android:host="example.com"
                     ~~~~~~~~~~~~~~~~~~~~~~~~~~
 0 errors, 1 warnings
 """
     lint()
-        .files(
-            xml(
-                "AndroidManifest.xml",
-                """<?xml version="1.0" encoding="utf-8"?>
+      .files(
+        xml(
+          "AndroidManifest.xml",
+          """<?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.helloworld" >
 
@@ -374,28 +368,25 @@ class AppLinksAutoVerifyDetectorTest : AbstractCheckTest() {
 
 </manifest>
 """,
-            )
         )
-        .networkData(
-            "http://example.com/.well-known/assetlinks.json",
-            AppLinksAutoVerifyDetector.STATUS_UNKNOWN_HOST,
-        )
-        .run()
-        .expect(expected)
+      )
+      .networkData("http://example.com/.well-known/assetlinks.json", AppLinksAutoVerifyDetector.STATUS_UNKNOWN_HOST)
+      .run()
+      .expect(expected)
   }
 
   fun testNotFound() {
     val expected =
-        """AndroidManifest.xml:12: Error: Digital Asset Links JSON file http://example.com/.well-known/assetlinks.json is not found on the host [AppLinksAutoVerify]
+      """AndroidManifest.xml:12: Error: Digital Asset Links JSON file http://example.com/.well-known/assetlinks.json is not found on the host [AppLinksAutoVerify]
                     android:host="example.com"
                     ~~~~~~~~~~~~~~~~~~~~~~~~~~
 1 errors, 0 warnings
 """
     lint()
-        .files(
-            xml(
-                "AndroidManifest.xml",
-                """<?xml version="1.0" encoding="utf-8"?>
+      .files(
+        xml(
+          "AndroidManifest.xml",
+          """<?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.helloworld" >
 
@@ -416,28 +407,25 @@ class AppLinksAutoVerifyDetectorTest : AbstractCheckTest() {
 
 </manifest>
 """,
-            )
         )
-        .networkData(
-            "http://example.com/.well-known/assetlinks.json",
-            AppLinksAutoVerifyDetector.STATUS_NOT_FOUND,
-        )
-        .run()
-        .expect(expected)
+      )
+      .networkData("http://example.com/.well-known/assetlinks.json", AppLinksAutoVerifyDetector.STATUS_NOT_FOUND)
+      .run()
+      .expect(expected)
   }
 
   fun testWrongJsonSyntax() {
     val expected =
-        """AndroidManifest.xml:12: Error: http://example.com/.well-known/assetlinks.json has incorrect JSON syntax [AppLinksAutoVerify]
+      """AndroidManifest.xml:12: Error: http://example.com/.well-known/assetlinks.json has incorrect JSON syntax [AppLinksAutoVerify]
                     android:host="example.com"
                     ~~~~~~~~~~~~~~~~~~~~~~~~~~
 1 errors, 0 warnings
 """
     lint()
-        .files(
-            xml(
-                "AndroidManifest.xml",
-                """<?xml version="1.0" encoding="utf-8"?>
+      .files(
+        xml(
+          "AndroidManifest.xml",
+          """<?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.helloworld" >
 
@@ -458,28 +446,25 @@ class AppLinksAutoVerifyDetectorTest : AbstractCheckTest() {
 
 </manifest>
 """,
-            )
         )
-        .networkData(
-            "http://example.com/.well-known/assetlinks.json",
-            AppLinksAutoVerifyDetector.STATUS_WRONG_JSON_SYNTAX,
-        )
-        .run()
-        .expect(expected)
+      )
+      .networkData("http://example.com/.well-known/assetlinks.json", AppLinksAutoVerifyDetector.STATUS_WRONG_JSON_SYNTAX)
+      .run()
+      .expect(expected)
   }
 
   fun testFailedJsonParsing() {
     val expected =
-        """AndroidManifest.xml:12: Error: Parsing JSON file http://example.com/.well-known/assetlinks.json fails [AppLinksAutoVerify]
+      """AndroidManifest.xml:12: Error: Parsing JSON file http://example.com/.well-known/assetlinks.json fails [AppLinksAutoVerify]
                     android:host="example.com"
                     ~~~~~~~~~~~~~~~~~~~~~~~~~~
 1 errors, 0 warnings
 """
     lint()
-        .files(
-            xml(
-                "AndroidManifest.xml",
-                """<?xml version="1.0" encoding="utf-8"?>
+      .files(
+        xml(
+          "AndroidManifest.xml",
+          """<?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.helloworld" >
 
@@ -500,22 +485,19 @@ class AppLinksAutoVerifyDetectorTest : AbstractCheckTest() {
 
 </manifest>
 """,
-            )
         )
-        .networkData(
-            "http://example.com/.well-known/assetlinks.json",
-            AppLinksAutoVerifyDetector.STATUS_JSON_PARSE_FAIL,
-        )
-        .run()
-        .expect(expected)
+      )
+      .networkData("http://example.com/.well-known/assetlinks.json", AppLinksAutoVerifyDetector.STATUS_JSON_PARSE_FAIL)
+      .run()
+      .expect(expected)
   }
 
   fun testNoAutoVerify() {
     lint()
-        .files(
-            xml(
-                "AndroidManifest.xml",
-                """<?xml version="1.0" encoding="utf-8"?>
+      .files(
+        xml(
+          "AndroidManifest.xml",
+          """<?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.helloworld" >
 
@@ -536,18 +518,18 @@ class AppLinksAutoVerifyDetectorTest : AbstractCheckTest() {
 
 </manifest>
 """,
-            )
         )
-        .run()
-        .expectClean()
+      )
+      .run()
+      .expectClean()
   }
 
   fun testNotAppLinkInIntents() {
     lint()
-        .files(
-            xml(
-                "AndroidManifest.xml",
-                """<?xml version="1.0" encoding="utf-8"?>
+      .files(
+        xml(
+          "AndroidManifest.xml",
+          """<?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.helloworld" >
 
@@ -579,15 +561,15 @@ class AppLinksAutoVerifyDetectorTest : AbstractCheckTest() {
 
 </manifest>
 """,
-            )
         )
-        .run()
-        .expectClean()
+      )
+      .run()
+      .expectClean()
   }
 
   fun testMultipleLinks() {
     val expected =
-        """AndroidManifest.xml:12: Error: Digital Asset Links JSON file https://example.com/.well-known/assetlinks.json is not found on the host [AppLinksAutoVerify]
+      """AndroidManifest.xml:12: Error: Digital Asset Links JSON file https://example.com/.well-known/assetlinks.json is not found on the host [AppLinksAutoVerify]
                     android:host="example.com"
                     ~~~~~~~~~~~~~~~~~~~~~~~~~~
 AndroidManifest.xml:15: Error: https://www.example.com/.well-known/assetlinks.json has incorrect JSON syntax [AppLinksAutoVerify]
@@ -602,10 +584,10 @@ AndroidManifest.xml:15: Warning: Unknown host: http://www.example.com. Check if 
 2 errors, 2 warnings
 """
     lint()
-        .files(
-            xml(
-                "AndroidManifest.xml",
-                """<?xml version="1.0" encoding="utf-8"?>
+      .files(
+        xml(
+          "AndroidManifest.xml",
+          """<?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.helloworld" >
 
@@ -628,31 +610,19 @@ AndroidManifest.xml:15: Warning: Unknown host: http://www.example.com. Check if 
 
 </manifest>
 """,
-            )
         )
-        .networkData(
-            "http://example.com/.well-known/assetlinks.json",
-            AppLinksAutoVerifyDetector.STATUS_HTTP_CONNECT_FAIL,
-        )
-        .networkData(
-            "https://example.com/.well-known/assetlinks.json",
-            AppLinksAutoVerifyDetector.STATUS_NOT_FOUND,
-        )
-        .networkData(
-            "http://www.example.com/.well-known/assetlinks.json",
-            AppLinksAutoVerifyDetector.STATUS_UNKNOWN_HOST,
-        )
-        .networkData(
-            "https://www.example.com/.well-known/assetlinks.json",
-            AppLinksAutoVerifyDetector.STATUS_WRONG_JSON_SYNTAX,
-        )
-        .run()
-        .expect(expected)
+      )
+      .networkData("http://example.com/.well-known/assetlinks.json", AppLinksAutoVerifyDetector.STATUS_HTTP_CONNECT_FAIL)
+      .networkData("https://example.com/.well-known/assetlinks.json", AppLinksAutoVerifyDetector.STATUS_NOT_FOUND)
+      .networkData("http://www.example.com/.well-known/assetlinks.json", AppLinksAutoVerifyDetector.STATUS_UNKNOWN_HOST)
+      .networkData("https://www.example.com/.well-known/assetlinks.json", AppLinksAutoVerifyDetector.STATUS_WRONG_JSON_SYNTAX)
+      .run()
+      .expect(expected)
   }
 
   fun testMultipleIntents() {
     val expected =
-        """AndroidManifest.xml:12: Warning: Unknown host: http://www.example.com. Check if the host exists, and check your network connection [AppLinksAutoVerify]
+      """AndroidManifest.xml:12: Warning: Unknown host: http://www.example.com. Check if the host exists, and check your network connection [AppLinksAutoVerify]
                     android:host="www.example.com"
                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 AndroidManifest.xml:20: Warning: Connection to Digital Asset Links JSON file http://example.com/.well-known/assetlinks.json fails [AppLinksAutoVerify]
@@ -661,10 +631,10 @@ AndroidManifest.xml:20: Warning: Connection to Digital Asset Links JSON file htt
 0 errors, 2 warnings
 """
     lint()
-        .files(
-            xml(
-                "AndroidManifest.xml",
-                """<?xml version="1.0" encoding="utf-8"?>
+      .files(
+        xml(
+          "AndroidManifest.xml",
+          """<?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.helloworld" >
 
@@ -693,28 +663,22 @@ AndroidManifest.xml:20: Warning: Connection to Digital Asset Links JSON file htt
 
 </manifest>
 """,
-            )
         )
-        .networkData(
-            "http://example.com/.well-known/assetlinks.json",
-            AppLinksAutoVerifyDetector.STATUS_HTTP_CONNECT_FAIL,
-        )
-        .networkData(
-            "http://www.example.com/.well-known/assetlinks.json",
-            AppLinksAutoVerifyDetector.STATUS_UNKNOWN_HOST,
-        )
-        .run()
-        .expect(expected)
+      )
+      .networkData("http://example.com/.well-known/assetlinks.json", AppLinksAutoVerifyDetector.STATUS_HTTP_CONNECT_FAIL)
+      .networkData("http://www.example.com/.well-known/assetlinks.json", AppLinksAutoVerifyDetector.STATUS_UNKNOWN_HOST)
+      .run()
+      .expect(expected)
   }
 
   fun testUnknownHostWithManifestPlaceholders() {
     // Regression test for https://code.google.com/p/android/issues/detail?id=205990
     // Skip hosts that use manifest placeholders
     lint()
-        .files(
-            xml(
-                "AndroidManifest.xml",
-                """<?xml version="1.0" encoding="utf-8"?>
+      .files(
+        xml(
+          "AndroidManifest.xml",
+          """<?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.helloworld" >
 
@@ -736,30 +700,27 @@ AndroidManifest.xml:20: Warning: Connection to Digital Asset Links JSON file htt
 
 </manifest>
 """,
-            )
         )
-        .networkData(
-            "http://example.com/.well-known/assetlinks.json",
-            AppLinksAutoVerifyDetector.STATUS_UNKNOWN_HOST,
-        )
-        .run()
-        .expectClean()
+      )
+      .networkData("http://example.com/.well-known/assetlinks.json", AppLinksAutoVerifyDetector.STATUS_UNKNOWN_HOST)
+      .run()
+      .expectClean()
   }
 
   fun testUnknownHostWithResolvedManifestPlaceholders() {
     // Regression test for https://code.google.com/p/android/issues/detail?id=205990
     // Skip hosts that use manifest placeholders
     val expected =
-        """src/main/AndroidManifest.xml:12: Warning: Unknown host: http://example.com. Check if the host exists, and check your network connection [AppLinksAutoVerify]
+      """src/main/AndroidManifest.xml:12: Warning: Unknown host: http://example.com. Check if the host exists, and check your network connection [AppLinksAutoVerify]
                     android:host="${"$"}{intentFilterHost}"
                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 0 errors, 1 warnings
 """
 
     lint()
-        .files(
-            manifest(
-                """<?xml version="1.0" encoding="utf-8"?>
+      .files(
+        manifest(
+          """<?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.helloworld" >
 
@@ -781,9 +742,9 @@ AndroidManifest.xml:20: Warning: Connection to Digital Asset Links JSON file htt
 
 </manifest>
 """
-            ),
-            gradle(
-                """buildscript {
+        ),
+        gradle(
+          """buildscript {
     dependencies {
         classpath 'com.android.tools.build:gradle:2.0.0'
     }
@@ -794,13 +755,10 @@ android {
     }
 }
 """
-            ),
-        )
-        .networkData(
-            "http://example.com/.well-known/assetlinks.json",
-            AppLinksAutoVerifyDetector.STATUS_UNKNOWN_HOST,
-        )
-        .run()
-        .expect(expected)
+        ),
+      )
+      .networkData("http://example.com/.well-known/assetlinks.json", AppLinksAutoVerifyDetector.STATUS_UNKNOWN_HOST)
+      .run()
+      .expect(expected)
   }
 }

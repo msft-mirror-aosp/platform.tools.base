@@ -90,11 +90,11 @@ class AppCompatCustomViewDetector : Detector(), SourceCodeScanner {
     val message = "This custom view should extend `$suggested` instead"
     val actionLabel = "Extend AppCompat widget instead"
     val fix =
-        if (superTypeNode != null) { // Can't quickfix without accurate node location
-          fix().name(actionLabel).sharedName(actionLabel).replace().all().with(suggested).autoFix().build()
-        } else {
-          null
-        }
+      if (superTypeNode != null) { // Can't quickfix without accurate node location
+        fix().name(actionLabel).sharedName(actionLabel).replace().all().with(suggested).autoFix().build()
+      } else {
+        null
+      }
     context.report(ISSUE, declaration, location, message, fix)
   }
 
@@ -102,11 +102,11 @@ class AppCompatCustomViewDetector : Detector(), SourceCodeScanner {
     /** Copy/pasted item decorator code. */
     @JvmField
     val ISSUE =
-        Issue.create(
-            id = "AppCompatCustomView",
-            briefDescription = "Appcompat Custom Widgets",
-            explanation =
-                """
+      Issue.create(
+        id = "AppCompatCustomView",
+        briefDescription = "Appcompat Custom Widgets",
+        explanation =
+          """
                 In order to support features such as tinting, the appcompat library will \
                 automatically load special appcompat replacements for the builtin widgets. \
                 However, this does not work for your own custom views.
@@ -115,20 +115,20 @@ class AppCompatCustomViewDetector : Detector(), SourceCodeScanner {
                 instead extend one of the delegate classes in \
                 `androidx.appcompat.widget.AppCompatTextView`.
                 """,
-            category = Category.CORRECTNESS,
-            priority = 4,
-            severity = Severity.ERROR,
-            androidSpecific = true,
-            implementation = Implementation(AppCompatCustomViewDetector::class.java, Scope.JAVA_FILE_SCOPE),
-        )
+        category = Category.CORRECTNESS,
+        priority = 4,
+        severity = Severity.ERROR,
+        androidSpecific = true,
+        implementation = Implementation(AppCompatCustomViewDetector::class.java, Scope.JAVA_FILE_SCOPE),
+      )
 
     private fun getAppCompatDelegate(widgetName: String, androidx: Boolean): String {
       val pkg =
-          if (androidx) {
-            "androidx.appcompat.widget"
-          } else {
-            "android.support.v7.widget"
-          }
+        if (androidx) {
+          "androidx.appcompat.widget"
+        } else {
+          "android.support.v7.widget"
+        }
       return "$pkg.AppCompat$widgetName"
     }
 

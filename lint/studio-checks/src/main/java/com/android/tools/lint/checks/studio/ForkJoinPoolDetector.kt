@@ -34,11 +34,11 @@ class ForkJoinPoolDetector : Detector(), SourceCodeScanner {
 
     @JvmField
     val COMMON_FJ_POOL =
-        Issue.create(
-            id = "CommonForkJoinPool",
-            briefDescription = "Using common Fork Join Pool",
-            explanation =
-                """
+      Issue.create(
+        id = "CommonForkJoinPool",
+        briefDescription = "Using common Fork Join Pool",
+        explanation =
+          """
                 Using the common ForkJoinPool can lead to freezes because in many cases \
                 the set of threads is very low.
 
@@ -53,20 +53,20 @@ class ForkJoinPoolDetector : Detector(), SourceCodeScanner {
 
                 For more, see `go/do-not-freeze`.
             """,
-            category = UI_RESPONSIVENESS,
-            priority = 6,
-            severity = Severity.ERROR,
-            platforms = STUDIO_PLATFORMS,
-            implementation = IMPLEMENTATION,
-        )
+        category = UI_RESPONSIVENESS,
+        priority = 6,
+        severity = Severity.ERROR,
+        platforms = STUDIO_PLATFORMS,
+        implementation = IMPLEMENTATION,
+      )
 
     @JvmField
     val NEW_FJ_POOL =
-        Issue.create(
-            id = "NewForkJoinPool",
-            briefDescription = "Using Fork Join Pool",
-            explanation =
-                """
+      Issue.create(
+        id = "NewForkJoinPool",
+        briefDescription = "Using Fork Join Pool",
+        explanation =
+          """
                 Using new Fork Join Pools should be limited to very specific use cases.
 
                 For Android Studio, when possible, prefer using the IntelliJ application pool: \
@@ -80,28 +80,24 @@ class ForkJoinPoolDetector : Detector(), SourceCodeScanner {
 
                 For more, see `go/do-not-freeze`.
             """,
-            category = UI_RESPONSIVENESS,
-            priority = 6,
-            severity = Severity.ERROR,
-            platforms = STUDIO_PLATFORMS,
-            implementation = IMPLEMENTATION,
-        )
+        category = UI_RESPONSIVENESS,
+        priority = 6,
+        severity = Severity.ERROR,
+        platforms = STUDIO_PLATFORMS,
+        implementation = IMPLEMENTATION,
+      )
   }
 
   override fun getApplicableConstructorTypes() = listOf("java.util.concurrent.ForkJoinPool")
 
-  override fun visitConstructor(
-      context: JavaContext,
-      node: UCallExpression,
-      constructor: PsiMethod,
-  ) {
+  override fun visitConstructor(context: JavaContext, node: UCallExpression, constructor: PsiMethod) {
     // Called constructor directly
     // TODO: ForkJoinTask
     context.report(
-        NEW_FJ_POOL,
-        node,
-        context.getLocation(node),
-        "Avoid using new ForkJoinPool instances when possible. Prefer using the IntelliJ application pool via `com.intellij.openapi.application.Application#executeOnPooledThread`, or for the Android Gradle Plugin use `com.android.build.gradle.internal.tasks.Workers`. See `go/do-not-freeze`.",
+      NEW_FJ_POOL,
+      node,
+      context.getLocation(node),
+      "Avoid using new ForkJoinPool instances when possible. Prefer using the IntelliJ application pool via `com.intellij.openapi.application.Application#executeOnPooledThread`, or for the Android Gradle Plugin use `com.android.build.gradle.internal.tasks.Workers`. See `go/do-not-freeze`.",
     )
   }
 
@@ -122,10 +118,10 @@ class ForkJoinPoolDetector : Detector(), SourceCodeScanner {
     }
 
     context.report(
-        COMMON_FJ_POOL,
-        node,
-        context.getNameLocation(node),
-        "Avoid using common ForkJoinPool, directly or indirectly (for example via CompletableFuture). It has a limited set of threads on some machines which leads to hangs. See `go/do-not-freeze`.",
+      COMMON_FJ_POOL,
+      node,
+      context.getNameLocation(node),
+      "Avoid using common ForkJoinPool, directly or indirectly (for example via CompletableFuture). It has a limited set of threads on some machines which leads to hangs. See `go/do-not-freeze`.",
     )
   }
 }

@@ -46,11 +46,11 @@ class IteratorDetector : Detector(), SourceCodeScanner {
     // Actually include ConcurrentHashMap too
     @JvmField
     val ISSUE =
-        Issue.create(
-            id = "BrokenIterator",
-            briefDescription = "Broken Iterator",
-            explanation =
-                """
+      Issue.create(
+        id = "BrokenIterator",
+        briefDescription = "Broken Iterator",
+        explanation =
+          """
                 **For LinkedHashMap:**
 
                 The spliterators returned by `LinkedHashMap` in Android Nougat (API levels 24 \
@@ -74,13 +74,13 @@ class IteratorDetector : Detector(), SourceCodeScanner {
                 on Android N (API level 24). Consider switching to `ArrayList` and if necessary \
                 adding synchronization.
             """,
-            moreInfo = "https://developer.android.com/reference/java/util/LinkedHashMap",
-            category = Category.CORRECTNESS,
-            priority = 6,
-            severity = Severity.WARNING,
-            androidSpecific = true,
-            implementation = IMPLEMENTATION,
-        )
+        moreInfo = "https://developer.android.com/reference/java/util/LinkedHashMap",
+        category = Category.CORRECTNESS,
+        priority = 6,
+        severity = Severity.WARNING,
+        androidSpecific = true,
+        implementation = IMPLEMENTATION,
+      )
   }
 
   override fun getApplicableMethodNames(): List<String> = listOf("add", "spliterator", "stream", "parallelStream")
@@ -115,31 +115,26 @@ class IteratorDetector : Detector(), SourceCodeScanner {
 
         val collection = receiver.asSourceString()
         val workaround =
-            if (name == "spliterator") {
-              "Use `java.util.Spliterators.spliterator($collection, $collection.spliterator().characteristics())`"
-            } else {
-              "Use `java.util.stream.StreamSupport.stream(spliterator, false)`"
-            }
+          if (name == "spliterator") {
+            "Use `java.util.Spliterators.spliterator($collection, $collection.spliterator().characteristics())`"
+          } else {
+            "Use `java.util.stream.StreamSupport.stream(spliterator, false)`"
+          }
         // b/33945212
         context.report(
-            Incident(
-                ISSUE,
-                node,
-                context.getLocation(node),
-                "`LinkedHashMap#$name` was broken in API 24 and 25. Workaround: $workaround",
-            ),
-            minSdkLessThan(26),
+          Incident(ISSUE, node, context.getLocation(node), "`LinkedHashMap#$name` was broken in API 24 and 25. Workaround: $workaround"),
+          minSdkLessThan(26),
         )
       } else if (canonical == "java.util.Vector") {
         // b/30974375
         context.report(
-            Incident(
-                ISSUE,
-                node,
-                context.getLocation(node),
-                "`Vector#listIterator` was broken in API 24 and 25; it can return `hasNext()=false` before the last element. Consider switching to `ArrayList` with synchronization if you need it.",
-            ),
-            minSdkLessThan(26),
+          Incident(
+            ISSUE,
+            node,
+            context.getLocation(node),
+            "`Vector#listIterator` was broken in API 24 and 25; it can return `hasNext()=false` before the last element. Consider switching to `ArrayList` with synchronization if you need it.",
+          ),
+          minSdkLessThan(26),
         )
       }
     }

@@ -21,8 +21,8 @@ import java.util.Locale
 
 /** Severity of an issue found by lint */
 enum class Severity(
-    /** A description of this severity suitable for display to the user. */
-    val description: String
+  /** A description of this severity suitable for display to the user. */
+  val description: String
 ) {
   /** Ignore: The user doesn't want to see this issue. */
   IGNORE("Ignore"),

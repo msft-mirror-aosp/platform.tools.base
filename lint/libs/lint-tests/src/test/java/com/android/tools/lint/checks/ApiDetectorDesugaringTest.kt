@@ -30,7 +30,7 @@ class ApiDetectorDesugaringTest : AbstractCheckTest() {
   fun testTryWithResources() {
     // No desugaring
     val expected =
-        """
+      """
             src/main/java/test/pkg/MultiCatch.java:10: Error: Multi-catch with these reflection exceptions requires API level 19 (current min is 1) because they get compiled to the common but new super type ReflectiveOperationException. As a workaround either create individual catch statements, or catch Exception. [NewApi]
                     } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -56,7 +56,7 @@ class ApiDetectorDesugaringTest : AbstractCheckTest() {
 
   fun testTryWithResourcesOldGradlePlugin() {
     val expected =
-        """
+      """
             src/main/java/test/pkg/TryWithResources.java:9: Error: Try-with-resources requires API level 19 (current min is 1) [NewApi]
                     try (BufferedReader br = new BufferedReader(new FileReader(path))) {
                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -67,7 +67,7 @@ class ApiDetectorDesugaringTest : AbstractCheckTest() {
 
   fun testTryWithResourcesNewPluginLanguage17() {
     val expected =
-        """
+      """
             src/main/java/test/pkg/TryWithResources.java:9: Error: Try-with-resources requires API level 19 (current min is 1) [NewApi]
                     try (BufferedReader br = new BufferedReader(new FileReader(path))) {
                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -85,9 +85,9 @@ class ApiDetectorDesugaringTest : AbstractCheckTest() {
     // Ditto for Throwable.addSuppressed.
 
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
                 package test.pkg;
 
                 import java.util.Objects;
@@ -106,23 +106,23 @@ class ApiDetectorDesugaringTest : AbstractCheckTest() {
                     }
                 }
                 """
-                )
-                .indented(),
-            gradleVersion24_language18,
-        )
-        .run()
-        .expectClean()
+          )
+          .indented(),
+        gradleVersion24_language18,
+      )
+      .run()
+      .expectClean()
   }
 
   fun testDefaultMethodsDesugar() {
     // Default methods require minSdkVersion=N
 
     lint()
-        .files(
-            manifest().minSdk(15),
-            java(
-                    "src/test/pkg/InterfaceMethodTest.java",
-                    """
+      .files(
+        manifest().minSdk(15),
+        java(
+            "src/test/pkg/InterfaceMethodTest.java",
+            """
                 package test.pkg;
 
                 @SuppressWarnings({"ClassNameDiffersFromFileName", "MethodMayBeStatic"})
@@ -135,20 +135,20 @@ class ApiDetectorDesugaringTest : AbstractCheckTest() {
                         System.out.println("test");
                     }
                 }""",
-                )
-                .indented(),
-            gradleVersion24_language18,
-        )
-        .run()
-        .expectClean()
+          )
+          .indented(),
+        gradleVersion24_language18,
+      )
+      .run()
+      .expectClean()
   }
 
   fun testDesugarCompare() {
     lint()
-        .files(
-            manifest().minSdk(1),
-            java(
-                    """
+      .files(
+        manifest().minSdk(1),
+        java(
+            """
                 package test.pkg;
 
                 // Desugar rewrites these
@@ -187,20 +187,20 @@ class ApiDetectorDesugaringTest : AbstractCheckTest() {
                     }
                 }
                 """
-                )
-                .indented(),
-            gradleVersion24_language18,
-        )
-        .run()
-        .expectClean()
+          )
+          .indented(),
+        gradleVersion24_language18,
+      )
+      .run()
+      .expectClean()
   }
 
   fun testDesugarJava8LibsKotlin() {
     lint()
-        .files(
-            manifest().minSdk(1),
-            kotlin(
-                    """
+      .files(
+        manifest().minSdk(1),
+        kotlin(
+            """
                 @file:Suppress("unused", "UNUSED_VARIABLE")
 
                 package test.pkg
@@ -230,20 +230,20 @@ class ApiDetectorDesugaringTest : AbstractCheckTest() {
                     annotation class MyTypeUse
                 }
                 """
-                )
-                .indented(),
-        )
-        .desugaring(Desugaring.FULL)
-        .run()
-        .expectClean()
+          )
+          .indented(),
+      )
+      .desugaring(Desugaring.FULL)
+      .run()
+      .expectClean()
   }
 
   fun testDesugarJava8LibsJavaAndroid() {
     lint()
-        .files(
-            manifest().minSdk(1),
-            java(
-                    """
+      .files(
+        manifest().minSdk(1),
+        java(
+            """
                 package test.pkg;
 
                 import java.lang.annotation.ElementType;
@@ -302,13 +302,13 @@ class ApiDetectorDesugaringTest : AbstractCheckTest() {
                     }
                 }
                 """
-                )
-                .indented(),
-        )
-        .desugaring(Desugaring.FULL)
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+      )
+      .desugaring(Desugaring.FULL)
+      .run()
+      .expect(
+        """
             src/test/pkg/Test.java:35: Error: Call requires API level 24 (current min is 1): java.util.Collection#parallelStream [NewApi]
                     Stream stream = collection.parallelStream();
                                                ~~~~~~~~~~~~~~
@@ -317,14 +317,14 @@ class ApiDetectorDesugaringTest : AbstractCheckTest() {
                                                ~~~~~~~~
             2 errors, 0 warnings
             """
-        )
+      )
   }
 
   fun testDesugarJava8LibsJavaLib() {
     val lib =
-        project(
-            java(
-                    """
+      project(
+        java(
+            """
                 package test.pkg.lib;
 
                 import java.util.ArrayList;
@@ -347,27 +347,27 @@ class ApiDetectorDesugaringTest : AbstractCheckTest() {
                     }
                 }
                 """
-                )
-                .indented(),
-            // Make sure it's treated as a plain library
-            gradle(
-                    """
+          )
+          .indented(),
+        // Make sure it's treated as a plain library
+        gradle(
+            """
           apply plugin: 'java'
           """
-                )
-                .indented(),
-        )
+          )
+          .indented(),
+      )
 
     val main =
-        project(
-                manifest().minSdk(1),
-                gradle(
-                    """
+      project(
+          manifest().minSdk(1),
+          gradle(
+            """
         android.compileOptions.coreLibraryDesugaringEnabled = true
         """
-                ),
-            )
-            .dependsOn(lib)
+          ),
+        )
+        .dependsOn(lib)
 
     lint().projects(lib, main).run().expectClean()
   }
@@ -375,9 +375,9 @@ class ApiDetectorDesugaringTest : AbstractCheckTest() {
   fun testDesugarInheritedMethods() {
     // Regression test for https://issuetracker.google.com/327670482
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
             package test.pkg;
 
             import java.util.ArrayList;
@@ -389,16 +389,16 @@ class ApiDetectorDesugaringTest : AbstractCheckTest() {
                 }
             }
             """
-                )
-                .indented(),
-            gradle(
-                """
+          )
+          .indented(),
+        gradle(
+          """
           android.compileOptions.coreLibraryDesugaringEnabled = true
           """
-            ),
-        )
-        .run()
-        .expectClean()
+        ),
+      )
+      .run()
+      .expectClean()
   }
 
   fun testDesugarInheritedMethodsInLibrary() {
@@ -407,9 +407,9 @@ class ApiDetectorDesugaringTest : AbstractCheckTest() {
     // generating a report for a downstream app module which turns it on only there.
     // Regression test for https://issuetracker.google.com/327670482
     val lib =
-        project(
-            java(
-                    """
+      project(
+        java(
+            """
             package test.pkg;
 
             import java.util.ArrayList;
@@ -421,29 +421,29 @@ class ApiDetectorDesugaringTest : AbstractCheckTest() {
                 }
             }
             """
-                )
-                .indented(),
-            // Make sure it's treated as a plain library
-            gradle(
-                    """
+          )
+          .indented(),
+        // Make sure it's treated as a plain library
+        gradle(
+            """
             apply plugin: 'java'
             android.compileOptions.coreLibraryDesugaringEnabled = false
             """
-                )
-                .indented(),
-        )
+          )
+          .indented(),
+      )
 
     val main =
-        project(
-                manifest().minSdk(1),
-                gradle(
-                        """
+      project(
+          manifest().minSdk(1),
+          gradle(
+              """
               android.compileOptions.coreLibraryDesugaringEnabled = true
               """
-                    )
-                    .indented(),
             )
-            .dependsOn(lib)
+            .indented(),
+        )
+        .dependsOn(lib)
 
     lint().projects(lib, main).run().expectClean()
   }
@@ -451,10 +451,10 @@ class ApiDetectorDesugaringTest : AbstractCheckTest() {
   fun testLibraryDesugaringNioFields() {
     // 267449090: Lint information for library desugaring is missing fields
     lint()
-        .files(
-            manifest().minSdk(1),
-            kotlin(
-                    """
+      .files(
+        manifest().minSdk(1),
+        kotlin(
+            """
                 package test.pkg
 
                 import java.nio.file.Path
@@ -464,10 +464,10 @@ class ApiDetectorDesugaringTest : AbstractCheckTest() {
                     tempFile.writeLines(listOf("Hello"), options = arrayOf(java.nio.file.StandardOpenOption.APPEND))
                 }
                 """
-                )
-                .indented(),
-            java(
-                    """
+          )
+          .indented(),
+        java(
+            """
                 package test.pkg;
 
                 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -483,21 +483,21 @@ class ApiDetectorDesugaringTest : AbstractCheckTest() {
                     }
                 }
                 """
-                )
-                .indented(),
-        )
-        .desugaring(Desugaring.FULL)
-        .run()
-        .expectClean()
+          )
+          .indented(),
+      )
+      .desugaring(Desugaring.FULL)
+      .run()
+      .expectClean()
   }
 
   fun testInstantSource() {
     // Regression test for b/374282903
     lint()
-        .files(
-            manifest().minSdk(1),
-            java(
-                    """
+      .files(
+        manifest().minSdk(1),
+        java(
+            """
             package test.pkg;
 
             import java.time.InstantSource;
@@ -508,28 +508,28 @@ class ApiDetectorDesugaringTest : AbstractCheckTest() {
               }
             }
           """
-                )
-                .indented(),
-        )
-        .desugaring(Desugaring.FULL)
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+      )
+      .desugaring(Desugaring.FULL)
+      .run()
+      .expect(
+        """
         src/test/pkg/Foo.java:7: Error: Call requires API level 34 (current min is 1): java.time.InstantSource#instant [NewApi]
             var unused = source.instant();
                                 ~~~~~~~
         1 errors, 0 warnings
         """
-        )
+      )
   }
 
   fun testLibraryDesugaredCasts() {
     // Regression test for b/347167978
     lint()
-        .files(
-            manifest().minSdk(1),
-            kotlin(
-                    """
+      .files(
+        manifest().minSdk(1),
+        kotlin(
+            """
             package test.pkg
 
             import java.time.chrono.IsoChronology
@@ -547,21 +547,21 @@ class ApiDetectorDesugaringTest : AbstractCheckTest() {
                     .withChronology(IsoChronology.INSTANCE)
             }
             """
-                )
-                .indented(),
-        )
-        .desugaring(Desugaring.FULL)
-        .run()
-        .expectClean()
+          )
+          .indented(),
+      )
+      .desugaring(Desugaring.FULL)
+      .run()
+      .expectClean()
   }
 
   fun testLibraryDesugaredCasts2() {
     // Regression test for b/441076971
     lint()
-        .files(
-            manifest().minSdk(21),
-            java(
-                    """
+      .files(
+        manifest().minSdk(21),
+        java(
+            """
             package test.pkg;
 
             import java.util.Comparator;
@@ -584,20 +584,20 @@ class ApiDetectorDesugaringTest : AbstractCheckTest() {
                 }
             }
             """
-                )
-                .indented(),
-        )
-        .desugaring(Desugaring.FULL)
-        .run()
-        .expectClean()
+          )
+          .indented(),
+      )
+      .desugaring(Desugaring.FULL)
+      .run()
+      .expectClean()
   }
 
   fun testNioCompatWarnings() {
     // Regression test for b/381126163
     val testFiles =
-        arrayOf(
-            java(
-                    """
+      arrayOf(
+        java(
+            """
             package test.pkg;
 
             import java.io.File;
@@ -651,10 +651,10 @@ class ApiDetectorDesugaringTest : AbstractCheckTest() {
                 }
             }
             """
-                )
-                .indented(),
-            kotlin(
-                    """
+          )
+          .indented(),
+        kotlin(
+            """
             package test.pkg
 
             import java.nio.channels.AsynchronousFileChannel
@@ -722,20 +722,20 @@ class ApiDetectorDesugaringTest : AbstractCheckTest() {
                 val channel4 = AsynchronousFileChannel.open(path, SPARSE) // ERROR 15
             }
             """
-                )
-                .indented(),
-        )
+          )
+          .indented(),
+      )
 
     // No warnings after API level 26 with full library desugaring
     lint().files(manifest().minSdk(26), *testFiles).desugaring(Desugaring.FULL).run().expectClean()
 
     // Special warnings with library desugaring prior to API level 26
     lint()
-        .files(manifest().minSdk(25), *testFiles)
-        .desugaring(Desugaring.FULL)
-        .run()
-        .expect(
-            """
+      .files(manifest().minSdk(25), *testFiles)
+      .desugaring(Desugaring.FULL)
+      .run()
+      .expect(
+        """
         src/test/pkg/NioTest.java:16: Error: Using AsynchronousFileChannel is not supported by core library desugaring on API levels lower than 26 [NioDesugaring]
                 try(AsynchronousFileChannel open = AsynchronousFileChannel.open(path)) { // ERROR 1
                                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -792,17 +792,17 @@ class ApiDetectorDesugaringTest : AbstractCheckTest() {
                                                   ~~~~~~~~~~~~~~~
         15 errors, 3 warnings
         """
-        )
+      )
   }
 
   fun testLibraryDesugaringFields() {
     try {
       val project =
-          getProjectDir(
-              null,
-              manifest().minSdk(1),
-              kotlin(
-                      """
+        getProjectDir(
+          null,
+          manifest().minSdk(1),
+          kotlin(
+              """
             package test.pkg
 
             import java.nio.file.Path
@@ -812,10 +812,10 @@ class ApiDetectorDesugaringTest : AbstractCheckTest() {
                 tempFile.writeLines(listOf("Hello"), options = arrayOf(java.nio.file.StandardOpenOption.APPEND))
             }
             """
-                  )
-                  .indented(),
-              java(
-                      """
+            )
+            .indented(),
+          java(
+              """
             package test.pkg;
 
             import static java.nio.charset.StandardCharsets.UTF_8;
@@ -834,44 +834,44 @@ class ApiDetectorDesugaringTest : AbstractCheckTest() {
                 }
             }
             """
-                  )
-                  .indented(),
-          )
+            )
+            .indented(),
+        )
 
       val desugaringFile = File(project, "desugaring.xml")
       desugaringFile.writeText(
-          """
-          java/net/URLDecoder
-          java/nio/charset/StandardCharsets
-          java/nio/file/Files
-          java/nio/file/SimpleFileVisitor
-          java/nio/file/StandardCopyOption
-          java/nio/file/StandardOpenOption
-          java/time/DateTimeException
-          java/util/List#of(Ljava/lang/Object;)Ljava/util/List;
-          """
-              .trimIndent()
+        """
+        java/net/URLDecoder
+        java/nio/charset/StandardCharsets
+        java/nio/file/Files
+        java/nio/file/SimpleFileVisitor
+        java/nio/file/StandardCopyOption
+        java/nio/file/StandardOpenOption
+        java/time/DateTimeException
+        java/util/List#of(Ljava/lang/Object;)Ljava/util/List;
+        """
+          .trimIndent()
       )
       MainTest.checkDriver(
-          "No issues found.",
-          "",
-          LintCliFlags.ERRNO_SUCCESS,
-          arrayOf(
-              "-q",
-              "--check",
-              "NewApi",
-              "--sdk-home",
-              TestUtils.getSdk().toString(),
-              "--text",
-              "stdout",
-              "--disable",
-              "LintError",
-              "--Xdesugared-methods",
-              desugaringFile.path,
-              project.path,
-          ),
-          null,
-          null,
+        "No issues found.",
+        "",
+        LintCliFlags.ERRNO_SUCCESS,
+        arrayOf(
+          "-q",
+          "--check",
+          "NewApi",
+          "--sdk-home",
+          TestUtils.getSdk().toString(),
+          "--text",
+          "stdout",
+          "--disable",
+          "LintError",
+          "--Xdesugared-methods",
+          desugaringFile.path,
+          project.path,
+        ),
+        null,
+        null,
       )
     } finally {
       DesugaredMethodLookup.reset()
@@ -879,8 +879,8 @@ class ApiDetectorDesugaringTest : AbstractCheckTest() {
   }
 
   private val gradleVersion24_language18 =
-      gradle(
-              """
+    gradle(
+        """
         buildscript {
             repositories {
                 mavenCentral()
@@ -895,12 +895,12 @@ class ApiDetectorDesugaringTest : AbstractCheckTest() {
                 targetCompatibility JavaVersion.VERSION_1_8
             }
         }"""
-          )
-          .indented()
+      )
+      .indented()
 
   private val gradleVersion24_language17 =
-      gradle(
-              """
+    gradle(
+        """
         buildscript {
             repositories {
                 mavenCentral()
@@ -915,12 +915,12 @@ class ApiDetectorDesugaringTest : AbstractCheckTest() {
                 targetCompatibility JavaVersion.VERSION_1_7
             }
         }"""
-          )
-          .indented()
+      )
+      .indented()
 
   private val gradleVersion231 =
-      gradle(
-              """
+    gradle(
+        """
         buildscript {
             repositories {
                 mavenCentral()
@@ -929,12 +929,12 @@ class ApiDetectorDesugaringTest : AbstractCheckTest() {
                 classpath 'com.android.tools.build:gradle:2.3.1'
             }
         }"""
-          )
-          .indented()
+      )
+      .indented()
 
   private val tryWithResources =
-      java(
-              """
+    java(
+        """
         package test.pkg;
 
         import java.io.BufferedReader;
@@ -949,12 +949,12 @@ class ApiDetectorDesugaringTest : AbstractCheckTest() {
             }
         }
         """
-          )
-          .indented()
+      )
+      .indented()
 
   private val multiCatch =
-      java(
-              """
+    java(
+        """
         package test.pkg;
 
         import java.lang.reflect.InvocationTargetException;
@@ -972,8 +972,8 @@ class ApiDetectorDesugaringTest : AbstractCheckTest() {
             }
         }
         """
-          )
-          .indented()
+      )
+      .indented()
 
   override fun getDetector(): Detector = ApiDetector()
 }

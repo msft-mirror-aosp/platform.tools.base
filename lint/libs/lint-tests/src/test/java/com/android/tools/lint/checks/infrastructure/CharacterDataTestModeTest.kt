@@ -29,9 +29,9 @@ class CharacterDataTestModeTest {
   @Test
   fun testBasic() {
     val before =
-        xml(
-                "res/values/strings.xml",
-                """
+      xml(
+          "res/values/strings.xml",
+          """
             <resources>
                 <dimen name="something">42dp</dimen>
                 <string-array>
@@ -45,13 +45,13 @@ class CharacterDataTestModeTest {
                 </string>
             </resources>
             """,
-            )
-            .indented()
+        )
+        .indented()
 
     val after =
-        xml(
-                "res/values/strings.xml",
-                """
+      xml(
+          "res/values/strings.xml",
+          """
             <resources>
                 <dimen name="something">42dp</dimen>
                 <string-array>
@@ -65,8 +65,8 @@ class CharacterDataTestModeTest {
                 ]]></string>
             </resources>
             """,
-            )
-            .indented()
+        )
+        .indented()
 
     val modified = transform(before)
     assertEquals(after.contents, modified)
@@ -76,26 +76,26 @@ class CharacterDataTestModeTest {
   @Test
   fun testEmpty() {
     val before =
-        xml(
-                "res/values/strings.xml",
-                """
+      xml(
+          "res/values/strings.xml",
+          """
               <resources>
                 <string name="test"></string>
               </resources>
             """,
-            )
-            .indented()
+        )
+        .indented()
 
     val after =
-        xml(
-                "res/values/strings.xml",
-                """
+      xml(
+          "res/values/strings.xml",
+          """
             <resources>
               <string name="test"><![CDATA[]]></string>
             </resources>
             """,
-            )
-            .indented()
+        )
+        .indented()
 
     val modified = transform(before)
     assertEquals(after.contents, modified)

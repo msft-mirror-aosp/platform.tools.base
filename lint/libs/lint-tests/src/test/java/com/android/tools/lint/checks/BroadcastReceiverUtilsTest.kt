@@ -63,7 +63,7 @@ class BroadcastReceiverUtilsTest {
     val index = t.indexOf(prefix)
     val end = t.indexOf("}", index + 1)
     if (index == -1 || end == -1)
-        error("Couldn't find existing switch; has the code formatting changed? Compare to the `prefix` and `suffix` variables above!")
+      error("Couldn't find existing switch; has the code formatting changed? Compare to the `prefix` and `suffix` variables above!")
     val replaced = t.substring(0, index) + replacement.toString() + t.substring(end + 1)
     utilsFile.writeText(replaced)
     println("Updated the switch table in $utilsFile")

@@ -66,6 +66,6 @@ class PersistentCollectionUtilsTest {
   @Test
   fun `map merging works`() {
     Truth.assertThat(persistentMapOf(1 to "foo", 2 to "bar") + persistentMapOf(1 to "qux", 3 to "word"))
-        .isEqualTo(persistentMapOf(1 to "qux", 2 to "bar", 3 to "word"))
+      .isEqualTo(persistentMapOf(1 to "qux", 2 to "bar", 3 to "word"))
   }
 }

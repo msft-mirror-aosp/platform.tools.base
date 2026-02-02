@@ -56,27 +56,22 @@ class VectorDrawableCompatDetector : ResourceXmlDetector() {
     /** The main issue discovered by this detector */
     @JvmField
     val ISSUE =
-        create(
-                id = "VectorDrawableCompat",
-                briefDescription = "Using VectorDrawableCompat",
-                explanation =
-                    """
+      create(
+          id = "VectorDrawableCompat",
+          briefDescription = "Using VectorDrawableCompat",
+          explanation =
+            """
                 To use VectorDrawableCompat, you need to make two modifications to your project. \
                 First, set `android.defaultConfig.vectorDrawables.useSupportLibrary = true` in your \
                 `build.gradle` file, and second, use `app:srcCompat` instead of `android:src` to \
                 refer to vector drawables.""",
-                category = Category.CORRECTNESS,
-                priority = 5,
-                severity = Severity.ERROR,
-                implementation =
-                    Implementation(
-                        VectorDrawableCompatDetector::class.java,
-                        Scope.ALL_RESOURCES_SCOPE,
-                        Scope.RESOURCE_FILE_SCOPE,
-                    ),
-            )
-            .addMoreInfo("https://developer.android.com/guide/topics/graphics/vector-drawable-resources")
-            .addMoreInfo("https://medium.com/androiddevelopers/using-vector-assets-in-android-apps-4318fd662eb9")
+          category = Category.CORRECTNESS,
+          priority = 5,
+          severity = Severity.ERROR,
+          implementation = Implementation(VectorDrawableCompatDetector::class.java, Scope.ALL_RESOURCES_SCOPE, Scope.RESOURCE_FILE_SCOPE),
+        )
+        .addMoreInfo("https://developer.android.com/guide/topics/graphics/vector-drawable-resources")
+        .addMoreInfo("https://medium.com/androiddevelopers/using-vector-assets-in-android-apps-4318fd662eb9")
   }
 
   /** Whether to skip the checks altogether. */
@@ -177,7 +172,7 @@ class VectorDrawableCompatDetector : ResourceXmlDetector() {
         path = model.modulePath + File.separator + path
       }
       val message =
-          "To use VectorDrawableCompat, you need to set " + "`android.defaultConfig.vectorDrawables.useSupportLibrary = true` in `$path`"
+        "To use VectorDrawableCompat, you need to set " + "`android.defaultConfig.vectorDrawables.useSupportLibrary = true` in `$path`"
       val incident = Incident(ISSUE, attribute, location, message)
       context.report(incident, minSdkLessThan(21))
     }

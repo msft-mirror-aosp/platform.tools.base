@@ -54,10 +54,10 @@ import org.w3c.dom.Attr
  */
 open class LintFix
 protected constructor(
-    @field:Nls private var displayName: String? = null,
-    @field:Nls private var familyName: String? = null,
-    /** A location range associated with this fix, if different from the associated incident's range. */
-    open var range: Location? = null,
+  @field:Nls private var displayName: String? = null,
+  @field:Nls private var familyName: String? = null,
+  /** A location range associated with this fix, if different from the associated incident's range. */
+  open var range: Location? = null,
 ) {
   /** The display name, a short user-visible description of the fix */
   open fun getDisplayName(): String? = displayName
@@ -343,20 +343,20 @@ protected constructor(
      * attribute name (and at the same time unset the old attribute.)
      */
     fun replaceAttribute(
-        attribute: Attr,
-        newNamespace: String? = attribute.namespaceURI.nullize(),
-        newAttribute: String = attribute.localName ?: attribute.name,
-        newValue: String = attribute.value,
+      attribute: Attr,
+      newNamespace: String? = attribute.namespaceURI.nullize(),
+      newAttribute: String = attribute.localName ?: attribute.name,
+      newValue: String = attribute.value,
     ): GroupBuilder {
       val prefix =
-          if (newNamespace != null) attribute.lookupPrefix(newNamespace) ?: LintFixPerformer.suggestNamespacePrefix(newNamespace) else null
+        if (newNamespace != null) attribute.lookupPrefix(newNamespace) ?: LintFixPerformer.suggestNamespacePrefix(newNamespace) else null
       return replaceAttribute(
-          attribute.namespaceURI.nullize(),
-          attribute.localName ?: attribute.name,
-          newValue,
-          newNamespace,
-          newAttribute,
-          prefix,
+        attribute.namespaceURI.nullize(),
+        attribute.localName ?: attribute.name,
+        newValue,
+        newNamespace,
+        newAttribute,
+        prefix,
       )
     }
 
@@ -367,28 +367,28 @@ protected constructor(
      * want to change the namespace and/or attribute name (and at the same time unset the old attribute.)
      */
     fun replaceAttribute(
-        namespace: String?,
-        attribute: String,
-        newValue: String,
-        newNamespace: String? = namespace,
-        newAttribute: String = attribute,
-        newNamespacePrefix: String? = LintFixPerformer.suggestNamespacePrefix(newNamespace),
+      namespace: String?,
+      attribute: String,
+      newValue: String,
+      newNamespace: String? = namespace,
+      newAttribute: String = attribute,
+      newNamespacePrefix: String? = LintFixPerformer.suggestNamespacePrefix(newNamespace),
     ): GroupBuilder {
       return composite()
-          .name(
-              displayName
-                  ?: if (!newNamespacePrefix.isNullOrBlank()) {
-                    "Update to `$newNamespacePrefix:$newAttribute`"
-                  } else if (newAttribute != attribute) {
-                    "Update to `$newAttribute`"
-                  } else if (namespace != null) {
-                    "Drop namespace prefix"
-                  } else {
-                    "Replace attribute"
-                  }
-          )
-          .add(unset(namespace, attribute).build())
-          .add(set(newNamespace, newAttribute, newValue).build())
+        .name(
+          displayName
+            ?: if (!newNamespacePrefix.isNullOrBlank()) {
+              "Update to `$newNamespacePrefix:$newAttribute`"
+            } else if (newAttribute != attribute) {
+              "Update to `$newAttribute`"
+            } else if (namespace != null) {
+              "Drop namespace prefix"
+            } else {
+              "Replace attribute"
+            }
+        )
+        .add(unset(namespace, attribute).build())
+        .add(set(newNamespace, newAttribute, newValue).build())
     }
 
     /** Provides a map with details for the quickfix implementation */
@@ -401,7 +401,7 @@ protected constructor(
       val builder = map()
       val map = builder.map
       assert(
-          args.size % 2 == 0 // keys and values
+        args.size % 2 == 0 // keys and values
       )
       var i = 0
       while (i < args.size) {
@@ -410,7 +410,7 @@ protected constructor(
         if (value != null) {
           val previous = map.put(key, value)
           assert(
-              previous == null // Clashing keys
+            previous == null // Clashing keys
           )
         }
         i += 2
@@ -465,12 +465,7 @@ protected constructor(
      * `.range(location)`.
      */
     @JvmOverloads
-    fun annotate(
-        source: String,
-        context: Context?,
-        element: PsiElement?,
-        replace: Boolean = true,
-    ): AnnotateBuilder {
+    fun annotate(source: String, context: Context?, element: PsiElement?, replace: Boolean = true): AnnotateBuilder {
       return AnnotateBuilder(displayName, familyName, source, replace, context, element)
     }
   }
@@ -478,40 +473,40 @@ protected constructor(
   /** Builder for creating an annotation fix */
   class AnnotateBuilder
   internal constructor(
-      @field:Nls private val displayName: String?,
-      @field:Nls private var familyName: String?,
-      annotation: String,
-      private val replace: Boolean,
-      private val context: Context? = null,
-      private val element: PsiElement? = null,
-      private var selectPattern: String? = null,
+    @field:Nls private val displayName: String?,
+    @field:Nls private var familyName: String?,
+    annotation: String,
+    private val replace: Boolean,
+    private val context: Context? = null,
+    private val element: PsiElement? = null,
+    private var selectPattern: String? = null,
   ) {
     private val annotation: String = if (annotation.startsWith("@")) annotation else "@$annotation"
     private var range: Location? =
-        if (context == null || element == null) null
-        else {
-          // If a location is not explicitly specified for a quickfix, it will be widened by
-          // `LintDriver#Incident.ensureInitialized` and may contain undesirable elements,
-          // like comments. Here we specify as specific a location as possible so that
-          // annotations are placed before any code, but after comments.
-          // This problem was noticed in b/249043377.
-          var anchorElement =
-              when (element) {
-                is KtNamedFunction -> element.modifierList ?: element.funKeyword ?: element
-                is PsiMethod -> element.modifierList
-                is KtProperty -> element.modifierList ?: element.valOrVarKeyword
-                is PsiField -> element.modifierList ?: element.typeElement ?: element
-                else -> null
-              }
-
-          if (anchorElement is KtLightElement<*, *>) {
-            anchorElement = (anchorElement as KtLightElement<*, *>).kotlinOrigin
+      if (context == null || element == null) null
+      else {
+        // If a location is not explicitly specified for a quickfix, it will be widened by
+        // `LintDriver#Incident.ensureInitialized` and may contain undesirable elements,
+        // like comments. Here we specify as specific a location as possible so that
+        // annotations are placed before any code, but after comments.
+        // This problem was noticed in b/249043377.
+        var anchorElement =
+          when (element) {
+            is KtNamedFunction -> element.modifierList ?: element.funKeyword ?: element
+            is PsiMethod -> element.modifierList
+            is KtProperty -> element.modifierList ?: element.valOrVarKeyword
+            is PsiField -> element.modifierList ?: element.typeElement ?: element
+            else -> null
           }
 
-          context.getLocation(anchorElement ?: element).start?.let { start ->
-            context.getLocation(element).end?.let { end -> extractOffsets(Location.create(context.file, start, end)) }
-          }
+        if (anchorElement is KtLightElement<*, *>) {
+          anchorElement = (anchorElement as KtLightElement<*, *>).kotlinOrigin
         }
+
+        context.getLocation(anchorElement ?: element).start?.let { start ->
+          context.getLocation(element).end?.let { end -> extractOffsets(Location.create(context.file, start, end)) }
+        }
+      }
     private var robot = false
     private var independent = false
 
@@ -562,27 +557,18 @@ protected constructor(
         val index = annotation.indexOf('(')
         val last = if (index != -1) annotation.lastIndexOf('.', index) else annotation.lastIndexOf('.')
         val simpleName: String =
-            if (last != -1) {
-              if (index != -1) {
-                "@" + annotation.substring(last + 1, index)
-              } else {
-                "@" + annotation.substring(last + 1)
-              }
+          if (last != -1) {
+            if (index != -1) {
+              "@" + annotation.substring(last + 1, index)
             } else {
-              annotation
+              "@" + annotation.substring(last + 1)
             }
+          } else {
+            annotation
+          }
         desc = "Annotate with $simpleName"
       }
-      return AnnotateFix(
-          desc,
-          familyName,
-          annotation,
-          replace,
-          range,
-          selectPattern,
-          robot,
-          independent,
-      )
+      return AnnotateFix(desc, familyName, annotation, replace, range, selectPattern, robot, independent)
     }
   }
 
@@ -596,11 +582,7 @@ protected constructor(
   }
 
   /** Builder for constructing a group of fixes */
-  class GroupBuilder
-  internal constructor(
-      @field:Nls private var displayName: String?,
-      @field:Nls private var familyName: String?,
-  ) {
+  class GroupBuilder internal constructor(@field:Nls private var displayName: String?, @field:Nls private var familyName: String?) {
     private var type = GroupType.ALTERNATIVES
     private val list: MutableList<LintFix> = Lists.newArrayListWithExpectedSize(4)
     private var robot = false
@@ -707,8 +689,8 @@ protected constructor(
       }
       if (!found) {
         error(
-            "All the nested fixes already have a custom range set. Make sure this method is called after adding " +
-                "all the nested fixes. (If the fixes all have appropriate ranges setting it on the group is not necessary.)"
+          "All the nested fixes already have a custom range set. Make sure this method is called after adding " +
+            "all the nested fixes. (If the fixes all have appropriate ranges setting it on the group is not necessary.)"
         )
       }
 
@@ -731,11 +713,7 @@ protected constructor(
   }
 
   /** A builder for replacing strings */
-  class ReplaceStringBuilder
-  internal constructor(
-      @field:Nls private var displayName: String?,
-      @field:Nls private var familyName: String?,
-  ) {
+  class ReplaceStringBuilder internal constructor(@field:Nls private var displayName: String?, @field:Nls private var familyName: String?) {
     private var newText: String? = null
     private var oldText: String? = null
     private var selectPattern: String? = null
@@ -991,32 +969,28 @@ protected constructor(
     /** Constructs a [LintFix] for this string replacement */
     fun build(): LintFix {
       return ReplaceString(
-          displayName,
-          familyName,
-          oldText,
-          oldPattern,
-          patternFlags,
-          selectPattern,
-          newText ?: "",
-          shortenNames,
-          reformat,
-          imports ?: emptyList(),
-          range,
-          repeatedly,
-          optional,
-          robot,
-          independent,
-          sortPriority,
+        displayName,
+        familyName,
+        oldText,
+        oldPattern,
+        patternFlags,
+        selectPattern,
+        newText ?: "",
+        shortenNames,
+        reformat,
+        imports ?: emptyList(),
+        range,
+        repeatedly,
+        optional,
+        robot,
+        independent,
+        sortPriority,
       )
     }
   }
 
   /** A builder for creating (or "un-creating", e.g. deleting) a file */
-  class CreateFileBuilder
-  internal constructor(
-      @field:Nls private var displayName: String?,
-      @field:Nls private var familyName: String?,
-  ) {
+  class CreateFileBuilder internal constructor(@field:Nls private var displayName: String?, @field:Nls private var familyName: String?) {
     private var selectPattern: String? = null
     private var delete: Boolean = false
     private var file: File? = null
@@ -1155,27 +1129,16 @@ protected constructor(
 
     /** Constructs a [LintFix] for this file creation or deletion fix */
     fun build(): LintFix {
-      return CreateFileFix(
-          displayName,
-          familyName,
-          selectPattern,
-          delete,
-          file!!,
-          binary,
-          text,
-          reformat,
-          robot,
-          independent,
-      )
+      return CreateFileFix(displayName, familyName, selectPattern, delete, file!!, binary, text, reformat, robot, independent)
     }
   }
 
   /** Builder for creating a show-url fix */
   class UrlBuilder
   internal constructor(
-      @field:Nls private var displayName: String?,
-      @field:Nls private var familyName: String?,
-      @field:NonNls private var url: String?,
+    @field:Nls private var displayName: String?,
+    @field:Nls private var familyName: String?,
+    @field:NonNls private var url: String?,
   ) {
     fun url(@NonNls url: String): UrlBuilder {
       this.url = url
@@ -1188,11 +1151,7 @@ protected constructor(
   }
 
   /** Builder for creating a set or clear attribute fix */
-  class SetAttributeBuilder
-  internal constructor(
-      @field:Nls private var displayName: String?,
-      @field:Nls private var familyName: String?,
-  ) {
+  class SetAttributeBuilder internal constructor(@field:Nls private var displayName: String?, @field:Nls private var familyName: String?) {
     private var attribute: String? = null
     private var namespace: String? = null
     private var value: String? = ""
@@ -1292,12 +1251,7 @@ protected constructor(
      * @return a builder for TＯDＯ edits
      */
     @JvmOverloads
-    fun todo(
-        namespace: String?,
-        attribute: String,
-        prefix: String? = null,
-        suffix: String? = null,
-    ): SetAttributeBuilder {
+    fun todo(namespace: String?, attribute: String, prefix: String? = null, suffix: String? = null): SetAttributeBuilder {
       namespace(namespace)
       attribute(attribute)
       val sb = StringBuilder()
@@ -1348,7 +1302,7 @@ protected constructor(
     /** Moves the caret to the end of the value after applying the new attribute */
     fun caretEnd(): SetAttributeBuilder {
       assert(
-          value != null // must be set first
+        value != null // must be set first
       )
       return caret(value!!.length)
     }
@@ -1421,26 +1375,11 @@ protected constructor(
 
     /** Constructs a [LintFix] for this attribute operation */
     fun build(): LintFix {
-      return SetAttribute(
-          displayName,
-          familyName,
-          namespace,
-          attribute!!,
-          value,
-          range,
-          point,
-          mark,
-          robot,
-          independent,
-      )
+      return SetAttribute(displayName, familyName, namespace, attribute!!, value, range, point, mark, robot, independent)
     }
   }
 
-  class FixMapBuilder
-  internal constructor(
-      @field:Nls private val displayName: String?,
-      @field:Nls private val familyName: String?,
-  ) {
+  class FixMapBuilder internal constructor(@field:Nls private val displayName: String?, @field:Nls private val familyName: String?) {
     /**
      * Values are limited to strings, files, list of strings, list of files, ints and booleans. Throwables can also be in there, but those
      * are only allowed within lint unit tests.
@@ -1618,33 +1557,29 @@ protected constructor(
   }
 
   /** A URL to be offered to be shown as a "fix". */
-  class ShowUrl(
-      displayName: String,
-      familyName: String?,
-      val url: String,
-      val onUrlOpen: (() -> Unit)? = null,
-  ) : LintFix(displayName, familyName)
+  class ShowUrl(displayName: String, familyName: String?, val url: String, val onUrlOpen: (() -> Unit)? = null) :
+    LintFix(displayName, familyName)
 
   /** An annotation to add to the element */
   class AnnotateFix
   internal constructor(
-      displayName: String?,
-      familyName: String?,
-      /** The annotation source code */
-      val annotation: String,
-      /**
-       * If true replace the previous occurrence of the same annotation. Should be used unless you're dealing with a repeatable annotation.
-       */
-      val replace: Boolean,
-      /**
-       * A location range for the source region where the fix will operate. Useful when the fix is applying in a wider range than the
-       * highlighted problem range.
-       */
-      range: Location?,
-      /** Pattern to select; if it contains parentheses, group(1) will be selected */
-      val selectPattern: String?,
-      robot: Boolean,
-      independent: Boolean,
+    displayName: String?,
+    familyName: String?,
+    /** The annotation source code */
+    val annotation: String,
+    /**
+     * If true replace the previous occurrence of the same annotation. Should be used unless you're dealing with a repeatable annotation.
+     */
+    val replace: Boolean,
+    /**
+     * A location range for the source region where the fix will operate. Useful when the fix is applying in a wider range than the
+     * highlighted problem range.
+     */
+    range: Location?,
+    /** Pattern to select; if it contains parentheses, group(1) will be selected */
+    val selectPattern: String?,
+    robot: Boolean,
+    independent: Boolean,
   ) : LintFix(displayName, familyName, range) {
     init {
       this.robot = robot
@@ -1658,22 +1593,22 @@ protected constructor(
    * This class/API is **only** intended for IDE use. Lint checks should be accessing the builder class instead - [create].
    */
   class LintFixGroup(
-      displayName: String?,
-      familyName: String?,
-      /** The type of group */
-      val type: GroupType,
-      /** A list of fixes */
-      val fixes: List<LintFix>,
-      robot: Boolean,
-      independent: Boolean,
+    displayName: String?,
+    familyName: String?,
+    /** The type of group */
+    val type: GroupType,
+    /** A list of fixes */
+    val fixes: List<LintFix>,
+    robot: Boolean,
+    independent: Boolean,
   ) : LintFix(displayName, familyName) {
     init {
       this.robot = robot
       this.independent = independent
       if (displayName == null && type == GroupType.COMPOSITE && LintClient.isUnitTest) {
         error(
-            "You should explicitly set a display name for composite group actions; " +
-                "unlike string replacement, set attribute, etc. it cannot produce a good default on its own"
+          "You should explicitly set a display name for composite group actions; " +
+            "unlike string replacement, set attribute, etc. it cannot produce a good default on its own"
         )
       }
     }
@@ -1708,25 +1643,25 @@ protected constructor(
    * This class/API is **only** intended for IDE use. Lint checks should be accessing the builder class instead - [create].
    */
   class SetAttribute(
-      displayName: String?,
-      familyName: String?,
-      /** The namespace */
-      val namespace: String?,
-      /** The local attribute name */
-      val attribute: String,
-      /** The value (or null to delete the attribute) */
-      val value: String?,
-      /**
-       * A location range for the source region where the fix will operate. Useful when the fix is applying in a wider range than the
-       * highlighted problem range.
-       */
-      range: Location?,
-      /** The caret location to show, OR null if not set. If [mark] is set, the end of the selection too. */
-      val point: Int?,
-      /** The selection anchor, OR null if not set */
-      val mark: Int?,
-      robot: Boolean,
-      independent: Boolean,
+    displayName: String?,
+    familyName: String?,
+    /** The namespace */
+    val namespace: String?,
+    /** The local attribute name */
+    val attribute: String,
+    /** The value (or null to delete the attribute) */
+    val value: String?,
+    /**
+     * A location range for the source region where the fix will operate. Useful when the fix is applying in a wider range than the
+     * highlighted problem range.
+     */
+    range: Location?,
+    /** The caret location to show, OR null if not set. If [mark] is set, the end of the selection too. */
+    val point: Int?,
+    /** The selection anchor, OR null if not set */
+    val mark: Int?,
+    robot: Boolean,
+    independent: Boolean,
   ) : LintFix(displayName, familyName, range) {
     init {
       this.robot = robot
@@ -1735,15 +1670,15 @@ protected constructor(
 
     override fun getDisplayName(): String {
       return super.getDisplayName()
-          ?: if (value != null) {
-            if (value.isEmpty() || point != null && point > 0) { // point > 0: value is partial?
-              "Set $attribute"
-            } else {
-              "Set $attribute=\"$value\""
-            }
+        ?: if (value != null) {
+          if (value.isEmpty() || point != null && point > 0) { // point > 0: value is partial?
+            "Set $attribute"
           } else {
-            "Delete $attribute"
+            "Set $attribute=\"$value\""
           }
+        } else {
+          "Delete $attribute"
+        }
     }
   }
 
@@ -1754,55 +1689,55 @@ protected constructor(
    * This class/API is **only** intended for IDE use. Lint checks should be accessing the builder class instead - [create].
    */
   class ReplaceString(
-      displayName: String?,
-      familyName: String?,
-      /**
-       * The string literal to replace, or [INSERT_BEGINNING] or [INSERT_END] to leave the old text alone and insert the "replacement" text
-       * at the beginning or the end
-       */
-      val oldString: String?,
-      /** The regex to replace. Will always have at least one group, which should be the replacement range. */
-      @RegExp val oldPattern: String?,
-      /** [java.util.regex.Pattern] flags to use with [oldPattern], or 0 */
-      val patternFlags: Int,
-      /** Pattern to select; if it contains parentheses, group(1) will be selected */
-      val selectPattern: String?,
-      /** The replacement string. */
-      val replacement: String,
-      /** Whether symbols should be shortened after replacement */
-      val shortenNames: Boolean,
-      /** Whether the modified text range should be reformatted */
-      val reformat: Boolean,
-      /**
-       * Additional imports to add. Normally, the replacement string should use fully qualified names and lint will automatically handle
-       * replacing these with imported symbols when possible (if [shortenNames] is true), but for example for extension methods where you
-       * cannot use fully qualified names in place, reference these here.
-       */
-      val imports: List<String>,
-      /**
-       * A location range to use for searching for the text or pattern. Useful if you want to make a replacement that is larger than the
-       * error range highlighted as the problem range.
-       */
-      range: Location?,
-      /**
-       * Normally the replacement happens just once; the first occurrence. But with the global flag set, it will repeat the search and
-       * perform repeated replacements throughout the entire fix range -- e.g. in the same sense as "/g" in a sed command.
-       */
-      val globally: Boolean,
-      /**
-       * Normally the replacement is required to happen exactly once, or at least once (if [globally] is set). But in some cases the
-       * replacement can be optional. This typically doesn't make sense for a quickfix on its own, but is useful in composite fixes. For
-       * example, when renaming an XML element tag, we also want to rename the closing tag -- but some elements don't have a closing tag.
-       * Instead of having to figure that up front, we'll just mark the closing edit as optional.
-       */
-      val optional: Boolean,
-      robot: Boolean,
-      independent: Boolean,
-      /**
-       * The sorting priority of this fix. This is *only* relevant when there are multiple insertions at the same location; in that case,
-       * the sorting priority will be used to sort the items.
-       */
-      val sortPriority: Int,
+    displayName: String?,
+    familyName: String?,
+    /**
+     * The string literal to replace, or [INSERT_BEGINNING] or [INSERT_END] to leave the old text alone and insert the "replacement" text at
+     * the beginning or the end
+     */
+    val oldString: String?,
+    /** The regex to replace. Will always have at least one group, which should be the replacement range. */
+    @RegExp val oldPattern: String?,
+    /** [java.util.regex.Pattern] flags to use with [oldPattern], or 0 */
+    val patternFlags: Int,
+    /** Pattern to select; if it contains parentheses, group(1) will be selected */
+    val selectPattern: String?,
+    /** The replacement string. */
+    val replacement: String,
+    /** Whether symbols should be shortened after replacement */
+    val shortenNames: Boolean,
+    /** Whether the modified text range should be reformatted */
+    val reformat: Boolean,
+    /**
+     * Additional imports to add. Normally, the replacement string should use fully qualified names and lint will automatically handle
+     * replacing these with imported symbols when possible (if [shortenNames] is true), but for example for extension methods where you
+     * cannot use fully qualified names in place, reference these here.
+     */
+    val imports: List<String>,
+    /**
+     * A location range to use for searching for the text or pattern. Useful if you want to make a replacement that is larger than the error
+     * range highlighted as the problem range.
+     */
+    range: Location?,
+    /**
+     * Normally the replacement happens just once; the first occurrence. But with the global flag set, it will repeat the search and perform
+     * repeated replacements throughout the entire fix range -- e.g. in the same sense as "/g" in a sed command.
+     */
+    val globally: Boolean,
+    /**
+     * Normally the replacement is required to happen exactly once, or at least once (if [globally] is set). But in some cases the
+     * replacement can be optional. This typically doesn't make sense for a quickfix on its own, but is useful in composite fixes. For
+     * example, when renaming an XML element tag, we also want to rename the closing tag -- but some elements don't have a closing tag.
+     * Instead of having to figure that up front, we'll just mark the closing edit as optional.
+     */
+    val optional: Boolean,
+    robot: Boolean,
+    independent: Boolean,
+    /**
+     * The sorting priority of this fix. This is *only* relevant when there are multiple insertions at the same location; in that case, the
+     * sorting priority will be used to sort the items.
+     */
+    val sortPriority: Int,
   ) : LintFix(displayName, familyName, range) {
     init {
       this.robot = robot
@@ -1877,7 +1812,7 @@ protected constructor(
                 sb.append(matcher.group(group))
               } else {
                 error(
-                    "Invalid backreference $group in `$replacement`: there are only ${matcher.groupCount()} matches in this matcher, $matcher"
+                  "Invalid backreference $group in `$replacement`: there are only ${matcher.groupCount()} matches in this matcher, $matcher"
                 )
               }
               begin = next + 1
@@ -1898,17 +1833,17 @@ protected constructor(
    * builder class instead - [create].
    */
   class CreateFileFix(
-      displayName: String?,
-      familyName: String?,
-      /** Pattern to select; if it contains parentheses, group(1) will be selected */
-      val selectPattern: String?,
-      val delete: Boolean,
-      val file: File,
-      val binary: ByteArray?,
-      val text: String?,
-      val reformat: Boolean,
-      robot: Boolean,
-      independent: Boolean,
+    displayName: String?,
+    familyName: String?,
+    /** Pattern to select; if it contains parentheses, group(1) will be selected */
+    val selectPattern: String?,
+    val delete: Boolean,
+    val file: File,
+    val binary: ByteArray?,
+    val text: String?,
+    val reformat: Boolean,
+    robot: Boolean,
+    independent: Boolean,
   ) : LintFix(displayName, familyName, Location.create(file)) {
     init {
       this.robot = robot
@@ -1917,11 +1852,11 @@ protected constructor(
 
     override fun getDisplayName(): String {
       return super.getDisplayName()
-          ?: return if (delete) {
-            "Delete ${file.name}"
-          } else {
-            "Create ${file.name}"
-          }
+        ?: return if (delete) {
+          "Delete ${file.name}"
+        } else {
+          "Create ${file.name}"
+        }
     }
   }
 
@@ -1970,11 +1905,7 @@ protected constructor(
     /** Convenience wrapper which checks whether the given fix is a map, and if so returns the value stored by its key */
     @JvmStatic
     @Contract("_, _, !null -> !null")
-    fun getApiConstraint(
-        fix: LintFix?,
-        key: String,
-        defaultValue: ApiConstraint? = ApiConstraint.UNKNOWN,
-    ): ApiConstraint? {
+    fun getApiConstraint(fix: LintFix?, key: String, defaultValue: ApiConstraint? = ApiConstraint.UNKNOWN): ApiConstraint? {
       return if (fix is DataMap) {
         fix.getApiConstraint(key) ?: defaultValue
       } else defaultValue
@@ -2004,11 +1935,7 @@ protected constructor(
       val start = range.start
       val end = range.end
       return if (start != null && end != null) {
-        Location.create(
-            range.file,
-            DefaultPosition(-1, -1, start.offset),
-            DefaultPosition(-1, -1, end.offset),
-        )
+        Location.create(range.file, DefaultPosition(-1, -1, start.offset), DefaultPosition(-1, -1, end.offset))
       } else {
         val pos = DefaultPosition(-1, -1, 0)
         Location.create(range.file, pos, pos)

@@ -39,19 +39,19 @@ class AdbDeviceServicesCommandDetector : Detector(), SourceCodeScanner {
 
     @JvmField
     val ISSUE =
-        Issue.create(
-            id = "AdbDeviceServicesCommand",
-            briefDescription = "Use `shellCommand` instead of `exec`, `shell`, and `shellV2`",
-            explanation =
-                """
+      Issue.create(
+        id = "AdbDeviceServicesCommand",
+        briefDescription = "Use `shellCommand` instead of `exec`, `shell`, and `shellV2`",
+        explanation =
+          """
                 It is strongly recommended to use `AdbDeviceServices.shellCommand` \
                 instead of `exec`, `shell`, and `shellV2` commands.
             """,
-            category = Category.CORRECTNESS,
-            severity = Severity.ERROR,
-            platforms = STUDIO_PLATFORMS,
-            implementation = IMPLEMENTATION,
-        )
+        category = Category.CORRECTNESS,
+        severity = Severity.ERROR,
+        platforms = STUDIO_PLATFORMS,
+        implementation = IMPLEMENTATION,
+      )
   }
 
   override fun getApplicableMethodNames() = discouragedMethods
@@ -67,10 +67,10 @@ class AdbDeviceServicesCommandDetector : Detector(), SourceCodeScanner {
     }
 
     context.report(
-        ISSUE,
-        method,
-        context.getLocation(node),
-        "Use of `$adbDeviceServicesClassName#${method.name}` is discouraged. Consider using `AdbDeviceServices.shellCommand()` instead",
+      ISSUE,
+      method,
+      context.getLocation(node),
+      "Use of `$adbDeviceServicesClassName#${method.name}` is discouraged. Consider using `AdbDeviceServices.shellCommand()` instead",
     )
   }
 }

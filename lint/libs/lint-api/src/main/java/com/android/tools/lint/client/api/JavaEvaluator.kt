@@ -101,17 +101,9 @@ class JavaEvaluator {
 
   abstract fun extendsClass(cls: PsiClass?, className: String, strict: Boolean = false): Boolean
 
-  abstract fun implementsInterface(
-      cls: PsiClass,
-      interfaceName: String,
-      strict: Boolean = false,
-  ): Boolean
+  abstract fun implementsInterface(cls: PsiClass, interfaceName: String, strict: Boolean = false): Boolean
 
-  open fun isMemberInSubClassOf(
-      member: PsiMember,
-      className: String,
-      strict: Boolean = false,
-  ): Boolean {
+  open fun isMemberInSubClassOf(member: PsiMember, className: String, strict: Boolean = false): Boolean {
     val containingClass = member.containingClass
     return containingClass != null && extendsClass(containingClass, className, strict)
   }
@@ -156,18 +148,13 @@ class JavaEvaluator {
    * @param argumentTypes the names of the types of the parameters
    * @return true if this method is defined in the given class and with the given parameters
    */
-  open fun methodMatches(
-      method: PsiMethod,
-      className: String?,
-      allowInherit: Boolean,
-      vararg argumentTypes: String,
-  ): Boolean {
+  open fun methodMatches(method: PsiMethod, className: String?, allowInherit: Boolean, vararg argumentTypes: String): Boolean {
     val classMatches =
-        when {
-          className == null -> true
-          allowInherit -> isMemberInSubClassOf(method, className, false)
-          else -> method.containingClass?.qualifiedName == className
-        }
+      when {
+        className == null -> true
+        allowInherit -> isMemberInSubClassOf(method, className, false)
+        else -> method.containingClass?.qualifiedName == className
+      }
     return classMatches && parametersMatch(method, *argumentTypes)
   }
 
@@ -422,9 +409,9 @@ class JavaEvaluator {
 
   @Suppress("DeprecatedCallableAddReplaceWith")
   @Deprecated(
-      "Most lint APIs (such as ApiLookup) no longer require internal JVM names and\n" +
-          "      accept qualified names that can be obtained by calling the\n" +
-          "      {@link #getQualifiedName(PsiClass)} method."
+    "Most lint APIs (such as ApiLookup) no longer require internal JVM names and\n" +
+      "      accept qualified names that can be obtained by calling the\n" +
+      "      {@link #getQualifiedName(PsiClass)} method."
   )
   open fun getInternalName(psiClass: PsiClass): String? {
     var qualifiedName = psiClass.qualifiedName
@@ -442,9 +429,9 @@ class JavaEvaluator {
 
   @Suppress("DeprecatedCallableAddReplaceWith")
   @Deprecated(
-      "Most lint APIs (such as ApiLookup) no longer require internal JVM names and\n" +
-          "      accept qualified names that can be obtained by calling the\n" +
-          "      {@link #getQualifiedName(PsiClassType)} method."
+    "Most lint APIs (such as ApiLookup) no longer require internal JVM names and\n" +
+      "      accept qualified names that can be obtained by calling the\n" +
+      "      {@link #getQualifiedName(PsiClassType)} method."
   )
   open fun getInternalName(psiClassType: PsiClassType): String? {
     return ClassContext.getInternalName(psiClassType.canonicalText)
@@ -460,11 +447,7 @@ class JavaEvaluator {
    * @param includeReturn whether the return type should be included
    * @return a simplified version of the internal JVM description for the method
    */
-  open fun getMethodDescription(
-      method: PsiMethod,
-      includeName: Boolean,
-      includeReturn: Boolean,
-  ): String? {
+  open fun getMethodDescription(method: PsiMethod, includeName: Boolean, includeReturn: Boolean): String? {
     val signature = StringBuilder()
 
     if (includeName) {
@@ -520,9 +503,9 @@ class JavaEvaluator {
   }
 
   @Deprecated(
-      "Most lint APIs (such as ApiLookup) no longer require internal JVM method\n" +
-          "      descriptions and accept JVM equivalent descriptions that can be obtained by calling the\n" +
-          "      {@link #getFieldDescription} method."
+    "Most lint APIs (such as ApiLookup) no longer require internal JVM method\n" +
+      "      descriptions and accept JVM equivalent descriptions that can be obtained by calling the\n" +
+      "      {@link #getFieldDescription} method."
   )
   fun getInternalDescription(field: PsiField): String? {
     val signature = StringBuilder()
@@ -539,11 +522,11 @@ class JavaEvaluator {
    * from the [method] name, the list of [argumentTypes] and optionally include the [returnType].
    */
   open fun constructMethodDescription(
-      method: String,
-      includeName: Boolean = false,
-      argumentTypes: Array<PsiType>,
-      returnType: PsiType? = null,
-      includeReturn: Boolean = false,
+    method: String,
+    includeName: Boolean = false,
+    argumentTypes: Array<PsiType>,
+    returnType: PsiType? = null,
+    includeReturn: Boolean = false,
   ): String? = buildString {
     if (includeName) {
       append(method)
@@ -564,15 +547,11 @@ class JavaEvaluator {
 
   @Suppress("DeprecatedCallableAddReplaceWith")
   @Deprecated(
-      "Most lint APIs (such as ApiLookup) no longer require internal JVM method\n" +
-          "      descriptions and accept JVM equivalent descriptions that can be obtained by calling the\n" +
-          "      {@link #getMethodDescription} method."
+    "Most lint APIs (such as ApiLookup) no longer require internal JVM method\n" +
+      "      descriptions and accept JVM equivalent descriptions that can be obtained by calling the\n" +
+      "      {@link #getMethodDescription} method."
   )
-  fun getInternalDescription(
-      method: PsiMethod,
-      includeName: Boolean = false,
-      includeReturn: Boolean = true,
-  ): String? {
+  fun getInternalDescription(method: PsiMethod, includeName: Boolean = false, includeReturn: Boolean = true): String? {
     val signature = StringBuilder()
 
     if (includeName) {
@@ -723,35 +702,35 @@ class JavaEvaluator {
 
   open fun erasure(type: PsiType?): PsiType? {
     return type?.accept(
-        object : PsiTypeVisitor<PsiType>() {
-          override fun visitType(type: PsiType): PsiType? {
-            return type
-          }
-
-          override fun visitClassType(classType: PsiClassType): PsiType? {
-            return classType.rawType()
-          }
-
-          override fun visitWildcardType(wildcardType: PsiWildcardType): PsiType? {
-            return wildcardType
-          }
-
-          override fun visitPrimitiveType(primitiveType: PsiPrimitiveType): PsiType? {
-            return primitiveType
-          }
-
-          override fun visitEllipsisType(ellipsisType: PsiEllipsisType): PsiType? {
-            val componentType = ellipsisType.componentType
-            val newComponentType = componentType.accept(this)
-            return if (newComponentType === componentType) ellipsisType else newComponentType?.createArrayType()
-          }
-
-          override fun visitArrayType(arrayType: PsiArrayType): PsiType? {
-            val componentType = arrayType.componentType
-            val newComponentType = componentType.accept(this)
-            return if (newComponentType === componentType) arrayType else newComponentType?.createArrayType()
-          }
+      object : PsiTypeVisitor<PsiType>() {
+        override fun visitType(type: PsiType): PsiType? {
+          return type
         }
+
+        override fun visitClassType(classType: PsiClassType): PsiType? {
+          return classType.rawType()
+        }
+
+        override fun visitWildcardType(wildcardType: PsiWildcardType): PsiType? {
+          return wildcardType
+        }
+
+        override fun visitPrimitiveType(primitiveType: PsiPrimitiveType): PsiType? {
+          return primitiveType
+        }
+
+        override fun visitEllipsisType(ellipsisType: PsiEllipsisType): PsiType? {
+          val componentType = ellipsisType.componentType
+          val newComponentType = componentType.accept(this)
+          return if (newComponentType === componentType) ellipsisType else newComponentType?.createArrayType()
+        }
+
+        override fun visitArrayType(arrayType: PsiArrayType): PsiType? {
+          val componentType = arrayType.componentType
+          val newComponentType = componentType.accept(this)
+          return if (newComponentType === componentType) arrayType else newComponentType?.createArrayType()
+        }
+      }
     )
   }
 
@@ -763,48 +742,23 @@ class JavaEvaluator {
 
   abstract fun getAllAnnotations(owner: UAnnotated, inHierarchy: Boolean = false): List<UAnnotation>
 
-  @Deprecated(
-      "Use getAnnotations() instead; consider providing a parent",
-      replaceWith = ReplaceWith("getAnnotations(owner, inHierarchy)"),
-  )
-  abstract fun getAllAnnotations(
-      owner: PsiModifierListOwner,
-      inHierarchy: Boolean,
-  ): Array<PsiAnnotation>
+  @Deprecated("Use getAnnotations() instead; consider providing a parent", replaceWith = ReplaceWith("getAnnotations(owner, inHierarchy)"))
+  abstract fun getAllAnnotations(owner: PsiModifierListOwner, inHierarchy: Boolean): Array<PsiAnnotation>
 
-  abstract fun getAnnotations(
-      owner: PsiModifierListOwner?,
-      inHierarchy: Boolean = false,
-      parent: UElement? = null,
-  ): List<UAnnotation>
+  abstract fun getAnnotations(owner: PsiModifierListOwner?, inHierarchy: Boolean = false, parent: UElement? = null): List<UAnnotation>
 
   @Deprecated(
-      "Use getAnnotationInHierarchy returning a UAnnotation instead",
-      replaceWith = ReplaceWith("getAnnotationInHierarchy(listOwner, *annotationNames)"),
+    "Use getAnnotationInHierarchy returning a UAnnotation instead",
+    replaceWith = ReplaceWith("getAnnotationInHierarchy(listOwner, *annotationNames)"),
   )
-  abstract fun findAnnotationInHierarchy(
-      listOwner: PsiModifierListOwner,
-      vararg annotationNames: String,
-  ): PsiAnnotation?
+  abstract fun findAnnotationInHierarchy(listOwner: PsiModifierListOwner, vararg annotationNames: String): PsiAnnotation?
 
-  abstract fun getAnnotationInHierarchy(
-      listOwner: PsiModifierListOwner,
-      vararg annotationNames: String,
-  ): UAnnotation?
+  abstract fun getAnnotationInHierarchy(listOwner: PsiModifierListOwner, vararg annotationNames: String): UAnnotation?
 
-  @Deprecated(
-      "Use getAnnotation returning a UAnnotation instead",
-      replaceWith = ReplaceWith("getAnnotation(listOwner, *annotationNames)"),
-  )
-  abstract fun findAnnotation(
-      listOwner: PsiModifierListOwner?,
-      vararg annotationNames: String,
-  ): PsiAnnotation?
+  @Deprecated("Use getAnnotation returning a UAnnotation instead", replaceWith = ReplaceWith("getAnnotation(listOwner, *annotationNames)"))
+  abstract fun findAnnotation(listOwner: PsiModifierListOwner?, vararg annotationNames: String): PsiAnnotation?
 
-  abstract fun getAnnotation(
-      listOwner: PsiModifierListOwner?,
-      vararg annotationNames: String,
-  ): UAnnotation?
+  abstract fun getAnnotation(listOwner: PsiModifierListOwner?, vararg annotationNames: String): UAnnotation?
 
   /** Try to determine the path to the .jar file containing the element, **if** applicable. */
   abstract fun findJarPath(element: PsiElement): String?
@@ -990,10 +944,7 @@ class JavaEvaluator {
     return null
   }
 
-  private fun findOwnerLibrary(
-      dependencies: Collection<LintModelLibrary>,
-      jarFile: String,
-  ): LintModelLibrary? {
+  private fun findOwnerLibrary(dependencies: Collection<LintModelLibrary>, jarFile: String): LintModelLibrary? {
     for (library in dependencies.asSequence().filterIsInstance<LintModelExternalLibrary>()) {
       for (jar in library.jarFiles) {
         if (jarFile == jar.path) {
@@ -1005,11 +956,7 @@ class JavaEvaluator {
     return null
   }
 
-  private fun findOwnerLibrary(
-      dependencies: Collection<LintModelLibrary>,
-      pathPrefix: String,
-      pathSuffix: String,
-  ): LintModelLibrary? {
+  private fun findOwnerLibrary(dependencies: Collection<LintModelLibrary>, pathPrefix: String, pathSuffix: String): LintModelLibrary? {
     for (library in dependencies.asSequence().filterIsInstance<LintModelExternalLibrary>()) {
       for (jar in library.jarFiles) {
         val path = jar.path
@@ -1027,10 +974,7 @@ class JavaEvaluator {
    * it can be quite a bit more complicated due to extension methods, named parameters, default parameters, and varargs and the spread
    * operator.
    */
-  open fun computeArgumentMapping(
-      call: UCallExpression,
-      method: PsiMethod,
-  ): Map<UExpression, PsiParameter> {
+  open fun computeArgumentMapping(call: UCallExpression, method: PsiMethod): Map<UExpression, PsiParameter> {
     return emptyMap()
   }
 
@@ -1045,9 +989,9 @@ class JavaEvaluator {
    * annotated with a duration.
    */
   fun filterRelevantAnnotations(
-      annotations: Array<PsiAnnotation>,
-      context: UElement? = null,
-      relevantAnnotations: Set<String>? = null,
+    annotations: Array<PsiAnnotation>,
+    context: UElement? = null,
+    relevantAnnotations: Set<String>? = null,
   ): List<UAnnotation> {
     val length = annotations.size
     if (length == 0) {
@@ -1090,12 +1034,12 @@ class JavaEvaluator {
       // Here we want to map from @foo.bar.Baz to the corresponding int def.
       // Don't need to compute this if performing @IntDef or @StringDef lookup
       val cls =
-          annotation.nameReferenceElement?.resolve()
-              ?: run {
-                val project = annotation.project
-                JavaPsiFacade.getInstance(project).findClass(signature, GlobalSearchScope.projectScope(project))
-              }
-              ?: continue
+        annotation.nameReferenceElement?.resolve()
+          ?: run {
+            val project = annotation.project
+            JavaPsiFacade.getInstance(project).findClass(signature, GlobalSearchScope.projectScope(project))
+          }
+          ?: continue
       if (cls !is PsiClass || !cls.isAnnotationType) {
         continue
       }
@@ -1121,9 +1065,9 @@ class JavaEvaluator {
   }
 
   fun filterRelevantAnnotations(
-      annotations: List<UAnnotation>,
-      context: UElement? = null,
-      relevantAnnotations: Set<String>? = null,
+    annotations: List<UAnnotation>,
+    context: UElement? = null,
+    relevantAnnotations: Set<String>? = null,
   ): List<UAnnotation> {
     val length = annotations.size
     if (length == 0) {
@@ -1164,16 +1108,16 @@ class JavaEvaluator {
       // Here we want to map from @foo.bar.Baz to the corresponding int def.
       // Don't need to compute this if performing @IntDef or @StringDef lookup
       val cls =
-          annotation.resolve()
-              ?: run {
-                val project = annotation.sourcePsi?.project
-                if (project != null) {
-                  JavaPsiFacade.getInstance(project).findClass(signature, GlobalSearchScope.projectScope(project))
-                } else {
-                  null
-                }
-              }
-              ?: continue
+        annotation.resolve()
+          ?: run {
+            val project = annotation.sourcePsi?.project
+            if (project != null) {
+              JavaPsiFacade.getInstance(project).findClass(signature, GlobalSearchScope.projectScope(project))
+            } else {
+              null
+            }
+          }
+          ?: continue
       if (!cls.isAnnotationType) {
         continue
       }
@@ -1248,17 +1192,17 @@ class JavaEvaluator {
 
   companion object {
     fun getPrimitiveSignature(typeName: String): String? =
-        when (typeName) {
-          "boolean" -> "Z"
-          "byte" -> "B"
-          "char" -> "C"
-          "short" -> "S"
-          "int" -> "I"
-          "long" -> "J"
-          "float" -> "F"
-          "double" -> "D"
-          "void" -> "V"
-          else -> null
-        }
+      when (typeName) {
+        "boolean" -> "Z"
+        "byte" -> "B"
+        "char" -> "C"
+        "short" -> "S"
+        "int" -> "I"
+        "long" -> "J"
+        "float" -> "F"
+        "double" -> "D"
+        "void" -> "V"
+        else -> null
+      }
   }
 }

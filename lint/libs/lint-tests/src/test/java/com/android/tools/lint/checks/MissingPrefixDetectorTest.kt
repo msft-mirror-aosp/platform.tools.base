@@ -28,10 +28,10 @@ class MissingPrefixDetectorTest : AbstractCheckTest() {
 
   fun testBasic() {
     lint()
-        .files(
-            xml(
-                    "res/layout/namespace.xml",
-                    """
+      .files(
+        xml(
+            "res/layout/namespace.xml",
+            """
 
                 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:other="http://foo.bar" android:id="@+id/newlinear" android:orientation="vertical" android:layout_width="match_parent" android:layout_height="match_parent" orientation="true">
                     <Button style="@style/setupWizardOuterFrame" android.text="Button" android:id="@+id/button1" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
@@ -39,12 +39,12 @@ class MissingPrefixDetectorTest : AbstractCheckTest() {
                     <LinearLayout other:orientation="horizontal"/>
                 </LinearLayout>
                 """,
-                )
-                .indented()
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented()
+      )
+      .run()
+      .expect(
+        """
             res/layout/namespace.xml:2: Error: Attribute is missing the Android namespace prefix [MissingPrefix]
             <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:other="http://foo.bar" android:id="@+id/newlinear" android:orientation="vertical" android:layout_width="match_parent" android:layout_height="match_parent" orientation="true">
                                                                                                                                                                                                                                                       ~~~~~~~~~~~~~~~~~~
@@ -53,15 +53,15 @@ class MissingPrefixDetectorTest : AbstractCheckTest() {
                                                              ~~~~~~~~~~~~~~~~~~~~~
             2 errors, 0 warnings
             """
-        )
+      )
   }
 
   fun testCustomNamespace() {
     lint()
-        .files(
-            xml(
-                    "res/layout/namespace2.xml",
-                    """
+      .files(
+        xml(
+            "res/layout/namespace2.xml",
+            """
 
                 <LinearLayout
                     xmlns:customprefix="http://schemas.android.com/apk/res/android"
@@ -92,26 +92,26 @@ class MissingPrefixDetectorTest : AbstractCheckTest() {
 
                 </LinearLayout>
                 """,
-                )
-                .indented()
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented()
+      )
+      .run()
+      .expect(
+        """
             res/layout/namespace2.xml:9: Error: Attribute is missing the Android namespace prefix [MissingPrefix]
                 orientation="true">
                 ~~~~~~~~~~~~~~~~~~
             1 errors, 0 warnings
             """
-        )
+      )
   }
 
   fun testCustomAttributesOnFragment() {
     lint()
-        .files(
-            xml(
-                    "res/layout/fragment_custom_attrs.xml",
-                    """
+      .files(
+        xml(
+            "res/layout/fragment_custom_attrs.xml",
+            """
                 <LinearLayout
                         xmlns:android="http://schemas.android.com/apk/res/android"
                         xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -127,18 +127,18 @@ class MissingPrefixDetectorTest : AbstractCheckTest() {
 
                 </LinearLayout>
                 """,
-                )
-                .indented()
-        )
-        .run()
-        .expectClean()
+          )
+          .indented()
+      )
+      .run()
+      .expectClean()
   }
 
   fun testManifest() {
     lint()
-        .files(
-            manifest(
-                    """
+      .files(
+        manifest(
+            """
 
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="foo.bar2"
@@ -163,12 +163,12 @@ class MissingPrefixDetectorTest : AbstractCheckTest() {
 
                 </manifest>
                 """
-                )
-                .indented()
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented()
+      )
+      .run()
+      .expect(
+        """
             AndroidManifest.xml:4: Error: Attribute is missing the Android namespace prefix [MissingPrefix]
                 versionCode="1"
                 ~~~~~~~~~~~~~~~
@@ -180,15 +180,15 @@ class MissingPrefixDetectorTest : AbstractCheckTest() {
                                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             3 errors, 0 warnings
             """
-        )
+      )
   }
 
   fun testLayoutAttributes() {
     lint()
-        .files(
-            xml(
-                    "res/layout/namespace3.xml",
-                    """
+      .files(
+        xml(
+            "res/layout/namespace3.xml",
+            """
                 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
                     xmlns:app="http://schemas.android.com/apk/res/com.example.apicalltest"
                     android:layout_width="match_parent"
@@ -207,19 +207,19 @@ class MissingPrefixDetectorTest : AbstractCheckTest() {
 
                 </FrameLayout>
                 """,
-                )
-                .indented()
-        )
-        .run()
-        .expectClean()
+          )
+          .indented()
+      )
+      .run()
+      .expectClean()
   }
 
   fun testLayoutAttributes2() {
     lint()
-        .files(
-            xml(
-                    "res/layout/namespace4.xml",
-                    """
+      .files(
+        xml(
+            "res/layout/namespace4.xml",
+            """
                 <android.support.v7.widget.GridLayout xmlns:android="http://schemas.android.com/apk/res/android"
                     xmlns:tools="http://schemas.android.com/tools"
                     xmlns:app="http://schemas.android.com/apk/res/com.example.apicalltest"
@@ -238,19 +238,19 @@ class MissingPrefixDetectorTest : AbstractCheckTest() {
 
                 </android.support.v7.widget.GridLayout>
                 """,
-                )
-                .indented()
-        )
-        .run()
-        .expectClean()
+          )
+          .indented()
+      )
+      .run()
+      .expectClean()
   }
 
   fun testUnusedNamespace() {
     lint()
-        .files(
-            xml(
-                    "res/layout/message_edit_detail.xml",
-                    """
+      .files(
+        xml(
+            "res/layout/message_edit_detail.xml",
+            """
                 <LinearLayout
                     xmlns:android="http://schemas.android.com/apk/res/android"
                     android:layout_width="match_parent"
@@ -288,20 +288,20 @@ class MissingPrefixDetectorTest : AbstractCheckTest() {
 
                 </LinearLayout>
                 """,
-                )
-                .indented()
-        )
-        .run()
-        .expectClean()
+          )
+          .indented()
+      )
+      .run()
+      .expectClean()
   }
 
   fun testMissingLayoutAttribute() {
     lint()
-        .files(
-            manifest().minSdk(5).targetSdk(17),
-            xml(
-                    "res/layout/rtl.xml",
-                    """
+      .files(
+        manifest().minSdk(5).targetSdk(17),
+        xml(
+            "res/layout/rtl.xml",
+            """
 
                 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
                     xmlns:tools="http://schemas.android.com/tools"
@@ -315,12 +315,12 @@ class MissingPrefixDetectorTest : AbstractCheckTest() {
 
                 </LinearLayout>
                 """,
-                )
-                .indented(),
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+      )
+      .run()
+      .expect(
+        """
             res/layout/rtl.xml:7: Error: Attribute is missing the Android namespace prefix [MissingPrefix]
                     layout_gravity="left"
                     ~~~~~~~~~~~~~~~~~~~~~
@@ -332,15 +332,15 @@ class MissingPrefixDetectorTest : AbstractCheckTest() {
                     ~~~~~~~~~~~~~~~~
             3 errors, 0 warnings
             """
-        )
+      )
   }
 
   fun testDataBinding() {
     lint()
-        .files(
-            xml(
-                    "res/layout/test.xml",
-                    """
+      .files(
+        xml(
+            "res/layout/test.xml",
+            """
                 <layout xmlns:android="http://schemas.android.com/apk/res/android"
                     xmlns:bind="http://schemas.android.com/apk/res-auto">
                     <data>
@@ -385,20 +385,20 @@ class MissingPrefixDetectorTest : AbstractCheckTest() {
                         </android.support.v7.widget.CardView>    </LinearLayout>
                 </layout>
                 """,
-                )
-                .indented()
-        )
-        .run()
-        .expectClean()
+          )
+          .indented()
+      )
+      .run()
+      .expectClean()
   }
 
   fun testAppCompat() {
     // Regression test for https://code.google.com/p/android/issues/detail?id=201790
     lint()
-        .files(
-            xml(
-                    "res/layout/app_compat.xml",
-                    """
+      .files(
+        xml(
+            "res/layout/app_compat.xml",
+            """
                 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
                     xmlns:app="http://schemas.android.com/apk/res-auto"
                     android:layout_width="match_parent"
@@ -413,20 +413,20 @@ class MissingPrefixDetectorTest : AbstractCheckTest() {
 
                 </LinearLayout>
                 """,
-                )
-                .indented()
-        )
-        .run()
-        .expectClean()
+          )
+          .indented()
+      )
+      .run()
+      .expectClean()
   }
 
   fun testAppCompatOther() {
     // Regression test for https://code.google.com/p/android/issues/detail?id=211348
     lint()
-        .files(
-            xml(
-                    "src/main/res/layout/app_compat.xml",
-                    """
+      .files(
+        xml(
+            "src/main/res/layout/app_compat.xml",
+            """
                 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
                     xmlns:app="http://schemas.android.com/apk/res-auto"
                     android:layout_width="match_parent"
@@ -441,44 +441,44 @@ class MissingPrefixDetectorTest : AbstractCheckTest() {
 
                 </LinearLayout>
                 """,
-                )
-                .indented(),
-            xml(
-                    // Simulates model mocker's location of where the AAR res folder is located
-                    "build/intermediates/exploded-aar/com.android.support/appcompat-v7/+/res/values/res.xml",
-                    """
+          )
+          .indented(),
+        xml(
+            // Simulates model mocker's location of where the AAR res folder is located
+            "build/intermediates/exploded-aar/com.android.support/appcompat-v7/+/res/values/res.xml",
+            """
                 <resources>
                     <attr name="buttonTint" />
                 </resources>
                 """,
-                )
-                .indented(),
-            gradle(
-                    """
+          )
+          .indented(),
+        gradle(
+            """
                 apply plugin: 'com.android.application'
                 dependencies {
                     compile 'com.android.support:appcompat-v7:+'
                 }
                 """
-                )
-                .indented(),
-        )
-        .sdkHome(TestUtils.getSdk().toFile())
-        // The built-in AGP test repository does not model libraries correctly,
-        // though it could
-        .skipTestModes(TestMode.RESOURCE_REPOSITORIES)
-        .incremental("src/main/res/layout/app_compat.xml")
-        .run()
-        .expectClean()
+          )
+          .indented(),
+      )
+      .sdkHome(TestUtils.getSdk().toFile())
+      // The built-in AGP test repository does not model libraries correctly,
+      // though it could
+      .skipTestModes(TestMode.RESOURCE_REPOSITORIES)
+      .incremental("src/main/res/layout/app_compat.xml")
+      .run()
+      .expectClean()
   }
 
   fun testMaterialDesign2() {
     // Regression test for https://b.corp.google.com/78246338
     lint()
-        .files(
-            xml(
-                    "src/main/res/layout/app_compat.xml",
-                    """
+      .files(
+        xml(
+            "src/main/res/layout/app_compat.xml",
+            """
                 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
                     xmlns:app="http://schemas.android.com/apk/res-auto"
                     android:layout_width="match_parent"
@@ -495,12 +495,12 @@ class MissingPrefixDetectorTest : AbstractCheckTest() {
                         app:strokeWidth="2dp" />
                 </LinearLayout>
                 """,
-                )
-                .indented(),
-            xml(
-                    // Simulates model mocker's location of where the AAR res folder is located
-                    "build/intermediates/exploded-aar/com.android.support/appcompat-v7/+/res/values/res.xml",
-                    """
+          )
+          .indented(),
+        xml(
+            // Simulates model mocker's location of where the AAR res folder is located
+            "build/intermediates/exploded-aar/com.android.support/appcompat-v7/+/res/values/res.xml",
+            """
                 <resources>
                     <attr name="cornerRadius" />
                     <attr name="rippleColor" />
@@ -508,30 +508,30 @@ class MissingPrefixDetectorTest : AbstractCheckTest() {
                     <attr name="strokeWidth" />
                 </resources>
                 """,
-                )
-                .indented(),
-            gradle(
-                    """
+          )
+          .indented(),
+        gradle(
+            """
                 apply plugin: 'com.android.application'
                 dependencies {
                     compile 'com.android.support:appcompat-v7:+'
                 }
                 """
-                )
-                .indented(),
-        )
-        .sdkHome(TestUtils.getSdk().toFile())
-        .skipTestModes(TestMode.RESOURCE_REPOSITORIES)
-        .run()
-        .expectClean()
+          )
+          .indented(),
+      )
+      .sdkHome(TestUtils.getSdk().toFile())
+      .skipTestModes(TestMode.RESOURCE_REPOSITORIES)
+      .run()
+      .expectClean()
   }
 
   fun testAaptBundleFormat() {
     lint()
-        .files(
-            xml(
-                    "res/drawable/my_drawable.xml",
-                    """
+      .files(
+        xml(
+            "res/drawable/my_drawable.xml",
+            """
                 <inset xmlns:android="http://schemas.android.com/apk/res/android"
                     xmlns:aapt="http://schemas.android.com/aapt"
                     android:inset="100dp">
@@ -541,19 +541,19 @@ class MissingPrefixDetectorTest : AbstractCheckTest() {
                     </aapt:attr>
                 </inset>
                 """,
-                )
-                .indented()
-        )
-        .run()
-        .expectClean()
+          )
+          .indented()
+      )
+      .run()
+      .expectClean()
   }
 
   fun testXmlns() {
     lint()
-        .files(
-            xml(
-                    "res/layout/foo.xml",
-                    """
+      .files(
+        xml(
+            "res/layout/foo.xml",
+            """
                 <RelativeLayout
                     xmlns:android="http://schemas.android.com/apk/res/android"
                     android:id="@+id/playbackReplayOptionsLayout"
@@ -569,28 +569,28 @@ class MissingPrefixDetectorTest : AbstractCheckTest() {
                     </RelativeLayout>
                 </RelativeLayout>
                 """,
-                )
-                .indented()
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented()
+      )
+      .run()
+      .expect(
+        """
             res/layout/foo.xml:9: Warning: Unused namespace declaration xmlns:android; already declared on the root element [UnusedNamespace]
                     xmlns:android="http://schemas.android.com/apk/res/android"
                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             0 errors, 1 warnings
             """
-        )
+      )
   }
 
   fun test173154717() {
     // Regression test for
     //   https://buganizer.corp.google.com/issues/173154717
     lint()
-        .files(
-            xml(
-                    "res/layout/foo.xml",
-                    """
+      .files(
+        xml(
+            "res/layout/foo.xml",
+            """
                 <foo.bar.Baz xmlns:android="http://schemas.android.com/apk/res/android"
                     xmlns:app="http://schemas.android.com/apk/res-auto"
                     xmlns:tools="http://schemas.android.com/tools"
@@ -619,20 +619,20 @@ class MissingPrefixDetectorTest : AbstractCheckTest() {
                       tools:text="My Text" />
                 </foo.bar.Baz>
                 """,
-                )
-                .indented()
-        )
-        .run()
-        .expectClean()
+          )
+          .indented()
+      )
+      .run()
+      .expectClean()
   }
 
   fun testFontFamilyWithAppCompat() {
     lint()
-        .files(
-            manifest().minSdk(1),
-            xml(
-                    "res/layout/foo.xml",
-                    """
+      .files(
+        manifest().minSdk(1),
+        xml(
+            "res/layout/foo.xml",
+            """
                 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
                     xmlns:app="http://schemas.android.com/apk/res-auto"
                     android:id="@+id/LinearLayout1"
@@ -645,21 +645,21 @@ class MissingPrefixDetectorTest : AbstractCheckTest() {
                         android:layout_height="wrap_content"/>
                 </LinearLayout>
                 """,
-                )
-                .indented(),
-        )
-        .run()
-        .expectClean()
+          )
+          .indented(),
+      )
+      .run()
+      .expectClean()
   }
 
   fun testAutoSize() {
     // Regression test for 78486045: Handle autoSize attributes
     lint()
-        .files(
-            manifest().minSdk(1),
-            xml(
-                    "src/main/res/layout/foo.xml",
-                    """
+      .files(
+        manifest().minSdk(1),
+        xml(
+            "src/main/res/layout/foo.xml",
+            """
                 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
                     xmlns:app="http://schemas.android.com/apk/res-auto"
                     android:id="@+id/LinearLayout1"
@@ -682,16 +682,16 @@ class MissingPrefixDetectorTest : AbstractCheckTest() {
 
                 </LinearLayout>
                 """,
-                )
-                .indented(),
-            xml(
-                    // Note -- we're pretending these attributes are in appcompat instead of
-                    // material; that's just to simplify test setup and the detector does
-                    // not care about the difference:
-                    //
-                    // Simulates model mocker's location of where the AAR res folder is located
-                    "build/intermediates/exploded-aar/com.google.android.material/material/1.0/res/values/res.xml",
-                    """
+          )
+          .indented(),
+        xml(
+            // Note -- we're pretending these attributes are in appcompat instead of
+            // material; that's just to simplify test setup and the detector does
+            // not care about the difference:
+            //
+            // Simulates model mocker's location of where the AAR res folder is located
+            "build/intermediates/exploded-aar/com.google.android.material/material/1.0/res/values/res.xml",
+            """
                 <resources>
                     <attr name="autoSizeTextType" format="enum">
                         <enum name="none" value="0" />
@@ -703,24 +703,24 @@ class MissingPrefixDetectorTest : AbstractCheckTest() {
                     <attr name="autoSizeMaxTextSize" format="dimension" />
                 </resources>
                 """,
-                )
-                .indented(),
-            gradle(
-                    """
+          )
+          .indented(),
+        gradle(
+            """
                 apply plugin: 'com.android.application'
                 dependencies {
                     //compile 'com.android.support:appcompat-v7:+'
                     compile 'com.google.android.material:material:1.0'
                 }
                 """
-                )
-                .indented(),
-        )
-        // The built-in AGP test repository does not model libraries correctly,
-        // though it could -- TODO
-        .skipTestModes(TestMode.RESOURCE_REPOSITORIES)
-        .run()
-        .expectClean()
+          )
+          .indented(),
+      )
+      // The built-in AGP test repository does not model libraries correctly,
+      // though it could -- TODO
+      .skipTestModes(TestMode.RESOURCE_REPOSITORIES)
+      .run()
+      .expectClean()
   }
 
   override fun getIssues(): List<Issue> {

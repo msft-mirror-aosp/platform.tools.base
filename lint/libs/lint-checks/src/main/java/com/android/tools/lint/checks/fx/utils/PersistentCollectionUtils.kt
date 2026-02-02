@@ -36,18 +36,16 @@ fun <T> Collection<T>.partitionToPersistentSets(sat: (T) -> Boolean): Pair<Persi
 }
 
 fun <X, Y> Collection<X>.flatMapToPersistentSet(f: (X) -> Collection<Y>): PersistentSet<Y> =
-    fold(persistentSetOf()) { acc, x -> f(x).fold(acc, PersistentSet<Y>::add) }
+  fold(persistentSetOf()) { acc, x -> f(x).fold(acc, PersistentSet<Y>::add) }
 
 internal fun <X, Y> PersistentSet<X>.map(f: (X) -> Y): PersistentSet<Y> = fold(persistentSetOf()) { ys, x -> ys + f(x) }
 
-fun <T, K, V> Collection<T>.assoc(
-    init: PersistentMap<K, V> = persistentMapOf<K, V>(),
-    transform: (T) -> Pair<K, V>,
-): PersistentMap<K, V> = fold(init) { m, t -> m + transform(t) }
+fun <T, K, V> Collection<T>.assoc(init: PersistentMap<K, V> = persistentMapOf<K, V>(), transform: (T) -> Pair<K, V>): PersistentMap<K, V> =
+  fold(init) { m, t -> m + transform(t) }
 
 fun <K, V, W> PersistentMap<K, V>.mapValues(f: (K, V) -> W): PersistentMap<K, W> =
-    asSequence().fold(persistentMapOf()) { m, (k, v) -> m.put(k, f(k, v)) }
+  asSequence().fold(persistentMapOf()) { m, (k, v) -> m.put(k, f(k, v)) }
 
 /** Merge the maps, with [that] overwriting [this] on conflict */
 operator fun <K, V> PersistentMap<K, V>.plus(that: PersistentMap<K, V>): PersistentMap<K, V> =
-    that.asSequence().fold(this) { m, (k, v) -> m.put(k, v) }
+  that.asSequence().fold(this) { m, (k, v) -> m.put(k, v) }

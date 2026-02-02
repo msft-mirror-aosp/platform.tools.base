@@ -45,25 +45,22 @@ interface LintModelAndroidArtifact : LintModelArtifact {
 }
 
 open class DefaultLintModelArtifact(
-    override val dependencies: LintModelDependencies,
-    override val classOutputs: List<File>,
-    override val type: LintModelArtifactType,
+  override val dependencies: LintModelDependencies,
+  override val classOutputs: List<File>,
+  override val type: LintModelArtifactType,
 ) : LintModelArtifact
 
-class DefaultLintModelJavaArtifact(
-    dependencies: LintModelDependencies,
-    classFolders: List<File>,
-    type: LintModelArtifactType,
-) : DefaultLintModelArtifact(dependencies, classFolders, type), LintModelJavaArtifact
+class DefaultLintModelJavaArtifact(dependencies: LintModelDependencies, classFolders: List<File>, type: LintModelArtifactType) :
+  DefaultLintModelArtifact(dependencies, classFolders, type), LintModelJavaArtifact
 
 class DefaultLintModelAndroidArtifact(
-    override val applicationId: String?,
-    override val generatedResourceFolders: Collection<File>,
-    override val generatedSourceFolders: Collection<File>,
-    override val desugaredMethodsFiles: Collection<File>,
-    dependencies: LintModelDependencies,
-    classOutputs: List<File>,
-    type: LintModelArtifactType,
+  override val applicationId: String?,
+  override val generatedResourceFolders: Collection<File>,
+  override val generatedSourceFolders: Collection<File>,
+  override val desugaredMethodsFiles: Collection<File>,
+  dependencies: LintModelDependencies,
+  classOutputs: List<File>,
+  type: LintModelArtifactType,
 ) : DefaultLintModelArtifact(dependencies, classOutputs, type), LintModelAndroidArtifact
 
 enum class LintModelArtifactType {

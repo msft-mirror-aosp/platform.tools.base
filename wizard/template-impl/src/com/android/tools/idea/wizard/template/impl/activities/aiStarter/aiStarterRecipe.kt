@@ -43,11 +43,7 @@ fun RecipeExecutor.aiStarterRecipe(moduleData: ModuleTemplateData, activityClass
   addComposeDependencies(moduleData)
 
   // KSP is needed for Room
-  addPlugin(
-    "com.google.devtools.ksp",
-    "com.google.devtools.ksp:symbol-processing-gradle-plugin",
-    "2.3.5",
-  )
+  addPlugin("com.google.devtools.ksp", "com.google.devtools.ksp:symbol-processing-gradle-plugin", "2.3.5")
 
   val navigationVersion = "2.8.9"
   addDependency("androidx.navigation:navigation-compose:$navigationVersion")

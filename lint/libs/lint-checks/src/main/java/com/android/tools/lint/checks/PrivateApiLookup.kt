@@ -131,23 +131,23 @@ class PrivateApiLookup private constructor(client: LintClient, binaryFile: File,
     private const val PRIVATE_API_BINARY_FORMAT_VERSION = 0
 
     private fun getCacheFileName(fileName: String, buildNumber: String?): String =
-        buildString(100) {
-          if (fileName.endsWith(".txt")) {
-            append(fileName.substring(0, fileName.length - 4))
-          } else {
-            append(fileName)
-          }
-
-          // Incorporate version number in the filename to avoid upgrade filename
-          // conflicts on Windows (such as issue #26663)
-          append('-').append(getBinaryFormatVersion(PRIVATE_API_BINARY_FORMAT_VERSION))
-
-          if (buildNumber != null) {
-            append('-').append(buildNumber.replace(' ', '_'))
-          }
-
-          append(".bin")
+      buildString(100) {
+        if (fileName.endsWith(".txt")) {
+          append(fileName.substring(0, fileName.length - 4))
+        } else {
+          append(fileName)
         }
+
+        // Incorporate version number in the filename to avoid upgrade filename
+        // conflicts on Windows (such as issue #26663)
+        append('-').append(getBinaryFormatVersion(PRIVATE_API_BINARY_FORMAT_VERSION))
+
+        if (buildNumber != null) {
+          append('-').append(buildNumber.replace(' ', '_'))
+        }
+
+        append(".bin")
+      }
 
     private fun cacheCreator(input: URL) = CacheCreator { client, binaryData ->
       val begin = if (WRITE_STATS) System.currentTimeMillis() else 0

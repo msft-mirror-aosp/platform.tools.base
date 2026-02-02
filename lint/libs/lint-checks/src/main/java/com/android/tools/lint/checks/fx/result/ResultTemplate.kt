@@ -25,10 +25,10 @@ import kotlinx.collections.immutable.PersistentMap
  * type parameters).
  */
 data class ResultTemplate<out FX>(
-    val typeBounds: TypeBounds<Nothing>,
-    val domains: List<Type<Nothing>>,
-    val range: Type<FX>,
-    val effect: Effect<FX>,
+  val typeBounds: TypeBounds<Nothing>,
+  val domains: List<Type<Nothing>>,
+  val range: Type<FX>,
+  val effect: Effect<FX>,
 ) {
   override fun toString(): String {
     val body = "(${domains.joinToString()}) -> $range @ $effect"
@@ -50,8 +50,8 @@ interface ResultTable<FX> {
 
   companion object {
     fun <FX> of(assumptions: AssumptionTable<FX>): ResultTable<FX> =
-        object : ResultTable<FX> {
-          override fun get(ref: Type.MethodRef) = assumptions[ref]
-        }
+      object : ResultTable<FX> {
+        override fun get(ref: Type.MethodRef) = assumptions[ref]
+      }
   }
 }

@@ -42,11 +42,11 @@ import org.jetbrains.kotlin.psi.allConstructors
 
 // We may not need this if https://youtrack.jetbrains.com/issue/KT-69114 is supported
 internal class LintFakeLightClassForKlib(
-    private val ktOrigin: KtClassOrObject,
-    psiManager: PsiManager,
-    name: String,
-    private val _containingFile: KtFile,
-    private val _containingClass: PsiClass? = null,
+  private val ktOrigin: KtClassOrObject,
+  psiManager: PsiManager,
+  name: String,
+  private val _containingFile: KtFile,
+  private val _containingClass: PsiClass? = null,
 ) : LightPsiClassBase(psiManager, ktOrigin.language, name) {
 
   override fun getQualifiedName(): String? {
@@ -100,17 +100,17 @@ internal class LintFakeLightClassForKlib(
 
   private val _innerClasses: Array<out PsiClass> by lazyPub {
     ktOrigin.declarations
-        .filterIsInstance<KtClassOrObject>()
-        .map { innerClassOrObject ->
-          LintFakeLightClassForKlib(
-              innerClassOrObject,
-              manager,
-              innerClassOrObject.name.orAnonymous(innerClassOrObject),
-              _containingFile,
-              this@LintFakeLightClassForKlib,
-          )
-        }
-        .toTypedArray()
+      .filterIsInstance<KtClassOrObject>()
+      .map { innerClassOrObject ->
+        LintFakeLightClassForKlib(
+          innerClassOrObject,
+          manager,
+          innerClassOrObject.name.orAnonymous(innerClassOrObject),
+          _containingFile,
+          this@LintFakeLightClassForKlib,
+        )
+      }
+      .toTypedArray()
   }
 
   override fun getInnerClasses(): Array<out PsiClass?> = _innerClasses

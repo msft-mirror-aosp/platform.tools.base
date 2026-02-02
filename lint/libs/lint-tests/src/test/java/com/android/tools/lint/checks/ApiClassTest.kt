@@ -28,11 +28,11 @@ class ApiClassTest {
   @Test
   fun checkComparator() {
     val client =
-        object : TestLintClient() {
-          override fun getSdkHome(): File? {
-            return TestUtils.getSdk().toFile()
-          }
+      object : TestLintClient() {
+        override fun getSdkHome(): File? {
+          return TestUtils.getSdk().toFile()
         }
+      }
     val target = client.getLatestSdkTarget(ApiLookup.SDK_DATABASE_MIN_VERSION, true) ?: return
     val folder = File(target.location)
     val database = File(folder, SdkConstants.FD_DATA + File.separator + ApiLookup.XML_FILE_PATH)

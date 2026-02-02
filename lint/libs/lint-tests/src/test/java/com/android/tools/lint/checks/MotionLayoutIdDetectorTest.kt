@@ -21,11 +21,11 @@ class MotionLayoutIdDetectorTest : AbstractCheckTest() {
   /** User has id inside motion layout thus does not trigger lint. */
   fun testHasId() {
     lint()
-        .files(
-            xml("res/xml/motion_scene.xml", "<MotionScene/>"),
-            xml(
-                    "res/layout/motion_test.xml",
-                    """
+      .files(
+        xml("res/xml/motion_scene.xml", "<MotionScene/>"),
+        xml(
+            "res/layout/motion_test.xml",
+            """
                 <android.support.constraint.motion.MotionLayout
                     xmlns:android="http://schemas.android.com/apk/res/android"
                     xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -43,21 +43,21 @@ class MotionLayoutIdDetectorTest : AbstractCheckTest() {
 
                 </android.support.constraint.motion.MotionLayout>
                 """,
-                )
-                .indented(),
-        )
-        .run()
-        .expectClean()
+          )
+          .indented(),
+      )
+      .run()
+      .expectClean()
   }
 
   /** User has a view without id inside motion layout thus triggers lint. */
   fun testDocumentationExample() {
     lint()
-        .files(
-            xml("res/xml/motion_scene.xml", "<MotionScene/>"),
-            xml(
-                    "res/layout/motion_test.xml",
-                    """
+      .files(
+        xml("res/xml/motion_scene.xml", "<MotionScene/>"),
+        xml(
+            "res/layout/motion_test.xml",
+            """
                 <android.support.constraint.motion.MotionLayout
                     xmlns:android="http://schemas.android.com/apk/res/android"
                     xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -74,35 +74,35 @@ class MotionLayoutIdDetectorTest : AbstractCheckTest() {
 
                 </android.support.constraint.motion.MotionLayout>
                 """,
-                )
-                .indented(),
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+      )
+      .run()
+      .expect(
+        """
             res/layout/motion_test.xml:9: Error: Views inside MotionLayout require an android:id attribute [MotionLayoutMissingId]
                 <View
                  ~~~~
             1 errors, 0 warnings
             """
-        )
-        .expectFixDiffs(
-            """
+      )
+      .expectFixDiffs(
+        """
             Fix for res/layout/motion_test.xml line 9: Set id:
             @@ -9,0 +10 @@
             +        android:id="@+id/[TODO]|"
             """
-        )
+      )
   }
 
   /** User has a view without id inside motion layout thus triggers lint. */
   fun testViewInheritorMissingId() {
     lint()
-        .files(
-            xml("res/xml/motion_scene.xml", "<MotionScene/>"),
-            xml(
-                    "res/layout/motion_test.xml",
-                    """
+      .files(
+        xml("res/xml/motion_scene.xml", "<MotionScene/>"),
+        xml(
+            "res/layout/motion_test.xml",
+            """
                 <android.support.constraint.motion.MotionLayout
                     xmlns:a="http://schemas.android.com/apk/res/android"
                     xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -133,35 +133,35 @@ class MotionLayoutIdDetectorTest : AbstractCheckTest() {
 
                 </android.support.constraint.motion.MotionLayout>
                 """,
-                )
-                .indented(),
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+      )
+      .run()
+      .expect(
+        """
             res/layout/motion_test.xml:23: Error: Views inside MotionLayout require an a:id attribute [MotionLayoutMissingId]
                 <TextView
                  ~~~~~~~~
             1 errors, 0 warnings
             """
-        )
-        .expectFixDiffs(
-            """
+      )
+      .expectFixDiffs(
+        """
             Fix for res/layout/motion_test.xml line 23: Set id:
             @@ -23,0 +24 @@
             +        a:id="@+id/[TODO]|"
             """
-        )
+      )
   }
 
   /** Lint does not check element that's not a view. */
   fun testSkipsNonView() {
     lint()
-        .files(
-            xml("res/xml/motion_scene.xml", "<MotionScene/>"),
-            xml(
-                    "res/layout/motion_test.xml",
-                    """
+      .files(
+        xml("res/xml/motion_scene.xml", "<MotionScene/>"),
+        xml(
+            "res/layout/motion_test.xml",
+            """
                 <android.support.constraint.motion.MotionLayout
                     xmlns:android="http://schemas.android.com/apk/res/android"
                     xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -184,10 +184,10 @@ class MotionLayoutIdDetectorTest : AbstractCheckTest() {
 
                 </android.support.constraint.motion.MotionLayout>
                 """,
-                )
-                .indented(),
-        )
-        .run()
-        .expectClean()
+          )
+          .indented(),
+      )
+      .run()
+      .expectClean()
   }
 }

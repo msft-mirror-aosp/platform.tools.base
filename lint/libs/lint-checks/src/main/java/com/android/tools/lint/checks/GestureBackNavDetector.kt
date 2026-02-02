@@ -55,11 +55,7 @@ import org.jetbrains.uast.skipParenthesizedExprUp
 class GestureBackNavDetector : Detector(), SourceCodeScanner {
   override fun getApplicableReferenceNames(): List<String> = listOf("KEYCODE_BACK")
 
-  override fun visitReference(
-      context: JavaContext,
-      reference: UReferenceExpression,
-      referenced: PsiElement,
-  ) {
+  override fun visitReference(context: JavaContext, reference: UReferenceExpression, referenced: PsiElement) {
     if (referenced is PsiField && context.evaluator.isMemberInClass(referenced, "android.view.KeyEvent")) {
       val keycodeBack = skipParenthesizedExprUp(reference.uastParent) ?: return
       val parent = skipParenthesizedExprUp(keycodeBack.uastParent) ?: return
@@ -74,31 +70,20 @@ class GestureBackNavDetector : Detector(), SourceCodeScanner {
       // as a replacement. In other cases, the reference to KeyEvent probably needs to remain for
       // old versions of Android, so we can't report it.
       if (
-          !context.evaluator.isMemberInSubClassOf(
-              containingMethod,
-              SdkConstants.CLASS_ACTIVITY,
-              true,
-          ) &&
-              !context.evaluator.isMemberInSubClassOf(containingMethod, DIALOG_CLASS, true) &&
-              !context.evaluator.isMemberInSubClassOf(
-                  containingMethod,
-                  DIALOG_INTERFACE_ON_KEY_LISTENER,
-                  true,
-              )
+        !context.evaluator.isMemberInSubClassOf(containingMethod, SdkConstants.CLASS_ACTIVITY, true) &&
+          !context.evaluator.isMemberInSubClassOf(containingMethod, DIALOG_CLASS, true) &&
+          !context.evaluator.isMemberInSubClassOf(containingMethod, DIALOG_INTERFACE_ON_KEY_LISTENER, true)
       ) {
         return
       }
 
       if (ifExpression is UIfExpression || ifExpression is USwitchClauseExpression || parent is USwitchClauseExpression) {
         val message =
-            "If intercepting back events, this should be handled through " +
-                "the registration of callbacks; " +
-                "see https://developer.android.com/guide/navigation/custom-back/predictive-back-gesture"
+          "If intercepting back events, this should be handled through " +
+            "the registration of callbacks; " +
+            "see https://developer.android.com/guide/navigation/custom-back/predictive-back-gesture"
         val fix = fix().url("https://developer.android.com/guide/navigation/custom-back/predictive-back-gesture").build()
-        context.report(
-            Incident(ISSUE, reference, context.getLocation(keycodeBack), message, fix),
-            map(),
-        )
+        context.report(Incident(ISSUE, reference, context.getLocation(keycodeBack), message, fix), map())
       }
     }
   }
@@ -108,24 +93,24 @@ class GestureBackNavDetector : Detector(), SourceCodeScanner {
   override fun visitClass(context: JavaContext, declaration: UClass) {
     for (method in declaration.methods) {
       if (
-          method.name != "onBackPressed" ||
-              method.visibility != UastVisibility.PUBLIC ||
-              method.uastParameters.isNotEmpty() ||
-              method.returnType != PsiTypes.voidType()
+        method.name != "onBackPressed" ||
+          method.visibility != UastVisibility.PUBLIC ||
+          method.uastParameters.isNotEmpty() ||
+          method.returnType != PsiTypes.voidType()
       )
-          continue
+        continue
 
       val fix = fix().url("https://developer.android.com/guide/navigation/custom-back/predictive-back-gesture").build()
 
       context.report(
-          Incident(
-              ISSUE,
-              method,
-              context.getNameLocation(method),
-              "`onBackPressed` is no longer called for back gestures; migrate to AndroidX's backward compatible `OnBackPressedDispatcher`",
-              fix,
-          ),
-          LintMap(),
+        Incident(
+          ISSUE,
+          method,
+          context.getNameLocation(method),
+          "`onBackPressed` is no longer called for back gestures; migrate to AndroidX's backward compatible `OnBackPressedDispatcher`",
+          fix,
+        ),
+        LintMap(),
       )
     }
   }
@@ -162,11 +147,11 @@ class GestureBackNavDetector : Detector(), SourceCodeScanner {
 
     @JvmField
     val ISSUE =
-        Issue.create(
-            id = "GestureBackNavigation",
-            briefDescription = "Usage of KeyEvent.KEYCODE_BACK",
-            explanation =
-                """
+      Issue.create(
+        id = "GestureBackNavigation",
+        briefDescription = "Usage of KeyEvent.KEYCODE_BACK",
+        explanation =
+          """
           For apps targeting and running on Android 16+ (API 36+), predictive back animations \
           are enabled by default. A back gesture does not trigger `{Activity,Dialog}.onBackPressed`, \
           and does not dispatch `KeyEvent.KEYCODE_BACK`.
@@ -176,12 +161,12 @@ class GestureBackNavDetector : Detector(), SourceCodeScanner {
           This lint check does not consider per-activity opt-in/opt-out, so you may need to suppress \
           or baseline reported incidents if migrating per-activity.
           """,
-            category = Category.CORRECTNESS,
-            priority = 7,
-            severity = Severity.WARNING,
-            implementation = Implementation(GestureBackNavDetector::class.java, Scope.JAVA_FILE_SCOPE),
-            androidSpecific = true,
-            moreInfo = "https://developer.android.com/guide/navigation/custom-back/predictive-back-gesture",
-        )
+        category = Category.CORRECTNESS,
+        priority = 7,
+        severity = Severity.WARNING,
+        implementation = Implementation(GestureBackNavDetector::class.java, Scope.JAVA_FILE_SCOPE),
+        androidSpecific = true,
+        moreInfo = "https://developer.android.com/guide/navigation/custom-back/predictive-back-gesture",
+      )
   }
 }

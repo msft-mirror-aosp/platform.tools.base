@@ -34,27 +34,18 @@ const val AAR_PACKAGE_NAME = "com.test.testlibrary"
 const val TEST_DATA_DIR = "tools/base/resource-repository/test/resources/aar"
 
 @JvmOverloads
-fun getTestAarRepositoryFromExplodedAar(
-    libraryDirName: String = "my_aar_lib"
-): AarSourceResourceRepository {
-  return AarSourceResourceRepository.create(
-      resolveWorkspacePath("$TEST_DATA_DIR/$libraryDirName/res"),
-      AAR_LIBRARY_NAME,
-  )
+fun getTestAarRepositoryFromExplodedAar(libraryDirName: String = "my_aar_lib"): AarSourceResourceRepository {
+  return AarSourceResourceRepository.create(resolveWorkspacePath("$TEST_DATA_DIR/$libraryDirName/res"), AAR_LIBRARY_NAME)
 }
 
 @JvmOverloads
-fun getTestAarRepository(
-    tempDir: Path,
-    libraryDirName: String = "my_aar_lib",
-): AarSourceResourceRepository {
+fun getTestAarRepository(tempDir: Path, libraryDirName: String = "my_aar_lib"): AarSourceResourceRepository {
   val aar = createAar(tempDir, libraryDirName)
   return AarSourceResourceRepository.create(aar, AAR_LIBRARY_NAME)
 }
 
 /**
- * Creates an .aar file for the [libraryDirName] library. The name of the .aar file is determined by
- * [libraryDirName].
+ * Creates an .aar file for the [libraryDirName] library. The name of the .aar file is determined by [libraryDirName].
  *
  * @return the path to the resulting .aar file in the temporary directory
  */
@@ -68,14 +59,14 @@ private fun createAar(sourceDirectory: Path, tempDir: Path): Path {
   val aarFile = tempDir.resolve(sourceDirectory.fileName.toString() + DOT_AAR)
   ZipOutputStream(Files.newOutputStream(aarFile)).use { zip ->
     Files.walkFileTree(
-        sourceDirectory,
-        object : SimpleFileVisitor<Path>() {
-          override fun visitFile(file: Path, attrs: BasicFileAttributes): FileVisitResult {
-            val relativePath = sourceDirectory.relativize(file).toString().replace('\\', '/')
-            createZipEntry(relativePath, Files.readAllBytes(file), zip)
-            return FileVisitResult.CONTINUE
-          }
-        },
+      sourceDirectory,
+      object : SimpleFileVisitor<Path>() {
+        override fun visitFile(file: Path, attrs: BasicFileAttributes): FileVisitResult {
+          val relativePath = sourceDirectory.relativize(file).toString().replace('\\', '/')
+          createZipEntry(relativePath, Files.readAllBytes(file), zip)
+          return FileVisitResult.CONTINUE
+        }
+      },
     )
   }
   return aarFile
@@ -88,15 +79,7 @@ private fun createZipEntry(name: String, content: ByteArray, zip: ZipOutputStrea
   zip.closeEntry()
 }
 
-fun getTestAarRepositoryWithResourceFolders(
-    libraryDirName: String,
-    vararg resources: String,
-): AarSourceResourceRepository {
+fun getTestAarRepositoryWithResourceFolders(libraryDirName: String, vararg resources: String): AarSourceResourceRepository {
   val root = resolveWorkspacePath("$TEST_DATA_DIR/$libraryDirName/res").toPathString()
-  return AarSourceResourceRepository.create(
-      root,
-      resources.map { resource -> root.resolve(resource) },
-      AAR_LIBRARY_NAME,
-      null,
-  )
+  return AarSourceResourceRepository.create(root, resources.map { resource -> root.resolve(resource) }, AAR_LIBRARY_NAME, null)
 }

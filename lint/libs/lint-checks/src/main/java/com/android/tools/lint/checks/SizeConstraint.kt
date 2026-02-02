@@ -47,21 +47,14 @@ internal class SizeConstraint private constructor(val exact: Long, val min: Long
   }
 
   @JvmOverloads
-  fun describe(
-      argument: UExpression? = null,
-      unit: String? = null,
-      actualValue: Long? = null,
-      skipPrefix: Boolean = false,
-  ): String {
+  fun describe(argument: UExpression? = null, unit: String? = null, actualValue: Long? = null, skipPrefix: Boolean = false): String {
     val actualUnit =
-        unit
-            ?: if (
-                argument?.getExpressionType() != null && argument.getExpressionType()?.canonicalText == CommonClassNames.JAVA_LANG_STRING
-            ) {
-              "Length"
-            } else {
-              "Size"
-            }
+      unit
+        ?: if (argument?.getExpressionType() != null && argument.getExpressionType()?.canonicalText == CommonClassNames.JAVA_LANG_STRING) {
+          "Length"
+        } else {
+          "Size"
+        }
 
     if (actualValue != null && !isValid(actualValue)) {
       val actual: Long = actualValue
@@ -83,7 +76,7 @@ internal class SizeConstraint private constructor(val exact: Long, val min: Long
         return sb.toString()
       } else if (actual % multiple != 0L) {
         return "Expected $actualUnit to be a multiple of $multiple (was $actual " +
-            "and should be either ${actual / multiple * multiple} or ${(actual / multiple + 1) * multiple})"
+          "and should be either ${actual / multiple * multiple} or ${(actual / multiple + 1) * multiple})"
       }
     }
     val sb = StringBuilder(20)
@@ -124,11 +117,7 @@ internal class SizeConstraint private constructor(val exact: Long, val min: Long
     return sb.toString()
   }
 
-  override fun describeDelta(
-      actual: RangeConstraint,
-      actualLabel: String,
-      allowedLabel: String,
-  ): String {
+  override fun describeDelta(actual: RangeConstraint, actualLabel: String, allowedLabel: String): String {
     if (actual !is SizeConstraint) {
       return describe()
     } else if (actual.exact != -1L) {
@@ -192,12 +181,12 @@ internal class SizeConstraint private constructor(val exact: Long, val min: Long
     other ?: return this
 
     val range =
-        when (other) {
-          is SizeConstraint -> other
-          is IntRangeConstraint -> SizeConstraint(other)
-          is FloatRangeConstraint -> SizeConstraint(IntRangeConstraint(other))
-          else -> error(other.javaClass.name)
-        }
+      when (other) {
+        is SizeConstraint -> other
+        is IntRangeConstraint -> SizeConstraint(other)
+        is FloatRangeConstraint -> SizeConstraint(IntRangeConstraint(other))
+        else -> error(other.javaClass.name)
+      }
 
     val start = max(if (exact != -1L) exact else min, if (range.exact != -1L) range.exact else range.min)
     val end = min(if (exact != -1L) exact else max, if (range.exact != -1L) range.exact else range.max)

@@ -21,11 +21,7 @@ import java.io.File
 
 /** Lint parser for TOML files. */
 open class LintTomlParser {
-  fun parse(
-      file: File,
-      contents: CharSequence,
-      onProblem: ((Severity, Location, String) -> Unit)? = null,
-  ): LintTomlDocument {
+  fun parse(file: File, contents: CharSequence, onProblem: ((Severity, Location, String) -> Unit)? = null): LintTomlDocument {
     return DefaultLintTomlParser(file, contents, onProblem).getDocument()
   }
 }

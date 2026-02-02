@@ -33,9 +33,9 @@ value class ApiLevel(val bits: Int) : Comparable<ApiLevel> {
 
   val major: Int
     get() =
-        if (bits < SDK_INT_MULTIPLIER) {
-          bits
-        } else if (bits == Integer.MAX_VALUE) Integer.MAX_VALUE else bits / SDK_INT_MULTIPLIER
+      if (bits < SDK_INT_MULTIPLIER) {
+        bits
+      } else if (bits == Integer.MAX_VALUE) Integer.MAX_VALUE else bits / SDK_INT_MULTIPLIER
 
   val minor: Int
     get() = if (bits >= SDK_INT_MULTIPLIER) bits % SDK_INT_MULTIPLIER else 0
@@ -43,12 +43,12 @@ value class ApiLevel(val bits: Int) : Comparable<ApiLevel> {
   /** Returns the corresponding version code reference */
   fun toSourceReference(fullyQualified: Boolean = true, kotlin: Boolean = true): String {
     val codeName =
-        // 36.0 != 36, look up separately
-        if (isDotted()) {
-          SdkVersionInfo.getBuildCode(major, minor)
-        } else {
-          SdkVersionInfo.getBuildCode(major)
-        }
+      // 36.0 != 36, look up separately
+      if (isDotted()) {
+        SdkVersionInfo.getBuildCode(major, minor)
+      } else {
+        SdkVersionInfo.getBuildCode(major)
+      }
     return if (codeName == null) {
       if (kotlin) bits.toKotlinLiteral() else bits.toString()
     } else if (!fullyQualified) {
@@ -131,11 +131,7 @@ value class ApiLevel(val bits: Int) : Comparable<ApiLevel> {
       return atLeast(ApiLevel(value), sdkId)
     }
 
-    fun getMinConstraint(
-        value: String,
-        sdkId: Int,
-        recognizeUnknowns: Boolean = true,
-    ): ApiConstraint.SdkApiConstraint? {
+    fun getMinConstraint(value: String, sdkId: Int, recognizeUnknowns: Boolean = true): ApiConstraint.SdkApiConstraint? {
       return get(value, recognizeUnknowns).atLeast(sdkId)
     }
 

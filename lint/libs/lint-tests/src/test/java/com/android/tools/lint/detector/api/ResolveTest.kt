@@ -35,10 +35,10 @@ class ResolveTest : TestCase() {
 
   fun testKotlinReferencesIntoJavaSource() {
     val tests =
-        arrayOf(
-            java(
-                    "pkg/Foo.java",
-                    """
+      arrayOf(
+        java(
+            "pkg/Foo.java",
+            """
                 package pkg;
 
                 public class Foo {
@@ -47,47 +47,47 @@ class ResolveTest : TestCase() {
                     }
                 }
             """,
-                )
-                .indented(),
-            kotlin(
-                    "test.kt",
-                    """
+          )
+          .indented(),
+        kotlin(
+            "test.kt",
+            """
                 package pkg
 
                 fun test() {
                     Foo.test()
                 }
             """,
-                )
-                .indented(),
-        )
+          )
+          .indented(),
+      )
 
     val pair = LintUtilsTest.parseAll(*tests)
 
     val file = pair.first.find { it.file.name == "test.kt" }?.uastFile
     assertEquals(
-        """
-        UFile (package = pkg) [package pkg...]
-            UClass (name = TestKt) [public final class TestKt {...}]
-                UMethod (name = test) [public static final fun test() : void {...}]
-                    UBlockExpression [{...}]
-                        UQualifiedReferenceExpression [Foo.test()] => PsiMethod:test
-                            USimpleNameReferenceExpression (identifier = Foo) [Foo] => PsiClass:Foo
-                            UCallExpression (kind = UastCallKind(name='method_call'), argCount = 0)) [test()] => PsiMethod:test
-                                UIdentifier (Identifier (test)) [UIdentifier (Identifier (test))]
-        """
-            .trimIndent()
-            .trim(),
-        file?.asResolveString()?.trim(),
+      """
+      UFile (package = pkg) [package pkg...]
+          UClass (name = TestKt) [public final class TestKt {...}]
+              UMethod (name = test) [public static final fun test() : void {...}]
+                  UBlockExpression [{...}]
+                      UQualifiedReferenceExpression [Foo.test()] => PsiMethod:test
+                          USimpleNameReferenceExpression (identifier = Foo) [Foo] => PsiClass:Foo
+                          UCallExpression (kind = UastCallKind(name='method_call'), argCount = 0)) [test()] => PsiMethod:test
+                              UIdentifier (Identifier (test)) [UIdentifier (Identifier (test))]
+      """
+        .trimIndent()
+        .trim(),
+      file?.asResolveString()?.trim(),
     )
     Disposer.dispose(pair.second)
   }
 
   fun testKotlinPropertyAccess() {
     val tests =
-        arrayOf(
-            kotlin(
-                    """
+      arrayOf(
+        kotlin(
+            """
                 import kotlin.reflect.full.declaredMemberFunctions
 
                 class KotlinTest {
@@ -97,15 +97,15 @@ class ResolveTest : TestCase() {
                     }
                 }
             """
-                )
-                .indented()
-        )
+          )
+          .indented()
+      )
 
     val lcClassName = if (useFirUast()) "SymbolLightClassForClassOrObject" else "KtUltraLightClass"
     val pair = LintUtilsTest.parse(*tests)
     val file = pair.first.uastFile
     assertEquals(
-        """
+      """
             UFile (package = ) [import kotlin.reflect.full.declaredMemberFunctions...]
                 UImportStatement (isOnDemand = false) [import kotlin.reflect.full.declaredMemberFunctions] => PsiMethod:getDeclaredMemberFunctions
                 UClass (name = KotlinTest) [public final class KotlinTest {...}]
@@ -131,18 +131,18 @@ class ResolveTest : TestCase() {
                                 USimpleNameReferenceExpression (identifier = declaredMemberFunctions) [declaredMemberFunctions] => PsiMethod:getDeclaredMemberFunctions
                     UMethod (name = KotlinTest) [public fun KotlinTest() = UastEmptyExpression]
             """
-            .trimIndent()
-            .trim(),
-        file?.asResolveString()?.trim(),
+        .trimIndent()
+        .trim(),
+      file?.asResolveString()?.trim(),
     )
     Disposer.dispose(pair.second)
   }
 
   fun testKotlinReferencesIntoBytecode() {
     val tests =
-        arrayOf(
-            kotlin(
-                    """
+      arrayOf(
+        kotlin(
+            """
                 package pkg
                 import lib.Bar
                 import lib.Bar2
@@ -152,49 +152,49 @@ class ResolveTest : TestCase() {
                     val bar2 = Bar2("hello2")
                 }
             """
-                )
-                .indented(),
-            libBar,
-        )
+          )
+          .indented(),
+        libBar,
+      )
 
     val pair = LintUtilsTest.parse(*tests)
 
     val file = pair.first.uastFile
     assertEquals(
-        """
-        UFile (package = pkg) [package pkg...]
-            UImportStatement (isOnDemand = false) [import lib.Bar] => PsiClass:Bar
-            UImportStatement (isOnDemand = false) [import lib.Bar2] => PsiClass:Bar2
-            UClass (name = TestKt) [public final class TestKt {...}]
-                UMethod (name = test) [public static final fun test() : void {...}]
-                    UBlockExpression [{...}]
-                        UDeclarationsExpression [var bar: lib.Bar = Bar("hello1")]
-                            ULocalVariable (name = bar) [var bar: lib.Bar = Bar("hello1")]
-                                UCallExpression (kind = UastCallKind(name='constructor_call'), argCount = 1)) [Bar("hello1")] => PsiMethod:Bar
-                                    UIdentifier (Identifier (Bar)) [UIdentifier (Identifier (Bar))]
-                                    USimpleNameReferenceExpression (identifier = Bar, resolvesTo = PsiClass: Bar) [Bar] => PsiClass:Bar
-                                    UPolyadicExpression (operator = +) ["hello1"]
-                                        ULiteralExpression (value = "hello1") ["hello1"]
-                        UDeclarationsExpression [var bar2: lib.Bar2 = Bar2("hello2")]
-                            ULocalVariable (name = bar2) [var bar2: lib.Bar2 = Bar2("hello2")]
-                                UCallExpression (kind = UastCallKind(name='constructor_call'), argCount = 1)) [Bar2("hello2")] => PsiMethod:Bar2
-                                    UIdentifier (Identifier (Bar2)) [UIdentifier (Identifier (Bar2))]
-                                    USimpleNameReferenceExpression (identifier = Bar2, resolvesTo = PsiClass: Bar2) [Bar2] => PsiClass:Bar2
-                                    UPolyadicExpression (operator = +) ["hello2"]
-                                        ULiteralExpression (value = "hello2") ["hello2"]
-        """
-            .trimIndent()
-            .trim(),
-        file?.asResolveString()?.trim(),
+      """
+      UFile (package = pkg) [package pkg...]
+          UImportStatement (isOnDemand = false) [import lib.Bar] => PsiClass:Bar
+          UImportStatement (isOnDemand = false) [import lib.Bar2] => PsiClass:Bar2
+          UClass (name = TestKt) [public final class TestKt {...}]
+              UMethod (name = test) [public static final fun test() : void {...}]
+                  UBlockExpression [{...}]
+                      UDeclarationsExpression [var bar: lib.Bar = Bar("hello1")]
+                          ULocalVariable (name = bar) [var bar: lib.Bar = Bar("hello1")]
+                              UCallExpression (kind = UastCallKind(name='constructor_call'), argCount = 1)) [Bar("hello1")] => PsiMethod:Bar
+                                  UIdentifier (Identifier (Bar)) [UIdentifier (Identifier (Bar))]
+                                  USimpleNameReferenceExpression (identifier = Bar, resolvesTo = PsiClass: Bar) [Bar] => PsiClass:Bar
+                                  UPolyadicExpression (operator = +) ["hello1"]
+                                      ULiteralExpression (value = "hello1") ["hello1"]
+                      UDeclarationsExpression [var bar2: lib.Bar2 = Bar2("hello2")]
+                          ULocalVariable (name = bar2) [var bar2: lib.Bar2 = Bar2("hello2")]
+                              UCallExpression (kind = UastCallKind(name='constructor_call'), argCount = 1)) [Bar2("hello2")] => PsiMethod:Bar2
+                                  UIdentifier (Identifier (Bar2)) [UIdentifier (Identifier (Bar2))]
+                                  USimpleNameReferenceExpression (identifier = Bar2, resolvesTo = PsiClass: Bar2) [Bar2] => PsiClass:Bar2
+                                  UPolyadicExpression (operator = +) ["hello2"]
+                                      ULiteralExpression (value = "hello2") ["hello2"]
+      """
+        .trimIndent()
+        .trim(),
+      file?.asResolveString()?.trim(),
     )
     Disposer.dispose(pair.second)
   }
 
   fun testJavaReferencesIntoBytecode() {
     val tests =
-        arrayOf(
-            java(
-                """
+      arrayOf(
+        java(
+          """
                 package pkg;
                 import lib.Bar;
                 import lib.Bar2;
@@ -206,34 +206,34 @@ class ResolveTest : TestCase() {
                     }
                 }
                 """
-            ),
-            libBar,
-        )
+        ),
+        libBar,
+      )
 
     val pair = LintUtilsTest.parse(*tests)
 
     val file = pair.first.uastFile
     assertEquals(
-        """
-        UFile (package = pkg) [package pkg...]
-            UImportStatement (isOnDemand = false) [import lib.Bar] => PsiClass:Bar
-            UImportStatement (isOnDemand = false) [import lib.Bar2] => PsiClass:Bar2
-            UClass (name = Foo2) [public class Foo2 {...}]
-                UAnnotation (fqName = java.lang.SuppressWarnings) [@java.lang.SuppressWarnings(null = "ALL")] => PsiClass:SuppressWarnings
-                    UNamedExpression (name = null) [null = "ALL"]
-                        ULiteralExpression (value = "ALL") ["ALL"]
-                UMethod (name = test) [public fun test() : void {...}]
-                    UBlockExpression [{...}]
-                        UCallExpression (kind = UastCallKind(name='constructor_call'), argCount = 1)) [Bar("hello1")] => PsiMethod:Bar
-                            USimpleNameReferenceExpression (identifier = Bar) [Bar] => PsiClass:Bar
-                            ULiteralExpression (value = "hello1") ["hello1"]
-                        UCallExpression (kind = UastCallKind(name='constructor_call'), argCount = 1)) [Bar2("hello2")] => PsiMethod:Bar2
-                            USimpleNameReferenceExpression (identifier = Bar2) [Bar2] => PsiClass:Bar2
-                            ULiteralExpression (value = "hello2") ["hello2"]
-        """
-            .trimIndent()
-            .trim(),
-        file?.asResolveString()?.trim(),
+      """
+      UFile (package = pkg) [package pkg...]
+          UImportStatement (isOnDemand = false) [import lib.Bar] => PsiClass:Bar
+          UImportStatement (isOnDemand = false) [import lib.Bar2] => PsiClass:Bar2
+          UClass (name = Foo2) [public class Foo2 {...}]
+              UAnnotation (fqName = java.lang.SuppressWarnings) [@java.lang.SuppressWarnings(null = "ALL")] => PsiClass:SuppressWarnings
+                  UNamedExpression (name = null) [null = "ALL"]
+                      ULiteralExpression (value = "ALL") ["ALL"]
+              UMethod (name = test) [public fun test() : void {...}]
+                  UBlockExpression [{...}]
+                      UCallExpression (kind = UastCallKind(name='constructor_call'), argCount = 1)) [Bar("hello1")] => PsiMethod:Bar
+                          USimpleNameReferenceExpression (identifier = Bar) [Bar] => PsiClass:Bar
+                          ULiteralExpression (value = "hello1") ["hello1"]
+                      UCallExpression (kind = UastCallKind(name='constructor_call'), argCount = 1)) [Bar2("hello2")] => PsiMethod:Bar2
+                          USimpleNameReferenceExpression (identifier = Bar2) [Bar2] => PsiClass:Bar2
+                          ULiteralExpression (value = "hello2") ["hello2"]
+      """
+        .trimIndent()
+        .trim(),
+      file?.asResolveString()?.trim(),
     )
     Disposer.dispose(pair.second)
   }
@@ -242,8 +242,8 @@ class ResolveTest : TestCase() {
     // Regression test for https://youtrack.jetbrains.com/issue/KT-40578:
     // write accesses to Kotlin properties should resolve to setter.
     val source =
-        kotlin(
-                """
+      kotlin(
+          """
             package test.pkg
 
             class A {
@@ -253,15 +253,15 @@ class ResolveTest : TestCase() {
                 }
             }
             """
-            )
-            .indented()
+        )
+        .indented()
 
     val pair = LintUtilsTest.parse(source)
 
     val lcAccessorName = if (useFirUast()) "SymbolLightAccessorMethod" else "KtUltraLightMethodForSourceDeclaration"
     val uastFile = pair.first.uastFile
     assertEquals(
-        """
+      """
             UFile (package = test.pkg) [package test.pkg...]
                 UClass (name = A) [public final class A {...}]
                     UField (name = myField) [@org.jetbrains.annotations.NotNull private var myField: int = 0]
@@ -277,9 +277,9 @@ class ResolveTest : TestCase() {
                                 ULiteralExpression (value = 42) [42]
                     UMethod (name = A) [public fun A() = UastEmptyExpression]
             """
-            .trimIndent()
-            .trim(),
-        uastFile?.asResolveString()?.trim(),
+        .trimIndent()
+        .trim(),
+      uastFile?.asResolveString()?.trim(),
     )
     Disposer.dispose(pair.second)
   }
@@ -288,28 +288,28 @@ class ResolveTest : TestCase() {
     // Regression test for https://youtrack.jetbrains.com/issue/KT-47846:
     // Stack overflow when handling enhanced recursive type parameter.
     val pair =
-        LintUtilsTest.parse(
-            java(
-                    """
+      LintUtilsTest.parse(
+        java(
+            """
                 import org.checkerframework.checker.nullness.qual.NonNull;
                 public interface I1<@NonNull T> {}
                 """
-                )
-                .indented(),
-            java(
-                    """
+          )
+          .indented(),
+        java(
+            """
                 public interface I2<T extends I1<T>> {}
                 """
-                )
-                .indented(),
-            kotlin(
-                    """
+          )
+          .indented(),
+        kotlin(
+            """
                 fun foo(): I2<*> { throw RuntimeException() }
                 """
-                )
-                .indented(),
-            java(
-                    """
+          )
+          .indented(),
+        java(
+            """
                     package org.checkerframework.checker.nullness.qual;
 
                     import java.lang.annotation.ElementType;
@@ -321,20 +321,20 @@ class ResolveTest : TestCase() {
                     @Target({ElementType.TYPE_USE, ElementType.TYPE_PARAMETER})
                     public @interface NonNull {}
                 """
-                )
-                .indented(),
-        )
+          )
+          .indented(),
+      )
 
     val uastFile = pair.first.uastFile
     assertEquals(
-        """
-        UFile (package = ) [import org.checkerframework.checker.nullness.qual.NonNull...]
-            UImportStatement (isOnDemand = false) [import org.checkerframework.checker.nullness.qual.NonNull] => PsiClass:NonNull
-            UClass (name = I1) [public abstract interface I1 {...}]
-        """
-            .trimIndent()
-            .trim(),
-        uastFile?.asResolveString()?.trim(),
+      """
+      UFile (package = ) [import org.checkerframework.checker.nullness.qual.NonNull...]
+          UImportStatement (isOnDemand = false) [import org.checkerframework.checker.nullness.qual.NonNull] => PsiClass:NonNull
+          UClass (name = I1) [public abstract interface I1 {...}]
+      """
+        .trimIndent()
+        .trim(),
+      uastFile?.asResolveString()?.trim(),
     )
     Disposer.dispose(pair.second)
   }
@@ -353,46 +353,46 @@ class ResolveTest : TestCase() {
           }
   */
   private val libBar =
-      base64gzip(
-          "libs/libBar.jar",
-          "" +
-              "H4sIAAAAAAAAAHWVeTTUaxjHx/YzUybbMLYuhRExJkuiayyZyTZmaC5J90RZ" +
-              "skW/KGSbbHUrjCsiSzQhS91IItlJGmSMrZCKGSqKLEPo0t2Me3rf85z3vOd5" +
-              "v8/7fP/5PCQrPn4EBAqFQuayJq0hGxYMwg8h4MgmGhY2eM3VNgiED0KyEoSu" +
-              "p3j/fkL6oRixFv+KCSY2FnjcITKagP9CoD+3ttJAd8GtNNQ66J1ldhim9sgY" +
-              "iLYkqFsQugIL+WGHx6WbZNNl1U5ykMooNk1tHxspMYpUToH0eM+A0yDP9y4Q" +
-              "Lt4aZmt/4Li6+LSpi21r4eN5XNPUBdRCn/BxOXNm/5xfHxYAAHEAiwbcAfRZ" +
-              "4NRZ4Cc8sPcGvZouth8P2MKzi5tKzVYymqoDVkaScunVAd7tGDwgyV5OJuOB" +
-              "8Gx6NbmWMUhj5iY20eRuQh38wz1twUIn1MXGieTDrjRBrcg4SgwllUpRVNG2" +
-              "kFdqbVWIxPQZqe7WrYymUhwPaF8xoVJg42IizvymkoC9wjNgVJXXE6XQXlie" +
-              "STmteDh9uzlIEXC8uUU/0gcF2Hw3K6bU9On+mpVeLrOsTWbh/5n9y2sM2Yko" +
-              "6yCy2jHt++R60OQgNFVJQ2nPWTHxkBydVElQNS+WRrK1zYqf1FAvPjcxJXNH" +
-              "U4K4CKMGlZDHlIXvME2Z5hIEGnb24C+Z0+gWnkLL+TT9M+41X9rT0la+Zr/+" +
-              "BsHE4yjJvj1t3W1WJlCpD15W13zHilPk+3rbQxJNrRXsD2UZ14QEPZIKSikL" +
-              "cXJ+9D6kaCxQuyC4DVwuBeX0SJSxJOwn4IvGK9S90UJpa+2WtIbx08lCYuZ5" +
-              "O3K2NkXpPkeaOyjay4U+BYtHsuoGGqb7u5ThMMpl2VPOTjbBYUWODzPqZuXc" +
-              "Undv+8qxHyLuUPGvqXHv1cvaRdQlzBRwRI0o3kN1LsMVxCq1qO59txQTymZR" +
-              "AsPZDcHbT8/CxgMrKicM8sQHc9XfT7GEeQ+oiE65tnQ5ZjJ+Emv1rzNvXLYp" +
-              "/2jsXPpi2iCepG/zUDYAEiW0lBUp+cgFOhaOcKtyG4D//hs2992WL327qowD" +
-              "a4reyDypfDmokxlbd1X8EEdYpyoMgQPUYRdt4XpaUvh0uFuVC2HRe2EodiC8" +
-              "2hKowHQkLNTv90Xy5n0WpWJq/VRfGdlxopJrlc3G0oQH2BFW/bA2Z7FsEHbn" +
-              "PthT4M2iG+uSb7aibjjtSReq31p+q7i8YgRnZyPr6kWiZH/yO9brls28fb+2" +
-              "pJsokx9wR9liPtH1Md59sv1QiV/E+aPxlyaGQxmJK6D6PCufpvO2zFOx+XFa" +
-              "BfFEWT78agDI1JE2oDom6hOqsHelDVemsXtQ7sPYy7bOscVPaFsZxJjhzibT" +
-              "u3ydDgtPy6OprlXvLsyYNMB7rdPrlHoWWcBcf53pc1hxnuPph+qvCwdYzDfj" +
-              "doJxMW0OQ1WlqckeqjOcdCTFpwekL9qXuYdQ3UZ32Xu0DfNM/ipEDjth44t3" +
-              "Wcp9NfOepXhZD7nzyu0TPgW2SnMwDyqbKPBM0/OpFs7uQPzq8koB4661vaXU" +
-              "pbf3xoOfuTXKlaS9MC9NHQ1FdOQPkS4c1OINMbZL0rEMfifRIbHgn3N4CW5Y" +
-              "G4DpjGGLorx3VPLNKmUaoQyVd3Lklvb/HJcwg1D5/JGV8u5ZHn50BJYUem7v" +
-              "6LwMWPkg7nIcZke5T9yR+ehzH/Lcyf6wVEUvh1vsDnhLxCClhb+omYEeFp7O" +
-              "fsA2mZUL1pcJOKJfYzyd0TzifdRxuLEn1AXZJx1jtorSeCx1fiBPmSMrgruW" +
-              "WyB3Hv0tZhaNDY1v0ruPzHTSbV1EYLOOM8Q5SlsyaMZZnW+OT3gIXVuNHjQ5" +
-              "5ikPxlPvdn+TmPqoIBrRJSARV23WSLn3siejmdcC53FuImeqRMG+3mPyNfu6" +
-              "QT/BwV9e2Ly5UQIqn/C5eUspNiSMzjF/4PDSC8vALoUJca6flN3NrPd14xxb" +
-              "R0mhgJS4CD8EEiS4jhIeXgSEm9//kH0d/tyLaxRslm7EMYJLZviDQbCxwjq2" +
-              "NzJuG1eFxv9BfKN2nYIbTcG5tH/wbGIiyUoAWE/wr+3ZtfOrwPrtTxRMPJAF" +
-              "BwAA",
-      )
+    base64gzip(
+      "libs/libBar.jar",
+      "" +
+        "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" +
+        "BwAA",
+    )
 }
 
 private fun UFile.asResolveString() = ResolveLogger().apply { this@asResolveString.accept(this) }.toString()
@@ -405,17 +405,17 @@ class ResolveLogger : AbstractUastVisitor() {
 
   override fun visitElement(node: UElement): Boolean {
     val initialLine =
-        node.asLogString() +
-            " [" +
-            run {
-              val renderString = node.asRenderString().lines()
-              if (renderString.size == 1) {
-                renderString.single()
-              } else {
-                renderString.first() + "..." + renderString.last()
-              }
-            } +
-            "]"
+      node.asLogString() +
+        " [" +
+        run {
+          val renderString = node.asRenderString().lines()
+          if (renderString.size == 1) {
+            renderString.single()
+          } else {
+            renderString.first() + "..." + renderString.last()
+          }
+        } +
+        "]"
 
     (1..level).forEach { builder.append("    ") }
     builder.append(initialLine)

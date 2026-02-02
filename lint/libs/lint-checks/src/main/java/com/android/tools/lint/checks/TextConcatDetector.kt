@@ -54,20 +54,20 @@ class TextConcatDetector : Detector(), SourceCodeScanner {
 
     @JvmField
     val ISSUE =
-        Issue.create(
-            id = "TextConcatSpace",
-            briefDescription = "Missing space in text concatenation?",
-            explanation =
-                """
+      Issue.create(
+        id = "TextConcatSpace",
+        briefDescription = "Missing space in text concatenation?",
+        explanation =
+          """
           When splitting strings up across separate lines, it's easy to accidentally \
           miss a separating space. This lint check looks for cases of string concatenation \
           where a separating space may be missing.
           """,
-            category = Category.CORRECTNESS,
-            priority = 6,
-            severity = Severity.WARNING,
-            implementation = IMPLEMENTATION,
-        )
+        category = Category.CORRECTNESS,
+        priority = 6,
+        severity = Severity.WARNING,
+        implementation = IMPLEMENTATION,
+      )
   }
 
   override fun getApplicableUastTypes(): List<Class<out UElement>> = listOf(UBinaryExpression::class.java, UPolyadicExpression::class.java)
@@ -198,12 +198,7 @@ class TextConcatDetector : Detector(), SourceCodeScanner {
     }
   }
 
-  private fun check(
-      context: JavaContext,
-      node: UPolyadicExpression,
-      lhs: UExpression,
-      rhs: UExpression,
-  ) {
+  private fun check(context: JavaContext, node: UPolyadicExpression, lhs: UExpression, rhs: UExpression) {
     val leftPsi = findString(lhs.sourcePsi, biasLeft = false) ?: return
     val leftString = leftPsi.getStringText()
     if (leftString.isEmpty() || !leftString.last().isLetter()) {
@@ -242,20 +237,20 @@ class TextConcatDetector : Detector(), SourceCodeScanner {
 
     val fixBuilder = fix().name("Insert space").replace().range(context.getLocation(rightPsi))
     val fix =
-        when (rightPsi) {
-          is KtLiteralStringTemplateEntry -> fixBuilder.beginning().with(" ").build()
-          is PsiJavaToken -> fixBuilder.text(rightPsi.text).with("\" " + rightPsi.text.substring(1)).build()
-          else -> null
-        }
+      when (rightPsi) {
+        is KtLiteralStringTemplateEntry -> fixBuilder.beginning().with(" ").build()
+        is PsiJavaToken -> fixBuilder.text(rightPsi.text).with("\" " + rightPsi.text.substring(1)).build()
+        else -> null
+      }
 
     val lastWord = leftWords.last()
     val firstWord = rightWords.first()
     context.report(
-        ISSUE,
-        node,
-        context.getLocation(rightPsi).withSecondary(context.getLocation(leftPsi), "Previous text here"),
-        "Missing space between \"$lastWord\" on the previous line and \"$firstWord\" here? Resulting string is \"$lastWord$firstWord\".",
-        fix,
+      ISSUE,
+      node,
+      context.getLocation(rightPsi).withSecondary(context.getLocation(leftPsi), "Previous text here"),
+      "Missing space between \"$lastWord\" on the previous line and \"$firstWord\" here? Resulting string is \"$lastWord$firstWord\".",
+      fix,
     )
   }
 }

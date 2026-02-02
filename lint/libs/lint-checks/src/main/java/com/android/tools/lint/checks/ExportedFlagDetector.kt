@@ -54,42 +54,42 @@ class ExportedFlagDetector : Detector(), XmlScanner {
     val exported = element.getAttributeNodeNS(ANDROID_URI, ATTR_EXPORTED)
     if ((intentFilter != null || navGraph != null) && exported == null) {
       val message =
-          """
-          As of Android 12, `android:exported` must be set; use `true` to make the activity \
-          available to other apps, and `false` otherwise.
-          """
-              .trimIndent()
+        """
+        As of Android 12, `android:exported` must be set; use `true` to make the activity \
+        available to other apps, and `false` otherwise.
+        """
+          .trimIndent()
 
       // Check if the intent filter is for a launcher activity
       val incident =
-          if (intentFilter?.subtag(TAG_ACTION)?.getAttributeNS(ANDROID_URI, ATTR_NAME)?.equals(MAIN_ACTION) == true) {
-            Incident(
-                ISSUE,
-                element,
-                context.getNameLocation(element),
-                "$message For launcher activities, this should be set to `true`.",
-                createSetToTrueFix(),
-            )
-          } else {
-            Incident(
-                ISSUE,
-                element,
-                context.getNameLocation(element),
-                message,
-                LintFix.create().alternatives(createSetToTrueFix(), createSetToFalseFix()),
-            )
-          }
+        if (intentFilter?.subtag(TAG_ACTION)?.getAttributeNS(ANDROID_URI, ATTR_NAME)?.equals(MAIN_ACTION) == true) {
+          Incident(
+            ISSUE,
+            element,
+            context.getNameLocation(element),
+            "$message For launcher activities, this should be set to `true`.",
+            createSetToTrueFix(),
+          )
+        } else {
+          Incident(
+            ISSUE,
+            element,
+            context.getNameLocation(element),
+            message,
+            LintFix.create().alternatives(createSetToTrueFix(), createSetToFalseFix()),
+          )
+        }
       context.report(incident, map())
     } else if (isNonExportedLaunchable(exported, intentFilter)) {
       val incident =
-          Incident(
-                  ISSUE,
-                  exported,
-                  context.getLocation(exported),
-                  "A launchable activity must be exported as of Android 12, which also makes it available to other apps.",
-                  createSetToTrueFix(),
-              )
-              .overrideSeverity(Severity.ERROR)
+        Incident(
+            ISSUE,
+            exported,
+            context.getLocation(exported),
+            "A launchable activity must be exported as of Android 12, which also makes it available to other apps.",
+            createSetToTrueFix(),
+          )
+          .overrideSeverity(Severity.ERROR)
       context.report(incident, map())
     }
   }
@@ -102,9 +102,9 @@ class ExportedFlagDetector : Detector(), XmlScanner {
   }
 
   private fun isNonExportedLaunchable(exported: Attr?, intentFilterTag: Element?) =
-      exported?.value == VALUE_FALSE &&
-          intentFilterTag?.subtag(TAG_ACTION)?.getAttributeNS(ANDROID_URI, ATTR_NAME)?.equals(MAIN_ACTION) == true &&
-          intentFilterTag.subtag(TAG_CATEGORY)?.getAttributeNS(ANDROID_URI, ATTR_NAME)?.equals(CATEGORY_LAUNCHER) == true
+    exported?.value == VALUE_FALSE &&
+      intentFilterTag?.subtag(TAG_ACTION)?.getAttributeNS(ANDROID_URI, ATTR_NAME)?.equals(MAIN_ACTION) == true &&
+      intentFilterTag.subtag(TAG_CATEGORY)?.getAttributeNS(ANDROID_URI, ATTR_NAME)?.equals(CATEGORY_LAUNCHER) == true
 
   private fun createSetToTrueFix() = fix().set().android().attribute(ATTR_EXPORTED).value(VALUE_TRUE).build()
 
@@ -116,11 +116,11 @@ class ExportedFlagDetector : Detector(), XmlScanner {
 
     @JvmField
     val ISSUE =
-        Issue.create(
-            id = "IntentFilterExportedReceiver",
-            briefDescription = "Unspecified `android:exported` in manifest",
-            explanation =
-                """
+      Issue.create(
+        id = "IntentFilterExportedReceiver",
+        briefDescription = "Unspecified `android:exported` in manifest",
+        explanation =
+          """
                 Apps targeting Android 12 and higher are required to specify an explicit value \
                 for `android:exported` when the corresponding component has an intent filter defined. \
                 Otherwise, installation will fail. Set it to `true` to make this activity accessible \
@@ -142,11 +142,11 @@ class ExportedFlagDetector : Detector(), XmlScanner {
                 prior to this requirement) unless you have a good reason to export a particular \
                 component.
             """,
-            moreInfo = "https://goo.gle/IntentFilterExportedReceiver",
-            category = Category.SECURITY,
-            priority = 5,
-            severity = Severity.WARNING,
-            implementation = Implementation(ExportedFlagDetector::class.java, Scope.MANIFEST_SCOPE),
-        )
+        moreInfo = "https://goo.gle/IntentFilterExportedReceiver",
+        category = Category.SECURITY,
+        priority = 5,
+        severity = Severity.WARNING,
+        implementation = Implementation(ExportedFlagDetector::class.java, Scope.MANIFEST_SCOPE),
+      )
   }
 }

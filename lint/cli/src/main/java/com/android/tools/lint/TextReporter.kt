@@ -32,11 +32,11 @@ import java.io.Writer
 
 /** A reporter which emits lint warnings as plain text strings */
 class TextReporter(
-    client: LintCliClient,
-    private val flags: LintCliFlags,
-    file: File?,
-    private val writer: Writer,
-    private val close: Boolean,
+  client: LintCliClient,
+  private val flags: LintCliFlags,
+  file: File?,
+  private val writer: Writer,
+  private val close: Boolean,
 ) : Reporter(client, file) {
   var format = TextFormat.TEXT
 
@@ -56,12 +56,7 @@ class TextReporter(
    * @param writer the writer to write into
    * @param close whether the writer should be closed when done
    */
-  constructor(
-      client: LintCliClient,
-      flags: LintCliFlags,
-      writer: Writer,
-      close: Boolean,
-  ) : this(client, flags, null, writer, close)
+  constructor(client: LintCliClient, flags: LintCliFlags, writer: Writer, close: Boolean) : this(client, flags, null, writer, close)
 
   @Throws(IOException::class)
   override fun write(stats: LintStats, issues: List<Incident>, registry: IssueRegistry) {
@@ -73,13 +68,7 @@ class TextReporter(
         if (stats.baselineErrorCount > 0 || stats.baselineWarningCount > 0) {
           val baselineFile = flags.baselineFile!!
           val counts =
-              describeCounts(
-                  stats.baselineErrorCount,
-                  stats.baselineWarningCount,
-                  stats.baselineHintCount,
-                  comma = true,
-                  capitalize = true,
-              )
+            describeCounts(stats.baselineErrorCount, stats.baselineWarningCount, stats.baselineHintCount, comma = true, capitalize = true)
           writer.write(" (and $counts filtered by baseline ${baselineFile.name})")
         }
         writer.write('.'.code)
@@ -194,13 +183,13 @@ class TextReporter(
         val applicableVariants = incident.applicableVariants
         if (applicableVariants != null && applicableVariants.variantSpecific) {
           val names =
-              if (applicableVariants.includesMoreThanExcludes()) {
-                output.append("Applies to variants: ")
-                applicableVariants.includedVariantNames
-              } else {
-                output.append("Does not apply to variants: ")
-                applicableVariants.excludedVariantNames
-              }
+            if (applicableVariants.includesMoreThanExcludes()) {
+              output.append("Applies to variants: ")
+              applicableVariants.includedVariantNames
+            } else {
+              output.append("Does not apply to variants: ")
+              applicableVariants.excludedVariantNames
+            }
           output.append(Joiner.on(", ").join(names))
           output.append('\n')
         }
@@ -209,25 +198,12 @@ class TextReporter(
       writer.write(output.toString())
       if (writeStats) {
         writer.write(
-            describeCounts(
-                stats.errorCount,
-                stats.warningCount,
-                stats.hintCount,
-                comma = true,
-                capitalize = true,
-                includeZero = true,
-            )
+          describeCounts(stats.errorCount, stats.warningCount, stats.hintCount, comma = true, capitalize = true, includeZero = true)
         )
         if (stats.baselineErrorCount > 0 || stats.baselineWarningCount > 0) {
           val baselineFile = flags.baselineFile!!
           val counts =
-              describeCounts(
-                  stats.baselineErrorCount,
-                  stats.baselineWarningCount,
-                  stats.baselineHintCount,
-                  comma = true,
-                  capitalize = true,
-              )
+            describeCounts(stats.baselineErrorCount, stats.baselineWarningCount, stats.baselineHintCount, comma = true, capitalize = true)
           writer.write(" (and $counts filtered by baseline ${baselineFile.name})")
         }
       }
@@ -257,11 +233,11 @@ class TextReporter(
 
   private fun explainIssue(output: StringBuilder, issue: Issue?) {
     if (
-        issue == null ||
-            !flags.isExplainIssues ||
-            issue === IssueRegistry.LINT_ERROR ||
-            issue === IssueRegistry.LINT_WARNING ||
-            issue === IssueRegistry.BASELINE_USED
+      issue == null ||
+        !flags.isExplainIssues ||
+        issue === IssueRegistry.LINT_ERROR ||
+        issue === IssueRegistry.LINT_WARNING ||
+        issue === IssueRegistry.BASELINE_USED
     ) {
       return
     }

@@ -56,63 +56,63 @@ class LintDriverCrashTest : AbstractCheckTest() {
   fun testLintDriverError() {
     // Regression test for 34248502
     lint()
-        .files(
-            xml("res/layout/foo.xml", "<LinearLayout/>"),
-            java(
-                """
+      .files(
+        xml("res/layout/foo.xml", "<LinearLayout/>"),
+        java(
+          """
                     package test.pkg;
                     @SuppressWarnings("ALL") class Foo {
                     }
                     """
-            ),
-        )
-        .allowSystemErrors(true)
-        .allowExceptions(true)
-        .issues(CrashingDetector.CRASHING_ISSUE)
-        // stack traces will differ between the test modes
-        .testModes(TestMode.DEFAULT)
-        .run()
-        // Checking for manual substrings instead of doing an actual equals check
-        // since the stacktrace contains a number of specific line numbers from
-        // the lint implementation, including this test, which keeps shifting every
-        // time there is an edit
-        .check({
-          assertThat(it)
-              .contains(
-                  "Foo.java: Error: Unexpected failure during lint analysis of Foo.java (this is a bug in lint or one of the libraries it depends on)"
-              )
-          assertThat(it)
-              .contains("The crash seems to involve the detector com.android.tools.lint.client.api.LintDriverCrashTest＄CrashingDetector.")
-          assertThat(it)
-              .contains(
-                  """
-                  The crash seems to involve the detector com.android.tools.lint.client.api.LintDriverCrashTest＄CrashingDetector.
-                  You can try disabling it with something like this:
-                      android {
-                          lint {
-                              disable "_TestCrash"
-                          }
-                      }
-                  """
-                      .trimIndent()
-              )
+        ),
+      )
+      .allowSystemErrors(true)
+      .allowExceptions(true)
+      .issues(CrashingDetector.CRASHING_ISSUE)
+      // stack traces will differ between the test modes
+      .testModes(TestMode.DEFAULT)
+      .run()
+      // Checking for manual substrings instead of doing an actual equals check
+      // since the stacktrace contains a number of specific line numbers from
+      // the lint implementation, including this test, which keeps shifting every
+      // time there is an edit
+      .check({
+        assertThat(it)
+          .contains(
+            "Foo.java: Error: Unexpected failure during lint analysis of Foo.java (this is a bug in lint or one of the libraries it depends on)"
+          )
+        assertThat(it)
+          .contains("The crash seems to involve the detector com.android.tools.lint.client.api.LintDriverCrashTest＄CrashingDetector.")
+        assertThat(it)
+          .contains(
+            """
+            The crash seems to involve the detector com.android.tools.lint.client.api.LintDriverCrashTest＄CrashingDetector.
+            You can try disabling it with something like this:
+                android {
+                    lint {
+                        disable "_TestCrash"
+                    }
+                }
+            """
+              .trimIndent()
+          )
 
-          // It's not easy to set environment variables from Java once the process is running,
-          // so instead of attempting to set it to true and false in tests, we'll just make this
-          // test adapt to what's set in the environment. On our CI tests, it should not be
-          // set, so the doesNotContain() assertion will be used. For developers on the lint team
-          // it's typically set so the contains() assertion will be used.
-          val suggestion = "You can run with --stacktrace or set environment variable LINT_PRINT_"
-          if (System.getenv("LINT_PRINT_STACKTRACE") == VALUE_TRUE) {
-            assertThat(it).doesNotContain(suggestion)
-          } else {
-            assertThat(it).contains(suggestion)
-          }
+        // It's not easy to set environment variables from Java once the process is running,
+        // so instead of attempting to set it to true and false in tests, we'll just make this
+        // test adapt to what's set in the environment. On our CI tests, it should not be
+        // set, so the doesNotContain() assertion will be used. For developers on the lint team
+        // it's typically set so the contains() assertion will be used.
+        val suggestion = "You can run with --stacktrace or set environment variable LINT_PRINT_"
+        if (System.getenv("LINT_PRINT_STACKTRACE") == VALUE_TRUE) {
+          assertThat(it).doesNotContain(suggestion)
+        } else {
+          assertThat(it).contains(suggestion)
+        }
 
-          assertThat(it)
-              .contains("ArithmeticException:LintDriverCrashTest＄CrashingDetector＄createUastHandler＄1.visitFile(LintDriverCrashTest.kt:")
-          assertThat(it).contains("1 error")
-        })
+        assertThat(it)
+          .contains("ArithmeticException:LintDriverCrashTest＄CrashingDetector＄createUastHandler＄1.visitFile(LintDriverCrashTest.kt:")
+        assertThat(it).contains("1 error")
+      })
     LintDriver.clearCrashCount()
   }
 
@@ -121,40 +121,35 @@ class LintDriverCrashTest : AbstractCheckTest() {
     val sb = StringBuilder()
     try {
       lint()
-          .files(
-              xml("res/layout/foo.xml", "<LinearLayout/>"),
-              java(
-                  """
+        .files(
+          xml("res/layout/foo.xml", "<LinearLayout/>"),
+          java(
+            """
                     package test.pkg;
                     @SuppressWarnings("ALL") class Foo {
                     }
                     """
-              ),
-          )
-          .allowSystemErrors(true)
-          .allowExceptions(true)
-          .issues(CrashingDetector.CRASHING_ISSUE)
-          // stack traces will differ between the test modes
-          .testModes(TestMode.DEFAULT)
-          .clientFactory {
-            object : com.android.tools.lint.checks.infrastructure.TestLintClient(CLIENT_STUDIO) {
-              override fun log(
-                  severity: Severity,
-                  exception: Throwable?,
-                  format: String?,
-                  vararg args: Any,
-              ) {
-                sb.append("Severity = ${severity.toName()}\n")
-                sb.append("Message = ${String.format(format ?: "", *args)}\n")
-                sb.append("Stack:\n").append(exception?.stackTraceToString()).append("\n")
-              }
+          ),
+        )
+        .allowSystemErrors(true)
+        .allowExceptions(true)
+        .issues(CrashingDetector.CRASHING_ISSUE)
+        // stack traces will differ between the test modes
+        .testModes(TestMode.DEFAULT)
+        .clientFactory {
+          object : com.android.tools.lint.checks.infrastructure.TestLintClient(CLIENT_STUDIO) {
+            override fun log(severity: Severity, exception: Throwable?, format: String?, vararg args: Any) {
+              sb.append("Severity = ${severity.toName()}\n")
+              sb.append("Message = ${String.format(format ?: "", *args)}\n")
+              sb.append("Stack:\n").append(exception?.stackTraceToString()).append("\n")
+            }
 
-              override fun log(exception: Throwable?, format: String?, vararg args: Any) {
-                log(Severity.WARNING, null, format, *args)
-              }
+            override fun log(exception: Throwable?, format: String?, vararg args: Any) {
+              log(Severity.WARNING, null, format, *args)
             }
           }
-          .run()
+        }
+        .run()
     } finally {
       clientName = LintClient.CLIENT_UNIT_TESTS
       LintDriver.clearCrashCount()
@@ -164,9 +159,9 @@ class LintDriverCrashTest : AbstractCheckTest() {
     // This detector isn't in the built-in package, so reporting as warning rather than error:
     assertThat(log).contains("Severity = warning")
     assertThat(log)
-        .contains(
-            "at com.android.tools.lint.client.api.LintDriverCrashTest\$CrashingDetector\$createUastHandler$1.visitFile(LintDriverCrashTest.kt"
-        )
+      .contains(
+        "at com.android.tools.lint.client.api.LintDriverCrashTest\$CrashingDetector\$createUastHandler$1.visitFile(LintDriverCrashTest.kt"
+      )
     assertThat(log).contains("java.lang.ArithmeticException")
   }
 
@@ -181,18 +176,18 @@ class LintDriverCrashTest : AbstractCheckTest() {
   fun testDisableLintDriverError() {
     // b/416046484
     lint()
-        .files(
-            xml("res/layout/foo.xml", "<LinearLayout/>"),
-            java(
-                """
+      .files(
+        xml("res/layout/foo.xml", "<LinearLayout/>"),
+        java(
+          """
                     package test.pkg;
                     @SuppressWarnings("ALL") class Foo {
                     }
                     """
-            ),
-            xml(
-                "lint.xml",
-                """
+        ),
+        xml(
+          "lint.xml",
+          """
             <lint
                 checkTestSources='false'
                 ignoreTestSources='false'
@@ -202,24 +197,24 @@ class LintDriverCrashTest : AbstractCheckTest() {
                 <issue id="_TestCrash_But_Ignore" severity="ignore"/>
             </lint>
             """,
-            ),
-        )
-        .clientFactory {
-          object : com.android.tools.lint.checks.infrastructure.TestLintClient() {
-            override fun getConfiguration(project: Project, driver: LintDriver?): Configuration {
-              // Make sure we don't pick up the special TestConfiguration;
-              // we want the real configuration lint would create in production
-              return configurations.getConfigurationForProject(project)
-            }
+        ),
+      )
+      .clientFactory {
+        object : com.android.tools.lint.checks.infrastructure.TestLintClient() {
+          override fun getConfiguration(project: Project, driver: LintDriver?): Configuration {
+            // Make sure we don't pick up the special TestConfiguration;
+            // we want the real configuration lint would create in production
+            return configurations.getConfigurationForProject(project)
           }
         }
-        .allowSystemErrors(true)
-        .allowExceptions(true)
-        .issues(CrashingYetDisabledDetector.CRASHING_ISSUE)
-        // stack traces will differ between the test modes
-        .testModes(TestMode.DEFAULT)
-        .run()
-        .expectClean()
+      }
+      .allowSystemErrors(true)
+      .allowExceptions(true)
+      .issues(CrashingYetDisabledDetector.CRASHING_ISSUE)
+      // stack traces will differ between the test modes
+      .testModes(TestMode.DEFAULT)
+      .run()
+      .expectClean()
   }
 
   fun testErrorThrownInAbstractDetector() {
@@ -229,44 +224,44 @@ class LintDriverCrashTest : AbstractCheckTest() {
     // already in the stacktrace so we should be able to extract the exact name of the detector
     // that was running when the exception was thrown.
     lint()
-        .files(
-            xml("res/layout/foo.xml", "<LinearLayout/>"),
-            java(
-                """
+      .files(
+        xml("res/layout/foo.xml", "<LinearLayout/>"),
+        java(
+          """
                     package test.pkg;
                     @SuppressWarnings("ALL") class Foo {
                     }
                     """
-            ),
-        )
-        .allowSystemErrors(true)
-        .allowExceptions(true)
-        .issues(CrashingImplementationDetector.CRASHING_ISSUE)
-        .testModes(TestMode.DEFAULT)
-        .run()
-        .check({
-          assertThat(it)
-              .contains(
-                  "Foo.java: Error: Unexpected failure during lint analysis of Foo.java (this is a bug in lint or one of the libraries it depends on)"
-              )
-          assertThat(it)
-              .contains(
-                  "The crash seems to involve the detector com.android.tools.lint.client.api.LintDriverCrashTest＄CrashingImplementationDetector."
-              )
-          assertThat(it)
-              .contains(
-                  """
-                  The crash seems to involve the detector com.android.tools.lint.client.api.LintDriverCrashTest＄CrashingImplementationDetector.
-                  You can try disabling it with something like this:
-                      android {
-                          lint {
-                              disable "_TestCrashImplementer"
-                          }
-                      }
-                  """
-                      .trimIndent()
-              )
-        })
+        ),
+      )
+      .allowSystemErrors(true)
+      .allowExceptions(true)
+      .issues(CrashingImplementationDetector.CRASHING_ISSUE)
+      .testModes(TestMode.DEFAULT)
+      .run()
+      .check({
+        assertThat(it)
+          .contains(
+            "Foo.java: Error: Unexpected failure during lint analysis of Foo.java (this is a bug in lint or one of the libraries it depends on)"
+          )
+        assertThat(it)
+          .contains(
+            "The crash seems to involve the detector com.android.tools.lint.client.api.LintDriverCrashTest＄CrashingImplementationDetector."
+          )
+        assertThat(it)
+          .contains(
+            """
+            The crash seems to involve the detector com.android.tools.lint.client.api.LintDriverCrashTest＄CrashingImplementationDetector.
+            You can try disabling it with something like this:
+                android {
+                    lint {
+                        disable "_TestCrashImplementer"
+                    }
+                }
+            """
+              .trimIndent()
+          )
+      })
     LintDriver.clearCrashCount()
   }
 
@@ -279,42 +274,42 @@ class LintDriverCrashTest : AbstractCheckTest() {
     // solve this problem is to disable all such detectors, so the error message should
     // suggest suppressing both of them.
     lint()
-        .files(
-            xml("res/layout/foo.xml", "<LinearLayout/>"),
-            java(
-                """
+      .files(
+        xml("res/layout/foo.xml", "<LinearLayout/>"),
+        java(
+          """
                     package test.pkg;
                     @SuppressWarnings("ALL") class Foo {
                     }
                     """
-            ),
-        )
-        .allowSystemErrors(true)
-        .allowExceptions(true)
-        .issues(CrashingInheritorDetector.CRASHING_ISSUE, CrashingInheritorDetector2.CRASHING_ISSUE)
-        .testModes(TestMode.DEFAULT)
-        .run()
-        .check({
-          assertThat(it)
-              .contains(
-                  "Foo.java: Error: Unexpected failure during lint analysis of Foo.java (this is a bug in lint or one of the libraries it depends on)"
-              )
-          assertThat(it)
-              .contains("The crash seems to involve the detector com.android.tools.lint.client.api.LintDriverCrashTest＄CrashingDetector.")
-          assertThat(it)
-              .contains(
-                  """
-                  The crash seems to involve the detector com.android.tools.lint.client.api.LintDriverCrashTest＄CrashingDetector.
-                  You can try disabling it with something like this:
-                      android {
-                          lint {
-                              disable "_TestCrashInheritor", "_TestCrashInheritor2"
-                          }
-                      }
-                  """
-                      .trimIndent()
-              )
-        })
+        ),
+      )
+      .allowSystemErrors(true)
+      .allowExceptions(true)
+      .issues(CrashingInheritorDetector.CRASHING_ISSUE, CrashingInheritorDetector2.CRASHING_ISSUE)
+      .testModes(TestMode.DEFAULT)
+      .run()
+      .check({
+        assertThat(it)
+          .contains(
+            "Foo.java: Error: Unexpected failure during lint analysis of Foo.java (this is a bug in lint or one of the libraries it depends on)"
+          )
+        assertThat(it)
+          .contains("The crash seems to involve the detector com.android.tools.lint.client.api.LintDriverCrashTest＄CrashingDetector.")
+        assertThat(it)
+          .contains(
+            """
+            The crash seems to involve the detector com.android.tools.lint.client.api.LintDriverCrashTest＄CrashingDetector.
+            You can try disabling it with something like this:
+                android {
+                    lint {
+                        disable "_TestCrashInheritor", "_TestCrashInheritor2"
+                    }
+                }
+            """
+              .trimIndent()
+          )
+      })
     LintDriver.clearCrashCount()
   }
 
@@ -323,9 +318,9 @@ class LintDriverCrashTest : AbstractCheckTest() {
     // If a detector crashes, that should not invalidate any other results from the module
 
     lint()
-        .files(
-            manifest(
-                    """
+      .files(
+        manifest(
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="test.pkg" android:versionName="1.0">
                     <application>
@@ -333,33 +328,33 @@ class LintDriverCrashTest : AbstractCheckTest() {
                     </application>
                 </manifest>
                 """
-                )
-                .indented(),
+          )
+          .indented(),
 
-            // Deliberately crashing lint check
-            *lintApiStubs,
-        )
-        .allowSystemErrors(true)
-        .allowExceptions(true)
-        .testModes(TestMode.PARTIAL)
-        .issues(CrashingDetector.CRASHING_ISSUE, ManifestDetector.WRONG_PARENT)
-        .run()
-        .check({
-          assertThat(it).contains("Unexpected failure during lint analysis")
-          assertThat(it).contains("(this is a bug in lint or one of the libraries it depends on)")
-          assertThat(it)
-              .contains("The crash seems to involve the detector com.android.tools.lint.client.api.LintDriverCrashTest＄CrashingDetector.")
-          assertThat(it)
-              .contains(
-                  """
-                  AndroidManifest.xml:4: Error: The <uses-sdk> element must be a direct child of the <manifest> root element [WrongManifestParent]
-                        <uses-sdk android:minSdkVersion="10" android:targetSdkVersion="31" />
-                         ~~~~~~~~
-                  6 errors
-                  """
-                      .trimIndent()
-              )
-        })
+        // Deliberately crashing lint check
+        *lintApiStubs,
+      )
+      .allowSystemErrors(true)
+      .allowExceptions(true)
+      .testModes(TestMode.PARTIAL)
+      .issues(CrashingDetector.CRASHING_ISSUE, ManifestDetector.WRONG_PARENT)
+      .run()
+      .check({
+        assertThat(it).contains("Unexpected failure during lint analysis")
+        assertThat(it).contains("(this is a bug in lint or one of the libraries it depends on)")
+        assertThat(it)
+          .contains("The crash seems to involve the detector com.android.tools.lint.client.api.LintDriverCrashTest＄CrashingDetector.")
+        assertThat(it)
+          .contains(
+            """
+            AndroidManifest.xml:4: Error: The <uses-sdk> element must be a direct child of the <manifest> root element [WrongManifestParent]
+                  <uses-sdk android:minSdkVersion="10" android:targetSdkVersion="31" />
+                   ~~~~~~~~
+            6 errors
+            """
+              .trimIndent()
+          )
+      })
 
     // Make sure we really had a crash during that analysis
     assertTrue(LintDriver.crashCount > 0)
@@ -370,21 +365,21 @@ class LintDriverCrashTest : AbstractCheckTest() {
   fun testLinkageError() {
     // Regression test for 34248502
     lint()
-        .files(
-            java(
-                """
+      .files(
+        java(
+          """
                     package test.pkg;
                     @SuppressWarnings("ALL") class Foo {
                     }
                     """
-            )
         )
-        .allowSystemErrors(true)
-        .allowExceptions(true)
-        .issues(LinkageErrorDetector.LINKAGE_ERROR)
-        .run()
-        .expect(
-            """
+      )
+      .allowSystemErrors(true)
+      .allowExceptions(true)
+      .issues(LinkageErrorDetector.LINKAGE_ERROR)
+      .run()
+      .expect(
+        """
                     src/test/pkg/Foo.java: Error: Lint crashed because it is being invoked with the wrong version of Guava
                     (the Android version instead of the JRE version, which is required in the
                     Gradle plugin).
@@ -398,55 +393,55 @@ class LintDriverCrashTest : AbstractCheckTest() {
 
                     (Note that this breaks a lot of lint analysis so this report is incomplete.) [LintError]
                     1 error"""
-        )
+      )
     LintDriver.clearCrashCount()
   }
 
   fun testInitializationError() {
     // Regression test for b/261757191
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
             package test.pkg;
             @SuppressWarnings("ALL") class Foo {
             }
             """
-                )
-                .indented()
-        )
-        .allowSystemErrors(true)
-        .allowExceptions(true)
-        .testModes(TestMode.DEFAULT)
-        .issues(BrokenInitializationDetector.BROKEN_INIT)
-        .run()
-        .check({ message ->
-          assertThat(message)
-              .contains(
-                  "app: Error: Can't initialize detector com.android.tools.lint.client.api.LintDriverCrashTest＄BrokenInitializationDetector."
-              )
-          assertThat(message)
-              .contains("Unexpected failure during lint analysis (this is a bug in lint or one of the libraries it depends on)")
-          assertThat(message)
-              .containsMatch(
-                  "Stack: InvocationTargetException:(NativeConstructorAccessorImpl.newInstance0|DirectConstructorHandleAccessor.newInstance)"
-              )
+          )
+          .indented()
+      )
+      .allowSystemErrors(true)
+      .allowExceptions(true)
+      .testModes(TestMode.DEFAULT)
+      .issues(BrokenInitializationDetector.BROKEN_INIT)
+      .run()
+      .check({ message ->
+        assertThat(message)
+          .contains(
+            "app: Error: Can't initialize detector com.android.tools.lint.client.api.LintDriverCrashTest＄BrokenInitializationDetector."
+          )
+        assertThat(message)
+          .contains("Unexpected failure during lint analysis (this is a bug in lint or one of the libraries it depends on)")
+        assertThat(message)
+          .containsMatch(
+            "Stack: InvocationTargetException:(NativeConstructorAccessorImpl.newInstance0|DirectConstructorHandleAccessor.newInstance)"
+          )
 
-          // It's not easy to set environment variables from Java once the process is running,
-          // so instead of attempting to set it to true and false in tests, we'll just make this
-          // test adapt to what's set in the environment. On our CI tests, it should not be
-          // set, so the doesNotContain() assertion will be used. For developers on the lint team
-          // it's typically set so the contains() assertion will be used.
-          val suggestion = "You can run with --stacktrace or set environment variable LINT_PRINT_"
-          if (System.getenv("LINT_PRINT_STACKTRACE") == VALUE_TRUE) {
-            assertThat(message).doesNotContain(suggestion)
-          } else {
-            assertThat(message).contains(suggestion)
-          }
+        // It's not easy to set environment variables from Java once the process is running,
+        // so instead of attempting to set it to true and false in tests, we'll just make this
+        // test adapt to what's set in the environment. On our CI tests, it should not be
+        // set, so the doesNotContain() assertion will be used. For developers on the lint team
+        // it's typically set so the contains() assertion will be used.
+        val suggestion = "You can run with --stacktrace or set environment variable LINT_PRINT_"
+        if (System.getenv("LINT_PRINT_STACKTRACE") == VALUE_TRUE) {
+          assertThat(message).doesNotContain(suggestion)
+        } else {
+          assertThat(message).contains(suggestion)
+        }
 
-          assertThat(message).contains("[LintError]")
-          assertThat(message).contains("1 error")
-        })
+        assertThat(message).contains("[LintError]")
+        assertThat(message).contains("1 error")
+      })
 
     LintDriver.clearCrashCount()
   }
@@ -460,20 +455,17 @@ class LintDriverCrashTest : AbstractCheckTest() {
       val root = temporaryFolder.root
 
       lint()
-          .files(
-              *lintApiStubs,
-              bytecode(
-                  "lint.jar",
-                  source(
-                      "META-INF/services/com.android.tools.lint.client.api.IssueRegistry",
-                      "test.pkg.MyIssueRegistry",
-                  ),
-                  0x70522285,
-              ),
-              bytecode(
-                  "lint.jar",
-                  kotlin(
-                          """
+        .files(
+          *lintApiStubs,
+          bytecode(
+            "lint.jar",
+            source("META-INF/services/com.android.tools.lint.client.api.IssueRegistry", "test.pkg.MyIssueRegistry"),
+            0x70522285,
+          ),
+          bytecode(
+            "lint.jar",
+            kotlin(
+                """
                 package test.pkg
                 import com.android.tools.lint.client.api.*
                 import com.android.tools.lint.detector.api.*
@@ -492,15 +484,15 @@ class LintDriverCrashTest : AbstractCheckTest() {
                     )
                 }
                 """
-                      )
-                      .indented(),
-                  0xce6ea435,
-                  """
+              )
+              .indented(),
+            0xce6ea435,
+            """
             META-INF/main.kotlin_module:
             H4sIAAAAAAAA/2NgYGBmYGBgBGJOBijgMuZSTM7P1UvMSynKz0zRK8nPzynW
             y8nMK9FLzslMBVKJBZlCfM5gdnxxSWlSsXeJEoMWAwC1C+QGTQAAAA==
             """,
-                  """
+            """
             test/pkg/MyIssueRegistry.class:
             H4sIAAAAAAAA/6VUW08bRxT+Zn1bLwssLmmMkzYkaYMxJGtoeoWQEnLRSoZK
             UKFWPI3t0XbwehftjFHyxq/oD6j62Ic+VI3USi3KY39U1bO7Tk0MUVNF1s65
@@ -523,32 +515,32 @@ class LintDriverCrashTest : AbstractCheckTest() {
             Vwi3eoCch4883PXwMT4hFZ96+AyfH4ApfIG1A1QULiusKxQVbijcU5hXuK5w
             NdU3FKoKcwoLCrcUlhVuKzQUlv4Bcv5ApO0GAAA=
             """,
-              ),
-          )
-          .testModes(TestMode.DEFAULT)
-          .createProjects(root)
+          ),
+        )
+        .testModes(TestMode.DEFAULT)
+        .createProjects(root)
 
       val lintJar = File(root, "app/lint.jar")
       assertTrue(lintJar.exists())
 
       lint()
-          .files(kotlin("fun test() { }"))
-          .clientFactory { createGlobalLintJarClient(lintJar) }
-          .testModes(TestMode.DEFAULT)
-          .allowSystemErrors(true)
-          .allowExceptions(true)
-          .allowObsoleteLintChecks(false)
-          .issueIds("MyIssueId")
-          .run()
-          .check({ message ->
-            assertThat(message).contains("app/lint.jar: Error: Could not load custom lint check jar file.")
-            assertThat(message)
-                .containsMatch(
-                    "The issue registry class is test.pkg.MyIssueRegistry. The initialization problem is (NativeConstructorAccessorImpl.newInstance0|DirectConstructorHandleAccessor.newInstance)"
-                )
-            assertThat(message).contains("[LintError]")
-            assertThat(message).contains("1 error")
-          })
+        .files(kotlin("fun test() { }"))
+        .clientFactory { createGlobalLintJarClient(lintJar) }
+        .testModes(TestMode.DEFAULT)
+        .allowSystemErrors(true)
+        .allowExceptions(true)
+        .allowObsoleteLintChecks(false)
+        .issueIds("MyIssueId")
+        .run()
+        .check({ message ->
+          assertThat(message).contains("app/lint.jar: Error: Could not load custom lint check jar file.")
+          assertThat(message)
+            .containsMatch(
+              "The issue registry class is test.pkg.MyIssueRegistry. The initialization problem is (NativeConstructorAccessorImpl.newInstance0|DirectConstructorHandleAccessor.newInstance)"
+            )
+          assertThat(message).contains("[LintError]")
+          assertThat(message).contains("1 error")
+        })
     } finally {
       LintDriver.clearCrashCount()
       temporaryFolder.delete()
@@ -565,17 +557,9 @@ class LintDriverCrashTest : AbstractCheckTest() {
       val root = temporaryFolder.root
 
       lint()
-          .files(
-              jar(
-                  "lint.jar",
-                  source(
-                      "META-INF/services/com.android.tools.lint.client.api.IssueRegistry",
-                      "test.pkg.MyIssueRegistry",
-                  ),
-              )
-          )
-          .testModes(TestMode.DEFAULT)
-          .createProjects(root)
+        .files(jar("lint.jar", source("META-INF/services/com.android.tools.lint.client.api.IssueRegistry", "test.pkg.MyIssueRegistry")))
+        .testModes(TestMode.DEFAULT)
+        .createProjects(root)
 
       val lintJar = File(root, "app/lint.jar")
       assertTrue(lintJar.exists())
@@ -584,22 +568,19 @@ class LintDriverCrashTest : AbstractCheckTest() {
 
       val log = StringBuilder()
       lint()
-          .files(kotlin("fun test() { }"))
-          .clientFactory { createGlobalLintJarClient(lintJar, log = { log.append(it).append('\n') }) }
-          .testModes(TestMode.DEFAULT)
-          .allowSystemErrors(true)
-          .allowExceptions(true)
-          .allowObsoleteLintChecks(false)
-          .issueIds("MyIssueId")
-          .run()
-          .expectClean()
+        .files(kotlin("fun test() { }"))
+        .clientFactory { createGlobalLintJarClient(lintJar, log = { log.append(it).append('\n') }) }
+        .testModes(TestMode.DEFAULT)
+        .allowSystemErrors(true)
+        .allowExceptions(true)
+        .allowObsoleteLintChecks(false)
+        .issueIds("MyIssueId")
+        .run()
+        .expectClean()
 
       val messages = log.toString()
       assertTrue(messages, messages.contains("Could not load custom lint check jar file"))
-      assertTrue(
-          messages,
-          messages.contains("←JarFileIssueRegistry\$Factory.loadIssueRegistry(JarFileIssueRegistry.kt"),
-      )
+      assertTrue(messages, messages.contains("←JarFileIssueRegistry\$Factory.loadIssueRegistry(JarFileIssueRegistry.kt"))
 
       // Now make sure that the `android.lint.log-jar-problems` flag can be used to
       // turn off logging of these problems.
@@ -609,15 +590,15 @@ class LintDriverCrashTest : AbstractCheckTest() {
         System.setProperty(propertyName, VALUE_FALSE)
         log.clear()
         lint()
-            .files(kotlin("fun test() { }"))
-            .clientFactory { createGlobalLintJarClient(lintJar, log = { log.append(it).append('\n') }) }
-            .testModes(TestMode.DEFAULT)
-            .allowSystemErrors(true)
-            .allowExceptions(true)
-            .allowObsoleteLintChecks(false)
-            .issueIds("MyIssueId")
-            .run()
-            .expectClean()
+          .files(kotlin("fun test() { }"))
+          .clientFactory { createGlobalLintJarClient(lintJar, log = { log.append(it).append('\n') }) }
+          .testModes(TestMode.DEFAULT)
+          .allowSystemErrors(true)
+          .allowExceptions(true)
+          .allowObsoleteLintChecks(false)
+          .issueIds("MyIssueId")
+          .run()
+          .expectClean()
         assertEquals("", log.toString())
       } finally {
         if (prevFlag != null) {
@@ -638,20 +619,20 @@ class LintDriverCrashTest : AbstractCheckTest() {
     // into the output as used to be the case
     try {
       lint()
-          .files(
-              java(
-                  """
+        .files(
+          java(
+            """
                         package test.pkg;
                         @SuppressWarnings("ALL") class Foo {
                         }
                         """
-              )
           )
-          .allowSystemErrors(true)
-          .allowExceptions(false)
-          .issues(LinkageErrorDetector.LINKAGE_ERROR)
-          .run()
-          .expect("<doesn't matter, we shouldn't get this far>")
+        )
+        .allowSystemErrors(true)
+        .allowExceptions(false)
+        .issues(LinkageErrorDetector.LINKAGE_ERROR)
+        .run()
+        .expect("<doesn't matter, we shouldn't get this far>")
       fail("Expected LinkageError to be thrown")
     } catch (e: LinkageError) {
       // OK
@@ -671,26 +652,26 @@ class LintDriverCrashTest : AbstractCheckTest() {
     override fun getApplicableUastTypes(): List<Class<out UElement>> = listOf(UFile::class.java)
 
     override fun createUastHandler(context: JavaContext): UElementHandler =
-        object : UElementHandler() {
-          override fun visitFile(node: UFile) {
-            @Suppress("DIVISION_BY_ZERO", "UNUSED_VARIABLE") // Intentional crash
-            val x = 1 / 0
-            super.visitFile(node)
-          }
+      object : UElementHandler() {
+        override fun visitFile(node: UFile) {
+          @Suppress("DIVISION_BY_ZERO", "UNUSED_VARIABLE") // Intentional crash
+          val x = 1 / 0
+          super.visitFile(node)
         }
+      }
 
     companion object {
       @Suppress("LintImplTextFormat")
       val CRASHING_ISSUE =
-          Issue.create(
-              "_TestCrash",
-              "test",
-              "test",
-              Category.LINT,
-              10,
-              Severity.FATAL,
-              Implementation(CrashingDetector::class.java, Scope.JAVA_FILE_SCOPE),
-          )
+        Issue.create(
+          "_TestCrash",
+          "test",
+          "test",
+          Category.LINT,
+          10,
+          Severity.FATAL,
+          Implementation(CrashingDetector::class.java, Scope.JAVA_FILE_SCOPE),
+        )
     }
   }
 
@@ -706,15 +687,15 @@ class LintDriverCrashTest : AbstractCheckTest() {
     companion object {
       @Suppress("LintImplTextFormat")
       val CRASHING_ISSUE =
-          Issue.create(
-              "_TestCrash_But_Ignore",
-              "test",
-              "test",
-              Category.LINT,
-              10,
-              Severity.ERROR,
-              Implementation(CrashingYetDisabledDetector::class.java, Scope.JAVA_FILE_SCOPE),
-          )
+        Issue.create(
+          "_TestCrash_But_Ignore",
+          "test",
+          "test",
+          Category.LINT,
+          10,
+          Severity.ERROR,
+          Implementation(CrashingYetDisabledDetector::class.java, Scope.JAVA_FILE_SCOPE),
+        )
     }
   }
 
@@ -731,15 +712,15 @@ class LintDriverCrashTest : AbstractCheckTest() {
     companion object {
       @Suppress("LintImplTextFormat")
       val CRASHING_ISSUE =
-          Issue.create(
-              "_TestCrashImplementer",
-              "test",
-              "test",
-              Category.LINT,
-              10,
-              Severity.FATAL,
-              Implementation(CrashingImplementationDetector::class.java, Scope.JAVA_FILE_SCOPE),
-          )
+        Issue.create(
+          "_TestCrashImplementer",
+          "test",
+          "test",
+          Category.LINT,
+          10,
+          Severity.FATAL,
+          Implementation(CrashingImplementationDetector::class.java, Scope.JAVA_FILE_SCOPE),
+        )
     }
   }
 
@@ -748,15 +729,15 @@ class LintDriverCrashTest : AbstractCheckTest() {
     companion object {
       @Suppress("LintImplTextFormat")
       val CRASHING_ISSUE =
-          Issue.create(
-              "_TestCrashInheritor",
-              "test",
-              "test",
-              Category.LINT,
-              10,
-              Severity.FATAL,
-              Implementation(CrashingInheritorDetector::class.java, Scope.JAVA_FILE_SCOPE),
-          )
+        Issue.create(
+          "_TestCrashInheritor",
+          "test",
+          "test",
+          Category.LINT,
+          10,
+          Severity.FATAL,
+          Implementation(CrashingInheritorDetector::class.java, Scope.JAVA_FILE_SCOPE),
+        )
     }
   }
 
@@ -765,15 +746,15 @@ class LintDriverCrashTest : AbstractCheckTest() {
     companion object {
       @Suppress("LintImplTextFormat")
       val CRASHING_ISSUE =
-          Issue.create(
-              "_TestCrashInheritor2",
-              "test",
-              "test",
-              Category.LINT,
-              10,
-              Severity.FATAL,
-              Implementation(CrashingInheritorDetector2::class.java, Scope.JAVA_FILE_SCOPE),
-          )
+        Issue.create(
+          "_TestCrashInheritor2",
+          "test",
+          "test",
+          Category.LINT,
+          10,
+          Severity.FATAL,
+          Implementation(CrashingInheritorDetector2::class.java, Scope.JAVA_FILE_SCOPE),
+        )
     }
   }
 
@@ -781,10 +762,10 @@ class LintDriverCrashTest : AbstractCheckTest() {
 
   fun testHalfUppercaseColor2() {
     lint()
-        .files(
-            xml(
-                    "res/drawable/drawable.xml",
-                    """
+      .files(
+        xml(
+            "res/drawable/drawable.xml",
+            """
           <vector xmlns:android="http://schemas.android.com/apk/res/android"
               android:height="800dp"
               android:viewportHeight="800"
@@ -811,13 +792,13 @@ class LintDriverCrashTest : AbstractCheckTest() {
           C639.384,516.129,645.161,521.906,645.161,529.032 L670.968,529.032
           C670.968,521.906,676.745,516.129,683.871,516.129 Z"/>
           </vector>""",
-                )
-                .indented()
-        )
-        .issues(ColorCasingDetector.ISSUE_COLOR_CASING)
-        .run()
-        .expect(
-            """
+          )
+          .indented()
+      )
+      .issues(ColorCasingDetector.ISSUE_COLOR_CASING)
+      .run()
+      .expect(
+        """
                 res/drawable/drawable.xml:7: Warning: Should be using uppercase letters [_ColorCasing]
                       android:fillColor="#ffe000"
                                          ~~~~~~~
@@ -829,9 +810,9 @@ class LintDriverCrashTest : AbstractCheckTest() {
                                          ~~~~~~~
                 0 errors, 3 warnings
                 """
-        )
-        .expectFixDiffs(
-            """
+      )
+      .expectFixDiffs(
+        """
                 Autofix for res/drawable/drawable.xml line 7: Convert to uppercase:
                 @@ -7 +7
                 -       android:fillColor="#ffe000"
@@ -845,7 +826,7 @@ class LintDriverCrashTest : AbstractCheckTest() {
                 -       android:fillColor="#ffe000"
                 +       android:fillColor="#FFE000"
                 """
-        )
+      )
   }
 
   fun testAbsolutePaths() {
@@ -856,12 +837,12 @@ class LintDriverCrashTest : AbstractCheckTest() {
     }
 
     lint()
-        .files(xml("res/drawable/drawable.xml", "<test/>").indented())
-        .issues(AbsPathTestDetector.ABS_PATH_ISSUE)
-        .stripRoot(false)
-        .run()
-        .expect(
-            """
+      .files(xml("res/drawable/drawable.xml", "<test/>").indented())
+      .issues(AbsPathTestDetector.ABS_PATH_ISSUE)
+      .stripRoot(false)
+      .run()
+      .expect(
+        """
                 Found absolute path
                     TESTROOT/default/app/res/drawable/drawable.xml
                 in a reported error message; this is discouraged because absolute
@@ -871,17 +852,17 @@ class LintDriverCrashTest : AbstractCheckTest() {
 
                 Error message was: `found error in TESTROOT/default/app/res/drawable/drawable.xml!`
                 """,
-            java.lang.AssertionError::class.java,
-        )
+        java.lang.AssertionError::class.java,
+      )
 
     // Allowing absolute paths
     lint()
-        .files(xml("res/drawable/drawable.xml", "<test/>").indented())
-        .issues(AbsPathTestDetector.ABS_PATH_ISSUE)
-        .stripRoot(false)
-        .allowAbsolutePathsInMessages(true)
-        .run()
-        .expectCount(1, Severity.WARNING)
+      .files(xml("res/drawable/drawable.xml", "<test/>").indented())
+      .issues(AbsPathTestDetector.ABS_PATH_ISSUE)
+      .stripRoot(false)
+      .allowAbsolutePathsInMessages(true)
+      .run()
+      .expectCount(1, Severity.WARNING)
   }
 
   // Invalid detector which includes absolute paths in error messages which should not be done
@@ -889,24 +870,20 @@ class LintDriverCrashTest : AbstractCheckTest() {
     override fun appliesTo(folderType: ResourceFolderType) = true
 
     override fun afterCheckFile(context: Context) {
-      context.report(
-          ABS_PATH_ISSUE,
-          Location.create(context.file),
-          "found error in " + context.file + "!",
-      )
+      context.report(ABS_PATH_ISSUE, Location.create(context.file), "found error in " + context.file + "!")
     }
 
     companion object {
       val ABS_PATH_ISSUE =
-          Issue.create(
-              "_AbsPath",
-              "Sample",
-              "Sample",
-              Category.CORRECTNESS,
-              5,
-              Severity.WARNING,
-              Implementation(AbsPathTestDetector::class.java, Scope.RESOURCE_FILE_SCOPE),
-          )
+        Issue.create(
+          "_AbsPath",
+          "Sample",
+          "Sample",
+          Category.CORRECTNESS,
+          5,
+          Severity.WARNING,
+          Implementation(AbsPathTestDetector::class.java, Scope.RESOURCE_FILE_SCOPE),
+        )
     }
   }
 
@@ -917,28 +894,22 @@ class LintDriverCrashTest : AbstractCheckTest() {
 
     override fun visitElement(context: XmlContext, element: Element) {
       element
-          .attributes()
-          .filter { it.nodeValue.matches(COLOR_REGEX) }
-          .filter { it.nodeValue.any { c -> c.isLowerCase() } }
-          .forEach {
-            val fix =
-                fix()
-                    .name("Convert to uppercase")
-                    .replace()
-                    // .range(context.getValueLocation(it as Attr))
-                    .text(it.nodeValue)
-                    .with(it.nodeValue.uppercase(Locale.US))
-                    .autoFix()
-                    .build()
+        .attributes()
+        .filter { it.nodeValue.matches(COLOR_REGEX) }
+        .filter { it.nodeValue.any { c -> c.isLowerCase() } }
+        .forEach {
+          val fix =
+            fix()
+              .name("Convert to uppercase")
+              .replace()
+              // .range(context.getValueLocation(it as Attr))
+              .text(it.nodeValue)
+              .with(it.nodeValue.uppercase(Locale.US))
+              .autoFix()
+              .build()
 
-            context.report(
-                ISSUE_COLOR_CASING,
-                it,
-                context.getValueLocation(it as Attr),
-                "Should be using uppercase letters",
-                fix,
-            )
-          }
+          context.report(ISSUE_COLOR_CASING, it, context.getValueLocation(it as Attr), "Should be using uppercase letters", fix)
+        }
     }
 
     companion object {
@@ -946,15 +917,15 @@ class LintDriverCrashTest : AbstractCheckTest() {
 
       @Suppress("LintImplTextFormat")
       val ISSUE_COLOR_CASING =
-          Issue.create(
-              "_ColorCasing",
-              "Raw colors should be defined with uppercase letters.",
-              "Colors should have uppercase letters. #FF0099 is valid while #ff0099 isn't since the ff should be written in uppercase.",
-              Category.CORRECTNESS,
-              5,
-              Severity.WARNING,
-              Implementation(ColorCasingDetector::class.java, Scope.RESOURCE_FILE_SCOPE),
-          )
+        Issue.create(
+          "_ColorCasing",
+          "Raw colors should be defined with uppercase letters.",
+          "Colors should have uppercase letters. #FF0099 is valid while #ff0099 isn't since the ff should be written in uppercase.",
+          Category.CORRECTNESS,
+          5,
+          Severity.WARNING,
+          Implementation(ColorCasingDetector::class.java, Scope.RESOURCE_FILE_SCOPE),
+        )
 
       internal fun Node.attributes() = (0 until attributes.length).map { attributes.item(it) }
     }
@@ -973,15 +944,15 @@ class LintDriverCrashTest : AbstractCheckTest() {
     companion object {
       @Suppress("LintImplTextFormat")
       val DISPOSED_ISSUE =
-          Issue.create(
-              "_TestDisposed",
-              "test",
-              "test",
-              Category.LINT,
-              10,
-              Severity.FATAL,
-              Implementation(DisposedThrowingDetector::class.java, Scope.RESOURCE_FILE_SCOPE),
-          )
+        Issue.create(
+          "_TestDisposed",
+          "test",
+          "test",
+          Category.LINT,
+          10,
+          Severity.FATAL,
+          Implementation(DisposedThrowingDetector::class.java, Scope.RESOURCE_FILE_SCOPE),
+        )
     }
   }
 
@@ -990,34 +961,34 @@ class LintDriverCrashTest : AbstractCheckTest() {
     override fun getApplicableUastTypes(): List<Class<out UElement>> = listOf(UFile::class.java)
 
     override fun createUastHandler(context: JavaContext): UElementHandler =
-        object : UElementHandler() {
-          override fun visitFile(node: UFile) {
-            throw LinkageError(
-                "loader constraint violation: when resolving field " +
-                    "\"QUALIFIER_SPLITTER\" the class loader (instance of " +
-                    "com/android/tools/lint/gradle/api/DelegatingClassLoader) of the " +
-                    "referring class, " +
-                    "com/android/ide/common/resources/configuration/FolderConfiguration, " +
-                    "and the class loader (instance of " +
-                    "org/gradle/internal/classloader/VisitableURLClassLoader) for the " +
-                    "field's resolved type, com/google/common/base/Splitter, have " +
-                    "different Class objects for that type"
-            )
-          }
+      object : UElementHandler() {
+        override fun visitFile(node: UFile) {
+          throw LinkageError(
+            "loader constraint violation: when resolving field " +
+              "\"QUALIFIER_SPLITTER\" the class loader (instance of " +
+              "com/android/tools/lint/gradle/api/DelegatingClassLoader) of the " +
+              "referring class, " +
+              "com/android/ide/common/resources/configuration/FolderConfiguration, " +
+              "and the class loader (instance of " +
+              "org/gradle/internal/classloader/VisitableURLClassLoader) for the " +
+              "field's resolved type, com/google/common/base/Splitter, have " +
+              "different Class objects for that type"
+          )
         }
+      }
 
     companion object {
       @Suppress("LintImplTextFormat")
       val LINKAGE_ERROR =
-          Issue.create(
-              "_LinkageCrash",
-              "test",
-              "test",
-              Category.LINT,
-              10,
-              Severity.FATAL,
-              Implementation(LinkageErrorDetector::class.java, Scope.JAVA_FILE_SCOPE),
-          )
+        Issue.create(
+          "_LinkageCrash",
+          "test",
+          "test",
+          Category.LINT,
+          10,
+          Severity.FATAL,
+          Implementation(LinkageErrorDetector::class.java, Scope.JAVA_FILE_SCOPE),
+        )
     }
   }
 
@@ -1029,22 +1000,22 @@ class LintDriverCrashTest : AbstractCheckTest() {
     override fun getApplicableUastTypes(): List<Class<out UElement>> = listOf(UFile::class.java)
 
     override fun createUastHandler(context: JavaContext): UElementHandler =
-        object : UElementHandler() {
-          override fun visitFile(node: UFile) {}
-        }
+      object : UElementHandler() {
+        override fun visitFile(node: UFile) {}
+      }
 
     companion object {
       @Suppress("LintImplTextFormat")
       val BROKEN_INIT =
-          Issue.create(
-              "_InitCrash",
-              "test",
-              "test",
-              Category.LINT,
-              10,
-              Severity.FATAL,
-              Implementation(BrokenInitializationDetector::class.java, Scope.JAVA_FILE_SCOPE),
-          )
+        Issue.create(
+          "_InitCrash",
+          "test",
+          "test",
+          Category.LINT,
+          10,
+          Severity.FATAL,
+          Implementation(BrokenInitializationDetector::class.java, Scope.JAVA_FILE_SCOPE),
+        )
     }
   }
 }

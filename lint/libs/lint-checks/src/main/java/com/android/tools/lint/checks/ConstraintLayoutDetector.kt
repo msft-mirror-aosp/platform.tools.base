@@ -43,12 +43,7 @@ import org.w3c.dom.Node
 /** Check which looks for potential errors in declarations of ConstraintLayout, such as under specifying constraints. */
 class ConstraintLayoutDetector : LayoutDetector() {
   override fun getApplicableElements(): Collection<String> {
-    return setOf(
-        CONSTRAINT_LAYOUT.oldName(),
-        CONSTRAINT_LAYOUT.newName(),
-        MOTION_LAYOUT.oldName(),
-        MOTION_LAYOUT.newName(),
-    )
+    return setOf(CONSTRAINT_LAYOUT.oldName(), CONSTRAINT_LAYOUT.newName(), MOTION_LAYOUT.oldName(), MOTION_LAYOUT.newName())
   }
 
   override fun visitElement(context: XmlContext, element: Element) {
@@ -93,18 +88,18 @@ class ConstraintLayoutDetector : LayoutDetector() {
       val layout = child as Element
       val elementTagName = layout.tagName
       if (
-          CLASS_CONSTRAINT_LAYOUT_GUIDELINE.isEquals(elementTagName) ||
-              // Groups do not need to be constrained
-              CLASS_CONSTRAINT_LAYOUT_GROUP.isEquals(elementTagName) ||
-              // Don't flag includes; they might have the right constraints inside.
-              TAG_INCLUDE == elementTagName ||
-              // <requestFocus/>, <tag/>, etc should not have constraint attributes
-              isLayoutMarkerTag(elementTagName)
+        CLASS_CONSTRAINT_LAYOUT_GUIDELINE.isEquals(elementTagName) ||
+          // Groups do not need to be constrained
+          CLASS_CONSTRAINT_LAYOUT_GROUP.isEquals(elementTagName) ||
+          // Don't flag includes; they might have the right constraints inside.
+          TAG_INCLUDE == elementTagName ||
+          // <requestFocus/>, <tag/>, etc should not have constraint attributes
+          isLayoutMarkerTag(elementTagName)
       ) {
         child = child.getNextSibling()
         continue
       } else if (
-          elementTagName.isNotBlank() && CLASS_CONSTRAINT_LAYOUT_BARRIER.isEquals(elementTagName) && scanForBarrierConstraint(layout)
+        elementTagName.isNotBlank() && CLASS_CONSTRAINT_LAYOUT_BARRIER.isEquals(elementTagName) && scanForBarrierConstraint(layout)
       ) {
         // The Barrier has the necessary layout constraints.
         // This element is constrained correctly.
@@ -130,23 +125,23 @@ class ConstraintLayoutDetector : LayoutDetector() {
           continue
         }
         if (
-            ATTR_LAYOUT_WIDTH == name && VALUE_MATCH_PARENT == attribute.nodeValue ||
-                name.endsWith("toLeftOf") ||
-                name.endsWith("toRightOf") ||
-                name.endsWith("toStartOf") ||
-                name.endsWith("toEndOf") ||
-                name.endsWith("toCenterX")
+          ATTR_LAYOUT_WIDTH == name && VALUE_MATCH_PARENT == attribute.nodeValue ||
+            name.endsWith("toLeftOf") ||
+            name.endsWith("toRightOf") ||
+            name.endsWith("toStartOf") ||
+            name.endsWith("toEndOf") ||
+            name.endsWith("toCenterX")
         ) {
           isConstrainedHorizontally = true
           if (isConstrainedVertically) {
             break
           }
         } else if (
-            ATTR_LAYOUT_HEIGHT == name && VALUE_MATCH_PARENT == attribute.nodeValue ||
-                name.endsWith("toTopOf") ||
-                name.endsWith("toBottomOf") ||
-                name.endsWith("toCenterY") ||
-                name.endsWith("toBaselineOf")
+          ATTR_LAYOUT_HEIGHT == name && VALUE_MATCH_PARENT == attribute.nodeValue ||
+            name.endsWith("toTopOf") ||
+            name.endsWith("toBottomOf") ||
+            name.endsWith("toCenterY") ||
+            name.endsWith("toBaselineOf")
         ) {
           isConstrainedVertically = true
           if (isConstrainedHorizontally) {
@@ -158,14 +153,14 @@ class ConstraintLayoutDetector : LayoutDetector() {
         // Don't complain if the element doesn't specify absolute x/y - that's
         // when it gets confusing
         val message: String =
-            when {
-              isConstrainedVertically ->
-                  "This view is not constrained horizontally: at runtime it will jump to the left unless you add a horizontal constraint"
-              isConstrainedHorizontally ->
-                  "This view is not constrained vertically: at runtime it will jump to the top unless you add a vertical constraint"
-              else ->
-                  "This view is not constrained. It only has designtime positions, so it will jump to (0,0) at runtime unless you add the constraints"
-            }
+          when {
+            isConstrainedVertically ->
+              "This view is not constrained horizontally: at runtime it will jump to the left unless you add a horizontal constraint"
+            isConstrainedHorizontally ->
+              "This view is not constrained vertically: at runtime it will jump to the top unless you add a vertical constraint"
+            else ->
+              "This view is not constrained. It only has designtime positions, so it will jump to (0,0) at runtime unless you add the constraints"
+          }
         context.report(ISSUE, layout, context.getNameLocation(layout), message)
       }
       child = child.getNextSibling()
@@ -175,11 +170,11 @@ class ConstraintLayoutDetector : LayoutDetector() {
   companion object {
     @JvmField
     val ISSUE =
-        Issue.create(
-            id = "MissingConstraints",
-            briefDescription = "Missing Constraints in ConstraintLayout",
-            explanation =
-                """
+      Issue.create(
+        id = "MissingConstraints",
+        briefDescription = "Missing Constraints in ConstraintLayout",
+        explanation =
+          """
                     The layout editor allows you to place widgets anywhere on the canvas, \
                     and it records the current position with designtime attributes (such as \
                     `layout_editor_absoluteX`). These attributes are **not** applied at \
@@ -188,12 +183,12 @@ class ConstraintLayoutDetector : LayoutDetector() {
                     a widget has both horizontal and vertical constraints by dragging from \
                     the edge connections.
                     """,
-            category = Category.CORRECTNESS,
-            priority = 6,
-            severity = Severity.ERROR,
-            implementation = Implementation(ConstraintLayoutDetector::class.java, Scope.RESOURCE_FILE_SCOPE),
-            androidSpecific = true,
-        )
+        category = Category.CORRECTNESS,
+        priority = 6,
+        severity = Severity.ERROR,
+        implementation = Implementation(ConstraintLayoutDetector::class.java, Scope.RESOURCE_FILE_SCOPE),
+        androidSpecific = true,
+      )
 
     /**
      * @param element to scan

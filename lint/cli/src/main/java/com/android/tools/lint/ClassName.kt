@@ -62,10 +62,10 @@ open class ClassName(val source: String, val extension: String = DOT_JAVA) {
       if (c.isWhitespace()) {
         sb.append(c)
       } else if (
-          c == '@' &&
-              !contents.startsWith("@interface", current) &&
-              !contents.startsWith("@file:JvmName", current) &&
-              !contents.startsWith("@file:kotlin.jvm.JvmName", current)
+        c == '@' &&
+          !contents.startsWith("@interface", current) &&
+          !contents.startsWith("@file:JvmName", current) &&
+          !contents.startsWith("@file:kotlin.jvm.JvmName", current)
       ) {
         val afterAnnotation = skipAnnotation(contents, current)
         sb.append(' ')
@@ -94,10 +94,7 @@ open class ClassName(val source: String, val extension: String = DOT_JAVA) {
 private val PACKAGE_PATTERN = Pattern.compile("""package\s+([\S&&[^;]]*)""")
 
 private val CLASS_PATTERN =
-    Pattern.compile(
-        """(\bclass\b|\binterface\b|\benum class\b|\benum\b|\bobject\b|\brecord\b)+?\s*([^\s:(]+)""",
-        Pattern.MULTILINE,
-    )
+  Pattern.compile("""(\bclass\b|\binterface\b|\benum class\b|\benum\b|\bobject\b|\brecord\b)+?\s*([^\s:(]+)""", Pattern.MULTILINE)
 
 private val JVM_NAME_PATTERN = Pattern.compile("""@file:(kotlin.jvm.)?JvmName\(\"(.+)\"\)""", Pattern.MULTILINE)
 

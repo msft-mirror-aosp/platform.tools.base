@@ -26,9 +26,9 @@ class RegisterReceiverFlagDetectorTest : AbstractCheckTest() {
 
   fun testProtectedBroadcast() {
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
                     package test.pkg;
                     import android.content.BroadcastReceiver;
                     import android.content.Context;
@@ -41,18 +41,18 @@ class RegisterReceiverFlagDetectorTest : AbstractCheckTest() {
                         }
                     }
                    """
-                )
-                .indented()
-        )
-        .run()
-        .expectClean()
+          )
+          .indented()
+      )
+      .run()
+      .expectClean()
   }
 
   fun testProtectedBroadcastCreate() {
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
                     package test.pkg;
                     import android.content.BroadcastReceiver;
                     import android.content.Context;
@@ -66,18 +66,18 @@ class RegisterReceiverFlagDetectorTest : AbstractCheckTest() {
                         }
                     }
                    """
-                )
-                .indented()
-        )
-        .run()
-        .expectClean()
+          )
+          .indented()
+      )
+      .run()
+      .expectClean()
   }
 
   fun testMultipleProtectedBroadcasts() {
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
                     package test.pkg;
                     import android.content.BroadcastReceiver;
                     import android.content.Context;
@@ -92,18 +92,18 @@ class RegisterReceiverFlagDetectorTest : AbstractCheckTest() {
                         }
                     }
                    """
-                )
-                .indented()
-        )
-        .run()
-        .expectClean()
+          )
+          .indented()
+      )
+      .run()
+      .expectClean()
   }
 
   fun testIntentFilterIsFieldWithProtectedActions() {
     lint()
-        .files(
-            java(
-                """
+      .files(
+        java(
+          """
           package test.pkg;
           import android.content.BroadcastReceiver;
           import android.content.Context;
@@ -123,17 +123,17 @@ class RegisterReceiverFlagDetectorTest : AbstractCheckTest() {
               }
           }
           """
-            )
         )
-        .run()
-        .expectClean()
+      )
+      .run()
+      .expectClean()
   }
 
   fun testIntentFilterIsFieldWithProtectedActions_multipleRegisterCalls() {
     lint()
-        .files(
-            java(
-                """
+      .files(
+        java(
+          """
           package test.pkg;
           import android.content.BroadcastReceiver;
           import android.content.Context;
@@ -156,17 +156,17 @@ class RegisterReceiverFlagDetectorTest : AbstractCheckTest() {
               }
           }
           """
-            )
         )
-        .run()
-        .expectClean()
+      )
+      .run()
+      .expectClean()
   }
 
   fun testIntentFilterIsFieldWithProtectedActions_nonPrivate() {
     lint()
-        .files(
-            java(
-                """
+      .files(
+        java(
+          """
           package test.pkg;
           import android.content.BroadcastReceiver;
           import android.content.Context;
@@ -186,24 +186,24 @@ class RegisterReceiverFlagDetectorTest : AbstractCheckTest() {
               }
           }
           """
-            )
         )
-        .run()
-        .expect(
-            """
+      )
+      .run()
+      .expect(
+        """
         src/test/pkg/TestClass1.java:17: Warning: receiver is missing RECEIVER_EXPORTED or RECEIVER_NOT_EXPORTED flag for unprotected broadcasts registered for an IntentFilter that cannot be inspected by lint [UnspecifiedRegisterReceiverFlag]
                           mContext.registerReceiver(receiver, myIntentFilter);
                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         0 errors, 1 warnings
         """
-        )
+      )
   }
 
   fun testIntentFilterIsFieldWithProtectedActions_escapesScope() {
     lint()
-        .files(
-            java(
-                """
+      .files(
+        java(
+          """
           package test.pkg;
           import android.content.BroadcastReceiver;
           import android.content.Context;
@@ -226,33 +226,33 @@ class RegisterReceiverFlagDetectorTest : AbstractCheckTest() {
               }
           }
           """
-            ),
-            java(
-                """
+        ),
+        java(
+          """
           package test.pkg;
           import android.content.IntentFilter;
           public class UtilClass {
               public void utilMethod(IntentFilter filter) {}
           }
           """
-            ),
-        )
-        .run()
-        .expect(
-            """
+        ),
+      )
+      .run()
+      .expect(
+        """
         src/test/pkg/TestClass1.java:17: Warning: receiver is missing RECEIVER_EXPORTED or RECEIVER_NOT_EXPORTED flag for unprotected broadcasts registered for an IntentFilter that cannot be inspected by lint [UnspecifiedRegisterReceiverFlag]
                           mContext.registerReceiver(receiver, myIntentFilter);
                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         0 errors, 1 warnings
         """
-        )
+      )
   }
 
   fun testIntentFilterIsFieldWithProtectedActions_escapesScopeViaPublicGetter() {
     lint()
-        .files(
-            java(
-                """
+      .files(
+        java(
+          """
           package test.pkg;
           import android.content.BroadcastReceiver;
           import android.content.Context;
@@ -275,24 +275,24 @@ class RegisterReceiverFlagDetectorTest : AbstractCheckTest() {
               }
           }
           """
-            )
         )
-        .run()
-        .expect(
-            """
+      )
+      .run()
+      .expect(
+        """
         src/test/pkg/TestClass1.java:17: Warning: receiver is missing RECEIVER_EXPORTED or RECEIVER_NOT_EXPORTED flag for unprotected broadcasts registered for an IntentFilter that cannot be inspected by lint [UnspecifiedRegisterReceiverFlag]
                           mContext.registerReceiver(receiver, myIntentFilter);
                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         0 errors, 1 warnings
         """
-        )
+      )
   }
 
   fun testIntentFilterIsFieldWithProtectedActions_escapesScopeViaPublicSetter() {
     lint()
-        .files(
-            java(
-                """
+      .files(
+        java(
+          """
           package test.pkg;
           import android.content.BroadcastReceiver;
           import android.content.Context;
@@ -315,24 +315,24 @@ class RegisterReceiverFlagDetectorTest : AbstractCheckTest() {
               }
           }
           """
-            )
         )
-        .run()
-        .expect(
-            """
+      )
+      .run()
+      .expect(
+        """
         src/test/pkg/TestClass1.java:17: Warning: receiver is missing RECEIVER_EXPORTED or RECEIVER_NOT_EXPORTED flag for unprotected broadcasts registered for an IntentFilter that cannot be inspected by lint [UnspecifiedRegisterReceiverFlag]
                           mContext.registerReceiver(receiver, myIntentFilter);
                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         0 errors, 1 warnings
         """
-        )
+      )
   }
 
   fun testIntentFilterIsFieldWithUnprotectedActions() {
     lint()
-        .files(
-            java(
-                """
+      .files(
+        java(
+          """
           package test.pkg;
           import android.content.BroadcastReceiver;
           import android.content.Context;
@@ -354,24 +354,24 @@ class RegisterReceiverFlagDetectorTest : AbstractCheckTest() {
               }
           }
           """
-            )
         )
-        .run()
-        .expect(
-            """
+      )
+      .run()
+      .expect(
+        """
         src/test/pkg/TestClass1.java:16: Warning: receiver is missing RECEIVER_EXPORTED or RECEIVER_NOT_EXPORTED flag for unprotected broadcasts registered for foo, bar, baz [UnspecifiedRegisterReceiverFlag]
                           mContext.registerReceiver(receiver, myIntentFilter);
                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         0 errors, 1 warnings
         """
-        )
+      )
   }
 
   fun testIntentFilterIsFieldWithUnprotectedActions_constructedInline() {
     lint()
-        .files(
-            java(
-                """
+      .files(
+        java(
+          """
           package test.pkg;
           import android.content.BroadcastReceiver;
           import android.content.Context;
@@ -389,24 +389,24 @@ class RegisterReceiverFlagDetectorTest : AbstractCheckTest() {
               }
           }
           """
-            )
         )
-        .run()
-        .expect(
-            """
+      )
+      .run()
+      .expect(
+        """
         src/test/pkg/TestClass1.java:15: Warning: receiver is missing RECEIVER_EXPORTED or RECEIVER_NOT_EXPORTED flag for unprotected broadcasts registered for foo, bar [UnspecifiedRegisterReceiverFlag]
                           mContext.registerReceiver(receiver, myIntentFilter);
                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         0 errors, 1 warnings
         """
-        )
+      )
   }
 
   fun testSubsequentFilterModification() {
     lint()
-        .files(
-            java(
-                """
+      .files(
+        java(
+          """
           package test.pkg;
           import android.content.BroadcastReceiver;
           import android.content.Context;
@@ -423,24 +423,24 @@ class RegisterReceiverFlagDetectorTest : AbstractCheckTest() {
               }
           }
           """
-            )
         )
-        .run()
-        .expect(
-            """
+      )
+      .run()
+      .expect(
+        """
         src/test/pkg/TestClass1.java:14: Warning: receiver is missing RECEIVER_EXPORTED or RECEIVER_NOT_EXPORTED flag for unprotected broadcasts registered for querty [UnspecifiedRegisterReceiverFlag]
                           context.registerReceiver(receiver, filter);
                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         0 errors, 1 warnings
         """
-        )
+      )
   }
 
   fun testNullReceiver() {
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
                     package test.pkg;
                     import android.content.BroadcastReceiver;
                     import android.content.Context;
@@ -453,18 +453,18 @@ class RegisterReceiverFlagDetectorTest : AbstractCheckTest() {
                         }
                     }
                    """
-                )
-                .indented()
-        )
-        .run()
-        .expectClean()
+          )
+          .indented()
+      )
+      .run()
+      .expectClean()
   }
 
   fun testExportedFlagPresent() {
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
                     package test.pkg;
                     import android.content.BroadcastReceiver;
                     import android.content.Context;
@@ -477,18 +477,18 @@ class RegisterReceiverFlagDetectorTest : AbstractCheckTest() {
                         }
                     }
                    """
-                )
-                .indented()
-        )
-        .run()
-        .expectClean()
+          )
+          .indented()
+      )
+      .run()
+      .expectClean()
   }
 
   fun testNotExportedFlagPresent() {
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
                     package test.pkg;
                     import android.content.BroadcastReceiver;
                     import android.content.Context;
@@ -502,18 +502,18 @@ class RegisterReceiverFlagDetectorTest : AbstractCheckTest() {
                         }
                     }
                    """
-                )
-                .indented()
-        )
-        .run()
-        .expectClean()
+          )
+          .indented()
+      )
+      .run()
+      .expectClean()
   }
 
   fun testDocumentationExampleFlagArgumentAbsent() {
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
           package test.pkg;
           import android.content.BroadcastReceiver;
           import android.content.Context;
@@ -526,20 +526,20 @@ class RegisterReceiverFlagDetectorTest : AbstractCheckTest() {
               }
           }
           """
-                )
-                .indented()
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented()
+      )
+      .run()
+      .expect(
+        """
         src/test/pkg/TestClass1.java:9: Warning: receiver is missing RECEIVER_EXPORTED or RECEIVER_NOT_EXPORTED flag for unprotected broadcasts registered for qwerty [UnspecifiedRegisterReceiverFlag]
                 context.registerReceiver(receiver, filter);
                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         0 errors, 1 warnings
         """
-        )
-        .expectFixDiffs(
-            """
+      )
+      .expectFixDiffs(
+        """
         Fix for src/test/pkg/TestClass1.java line 9: Add RECEIVER_NOT_EXPORTED (preferred):
         @@ -5,0 +6 @@
         +import androidx.core.content.ContextCompat;
@@ -553,14 +553,14 @@ class RegisterReceiverFlagDetectorTest : AbstractCheckTest() {
         -        context.registerReceiver(receiver, filter);
         +        ContextCompat.registerReceiver(context, receiver, filter, ContextCompat.RECEIVER_EXPORTED);
         """
-        )
+      )
   }
 
   fun testExportedFlagsAbsent() {
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
           package test.pkg;
           import android.content.BroadcastReceiver;
           import android.content.Context;
@@ -573,20 +573,20 @@ class RegisterReceiverFlagDetectorTest : AbstractCheckTest() {
               }
           }
           """
-                )
-                .indented()
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented()
+      )
+      .run()
+      .expect(
+        """
         src/test/pkg/TestClass1.java:9: Warning: receiver is missing RECEIVER_EXPORTED or RECEIVER_NOT_EXPORTED flag for unprotected broadcasts registered for qwerty [UnspecifiedRegisterReceiverFlag]
                 context.registerReceiver(receiver, filter, 0);
                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         0 errors, 1 warnings
         """
-        )
-        .expectFixDiffs(
-            """
+      )
+      .expectFixDiffs(
+        """
         Fix for src/test/pkg/TestClass1.java line 9: Add RECEIVER_NOT_EXPORTED (preferred):
         @@ -5,0 +6 @@
         +import androidx.core.content.ContextCompat;
@@ -600,14 +600,14 @@ class RegisterReceiverFlagDetectorTest : AbstractCheckTest() {
         -        context.registerReceiver(receiver, filter, 0);
         +        ContextCompat.registerReceiver(context, receiver, filter, ContextCompat.RECEIVER_EXPORTED);
         """
-        )
+      )
   }
 
   fun testOtherFlagsPresent_ExportedFlagsAbsent() {
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
           package test.pkg;
           import android.content.BroadcastReceiver;
           import android.content.Context;
@@ -622,10 +622,10 @@ class RegisterReceiverFlagDetectorTest : AbstractCheckTest() {
               }
           }
           """
-                )
-                .indented(),
-            kotlin(
-                    """
+          )
+          .indented(),
+        kotlin(
+            """
           package test.pkg
           import android.content.BroadcastReceiver
           import android.content.Context
@@ -640,12 +640,12 @@ class RegisterReceiverFlagDetectorTest : AbstractCheckTest() {
               }
           }
           """
-                )
-                .indented(),
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+      )
+      .run()
+      .expect(
+        """
         src/test/pkg/TestClass1.java:9: Warning: receiver is missing RECEIVER_EXPORTED or RECEIVER_NOT_EXPORTED flag for unprotected broadcasts registered for qwerty [UnspecifiedRegisterReceiverFlag]
                 context.registerReceiver(receiver, filter, Context.RECEIVER_VISIBLE_TO_INSTANT_APPS);
                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -660,9 +660,9 @@ class RegisterReceiverFlagDetectorTest : AbstractCheckTest() {
                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         0 errors, 4 warnings
         """
-        )
-        .expectFixDiffs(
-            """
+      )
+      .expectFixDiffs(
+        """
         Fix for src/test/pkg/TestClass1.java line 9: Add RECEIVER_NOT_EXPORTED (preferred):
         @@ -5,0 +6 @@
         +import androidx.core.content.ContextCompat;
@@ -712,14 +712,14 @@ class RegisterReceiverFlagDetectorTest : AbstractCheckTest() {
         -        context.registerReceiver(receiver, filter, flags)
         +        ContextCompat.registerReceiver(context, receiver, filter, flags or ContextCompat.RECEIVER_EXPORTED)
         """
-        )
+      )
   }
 
   fun testExportedFlagVariable() {
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
                     package test.pkg;
                     import android.content.BroadcastReceiver;
                     import android.content.Context;
@@ -733,18 +733,18 @@ class RegisterReceiverFlagDetectorTest : AbstractCheckTest() {
                         }
                     }
                    """
-                )
-                .indented()
-        )
-        .run()
-        .expectClean()
+          )
+          .indented()
+      )
+      .run()
+      .expectClean()
   }
 
   fun testUnknownFilter() {
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
           package test.pkg;
           import android.content.BroadcastReceiver;
           import android.content.Context;
@@ -757,20 +757,20 @@ class RegisterReceiverFlagDetectorTest : AbstractCheckTest() {
               }
           }
           """
-                )
-                .indented()
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented()
+      )
+      .run()
+      .expect(
+        """
         src/test/pkg/TestClass1.java:9: Warning: receiver is missing RECEIVER_EXPORTED or RECEIVER_NOT_EXPORTED flag for unprotected broadcasts registered for an IntentFilter that cannot be inspected by lint [UnspecifiedRegisterReceiverFlag]
                 context.registerReceiver(receiver, filter);
                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         0 errors, 1 warnings
         """
-        )
-        .expectFixDiffs(
-            """
+      )
+      .expectFixDiffs(
+        """
         Fix for src/test/pkg/TestClass1.java line 9: Add RECEIVER_NOT_EXPORTED (preferred):
         @@ -5,0 +6 @@
         +import androidx.core.content.ContextCompat;
@@ -784,14 +784,14 @@ class RegisterReceiverFlagDetectorTest : AbstractCheckTest() {
         -        context.registerReceiver(receiver, filter);
         +        ContextCompat.registerReceiver(context, receiver, filter, ContextCompat.RECEIVER_EXPORTED);
         """
-        )
+      )
   }
 
   fun testFilterEscapes() {
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
                     package test.pkg;
                     import android.content.BroadcastReceiver;
                     import android.content.Context;
@@ -805,25 +805,25 @@ class RegisterReceiverFlagDetectorTest : AbstractCheckTest() {
                         }
                     }
                    """
-                )
-                .indented()
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented()
+      )
+      .run()
+      .expect(
+        """
                 src/test/pkg/TestClass1.java:10: Warning: receiver is missing RECEIVER_EXPORTED or RECEIVER_NOT_EXPORTED flag for unprotected broadcasts registered for an IntentFilter that cannot be inspected by lint [UnspecifiedRegisterReceiverFlag]
                         context.registerReceiver(receiver, filter);
                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 0 errors, 1 warnings
                 """
-        )
+      )
   }
 
   fun testInlineFilter() {
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
             package test.pkg;
             import android.content.BroadcastReceiver;
             import android.content.Context;
@@ -836,18 +836,18 @@ class RegisterReceiverFlagDetectorTest : AbstractCheckTest() {
                 }
             }
             """
-                )
-                .indented()
-        )
-        .run()
-        .expectClean()
+          )
+          .indented()
+      )
+      .run()
+      .expectClean()
   }
 
   fun testInlineFilterApply() {
     lint()
-        .files(
-            kotlin(
-                    """
+      .files(
+        kotlin(
+            """
             package test.pkg
             import android.content.BroadcastReceiver
             import android.content.Context
@@ -862,20 +862,20 @@ class RegisterReceiverFlagDetectorTest : AbstractCheckTest() {
                 }
             }
             """
-                )
-                .indented()
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented()
+      )
+      .run()
+      .expect(
+        """
         src/test/pkg/TestClass1.kt:8: Warning: receiver is missing RECEIVER_EXPORTED or RECEIVER_NOT_EXPORTED flag for unprotected broadcasts registered for qwerty [UnspecifiedRegisterReceiverFlag]
                 context.registerReceiver(receiver,
                 ^
         0 errors, 1 warnings
         """
-        )
-        .expectFixDiffs(
-            """
+      )
+      .expectFixDiffs(
+        """
         Fix for src/test/pkg/TestClass1.kt line 8: Add RECEIVER_NOT_EXPORTED (preferred):
         @@ -5,0 +6 @@
         +import androidx.core.content.ContextCompat
@@ -897,14 +897,14 @@ class RegisterReceiverFlagDetectorTest : AbstractCheckTest() {
         -                })
         +                }, ContextCompat.RECEIVER_EXPORTED)
         """
-        )
+      )
   }
 
   fun testFilterVariableApply() {
     lint()
-        .files(
-            kotlin(
-                    """
+      .files(
+        kotlin(
+            """
                     package test.pkg
                     import android.content.BroadcastReceiver
                     import android.content.Context
@@ -919,25 +919,25 @@ class RegisterReceiverFlagDetectorTest : AbstractCheckTest() {
                         }
                     }
                    """
-                )
-                .indented()
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented()
+      )
+      .run()
+      .expect(
+        """
                 src/test/pkg/TestClass1.kt:11: Warning: receiver is missing RECEIVER_EXPORTED or RECEIVER_NOT_EXPORTED flag for unprotected broadcasts registered for qwerty [UnspecifiedRegisterReceiverFlag]
                         context.registerReceiver(receiver, filter)
                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 0 errors, 1 warnings
                 """
-        )
+      )
   }
 
   fun testFilterVariableApply2() {
     lint()
-        .files(
-            kotlin(
-                    """
+      .files(
+        kotlin(
+            """
                     package test.pkg
                     import android.content.BroadcastReceiver
                     import android.content.Context
@@ -954,25 +954,25 @@ class RegisterReceiverFlagDetectorTest : AbstractCheckTest() {
                         }
                     }
                    """
-                )
-                .indented()
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented()
+      )
+      .run()
+      .expect(
+        """
                 src/test/pkg/TestClass1.kt:11: Warning: receiver is missing RECEIVER_EXPORTED or RECEIVER_NOT_EXPORTED flag for unprotected broadcasts registered for qwerty [UnspecifiedRegisterReceiverFlag]
                         context.registerReceiver(receiver, filter.apply {
                         ^
                 0 errors, 1 warnings
                 """
-        )
+      )
   }
 
   fun testFilterComplexChain() {
     lint()
-        .files(
-            kotlin(
-                    """
+      .files(
+        kotlin(
+            """
                     package test.pkg
                     import android.content.BroadcastReceiver
                     import android.content.Context
@@ -995,27 +995,27 @@ class RegisterReceiverFlagDetectorTest : AbstractCheckTest() {
                         }
                     }
                    """
-                )
-                .indented()
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented()
+      )
+      .run()
+      .expect(
+        """
                 src/test/pkg/TestClass1.kt:19: Warning: receiver is missing RECEIVER_EXPORTED or RECEIVER_NOT_EXPORTED flag for unprotected broadcasts registered for qwerty [UnspecifiedRegisterReceiverFlag]
                         context.registerReceiver(receiver, filter4)
                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 0 errors, 1 warnings
                 """
-        )
+      )
   }
 
   fun testApiLevelU_error() {
     lint()
-        .projects(
-            project(
-                manifest().targetSdk(34),
-                kotlin(
-                        """
+      .projects(
+        project(
+          manifest().targetSdk(34),
+          kotlin(
+              """
             package test.pkg
             import android.content.BroadcastReceiver
             import android.content.Context
@@ -1031,13 +1031,13 @@ class RegisterReceiverFlagDetectorTest : AbstractCheckTest() {
                 }
             }
            """
-                    )
-                    .indented(),
             )
+            .indented(),
         )
-        .run()
-        .expect(
-            """
+      )
+      .run()
+      .expect(
+        """
         src/test/pkg/TestClass1.kt:9: Error: receiver is missing RECEIVER_EXPORTED or RECEIVER_NOT_EXPORTED flag for unprotected broadcasts registered for qwerty [UnspecifiedRegisterReceiverFlag]
                 context.registerReceiver(receiver, filter)
                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1046,14 +1046,14 @@ class RegisterReceiverFlagDetectorTest : AbstractCheckTest() {
                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         1 errors, 1 warnings
         """
-        )
+      )
   }
 
   fun testRegisterReceiverSchedulerApi_exportedFlagPresent() {
     lint()
-        .files(
-            kotlin(
-                    """
+      .files(
+        kotlin(
+            """
           package test.pkg.kt
           import android.content.BroadcastReceiver
           import android.content.Context
@@ -1066,10 +1066,10 @@ class RegisterReceiverFlagDetectorTest : AbstractCheckTest() {
               }
           }
                    """
-                )
-                .indented(),
-            java(
-                    """
+          )
+          .indented(),
+        java(
+            """
           package test.pkg;
           import android.content.BroadcastReceiver;
           import android.content.Context;
@@ -1082,18 +1082,18 @@ class RegisterReceiverFlagDetectorTest : AbstractCheckTest() {
               }
           }
                    """
-                )
-                .indented(),
-        )
-        .run()
-        .expectClean()
+          )
+          .indented(),
+      )
+      .run()
+      .expectClean()
   }
 
   fun testRegisterReceiverSchedulerApi_exportedFlagAbsent() {
     lint()
-        .files(
-            kotlin(
-                    """
+      .files(
+        kotlin(
+            """
           package test.pkg.kt
           import android.content.BroadcastReceiver
           import android.content.Context
@@ -1106,10 +1106,10 @@ class RegisterReceiverFlagDetectorTest : AbstractCheckTest() {
               }
           }
                    """
-                )
-                .indented(),
-            java(
-                    """
+          )
+          .indented(),
+        java(
+            """
           package test.pkg;
           import android.content.BroadcastReceiver;
           import android.content.Context;
@@ -1122,12 +1122,12 @@ class RegisterReceiverFlagDetectorTest : AbstractCheckTest() {
               }
           }
                    """
-                )
-                .indented(),
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+      )
+      .run()
+      .expect(
+        """
           src/test/pkg/TestClass1.java:9: Warning: receiver is missing RECEIVER_EXPORTED or RECEIVER_NOT_EXPORTED flag for unprotected broadcasts registered for an IntentFilter that cannot be inspected by lint [UnspecifiedRegisterReceiverFlag]
                   context.registerReceiver(receiver, filter, "", scheduler);
                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1136,9 +1136,9 @@ class RegisterReceiverFlagDetectorTest : AbstractCheckTest() {
                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
           0 errors, 2 warnings
         """
-        )
-        .expectFixDiffs(
-            """
+      )
+      .expectFixDiffs(
+        """
           Fix for src/test/pkg/TestClass1.java line 9: Add RECEIVER_NOT_EXPORTED (preferred):
           @@ -6,0 +7 @@
           +import androidx.core.content.ContextCompat;
@@ -1164,6 +1164,6 @@ class RegisterReceiverFlagDetectorTest : AbstractCheckTest() {
           -        context.registerReceiver(receiver, filter, "", scheduler)
           +        ContextCompat.registerReceiver(context, receiver, filter, "", scheduler, ContextCompat.RECEIVER_EXPORTED)
         """
-        )
+      )
   }
 }

@@ -21,9 +21,9 @@ class LeanbackWifiUsageDetectorTest : AbstractCheckTest() {
 
   fun testUseWifiFeature() {
     lint()
-        .files(
-            manifest(
-                    """
+      .files(
+        manifest(
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="test.pkg">
                     <uses-feature android:name="android.software.leanback"/>
@@ -34,25 +34,25 @@ class LeanbackWifiUsageDetectorTest : AbstractCheckTest() {
                     </application>
                 </manifest>
                 """
-                )
-                .indented()
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented()
+      )
+      .run()
+      .expect(
+        """
             AndroidManifest.xml:4: Warning: Requiring android.hardware.wifi limits app availability on TVs that support only Ethernet [LeanbackUsesWifi]
                 <uses-feature android:name="android.hardware.wifi"/>
                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             0 errors, 1 warnings
             """
-        )
+      )
   }
 
   fun testDocumentationExample() {
     lint()
-        .files(
-            manifest(
-                    """
+      .files(
+        manifest(
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="test.pkg">
                     <uses-feature android:name="android.software.leanback"/>
@@ -63,25 +63,25 @@ class LeanbackWifiUsageDetectorTest : AbstractCheckTest() {
                     </application>
                 </manifest>
                 """
-                )
-                .indented()
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented()
+      )
+      .run()
+      .expect(
+        """
             AndroidManifest.xml:4: Warning: Requiring Wifi permissions limits app availability on TVs that support only Ethernet [LeanbackUsesWifi]
                 <uses-permission android:name="android.permission.ACCESS_WIFI_STATE"/>
                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             0 errors, 1 warnings
             """
-        )
+      )
   }
 
   fun testUseWifiChangeStatePermission() {
     lint()
-        .files(
-            manifest(
-                    """
+      .files(
+        manifest(
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="test.pkg">
                     <uses-feature android:name="android.software.leanback"/>
@@ -92,25 +92,25 @@ class LeanbackWifiUsageDetectorTest : AbstractCheckTest() {
                     </application>
                 </manifest>
                 """
-                )
-                .indented()
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented()
+      )
+      .run()
+      .expect(
+        """
             AndroidManifest.xml:4: Warning: Requiring Wifi permissions limits app availability on TVs that support only Ethernet [LeanbackUsesWifi]
                 <uses-permission android:name="android.permission.CHANGE_WIFI_STATE"/>
                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             0 errors, 1 warnings
             """
-        )
+      )
   }
 
   fun testUseWifiMulticastStatePermission() {
     lint()
-        .files(
-            manifest(
-                    """
+      .files(
+        manifest(
+            """
             <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                 package="test.pkg">
                 <uses-feature android:name="android.software.leanback"/>
@@ -121,25 +121,25 @@ class LeanbackWifiUsageDetectorTest : AbstractCheckTest() {
                 </application>
             </manifest>
             """
-                )
-                .indented()
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented()
+      )
+      .run()
+      .expect(
+        """
             AndroidManifest.xml:4: Warning: Requiring Wifi permissions limits app availability on TVs that support only Ethernet [LeanbackUsesWifi]
                 <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE"/>
                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             0 errors, 1 warnings
             """
-        )
+      )
   }
 
   fun testNoLeanbackNoWarning() {
     lint()
-        .files(
-            manifest(
-                    """
+      .files(
+        manifest(
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="test.pkg">
                     <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE"/>
@@ -149,18 +149,18 @@ class LeanbackWifiUsageDetectorTest : AbstractCheckTest() {
                     </application>
                 </manifest>
                 """
-                )
-                .indented()
-        )
-        .run()
-        .expectClean()
+          )
+          .indented()
+      )
+      .run()
+      .expectClean()
   }
 
   fun testNotRequiredLeanbackWifiFeature() {
     lint()
-        .files(
-            manifest(
-                    """
+      .files(
+        manifest(
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="test.pkg">
                     <uses-feature android:name="android.software.leanback"/>
@@ -171,18 +171,18 @@ class LeanbackWifiUsageDetectorTest : AbstractCheckTest() {
                     </application>
                 </manifest>
                 """
-                )
-                .indented()
-        )
-        .run()
-        .expectClean()
+          )
+          .indented()
+      )
+      .run()
+      .expectClean()
   }
 
   fun testNotRequiredLeanbackWifiFeatureAndPermission() {
     lint()
-        .files(
-            manifest(
-                    """
+      .files(
+        manifest(
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="test.pkg">
                     <uses-feature android:name="android.software.leanback"/>
@@ -194,20 +194,20 @@ class LeanbackWifiUsageDetectorTest : AbstractCheckTest() {
                     </application>
                 </manifest>
                 """
-                )
-                .indented()
-        )
-        .run()
-        .expectClean()
+          )
+          .indented()
+      )
+      .run()
+      .expectClean()
   }
 
   fun testSuppress() {
     // Like testUseWifiFeature but with a tools:ignore on the error node, making
     // sure that local suppress directives are working
     lint()
-        .files(
-            manifest(
-                    """
+      .files(
+        manifest(
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     xmlns:tools="http://schemas.android.com/tools"
                     package="test.pkg">
@@ -219,44 +219,44 @@ class LeanbackWifiUsageDetectorTest : AbstractCheckTest() {
                     </application>
                 </manifest>
                 """
-                )
-                .indented()
-        )
-        .run()
-        .expectClean()
+          )
+          .indented()
+      )
+      .run()
+      .expectClean()
   }
 
   fun testMultiProject() {
     // Like testUseWifiFeature but with the various manifest elements spread into
     // different modules
     val lib1 =
-        project(
-            manifest(
-                    """
+      project(
+        manifest(
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="test.pkg.lib1">
                     <uses-feature android:name="android.software.leanback"/>
                 </manifest>
                 """
-                )
-                .indented()
-        )
+          )
+          .indented()
+      )
     val lib2 =
-        project(
-            manifest(
-                    """
+      project(
+        manifest(
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="test.pkg.lib2">
                     <uses-feature android:name="android.hardware.wifi"/>
                 </manifest>
                 """
-                )
-                .indented()
-        )
+          )
+          .indented()
+      )
     val app =
-        project(
-                manifest(
-                        """
+      project(
+          manifest(
+              """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="test.pkg.app">
                     <application
@@ -265,14 +265,14 @@ class LeanbackWifiUsageDetectorTest : AbstractCheckTest() {
                     </application>
                 </manifest>
                 """
-                    )
-                    .indented()
             )
-            .dependsOn(lib1)
-            .dependsOn(lib2)
+            .indented()
+        )
+        .dependsOn(lib1)
+        .dependsOn(lib2)
 
     val expected =
-        """
+      """
             ../lib2/AndroidManifest.xml:3: Warning: Requiring android.hardware.wifi limits app availability on TVs that support only Ethernet [LeanbackUsesWifi]
                 <uses-feature android:name="android.hardware.wifi"/>
                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

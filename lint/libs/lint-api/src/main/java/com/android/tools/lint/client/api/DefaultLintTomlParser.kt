@@ -34,10 +34,10 @@ import java.time.ZonedDateTime
  * ambiguous. When you edit files in IntelliJ, the TOML plugin will perform validation warnings.
  */
 internal class DefaultLintTomlParser(
-    private val file: File,
-    private val source: CharSequence,
-    private val onProblem: ((Severity, Location, String) -> Unit)?,
-    private val validate: Boolean = onProblem != null,
+  private val file: File,
+  private val source: CharSequence,
+  private val onProblem: ((Severity, Location, String) -> Unit)?,
+  private val validate: Boolean = onProblem != null,
 ) {
   private var offset: Int = 0
   private val length = source.length
@@ -81,10 +81,7 @@ internal class DefaultLintTomlParser(
               warn("= missing ]`", keyEnd)
             }
             if (parent.find(currentArray) != null) {
-              warn(
-                  "You cannot define a table (`${currentArray.joinToString(".")}`) more than once",
-                  start,
-              )
+              warn("You cannot define a table (`${currentArray.joinToString(".")}`) more than once", start)
             }
           }
           if (inInlineTable) {
@@ -137,21 +134,12 @@ internal class DefaultLintTomlParser(
             array.add(target)
           } else {
             val into =
-                if (currentArray.size > 1) {
-                  parent.ensure(currentArray.dropLast(1), false)
-                } else {
-                  parent
-                }
-            val arrayValue =
-                TomlArrayValue(
-                    into,
-                    arrayStart,
-                    offset,
-                    currentArray.lastOrNull() ?: "",
-                    start,
-                    keyEnd,
-                    false,
-                )
+              if (currentArray.size > 1) {
+                parent.ensure(currentArray.dropLast(1), false)
+              } else {
+                parent
+              }
+            val arrayValue = TomlArrayValue(into, arrayStart, offset, currentArray.lastOrNull() ?: "", start, keyEnd, false)
             into.put(currentArray.lastOrNull() ?: "", arrayValue)
             target = TomlMapValue(arrayValue, arrayStart, offset)
             arrayValue.add(target)
@@ -202,11 +190,11 @@ internal class DefaultLintTomlParser(
           }
           val key = keys.lastOrNull() ?: ""
           val into =
-              if (keys.size > 1) {
-                target.ensure(keys.dropLast(1), validate)
-              } else {
-                target
-              }
+            if (keys.size > 1) {
+              target.ensure(keys.dropLast(1), validate)
+            } else {
+              target
+            }
           val value = parseValue(into, key, keyStart, keyEnd, valueStart)
           if (validate && into.map[key] != null && into.map[key] !is TomlMapValue) {
             warn("Defining a key (`$key`) multiple times is invalid", offset)
@@ -265,21 +253,12 @@ internal class DefaultLintTomlParser(
     return parent
   }
 
-  private fun parseValue(
-      parent: TomlMapValue,
-      key: String,
-      keyStart: Int,
-      keyEnd: Int,
-      valueStart: Int,
-  ): TomlValue {
+  private fun parseValue(parent: TomlMapValue, key: String, keyStart: Int, keyEnd: Int, valueStart: Int): TomlValue {
     val token = getToken(breakOnDot = false)
     if (token == "{") {
       // Inline table -- https://toml.io/en/v1.0.0#inline-table
       if (validate && parent.find(key) != null) {
-        warn(
-            "Inline tables cannot be used to add keys or sub-tables to an already-defined table",
-            valueStart,
-        )
+        warn("Inline tables cannot be used to add keys or sub-tables to an already-defined table", valueStart)
       }
       val target = parent.ensure(key)
       return parseMapElements(target, inInlineTable = true)
@@ -304,10 +283,7 @@ internal class DefaultLintTomlParser(
         return
       }
       if (dotIndex == 0 || dotIndex == literal.length - 1 || !literal[dotIndex - 1].isDigit() || !literal[dotIndex + 1].isDigit()) {
-        warn(
-            "The decimal point, if used, must be surrounded by at least one digit on each side",
-            valueStart,
-        )
+        warn("The decimal point, if used, must be surrounded by at least one digit on each side", valueStart)
       }
     }
   }
@@ -355,11 +331,7 @@ internal class DefaultLintTomlParser(
     }
   }
 
-  private fun getToken(
-      breakAtNewline: Boolean = false,
-      breakOnDot: Boolean = true,
-      arrayTableAllowed: Boolean = false,
-  ): String {
+  private fun getToken(breakAtNewline: Boolean = false, breakOnDot: Boolean = true, arrayTableAllowed: Boolean = false): String {
     skipToNextToken(breakAtNewline)
     if (offset == length || breakAtNewline && source[offset] == '\n') {
       return ""
@@ -479,10 +451,10 @@ internal class DefaultLintTomlParser(
       '9' -> { // Number or date
         val start = offset - 1
         if (
-            source.startsWith("+", start) && source.startsWith("+nan", start) ||
-                source.startsWith("+inf", start) ||
-                source.startsWith("-", start) && source.startsWith("-nan", start) ||
-                source.startsWith("-inf", start)
+          source.startsWith("+", start) && source.startsWith("+nan", start) ||
+            source.startsWith("+inf", start) ||
+            source.startsWith("-", start) && source.startsWith("-nan", start) ||
+            source.startsWith("-inf", start)
         ) {
           offset = start + 4
           return source.substring(start, offset)
@@ -532,11 +504,11 @@ internal class DefaultLintTomlParser(
         }
         val lineEnd = source.indexOf('\n', start)
         offset =
-            if (lineEnd != -1) {
-              lineEnd + 1
-            } else {
-              length
-            }
+          if (lineEnd != -1) {
+            lineEnd + 1
+          } else {
+            length
+          }
       }
     }
   }
@@ -589,12 +561,12 @@ internal class DefaultLintTomlParser(
   }
 
   private open inner class TomlValue(
-      val parent: TomlValue?,
-      private var startOffset: Int = -1,
-      private var endOffset: Int = parent?.getEndOffset() ?: -1,
-      private var key: String? = null,
-      private var keyStartOffset: Int = -1,
-      private var keyEndOffset: Int = -1,
+    val parent: TomlValue?,
+    private var startOffset: Int = -1,
+    private var endOffset: Int = parent?.getEndOffset() ?: -1,
+    private var key: String? = null,
+    private var keyStartOffset: Int = -1,
+    private var keyEndOffset: Int = -1,
   ) : LintTomlValue {
     override fun getDocument(): LintTomlDocument = document
 
@@ -698,10 +670,10 @@ internal class DefaultLintTomlParser(
 
     override fun getFullLocation(): Location {
       return Location.create(
-          file,
-          source,
-          if (key != null && keyStartOffset > -1 && keyStartOffset < startOffset) keyStartOffset else startOffset,
-          endOffset,
+        file,
+        source,
+        if (key != null && keyStartOffset > -1 && keyStartOffset < startOffset) keyStartOffset else startOffset,
+        endOffset,
       )
     }
 
@@ -736,12 +708,12 @@ internal class DefaultLintTomlParser(
   }
 
   private inner class TomlMapValue(
-      parent: TomlValue?,
-      startOffset: Int = -1,
-      endOffset: Int = parent?.getEndOffset() ?: -1,
-      key: String? = null,
-      keyStartOffset: Int = -1,
-      keyEndOffset: Int = -1,
+    parent: TomlValue?,
+    startOffset: Int = -1,
+    endOffset: Int = parent?.getEndOffset() ?: -1,
+    key: String? = null,
+    keyStartOffset: Int = -1,
+    keyEndOffset: Int = -1,
   ) : TomlValue(parent, startOffset, endOffset, key, keyStartOffset, keyEndOffset), LintTomlMapValue {
     private val _map: MutableMap<String, TomlValue> = LinkedHashMap() // preserve order, as guaranteed by the [getMappedValue] contract.
     val map: Map<String, TomlValue> = _map
@@ -781,12 +753,7 @@ internal class DefaultLintTomlParser(
       return ensure(path, 0, this, validate)
     }
 
-    private fun ensure(
-        path: List<String>,
-        index: Int,
-        parent: TomlValue?,
-        validate: Boolean,
-    ): TomlMapValue {
+    private fun ensure(path: List<String>, index: Int, parent: TomlValue?, validate: Boolean): TomlMapValue {
       if (path.isEmpty()) {
         return this
       }
@@ -897,13 +864,13 @@ internal class DefaultLintTomlParser(
   }
 
   private inner class TomlArrayValue(
-      parent: TomlValue?,
-      startOffset: Int = -1,
-      endOffset: Int = parent?.getEndOffset() ?: -1,
-      key: String? = null,
-      keyStartOffset: Int = -1,
-      keyEndOffset: Int = -1,
-      val isLiteral: Boolean = true,
+    parent: TomlValue?,
+    startOffset: Int = -1,
+    endOffset: Int = parent?.getEndOffset() ?: -1,
+    key: String? = null,
+    keyStartOffset: Int = -1,
+    keyEndOffset: Int = -1,
+    val isLiteral: Boolean = true,
   ) : TomlValue(parent, startOffset, endOffset, key, keyStartOffset, keyEndOffset), LintTomlArrayValue {
 
     override fun getArrayElements(): List<LintTomlValue> {
@@ -925,13 +892,13 @@ internal class DefaultLintTomlParser(
   }
 
   private inner class TomlLiteralValue(
-      parent: TomlValue?,
-      private val text: String,
-      startOffset: Int = -1,
-      endOffset: Int = parent?.getEndOffset() ?: -1,
-      key: String? = null,
-      keyStartOffset: Int = -1,
-      keyEndOffset: Int = -1,
+    parent: TomlValue?,
+    private val text: String,
+    startOffset: Int = -1,
+    endOffset: Int = parent?.getEndOffset() ?: -1,
+    key: String? = null,
+    keyStartOffset: Int = -1,
+    keyEndOffset: Int = -1,
   ) : TomlValue(parent, startOffset, endOffset, key, keyStartOffset, keyEndOffset), LintTomlLiteralValue {
     override fun getText(): String = text
 
@@ -1016,14 +983,7 @@ internal class DefaultLintTomlParser(
     private fun parseAsDate(): Any? {
       // Try to parse the date string as various formats
       for (method in
-          listOf(
-              Instant::parse,
-              OffsetDateTime::parse,
-              ZonedDateTime::parse,
-              LocalDateTime::parse,
-              LocalDate::parse,
-              LocalTime::parse,
-          )) {
+        listOf(Instant::parse, OffsetDateTime::parse, ZonedDateTime::parse, LocalDateTime::parse, LocalDate::parse, LocalTime::parse)) {
         try {
           return method(text)
         } catch (ignore: Throwable) {}
@@ -1106,19 +1066,19 @@ private fun Char.isNumberOrDateLiteralChar(): Boolean {
   // This is more permissive than the spec
   val c = this
   return c.isDigit() ||
-      c == '.' ||
-      c == '+' ||
-      c == '-' || // scientific notation (or leading +/-)
-      c == '_' || // digit separator
-      c == 'o' ||
-      c == 'x' ||
-      c in 'a'..'f' ||
-      c in 'A'..'F' || // octal & hex
-      c == 'e' ||
-      c == 'E' || // scientific notation
-      c == ':' ||
-      c == 'T' ||
-      c == 'Z' // date
+    c == '.' ||
+    c == '+' ||
+    c == '-' || // scientific notation (or leading +/-)
+    c == '_' || // digit separator
+    c == 'o' ||
+    c == 'x' ||
+    c in 'a'..'f' ||
+    c in 'A'..'F' || // octal & hex
+    c == 'e' ||
+    c == 'E' || // scientific notation
+    c == ':' ||
+    c == 'T' ||
+    c == 'Z' // date
 }
 
 private fun String.tomlStringSourceToString(): String {

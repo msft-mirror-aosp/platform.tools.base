@@ -25,18 +25,18 @@ class PrivateKeyDetectorTest : AbstractCheckTest() {
   fun testPrivateKey() {
     //noinspection all // Sample code
     lint()
-        .files(
-            // Not a private key file
-            source(
-                    "res/values/strings.xml",
-                    """
+      .files(
+        // Not a private key file
+        source(
+            "res/values/strings.xml",
+            """
                 """,
-                )
-                .indented(),
-            // Private key file
-            source(
-                    "res/private_key.pem",
-                    """
+          )
+          .indented(),
+        // Private key file
+        source(
+            "res/private_key.pem",
+            """
                 -----BEGIN RSA PRIVATE KEY-----
                 Proc-Type: 4,ENCRYPTED
                 DEK-Info: DES-EDE3-CBC,77F426A58B274623
@@ -56,15 +56,15 @@ class PrivateKeyDetectorTest : AbstractCheckTest() {
                 5INqBUeJxZWYxn6tRr9WMty/UcYnPR3YHgt0RDZycvbcqPsU5tHk9Q==
                 -----END RSA PRIVATE KEY-----
                 """,
-                )
-                .indented(),
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+      )
+      .run()
+      .expect(
+        """
             res/private_key.pem: Error: The res/private_key.pem file seems to be a private key file. Please make sure not to embed this in your APK file. [PackagedPrivateKey]
             1 errors, 0 warnings
             """
-        )
+      )
   }
 }

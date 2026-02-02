@@ -30,10 +30,10 @@ class InterningPool<T : Any> {
 
   @Synchronized
   fun intern(instance: T): T =
-      when (val priorInstance = instances[instance]?.get()) {
-        null -> instance.also { instances[instance] = WeakReference(instance) }
-        else -> priorInstance
-      }
+    when (val priorInstance = instances[instance]?.get()) {
+      null -> instance.also { instances[instance] = WeakReference(instance) }
+      else -> priorInstance
+    }
 
   companion object {
     /** Interns a [String] without retaining it if no live object does otherwise */

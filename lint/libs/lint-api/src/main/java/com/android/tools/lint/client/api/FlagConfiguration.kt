@@ -61,11 +61,7 @@ open class FlagConfiguration(configurations: ConfigurationHierarchy) : Configura
 
   open fun severityOverrides(): Set<String> = emptySet()
 
-  override fun getDefinedSeverity(
-      issue: Issue,
-      source: Configuration,
-      visibleDefault: Severity,
-  ): Severity? {
+  override fun getDefinedSeverity(issue: Issue, source: Configuration, visibleDefault: Severity): Severity? {
     if (issue.suppressNames != null && !issue.suppressNames.contains(issue.id)) {
       return getDefaultSeverity(issue, visibleDefault)
     }
@@ -97,9 +93,9 @@ open class FlagConfiguration(configurations: ConfigurationHierarchy) : Configura
       // file back on, and similarly it ensures that issues not mentioned
       // in lint.xml will use the default.
       val impliedSeverity =
-          severity
-              ?: configurations.getDefinedSeverityWithoutOverride(source, issue, visibleDefault)
-              ?: getDefaultSeverity(issue, visibleDefault)
+        severity
+          ?: configurations.getDefinedSeverityWithoutOverride(source, issue, visibleDefault)
+          ?: getDefaultSeverity(issue, visibleDefault)
       if (isWarningsAsErrors() && impliedSeverity === Severity.WARNING) {
         if (issue === IssueRegistry.BASELINE_USED) {
           // Don't promote the baseline informational issue
@@ -153,11 +149,7 @@ open class FlagConfiguration(configurations: ConfigurationHierarchy) : Configura
     return issue.id == "WrongThreadInterprocedural"
   }
 
-  private fun computeSeverity(
-      issue: Issue,
-      source: Configuration,
-      visibleDefault: Severity,
-  ): Severity? {
+  private fun computeSeverity(issue: Issue, source: Configuration, visibleDefault: Severity): Severity? {
     if (issue.suppressNames != null && !issue.suppressNames.contains(issue.id) && !allowSuppress()) {
       return getDefaultSeverity(issue, visibleDefault)
     }
@@ -204,10 +196,10 @@ open class FlagConfiguration(configurations: ConfigurationHierarchy) : Configura
       }
     }
     if (
-        enabled.contains(id) ||
-            enabledCategories != null &&
-                (enabledCategories.contains(category) || category.parent != null && enabledCategories.contains(category.parent)) ||
-            severity != Severity.IGNORE && isCheckAllWarnings() && !neverEnabledImplicitly(issue)
+      enabled.contains(id) ||
+        enabledCategories != null &&
+          (enabledCategories.contains(category) || category.parent != null && enabledCategories.contains(category.parent)) ||
+        severity != Severity.IGNORE && isCheckAllWarnings() && !neverEnabledImplicitly(issue)
     ) {
       return getVisibleSeverity(issue, severity, source, visibleDefault)
     }
@@ -220,12 +212,7 @@ open class FlagConfiguration(configurations: ConfigurationHierarchy) : Configura
    * configuration) use it, otherwise try to compute the severity from the [source] configuration (without applying overrides), and finally
    * use default severity of the issue.
    */
-  private fun getVisibleSeverity(
-      issue: Issue,
-      severity: Severity?,
-      source: Configuration,
-      visibleDefault: Severity,
-  ): Severity {
+  private fun getVisibleSeverity(issue: Issue, severity: Severity?, source: Configuration, visibleDefault: Severity): Severity {
     val configuredSeverity = client.configurations.getDefinedSeverityWithoutOverride(source, issue, visibleDefault)
     if (configuredSeverity != null && configuredSeverity != Severity.IGNORE) {
       if (configuredSeverity == Severity.WARNING && isWarningsAsErrors()) {
@@ -243,11 +230,11 @@ open class FlagConfiguration(configurations: ConfigurationHierarchy) : Configura
       visibleSeverity = visibleDefault
       if (visibleSeverity === Severity.IGNORE) {
         visibleSeverity =
-            if (isWarningsAsErrors()) {
-              Severity.ERROR
-            } else {
-              Severity.WARNING
-            }
+          if (isWarningsAsErrors()) {
+            Severity.ERROR
+          } else {
+            Severity.WARNING
+          }
       }
     }
     return visibleSeverity
@@ -259,13 +246,7 @@ open class FlagConfiguration(configurations: ConfigurationHierarchy) : Configura
    */
   private var validated = false
 
-  override fun validateIssueIds(
-      client: LintClient,
-      driver: LintDriver,
-      project: Project?,
-      registry: IssueRegistry,
-      allowed: Set<String>,
-  ) {
+  override fun validateIssueIds(client: LintClient, driver: LintDriver, project: Project?, registry: IssueRegistry, allowed: Set<String>) {
     parent?.validateIssueIds(client, driver, project, registry, allowed)
     if (validated) {
       return
@@ -283,12 +264,12 @@ open class FlagConfiguration(configurations: ConfigurationHierarchy) : Configura
   }
 
   private fun validateDisablingAllowed(
-      client: LintClient,
-      driver: LintDriver,
-      project: Project?,
-      disabledIds: Set<String>,
-      registry: IssueRegistry,
-      allowed: Set<String>,
+    client: LintClient,
+    driver: LintDriver,
+    project: Project?,
+    disabledIds: Set<String>,
+    registry: IssueRegistry,
+    allowed: Set<String>,
   ) {
     for (id in disabledIds) {
       val issue = registry.getIssue(id)
@@ -306,7 +287,7 @@ open class FlagConfiguration(configurations: ConfigurationHierarchy) : Configura
         var message = "Issue `${issue.id}` is not allowed to be suppressed"
         if (names.isNotEmpty()) {
           message +=
-              " (but can be with ${
+            " (but can be with ${
               formatList(
                 names.map { "`@$it`" }.toList(),
                 sort = false,
@@ -316,31 +297,31 @@ open class FlagConfiguration(configurations: ConfigurationHierarchy) : Configura
         }
 
         val location =
-            getIssueConfigLocation(id, specificOnly = true, severityOnly = false)
-                ?: if (project != null) {
-                  guessGradleLocation(project)
-                } else {
-                  Location.create(File("(unknown location; supplied by command line flags)"))
-                }
+          getIssueConfigLocation(id, specificOnly = true, severityOnly = false)
+            ?: if (project != null) {
+              guessGradleLocation(project)
+            } else {
+              Location.create(File("(unknown location; supplied by command line flags)"))
+            }
         LintClient.report(
-            client = client,
-            issue = IssueRegistry.LINT_ERROR,
-            message = message,
-            driver = driver,
-            project = project,
-            location = location,
+          client = client,
+          issue = IssueRegistry.LINT_ERROR,
+          message = message,
+          driver = driver,
+          project = project,
+          location = location,
         )
       }
     }
   }
 
   protected fun validateIssueIds(
-      client: LintClient,
-      driver: LintDriver,
-      project: Project?,
-      registry: IssueRegistry,
-      ids: Collection<String>,
-      allowed: Set<String>,
+    client: LintClient,
+    driver: LintDriver,
+    project: Project?,
+    registry: IssueRegistry,
+    ids: Collection<String>,
+    allowed: Set<String>,
   ) {
     for (id in ids) {
       if (id == SdkConstants.SUPPRESS_ALL) {
@@ -361,11 +342,7 @@ open class FlagConfiguration(configurations: ConfigurationHierarchy) : Configura
     parent?.validateIssueIds(client, driver, project, registry, allowed)
   }
 
-  override fun addConfiguredIssues(
-      targetMap: MutableMap<String, Severity>,
-      registry: IssueRegistry,
-      specificOnly: Boolean,
-  ) {
+  override fun addConfiguredIssues(targetMap: MutableMap<String, Severity>, registry: IssueRegistry, specificOnly: Boolean) {
     parent?.addConfiguredIssues(targetMap, registry, specificOnly)
 
     val suppress = disabledIds()
@@ -421,9 +398,9 @@ open class FlagConfiguration(configurations: ConfigurationHierarchy) : Configura
         }
       }
       if (
-          enabled.contains(id) ||
-              enabledCategories != null &&
-                  (enabledCategories.contains(category) || category.parent != null && enabledCategories.contains(category.parent))
+        enabled.contains(id) ||
+          enabledCategories != null &&
+            (enabledCategories.contains(category) || category.parent != null && enabledCategories.contains(category.parent))
       ) {
         targetMap[issue.id] = issue.defaultSeverity
       }
@@ -432,12 +409,7 @@ open class FlagConfiguration(configurations: ConfigurationHierarchy) : Configura
     }
   }
 
-  override fun getLocalIssueConfigLocation(
-      issue: String,
-      specificOnly: Boolean,
-      severityOnly: Boolean,
-      source: Configuration,
-  ): Location? {
+  override fun getLocalIssueConfigLocation(issue: String, specificOnly: Boolean, severityOnly: Boolean, source: Configuration): Location? {
     if (specificOnly && !configuresIssue(issue) && source !== this) {
       return null
     }
@@ -462,11 +434,11 @@ open class FlagConfiguration(configurations: ConfigurationHierarchy) : Configura
     val exactCategories = exactCategories()
 
     return enabled.contains(issueId) ||
-        disabled.contains(issueId) ||
-        exact != null && exact.contains(issueId) ||
-        disabledCategories.contains(issueId) ||
-        enabledCategories.contains(issueId) ||
-        exactCategories.contains(issueId)
+      disabled.contains(issueId) ||
+      exact != null && exact.contains(issueId) ||
+      disabledCategories.contains(issueId) ||
+      enabledCategories.contains(issueId) ||
+      exactCategories.contains(issueId)
   }
 
   /** Returns true if this set of categories contains one named [id]. */

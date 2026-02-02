@@ -36,17 +36,11 @@ import org.junit.rules.TemporaryFolder
 class GradleModelMockerTest {
   @get:Rule var tempFolder = TemporaryFolder()
 
-  private fun createMocker(
-      @Language("Groovy") gradle: String,
-      @Language("TOML") versionCatalog: String? = null,
-  ): GradleModelMocker {
+  private fun createMocker(@Language("Groovy") gradle: String, @Language("TOML") versionCatalog: String? = null): GradleModelMocker {
     return createMocker(gradle, tempFolder, versionCatalog)
   }
 
-  private fun createMockerKts(
-      @Language("kts") gradle: String,
-      @Language("TOML") versionCatalog: String? = null,
-  ): GradleModelMocker {
+  private fun createMockerKts(@Language("kts") gradle: String, @Language("TOML") versionCatalog: String? = null): GradleModelMocker {
     //noinspection LanguageMismatch
     return createMocker(gradle, tempFolder, versionCatalog)
   }
@@ -54,14 +48,14 @@ class GradleModelMockerTest {
   @Test
   fun testLibraries() {
     val mocker =
-        createMocker(
-            """
+      createMocker(
+        """
 apply plugin: 'com.android.application'
 
 dependencies {
     compile 'my.group.id:mylib:25.0.0-SNAPSHOT'
 }"""
-        )
+      )
     val module = mocker.getLintModule()
     val variant = mocker.getLintVariant()!!
 
@@ -70,19 +64,19 @@ dependencies {
     Truth.assertThat(libraries).hasSize(1)
     val library = libraries.first()
     Truth.assertThat((library.findLibrary() as LintModelExternalLibrary).resolvedCoordinates.toString())
-        .isEqualTo("my.group.id:mylib:25.0.0-SNAPSHOT")
+      .isEqualTo("my.group.id:mylib:25.0.0-SNAPSHOT")
   }
 
   @Test
   fun testLibraryName() {
     val mocker =
-        createMocker(
-            """
+      createMocker(
+        """
         apply plugin: 'com.android.library'
         group=test.pkg.library
         version=1.1
         """
-        )
+      )
     val module = mocker.getLintModule()
 
     Truth.assertThat(module.mavenName?.toString()).isEqualTo("test.pkg.library:test_project-build:1.1")
@@ -91,15 +85,15 @@ dependencies {
   @Test
   fun testLibrariesInExtraArtifacts() {
     val mocker =
-        createMocker(
-            """
+      createMocker(
+        """
 apply plugin: 'com.android.application'
 
 dependencies {
     testCompile 'my.group.id:mylib1:1.2.3-rc4'
     androidTestImplementation 'my.group.id:mylib2:4.5.6-SNAPSHOT'
 }"""
-        )
+      )
     val module = mocker.getLintModule()
     val variant = mocker.getLintVariant()!!
 
@@ -109,48 +103,48 @@ dependencies {
     Truth.assertThat(testLibraries).hasSize(1)
     val testLibrary = testLibraries.first()
     Truth.assertThat((testLibrary.findLibrary() as LintModelExternalLibrary).resolvedCoordinates.toString())
-        .isEqualTo("my.group.id:mylib1:1.2.3-rc4")
+      .isEqualTo("my.group.id:mylib1:1.2.3-rc4")
 
     val androidTestLibraries = variant.androidTestArtifact!!.dependencies.compileDependencies.roots
     Truth.assertThat(androidTestLibraries).hasSize(1)
     val library = androidTestLibraries.first()
     Truth.assertThat((library.findLibrary() as LintModelExternalLibrary).resolvedCoordinates.toString())
-        .isEqualTo("my.group.id:mylib2:4.5.6-SNAPSHOT")
+      .isEqualTo("my.group.id:mylib2:4.5.6-SNAPSHOT")
   }
 
   @Test
   fun testKotlin() {
     val mocker =
-        createMocker(
-            """
+      createMocker(
+        """
 apply plugin: 'kotlin-android'
 
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:${"$"}kotlin_version"
 }"""
-        )
+      )
     val module = mocker.getLintModule()
     val variant = mocker.getLintVariant()!!
 
     Truth.assertThat(module.type).isEqualTo(LintModelModuleType.APP)
 
     val javaLibraries =
-        variant.mainArtifact.dependencies.compileDependencies.getAllLibraries().filterIsInstance<LintModelJavaLibrary>().map {
-          it.resolvedCoordinates.toString()
-        }
+      variant.mainArtifact.dependencies.compileDependencies.getAllLibraries().filterIsInstance<LintModelJavaLibrary>().map {
+        it.resolvedCoordinates.toString()
+      }
     Truth.assertThat(javaLibraries)
-        .containsAllOf(
-            "org.jetbrains.kotlin:kotlin-stdlib-jdk7:\$kotlin_version",
-            "org.jetbrains.kotlin:kotlin-stdlib:\$kotlin_version",
-            "org.jetbrains.kotlin:kotlin-stdlib-common:\$kotlin_version",
-        )
+      .containsAllOf(
+        "org.jetbrains.kotlin:kotlin-stdlib-jdk7:\$kotlin_version",
+        "org.jetbrains.kotlin:kotlin-stdlib:\$kotlin_version",
+        "org.jetbrains.kotlin:kotlin-stdlib-common:\$kotlin_version",
+      )
   }
 
   @Test
   fun testKotlinWithInterpolation() {
     val mocker =
-        createMocker(
-            """
+      createMocker(
+        """
 apply plugin: 'kotlin-android'
 
 ext {
@@ -160,31 +154,31 @@ ext {
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:${"$"}kotlin_version"
 }"""
-        )
+      )
     val module = mocker.getLintModule()
     val variant = mocker.getLintVariant()!!
 
     Truth.assertThat(module.type).isEqualTo(LintModelModuleType.APP)
 
     val libraries =
-        variant.mainArtifact.dependencies.compileDependencies.getAllLibraries().filterIsInstance<LintModelJavaLibrary>().map {
-          it.resolvedCoordinates.toString()
-        }
+      variant.mainArtifact.dependencies.compileDependencies.getAllLibraries().filterIsInstance<LintModelJavaLibrary>().map {
+        it.resolvedCoordinates.toString()
+      }
     Truth.assertThat(libraries).hasSize(4)
     Truth.assertThat(libraries)
-        .containsExactly(
-            "org.jetbrains.kotlin:kotlin-stdlib-common:1.3.21",
-            "org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.3.21",
-            "org.jetbrains.kotlin:kotlin-stdlib:1.3.21",
-            "org.jetbrains:annotations:13.0",
-        )
+      .containsExactly(
+        "org.jetbrains.kotlin:kotlin-stdlib-common:1.3.21",
+        "org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.3.21",
+        "org.jetbrains.kotlin:kotlin-stdlib:1.3.21",
+        "org.jetbrains:annotations:13.0",
+      )
   }
 
   @Test
   fun testMinSdkVersion() {
     val mocker =
-        createMocker(
-            """android {
+      createMocker(
+        """android {
     compileSdkVersion 25
     defaultConfig {
         applicationId "com.android.tools.test"
@@ -194,7 +188,7 @@ dependencies {
         versionName "MyName"
     }
 }"""
-        )
+      )
     val module = mocker.getLintModule()
     val variant = mocker.getLintVariant()!!
 
@@ -213,8 +207,8 @@ dependencies {
   @Test
   fun testKts() {
     val mocker =
-        createMockerKts(
-            """
+      createMockerKts(
+        """
         @file:Suppress("UnstableApiUsage")
         plugins {
             java
@@ -265,7 +259,7 @@ dependencies {
             implementation(libs.kotlinx.coroutines.android)
         }
         """,
-            """
+        """
         [versions]
         androidGradlePlugin = "8.7.0-alpha01"
         androidx-corektx = "1.13.1"
@@ -285,7 +279,7 @@ dependencies {
         android-application = { id = "com.android.application", version.ref = "androidGradlePlugin" }
         kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
         """,
-        )
+      )
     val module = mocker.getLintModule()
     val variant = mocker.getLintVariant()!!
 
@@ -302,8 +296,8 @@ dependencies {
   @Test
   fun testFlavors() {
     val mocker =
-        createMocker(
-            """
+      createMocker(
+        """
 apply plugin: 'com.android.application'
 
 android {
@@ -324,21 +318,21 @@ android {
         paid { dimension "pricing" }
     }
 }"""
-        )
+      )
     val module = mocker.getLintModule()
     Truth.assertThat(module.type).isEqualTo(LintModelModuleType.APP)
 
     Truth.assertThat(module.variants.map { it.name })
-        .containsExactly(
-            "freeBetaDebug",
-            "paidBetaDebug",
-            "freeNormalDebug",
-            "paidNormalDebug",
-            "freeBetaRelease",
-            "paidBetaRelease",
-            "freeNormalRelease",
-            "paidNormalRelease",
-        )
+      .containsExactly(
+        "freeBetaDebug",
+        "paidBetaDebug",
+        "freeNormalDebug",
+        "paidNormalDebug",
+        "freeBetaRelease",
+        "paidBetaRelease",
+        "freeNormalRelease",
+        "paidNormalRelease",
+      )
 
     Truth.assertThat(module.findVariant("freeBetaDebug")!!.debuggable).isTrue()
     Truth.assertThat(module.findVariant("freeBetaRelease")!!.debuggable).isFalse()
@@ -357,8 +351,8 @@ android {
   @Test
   fun testSourceSets() {
     val mocker =
-        createMocker(
-            """android {
+      createMocker(
+        """android {
     compileSdkVersion 25
     defaultConfig {
         applicationId "com.android.tools.test"
@@ -368,7 +362,7 @@ android {
         versionName "MyName"
     }
 }"""
-        )
+      )
     val module = mocker.getLintModule()
     val variant = mocker.getLintVariant()!!
 
@@ -384,23 +378,23 @@ android {
   @Test
   fun testProvidedScopes() {
     val mocker =
-        createMocker(
-            """
+      createMocker(
+        """
 apply plugin: 'android-library'
 
 dependencies {
     provided "com.google.android.wearable:wearable:2.0.0-alpha4"
 }
 """
-        )
+      )
     val module = mocker.getLintModule()
     val variant = mocker.getLintVariant()!!
 
     Truth.assertThat(module.type).isEqualTo(LintModelModuleType.LIBRARY)
 
     val libraries =
-        variant.mainArtifact.dependencies.compileDependencies.roots.map { it.identifier }.toSet() -
-            variant.mainArtifact.dependencies.packageDependencies.roots.map { it.identifier }.toSet()
+      variant.mainArtifact.dependencies.compileDependencies.roots.map { it.identifier }.toSet() -
+        variant.mainArtifact.dependencies.packageDependencies.roots.map { it.identifier }.toSet()
 
     Truth.assertThat(libraries).containsExactly("com.google.android.wearable:wearable:2.0.0-alpha4")
   }
@@ -408,8 +402,8 @@ dependencies {
   @Test
   fun testDependencyPropertyForm() {
     val mocker =
-        createMocker(
-            """
+      createMocker(
+        """
 apply plugin: 'android'
 
 dependencies {
@@ -417,29 +411,25 @@ dependencies {
             name: "support-v4", version: '19.0'
 }
 """
-        )
+      )
     val module = mocker.getLintModule()
     val variant = mocker.getLintVariant()!!
 
     Truth.assertThat(module.type).isEqualTo(LintModelModuleType.APP)
 
     val libraries =
-        variant.mainArtifact.dependencies.compileDependencies.getAllLibraries().filterIsInstance<LintModelJavaLibrary>().map {
-          it.resolvedCoordinates.toString()
-        }
+      variant.mainArtifact.dependencies.compileDependencies.getAllLibraries().filterIsInstance<LintModelJavaLibrary>().map {
+        it.resolvedCoordinates.toString()
+      }
 
-    Truth.assertThat(libraries)
-        .containsExactly(
-            "com.android.support:support-v4:19.0",
-            "com.android.support:support-annotations:19.0",
-        )
+    Truth.assertThat(libraries).containsExactly("com.android.support:support-v4:19.0", "com.android.support:support-annotations:19.0")
   }
 
   @Test
   fun testModelVersion() {
     val mocker =
-        createMocker(
-            """buildscript {
+      createMocker(
+        """buildscript {
     repositories {
         mavenCentral()
     }
@@ -450,7 +440,7 @@ dependencies {
         // in the individual module build.gradle files
     }
 }"""
-        )
+      )
     val module = mocker.getLintModule()
 
     Truth.assertThat(module.agpVersion.toString()).isEqualTo("1.5.1")
@@ -459,11 +449,11 @@ dependencies {
   @Test
   fun testVectors() {
     val mocker =
-        createMocker(
-            """android.defaultConfig.vectorDrawables {
+      createMocker(
+        """android.defaultConfig.vectorDrawables {
     useSupportLibrary = true
 }"""
-        )
+      )
     val variant = mocker.getLintVariant()!!
 
     Truth.assertThat(variant.useSupportLibraryVectorDrawables).isTrue()
@@ -472,8 +462,8 @@ dependencies {
   @Test
   fun testResValues() {
     val mocker =
-        createMocker(
-            """android {
+      createMocker(
+        """android {
     defaultConfig {
         resValue "string", "defaultConfigName", "Some DefaultConfig Data"
     }
@@ -499,42 +489,42 @@ dependencies {
          }
      }
 }"""
-        )
+      )
 
     val module = mocker.getLintModule()
 
     fun LintModelVariant.testValue() = this.resValues.values.joinToString("\n") { "${it.name}/${it.type}/${it.value}" }
 
     Truth.assertThat(module.findVariant("flavor1Debug")!!.testValue())
-        .isEqualTo(
-            """
-            defaultConfigName/string/Some DefaultConfig Data
-            VALUE_DEBUG/string/10
-            VALUE_FLAVOR/string/10
-            VALUE_VARIANT/string/10
-            debugName/string/Some Debug Data
-            """
-                .trimIndent()
-        )
+      .isEqualTo(
+        """
+        defaultConfigName/string/Some DefaultConfig Data
+        VALUE_DEBUG/string/10
+        VALUE_FLAVOR/string/10
+        VALUE_VARIANT/string/10
+        debugName/string/Some Debug Data
+        """
+          .trimIndent()
+      )
     Truth.assertThat(module.findVariant("flavor2Release")!!.testValue())
-        .isEqualTo(
-            """
-            defaultConfigName/string/Some DefaultConfig Data
-            VALUE_DEBUG/string/20
-            VALUE_FLAVOR/string/20
-            VALUE_VARIANT/string/20
-            releaseName1/string/Some Release Data 1
-            releaseName2/string/Some Release Data 2
-            """
-                .trimIndent()
-        )
+      .isEqualTo(
+        """
+        defaultConfigName/string/Some DefaultConfig Data
+        VALUE_DEBUG/string/20
+        VALUE_FLAVOR/string/20
+        VALUE_VARIANT/string/20
+        releaseName1/string/Some Release Data 1
+        releaseName2/string/Some Release Data 2
+        """
+          .trimIndent()
+      )
   }
 
   @Test
   fun testSetVariantName() {
     val mocker =
-        createMocker(
-            """android {
+      createMocker(
+        """android {
     defaultConfig {
         resValue "string", "defaultConfigName", "Some DefaultConfig Data"
     }
@@ -560,7 +550,7 @@ dependencies {
          }
      }
 }"""
-        )
+      )
     Truth.assertThat(mocker.getLintVariant()!!.name).isEqualTo("flavor1Debug")
     mocker.setVariantName("flavor2Release")
     Truth.assertThat(mocker.getLintVariant()!!.name).isEqualTo("flavor2Release")
@@ -569,8 +559,8 @@ dependencies {
   @Test
   fun testPlaceHolders() {
     val mocker =
-        createMocker(
-            """android {
+      createMocker(
+        """android {
     defaultConfig {
         manifestPlaceholders = [ localApplicationId:"com.example.manifest_merger_example"]
     }
@@ -588,50 +578,50 @@ dependencies {
         }
     }
 }"""
-        )
+      )
     val module = mocker.getLintModule()
 
     fun LintModelVariant.testValue() = this.manifestPlaceholders.entries.joinToString("\n") { "${it.key}/${it.value}" }
 
     Truth.assertThat(module.findVariant("flavorDebug")!!.testValue())
-        .isEqualTo(
-            """
-            localApplicationId/com.example.manifest_merger_example.flavor
-            """
-                .trimIndent()
-        )
+      .isEqualTo(
+        """
+        localApplicationId/com.example.manifest_merger_example.flavor
+        """
+          .trimIndent()
+      )
 
     Truth.assertThat(module.findVariant("freeRelease")!!.testValue())
-        .isEqualTo(
-            """
-            localApplicationId/com.example.manifest_merger_example
-            holder/free
-            """
-                .trimIndent()
-        )
+      .isEqualTo(
+        """
+        localApplicationId/com.example.manifest_merger_example
+        holder/free
+        """
+          .trimIndent()
+      )
 
     Truth.assertThat(module.findVariant("betaDebug")!!.testValue())
-        .isEqualTo(
-            """
-            localApplicationId/com.example.manifest_merger_example
-            holder/beta
-            """
-                .trimIndent()
-        )
+      .isEqualTo(
+        """
+        localApplicationId/com.example.manifest_merger_example
+        holder/beta
+        """
+          .trimIndent()
+      )
   }
 
   @Test
   fun testMinifyEnabled() {
     val mocker =
-        createMocker(
-            """android {
+      createMocker(
+        """android {
     buildTypes {
         release {
             minifyEnabled true
         }
     }
 }"""
-        )
+      )
     val module = mocker.getLintModule()
     Truth.assertThat(module.findVariant("release")!!.shrinkable).isTrue()
     Truth.assertThat(module.findVariant("debug")!!.shrinkable).isFalse()
@@ -648,24 +638,24 @@ dependencies {
     val hasWarning = AtomicBoolean()
     val hasError = AtomicBoolean()
     val mocker =
-        createMocker("apply plugin: 'java'\nfoo.bar\n")
-            .withLogger(
-                object : ILogger {
-                  override fun error(t: Throwable?, msgFormat: String?, vararg args: Any) {
-                    hasError.set(true)
-                  }
+      createMocker("apply plugin: 'java'\nfoo.bar\n")
+        .withLogger(
+          object : ILogger {
+            override fun error(t: Throwable?, msgFormat: String?, vararg args: Any) {
+              hasError.set(true)
+            }
 
-                  override fun warning(msgFormat: String, vararg args: Any) {
-                    hasWarning.set(true)
-                  }
+            override fun warning(msgFormat: String, vararg args: Any) {
+              hasWarning.set(true)
+            }
 
-                  override fun info(msgFormat: String, vararg args: Any) {}
+            override fun info(msgFormat: String, vararg args: Any) {}
 
-                  override fun verbose(msgFormat: String, vararg args: Any) {}
-                }
-            )
-            .withModelVersion("1.5.0")
-            .allowUnrecognizedConstructs()
+            override fun verbose(msgFormat: String, vararg args: Any) {}
+          }
+        )
+        .withModelVersion("1.5.0")
+        .allowUnrecognizedConstructs()
     Truth.assertThat(mocker.getLintModule().agpVersion.toString()).isEqualTo("1.5.0")
     Truth.assertThat(hasWarning.get()).isTrue()
     Truth.assertThat(hasError.get()).isFalse()
@@ -674,8 +664,8 @@ dependencies {
   @Test
   fun testVersionProperties() {
     val mocker =
-        createMocker(
-            """android {
+      createMocker(
+        """android {
     defaultConfig {
         applicationId "com.example.manifest_merger_example"
         minSdkVersion 15
@@ -693,7 +683,7 @@ dependencies {
         }
     }
 }"""
-        )
+      )
     mocker.setVariantName("flavorDebug")
     val variant = mocker.getLintVariant()!!
 
@@ -707,8 +697,8 @@ dependencies {
   @Test
   fun testApkSplits() {
     val mocker =
-        createMocker(
-            """android {
+      createMocker(
+        """android {
     splits {
         density {
             enable true
@@ -726,7 +716,7 @@ dependencies {
     }
 }
 """
-        )
+      )
     val module = mocker.getLintModule()
     val variant = mocker.getLintVariant()!!
     // TODO:
@@ -856,46 +846,46 @@ dependencies {
   @Test
   fun testDependencyGraph() {
     val mocker =
-        createMocker(
-            """
+      createMocker(
+        """
 apply plugin: 'com.android.application'
 
 dependencies {
     compile "com.android.support:appcompat-v7:25.0.1"
     compile "com.android.support.constraint:constraint-layout:1.0.0-beta3"
 }"""
-        )
+      )
 
     val module = mocker.getLintModule()
     var variant = mocker.getLintVariant()!!
 
     val javaLibraries =
-        variant.mainArtifact.dependencies.compileDependencies.getAllLibraries().filterIsInstance<LintModelJavaLibrary>().map {
-          it.resolvedCoordinates.toString()
-        }
+      variant.mainArtifact.dependencies.compileDependencies.getAllLibraries().filterIsInstance<LintModelJavaLibrary>().map {
+        it.resolvedCoordinates.toString()
+      }
     val androidLibraries =
-        variant.mainArtifact.dependencies.compileDependencies.getAllLibraries().filterIsInstance<LintModelAndroidLibrary>().map {
-          it.resolvedCoordinates.toString()
-        }
+      variant.mainArtifact.dependencies.compileDependencies.getAllLibraries().filterIsInstance<LintModelAndroidLibrary>().map {
+        it.resolvedCoordinates.toString()
+      }
 
     Truth.assertThat(javaLibraries)
-        .containsExactly(
-            "com.android.support:support-annotations:25.0.1",
-            "com.android.support.constraint:constraint-layout-solver:1.0.0-beta3",
-        )
+      .containsExactly(
+        "com.android.support:support-annotations:25.0.1",
+        "com.android.support.constraint:constraint-layout-solver:1.0.0-beta3",
+      )
     Truth.assertThat(androidLibraries)
-        .containsExactly(
-            "com.android.support:appcompat-v7:25.0.1",
-            "com.android.support:support-v4:25.0.1",
-            "com.android.support:support-compat:25.0.1",
-            "com.android.support:support-media-compat:25.0.1",
-            "com.android.support:support-core-utils:25.0.1",
-            "com.android.support:support-core-ui:25.0.1",
-            "com.android.support:support-fragment:25.0.1",
-            "com.android.support:support-vector-drawable:25.0.1",
-            "com.android.support:animated-vector-drawable:25.0.1",
-            "com.android.support.constraint:constraint-layout:1.0.0-beta3",
-        )
+      .containsExactly(
+        "com.android.support:appcompat-v7:25.0.1",
+        "com.android.support:support-v4:25.0.1",
+        "com.android.support:support-compat:25.0.1",
+        "com.android.support:support-media-compat:25.0.1",
+        "com.android.support:support-core-utils:25.0.1",
+        "com.android.support:support-core-ui:25.0.1",
+        "com.android.support:support-fragment:25.0.1",
+        "com.android.support:support-vector-drawable:25.0.1",
+        "com.android.support:animated-vector-drawable:25.0.1",
+        "com.android.support.constraint:constraint-layout:1.0.0-beta3",
+      )
   }
 
   // @Test
@@ -1052,8 +1042,8 @@ dependencies {
   @Test
   fun testLintOptions() {
     val mocker =
-        createMocker(
-            """android {
+      createMocker(
+        """android {
     lintOptions {
         quiet = true
         abortOnError = false
@@ -1072,7 +1062,7 @@ dependencies {
     }
 }
 """
-        )
+      )
     Truth.assertThat(mocker).isNotNull()
     val flags = LintCliFlags()
     mocker.syncFlagsTo(flags)
@@ -1090,14 +1080,14 @@ dependencies {
   @Test
   fun testLanguageOptions1() {
     val mocker =
-        createMocker(
-            """android {
+      createMocker(
+        """android {
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
 }"""
-        )
+      )
 
     val module = mocker.getLintModule()
 
@@ -1108,14 +1098,14 @@ dependencies {
   @Test
   fun testLanguageOptions2() {
     val mocker =
-        createMocker(
-            """android {
+      createMocker(
+        """android {
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_7
         targetCompatibility JavaVersion.VERSION_1_7
     }
 }"""
-        )
+      )
     val module = mocker.getLintModule()
 
     Truth.assertThat(module.javaSourceLevel).isEqualTo("1.7")
@@ -1124,9 +1114,9 @@ dependencies {
 
   companion object {
     fun createMocker(
-        @Language("Groovy") gradle: String,
-        tempFolder: TemporaryFolder,
-        @Language("TOML") versionCatalog: String? = null,
+      @Language("Groovy") gradle: String,
+      tempFolder: TemporaryFolder,
+      @Language("TOML") versionCatalog: String? = null,
     ): GradleModelMocker {
       val projectDir = tempFolder.newFolder("build")
       if (versionCatalog != null) {
@@ -1136,21 +1126,21 @@ dependencies {
       }
       return try {
         GradleModelMocker(gradle, projectDir)
-            .withLogger(
-                object : ILogger {
-                  override fun error(t: Throwable?, msgFormat: String?, vararg args: Any) {
-                    Assert.fail(msgFormat)
-                  }
+          .withLogger(
+            object : ILogger {
+              override fun error(t: Throwable?, msgFormat: String?, vararg args: Any) {
+                Assert.fail(msgFormat)
+              }
 
-                  override fun warning(msgFormat: String, vararg args: Any) {
-                    println(msgFormat)
-                  }
+              override fun warning(msgFormat: String, vararg args: Any) {
+                println(msgFormat)
+              }
 
-                  override fun info(msgFormat: String, vararg args: Any) {}
+              override fun info(msgFormat: String, vararg args: Any) {}
 
-                  override fun verbose(msgFormat: String, vararg args: Any) {}
-                }
-            )
+              override fun verbose(msgFormat: String, vararg args: Any) {}
+            }
+          )
       } catch (e: IOException) {
         Assert.fail(e.message)
         error("")

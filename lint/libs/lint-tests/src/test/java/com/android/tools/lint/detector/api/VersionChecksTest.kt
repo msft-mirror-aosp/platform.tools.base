@@ -33,11 +33,11 @@ class VersionChecksTest : AbstractCheckTest() {
   fun testConditionalApi0() {
     // See https://code.google.com/p/android/issues/detail?id=137195
     lint()
-        .files(
-            classpath(),
-            manifest().minSdk(14),
-            java(
-                    """
+      .files(
+        classpath(),
+        manifest().minSdk(14),
+        java(
+            """
                 package test.pkg;
 
                 import android.animation.RectEvaluator;
@@ -89,16 +89,16 @@ class VersionChecksTest : AbstractCheckTest() {
                     }
                 }
                 """
-                )
-                .indented(),
-        )
-        // We *don't* want to use provisional computation for this:
-        // limit suggestions around SDK_INT checks to those implied
-        // by the minSdkVersion of the library.
-        .skipTestModes(PARTIAL)
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+      )
+      // We *don't* want to use provisional computation for this:
+      // limit suggestions around SDK_INT checks to those implied
+      // by the minSdkVersion of the library.
+      .skipTestModes(PARTIAL)
+      .run()
+      .expect(
+        """
                 src/test/pkg/ConditionalApiTest.java:28: Error: Call requires API level 18 (current min is 14): new android.animation.RectEvaluator [NewApi]
                             new RectEvaluator(); // ERROR 1
                             ~~~~~~~~~~~~~~~~~
@@ -116,17 +116,17 @@ class VersionChecksTest : AbstractCheckTest() {
                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 3 errors, 2 warnings
                 """
-        )
+      )
   }
 
   fun testConditionalApi1() {
     // See https://code.google.com/p/android/issues/detail?id=137195
     lint()
-        .files(
-            classpath(),
-            manifest().minSdk(4),
-            java(
-                    """
+      .files(
+        classpath(),
+        manifest().minSdk(4),
+        java(
+            """
                 package test.pkg;
 
                 import android.os.Build;
@@ -263,12 +263,12 @@ class VersionChecksTest : AbstractCheckTest() {
                     }
                 }
                 """
-                )
-                .indented(),
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+      )
+      .run()
+      .expect(
+        """
                 src/test/pkg/VersionConditional1.java:18: Error: Call requires API level 14 (current min is 4): android.widget.GridLayout#getOrientation [NewApi]
                             new GridLayout(null).getOrientation(); // Flagged
                                                  ~~~~~~~~~~~~~~
@@ -367,7 +367,7 @@ class VersionChecksTest : AbstractCheckTest() {
                             ~~~~~~~~~~~~~~
                 32 errors, 0 warnings
                 """
-        )
+      )
   }
 
   fun testConditionalApi1b() {
@@ -375,11 +375,11 @@ class VersionChecksTest : AbstractCheckTest() {
     // This is like testConditionalApi1, but with each logical lookup call extracted into
     // a single method. This makes debugging through the control flow graph a lot easier.
     lint()
-        .files(
-            classpath(),
-            manifest().minSdk(4),
-            java(
-                    """
+      .files(
+        classpath(),
+        manifest().minSdk(4),
+        java(
+            """
                 package test.pkg;
 
                 import android.os.Build;
@@ -532,12 +532,12 @@ class VersionChecksTest : AbstractCheckTest() {
                     }
                 }
                 """
-                )
-                .indented(),
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+      )
+      .run()
+      .expect(
+        """
                 src/test/pkg/VersionConditional1b.java:23: Error: Call requires API level 14 (current min is 4): new android.widget.GridLayout [NewApi]
                             new GridLayout(null); // Flagged
                             ~~~~~~~~~~~~~~
@@ -636,17 +636,17 @@ class VersionChecksTest : AbstractCheckTest() {
                             ~~~~~~~~~~~~~~
                 32 errors, 0 warnings
                 """
-        )
+      )
   }
 
   fun testConditionalApi2() {
     // See https://code.google.com/p/android/issues/detail?id=137195
     lint()
-        .files(
-            classpath(),
-            manifest().minSdk(4),
-            java(
-                    """
+      .files(
+        classpath(),
+        manifest().minSdk(4),
+        java(
+            """
                 package test.pkg;
 
                 import android.graphics.drawable.Drawable;
@@ -795,12 +795,12 @@ class VersionChecksTest : AbstractCheckTest() {
                     }
                 }
                 """
-                )
-                .indented(),
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+      )
+      .run()
+      .expect(
+        """
                 src/test/pkg/VersionConditional2.java:20: Error: Call requires API level 16 (current min is 10): android.view.View#setBackground [NewApi]
                             root.setBackground(background); // Flagged
                                  ~~~~~~~~~~~~~
@@ -842,7 +842,7 @@ class VersionChecksTest : AbstractCheckTest() {
                                  ~~~~~~~~~~~~~
                 13 errors, 0 warnings
                 """
-        )
+      )
   }
 
   fun testConditionalApi2b() {
@@ -850,11 +850,11 @@ class VersionChecksTest : AbstractCheckTest() {
     // This is like testConditionalApi2, but with each logical lookup call extracted into
     // a single method. This makes debugging through the control flow graph a lot easier.
     lint()
-        .files(
-            classpath(),
-            manifest().minSdk(4),
-            java(
-                    """
+      .files(
+        classpath(),
+        manifest().minSdk(4),
+        java(
+            """
                 package test.pkg;
 
                 import android.graphics.drawable.Drawable;
@@ -1040,12 +1040,12 @@ class VersionChecksTest : AbstractCheckTest() {
                     }
                 }
                 """
-                )
-                .indented(),
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+      )
+      .run()
+      .expect(
+        """
                 src/test/pkg/VersionConditional2b.java:17: Error: Call requires API level 16 (current min is 10): android.view.View#setBackground [NewApi]
                             root.setBackground(background); // Flagged
                                  ~~~~~~~~~~~~~
@@ -1087,17 +1087,17 @@ class VersionChecksTest : AbstractCheckTest() {
                                  ~~~~~~~~~~~~~
                 13 errors, 0 warnings
                 """
-        )
+      )
   }
 
   fun testConditionalApi3() {
     // See https://code.google.com/p/android/issues/detail?id=137195
     lint()
-        .files(
-            classpath(),
-            manifest().minSdk(4),
-            java(
-                    """
+      .files(
+        classpath(),
+        manifest().minSdk(4),
+        java(
+            """
                 package test.pkg;
                 import android.os.Build;
                 import android.os.Build.VERSION_CODES;
@@ -1190,12 +1190,12 @@ class VersionChecksTest : AbstractCheckTest() {
                     }
                 }
                 """
-                )
-                .indented(),
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+      )
+      .run()
+      .expect(
+        """
                 src/test/pkg/VersionConditional3.java:13: Error: Call requires API level 21 (current min is 19): android.view.ViewDebug.ExportedProperty#hasAdjacentMapping [NewApi]
                         if (Build.VERSION.SDK_INT > 18 && property.hasAdjacentMapping()) { // ERROR
                                                                    ~~~~~~~~~~~~~~~~~~
@@ -1246,7 +1246,7 @@ class VersionChecksTest : AbstractCheckTest() {
                                          ~~~~~~~~~~~~~~~~~~
                 16 errors, 0 warnings
                 """
-        )
+      )
   }
 
   fun testConditionalApi3b() {
@@ -1254,11 +1254,11 @@ class VersionChecksTest : AbstractCheckTest() {
     // This is like testConditionalApi3, but with each logical lookup call extracted into
     // a single method. This makes debugging through the control flow graph a lot easier.
     lint()
-        .files(
-            classpath(),
-            manifest().minSdk(4),
-            java(
-                    """
+      .files(
+        classpath(),
+        manifest().minSdk(4),
+        java(
+            """
                 package test.pkg;
 
                 import android.os.Build;
@@ -1422,12 +1422,12 @@ class VersionChecksTest : AbstractCheckTest() {
                     }
                 }
                 """
-                )
-                .indented(),
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+      )
+      .run()
+      .expect(
+        """
                 src/test/pkg/VersionConditional3b.java:21: Error: Call requires API level 21 (current min is 4): android.view.ViewDebug.ExportedProperty#hasAdjacentMapping [NewApi]
                                 property.hasAdjacentMapping() && // ERROR
                                          ~~~~~~~~~~~~~~~~~~
@@ -1478,15 +1478,15 @@ class VersionChecksTest : AbstractCheckTest() {
                                                                    ~~~~~~~~~~~~~~~~~~
                 16 errors, 0 warnings
                 """
-        )
+      )
   }
 
   fun testConditionalApi4() {
     lint()
-        .files(
-            manifest().minSdk(4),
-            java(
-                    """
+      .files(
+        manifest().minSdk(4),
+        java(
+            """
                 package test.pkg;
 
                 import androidx.annotation.RequiresApi;
@@ -1583,34 +1583,34 @@ class VersionChecksTest : AbstractCheckTest() {
                     }
                 }
                 """
-                )
-                .indented(),
-            jar(
-                "libs/build-compat.jar",
-                base64gzip(
-                    "androidx/core/os/BuildCompat.class",
-                    "" +
-                        "H4sIAAAAAAAAAIWUz08TQRTHv9MuXVoXqKBIKYIoYotKRbxhjLXFpLE/hJKa" +
-                        "4MFMt5N2cNklu1PjnyPx4MWLHDTx4B/gH2V8uy1txZbuYebNzHuf75v3Jvv7" +
-                        "z89fALaxHYOOpShuYtkfVmK4hVV/uK3jjo41hshTaUv1jCGcStcYtJzTEAwz" +
-                        "RWmLcvu4LtwDXrdoZ7bomNyqcVf66+6mplrSY1gucrvhOrLxMWM6rsg4XuZF" +
-                        "W1qNnHN8wtUOQ0x6WVUU3FPlQOiQYaqquPm+xE+6qFhenLjC5Eo0GBL7bVvJ" +
-                        "Y1GTnqTTrG07iivp2CQ2XzziH3jG4nYz048hkam+SGl/a1C0MnhYuXD4enCx" +
-                        "R4uq03ZN8VL6WcUH7rHp6xqYRFTHuoE0NgzcxwMdDw1sImPgEQi8dFkpCNhP" +
-                        "vlI/EqbS8ZhhoRvUc1+r7e5XCxWqlt6zjIJtCzdncc8TVAe9mn/1rlA+YGAF" +
-                        "hslcJb9bzpZ2/U71NarKlXZz5x/dzh513hJ2U7WChhAhYra4m6UUtVQhnaOI" +
-                        "izlhFRF6Tf6nI+TXAVSt4JlRDjRPbPwA+0ZGCFdojNEMLEJDEgZZRscJU5im" +
-                        "OYoZxBEOAFuBJzB9hlB84RS69gVa+GuPFAki7+FqEB8yntMlg4C57uG1AHh9" +
-                        "ODAxCvhkHHB+OHBxFDA7DnhjODA5ClgeB1wYDlwaBXw7DpggYKerb7rA1BnC" +
-                        "36Fpn7BCFpkT8b1TzJ3bh5//k5qllgMtarOk9h9R41rnsuskG6JN3zWJVPBK" +
-                        "GP2Y7pJT9C+SvhI3tgQAAA==",
-                ),
-            ),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+        jar(
+          "libs/build-compat.jar",
+          base64gzip(
+            "androidx/core/os/BuildCompat.class",
+            "" +
+              "H4sIAAAAAAAAAIWUz08TQRTHv9MuXVoXqKBIKYIoYotKRbxhjLXFpLE/hJKa" +
+              "4MFMt5N2cNklu1PjnyPx4MWLHDTx4B/gH2V8uy1txZbuYebNzHuf75v3Jvv7" +
+              "z89fALaxHYOOpShuYtkfVmK4hVV/uK3jjo41hshTaUv1jCGcStcYtJzTEAwz" +
+              "RWmLcvu4LtwDXrdoZ7bomNyqcVf66+6mplrSY1gucrvhOrLxMWM6rsg4XuZF" +
+              "W1qNnHN8wtUOQ0x6WVUU3FPlQOiQYaqquPm+xE+6qFhenLjC5Eo0GBL7bVvJ" +
+              "Y1GTnqTTrG07iivp2CQ2XzziH3jG4nYz048hkam+SGl/a1C0MnhYuXD4enCx" +
+              "R4uq03ZN8VL6WcUH7rHp6xqYRFTHuoE0NgzcxwMdDw1sImPgEQi8dFkpCNhP" +
+              "vlI/EqbS8ZhhoRvUc1+r7e5XCxWqlt6zjIJtCzdncc8TVAe9mn/1rlA+YGAF" +
+              "hslcJb9bzpZ2/U71NarKlXZz5x/dzh513hJ2U7WChhAhYra4m6UUtVQhnaOI" +
+              "izlhFRF6Tf6nI+TXAVSt4JlRDjRPbPwA+0ZGCFdojNEMLEJDEgZZRscJU5im" +
+              "OYoZxBEOAFuBJzB9hlB84RS69gVa+GuPFAki7+FqEB8yntMlg4C57uG1AHh9" +
+              "ODAxCvhkHHB+OHBxFDA7DnhjODA5ClgeB1wYDlwaBXw7DpggYKerb7rA1BnC" +
+              "36Fpn7BCFpkT8b1TzJ3bh5//k5qllgMtarOk9h9R41rnsuskG6JN3zWJVPBK" +
+              "GP2Y7pJT9C+SvhI3tgQAAA==",
+          ),
+        ),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
                 src/test/pkg/VersionConditionals4.java:16: Error: Call requires API level 24 (current min is 4): methodN [NewApi]
                         if (methodN() || SDK_INT < N) { } // ERROR
                             ~~~~~~~
@@ -1631,7 +1631,7 @@ class VersionChecksTest : AbstractCheckTest() {
                                     ~~~~~~~
                 6 errors, 0 warnings
                 """
-        )
+      )
   }
 
   fun testConditionalApi5() {
@@ -1640,10 +1640,10 @@ class VersionChecksTest : AbstractCheckTest() {
     //   -- https://issuetracker.google.com/issues/37078078
     // Handle version checks in conditionals.
     lint()
-        .files(
-            manifest().minSdk(4),
-            java(
-                    """
+      .files(
+        manifest().minSdk(4),
+        java(
+            """
                 package test.pkg;
 
                 import android.Manifest;
@@ -1676,20 +1676,20 @@ class VersionChecksTest : AbstractCheckTest() {
                     }
                 }
                 """
-                )
-                .indented(),
-        )
-        .run()
-        .expectClean()
+          )
+          .indented(),
+      )
+      .run()
+      .expectClean()
   }
 
   fun testConditionalApi6() {
     // Regression test for https://code.google.com/p/android/issues/detail?id=207289
     lint()
-        .files(
-            manifest().minSdk(4),
-            java(
-                    """
+      .files(
+        manifest().minSdk(4),
+        java(
+            """
                 package test.pkg;
 
                 import android.animation.*;
@@ -1719,20 +1719,20 @@ class VersionChecksTest : AbstractCheckTest() {
                         }
                     }
                 }"""
-                )
-                .indented(),
-        )
-        .run()
-        .expectClean()
+          )
+          .indented(),
+      )
+      .run()
+      .expectClean()
   }
 
   fun testConditionalOnConstant() {
     // Regression test for https://code.google.com/p/android/issues/detail?id=221586
     lint()
-        .files(
-            manifest().minSdk(4),
-            java(
-                    """
+      .files(
+        manifest().minSdk(4),
+        java(
+            """
                 package test.pkg;
 
                 import android.app.Activity;
@@ -1750,18 +1750,18 @@ class VersionChecksTest : AbstractCheckTest() {
                     }
                 }
                 """
-                )
-                .indented(),
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+      )
+      .run()
+      .expect(
+        """
             src/test/pkg/VersionConditionals6.java:14: Error: Call requires API level 21 (current min is 4): android.widget.TextView#setLetterSpacing [NewApi]
                     textView.setLetterSpacing(1f); // ERROR
                              ~~~~~~~~~~~~~~~~
             1 errors, 0 warnings
             """
-        )
+      )
   }
 
   fun testVersionCheckInLibrary() {
@@ -1771,10 +1771,10 @@ class VersionChecksTest : AbstractCheckTest() {
     val issues = arrayOf(ApiDetector.UNSUPPORTED, SdkIntDetector.ISSUE)
 
     lint()
-        .files(
-            manifest().minSdk(4),
-            java(
-                    """
+      .files(
+        manifest().minSdk(4),
+        java(
+            """
                 package test.pkg;
 
                 import androidx.annotation.RequiresApi;
@@ -1799,13 +1799,13 @@ class VersionChecksTest : AbstractCheckTest() {
                     }
                 }
                 """
-                )
-                .indented(),
-            compiled(
-                "../lib/bin/classes",
-                java(
-                        "../lib/src/test/utils/Utils.java",
-                        """
+          )
+          .indented(),
+        compiled(
+          "../lib/bin/classes",
+          java(
+              "../lib/src/test/utils/Utils.java",
+              """
                         package test.utils;
                         import static android.os.Build.VERSION.SDK_INT;
                         import static android.os.Build.VERSION_CODES.N;
@@ -1829,10 +1829,10 @@ class VersionChecksTest : AbstractCheckTest() {
                             }
                         }
                     """,
-                    )
-                    .indented(),
-                0x64a854c9,
-                """
+            )
+            .indented(),
+          0x64a854c9,
+          """
                     test/utils/Utils.class:
                     H4sIAAAAAAAAAHWTy27TQBSG/0nSTC7OpQmlaaEtpQXSIGGQkECiQrRuKlmk
                     MYpDF91EjmMVt2aMfOn7sGLDJrBAsOABeCjEGctNq6B6MT5zfL7z/3NG/vP3
@@ -1847,35 +1847,35 @@ class VersionChecksTest : AbstractCheckTest() {
                     xYudn8gxTGd8FVlaG6TfpHgp6ZMFq1JiaXba5+kRFmWXmYnvWJjO+ahdP0UG
                     t5PPy7iTSEgnLaxC/hstPETxH5PQHcg3AwAA
                     """,
-            ),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .issues(*issues)
-        // If we only supply the bytecode, lint would have to analyze bytecode
-        // to recognize version checks inside a compiled method; it doesn't do that;
-        // this is what the SdkIntDetector is for (encouraging use of annotations
-        // which captures the info). However, when we analyze the source code in a
-        // library we can record the information as partial state, so this *does*
-        // work in partial analysis which we want to test here.
-        .skipTestModes(TestMode.BYTECODE_ONLY)
-        .run()
-        .expect(
-            """
+        ),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .issues(*issues)
+      // If we only supply the bytecode, lint would have to analyze bytecode
+      // to recognize version checks inside a compiled method; it doesn't do that;
+      // this is what the SdkIntDetector is for (encouraging use of annotations
+      // which captures the info). However, when we analyze the source code in a
+      // library we can record the information as partial state, so this *does*
+      // work in partial analysis which we want to test here.
+      .skipTestModes(TestMode.BYTECODE_ONLY)
+      .run()
+      .expect(
+        """
             src/test/pkg/CheckInLibraryTest.java:14: Error: Call requires API level 24 (current min is 14): methodN [NewApi]
                     if (versionCheck(14)) { methodN(); } // ERROR
                                             ~~~~~~~
             1 errors, 0 warnings
             """
-        )
+      )
   }
 
   fun testVersionCheckMethodsInBinaryOperator() {
     // Regression test for https://code.google.com/p/android/issues/detail?id=199572
     lint()
-        .files(
-            manifest().minSdk(10),
-            java(
-                """
+      .files(
+        manifest().minSdk(10),
+        java(
+          """
                 package test.pkg;
 
                 import android.app.Activity;
@@ -1902,18 +1902,18 @@ class VersionChecksTest : AbstractCheckTest() {
                     }
                 }
                 """
-            ),
-        )
-        .run()
-        .expectClean()
+        ),
+      )
+      .run()
+      .expectClean()
   }
 
   fun testTernaryOperator() {
     lint()
-        .files(
-            manifest().minSdk(10),
-            java(
-                    """
+      .files(
+        manifest().minSdk(10),
+        java(
+            """
                 package test.pkg;
 
                 import android.os.Build;
@@ -1932,21 +1932,21 @@ class VersionChecksTest : AbstractCheckTest() {
                     }
                 }
                 """
-                )
-                .indented(),
-        )
-        .run()
-        .expectClean()
+          )
+          .indented(),
+      )
+      .run()
+      .expectClean()
   }
 
   fun testVersionInVariable() {
     // Regression test for b/35116007:
     // Allow the SDK version to be extracted into a variable or field
     lint()
-        .files(
-            manifest().minSdk(10),
-            java(
-                    """
+      .files(
+        manifest().minSdk(10),
+        java(
+            """
                 package test.pkg;
 
                 import android.os.Build;
@@ -1967,19 +1967,19 @@ class VersionChecksTest : AbstractCheckTest() {
                     }
                 }
                 """
-                )
-                .indented(),
-        )
-        .run()
-        .expectClean()
+          )
+          .indented(),
+      )
+      .run()
+      .expectClean()
   }
 
   fun testNegative() {
     lint()
-        .files(
-            manifest().minSdk(10),
-            java(
-                    """
+      .files(
+        manifest().minSdk(10),
+        java(
+            """
                 package test.pkg;
 
                 import android.app.Activity;
@@ -2007,19 +2007,19 @@ class VersionChecksTest : AbstractCheckTest() {
                     }
                 }
                 """
-                )
-                .indented(),
-        )
-        .run()
-        .expectClean()
+          )
+          .indented(),
+      )
+      .run()
+      .expectClean()
   }
 
   fun testPrecededBy() {
     lint()
-        .files(
-            manifest().minSdk(10),
-            java(
-                    """
+      .files(
+        manifest().minSdk(10),
+        java(
+            """
                 package test.pkg;
 
                 import android.os.Build;
@@ -2089,13 +2089,13 @@ class VersionChecksTest : AbstractCheckTest() {
                     }
                 }
                 """
-                )
-                .indented(),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
                 src/test/pkg/TestPrecededByVersionCheck.java:24: Error: Call requires API level 22 (current min is 10): requiresLollipop [NewApi]
                         requiresLollipop(); // ERROR 1: API level could be 18-21
                         ~~~~~~~~~~~~~~~~
@@ -2113,15 +2113,15 @@ class VersionChecksTest : AbstractCheckTest() {
                         ~~~~~~~~~~~~~~~~
                 5 errors, 0 warnings
                 """
-        )
+      )
   }
 
   fun testNestedChecks() {
     lint()
-        .files(
-            manifest().minSdk(11),
-            java(
-                    """
+      .files(
+        manifest().minSdk(11),
+        java(
+            """
                 package p1.p2;
 
                 import android.os.Build;
@@ -2177,13 +2177,13 @@ class VersionChecksTest : AbstractCheckTest() {
                         }
                     }
                 }"""
-                )
-                .indented(),
-        )
-        .skipTestModes(PARTIAL)
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+      )
+      .skipTestModes(PARTIAL)
+      .run()
+      .expect(
+        """
                 src/p1/p2/Class.java:39: Error: Call requires API level 14 (current min is 11): new android.widget.GridLayout [NewApi]
                         new GridLayout(null); // ERROR
                         ~~~~~~~~~~~~~~
@@ -2192,15 +2192,15 @@ class VersionChecksTest : AbstractCheckTest() {
                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 1 errors, 1 warnings
                 """
-        )
+      )
   }
 
   fun testNestedChecks2() {
     lint()
-        .files(
-            manifest().minSdk(11),
-            java(
-                    """
+      .files(
+        manifest().minSdk(11),
+        java(
+            """
             package p1.p2;
 
             import android.os.Build;
@@ -2218,13 +2218,13 @@ class VersionChecksTest : AbstractCheckTest() {
                 }
             }
             """
-                )
-                .indented(),
-        )
-        .skipTestModes(PARTIAL)
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+      )
+      .skipTestModes(PARTIAL)
+      .run()
+      .expect(
+        """
         src/p1/p2/Class.java:8: Warning: Unnecessary; Build.VERSION.SDK_INT < 31 is always true here (SDK_INT ≥ 11 and < 31) [ObsoleteSdkInt]
                     if (Build.VERSION.SDK_INT < 31) { // Unnecessary; SDK_INT is always < 31
                         ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -2233,7 +2233,7 @@ class VersionChecksTest : AbstractCheckTest() {
                         ~~~~~~~~~~~~~~~~~~~~~~~~~~
         0 errors, 2 warnings
         """
-        )
+      )
   }
 
   fun testNestedChecksKotlin() {
@@ -2243,10 +2243,10 @@ class VersionChecksTest : AbstractCheckTest() {
     // Second, we're accessing the version check using property syntax, not a call, which
     // also required changes to the AST analysis.
     lint()
-        .files(
-            manifest().minSdk(11),
-            kotlin(
-                    """
+      .files(
+        manifest().minSdk(11),
+        kotlin(
+            """
                 package p1.p2
 
                 import android.os.Build
@@ -2299,13 +2299,13 @@ class VersionChecksTest : AbstractCheckTest() {
                             get() = Build.VERSION.SDK_INT >= Build.VERSION_CODES.GINGERBREAD
                     }
                 }"""
-                )
-                .indented(),
-        )
-        .skipTestModes(PARTIAL)
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+      )
+      .skipTestModes(PARTIAL)
+      .run()
+      .expect(
+        """
                 src/p1/p2/NestedChecks.kt:39: Error: Call requires API level 14 (current min is 11): android.widget.GridLayout() [NewApi]
                         GridLayout(null) // ERROR
                         ~~~~~~~~~~
@@ -2314,7 +2314,7 @@ class VersionChecksTest : AbstractCheckTest() {
                                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 1 errors, 1 warnings
                 """
-        )
+      )
   }
 
   fun testGetMinSdkVersionFromMethodName() {
@@ -2336,9 +2336,9 @@ class VersionChecksTest : AbstractCheckTest() {
 
   fun testVersionNameFromMethodName() {
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
                 package test.pkg;
 
                 import android.content.pm.ShortcutManager;
@@ -2362,21 +2362,21 @@ class VersionChecksTest : AbstractCheckTest() {
                     public abstract boolean isOreoOrAbove();
                 }
                 """
-                )
-                .indented()
-        )
-        .run()
-        .expectClean()
+          )
+          .indented()
+      )
+      .run()
+      .expectClean()
   }
 
   fun testKotlinWhenStatement() {
     // Regression test for
     //   67712955: Kotlin when statement fails if subject is Build.VERSION.SDK_INT
     lint()
-        .files(
-            manifest().minSdk(4),
-            kotlin(
-                    """
+      .files(
+        manifest().minSdk(4),
+        kotlin(
+            """
                 import android.os.Build.VERSION.SDK_INT
                 import android.os.Build.VERSION_CODES.N
                 import android.text.Html
@@ -2388,18 +2388,18 @@ class VersionChecksTest : AbstractCheckTest() {
                         else -> Html.fromHtml(this)
                     }.toString()
                 }"""
-                )
-                .indented(),
-        )
-        .run()
-        .expectClean()
+          )
+          .indented(),
+      )
+      .run()
+      .expectClean()
   }
 
   fun testWhenFallthrough() {
     lint()
-        .files(
-            kotlin(
-                    """
+      .files(
+        kotlin(
+            """
                 package test.pkg
 
                 import androidx.annotation.RequiresApi
@@ -2421,29 +2421,29 @@ class VersionChecksTest : AbstractCheckTest() {
                 @RequiresApi(19) fun bar1() {}
                 @RequiresApi(20) fun bar2() {}
                 """
-                )
-                .indented(),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
                 src/test/pkg/test.kt:14: Error: Call requires API level 20 (current min is 1): bar2 [NewApi]
                     bar2() // ERROR 1
                     ~~~~
                 1 errors, 0 warnings
                 """
-        )
+      )
   }
 
   fun testKotlinWhenStatement_logicalOperatorsWithConstants() {
     // Regression test for
     //   242479753: false positives when logical operators and constants are combined
     lint()
-        .files(
-            manifest().minSdk(4),
-            kotlin(
-                    """
+      .files(
+        manifest().minSdk(4),
+        kotlin(
+            """
                 import android.os.Build.VERSION.SDK_INT
                 import android.os.Build.VERSION_CODES.N
                 import android.text.Html
@@ -2459,12 +2459,12 @@ class VersionChecksTest : AbstractCheckTest() {
                         else -> Html.fromHtml(this)
                     }.toString()
                 }"""
-                )
-                .indented(),
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+      )
+      .run()
+      .expect(
+        """
             src/test.kt:10: Warning: Field requires API level 24 (current min is 4): android.text.Html#FROM_HTML_MODE_LEGACY [InlinedApi]
                     true || SDK_INT >= N -> Html.fromHtml(this, Html.FROM_HTML_MODE_LEGACY) // ERROR
                                                                 ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -2473,15 +2473,15 @@ class VersionChecksTest : AbstractCheckTest() {
                                                  ~~~~~~~~
             1 errors, 1 warnings
             """
-        )
+      )
   }
 
   fun testKotlinWhenStatement2() {
     // Regression test for issue 69661204
     lint()
-        .files(
-            kotlin(
-                    """
+      .files(
+        kotlin(
+            """
                 package test.pkg
 
                 import android.os.Build
@@ -2509,13 +2509,13 @@ class VersionChecksTest : AbstractCheckTest() {
                     }
                 }
                 """
-                )
-                .indented(),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
         src/test/pkg/test.kt:17: Warning: Unnecessary; Build.VERSION.SDK_INT >= 23 is never true here [ObsoleteSdkInt]
                 Build.VERSION.SDK_INT >= 23 -> requires23() // never possible
                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -2524,15 +2524,15 @@ class VersionChecksTest : AbstractCheckTest() {
                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
         0 errors, 2 warnings
         """
-        )
+      )
   }
 
   fun testSdkIntCheckVariable() {
     // Regression test for https://issuetracker.google.com/262376528
     lint()
-        .files(
-            kotlin(
-                    """
+      .files(
+        kotlin(
+            """
                 package test.pkg
 
                 import android.content.Context
@@ -2558,20 +2558,20 @@ class VersionChecksTest : AbstractCheckTest() {
                 @RequiresApi(Build.VERSION_CODES.S)
                 fun dynamicLightColorScheme(context: Context): ColorScheme = TODO()
                 """
-                )
-                .indented(),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expectClean()
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expectClean()
   }
 
   fun testSdkIntCheckFields() {
     // Regression test for b/303549797
     lint()
-        .files(
-            kotlin(
-                    """
+      .files(
+        kotlin(
+            """
                 package test.pkg
 
                 import android.content.Context
@@ -2601,10 +2601,10 @@ class VersionChecksTest : AbstractCheckTest() {
                 @RequiresApi(Build.VERSION_CODES.S)
                 fun dynamicLightColorScheme(context: Context): ColorScheme = TODO()
                 """
-                )
-                .indented(),
-            java(
-                    """
+          )
+          .indented(),
+        java(
+            """
             package test.pkg;
 
             import android.content.Context;
@@ -2636,13 +2636,13 @@ class VersionChecksTest : AbstractCheckTest() {
                 ColorScheme dynamicLightColorScheme(Context context) { TODO(); }
             }
           """
-                )
-                .indented(),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
           src/test/pkg/C.java:20: Error: Call requires API level 31 (current min is 1): dynamicDarkColorScheme [NewApi]
                   if (dynamicColorNotFinal && darkTheme) { dynamicDarkColorScheme(context); }
                                                            ~~~~~~~~~~~~~~~~~~~~~~
@@ -2657,15 +2657,15 @@ class VersionChecksTest : AbstractCheckTest() {
                                                  ~~~~~~~~~~~~~~~~~~~~~~~
           4 errors, 0 warnings
         """
-        )
+      )
   }
 
   fun testIfElse() {
     // Regression test for issue 69661204
     lint()
-        .files(
-            kotlin(
-                    """
+      .files(
+        kotlin(
+            """
                 package test.pkg
 
                 import android.os.Build
@@ -2731,13 +2731,13 @@ class VersionChecksTest : AbstractCheckTest() {
                     }
                 }
                 """
-                )
-                .indented(),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
         src/test/pkg/test.kt:32: Error: Call requires API level 23 (current min is 19): requires23 [NewApi]
                 requires23()  // ERROR 1
                 ~~~~~~~~~~
@@ -2767,15 +2767,15 @@ class VersionChecksTest : AbstractCheckTest() {
                            ~~~~~~~~~~~~~~~~~~~~~~~~~~
         4 errors, 5 warnings
         """
-        )
+      )
   }
 
   fun testKotlinHelper() {
     // Regression test for issue 64550633
     lint()
-        .files(
-            kotlin(
-                    """
+      .files(
+        kotlin(
+            """
                 package test.pkg
 
                 import android.os.Build
@@ -2818,27 +2818,27 @@ class VersionChecksTest : AbstractCheckTest() {
                     }
                 }
                 """
-                )
-                .indented()
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented()
+      )
+      .run()
+      .expect(
+        """
             src/test/pkg/test.kt:39: Error: Field requires API level 19 (current min is 1): java.lang.Character.UnicodeBlock#CJK_UNIFIED_IDEOGRAPHS_EXTENSION_C [NewApi]
                     val cjkExtensionC = Character.UnicodeBlock.CJK_UNIFIED_IDEOGRAPHS_EXTENSION_C // ERROR
                                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             1 errors, 0 warnings
             """
-        )
+      )
   }
 
   fun testKotlinEarlyExit1() {
     // Regression test for issue 71560541: Wrong API condition
     // Root cause: https://youtrack.jetbrains.com/issue/IDEA-184544
     lint()
-        .files(
-            kotlin(
-                    """
+      .files(
+        kotlin(
+            """
                 package test.pkg
 
                 import android.app.NotificationChannel
@@ -2856,20 +2856,20 @@ class VersionChecksTest : AbstractCheckTest() {
                     channel.description = "test"
                 }
                 """
-                )
-                .indented(),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expectClean()
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expectClean()
   }
 
   fun testKotlinEarlyExit2() {
     // Regression test for issue 71560541: Wrong API condition, part 2
     lint()
-        .files(
-            kotlin(
-                    """
+      .files(
+        kotlin(
+            """
                 package test.pkg
 
                 import android.app.NotificationChannel
@@ -2888,20 +2888,20 @@ class VersionChecksTest : AbstractCheckTest() {
 
                     channel.description = "test"
                 }"""
-                )
-                .indented(),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expectClean()
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expectClean()
   }
 
   fun testEarlyExit() {
     // Regression test for b/247135738
     lint()
-        .files(
-            kotlin(
-                    """
+      .files(
+        kotlin(
+            """
                 package test.pkg
 
                 import android.os.Build
@@ -2926,13 +2926,13 @@ class VersionChecksTest : AbstractCheckTest() {
                 @RequiresApi(28) fun requires28() { }
                 @RequiresApi(29) fun requires29() { }
                 """
-                )
-                .indented(),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
             src/test/pkg/test.kt:11: Error: Call requires API level 29 (current min is 1): requires29 [NewApi]
                 requires29() // ERROR 1
                 ~~~~~~~~~~
@@ -2941,7 +2941,7 @@ class VersionChecksTest : AbstractCheckTest() {
                     ~~~~~~~~~~
             2 errors, 0 warnings
             """
-        )
+      )
   }
 
   fun testEarlyExit2() {
@@ -2953,9 +2953,9 @@ class VersionChecksTest : AbstractCheckTest() {
     // both as documentation that this is indeed the current limited behavior, and as a goal
     // for us to improve this.
     lint()
-        .files(
-            kotlin(
-                    """
+      .files(
+        kotlin(
+            """
                 package test.pkg
 
                 import android.os.Build
@@ -2988,13 +2988,13 @@ class VersionChecksTest : AbstractCheckTest() {
                 @RequiresApi(28) fun requires28() { }
                 @RequiresApi(29) fun requires29() { }
                 """
-                )
-                .indented(),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
             src/test/pkg/test.kt:17: Error: Call requires API level 29 (current min is 1): requires29 [NewApi]
                         requires29() // ERROR 1
                         ~~~~~~~~~~
@@ -3003,16 +3003,16 @@ class VersionChecksTest : AbstractCheckTest() {
                             ~~~~~~~~~~
             2 errors, 0 warnings
             """
-        )
+      )
   }
 
   fun testCombineConstraintAndEarlyExit() {
     // Here we a locally inferred constraint which doesn't satisfy the API requirement,
     // but there's an earlier exit we need to look up.
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
                 package test.pkg;
 
                 import android.os.Build;
@@ -3038,20 +3038,20 @@ class VersionChecksTest : AbstractCheckTest() {
                     @RequiresApi(29) private static void requires29() { }
                 }
                 """
-                )
-                .indented(),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expectClean()
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expectClean()
   }
 
   fun testWhenEarlyReturns() {
     lint()
-        .files(
-            manifest().minSdk(16),
-            kotlin(
-                    """
+      .files(
+        manifest().minSdk(16),
+        kotlin(
+            """
                 package test.pkg
 
                 import android.os.Build.VERSION.SDK_INT
@@ -3196,15 +3196,15 @@ class VersionChecksTest : AbstractCheckTest() {
                 @RequiresApi(23) fun requires23() { }
                 @RequiresApi(24) fun requires24() { }
                 """
-                )
-                .indented(),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        // Error message varies in partial mode
-        .skipTestModes(PARTIAL)
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      // Error message varies in partial mode
+      .skipTestModes(PARTIAL)
+      .run()
+      .expect(
+        """
         src/test/pkg/test.kt:19: Error: Call requires API level 21 (current min is 16): requires21 [NewApi]
             requires21() // ERROR 2: SDK_INT can be 1
             ~~~~~~~~~~
@@ -3240,17 +3240,17 @@ class VersionChecksTest : AbstractCheckTest() {
                 ~~~~~~~~~~~~
         10 errors, 1 warnings
         """
-        )
+      )
   }
 
   fun testUnconditionalExitViaWhen() {
     // Makes sure we correctly detect that you unconditionally return when the statement
     // is a when statement.
     lint()
-        .files(
-            manifest().minSdk(16),
-            kotlin(
-                    """
+      .files(
+        manifest().minSdk(16),
+        kotlin(
+            """
                 package test.pkg
 
                 import android.os.Build.VERSION.SDK_INT
@@ -3276,20 +3276,20 @@ class VersionChecksTest : AbstractCheckTest() {
 
                 @RequiresApi(21) fun requires21() { }
                 """
-                )
-                .indented(),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expectClean()
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expectClean()
   }
 
   fun testPreviousWhenStatements() {
     lint()
-        .files(
-            manifest().minSdk(16),
-            kotlin(
-                    """
+      .files(
+        manifest().minSdk(16),
+        kotlin(
+            """
                 package test.pkg
 
                 import android.os.Build.VERSION.SDK_INT
@@ -3376,13 +3376,13 @@ class VersionChecksTest : AbstractCheckTest() {
                 @RequiresApi(21)
                 fun requires21() { }
                 """
-                )
-                .indented(),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
             src/test/pkg/test.kt:9: Error: Call requires API level 21 (current min is 20): requires21 [NewApi]
                         requires21() // ERROR 1: SDK_INT can be 20
                         ~~~~~~~~~~
@@ -3409,15 +3409,15 @@ class VersionChecksTest : AbstractCheckTest() {
                         ~~~~~~~~~~
             8 errors, 0 warnings
             """
-        )
+      )
   }
 
   fun testWhenSubject() {
     lint()
-        .files(
-            manifest().minSdk(16),
-            kotlin(
-                    """
+      .files(
+        manifest().minSdk(16),
+        kotlin(
+            """
                 package test.pkg
 
                 import android.os.Build.VERSION.SDK_INT
@@ -3435,27 +3435,27 @@ class VersionChecksTest : AbstractCheckTest() {
                 @RequiresApi(21)
                 fun requires21() { }
                 """
-                )
-                .indented(),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
             src/test/pkg/test.kt:10: Error: Call requires API level 21 (current min is 17): requires21 [NewApi]
                     in 17..20 -> requires21() // ERROR
                                  ~~~~~~~~~~
             1 errors, 0 warnings
             """
-        )
+      )
   }
 
   fun testWhenSubject2() {
     // Regression test for b/247146231
     lint()
-        .files(
-            kotlin(
-                    """
+      .files(
+        kotlin(
+            """
                 package test.pkg
 
                 import android.os.Build.VERSION.SDK_INT
@@ -3479,13 +3479,13 @@ class VersionChecksTest : AbstractCheckTest() {
                 @RequiresApi(21) fun requires21() { }
                 @RequiresApi(24) fun requires24() { }
                 """
-                )
-                .indented(),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
             src/test/pkg/test.kt:12: Error: Call requires API level 24 (current min is 21): requires24 [NewApi]
                     requires24() // ERROR 1
                     ~~~~~~~~~~
@@ -3494,16 +3494,16 @@ class VersionChecksTest : AbstractCheckTest() {
                     ~~~~~~~~~~
             2 errors, 0 warnings
             """
-        )
+      )
   }
 
   fun testKotlinWhenRange1() {
     // Regression test for b/247135738
     lint()
-        .files(
-            manifest().minSdk(4),
-            kotlin(
-                    """
+      .files(
+        manifest().minSdk(4),
+        kotlin(
+            """
                 package test.pkg
 
                 import android.os.Build
@@ -3533,13 +3533,13 @@ class VersionChecksTest : AbstractCheckTest() {
                 @RequiresApi(21) fun requires21() { }
                 @RequiresApi(24) fun requires24() { }
                 """
-                )
-                .indented(),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
             src/test/pkg/test.kt:14: Error: Call requires API level 24 (current min is 21): requires24 [NewApi]
                         requires24() // ERROR 1
                         ~~~~~~~~~~
@@ -3548,16 +3548,16 @@ class VersionChecksTest : AbstractCheckTest() {
                         ~~~~~~~~~~
             2 errors, 0 warnings
             """
-        )
+      )
   }
 
   fun testKotlinWhenRange2() {
     // Regression test for b/247135738
     lint()
-        .files(
-            manifest().minSdk(4),
-            kotlin(
-                    """
+      .files(
+        manifest().minSdk(4),
+        kotlin(
+            """
                 package test.pkg
 
                 import android.os.Build
@@ -3580,13 +3580,13 @@ class VersionChecksTest : AbstractCheckTest() {
                 @RequiresApi(21) fun requires21() { }
                 @RequiresApi(24) fun requires24() { }
                 """
-                )
-                .indented(),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
             src/test/pkg/test.kt:13: Error: Call requires API level 24 (current min is 21): requires24 [NewApi]
                         requires24() // ERROR 1
                         ~~~~~~~~~~
@@ -3595,15 +3595,15 @@ class VersionChecksTest : AbstractCheckTest() {
                 ~~~~~~~~~~
             2 errors, 0 warnings
             """
-        )
+      )
   }
 
   fun testNestedIfs() {
     // Regression test for issue 67553351
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
                 package test.pkg;
 
                 import android.os.Build;
@@ -3630,20 +3630,20 @@ class VersionChecksTest : AbstractCheckTest() {
                     }
                 }
                 """
-                )
-                .indented(),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expectClean()
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expectClean()
   }
 
   fun testApplyBlock() {
     // Regression test for 71809249: False positive when using lambdas and higher-order functions
     lint()
-        .files(
-            kotlin(
-                    """
+      .files(
+        kotlin(
+            """
                 package com.example.lintexample
 
                 import android.app.NotificationChannel
@@ -3670,20 +3670,20 @@ class VersionChecksTest : AbstractCheckTest() {
                     return this
                 }
                 """
-                )
-                .indented()
-        )
-        .run()
-        .expectClean()
+          )
+          .indented()
+      )
+      .run()
+      .expectClean()
   }
 
   fun test110576968() {
     // Regression test for 110576968: NewApi isn't resolving a static final constant API value
     lint()
-        .files(
-            manifest().minSdk(15),
-            java(
-                    """
+      .files(
+        manifest().minSdk(15),
+        java(
+            """
                 package test.pkg;
 
                 import android.os.Build;
@@ -3696,10 +3696,10 @@ class VersionChecksTest : AbstractCheckTest() {
                         }
                     }
                 }"""
-                )
-                .indented(),
-            java(
-                    """
+          )
+          .indented(),
+        java(
+            """
                 package test.pkg;
 
                 @SuppressWarnings("unused")
@@ -3707,10 +3707,10 @@ class VersionChecksTest : AbstractCheckTest() {
                     public static final int MIN_JOB_SCHEDULER_API_LEVEL = 23;
                 }
                 """
-                )
-                .indented(),
-            java(
-                    """
+          )
+          .indented(),
+        java(
+            """
                 package test.pkg;
 
                 import androidx.annotation.RequiresApi;
@@ -3725,28 +3725,28 @@ class VersionChecksTest : AbstractCheckTest() {
                     }
                 }
                 """
-                )
-                .indented(),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
             src/test/pkg/SystemJobScheduler.java:11: Error: Call requires API level 24 (current min is 23): android.app.job.JobScheduler#getPendingJob [NewApi]
                     mJobScheduler.getPendingJob(systemId);
                                   ~~~~~~~~~~~~~
             1 errors, 0 warnings
             """
-        )
+      )
   }
 
   fun test113198297() {
     // Regression test for https://issuetracker.google.com/113198297
     lint()
-        .files(
-            manifest().minSdk(15),
-            kotlin(
-                    """
+      .files(
+        manifest().minSdk(15),
+        kotlin(
+            """
                 package test.pkg
 
                 import android.os.Build
@@ -3767,20 +3767,20 @@ class VersionChecksTest : AbstractCheckTest() {
                     }
                 }
                 """
-                )
-                .indented(),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expectClean()
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expectClean()
   }
 
   fun testExceptionsAndErrorsAsExitPoints() {
     // Regression lifted from issue 117793069
     lint()
-        .files(
-            kotlin(
-                    """
+      .files(
+        kotlin(
+            """
                 import android.app.Activity
 
                 import android.os.Build.VERSION.SDK_INT
@@ -3891,70 +3891,70 @@ class VersionChecksTest : AbstractCheckTest() {
                     }
                 }
                 """
-                )
-                .indented(),
-            java(
-                    """
-                    import android.app.Activity;
-                    import android.os.Build;
+          )
+          .indented(),
+        java(
+            """
+            import android.app.Activity;
+            import android.os.Build;
 
-                    public class JavaExitTest extends Activity {
-                        public static void testInexhaustiveWhen_1(int n) {
-                            if (Build.VERSION.SDK_INT < 11) {
-                                switch(n) {
-                                }
-                            }
-                            var actionBar = getActionBar(); // ERROR
-                        }
-
-                        public static void testInexhaustiveWhen_2(int n) {
-                            if (Build.VERSION.SDK_INT < 11) {
-                                switch(n) {
-                                    case 0: return;
-                                }
-                            }
-                            var actionBar = getActionBar(); // ERROR
-                        }
-
-                        public static void testInexhaustiveWhen_3(int n) {
-                            if (Build.VERSION.SDK_INT < 11) {
-                                switch(n) {
-                                    case 0:
-                                    case 1: return;
-                                }
-                            }
-                            var actionBar = getActionBar(); // ERROR
-                        }
-
-                        public static void testInexhaustiveWhen_4(int n) {
-                            if (Build.VERSION.SDK_INT < 11) {
-                                switch(n) {
-                                    case 0:
-                                    case 1:
-                                    default: return;
-                                }
-                            }
-                            var actionBar = getActionBar(); // ok
-                        }
-
-                        public static void testInexhaustiveWhen_5(int n) {
-                            if (Build.VERSION.SDK_INT < 11) {
-                                switch(n) {
-                                    default: return;
-                                }
-                            }
-                            var actionBar = getActionBar(); // ok
+            public class JavaExitTest extends Activity {
+                public static void testInexhaustiveWhen_1(int n) {
+                    if (Build.VERSION.SDK_INT < 11) {
+                        switch(n) {
                         }
                     }
-                    """
-                        .trimIndent()
-                )
-                .indented(),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expect(
+                    var actionBar = getActionBar(); // ERROR
+                }
+
+                public static void testInexhaustiveWhen_2(int n) {
+                    if (Build.VERSION.SDK_INT < 11) {
+                        switch(n) {
+                            case 0: return;
+                        }
+                    }
+                    var actionBar = getActionBar(); // ERROR
+                }
+
+                public static void testInexhaustiveWhen_3(int n) {
+                    if (Build.VERSION.SDK_INT < 11) {
+                        switch(n) {
+                            case 0:
+                            case 1: return;
+                        }
+                    }
+                    var actionBar = getActionBar(); // ERROR
+                }
+
+                public static void testInexhaustiveWhen_4(int n) {
+                    if (Build.VERSION.SDK_INT < 11) {
+                        switch(n) {
+                            case 0:
+                            case 1:
+                            default: return;
+                        }
+                    }
+                    var actionBar = getActionBar(); // ok
+                }
+
+                public static void testInexhaustiveWhen_5(int n) {
+                    if (Build.VERSION.SDK_INT < 11) {
+                        switch(n) {
+                            default: return;
+                        }
+                    }
+                    var actionBar = getActionBar(); // ok
+                }
+            }
             """
+              .trimIndent()
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
           src/ExitTest.kt:43: Error: Call requires API level 11 (current min is 1): android.app.Activity#getActionBar [NewApi]
         val actionBar = getActionBar() // ERROR
                         ~~~~~~~~~~~~
@@ -3978,16 +3978,16 @@ src/JavaExitTest.java:29: Error: Call requires API level 11 (current min is 1): 
                         ~~~~~~~~~~~~
 7 errors
         """
-        )
+      )
   }
 
   fun testNotEquals() {
     // Regression test lifted from issue 117793069
     lint()
-        .files(
-            manifest().minSdk(1),
-            kotlin(
-                """
+      .files(
+        manifest().minSdk(1),
+        kotlin(
+          """
 
                 import android.app.Activity
 
@@ -4006,19 +4006,19 @@ src/JavaExitTest.java:29: Error: Call requires API level 11 (current min is 1): 
                     }
                 }
                 """
-            ),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expectInlinedMessages(false)
+        ),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expectInlinedMessages(false)
   }
 
   fun testNotEquals2() {
     // Regression test for issue 69661204
     lint()
-        .files(
-            kotlin(
-                    """
+      .files(
+        kotlin(
+            """
                 package test.pkg
 
                 import android.os.Build
@@ -4041,13 +4041,13 @@ src/JavaExitTest.java:29: Error: Call requires API level 11 (current min is 1): 
                 }
                 @RequiresApi(23) fun requires23() { }
                 """
-                )
-                .indented(),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
             src/test/pkg/test.kt:8: Error: Call requires API level 23 (current min is 22): requires23 [NewApi]
                 if (SDK_INT != 22 || requires23()) { }    // ERROR 1
                                      ~~~~~~~~~~
@@ -4056,16 +4056,16 @@ src/JavaExitTest.java:29: Error: Call requires API level 11 (current min is 1): 
                                      ~~~~~~~~~~
             2 errors, 0 warnings
             """
-        )
+      )
   }
 
   fun test143324759() {
     // Regression test for issue 143324759: NewApi false positive on inline kotlin lambda
     lint()
-        .files(
-            manifest().minSdk(1),
-            kotlin(
-                    """
+      .files(
+        manifest().minSdk(1),
+        kotlin(
+            """
                 package test.pkg
 
                 import android.content.Context
@@ -4091,14 +4091,14 @@ src/JavaExitTest.java:29: Error: Call requires API level 11 (current min is 1): 
                         }
                     }
                 """
-                )
-                .indented(),
-            // TODO: This currently passes. I need to port this to bytecode to have it simulate
-            // what's happening in a running app.
-            // OR maybe allow a form of @RequiresApi where you indicate that one of the
-            // params supplies the  level
-            kotlin(
-                    """
+          )
+          .indented(),
+        // TODO: This currently passes. I need to port this to bytecode to have it simulate
+        // what's happening in a running app.
+        // OR maybe allow a form of @RequiresApi where you indicate that one of the
+        // params supplies the  level
+        kotlin(
+            """
                 package test.pkg
 
                 import android.os.Build
@@ -4111,12 +4111,12 @@ src/JavaExitTest.java:29: Error: Call requires API level 11 (current min is 1): 
                     }
                 }
                 """
-                )
-                .indented(),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expectInlinedMessages(false)
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expectInlinedMessages(false)
   }
 
   fun testFailedResolve() {
@@ -4124,9 +4124,9 @@ src/JavaExitTest.java:29: Error: Call requires API level 11 (current min is 1): 
     // Make sure method-name based checks work even if we can't resolve the
     // utility method call
     lint()
-        .files(
-            kotlin(
-                    """
+      .files(
+        kotlin(
+            """
                 @file:Suppress("RemoveRedundantQualifierName", "unused")
 
                 package test.pkg
@@ -4151,13 +4151,13 @@ src/JavaExitTest.java:29: Error: Call requires API level 11 (current min is 1): 
                 fun bar() {
                 }
                 """
-                )
-                .indented(),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .allowCompilationErrors() // Deliberate resolve errors
-        .run()
-        .expectClean()
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .allowCompilationErrors() // Deliberate resolve errors
+      .run()
+      .expectClean()
   }
 
   fun testChecksSdkIntAtLeast() {
@@ -4170,10 +4170,10 @@ src/JavaExitTest.java:29: Error: Call requires API level 11 (current min is 1): 
     // for compiled libraries, and (b) name patterns, which doesn't
     // work for unusually named version methods.
     lint()
-        .files(
-            kotlin(
-                    "src/main/java/test/pkg/test.kt",
-                    """
+      .files(
+        kotlin(
+            "src/main/java/test/pkg/test.kt",
+            """
                 package test.pkg
 
                 import androidx.annotation.RequiresApi
@@ -4219,11 +4219,11 @@ src/JavaExitTest.java:29: Error: Call requires API level 11 (current min is 1): 
                 fun fallback() {
                 }
                 """,
-                )
-                .indented(),
-            kotlin(
-                "src/main/java/test/pkg/utils.kt",
-                """
+          )
+          .indented(),
+        kotlin(
+          "src/main/java/test/pkg/utils.kt",
+          """
                 @file:Suppress("RemoveRedundantQualifierName", "unused")
 
                 package test.pkg
@@ -4253,13 +4253,13 @@ src/JavaExitTest.java:29: Error: Call requires API level 11 (current min is 1): 
                 val versionCheck1: Boolean
                     get() = false
                 """,
-            ),
-            binaryStub(
-                "libs/library.jar",
-                stubSources =
-                    listOf(
-                        java(
-                            """
+        ),
+        binaryStub(
+          "libs/library.jar",
+          stubSources =
+            listOf(
+              java(
+                """
                         package test.pkg;
 
                         import android.os.Build;
@@ -4281,21 +4281,21 @@ src/JavaExitTest.java:29: Error: Call requires API level 11 (current min is 1): 
                             public static final boolean SUPPORTS_LETTER_SPACING = Boolean.getBoolean("foo");
                         }
                         """
-                        )
-                    ),
-                compileOnly = listOf(SUPPORT_ANNOTATIONS_JAR),
+              )
             ),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expect(
-            """
+          compileOnly = listOf(SUPPORT_ANNOTATIONS_JAR),
+        ),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
                 src/main/java/test/pkg/test.kt:33: Error: Call requires API level 10 (current min is 1): bar [NewApi]
                     bar() // ERROR
                     ~~~
                 1 errors, 0 warnings
                 """
-        )
+      )
   }
 
   // TODO: Test out of order parameters!
@@ -4307,9 +4307,9 @@ src/JavaExitTest.java:29: Error: Call requires API level 11 (current min is 1): 
     // for compiled libraries, and (b) name patterns, which doesn't
     // work for unusually named version methods.
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
                 package test.pkg;
                 import androidx.annotation.RequiresApi;
                 class Scratch {
@@ -4335,10 +4335,10 @@ src/JavaExitTest.java:29: Error: Call requires API level 11 (current min is 1): 
                     }
                 }
                 """
-                )
-                .indented(),
-            java(
-                    """
+          )
+          .indented(),
+        java(
+            """
                 package test.pkg;
 
                 import android.os.Build;
@@ -4359,13 +4359,13 @@ src/JavaExitTest.java:29: Error: Call requires API level 11 (current min is 1): 
                     }
                 }
                 """
-                )
-                .indented(),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        // TODO: Add in other positions, maybe even out of order, to make sure we handle it right
-        .expectClean()
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      // TODO: Add in other positions, maybe even out of order, to make sure we handle it right
+      .expectClean()
   }
 
   fun testChecksSdkIntAtLeastBytecode() {
@@ -4378,10 +4378,10 @@ src/JavaExitTest.java:29: Error: Call requires API level 11 (current min is 1): 
     // the method bodies won't work at all.
     // Regression test for https://issuetracker.google.com/120255046
     lint()
-        .files(
-            kotlin(
-                    "src/main/java/test/pkg/test.kt",
-                    """
+      .files(
+        kotlin(
+            "src/main/java/test/pkg/test.kt",
+            """
                 package test.pkg
 
                 import test.pkg.constants.Constants;
@@ -4414,13 +4414,13 @@ src/JavaExitTest.java:29: Error: Call requires API level 11 (current min is 1): 
                 fun fallback() {
                 }
                 """,
-                )
-                .indented(),
-            bytecode(
-                "libs/lib1.jar",
-                kotlin(
-                    "src/test/pkg/utils/utils.kt",
-                    """
+          )
+          .indented(),
+        bytecode(
+          "libs/lib1.jar",
+          kotlin(
+            "src/test/pkg/utils/utils.kt",
+            """
                     @file:Suppress("RemoveRedundantQualifierName", "unused")
 
                     package test.pkg.utils
@@ -4446,42 +4446,42 @@ src/JavaExitTest.java:29: Error: Call requires API level 11 (current min is 1): 
                     val versionCheck1: Boolean
                         get() = false
                     """,
-                ),
-                0xdeff4caa,
-                "test/pkg/utils/UtilsKt.class:" +
-                    "H4sIAAAAAAAAAI1UzVcaVxT/vQFhGPwY0fiBrVpDEtDqIEnaNBhbYzVySrWt" +
-                    "xEVdPWAkI8MMZ97ASXaebvo3dNt1F+0up4sej931P+k/0dP7RjCgNJbFe/fd" +
-                    "+7v3/u4H89c/v/8BIIcCw5RvCt9o1mtGy7dsYbyU51d+FIxBP+VtbtjcqRkH" +
-                    "5VOzQtoQQ/TEcxtbTYshlS4U665vW45x2m4YJy2n4luuI4zdjpTNZ44YHt4K" +
-                    "2+jaXzqWn98MvDJF7lQ916q+NrjjuD6XSGP7lVmpi8NqveD4W37R5MLPM8Sa" +
-                    "3OMN0ze9ENUFhojNG+Uqly+q427R9WrGqemXPW5R3nfxhLHv+vst26YgER6Q" +
-                    "UTHKMN/D13IorsNtg1J65G5VRBQ6w52K5NLx/6ZLgOFBuni9b/kezaEMUqMS" +
-                    "h5HAhIZxTDIMtbndMhkYTWTxtp4yDKes1Enqag4TvNm03+y63oFnugfeVtlt" +
-                    "U6zdQTzeG3o9n7npwvDtRunpTf1mulS6Ld7Gag+mO1tSMYR405LTSVLtZdut" +
-                    "1FUsMMym/FeWSA0sJzGI2i29WifITNCrgSFDolpnePw/tnhQ7uf/0ZZbl32F" +
-                    "OtDtQ+p9q0l7xcu2SbCwjKMiQ92yzbZpM6hBWUEBes30j0xPkFPw91inytKZ" +
-                    "72V74wzjXTpfmz6vcp9TOKXRltYwSeVAor81q0tBIVWVAvx9fpbWzs80RY9r" +
-                    "ihqiW7l8qsE1o5A2ennPSEtySQ8nlexQLqJH6I7mhnU1qSbCCdJlY3sXP6p/" +
-                    "vmUEM3QtGZ5he/GlsHp+pscJP9zBj1zi9+I9+IufI4o+mnykjyWVK59lEnPT" +
-                    "up6cuMR3soxLsJro951YGtcprZJlT16QIpIMq4oeuvhBiWpD6sVPuSyTBecY" +
-                    "Rtr9HYTcuE7nev96rDTAIPdsvqvcee2bjgzVtZbeNOUM1eADu1b3aZzbbpX2" +
-                    "b6xoOeZ+q1E2vZIctIzsVrh9xD1LvjvK2KFVc7jf8kie+67l+FbDLDhtS1hk" +
-                    "3nq3MLRN161Xn6U+mHbotryKuWvJ6LMdn6Mb8bAOBWH5QaVzFkOI0L1Frz3S" +
-                    "y2XREtqzlcTYW9z5Ta4OntMZocbFoGGb5MVLFKYwHUTRMIoZsocQpXjT5PFl" +
-                    "4BfFDt06WVR6xQoEjBcwjF3SxpTggz5C5yySmOtQKHQoxAMKi0Rh+ddrHEZ7" +
-                    "OMTxEZYCDnEs4G7AQUWqh8MHfRw+LGBectBucriH+wM5LBMHdp3DRB+HlU4f" +
-                    "4sh0+qDi4x4ODwIOkyT19yFN2hs8VrFGIMkjSTr5U0K/BPZueonaCdLJopgs" +
-                    "yiCXF0GuL2iKQJPUWZrs+jFClKmAnMz3sPvSCniExwV8gk+PwQSe4LNjTAo8" +
-                    "FcgLrAqsCQwF8lRwjgpsCNwTeCawIpARuC+QFFgQ2BT4XGDuXy4VqTB7CAAA",
-                "META-INF/main.kotlin_module:" +
-                    "H4sIAAAAAAAAAGNgYGBmYGBgBGIWKM3AJcTFUZJaXKJXkJ0uxBYCZHmXcEly" +
-                    "8cHE9EpLMnOKhdhDQZR3iRKDFgMA7UDMuUcAAAA=",
-            ),
-            bytecode(
-                "libs/lib1.jar",
-                kotlin(
-                    "src/test/pkg/utils/utils2.kt",
-                    """
+          ),
+          0xdeff4caa,
+          "test/pkg/utils/UtilsKt.class:" +
+            "H4sIAAAAAAAAAI1UzVcaVxT/vQFhGPwY0fiBrVpDEtDqIEnaNBhbYzVySrWt" +
+            "xEVdPWAkI8MMZ97ASXaebvo3dNt1F+0up4sej931P+k/0dP7RjCgNJbFe/fd" +
+            "+7v3/u4H89c/v/8BIIcCw5RvCt9o1mtGy7dsYbyU51d+FIxBP+VtbtjcqRkH" +
+            "5VOzQtoQQ/TEcxtbTYshlS4U665vW45x2m4YJy2n4luuI4zdjpTNZ44YHt4K" +
+            "2+jaXzqWn98MvDJF7lQ916q+NrjjuD6XSGP7lVmpi8NqveD4W37R5MLPM8Sa" +
+            "3OMN0ze9ENUFhojNG+Uqly+q427R9WrGqemXPW5R3nfxhLHv+vst26YgER6Q" +
+            "UTHKMN/D13IorsNtg1J65G5VRBQ6w52K5NLx/6ZLgOFBuni9b/kezaEMUqMS" +
+            "h5HAhIZxTDIMtbndMhkYTWTxtp4yDKes1Enqag4TvNm03+y63oFnugfeVtlt" +
+            "U6zdQTzeG3o9n7npwvDtRunpTf1mulS6Ld7Gag+mO1tSMYR405LTSVLtZdut" +
+            "1FUsMMym/FeWSA0sJzGI2i29WifITNCrgSFDolpnePw/tnhQ7uf/0ZZbl32F" +
+            "OtDtQ+p9q0l7xcu2SbCwjKMiQ92yzbZpM6hBWUEBes30j0xPkFPw91inytKZ" +
+            "72V74wzjXTpfmz6vcp9TOKXRltYwSeVAor81q0tBIVWVAvx9fpbWzs80RY9r" +
+            "ihqiW7l8qsE1o5A2ennPSEtySQ8nlexQLqJH6I7mhnU1qSbCCdJlY3sXP6p/" +
+            "vmUEM3QtGZ5he/GlsHp+pscJP9zBj1zi9+I9+IufI4o+mnykjyWVK59lEnPT" +
+            "up6cuMR3soxLsJro951YGtcprZJlT16QIpIMq4oeuvhBiWpD6sVPuSyTBecY" +
+            "Rtr9HYTcuE7nev96rDTAIPdsvqvcee2bjgzVtZbeNOUM1eADu1b3aZzbbpX2" +
+            "b6xoOeZ+q1E2vZIctIzsVrh9xD1LvjvK2KFVc7jf8kie+67l+FbDLDhtS1hk" +
+            "3nq3MLRN161Xn6U+mHbotryKuWvJ6LMdn6Mb8bAOBWH5QaVzFkOI0L1Frz3S" +
+            "y2XREtqzlcTYW9z5Ta4OntMZocbFoGGb5MVLFKYwHUTRMIoZsocQpXjT5PFl" +
+            "4BfFDt06WVR6xQoEjBcwjF3SxpTggz5C5yySmOtQKHQoxAMKi0Rh+ddrHEZ7" +
+            "OMTxEZYCDnEs4G7AQUWqh8MHfRw+LGBectBucriH+wM5LBMHdp3DRB+HlU4f" +
+            "4sh0+qDi4x4ODwIOkyT19yFN2hs8VrFGIMkjSTr5U0K/BPZueonaCdLJopgs" +
+            "yiCXF0GuL2iKQJPUWZrs+jFClKmAnMz3sPvSCniExwV8gk+PwQSe4LNjTAo8" +
+            "FcgLrAqsCQwF8lRwjgpsCNwTeCawIpARuC+QFFgQ2BT4XGDuXy4VqTB7CAAA",
+          "META-INF/main.kotlin_module:" +
+            "H4sIAAAAAAAAAGNgYGBmYGBgBGIWKM3AJcTFUZJaXKJXkJ0uxBYCZHmXcEly" +
+            "8cHE9EpLMnOKhdhDQZR3iRKDFgMA7UDMuUcAAAA=",
+        ),
+        bytecode(
+          "libs/lib1.jar",
+          kotlin(
+            "src/test/pkg/utils/utils2.kt",
+            """
                     @file:Suppress("RemoveRedundantQualifierName", "unused")
 
                     package test.pkg.utils
@@ -4493,9 +4493,9 @@ src/JavaExitTest.java:29: Error: Call requires API level 11 (current min is 1): 
                     }
 
                     """,
-                ),
-                0xe95da7a2,
-                """
+          ),
+          0xe95da7a2,
+          """
                 test/pkg/utils/Utils2Kt.class:
                 H4sIAAAAAAAAAG1QyU4CQRB9PQMMjCi44IL7loAHR4g3vBgTEyIuEeXCqZGO
                 aZnpMUyP0Ru/pAcPHgxnP8pYPTeNfajlvVfVVfX1/fEJ4BC7DAtaRNp7HNx7
@@ -4507,16 +4507,16 @@ src/JavaExitTest.java:29: Error: Call requires API level 11 (current min is 1): 
                 yE/OOGf20Rsm994x+5rItsi6CUnHSqJtswU2sEO+Roo5alTqwm5ivokFslhs
                 UvdyE8tY6YJFWMVaF1aEdIT1HzzAfZH9AQAA
                 """,
-                """
+          """
                 META-INF/main.kotlin_module:
                 H4sIAAAAAAAAAGNgYGBmYGBgBGJWKM3AJcTFUZJaXKJXkJ0uxBYCZHmXcClz
                 8cHE9EpLMnOKhThCQZSRd4kQO5jlXaLEoMUAAMCpI5xRAAAA
                 """,
-            ),
-            bytecode(
-                "libs/lib2.jar",
-                java(
-                    """
+        ),
+        bytecode(
+          "libs/lib2.jar",
+          java(
+            """
                     package test.pkg.constants;
 
                     import android.os.Build;
@@ -4538,41 +4538,41 @@ src/JavaExitTest.java:29: Error: Call requires API level 11 (current min is 1): 
                         public static final boolean SUPPORTS_LETTER_SPACING = Boolean.getBoolean("foo");
                     }
                     """
-                ),
-                0xb5722a1d,
-                "test/pkg/constants/Constants.class:" +
-                    "H4sIAAAAAAAAAG1RTU8bMRB9zoYkm6QQKCnlm5QeSA9dqT30AEIKEa1WWkGU" +
-                    "DTnkgpyNG0wSO9p1UH9UL4hDEYf+AH4UYnYFoQUOnrGf5817Y9/e3fwF8A0f" +
-                    "88hgJYfVPNawbmMGG1lsZrHFsOSfNBrHzZZ/6h22WofNU79Rq7tHPxhYh2G1" +
-                    "OVFGjoSrLmQku0NRU0obbqRWEUPV46oXatn75fAp7tTPRDCI/N7AVaZmPMEj" +
-                    "s8tg8bG0yEyZIbMnlTT7hO1U2wzpuu4JhjlPKnE0GXVF2OKkxFDqC9MWYURN" +
-                    "k55fEkbn5cVXGmPHO+cX3Bly1Xd8E0rV3+24cbE95iEfCSPCWD7FkNsLhg8G" +
-                    "8r6ehIH4LmO52ToNZbgy0ee4VRFvMEuKP7XOolLEB2wXkUWOYc2IyDjjQd8J" +
-                    "HhnOlEvunowcd89FYBjmn6ADrYeCK9KmIaaH8iv2qx1U6Kcy5JphOZambNOp" +
-                    "QDlPq+CiiDRtyCjFObpap8woz3z6A3aZMEsUMwmYI/Y8FpBKSlcSjF7E+v2s" +
-                    "rvBSxcZbLP5DtF4llv4jll28I82lqbnKg6K9kLqGdYX0c4OLFN/HnbF8D6c8" +
-                    "O3S7AgAA",
-            ),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expect(
-            """
+          ),
+          0xb5722a1d,
+          "test/pkg/constants/Constants.class:" +
+            "H4sIAAAAAAAAAG1RTU8bMRB9zoYkm6QQKCnlm5QeSA9dqT30AEIKEa1WWkGU" +
+            "DTnkgpyNG0wSO9p1UH9UL4hDEYf+AH4UYnYFoQUOnrGf5817Y9/e3fwF8A0f" +
+            "88hgJYfVPNawbmMGG1lsZrHFsOSfNBrHzZZ/6h22WofNU79Rq7tHPxhYh2G1" +
+            "OVFGjoSrLmQku0NRU0obbqRWEUPV46oXatn75fAp7tTPRDCI/N7AVaZmPMEj" +
+            "s8tg8bG0yEyZIbMnlTT7hO1U2wzpuu4JhjlPKnE0GXVF2OKkxFDqC9MWYURN" +
+            "k55fEkbn5cVXGmPHO+cX3Bly1Xd8E0rV3+24cbE95iEfCSPCWD7FkNsLhg8G" +
+            "8r6ehIH4LmO52ToNZbgy0ee4VRFvMEuKP7XOolLEB2wXkUWOYc2IyDjjQd8J" +
+            "HhnOlEvunowcd89FYBjmn6ADrYeCK9KmIaaH8iv2qx1U6Kcy5JphOZambNOp" +
+            "QDlPq+CiiDRtyCjFObpap8woz3z6A3aZMEsUMwmYI/Y8FpBKSlcSjF7E+v2s" +
+            "rvBSxcZbLP5DtF4llv4jll28I82lqbnKg6K9kLqGdYX0c4OLFN/HnbF8D6c8" +
+            "O3S7AgAA",
+        ),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
                 src/main/java/test/pkg/test.kt:23: Error: Call requires API level 10 (current min is 1): bar [NewApi]
                     bar() // ERROR
                     ~~~
                 1 errors, 0 warnings
                 """
-        )
+      )
   }
 
   fun testChecksSdkIntAtLeastWithFullVersions() {
     // Uses of @ChecksSdkIntAtLeast with full versions
     lint()
-        .files(
-            kotlin(
-                    "src/main/java/test/pkg/test.kt",
-                    """
+      .files(
+        kotlin(
+            "src/main/java/test/pkg/test.kt",
+            """
             package test.pkg
 
             import androidx.annotation.RequiresApi
@@ -4591,14 +4591,14 @@ src/JavaExitTest.java:29: Error: Call requires API level 11 (current min is 1): 
             fun bar() {
             }
             """,
-                )
-                .indented(),
-            binaryStub(
-                "libs/library.jar",
-                stubSources =
-                    listOf(
-                        java(
-                            """
+          )
+          .indented(),
+        binaryStub(
+          "libs/library.jar",
+          stubSources =
+            listOf(
+              java(
+                """
                 package test.pkg;
 
                 import android.os.Build;
@@ -4614,30 +4614,30 @@ src/JavaExitTest.java:29: Error: Call requires API level 11 (current min is 1): 
                     public static final boolean SUPPORTS_LETTER_SPACING = Boolean.getBoolean("foo");
                 }
                 """
-                        )
-                    ),
-                compileOnly = listOf(newAndroidOsBuildStub, SUPPORT_ANNOTATIONS_JAR),
+              )
             ),
-            newAndroidOsBuildStub,
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expect(
-            """
+          compileOnly = listOf(newAndroidOsBuildStub, SUPPORT_ANNOTATIONS_JAR),
+        ),
+        newAndroidOsBuildStub,
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
         src/main/java/test/pkg/test.kt:12: Error: Call requires API level 10 (current min is 1): bar [NewApi]
             bar() // ERROR
             ~~~
         1 errors, 0 warnings
         """
-        )
+      )
   }
 
   fun testPolyadic() {
     lint()
-        .files(
-            manifest().minSdk(14),
-            java(
-                    """
+      .files(
+        manifest().minSdk(14),
+        java(
+            """
                 package test.pkg;
 
                 import androidx.annotation.RequiresApi;
@@ -4688,13 +4688,13 @@ src/JavaExitTest.java:29: Error: Call requires API level 11 (current min is 1): 
                     }
                 }
                 """
-                )
-                .indented(),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
                 src/test/pkg/PolyadicTest.java:22: Error: Call requires API level 23 (current min is 14): methodM [NewApi]
                             methodM(); // ERROR 1
                             ~~~~~~~
@@ -4709,17 +4709,17 @@ src/JavaExitTest.java:29: Error: Call requires API level 11 (current min is 1): 
                             ~~~~~~~
                 4 errors, 0 warnings
                 """
-        )
+      )
   }
 
   fun testNextPlatformHandling() {
     // Regression test for b/172930073
     // Need to gracefully handle the next version of Android
     lint()
-        .files(
-            manifest().minSdk(14),
-            java(
-                    """
+      .files(
+        manifest().minSdk(14),
+        java(
+            """
                 package test.pkg;
 
                 import android.os.Build;
@@ -4746,10 +4746,10 @@ src/JavaExitTest.java:29: Error: Call requires API level 11 (current min is 1): 
                     }
                 }
                 """
-                )
-                .indented(),
-            java(
-                    """
+          )
+          .indented(),
+        java(
+            """
                 package androidx.core.os;
                 import android.os.Build;
                 import androidx.annotation.ChecksSdkIntAtLeast;
@@ -4765,10 +4765,10 @@ src/JavaExitTest.java:29: Error: Call requires API level 11 (current min is 1): 
                     }
                 }
                 """
-                )
-                .indented(),
-            java(
-                    """
+          )
+          .indented(),
+        java(
+            """
                 package android.os;
 
                 public class Build {
@@ -4778,20 +4778,20 @@ src/JavaExitTest.java:29: Error: Call requires API level 11 (current min is 1): 
                     }
                 }
                 """
-                )
-                .indented(),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expectClean()
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expectClean()
   }
 
   fun testNextPlatformHandling2() {
     lint()
-        .files(
-            manifest().minSdk(14),
-            kotlin(
-                    """
+      .files(
+        manifest().minSdk(14),
+        kotlin(
+            """
                 import android.os.Build
                 import androidx.annotation.RequiresApi;
                 import androidx.core.os.BuildCompat
@@ -4806,10 +4806,10 @@ src/JavaExitTest.java:29: Error: Call requires API level 11 (current min is 1): 
                     }
                 }
                 """
-                )
-                .indented(),
-            java(
-                    """
+          )
+          .indented(),
+        java(
+            """
                 package androidx.core.os;
                 import android.os.Build;
                 import androidx.annotation.ChecksSdkIntAtLeast;
@@ -4821,10 +4821,10 @@ src/JavaExitTest.java:29: Error: Call requires API level 11 (current min is 1): 
                     }
                 }
                 """
-                )
-                .indented(),
-            java(
-                    """
+          )
+          .indented(),
+        java(
+            """
                 package android.os;
 
                 public class Build {
@@ -4833,20 +4833,20 @@ src/JavaExitTest.java:29: Error: Call requires API level 11 (current min is 1): 
                     }
                 }
                 """
-                )
-                .indented(),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expectClean()
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expectClean()
   }
 
   fun testWhen() {
     // Regression test for issue 189459502
     lint()
-        .files(
-            kotlin(
-                    """
+      .files(
+        kotlin(
+            """
                 import android.os.Build
                 import androidx.annotation.RequiresApi
 
@@ -4862,20 +4862,20 @@ src/JavaExitTest.java:29: Error: Call requires API level 11 (current min is 1): 
                 fun RenderNodeCapture() {
                 }
                 """
-                )
-                .indented(),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expectClean()
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expectClean()
   }
 
   fun test189459502() {
     // Regression test for 189459502
     lint()
-        .files(
-            kotlin(
-                    """
+      .files(
+        kotlin(
+            """
                 package test.pkg
 
                 import android.os.Build
@@ -4890,20 +4890,20 @@ src/JavaExitTest.java:29: Error: Call requires API level 11 (current min is 1): 
                 @RequiresApi(30)
                 fun requires30() {}
                 """
-                )
-                .indented(),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expectClean()
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expectClean()
   }
 
   fun testWhen221488045() {
     // Regression test for https://issuetracker.google.com/221488045
     lint()
-        .files(
-            kotlin(
-                    """
+      .files(
+        kotlin(
+            """
                 package test.pkg
 
                 import android.app.Activity
@@ -4931,21 +4931,21 @@ src/JavaExitTest.java:29: Error: Call requires API level 11 (current min is 1): 
                 @RequiresApi(Build.VERSION_CODES.Q)
                 class CallSystemUiHelperImplQ(activity: Activity, listener: Listener) : CallSystemUiHelper()
                 """
-                )
-                .indented(),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expectClean()
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expectClean()
   }
 
   fun testSwitchOnSdkInt() {
     // Additional regression test for https://issuetracker.google.com/221488045
     lint()
-        .files(
-            manifest().minSdk(8),
-            kotlin(
-                    """
+      .files(
+        manifest().minSdk(8),
+        kotlin(
+            """
                 package test.pkg
 
                 import android.annotation.TargetApi
@@ -4991,14 +4991,14 @@ src/JavaExitTest.java:29: Error: Call requires API level 11 (current min is 1): 
                 @RequiresApi(15) private fun requires15() { }
                 @RequiresApi(16) private fun requires16() { }
                 """
-                )
-                .indented(),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .issues(ApiDetector.UNSUPPORTED)
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .issues(ApiDetector.UNSUPPORTED)
+      .run()
+      .expect(
+        """
             src/test/pkg/Test.kt:14: Error: Call requires API level 11 (current min is 10): requires11 [NewApi]
                             requires11() // ERROR 1 (could be 10)
                             ~~~~~~~~~~
@@ -5022,14 +5022,14 @@ src/JavaExitTest.java:29: Error: Call requires API level 11 (current min is 1): 
                             ~~~~~~~~~~
             7 errors, 0 warnings
             """
-        )
+      )
   }
 
   fun testCurDevelopment() {
     lint()
-        .files(
-            kotlin(
-                """
+      .files(
+        kotlin(
+          """
                 import android.os.Build.VERSION.SDK_INT
 
                 fun test() {
@@ -5039,11 +5039,11 @@ src/JavaExitTest.java:29: Error: Call requires API level 11 (current min is 1): 
                 }
                 @RequiresApi(10000) fun requires10000() { }
                 """
-            ),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expectClean()
+        ),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expectClean()
   }
 
   fun testExtensionSdkCheck() {
@@ -5052,9 +5052,9 @@ src/JavaExitTest.java:29: Error: Call requires API level 11 (current min is 1): 
       return
     }
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
                 package test.pkg;
 
                 import android.os.Build;
@@ -5109,10 +5109,10 @@ src/JavaExitTest.java:29: Error: Call requires API level 11 (current min is 1): 
                     // TODO: Test repeatable annotations
                 }
                 """
-                )
-                .indented(),
-            kotlin(
-                    """
+          )
+          .indented(),
+        kotlin(
+            """
                 package test.pkg
                 import android.os.Build
                 import android.os.ext.SdkExtensions
@@ -5135,14 +5135,14 @@ src/JavaExitTest.java:29: Error: Call requires API level 11 (current min is 1): 
                     requiresExtRv4() // OK 9
                 }
                 """
-                )
-                .indented(),
-            requiresExtensionStub,
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+        requiresExtensionStub,
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
             src/test/pkg/SdkExtensionsTest.java:12: Error: Call requires version 4 of the R Extensions SDK (current min is 0): requiresExtRv4 [NewApi]
                     requiresExtRv4(); // ERROR 1
                     ~~~~~~~~~~~~~~
@@ -5160,14 +5160,14 @@ src/JavaExitTest.java:29: Error: Call requires API level 11 (current min is 1): 
                 ~~~~~~~~~~~~~~~~~
             5 errors, 0 warnings
             """
-        )
+      )
   }
 
   fun testMissingAdServices() {
     lint()
-        .files(
-            kotlin(
-                    """
+      .files(
+        kotlin(
+            """
             package test.pkg
 
             import android.os.ext.SdkExtensions
@@ -5186,20 +5186,20 @@ src/JavaExitTest.java:29: Error: Call requires API level 11 (current min is 1): 
             fun rAndRb() {
             }
             """
-                )
-                .indented(),
-            SUPPORT_ANNOTATIONS_JAR,
-            requiresExtensionStub,
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+        requiresExtensionStub,
+      )
+      .run()
+      .expect(
+        """
         src/test/pkg/test.kt:11: Error: Call requires version 4 of the Ad Services Extensions SDK (current min is 0): rAndRb [NewApi]
             rAndRb() // ERROR 1
             ~~~~~~
         1 errors, 0 warnings
         """
-        )
+      )
   }
 
   fun testAndOrWithIfs() {
@@ -5211,10 +5211,10 @@ src/JavaExitTest.java:29: Error: Call requires API level 11 (current min is 1): 
       // to test OR semantics on APIs, which we cannot express with annotations,
       // only in the database (for now).
       ApiLookupTest.runApiCheckWithCustomLookup {
-            lint()
-                .files(
-                    kotlin(
-                            """
+          lint()
+            .files(
+              kotlin(
+                  """
                 package test.pkg
 
                 import android.os.Build
@@ -5271,14 +5271,14 @@ src/JavaExitTest.java:29: Error: Call requires API level 11 (current min is 1): 
                     }
                 }
                 """
-                        )
-                        .indented(),
-                    requiresExtensionStub,
-                    SUPPORT_ANNOTATIONS_JAR,
                 )
-          }
-          .expect(
-              """
+                .indented(),
+              requiresExtensionStub,
+              SUPPORT_ANNOTATIONS_JAR,
+            )
+        }
+        .expect(
+          """
           src/test/pkg/Test.kt:22: Error: Call requires API level 33 (current min is 30): android.provider.MediaStore#getPickImagesMaxLimit [NewApi]
                   MediaStore.getPickImagesMaxLimit() // ERROR 1
                              ~~~~~~~~~~~~~~~~~~~~~
@@ -5296,14 +5296,14 @@ src/JavaExitTest.java:29: Error: Call requires API level 11 (current min is 1): 
                                        ~~~~~~~~~~~~
           3 errors, 2 warnings
           """
-          )
+        )
     } else {
       // Like ApiDetector#testExtensionAndOr(), but we've replaced the annotations with surrounding
       // if-else checks of SDKs.
       lint()
-          .files(
-              kotlin(
-                      """
+        .files(
+          kotlin(
+              """
               package test.pkg
 
               import android.os.Build.VERSION.SDK_INT
@@ -5387,14 +5387,14 @@ src/JavaExitTest.java:29: Error: Call requires API level 11 (current min is 1): 
                   }
               }
               """
-                  )
-                  .indented(),
-              requiresExtensionStub,
-              SUPPORT_ANNOTATIONS_JAR,
-          )
-          .run()
-          .expect(
-              """
+            )
+            .indented(),
+          requiresExtensionStub,
+          SUPPORT_ANNOTATIONS_JAR,
+        )
+        .run()
+        .expect(
+          """
           src/test/pkg/Test.kt:20: Error: Call requires version 4 of the R Extensions SDK (current min is 0): rOnly [NewApi]
                       rOnly()  // ERROR 1: We may not have R, we may only have U
                       ~~~~~
@@ -5424,7 +5424,7 @@ src/JavaExitTest.java:29: Error: Call requires API level 11 (current min is 1): 
                                        ~~~~~~~~~~~~
           7 errors, 2 warnings
           """
-          )
+        )
     }
   }
 
@@ -5433,10 +5433,10 @@ src/JavaExitTest.java:29: Error: Call requires API level 11 (current min is 1): 
     // but missing the method bodies and field initializations and instead using
     // @ChecksSdkIntAtLeast annotations.
     lint()
-        .files(
-            manifest().minSdk(1),
-            java(
-                    """
+      .files(
+        manifest().minSdk(1),
+        java(
+            """
                 package test.pkg;
 
                 import android.os.Build;
@@ -5508,14 +5508,14 @@ src/JavaExitTest.java:29: Error: Call requires API level 11 (current min is 1): 
                     }
                 }
                 """
-                )
-                .indented(),
-            requiresExtensionStub,
-            checksSdkIntWithSdkStub,
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+        requiresExtensionStub,
+        checksSdkIntWithSdkStub,
+      )
+      .run()
+      .expect(
+        """
         src/test/pkg/SdkExtensionsTest.java:13: Error: Call requires version 4 of the R Extensions SDK (current min is 0): requiresExtRv4 [NewApi]
                 requiresExtRv4(); // ERROR 1
                 ~~~~~~~~~~~~~~
@@ -5530,17 +5530,17 @@ src/JavaExitTest.java:29: Error: Call requires API level 11 (current min is 1): 
                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         2 errors, 2 warnings
         """
-        )
+      )
   }
 
   fun testExtensionWithChecksSdkIntAtLeast() {
     // In testExtensionSuppressInFieldsAndMethods we have the same test scenario, but instead
     // of @ChecksSdkIntAtLeast annotations we have the actual checks implemented as source.
     lint()
-        .files(
-            manifest().minSdk(1),
-            java(
-                    """
+      .files(
+        manifest().minSdk(1),
+        java(
+            """
                 package test.pkg;
 
                 import android.os.Build;
@@ -5586,13 +5586,13 @@ src/JavaExitTest.java:29: Error: Call requires API level 11 (current min is 1): 
                     }
                 }
                 """
-                )
-                .indented(),
-            // We deliberately put the version utilities in a separate library such that
-            // we also test provisional reporting
-            java(
-                    "../lib/src/test/pkg/lib/Utils.java",
-                    """
+          )
+          .indented(),
+        // We deliberately put the version utilities in a separate library such that
+        // we also test provisional reporting
+        java(
+            "../lib/src/test/pkg/lib/Utils.java",
+            """
                 package test.pkg.lib;
 
                 import android.annotation.TargetApi;
@@ -5627,16 +5627,16 @@ src/JavaExitTest.java:29: Error: Call requires API level 11 (current min is 1): 
                     }
                 }
                 """,
-                )
-                .indented(),
-            requiresExtensionStub,
-            checksSdkIntWithSdkStub,
-            requiresExtensionStub.to("../lib/androidx/annotation/RequiresExtension.kt"),
-            checksSdkIntWithSdkStub.to("../lib/androidx/annotation/ChecksSdkIntAtLeast.java"),
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+        requiresExtensionStub,
+        checksSdkIntWithSdkStub,
+        requiresExtensionStub.to("../lib/androidx/annotation/RequiresExtension.kt"),
+        checksSdkIntWithSdkStub.to("../lib/androidx/annotation/ChecksSdkIntAtLeast.java"),
+      )
+      .run()
+      .expect(
+        """
             src/test/pkg/SdkExtensionsTest.java:16: Error: Call requires version 4 of the R Extensions SDK (current min is 0): requiresExtRv4 [NewApi]
                     requiresExtRv4(); // ERROR 1
                     ~~~~~~~~~~~~~~
@@ -5645,14 +5645,14 @@ src/JavaExitTest.java:29: Error: Call requires API level 11 (current min is 1): 
                         ~~~~~~~~~~~~~~
             2 errors, 0 warnings
             """
-        )
+      )
   }
 
   fun testUncertainOr() {
     lint()
-        .files(
-            kotlin(
-                    """
+      .files(
+        kotlin(
+            """
                 package test.pkg
 
                 import android.os.Build.VERSION.SDK_INT
@@ -5675,26 +5675,26 @@ src/JavaExitTest.java:29: Error: Call requires API level 11 (current min is 1): 
                 fun requires21() {
                 }
                 """
-                )
-                .indented(),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
             src/test/pkg/test.kt:11: Error: Call requires API level 21 (current min is 1): requires21 [NewApi]
                     requires21() // ERROR 1
                     ~~~~~~~~~~
             1 errors, 0 warnings
             """
-        )
+      )
   }
 
   fun testUncertainSdkIntCheck() {
     lint()
-        .files(
-            kotlin(
-                    """
+      .files(
+        kotlin(
+            """
                 package test.pkg
 
                 import android.os.Build.VERSION.SDK_INT
@@ -5785,13 +5785,13 @@ src/JavaExitTest.java:29: Error: Call requires API level 11 (current min is 1): 
                 fun requires21() {
                 }
                 """
-                )
-                .indented(),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
         src/test/pkg/test.kt:15: Error: Call requires API level 21 (current min is 1): requires21 [NewApi]
                 requires21() // ERROR 1
                 ~~~~~~~~~~
@@ -5809,15 +5809,15 @@ src/JavaExitTest.java:29: Error: Call requires API level 11 (current min is 1): 
                        ~~~~~~~~~~~~
         3 errors, 2 warnings
         """
-        )
+      )
   }
 
   fun testRecursiveUtilityFunction() {
     // Regression test for b/290340814
     lint()
-        .files(
-            kotlin(
-                    """
+      .files(
+        kotlin(
+            """
             package test.pkg
 
             import androidx.annotation.RequiresApi
@@ -5835,10 +5835,10 @@ src/JavaExitTest.java:29: Error: Call requires API level 11 (current min is 1): 
             @RequiresApi(30)
             fun requires30() { }
             """
-                )
-                .indented(),
-            kotlin(
-                    """
+          )
+          .indented(),
+        kotlin(
+            """
             package test.pkg
 
             import androidx.annotation.RequiresApi
@@ -5861,13 +5861,13 @@ src/JavaExitTest.java:29: Error: Call requires API level 11 (current min is 1): 
                 }
             }
             """
-                )
-                .indented(),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
         src/test/pkg/test.kt:11: Error: Call requires API level 30 (current min is 1): requires30 [NewApi]
                 requires30() // ERROR 1
                 ~~~~~~~~~~
@@ -5876,15 +5876,15 @@ src/JavaExitTest.java:29: Error: Call requires API level 11 (current min is 1): 
                 ~~~~~~~~~~
         2 errors, 0 warnings
         """
-        )
+      )
   }
 
   fun testNestedWithinAnonymousClass() {
     // Regression test for b/350324869
     lint()
-        .files(
-            kotlin(
-                    """
+      .files(
+        kotlin(
+            """
             package test.pkg
 
             import android.os.Build.VERSION.SDK_INT
@@ -5906,20 +5906,20 @@ src/JavaExitTest.java:29: Error: Call requires API level 11 (current min is 1): 
             @RequiresApi(34)
             fun requires34() { }
             """
-                )
-                .indented(),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expectClean()
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expectClean()
   }
 
   @Suppress("SimplifyNegatedBinaryExpression")
   fun testInverse() {
     lint()
-        .files(
-            kotlin(
-                    """
+      .files(
+        kotlin(
+            """
             package test.pkg
 
             import android.os.Build.VERSION.SDK_INT
@@ -5949,13 +5949,13 @@ src/JavaExitTest.java:29: Error: Call requires API level 11 (current min is 1): 
             @RequiresApi(24)
             private fun requires24() = true
             """
-                )
-                .indented(),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
         src/test/pkg/test.kt:14: Error: Call requires API level 24 (current min is 1): requires24 [NewApi]
                 requires24() // ERROR 1: We can crash here
                 ~~~~~~~~~~
@@ -5964,14 +5964,14 @@ src/JavaExitTest.java:29: Error: Call requires API level 11 (current min is 1): 
                         ~~~~~~~~~~
         2 errors, 0 warnings
         """
-        )
+      )
   }
 
   fun testMinorVersions() {
     lint()
-        .files(
-            kotlin(
-                    """
+      .files(
+        kotlin(
+            """
             package test.pkg
 
             import android.os.Build
@@ -6018,14 +6018,14 @@ src/JavaExitTest.java:29: Error: Call requires API level 11 (current min is 1): 
             fun requiresApi35_2() {
             }
             """
-                )
-                .indented(),
-            SUPPORT_ANNOTATIONS_JAR,
-            newAndroidOsBuildStub,
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+        newAndroidOsBuildStub,
+      )
+      .run()
+      .expect(
+        """
         src/test/pkg/test.kt:10: Error: Call requires API level 35 (current min is 1): requiresApi35 [NewApi]
             requiresApi35()            // ERROR 1
             ~~~~~~~~~~~~~
@@ -6046,14 +6046,14 @@ src/JavaExitTest.java:29: Error: Call requires API level 11 (current min is 1): 
                 ~~~~~~~~~~~~~~~
         6 errors, 0 warnings
         """
-        )
+      )
   }
 
   fun testMinorVersionsOperators() {
     lint()
-        .files(
-            kotlin(
-                    """
+      .files(
+        kotlin(
+            """
             package test.pkg
 
             import android.os.Build
@@ -6130,14 +6130,14 @@ src/JavaExitTest.java:29: Error: Call requires API level 11 (current min is 1): 
             fun requiresApi35_3() {
             }
             """
-                )
-                .indented(),
-            SUPPORT_ANNOTATIONS_JAR,
-            newAndroidOsBuildStub,
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+        newAndroidOsBuildStub,
+      )
+      .run()
+      .expect(
+        """
         src/test/pkg/test.kt:15: Error: Call requires API level 35.2 (current min is 35.1): requiresApi35_2 [NewApi]
                 requiresApi35_2()  // ERROR 1
                 ~~~~~~~~~~~~~~~
@@ -6155,17 +6155,17 @@ src/JavaExitTest.java:29: Error: Call requires API level 11 (current min is 1): 
                 ~~~~~~~~~~~~~~~
         5 errors, 0 warnings
         """
-        )
+      )
   }
 
   fun test399692455() {
     // Regression test for b/399692455
     lint()
-        .files(
-            classpath(),
-            manifest().minSdk(26),
-            kotlin(
-                    """
+      .files(
+        classpath(),
+        manifest().minSdk(26),
+        kotlin(
+            """
             package test.pkg
 
             import android.os.Build.VERSION.SDK_INT
@@ -6190,16 +6190,16 @@ src/JavaExitTest.java:29: Error: Call requires API level 11 (current min is 1): 
                 }
             }
             """
-                )
-                .indented(),
-        )
-        // We *don't* want to use provisional computation for this:
-        // limit suggestions around SDK_INT checks to those implied
-        // by the minSdkVersion of the library.
-        .skipTestModes(PARTIAL)
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+      )
+      // We *don't* want to use provisional computation for this:
+      // limit suggestions around SDK_INT checks to those implied
+      // by the minSdkVersion of the library.
+      .skipTestModes(PARTIAL)
+      .run()
+      .expect(
+        """
         src/test/pkg/Version.kt:9: Warning: Unnecessary; SDK_INT >= 26 is always true here (SDK_INT ≥ 26 and < 31) [ObsoleteSdkInt]
                     if (SDK_INT >= 26) { // ERROR 1
                         ~~~~~~~~~~~~~
@@ -6211,7 +6211,7 @@ src/JavaExitTest.java:29: Error: Call requires API level 11 (current min is 1): 
                         ~~~~~~~~~~~~~
         0 errors, 3 warnings
         """
-        )
+      )
   }
 
   override fun getDetector(): Detector {
@@ -6221,8 +6221,8 @@ src/JavaExitTest.java:29: Error: Call requires API level 11 (current min is 1): 
 
 // Stub; can't use SUPPORT_ANNOTATIONS_JAR because it doesn't yet have the extension= field
 private val checksSdkIntWithSdkStub: TestFile =
-    java(
-            """
+  java(
+      """
       package androidx.annotation;
       import static java.lang.annotation.ElementType.FIELD;
       import static java.lang.annotation.ElementType.METHOD;
@@ -6241,13 +6241,13 @@ private val checksSdkIntWithSdkStub: TestFile =
           int extension() default 0;
       }
       """
-        )
-        .indented()
+    )
+    .indented()
 
 val newAndroidOsBuildStub: TestFile =
-    java(
-            // Stub until SDK_MINOR_INT is available everywhere
-            """
+  java(
+      // Stub until SDK_MINOR_INT is available everywhere
+      """
       // HIDE-FROM-DOCUMENTATION
       package android.os;
 
@@ -6272,12 +6272,12 @@ val newAndroidOsBuildStub: TestFile =
           }
       }
       """
-        )
-        .indented()
+    )
+    .indented()
 
 val requiresExtensionStub: TestFile =
-    kotlin(
-            """
+  kotlin(
+      """
       package androidx.annotation
 
       import java.lang.annotation.ElementType.CONSTRUCTOR
@@ -6306,5 +6306,5 @@ val requiresExtensionStub: TestFile =
           val version: Int
       )
       """
-        )
-        .indented()
+    )
+    .indented()

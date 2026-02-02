@@ -44,11 +44,11 @@ class ByLazyDetector : Detector(), SourceCodeScanner {
 
     @JvmField
     val ISSUE =
-        Issue.create(
-            id = "AvoidByLazy",
-            briefDescription = "Avoid using `by lazy` for simple lazy initialization",
-            explanation =
-                """
+      Issue.create(
+        id = "AvoidByLazy",
+        briefDescription = "Avoid using `by lazy` for simple lazy initialization",
+        explanation =
+          """
                 Kotlin's `by lazy` feature looks like an easy and convenient replacement \
                 for code ported from Java where a field was lazily initialized through a \
                 getter. However, it's much more involved than it looks; try the \
@@ -86,19 +86,19 @@ class ByLazyDetector : Detector(), SourceCodeScanner {
                 as a parameter to the `lazy` call; in that case, this lint check will ignore it.
                 ```
             """,
-            category = CORRECTNESS,
-            severity = ERROR,
-            enabledByDefault = false,
-            platforms = STUDIO_PLATFORMS,
-            implementation = IMPLEMENTATION,
-        )
+        category = CORRECTNESS,
+        severity = ERROR,
+        enabledByDefault = false,
+        platforms = STUDIO_PLATFORMS,
+        implementation = IMPLEMENTATION,
+      )
   }
 
   override fun getApplicableMethodNames(): List<String> = listOf("lazy")
 
   override fun visitMethodCall(context: JavaContext, node: UCallExpression, method: PsiMethod) {
     if (
-        !context.evaluator.isMemberInClass(node.resolve()) { fqName -> fqName == "kotlin.LazyKt__LazyJVMKt" || fqName == "kotlin.LazyKt" }
+      !context.evaluator.isMemberInClass(node.resolve()) { fqName -> fqName == "kotlin.LazyKt__LazyJVMKt" || fqName == "kotlin.LazyKt" }
     ) {
       return
     }

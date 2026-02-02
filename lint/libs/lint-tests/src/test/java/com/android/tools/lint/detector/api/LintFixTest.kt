@@ -76,38 +76,38 @@ class LintFixTest : TestCase() {
 
   fun testMatching() {
     lint()
-        .files(
-            java(
-                "" +
-                    "package test.pkg;\n" +
-                    "import android.util.Log;\n" +
-                    "public class Test {\n" +
-                    "    void test() {\n" +
-                    "        Log.d(\"TAG\", \"msg\");\n" +
-                    "    }\n" +
-                    "}"
-            )
+      .files(
+        java(
+          "" +
+            "package test.pkg;\n" +
+            "import android.util.Log;\n" +
+            "public class Test {\n" +
+            "    void test() {\n" +
+            "        Log.d(\"TAG\", \"msg\");\n" +
+            "    }\n" +
+            "}"
         )
-        .detector(SampleTestDetector())
-        .sdkHome(TestUtils.getSdk().toFile())
-        .run()
-        .expect(
-            "src/test/pkg/Test.java:5: Warning: Sample test message [_TestIssueId]\n" +
-                "        Log.d(\"TAG\", \"msg\");\n" +
-                "        ~~~\n" +
-                "0 errors, 1 warnings\n"
-        )
-        .verifyFixes()
-        .window(1)
-        .expectFixDiffs(
-            "" +
-                "Fix for src/test/pkg/Test.java line 4: Fix Description:\n" +
-                "@@ -5 +5\n" +
-                "      void test() {\n" +
-                "-         Log.d(\"TAG\", \"msg\");\n" +
-                "+         MyLogger.d(\"msg\"); // Was: Log.d(\"TAG\", \"msg\");\n" +
-                "      }\n"
-        )
+      )
+      .detector(SampleTestDetector())
+      .sdkHome(TestUtils.getSdk().toFile())
+      .run()
+      .expect(
+        "src/test/pkg/Test.java:5: Warning: Sample test message [_TestIssueId]\n" +
+          "        Log.d(\"TAG\", \"msg\");\n" +
+          "        ~~~\n" +
+          "0 errors, 1 warnings\n"
+      )
+      .verifyFixes()
+      .window(1)
+      .expectFixDiffs(
+        "" +
+          "Fix for src/test/pkg/Test.java line 4: Fix Description:\n" +
+          "@@ -5 +5\n" +
+          "      void test() {\n" +
+          "-         Log.d(\"TAG\", \"msg\");\n" +
+          "+         MyLogger.d(\"msg\"); // Was: Log.d(\"TAG\", \"msg\");\n" +
+          "      }\n"
+      )
   }
 
   fun testAnnotate() {
@@ -152,29 +152,29 @@ class LintFixTest : TestCase() {
         replacement = replacement.replace("\"TAG\", ", "")
 
         val fix =
-            fix()
-                .name("Fix Description")
-                .replace()
-                .pattern(oldPattern)
-                .with(replacement)
-                .range(context.getLocation(node))
-                .shortenNames()
-                .build()
+          fix()
+            .name("Fix Description")
+            .replace()
+            .pattern(oldPattern)
+            .with(replacement)
+            .range(context.getLocation(node))
+            .shortenNames()
+            .build()
         context.report(SAMPLE_ISSUE, context.getLocation(receiver), "Sample test message", fix)
       }
     }
 
     companion object {
       val SAMPLE_ISSUE =
-          Issue.create(
-              "_TestIssueId",
-              "Not applicable",
-              "Not applicable",
-              Category.MESSAGES,
-              5,
-              Severity.WARNING,
-              Implementation(SampleTestDetector::class.java, Scope.JAVA_FILE_SCOPE),
-          )
+        Issue.create(
+          "_TestIssueId",
+          "Not applicable",
+          "Not applicable",
+          Category.MESSAGES,
+          5,
+          Severity.WARNING,
+          Implementation(SampleTestDetector::class.java, Scope.JAVA_FILE_SCOPE),
+        )
     }
   }
 }

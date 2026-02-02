@@ -24,11 +24,11 @@ class ViewConstructorDetectorTest : AbstractCheckTest() {
 
   fun testBasic() {
     lint()
-        .files(
-            classpath(),
-            manifest().minSdk(10),
-            java(
-                    """
+      .files(
+        classpath(),
+        manifest().minSdk(10),
+        java(
+            """
                 package test.bytecode;
 
                 import android.view.View;
@@ -39,10 +39,10 @@ class ViewConstructorDetectorTest : AbstractCheckTest() {
                 	}
                 }
                 """
-                )
-                .indented(),
-            java(
-                    """
+          )
+          .indented(),
+        java(
+            """
                 package test.bytecode;
 
                 import android.content.Context;
@@ -56,10 +56,10 @@ class ViewConstructorDetectorTest : AbstractCheckTest() {
                 	}
                 }
                 """
-                )
-                .indented(),
-            java(
-                    """
+          )
+          .indented(),
+        java(
+            """
                 package test.bytecode;
 
                 import android.content.Context;
@@ -74,12 +74,12 @@ class ViewConstructorDetectorTest : AbstractCheckTest() {
 
                 }
                 """
-                )
-                .indented(),
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+      )
+      .run()
+      .expect(
+        """
             src/test/bytecode/CustomView1.java:5: Warning: Custom view CustomView1 is missing constructor used by tools: (Context) or (Context,AttributeSet) or (Context,AttributeSet,int) [ViewConstructor]
             public class CustomView1 extends View {
                          ~~~~~~~~~~~
@@ -88,16 +88,16 @@ class ViewConstructorDetectorTest : AbstractCheckTest() {
                          ~~~~~~~~~~~
             0 errors, 2 warnings
             """
-        )
+      )
   }
 
   fun testInheritLocal() {
     lint()
-        .files(
-            classpath(),
-            manifest().minSdk(10),
-            java(
-                    """
+      .files(
+        classpath(),
+        manifest().minSdk(10),
+        java(
+            """
                 package test.pkg;
 
                 import android.app.Activity;
@@ -114,10 +114,10 @@ class ViewConstructorDetectorTest : AbstractCheckTest() {
                 	}
                 }
                 """
-                )
-                .indented(),
-            java(
-                    """
+          )
+          .indented(),
+        java(
+            """
                 package test.pkg;
 
                 import test.pkg.Intermediate.IntermediateCustomV;
@@ -125,28 +125,28 @@ class ViewConstructorDetectorTest : AbstractCheckTest() {
                 public class CustomViewTest extends IntermediateCustomV {
                 }
                 """
-                )
-                .indented(),
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+      )
+      .run()
+      .expect(
+        """
             src/test/pkg/CustomViewTest.java:5: Warning: Custom view CustomViewTest is missing constructor used by tools: (Context) or (Context,AttributeSet) or (Context,AttributeSet,int) [ViewConstructor]
             public class CustomViewTest extends IntermediateCustomV {
                          ~~~~~~~~~~~~~~
             0 errors, 1 warnings
             """
-        )
+      )
   }
 
   fun testAbstract() {
     //noinspection all // Sample code
     lint()
-        .files(
-            classpath(),
-            manifest().minSdk(10),
-            java(
-                    """
+      .files(
+        classpath(),
+        manifest().minSdk(10),
+        java(
+            """
                 package test.pkg;
 
                 import android.view.View;
@@ -157,18 +157,18 @@ class ViewConstructorDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-                )
-                .indented(),
-        )
-        .run()
-        .expectClean()
+          )
+          .indented(),
+      )
+      .run()
+      .expectClean()
   }
 
   fun testPrivate() {
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
                 package test.pkg;
 
                 import android.view.View;
@@ -181,10 +181,10 @@ class ViewConstructorDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-                )
-                .indented()
-        )
-        .run()
-        .expectClean()
+          )
+          .indented()
+      )
+      .run()
+      .expectClean()
   }
 }

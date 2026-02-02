@@ -46,9 +46,9 @@ import org.w3c.dom.Node
  * It also notifies all the detectors before and after the document is processed such that they can do pre- and post-processing.
  */
 internal class ResourceVisitor(
-    driver: LintDriver,
-    private val allDetectors: List<XmlScanner>,
-    private val binaryDetectors: List<Detector>?,
+  driver: LintDriver,
+  private val allDetectors: List<XmlScanner>,
+  private val binaryDetectors: List<Detector>?,
 ) {
   private val elementToCheck: Map<String, List<XmlScanner>>
   private val attributeToCheck: Map<String?, List<XmlScanner>>
@@ -105,10 +105,10 @@ internal class ResourceVisitor(
       }
 
       if (
-          elementToCheck.isNotEmpty() ||
-              attributeToCheck.isNotEmpty() ||
-              allAttributeDetectors.isNotEmpty() ||
-              allElementDetectors.isNotEmpty()
+        elementToCheck.isNotEmpty() ||
+          attributeToCheck.isNotEmpty() ||
+          allAttributeDetectors.isNotEmpty() ||
+          allElementDetectors.isNotEmpty()
       ) {
         visitElement(context, context.document.documentElement)
       }
@@ -176,10 +176,10 @@ internal class ResourceVisitor(
         if (annotationHandler != null) {
           var className = attribute.value
           if (
-              className.startsWith(".") &&
-                  context.file.path.endsWith(ANDROID_MANIFEST_XML) &&
-                  localName == ATTR_NAME &&
-                  attribute.namespaceURI == ANDROID_URI
+            className.startsWith(".") &&
+              context.file.path.endsWith(ANDROID_MANIFEST_XML) &&
+              localName == ATTR_NAME &&
+              attribute.namespaceURI == ANDROID_URI
           ) {
             // Manifest? Resolve package names:
             className = resolveManifestName(element, context.project)

@@ -147,27 +147,24 @@ sealed class Intervals {
 
   /** Represents a single half-open interval from `[fromInclusive.fromInclusiveMinor, toExclusive.toExclusiveMinor)` */
   private class Span(
-      /**
-       * The start of the span, encoded as the major version, left shifted [MAJOR_SHIFT] bits and then the minor version added in. From is
-       * inclusive, and to is exclusive.
-       */
-      val from: MajorMinor,
-      val to: MajorMinor,
+    /**
+     * The start of the span, encoded as the major version, left shifted [MAJOR_SHIFT] bits and then the minor version added in. From is
+     * inclusive, and to is exclusive.
+     */
+    val from: MajorMinor,
+    val to: MajorMinor,
   ) : Intervals() {
     constructor(
-        fromInclusive: Int,
-        fromInclusiveMinor: Int,
-        toExclusive: Int,
-        toExclusiveMinor: Int,
-    ) : this(
-        MajorMinor(fromInclusive, fromInclusiveMinor),
-        MajorMinor(toExclusive, toExclusiveMinor),
-    )
+      fromInclusive: Int,
+      fromInclusiveMinor: Int,
+      toExclusive: Int,
+      toExclusiveMinor: Int,
+    ) : this(MajorMinor(fromInclusive, fromInclusiveMinor), MajorMinor(toExclusive, toExclusiveMinor))
 
     override fun fromInclusive(): Int =
-        if (isEmpty()) {
-          -1
-        } else from.major
+      if (isEmpty()) {
+        -1
+      } else from.major
 
     override fun fromInclusiveMinor(): Int = from.minor
 
@@ -283,18 +280,18 @@ sealed class Intervals {
         adjacent(from, to) -> "$variable = $fromString"
         to <= from -> "No ${variable}s"
         from == ZERO ->
-            if (to == INFINITY) {
-              "All ${variable}s"
-            } else {
-              "$variable < $toString"
-            }
+          if (to == INFINITY) {
+            "All ${variable}s"
+          } else {
+            "$variable < $toString"
+          }
         to == INFINITY -> "$variable ≥ $fromString"
         else ->
-            if (compact) {
-              "$fromString ≤ $variable < $toString"
-            } else {
-              "$variable ≥ $fromString and $variable < $toString"
-            }
+          if (compact) {
+            "$fromString ≤ $variable < $toString"
+          } else {
+            "$variable ≥ $fromString and $variable < $toString"
+          }
       }
     }
 
@@ -393,10 +390,10 @@ sealed class Intervals {
 
     override infix fun and(other: Intervals): Intervals {
       val merged =
-          when (other) {
-            is Span -> intersectIntervals(this.spans, listOf(other))
-            is Spans -> intersectIntervals(this.spans, other.spans)
-          }
+        when (other) {
+          is Span -> intersectIntervals(this.spans, listOf(other))
+          is Spans -> intersectIntervals(this.spans, other.spans)
+        }
       return create(merged)
     }
 
@@ -466,12 +463,8 @@ sealed class Intervals {
 
     fun range(fromInclusive: Int, toExclusive: Int): Intervals = Span(fromInclusive, 0, toExclusive, 0)
 
-    fun range(
-        fromInclusive: Int,
-        fromInclusiveMinor: Int,
-        toExclusive: Int,
-        toExclusiveMinor: Int,
-    ): Intervals = Span(fromInclusive, fromInclusiveMinor, toExclusive, toExclusiveMinor)
+    fun range(fromInclusive: Int, fromInclusiveMinor: Int, toExclusive: Int, toExclusiveMinor: Int): Intervals =
+      Span(fromInclusive, fromInclusiveMinor, toExclusive, toExclusiveMinor)
 
     fun deserialize(s: String): Intervals {
       if (s.contains(',')) {

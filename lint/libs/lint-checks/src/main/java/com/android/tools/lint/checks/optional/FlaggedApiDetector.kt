@@ -86,20 +86,20 @@ class FlaggedApiDetector : Detector(), SourceCodeScanner {
     /** Accessing flagged api without check. */
     @JvmField
     val ISSUE =
-        Issue.create(
-            id = "FlaggedApi",
-            explanation =
-                """
+      Issue.create(
+        id = "FlaggedApi",
+        explanation =
+          """
           This lint check looks for accesses of APIs marked with `@FlaggedApi(X)` without \
           a guarding `if (Flags.X)` check. See go/android-flagged-apis.
           """,
-            briefDescription = "FlaggedApi access without check",
-            category = Category.CORRECTNESS,
-            priority = 6,
-            severity = Severity.ERROR,
-            androidSpecific = true,
-            implementation = IMPLEMENTATION,
-        )
+        briefDescription = "FlaggedApi access without check",
+        category = Category.CORRECTNESS,
+        priority = 6,
+        severity = Severity.ERROR,
+        androidSpecific = true,
+        implementation = IMPLEMENTATION,
+      )
 
     private const val FLAGGED_API_ANNOTATION = "android.annotation.FlaggedApi"
 
@@ -147,10 +147,10 @@ class FlaggedApiDetector : Detector(), SourceCodeScanner {
   }
 
   override fun visitAnnotationUsage(
-      context: JavaContext,
-      element: UElement,
-      annotationInfo: AnnotationInfo,
-      usageInfo: AnnotationUsageInfo,
+    context: JavaContext,
+    element: UElement,
+    annotationInfo: AnnotationInfo,
+    usageInfo: AnnotationUsageInfo,
   ) {
     val annotation = annotationInfo.annotation
     if (usageInfo.type == AnnotationUsageType.DEFINITION) {
@@ -162,35 +162,35 @@ class FlaggedApiDetector : Detector(), SourceCodeScanner {
     val evaluator = context.evaluator
 
     val flags =
-        if (compiled) {
-          val flagString = getFlaggedApiString(annotation)
-          val flag =
-              if (flagString != null) {
-                getFlaggedApiFromString(evaluator, flagString)
-              } else {
-                null
-              }
-          if (flag == null && flagString != null) {
-            if (isFinalized(context, element, annotationInfo.annotated)) {
-              return
-            }
-
-            // Flags class missing from class path. We still want to flag
-            // these as errors, and we don't need to check to see if you've
-            // added explicit flags checks since clearly you haven't -- the
-            // flags class aren't on the class path so a flag check wouldn't
-            // compile.
-            val flagClass = flagString.substringBeforeLast(".")
-            val flagClassName = flagClass.substringAfterLast(".")
-            val flagName = flagString.substringAfterLast(".")
-            val flagMethodName = getFlagMethodName(flagName)
-            reportError(context, element, flagClassName, flagName, flagMethodName)
+      if (compiled) {
+        val flagString = getFlaggedApiString(annotation)
+        val flag =
+          if (flagString != null) {
+            getFlaggedApiFromString(evaluator, flagString)
+          } else {
+            null
+          }
+        if (flag == null && flagString != null) {
+          if (isFinalized(context, element, annotationInfo.annotated)) {
             return
           }
-          flag
-        } else {
-          getFlaggedApiFromSource(evaluator, annotation)
+
+          // Flags class missing from class path. We still want to flag
+          // these as errors, and we don't need to check to see if you've
+          // added explicit flags checks since clearly you haven't -- the
+          // flags class aren't on the class path so a flag check wouldn't
+          // compile.
+          val flagClass = flagString.substringBeforeLast(".")
+          val flagClassName = flagClass.substringAfterLast(".")
+          val flagName = flagString.substringAfterLast(".")
+          val flagMethodName = getFlagMethodName(flagName)
+          reportError(context, element, flagClassName, flagName, flagMethodName)
+          return
         }
+        flag
+      } else {
+        getFlaggedApiFromSource(evaluator, annotation)
+      }
 
     val (flag, flag2) = flags ?: return
 
@@ -220,11 +220,7 @@ class FlaggedApiDetector : Detector(), SourceCodeScanner {
     reportError(context, element, flagClass.name ?: "", flagName, flagMethodName)
   }
 
-  private fun isFinalized(
-      context: JavaContext,
-      reference: UElement,
-      annotated: PsiElement?,
-  ): Boolean {
+  private fun isFinalized(context: JavaContext, reference: UElement, annotated: PsiElement?): Boolean {
     val apiDatabase = ApiLookup.getOrNull(context.client, context.project.buildTarget) ?: return false
 
     val element = reference.tryResolve() ?: annotated ?: return false
@@ -257,31 +253,22 @@ class FlaggedApiDetector : Detector(), SourceCodeScanner {
 
   private fun getFlagMethodName(flagName: String): String = constantNameToCamelCase(flagName.removePrefix("FLAG_"))
 
-  private fun checkFlagApiDeclaration(
-      annotation: UAnnotation,
-      context: JavaContext,
-      usageInfo: AnnotationUsageInfo,
-  ) {
+  private fun checkFlagApiDeclaration(annotation: UAnnotation, context: JavaContext, usageInfo: AnnotationUsageInfo) {
     val expression = annotation.attributeValues.firstOrNull()?.expression
     if (expression is ULiteralExpression) {
       val flagString = ConstantEvaluator.evaluateString(context, expression, false)
       if (usageInfo.type == AnnotationUsageType.DEFINITION) {
         if (flagString != null && flagString.indexOf('.') == -1) {
-          context.report(
+          context.report(ISSUE, expression, context.getLocation(expression), "Invalid @FlaggedApi descriptor; should be `package.name`")
+        } else {
+          val incident =
+            Incident(
               ISSUE,
               expression,
               context.getLocation(expression),
-              "Invalid @FlaggedApi descriptor; should be `package.name`",
-          )
-        } else {
-          val incident =
-              Incident(
-                  ISSUE,
-                  expression,
-                  context.getLocation(expression),
-                  "@FlaggedApi should specify an actual flag constant; " +
-                      "raw strings are discouraged (and more importantly, **not enforced**)",
-              )
+              "@FlaggedApi should specify an actual flag constant; " +
+                "raw strings are discouraged (and more importantly, **not enforced**)",
+            )
           incident.overrideSeverity(Severity.WARNING)
           context.report(incident)
         }
@@ -289,28 +276,22 @@ class FlaggedApiDetector : Detector(), SourceCodeScanner {
     }
   }
 
-  private fun reportError(
-      context: JavaContext,
-      element: UElement,
-      flagClassName: String,
-      flagName: String,
-      flagMethodName: String,
-  ) {
+  private fun reportError(context: JavaContext, element: UElement, flagClassName: String, flagName: String, flagMethodName: String) {
     val referenced = element.tryResolve()
     val description =
-        when {
-          referenced is PsiMethod -> "Method `${referenced.name}()`"
-          element is UCallExpression -> "Method `${getMethodName(element)}()`"
-          referenced is PsiField -> "Field `${referenced.name}`"
-          referenced is PsiClass -> "Class `${referenced.name}`"
-          element is UClassLiteralExpression -> "Class `${element.expression?.sourcePsi?.text}`"
-          referenced is PsiNamedElement -> "Reference `${referenced.name}`"
-          else -> "This"
-        }
+      when {
+        referenced is PsiMethod -> "Method `${referenced.name}()`"
+        element is UCallExpression -> "Method `${getMethodName(element)}()`"
+        referenced is PsiField -> "Field `${referenced.name}`"
+        referenced is PsiClass -> "Class `${referenced.name}`"
+        element is UClassLiteralExpression -> "Class `${element.expression?.sourcePsi?.text}`"
+        referenced is PsiNamedElement -> "Reference `${referenced.name}`"
+        else -> "This"
+      }
     val name = element.getParentOfType<UMethod>()?.name ?: "?"
     val message =
-        "$description is a flagged API and should be inside an `if (${flagClassName}.$flagMethodName())` check " +
-            "(or annotate the surrounding method `$name` with `@FlaggedApi(${flagClassName}.$flagName) to transfer requirement to caller`)"
+      "$description is a flagged API and should be inside an `if (${flagClassName}.$flagMethodName())` check " +
+        "(or annotate the surrounding method `$name` with `@FlaggedApi(${flagClassName}.$flagName) to transfer requirement to caller`)"
     context.report(ISSUE, element, context.getLocation(element), message)
   }
 
@@ -325,10 +306,7 @@ class FlaggedApiDetector : Detector(), SourceCodeScanner {
   }
 
   /** Given a `@FlaggedApi` annotation, returns the resolved field. */
-  private fun getFlaggedApiFromSource(
-      evaluator: JavaEvaluator,
-      annotation: UAnnotation,
-  ): OneOrTwoFlagFields? {
+  private fun getFlaggedApiFromSource(evaluator: JavaEvaluator, annotation: UAnnotation): OneOrTwoFlagFields? {
     val expression = annotation.attributeValues.firstOrNull()?.expression
     val flag = expression?.tryResolve() as? PsiField
     if (flag == null) {
@@ -342,10 +320,7 @@ class FlaggedApiDetector : Detector(), SourceCodeScanner {
     if (name != null && name.endsWith(".Flags")) {
       val fieldName = flag.name
       val packageName = name.substringBeforeLast(".")
-      return OneOrTwoFlagFields(
-          flag,
-          findFlagField(evaluator, packageName, "ExportedFlags", fieldName),
-      )
+      return OneOrTwoFlagFields(flag, findFlagField(evaluator, packageName, "ExportedFlags", fieldName))
     }
     return OneOrTwoFlagFields(flag, null)
   }
@@ -377,21 +352,12 @@ class FlaggedApiDetector : Detector(), SourceCodeScanner {
     return null
   }
 
-  private fun findFlagField(
-      evaluator: JavaEvaluator,
-      packageName: String,
-      className: String,
-      fieldName: String,
-  ): PsiField? {
+  private fun findFlagField(evaluator: JavaEvaluator, packageName: String, className: String, fieldName: String): PsiField? {
     return evaluator.findClass("$packageName.$className")?.findFieldByName(fieldName, true)
   }
 
   /** Is the given [element] within a code block already annotated with the same flagged api as [flag]. */
-  private fun isAlreadyAnnotated(
-      evaluator: JavaEvaluator,
-      element: UElement?,
-      flag: PsiField,
-  ): Boolean {
+  private fun isAlreadyAnnotated(evaluator: JavaEvaluator, element: UElement?, flag: PsiField): Boolean {
     var current = element
     while (current != null) {
       if (current is UAnnotated) {
@@ -432,12 +398,7 @@ class FlaggedApiDetector : Detector(), SourceCodeScanner {
    * Is the given [element] inside a flag check (where the class is [flagClass1] and [flagMethodName] is the flag checking method name), or
    * after an early return of the flag not being set?
    */
-  private fun isFlagChecked(
-      element: UElement,
-      flagClass1: PsiClass,
-      flagClass2: PsiClass?,
-      flagMethodName: String,
-  ): Boolean {
+  private fun isFlagChecked(element: UElement, flagClass1: PsiClass, flagClass2: PsiClass?, flagMethodName: String): Boolean {
     var curr = element.uastParent ?: return false
 
     var prev = element
@@ -454,20 +415,20 @@ class FlaggedApiDetector : Detector(), SourceCodeScanner {
             // Handle "if (!Flags.X) else <CALL>"
             val op = condition.skipParenthesizedExprDown()
             if (
-                op is UUnaryExpression &&
-                    op.operator == UastPrefixOperator.LOGICAL_NOT &&
-                    isFlagExpression(op.operand, flagClass1, flagClass2, flagMethodName)
+              op is UUnaryExpression &&
+                op.operator == UastPrefixOperator.LOGICAL_NOT &&
+                isFlagExpression(op.operand, flagClass1, flagClass2, flagMethodName)
             ) {
               return true
             } else if (
-                op is UPolyadicExpression &&
-                    op.operator == UastBinaryOperator.LOGICAL_OR &&
-                    (op.operands.any {
-                      val nested = it.skipParenthesizedExprDown()
-                      nested is UUnaryExpression &&
-                          nested.operator == UastPrefixOperator.LOGICAL_NOT &&
-                          isFlagExpression(nested.operand, flagClass1, flagClass2, flagMethodName)
-                    })
+              op is UPolyadicExpression &&
+                op.operator == UastBinaryOperator.LOGICAL_OR &&
+                (op.operands.any {
+                  val nested = it.skipParenthesizedExprDown()
+                  nested is UUnaryExpression &&
+                    nested.operator == UastPrefixOperator.LOGICAL_NOT &&
+                    isFlagExpression(nested.operand, flagClass1, flagClass2, flagMethodName)
+                })
             ) {
               return true
             }
@@ -490,9 +451,9 @@ class FlaggedApiDetector : Detector(), SourceCodeScanner {
           if (first is UIfExpression) {
             val condition = first.condition.skipParenthesizedExprDown()
             if (
-                condition is UUnaryExpression &&
-                    condition.operator == UastPrefixOperator.LOGICAL_NOT &&
-                    isFlagExpression(condition.operand, flagClass1, flagClass2, flagMethodName)
+              condition is UUnaryExpression &&
+                condition.operator == UastPrefixOperator.LOGICAL_NOT &&
+                isFlagExpression(condition.operand, flagClass1, flagClass2, flagMethodName)
             ) {
               // It's a flag check; make sure we just return
               val then = first.thenExpression?.skipParenthesizedExprDown()
@@ -512,12 +473,7 @@ class FlaggedApiDetector : Detector(), SourceCodeScanner {
   }
 
   /** Is the given [element] a flag expression (e.g. "Flags.set()") ? */
-  private fun isFlagExpression(
-      element: UElement,
-      flagClass1: PsiClass,
-      flagClass2: PsiClass?,
-      flagMethodName: String,
-  ): Boolean {
+  private fun isFlagExpression(element: UElement, flagClass1: PsiClass, flagClass2: PsiClass?, flagMethodName: String): Boolean {
     if (element is UReferenceExpression || element is UCallExpression) {
       val resolved = element.tryResolve()
       if (resolved is PsiMethod) {

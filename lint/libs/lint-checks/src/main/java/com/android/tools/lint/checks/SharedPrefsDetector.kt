@@ -38,11 +38,11 @@ class SharedPrefsDetector : Detector(), SourceCodeScanner {
     /** Modifying a string set. */
     @JvmField
     val ISSUE =
-        Issue.create(
-            id = "MutatingSharedPrefs",
-            briefDescription = "Mutating an Immutable SharedPrefs Set",
-            explanation =
-                """
+      Issue.create(
+        id = "MutatingSharedPrefs",
+        briefDescription = "Mutating an Immutable SharedPrefs Set",
+        explanation =
+          """
                 As stated in the docs for `SharedPreferences.getStringSet`, you must \
                 not modify the set returned by `getStringSet`:
 
@@ -50,12 +50,12 @@ class SharedPrefsDetector : Detector(), SourceCodeScanner {
                    by this call.  The consistency of the stored data is not guaranteed \
                    if you do, nor is your ability to modify the instance at all."
                 """,
-            category = Category.CORRECTNESS,
-            priority = 6,
-            severity = Severity.WARNING,
-            androidSpecific = true,
-            implementation = IMPLEMENTATION,
-        )
+        category = Category.CORRECTNESS,
+        priority = 6,
+        severity = Severity.WARNING,
+        androidSpecific = true,
+        implementation = IMPLEMENTATION,
+      )
   }
 
   override fun getApplicableMethodNames(): List<String> {
@@ -69,19 +69,14 @@ class SharedPrefsDetector : Detector(), SourceCodeScanner {
 
     val surrounding = node.getParentOfType<UMethod>(UMethod::class.java, true) ?: return
     surrounding.accept(
-        object : DataFlowAnalyzer(listOf(node), emptySet()) {
-          override fun receiver(call: UCallExpression) {
-            val methodName = getMethodName(call) ?: return
-            if (methodName.startsWith("add") || methodName.startsWith("remove") || methodName == "retainAll" || methodName == "clear") {
-              context.report(
-                  ISSUE,
-                  call,
-                  context.getLocation(call),
-                  "Do not modify the set returned by `SharedPreferences.getStringSet()``",
-              )
-            }
+      object : DataFlowAnalyzer(listOf(node), emptySet()) {
+        override fun receiver(call: UCallExpression) {
+          val methodName = getMethodName(call) ?: return
+          if (methodName.startsWith("add") || methodName.startsWith("remove") || methodName == "retainAll" || methodName == "clear") {
+            context.report(ISSUE, call, context.getLocation(call), "Do not modify the set returned by `SharedPreferences.getStringSet()``")
           }
         }
+      }
     )
   }
 }

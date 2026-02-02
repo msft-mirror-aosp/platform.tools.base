@@ -38,24 +38,19 @@ class AllCapsDetector : LayoutDetector() {
     /** Using all caps with markup. */
     @JvmField
     val ISSUE =
-        Issue.create(
-            id = "AllCaps",
-            briefDescription = "Combining textAllCaps and markup",
-            explanation =
-                """
+      Issue.create(
+        id = "AllCaps",
+        briefDescription = "Combining textAllCaps and markup",
+        explanation =
+          """
             The textAllCaps text transform will end up calling `toString` on the `CharSequence`, which has \
             the net effect of removing any markup such as `<b>`. This check looks for usages of strings \
             containing markup that also specify `textAllCaps=true`.""",
-            category = Category.TYPOGRAPHY,
-            priority = 8,
-            severity = Severity.WARNING,
-            implementation =
-                Implementation(
-                    AllCapsDetector::class.java,
-                    Scope.ALL_RESOURCES_SCOPE,
-                    Scope.RESOURCE_FILE_SCOPE,
-                ),
-        )
+        category = Category.TYPOGRAPHY,
+        priority = 8,
+        severity = Severity.WARNING,
+        implementation = Implementation(AllCapsDetector::class.java, Scope.ALL_RESOURCES_SCOPE, Scope.RESOURCE_FILE_SCOPE),
+      )
   }
 
   override fun getApplicableAttributes(): Collection<String> = listOf("textAllCaps")
@@ -91,9 +86,9 @@ class AllCapsDetector : LayoutDetector() {
     val rawXmlValue = resourceValue.rawXmlValue ?: return
     if (rawXmlValue.contains("<")) {
       val message =
-          "Using `textAllCaps` with a string (`${url.name}`) that " +
-              "contains markup; the markup will be dropped by the caps " +
-              "conversion"
+        "Using `textAllCaps` with a string (`${url.name}`) that " +
+          "contains markup; the markup will be dropped by the caps " +
+          "conversion"
       context.report(ISSUE, attribute, context.getLocation(attribute), message)
     }
   }

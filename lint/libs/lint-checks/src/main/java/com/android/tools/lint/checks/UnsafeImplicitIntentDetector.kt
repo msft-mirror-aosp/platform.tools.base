@@ -124,10 +124,10 @@ class UnsafeImplicitIntentDetector : Detector(), SourceCodeScanner {
 
     // Must be a call on Context.
     if (
-        !context.evaluator.isMemberInSubClassOf(method, CLASS_CONTEXT) &&
-            !context.evaluator.isMemberInSubClassOf(method, CLASS_CONTEXT_COMPAT)
+      !context.evaluator.isMemberInSubClassOf(method, CLASS_CONTEXT) &&
+        !context.evaluator.isMemberInSubClassOf(method, CLASS_CONTEXT_COMPAT)
     )
-        return
+      return
 
     // If we can't evaluate the flags arg to see that it includes
     // RECEIVER_NOT_EXPORTED then we give up.
@@ -139,11 +139,7 @@ class UnsafeImplicitIntentDetector : Detector(), SourceCodeScanner {
     // Get the actions registered via the IntentFilter argument.
     val filterArg = UastLintUtils.findArgument(node, CLASS_INTENT_FILTER) ?: return
     val (_, unprotectedActionsList) =
-        BroadcastReceiverUtils.checkIsProtectedReceiverAndReturnUnprotectedActions(
-            filterArg,
-            node,
-            context.evaluator,
-        )
+      BroadcastReceiverUtils.checkIsProtectedReceiverAndReturnUnprotectedActions(filterArg, node, context.evaluator)
 
     // Add all registered actions to the partial results map. Note that we add
     // the broadcast suffix because only actions that are used to send a
@@ -154,11 +150,7 @@ class UnsafeImplicitIntentDetector : Detector(), SourceCodeScanner {
     }
   }
 
-  override fun visitConstructor(
-      context: JavaContext,
-      node: UCallExpression,
-      constructor: PsiMethod,
-  ) {
+  override fun visitConstructor(context: JavaContext, node: UCallExpression, constructor: PsiMethod) {
     // This is an Intent constructor. We will track the Intent to see if it
     // satisfies various conditions.
 
@@ -212,42 +204,42 @@ class UnsafeImplicitIntentDetector : Detector(), SourceCodeScanner {
     var isUsedForActivity = false
     var isUsedForBroadcast = false
     val visitor =
-        object : DataFlowAnalyzer(setOf(node)) {
+      object : DataFlowAnalyzer(setOf(node)) {
 
-          override fun visitElement(node: UElement): Boolean {
-            // As soon as we think the Intent might be explicit, we can stop.
-            // Returning true stops visiting.
-            return !isIntentImplicit
-          }
+        override fun visitElement(node: UElement): Boolean {
+          // As soon as we think the Intent might be explicit, we can stop.
+          // Returning true stops visiting.
+          return !isIntentImplicit
+        }
 
-          override fun receiver(call: UCallExpression) {
-            when (call.methodName) {
-              "setComponent",
-              "setClass",
-              "setPackage",
-              "setClassName" -> {
-                isIntentImplicit = false
-              }
-              "setAction" -> addActionNameAndLocationFromFirstArg(call)
+        override fun receiver(call: UCallExpression) {
+          when (call.methodName) {
+            "setComponent",
+            "setClass",
+            "setPackage",
+            "setClassName" -> {
+              isIntentImplicit = false
             }
-          }
-
-          override fun argument(call: UCallExpression, reference: UElement) {
-            when (call.methodName) {
-              // TODO: We should track the intent being added to an array and then
-              //  detect use of startActivities(...).
-              "startActivity" -> {
-                isUsedForActivity = true
-              }
-              "sendBroadcast",
-              "sendBroadcastAsUser" -> {
-                isUsedForBroadcast = true
-              }
-            // Ignore methods for starting services; an exception is thrown for
-            // implicit service intents since Lollipop.
-            }
+            "setAction" -> addActionNameAndLocationFromFirstArg(call)
           }
         }
+
+        override fun argument(call: UCallExpression, reference: UElement) {
+          when (call.methodName) {
+            // TODO: We should track the intent being added to an array and then
+            //  detect use of startActivities(...).
+            "startActivity" -> {
+              isUsedForActivity = true
+            }
+            "sendBroadcast",
+            "sendBroadcastAsUser" -> {
+              isUsedForBroadcast = true
+            }
+          // Ignore methods for starting services; an exception is thrown for
+          // implicit service intents since Lollipop.
+          }
+        }
+      }
 
     val parent = node.getParentOfType(UMethod::class.java) ?: return
     parent.accept(visitor)
@@ -289,10 +281,7 @@ class UnsafeImplicitIntentDetector : Detector(), SourceCodeScanner {
    * component names. Note that the action names have the appropriate suffix added indicating the type of use that would trigger the
    * component; for example, [ACTIVITY_ACTION_SUFFIX].
    */
-  private fun getActionToNonExportedComponents(
-      project: Project,
-      root: Element,
-  ): Map<String, Set<String>> {
+  private fun getActionToNonExportedComponents(project: Project, root: Element): Map<String, Set<String>> {
     // E.g.
     // <application ...>
     //   <activity android:name=".TestActivity" android:exported="false" ...>
@@ -306,16 +295,16 @@ class UnsafeImplicitIntentDetector : Detector(), SourceCodeScanner {
       // Given the component type (indicated by the tag name), we will add the
       // corresponding suffix to the action name.
       val suffix =
-          when (component.tagName) {
-            TAG_ACTIVITY,
-            TAG_ACTIVITY_ALIAS -> ACTIVITY_ACTION_SUFFIX
-            // Ignore services; an exception is thrown for implicit service intents since
-            // Lollipop.
-            TAG_SERVICE -> ""
-            TAG_RECEIVER -> BROADCAST_ACTION_SUFFIX
-            TAG_PROVIDER -> "" // Ignore ContentProviders, which are not accessed using Intents.
-            else -> ""
-          }
+        when (component.tagName) {
+          TAG_ACTIVITY,
+          TAG_ACTIVITY_ALIAS -> ACTIVITY_ACTION_SUFFIX
+          // Ignore services; an exception is thrown for implicit service intents since
+          // Lollipop.
+          TAG_SERVICE -> ""
+          TAG_RECEIVER -> BROADCAST_ACTION_SUFFIX
+          TAG_PROVIDER -> "" // Ignore ContentProviders, which are not accessed using Intents.
+          else -> ""
+        }
       if (suffix.isEmpty()) continue
       val componentName = resolveManifestName(component, project)
       // The default value for android:exported varies; on recent Android
@@ -384,32 +373,28 @@ class UnsafeImplicitIntentDetector : Detector(), SourceCodeScanner {
       if (nonExportedComponents != null) {
         val firstComponent = nonExportedComponents.firstOrNull() ?: continue
         val message =
-            "The intent action `$action` matches the intent filter of a non-exported " +
-                "component `$firstComponent` from a manifest. " +
-                "If you are trying to invoke this specific component via the action " +
-                "then you should make the intent explicit by calling `Intent.set{Component,Class,ClassName}`."
+          "The intent action `$action` matches the intent filter of a non-exported " +
+            "component `$firstComponent` from a manifest. " +
+            "If you are trying to invoke this specific component via the action " +
+            "then you should make the intent explicit by calling `Intent.set{Component,Class,ClassName}`."
 
         for (location in locations) {
           context.report(
-              Incident(
-                  ISSUE,
-                  location,
-                  message,
-                  fix()
-                      .alternatives(
-                          buildClassNameQuickFix(location, firstComponent),
-                          buildPackageNameQuickFix(location),
-                      ),
-              )
+            Incident(
+              ISSUE,
+              location,
+              message,
+              fix().alternatives(buildClassNameQuickFix(location, firstComponent), buildPackageNameQuickFix(location)),
+            )
           )
         }
       } else if (actionsRegistered.contains(action)) {
         // No manifest components, but there is a registered receiver.
         val message =
-            "The intent action `$action` matches the intent filter of a non-exported " +
-                "receiver, registered via a call to `Context.registerReceiver`, or similar. " +
-                "If you are trying to invoke this specific receiver via the action " +
-                "then you should use `Intent.setPackage(<APPLICATION_ID>)`."
+          "The intent action `$action` matches the intent filter of a non-exported " +
+            "receiver, registered via a call to `Context.registerReceiver`, or similar. " +
+            "If you are trying to invoke this specific receiver via the action " +
+            "then you should use `Intent.setPackage(<APPLICATION_ID>)`."
 
         for (location in locations) {
           context.report(Incident(ISSUE, location, message, buildPackageNameQuickFix(location)))
@@ -421,29 +406,29 @@ class UnsafeImplicitIntentDetector : Detector(), SourceCodeScanner {
   private fun buildPackageNameQuickFix(location: Location): LintFix {
     val applicationIdExpression = getApplicationIdExpression(location)
     return LintFix.create()
-        .name("Set package name")
-        .replace()
-        .reformat(true)
-        .range(location)
-        .end()
-        .with(".setPackage($applicationIdExpression)")
-        .select(Regex.escape(applicationIdExpression))
-        .robot(false) // the application id expression is not necessarily correct
-        .build()
+      .name("Set package name")
+      .replace()
+      .reformat(true)
+      .range(location)
+      .end()
+      .with(".setPackage($applicationIdExpression)")
+      .select(Regex.escape(applicationIdExpression))
+      .robot(false) // the application id expression is not necessarily correct
+      .build()
   }
 
   private fun buildClassNameQuickFix(location: Location, componentName: String): LintFix {
     val applicationIdExpression = getApplicationIdExpression(location)
     return LintFix.create()
-        .name("Set class name")
-        .replace()
-        .reformat(true)
-        .range(location)
-        .end()
-        .with(".setClassName($applicationIdExpression, \"$componentName\")")
-        .select(Regex.escape(applicationIdExpression))
-        .robot(false) // the application id expression is not necessarily correct
-        .build()
+      .name("Set class name")
+      .replace()
+      .reformat(true)
+      .range(location)
+      .end()
+      .with(".setClassName($applicationIdExpression, \"$componentName\")")
+      .select(Regex.escape(applicationIdExpression))
+      .robot(false) // the application id expression is not necessarily correct
+      .build()
   }
 
   companion object {
@@ -468,32 +453,32 @@ class UnsafeImplicitIntentDetector : Detector(), SourceCodeScanner {
      * Returns the most common way to get the application id by calling getPackageName(), but of course this method might not be available.
      */
     fun getApplicationIdExpression(location: Location): String =
-        if (location.file.extension.lowercase() == EXT_JAVA) {
-          "/* TODO: provide the application ID. For example: */ getPackageName()"
-        } else {
-          "/* TODO: provide the application ID. For example: */ packageName"
-        }
+      if (location.file.extension.lowercase() == EXT_JAVA) {
+        "/* TODO: provide the application ID. For example: */ getPackageName()"
+      } else {
+        "/* TODO: provide the application ID. For example: */ packageName"
+      }
 
     /** Issue describing the problem and pointing to the detector implementation. */
     @JvmField
     val ISSUE: Issue =
-        Issue.create(
-            id = "UnsafeImplicitIntentLaunch",
-            briefDescription = "Implicit intent matches an internal non-exported component",
-            explanation =
-                """
+      Issue.create(
+        id = "UnsafeImplicitIntentLaunch",
+        briefDescription = "Implicit intent matches an internal non-exported component",
+        explanation =
+          """
                     This intent matches a non-exported component within the same app. \
                     In many cases, the app developer could instead use an explicit Intent \
                     to send messages to their internal components, ensuring that the messages \
                     are safely delivered without exposure to malicious apps on the device. \
                     Using such implicit intents will result in a crash in an upcoming version of Android.
                     """,
-            category = Category.SECURITY,
-            priority = 9,
-            severity = Severity.ERROR,
-            androidSpecific = true,
-            enabledByDefault = true,
-            implementation = IMPLEMENTATION,
-        )
+        category = Category.SECURITY,
+        priority = 9,
+        severity = Severity.ERROR,
+        androidSpecific = true,
+        enabledByDefault = true,
+        implementation = IMPLEMENTATION,
+      )
   }
 }

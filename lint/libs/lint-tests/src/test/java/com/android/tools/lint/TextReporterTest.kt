@@ -28,10 +28,10 @@ import com.android.tools.lint.detector.api.Detector
 class TextReporterTest : AbstractCheckTest() {
   fun testBasic() {
     lint()
-        .files(
-            xml(
-                    "res/menu/menu.xml",
-                    """
+      .files(
+        xml(
+            "res/menu/menu.xml",
+            """
                     <menu xmlns:android="http://schemas.android.com/apk/res/android" >
                         <item
                             android:id="@+id/item1"
@@ -46,11 +46,11 @@ class TextReporterTest : AbstractCheckTest() {
                         </item>
                     </menu>
                     """,
-                )
-                .indented(),
-            xml(
-                    "res/values/duplicate-strings.xml",
-                    """
+          )
+          .indented(),
+        xml(
+            "res/values/duplicate-strings.xml",
+            """
                     <resources>
                         <string name="app_name">App Name</string>
                         <string name="hello_world">Hello world!</string>
@@ -59,13 +59,13 @@ class TextReporterTest : AbstractCheckTest() {
 
                     </resources>
                     """,
-                )
-                .indented(),
-        )
-        .issues(HardcodedValuesDetector.ISSUE, DuplicateResourceDetector.ISSUE)
-        .run()
-        .expectText(
-            """
+          )
+          .indented(),
+      )
+      .issues(HardcodedValuesDetector.ISSUE, DuplicateResourceDetector.ISSUE)
+      .run()
+      .expectText(
+        """
             res/values/duplicate-strings.xml:4: Error: app_name has already been defined in this folder [DuplicateDefinition]
                 <string name="app_name">App Name 1</string>
                         ~~~~~~~~~~~~~~~
@@ -78,8 +78,8 @@ class TextReporterTest : AbstractCheckTest() {
                     ~~~~~~~~~~~~~~~~~~~~~~~~~~
             1 error, 2 warnings
                 """,
-            LintCliFlags().apply { isShowEverything = true },
-        )
+        LintCliFlags().apply { isShowEverything = true },
+      )
   }
 
   fun testWithExplanations() {
@@ -92,10 +92,10 @@ class TextReporterTest : AbstractCheckTest() {
     // type to make sure we display the explanations only once per issue type etc
     try {
       lint()
-          .files(
-              xml(
-                      "res/menu/menu.xml",
-                      """
+        .files(
+          xml(
+              "res/menu/menu.xml",
+              """
                     <menu xmlns:android="http://schemas.android.com/apk/res/android" >
                         <item
                             android:id="@+id/item1"
@@ -110,11 +110,11 @@ class TextReporterTest : AbstractCheckTest() {
                         </item>
                     </menu>
                     """,
-                  )
-                  .indented(),
-              xml(
-                      "res/values/duplicate-strings.xml",
-                      """
+            )
+            .indented(),
+          xml(
+              "res/values/duplicate-strings.xml",
+              """
                     <resources>
                         <string name="app_name">App Name</string>
                         <string name="hello_world">Hello world!</string>
@@ -123,13 +123,13 @@ class TextReporterTest : AbstractCheckTest() {
 
                     </resources>
                     """,
-                  )
-                  .indented(),
-          )
-          .issues(HardcodedValuesDetector.ISSUE, DuplicateResourceDetector.ISSUE)
-          .run()
-          .expectText(
-              """
+            )
+            .indented(),
+        )
+        .issues(HardcodedValuesDetector.ISSUE, DuplicateResourceDetector.ISSUE)
+        .run()
+        .expectText(
+          """
                 res/values/duplicate-strings.xml:4: Error: app_name has already been defined in this folder [DuplicateDefinition]
                     <string name="app_name">App Name 1</string>
                             ~~~~~~~~~~~~~~~
@@ -170,8 +170,8 @@ class TextReporterTest : AbstractCheckTest() {
 
                 1 error, 2 warnings
                 """,
-              LintCliFlags().apply { isExplainIssues = true },
-          )
+          LintCliFlags().apply { isExplainIssues = true },
+        )
     } finally {
       HardcodedValuesDetector.ISSUE.vendor = BuiltinIssueRegistry().vendor
     }
@@ -179,9 +179,9 @@ class TextReporterTest : AbstractCheckTest() {
 
   fun testDescribeOptions() {
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
                 package other.pkg;
 
                 @SuppressWarnings({"ClassNameDiffersFromFileName", "MethodMayBeStatic"})
@@ -191,13 +191,13 @@ class TextReporterTest : AbstractCheckTest() {
                     public Float error5;
                 }
                 """
-                )
-                .indented()
-        )
-        .issues(InteroperabilityDetector.PLATFORM_NULLNESS)
-        .run()
-        .expectText(
-            """
+          )
+          .indented()
+      )
+      .issues(InteroperabilityDetector.PLATFORM_NULLNESS)
+      .run()
+      .expectText(
+        """
             src/other/pkg/Test2.java:5: Warning: Unknown nullability; explicitly declare as @Nullable or @NonNull to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations [UnknownNullness]
                 public Float error4;
                        ~~~~~
@@ -230,16 +230,12 @@ class TextReporterTest : AbstractCheckTest() {
 
             0 errors, 2 warnings
             """,
-            LintCliFlags().apply { isExplainIssues = true },
-        )
+        LintCliFlags().apply { isExplainIssues = true },
+      )
   }
 
   private fun TestLintResult.expectText(expected: String, flags: LintCliFlags) {
-    expectReported(
-        expected,
-        DOT_TXT,
-        { client, file -> Reporter.createTextReporter(client, flags, file, file.bufferedWriter(), true) },
-    )
+    expectReported(expected, DOT_TXT, { client, file -> Reporter.createTextReporter(client, flags, file, file.bufferedWriter(), true) })
   }
 
   override fun getDetector(): Detector = HardcodedValuesDetector()
@@ -247,9 +243,9 @@ class TextReporterTest : AbstractCheckTest() {
 
 fun createTestVendor(): Vendor {
   return Vendor(
-      vendorName = "AOSP Unit Tests",
-      contact = "lint@example.com",
-      feedbackUrl = "https://example.com/lint/file-new-bug.html",
-      identifier = "mylibrary-1.0",
+    vendorName = "AOSP Unit Tests",
+    contact = "lint@example.com",
+    feedbackUrl = "https://example.com/lint/file-new-bug.html",
+    identifier = "mylibrary-1.0",
   )
 }

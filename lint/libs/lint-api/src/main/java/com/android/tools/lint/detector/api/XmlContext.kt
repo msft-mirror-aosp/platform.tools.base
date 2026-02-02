@@ -29,31 +29,31 @@ import org.w3c.dom.Node
 
 /** A [Context] used when checking XML files. */
 open class XmlContext(
-    /** the driver running through the checks */
-    driver: LintDriver,
+  /** the driver running through the checks */
+  driver: LintDriver,
 
-    /** the project containing the file being checked */
-    project: Project,
+  /** the project containing the file being checked */
+  project: Project,
 
-    /**
-     * The "main" project. For normal projects, this is the same as [project], but for library projects, it's the root project that includes
-     * (possibly indirectly) the various library projects and their library projects.
-     *
-     * Note that this is a property on the [Context], not the [Project], since a library project can be included from multiple different top
-     * level projects, so there isn't **one** main project, just one per main project being analyzed with its library projects.
-     */
-    main: Project?,
-    /** the file being checked */
-    file: File,
-    /** the [ResourceFolderType] of this file, if any */
-    folderType: ResourceFolderType?,
+  /**
+   * The "main" project. For normal projects, this is the same as [project], but for library projects, it's the root project that includes
+   * (possibly indirectly) the various library projects and their library projects.
+   *
+   * Note that this is a property on the [Context], not the [Project], since a library project can be included from multiple different top
+   * level projects, so there isn't **one** main project, just one per main project being analyzed with its library projects.
+   */
+  main: Project?,
+  /** the file being checked */
+  file: File,
+  /** the [ResourceFolderType] of this file, if any */
+  folderType: ResourceFolderType?,
 
-    /** The XML contents of the file. */
-    contents: CharSequence?,
+  /** The XML contents of the file. */
+  contents: CharSequence?,
 
-    /** The XML document. */
-    @JvmField // backwards compatibility
-    val document: Document,
+  /** The XML document. */
+  @JvmField // backwards compatibility
+  val document: Document,
 ) : ResourceContext(driver, project, main, file, folderType, contents) {
 
   /** The XML parser. */
@@ -100,12 +100,8 @@ open class XmlContext(
    * example of this is the "name" attribute in resource values. If not passed in or not defined on the element, this method will use the
    * element range if it fits on a single line; otherwise it will use just the tag name range.
    */
-  fun getElementLocation(
-      element: Element,
-      node: Node? = null,
-      namespace: String? = null,
-      attribute: String? = null,
-  ): Location = parser.getElementLocation(this, element, node, namespace, attribute)
+  fun getElementLocation(element: Element, node: Node? = null, namespace: String? = null, attribute: String? = null): Location =
+    parser.getElementLocation(this, element, node, namespace, attribute)
 
   /** Convenience wrapper for java so you don't have to specify default attributes. */
   fun getElementLocation(element: Element): Location = parser.getElementLocation(this, element)
@@ -134,13 +130,7 @@ open class XmlContext(
    * @param quickfixData optional data to pass to the IDE for use by a quickfix.
    */
   @JvmOverloads
-  fun report(
-      issue: Issue,
-      scope: Node?,
-      location: Location,
-      message: String,
-      quickfixData: LintFix? = null,
-  ) {
+  fun report(issue: Issue, scope: Node?, location: Location, message: String, quickfixData: LintFix? = null) {
     val incident = Incident(issue, message, location, scope, quickfixData)
     driver.client.report(this, incident)
   }

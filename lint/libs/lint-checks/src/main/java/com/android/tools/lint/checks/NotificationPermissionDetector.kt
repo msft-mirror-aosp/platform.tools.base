@@ -74,28 +74,24 @@ import org.w3c.dom.Node
 class NotificationPermissionDetector : Detector(), SourceCodeScanner, ClassScanner {
   companion object Issues {
     private val IMPLEMENTATION =
-        Implementation(
-            NotificationPermissionDetector::class.java,
-            EnumSet.of(Scope.JAVA_FILE, Scope.JAVA_LIBRARIES),
-            Scope.JAVA_FILE_SCOPE,
-        )
+      Implementation(NotificationPermissionDetector::class.java, EnumSet.of(Scope.JAVA_FILE, Scope.JAVA_LIBRARIES), Scope.JAVA_FILE_SCOPE)
 
     @JvmField
     val ISSUE =
-        Issue.create(
-            id = "NotificationPermission",
-            briefDescription = "Notifications Without Permission",
-            explanation =
-                """
+      Issue.create(
+        id = "NotificationPermission",
+        briefDescription = "Notifications Without Permission",
+        explanation =
+          """
                 When targeting Android 13 and higher, posting permissions requires holding the runtime permission \
                 `android.permission.POST_NOTIFICATIONS`.
                 """,
-            category = Category.CORRECTNESS,
-            priority = 6,
-            severity = Severity.ERROR,
-            androidSpecific = true,
-            implementation = IMPLEMENTATION,
-        )
+        category = Category.CORRECTNESS,
+        priority = 6,
+        severity = Severity.ERROR,
+        androidSpecific = true,
+        implementation = IMPLEMENTATION,
+      )
 
     /** Boolean property: whether we've found at least one notification call in the source code. */
     private const val KEY_SOURCE = "source"
@@ -137,14 +133,14 @@ class NotificationPermissionDetector : Detector(), SourceCodeScanner, ClassScann
               if (op is UUnaryExpression && op.operator == UastPrefixOperator.LOGICAL_NOT && isNotificationPermissionCheck(op.operand)) {
                 return true
               } else if (
-                  op is UPolyadicExpression &&
-                      op.operator == UastBinaryOperator.LOGICAL_OR &&
-                      (op.operands.any {
-                        val nested = it.skipParenthesizedExprDown()
-                        nested is UUnaryExpression &&
-                            nested.operator == UastPrefixOperator.LOGICAL_NOT &&
-                            isNotificationPermissionCheck(nested.operand)
-                      })
+                op is UPolyadicExpression &&
+                  op.operator == UastBinaryOperator.LOGICAL_OR &&
+                  (op.operands.any {
+                    val nested = it.skipParenthesizedExprDown()
+                    nested is UUnaryExpression &&
+                      nested.operator == UastPrefixOperator.LOGICAL_NOT &&
+                      isNotificationPermissionCheck(nested.operand)
+                  })
               ) {
                 return true
               }
@@ -159,9 +155,9 @@ class NotificationPermissionDetector : Detector(), SourceCodeScanner, ClassScann
             if (first is UIfExpression) {
               val condition = first.condition.skipParenthesizedExprDown()
               if (
-                  condition is UUnaryExpression &&
-                      condition.operator == UastPrefixOperator.LOGICAL_NOT &&
-                      isNotificationPermissionCheck(condition.operand)
+                condition is UUnaryExpression &&
+                  condition.operator == UastPrefixOperator.LOGICAL_NOT &&
+                  isNotificationPermissionCheck(condition.operand)
               ) {
                 // It's a notifications enabled check; make sure we only return
                 val then = first.thenExpression?.skipParenthesizedExprDown()
@@ -236,10 +232,10 @@ class NotificationPermissionDetector : Detector(), SourceCodeScanner, ClassScann
     // bail out if permission is held or not yet targeting T
     if (context.isGlobalAnalysis()) {
       if (
-          context.mainProject.targetSdk < MIN_TARGET ||
-              isHoldingPostNotificationsViaAnnotations(node) ||
-              isHoldingPostNotifications(context.mainProject) != false ||
-              context.mainProject.isLibrary
+        context.mainProject.targetSdk < MIN_TARGET ||
+          isHoldingPostNotificationsViaAnnotations(node) ||
+          isHoldingPostNotifications(context.mainProject) != false ||
+          context.mainProject.isLibrary
       ) {
         return
       }
@@ -265,21 +261,16 @@ class NotificationPermissionDetector : Detector(), SourceCodeScanner, ClassScann
   }
 
   private fun getWarningMessage() =
-      "When targeting Android 13 or higher, posting a permission requires holding the `POST_NOTIFICATIONS` permission"
+    "When targeting Android 13 or higher, posting a permission requires holding the `POST_NOTIFICATIONS` permission"
 
   override fun getApplicableCallNames(): List<String> = listOf("notify")
 
-  override fun checkCall(
-      context: ClassContext,
-      classNode: ClassNode,
-      method: MethodNode,
-      call: MethodInsnNode,
-  ) {
+  override fun checkCall(context: ClassContext, classNode: ClassNode, method: MethodNode, call: MethodInsnNode) {
     val owner = classNode.name
     if (
-        owner.startsWith("android/") ||
-            owner.startsWith("androidx/") ||
-            owner.startsWith("com/google/android/gms/") // such as play-services-base
+      owner.startsWith("android/") ||
+        owner.startsWith("androidx/") ||
+        owner.startsWith("com/google/android/gms/") // such as play-services-base
     ) {
       // Call from within AndroidX libraries; just depending on AndroidX doesn't mean you're using
       // its notification utility methods.
@@ -288,10 +279,10 @@ class NotificationPermissionDetector : Detector(), SourceCodeScanner, ClassScann
     if (call.owner == "android/app/NotificationManager" || call.owner == "androidx/core/app/NotificationManagerCompat") {
       val map = context.getPartialResults(ISSUE).map()
       if (
-          !map.containsKey(KEY_CLASS) ||
-              // We special case the exo player reference later, so if there are any *other*
-              // notification manager usages, make sure we record those
-              map[KEY_CLASS_NAME]?.startsWith(EXO_PLAYER_CLASS_NAME_PREFIX) == true
+        !map.containsKey(KEY_CLASS) ||
+          // We special case the exo player reference later, so if there are any *other*
+          // notification manager usages, make sure we record those
+          map[KEY_CLASS_NAME]?.startsWith(EXO_PLAYER_CLASS_NAME_PREFIX) == true
       ) {
         if (isHoldingPostNotificationsViaAnnotations(classNode, method)) {
           return
@@ -356,8 +347,8 @@ class NotificationPermissionDetector : Detector(), SourceCodeScanner, ClassScann
     val gradleFile = findGradleBuildFile(context.mainProject.dir)
 
     val location =
-        if (manifest != null) Location.create(manifest)
-        else if (gradleFile.isFile) Location.create(gradleFile) else map.getLocation(KEY_CLASS) ?: return
+      if (manifest != null) Location.create(manifest)
+      else if (gradleFile.isFile) Location.create(gradleFile) else map.getLocation(KEY_CLASS) ?: return
     val message = getWarningMessage() + " (usage from ${ClassContext.getFqcn(owner)})"
     context.report(ISSUE, location, message, createFix())
   }
@@ -417,14 +408,9 @@ class NotificationPermissionDetector : Detector(), SourceCodeScanner, ClassScann
     return null
   }
 
-  private fun isHoldingPostNotificationsViaAnnotations(
-      classNode: ClassNode,
-      method: MethodNode,
-  ): Boolean {
+  private fun isHoldingPostNotificationsViaAnnotations(classNode: ClassNode, method: MethodNode): Boolean {
     val requirement =
-        method.invisibleAnnotations?.getPermissionRequirement()
-            ?: classNode.invisibleAnnotations?.getPermissionRequirement()
-            ?: return false
+      method.invisibleAnnotations?.getPermissionRequirement() ?: classNode.invisibleAnnotations?.getPermissionRequirement() ?: return false
 
     return isHoldingPostNotificationsViaAnnotations(requirement)
   }

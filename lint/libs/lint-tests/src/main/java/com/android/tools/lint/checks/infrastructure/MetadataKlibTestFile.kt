@@ -28,12 +28,7 @@ import org.jetbrains.kotlin.cli.common.ExitCode
 import org.jetbrains.kotlin.cli.metadata.KotlinMetadataCompiler
 import org.junit.Assert
 
-class MetadataKlibTestFile(
-    to: String,
-    val files: Array<out TestFile>,
-    val checksum: Long?,
-    val encoding: String?,
-) : TestFile() {
+class MetadataKlibTestFile(to: String, val files: Array<out TestFile>, val checksum: Long?, val encoding: String?) : TestFile() {
 
   init {
     to(to)
@@ -53,13 +48,13 @@ class MetadataKlibTestFile(
     val tmpSrc = createTempDirectory()
     val tmpOut = createTempDirectory()
     val args =
-        buildList<String> {
-          files.map { add(it.createFile(tmpSrc).path) }
-          add("-d")
-          add(tmpOut.path)
-          // This flag may simplify the output, but seems marginal and/or unnecessary.
-          // add("-Xmetadata-klib=true")
-        }
+      buildList<String> {
+        files.map { add(it.createFile(tmpSrc).path) }
+        add("-d")
+        add(tmpOut.path)
+        // This flag may simplify the output, but seems marginal and/or unnecessary.
+        // add("-Xmetadata-klib=true")
+      }
 
     val outStream = ByteArrayOutputStream()
     val compilerClass = KotlinMetadataCompiler::class.java
@@ -72,10 +67,10 @@ class MetadataKlibTestFile(
     val (checksum, encodings) = describeTestFiles(targetDir, tmpOut)
     tmpOut.deleteRecursively()
     Assert.fail(
-        "Update the test source declaration for $targetRelativePath with this encoding:" +
-            "\n\n\"\"\"\n$encodings\"\"\"" +
-            "\n\nAlso the checksum is 0x" +
-            checksum.toString(16)
+      "Update the test source declaration for $targetRelativePath with this encoding:" +
+        "\n\n\"\"\"\n$encodings\"\"\"" +
+        "\n\nAlso the checksum is 0x" +
+        checksum.toString(16)
     )
   }
 
@@ -128,13 +123,13 @@ class MetadataKlibTestFile(
       val actualChecksum = computeCheckSum(targetPath, listOf(actualBytes))
       if (checksum.toInt() != actualChecksum) {
         Assert.fail(
-            "The checksum does not match for $targetRelativePath;\n" +
-                "expected " +
-                "0x${Integer.toHexString(checksum.toInt())} but was " +
-                "0x${Integer.toHexString(actualChecksum)}.\n" +
-                "Has the source file been changed without updating the binaries?\n" +
-                "Don't just update the checksum -- delete the binary file arguments and " +
-                "re-run the test first!"
+          "The checksum does not match for $targetRelativePath;\n" +
+            "expected " +
+            "0x${Integer.toHexString(checksum.toInt())} but was " +
+            "0x${Integer.toHexString(actualChecksum)}.\n" +
+            "Has the source file been changed without updating the binaries?\n" +
+            "Don't just update the checksum -- delete the binary file arguments and " +
+            "re-run the test first!"
         )
       }
     }

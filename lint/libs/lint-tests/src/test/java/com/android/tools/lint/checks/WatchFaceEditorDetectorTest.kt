@@ -22,10 +22,10 @@ class WatchFaceEditorDetectorTest : AbstractCheckTest() {
   fun testDocumentationExample() {
     // Wrong launch mode
     lint()
-        .files(
-            xml(
-                    "AndroidManifest.xml",
-                    """
+      .files(
+        xml(
+            "AndroidManifest.xml",
+            """
                     <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                         package="test.pkg">
                         <application>
@@ -39,34 +39,34 @@ class WatchFaceEditorDetectorTest : AbstractCheckTest() {
                             </activity>
                         </application>
                     </manifest>""",
-                )
-                .indented()
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented()
+      )
+      .run()
+      .expect(
+        """
             AndroidManifest.xml:7: Warning: Watch face editor must use launchMode="standard" [WatchFaceEditor]
                         android:launchMode="singleTask">
                         ~~~~~~~~~~~~~~~~~~
             0 errors, 1 warnings"""
-        )
-        .verifyFixes()
-        .expectFixDiffs(
-            """
+      )
+      .verifyFixes()
+      .expectFixDiffs(
+        """
                 Fix for AndroidManifest.xml line 7: Set launchMode="standard":
                 @@ -9 +9 @@
                 -            android:launchMode="singleTask" >
                 +            android:launchMode="standard" >
         """
-        )
+      )
   }
 
   fun testCorrectLaunchMode() {
     lint()
-        .files(
-            xml(
-                    "AndroidManifest.xml",
-                    """
+      .files(
+        xml(
+            "AndroidManifest.xml",
+            """
                     <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                         package="test.pkg">
                         <application>
@@ -80,10 +80,10 @@ class WatchFaceEditorDetectorTest : AbstractCheckTest() {
                             </activity>
                         </application>
                     </manifest>""",
-                )
-                .indented()
-        )
-        .run()
-        .expectClean()
+          )
+          .indented()
+      )
+      .run()
+      .expectClean()
   }
 }

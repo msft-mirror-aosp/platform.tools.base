@@ -26,9 +26,9 @@ class KotlincFE10DetectorTest : AbstractCheckTest() {
 
   fun testDocumentationExample() {
     lint()
-        .files(
-            kotlin(
-                    """
+      .files(
+        kotlin(
+            """
                 package test.pkg
 
                 import com.android.tools.lint.client.api.UElementHandler
@@ -86,14 +86,14 @@ class KotlincFE10DetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-                )
-                .indented(),
-            *TestFiles.getLintClassPath(),
-        )
-        .skipTestModes(TestMode.BODY_REMOVAL, TestMode.IMPORT_ALIAS)
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+        *TestFiles.getLintClassPath(),
+      )
+      .skipTestModes(TestMode.BODY_REMOVAL, TestMode.IMPORT_ALIAS)
+      .run()
+      .expect(
+        """
                 src/test/pkg/TestVisitor.kt:28: Warning: org.jetbrains.kotlin.resolve.BindingContext appears to be part of the old K1 Kotlin compiler. Avoid using it if possible; K1 will be going away soon. [KotlincFE10]
                         val bindingContext = service.getBindingContext(declaration) // ERROR
                                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -126,14 +126,14 @@ class KotlincFE10DetectorTest : AbstractCheckTest() {
                                                                      ~~~~~~~~~~
                 0 errors, 10 warnings
                 """
-        )
+      )
   }
 
   fun testKotlinPsiUtils() {
     lint()
-        .files(
-            kotlin(
-                    """
+      .files(
+        kotlin(
+            """
                 package test.pkg
 
                 import org.jetbrains.kotlin.descriptors.CallableDescriptor
@@ -164,14 +164,14 @@ class KotlincFE10DetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-                )
-                .indented(),
-            *TestFiles.getLintClassPath(),
-        )
-        .skipTestModes(TestMode.BODY_REMOVAL, TestMode.IMPORT_ALIAS)
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+        *TestFiles.getLintClassPath(),
+      )
+      .skipTestModes(TestMode.BODY_REMOVAL, TestMode.IMPORT_ALIAS)
+      .run()
+      .expect(
+        """
                 src/test/pkg/KotlinPsiUtils.kt:15: Warning: org.jetbrains.kotlin.resolve.BindingContext appears to be part of the old K1 Kotlin compiler. Avoid using it if possible; K1 will be going away soon. [KotlincFE10]
                         val context = ktSource.getBindingContext() // ERROR
                                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -195,14 +195,14 @@ class KotlincFE10DetectorTest : AbstractCheckTest() {
                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 0 errors, 7 warnings
                 """
-        )
+      )
   }
 
   fun testUnusedValueUtils() {
     lint()
-        .files(
-            kotlin(
-                    """
+      .files(
+        kotlin(
+            """
                 package test.pkg
 
                 import org.jetbrains.kotlin.descriptors.synthetic.FunctionInterfaceConstructorDescriptor
@@ -258,15 +258,15 @@ class KotlincFE10DetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-                )
-                .indented(),
-            *TestFiles.getLintClassPath(),
-        )
-        .skipTestModes(TestMode.BODY_REMOVAL, TestMode.IMPORT_ALIAS, TestMode.IF_TO_WHEN)
-        .allowDuplicates()
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+        *TestFiles.getLintClassPath(),
+      )
+      .skipTestModes(TestMode.BODY_REMOVAL, TestMode.IMPORT_ALIAS, TestMode.IF_TO_WHEN)
+      .allowDuplicates()
+      .run()
+      .expect(
+        """
                 src/test/pkg/UnusedValueUtils.kt:22: Warning: org.jetbrains.kotlin.resolve.BindingContext appears to be part of the old K1 Kotlin compiler. Avoid using it if possible; K1 will be going away soon. [KotlincFE10]
                         return service?.getBindingContext(this) ?: BindingContext.EMPTY // ERROR
                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -329,6 +329,6 @@ class KotlincFE10DetectorTest : AbstractCheckTest() {
                              ~~~~~~~~~
                 0 errors, 20 warnings
                 """
-        )
+      )
   }
 }

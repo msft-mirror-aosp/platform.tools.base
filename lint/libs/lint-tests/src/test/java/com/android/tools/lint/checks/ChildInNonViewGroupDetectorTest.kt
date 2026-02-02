@@ -24,10 +24,10 @@ class ChildInNonViewGroupDetectorTest : AbstractCheckTest() {
 
   fun `test wrong nesting of TextView within ImageView`() {
     lint()
-        .files(
-            xml(
-                    "res/layout/wrong.xml",
-                    """
+      .files(
+        xml(
+            "res/layout/wrong.xml",
+            """
               <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
                   android:orientation="vertical"
                   android:layout_width="match_parent"
@@ -41,26 +41,26 @@ class ChildInNonViewGroupDetectorTest : AbstractCheckTest() {
 
               </LinearLayout>
             """,
-                )
-                .indented()
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented()
+      )
+      .run()
+      .expect(
+        """
           res/layout/wrong.xml:9: Error: A ImageView should have no children declared in XML [ChildInNonViewGroup]
                   <TextView />
                    ~~~~~~~~
           1 errors, 0 warnings
         """
-        )
+      )
   }
 
   fun `test normal nesting of ImageView within a LinearLayout`() {
     lint()
-        .files(
-            xml(
-                    "res/layout/normal.xml",
-                    """
+      .files(
+        xml(
+            "res/layout/normal.xml",
+            """
               <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
                   android:orientation="vertical"
                   android:layout_width="match_parent"
@@ -73,19 +73,19 @@ class ChildInNonViewGroupDetectorTest : AbstractCheckTest() {
 
               </LinearLayout>
             """,
-                )
-                .indented()
-        )
-        .run()
-        .expectClean()
+          )
+          .indented()
+      )
+      .run()
+      .expectClean()
   }
 
   fun `test for nesting a marker`() {
     lint()
-        .files(
-            xml(
-                    "res/layout/normal.xml",
-                    """
+      .files(
+        xml(
+            "res/layout/normal.xml",
+            """
             <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
                 android:orientation="vertical"
                 android:layout_width="match_parent"
@@ -99,10 +99,10 @@ class ChildInNonViewGroupDetectorTest : AbstractCheckTest() {
 
             </LinearLayout>
           """,
-                )
-                .indented()
-        )
-        .run()
-        .expectClean()
+          )
+          .indented()
+      )
+      .run()
+      .expectClean()
   }
 }

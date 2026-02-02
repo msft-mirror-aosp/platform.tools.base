@@ -28,17 +28,8 @@ import org.jetbrains.uast.UFile
  * parentheses) often test modes don't overlap and so we don't need to run through all the machinery twice.
  */
 internal class UastSourceTransformationTestModeGroup(vararg modes: TestMode) :
-    UastSourceTransformationTestMode(
-        "Source code transformations",
-        "TestMode.SOURCE_CODE_TRANSFORMATIONS",
-        "default",
-    ) {
-  override fun transform(
-      source: String,
-      context: JavaContext,
-      root: UFile,
-      clientData: MutableMap<String, Any>,
-  ): MutableList<Edit> {
+  UastSourceTransformationTestMode("Source code transformations", "TestMode.SOURCE_CODE_TRANSFORMATIONS", "default") {
+  override fun transform(source: String, context: JavaContext, root: UFile, clientData: MutableMap<String, Any>): MutableList<Edit> {
     // This should never be called since we override [processTestFiles]
     // to perform composite editing
     throw IllegalStateException()
@@ -46,7 +37,7 @@ internal class UastSourceTransformationTestModeGroup(vararg modes: TestMode) :
 
   val modes: List<TestMode> = modes.toList()
   private val validModes: MutableList<UastSourceTransformationTestMode> =
-      modes.mapNotNull { it as? UastSourceTransformationTestMode }.toMutableList()
+    modes.mapNotNull { it as? UastSourceTransformationTestMode }.toMutableList()
   override val folderName: String = "default"
   override val modifiesSources: Boolean = true
 
@@ -69,10 +60,7 @@ internal class UastSourceTransformationTestModeGroup(vararg modes: TestMode) :
     }
   }
 
-  private fun partition(
-      testContext: TestModeContext,
-      contexts: List<JavaContext>,
-  ): List<SourceTransformationTestMode> {
+  private fun partition(testContext: TestModeContext, contexts: List<JavaContext>): List<SourceTransformationTestMode> {
     // We're assuming two test modes don't cancel each other out, e.g. we shouldn't
     // put both an "add unnecessary parentheses" and a "remove unnecessary parentheses" mode
     // here into the same group)
@@ -113,7 +101,7 @@ internal class UastSourceTransformationTestModeGroup(vararg modes: TestMode) :
       var conflict = false
       for ((file, edits) in pending) {
         val pair: Pair<String, MutableList<Edit>> =
-            currentEditMap[file] ?: Pair<String, MutableList<Edit>>(contents[file]!!, mutableListOf()).also { currentEditMap[file] = it }
+          currentEditMap[file] ?: Pair<String, MutableList<Edit>>(contents[file]!!, mutableListOf()).also { currentEditMap[file] = it }
         val currentEdits = pair.second
         if (currentEdits.conflicts(edits)) {
           conflict = true
@@ -167,10 +155,10 @@ internal class UastSourceTransformationTestModeGroup(vararg modes: TestMode) :
   }
 
   override fun processTestFiles(
-      testContext: TestModeContext,
-      projectDir: File,
-      sdkHome: File?,
-      changeCallback: (JavaContext, String) -> Unit,
+    testContext: TestModeContext,
+    projectDir: File,
+    sdkHome: File?,
+    changeCallback: (JavaContext, String) -> Unit,
   ): Boolean {
     error("Should not be called")
   }

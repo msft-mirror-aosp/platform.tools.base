@@ -56,20 +56,20 @@ class RemoteViewDetector : Detector(), SourceCodeScanner {
     /** Unsupported views in a remote view. */
     @JvmField
     val ISSUE =
-        Issue.create(
-            id = "RemoteViewLayout",
-            briefDescription = "Unsupported View in RemoteView",
-            explanation =
-                """
+      Issue.create(
+        id = "RemoteViewLayout",
+        briefDescription = "Unsupported View in RemoteView",
+        explanation =
+          """
             In a `RemoteView`, only some layouts and views are allowed.
             """,
-            moreInfo = "https://developer.android.com/reference/android/widget/RemoteViews",
-            category = Category.CORRECTNESS,
-            priority = 6,
-            severity = Severity.ERROR,
-            androidSpecific = true,
-            implementation = IMPLEMENTATION,
-        )
+        moreInfo = "https://developer.android.com/reference/android/widget/RemoteViews",
+        category = Category.CORRECTNESS,
+        priority = 6,
+        severity = Severity.ERROR,
+        androidSpecific = true,
+        implementation = IMPLEMENTATION,
+      )
 
     private const val KEY_LAYOUT = "layout"
   }
@@ -78,11 +78,7 @@ class RemoteViewDetector : Detector(), SourceCodeScanner {
     return listOf("android.widget.RemoteViews")
   }
 
-  override fun visitConstructor(
-      context: JavaContext,
-      node: UCallExpression,
-      constructor: PsiMethod,
-  ) {
+  override fun visitConstructor(context: JavaContext, node: UCallExpression, constructor: PsiMethod) {
     val arguments = node.valueArguments
     if (arguments.size != 2) return
     val argument = arguments[1]
@@ -94,8 +90,8 @@ class RemoteViewDetector : Detector(), SourceCodeScanner {
     val client = context.client
     val globalAnalysis = context.isGlobalAnalysis()
     val resources =
-        if (globalAnalysis) client.getResources(context.mainProject, LOCAL_DEPENDENCIES)
-        else client.getResources(context.project, PROJECT_ONLY)
+      if (globalAnalysis) client.getResources(context.mainProject, LOCAL_DEPENDENCIES)
+      else client.getResources(context.project, PROJECT_ONLY)
 
     // See if the associated resource references propertyValuesHolder, and if so
     // suggest switching to AnimatorInflaterCompat.loadAnimator.
@@ -126,11 +122,11 @@ class RemoteViewDetector : Detector(), SourceCodeScanner {
    * be applied to the [incident] (used for partial analysis).
    */
   private fun checkLayouts(
-      context: Context,
-      layoutName: String,
-      layouts: List<ResourceItem>,
-      node: UCallExpression?,
-      incident: Incident?,
+    context: Context,
+    layoutName: String,
+    layouts: List<ResourceItem>,
+    node: UCallExpression?,
+    incident: Incident?,
   ): Boolean {
     var tags: MutableSet<String>? = null
     val paths = layouts.asSequence().mapNotNull { it.source }.toSet()
@@ -169,10 +165,10 @@ class RemoteViewDetector : Detector(), SourceCodeScanner {
   }
 
   private fun createIncident(context: Context, node: UCallExpression, message: String) =
-      Incident(ISSUE, node, context.getLocation(node), message)
+    Incident(ISSUE, node, context.getLocation(node), message)
 
   private fun createErrorMessage(layoutName: String, sorted: SortedSet<String>) =
-      "`@layout/${layoutName}` includes views not allowed in a `RemoteView`: ${sorted.joinToString()}"
+    "`@layout/${layoutName}` includes views not allowed in a `RemoteView`: ${sorted.joinToString()}"
 
   private fun isSupportedTag(tag: String, min: Int): Boolean {
     if (tag.startsWith(VIEW_PKG_PREFIX) || tag.startsWith(WIDGET_PKG_PREFIX)) {

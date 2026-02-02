@@ -62,9 +62,9 @@ class AppBundleLocaleChangesDetector : Detector(), SourceCodeScanner, GradleScan
       REF_SETLOCALE,
       REF_SETLOCALES -> {
         if (
-            localeChangeLocation == null &&
-                context.evaluator.isMemberInClass(method, CLASS_CONFIGURATION) &&
-                (!isLocationSuppressed(context, node))
+          localeChangeLocation == null &&
+            context.evaluator.isMemberInClass(method, CLASS_CONFIGURATION) &&
+            (!isLocationSuppressed(context, node))
         ) {
           localeChangeLocation = context.getLocation(node)
         }
@@ -78,12 +78,12 @@ class AppBundleLocaleChangesDetector : Detector(), SourceCodeScanner, GradleScan
         val evaluator = context.evaluator
         with(method.parameterList) {
           if (
-              !playCoreLanguageRequestFound &&
-                  parameters.size == 4 &&
-                  evaluator.typeMatches(parameters[0].type, CLASS_SPLITINSTALLMANAGER) &&
-                  evaluator.isSuspend(method) &&
-                  (node.valueArgumentCount == 2 ||
-                      node.sourcePsi?.collectDescendantsOfType<KtValueArgumentName>()?.any { it.text == "languages" } == true)
+            !playCoreLanguageRequestFound &&
+              parameters.size == 4 &&
+              evaluator.typeMatches(parameters[0].type, CLASS_SPLITINSTALLMANAGER) &&
+              evaluator.isSuspend(method) &&
+              (node.valueArgumentCount == 2 ||
+                node.sourcePsi?.collectDescendantsOfType<KtValueArgumentName>()?.any { it.text == "languages" } == true)
           ) {
             playCoreLanguageRequestFound = true
           }
@@ -93,19 +93,15 @@ class AppBundleLocaleChangesDetector : Detector(), SourceCodeScanner, GradleScan
   }
 
   @Suppress("LintImplPsiEquals")
-  override fun visitReference(
-      context: JavaContext,
-      reference: UReferenceExpression,
-      referenced: PsiElement,
-  ) {
+  override fun visitReference(context: JavaContext, reference: UReferenceExpression, referenced: PsiElement) {
     if (localeChangeLocation == null && referenced is PsiField && context.evaluator.isMemberInClass(referenced, CLASS_CONFIGURATION)) {
       // Check if we're assigning to the `locale` field
       val binaryExpr = reference.getParentOfType(UBinaryExpression::class.java)
       if (
-          binaryExpr != null &&
-              binaryExpr.operator == UastBinaryOperator.ASSIGN &&
-              binaryExpr.leftOperand.tryResolve() == referenced &&
-              (!isLocationSuppressed(context, reference))
+        binaryExpr != null &&
+          binaryExpr.operator == UastBinaryOperator.ASSIGN &&
+          binaryExpr.leftOperand.tryResolve() == referenced &&
+          (!isLocationSuppressed(context, reference))
       ) {
         localeChangeLocation = context.getLocation(reference)
       }
@@ -127,14 +123,14 @@ class AppBundleLocaleChangesDetector : Detector(), SourceCodeScanner, GradleScan
   }
 
   override fun checkDslPropertyAssignment(
-      context: GradleContext,
-      property: String,
-      value: String,
-      parent: String,
-      parentParent: String?,
-      propertyCookie: Any,
-      valueCookie: Any,
-      statementCookie: Any,
+    context: GradleContext,
+    property: String,
+    value: String,
+    parent: String,
+    parentParent: String?,
+    propertyCookie: Any,
+    valueCookie: Any,
+    statementCookie: Any,
   ) {
     if (property == "enableSplit" && parent == "language" && parentParent == "bundle" && value == "false") {
       bundleLanguageSplittingDisabled = true
@@ -145,10 +141,10 @@ class AppBundleLocaleChangesDetector : Detector(), SourceCodeScanner, GradleScan
     if (context.isGlobalAnalysis()) {
       if (context.project === context.mainProject) {
         checkConditionsAndReport(
-            context,
-            localeChangeLocation,
-            playCoreLanguageRequestFound = playCoreLanguageRequestFound,
-            bundleLanguageSplittingDisabled = bundleLanguageSplittingDisabled,
+          context,
+          localeChangeLocation,
+          playCoreLanguageRequestFound = playCoreLanguageRequestFound,
+          bundleLanguageSplittingDisabled = bundleLanguageSplittingDisabled,
         )
       }
     } else {
@@ -167,57 +163,53 @@ class AppBundleLocaleChangesDetector : Detector(), SourceCodeScanner, GradleScan
     if (context.project === context.mainProject) {
       with(partialResults.map()) {
         checkConditionsAndReport(
-            context,
-            getLocation(KEY_LOCALE_CHANGE_LOCATION),
-            playCoreLanguageRequestFound = getBoolean(KEY_PLAYCORE_LANGUAGE_REQUEST_FOUND) ?: false,
-            bundleLanguageSplittingDisabled = getBoolean(KEY_BUNDLE_LANGUAGE_SPLITTING_DISABLED) ?: false,
+          context,
+          getLocation(KEY_LOCALE_CHANGE_LOCATION),
+          playCoreLanguageRequestFound = getBoolean(KEY_PLAYCORE_LANGUAGE_REQUEST_FOUND) ?: false,
+          bundleLanguageSplittingDisabled = getBoolean(KEY_BUNDLE_LANGUAGE_SPLITTING_DISABLED) ?: false,
         )
       }
     }
   }
 
   private fun checkConditionsAndReport(
-      context: Context,
-      localeChangeLocation: Location?,
-      playCoreLanguageRequestFound: Boolean,
-      bundleLanguageSplittingDisabled: Boolean,
+    context: Context,
+    localeChangeLocation: Location?,
+    playCoreLanguageRequestFound: Boolean,
+    bundleLanguageSplittingDisabled: Boolean,
   ) {
     if (localeChangeLocation != null && !(playCoreLanguageRequestFound || bundleLanguageSplittingDisabled)) {
       Incident(context)
-          .issue(ISSUE)
-          .message(
-              "Found dynamic locale changes, but did not find corresponding Play Core " +
-                  "library calls for downloading languages and splitting by language " +
-                  "is not disabled in the `bundle` configuration"
-          )
-          .location(localeChangeLocation)
-          .report()
+        .issue(ISSUE)
+        .message(
+          "Found dynamic locale changes, but did not find corresponding Play Core " +
+            "library calls for downloading languages and splitting by language " +
+            "is not disabled in the `bundle` configuration"
+        )
+        .location(localeChangeLocation)
+        .report()
     }
   }
 
   companion object {
     @JvmField
     val ISSUE =
-        Issue.create(
-            id = "AppBundleLocaleChanges",
-            briefDescription = "App Bundle handling of runtime locale changes",
-            explanation =
-                """
+      Issue.create(
+        id = "AppBundleLocaleChanges",
+        briefDescription = "App Bundle handling of runtime locale changes",
+        explanation =
+          """
                 When changing locales at runtime (e.g. to provide an in-app language switcher), \
                 the Android App Bundle must be configured to not split by locale or the Play Core \
                 library must be used to download additional locales at runtime.
                 """,
-            category = Category.CORRECTNESS,
-            priority = 5,
-            severity = Severity.WARNING,
-            androidSpecific = true,
-            implementation =
-                Implementation(
-                    AppBundleLocaleChangesDetector::class.java,
-                    EnumSet.of(Scope.JAVA_FILE, Scope.GRADLE_FILE),
-                ),
-            moreInfo = "https://developer.android.com/guide/app-bundle/configure-base#handling_language_changes",
-        )
+        category = Category.CORRECTNESS,
+        priority = 5,
+        severity = Severity.WARNING,
+        androidSpecific = true,
+        implementation = Implementation(AppBundleLocaleChangesDetector::class.java, EnumSet.of(Scope.JAVA_FILE, Scope.GRADLE_FILE)),
+        moreInfo = "https://developer.android.com/guide/app-bundle/configure-base#handling_language_changes",
+      )
 
     private const val REF_SETLOCALE = "setLocale"
     private const val REF_SETLOCALES = "setLocales"

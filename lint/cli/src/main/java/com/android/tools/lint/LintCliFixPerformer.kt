@@ -35,17 +35,17 @@ import org.xml.sax.SAXException
 
 /** Support for applying quickfixes directly. */
 open class LintCliFixPerformer(
-    private val client: LintCliClient,
-    /** Whether to emit statistics about number of files modified and number of edits applied. */
-    private val printStatistics: Boolean = true,
-    /** Should applied fixes be limited to those marked as safe to be applied automatically? */
-    requireAutoFixable: Boolean = true,
-    /** Should we include markers in the applied files like indicators for the marker and selection? */
-    private val includeMarkers: Boolean = false,
-    /** Should we also add import statements? */
-    private val updateImports: Boolean = includeMarkers,
-    /** Whether to perform shortening of all symbols in the replacement string, not just imported symbpls. */
-    private val shortenAll: Boolean = includeMarkers,
+  private val client: LintCliClient,
+  /** Whether to emit statistics about number of files modified and number of edits applied. */
+  private val printStatistics: Boolean = true,
+  /** Should applied fixes be limited to those marked as safe to be applied automatically? */
+  requireAutoFixable: Boolean = true,
+  /** Should we include markers in the applied files like indicators for the marker and selection? */
+  private val includeMarkers: Boolean = false,
+  /** Should we also add import statements? */
+  private val updateImports: Boolean = includeMarkers,
+  /** Whether to perform shortening of all symbols in the replacement string, not just imported symbpls. */
+  private val shortenAll: Boolean = includeMarkers,
 ) : LintFixPerformer(client, requireAutoFixable) {
   fun getSourceText(file: File): CharSequence {
     return client.getSourceText(file)
@@ -80,11 +80,7 @@ open class LintCliFixPerformer(
     return super.computeEdits(incident, lintFix, LintCliFileProvider())
   }
 
-  override fun applyEdits(
-      fileProvider: FileProvider,
-      fileData: PendingEditFile,
-      edits: List<PendingEdit>,
-  ) {
+  override fun applyEdits(fileProvider: FileProvider, fileData: PendingEditFile, edits: List<PendingEdit>) {
     var fileContents = fileProvider.getFileContents(fileData)
 
     // First selection in the source (edits are sorted in reverse order so pick the last one)
@@ -100,12 +96,7 @@ open class LintCliFixPerformer(
           // attributes; these use the fix().set().todo() call, and todo will default
           // to selecting the "TODO" token, but we only want to select the first one.
         } else {
-          fileContents =
-              injectSelection(
-                  fileContents,
-                  edit.startOffset + edit.selectStart,
-                  edit.startOffset + edit.selectEnd,
-              )
+          fileContents = injectSelection(fileContents, edit.startOffset + edit.selectStart, edit.startOffset + edit.selectEnd)
         }
       }
     }
@@ -113,44 +104,31 @@ open class LintCliFixPerformer(
   }
 
   /** Indicates caret position with a `|` and the selection range using square brackets if set by the fix. */
-  private fun injectSelection(
-      fileContents: String,
-      selectionStartOffset: Int,
-      selectionEndOffset: Int,
-  ): String {
+  private fun injectSelection(fileContents: String, selectionStartOffset: Int, selectionEndOffset: Int): String {
     assert(includeMarkers)
     if (selectionStartOffset == -1) {
       return fileContents
     }
     return StringBuilder(fileContents)
-        .apply {
-          if (selectionEndOffset == selectionStartOffset) {
-            replace(selectionEndOffset, selectionEndOffset, "|")
-          } else {
-            replace(selectionEndOffset, selectionEndOffset, "]|")
-            replace(selectionStartOffset, selectionStartOffset, "[")
-          }
+      .apply {
+        if (selectionEndOffset == selectionStartOffset) {
+          replace(selectionEndOffset, selectionEndOffset, "|")
+        } else {
+          replace(selectionEndOffset, selectionEndOffset, "]|")
+          replace(selectionStartOffset, selectionStartOffset, "[")
         }
-        .toString()
+      }
+      .toString()
   }
 
-  override fun printStatistics(
-      editMap: MutableMap<String, Int>,
-      appliedEditCount: Int,
-      editedFileCount: Int,
-  ) {
+  override fun printStatistics(editMap: MutableMap<String, Int>, appliedEditCount: Int, editedFileCount: Int) {
     if (printStatistics && editedFileCount > 0) {
       val printWriter = PrintWriter(System.out, true, Charsets.UTF_8)
       printStatistics(printWriter, editMap, appliedEditCount, editedFileCount)
     }
   }
 
-  protected open fun printStatistics(
-      writer: PrintWriter,
-      editMap: MutableMap<String, Int>,
-      appliedEditCount: Int,
-      editedFileCount: Int,
-  ) {
+  protected open fun printStatistics(writer: PrintWriter, editMap: MutableMap<String, Int>, appliedEditCount: Int, editedFileCount: Int) {
     if (editMap.keys.size == 1) {
       writer.println("Applied $appliedEditCount edits across $editedFileCount files for this fix: ${editMap.keys.first()}")
     } else {
@@ -170,10 +148,10 @@ open class LintCliFixPerformer(
   }
 
   override fun customizeReplaceString(
-      fileProvider: FileProvider,
-      file: PendingEditFile,
-      replaceFix: LintFix.ReplaceString,
-      @Suppress("PARAMETER_NAME_CHANGED_ON_OVERRIDE") originalReplacement: String,
+    fileProvider: FileProvider,
+    file: PendingEditFile,
+    replaceFix: LintFix.ReplaceString,
+    @Suppress("PARAMETER_NAME_CHANGED_ON_OVERRIDE") originalReplacement: String,
   ): String {
     var replacement = originalReplacement
     val contents: String = fileProvider.getFileContents(file)
@@ -295,11 +273,11 @@ open class LintCliFixPerformer(
                 // could also terminate here, but in this case, we'll just insert before
                 // this import
                 insertOffset =
-                    if (contents.subSequence(last, lineEnd).contains("/*")) {
-                      last
-                    } else {
-                      min(lineEnd + 1, contents.length)
-                    }
+                  if (contents.subSequence(last, lineEnd).contains("/*")) {
+                    last
+                  } else {
+                    min(lineEnd + 1, contents.length)
+                  }
               } else {
                 // No imports: place after package statement Note that there might be
                 // no package statement -- and we can't just skip comments to find
@@ -331,12 +309,12 @@ open class LintCliFixPerformer(
               }
             }
             val importStatement =
-                if (isJava) {
-                  "import ${if (isStaticImport) "static " else ""}$import;\n"
-                } else {
-                  // Kotlin
-                  "import $import\n"
-                }
+              if (isJava) {
+                "import ${if (isStaticImport) "static " else ""}$import;\n"
+              } else {
+                // Kotlin
+                "import $import\n"
+              }
 
             file.edits.add(PendingEdit(replaceFix, insertOffset, insertOffset, importStatement))
           }
@@ -354,12 +332,7 @@ open class LintCliFixPerformer(
    * For example, given the package prefix `p1.p2`, for the source string `p1.p2.p3.Class1, `p1.p2.Class2`, this method will return
    * `p1.p2.p3.Class1, Class2`.
    */
-  private fun removePackage(
-      source: String,
-      prefix: String,
-      names: Set<String>,
-      isWildcard: Boolean,
-  ): String {
+  private fun removePackage(source: String, prefix: String, names: Set<String>, isWildcard: Boolean): String {
     if (prefix.isEmpty()) {
       return source
     }
@@ -512,11 +485,11 @@ open class LintCliFixPerformer(
 
     override fun getXmlDocument(file: PendingEditFile): Document? {
       return documents[file]
-          ?: createXmlDocument(file).also {
-            if (it != null) {
-              documents[file] = it
-            }
+        ?: createXmlDocument(file).also {
+          if (it != null) {
+            documents[file] = it
           }
+        }
     }
 
     override fun createBinaryFile(fileData: PendingEditFile, contents: ByteArray) {

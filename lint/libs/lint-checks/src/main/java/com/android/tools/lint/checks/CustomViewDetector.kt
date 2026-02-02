@@ -52,16 +52,16 @@ class CustomViewDetector : Detector(), SourceCodeScanner {
       }
 
       parameterIndex =
-          if (size == 1) {
-            // obtainStyledAttributes(int[] attrs)
-            0
-          } else {
-            // obtainStyledAttributes(int resid, int[] attrs)
-            // obtainStyledAttributes(AttributeSet set, int[] attrs)
-            // obtainStyledAttributes(AttributeSet set, int[] attrs, int defStyleAttr, int
-            //   defStyleRes)
-            1
-          }
+        if (size == 1) {
+          // obtainStyledAttributes(int[] attrs)
+          0
+        } else {
+          // obtainStyledAttributes(int resid, int[] attrs)
+          // obtainStyledAttributes(AttributeSet set, int[] attrs)
+          // obtainStyledAttributes(AttributeSet set, int[] attrs, int defStyleAttr, int
+          //   defStyleRes)
+          1
+        }
     } else {
       if (!context.evaluator.isMemberInSubClassOf(method, "androidx.core.content.ContextKt", false)) {
         return
@@ -87,9 +87,9 @@ class CustomViewDetector : Detector(), SourceCodeScanner {
     if (context.evaluator.extendsClass(psiClass, CLASS_VIEW, false)) {
       if (styleableName != className) {
         val message =
-            "By convention, the custom view (`$className`) and the declare-styleable " +
-                "(`$styleableName`) should have the same name (various editor features " +
-                "rely on this convention)"
+          "By convention, the custom view (`$className`) and the declare-styleable " +
+            "(`$styleableName`) should have the same name (various editor features " +
+            "rely on this convention)"
         context.report(ISSUE, node, context.getLocation(expression), message)
       }
     } else if (context.evaluator.extendsClass(psiClass, CLASS_VIEWGROUP + DOT_LAYOUT_PARAMS, false)) {
@@ -98,10 +98,10 @@ class CustomViewDetector : Detector(), SourceCodeScanner {
       val expectedName = layoutClassName + "_Layout"
       if (styleableName != expectedName) {
         val message =
-            "By convention, the declare-styleable (`$styleableName`) for a layout parameter " +
-                "class (`$className`) is expected to be the surrounding class " +
-                "(`$layoutClassName`) plus \"`_Layout`\", e.g. `$expectedName`. " +
-                "(Various editor features rely on this convention.)"
+          "By convention, the declare-styleable (`$styleableName`) for a layout parameter " +
+            "class (`$className`) is expected to be the surrounding class " +
+            "(`$layoutClassName`) plus \"`_Layout`\", e.g. `$expectedName`. " +
+            "(Various editor features rely on this convention.)"
         context.report(ISSUE, node, context.getLocation(expression), message)
       }
     }
@@ -113,11 +113,11 @@ class CustomViewDetector : Detector(), SourceCodeScanner {
     /** Mismatched style and class names */
     @JvmField
     val ISSUE: Issue =
-        Issue.create(
-            id = "CustomViewStyleable",
-            briefDescription = "Mismatched Styleable/Custom View Name",
-            explanation =
-                """
+      Issue.create(
+        id = "CustomViewStyleable",
+        briefDescription = "Mismatched Styleable/Custom View Name",
+        explanation =
+          """
           The convention for custom views is to use a `declare-styleable` whose \
           name matches the custom view class name. The IDE relies on this convention \
           such that for example code completion can be offered for attributes \
@@ -125,12 +125,12 @@ class CustomViewDetector : Detector(), SourceCodeScanner {
 
           (Similarly, layout parameter classes should use the suffix `_Layout`.)
           """,
-            category = Category.CORRECTNESS,
-            priority = 6,
-            severity = Severity.WARNING,
-            implementation = IMPLEMENTATION,
-            androidSpecific = true,
-        )
+        category = Category.CORRECTNESS,
+        priority = 6,
+        severity = Severity.WARNING,
+        implementation = IMPLEMENTATION,
+        androidSpecific = true,
+      )
 
     private const val OBTAIN_STYLED_ATTRIBUTES = "obtainStyledAttributes"
     private const val WITH_STYLED_ATTRIBUTES = "withStyledAttributes"

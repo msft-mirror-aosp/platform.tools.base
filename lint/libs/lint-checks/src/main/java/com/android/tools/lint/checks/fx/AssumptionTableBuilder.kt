@@ -73,67 +73,57 @@ open class AssumptionTableBuilder<FX>(lattice: Lattice<FX>) : Lattice<FX> by lat
   }
 
   private fun Type<FX>.erase(): ClassId? =
-      when (this) {
-        is Type.Application -> constructor
-        is Type.Sym.Param,
-        is Type.WildCard -> null
-        is Type.Ellipsis -> ClassId.Array
-        else -> throw IllegalArgumentException("Unexpected: $this")
-      }
+    when (this) {
+      is Type.Application -> constructor
+      is Type.Sym.Param,
+      is Type.WildCard -> null
+      is Type.Ellipsis -> ClassId.Array
+      else -> throw IllegalArgumentException("Unexpected: $this")
+    }
 
   /** Assumes a monomorphic method signature, taking the domain from the method descriptor */
   infix fun MethodRef.assumedMonoAs(setUp: ResultTemplateBuilder<FX>.() -> Unit) {
     val (container, sig) = this
     val domains: Array<Type<Nothing>> =
-        when {
-          sig.isVirtual ->
-              Array(1 + sig.paramTags.size) {
-                when (it) {
-                  0 -> Type.Application(container)
-                  else -> sig.paramTags[it - 1]?.let(Type<Nothing>::Application) ?: Type.WildCard
-                }
-              }
-          else -> Array(sig.paramTags.size) { sig.paramTags[it]?.let(Type<Nothing>::Application) ?: Type.WildCard }
-        }
+      when {
+        sig.isVirtual ->
+          Array(1 + sig.paramTags.size) {
+            when (it) {
+              0 -> Type.Application(container)
+              else -> sig.paramTags[it - 1]?.let(Type<Nothing>::Application) ?: Type.WildCard
+            }
+          }
+        else -> Array(sig.paramTags.size) { sig.paramTags[it]?.let(Type<Nothing>::Application) ?: Type.WildCard }
+      }
     this assumedAs given(domains = domains, setUp)
   }
 
   /** Creates a monomorphic signature, [setUp]-ing the type and effect given [domains] */
-  fun TypeBounds<Nothing>.given(
-      vararg domains: Type<Nothing>,
-      setUp: ResultTemplateBuilder<FX>.() -> Unit,
-  ): ResultTemplate<FX> =
-      with(ResultTemplateBuilder(this@AssumptionTableBuilder).apply(setUp)) {
-        ResultTemplate(
-            this@given,
-            domains.asList(),
-            range,
-            Effect(concreteEffect, symbolicInvocations, constraint),
-        )
-      }
+  fun TypeBounds<Nothing>.given(vararg domains: Type<Nothing>, setUp: ResultTemplateBuilder<FX>.() -> Unit): ResultTemplate<FX> =
+    with(ResultTemplateBuilder(this@AssumptionTableBuilder).apply(setUp)) {
+      ResultTemplate(this@given, domains.asList(), range, Effect(concreteEffect, symbolicInvocations, constraint))
+    }
 
   /** Creates a polymorphic signature, introducing unbounded type parameter */
   fun TypeBounds<Nothing>.forAll(make: TypeBounds<Nothing>.(Type.Sym<Nothing>) -> ResultTemplate<FX>) =
-      uncheckedForAll(persistentSetOf()) { (x) -> make(x) }
+    uncheckedForAll(persistentSetOf()) { (x) -> make(x) }
 
   fun TypeBounds<Nothing>.forAll(make: TypeBounds<Nothing>.(Type.Sym<Nothing>, Type.Sym<Nothing>) -> ResultTemplate<FX>) =
-      uncheckedForAll(persistentSetOf(), persistentSetOf()) { (x0, x1) -> make(x0, x1) }
+    uncheckedForAll(persistentSetOf(), persistentSetOf()) { (x0, x1) -> make(x0, x1) }
 
   /** Creates a polymorphic signature, introducing type parameter bounded by [X] */
   @JvmName("forAllReified")
   inline fun <reified X : Any> TypeBounds<Nothing>.forAll(noinline make: TypeBounds<Nothing>.(Type.Sym<Nothing>) -> ResultTemplate<FX>) =
-      forAll(X::class(), make)
+    forAll(X::class(), make)
 
   /** Creates a polymorphic signature, introducing type parameter bounded by [bound] */
-  fun TypeBounds<Nothing>.forAll(
-      bound: Type<Nothing>,
-      make: TypeBounds<Nothing>.(Type.Sym<Nothing>) -> ResultTemplate<FX>,
-  ) = uncheckedForAll(persistentSetOf(bound)) { (x) -> make(x) }
+  fun TypeBounds<Nothing>.forAll(bound: Type<Nothing>, make: TypeBounds<Nothing>.(Type.Sym<Nothing>) -> ResultTemplate<FX>) =
+    uncheckedForAll(persistentSetOf(bound)) { (x) -> make(x) }
 
   /** Creates a polymorphic signature introducing type parameter bounded by [boundList] */
   private fun TypeBounds<Nothing>.uncheckedForAll(
-      vararg boundList: PersistentSet<Type<Nothing>>,
-      make: TypeBounds<Nothing>.(List<Type.Sym<Nothing>>) -> ResultTemplate<FX>,
+    vararg boundList: PersistentSet<Type<Nothing>>,
+    make: TypeBounds<Nothing>.(List<Type.Sym<Nothing>>) -> ResultTemplate<FX>,
   ): ResultTemplate<FX> {
     val names = Array(boundList.size) { i -> "x${(size + i).subscript()}" }
     val extendedContext = (names zip boundList).fold(this) { acc, bound -> acc + bound }
@@ -165,7 +155,7 @@ open class AssumptionTableBuilder<FX>(lattice: Lattice<FX>) : Lattice<FX> by lat
 
   companion object {
     fun <FX> Lattice<FX>.build(setUp: AssumptionTableBuilder<FX>.() -> Unit): AssumptionTable<FX> =
-        AssumptionTableBuilder(this).apply(setUp).results
+      AssumptionTableBuilder(this).apply(setUp).results
   }
 }
 
@@ -181,28 +171,19 @@ operator fun <FX> Type.Sym<FX>.get(method: KFunction1<*, *>) = Type.Sym.Invoke(t
 
 /** Build symbolic invocation with receiver [this] and 1 other argument [x0] */
 operator fun <FX> Type.Sym<FX>.get(method: KFunction2<*, *, *>, x0: Type<FX>) =
-    Type.Sym.Invoke(this, MethodId.ofVirtual(method), listOf(x0))
+  Type.Sym.Invoke(this, MethodId.ofVirtual(method), listOf(x0))
 
 /** Build symbolic invocation with receiver [this] and 2 other arguments [x0], [x1] */
 operator fun <FX> Type.Sym<FX>.get(method: KFunction3<*, *, *, *>, x0: Type<FX>, x1: Type<FX>) =
-    Type.Sym.Invoke(this, MethodId.ofVirtual(method), listOf(x0, x1))
+  Type.Sym.Invoke(this, MethodId.ofVirtual(method), listOf(x0, x1))
 
 /** Build symbolic invocation with receiver [this] and 3 other arguments [x0], [x1], [x2] */
-operator fun <FX> Type.Sym<FX>.get(
-    method: KFunction4<*, *, *, *, *>,
-    x0: Type<FX>,
-    x1: Type<FX>,
-    x2: Type<FX>,
-) = Type.Sym.Invoke(this, MethodId.ofVirtual(method), listOf(x0, x1, x2))
+operator fun <FX> Type.Sym<FX>.get(method: KFunction4<*, *, *, *, *>, x0: Type<FX>, x1: Type<FX>, x2: Type<FX>) =
+  Type.Sym.Invoke(this, MethodId.ofVirtual(method), listOf(x0, x1, x2))
 
 /** Build symbolic invocation with receiver [this] and 4 other arguments [x0], [x1], [x2], [x3] */
-operator fun <FX> Type.Sym<FX>.get(
-    method: KFunction5<*, *, *, *, *, *>,
-    x0: Type<FX>,
-    x1: Type<FX>,
-    x2: Type<FX>,
-    x3: Type<FX>,
-) = Type.Sym.Invoke(this, MethodId.ofVirtual(method), listOf(x0, x1, x2, x3))
+operator fun <FX> Type.Sym<FX>.get(method: KFunction5<*, *, *, *, *, *>, x0: Type<FX>, x1: Type<FX>, x2: Type<FX>, x3: Type<FX>) =
+  Type.Sym.Invoke(this, MethodId.ofVirtual(method), listOf(x0, x1, x2, x3))
 
 /**
  * Build symbolic invocation with receiver [this] and some other arguments [xs]. Because the method reference [method] is dynamically

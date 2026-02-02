@@ -39,11 +39,7 @@ class BlockedDependencies(val project: Project) {
    * Returns the path from this dependency to one of the forbidden dependencies, or null if this dependency is not forbidden. If [remove] is
    * true, the dependency is removed from the map after this.
    */
-  fun checkDependency(
-      groupId: String,
-      artifactId: String,
-      remove: Boolean,
-  ): List<LintModelDependency>? {
+  fun checkDependency(groupId: String, artifactId: String, remove: Boolean): List<LintModelDependency>? {
     val map = this.map ?: return null
     val coordinate = "$groupId:$artifactId"
     val path = map[coordinate] ?: return null
@@ -62,10 +58,7 @@ class BlockedDependencies(val project: Project) {
     return map.values.toMutableList().sortedBy { it[0].artifactName }
   }
 
-  private fun visitLibraries(
-      stack: ArrayDeque<LintModelDependency>,
-      libraries: List<LintModelDependency>,
-  ) {
+  private fun visitLibraries(stack: ArrayDeque<LintModelDependency>, libraries: List<LintModelDependency>) {
     for (library in libraries) {
       visitLibrary(stack, library)
     }

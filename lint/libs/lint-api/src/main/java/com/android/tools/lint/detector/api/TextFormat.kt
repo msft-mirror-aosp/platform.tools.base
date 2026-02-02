@@ -181,17 +181,17 @@ enum class TextFormat {
         if (tag.equals("br", ignoreCase = true)) {
           sb.append('\n')
         } else if (
-            tag.equals("p", ignoreCase = true) || // Most common block tags
-                tag.equals("div", ignoreCase = true) ||
-                tag.equals("pre", ignoreCase = true) ||
-                tag.equals("blockquote", ignoreCase = true) ||
-                tag.equals("dl", ignoreCase = true) ||
-                tag.equals("dd", ignoreCase = true) ||
-                tag.equals("dt", ignoreCase = true) ||
-                tag.equals("ol", ignoreCase = true) ||
-                tag.equals("ul", ignoreCase = true) ||
-                tag.equals("li", ignoreCase = true) ||
-                (tag.length == 2 && tag.startsWith("h") && Character.isDigit(tag[1]))
+          tag.equals("p", ignoreCase = true) || // Most common block tags
+            tag.equals("div", ignoreCase = true) ||
+            tag.equals("pre", ignoreCase = true) ||
+            tag.equals("blockquote", ignoreCase = true) ||
+            tag.equals("dl", ignoreCase = true) ||
+            tag.equals("dd", ignoreCase = true) ||
+            tag.equals("dt", ignoreCase = true) ||
+            tag.equals("ol", ignoreCase = true) ||
+            tag.equals("ul", ignoreCase = true) ||
+            tag.equals("li", ignoreCase = true) ||
+            (tag.length == 2 && tag.startsWith("h") && Character.isDigit(tag[1]))
         ) {
           // Block tag: ensure new line
           if (sb.isNotEmpty() && sb[sb.length - 1] != '\n') {
@@ -307,26 +307,18 @@ enum class TextFormat {
             if (html) {
               sb.append("<pre>\n")
             }
-            appendEscapedText(
-                sb,
-                text,
-                html,
-                nextLineStart,
-                end + 1,
-                escapeUnicode,
-                newlinesAsBr = false,
-            )
+            appendEscapedText(sb, text, html, nextLineStart, end + 1, escapeUnicode, newlinesAsBr = false)
             if (html) {
               sb.append("</pre>\n")
             }
 
             // Skip past the final ``` (and possibly \n if end of line)
             i =
-                if (end + 4 < n && text[end + 4] == '\n') {
-                  end + 5
-                } else {
-                  end + 4
-                }
+              if (end + 4 < n && text[end + 4] == '\n') {
+                end + 5
+              } else {
+                end + 4
+              }
             flushIndex = i
             continue
           }
@@ -388,12 +380,12 @@ enum class TextFormat {
           }
         }
       } else if (
-          html &&
-              c == 'h' &&
-              i < n - 1 &&
-              text[i + 1] == 't' &&
-              (text.startsWith(HTTP_PREFIX, i) || text.startsWith(HTTPS_PREFIX, i)) &&
-              !Character.isLetterOrDigit(prev)
+        html &&
+          c == 'h' &&
+          i < n - 1 &&
+          text[i + 1] == 't' &&
+          (text.startsWith(HTTP_PREFIX, i) || text.startsWith(HTTPS_PREFIX, i)) &&
+          !Character.isLetterOrDigit(prev)
       ) {
         val length = if (text.startsWith(HTTP_PREFIX, i)) HTTP_PREFIX.length else HTTPS_PREFIX.length
         val end = findUrlEnd(text, i)
@@ -415,13 +407,13 @@ enum class TextFormat {
       } else if (c == '\n' && escaped) {
         flushIndex++
       } else if (
-          c == '~' &&
-              !escaped &&
-              i < n - 4 &&
-              text[i + 1] == '~' &&
-              text[i + 2] != '~' &&
-              !Character.isWhitespace(text[i + 2]) &&
-              !Character.isLetterOrDigit(prev)
+        c == '~' &&
+          !escaped &&
+          i < n - 4 &&
+          text[i + 1] == '~' &&
+          text[i + 2] != '~' &&
+          !Character.isWhitespace(text[i + 2]) &&
+          !Character.isLetterOrDigit(prev)
       ) {
         // Strikethrough span. Found ~~ immediately before a letter, and not in the middle of a
         // word.
@@ -577,13 +569,13 @@ enum class TextFormat {
     }
 
     private fun appendEscapedText(
-        sb: StringBuilder,
-        text: String,
-        html: Boolean,
-        start: Int,
-        end: Int,
-        escapeUnicode: Boolean,
-        newlinesAsBr: Boolean = true,
+      sb: StringBuilder,
+      text: String,
+      html: Boolean,
+      start: Int,
+      end: Int,
+      escapeUnicode: Boolean,
+      newlinesAsBr: Boolean = true,
     ) {
       if (html) {
         for (i in start until end) {

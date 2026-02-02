@@ -44,27 +44,27 @@ open class Location
  * @param end the ending position, or null
  */
 protected constructor(
-    /**
-     * Returns the file containing the warning. Note that the file *itself* may not yet contain the error. When editing a file in the IDE
-     * for example, the tool could generate warnings in the background even before the document is saved. However, the file is used as a
-     * identifying token for the document being edited, and the IDE integration can map this back to error locations in the editor source
-     * code.
-     *
-     * @return the file handle for the location
-     */
-    val file: File,
-    /**
-     * The start position of the range
-     *
-     * @return the start position of the range, or null
-     */
-    val start: Position?,
-    /**
-     * The end position of the range
-     *
-     * @return the end position of the range, may be null for an empty range
-     */
-    val end: Position?,
+  /**
+   * Returns the file containing the warning. Note that the file *itself* may not yet contain the error. When editing a file in the IDE for
+   * example, the tool could generate warnings in the background even before the document is saved. However, the file is used as a
+   * identifying token for the document being edited, and the IDE integration can map this back to error locations in the editor source
+   * code.
+   *
+   * @return the file handle for the location
+   */
+  val file: File,
+  /**
+   * The start position of the range
+   *
+   * @return the start position of the range, or null
+   */
+  val start: Position?,
+  /**
+   * The end position of the range
+   *
+   * @return the end position of the range, may be null for an empty range
+   */
+  val end: Position?,
 ) {
 
   /**
@@ -125,11 +125,7 @@ protected constructor(
    * @return current location updated with the secondary location
    */
   @JvmOverloads
-  fun withSecondary(
-      secondary: Location,
-      message: String,
-      selfExplanatory: Boolean = false,
-  ): Location {
+  fun withSecondary(secondary: Location, message: String, selfExplanatory: Boolean = false): Location {
     this.secondary = secondary
     secondary.message = message
     secondary.selfExplanatory = selfExplanatory
@@ -282,10 +278,10 @@ protected constructor(
   }
 
   open class ResourceItemHandle(
-      protected val client: LintClient,
-      val item: ResourceItem,
-      protected val nameOnly: Boolean,
-      protected val valueOnly: Boolean,
+    protected val client: LintClient,
+    val item: ResourceItem,
+    protected val nameOnly: Boolean,
+    protected val valueOnly: Boolean,
   ) : Handle {
     override fun resolve(): Location {
       if (item is LocationAware) {
@@ -301,11 +297,11 @@ protected constructor(
       }
       val parser = client.xmlParser
       val location =
-          when {
-            valueOnly -> parser.getValueLocation(client, item)
-            nameOnly -> parser.getNameLocation(client, item)
-            else -> parser.getLocation(client, item)
-          }
+        when {
+          valueOnly -> parser.getValueLocation(client, item)
+          nameOnly -> parser.getNameLocation(client, item)
+          else -> parser.getLocation(client, item)
+        }
       return location ?: (item as? LocationAware)?.getLocation() ?: error(item)
     }
 
@@ -358,8 +354,8 @@ protected constructor(
   /** Extra information pertaining to finding a symbol in a source buffer, used by [Location.create] */
   class SearchHints
   private constructor(
-      /** the direction to search for the nearest match in (provided `patternStart` is non null) */
-      val direction: SearchDirection
+    /** the direction to search for the nearest match in (provided `patternStart` is non null) */
+    val direction: SearchDirection
   ) {
 
     /** Whether the matched pattern should be a whole word. */
@@ -437,50 +433,50 @@ protected constructor(
      */
     @JvmField
     val NONE: Location =
-        object : Location(File("NONE"), null, null) {
-          override fun setMessage(message: String, selfExplanatory: Boolean): Location {
-            warnImmutable()
-            return this
-          }
+      object : Location(File("NONE"), null, null) {
+        override fun setMessage(message: String, selfExplanatory: Boolean): Location {
+          warnImmutable()
+          return this
+        }
 
-          override fun setData(clientData: Any?): Location {
-            warnImmutable()
-            return this
-          }
+        override fun setData(clientData: Any?): Location {
+          warnImmutable()
+          return this
+        }
 
-          override fun setSelfExplanatory(selfExplanatory: Boolean): Location {
-            warnImmutable()
-            return this
-          }
+        override fun setSelfExplanatory(selfExplanatory: Boolean): Location {
+          warnImmutable()
+          return this
+        }
 
-          @Suppress("UNUSED_PARAMETER")
-          override var visible: Boolean = false
-            set(value) = Unit
+        @Suppress("UNUSED_PARAMETER")
+        override var visible: Boolean = false
+          set(value) = Unit
 
-          @Suppress("UNUSED_PARAMETER")
-          override var secondary: Location? = null
-            set(_) = warnImmutable()
+        @Suppress("UNUSED_PARAMETER")
+        override var secondary: Location? = null
+          set(_) = warnImmutable()
 
-          @Suppress("SetterBackingFieldAssignment")
-          override var source: Any? = null
-            set(_) = warnImmutable()
+        @Suppress("SetterBackingFieldAssignment")
+        override var source: Any? = null
+          set(_) = warnImmutable()
 
-          @Suppress("SetterBackingFieldAssignment")
-          override var originalSource: Any? = null
-            set(_) = warnImmutable()
+        @Suppress("SetterBackingFieldAssignment")
+        override var originalSource: Any? = null
+          set(_) = warnImmutable()
 
-          @Suppress("SetterBackingFieldAssignment")
-          override var clientData: Any? = null
-            set(_) = warnImmutable()
+        @Suppress("SetterBackingFieldAssignment")
+        override var clientData: Any? = null
+          set(_) = warnImmutable()
 
-          private fun warnImmutable() {
-            // Deliberately not allowing the source to be
-            // overridden on the shared & static location
-            if (LintClient.isUnitTest) {
-              error("Location.NONE is immutable; manipulating it usually a bug")
-            }
+        private fun warnImmutable() {
+          // Deliberately not allowing the source to be
+          // overridden on the shared & static location
+          if (LintClient.isUnitTest) {
+            error("Location.NONE is immutable; manipulating it usually a bug")
           }
         }
+      }
 
     /**
      * Creates a new location for the given file
@@ -503,9 +499,9 @@ protected constructor(
         return Location(file, null, null)
       }
       return Location(
-          file,
-          DefaultPosition(position.startLine, position.startColumn, position.startOffset),
-          DefaultPosition(position.endLine, position.endColumn, position.endOffset),
+        file,
+        DefaultPosition(position.startLine, position.startColumn, position.startOffset),
+        DefaultPosition(position.endLine, position.endColumn, position.endOffset),
       )
     }
 
@@ -536,11 +532,7 @@ protected constructor(
       }
 
       if (contents == null) {
-        return Location(
-            file,
-            DefaultPosition(-1, -1, startOffset),
-            DefaultPosition(-1, -1, endOffset),
-        )
+        return Location(file, DefaultPosition(-1, -1, startOffset), DefaultPosition(-1, -1, endOffset))
       }
 
       val size = contents.length
@@ -590,14 +582,7 @@ protected constructor(
      * @return a new location
      */
     @JvmStatic
-    fun create(
-        file: File,
-        contents: CharSequence,
-        line: Int,
-        patternStart: String?,
-        patternEnd: String?,
-        hints: SearchHints?,
-    ): Location {
+    fun create(file: File, contents: CharSequence, line: Int, patternStart: String?, patternEnd: String?, hints: SearchHints?): Location {
 
       var targetLine = line
       var targetPattern = patternStart
@@ -679,30 +664,22 @@ protected constructor(
           if (patternEnd != null) {
             val end = indexOf(contents, patternEnd, offset + targetPattern.length)
             if (end != -1) {
-              return Location(
-                  file,
-                  DefaultPosition(targetLine, column, index),
-                  DefaultPosition(targetLine, -1, end + patternEnd.length),
-              )
+              return Location(file, DefaultPosition(targetLine, column, index), DefaultPosition(targetLine, -1, end + patternEnd.length))
             }
           } else if (hints != null && (hints.isJavaSymbol || hints.isWholeWord)) {
             if (hints.isConstructor && startsWith(contents, SUPER_KEYWORD, index)) {
               targetPattern = SUPER_KEYWORD
             }
             return Location(
-                file,
-                DefaultPosition(targetLine, column, index),
-                DefaultPosition(
-                    targetLine,
-                    column + targetPattern.length,
-                    index + targetPattern.length,
-                ),
+              file,
+              DefaultPosition(targetLine, column, index),
+              DefaultPosition(targetLine, column + targetPattern.length, index + targetPattern.length),
             )
           }
           return Location(
-              file,
-              DefaultPosition(targetLine, column, index),
-              DefaultPosition(targetLine, column, index + targetPattern.length),
+            file,
+            DefaultPosition(targetLine, column, index),
+            DefaultPosition(targetLine, column, index + targetPattern.length),
           )
         }
       }
@@ -712,12 +689,7 @@ protected constructor(
     }
 
     @JvmStatic
-    private fun findPreviousMatch(
-        contents: CharSequence,
-        offset: Int,
-        pattern: String,
-        hints: SearchHints?,
-    ): Int {
+    private fun findPreviousMatch(contents: CharSequence, offset: Int, pattern: String, hints: SearchHints?): Int {
       var currentOffset = offset
       val loopDecrement = max(1, pattern.length)
       while (true) {
@@ -735,12 +707,7 @@ protected constructor(
     }
 
     @JvmStatic
-    private fun findNextMatch(
-        contents: CharSequence,
-        offset: Int,
-        pattern: String,
-        hints: SearchHints?,
-    ): Int {
+    private fun findNextMatch(contents: CharSequence, offset: Int, pattern: String, hints: SearchHints?): Int {
       var currentOffset = offset
       var constructorIndex = -1
       if (hints != null && hints.isConstructor) {
@@ -771,12 +738,7 @@ protected constructor(
     }
 
     @JvmStatic
-    private fun isMatch(
-        contents: CharSequence,
-        offset: Int,
-        pattern: String,
-        hints: SearchHints?,
-    ): Boolean {
+    private fun isMatch(contents: CharSequence, offset: Int, pattern: String, hints: SearchHints?): Boolean {
       if (!startsWith(contents, pattern, offset)) {
         return false
       }

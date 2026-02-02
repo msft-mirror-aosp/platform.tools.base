@@ -24,18 +24,18 @@ import org.junit.Assert
 
 /** A list of project descriptors for a project to be created and analyzed with Lint. */
 internal class ProjectDescriptionList(
-    /**
-     * Initial set of project descriptors; may have dependencies on projects not included in this list, or contain implicit projects
-     * inferred from relative test file paths.
-     */
-    var projects: MutableList<ProjectDescription> = mutableListOf(),
+  /**
+   * Initial set of project descriptors; may have dependencies on projects not included in this list, or contain implicit projects inferred
+   * from relative test file paths.
+   */
+  var projects: MutableList<ProjectDescription> = mutableListOf(),
 
-    /**
-     * If not null, the project to consider the "base" to report from. E.g. if you have projects "app" and "lib" and you get warnings from
-     * both, by default (with [reportFrom] null) the errors in the report will show paths like `app/src/main` and `lib/src/main`. If
-     * [reportFrom] is set to the app, the paths will instead be `src/main/` and `../lib/src/main`.
-     */
-    var reportFrom: ProjectDescription? = null,
+  /**
+   * If not null, the project to consider the "base" to report from. E.g. if you have projects "app" and "lib" and you get warnings from
+   * both, by default (with [reportFrom] null) the errors in the report will show paths like `app/src/main` and `lib/src/main`. If
+   * [reportFrom] is set to the app, the paths will instead be `src/main/` and `../lib/src/main`.
+   */
+  var reportFrom: ProjectDescription? = null,
 ) : Iterable<ProjectDescription> {
   /**
    * If the project set was constructed implicitly (via ../module/path) file names, this property will point to the implicit "main" (or app)
@@ -89,12 +89,12 @@ internal class ProjectDescriptionList(
       for (file in files) {
         val path = file.targetRelativePath
         if (
-            path.startsWith("../") &&
-                path.indexOf('/', 3) != -1 &&
-                // The gradle toml file should be in the root project, not inside one of the
-                // project folder, so there ../gradle/ here is not shorthand for writing a project
-                // called gradle. Ditto for gradle-wrapper.properties etc.
-                !(path.startsWith("../gradle/"))
+          path.startsWith("../") &&
+            path.indexOf('/', 3) != -1 &&
+            // The gradle toml file should be in the root project, not inside one of the
+            // project folder, so there ../gradle/ here is not shorthand for writing a project
+            // called gradle. Ditto for gradle-wrapper.properties etc.
+            !(path.startsWith("../gradle/"))
         ) {
           val name = path.substring(3, path.indexOf('/', 3))
           var newProject = nameMap[name]
@@ -123,11 +123,11 @@ internal class ProjectDescriptionList(
           }
           if (reportFrom == null) {
             reportFrom =
-                if (name.startsWith("app") || name.startsWith("main")) {
-                  newProject
-                } else {
-                  project
-                }
+              if (name.startsWith("app") || name.startsWith("main")) {
+                newProject
+              } else {
+                project
+              }
           }
           // move the test file over and update target path
           newProject.files = Lists.asList(file, newProject.files).toTypedArray()
@@ -199,11 +199,11 @@ internal class ProjectDescriptionList(
   /** Finds a unique name for the given project, not conflicting with any of the existing names passed in. */
   private fun pickUniqueName(usedNames: Set<String>, project: ProjectDescription): String {
     val root =
-        when (project.type) {
-          ProjectDescription.Type.APP -> "app"
-          ProjectDescription.Type.LIBRARY -> "lib"
-          ProjectDescription.Type.JAVA -> "javalib"
-        }
+      when (project.type) {
+        ProjectDescription.Type.APP -> "app"
+        ProjectDescription.Type.LIBRARY -> "lib"
+        ProjectDescription.Type.JAVA -> "javalib"
+      }
     if (!usedNames.contains(root)) {
       return root
     }

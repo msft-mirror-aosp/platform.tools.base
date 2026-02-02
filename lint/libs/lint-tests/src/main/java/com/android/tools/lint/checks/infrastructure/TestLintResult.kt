@@ -60,10 +60,10 @@ import org.junit.Assert.fail
 /** The result of running a [TestLintTask]. */
 class TestLintResult
 internal constructor(
-    private val task: TestLintTask,
-    private val states: MutableMap<TestMode, TestResultState>,
-    /** The mode to use for result tasks that do not pass in a specific mode to check. */
-    private val defaultMode: TestMode,
+  private val task: TestLintTask,
+  private val states: MutableMap<TestMode, TestResultState>,
+  /** The mode to use for result tasks that do not pass in a specific mode to check. */
+  private val defaultMode: TestMode,
 ) {
   private var maxLineLength: Int = 0
 
@@ -94,10 +94,10 @@ internal constructor(
    */
   @JvmOverloads
   fun expect(
-      expectedText: String,
-      expectedException: Class<out Throwable>? = null,
-      transformer: TestResultTransformer = TestResultTransformer { it },
-      testMode: TestMode = defaultMode,
+    expectedText: String,
+    expectedException: Class<out Throwable>? = null,
+    transformer: TestResultTransformer = TestResultTransformer { it },
+    testMode: TestMode = defaultMode,
   ): TestLintResult {
     if (expectedException == null) {
       checkPendingErrors()
@@ -110,13 +110,13 @@ internal constructor(
       // See if it's a Windows path issue
       if (actual == expected.replace(File.separatorChar, '/')) {
         assertEquals(
-            "The expected lint output does not match, but it *does* " +
-                "match when Windows file separators (\\) are replaced by Unix ones.\n" +
-                "Make sure your lint detector calls LintClient.getDisplayPath(File) " +
-                "instead of displaying paths directly (in unit tests they will then " +
-                "be converted to forward slashes for test output stability.)\n",
-            expected,
-            actual,
+          "The expected lint output does not match, but it *does* " +
+            "match when Windows file separators (\\) are replaced by Unix ones.\n" +
+            "Make sure your lint detector calls LintClient.getDisplayPath(File) " +
+            "instead of displaying paths directly (in unit tests they will then " +
+            "be converted to forward slashes for test output stability.)\n",
+          expected,
+          actual,
         )
       }
 
@@ -140,9 +140,9 @@ internal constructor(
   /** Checks that the lint report contains the given [substring] */
   @JvmOverloads
   fun expectContains(
-      expectedText: String,
-      transformer: TestResultTransformer = TestResultTransformer { it },
-      testMode: TestMode = defaultMode,
+    expectedText: String,
+    transformer: TestResultTransformer = TestResultTransformer { it },
+    testMode: TestMode = defaultMode,
   ): TestLintResult {
     checkPendingErrors()
     val actual = transformer.transform(describeOutput(null, testMode))
@@ -154,30 +154,24 @@ internal constructor(
       // See if it's a Windows path issue
       if (actual.contains(unixPath)) {
         assertEquals(
-            "The expected lint output does not match, but it *does* " +
-                "match when Windows file separators (\\) are replaced by Unix ones.\n" +
-                "Make sure your lint detector calls LintClient.getDisplayPath(File) " +
-                "instead of displaying paths directly (in unit tests they will then " +
-                "be converted to forward slashes for test output stability.)\n",
-            expected,
-            actual,
+          "The expected lint output does not match, but it *does* " +
+            "match when Windows file separators (\\) are replaced by Unix ones.\n" +
+            "Make sure your lint detector calls LintClient.getDisplayPath(File) " +
+            "instead of displaying paths directly (in unit tests they will then " +
+            "be converted to forward slashes for test output stability.)\n",
+          expected,
+          actual,
         )
       }
     }
 
-    assertTrue(
-        "Not true that\n\"$expectedWithoutIndent\nis found in lint output\n\"$actual",
-        actual.contains(expectedWithoutIndent),
-    )
+    assertTrue("Not true that\n\"$expectedWithoutIndent\nis found in lint output\n\"$actual", actual.contains(expectedWithoutIndent))
 
     cleanup()
     return this
   }
 
-  private fun describeOutput(
-      expectedException: Class<out Throwable>? = null,
-      testMode: TestMode = defaultMode,
-  ): String {
+  private fun describeOutput(expectedException: Class<out Throwable>? = null, testMode: TestMode = defaultMode): String {
     val state = states[testMode]!!
     return formatOutput(state.output, state.firstThrowable, expectedException, state.rootDir)
   }
@@ -186,22 +180,17 @@ internal constructor(
    * The test output is already formatted by the text reporter in the states passed in to this result, but we do some extra post processing
    * here to truncate output, clean up whitespace only diffs, etc.
    */
-  private fun formatOutput(
-      originalOutput: String,
-      throwable: Throwable?,
-      expectedThrowable: Class<out Throwable>?,
-      rootDir: File,
-  ): String {
+  private fun formatOutput(originalOutput: String, throwable: Throwable?, expectedThrowable: Class<out Throwable>?, rootDir: File): String {
     var output = originalOutput
     if (maxLineLength > TRUNCATION_MARKER.length) {
       val sb = StringBuilder()
       for (line in Splitter.on('\n').split(output)) {
         val truncated =
-            if (line.length > maxLineLength) {
-              line.substring(0, maxLineLength - TRUNCATION_MARKER.length) + TRUNCATION_MARKER
-            } else {
-              line
-            }
+          if (line.length > maxLineLength) {
+            line.substring(0, maxLineLength - TRUNCATION_MARKER.length) + TRUNCATION_MARKER
+          } else {
+            line
+          }
         sb.append(truncated).append('\n')
       }
       output = sb.toString()
@@ -243,15 +232,7 @@ internal constructor(
     }
     val matchResult = OLD_ERROR_COUNT_PATTERN.matchAt(output, lastLineBegin)
     if (matchResult != null) {
-      val replacement =
-          describeCounts(
-              matchResult.groupValues[1].toInt(),
-              matchResult.groupValues[2].toInt(),
-              0,
-              true,
-              false,
-              true,
-          )
+      val replacement = describeCounts(matchResult.groupValues[1].toInt(), matchResult.groupValues[2].toInt(), 0, true, false, true)
       output = output.substring(0, lastLineBegin) + replacement
     }
 
@@ -422,10 +403,7 @@ internal constructor(
    * @return this
    */
   @JvmOverloads
-  fun expectMatches(
-      @Language("RegExp") regexp: String,
-      transformer: TestResultTransformer = TestResultTransformer { it },
-  ): TestLintResult {
+  fun expectMatches(@Language("RegExp") regexp: String, transformer: TestResultTransformer = TestResultTransformer { it }): TestLintResult {
     checkPendingErrors()
     val output = transformer.transform(describeOutput())
     var pattern = Pattern.compile(regexp, MULTILINE or DOTALL)
@@ -450,10 +428,7 @@ internal constructor(
    * @return this
    */
   @JvmOverloads
-  fun check(
-      checker: TestResultChecker,
-      transformer: TestResultTransformer = TestResultTransformer { it },
-  ): TestLintResult {
+  fun check(checker: TestResultChecker, transformer: TestResultTransformer = TestResultTransformer { it }): TestLintResult {
     val output = transformer.transform(describeOutput())
     checker.check(output)
     cleanup()
@@ -506,9 +481,9 @@ internal constructor(
 
     if (count != expectedCount) {
       assertEquals(
-          "Expected " + expectedCount + " problems with severity " + Joiner.on(" or ").join(severities) + " but was " + count,
-          expectedCount.toLong(),
-          count.toLong(),
+        "Expected " + expectedCount + " problems with severity " + Joiner.on(" or ").join(severities) + " but was " + count,
+        expectedCount.toLong(),
+        count.toLong(),
       )
     }
 
@@ -516,10 +491,7 @@ internal constructor(
   }
 
   /** Applies the lint fixes in place */
-  fun applyFixes(
-      pickFix: (Incident, List<LintFix>) -> LintFix?,
-      apply: (Project?, File, ByteArray?) -> Unit,
-  ): TestLintResult {
+  fun applyFixes(pickFix: (Incident, List<LintFix>) -> LintFix?, apply: (Project?, File, ByteArray?) -> Unit): TestLintResult {
     LintFixVerifier(task, defaultMode, states[defaultMode]!!).applyFixes(pickFix, apply)
     return this
   }
@@ -583,16 +555,10 @@ internal constructor(
    */
   @Suppress("MemberVisibilityCanBePrivate") // Also allow calls by 3rd party checks
   fun checkHtmlReport(
-      vararg checkers: TestResultChecker,
-      transformer: TestResultTransformer = TestResultTransformer { it },
+    vararg checkers: TestResultChecker,
+    transformer: TestResultTransformer = TestResultTransformer { it },
   ): TestLintResult {
-    return checkReport(
-        html = true,
-        fullPaths = false,
-        xmlReportType = XmlFileType.REPORT,
-        transformer = transformer,
-        checkers = checkers,
-    )
+    return checkReport(html = true, fullPaths = false, xmlReportType = XmlFileType.REPORT, transformer = transformer, checkers = checkers)
   }
 
   /**
@@ -600,45 +566,42 @@ internal constructor(
    *
    * @param expected the expected XML report
    */
-  fun expectHtml(
-      @Language("HTML") expected: String,
-      transformer: TestResultTransformer = TestResultTransformer { it },
-  ): TestLintResult {
+  fun expectHtml(@Language("HTML") expected: String, transformer: TestResultTransformer = TestResultTransformer { it }): TestLintResult {
     val trimmed = normalizeOutput(expected.trimIndent())
     return checkHtmlReport(
-        TestResultChecker { actual ->
-          val s = normalizeOutput(actual.trimIndent())
-          if (s != trimmed && s.dos2unix() == trimmed.dos2unix()) {
-            // Allow Windows file separators to differ
-          } else {
-            assertEquals(trimmed, s)
-          }
-        },
-        transformer = transformer,
+      TestResultChecker { actual ->
+        val s = normalizeOutput(actual.trimIndent())
+        if (s != trimmed && s.dos2unix() == trimmed.dos2unix()) {
+          // Allow Windows file separators to differ
+        } else {
+          assertEquals(trimmed, s)
+        }
+      },
+      transformer = transformer,
     )
   }
 
   /** Checks that the report (produced by a reporter provided via a lambda factory) is as expected */
   fun expectReported(
-      expected: String,
-      extension: String,
-      reporter: (LintCliClient, File) -> Reporter,
-      transformer: TestResultTransformer = TestResultTransformer { it },
+    expected: String,
+    extension: String,
+    reporter: (LintCliClient, File) -> Reporter,
+    transformer: TestResultTransformer = TestResultTransformer { it },
   ): TestLintResult {
     val trimmed = normalizeOutput(expected.trimIndent())
     return checkReport(
-        reporter,
-        extension,
-        false,
-        transformer,
-        TestResultChecker { actual ->
-          val s = normalizeOutput(actual.trimIndent())
-          if (s != trimmed && s.dos2unix() == trimmed.dos2unix()) {
-            // Allow Windows file separators to differ
-          } else {
-            assertEquals(trimmed, s)
-          }
-        },
+      reporter,
+      extension,
+      false,
+      transformer,
+      TestResultChecker { actual ->
+        val s = normalizeOutput(actual.trimIndent())
+        if (s != trimmed && s.dos2unix() == trimmed.dos2unix()) {
+          // Allow Windows file separators to differ
+        } else {
+          assertEquals(trimmed, s)
+        }
+      },
     )
   }
 
@@ -649,16 +612,10 @@ internal constructor(
    */
   @Suppress("MemberVisibilityCanBePrivate") // Also allow calls by 3rd party checks
   fun checkXmlReport(
-      vararg checkers: TestResultChecker,
-      transformer: TestResultTransformer = TestResultTransformer { it },
+    vararg checkers: TestResultChecker,
+    transformer: TestResultTransformer = TestResultTransformer { it },
   ): TestLintResult {
-    return checkReport(
-        xml = true,
-        fullPaths = false,
-        xmlReportType = XmlFileType.REPORT,
-        transformer = transformer,
-        checkers = checkers,
-    )
+    return checkReport(xml = true, fullPaths = false, xmlReportType = XmlFileType.REPORT, transformer = transformer, checkers = checkers)
   }
 
   /**
@@ -666,20 +623,17 @@ internal constructor(
    *
    * @param expected the expected XML report
    */
-  fun expectXml(
-      @Language("XML") expected: String,
-      transformer: TestResultTransformer = TestResultTransformer { it },
-  ): TestLintResult {
+  fun expectXml(@Language("XML") expected: String, transformer: TestResultTransformer = TestResultTransformer { it }): TestLintResult {
     return checkXmlReport(
-        TestResultChecker { actual ->
-          val s = normalizeOutput(actual.trimIndent())
-          if (s != expected && s.dos2unix() == expected.dos2unix()) {
-            // Allow Windows file separators to differ
-          } else {
-            assertEquals(expected, s)
-          }
-        },
-        transformer = transformer,
+      TestResultChecker { actual ->
+        val s = normalizeOutput(actual.trimIndent())
+        if (s != expected && s.dos2unix() == expected.dos2unix()) {
+          // Allow Windows file separators to differ
+        } else {
+          assertEquals(expected, s)
+        }
+      },
+      transformer = transformer,
     )
   }
 
@@ -689,18 +643,12 @@ internal constructor(
    * @param checkers one or more checks to apply to the output
    */
   fun checkXmlReport(
-      vararg checkers: TestResultChecker,
-      fullPaths: Boolean = false,
-      reportType: XmlFileType = XmlFileType.REPORT,
-      transformer: TestResultTransformer = TestResultTransformer { it },
+    vararg checkers: TestResultChecker,
+    fullPaths: Boolean = false,
+    reportType: XmlFileType = XmlFileType.REPORT,
+    transformer: TestResultTransformer = TestResultTransformer { it },
   ): TestLintResult {
-    return checkReport(
-        xml = true,
-        fullPaths = fullPaths,
-        xmlReportType = reportType,
-        transformer = transformer,
-        checkers = checkers,
-    )
+    return checkReport(xml = true, fullPaths = fullPaths, xmlReportType = reportType, transformer = transformer, checkers = checkers)
   }
 
   /**
@@ -709,27 +657,27 @@ internal constructor(
    * @param expected the expected XML report
    */
   fun expectXml(
-      @Language("XML") expected: String,
-      fullPaths: Boolean = false,
-      reportType: XmlFileType = XmlFileType.REPORT,
-      transformer: TestResultTransformer = TestResultTransformer { it },
+    @Language("XML") expected: String,
+    fullPaths: Boolean = false,
+    reportType: XmlFileType = XmlFileType.REPORT,
+    transformer: TestResultTransformer = TestResultTransformer { it },
   ): TestLintResult {
     val trimmed = normalizeOutput(expected.trimIndent())
     return checkXmlReport(
-        fullPaths = fullPaths,
-        reportType = reportType,
-        transformer = transformer,
-        checkers =
-            arrayOf(
-                TestResultChecker { actual ->
-                  val s = normalizeOutput(actual.trimIndent())
-                  if (s != trimmed && s.dos2unix() == trimmed.dos2unix()) {
-                    // Allow Windows file separators to differ
-                  } else {
-                    assertEquals(trimmed, s)
-                  }
-                }
-            ),
+      fullPaths = fullPaths,
+      reportType = reportType,
+      transformer = transformer,
+      checkers =
+        arrayOf(
+          TestResultChecker { actual ->
+            val s = normalizeOutput(actual.trimIndent())
+            if (s != trimmed && s.dos2unix() == trimmed.dos2unix()) {
+              // Allow Windows file separators to differ
+            } else {
+              assertEquals(trimmed, s)
+            }
+          }
+        ),
     )
   }
 
@@ -738,24 +686,21 @@ internal constructor(
    *
    * @param expected the expected SARIF report
    */
-  fun expectSarif(
-      @Language("JSON") expected: String,
-      transformer: TestResultTransformer = TestResultTransformer { it },
-  ): TestLintResult {
+  fun expectSarif(@Language("JSON") expected: String, transformer: TestResultTransformer = TestResultTransformer { it }): TestLintResult {
     val trimmed = normalizeOutput(expected.trimIndent())
     return checkSarifReport(
-        transformer = transformer,
-        checkers =
-            arrayOf(
-                TestResultChecker { actual ->
-                  val s = normalizeOutput(actual.trimIndent())
-                  if (s != trimmed && s.dos2unix() == trimmed.dos2unix()) {
-                    // Allow Windows file separators to differ
-                  } else {
-                    assertEquals(trimmed, s)
-                  }
-                }
-            ),
+      transformer = transformer,
+      checkers =
+        arrayOf(
+          TestResultChecker { actual ->
+            val s = normalizeOutput(actual.trimIndent())
+            if (s != trimmed && s.dos2unix() == trimmed.dos2unix()) {
+              // Allow Windows file separators to differ
+            } else {
+              assertEquals(trimmed, s)
+            }
+          }
+        ),
     )
   }
 
@@ -766,8 +711,8 @@ internal constructor(
    */
   @Suppress("MemberVisibilityCanBePrivate") // Also allow calls by 3rd party checks
   fun checkSarifReport(
-      vararg checkers: TestResultChecker,
-      transformer: TestResultTransformer = TestResultTransformer { it },
+    vararg checkers: TestResultChecker,
+    transformer: TestResultTransformer = TestResultTransformer { it },
   ): TestLintResult {
     return checkReport(sarif = true, transformer = transformer, checkers = checkers)
   }
@@ -781,24 +726,24 @@ internal constructor(
   }
 
   private fun checkReport(
-      xml: Boolean = false,
-      html: Boolean = false,
-      sarif: Boolean = false,
-      xmlReportType: XmlFileType = XmlFileType.REPORT,
-      fullPaths: Boolean = false,
-      transformer: TestResultTransformer = TestResultTransformer { it },
-      vararg checkers: TestResultChecker,
+    xml: Boolean = false,
+    html: Boolean = false,
+    sarif: Boolean = false,
+    xmlReportType: XmlFileType = XmlFileType.REPORT,
+    fullPaths: Boolean = false,
+    transformer: TestResultTransformer = TestResultTransformer { it },
+    vararg checkers: TestResultChecker,
   ): TestLintResult {
     checkPendingErrors()
     assertTrue(sequenceOf(xml, html, sarif).count { it } == 1)
     val reporterFactory: (LintCliClient, File) -> Reporter = { client, file ->
       val reporter =
-          when {
-            html -> Reporter.createHtmlReporter(client, file, client.flags)
-            xml -> Reporter.createXmlReporter(client, file, xmlReportType)
-            sarif -> Reporter.createSarifReporter(client, file)
-            else -> throw IllegalStateException() // enforced by above assertion
-          }
+        when {
+          html -> Reporter.createHtmlReporter(client, file, client.flags)
+          xml -> Reporter.createXmlReporter(client, file, xmlReportType)
+          sarif -> Reporter.createSarifReporter(client, file)
+          else -> throw IllegalStateException() // enforced by above assertion
+        }
       reporter
     }
     val extension = if (html) ".html" else if (sarif) ".sarif" else DOT_XML
@@ -807,11 +752,11 @@ internal constructor(
   }
 
   fun checkReport(
-      reporterFactory: (LintCliClient, File) -> Reporter,
-      extension: String,
-      fullPaths: Boolean = false,
-      transformer: TestResultTransformer = TestResultTransformer { it },
-      vararg checkers: TestResultChecker,
+    reporterFactory: (LintCliClient, File) -> Reporter,
+    extension: String,
+    fullPaths: Boolean = false,
+    transformer: TestResultTransformer = TestResultTransformer { it },
+    vararg checkers: TestResultChecker,
   ): TestLintResult {
     val state = states[defaultMode]!!
     val throwable = state.firstThrowable
@@ -827,25 +772,25 @@ internal constructor(
       val name = "test-lint"
 
       val file =
-          if (root != null) {
-            File(root, name + extension)
-          } else {
-            File.createTempFile(name, extension)
-          }
+        if (root != null) {
+          File(root, name + extension)
+        } else {
+          File.createTempFile(name, extension)
+        }
       val client =
-          incidents.firstNotNullResult { it.project?.client as? TestLintClient }
-              ?: object : TestLintClient() {
-                    override fun getClientRevision(): String {
-                      // HACK
-                      if (registry == null) {
-                        registry = BuiltinIssueRegistry()
-                      }
-                      return super.getClientRevision()
-                    }
-                  }
-                  .apply {
-                    getClientRevision() // force registry initialization
-                  }
+        incidents.firstNotNullResult { it.project?.client as? TestLintClient }
+          ?: object : TestLintClient() {
+              override fun getClientRevision(): String {
+                // HACK
+                if (registry == null) {
+                  registry = BuiltinIssueRegistry()
+                }
+                return super.getClientRevision()
+              }
+            }
+            .apply {
+              getClientRevision() // force registry initialization
+            }
 
       file.parentFile.mkdirs()
       val reporter = reporterFactory(client, file)
@@ -867,10 +812,7 @@ internal constructor(
         try {
           val document = PositionXmlParser.parse(actual)
           assertNotNull(document)
-          assertEquals(
-              incidents.size.toLong(),
-              document.getElementsByTagName("issue").length.toLong(),
-          )
+          assertEquals(incidents.size.toLong(), document.getElementsByTagName("issue").length.toLong())
         } catch (t: Throwable) {
           throw RuntimeException("Could not parse XML report file: " + t.message, t)
         }
@@ -975,15 +917,15 @@ internal constructor(
 
     /** Returns a test-suitable diff of the two strings. */
     @Deprecated(
-        "This method is specifically for lint backwards compatibility; to just get diffs, use Diffs.diff",
-        ReplaceWith("diff(before, after)", "com.android.ide.common.util.Diffs.diff"),
+      "This method is specifically for lint backwards compatibility; to just get diffs, use Diffs.diff",
+      ReplaceWith("diff(before, after)", "com.android.ide.common.util.Diffs.diff"),
     )
     fun getDiff(
-        before: String,
-        after: String,
-        diffCompatMode: Boolean = false,
-        diffCompatMode2: Boolean = false,
-        diffCompatMode3: Boolean = false,
+      before: String,
+      after: String,
+      diffCompatMode: Boolean = false,
+      diffCompatMode2: Boolean = false,
+      diffCompatMode3: Boolean = false,
     ): String {
       return getDiff(before, after, 0, diffCompatMode, diffCompatMode2, diffCompatMode3)
     }
@@ -996,24 +938,24 @@ internal constructor(
      * setting the [diffCompatMode] and [diffCompatMode2] properties to true.
      */
     @Deprecated(
-        "This method is specifically for lint backwards compatibility; to just get diffs, use Diffs.diff",
-        ReplaceWith("diff(before, after, windowSize)", "com.android.ide.common.util.Diffs.diff"),
+      "This method is specifically for lint backwards compatibility; to just get diffs, use Diffs.diff",
+      ReplaceWith("diff(before, after, windowSize)", "com.android.ide.common.util.Diffs.diff"),
     )
     fun getDiff(
-        before: String,
-        after: String,
-        windowSize: Int,
-        diffCompatMode: Boolean = false,
-        diffCompatMode2: Boolean = false,
-        diffCompatMode3: Boolean = false,
+      before: String,
+      after: String,
+      windowSize: Int,
+      diffCompatMode: Boolean = false,
+      diffCompatMode2: Boolean = false,
+      diffCompatMode3: Boolean = false,
     ): String {
       if (diffCompatMode || diffCompatMode2 || diffCompatMode3) {
         return getDiff(
-            if (before.isEmpty()) emptyArray() else before.split("\n").toTypedArray(),
-            if (after.isEmpty()) emptyArray() else after.split("\n").toTypedArray(),
-            windowSize,
-            diffCompatMode,
-            diffCompatMode2,
+          if (before.isEmpty()) emptyArray() else before.split("\n").toTypedArray(),
+          if (after.isEmpty()) emptyArray() else after.split("\n").toTypedArray(),
+          windowSize,
+          diffCompatMode,
+          diffCompatMode2,
         )
       } else {
         return Diffs.diff(before, after, windowSize)
@@ -1028,15 +970,15 @@ internal constructor(
      * setting the [diffCompatMode] and [diffCompatMode2] properties to true.
      */
     @Deprecated(
-        "This method is specifically for lint backwards compatibility; to just get diffs, use Diffs.diff",
-        ReplaceWith("diff(before, after, windowSize)", "com.android.ide.common.util.Diffs.diff"),
+      "This method is specifically for lint backwards compatibility; to just get diffs, use Diffs.diff",
+      ReplaceWith("diff(before, after, windowSize)", "com.android.ide.common.util.Diffs.diff"),
     )
     fun getDiff(
-        before: Array<String>,
-        after: Array<String>,
-        windowSize: Int = 0,
-        diffCompatMode: Boolean = false,
-        diffCompatMode2: Boolean = false,
+      before: Array<String>,
+      after: Array<String>,
+      windowSize: Int = 0,
+      diffCompatMode: Boolean = false,
+      diffCompatMode2: Boolean = false,
     ): String {
       // Based on the LCS section in http://introcs.cs.princeton.edu/java/96optimization/
       val sb = StringBuilder()

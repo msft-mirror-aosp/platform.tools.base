@@ -91,10 +91,7 @@ class ProjectDescription : Comparable<ProjectDescription> {
    * @return this for constructor chaining
    */
   @JvmOverloads
-  fun dependsOn(
-      library: ProjectDescription,
-      kind: DependencyKind = DependencyKind.Regular,
-  ): ProjectDescription {
+  fun dependsOn(library: ProjectDescription, kind: DependencyKind = DependencyKind.Regular): ProjectDescription {
     if (library !in dependsOn) {
       dependsOn[library] = kind
       if (library.type == Type.APP) {
@@ -195,8 +192,8 @@ class ProjectDescription : Comparable<ProjectDescription> {
       val added = targets.add(file.targetRelativePath)
       if (!added) {
         if (
-            (file.targetRelativePath.endsWith("/test.kt") || file.targetRelativePath == "test.kt") &&
-                ClassName(file.contents, DOT_KT).className == null
+          (file.targetRelativePath.endsWith("/test.kt") || file.targetRelativePath == "test.kt") &&
+            ClassName(file.contents, DOT_KT).className == null
         ) {
           // Just a default name assigned to a Kotlin compilation unit with no class: pick a new
           // unique name
@@ -213,7 +210,7 @@ class ProjectDescription : Comparable<ProjectDescription> {
         }
 
         fail(
-            "${file.targetRelativePath} is specified multiple times; files must be unique (in older versions, lint tests would just clobber the earlier files of the same name)"
+          "${file.targetRelativePath} is specified multiple times; files must be unique (in older versions, lint tests would just clobber the earlier files of the same name)"
         )
       }
     }
@@ -267,11 +264,7 @@ class ProjectDescription : Comparable<ProjectDescription> {
       return File(rootDir, relativePath)
     }
 
-    fun TestLintTask.populateProjectDirectory(
-        project: ProjectDescription,
-        projectDir: File,
-        vararg testFiles: TestFile,
-    ) {
+    fun TestLintTask.populateProjectDirectory(project: ProjectDescription, projectDir: File, vararg testFiles: TestFile) {
       if (!projectDir.exists()) {
         val ok = projectDir.mkdirs()
         if (!ok) {
@@ -291,32 +284,32 @@ class ProjectDescription : Comparable<ProjectDescription> {
 
       if (!allowClassNameClashes) {
         val files =
-            testFiles
-                .filter { it.targetPath.endsWith(DOT_JAVA) || it.targetPath.endsWith(DOT_KT) }
-                .mapNotNull { testFile ->
-                  val className = ClassName(testFile.contents)
-                  val name = className.className ?: className.jvmName
-                  if (name != null) {
-                    val prefix = className.packageName?.let { "$it." } ?: ""
-                    val parent = testFile.targetRelativePath.substringBeforeLast('/')
-                    val path = "$parent: $prefix$name"
-                    Pair(path, testFile)
-                  } else {
-                    null
-                  }
-                }
-                .groupBy { it.first }
+          testFiles
+            .filter { it.targetPath.endsWith(DOT_JAVA) || it.targetPath.endsWith(DOT_KT) }
+            .mapNotNull { testFile ->
+              val className = ClassName(testFile.contents)
+              val name = className.className ?: className.jvmName
+              if (name != null) {
+                val prefix = className.packageName?.let { "$it." } ?: ""
+                val parent = testFile.targetRelativePath.substringBeforeLast('/')
+                val path = "$parent: $prefix$name"
+                Pair(path, testFile)
+              } else {
+                null
+              }
+            }
+            .groupBy { it.first }
         for ((className, locations) in files) {
           if (locations.size > 1) {
             fail(
-                "Found more than one Java or Kotlin class in the same " +
-                    "package that have the same class name (" +
-                    className.substringAfterLast(": ").replace("/", ".") +
-                    "), this can lead to subtle errors (and in a real project, would result in " +
-                    "duplicate class compilation warnings). This scenario often happens when you're " +
-                    "creating a Kotlin specific test from a Java example, and end up with both versions " +
-                    "in the same folder. To address this, rename one of the classes, or put it into its " +
-                    "own package, or set `allowClassNameClashes(true)` on the test lint task."
+              "Found more than one Java or Kotlin class in the same " +
+                "package that have the same class name (" +
+                className.substringAfterLast(": ").replace("/", ".") +
+                "), this can lead to subtle errors (and in a real project, would result in " +
+                "duplicate class compilation warnings). This scenario often happens when you're " +
+                "creating a Kotlin specific test from a Java example, and end up with both versions " +
+                "in the same folder. To address this, rename one of the classes, or put it into its " +
+                "own package, or set `allowClassNameClashes(true)` on the test lint task."
             )
           }
         }
@@ -348,11 +341,11 @@ class ProjectDescription : Comparable<ProjectDescription> {
           fp.task = this
           if (!allowKotlinClassStubs && fp.stubSources.any { it.targetRelativePath.endsWith(DOT_KT) }) {
             error(
-                "You cannot use Kotlin in a binaryStub or mavenLibrary unless you also turn on\n" +
-                    "`lint().allowKotlinClassStubs(true)`. Kotlin stubs work in general, but module\n" +
-                    "metadata is still missing, which means that if your test relies on this metadata\n" +
-                    "(for example to call package level functions from Kotlin, or to access things like\n" +
-                    "default values or inline methods), that will not work."
+              "You cannot use Kotlin in a binaryStub or mavenLibrary unless you also turn on\n" +
+                "`lint().allowKotlinClassStubs(true)`. Kotlin stubs work in general, but module\n" +
+                "metadata is still missing, which means that if your test relies on this metadata\n" +
+                "(for example to call package level functions from Kotlin, or to access things like\n" +
+                "default values or inline methods), that will not work."
             )
           }
         }
@@ -384,11 +377,11 @@ class ProjectDescription : Comparable<ProjectDescription> {
         classpath.createFile(projectDir)
       }
       val manifest: File =
-          if (haveGradle) {
-            File(projectDir, "src/main/AndroidManifest.xml")
-          } else {
-            File(projectDir, ANDROID_MANIFEST_XML)
-          }
+        if (haveGradle) {
+          File(projectDir, "src/main/AndroidManifest.xml")
+        } else {
+          File(projectDir, ANDROID_MANIFEST_XML)
+        }
       if (project.type !== Type.JAVA) {
         addManifestFileIfNecessary(manifest)
       }
@@ -463,15 +456,15 @@ class ProjectDescription : Comparable<ProjectDescription> {
           Assert.assertTrue("Couldn't create directory $parentFile", ok)
         }
         manifest.writeText(
-            """
-            <?xml version="1.0" encoding="utf-8"?>
-            <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-                package="lint.test.pkg"
-                android:versionCode="1"
-                android:versionName="1.0" >
-            </manifest>
-            """
-                .trimIndent()
+          """
+          <?xml version="1.0" encoding="utf-8"?>
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+              package="lint.test.pkg"
+              android:versionCode="1"
+              android:versionName="1.0" >
+          </manifest>
+          """
+            .trimIndent()
         )
       }
     }

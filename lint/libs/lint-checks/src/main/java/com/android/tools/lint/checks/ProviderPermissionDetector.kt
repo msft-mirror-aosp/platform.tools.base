@@ -106,11 +106,7 @@ class ProviderPermissionDetector : Detector(), SourceCodeScanner {
    *
    * If the detector isn't running "on-the-fly", the issue will be reported in the location of the provider's manifest entry.
    */
-  private fun reportIfProviderReadPermissionOnlyOccurs(
-      context: Context,
-      provider: Element,
-      providersMap: LintMap,
-  ) {
+  private fun reportIfProviderReadPermissionOnlyOccurs(context: Context, provider: Element, providersMap: LintMap) {
     val readPermission = provider.getAttributeNodeNS(ANDROID_URI, ATTR_READ_PERMISSION) ?: return
     provider.getAttributeNodeNS(ANDROID_URI, ATTR_WRITE_PERMISSION)?.let {
       return
@@ -125,14 +121,14 @@ class ProviderPermissionDetector : Detector(), SourceCodeScanner {
     val manifestLocation = context.getLocation(readPermission, LocationType.NAME)
     val reportLocation = if (context.driver.isIsolated()) classLocation else manifestLocation
     context.report(
-        Incident(
-            PROVIDER_READ_PERMISSION_ONLY,
-            reportLocation,
-            "$providerName implements $implementedWriteMethods write APIs but " +
-                "does not protect them with a permission. Update the <provider> tag to use " +
-                "android:permission or android:writePermission",
-            fix().replace().text(ATTR_READ_PERMISSION).with(ATTR_PERMISSION).range(manifestLocation).build(),
-        )
+      Incident(
+        PROVIDER_READ_PERMISSION_ONLY,
+        reportLocation,
+        "$providerName implements $implementedWriteMethods write APIs but " +
+          "does not protect them with a permission. Update the <provider> tag to use " +
+          "android:permission or android:writePermission",
+        fix().replace().text(ATTR_READ_PERMISSION).with(ATTR_PERMISSION).range(manifestLocation).build(),
+      )
     )
   }
 
@@ -182,11 +178,11 @@ class ProviderPermissionDetector : Detector(), SourceCodeScanner {
   companion object {
     @JvmField
     val PROVIDER_READ_PERMISSION_ONLY: Issue =
-        Issue.create(
-            id = "ProviderReadPermissionOnly",
-            briefDescription = "Provider with readPermission only and implemented write APIs",
-            explanation =
-                """
+      Issue.create(
+        id = "ProviderReadPermissionOnly",
+        briefDescription = "Provider with readPermission only and implemented write APIs",
+        explanation =
+          """
                 This check looks for Content Providers that only have the `readPermission` \
                 attribute but implement write APIs.
 
@@ -197,12 +193,12 @@ class ProviderPermissionDetector : Detector(), SourceCodeScanner {
                 and write access with the same permission. Alternatively, declaring a separate \
                 `android:writePermission` can protect write access with a different permission.
             """,
-            category = Category.SECURITY,
-            priority = 5,
-            severity = Severity.WARNING,
-            androidSpecific = true,
-            implementation = Implementation(ProviderPermissionDetector::class.java, Scope.JAVA_FILE_SCOPE),
-        )
+        category = Category.SECURITY,
+        priority = 5,
+        severity = Severity.WARNING,
+        androidSpecific = true,
+        implementation = Implementation(ProviderPermissionDetector::class.java, Scope.JAVA_FILE_SCOPE),
+      )
 
     const val KEY_LOCATION = "location"
     const val KEY_IMPL_WRITE_METHODS = "implementedWriteMethods"

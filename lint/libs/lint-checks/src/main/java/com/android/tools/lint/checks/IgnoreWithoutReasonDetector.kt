@@ -40,37 +40,33 @@ import org.jetbrains.uast.UElement
 class IgnoreWithoutReasonDetector : Detector(), Detector.UastScanner {
   companion object {
     val ALLOW_COMMENT =
-        BooleanOption(
-            "allow-comments",
-            "Whether to allow a comment next to the @Ignore tag to be considered providing a reason",
-            true,
-            """
+      BooleanOption(
+        "allow-comments",
+        "Whether to allow a comment next to the @Ignore tag to be considered providing a reason",
+        true,
+        """
                 Normally you have to specify an annotation argument to the `@Ignore` \
                 annotation, but with this option you can configure whether it should \
                 also allow ignore reasons to specified by a comment adjacent to \
                 the ignore tag.
                 """,
-        )
+      )
 
     @JvmField
     val ISSUE =
-        Issue.create(
-                id = "IgnoreWithoutReason",
-                briefDescription = "@Ignore without Reason",
-                explanation =
-                    """
+      Issue.create(
+          id = "IgnoreWithoutReason",
+          briefDescription = "@Ignore without Reason",
+          explanation =
+            """
             Ignoring a test without a reason makes it difficult to figure out the problem later. \
             Please define an explicit reason why it is ignored, and when it can be resolved.""",
-                category = Category.TESTING,
-                priority = 2,
-                severity = Severity.WARNING,
-                implementation =
-                    Implementation(
-                        IgnoreWithoutReasonDetector::class.java,
-                        EnumSet.of(Scope.JAVA_FILE, Scope.TEST_SOURCES),
-                    ),
-            )
-            .setOptions(listOf(ALLOW_COMMENT))
+          category = Category.TESTING,
+          priority = 2,
+          severity = Severity.WARNING,
+          implementation = Implementation(IgnoreWithoutReasonDetector::class.java, EnumSet.of(Scope.JAVA_FILE, Scope.TEST_SOURCES)),
+        )
+        .setOptions(listOf(ALLOW_COMMENT))
   }
 
   override fun applicableAnnotations(): List<String> = listOf("org.junit.Ignore")
@@ -78,10 +74,10 @@ class IgnoreWithoutReasonDetector : Detector(), Detector.UastScanner {
   override fun isApplicableAnnotationUsage(type: AnnotationUsageType): Boolean = type == AnnotationUsageType.DEFINITION
 
   override fun visitAnnotationUsage(
-      context: JavaContext,
-      element: UElement,
-      annotationInfo: AnnotationInfo,
-      usageInfo: AnnotationUsageInfo,
+    context: JavaContext,
+    element: UElement,
+    annotationInfo: AnnotationInfo,
+    usageInfo: AnnotationUsageInfo,
   ) {
     val node = annotationInfo.annotation
     val parent = node.uastParent ?: return
@@ -92,29 +88,23 @@ class IgnoreWithoutReasonDetector : Detector(), Detector.UastScanner {
 
     val attribute = node.findAttributeValue(ATTR_VALUE)
     val hasDescription =
-        attribute != null &&
-            run {
-              val value = ConstantEvaluator.evaluate(context, attribute) as? String
-              value != null && value.isNotBlank() && value != "TODO"
-            }
+      attribute != null &&
+        run {
+          val value = ConstantEvaluator.evaluate(context, attribute) as? String
+          value != null && value.isNotBlank() && value != "TODO"
+        }
     if (!hasDescription) {
       if (ALLOW_COMMENT.getValue(context.configuration) && hasComment(node.sourcePsi)) {
         return
       }
 
       val fix =
-          if (attribute == null || node.attributeValues.isEmpty()) {
-            fix().name("Give reason").replace().end().with("(\"TODO\")").select("TODO").build()
-          } else {
-            null
-          }
-      context.report(
-          ISSUE,
-          parent,
-          context.getLocation(node),
-          "Test is ignored without giving any explanation",
-          fix,
-      )
+        if (attribute == null || node.attributeValues.isEmpty()) {
+          fix().name("Give reason").replace().end().with("(\"TODO\")").select("TODO").build()
+        } else {
+          null
+        }
+      context.report(ISSUE, parent, context.getLocation(node), "Test is ignored without giving any explanation", fix)
     }
   }
 

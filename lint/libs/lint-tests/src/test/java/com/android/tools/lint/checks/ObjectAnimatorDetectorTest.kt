@@ -26,9 +26,9 @@ class ObjectAnimatorDetectorTest : AbstractCheckTest() {
 
   fun testDocumentationExample() {
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
           import android.animation.ObjectAnimator;
 
           public class AnimationExample {
@@ -52,11 +52,11 @@ class ObjectAnimatorDetectorTest : AbstractCheckTest() {
               }
           }
                 """
-                )
-                .indented(),
-            SUPPORT_ANNOTATIONS_JAR,
-            gradle(
-                    """
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+        gradle(
+            """
             /* HIDE-FROM-DOCUMENTATION */
             android {
                 buildTypes {
@@ -66,12 +66,12 @@ class ObjectAnimatorDetectorTest : AbstractCheckTest() {
                 }
             }
             """
-                )
-                .indented(),
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+      )
+      .run()
+      .expect(
+        """
         src/main/java/AnimationExample.java:9: Error: The setter for this property does not match the expected signature (public void setProp2(int arg) [ObjectAnimatorBinding]
                 ObjectAnimator animator2 = ObjectAnimator.ofInt(myObject, "prop2", 0, 1, 2, 5);
                                                                           ~~~~~~~
@@ -86,21 +86,21 @@ class ObjectAnimatorDetectorTest : AbstractCheckTest() {
                                                                           ~~~~~~~
         1 errors, 1 warnings
               """
-        )
-        .expectFixDiffs(
-            """
+      )
+      .expectFixDiffs(
+        """
         Fix for src/main/java/AnimationExample.java line 14: Annotate with @Keep:
         @@ -1,0 +2 @@
         +import androidx.annotation.Keep;
         @@ -13,0 +15 @@
         +        @Keep
         """
-        )
+      )
   }
 
   fun testBasic() {
     val expected =
-        """
+      """
             src/main/java/test/pkg/AnimatorTest.java:21: Error: The setter for this property does not match the expected signature (public void setProp2(int arg) [ObjectAnimatorBinding]
                     ObjectAnimator.ofInt(myObject, "prop2", 0, 1, 2, 5).start();
                                                    ~~~~~~~
@@ -134,9 +134,9 @@ class ObjectAnimatorDetectorTest : AbstractCheckTest() {
             4 errors, 2 warnings
             """
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
                 package test.pkg;
 
 
@@ -226,11 +226,11 @@ class ObjectAnimatorDetectorTest : AbstractCheckTest() {
 
                 }
                 """
-                )
-                .indented(),
-            SUPPORT_ANNOTATIONS_JAR,
-            gradle(
-                    """
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+        gradle(
+            """
                 android {
                     buildTypes {
                         release {
@@ -239,13 +239,13 @@ class ObjectAnimatorDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-                )
-                .indented(),
-        )
-        .run()
-        .expect(expected)
-        .expectFixDiffs(
-            """
+          )
+          .indented(),
+      )
+      .run()
+      .expect(expected)
+      .expectFixDiffs(
+        """
             Fix for src/main/java/test/pkg/AnimatorTest.java line 55: Annotate with @Keep:
             @@ -54,0 +55 @@
             +        @Keep
@@ -253,14 +253,14 @@ class ObjectAnimatorDetectorTest : AbstractCheckTest() {
             @@ -57,0 +58 @@
             +        @Keep
             """
-        )
+      )
   }
 
   fun testNotMinifying() {
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
                 package test.pkg;
 
 
@@ -287,10 +287,10 @@ class ObjectAnimatorDetectorTest : AbstractCheckTest() {
 
                 }
                 """
-                )
-                .indented(),
-            gradle(
-                    """
+          )
+          .indented(),
+        gradle(
+            """
                 android {
                     buildTypes {
                         release {
@@ -299,18 +299,18 @@ class ObjectAnimatorDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-                )
-                .indented(),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .issues(MISSING_KEEP)
-        .run()
-        .expectClean()
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .issues(MISSING_KEEP)
+      .run()
+      .expectClean()
   }
 
   fun testFlow() {
     val expected =
-        """
+      """
             src/test/pkg/AnimatorFlowTest.java:10: Error: The setter for this property does not match the expected signature (public void setProp1(int arg) [ObjectAnimatorBinding]
                     PropertyValuesHolder p1 = PropertyValuesHolder.ofInt("prop1", 50); // ERROR
                                                                          ~~~~~~~
@@ -344,9 +344,9 @@ class ObjectAnimatorDetectorTest : AbstractCheckTest() {
             5 errors, 0 warnings
             """
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
                 package test.pkg;
 
                 import android.animation.ObjectAnimator;
@@ -388,19 +388,19 @@ class ObjectAnimatorDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-                )
-                .indented()
-        )
-        .run()
-        .expect(expected)
+          )
+          .indented()
+      )
+      .run()
+      .expect(expected)
   }
 
   fun test229545() {
     // Regression test for https://code.google.com/p/android/issues/detail?id=229545
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
                 package com.example.objectanimatorbinding;
 
                 import android.animation.ArgbEvaluator;
@@ -444,10 +444,10 @@ class ObjectAnimatorDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-                )
-                .indented(),
-            gradle(
-                    """
+          )
+          .indented(),
+        gradle(
+            """
                 android {
                     buildTypes {
                         release {
@@ -456,21 +456,21 @@ class ObjectAnimatorDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-                )
-                .indented(),
-        )
-        .issues(MISSING_KEEP)
-        .allowCompilationErrors()
-        .run()
-        .expectClean()
+          )
+          .indented(),
+      )
+      .issues(MISSING_KEEP)
+      .allowCompilationErrors()
+      .run()
+      .expectClean()
   }
 
   fun test230387() {
     // Regression test for https://code.google.com/p/android/issues/detail?id=230387
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
                 package test.pkg;
 
                 import android.animation.ObjectAnimator;
@@ -487,10 +487,10 @@ class ObjectAnimatorDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-                )
-                .indented(),
-            gradle(
-                    """
+          )
+          .indented(),
+        gradle(
+            """
                 android {
                     buildTypes {
                         release {
@@ -499,12 +499,12 @@ class ObjectAnimatorDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-                )
-                .indented(),
-        )
-        .issues(MISSING_KEEP)
-        .run()
-        .expectClean()
+          )
+          .indented(),
+      )
+      .issues(MISSING_KEEP)
+      .run()
+      .expectClean()
   }
 
   fun testCreateValueAnimator() {
@@ -512,9 +512,9 @@ class ObjectAnimatorDetectorTest : AbstractCheckTest() {
     // to create a property holder and we don't know the associated object, we don't falsely
     // report broken properties
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
                 package test.pkg;
 
                 import android.animation.PropertyValuesHolder;
@@ -529,12 +529,12 @@ class ObjectAnimatorDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-                )
-                .indented()
-        )
-        .issues(BROKEN_PROPERTY)
-        .run()
-        .expectClean()
+          )
+          .indented()
+      )
+      .issues(BROKEN_PROPERTY)
+      .run()
+      .expectClean()
   }
 
   fun testSuppress() {
@@ -542,9 +542,9 @@ class ObjectAnimatorDetectorTest : AbstractCheckTest() {
     // Ensure that we can suppress both types of issues by annotating either the
     // property binding site *or* the property declaration site
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
                 package test.pkg;
 
                 import android.animation.ObjectAnimator;
@@ -588,20 +588,20 @@ class ObjectAnimatorDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-                )
-                .indented()
-        )
-        .issues(BROKEN_PROPERTY, MISSING_KEEP)
-        .run()
-        .expectClean()
+          )
+          .indented()
+      )
+      .issues(BROKEN_PROPERTY, MISSING_KEEP)
+      .run()
+      .expectClean()
   }
 
   fun test37136742() {
     // Regression test for 37136742
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
                 package test.pkg;
                 import android.animation.Keyframe;
                 import android.animation.ObjectAnimator;
@@ -620,19 +620,19 @@ class ObjectAnimatorDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-                )
-                .indented()
-        )
-        .run()
-        .expectClean()
+          )
+          .indented()
+      )
+      .run()
+      .expectClean()
   }
 
   fun test137695423() {
     // Regression test for 137695423
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
                 package test.pkg;
 
                 import android.animation.ObjectAnimator;
@@ -664,20 +664,20 @@ class ObjectAnimatorDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-                )
-                .indented(),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expectClean()
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expectClean()
   }
 
   fun testMotionLayoutKeep() {
     lint()
-        .files(
-            xml(
-                    "src/main/res/layout/mylayout.xml",
-                    """
+      .files(
+        xml(
+            "src/main/res/layout/mylayout.xml",
+            """
                 <android.support.constraint.motion.MotionLayout
                     xmlns:android="http://schemas.android.com/apk/res/android"
                     xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -709,11 +709,11 @@ class ObjectAnimatorDetectorTest : AbstractCheckTest() {
 
                 </android.support.constraint.motion.MotionLayout>
             """,
-                )
-                .indented(),
-            xml(
-                    "src/main/res/xml/scene_show_details.xml",
-                    """
+          )
+          .indented(),
+        xml(
+            "src/main/res/xml/scene_show_details.xml",
+            """
                 <MotionScene xmlns:android="http://schemas.android.com/apk/res/android"
                     xmlns:app="http://schemas.android.com/apk/res-auto">
 
@@ -763,10 +763,10 @@ class ObjectAnimatorDetectorTest : AbstractCheckTest() {
 
                 </MotionScene>
             """,
-                )
-                .indented(),
-            java(
-                    """
+          )
+          .indented(),
+        java(
+            """
                 package test.pkg;
                 import androidx.annotation.Keep;
                 import android.animation.Keyframe;
@@ -786,10 +786,10 @@ class ObjectAnimatorDetectorTest : AbstractCheckTest() {
                     public void setIconTint2(int value) { } // OK
                 }
                 """
-                )
-                .indented(),
-            kotlin(
-                    """
+          )
+          .indented(),
+        kotlin(
+            """
                 package test.pkg
 
                 import android.content.Context
@@ -808,10 +808,10 @@ class ObjectAnimatorDetectorTest : AbstractCheckTest() {
                     var iconTint4: Int = 0 // OK
                 }
                 """
-                )
-                .indented(),
-            gradle(
-                    """
+          )
+          .indented(),
+        gradle(
+            """
                 android {
                     buildTypes {
                         release {
@@ -820,14 +820,14 @@ class ObjectAnimatorDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-                )
-                .indented(),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .issues(MISSING_KEEP)
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .issues(MISSING_KEEP)
+      .run()
+      .expect(
+        """
             src/main/res/xml/scene_show_details.xml:32: Warning: This attribute references a method or property in custom view test.pkg.TintingToolbarJava which is not annotated with @Keep; it should be annotated with @Keep to ensure that it is not discarded or renamed in release builds [AnimatorKeep]
                         app:attributeName="iconTint1"
                                            ~~~~~~~~~
@@ -842,6 +842,6 @@ class ObjectAnimatorDetectorTest : AbstractCheckTest() {
                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             0 errors, 2 warnings
             """
-        )
+      )
   }
 }

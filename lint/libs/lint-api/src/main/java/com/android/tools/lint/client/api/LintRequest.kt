@@ -24,18 +24,18 @@ import java.util.EnumSet
 
 /** Information about a request to run lint. */
 open class LintRequest(
-    /**
-     * The lint client requesting the lint check
-     *
-     * @return the client, never null
-     */
-    val client: LintClient,
+  /**
+   * The lint client requesting the lint check
+   *
+   * @return the client, never null
+   */
+  val client: LintClient,
 
-    /**
-     * The set of files to check with lint. This can reference Android projects, or directories containing Android projects, or individual
-     * XML or Java files (typically for incremental IDE analysis).
-     */
-    val files: List<File>,
+  /**
+   * The set of files to check with lint. This can reference Android projects, or directories containing Android projects, or individual XML
+   * or Java files (typically for incremental IDE analysis).
+   */
+  val files: List<File>,
 ) {
 
   /** The root directory containing all the projects. */

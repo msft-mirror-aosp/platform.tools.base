@@ -40,16 +40,14 @@ fun VirtualFile.asFile(): File = VirtualFileWrapper(this)
 
 // Copied over from `org.jetbrains.kotlin.analysis.project.structure.impl.KtModuleUtils.kt`
 
-internal fun getSourceFilePaths(
-    javaSourceRoots: Collection<File>,
-    includeDirectoryRoot: Boolean = false,
-): PathCollection = getFilePaths(javaSourceRoots, sourceFileExtensions::contains, includeDirectoryRoot)
+internal fun getSourceFilePaths(javaSourceRoots: Collection<File>, includeDirectoryRoot: Boolean = false): PathCollection =
+  getFilePaths(javaSourceRoots, sourceFileExtensions::contains, includeDirectoryRoot)
 
 /** Return a [PathCollection] of paths beneath [roots], whose extensions satisfy [isExtensionWanted] */
 private fun getFilePaths(
-    roots: Collection<File>,
-    isExtensionWanted: (String?) -> Boolean,
-    includeDirectoryRoot: Boolean = false,
+  roots: Collection<File>,
+  isExtensionWanted: (String?) -> Boolean,
+  includeDirectoryRoot: Boolean = false,
 ): PathCollection {
   val physicalPaths = hashSetOf<Path>()
   val physicalDirectoryPaths = hashSetOf<Path>()
@@ -125,47 +123,43 @@ internal fun Iterable<File>.toPathCollection(): PathCollection {
  *
  * Note that this util gracefully skips [IOException] during file tree traversal.
  */
-private fun collectFilePaths(
-    root: Path,
-    result: MutableSet<Path>,
-    isExtensionWanted: (String?) -> Boolean,
-) {
+private fun collectFilePaths(root: Path, result: MutableSet<Path>, isExtensionWanted: (String?) -> Boolean) {
   // NB: [Files#walk] throws an exception if there is an issue during IO.
   // With [Files#walkFileTree] with a custom visitor, we can take control of exception handling.
   Files.walkFileTree(
-      root,
-      object : SimpleFileVisitor<Path>() {
-        override fun preVisitDirectory(dir: Path, attrs: BasicFileAttributes): FileVisitResult {
-          return if (Files.isReadable(dir)) FileVisitResult.CONTINUE else FileVisitResult.SKIP_SUBTREE
-        }
+    root,
+    object : SimpleFileVisitor<Path>() {
+      override fun preVisitDirectory(dir: Path, attrs: BasicFileAttributes): FileVisitResult {
+        return if (Files.isReadable(dir)) FileVisitResult.CONTINUE else FileVisitResult.SKIP_SUBTREE
+      }
 
-        override fun visitFile(file: Path, attrs: BasicFileAttributes): FileVisitResult {
-          if (!Files.isRegularFile(file) || !Files.isReadable(file)) return FileVisitResult.CONTINUE
-          if (isExtensionWanted(GoogleFiles.getFileExtension(file.fileName.toString()))) {
-            result.add(file)
-          }
-          return FileVisitResult.CONTINUE
+      override fun visitFile(file: Path, attrs: BasicFileAttributes): FileVisitResult {
+        if (!Files.isRegularFile(file) || !Files.isReadable(file)) return FileVisitResult.CONTINUE
+        if (isExtensionWanted(GoogleFiles.getFileExtension(file.fileName.toString()))) {
+          result.add(file)
         }
+        return FileVisitResult.CONTINUE
+      }
 
-        override fun visitFileFailed(file: Path, exc: IOException?): FileVisitResult {
-          // TODO: report or log [IOException]?
-          // NB: this intentionally swallows the exception, hence fail-safe.
-          // Skipping subtree doesn't make any sense, since this is not a directory.
-          // Skipping sibling may drop valid file paths afterward, so we just continue.
-          return FileVisitResult.CONTINUE
-        }
-      },
+      override fun visitFileFailed(file: Path, exc: IOException?): FileVisitResult {
+        // TODO: report or log [IOException]?
+        // NB: this intentionally swallows the exception, hence fail-safe.
+        // Skipping subtree doesn't make any sense, since this is not a directory.
+        // Skipping sibling may drop valid file paths afterward, so we just continue.
+        return FileVisitResult.CONTINUE
+      }
+    },
   )
 }
 
 internal class PathCollection(
-    val physicalFiles: Collection<Path>,
-    val physicalDirectories: Collection<Path>,
-    val virtualFiles: Collection<VirtualFile>,
-    val virtualDirectories: Collection<VirtualFile>,
+  val physicalFiles: Collection<Path>,
+  val physicalDirectories: Collection<Path>,
+  val virtualFiles: Collection<VirtualFile>,
+  val virtualDirectories: Collection<VirtualFile>,
 ) {
   fun isEmpty(): Boolean =
-      physicalFiles.isEmpty() && physicalDirectories.isEmpty() && virtualFiles.isEmpty() && virtualDirectories.isEmpty()
+    physicalFiles.isEmpty() && physicalDirectories.isEmpty() && virtualFiles.isEmpty() && virtualDirectories.isEmpty()
 
   fun hasFiles(): Boolean = physicalFiles.isNotEmpty() || virtualFiles.isNotEmpty()
 
@@ -174,10 +168,7 @@ internal class PathCollection(
   fun isNotEmpty(): Boolean = !isEmpty()
 
   /** Partition the paths into those that satisfy [keepVirtual] and don't, respectively */
-  fun partition(
-      fileSystem: CoreLocalFileSystem,
-      keepVirtual: (VirtualFile) -> Boolean,
-  ): Pair<PathCollection, PathCollection> {
+  fun partition(fileSystem: CoreLocalFileSystem, keepVirtual: (VirtualFile) -> Boolean): Pair<PathCollection, PathCollection> {
     fun keepPhysical(path: Path): Boolean {
       val vFile = fileSystem.findFileByPath(path.toString())
       return vFile != null && keepVirtual(vFile)
@@ -189,7 +180,7 @@ internal class PathCollection(
     val (virtualDirsT, virtualDirsF) = virtualDirectories.partition(keepVirtual)
 
     return PathCollection(physicalFilesT, physicalDirsT, virtualFilesT, virtualDirsT) to
-        PathCollection(physicalFilesF, physicalDirsF, virtualFilesF, virtualDirsF)
+      PathCollection(physicalFilesF, physicalDirsF, virtualFilesF, virtualDirsF)
   }
 
   operator fun plus(paths: Collection<Path>): PathCollection {
@@ -202,12 +193,7 @@ internal class PathCollection(
         newPhysicalFiles.add(path)
       }
     }
-    return PathCollection(
-        newPhysicalFiles,
-        newPhysicalDirectories,
-        virtualFiles,
-        virtualDirectories,
-    )
+    return PathCollection(newPhysicalFiles, newPhysicalDirectories, virtualFiles, virtualDirectories)
   }
 
   override fun toString(): String {
@@ -239,8 +225,4 @@ internal fun KtBinaryModuleBuilder.addBinaryPaths(paths: PathCollection) {
 }
 
 private val sourceFileExtensions =
-    arrayOf(
-        KotlinFileType.EXTENSION,
-        KotlinParserDefinition.STD_SCRIPT_SUFFIX,
-        JavaFileType.DEFAULT_EXTENSION,
-    )
+  arrayOf(KotlinFileType.EXTENSION, KotlinParserDefinition.STD_SCRIPT_SUFFIX, JavaFileType.DEFAULT_EXTENSION)

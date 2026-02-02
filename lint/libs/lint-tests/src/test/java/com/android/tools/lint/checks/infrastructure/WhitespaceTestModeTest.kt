@@ -43,50 +43,50 @@ class WhitespaceTestModeTest {
   fun testBasic() {
     @Language("kotlin")
     val kotlin =
-        """
-        @file:Suppress("ALL")
-        import android.util.List
-        /** {@link Test} and [test] */
-        fun test(i1: Int, i2: Int, s1: String, s2: String, a: Any, b1: Boolean, b2: Boolean) {
-            val x = i1 + i2 + s1.length + s2.length
-            var y = 0
-            y++
-            val z2 = !b2
-            val z = (b2 && !b1 && ++y != 5)
-            if (x > 1) {
-                val y = a as? String
-            }
-            val t: Any = "test"
-            val t2: Any = ${'"'}""test""${'"'}
-            (t as? String)?.plus("other")?.get(0)?.dec()?.inc()
-            "foo".chars().allMatch { it.dec() > 0 }.toString()
-            val minusOne = -1
-        }
-        """
-            .trimIndent()
-            .trim()
+      """
+      @file:Suppress("ALL")
+      import android.util.List
+      /** {@link Test} and [test] */
+      fun test(i1: Int, i2: Int, s1: String, s2: String, a: Any, b1: Boolean, b2: Boolean) {
+          val x = i1 + i2 + s1.length + s2.length
+          var y = 0
+          y++
+          val z2 = !b2
+          val z = (b2 && !b1 && ++y != 5)
+          if (x > 1) {
+              val y = a as? String
+          }
+          val t: Any = "test"
+          val t2: Any = ${'"'}""test""${'"'}
+          (t as? String)?.plus("other")?.get(0)?.dec()?.inc()
+          "foo".chars().allMatch { it.dec() > 0 }.toString()
+          val minusOne = -1
+      }
+      """
+        .trimIndent()
+        .trim()
 
     @Language("kotlin")
     val expected =
-        "" +
-            " @file:Suppress(\"ALL\") \n" +
-            " import android.util.List \n" +
-            " /** {@link Test} and [test] */ \n" +
-            " fun   test ( i1 :   Int ,   i2 :   Int ,   s1 :   String ,   s2 :   String ,   a :   Any ,   b1 :   Boolean ,   b2 :   Boolean )   { \n" +
-            "     val   x   =   i1   +   i2   +   s1 . length   +   s2 . length \n" +
-            "     var   y   =   0 \n" +
-            "     y ++ \n" +
-            "     val   z2   =   ! b2 \n" +
-            "     val   z   =   ( b2   &&   ! b1   &&   ++ y   !=   5 ) \n" +
-            "     if   ( x   >   1 )   { \n" +
-            "         val   y   =   a   as?   String \n" +
-            "     } \n" +
-            "     val   t :   Any   =   \"test\" \n" +
-            "     val   t2 :   Any   =   \"\"\"test\"\"\" \n" +
-            "     ( t   as?   String ) ?. plus ( \"other\" ) ?. get ( 0 ) ?. dec ( ) ?. inc ( ) \n" +
-            "     \"foo\" . chars ( ) . allMatch   {   it . dec ( )   >   0   } . toString ( ) \n" +
-            "     val   minusOne   =   -1 \n" +
-            " } "
+      "" +
+        " @file:Suppress(\"ALL\") \n" +
+        " import android.util.List \n" +
+        " /** {@link Test} and [test] */ \n" +
+        " fun   test ( i1 :   Int ,   i2 :   Int ,   s1 :   String ,   s2 :   String ,   a :   Any ,   b1 :   Boolean ,   b2 :   Boolean )   { \n" +
+        "     val   x   =   i1   +   i2   +   s1 . length   +   s2 . length \n" +
+        "     var   y   =   0 \n" +
+        "     y ++ \n" +
+        "     val   z2   =   ! b2 \n" +
+        "     val   z   =   ( b2   &&   ! b1   &&   ++ y   !=   5 ) \n" +
+        "     if   ( x   >   1 )   { \n" +
+        "         val   y   =   a   as?   String \n" +
+        "     } \n" +
+        "     val   t :   Any   =   \"test\" \n" +
+        "     val   t2 :   Any   =   \"\"\"test\"\"\" \n" +
+        "     ( t   as?   String ) ?. plus ( \"other\" ) ?. get ( 0 ) ?. dec ( ) ?. inc ( ) \n" +
+        "     \"foo\" . chars ( ) . allMatch   {   it . dec ( )   >   0   } . toString ( ) \n" +
+        "     val   minusOne   =   -1 \n" +
+        " } "
 
     val modified = addSpacesKotlin(kotlin)
     assertEquals(expected, modified)
@@ -96,20 +96,20 @@ class WhitespaceTestModeTest {
   fun testAnnotationBracketSyntax() {
     @Language("kotlin")
     val kotlin =
-        """
-        @file:Suppress("ALL")
-        annotation class VisibleForTesting
-        class TestClass(@get:[VisibleForTesting] @set:VisibleForTesting var p5: String)
-        """
-            .trimIndent()
-            .trim()
+      """
+      @file:Suppress("ALL")
+      annotation class VisibleForTesting
+      class TestClass(@get:[VisibleForTesting] @set:VisibleForTesting var p5: String)
+      """
+        .trimIndent()
+        .trim()
 
     @Language("kotlin")
     val expected =
-        "" +
-            " @file:Suppress(\"ALL\") \n" +
-            " annotation   class   VisibleForTesting \n" +
-            " class   TestClass ( @get:[VisibleForTesting]   @set:VisibleForTesting   var   p5 :   String ) "
+      "" +
+        " @file:Suppress(\"ALL\") \n" +
+        " annotation   class   VisibleForTesting \n" +
+        " class   TestClass ( @get:[VisibleForTesting]   @set:VisibleForTesting   var   p5 :   String ) "
 
     val modified = addSpacesKotlin(kotlin)
     assertEquals(expected, modified)
@@ -119,12 +119,12 @@ class WhitespaceTestModeTest {
   fun testStrings() {
     @Language("kotlin")
     val kotlin =
-        """
-        @file:Suppress("ALL")
-        val test = "test" + ""${'"'}test""${'"'}
-        """
-            .trimIndent()
-            .trim()
+      """
+      @file:Suppress("ALL")
+      val test = "test" + ""${'"'}test""${'"'}
+      """
+        .trimIndent()
+        .trim()
 
     @Suppress("MayBeConstant")
     @Language("kotlin")
@@ -138,37 +138,37 @@ class WhitespaceTestModeTest {
   fun testJava() {
     @Language("java")
     val java =
-        """
-        package test.pkg;
-        import android.util.List;
-        @SuppressWarnings("ALL")
-        public class Test {
-            void test(int i) {
-                /** {@link Test} */
-                String s="test"+'test';
-                boolean x=i>5?!true:i%2==0;
-                int minusOne = -1;
-            }
-        }
-        """
-            .trimIndent()
-            .trim()
+      """
+      package test.pkg;
+      import android.util.List;
+      @SuppressWarnings("ALL")
+      public class Test {
+          void test(int i) {
+              /** {@link Test} */
+              String s="test"+'test';
+              boolean x=i>5?!true:i%2==0;
+              int minusOne = -1;
+          }
+      }
+      """
+        .trimIndent()
+        .trim()
 
     @Suppress("DanglingJavadoc", "PointlessBooleanExpression", "ConstantConditions")
     @Language("java")
     val expected =
-        "" +
-            " package test.pkg; \n" +
-            " import android.util.List; \n" +
-            " @SuppressWarnings(\"ALL\") \n" +
-            " public   class   Test   { \n" +
-            "     void   test ( int   i )   { \n" +
-            "         /** {@link Test} */ \n" +
-            "         String   s = \"test\" + 'test' ; \n" +
-            "         boolean   x = i > 5 ? ! true : i % 2 == 0 ; \n" +
-            "         int   minusOne   =   -1 ; \n" +
-            "     } \n" +
-            " } "
+      "" +
+        " package test.pkg; \n" +
+        " import android.util.List; \n" +
+        " @SuppressWarnings(\"ALL\") \n" +
+        " public   class   Test   { \n" +
+        "     void   test ( int   i )   { \n" +
+        "         /** {@link Test} */ \n" +
+        "         String   s = \"test\" + 'test' ; \n" +
+        "         boolean   x = i > 5 ? ! true : i % 2 == 0 ; \n" +
+        "         int   minusOne   =   -1 ; \n" +
+        "     } \n" +
+        " } "
     val modified = addSpacesJava(java)
     assertEquals(expected, modified)
   }
@@ -179,33 +179,33 @@ class WhitespaceTestModeTest {
 
     @Language("kotlin")
     val kotlin =
-        """
-        @file:Suppress("ALL")
-        fun test() = run {
-            label@ for (i in 0 until 10) {
-                if (i < 5) {
-                    continue@label
-                }
-            }
-            this@run
-        }
-        """
-            .trimIndent()
-            .trim()
+      """
+      @file:Suppress("ALL")
+      fun test() = run {
+          label@ for (i in 0 until 10) {
+              if (i < 5) {
+                  continue@label
+              }
+          }
+          this@run
+      }
+      """
+        .trimIndent()
+        .trim()
 
     @Suppress("MayBeConstant")
     @Language("kotlin")
     val expected =
-        "" +
-            " @file:Suppress(\"ALL\") \n" +
-            " fun   test ( )   =   run   { \n" +
-            "     label@   for   ( i   in   0   until   10 )   { \n" +
-            "         if   ( i   <   5 )   { \n" +
-            "             continue@label \n" +
-            "         } \n" +
-            "     } \n" +
-            "     this@run \n" +
-            " } "
+      "" +
+        " @file:Suppress(\"ALL\") \n" +
+        " fun   test ( )   =   run   { \n" +
+        "     label@   for   ( i   in   0   until   10 )   { \n" +
+        "         if   ( i   <   5 )   { \n" +
+        "             continue@label \n" +
+        "         } \n" +
+        "     } \n" +
+        "     this@run \n" +
+        " } "
 
     val modified = addSpacesKotlin(kotlin)
     assertEquals(expected, modified)

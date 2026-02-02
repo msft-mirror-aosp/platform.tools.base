@@ -53,13 +53,13 @@ import org.jetbrains.uast.UCallExpression
 
 class WrongGradleMethodDetector : Detector(), GradleScanner {
   override fun checkMethodCall(
-      context: GradleContext,
-      statement: String,
-      parent: String?,
-      parentParent: String?,
-      namedArguments: Map<String, String>,
-      unnamedArguments: List<String>,
-      cookie: Any,
+    context: GradleContext,
+    statement: String,
+    parent: String?,
+    parentParent: String?,
+    namedArguments: Map<String, String>,
+    unnamedArguments: List<String>,
+    cookie: Any,
   ) {
     if (cookie is UCallExpression) {
       val call = cookie.sourcePsi
@@ -106,45 +106,39 @@ class WrongGradleMethodDetector : Detector(), GradleScanner {
 
         val imports = findImports(symbol) ?: emptyList()
         val fix =
-            if (imports.isNotEmpty()) {
-              createFix(context, imports.first())
-            } else {
-              null
-            }
+          if (imports.isNotEmpty()) {
+            createFix(context, imports.first())
+          } else {
+            null
+          }
 
         val inProductFlavor = thisTypeString == "com.android.build.api.dsl.ApplicationProductFlavor"
         val inBuildType = thisTypeString == "com.android.build.api.dsl.ApplicationBuildType"
         val simpleParentType = parentType.classId.relativeClassName.asString()
 
         val message =
-            getErrorMessage(
-                simpleParentType,
-                thisTypeString,
-                if (statement == DEPENDENCIES_BLOCK_NAME) ktCall.parentLambda()?.getContainerName() else null,
-                imports.firstOrNull(),
-                inBuildType,
-                inProductFlavor,
-            )
+          getErrorMessage(
+            simpleParentType,
+            thisTypeString,
+            if (statement == DEPENDENCIES_BLOCK_NAME) ktCall.parentLambda()?.getContainerName() else null,
+            imports.firstOrNull(),
+            inBuildType,
+            inProductFlavor,
+          )
 
-        context.report(
-            ISSUE,
-            ktCall,
-            context.getLocation(ktCall.getCallNameExpression()),
-            message,
-            fix,
-        )
+        context.report(ISSUE, ktCall, context.getLocation(ktCall.getCallNameExpression()), message, fix)
       }
     }
   }
 
   /** Creates the error message. */
   private fun getErrorMessage(
-      parentType: String,
-      thisType: String,
-      dependenciesParent: String?,
-      import: String?,
-      inBuildType: Boolean,
-      inProductFlavor: Boolean,
+    parentType: String,
+    thisType: String,
+    dependenciesParent: String?,
+    import: String?,
+    inBuildType: Boolean,
+    inProductFlavor: Boolean,
   ): String {
     return buildString {
       append("Suspicious receiver type; ")
@@ -177,12 +171,12 @@ class WrongGradleMethodDetector : Detector(), GradleScanner {
   }
 
   private fun checkCli(
-      context: GradleContext,
-      statement: String,
-      parent: String?,
-      parentParent: String?,
-      ktsCall: KtCallElement?,
-      cookie: Any,
+    context: GradleContext,
+    statement: String,
+    parent: String?,
+    parentParent: String?,
+    ktsCall: KtCallElement?,
+    cookie: Any,
   ) {
     // From outside the IDE we don't have a correct classpath and KTS setup,
     // so resolving into the Gradle APIs doesn't work -- which means we cannot
@@ -199,22 +193,17 @@ class WrongGradleMethodDetector : Detector(), GradleScanner {
       val inProductFlavor = parentParent == "productFlavors"
       if (inBuildType || inProductFlavor) {
         val message =
-            getErrorMessage(
-                "Project",
-                "org.gradle.api.Project",
-                ktsCall?.parentLambda()?.getContainerName() ?: parent,
-                null,
-                inBuildType,
-                inProductFlavor,
-            )
+          getErrorMessage(
+            "Project",
+            "org.gradle.api.Project",
+            ktsCall?.parentLambda()?.getContainerName() ?: parent,
+            null,
+            inBuildType,
+            inProductFlavor,
+          )
 
         if (ktsCall != null) {
-          context.report(
-              ISSUE,
-              ktsCall,
-              context.getLocation(ktsCall.getCallNameExpression()),
-              message,
-          )
+          context.report(ISSUE, ktsCall, context.getLocation(ktsCall.getCallNameExpression()), message)
         } else {
           context.report(ISSUE, cookie, context.getLocation(cookie, LocationType.NAME), message)
         }
@@ -223,25 +212,15 @@ class WrongGradleMethodDetector : Detector(), GradleScanner {
   }
 
   private fun reportFirebaseAppDistributionMistake(
-      context: GradleContext,
-      call: KtCallElement,
-      location: Location = context.getLocation(call.getCallNameExpression()),
+    context: GradleContext,
+    call: KtCallElement,
+    location: Location = context.getLocation(call.getCallNameExpression()),
   ) {
     reportFirebaseAppDistributionMistake(context, call as Any, location)
   }
 
-  private fun reportFirebaseAppDistributionMistake(
-      context: GradleContext,
-      cookie: Any,
-      location: Location,
-  ) {
-    context.report(
-        ISSUE,
-        cookie,
-        location,
-        FIREBASE_APP_DISTRIBUTION_MESSAGE,
-        fix = createFix(context, FIREBASE_APP_DISTRIBUTION_FQN),
-    )
+  private fun reportFirebaseAppDistributionMistake(context: GradleContext, cookie: Any, location: Location) {
+    context.report(ISSUE, cookie, location, FIREBASE_APP_DISTRIBUTION_MESSAGE, fix = createFix(context, FIREBASE_APP_DISTRIBUTION_FQN))
   }
 
   private fun getReceiverType(symbol: KaFunctionSymbol): KaType? {
@@ -285,23 +264,23 @@ class WrongGradleMethodDetector : Detector(), GradleScanner {
         return null
       }
       return findTopLevelCallables(FqName(pkgName), methodName)
-          .filter { it is KaFunctionSymbol }
-          .mapNotNull { it.callableId?.asSingleFqName()?.asString() }
-          .toSet()
-          .toList()
-          .sorted()
+        .filter { it is KaFunctionSymbol }
+        .mapNotNull { it.callableId?.asSingleFqName()?.asString() }
+        .toSet()
+        .toList()
+        .sorted()
     }
     return null
   }
 
   private fun createFix(context: GradleContext, import: String): LintFix {
     return fix()
-        .name("Import $import")
-        .replace()
-        .beginning()
-        .with("import $import\n")
-        .range(Location.create(context.file, DefaultPosition(-1, -1, 0), DefaultPosition(-1, -1, 0)))
-        .build()
+      .name("Import $import")
+      .replace()
+      .beginning()
+      .with("import $import\n")
+      .range(Location.create(context.file, DefaultPosition(-1, -1, 0), DefaultPosition(-1, -1, 0)))
+      .build()
   }
 
   companion object {
@@ -309,16 +288,16 @@ class WrongGradleMethodDetector : Detector(), GradleScanner {
     private const val FIREBASE_APP_DISTRIBUTION_PKG_PREFIX = "com.google.firebase.appdistribution.gradle."
     private const val FIREBASE_APP_DISTRIBUTION_FQN = "$FIREBASE_APP_DISTRIBUTION_PKG_PREFIX$FIREBASE_APP_DISTRIBUTION_NAME"
     private const val FIREBASE_APP_DISTRIBUTION_MESSAGE =
-        "This does not resolve to the right method; you need to explicitly " + "add `import $FIREBASE_APP_DISTRIBUTION_FQN` to this file!"
+      "This does not resolve to the right method; you need to explicitly " + "add `import $FIREBASE_APP_DISTRIBUTION_FQN` to this file!"
     private const val DEPENDENCIES_BLOCK_NAME = "dependencies"
 
     @JvmField
     val ISSUE =
-        Issue.create(
-            id = "WrongGradleMethod",
-            briefDescription = "Wrong Gradle method invoked",
-            explanation =
-                """
+      Issue.create(
+        id = "WrongGradleMethod",
+        briefDescription = "Wrong Gradle method invoked",
+        explanation =
+          """
           This lint check looks for suspicious Gradle DSL calls.
 
           One common example is attempting to create product flavor or build type specific dependencies by \
@@ -361,10 +340,10 @@ class WrongGradleMethodDetector : Detector(), GradleScanner {
           If you get this error on other DSL constructs inside build types or product flavors, \
           check the plugin documentation.
           """,
-            category = Category.CORRECTNESS,
-            priority = 2,
-            severity = Severity.ERROR,
-            implementation = Implementation(WrongGradleMethodDetector::class.java, Scope.GRADLE_SCOPE),
-        )
+        category = Category.CORRECTNESS,
+        priority = 2,
+        severity = Severity.ERROR,
+        implementation = Implementation(WrongGradleMethodDetector::class.java, Scope.GRADLE_SCOPE),
+      )
   }
 }

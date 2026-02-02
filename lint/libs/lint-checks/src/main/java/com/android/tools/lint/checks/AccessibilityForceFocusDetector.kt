@@ -40,7 +40,7 @@ class AccessibilityForceFocusDetector : Detector(), SourceCodeScanner {
   override fun visitMethodCall(context: JavaContext, node: UCallExpression, method: PsiMethod) {
 
     fun isViewMethod(methodName: String, vararg argumentTypes: String): Boolean =
-        method.name == methodName && context.evaluator.methodMatches(method, CLASS_VIEW, allowInherit = true, *argumentTypes)
+      method.name == methodName && context.evaluator.methodMatches(method, CLASS_VIEW, allowInherit = true, *argumentTypes)
 
     when {
       isViewMethod("performAccessibilityAction", TYPE_INT, CLASS_BUNDLE) -> checkPerformAccessibilityAction(context, node)
@@ -66,28 +66,28 @@ class AccessibilityForceFocusDetector : Detector(), SourceCodeScanner {
     fun UExpression.containsRefToFocus(): Boolean {
       var referencesFocus = false
       this.accept(
-          object : AbstractUastVisitor() {
-            override fun visitSimpleNameReferenceExpression(node: USimpleNameReferenceExpression): Boolean {
-              if (node.identifier == "ACTION_ACCESSIBILITY_FOCUS") {
-                referencesFocus = true
-                // Stop visiting.
-                return true
-              }
-              return super.visitSimpleNameReferenceExpression(node)
+        object : AbstractUastVisitor() {
+          override fun visitSimpleNameReferenceExpression(node: USimpleNameReferenceExpression): Boolean {
+            if (node.identifier == "ACTION_ACCESSIBILITY_FOCUS") {
+              referencesFocus = true
+              // Stop visiting.
+              return true
             }
+            return super.visitSimpleNameReferenceExpression(node)
           }
+        }
       )
       return referencesFocus
     }
 
     if (firstArg.evaluatesToFocusValue() || firstArg.containsRefToFocus()) {
       context.report(
-          issue = ISSUE,
-          scope = node,
-          location = context.getCallLocation(node, includeReceiver = true, includeArguments = true),
-          message =
-              "Do not force accessibility focus, as this interferes with screen readers and gives an " +
-                  "inconsistent user experience, especially across apps",
+        issue = ISSUE,
+        scope = node,
+        location = context.getCallLocation(node, includeReceiver = true, includeArguments = true),
+        message =
+          "Do not force accessibility focus, as this interferes with screen readers and gives an " +
+            "inconsistent user experience, especially across apps",
       )
     }
   }
@@ -97,19 +97,19 @@ class AccessibilityForceFocusDetector : Detector(), SourceCodeScanner {
 
     @JvmField
     val ISSUE =
-        Issue.create(
-            id = "AccessibilityFocus",
-            briefDescription = "Forcing accessibility focus",
-            explanation =
-                """
+      Issue.create(
+        id = "AccessibilityFocus",
+        briefDescription = "Forcing accessibility focus",
+        explanation =
+          """
           Forcing accessibility focus interferes with screen readers and gives an \
           inconsistent user experience, especially across apps.
           """,
-            category = Category.A11Y,
-            priority = 5,
-            severity = Severity.WARNING,
-            implementation = Implementation(AccessibilityForceFocusDetector::class.java, Scope.JAVA_FILE_SCOPE),
-            androidSpecific = true,
-        )
+        category = Category.A11Y,
+        priority = 5,
+        severity = Severity.WARNING,
+        implementation = Implementation(AccessibilityForceFocusDetector::class.java, Scope.JAVA_FILE_SCOPE),
+        androidSpecific = true,
+      )
   }
 }

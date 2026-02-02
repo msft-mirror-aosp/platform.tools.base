@@ -94,10 +94,8 @@ import org.jetbrains.uast.visitor.AbstractUastVisitor
  * method scope with this analyzer. It has a number of callback methods you can override to find out when the value is returned, or used as
  * an argument in a call, or used as a receiver in a call, etc. See `lint/docs/api-guide/dataflow-analyzer.md.html` for more.
  */
-abstract class DataFlowAnalyzer(
-    val initial: Collection<UElement>,
-    initialReferences: Collection<PsiVariable> = emptyList(),
-) : AbstractUastVisitor() {
+abstract class DataFlowAnalyzer(val initial: Collection<UElement>, initialReferences: Collection<PsiVariable> = emptyList()) :
+  AbstractUastVisitor() {
 
   /** The instance being tracked is the receiver for a method call. */
   open fun receiver(call: UCallExpression) {}
@@ -187,11 +185,11 @@ abstract class DataFlowAnalyzer(
   @Suppress("RedundantIf")
   open fun returnsSelf(call: UCallExpression): Boolean {
     val resolvedCall =
-        call.resolve()
-            ?: run {
-              failedResolve(call)
-              return false
-            }
+      call.resolve()
+        ?: run {
+          failedResolve(call)
+          return false
+        }
 
     if (call.returnType is PsiPrimitiveType) {
       return false
@@ -255,7 +253,7 @@ abstract class DataFlowAnalyzer(
   private val handledScopeFunctionCalls: MutableSet<UCallExpression> = HashSet()
 
   private val baseKotlinUastResolveProviderService: BaseKotlinUastResolveProviderService =
-      ApplicationManager.getApplication().getService(BaseKotlinUastResolveProviderService::class.java)
+    ApplicationManager.getApplication().getService(BaseKotlinUastResolveProviderService::class.java)
 
   init {
     if (references.isEmpty()) {
@@ -282,7 +280,7 @@ abstract class DataFlowAnalyzer(
   private fun isTracked(element: UElement): Boolean {
     if (instances.contains(element)) return true
     if (element is UResolvable && (element is UReferenceExpression || element is UThisExpression))
-        return element.resolve()?.let { references.contains(it) } == true
+      return element.resolve()?.let { references.contains(it) } == true
 
     return false
   }
@@ -309,7 +307,7 @@ abstract class DataFlowAnalyzer(
     if (callExpression.receiverType != null && callExpression.lang == KotlinLanguage.INSTANCE) {
       val ktExpression = callExpression.sourcePsi as? KtExpression ?: return null
       val implicitReceiver =
-          analyze(ktExpression) { getImplicitReceiverIfFromLambdaExpr(ktExpression, baseKotlinUastResolveProviderService) } ?: return null
+        analyze(ktExpression) { getImplicitReceiverIfFromLambdaExpr(ktExpression, baseKotlinUastResolveProviderService) } ?: return null
       return if (isTracked(implicitReceiver)) {
         true to implicitReceiver
       } else {
@@ -372,8 +370,8 @@ abstract class DataFlowAnalyzer(
     val lastParameterIndex = (callExpression.resolve()?.toUElementOfType<UMethod>()?.uastParameters?.size ?: return false) - 1
 
     val lambda =
-        callExpression.getArgumentForParameter(lastParameterIndex)?.skipParenthesizedExprDown()?.skipLabeledExpression()
-            as? ULambdaExpression ?: return false
+      callExpression.getArgumentForParameter(lastParameterIndex)?.skipParenthesizedExprDown()?.skipLabeledExpression() as? ULambdaExpression
+        ?: return false
 
     if (isReturningLambdaResult(callExpression)) {
       lambdaResultReturnedByCall = true
@@ -428,14 +426,14 @@ abstract class DataFlowAnalyzer(
     // Note: must use valueParameters, which includes implicit "it" (or the explicit named
     // parameter), but never includes "this".
     val itParam =
-        if (trackIt) {
-          lambda.valueParameters.firstOrNull() ?: return false
-        } else null
+      if (trackIt) {
+        lambda.valueParameters.firstOrNull() ?: return false
+      } else null
     // Note: return early if we cannot get the parameter.
     val thisParam =
-        if (trackThis) {
-          lambda.getThisParameter(baseKotlinUastResolveProviderService) ?: return false
-        } else null
+      if (trackThis) {
+        lambda.getThisParameter(baseKotlinUastResolveProviderService) ?: return false
+      } else null
 
     //
     // This scope function can now definitely be handled. Do not add early returns below, as we want
@@ -555,13 +553,13 @@ abstract class DataFlowAnalyzer(
 
   override fun visitCallableReferenceExpression(node: UCallableReferenceExpression): Boolean {
     val qualifier =
-        node.qualifierExpression
-            // For odd reasons, UCallableReferenceExpression#qualifierExpression
-            // "can be null if the qualifierType is known" which the Kotlin implementation
-            // does. But we care about more than the type; we want to make sure
-            // that it's bound to the right instance, so we have to work a bit
-            // harder here.
-            ?: (node.sourcePsi as? KtCallableReferenceExpression)?.receiverExpression?.toUElement()
+      node.qualifierExpression
+        // For odd reasons, UCallableReferenceExpression#qualifierExpression
+        // "can be null if the qualifierType is known" which the Kotlin implementation
+        // does. But we care about more than the type; we want to make sure
+        // that it's bound to the right instance, so we have to work a bit
+        // harder here.
+        ?: (node.sourcePsi as? KtCallableReferenceExpression)?.receiverExpression?.toUElement()
 
     if (qualifier != null) {
       if (isTracked(qualifier)) {
@@ -691,7 +689,7 @@ abstract class DataFlowAnalyzer(
     if (thenExpression != null && instances.contains(thenExpression) || thenReference != null && references.contains(thenReference)) {
       track(node, thenExpression)
     } else if (
-        elseExpression != null && instances.contains(elseExpression) || elseReference != null && references.contains(elseReference)
+      elseExpression != null && instances.contains(elseExpression) || elseReference != null && references.contains(elseReference)
     ) {
       track(node, elseExpression)
     } else {
@@ -758,12 +756,7 @@ abstract class DataFlowAnalyzer(
         if (element.isBelow(node)) {
           return
         }
-        val initialBlock =
-            element.getParentOfType<UElement>(
-                false,
-                UBlockExpression::class.java,
-                UIfExpression::class.java,
-            ) ?: return
+        val initialBlock = element.getParentOfType<UElement>(false, UBlockExpression::class.java, UIfExpression::class.java) ?: return
 
         if (initialBlock === block) {
           references.remove(lhs)
@@ -772,27 +765,27 @@ abstract class DataFlowAnalyzer(
           val target = skipParenthesizedExprUp(node.uastParent) ?: return
 
           initialBlock.accept(
-              object : AbstractUastVisitor() {
-                private var reachedTarget = false
+            object : AbstractUastVisitor() {
+              private var reachedTarget = false
 
-                override fun afterVisitElement(node: UElement) {
-                  if (node == target) {
-                    reachedTarget = true
-                  }
-                  super.afterVisitElement(node)
+              override fun afterVisitElement(node: UElement) {
+                if (node == target) {
+                  reachedTarget = true
                 }
-
-                override fun visitSimpleNameReferenceExpression(node: USimpleNameReferenceExpression): Boolean {
-                  if (reachedTarget) {
-                    val resolved = node.resolve()
-                    if (lhs.isEquivalentTo(resolved)) {
-                      referenced = true
-                      return true
-                    }
-                  }
-                  return super.visitSimpleNameReferenceExpression(node)
-                }
+                super.afterVisitElement(node)
               }
+
+              override fun visitSimpleNameReferenceExpression(node: USimpleNameReferenceExpression): Boolean {
+                if (reachedTarget) {
+                  val resolved = node.resolve()
+                  if (lhs.isEquivalentTo(resolved)) {
+                    referenced = true
+                    return true
+                  }
+                }
+                return super.visitSimpleNameReferenceExpression(node)
+              }
+            }
           )
           if (!referenced) {
             // The variable is reassigned in a different (deeper) block than the origin, but
@@ -859,11 +852,11 @@ abstract class DataFlowAnalyzer(
         // see if the property is a parameter
         val body = node.uastBody
         val call =
-            if (body is UBlockExpression) {
-              body.expressions.firstOrNull()
-            } else {
-              body
-            }
+          if (body is UBlockExpression) {
+            body.expressions.firstOrNull()
+          } else {
+            body
+          }
         if (call is UCallExpression) {
           for (parameter in node.uastParameters) {
             val initializer = parameter.uastInitializer?.skipParenthesizedExprDown()
@@ -947,11 +940,7 @@ abstract class DataFlowAnalyzer(
       return null
     }
 
-    fun getVariableElement(
-        rhs: UCallExpression,
-        allowChainedCalls: Boolean,
-        allowFields: Boolean,
-    ): PsiVariable? {
+    fun getVariableElement(rhs: UCallExpression, allowChainedCalls: Boolean, allowFields: Boolean): PsiVariable? {
       var parent = skipParenthesizedExprUp(rhs.getQualifiedParentOrThis().uastParent)
 
       // Handle some types of chained calls; e.g. you might have
@@ -1002,10 +991,8 @@ abstract class DataFlowAnalyzer(
  * [DataFlowAnalyzer] which also tracks whether the tracked instances escape into fields, method calls, array assignments or as return
  * values. Subclasses can check the value of the [escaped] property after visiting.
  */
-open class EscapeCheckingDataFlowAnalyzer(
-    initial: Collection<UElement>,
-    initialReferences: Collection<PsiVariable> = emptyList(),
-) : DataFlowAnalyzer(initial, initialReferences) {
+open class EscapeCheckingDataFlowAnalyzer(initial: Collection<UElement>, initialReferences: Collection<PsiVariable> = emptyList()) :
+  DataFlowAnalyzer(initial, initialReferences) {
   var escaped: Boolean = false
 
   override fun field(field: UElement) {
@@ -1036,10 +1023,8 @@ open class EscapeCheckingDataFlowAnalyzer(
  * There are some utility methods in the companion object which makes it even simpler for some common and basic scenarios, but in general
  * this continues to extend a UAST visitor, so you can override various AST visitor methods to customize the logic as needed.
  */
-abstract class TargetMethodDataFlowAnalyzer(
-    initial: Collection<UElement>,
-    initialReferences: Collection<PsiVariable> = emptyList(),
-) : EscapeCheckingDataFlowAnalyzer(initial, initialReferences) {
+abstract class TargetMethodDataFlowAnalyzer(initial: Collection<UElement>, initialReferences: Collection<PsiVariable> = emptyList()) :
+  EscapeCheckingDataFlowAnalyzer(initial, initialReferences) {
   var targetReached = false
   var targetReference: UElement? = null
 
@@ -1057,12 +1042,7 @@ abstract class TargetMethodDataFlowAnalyzer(
    * passing in either the corresponding call expression or corresponding method reference expression, in case you want to perform
    * additional validation.
    */
-  open fun isTargetMethod(
-      name: String,
-      method: PsiMethod?,
-      call: UCallExpression?,
-      methodRef: UCallableReferenceExpression?,
-  ): Boolean {
+  open fun isTargetMethod(name: String, method: PsiMethod?, call: UCallExpression?, methodRef: UCallableReferenceExpression?): Boolean {
     return isTargetMethod(name, method)
   }
 
@@ -1096,16 +1076,16 @@ abstract class TargetMethodDataFlowAnalyzer(
         if (isTargetMethod(name, resolved, null, call)) {
           val method = initial.firstOrNull()?.getParentOfType<UMethod>() ?: call.getParentOfType<UMethod>() ?: return
           val callTracker =
-              object : EscapeCheckingDataFlowAnalyzer(listOf(call)) {
-                override fun visitElement(node: UElement): Boolean {
-                  return targetReached
-                }
-
-                override fun receiver(call: UCallExpression) {
-                  targetReference = call
-                  targetReached = true
-                }
+            object : EscapeCheckingDataFlowAnalyzer(listOf(call)) {
+              override fun visitElement(node: UElement): Boolean {
+                return targetReached
               }
+
+              override fun receiver(call: UCallExpression) {
+                targetReference = call
+                targetReached = true
+              }
+            }
           method.accept(callTracker)
           if (callTracker.escaped) escaped = true
           if (callTracker.failedResolve) failedResolve = true
@@ -1128,29 +1108,29 @@ abstract class TargetMethodDataFlowAnalyzer(
       // part anywhere, and if so, don't conclude that the target was never reached.
       var found = false
       within.accept(
-          object : AbstractUastVisitor() {
-            override fun visitCallExpression(node: UCallExpression): Boolean {
-              val name = node.methodName ?: node.methodIdentifier?.name
-              if (name != null && isTargetMethodName(name)) {
-                val resolved = node.resolve()
-                if (resolved !is PsiMethod || isTargetMethod(name, resolved, node, null)) {
-                  found = true
-                }
+        object : AbstractUastVisitor() {
+          override fun visitCallExpression(node: UCallExpression): Boolean {
+            val name = node.methodName ?: node.methodIdentifier?.name
+            if (name != null && isTargetMethodName(name)) {
+              val resolved = node.resolve()
+              if (resolved !is PsiMethod || isTargetMethod(name, resolved, node, null)) {
+                found = true
               }
-              return found || super.visitCallExpression(node)
             }
-
-            override fun visitCallableReferenceExpression(node: UCallableReferenceExpression): Boolean {
-              val name = node.callableName
-              if (isTargetMethodName(name)) {
-                val resolved = node.resolve()
-                if (resolved !is PsiMethod || isTargetMethod(name, resolved, null, node)) {
-                  found = true
-                }
-              }
-              return found || super.visitCallableReferenceExpression(node)
-            }
+            return found || super.visitCallExpression(node)
           }
+
+          override fun visitCallableReferenceExpression(node: UCallableReferenceExpression): Boolean {
+            val name = node.callableName
+            if (isTargetMethodName(name)) {
+              val resolved = node.resolve()
+              if (resolved !is PsiMethod || isTargetMethod(name, resolved, null, node)) {
+                found = true
+              }
+            }
+            return found || super.visitCallableReferenceExpression(node)
+          }
+        }
       )
       return !found
     }
@@ -1180,11 +1160,7 @@ abstract class TargetMethodDataFlowAnalyzer(
      * Creates a simple [TargetMethodDataFlowAnalyzer] looking for the given method (identified by name and list of containing class fully
      * qualified names) starting from the given source element.
      */
-    fun create(
-        source: UElement,
-        methodName: String,
-        containingClass: String?,
-    ): TargetMethodDataFlowAnalyzer {
+    fun create(source: UElement, methodName: String, containingClass: String?): TargetMethodDataFlowAnalyzer {
       return object : TargetMethodDataFlowAnalyzer(listOf(source)) {
         override fun isTargetMethodName(name: String): Boolean {
           return methodName == name
@@ -1206,10 +1182,7 @@ abstract class TargetMethodDataFlowAnalyzer(
  * a return or method call or assignment into a field etc), or if we have some uncertainty about it, for example if there were resolve
  * problems, and we observed a call or method reference with a name match).
  */
-fun UMethod.isMissingTarget(
-    analyzer: TargetMethodDataFlowAnalyzer,
-    allowEscape: Boolean = false,
-): Boolean {
+fun UMethod.isMissingTarget(analyzer: TargetMethodDataFlowAnalyzer, allowEscape: Boolean = false): Boolean {
   accept(analyzer)
   return analyzer.isMissingTarget(this, allowEscape)
 }
@@ -1225,14 +1198,14 @@ fun UMethod.isMissingTarget(
 fun UMethod.anyCall(filter: (UCallExpression) -> Boolean): Boolean {
   var found = false
   accept(
-      object : AbstractUastVisitor() {
-        override fun visitCallExpression(node: UCallExpression): Boolean {
-          if (filter(node)) {
-            found = true
-          }
-          return found || super.visitCallExpression(node)
+    object : AbstractUastVisitor() {
+      override fun visitCallExpression(node: UCallExpression): Boolean {
+        if (filter(node)) {
+          found = true
         }
+        return found || super.visitCallExpression(node)
       }
+    }
   )
   return found
 }

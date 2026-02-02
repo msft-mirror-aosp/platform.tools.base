@@ -27,9 +27,9 @@ class EmptySuperDetectorTest : AbstractCheckTest() {
   fun testDocumentationExample() {
     @Suppress("RedundantOverride")
     lint()
-        .files(
-            kotlin(
-                    """
+      .files(
+        kotlin(
+            """
                 import androidx.annotation.EmptySuper
 
                 open class ParentClass {
@@ -55,26 +55,26 @@ class EmptySuperDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-                )
-                .indented(),
-            emptySuperStub,
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+        emptySuperStub,
+      )
+      .run()
+      .expect(
+        """
             src/ParentClass.kt:22: Warning: No need to call super.someOtherMethod; the super method is defined to be empty [EmptySuperCall]
                     super.someOtherMethod(arg) // ERROR
                           ~~~~~~~~~~~~~~~
             0 errors, 1 warnings
             """
-        )
+      )
   }
 
   fun testMultipleOverridesOk() {
     lint()
-        .files(
-            kotlin(
-                    """
+      .files(
+        kotlin(
+            """
             import androidx.annotation.EmptySuper
 
             interface Super1 {
@@ -92,19 +92,19 @@ class EmptySuperDetectorTest : AbstractCheckTest() {
                 }
             }
           """
-                )
-                .indented(),
-            emptySuperStub,
-        )
-        .run()
-        .expectClean()
+          )
+          .indented(),
+        emptySuperStub,
+      )
+      .run()
+      .expectClean()
   }
 
   fun testMultipleOverridesWarned() {
     lint()
-        .files(
-            kotlin(
-                    """
+      .files(
+        kotlin(
+            """
             import androidx.annotation.EmptySuper
 
             interface Super1 {
@@ -122,25 +122,25 @@ class EmptySuperDetectorTest : AbstractCheckTest() {
                 }
             }
           """
-                )
-                .indented(),
-            emptySuperStub,
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+        emptySuperStub,
+      )
+      .run()
+      .expect(
+        """
           src/Super1.kt:14: Warning: No need to call super.f; the super method is defined to be empty [EmptySuperCall]
                   super<Super2>.f()
                                 ~
           0 errors, 1 warnings
         """
-        )
+      )
   }
 }
 
 val emptySuperStub: TestFile =
-    kotlin(
-            """
+  kotlin(
+      """
     package androidx.annotation
     import kotlin.annotation.AnnotationTarget.FUNCTION
     @MustBeDocumented
@@ -148,5 +148,5 @@ val emptySuperStub: TestFile =
     @Target(FUNCTION)
     annotation class EmptySuper
     """
-        )
-        .indented()
+    )
+    .indented()

@@ -35,11 +35,11 @@ class PluginXmlDetector : Detector(), OtherFileScanner {
 
   companion object {
     val ISSUE =
-        Issue.create(
-            id = "PluginXmlUnresolvedClass",
-            briefDescription = "Unresolved class in IDE plugin config file",
-            explanation =
-                """
+      Issue.create(
+        id = "PluginXmlUnresolvedClass",
+        briefDescription = "Unresolved class in IDE plugin config file",
+        explanation =
+          """
           Plugin configuration files should register extension classes only from the \
           current module (preferred) or from a dependency of the current module. \
           Otherwise, downstream test targets may need to add spurious runtime \
@@ -50,12 +50,12 @@ class PluginXmlDetector : Detector(), OtherFileScanner {
           same module as the extension class. If you suspect this is a false \
           positive error, reach out to the Android Studio Platform team.
           """,
-            category = Category.CORRECTNESS,
-            priority = 5,
-            severity = Severity.ERROR,
-            androidSpecific = false,
-            implementation = Implementation(PluginXmlDetector::class.java, Scope.OTHER_SCOPE),
-        )
+        category = Category.CORRECTNESS,
+        priority = 5,
+        severity = Severity.ERROR,
+        androidSpecific = false,
+        implementation = Implementation(PluginXmlDetector::class.java, Scope.OTHER_SCOPE),
+      )
   }
 
   override fun getApplicableFiles(): EnumSet<Scope> = Scope.RESOURCE_FILE_SCOPE
@@ -98,19 +98,15 @@ class PluginXmlDetector : Detector(), OtherFileScanner {
     val psiClass = evaluator.findClass(className.replace('$', '.'))
     if (psiClass == null) {
       val shortName = className.substringAfterLast('.')
-      context.report(
-          ISSUE,
-          context.getLocation(node),
-          "Class `$shortName` not found in the current module or its dependencies",
-      )
+      context.report(ISSUE, context.getLocation(node), "Class `$shortName` not found in the current module or its dependencies")
     }
   }
 
   private fun looksLikeClassRef(s: String?): Boolean {
     return s != null &&
-        s != "classpath" &&
-        CLASS_KEYWORDS.any { keyword -> s.contains(keyword, ignoreCase = true) } &&
-        NOT_CLASS_SUFFIXES.all { suffix -> !s.endsWith(suffix, ignoreCase = true) }
+      s != "classpath" &&
+      CLASS_KEYWORDS.any { keyword -> s.contains(keyword, ignoreCase = true) } &&
+      NOT_CLASS_SUFFIXES.all { suffix -> !s.endsWith(suffix, ignoreCase = true) }
   }
 }
 

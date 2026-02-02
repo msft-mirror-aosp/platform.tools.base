@@ -32,68 +32,68 @@ import java.util.EnumSet
  */
 class Issue
 private constructor(
-    /**
-     * Returns the unique id of this issue. These should not change over time since they are used to persist the names of issues suppressed
-     * by the user etc. It is typically a single camel-cased word.
-     *
-     * @return the associated fixed id, never null and always unique
-     */
-    val id: String,
-    private val briefDescription: String,
-    private val explanation: String,
+  /**
+   * Returns the unique id of this issue. These should not change over time since they are used to persist the names of issues suppressed by
+   * the user etc. It is typically a single camel-cased word.
+   *
+   * @return the associated fixed id, never null and always unique
+   */
+  val id: String,
+  private val briefDescription: String,
+  private val explanation: String,
 
-    /**
-     * The primary category of the issue
-     *
-     * @return the primary category of the issue, never null
-     */
-    val category: Category,
+  /**
+   * The primary category of the issue
+   *
+   * @return the primary category of the issue, never null
+   */
+  val category: Category,
 
-    /**
-     * Returns a priority, in the range 1-10, with 10 being the most severe and 1 the least
-     *
-     * @return a priority from 1 to 10
-     */
-    val priority: Int,
+  /**
+   * Returns a priority, in the range 1-10, with 10 being the most severe and 1 the least
+   *
+   * @return a priority from 1 to 10
+   */
+  val priority: Int,
 
-    /**
-     * Returns the default severity of the issues found by this detector (some tools may allow the user to specify custom severities for
-     * detectors).
-     *
-     * Note that even though the normal way for an issue to be disabled is for the [Configuration] to return [Severity.IGNORE], there is a
-     * [isEnabledByDefault] method which can be used to turn off issues by default. This is done rather than just having the severity as the
-     * only attribute on the issue such that an issue can be configured with an appropriate severity (such as [Severity.ERROR]) even when
-     * issues are disabled by default for example because they are experimental or not yet stable.
-     *
-     * @return the severity of the issues found by this detector
-     */
-    val defaultSeverity: Severity,
+  /**
+   * Returns the default severity of the issues found by this detector (some tools may allow the user to specify custom severities for
+   * detectors).
+   *
+   * Note that even though the normal way for an issue to be disabled is for the [Configuration] to return [Severity.IGNORE], there is a
+   * [isEnabledByDefault] method which can be used to turn off issues by default. This is done rather than just having the severity as the
+   * only attribute on the issue such that an issue can be configured with an appropriate severity (such as [Severity.ERROR]) even when
+   * issues are disabled by default for example because they are experimental or not yet stable.
+   *
+   * @return the severity of the issues found by this detector
+   */
+  val defaultSeverity: Severity,
 
-    /**
-     * Set of platforms where this issue applies. For example, if the analysis is being run on an Android project, lint will include all
-     * checks that either don't specify any platforms, or includes the android scope.
-     */
-    platforms: EnumSet<Platform>,
+  /**
+   * Set of platforms where this issue applies. For example, if the analysis is being run on an Android project, lint will include all
+   * checks that either don't specify any platforms, or includes the android scope.
+   */
+  platforms: EnumSet<Platform>,
 
-    /**
-     * If non-null, this issue can **only** be suppressed with one of the given annotations: not with @Suppress, not with @SuppressLint, not
-     * with lint.xml, not with lintOptions{} and not with baselines.
-     *
-     * These suppress names can take various forms:
-     * * Valid qualified names in Kotlin and Java (identifier characters and dots). Represents suppress annotation. Examples include
-     *   android.annotation.SuppressLint, java.lang.Suppress and kotlin.Suppress (which all happen to be looked at by default by lint.)
-     * * Simple name (no dots): XML suppress attribute in the tools namespace
-     * * HTTP URL followed by colon and then name: namespace and attribute for XML suppress attribute. For example,
-     *   http://schemas.android.com/tools:ignore represents "ignore" in the tools namespace (which happens to be the default Lint already
-     *   looks for.)
-     */
-    val suppressNames: Collection<String>?,
+  /**
+   * If non-null, this issue can **only** be suppressed with one of the given annotations: not with @Suppress, not with @SuppressLint, not
+   * with lint.xml, not with lintOptions{} and not with baselines.
+   *
+   * These suppress names can take various forms:
+   * * Valid qualified names in Kotlin and Java (identifier characters and dots). Represents suppress annotation. Examples include
+   *   android.annotation.SuppressLint, java.lang.Suppress and kotlin.Suppress (which all happen to be looked at by default by lint.)
+   * * Simple name (no dots): XML suppress attribute in the tools namespace
+   * * HTTP URL followed by colon and then name: namespace and attribute for XML suppress attribute. For example,
+   *   http://schemas.android.com/tools:ignore represents "ignore" in the tools namespace (which happens to be the default Lint already
+   *   looks for.)
+   */
+  val suppressNames: Collection<String>?,
 
-    /**
-     * The implementation for the given issue. This is typically done by IDEs that can offer a replacement for a given issue which performs
-     * better or in some other way works better within the IDE.
-     */
-    var implementation: Implementation,
+  /**
+   * The implementation for the given issue. This is typically done by IDEs that can offer a replacement for a given issue which performs
+   * better or in some other way works better within the IDE.
+   */
+  var implementation: Implementation,
 ) : Comparable<Issue> {
   // TODO revise below once Kotlin supports union
   private var moreInfoUrls: Any? /* null | String | MutableList<String> */ = null
@@ -115,22 +115,22 @@ private constructor(
   fun setAndroidSpecific(value: Boolean): Issue {
     if (value) {
       platforms =
-          if (platforms.isEmpty()) {
-            Platform.ANDROID_SET
-          } else {
-            val new = EnumSet.copyOf(platforms)
-            new.add(Platform.ANDROID)
-            new
-          }
+        if (platforms.isEmpty()) {
+          Platform.ANDROID_SET
+        } else {
+          val new = EnumSet.copyOf(platforms)
+          new.add(Platform.ANDROID)
+          new
+        }
     } else {
       platforms =
-          if (platforms == Platform.ANDROID_SET) {
-            Platform.UNSPECIFIED
-          } else {
-            val new = EnumSet.copyOf(platforms)
-            new.remove(Platform.ANDROID)
-            new
-          }
+        if (platforms == Platform.ANDROID_SET) {
+          Platform.UNSPECIFIED
+        } else {
+          val new = EnumSet.copyOf(platforms)
+          new.remove(Platform.ANDROID)
+          new
+        }
     }
 
     return this
@@ -181,12 +181,12 @@ private constructor(
   val moreInfo: List<String>
     @Suppress("UNCHECKED_CAST")
     get() =
-        when (val urls = moreInfoUrls) {
-          null -> emptyList()
-          is String -> listOf(urls)
-          is List<*> -> urls as List<String>
-          else -> throw IllegalStateException("Unexpected `moreInfoUrls` of $urls")
-        }
+      when (val urls = moreInfoUrls) {
+        null -> emptyList()
+        is String -> listOf(urls)
+        is List<*> -> urls as List<String>
+        else -> throw IllegalStateException("Unexpected `moreInfoUrls` of $urls")
+      }
 
   init {
     assert(briefDescription.isNotEmpty())
@@ -313,25 +313,25 @@ private constructor(
      */
     @JvmStatic
     fun create(
-        id: String,
-        briefDescription: String,
-        explanation: String,
-        category: Category,
-        priority: Int,
-        severity: Severity,
-        implementation: Implementation,
+      id: String,
+      briefDescription: String,
+      explanation: String,
+      category: Category,
+      priority: Int,
+      severity: Severity,
+      implementation: Implementation,
     ): Issue =
-        Issue(
-            id,
-            briefDescription,
-            explanation,
-            category,
-            priority,
-            severity,
-            platformsFromImplementation(implementation),
-            null,
-            implementation,
-        )
+      Issue(
+        id,
+        briefDescription,
+        explanation,
+        category,
+        priority,
+        severity,
+        platformsFromImplementation(implementation),
+        null,
+        implementation,
+      )
 
     /**
      * Creates a new issue. The description strings can use some simple markup; see the [TextFormat.RAW] documentation for details.
@@ -351,52 +351,52 @@ private constructor(
      * @return a new [Issue]
      */
     fun create(
-        id: String,
-        briefDescription: String,
-        explanation: String,
-        implementation: Implementation,
-        moreInfo: String? = null,
-        category: Category = Category.CORRECTNESS,
-        priority: Int = 5,
-        severity: Severity = Severity.WARNING,
-        enabledByDefault: Boolean = true,
-        androidSpecific: Boolean? = null,
-        platforms: EnumSet<Platform>? = null,
-        suppressAnnotations: Collection<String>? = null,
+      id: String,
+      briefDescription: String,
+      explanation: String,
+      implementation: Implementation,
+      moreInfo: String? = null,
+      category: Category = Category.CORRECTNESS,
+      priority: Int = 5,
+      severity: Severity = Severity.WARNING,
+      enabledByDefault: Boolean = true,
+      androidSpecific: Boolean? = null,
+      platforms: EnumSet<Platform>? = null,
+      suppressAnnotations: Collection<String>? = null,
     ): Issue =
-        Issue(
-                id,
-                briefDescription,
-                explanation,
-                category,
-                priority,
-                severity,
-                platforms ?: androidSpecific?.let(::platformsFromAndroidSpecificFlag) ?: platformsFromImplementation(implementation),
-                // Use a mutable list here such that we can add id's to it if we allow
-                // suppressing with the specific id using special -Xdisable flags; see
-                // FlagConfiguration.validateDisablingAllowed
-                suppressAnnotations?.toMutableList(),
-                implementation,
-            )
-            .apply {
-              if (moreInfo != null) addMoreInfo(moreInfo)
-              if (!enabledByDefault) setEnabledByDefault(false)
-            }
+      Issue(
+          id,
+          briefDescription,
+          explanation,
+          category,
+          priority,
+          severity,
+          platforms ?: androidSpecific?.let(::platformsFromAndroidSpecificFlag) ?: platformsFromImplementation(implementation),
+          // Use a mutable list here such that we can add id's to it if we allow
+          // suppressing with the specific id using special -Xdisable flags; see
+          // FlagConfiguration.validateDisablingAllowed
+          suppressAnnotations?.toMutableList(),
+          implementation,
+        )
+        .apply {
+          if (moreInfo != null) addMoreInfo(moreInfo)
+          if (!enabledByDefault) setEnabledByDefault(false)
+        }
 
     private fun platformsFromAndroidSpecificFlag(specific: Boolean): EnumSet<Platform> =
-        if (specific) Platform.ANDROID_SET else Platform.JDK_SET
+      if (specific) Platform.ANDROID_SET else Platform.JDK_SET
 
     private fun platformsFromImplementation(impl: Implementation): EnumSet<Platform> =
-        when {
-          scopeImpliesAndroid(impl.scope) -> Platform.ANDROID_SET
-          else -> Platform.UNSPECIFIED
-        }
+      when {
+        scopeImpliesAndroid(impl.scope) -> Platform.ANDROID_SET
+        else -> Platform.UNSPECIFIED
+      }
 
     private fun scopeImpliesAndroid(scope: EnumSet<Scope>): Boolean {
       return scope.contains(Scope.MANIFEST) ||
-          scope.contains(Scope.RESOURCE_FILE) ||
-          scope.contains(Scope.BINARY_RESOURCE_FILE) ||
-          scope.contains(Scope.ALL_RESOURCE_FILES)
+        scope.contains(Scope.RESOURCE_FILE) ||
+        scope.contains(Scope.BINARY_RESOURCE_FILE) ||
+        scope.contains(Scope.ALL_RESOURCE_FILES)
     }
   }
 

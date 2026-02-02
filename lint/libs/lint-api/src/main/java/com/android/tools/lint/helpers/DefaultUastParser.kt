@@ -66,10 +66,8 @@ import org.jetbrains.uast.psi.UElementWithLocation
 // Fully qualified names here:
 // class traffics in Project from both lint and openapi so be explicit
 @Suppress("RemoveRedundantQualifierName")
-open class DefaultUastParser(
-    project: com.android.tools.lint.detector.api.Project?,
-    val ideaProject: com.intellij.openapi.project.Project,
-) : UastParser() {
+open class DefaultUastParser(project: com.android.tools.lint.detector.api.Project?, val ideaProject: com.intellij.openapi.project.Project) :
+  UastParser() {
   private val javaEvaluator: JavaEvaluator
 
   init {
@@ -77,10 +75,8 @@ open class DefaultUastParser(
     javaEvaluator = createEvaluator(project, ideaProject)
   }
 
-  protected open fun createEvaluator(
-      project: Project?,
-      p: com.intellij.openapi.project.Project,
-  ): DefaultJavaEvaluator = DefaultJavaEvaluator(p, project!!)
+  protected open fun createEvaluator(project: Project?, p: com.intellij.openapi.project.Project): DefaultJavaEvaluator =
+    DefaultJavaEvaluator(p, project!!)
 
   /**
    * Returns an evaluator which can perform various resolution tasks, evaluate inheritance lookup etc.
@@ -113,9 +109,9 @@ open class DefaultUastParser(
     if (psiFile.language == Language.ANY && (file.path.endsWith(DOT_KT) || file.path.endsWith(DOT_KTS))) {
       // Expected to get Kotlin language back here!
       context.client.log(
-          Severity.ERROR,
-          null,
-          "Could not process " + context.project.getRelativePath(file) + ": Kotlin not configured correctly",
+        Severity.ERROR,
+        null,
+        "Could not process " + context.project.getRelativePath(file) + ": Kotlin not configured correctly",
       )
       return null
     }
@@ -129,13 +125,13 @@ open class DefaultUastParser(
         val size = file.length() / 1024
         val sizeRoundedUp = 2.0.pow(ceil(log10(size.toDouble()) / log10(2.0) + 0.2)).toInt()
         context.report(
-            issue = IssueRegistry.LINT_ERROR,
-            location = Location.create(file),
-            message =
-                "Source file too large for lint to process (${size}KB); the " +
-                    "current max size is ${max}KB. You can increase the limit by " +
-                    "setting this system property: " +
-                    "`idea.max.intellisense.filesize=$sizeRoundedUp` (or even higher)",
+          issue = IssueRegistry.LINT_ERROR,
+          location = Location.create(file),
+          message =
+            "Source file too large for lint to process (${size}KB); the " +
+              "current max size is ${max}KB. You can increase the limit by " +
+              "setting this system property: " +
+              "`idea.max.intellisense.filesize=$sizeRoundedUp` (or even higher)",
         )
       }
       return null
@@ -154,29 +150,20 @@ open class DefaultUastParser(
    * these annotations are typically used to avoid processing large and costly generated classes, so it's worthwhile skipping the UAST
    * conversion.
    */
-  protected fun isAnnotatedWithSkipAnnotation(
-      psiFile: PsiFile,
-      skipAnnotations: List<String>,
-  ): Boolean {
+  protected fun isAnnotatedWithSkipAnnotation(psiFile: PsiFile, skipAnnotations: List<String>): Boolean {
     if (psiFile is PsiJavaFile) {
       val topLevel = psiFile.classes.firstOrNull() ?: return false
       //noinspection ExternalAnnotations
       return topLevel.annotations.any { skipAnnotations.contains(it.qualifiedName) }
     } else if (psiFile is KtFile) {
       return containsAnnotation(skipAnnotations, psiFile.annotationEntries) ||
-          containsAnnotation(
-              skipAnnotations,
-              psiFile.declarations.firstOrNull()?.annotationEntries ?: emptyList(),
-          )
+        containsAnnotation(skipAnnotations, psiFile.declarations.firstOrNull()?.annotationEntries ?: emptyList())
     }
     return false
   }
 
   /** Returns true if any of the given Kotlin [annotations] are any of the fully qualified [names] */
-  protected fun containsAnnotation(
-      names: List<String>,
-      annotations: List<KtAnnotationEntry>,
-  ): Boolean {
+  protected fun containsAnnotation(names: List<String>, annotations: List<KtAnnotationEntry>): Boolean {
     for (annotation in annotations) {
       if (names.any { it.endsWith(annotation.shortName?.identifier ?: "?") }) {
         val uAnnotation = UastFacade.convertElement(annotation, null, UAnnotation::class.java) as? UAnnotation ?: continue
@@ -222,11 +209,11 @@ open class DefaultUastParser(
     var contents: CharSequence = context.getContents() ?: ""
 
     if (
-        containingFile != null &&
-            !containingFile.isEquivalentTo(context.psiFile) &&
-            containingFile.name == context.psiFile?.name &&
-            // createJavaFileStub$fakeFile$1
-            containingFile.javaClass.simpleName.contains("fakeFile")
+      containingFile != null &&
+        !containingFile.isEquivalentTo(context.psiFile) &&
+        containingFile.name == context.psiFile?.name &&
+        // createJavaFileStub$fakeFile$1
+        containingFile.javaClass.simpleName.contains("fakeFile")
     ) {
       // Consider these equal
     } else if (containingFile != null && containingFile != context.psiFile) {
@@ -292,12 +279,7 @@ open class DefaultUastParser(
     return Location.NONE
   }
 
-  override fun getCallLocation(
-      context: JavaContext,
-      call: UCallExpression,
-      includeReceiver: Boolean,
-      includeArguments: Boolean,
-  ): Location {
+  override fun getCallLocation(context: JavaContext, call: UCallExpression, includeReceiver: Boolean, includeArguments: Boolean): Location {
     if (includeArguments) {
       call.valueArguments.lastOrNull()?.let { lastArgument ->
         val argumentsEnd = lastArgument.sourcePsi?.endOffset
@@ -314,11 +296,11 @@ open class DefaultUastParser(
           // tokens as well. We need to include the closing tags in the range as well!
           val next = (lastArgument.sourcePsi as? KtLiteralStringTemplateEntry)?.nextSibling as? TreeElement
           val delta =
-              if (next != null && next.elementType == KtTokens.CLOSING_QUOTE) {
-                next.textLength
-              } else {
-                0
-              }
+            if (next != null && next.elementType == KtTokens.CLOSING_QUOTE) {
+              next.textLength
+            } else {
+              0
+            }
           return getRangeLocation(context, startElement, 0, lastArgument, delta)
         }
       }
@@ -398,13 +380,7 @@ open class DefaultUastParser(
    * @param toDelta Offset delta to apply to the ending offset
    * @return a location for the given node
    */
-  override fun getRangeLocation(
-      context: JavaContext,
-      from: PsiElement,
-      fromDelta: Int,
-      to: PsiElement,
-      toDelta: Int,
-  ): Location {
+  override fun getRangeLocation(context: JavaContext, from: PsiElement, fromDelta: Int, to: PsiElement, toDelta: Int): Location {
     val contents = context.getContents()
 
     // b/452422771: `PsiElement.textRange` can be `null`
@@ -413,33 +389,19 @@ open class DefaultUastParser(
 
     if (fromRange == null || toRange == null) {
       val sources =
-          when {
-            fromRange == null && toRange == null -> "both sources"
-            fromRange == null -> "starting source"
-            else -> "end source"
-          }
-      context.client.log(
-          Severity.WARNING,
-          NullPointerException("Text range missing from $sources"),
-          "Text range missing from $sources",
-      )
+        when {
+          fromRange == null && toRange == null -> "both sources"
+          fromRange == null -> "starting source"
+          else -> "end source"
+        }
+      context.client.log(Severity.WARNING, NullPointerException("Text range missing from $sources"), "Text range missing from $sources")
     }
 
     val start = max(0, fromRange?.startOffset?.plus(fromDelta) ?: toRange?.endOffset ?: 0)
-    val end =
-        min(
-            contents?.length ?: Integer.MAX_VALUE,
-            toRange?.endOffset?.plus(toDelta) ?: fromRange?.endOffset ?: Integer.MAX_VALUE,
-        )
+    val end = min(contents?.length ?: Integer.MAX_VALUE, toRange?.endOffset?.plus(toDelta) ?: fromRange?.endOffset ?: Integer.MAX_VALUE)
     if (end <= start) {
       // Some AST nodes don't have proper bounds, such as empty parameter lists
-      return Location.create(
-              context.file,
-              contents,
-              start,
-              fromRange?.endOffset ?: contents?.length ?: start,
-          )
-          .setSource(from)
+      return Location.create(context.file, contents, start, fromRange?.endOffset ?: contents?.length ?: start).setSource(from)
     }
     return Location.create(context.file, contents, start, end).setSource(from)
   }
@@ -457,13 +419,7 @@ open class DefaultUastParser(
     return null
   }
 
-  override fun getRangeLocation(
-      context: JavaContext,
-      from: UElement,
-      fromDelta: Int,
-      to: UElement,
-      toDelta: Int,
-  ): Location {
+  override fun getRangeLocation(context: JavaContext, from: UElement, fromDelta: Int, to: UElement, toDelta: Int): Location {
     var contents = context.getContents()
     val toRange = getTextRange(to)
     val fromRange = getTextRange(from) ?: toRange
@@ -526,19 +482,10 @@ open class DefaultUastParser(
    * @param toDelta Offset delta to apply to the starting offset
    * @return a location for the given node
    */
-  override fun getRangeLocation(
-      context: JavaContext,
-      from: PsiElement,
-      fromDelta: Int,
-      toDelta: Int,
-  ): Location = getRangeLocation(context, from, fromDelta, from, -(from.textRange.length - toDelta))
+  override fun getRangeLocation(context: JavaContext, from: PsiElement, fromDelta: Int, toDelta: Int): Location =
+    getRangeLocation(context, from, fromDelta, from, -(from.textRange.length - toDelta))
 
-  override fun getRangeLocation(
-      context: JavaContext,
-      from: UElement,
-      fromDelta: Int,
-      toDelta: Int,
-  ): Location {
+  override fun getRangeLocation(context: JavaContext, from: UElement, fromDelta: Int, toDelta: Int): Location {
     val fromRange = getTextRange(from)
     if (fromRange != null) {
       return getRangeLocation(context, from, fromDelta, from, -(fromRange.length - toDelta))

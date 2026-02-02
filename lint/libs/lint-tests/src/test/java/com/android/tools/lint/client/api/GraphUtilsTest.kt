@@ -23,14 +23,14 @@ class GraphUtilsTest {
   @Test
   fun `linearizing a graph from leaves touches leaves first`() {
     fun <T> subsetGraph(root: Set<T>): Map<Set<T>, List<Set<T>>> =
-        hashMapOf<Set<T>, List<Set<T>>>().also { out ->
-          fun <T> minusOneSubsets(s: Set<T>): List<Set<T>> = s.map { n -> s - n }
-          fun buildNextDepth(s: Set<T>) {
-            out[s] = minusOneSubsets(s)
-            out[s]!!.forEach(::buildNextDepth)
-          }
-          buildNextDepth(root)
+      hashMapOf<Set<T>, List<Set<T>>>().also { out ->
+        fun <T> minusOneSubsets(s: Set<T>): List<Set<T>> = s.map { n -> s - n }
+        fun buildNextDepth(s: Set<T>) {
+          out[s] = minusOneSubsets(s)
+          out[s]!!.forEach(::buildNextDepth)
         }
+        buildNextDepth(root)
+      }
 
     val all = setOf(1, 2, 3)
     val graph = subsetGraph(all)

@@ -79,9 +79,9 @@ class BuiltinIssueRegistryTest : TestCase() {
 
   fun testCacheable() {
     val registry =
-        object : BuiltinIssueRegistry() {
-          fun isCacheable() = cacheable()
-        }
+      object : BuiltinIssueRegistry() {
+        fun isCacheable() = cacheable()
+      }
     val old = clientName
     try {
       TestLintClient(LintClient.CLIENT_STUDIO) // side effect: sets client name

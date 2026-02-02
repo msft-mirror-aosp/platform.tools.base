@@ -43,19 +43,19 @@ class StorageDetector : Detector(), SourceCodeScanner {
     // See if we're already referencing getAllocatableBytes in the same compilation unit
     var found = false
     context.uastFile?.accept(
-        object : AbstractUastVisitor() {
-          override fun visitCallExpression(node: UCallExpression): Boolean {
-            if (node.methodName == "getAllocatableBytes") {
-              found = true
-            }
-            return super.visitCallExpression(node)
+      object : AbstractUastVisitor() {
+        override fun visitCallExpression(node: UCallExpression): Boolean {
+          if (node.methodName == "getAllocatableBytes") {
+            found = true
           }
+          return super.visitCallExpression(node)
         }
+      }
     )
     if (!found) {
       val location = context.getCallLocation(node, false, false)
       val message =
-          "Consider also using `StorageManager#getAllocatableBytes` and " + "`allocateBytes` which will consider clearable cached data"
+        "Consider also using `StorageManager#getAllocatableBytes` and " + "`allocateBytes` which will consider clearable cached data"
       context.report(ISSUE, node, location, message)
     }
   }
@@ -63,11 +63,11 @@ class StorageDetector : Detector(), SourceCodeScanner {
   companion object {
     @JvmField
     val ISSUE =
-        Issue.create(
-            id = "UsableSpace",
-            briefDescription = "Using getUsableSpace()",
-            explanation =
-                """
+      Issue.create(
+        id = "UsableSpace",
+        briefDescription = "Using getUsableSpace()",
+        explanation =
+          """
                 When you need to allocate disk space for large files, consider using the new \
                 `allocateBytes(FileDescriptor, long)` API, which will automatically clear \
                 cached files belonging to other apps (as needed) to meet your request.
@@ -84,11 +84,11 @@ class StorageDetector : Detector(), SourceCodeScanner {
                 already using the new API, consider moving the calls to the same file or \
                 suppressing the warning.
                 """,
-            category = Category.PERFORMANCE,
-            priority = 3,
-            severity = Severity.WARNING,
-            androidSpecific = true,
-            implementation = Implementation(StorageDetector::class.java, Scope.JAVA_FILE_SCOPE),
-        )
+        category = Category.PERFORMANCE,
+        priority = 3,
+        severity = Severity.WARNING,
+        androidSpecific = true,
+        implementation = Implementation(StorageDetector::class.java, Scope.JAVA_FILE_SCOPE),
+      )
   }
 }

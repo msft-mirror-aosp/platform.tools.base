@@ -37,19 +37,19 @@ import java.io.File
 class ProguardConsumerRulesDetector : DependencyDetector<ProguardConsumerRulesDetector.GlobalOptionIssue>() {
   /** Represents a specific problematic global option at a specified file */
   class GlobalOptionIssue(
-      val coordinates: LintModelMavenName,
-      val keepRules: File,
-      val requiresArgumentInConsumerRules: Boolean,
-      val globalOption: String,
+    val coordinates: LintModelMavenName,
+    val keepRules: File,
+    val requiresArgumentInConsumerRules: Boolean,
+    val globalOption: String,
   ) : DependencyIssue() {
     override fun toLintIncident(): Incident {
       val location = Location.create(keepRules)
       val libraryName = "${keepRules.parentFile?.name}/${keepRules.name}"
       val errorSuffix = if (requiresArgumentInConsumerRules) " without an argument" else ""
       val message =
-          "The consumer keep rules at `$libraryName` (from `$coordinates`) contains" +
-              " a global option which should not be specified in library consumer rules$errorSuffix:" +
-              " -$globalOption"
+        "The consumer keep rules at `$libraryName` (from `$coordinates`) contains" +
+          " a global option which should not be specified in library consumer rules$errorSuffix:" +
+          " -$globalOption"
       val incident = Incident(GLOBAL_OPTION_ISSUE, location, message)
       return incident
     }
@@ -62,10 +62,10 @@ class ProguardConsumerRulesDetector : DependencyDetector<ProguardConsumerRulesDe
     }
 
     return group.startsWith("androidx.") ||
-        group.startsWith("com.google.") ||
-        group.startsWith("com.android.") ||
-        group == "org.chromium.net" ||
-        group.startsWith("com.crashlytics.")
+      group.startsWith("com.google.") ||
+      group.startsWith("com.android.") ||
+      group == "org.chromium.net" ||
+      group.startsWith("com.crashlytics.")
   }
 
   override val dependencyIssueCache: HashMap<LintModelMavenName, List<DependencyIssue>>
@@ -77,17 +77,14 @@ class ProguardConsumerRulesDetector : DependencyDetector<ProguardConsumerRulesDe
     }
 
     val errors = mutableListOf<DependencyIssue>()
-    ConsumerRuleGlobalGuardian.validateConsumerRulesHasNoBannedGlobals(
-        library.proguardRules,
-        isDynamicFeature = false,
-    ) { issue ->
+    ConsumerRuleGlobalGuardian.validateConsumerRulesHasNoBannedGlobals(library.proguardRules, isDynamicFeature = false) { issue ->
       errors.add(
-          GlobalOptionIssue(
-              coordinates = library.resolvedCoordinates,
-              keepRules = library.proguardRules,
-              requiresArgumentInConsumerRules = issue.requiresArgumentInConsumerRules,
-              globalOption = issue.globalOption,
-          )
+        GlobalOptionIssue(
+          coordinates = library.resolvedCoordinates,
+          keepRules = library.proguardRules,
+          requiresArgumentInConsumerRules = issue.requiresArgumentInConsumerRules,
+          globalOption = issue.globalOption,
+        )
       )
     }
     return errors
@@ -98,11 +95,11 @@ class ProguardConsumerRulesDetector : DependencyDetector<ProguardConsumerRulesDe
 
     @JvmField
     val GLOBAL_OPTION_ISSUE =
-        Issue.create(
-            id = "GlobalOptionInConsumerRules",
-            briefDescription = "Library has global options in consumer rules",
-            explanation =
-                """
+      Issue.create(
+        id = "GlobalOptionInConsumerRules",
+        briefDescription = "Library has global options in consumer rules",
+        explanation =
+          """
           Libraries often include consumer keep rules to instruct R8 how to \
           optimize the library, especially if the library uses reflection. \
           These keep rules typically indicate to R8 of which classes, methods \
@@ -130,18 +127,12 @@ class ProguardConsumerRulesDetector : DependencyDetector<ProguardConsumerRulesDe
           in your application. If they are, you can add them temporarily to a local \
           keep rule file.
           """,
-            category = Category.CORRECTNESS,
-            priority = 2,
-            severity = Severity.WARNING,
-            implementation =
-                Implementation(
-                    ProguardConsumerRulesDetector::class.java,
-                    GRADLE_AND_TOML_SCOPE,
-                    GRADLE_SCOPE,
-                    TOML_SCOPE,
-                ),
-            androidSpecific = true,
-            moreInfo = "https://developer.android.com/topic/performance/app-optimization/choose-libraries-wisely",
-        )
+        category = Category.CORRECTNESS,
+        priority = 2,
+        severity = Severity.WARNING,
+        implementation = Implementation(ProguardConsumerRulesDetector::class.java, GRADLE_AND_TOML_SCOPE, GRADLE_SCOPE, TOML_SCOPE),
+        androidSpecific = true,
+        moreInfo = "https://developer.android.com/topic/performance/app-optimization/choose-libraries-wisely",
+      )
   }
 }

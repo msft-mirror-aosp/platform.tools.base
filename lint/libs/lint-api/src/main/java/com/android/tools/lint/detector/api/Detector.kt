@@ -184,11 +184,11 @@ abstract class Detector {
    *   an incompatible change.
    */
   @Deprecated(
-      "If you want to override the event that each root project is about " +
-          "to be analyzed, override beforeCheckRootProject; if you want to override the event " +
-          "that each project (both root projects and their dependencies, override " +
-          "beforeCheckEachProject",
-      replaceWith = ReplaceWith("beforeCheckRootProject(context)"),
+    "If you want to override the event that each root project is about " +
+      "to be analyzed, override beforeCheckRootProject; if you want to override the event " +
+      "that each project (both root projects and their dependencies, override " +
+      "beforeCheckEachProject",
+    replaceWith = ReplaceWith("beforeCheckRootProject(context)"),
   )
   open fun beforeCheckProject(context: Context) {}
 
@@ -203,11 +203,11 @@ abstract class Detector {
    *   incompatible change.
    */
   @Deprecated(
-      "If you want to override the event that each root project is about " +
-          "to be analyzed, override afterCheckRootProject; if you want to override the event " +
-          "that each project (both root projects and their dependencies, override " +
-          "afterCheckEachProject",
-      replaceWith = ReplaceWith("afterCheckRootProject(context)"),
+    "If you want to override the event that each root project is about " +
+      "to be analyzed, override afterCheckRootProject; if you want to override the event " +
+      "that each project (both root projects and their dependencies, override " +
+      "afterCheckEachProject",
+    replaceWith = ReplaceWith("afterCheckRootProject(context)"),
   )
   open fun afterCheckProject(context: Context) {}
 
@@ -222,8 +222,8 @@ abstract class Detector {
    *   an incompatible change.
    */
   @Deprecated(
-      "Use beforeCheckEachProject instead (which now includes the root projects too)",
-      replaceWith = ReplaceWith("beforeCheckEachProject(context)"),
+    "Use beforeCheckEachProject instead (which now includes the root projects too)",
+    replaceWith = ReplaceWith("beforeCheckEachProject(context)"),
   )
   open fun beforeCheckLibraryProject(context: Context) {}
 
@@ -239,8 +239,8 @@ abstract class Detector {
    *   incompatible change.
    */
   @Deprecated(
-      "Use afterCheckEachProject instead (which now includes the root projects too)",
-      replaceWith = ReplaceWith("afterCheckEachProject(context)"),
+    "Use afterCheckEachProject instead (which now includes the root projects too)",
+    replaceWith = ReplaceWith("afterCheckEachProject(context)"),
   )
   open fun afterCheckLibraryProject(context: Context) {}
 
@@ -298,19 +298,9 @@ abstract class Detector {
 
   open fun checkClass(context: ClassContext, classNode: ClassNode) {}
 
-  open fun checkCall(
-      context: ClassContext,
-      classNode: ClassNode,
-      method: MethodNode,
-      call: MethodInsnNode,
-  ) {}
+  open fun checkCall(context: ClassContext, classNode: ClassNode, method: MethodNode, call: MethodInsnNode) {}
 
-  open fun checkInstruction(
-      context: ClassContext,
-      classNode: ClassNode,
-      method: MethodNode,
-      instruction: AbstractInsnNode,
-  ) {}
+  open fun checkInstruction(context: ClassContext, classNode: ClassNode, method: MethodNode, instruction: AbstractInsnNode) {}
 
   // ---- Empty implementations to make implementing an GradleScanner easier: ----
 
@@ -324,54 +314,46 @@ abstract class Detector {
   }
 
   open fun checkDslPropertyAssignment(
-      context: GradleContext,
-      property: String,
-      value: String,
-      parent: String,
-      parentParent: String?,
-      valueCookie: Any,
-      statementCookie: Any,
+    context: GradleContext,
+    property: String,
+    value: String,
+    parent: String,
+    parentParent: String?,
+    valueCookie: Any,
+    statementCookie: Any,
   ) {}
 
   open fun checkDslPropertyAssignment(
-      context: GradleContext,
-      property: String,
-      value: String,
-      parent: String,
-      parentParent: String?,
-      propertyCookie: Any,
-      valueCookie: Any,
-      statementCookie: Any,
+    context: GradleContext,
+    property: String,
+    value: String,
+    parent: String,
+    parentParent: String?,
+    propertyCookie: Any,
+    valueCookie: Any,
+    statementCookie: Any,
   ) {
     // Backward compatibility
-    checkDslPropertyAssignment(
-        context,
-        property,
-        value,
-        parent,
-        parentParent,
-        valueCookie,
-        statementCookie,
-    )
+    checkDslPropertyAssignment(context, property, value, parent, parentParent, valueCookie, statementCookie)
   }
 
   open fun checkMethodCall(
-      context: GradleContext,
-      statement: String,
-      parent: String?,
-      namedArguments: Map<String, String>,
-      unnamedArguments: List<String>,
-      cookie: Any,
+    context: GradleContext,
+    statement: String,
+    parent: String?,
+    namedArguments: Map<String, String>,
+    unnamedArguments: List<String>,
+    cookie: Any,
   ) {}
 
   open fun checkMethodCall(
-      context: GradleContext,
-      statement: String,
-      parent: String?,
-      parentParent: String?,
-      namedArguments: Map<String, String>,
-      unnamedArguments: List<String>,
-      cookie: Any,
+    context: GradleContext,
+    statement: String,
+    parent: String?,
+    parentParent: String?,
+    namedArguments: Map<String, String>,
+    unnamedArguments: List<String>,
+    cookie: Any,
   ) {
     // Backward compatibility
     checkMethodCall(context, statement, parent, namedArguments, unnamedArguments, cookie)
@@ -395,29 +377,19 @@ abstract class Detector {
   // be used.
 
   @Deprecated("Use UAST instead of PSI")
-  open fun visitMethod(
-      context: JavaContext,
-      visitor: JavaElementVisitor?,
-      call: PsiMethodCallExpression,
-      method: PsiMethod,
-  ) {}
+  open fun visitMethod(context: JavaContext, visitor: JavaElementVisitor?, call: PsiMethodCallExpression, method: PsiMethod) {}
 
   @Deprecated("Use UAST instead of PSI")
-  open fun visitConstructor(
-      context: JavaContext,
-      visitor: JavaElementVisitor?,
-      node: PsiNewExpression,
-      constructor: PsiMethod,
-  ) {}
+  open fun visitConstructor(context: JavaContext, visitor: JavaElementVisitor?, node: PsiNewExpression, constructor: PsiMethod) {}
 
   @Deprecated("Use UAST instead of PSI")
   open fun visitResourceReference(
-      context: JavaContext,
-      visitor: JavaElementVisitor?,
-      node: PsiElement,
-      type: ResourceType,
-      name: String,
-      isFramework: Boolean,
+    context: JavaContext,
+    visitor: JavaElementVisitor?,
+    node: PsiElement,
+    type: ResourceType,
+    name: String,
+    isFramework: Boolean,
   ) {}
 
   @Deprecated("Use UAST instead of PSI") open fun checkClass(context: JavaContext, declaration: PsiClass) {}
@@ -427,10 +399,10 @@ abstract class Detector {
 
   @Deprecated("Use UAST instead of PSI")
   open fun visitReference(
-      context: JavaContext,
-      visitor: JavaElementVisitor?,
-      reference: PsiJavaCodeReferenceElement,
-      referenced: PsiElement,
+    context: JavaContext,
+    visitor: JavaElementVisitor?,
+    reference: PsiJavaCodeReferenceElement,
+    referenced: PsiElement,
   ) {}
 
   // ---- Empty implementations to make implementing UastScanner easier: ----
@@ -439,11 +411,7 @@ abstract class Detector {
 
   open fun visitClass(context: JavaContext, lambda: ULambdaExpression) {}
 
-  open fun visitReference(
-      context: JavaContext,
-      reference: UReferenceExpression,
-      referenced: PsiElement,
-  ) {}
+  open fun visitReference(context: JavaContext, reference: UReferenceExpression, referenced: PsiElement) {}
 
   open fun visitConstructor(context: JavaContext, node: UCallExpression, constructor: PsiMethod) {}
 
@@ -457,71 +425,55 @@ abstract class Detector {
 
   open fun createUastHandler(context: JavaContext): UElementHandler? = null
 
-  open fun visitResourceReference(
-      context: JavaContext,
-      node: UElement,
-      type: ResourceType,
-      name: String,
-      isFramework: Boolean,
+  open fun visitResourceReference(context: JavaContext, node: UElement, type: ResourceType, name: String, isFramework: Boolean) {}
+
+  @Deprecated("Migrate to visitAnnotationUsage(JavaContext, UElement, AnnotationInfo, AnnotationUsageInfo)")
+  open fun visitAnnotationUsage(
+    context: JavaContext,
+    usage: UElement,
+    type: AnnotationUsageType,
+    annotation: UAnnotation,
+    qualifiedName: String,
+    method: PsiMethod?,
+    annotations: List<UAnnotation>,
+    allMemberAnnotations: List<UAnnotation>,
+    allClassAnnotations: List<UAnnotation>,
+    allPackageAnnotations: List<UAnnotation>,
   ) {}
 
   @Deprecated("Migrate to visitAnnotationUsage(JavaContext, UElement, AnnotationInfo, AnnotationUsageInfo)")
   open fun visitAnnotationUsage(
-      context: JavaContext,
-      usage: UElement,
-      type: AnnotationUsageType,
-      annotation: UAnnotation,
-      qualifiedName: String,
-      method: PsiMethod?,
-      annotations: List<UAnnotation>,
-      allMemberAnnotations: List<UAnnotation>,
-      allClassAnnotations: List<UAnnotation>,
-      allPackageAnnotations: List<UAnnotation>,
-  ) {}
-
-  @Deprecated("Migrate to visitAnnotationUsage(JavaContext, UElement, AnnotationInfo, AnnotationUsageInfo)")
-  open fun visitAnnotationUsage(
-      context: JavaContext,
-      usage: UElement,
-      type: AnnotationUsageType,
-      annotation: UAnnotation,
-      qualifiedName: String,
-      method: PsiMethod?,
-      referenced: PsiElement?,
-      annotations: List<UAnnotation>,
-      allMemberAnnotations: List<UAnnotation>,
-      allClassAnnotations: List<UAnnotation>,
-      allPackageAnnotations: List<UAnnotation>,
+    context: JavaContext,
+    usage: UElement,
+    type: AnnotationUsageType,
+    annotation: UAnnotation,
+    qualifiedName: String,
+    method: PsiMethod?,
+    referenced: PsiElement?,
+    annotations: List<UAnnotation>,
+    allMemberAnnotations: List<UAnnotation>,
+    allClassAnnotations: List<UAnnotation>,
+    allPackageAnnotations: List<UAnnotation>,
   ) {
     // Backwards compatibility
     @Suppress("DEPRECATION")
     visitAnnotationUsage(
-        context,
-        usage,
-        type,
-        annotation,
-        qualifiedName,
-        method,
-        annotations,
-        allMemberAnnotations,
-        allClassAnnotations,
-        allPackageAnnotations,
+      context,
+      usage,
+      type,
+      annotation,
+      qualifiedName,
+      method,
+      annotations,
+      allMemberAnnotations,
+      allClassAnnotations,
+      allPackageAnnotations,
     )
   }
 
-  open fun visitAnnotationUsage(
-      context: XmlContext,
-      reference: Node,
-      annotationInfo: AnnotationInfo,
-      usageInfo: AnnotationUsageInfo,
-  ) {}
+  open fun visitAnnotationUsage(context: XmlContext, reference: Node, annotationInfo: AnnotationInfo, usageInfo: AnnotationUsageInfo) {}
 
-  open fun visitAnnotationUsage(
-      context: JavaContext,
-      element: UElement,
-      annotationInfo: AnnotationInfo,
-      usageInfo: AnnotationUsageInfo,
-  ) {
+  open fun visitAnnotationUsage(context: JavaContext, element: UElement, annotationInfo: AnnotationInfo, usageInfo: AnnotationUsageInfo) {
     // Temporary backwards compatibility. If you have overridden visitAnnotationUsage, do NOT
     // invoke this code since it will redundantly compute parameters and invoke the older
     // no-op visitAnnotationUsage method for backwards compatibility.
@@ -533,18 +485,18 @@ abstract class Detector {
 
     for (info in usageInfo.annotations) {
       val list: MutableList<UAnnotation> =
-          when (info.origin) {
-            AnnotationOrigin.METHOD,
-            AnnotationOrigin.FIELD -> {
-              annotations.add(info.annotation)
-              memberAnnotations
-            }
-            AnnotationOrigin.CLASS,
-            AnnotationOrigin.OUTER_CLASS -> classAnnotations
-            AnnotationOrigin.FILE,
-            AnnotationOrigin.PACKAGE -> packageAnnotations
-            else -> annotations
+        when (info.origin) {
+          AnnotationOrigin.METHOD,
+          AnnotationOrigin.FIELD -> {
+            annotations.add(info.annotation)
+            memberAnnotations
           }
+          AnnotationOrigin.CLASS,
+          AnnotationOrigin.OUTER_CLASS -> classAnnotations
+          AnnotationOrigin.FILE,
+          AnnotationOrigin.PACKAGE -> packageAnnotations
+          else -> annotations
+        }
       list.add(info.annotation)
     }
 
@@ -555,29 +507,29 @@ abstract class Detector {
 
     @Suppress("DEPRECATION")
     val usageType =
-        when (usageInfo.type) {
-          AnnotationUsageType.METHOD_CALL ->
-              when (annotationInfo.origin) {
-                AnnotationOrigin.CLASS -> AnnotationUsageType.METHOD_CALL_CLASS
-                AnnotationOrigin.PACKAGE -> AnnotationUsageType.METHOD_CALL_PACKAGE
-                else -> usageInfo.type
-              }
-          else -> usageInfo.type
-        }
+      when (usageInfo.type) {
+        AnnotationUsageType.METHOD_CALL ->
+          when (annotationInfo.origin) {
+            AnnotationOrigin.CLASS -> AnnotationUsageType.METHOD_CALL_CLASS
+            AnnotationOrigin.PACKAGE -> AnnotationUsageType.METHOD_CALL_PACKAGE
+            else -> usageInfo.type
+          }
+        else -> usageInfo.type
+      }
 
     @Suppress("DEPRECATION")
     visitAnnotationUsage(
-        context,
-        element,
-        usageType,
-        annotation,
-        annotationInfo.qualifiedName,
-        usageInfo.referenced as? PsiMethod,
-        usageInfo.referenced,
-        annotations,
-        memberAnnotations,
-        classAnnotations,
-        packageAnnotations,
+      context,
+      element,
+      usageType,
+      annotation,
+      annotationInfo.qualifiedName,
+      usageInfo.referenced as? PsiMethod,
+      usageInfo.referenced,
+      annotations,
+      memberAnnotations,
+      classAnnotations,
+      packageAnnotations,
     )
   }
 
@@ -655,11 +607,11 @@ abstract class Detector {
     // don't accidentally forget to override this if your detector reports
     // partial results.
     error(
-        this.javaClass.simpleName +
-            ": You must override " +
-            "Detector.checkPartialResults(Context, data: List<LintMap>) " +
-            "when you report data via Context.reportPartialResult (and don't " +
-            "call super.checkPartialResults!)"
+      this.javaClass.simpleName +
+        ": You must override " +
+        "Detector.checkPartialResults(Context, data: List<LintMap>) " +
+        "when you report data via Context.reportPartialResult (and don't " +
+        "call super.checkPartialResults!)"
     )
   }
 
@@ -695,10 +647,10 @@ abstract class Detector {
     // don't accidentally forget to override this if your detector reports
     // issues conditionally.
     error(
-        this.javaClass.simpleName +
-            ": You must override " +
-            "Detector.filterIncident(Context, Incident, LintMap) " +
-            "when you report conditional incidents via Context.report(Incident, LintMap)"
+      this.javaClass.simpleName +
+        ": You must override " +
+        "Detector.filterIncident(Context, Incident, LintMap) " +
+        "when you report conditional incidents via Context.report(Incident, LintMap)"
     )
   }
 

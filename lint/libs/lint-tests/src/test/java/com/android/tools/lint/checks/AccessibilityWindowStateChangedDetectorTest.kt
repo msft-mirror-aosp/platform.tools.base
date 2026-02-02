@@ -20,9 +20,9 @@ class AccessibilityWindowStateChangedDetectorTest : AbstractCheckTest() {
 
   fun testDocumentationExample() {
     lint()
-        .files(
-            kotlin(
-                    """
+      .files(
+        kotlin(
+            """
         package com.my.app
 
         import android.content.Context
@@ -52,12 +52,12 @@ class AccessibilityWindowStateChangedDetectorTest : AbstractCheckTest() {
           }
         }
         """
-                )
-                .indented()
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented()
+      )
+      .run()
+      .expect(
+        """
         src/com/my/app/MyView.kt:12: Warning: Manually populating or sending TYPE_WINDOW_STATE_CHANGED events should be avoided. They may be ignored on certain versions of Android. Prefer setting UI metadata using View.onInitializeAccessibilityNodeInfo, Activity.setTitle, ViewCompat.setAccessibilityPaneTitle, etc. to inform users of crucial changes to the UI. [AccessibilityWindowStateChangedEvent]
             sendAccessibilityEvent(AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED)
             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -69,14 +69,14 @@ class AccessibilityWindowStateChangedDetectorTest : AbstractCheckTest() {
                                                       ~~~~~~~~~~~~~~~~~~~~~~~~~
         0 errors, 3 warnings
         """
-        )
+      )
   }
 
   fun testWindowStateChangedEvent() {
     lint()
-        .files(
-            kotlin(
-                    """
+      .files(
+        kotlin(
+            """
         package com.my.app
 
         import android.content.Context
@@ -89,25 +89,25 @@ class AccessibilityWindowStateChangedDetectorTest : AbstractCheckTest() {
           view.sendAccessibilityEvent(AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED)
         }
         """
-                )
-                .indented()
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented()
+      )
+      .run()
+      .expect(
+        """
         src/com/my/app/MyView.kt:10: Warning: Manually populating or sending TYPE_WINDOW_STATE_CHANGED events should be avoided. They may be ignored on certain versions of Android. Prefer setting UI metadata using View.onInitializeAccessibilityNodeInfo, Activity.setTitle, ViewCompat.setAccessibilityPaneTitle, etc. to inform users of crucial changes to the UI. [AccessibilityWindowStateChangedEvent]
           view.sendAccessibilityEvent(AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED)
           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         0 errors, 1 warnings
         """
-        )
+      )
   }
 
   fun testWindowStateChangedReferenceInOverride() {
     lint()
-        .files(
-            kotlin(
-                    """
+      .files(
+        kotlin(
+            """
         package com.my.app
 
         import android.content.Context
@@ -130,12 +130,12 @@ class AccessibilityWindowStateChangedDetectorTest : AbstractCheckTest() {
           }
         }
         """
-                )
-                .indented()
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented()
+      )
+      .run()
+      .expect(
+        """
         src/com/my/app/MyView.kt:9: Warning: Manually populating or sending TYPE_WINDOW_STATE_CHANGED events should be avoided. They may be ignored on certain versions of Android. Prefer setting UI metadata using View.onInitializeAccessibilityNodeInfo, Activity.setTitle, ViewCompat.setAccessibilityPaneTitle, etc. to inform users of crucial changes to the UI. [AccessibilityWindowStateChangedEvent]
             if (event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
                                                       ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -144,6 +144,6 @@ class AccessibilityWindowStateChangedDetectorTest : AbstractCheckTest() {
                                                       ~~~~~~~~~~~~~~~~~~~~~~~~~
         0 errors, 2 warnings
         """
-        )
+      )
   }
 }

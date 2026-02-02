@@ -45,9 +45,9 @@ class RequiredFeatureDetector : ResourceXmlDetector() {
     val feature = featureNode.value
     if (isUnnecessaryRequiredFeature(feature)) {
       val message =
-          "Consider whether this feature (`$feature`) really is required for the app to function; " +
-              "you can set `android:required=\"false\"` to " +
-              "indicate that the feature is used but not required"
+        "Consider whether this feature (`$feature`) really is required for the app to function; " +
+          "you can set `android:required=\"false\"` to " +
+          "indicate that the feature is used but not required"
       val fix = fix().set(ANDROID_URI, ATTR_REQUIRED, VALUE_FALSE).build()
       context.report(ISSUE, featureNode, context.getValueLocation(featureNode), message, fix)
     }
@@ -71,11 +71,11 @@ class RequiredFeatureDetector : ResourceXmlDetector() {
   companion object {
     @JvmField
     val ISSUE =
-        create(
-            id = "UnnecessaryRequiredFeature",
-            briefDescription = "Potentially unnecessary required feature",
-            explanation =
-                """
+      create(
+        id = "UnnecessaryRequiredFeature",
+        briefDescription = "Potentially unnecessary required feature",
+        explanation =
+          """
           Avoid unnecessarily requiring features that may exclude your app from being served onto \
           devices it might otherwise support.
 
@@ -83,11 +83,11 @@ class RequiredFeatureDetector : ResourceXmlDetector() {
           requirements by setting these to `android:required="false"`. By doing so, you can increase \
           the availability of your app to a broader set of devices, including tablets, laptops and cars.
           """,
-            category = Category.USABILITY,
-            priority = 2,
-            severity = Severity.WARNING,
-            implementation = Implementation(RequiredFeatureDetector::class.java, MANIFEST_SCOPE),
-            androidSpecific = true,
-        )
+        category = Category.USABILITY,
+        priority = 2,
+        severity = Severity.WARNING,
+        implementation = Implementation(RequiredFeatureDetector::class.java, MANIFEST_SCOPE),
+        androidSpecific = true,
+      )
   }
 }

@@ -24,10 +24,10 @@ class WrongLocationDetectorTest : AbstractCheckTest() {
 
   fun testOk() {
     lint()
-        .files(
-            xml(
-                    "res/values/strings.xml",
-                    """
+      .files(
+        xml(
+            "res/values/strings.xml",
+            """
                 <resources>
                     <!-- Home -->
                     <string name="home_title">Home Sample</string>
@@ -44,19 +44,19 @@ class WrongLocationDetectorTest : AbstractCheckTest() {
                 </resources>
 
                 """,
-                )
-                .indented()
-        )
-        .run()
-        .expectClean()
+          )
+          .indented()
+      )
+      .run()
+      .expectClean()
   }
 
   fun test() {
     lint()
-        .files(
-            xml(
-                    "res/layout/alias.xml",
-                    """
+      .files(
+        xml(
+            "res/layout/alias.xml",
+            """
                 <resources>
                     <!-- Home -->
                     <string name="home_title">Home Sample</string>
@@ -73,17 +73,17 @@ class WrongLocationDetectorTest : AbstractCheckTest() {
                 </resources>
 
                 """,
-                )
-                .indented()
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented()
+      )
+      .run()
+      .expect(
+        """
             res/layout/alias.xml:1: Error: This file should be placed in a values/ folder, not a layout/ folder [WrongFolder]
             <resources>
              ~~~~~~~~~
             1 errors, 0 warnings
             """
-        )
+      )
   }
 }

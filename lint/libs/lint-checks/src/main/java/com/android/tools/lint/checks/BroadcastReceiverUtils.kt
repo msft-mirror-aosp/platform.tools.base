@@ -39,9 +39,9 @@ import org.jetbrains.uast.tryResolve
 object BroadcastReceiverUtils {
   @JvmStatic
   fun checkIsProtectedReceiverAndReturnUnprotectedActions(
-      filterArg: UExpression,
-      node: UCallExpression,
-      javaEvaluator: JavaEvaluator,
+    filterArg: UExpression,
+    node: UCallExpression,
+    javaEvaluator: JavaEvaluator,
   ): Pair<Boolean, List<String>> { // isProtected, unprotectedActions
     val constantEvaluator = ConstantEvaluator().allowFieldInitializers()
     val actions = mutableSetOf<String>()
@@ -82,33 +82,23 @@ object BroadcastReceiverUtils {
    * constructor, an `IntentFilter.create()` call, or `null`. It will only be found if the intent filter is constructed within the body of
    * the supplied call expression (as in, it is a local variable defined within the function).
    */
-  private fun findIntentFilterConstruction(
-      expression: UExpression,
-      endAt: UElement,
-  ): UCallExpression? {
+  private fun findIntentFilterConstruction(expression: UExpression, endAt: UElement): UCallExpression? {
     return findConstruction("android.content.IntentFilter", expression, endAt)
   }
 
   private fun isIntentFilterFactoryMethod(method: PsiMethod?) =
-      method != null &&
-          (method.containingClass?.qualifiedName == "android.content.IntentFilter" &&
-              (method.returnType?.canonicalText == "android.content.IntentFilter" || method.isConstructor))
+    method != null &&
+      (method.containingClass?.qualifiedName == "android.content.IntentFilter" &&
+        (method.returnType?.canonicalText == "android.content.IntentFilter" || method.isConstructor))
 
-  private fun addActionArg(
-      call: UCallExpression,
-      evaluator: ConstantEvaluator,
-      actions: MutableSet<String>,
-  ) {
+  private fun addActionArg(call: UCallExpression, evaluator: ConstantEvaluator, actions: MutableSet<String>) {
     val actionArg = call.getArgumentForParameter(0) ?: return
     val action = evaluator.evaluate(actionArg) as? String ?: return
     actions.add(action)
   }
 
-  private class ActionCollectorVisitor(
-      start: Collection<UElement>,
-      val functionCall: UCallExpression,
-      val evaluator: ConstantEvaluator,
-  ) : EscapeCheckingDataFlowAnalyzer(start) {
+  private class ActionCollectorVisitor(start: Collection<UElement>, val functionCall: UCallExpression, val evaluator: ConstantEvaluator) :
+    EscapeCheckingDataFlowAnalyzer(start) {
     private var finished = false
     val actions = mutableSetOf<String>()
 
@@ -134,9 +124,9 @@ object BroadcastReceiverUtils {
    * scope.
    */
   private class IntentFilterFieldDataFlowAnalyzer(
-      val intentFilterField: PsiField,
-      val javaEvaluator: JavaEvaluator,
-      val constantEvaluator: ConstantEvaluator,
+    val intentFilterField: PsiField,
+    val javaEvaluator: JavaEvaluator,
+    val constantEvaluator: ConstantEvaluator,
   ) : EscapeCheckingDataFlowAnalyzer(listOfNotNull(intentFilterField.toUElement())) {
     val actions: MutableSet<String> = mutableSetOf()
 
@@ -191,9 +181,9 @@ object BroadcastReceiverUtils {
     private fun isIntentFilterFieldConstruction(node: UCallExpression): Boolean {
       if (!isIntentFilterFactoryMethod(node.resolve())) return false
       val parent =
-          if (node.uastParent is UParenthesizedExpression) {
-            skipParenthesizedExprUp(node.uastParent as? UExpression)
-          } else node.uastParent
+        if (node.uastParent is UParenthesizedExpression) {
+          skipParenthesizedExprUp(node.uastParent as? UExpression)
+        } else node.uastParent
       if (parent?.sourcePsi == intentFilterField) return true
       return (parent as? UBinaryExpression)?.let {
         it.operator == UastBinaryOperator.ASSIGN && it.leftOperand.tryResolve() == intentFilterField

@@ -56,11 +56,7 @@ class PrivateApiClass(name: String) : ApiClassBase(name) {
     // We don't store the class hierarchy.
   }
 
-  internal override fun writeMemberData(
-      info: Api<out ApiClassBase>,
-      member: String,
-      buffer: ByteBuffer,
-  ) {
+  internal override fun writeMemberData(info: Api<out ApiClassBase>, member: String, buffer: ByteBuffer) {
     val payload = (if (member.indexOf('(') >= 0) methods[member] else fields[member]) ?: return
 
     val signature = member.toByteArray(StandardCharsets.UTF_8)
@@ -92,13 +88,13 @@ enum class Restriction(val encoding: Int) {
 }
 
 fun decode(encoding: Int): Restriction =
-    when (encoding) {
-      1 -> Restriction.ALLOW
-      2 -> Restriction.DENY
-      3 -> Restriction.MAYBE
-      4 -> Restriction.MAYBE_MAX_O
-      5 -> Restriction.MAYBE_MAX_P
-      6 -> Restriction.MAYBE_MAX_Q
-      7 -> Restriction.MAYBE_MAX_R
-      else -> Restriction.UNKNOWN
-    }
+  when (encoding) {
+    1 -> Restriction.ALLOW
+    2 -> Restriction.DENY
+    3 -> Restriction.MAYBE
+    4 -> Restriction.MAYBE_MAX_O
+    5 -> Restriction.MAYBE_MAX_P
+    6 -> Restriction.MAYBE_MAX_Q
+    7 -> Restriction.MAYBE_MAX_R
+    else -> Restriction.UNKNOWN
+  }

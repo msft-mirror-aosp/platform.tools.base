@@ -47,15 +47,9 @@ class ExtensionSdk(val name: String, val shortName: String?, val id: Int, val re
      * true, it will include the VERSION_CODES_FULL class name containing the constant. If [requireFull] is false, it will try to use a
      * plain VERSION_CODES constant if the minor level is 0.
      */
-    fun getAndroidVersionField(
-        api: Int,
-        minor: Int,
-        fullyQualified: Boolean,
-        requireFull: Boolean = true,
-        kotlin: Boolean = true,
-    ): String =
-        if (minor > 0 || requireFull) ApiLevel(api, minor).toSourceReference(fullyQualified, kotlin)
-        else ApiLevel(api).toSourceReference(fullyQualified, kotlin)
+    fun getAndroidVersionField(api: Int, minor: Int, fullyQualified: Boolean, requireFull: Boolean = true, kotlin: Boolean = true): String =
+      if (minor > 0 || requireFull) ApiLevel(api, minor).toSourceReference(fullyQualified, kotlin)
+      else ApiLevel(api).toSourceReference(fullyQualified, kotlin)
 
     fun getSdkExtensionField(sdkId: Int, fullyQualified: Boolean): String {
       if (sdkId <= MAX_PLATFORM_SDK_ID) { // For values less than 1_000_000, the sdk ID corresponds to a platform level

@@ -27,21 +27,16 @@ import org.jetbrains.uast.UAnnotation
 import org.jetbrains.uast.UExpression
 import org.jetbrains.uast.ULiteralExpression
 
-class FloatRangeConstraint
-private constructor(
-    val from: Double,
-    val to: Double,
-    val fromInclusive: Boolean,
-    val toInclusive: Boolean,
-) : RangeConstraint() {
+class FloatRangeConstraint private constructor(val from: Double, val to: Double, val fromInclusive: Boolean, val toInclusive: Boolean) :
+  RangeConstraint() {
 
   constructor(
-      range: IntRangeConstraint
+    range: IntRangeConstraint
   ) : this(
-      if (range.from == Long.MIN_VALUE) NEGATIVE_INFINITY else range.from.toDouble(),
-      if (range.to == Long.MAX_VALUE) POSITIVE_INFINITY else range.to.toDouble(),
-      true,
-      true,
+    if (range.from == Long.MIN_VALUE) NEGATIVE_INFINITY else range.from.toDouble(),
+    if (range.to == Long.MAX_VALUE) POSITIVE_INFINITY else range.to.toDouble(),
+    true,
+    true,
   )
 
   fun isValid(value: Double): Boolean {
@@ -56,25 +51,21 @@ private constructor(
   }
 
   @JvmOverloads
-  fun describe(
-      argument: UExpression? = null,
-      actualValue: Double? = null,
-      prefix: String = "Value must be ",
-  ): String {
+  fun describe(argument: UExpression? = null, actualValue: Double? = null, prefix: String = "Value must be "): String {
     val sb = StringBuilder(20)
     sb.append(prefix)
     val valueString =
-        if (argument is ULiteralExpression) {
-          // Use source text instead to avoid rounding errors involved in conversion, e.g
-          //    Error: Value must be > 2.5 (was 2.490000009536743) [Range]
-          //    printAtLeastExclusive(2.49f); // ERROR
-          //                          ~~~~~
-          var str = argument.asSourceString()
-          if (str.endsWith("f") || str.endsWith("F")) {
-            str = str.substring(0, str.length - 1)
-          }
-          str
-        } else actualValue?.toString()
+      if (argument is ULiteralExpression) {
+        // Use source text instead to avoid rounding errors involved in conversion, e.g
+        //    Error: Value must be > 2.5 (was 2.490000009536743) [Range]
+        //    printAtLeastExclusive(2.49f); // ERROR
+        //                          ~~~~~
+        var str = argument.asSourceString()
+        if (str.endsWith("f") || str.endsWith("F")) {
+          str = str.substring(0, str.length - 1)
+        }
+        str
+      } else actualValue?.toString()
 
     // If we have an actual value, don't describe the full range, only describe
     // the parts that are outside the range
@@ -170,11 +161,7 @@ private constructor(
     return sb.toString()
   }
 
-  override fun describeDelta(
-      actual: RangeConstraint,
-      actualLabel: String,
-      allowedLabel: String,
-  ): String {
+  override fun describeDelta(actual: RangeConstraint, actualLabel: String, allowedLabel: String): String {
     if (actual !is FloatRangeConstraint) {
       return if (actual is IntRangeConstraint) {
         describeDelta(FloatRangeConstraint(actual), actualLabel, allowedLabel)
@@ -227,11 +214,11 @@ private constructor(
     other ?: return this
 
     val range: FloatRangeConstraint =
-        when (other) {
-          is FloatRangeConstraint -> other
-          is IntRangeConstraint -> FloatRangeConstraint(other)
-          else -> error(other.javaClass.name)
-        }
+      when (other) {
+        is FloatRangeConstraint -> other
+        is IntRangeConstraint -> FloatRangeConstraint(other)
+        else -> error(other.javaClass.name)
+      }
 
     val start: Double
     val startInclusive: Boolean
@@ -280,12 +267,12 @@ private constructor(
   override fun contains(other: RangeConstraint): Boolean? {
     if (other is FloatRangeConstraint) {
       return !(other.from < from || other.to > to) &&
-          !(!fromInclusive && other.fromInclusive && other.from == from) &&
-          !(!toInclusive && other.toInclusive && other.to == to)
+        !(!fromInclusive && other.fromInclusive && other.from == from) &&
+        !(!toInclusive && other.toInclusive && other.to == to)
     } else if (other is IntRangeConstraint) {
       return !(other.from < from || other.to > to) &&
-          !(!fromInclusive && other.from.toDouble() == from) &&
-          !(!toInclusive && other.to.toDouble() == to)
+        !(!fromInclusive && other.from.toDouble() == from) &&
+        !(!toInclusive && other.to.toDouble() == to)
     }
     return null
   }
@@ -311,12 +298,7 @@ private constructor(
     }
 
     @JvmStatic
-    fun range(
-        from: Double,
-        fromInclusive: Boolean,
-        to: Double,
-        toInclusive: Boolean,
-    ): FloatRangeConstraint {
+    fun range(from: Double, fromInclusive: Boolean, to: Double, toInclusive: Boolean): FloatRangeConstraint {
       return FloatRangeConstraint(from, to, fromInclusive, toInclusive)
     }
 

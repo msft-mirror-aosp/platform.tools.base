@@ -48,19 +48,19 @@ class StartDestinationDetector : ResourceXmlDetector() {
 
     @JvmField
     val ISSUE =
-        Issue.create(
-            id = "InvalidNavigation",
-            briefDescription = "No start destination specified",
-            explanation =
-                """
+      Issue.create(
+        id = "InvalidNavigation",
+        briefDescription = "No start destination specified",
+        explanation =
+          """
             All `<navigation>` elements must have a start destination specified, and it must \
             be a direct child of that `<navigation>`.
             """,
-            category = Category.CORRECTNESS,
-            priority = 3,
-            severity = Severity.WARNING,
-            implementation = Implementation(StartDestinationDetector::class.java, Scope.RESOURCE_FILE_SCOPE),
-        )
+        category = Category.CORRECTNESS,
+        priority = 3,
+        severity = Severity.WARNING,
+        implementation = Implementation(StartDestinationDetector::class.java, Scope.RESOURCE_FILE_SCOPE),
+      )
   }
 
   override fun appliesTo(folderType: ResourceFolderType): Boolean = folderType == ResourceFolderType.NAVIGATION
@@ -76,22 +76,12 @@ class StartDestinationDetector : ResourceXmlDetector() {
     val destinationAttrValue = destinationAttr?.value
     // smart cast to non-null doesn't seem to work with isNullOrBlank
     if (destinationAttrValue == null || destinationAttrValue.isBlank()) {
-      context.report(
-          ISSUE,
-          element,
-          context.getNameLocation(element),
-          "No start destination specified",
-      )
+      context.report(ISSUE, element, context.getNameLocation(element), "No start destination specified")
     } else {
       // TODO(namespaces): Support namespaces in ids
       val url = ResourceUrl.parse(destinationAttrValue)
       if (url == null || url.type != ResourceType.ID) {
-        context.report(
-            ISSUE,
-            element,
-            context.getNameLocation(element),
-            "`startDestination` must be an id",
-        )
+        context.report(ISSUE, element, context.getNameLocation(element), "`startDestination` must be an id")
         return
       }
       for (i in 0 until children.length) {
@@ -101,8 +91,8 @@ class StartDestinationDetector : ResourceXmlDetector() {
           val includedUrl = ResourceUrl.parse(includedGraph) ?: continue
           val client = context.client
           val repository =
-              if (context.isGlobalAnalysis()) client.getResources(context.mainProject, LOCAL_DEPENDENCIES)
-              else client.getResources(context.project, ResourceRepositoryScope.PROJECT_ONLY)
+            if (context.isGlobalAnalysis()) client.getResources(context.mainProject, LOCAL_DEPENDENCIES)
+            else client.getResources(context.project, ResourceRepositoryScope.PROJECT_ONLY)
           val items = repository.getResources(ResourceNamespace.TODO(), includedUrl.type, includedUrl.name)
           if (items.isEmpty() && !context.isGlobalAnalysis()) {
             // The included layout is in another module; in that case, we can't check it.
@@ -129,12 +119,7 @@ class StartDestinationDetector : ResourceXmlDetector() {
           }
         }
       }
-      context.report(
-          ISSUE,
-          element,
-          context.getValueLocation(destinationAttr),
-          "Invalid start destination $destinationAttrValue",
-      )
+      context.report(ISSUE, element, context.getValueLocation(destinationAttr), "Invalid start destination $destinationAttrValue")
     }
   }
 

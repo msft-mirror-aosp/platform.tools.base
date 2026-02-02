@@ -35,24 +35,20 @@ class MediaBrowserServiceCompatVersionDetector : Detector(), SourceCodeScanner {
 
     @JvmField
     val ISSUE =
-        Issue.create(
-            id = "IncompatibleMediaBrowserServiceCompatVersion",
-            briefDescription = "Obsolete version of MediaBrowserServiceCompat",
-            explanation =
-                """
+      Issue.create(
+        id = "IncompatibleMediaBrowserServiceCompatVersion",
+        briefDescription = "Obsolete version of MediaBrowserServiceCompat",
+        explanation =
+          """
             `MediaBrowserServiceCompat` from version 23.2.0 to 23.4.0 of the Support v4 Library \
             used private APIs and will not be compatible with future versions of Android beyond Android N. \
             Please upgrade to version 24.0.0 or higher of the Support Library.""",
-            category = Category.CORRECTNESS,
-            priority = 6,
-            severity = Severity.WARNING,
-            androidSpecific = true,
-            implementation =
-                Implementation(
-                    MediaBrowserServiceCompatVersionDetector::class.java,
-                    Scope.JAVA_FILE_SCOPE,
-                ),
-        )
+        category = Category.CORRECTNESS,
+        priority = 6,
+        severity = Severity.WARNING,
+        androidSpecific = true,
+        implementation = Implementation(MediaBrowserServiceCompatVersionDetector::class.java, Scope.JAVA_FILE_SCOPE),
+      )
 
     /**
      * Minimum recommended support library version that has the necessary fixes to ensure that MediaBrowserServiceCompat is forward
@@ -73,7 +69,7 @@ class MediaBrowserServiceCompatVersionDetector : Detector(), SourceCodeScanner {
     }
 
     val library =
-        context.project.buildVariant?.mainArtifact?.findCompileDependency(SUPPORT_LIB_ARTIFACT) as? LintModelExternalLibrary ?: return
+      context.project.buildVariant?.mainArtifact?.findCompileDependency(SUPPORT_LIB_ARTIFACT) as? LintModelExternalLibrary ?: return
     val mc = library.resolvedCoordinates
     if (mc.version.isNotBlank()) {
       val libVersion = Version.parse(mc.version)

@@ -53,13 +53,7 @@ class CipherGetInstanceDetector : Detector(), SourceCodeScanner {
       val expression = arguments[0]
       val transformation = ConstantEvaluator.evaluate(context, expression)
       if (transformation is String) {
-        checkTransformation(
-            context,
-            node,
-            expression,
-            transformation,
-            expression !is ULiteralExpression,
-        )
+        checkTransformation(context, node, expression, transformation, expression !is ULiteralExpression)
       }
     }
     if (arguments.size == 2) {
@@ -87,11 +81,11 @@ class CipherGetInstanceDetector : Detector(), SourceCodeScanner {
   }
 
   private fun checkTransformation(
-      context: JavaContext,
-      call: UCallExpression,
-      node: UElement,
-      transformation: String,
-      includeValue: Boolean,
+    context: JavaContext,
+    call: UCallExpression,
+    node: UElement,
+    transformation: String,
+    includeValue: Boolean,
   ) {
     if (ALGORITHM_ONLY.contains(transformation)) {
       val message = "`Cipher.getInstance` should not be called without setting the" + " encryption mode and padding"
@@ -105,12 +99,7 @@ class CipherGetInstanceDetector : Detector(), SourceCodeScanner {
     }
   }
 
-  private fun checkProvider(
-      context: JavaContext,
-      call: UCallExpression,
-      node: UElement,
-      provider: String,
-  ) {
+  private fun checkProvider(context: JavaContext, call: UCallExpression, node: UElement, provider: String) {
     if (provider == "BC") {
       val atLeastP = ApiConstraint.get(28)
       val constraint = getOuterVersionCheckConstraint(context, call)
@@ -124,12 +113,12 @@ class CipherGetInstanceDetector : Detector(), SourceCodeScanner {
 
   override fun filterIncident(context: Context, incident: Incident, map: LintMap): Boolean {
     val prefix =
-        if (context.mainProject.targetSdkVersion.featureLevel >= 28) {
-          "The `BC` provider is deprecated and as of Android P " + "this method will throw a `NoSuchAlgorithmException`."
-        } else {
-          "The `BC` provider is deprecated and when `targetSdkVersion` is moved " +
-              "to `P` this method will throw a `NoSuchAlgorithmException`."
-        }
+      if (context.mainProject.targetSdkVersion.featureLevel >= 28) {
+        "The `BC` provider is deprecated and as of Android P " + "this method will throw a `NoSuchAlgorithmException`."
+      } else {
+        "The `BC` provider is deprecated and when `targetSdkVersion` is moved " +
+          "to `P` this method will throw a `NoSuchAlgorithmException`."
+      }
     val message = prefix + " To fix " + "this you should stop specifying a provider and use the default " + "implementation"
     incident.message = message
     return true
@@ -138,39 +127,39 @@ class CipherGetInstanceDetector : Detector(), SourceCodeScanner {
   companion object {
     @JvmField
     val ISSUE =
-        Issue.create(
-            id = "GetInstance",
-            briefDescription = "Cipher.getInstance with ECB",
-            explanation =
-                """
+      Issue.create(
+        id = "GetInstance",
+        briefDescription = "Cipher.getInstance with ECB",
+        explanation =
+          """
                 `Cipher#getInstance` should not be called with ECB as the cipher mode or \
                 without setting the cipher mode because the default mode on android is \
                 ECB, which is insecure.""",
-            moreInfo = "https://goo.gle/GetInstance",
-            category = Category.SECURITY,
-            priority = 9,
-            severity = Severity.WARNING,
-            androidSpecific = true,
-            implementation = Implementation(CipherGetInstanceDetector::class.java, Scope.JAVA_FILE_SCOPE),
-        )
+        moreInfo = "https://goo.gle/GetInstance",
+        category = Category.SECURITY,
+        priority = 9,
+        severity = Severity.WARNING,
+        androidSpecific = true,
+        implementation = Implementation(CipherGetInstanceDetector::class.java, Scope.JAVA_FILE_SCOPE),
+      )
 
     @JvmField
     val DEPRECATED_PROVIDER =
-        Issue.create(
-                id = "DeprecatedProvider",
-                briefDescription = "Using BC Provider",
-                explanation =
-                    """
+      Issue.create(
+          id = "DeprecatedProvider",
+          briefDescription = "Using BC Provider",
+          explanation =
+            """
         The `BC` provider has been deprecated and will not be provided when `targetSdkVersion` is P or higher.
         """,
-                moreInfo = "https://android-developers.googleblog.com/2018/03/cryptography-changes-in-android-p.html",
-                category = Category.SECURITY,
-                priority = 9,
-                severity = Severity.WARNING,
-                androidSpecific = true,
-                implementation = Implementation(CipherGetInstanceDetector::class.java, Scope.JAVA_FILE_SCOPE),
-            )
-            .addMoreInfo("https://goo.gle/DeprecatedProvider")
+          moreInfo = "https://android-developers.googleblog.com/2018/03/cryptography-changes-in-android-p.html",
+          category = Category.SECURITY,
+          priority = 9,
+          severity = Severity.WARNING,
+          androidSpecific = true,
+          implementation = Implementation(CipherGetInstanceDetector::class.java, Scope.JAVA_FILE_SCOPE),
+        )
+        .addMoreInfo("https://goo.gle/DeprecatedProvider")
 
     private const val JAVAX_CRYPTO_CIPHER = "javax.crypto.Cipher"
     private const val GET_INSTANCE = "getInstance"

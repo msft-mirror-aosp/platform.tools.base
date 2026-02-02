@@ -22,10 +22,10 @@ class MotionSceneDetectorTest : AbstractCheckTest() {
 
   fun testMissingCustomAttributeName() {
     lint()
-        .files(
-            xml(
-                    "res/xml/missing_custom_attribute_name.xml",
-                    """
+      .files(
+        xml(
+            "res/xml/missing_custom_attribute_name.xml",
+            """
                 <MotionScene
                         xmlns:android="http://schemas.android.com/apk/res/android"
                         xmlns:app="http://schemas.android.com/apk/res-auto">
@@ -37,20 +37,20 @@ class MotionSceneDetectorTest : AbstractCheckTest() {
                     </ConstraintSet>
                 </MotionScene>
                 """,
-                )
-                .indented()
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented()
+      )
+      .run()
+      .expect(
+        """
                 res/xml/missing_custom_attribute_name.xml:7: Error: attributeName should be defined [MotionSceneFileValidationError]
                              <CustomAttribute app:customPixelDimension="2sp"/>
                               ~~~~~~~~~~~~~~~
                 1 errors, 0 warnings
             """
-        )
-        .expectFixDiffs(
-            """
+      )
+      .expectFixDiffs(
+        """
                 Fix for res/xml/missing_custom_attribute_name.xml line 7: Set attributeName:
                 @@ -9 +9,3 @@
                 -            <CustomAttribute app:customPixelDimension="2sp" />
@@ -58,15 +58,15 @@ class MotionSceneDetectorTest : AbstractCheckTest() {
                 +                app:attributeName="[TODO]|"
                 +                app:customPixelDimension="2sp" />
             """
-        )
+      )
   }
 
   fun testDuplicateCustomAttributeName() {
     lint()
-        .files(
-            xml(
-                    "res/xml/duplicate_custom_attribute_name.xml",
-                    """
+      .files(
+        xml(
+            "res/xml/duplicate_custom_attribute_name.xml",
+            """
                 <MotionScene
                         xmlns:android="http://schemas.android.com/apk/res/android"
                         xmlns:app="http://schemas.android.com/apk/res-auto">
@@ -83,35 +83,35 @@ class MotionSceneDetectorTest : AbstractCheckTest() {
                     </ConstraintSet>
                 </MotionScene>
                 """,
-                )
-                .indented()
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented()
+      )
+      .run()
+      .expect(
+        """
                 res/xml/duplicate_custom_attribute_name.xml:10: Error: The custom attribute textSize was specified multiple times [MotionSceneFileValidationError]
                              <CustomAttribute
                               ~~~~~~~~~~~~~~~
                 1 errors, 0 warnings
             """
-        )
-        .expectFixDiffs(
-            """
+      )
+      .expectFixDiffs(
+        """
                 Fix for res/xml/duplicate_custom_attribute_name.xml line 10: Delete this custom attribute:
                 @@ -10,3 +9,0 @@
                 -             <CustomAttribute
                 -                app:attributeName="textSize"
                 -                app:customPixelDimension="4sp"/>
             """
-        )
+      )
   }
 
   fun testMultipleOnClickInTransition() {
     lint()
-        .files(
-            xml(
-                    "res/xml/multiple_onclick_in_transition.xml",
-                    """
+      .files(
+        xml(
+            "res/xml/multiple_onclick_in_transition.xml",
+            """
                 <MotionScene
                         xmlns:android="http://schemas.android.com/apk/res/android"
                         xmlns:motion="http://schemas.android.com/apk/res-auto">
@@ -121,24 +121,24 @@ class MotionSceneDetectorTest : AbstractCheckTest() {
                     </Transition>
                 </MotionScene>
                 """,
-                )
-                .indented()
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented()
+      )
+      .run()
+      .expect(
+        """
                 res/xml/multiple_onclick_in_transition.xml:6: Error: Can only have one OnClick per Transition [MotionSceneFileValidationError]
                         <OnClick motion:clickAction="transitionToEnd"  />
                          ~~~~~~~
                 1 errors, 0 warnings
             """
-        )
-        .expectFixDiffs(
-            """
+      )
+      .expectFixDiffs(
+        """
                 Fix for res/xml/multiple_onclick_in_transition.xml line 6: Delete additional OnClick:
                 @@ -6 +5,0 @@
                 -        <OnClick motion:clickAction="transitionToEnd"  />
             """
-        )
+      )
   }
 }

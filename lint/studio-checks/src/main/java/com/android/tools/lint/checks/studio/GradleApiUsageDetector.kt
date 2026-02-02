@@ -43,21 +43,21 @@ class GradleApiUsageDetector : Detector(), SourceCodeScanner {
 
     @JvmField
     val ISSUE =
-        Issue.create(
-            id = "ProjectExecOperations",
-            briefDescription = "Using org.gradle.api.Project.exec",
-            explanation =
-                """
+      Issue.create(
+        id = "ProjectExecOperations",
+        briefDescription = "Using org.gradle.api.Project.exec",
+        explanation =
+          """
                 Using `org.gradle.api.Project.exec` is not compatible with Gradle configuration cache.
 
                 Please inject `org.gradle.process.ExecOperations` into task that needs it. This will \
                 provide you with ability to start Java and other types of processes.
             """,
-            category = CORRECTNESS,
-            severity = Severity.ERROR,
-            platforms = STUDIO_PLATFORMS,
-            implementation = IMPLEMENTATION,
-        )
+        category = CORRECTNESS,
+        severity = Severity.ERROR,
+        platforms = STUDIO_PLATFORMS,
+        implementation = IMPLEMENTATION,
+      )
   }
 
   override fun createUastHandler(context: JavaContext): UElementHandler? {
@@ -77,16 +77,16 @@ class GradleApiUsageDetector : Detector(), SourceCodeScanner {
   }
 
   override fun getApplicableUastTypes(): List<Class<out UElement>>? =
-      listOf(UCallableReferenceExpression::class.java, UCallExpression::class.java)
+    listOf(UCallableReferenceExpression::class.java, UCallExpression::class.java)
 
   private fun check(context: JavaContext, node: UExpression, psiMethod: PsiMethod) {
     val containingClass = psiMethod.containingClass ?: return
     if (context.evaluator.implementsInterface(containingClass, "org.gradle.api.Project", false)) {
       context.report(
-          ISSUE,
-          node,
-          context.getNameLocation(node),
-          "Avoid using `org.gradle.api.Project.exec` as it is incompatible with Gradle configuration cache.",
+        ISSUE,
+        node,
+        context.getNameLocation(node),
+        "Avoid using `org.gradle.api.Project.exec` as it is incompatible with Gradle configuration cache.",
       )
     }
   }

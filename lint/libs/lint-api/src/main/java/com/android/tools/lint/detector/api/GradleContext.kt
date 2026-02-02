@@ -30,23 +30,23 @@ import org.jetbrains.uast.UastBinaryOperator
 
 /** Context for analyzing a particular file. */
 open class GradleContext(
-    /** Visitor to use to analyze the file. */
-    val gradleVisitor: GradleVisitor,
+  /** Visitor to use to analyze the file. */
+  val gradleVisitor: GradleVisitor,
 
-    /** the driver running through the checks */
-    driver: LintDriver,
+  /** the driver running through the checks */
+  driver: LintDriver,
 
-    /** the project to run lint on which contains the given file */
-    project: Project,
+  /** the project to run lint on which contains the given file */
+  project: Project,
 
-    /**
-     * The main project if this project is a library project, or null if this is not a library project. The main project is the root project
-     * of all library projects, not necessarily the directly including project.
-     */
-    main: Project?,
+  /**
+   * The main project if this project is a library project, or null if this is not a library project. The main project is the root project
+   * of all library projects, not necessarily the directly including project.
+   */
+  main: Project?,
 
-    /** the file to be analyzed */
-    file: File,
+  /** the file to be analyzed */
+  file: File,
 ) : Context(driver, project, main, file) {
   /** If this is a KTS file, the corresponding [JavaContext] */
   open val ktsContext: JavaContext?
@@ -61,7 +61,7 @@ open class GradleContext(
   }
 
   fun findElementByRange(cookie: Any, startOffset: Int, endOffset: Int): Any? =
-      gradleVisitor.findElementByRange(this, cookie, startOffset, endOffset)
+    gradleVisitor.findElementByRange(this, cookie, startOffset, endOffset)
 
   @Deprecated(message = "unused", replaceWith = ReplaceWith(expression = "cookie")) fun getPropertyKeyCookie(cookie: Any): Any = cookie
 
@@ -111,9 +111,9 @@ open class GradleContext(
           }
         }
         if (
-            valueCookie is UPolyadicExpression &&
-                valueCookie.operator == UastBinaryOperator.PLUS &&
-                valueCookie.getExpressionType()?.canonicalText == CommonClassNames.JAVA_LANG_STRING
+          valueCookie is UPolyadicExpression &&
+            valueCookie.operator == UastBinaryOperator.PLUS &&
+            valueCookie.getExpressionType()?.canonicalText == CommonClassNames.JAVA_LANG_STRING
         ) {
           return getKotlinStringLiteralValue(valueCookie)
         }

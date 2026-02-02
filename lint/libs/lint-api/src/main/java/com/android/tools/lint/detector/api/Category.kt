@@ -26,12 +26,12 @@ data class Category
  * @param priority a sorting priority, with higher being more important
  */
 constructor(
-    /** The parent category, or null if this is a top level category. */
-    val parent: Category?,
+  /** The parent category, or null if this is a top level category. */
+  val parent: Category?,
 
-    /** The name of this category. */
-    val name: String,
-    val priority: Int,
+  /** The name of this category. */
+  val name: String,
+  val priority: Int,
 ) : Comparable<Category> {
   /**
    * Returns a full name for this category. For a top level category, this is just the [name] value, but for nested categories it will
@@ -40,11 +40,11 @@ constructor(
    * @return a full name for this category
    */
   val fullName: String =
-      if (parent != null) {
-        parent.fullName + ':' + name
-      } else {
-        name
-      }
+    if (parent != null) {
+      parent.fullName + ':' + name
+    } else {
+      name
+    }
 
   init {
     categoryMap[name] = this

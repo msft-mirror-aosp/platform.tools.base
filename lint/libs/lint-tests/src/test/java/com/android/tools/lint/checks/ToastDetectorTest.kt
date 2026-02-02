@@ -23,7 +23,7 @@ class ToastDetectorTest : AbstractCheckTest() {
 
   fun testJava() {
     val expected =
-        """
+      """
         src/test/pkg/ToastTest.java:32: Warning: Toast created but not shown: did you forget to call show()? [ShowToast]
                 Toast.makeText(context, "foo", Toast.LENGTH_LONG);
                 ~~~~~~~~~~~~~~
@@ -43,9 +43,9 @@ class ToastDetectorTest : AbstractCheckTest() {
         """
 
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
                 package test.pkg;
 
                 import android.app.Activity;
@@ -109,13 +109,13 @@ class ToastDetectorTest : AbstractCheckTest() {
                         }
                     }
                 }"""
-                )
-                .indented()
-        )
-        .run()
-        .expect(expected)
-        .expectFixDiffs(
-            """
+          )
+          .indented()
+      )
+      .run()
+      .expect(expected)
+      .expectFixDiffs(
+        """
             Fix for src/test/pkg/ToastTest.java line 32: Call show():
             @@ -32 +32 @@
             -        Toast.makeText(context, "foo", Toast.LENGTH_LONG);
@@ -125,12 +125,12 @@ class ToastDetectorTest : AbstractCheckTest() {
             -        Toast.makeText(context, "foo", Toast.LENGTH_LONG);
             +        Toast.makeText(context, "foo", Toast.LENGTH_LONG).show();
             """
-        )
+      )
   }
 
   fun testKotlin() {
     val expected =
-        """
+      """
         src/test/pkg/ToastTest.kt:34: Warning: Toast created but not shown: did you forget to call show()? [ShowToast]
                 Toast.makeText(context, "foo", Toast.LENGTH_LONG)
                 ~~~~~~~~~~~~~~
@@ -147,9 +147,9 @@ class ToastDetectorTest : AbstractCheckTest() {
         """
 
     lint()
-        .files(
-            kotlin(
-                    """
+      .files(
+        kotlin(
+            """
                 package test.pkg
 
                 import android.annotation.SuppressLint
@@ -208,13 +208,13 @@ class ToastDetectorTest : AbstractCheckTest() {
                         }
                     }
                 }"""
-                )
-                .indented()
-        )
-        .run()
-        .expect(expected)
-        .expectFixDiffs(
-            """
+          )
+          .indented()
+      )
+      .run()
+      .expect(expected)
+      .expectFixDiffs(
+        """
             Fix for src/test/pkg/ToastTest.kt line 34: Call show():
             @@ -34 +34 @@
             -        Toast.makeText(context, "foo", Toast.LENGTH_LONG)
@@ -224,14 +224,14 @@ class ToastDetectorTest : AbstractCheckTest() {
             -        Toast.makeText(context, "foo", Toast.LENGTH_LONG)
             +        Toast.makeText(context, "foo", Toast.LENGTH_LONG).show()
             """
-        )
+      )
   }
 
   fun testSnackbar() {
     lint()
-        .files(
-            kotlin(
-                    """
+      .files(
+        kotlin(
+            """
                 package test.pkg
 
                 import android.view.View
@@ -250,13 +250,13 @@ class ToastDetectorTest : AbstractCheckTest() {
                         sb2.show()
                     }
                 }"""
-                )
-                .indented(),
-            *snackbarStubs,
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+        *snackbarStubs,
+      )
+      .run()
+      .expect(
+        """
             src/test/pkg/Test.kt:8: Warning: Snackbar created but not shown: did you forget to call show()? [ShowToast]
                     Snackbar.make(parent, "Message", Snackbar.LENGTH_INDEFINITE) // ERROR
                     ~~~~~~~~~~~~~
@@ -265,22 +265,22 @@ class ToastDetectorTest : AbstractCheckTest() {
                              ~~~~~~~~~~~~~
             0 errors, 2 warnings
             """
-        )
-        .expectFixDiffs(
-            """
+      )
+      .expectFixDiffs(
+        """
             Fix for src/test/pkg/Test.kt line 8: Call show():
             @@ -8 +8 @@
             -        Snackbar.make(parent, "Message", Snackbar.LENGTH_INDEFINITE) // ERROR
             +        Snackbar.make(parent, "Message", Snackbar.LENGTH_INDEFINITE).show() // ERROR
             """
-        )
+      )
   }
 
   fun testSnackbarExtensionMethods() {
     lint()
-        .files(
-            kotlin(
-                    """
+      .files(
+        kotlin(
+            """
                 package test.pkg
 
                 import android.view.View
@@ -295,20 +295,20 @@ class ToastDetectorTest : AbstractCheckTest() {
 
                 private fun Snackbar.extension(): Snackbar = this
                 """
-                )
-                .indented(),
-            *snackbarStubs,
-        )
-        .run()
-        .expectClean()
+          )
+          .indented(),
+        *snackbarStubs,
+      )
+      .run()
+      .expectClean()
   }
 
   fun testSnackbarAnchor() {
     // Regression test for b/182452136
     lint()
-        .files(
-            kotlin(
-                    """
+      .files(
+        kotlin(
+            """
                 package test.pkg
                 import android.view.View
                 import com.google.android.material.snackbar.Snackbar
@@ -318,20 +318,20 @@ class ToastDetectorTest : AbstractCheckTest() {
                         .show()
                 }
                 """
-                )
-                .indented(),
-            *snackbarStubs,
-        )
-        .run()
-        .expectClean()
+          )
+          .indented(),
+        *snackbarStubs,
+      )
+      .run()
+      .expectClean()
   }
 
   fun testProperty() {
     // Regression test for b/199163915
     lint()
-        .files(
-            kotlin(
-                    """
+      .files(
+        kotlin(
+            """
                 package test.pkg
 
                 import android.content.Context
@@ -348,18 +348,18 @@ class ToastDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-                )
-                .indented()
-        )
-        .run()
-        .expectClean()
+          )
+          .indented()
+      )
+      .run()
+      .expectClean()
   }
 
   companion object {
     val snackbarStubs =
-        arrayOf(
-            java(
-                    """
+      arrayOf(
+        java(
+            """
                 package com.google.android.material.snackbar;
                 import android.view.View;
                 public abstract class BaseTransientBottomBar<B extends BaseTransientBottomBar<B>> {
@@ -370,10 +370,10 @@ class ToastDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-                )
-                .indented(),
-            java(
-                """
+          )
+          .indented(),
+        java(
+          """
                 package com.google.android.material.snackbar;
                 import android.view.View;
                 public class Snackbar extends BaseTransientBottomBar<Snackbar> {
@@ -396,16 +396,16 @@ class ToastDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-            ),
-        )
+        ),
+      )
   }
 
   fun testChainedArgumentAsArgument() {
     // Regression test for b/169689480
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
                 package test.pkg;
 
                 import android.view.View;
@@ -423,19 +423,19 @@ class ToastDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-                )
-                .indented(),
-            *snackbarStubs,
-        )
-        .run()
-        .expectClean()
+          )
+          .indented(),
+        *snackbarStubs,
+      )
+      .run()
+      .expectClean()
   }
 
   fun testUnresolvable() {
     lint()
-        .files(
-            kotlin(
-                """
+      .files(
+        kotlin(
+          """
                 package test.pkg
 
                 import android.content.Context
@@ -479,11 +479,11 @@ class ToastDetectorTest : AbstractCheckTest() {
                     unrelated.show()
                 }
                 """
-            )
         )
-        .run()
-        .expect(
-            """
+      )
+      .run()
+      .expect(
+        """
             src/test/pkg/test.kt:23: Warning: Toast created but not shown: did you forget to call show()? [ShowToast]
                                 Toast.makeText(context, "Test", Toast.LENGTH_SHORT).unknown() // ERROR 1
                                 ~~~~~~~~~~~~~~
@@ -492,6 +492,6 @@ class ToastDetectorTest : AbstractCheckTest() {
                                             ~~~~~~~~~~~~~~
             0 errors, 2 warnings
             """
-        )
+      )
   }
 }

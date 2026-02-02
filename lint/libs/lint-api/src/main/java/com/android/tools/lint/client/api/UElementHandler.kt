@@ -303,8 +303,8 @@ open class UElementHandler {
 
   companion object {
     val NONE: UElementHandler =
-        object : UElementHandler() {
-          override fun error(parameterType: Class<out UElement>) {}
-        }
+      object : UElementHandler() {
+        override fun error(parameterType: Class<out UElement>) {}
+      }
   }
 }

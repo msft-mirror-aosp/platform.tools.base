@@ -24,10 +24,8 @@ import com.android.sdklib.IAndroidTarget
  * specific releases (identified by `compileSdkVersion` in test files) that present themselves as that specific build hash but is using
  * whatever platform is actually available to the test (unless the actual target one is available).
  */
-internal class AndroidTestTargetWrapper(
-    private val target: IAndroidTarget,
-    private val version: AndroidVersion,
-) : IAndroidTarget by target {
+internal class AndroidTestTargetWrapper(private val target: IAndroidTarget, private val version: AndroidVersion) :
+  IAndroidTarget by target {
   override fun getVersion(): AndroidVersion = version
 
   override fun getVersionName(): String {

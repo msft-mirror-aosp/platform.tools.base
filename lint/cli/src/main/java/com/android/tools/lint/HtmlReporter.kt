@@ -78,12 +78,7 @@ class HtmlReporter(client: LintCliClient, output: File, flags: LintCliFlags) : R
     }
     if (incidents.isNotEmpty()) {
       append("\n<a name=\"overview\"></a>\n")
-      writeCard(
-          "Overview",
-          true,
-          "OverviewCard",
-          appender = { writeOverview(related, missing.size, extra.size) },
-      )
+      writeCard("Overview", true, "OverviewCard", appender = { writeOverview(related, missing.size, extra.size) })
       var previousCategory: Category? = null
       for (warnings in related) {
         val category = warnings[0].issue.category
@@ -129,17 +124,17 @@ class HtmlReporter(client: LintCliClient, output: File, flags: LintCliFlags) : R
   private fun writeIssueCard(incidents: List<Incident>) {
     val firstIssue = incidents[0].issue
     append(
-        """
+      """
             <a name="${firstIssue.id}"></a>
 
             """
-            .trimIndent()
+        .trimIndent()
     )
     writeCard(
-        title = XmlUtils.toXmlTextValue(firstIssue.getBriefDescription(TextFormat.TEXT)),
-        dismissible = true,
-        cardId = firstIssue.id + "Card",
-        actions = listOf(Action("Explain", getExplanationId(firstIssue), "reveal")),
+      title = XmlUtils.toXmlTextValue(firstIssue.getBriefDescription(TextFormat.TEXT)),
+      dismissible = true,
+      cardId = firstIssue.id + "Card",
+      actions = listOf(Action("Explain", getExplanationId(firstIssue), "reveal")),
     ) {
       val first = incidents[0]
       val issue = first.issue
@@ -167,13 +162,7 @@ class HtmlReporter(client: LintCliClient, output: File, flags: LintCliFlags) : R
           append("Link\" onclick=\"reveal('")
           append(id)
           append("');\" />")
-          append(
-              String.format(
-                  Locale.getDefault(),
-                  "+ %1\$d More Occurrences...",
-                  incidents.size - SHOWN_COUNT,
-              )
-          )
+          append(String.format(Locale.getDefault(), "+ %1\$d More Occurrences...", incidents.size - SHOWN_COUNT))
           append("</button>\n")
           append("<div id=\"")
           append(id)
@@ -214,13 +203,7 @@ class HtmlReporter(client: LintCliClient, output: File, flags: LintCliFlags) : R
         // Insert surrounding code block window
         val fileContents = if (incident.line >= 0) client.getSourceText(incident.file) else null
         if (fileContents != null && incident.startOffset != -1 && incident.endOffset != -1) {
-          appendCodeBlock(
-              incident.file,
-              fileContents,
-              incident.startOffset,
-              incident.endOffset,
-              incident.severity,
-          )
+          appendCodeBlock(incident.file, fileContents, incident.startOffset, incident.endOffset, incident.severity)
         }
         append('\n')
         if (incident.location.secondary != null) {
@@ -348,24 +331,18 @@ class HtmlReporter(client: LintCliClient, output: File, flags: LintCliFlags) : R
 
   private fun writeNavigationHeader(stats: LintStats, appender: () -> Unit) {
     append(
-        """<div class="mdl-layout mdl-js-layout mdl-layout--fixed-header">
+      """<div class="mdl-layout mdl-js-layout mdl-layout--fixed-header">
   <header class="mdl-layout__header">
     <div class="mdl-layout__header-row">
       <span class="mdl-layout-title">$title: """ +
-            describeCounts(
-                stats.errorCount,
-                stats.warningCount,
-                stats.hintCount,
-                comma = false,
-                capitalize = true,
-            ) +
-            "</span>\n" +
-            "      <div class=\"mdl-layout-spacer\"></div>\n" +
-            "      <nav class=\"mdl-navigation mdl-layout--large-screen-only\">"
+        describeCounts(stats.errorCount, stats.warningCount, stats.hintCount, comma = false, capitalize = true) +
+        "</span>\n" +
+        "      <div class=\"mdl-layout-spacer\"></div>\n" +
+        "      <nav class=\"mdl-navigation mdl-layout--large-screen-only\">"
     )
     append("Check performed at ${Date()} by ${client.getClientDisplayName()}")
     append(
-        """</nav>
+      """</nav>
     </div>
   </header>
   <div class="mdl-layout__drawer">
@@ -375,7 +352,7 @@ class HtmlReporter(client: LintCliClient, output: File, flags: LintCliFlags) : R
     )
     appender()
     append(
-        """    </nav>
+      """    </nav>
   </div>
   <main class="mdl-layout__content">
     <div class="mdl-layout__tab-panel is-active">"""
@@ -396,7 +373,7 @@ class HtmlReporter(client: LintCliClient, output: File, flags: LintCliFlags) : R
 
   private fun writeOpenHtmlTag() {
     append(
-        """<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+      """<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 """
     )
@@ -408,7 +385,7 @@ class HtmlReporter(client: LintCliClient, output: File, flags: LintCliFlags) : R
 
   private fun writeHeadTag() {
     append(
-        """
+      """
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 <title>$title</title>
@@ -417,7 +394,7 @@ class HtmlReporter(client: LintCliClient, output: File, flags: LintCliFlags) : R
 
     // Material
     append(
-        """<link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+      """<link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
  <link rel="stylesheet" href="https://code.getmdl.io/1.2.1/material.blue-indigo.min.css" />
 <link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Roboto:300,400,500,700" type="text/css">
 <script defer src="https://code.getmdl.io/1.2.0/material.min.js"></script>
@@ -427,7 +404,7 @@ class HtmlReporter(client: LintCliClient, output: File, flags: LintCliFlags) : R
 
     // JavaScript for collapsing/expanding long lists
     append(
-        """<script language="javascript" type="text/javascript">
+      """<script language="javascript" type="text/javascript">
 <!--
 function reveal(id) {
 if (document.getElementById) {
@@ -448,11 +425,11 @@ document.getElementById(id).style.display = 'none';
   }
 
   private fun writeIssueMetadata(
-      issue: Issue,
-      disabledBy: String?,
-      hide: Boolean,
-      includeSuppressInfo: Boolean = true,
-      includeVendorInfo: Boolean = false,
+    issue: Issue,
+    disabledBy: String?,
+    hide: Boolean,
+    includeSuppressInfo: Boolean = true,
+    includeVendorInfo: Boolean = false,
   ) {
     append("<div class=\"metadata\">")
     if (disabledBy != null) {
@@ -476,19 +453,19 @@ document.getElementById(id).style.display = 'none';
         append(option.describe(TextFormat.HTML, includeExample = false))
         append("<br/>\n")
         append(
-            "To configure this option, use a `lint.xml` file in the project or source folder using an " +
-                "<code>&lt;option&gt;</code> block like the following:\n"
+          "To configure this option, use a `lint.xml` file in the project or source folder using an " +
+            "<code>&lt;option&gt;</code> block like the following:\n"
         )
 
         val name = option.name
         val defaultValue = option.defaultAsString()
         val builder = HtmlBuilder()
         val snippet =
-            "<lint>\n" +
-                "    <issue id=\"${issue.id}\">\n" +
-                "        <option name=\"$name\" value=\"${defaultValue ?: "some string"}\" />\n" +
-                "    </issue>\n" +
-                "</lint>\n"
+          "<lint>\n" +
+            "    <issue id=\"${issue.id}\">\n" +
+            "        <option name=\"$name\" value=\"${defaultValue ?: "some string"}\" />\n" +
+            "    </issue>\n" +
+            "</lint>\n"
 
         val highlighter = LintSyntaxHighlighter("lint.xml", snippet)
         highlighter.isPadCaretLine = true
@@ -535,13 +512,12 @@ document.getElementById(id).style.display = 'none';
     }
     if (includeSuppressInfo) {
       append(
-          String.format(
-              "To suppress this error, use the issue id \"%1\$s\" as explained in the " +
-                  "%2\$sSuppressing Warnings and Errors%3\$s section.",
-              issue.id,
-              "<a href=\"#SuppressInfo\">",
-              "</a>",
-          )
+        String.format(
+          "To suppress this error, use the issue id \"%1\$s\" as explained in the " + "%2\$sSuppressing Warnings and Errors%3\$s section.",
+          issue.id,
+          "<a href=\"#SuppressInfo\">",
+          "</a>",
+        )
       )
     }
     if (includeVendorInfo && vendor != null && vendor != AOSP_VENDOR) {
@@ -564,10 +540,7 @@ document.getElementById(id).style.display = 'none';
     }
   }
 
-  private fun computeMissingIssues(
-      registry: IssueRegistry,
-      incidents: List<Incident>,
-  ): Map<Issue, String> {
+  private fun computeMissingIssues(registry: IssueRegistry, incidents: List<Incident>): Map<Issue, String> {
     val projects: MutableSet<Project> = HashSet()
     val seen: MutableSet<Issue> = HashSet()
     for (incident in incidents) {
@@ -608,20 +581,20 @@ document.getElementById(id).style.display = 'none';
     if (!client.isCheckingSpecificIssues && missing.isNotEmpty()) {
       append("\n<a name=\"MissingIssues\"></a>\n")
       writeCard(
-          title = "Disabled Checks",
-          dismissible = true,
-          cardId = "MissingIssuesCard",
-          actions = listOf(Action("List Missing Issues", "SuppressedIssues", "reveal")),
+        title = "Disabled Checks",
+        dismissible = true,
+        cardId = "MissingIssuesCard",
+        actions = listOf(Action("List Missing Issues", "SuppressedIssues", "reveal")),
       ) {
         append(
-            """
-            One or more issues were not run by lint, either
-            because the check is not enabled by default, or because
-            it was disabled with a command line flag or via one or
-            more <code>lint.xml</code> configuration files in the project directories.
+          """
+          One or more issues were not run by lint, either
+          because the check is not enabled by default, or because
+          it was disabled with a command line flag or via one or
+          more <code>lint.xml</code> configuration files in the project directories.
 
-            """
-                .trimIndent()
+          """
+            .trimIndent()
         )
         append("<div id=\"SuppressedIssues\" style=\"display: none;\">")
         val list = ArrayList(missing.keys)
@@ -636,13 +609,7 @@ document.getElementById(id).style.display = 'none';
           append("<div class=\"issueSeparator\"></div>\n")
           append("</div>\n")
           val disabledBy = missing[issue]
-          writeIssueMetadata(
-              issue,
-              disabledBy,
-              hide = false,
-              includeSuppressInfo = false,
-              includeVendorInfo = false,
-          )
+          writeIssueMetadata(issue, disabledBy, hide = false, includeSuppressInfo = false, includeVendorInfo = false)
           append("</div>\n")
         }
         append("</div>\n") // SuppressedIssues
@@ -654,21 +621,21 @@ document.getElementById(id).style.display = 'none';
     if (!client.isCheckingSpecificIssues && extra.isNotEmpty()) {
       append("\n<a name=\"ExtraIssues\"></a>\n")
       writeCard(
-          title = "Included Additional Checks",
-          dismissible = true,
-          cardId = "ExtraIssuesCard",
-          actions = listOf(Action("List Issues", "IncludedIssues", "reveal")),
+        title = "Included Additional Checks",
+        dismissible = true,
+        cardId = "ExtraIssuesCard",
+        actions = listOf(Action("List Issues", "IncludedIssues", "reveal")),
       ) {
         append(
-            """
-            This card lists all the extra checks run by lint, provided from libraries,
-            build configuration and extra flags. This is included to help you verify
-            whether a particular check is included in analysis when configuring builds.
-            (Note that the list does not include the hundreds of built-in checks into lint,
-            only additional ones.)
+          """
+          This card lists all the extra checks run by lint, provided from libraries,
+          build configuration and extra flags. This is included to help you verify
+          whether a particular check is included in analysis when configuring builds.
+          (Note that the list does not include the hundreds of built-in checks into lint,
+          only additional ones.)
 
-            """
-                .trimIndent()
+          """
+            .trimIndent()
         )
         append("<div id=\"IncludedIssues\" style=\"display: none;\">")
         append("<br/><br/>")
@@ -680,13 +647,7 @@ document.getElementById(id).style.display = 'none';
           append(issue.id)
           append("<div class=\"issueSeparator\"></div>\n")
           append("</div>\n")
-          writeIssueMetadata(
-              issue,
-              null,
-              hide = false,
-              includeSuppressInfo = false,
-              includeVendorInfo = true,
-          )
+          writeIssueMetadata(issue, null, hide = false, includeSuppressInfo = false, includeVendorInfo = true)
           append("</div>\n")
         }
         append("</div>\n") // ExtraIssues
@@ -758,13 +719,13 @@ document.getElementById(id).style.display = 'none';
 
   private fun writeCardHeader(title: String?, cardId: String) {
     append(
-        """<section class="section--center mdl-grid mdl-grid--no-spacing mdl-shadow--2dp" id="$cardId" style="display: block;">
+      """<section class="section--center mdl-grid mdl-grid--no-spacing mdl-shadow--2dp" id="$cardId" style="display: block;">
             <div class="mdl-card mdl-cell mdl-cell--12-col">
 """
     )
     if (title != null) {
       append(
-          """  <div class="mdl-card__title">
+        """  <div class="mdl-card__title">
     <h2 class="mdl-card__title-text">$title</h2>
   </div>
 """
@@ -777,13 +738,13 @@ document.getElementById(id).style.display = 'none';
 
   private fun writeCardAction(actions: List<Action>) {
     append(
-        """              </div>
+      """              </div>
               <div class="mdl-card__actions mdl-card--border">
 """
     )
     for (action in actions) {
       append(
-          """<button class="mdl-button mdl-js-button mdl-js-ripple-effect" id="${action.id}Link" onclick="${action.function}('${action.id}');">
+        """<button class="mdl-button mdl-js-button mdl-js-ripple-effect" id="${action.id}Link" onclick="${action.function}('${action.id}');">
 ${action.title}</button>"""
       )
     }
@@ -799,33 +760,27 @@ ${action.title}</button>"""
 
   private fun writeChip(text: String) {
     append(
-        """
+      """
             <span class="mdl-chip">
                 <span class="mdl-chip__text">$text</span>
             </span>
 
             """
-            .trimIndent()
+        .trimIndent()
     )
   }
 
   private var cardNumber = 0
   private val usedCardIds: MutableSet<String> = mutableSetOf()
 
-  private fun writeCard(
-      title: String?,
-      dismissible: Boolean,
-      cardId: String?,
-      actions: List<Action> = emptyList(),
-      appender: () -> Unit,
-  ) {
+  private fun writeCard(title: String?, dismissible: Boolean, cardId: String?, actions: List<Action> = emptyList(), appender: () -> Unit) {
     @Suppress("NAME_SHADOWING")
     val cardId =
-        cardId
-            ?: run {
-              val card = cardNumber++
-              getCardId(card)
-            }
+      cardId
+        ?: run {
+          val card = cardNumber++
+          getCardId(card)
+        }
     usedCardIds.add(cardId)
     writeCardHeader(title, cardId)
     appender()
@@ -1005,13 +960,7 @@ ${action.title}</button>"""
   }
 
   /** Insert syntax highlighted XML. */
-  private fun appendCodeBlock(
-      file: File,
-      contents: CharSequence,
-      startOffset: Int,
-      endOffset: Int,
-      severity: Severity,
-  ) {
+  private fun appendCodeBlock(file: File, contents: CharSequence, startOffset: Int, endOffset: Int, severity: Severity) {
     val builder = builder ?: return
     val start = max(0, startOffset)
     val end = max(start, min(endOffset, contents.length))
@@ -1077,7 +1026,7 @@ ${action.title}</button>"""
     @Suppress("ConstantConditionIf")
     private val cssSyntaxColorsLightTheme: String
       get() =
-          ("""
+        ("""
 pre.errorlines {
     background-color: white;
     font-family: monospace;
@@ -1133,32 +1082,32 @@ pre.errorlines {
 }
 .error {
 """ +
-              (if (USE_WAVY_UNDERLINES_FOR_ERRORS)
-                  if (USE_CSS_DECORATION_FOR_WAVY_UNDERLINES)
-                      """    text-decoration: underline wavy #ff0000;
+          (if (USE_WAVY_UNDERLINES_FOR_ERRORS)
+            if (USE_CSS_DECORATION_FOR_WAVY_UNDERLINES)
+              """    text-decoration: underline wavy #ff0000;
     text-decoration-color: #ff0000;
     -webkit-text-decoration-color: #ff0000;
     -moz-text-decoration-color: #ff0000;
 """
-                  else
-                      """    display: inline-block;
+            else
+              """    display: inline-block;
     position:relative;
     background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAYAAACp8Z5+AAAABmJLR0QA/wD/AP+gvaeTAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAB3RJTUUH4AwCFR4T/3uLMgAAADxJREFUCNdNyLERQEAABMCjL4lQwIzcjErpguAL+C9AvgKJDbeD/PRpLdm35Hm+MU+cB+tCKaJW4L4YBy+CAiLJrFs9mgAAAABJRU5ErkJggg==) bottom repeat-x;
 """
-              else
-                  """    text-decoration: none;
+          else
+            """    text-decoration: none;
     background-color: #f8d8d8;
 """) +
-              "}\n" +
-              ".warning {\n" +
-              "    text-decoration: none;\n" +
-              "    background-color: #f6ebbc;\n" +
-              "}\n")
+          "}\n" +
+          ".warning {\n" +
+          "    text-decoration: none;\n" +
+          "    background-color: #f6ebbc;\n" +
+          "}\n")
 
     @Suppress("ConstantConditionIf")
     private val cssSyntaxColorsDarcula: String
       get() =
-          ("""pre.errorlines {
+        ("""pre.errorlines {
     background-color: #2b2b2b;
     color: #a9b7c6;
     font-family: monospace;
@@ -1207,33 +1156,33 @@ pre.errorlines {
 }
 .error {
 """ +
-              (if (USE_WAVY_UNDERLINES_FOR_ERRORS)
-                  if (USE_CSS_DECORATION_FOR_WAVY_UNDERLINES)
-                      """    text-decoration: underline wavy #ff0000;
+          (if (USE_WAVY_UNDERLINES_FOR_ERRORS)
+            if (USE_CSS_DECORATION_FOR_WAVY_UNDERLINES)
+              """    text-decoration: underline wavy #ff0000;
     text-decoration-color: #ff0000;
     -webkit-text-decoration-color: #ff0000;
     -moz-text-decoration-color: #ff0000;
 """
-                  else
-                      """    display: inline-block;
+            else
+              """    display: inline-block;
     position:relative;
     background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAYAAACp8Z5+AAAABmJLR0QA/wD/AP+gvaeTAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAB3RJTUUH4AwCFR46vckTXgAAAEBJREFUCNdj1NbW/s+ABJj4mJgYork5GNgZGSECYVzsDKd+/WaI5uZgEGVmYmBZ9e0nw6d//xg+/vvJEM7FwQAAPnUOmQBDSmAAAAAASUVORK5CYII=) bottom repeat-x;
 """
-              else
-                  """    text-decoration: none;
+          else
+            """    text-decoration: none;
     background-color: #52503a;
 """) +
-              "}\n" +
-              ".warning {\n" +
-              "    text-decoration: none;\n" +
-              "    background-color: #52503a;\n" +
-              "}\n")
+          "}\n" +
+          ".warning {\n" +
+          "    text-decoration: none;\n" +
+          "    background-color: #52503a;\n" +
+          "}\n")
 
     /** Solarized theme. */
     @Suppress("ConstantConditionIf")
     private val cssSyntaxColorsSolarized: String
       get() =
-          ("""pre.errorlines {
+        ("""pre.errorlines {
     background-color: #FDF6E3;
     color: #586E75;
     font-family: monospace;
@@ -1281,36 +1230,36 @@ pre.errorlines {
 }
 .error {
 """ + // General > Errors and Warnings > Error
-              (if (USE_WAVY_UNDERLINES_FOR_ERRORS)
-                  if (USE_CSS_DECORATION_FOR_WAVY_UNDERLINES)
-                      """    text-decoration: underline wavy #DC322F;
+          (if (USE_WAVY_UNDERLINES_FOR_ERRORS)
+            if (USE_CSS_DECORATION_FOR_WAVY_UNDERLINES)
+              """    text-decoration: underline wavy #DC322F;
     text-decoration-color: #DC322F;
     -webkit-text-decoration-color: #DC322F;
     -moz-text-decoration-color: #DC322F;
 """
-                  else
-                      """    display: inline-block;
+            else
+              """    display: inline-block;
     position:relative;
     background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAADCAYAAAC09K7GAAAABmJLR0QA/wD/AP+gvaeTAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAB3RJTUUH4AwCFRgHs/v4yQAAAD5JREFUCNcBMwDM/wDqe2//++zZ//324v/75NH/AgxKRgDuho8A/OTnAO2KkwAA/fbi//nXxf/mZlz/++TR/4EMI0ZH4MfyAAAAAElFTkSuQmCC) bottom repeat-x;
 """
-              else
-                  """    text-decoration: none;
+          else
+            """    text-decoration: none;
     color: #073642;
     background-color: #FFA0A3;
 """) + // not from theme
-              "}\n" +
-              ".warning {\n" + // General > Errors and Warnings > Warning
-              "    text-decoration: none;\n" +
-              "    color: #073642;\n" +
-              "    background-color: #FFDF80;\n" +
-              "}\n")
+          "}\n" +
+          ".warning {\n" + // General > Errors and Warnings > Warning
+          "    text-decoration: none;\n" +
+          "    color: #073642;\n" +
+          "    background-color: #FFDF80;\n" +
+          "}\n")
 
     private var cssSyntaxColors: String = "" // set by initializePreferences() called from init { }
 
     /** Stylesheet for the HTML report. Note that the [LintSyntaxHighlighter] also depends on these class names. */
     val cssStyles: String
       get() =
-          """section.section--center {
+        """section.section--center {
     max-width: 860px;
 }
 .mdl-card__supporting-text + .mdl-card__actions {
@@ -1494,12 +1443,12 @@ $cssSyntaxColors.overview {
       USE_WAVY_UNDERLINES_FOR_ERRORS = underlineErrors
 
       val css: String =
-          when (preferredThemeName) {
-            "darcula" -> cssSyntaxColorsDarcula
-            "solarized" -> cssSyntaxColorsSolarized
-            "light" -> cssSyntaxColorsLightTheme
-            else -> cssSyntaxColorsLightTheme
-          }
+        when (preferredThemeName) {
+          "darcula" -> cssSyntaxColorsDarcula
+          "solarized" -> cssSyntaxColorsSolarized
+          "light" -> cssSyntaxColorsLightTheme
+          else -> cssSyntaxColorsLightTheme
+        }
       cssSyntaxColors = css
     }
   }

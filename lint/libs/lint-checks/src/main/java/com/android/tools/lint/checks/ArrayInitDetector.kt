@@ -46,21 +46,21 @@ class ArrayInitDetector : Detector(), SourceCodeScanner, XmlScanner {
     /** Unnecessary array initialization. */
     @JvmField
     val ISSUE =
-        Issue.create(
-            id = "UnnecessaryArrayInit",
-            briefDescription = "Unnecessary array initialization",
-            explanation =
-                """
+      Issue.create(
+        id = "UnnecessaryArrayInit",
+        briefDescription = "Unnecessary array initialization",
+        explanation =
+          """
           When constructing an array in Kotlin, you don't need to pass \
           a lambda to set the initial value if it's identical to the \
           default or if you're going to overwrite all the values without \
           reading them anyway.
           """,
-            category = Category.PERFORMANCE,
-            priority = 6,
-            severity = Severity.INFORMATIONAL,
-            implementation = IMPLEMENTATION,
-        )
+        category = Category.PERFORMANCE,
+        priority = 6,
+        severity = Severity.INFORMATIONAL,
+        implementation = IMPLEMENTATION,
+      )
   }
 
   override fun getApplicableUastTypes(): List<Class<out UElement>>? {
@@ -83,9 +83,9 @@ class ArrayInitDetector : Detector(), SourceCodeScanner, XmlScanner {
                 if (symbol != null) {
                   val classId = symbol.returnType.symbol?.classId
                   if (
-                      classId != null &&
-                          classId.packageFqName.asString() == "kotlin" &&
-                          classId.relativeClassName.asString().isArrayWithOptionalInitializer()
+                    classId != null &&
+                      classId.packageFqName.asString() == "kotlin" &&
+                      classId.relativeClassName.asString().isArrayWithOptionalInitializer()
                   ) {
                     checkConstructor(context, node)
                   }
@@ -120,16 +120,16 @@ class ArrayInitDetector : Detector(), SourceCodeScanner, XmlScanner {
               val reference = if (sourcePsi != null) " (`${sourcePsi.text}`)" else ""
               val message = "This initialization lambda$reference is unnecessary and is less efficient"
               val fix =
-                  fix()
-                      .name("Remove initialization")
-                      .replace()
-                      .apply {
-                        if (sourcePsi != null) pattern("\\s*\\Q${lambda.sourcePsi?.text}\\E").range(context.getLocation(node))
-                        else all().reformat(true)
-                      }
-                      .with("")
-                      .autoFix()
-                      .build()
+                fix()
+                  .name("Remove initialization")
+                  .replace()
+                  .apply {
+                    if (sourcePsi != null) pattern("\\s*\\Q${lambda.sourcePsi?.text}\\E").range(context.getLocation(node))
+                    else all().reformat(true)
+                  }
+                  .with("")
+                  .autoFix()
+                  .build()
               context.report(ISSUE, lambda, context.getLocation(lambda), message, fix)
             }
           }

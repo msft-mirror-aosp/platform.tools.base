@@ -20,10 +20,10 @@ class TileServiceActivityDetectorTest : AbstractCheckTest() {
 
   fun testDocumentationExample() {
     lint()
-        .files(
-            manifest().targetSdk(34),
-            kotlin(
-                    """
+      .files(
+        manifest().targetSdk(34),
+        kotlin(
+            """
               import android.app.PendingIntent
               import android.content.Intent
               import android.service.quicksettings.TileService
@@ -36,25 +36,25 @@ class TileServiceActivityDetectorTest : AbstractCheckTest() {
                 tileService.startActivityAndCollapse(intent) // OK
               }
 """
-                )
-                .indented(),
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+      )
+      .run()
+      .expect(
+        """
         src/test.kt:6: Error: TileService#startActivityAndCollapse(Intent) is deprecated. Use TileService#startActivityAndCollapse(PendingIntent) instead. [StartActivityAndCollapseDeprecated]
           tileService.startActivityAndCollapse(intent) // ERROR
                                                ~~~~~~
         1 errors, 0 warnings"""
-        )
+      )
   }
 
   fun testWrongPermission() {
     lint()
-        .files(
-            manifest().targetSdk(32),
-            kotlin(
-                    """
+      .files(
+        manifest().targetSdk(32),
+        kotlin(
+            """
               import android.app.PendingIntent
               import android.content.Intent
               import android.service.quicksettings.TileService
@@ -67,16 +67,16 @@ class TileServiceActivityDetectorTest : AbstractCheckTest() {
                 tileService.startActivityAndCollapse(intent) // OK
               }
 """
-                )
-                .indented(),
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+      )
+      .run()
+      .expect(
+        """
         src/test.kt:6: Warning: TileService#startActivityAndCollapse(Intent) is deprecated. Use TileService#startActivityAndCollapse(PendingIntent) instead. [StartActivityAndCollapseDeprecated]
           tileService.startActivityAndCollapse(intent) // ERROR
                                                ~~~~~~
         0 errors, 1 warnings"""
-        )
+      )
   }
 }

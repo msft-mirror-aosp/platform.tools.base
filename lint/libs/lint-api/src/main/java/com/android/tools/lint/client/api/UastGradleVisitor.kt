@@ -41,25 +41,21 @@ class UastGradleVisitor(override val javaContext: JavaContext) : GradleVisitor()
   override fun visitBuildScript(context: GradleContext, detectors: List<GradleScanner>) {
     val uastFile = javaContext.uastFile ?: return
     uastFile.acceptSourceFile(
-        object : AbstractUastVisitor() {
-          override fun visitCallExpression(node: UCallExpression): Boolean {
-            handleMethodCall(node, detectors, context)
-            return super.visitCallExpression(node)
-          }
-
-          override fun visitBinaryExpression(node: UBinaryExpression): Boolean {
-            handleBinaryExpression(node, detectors, context)
-            return super.visitBinaryExpression(node)
-          }
+      object : AbstractUastVisitor() {
+        override fun visitCallExpression(node: UCallExpression): Boolean {
+          handleMethodCall(node, detectors, context)
+          return super.visitCallExpression(node)
         }
+
+        override fun visitBinaryExpression(node: UBinaryExpression): Boolean {
+          handleBinaryExpression(node, detectors, context)
+          return super.visitBinaryExpression(node)
+        }
+      }
     )
   }
 
-  private fun handleBinaryExpression(
-      node: UBinaryExpression,
-      detectors: List<GradleScanner>,
-      context: GradleContext,
-  ) {
+  private fun handleBinaryExpression(node: UBinaryExpression, detectors: List<GradleScanner>, context: GradleContext) {
     if (node.isAssignment()) {
       val hierarchy = getPropertyHierarchy(node.leftOperand)
       val target = hierarchy.firstOrNull() ?: return
@@ -68,16 +64,7 @@ class UastGradleVisitor(override val javaContext: JavaContext) : GradleVisitor()
       val parentParentName = hierarchyWithParents[2]
       val value = node.rightOperand.getSource()
       for (scanner in detectors) {
-        scanner.checkDslPropertyAssignment(
-            context,
-            target,
-            value,
-            parentName,
-            parentParentName,
-            node.leftOperand,
-            node.rightOperand,
-            node,
-        )
+        scanner.checkDslPropertyAssignment(context, target, value, parentName, parentParentName, node.leftOperand, node.rightOperand, node)
       }
     } else if (listOf("version", "apply").contains(node.operatorIdentifier?.name)) {
       // TODO(xof): the above condition is not really right, and this should actually work by
@@ -94,27 +81,14 @@ class UastGradleVisitor(override val javaContext: JavaContext) : GradleVisitor()
         GradleContext.getStringLiteralValue(idExpression.getSource(), idExpression)?.let { id ->
           val value = node.rightOperand.getSource()
           for (scanner in detectors) {
-            scanner.checkDslPropertyAssignment(
-                context,
-                property,
-                value,
-                id,
-                "plugins",
-                node.operator,
-                node.rightOperand,
-                node,
-            )
+            scanner.checkDslPropertyAssignment(context, property, value, id, "plugins", node.operator, node.rightOperand, node)
           }
         }
       }
     }
   }
 
-  private fun handleMethodCall(
-      node: UCallExpression,
-      detectors: List<GradleScanner>,
-      context: GradleContext,
-  ) {
+  private fun handleMethodCall(node: UCallExpression, detectors: List<GradleScanner>, context: GradleContext) {
     val valueArguments = node.valueArguments
     val propertyName = getMethodName(node)
     if (propertyName == null) {
@@ -134,15 +108,7 @@ class UastGradleVisitor(override val javaContext: JavaContext) : GradleVisitor()
         }
       }
       for (scanner in detectors) {
-        scanner.checkMethodCall(
-            context,
-            propertyName,
-            parentName,
-            parentParentName,
-            namedArguments,
-            unnamedArguments,
-            node,
-        )
+        scanner.checkMethodCall(context, propertyName, parentName, parentParentName, namedArguments, unnamedArguments, node)
       }
       if (namedArguments.isEmpty() && valueArguments.size == 1 && valueArguments[0] !is ULambdaExpression) {
         // Some sort of DSL property?
@@ -152,25 +118,25 @@ class UastGradleVisitor(override val javaContext: JavaContext) : GradleVisitor()
           val value = unnamedArguments[0]
           for (scanner in detectors) {
             scanner.checkDslPropertyAssignment(
-                context,
-                propertyName,
-                value,
-                parentName ?: "",
-                parentParentName,
-                node.methodIdentifier ?: node,
-                valueArguments[0],
-                node,
+              context,
+              propertyName,
+              value,
+              parentName ?: "",
+              parentParentName,
+              node.methodIdentifier ?: node,
+              valueArguments[0],
+              node,
             )
           }
         }
       }
       if (
-          propertyName == "apply" &&
-              node.receiver == null &&
-              parentName == null &&
-              parentParentName == null &&
-              valueArguments.isNotEmpty() &&
-              !context.driver.isIsolated()
+        propertyName == "apply" &&
+          node.receiver == null &&
+          parentName == null &&
+          parentParentName == null &&
+          valueArguments.isNotEmpty() &&
+          !context.driver.isIsolated()
       ) {
         var relative = valueArguments.first().evaluate()?.toString()
         if (relative == null) {
@@ -279,13 +245,13 @@ class UastGradleVisitor(override val javaContext: JavaContext) : GradleVisitor()
   }
 
   private fun isMethodCallInClosure(node: UElement): Boolean =
-      getSurroundingNamedBlock(node)?.let { block ->
-        when (val parent = node.uastParent) {
-          is UReturnExpression -> block == parent.uastParent?.uastParent?.uastParent
-          is UBinaryExpression -> isMethodCallInClosure(parent)
-          else -> block == parent?.uastParent?.uastParent
-        }
-      } ?: false
+    getSurroundingNamedBlock(node)?.let { block ->
+      when (val parent = node.uastParent) {
+        is UReturnExpression -> block == parent.uastParent?.uastParent?.uastParent
+        is UBinaryExpression -> isMethodCallInClosure(parent)
+        else -> block == parent?.uastParent?.uastParent
+      }
+    } ?: false
 
   override fun createLocation(context: GradleContext, cookie: Any): Location {
     return if (cookie is UElement) {

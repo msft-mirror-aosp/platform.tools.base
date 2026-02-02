@@ -80,10 +80,10 @@ class WindowExtensionsDetector : Detector(), SourceCodeScanner {
     /** Accessing an `@RequiresWindowSdkExtension` annotated API without a version check. */
     @JvmField
     val ISSUE =
-        Issue.create(
-            id = "RequiresWindowSdk",
-            explanation =
-                """
+      Issue.create(
+        id = "RequiresWindowSdk",
+        explanation =
+          """
           Some methods in the window library require explicit checks of the \
           `extensionVersion` level:
           ```kotlin
@@ -99,13 +99,13 @@ class WindowExtensionsDetector : Detector(), SourceCodeScanner {
           such as extracting the checks into utility methods or constants. Use \
           a direct `if` check as shown above.)
           """,
-            briefDescription = "API requires a `WindowSdkExtensions.extensionVersion` check",
-            category = Category.CORRECTNESS,
-            priority = 6,
-            severity = Severity.ERROR,
-            androidSpecific = true,
-            implementation = IMPLEMENTATION,
-        )
+        briefDescription = "API requires a `WindowSdkExtensions.extensionVersion` check",
+        category = Category.CORRECTNESS,
+        priority = 6,
+        severity = Severity.ERROR,
+        androidSpecific = true,
+        implementation = IMPLEMENTATION,
+      )
 
     private const val REQUIRES_WINDOW_SDK_EXTENSION = "androidx.window.RequiresWindowSdkExtension"
     private const val WINDOW_SDK_EXTENSIONS_CLASS = "androidx.window.WindowSdkExtensions"
@@ -139,10 +139,10 @@ class WindowExtensionsDetector : Detector(), SourceCodeScanner {
   }
 
   override fun visitAnnotationUsage(
-      context: JavaContext,
-      element: UElement,
-      annotationInfo: AnnotationInfo,
-      usageInfo: AnnotationUsageInfo,
+    context: JavaContext,
+    element: UElement,
+    annotationInfo: AnnotationInfo,
+    usageInfo: AnnotationUsageInfo,
   ) {
     if (annotationInfo.origin == AnnotationOrigin.SELF) {
       return
@@ -174,16 +174,16 @@ class WindowExtensionsDetector : Detector(), SourceCodeScanner {
 
   private fun getUsageTypePrefix(usageInfo: AnnotationUsageInfo, qualifiedName: String): String {
     val type =
-        when (usageInfo.type) {
-          AnnotationUsageType.EXTENDS -> "Extending $qualifiedName"
-          AnnotationUsageType.ANNOTATION_REFERENCE,
-          AnnotationUsageType.CLASS_REFERENCE -> "Class"
-          AnnotationUsageType.METHOD_RETURN,
-          AnnotationUsageType.METHOD_OVERRIDE -> "Method"
-          AnnotationUsageType.VARIABLE_REFERENCE,
-          AnnotationUsageType.FIELD_REFERENCE -> "Field"
-          else -> "Call"
-        }
+      when (usageInfo.type) {
+        AnnotationUsageType.EXTENDS -> "Extending $qualifiedName"
+        AnnotationUsageType.ANNOTATION_REFERENCE,
+        AnnotationUsageType.CLASS_REFERENCE -> "Class"
+        AnnotationUsageType.METHOD_RETURN,
+        AnnotationUsageType.METHOD_OVERRIDE -> "Method"
+        AnnotationUsageType.VARIABLE_REFERENCE,
+        AnnotationUsageType.FIELD_REFERENCE -> "Field"
+        else -> "Call"
+      }
     val typeString = type.usLocaleCapitalize()
     return typeString
   }
@@ -320,20 +320,17 @@ class WindowExtensionsDetector : Detector(), SourceCodeScanner {
   }
 
   /** Returns the actual API constraint enforced by the given SDK_INT comparison. */
-  private fun getWindowsExtensionConstraint(
-      binary: UBinaryExpression,
-      evaluator: JavaEvaluator,
-  ): ApiConstraint? {
+  private fun getWindowsExtensionConstraint(binary: UBinaryExpression, evaluator: JavaEvaluator): ApiConstraint? {
     var tokenType = binary.operator
     if (
-        tokenType === UastBinaryOperator.GREATER ||
-            tokenType === UastBinaryOperator.GREATER_OR_EQUALS ||
-            tokenType === UastBinaryOperator.LESS_OR_EQUALS ||
-            tokenType === UastBinaryOperator.LESS ||
-            tokenType === UastBinaryOperator.EQUALS ||
-            tokenType === UastBinaryOperator.IDENTITY_EQUALS ||
-            tokenType === UastBinaryOperator.NOT_EQUALS ||
-            tokenType === UastBinaryOperator.IDENTITY_NOT_EQUALS
+      tokenType === UastBinaryOperator.GREATER ||
+        tokenType === UastBinaryOperator.GREATER_OR_EQUALS ||
+        tokenType === UastBinaryOperator.LESS_OR_EQUALS ||
+        tokenType === UastBinaryOperator.LESS ||
+        tokenType === UastBinaryOperator.EQUALS ||
+        tokenType === UastBinaryOperator.IDENTITY_EQUALS ||
+        tokenType === UastBinaryOperator.NOT_EQUALS ||
+        tokenType === UastBinaryOperator.IDENTITY_NOT_EQUALS
     ) {
       val left = binary.leftOperand
       val level: ApiLevel
@@ -408,8 +405,8 @@ class WindowExtensionsDetector : Detector(), SourceCodeScanner {
     if (element is UReferenceExpression) {
       val resolvedName = element.resolvedName
       if (
-          GET_EXTENSION_VERSION == resolvedName &&
-              (element.resolve() as? PsiMethod)?.containingClass?.qualifiedName == WINDOW_SDK_EXTENSIONS_CLASS
+        GET_EXTENSION_VERSION == resolvedName &&
+          (element.resolve() as? PsiMethod)?.containingClass?.qualifiedName == WINDOW_SDK_EXTENSIONS_CLASS
       ) {
         return true
       }

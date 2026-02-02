@@ -35,34 +35,20 @@ sealed interface Error<out FX> {
     override fun toString() = "(unsatisfiable: ${source.renderAbbrev() })"
   }
 
-  data class ExceedingAnnotation<out FX>(
-      val callerAnnotation: FX,
-      val calleeLowerBound: FX,
-      val site: ErrorSite,
-  ) : Error<FX> {
+  data class ExceedingAnnotation<out FX>(val callerAnnotation: FX, val calleeLowerBound: FX, val site: ErrorSite) : Error<FX> {
     override fun toString() = "(${site.renderAbbrev()}: $callerAnnotation ⋤ $calleeLowerBound)"
   }
 
-  data class FailingConstraint<out FX>(
-      val constraints: UnboundedSet<ConstraintFailure<FX>>,
-      val site: UExpression,
-  ) : Error<FX> {
+  data class FailingConstraint<out FX>(val constraints: UnboundedSet<ConstraintFailure<FX>>, val site: UExpression) : Error<FX> {
     override fun toString(): String {
       val c =
-          constraints?.joinToString(
-              separator = " ∧ ",
-              prefix = "(",
-              postfix = ")",
-              transform = { (l, r) -> "$l ⊑ $r" },
-          ) ?: "constraints"
+        constraints?.joinToString(separator = " ∧ ", prefix = "(", postfix = ")", transform = { (l, r) -> "$l ⊑ $r" }) ?: "constraints"
       return "($c fails at ${site.renderAbbrev()})"
     }
   }
 
-  data class ConflictingAnnotations<out FX>(
-      val self: EffectAnnotation.Explicit<FX>,
-      val bases: Collection<EffectAnnotation.Explicit<FX>>,
-  ) : Error<FX> {
+  data class ConflictingAnnotations<out FX>(val self: EffectAnnotation.Explicit<FX>, val bases: Collection<EffectAnnotation.Explicit<FX>>) :
+    Error<FX> {
     init {
       require(bases.isNotEmpty())
     }
@@ -71,9 +57,9 @@ sealed interface Error<out FX> {
   }
 
   data class ConflictingInference<out FX>(
-      val site: ErrorSite,
-      val inferredLowerBound: FX,
-      val conflictingBase: EffectAnnotation.Explicit<FX>,
+    val site: ErrorSite,
+    val inferredLowerBound: FX,
+    val conflictingBase: EffectAnnotation.Explicit<FX>,
   ) : Error<FX> {
 
     override fun toString() = "$site ⋤ $conflictingBase"
@@ -82,18 +68,14 @@ sealed interface Error<out FX> {
 
 internal fun <FX> errorSetLattice() = possibilityLattice<Error<FX>>()
 
-data class ConstraintFailure<out FX>(
-    val invocation: Type.Sym<FX>,
-    val expectedUpperBound: FX,
-    val inferredLowerBound: FX,
-) {
+data class ConstraintFailure<out FX>(val invocation: Type.Sym<FX>, val expectedUpperBound: FX, val inferredLowerBound: FX) {
   override fun toString() = "$invocation : $inferredLowerBound ⋤ $expectedUpperBound"
 }
 
 internal fun <FX> UnboundedSet<ConstraintFailure<FX>>.at(site: UExpression) =
-    when {
-      this == null || isNotEmpty() -> persistentSetOf(Error.FailingConstraint(this, site))
-      else -> persistentSetOf()
-    }
+  when {
+    this == null || isNotEmpty() -> persistentSetOf(Error.FailingConstraint(this, site))
+    else -> persistentSetOf()
+  }
 
 typealias ErrorSite = UElement

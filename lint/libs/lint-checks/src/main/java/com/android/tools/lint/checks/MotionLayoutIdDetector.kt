@@ -48,13 +48,13 @@ class MotionLayoutIdDetector : LayoutDetector() {
       val elementTagName = child.tagName
       // TODO: Check if layout referenced by <include> has an ID
       if (
-          TAG_INCLUDE == elementTagName ||
-              // TODO: Check if the views referenced by <merge> have ID
-              VIEW_MERGE == elementTagName ||
-              // Ignore non-view tags
-              isLayoutMarkerTag(elementTagName) ||
-              // Skip if the tag is not an actual View instance
-              !isView(elementTagName, evaluator, sdkInfo)
+        TAG_INCLUDE == elementTagName ||
+          // TODO: Check if the views referenced by <merge> have ID
+          VIEW_MERGE == elementTagName ||
+          // Ignore non-view tags
+          isLayoutMarkerTag(elementTagName) ||
+          // Skip if the tag is not an actual View instance
+          !isView(elementTagName, evaluator, sdkInfo)
       ) {
         continue
       }
@@ -62,11 +62,11 @@ class MotionLayoutIdDetector : LayoutDetector() {
       if (!child.hasAttributeNS(ANDROID_URI, ATTR_ID)) {
         val prefix = context.document.lookupPrefix(ANDROID_URI) ?: "android"
         context.report(
-            MISSING_ID,
-            child,
-            context.getNameLocation(child),
-            "Views inside `MotionLayout` require an `$prefix:id` attribute",
-            fix().set().todo(ANDROID_URI, ATTR_ID, "@+id/").build(),
+          MISSING_ID,
+          child,
+          context.getNameLocation(child),
+          "Views inside `MotionLayout` require an `$prefix:id` attribute",
+          fix().set().todo(ANDROID_URI, ATTR_ID, "@+id/").build(),
         )
       }
     }
@@ -75,16 +75,16 @@ class MotionLayoutIdDetector : LayoutDetector() {
   companion object {
     @JvmField
     val MISSING_ID =
-        Issue.create(
-            id = "MotionLayoutMissingId",
-            briefDescription = "Views inside `MotionLayout` require an `android:id`",
-            explanation = "Views inside `MotionLayout` require an `android:id`.",
-            category = Category.CORRECTNESS,
-            priority = 8,
-            severity = Severity.ERROR,
-            implementation = Implementation(MotionLayoutIdDetector::class.java, Scope.RESOURCE_FILE_SCOPE),
-            androidSpecific = true,
-        )
+      Issue.create(
+        id = "MotionLayoutMissingId",
+        briefDescription = "Views inside `MotionLayout` require an `android:id`",
+        explanation = "Views inside `MotionLayout` require an `android:id`.",
+        category = Category.CORRECTNESS,
+        priority = 8,
+        severity = Severity.ERROR,
+        implementation = Implementation(MotionLayoutIdDetector::class.java, Scope.RESOURCE_FILE_SCOPE),
+        androidSpecific = true,
+      )
   }
 }
 

@@ -82,13 +82,13 @@ class ForegroundServiceTypesDetector : Detector(), XmlScanner, SourceCodeScanner
 
     if (manifestHasServiceTag(manifest) && !manifestHasForegroundServiceType(manifest)) {
       val incident =
-          Incident(
-              ISSUE_TYPE,
-              call,
-              context.getNameLocation(call),
-              "To call `Service.startForeground()`, the `<service>` element of manifest file must " +
-                  "have the `foregroundServiceType` attribute specified",
-          )
+        Incident(
+          ISSUE_TYPE,
+          call,
+          context.getNameLocation(call),
+          "To call `Service.startForeground()`, the `<service>` element of manifest file must " +
+            "have the `foregroundServiceType` attribute specified",
+        )
       context.report(incident, targetSdkAtLeast(34))
     }
   }
@@ -97,27 +97,27 @@ class ForegroundServiceTypesDetector : Detector(), XmlScanner, SourceCodeScanner
     private const val START_FOREGROUND = "startForeground"
     private const val CLASS_SERVICE_COMPAT = "androidx.core.app.ServiceCompat"
     val IMPLEMENTATION =
-        Implementation(
-            ForegroundServiceTypesDetector::class.java,
-            EnumSet.of(Scope.MANIFEST, Scope.JAVA_FILE),
-            Scope.MANIFEST_SCOPE,
-            Scope.JAVA_FILE_SCOPE,
-        )
+      Implementation(
+        ForegroundServiceTypesDetector::class.java,
+        EnumSet.of(Scope.MANIFEST, Scope.JAVA_FILE),
+        Scope.MANIFEST_SCOPE,
+        Scope.JAVA_FILE_SCOPE,
+      )
 
     /** Foreground service type related issues */
     val ISSUE_TYPE =
-        create(
-            id = "ForegroundServiceType",
-            briefDescription = "Missing `foregroundServiceType` attribute in manifest",
-            explanation =
-                """
+      create(
+        id = "ForegroundServiceType",
+        briefDescription = "Missing `foregroundServiceType` attribute in manifest",
+        explanation =
+          """
               For `targetSdkVersion` >= 34, to call `Service.startForeground()`, the <service> element in the \
               manifest file must have the `foregroundServiceType` attribute specified.
         """,
-            category = Category.CORRECTNESS,
-            priority = 5,
-            severity = Severity.ERROR, // It is an error, missing permission causes SecurityException.
-            implementation = IMPLEMENTATION,
-        )
+        category = Category.CORRECTNESS,
+        priority = 5,
+        severity = Severity.ERROR, // It is an error, missing permission causes SecurityException.
+        implementation = IMPLEMENTATION,
+      )
   }
 }

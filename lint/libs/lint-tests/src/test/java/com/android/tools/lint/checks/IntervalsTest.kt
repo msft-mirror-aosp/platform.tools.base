@@ -61,10 +61,7 @@ class IntervalsTest {
     assertEquals(range(1, 6), below(6))
     assertEquals(range(5, 5), range(2, 1)) // empty == empty
     assertNotEquals(range_14_to_17, range_14_to_17 or exactly(19))
-    assertEquals(
-        range_10_to_17_without_12_and_13,
-        atLeast(10) and below(17) and (exactly(12) or exactly(13)).not(),
-    )
+    assertEquals(range_10_to_17_without_12_and_13, atLeast(10) and below(17) and (exactly(12) or exactly(13)).not())
     assertFalse(range_15_to_22.contains(14))
     assertTrue(range_15_to_22.contains(15))
     assertTrue(range_15_to_22.contains(21))
@@ -97,18 +94,12 @@ class IntervalsTest {
     assertEquals("x < 5 or 6 ≤ x < 12", p(((exactly(5) or atLeast12)).not()))
     assertEquals("10 ≤ x < 17", p(range_10_to_15 or range_12_to_17))
     assertEquals("10 ≤ x < 12 or 14 ≤ x < 17", p(range_10_to_17_without_12_and_13))
+    assertEquals("10 ≤ x < 12 or 14 ≤ x < 17 or 20 ≤ x < 23", p(range_10_to_17_without_12_and_13 or range_20_to_23))
     assertEquals(
-        "10 ≤ x < 12 or 14 ≤ x < 17 or 20 ≤ x < 23",
-        p(range_10_to_17_without_12_and_13 or range_20_to_23),
+      "10 ≤ x < 12 or 14 ≤ x < 17 or 20 ≤ x < 23 or 25 ≤ x < 27",
+      p(range_10_to_17_without_12_and_13 or (range_20_to_23 or range_25_to_27)),
     )
-    assertEquals(
-        "10 ≤ x < 12 or 14 ≤ x < 17 or 20 ≤ x < 23 or 25 ≤ x < 27",
-        p(range_10_to_17_without_12_and_13 or (range_20_to_23 or range_25_to_27)),
-    )
-    assertEquals(
-        "No xs",
-        p((range_10_to_17_without_12_and_13 and (range_20_to_23 or range_25_to_27))),
-    )
+    assertEquals("No xs", p((range_10_to_17_without_12_and_13 and (range_20_to_23 or range_25_to_27))))
     assertTrue(ApiConstraint.isInfinity(atLeast12.toExclusive()))
     assertFalse(ApiConstraint.isInfinity(atLeast12.fromInclusive()))
     assertFalse(ApiConstraint.isInfinity(below16_2.toExclusive()))

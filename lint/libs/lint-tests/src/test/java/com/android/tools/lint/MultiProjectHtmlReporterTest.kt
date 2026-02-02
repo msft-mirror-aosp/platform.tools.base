@@ -36,68 +36,52 @@ class MultiProjectHtmlReporterTest : AbstractCheckTest() {
     val dir = File(targetDir, "report")
     try {
       val client: LintCliClient =
-          object : LintCliClient(CLIENT_UNIT_TESTS) {
-            override var registry: IssueRegistry?
-              get() {
-                var registry = super.registry
-                if (registry == null) {
-                  registry =
-                      object : IssueRegistry() {
-                        // Not reported, but for the disabled-list
-                        override val issues: List<Issue>
-                          get() =
-                              listOf(
-                                  ManifestDetector.MULTIPLE_USES_SDK,
-                                  HardcodedValuesDetector.ISSUE,
-                                  // Not reported, but for the disabled-list
-                                  ManifestDetector.MOCK_LOCATION,
-                              )
-                      }
-                  super.registry = registry
-                }
-                return registry
-              }
-              set(registry) {
+        object : LintCliClient(CLIENT_UNIT_TESTS) {
+          override var registry: IssueRegistry?
+            get() {
+              var registry = super.registry
+              if (registry == null) {
+                registry =
+                  object : IssueRegistry() {
+                    // Not reported, but for the disabled-list
+                    override val issues: List<Issue>
+                      get() =
+                        listOf(
+                          ManifestDetector.MULTIPLE_USES_SDK,
+                          HardcodedValuesDetector.ISSUE,
+                          // Not reported, but for the disabled-list
+                          ManifestDetector.MOCK_LOCATION,
+                        )
+                  }
                 super.registry = registry
               }
-          }
+              return registry
+            }
+            set(registry) {
+              super.registry = registry
+            }
+        }
       dir.mkdirs()
       val reporter = MultiProjectHtmlReporter(client, dir, LintCliFlags())
       val project = Project.create(client, File("/foo/bar/Foo"), File("/foo/bar/Foo"))
-      val location1 =
-          create(
-              File("/foo/bar/Foo/AndroidManifest.xml"),
-              DefaultPosition(6, 4, 198),
-              DefaultPosition(6, 42, 236),
-          )
+      val location1 = create(File("/foo/bar/Foo/AndroidManifest.xml"), DefaultPosition(6, 4, 198), DefaultPosition(6, 42, 236))
       val incident1 =
-          Incident(
-                  ManifestDetector.MULTIPLE_USES_SDK,
-                  "There should only be a single `<uses-sdk>` element in the manifest: merge these together",
-                  location1,
-                  null,
-              )
-              .apply {
-                this.project = project
-                severity = Severity.WARNING
-              }
-      val location2 =
-          create(
-              File("/foo/bar/Foo/res/layout/main.xml"),
-              DefaultPosition(11, 8, 377),
-              DefaultPosition(11, 27, 396),
+        Incident(
+            ManifestDetector.MULTIPLE_USES_SDK,
+            "There should only be a single `<uses-sdk>` element in the manifest: merge these together",
+            location1,
+            null,
           )
+          .apply {
+            this.project = project
+            severity = Severity.WARNING
+          }
+      val location2 = create(File("/foo/bar/Foo/res/layout/main.xml"), DefaultPosition(11, 8, 377), DefaultPosition(11, 27, 396))
       val incident2 =
-          Incident(
-                  HardcodedValuesDetector.ISSUE,
-                  "Hardcoded string \"Fooo\", should use @string resource",
-                  location2,
-                  null,
-              )
-              .apply {
-                this.project = project
-                severity = Severity.WARNING
-              }
+        Incident(HardcodedValuesDetector.ISSUE, "Hardcoded string \"Fooo\", should use @string resource", location2, null).apply {
+          this.project = project
+          severity = Severity.WARNING
+        }
       val incidents: MutableList<Incident> = ArrayList()
       incidents.add(incident1)
       incidents.add(incident2)
@@ -117,7 +101,7 @@ class MultiProjectHtmlReporterTest : AbstractCheckTest() {
       //  http://validator.w3.org/#validate_by_input
       // before updating the following
       assertEquals(
-          """<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+        """<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 
 <head>
@@ -179,7 +163,7 @@ document.getElementById(id).style.display = 'none';
 </div>
 </body>
 </html>""",
-          report,
+        report,
       )
     } finally {
       dir.delete()

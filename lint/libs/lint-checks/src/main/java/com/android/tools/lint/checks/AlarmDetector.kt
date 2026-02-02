@@ -50,73 +50,68 @@ import org.w3c.dom.Element
 class AlarmDetector : Detector(), SourceCodeScanner, XmlScanner {
   companion object Issues {
     private val IMPLEMENTATION =
-        Implementation(
-            AlarmDetector::class.java,
-            EnumSet.of(Scope.JAVA_FILE, Scope.MANIFEST),
-            Scope.JAVA_FILE_SCOPE,
-            Scope.MANIFEST_SCOPE,
-        )
+      Implementation(AlarmDetector::class.java, EnumSet.of(Scope.JAVA_FILE, Scope.MANIFEST), Scope.JAVA_FILE_SCOPE, Scope.MANIFEST_SCOPE)
 
     /** Alarm set too soon/frequently. */
     @JvmField
     val SHORT_ALARM =
-        Issue.create(
-            id = "ShortAlarm",
-            briefDescription = "Short or Frequent Alarm",
-            explanation =
-                """
+      Issue.create(
+        id = "ShortAlarm",
+        briefDescription = "Short or Frequent Alarm",
+        explanation =
+          """
             Frequent alarms are bad for battery life. As of API 22, the `AlarmManager` will override \
             near-future and high-frequency alarm requests, delaying the alarm at least 5 seconds into the \
             future and ensuring that the repeat interval is at least 60 seconds.
 
             If you really need to do work sooner than 5 seconds, post a delayed message or runnable to a \
             Handler.""",
-            category = Category.CORRECTNESS,
-            priority = 6,
-            severity = Severity.WARNING,
-            androidSpecific = true,
-            implementation = IMPLEMENTATION,
-        )
+        category = Category.CORRECTNESS,
+        priority = 6,
+        severity = Severity.WARNING,
+        androidSpecific = true,
+        implementation = IMPLEMENTATION,
+      )
 
     @JvmField
     val EXACT_ALARM =
-        Issue.create(
-            id = "ExactAlarm",
-            briefDescription = "Invalid Usage of Exact Alarms",
-            explanation =
-                """
+      Issue.create(
+        id = "ExactAlarm",
+        briefDescription = "Invalid Usage of Exact Alarms",
+        explanation =
+          """
                 The `USE_EXACT_ALARM` permission is only available when targeting API level 33 \
                 and above. Also, note that this permission is only permitted for apps whose core \
                 functionality requires precisely-timed actions for user facing features.
             """,
-            category = Category.CORRECTNESS,
-            priority = 6,
-            severity = Severity.ERROR,
-            androidSpecific = true,
-            implementation = IMPLEMENTATION,
-            moreInfo = "https://developer.android.com/training/scheduling/alarms",
-        )
+        category = Category.CORRECTNESS,
+        priority = 6,
+        severity = Severity.ERROR,
+        androidSpecific = true,
+        implementation = IMPLEMENTATION,
+        moreInfo = "https://developer.android.com/training/scheduling/alarms",
+      )
 
     @JvmField
     val SCHEDULE_EXACT_ALARM =
-        Issue.create(
-            id = "ScheduleExactAlarm",
-            briefDescription = "Scheduling Exact Alarms Without Required Permission",
-            explanation =
-                """
+      Issue.create(
+        id = "ScheduleExactAlarm",
+        briefDescription = "Scheduling Exact Alarms Without Required Permission",
+        explanation =
+          """
                 Applications looking to schedule exact alarms should ensure that the `SCHEDULE_EXACT_ALARM` \
                 permission is granted by calling the `AlarmManager#canScheduleExactAlarms` API before attempting \
                 to set an exact alarm. If the permission is not granted to your application, please consider \
                 requesting it from the user by starting the `ACTION_REQUEST_SCHEDULE_EXACT_ALARM` intent or gracefully \
                 falling back to another option.
             """,
-            category = Category.CORRECTNESS,
-            priority = 6,
-            severity = Severity.ERROR,
-            androidSpecific = true,
-            implementation = IMPLEMENTATION,
-            moreInfo = "https://developer.android.com/training/scheduling/alarms#exact",
-        )
+        category = Category.CORRECTNESS,
+        priority = 6,
+        severity = Severity.ERROR,
+        androidSpecific = true,
+        implementation = IMPLEMENTATION,
+        moreInfo = "https://developer.android.com/training/scheduling/alarms#exact",
+      )
 
     // Relevant permissions for the two issues above
     const val USE_EXACT_ALARM_PERMISSION = "android.permission.USE_EXACT_ALARM"
@@ -143,18 +138,18 @@ class AlarmDetector : Detector(), SourceCodeScanner, XmlScanner {
   override fun applicableAnnotations(): List<String> = listOf(PERMISSION_ANNOTATION.oldName(), PERMISSION_ANNOTATION.newName())
 
   override fun visitAnnotationUsage(
-      context: JavaContext,
-      element: UElement,
-      annotationInfo: AnnotationInfo,
-      usageInfo: AnnotationUsageInfo,
+    context: JavaContext,
+    element: UElement,
+    annotationInfo: AnnotationInfo,
+    usageInfo: AnnotationUsageInfo,
   ) {
     val requirement = PermissionRequirement.create(annotationInfo.annotation)
     if (
-        requirement.contains(SCHEDULE_EXACT_ALARM_PERMISSION) &&
-            !handlesException(element, null, allowSuperClass = false, SECURITY_EXCEPTION) &&
-            !context.driver.isSuppressed(context, SCHEDULE_EXACT_ALARM, element)
+      requirement.contains(SCHEDULE_EXACT_ALARM_PERMISSION) &&
+        !handlesException(element, null, allowSuperClass = false, SECURITY_EXCEPTION) &&
+        !context.driver.isSuppressed(context, SCHEDULE_EXACT_ALARM, element)
     )
-        context.getPartialResults(SCHEDULE_EXACT_ALARM).map().put(numScheduleCalls++.toString(), context.getLocation(element))
+      context.getPartialResults(SCHEDULE_EXACT_ALARM).map().put(numScheduleCalls++.toString(), context.getLocation(element))
   }
 
   override fun visitMethodCall(context: JavaContext, node: UCallExpression, method: PsiMethod) {
@@ -178,12 +173,7 @@ class AlarmDetector : Detector(), SourceCodeScanner, XmlScanner {
     }
   }
 
-  private fun ensureAtLeast(
-      context: JavaContext,
-      node: UCallExpression,
-      parameter: Int,
-      min: Long,
-  ) {
+  private fun ensureAtLeast(context: JavaContext, node: UCallExpression, parameter: Int, min: Long) {
     val argument = node.valueArguments[parameter]
     val value = getLongValue(context, argument)
     if (value < min) {
@@ -209,12 +199,12 @@ class AlarmDetector : Detector(), SourceCodeScanner, XmlScanner {
       val nameAttr: Attr? = element.getAttributeNodeNS(ANDROID_URI, ATTR_NAME)
       if (nameAttr != null && nameAttr.value == USE_EXACT_ALARM_PERMISSION) {
         context.report(
-            Incident(
-                EXACT_ALARM,
-                "`USE_EXACT_ALARM` can only be used when targeting API level 33 or higher",
-                context.getValueLocation(nameAttr),
-            ),
-            constraint = targetSdkLessThan(33),
+          Incident(
+            EXACT_ALARM,
+            "`USE_EXACT_ALARM` can only be used when targeting API level 33 or higher",
+            context.getValueLocation(nameAttr),
+          ),
+          constraint = targetSdkLessThan(33),
         )
       }
     }
@@ -259,12 +249,12 @@ class AlarmDetector : Detector(), SourceCodeScanner, XmlScanner {
         // `CHECKS_EXACT_ALARM_PERMISSION`
         val location = perModuleLintMap.getLocation(it)!!
         context.report(
-            Incident(
-                SCHEDULE_EXACT_ALARM,
-                "When scheduling exact alarms, apps should explicitly call `AlarmManager#canScheduleExactAlarms`" +
-                    " or handle `SecurityException`s",
-                location,
-            )
+          Incident(
+            SCHEDULE_EXACT_ALARM,
+            "When scheduling exact alarms, apps should explicitly call `AlarmManager#canScheduleExactAlarms`" +
+              " or handle `SecurityException`s",
+            location,
+          )
         )
       }
     }

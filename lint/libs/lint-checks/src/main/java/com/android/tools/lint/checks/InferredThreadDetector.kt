@@ -30,19 +30,19 @@ class InferredThreadDetector : ThreadConstraintDetector<Thread>(lattice, assumpt
   override val unsatisfiableConstraintIssue = THREAD
 
   override fun parse(ann: UAnnotation) =
-      when (ann.qualifiedName) {
-        ANY_THREAD_ANNOTATION.newName(),
-        ANY_THREAD_ANNOTATION.oldName() -> lattice.AnyThread
-        UI_THREAD_ANNOTATION.oldName(),
-        UI_THREAD_ANNOTATION.newName(),
-        MAIN_THREAD_ANNOTATION.oldName(),
-        MAIN_THREAD_ANNOTATION.newName() -> lattice.of(Thread.MainOrUi)
-        WORKER_THREAD_ANNOTATION.oldName(),
-        WORKER_THREAD_ANNOTATION.newName() -> lattice.of(Thread.Worker)
-        BINDER_THREAD_ANNOTATION.oldName(),
-        BINDER_THREAD_ANNOTATION.newName() -> lattice.of(Thread.Binder)
-        else -> null
-      }
+    when (ann.qualifiedName) {
+      ANY_THREAD_ANNOTATION.newName(),
+      ANY_THREAD_ANNOTATION.oldName() -> lattice.AnyThread
+      UI_THREAD_ANNOTATION.oldName(),
+      UI_THREAD_ANNOTATION.newName(),
+      MAIN_THREAD_ANNOTATION.oldName(),
+      MAIN_THREAD_ANNOTATION.newName() -> lattice.of(Thread.MainOrUi)
+      WORKER_THREAD_ANNOTATION.oldName(),
+      WORKER_THREAD_ANNOTATION.newName() -> lattice.of(Thread.Worker)
+      BINDER_THREAD_ANNOTATION.oldName(),
+      BINDER_THREAD_ANNOTATION.newName() -> lattice.of(Thread.Binder)
+      else -> null
+    }
 
   /**
    * Thread groups we track in an Android app.
@@ -57,11 +57,11 @@ class InferredThreadDetector : ThreadConstraintDetector<Thread>(lattice, assumpt
     Binder;
 
     override fun toString() =
-        when (this) {
-          MainOrUi -> "`@{Main,Ui}Thread`"
-          Worker -> "`@WorkerThread`"
-          Binder -> "`@BinderThread`"
-        }
+      when (this) {
+        MainOrUi -> "`@{Main,Ui}Thread`"
+        Worker -> "`@WorkerThread`"
+        Binder -> "`@BinderThread`"
+      }
   }
 
   companion object {
@@ -70,26 +70,26 @@ class InferredThreadDetector : ThreadConstraintDetector<Thread>(lattice, assumpt
 
     @JvmField
     val THREAD =
-        Issue.create(
-                id = "ThreadConstraint",
-                briefDescription = "Wrong Thread (with inference)",
-                explanation =
-                    """
+      Issue.create(
+          id = "ThreadConstraint",
+          briefDescription = "Wrong Thread (with inference)",
+          explanation =
+            """
                 Ensures that a method which expects to be called on a specific thread, is \
                 actually called from that thread. For example, calls on methods in widgets \
                 should always be made on the UI thread. This new issue subsumes \
                 `WrongThreadInterprocedural`, accompanied by a check aiming to be more reliable \
                 and scalable.
                 """,
-                moreInfo = "https://developer.android.com/guide/components/processes-and-threads.html#Threads",
-                category = Category.CORRECTNESS,
-                priority = 6,
-                severity = Severity.ERROR,
-                enabledByDefault = false,
-                androidSpecific = true,
-                implementation = Impl,
-            )
-            .setAliases(listOf(WrongThreadInterproceduralDetector.ISSUE.id))
+          moreInfo = "https://developer.android.com/guide/components/processes-and-threads.html#Threads",
+          category = Category.CORRECTNESS,
+          priority = 6,
+          severity = Severity.ERROR,
+          enabledByDefault = false,
+          androidSpecific = true,
+          implementation = Impl,
+        )
+        .setAliases(listOf(WrongThreadInterproceduralDetector.ISSUE.id))
 
     val lattice = ThreadConstraintLattice.of<Thread>()
 

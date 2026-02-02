@@ -56,39 +56,39 @@ import org.jetbrains.uast.util.isNewArrayWithInitializer
 
 class RangeDetector : AbstractAnnotationDetector(), SourceCodeScanner {
   override fun applicableAnnotations(): List<String> =
-      listOf(
-          INT_RANGE_ANNOTATION.oldName(),
-          INT_RANGE_ANNOTATION.newName(),
-          FLOAT_RANGE_ANNOTATION.oldName(),
-          FLOAT_RANGE_ANNOTATION.newName(),
-          SIZE_ANNOTATION.oldName(),
-          SIZE_ANNOTATION.newName(),
+    listOf(
+      INT_RANGE_ANNOTATION.oldName(),
+      INT_RANGE_ANNOTATION.newName(),
+      FLOAT_RANGE_ANNOTATION.oldName(),
+      FLOAT_RANGE_ANNOTATION.newName(),
+      SIZE_ANNOTATION.oldName(),
+      SIZE_ANNOTATION.newName(),
 
-          // Such that the annotation is considered relevant by the annotation handler
-          // even if the typedef check itself is disabled
-          INT_DEF_ANNOTATION.oldName(),
-          INT_DEF_ANNOTATION.newName(),
-          LONG_DEF_ANNOTATION.oldName(),
-          LONG_DEF_ANNOTATION.newName(),
+      // Such that the annotation is considered relevant by the annotation handler
+      // even if the typedef check itself is disabled
+      INT_DEF_ANNOTATION.oldName(),
+      INT_DEF_ANNOTATION.newName(),
+      LONG_DEF_ANNOTATION.oldName(),
+      LONG_DEF_ANNOTATION.newName(),
 
-          // Consider including org.jetbrains.annotations.Range here, but be careful
-          // such that we don't end up with a double set of warnings in the IDE (one
-          // from Lint, one from IntelliJ's support for this annotation)
-      )
+      // Consider including org.jetbrains.annotations.Range here, but be careful
+      // such that we don't end up with a double set of warnings in the IDE (one
+      // from Lint, one from IntelliJ's support for this annotation)
+    )
 
   override fun isApplicableAnnotationUsage(type: AnnotationUsageType) =
-      when (type) {
-        METHOD_CALL_PARAMETER,
-        ASSIGNMENT_RHS,
-        METHOD_RETURN -> true
-        else -> false
-      }
+    when (type) {
+      METHOD_CALL_PARAMETER,
+      ASSIGNMENT_RHS,
+      METHOD_RETURN -> true
+      else -> false
+    }
 
   override fun visitAnnotationUsage(
-      context: JavaContext,
-      element: UElement,
-      annotationInfo: AnnotationInfo,
-      usageInfo: AnnotationUsageInfo,
+    context: JavaContext,
+    element: UElement,
+    annotationInfo: AnnotationInfo,
+    usageInfo: AnnotationUsageInfo,
   ) {
     val annotation = annotationInfo.annotation
     when (annotationInfo.qualifiedName) {
@@ -111,12 +111,7 @@ class RangeDetector : AbstractAnnotationDetector(), SourceCodeScanner {
     }
   }
 
-  private fun checkIntRange(
-      context: JavaContext,
-      annotation: UAnnotation,
-      argument: UElement,
-      usageInfo: AnnotationUsageInfo,
-  ) {
+  private fun checkIntRange(context: JavaContext, annotation: UAnnotation, argument: UElement, usageInfo: AnnotationUsageInfo) {
     if (argument is UIfExpression) {
       argument.thenExpression?.let { thenExpression -> checkIntRange(context, annotation, thenExpression, usageInfo) }
       argument.elseExpression?.let { elseExpression -> checkIntRange(context, annotation, elseExpression, usageInfo) }
@@ -139,12 +134,7 @@ class RangeDetector : AbstractAnnotationDetector(), SourceCodeScanner {
     }
   }
 
-  private fun checkFloatRange(
-      context: JavaContext,
-      annotation: UAnnotation,
-      argument: UElement,
-      usageInfo: AnnotationUsageInfo,
-  ) {
+  private fun checkFloatRange(context: JavaContext, annotation: UAnnotation, argument: UElement, usageInfo: AnnotationUsageInfo) {
     if (argument is UIfExpression) {
       argument.thenExpression?.let { thenExpression -> checkFloatRange(context, annotation, thenExpression, usageInfo) }
       argument.elseExpression?.let { elseExpression -> checkFloatRange(context, annotation, elseExpression, usageInfo) }
@@ -225,12 +215,7 @@ class RangeDetector : AbstractAnnotationDetector(), SourceCodeScanner {
     }
   }
 
-  private fun checkSize(
-      context: JavaContext,
-      annotation: UAnnotation,
-      argument: UElement,
-      usageInfo: AnnotationUsageInfo,
-  ) {
+  private fun checkSize(context: JavaContext, annotation: UAnnotation, argument: UElement, usageInfo: AnnotationUsageInfo) {
     val actual: Long
     var isString = false
 
@@ -275,11 +260,11 @@ class RangeDetector : AbstractAnnotationDetector(), SourceCodeScanner {
     val constraint = SizeConstraint.create(annotation)
     if (!constraint.isValid(actual)) {
       val unit =
-          if (isString) {
-            "length"
-          } else {
-            "size"
-          }
+        if (isString) {
+          "length"
+        } else {
+          "size"
+        }
 
       val message = constraint.describe(argument as? UExpression, unit, actual)
       report(context, RANGE, argument, context.getLocation(argument), message)
@@ -299,12 +284,7 @@ class RangeDetector : AbstractAnnotationDetector(), SourceCodeScanner {
       return false
     }
 
-    fun getIntRangeError(
-        context: JavaContext,
-        annotation: UAnnotation,
-        argument: UElement,
-        usageInfo: AnnotationUsageInfo,
-    ): String? {
+    fun getIntRangeError(context: JavaContext, annotation: UAnnotation, argument: UElement, usageInfo: AnnotationUsageInfo): String? {
       if (argument.isNewArrayWithInitializer()) {
         val newExpression = argument as UCallExpression
         for (topExpression in newExpression.valueArguments) {
@@ -361,17 +341,14 @@ class RangeDetector : AbstractAnnotationDetector(), SourceCodeScanner {
       } else null
     }
 
-    private fun getRangeConstraint(
-        context: JavaContext,
-        resolvable: UResolvable?,
-    ): RangeConstraint? {
+    private fun getRangeConstraint(context: JavaContext, resolvable: UResolvable?): RangeConstraint? {
       val resolved = resolvable?.resolve() ?: return null
       // TODO: What about parameters or local variables here?
       // UAST-wise we could look for UDeclaration but it turns out
       // UDeclaration also extends PsiModifierListOwner!
       val constraint =
-          (resolved.toUElement() as? UAnnotated)?.let { RangeConstraint.create(it, context.evaluator) }
-              ?: if (resolved is PsiModifierListOwner) RangeConstraint.create(resolved, context.evaluator) else null
+        (resolved.toUElement() as? UAnnotated)?.let { RangeConstraint.create(it, context.evaluator) }
+          ?: if (resolved is PsiModifierListOwner) RangeConstraint.create(resolved, context.evaluator) else null
 
       if (resolvable is USimpleNameReferenceExpression) {
         val surroundingIf = resolvable.getParentOfType<UIfExpression>(true)
@@ -398,25 +375,15 @@ class RangeDetector : AbstractAnnotationDetector(), SourceCodeScanner {
     }
 
     private fun getRangeConstraints(
-        resolvable: USimpleNameReferenceExpression,
-        condition: UExpression?,
-        previousConstraint: RangeConstraint?,
+      resolvable: USimpleNameReferenceExpression,
+      condition: UExpression?,
+      previousConstraint: RangeConstraint?,
     ): RangeConstraint? {
       if (condition !is UBinaryExpression) return null
       val operator = condition.operator
       if (operator == UastBinaryOperator.LOGICAL_AND) {
-        val left =
-            getRangeConstraints(
-                resolvable,
-                condition.leftOperand.skipParenthesizedExprDown(),
-                previousConstraint,
-            )
-        val right =
-            getRangeConstraints(
-                resolvable,
-                condition.rightOperand.skipParenthesizedExprDown(),
-                previousConstraint,
-            )
+        val left = getRangeConstraints(resolvable, condition.leftOperand.skipParenthesizedExprDown(), previousConstraint)
+        val right = getRangeConstraints(resolvable, condition.rightOperand.skipParenthesizedExprDown(), previousConstraint)
         return when {
           left == null && right == null -> null
           left != null && right != null -> right and left
@@ -484,10 +451,10 @@ class RangeDetector : AbstractAnnotationDetector(), SourceCodeScanner {
     }
 
     private fun getNonOverlapMessage(
-        allowed: RangeConstraint?,
-        actual: RangeConstraint,
-        argument: UElement,
-        usageInfo: AnnotationUsageInfo,
+      allowed: RangeConstraint?,
+      actual: RangeConstraint,
+      argument: UElement,
+      usageInfo: AnnotationUsageInfo,
     ): String? {
       allowed ?: return null
       val contains = allowed.contains(actual) ?: return null
@@ -507,11 +474,11 @@ class RangeDetector : AbstractAnnotationDetector(), SourceCodeScanner {
         var allowedLabel = ""
 
         val argumentSource =
-            when (val selector = argument.findSelector()) {
-              is UCallExpression -> selector.methodName ?: ""
-              is USimpleNameReferenceExpression -> selector.identifier
-              else -> argument.sourcePsi?.text?.takeIf { it.length < 40 } ?: ""
-            }
+          when (val selector = argument.findSelector()) {
+            is UCallExpression -> selector.methodName ?: ""
+            is USimpleNameReferenceExpression -> selector.identifier
+            else -> argument.sourcePsi?.text?.takeIf { it.length < 40 } ?: ""
+          }
 
         if (argumentSource.isNotBlank()) {
           actualLabel = "`$argumentSource`"
@@ -529,18 +496,18 @@ class RangeDetector : AbstractAnnotationDetector(), SourceCodeScanner {
     /** Makes sure values are within the allowed range. */
     @JvmField
     val RANGE =
-        Issue.create(
-            id = "Range",
-            briefDescription = "Outside Range",
-            explanation =
-                """
+      Issue.create(
+        id = "Range",
+        briefDescription = "Outside Range",
+        explanation =
+          """
                 Some parameters are required to be in a particular numerical range; this check \
                 makes sure that arguments passed fall within the range. For arrays, Strings \
                 and collections this refers to the size or length.""",
-            category = Category.CORRECTNESS,
-            priority = 6,
-            severity = Severity.ERROR,
-            implementation = IMPLEMENTATION,
-        )
+        category = Category.CORRECTNESS,
+        priority = 6,
+        severity = Severity.ERROR,
+        implementation = IMPLEMENTATION,
+      )
   }
 }

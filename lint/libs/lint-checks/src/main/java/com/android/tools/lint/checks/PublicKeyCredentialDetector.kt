@@ -44,20 +44,20 @@ class PublicKeyCredentialDetector : Detector(), SourceCodeScanner {
 
     @JvmField
     val ISSUE =
-        Issue.create(
-            id = "PublicKeyCredential",
-            briefDescription = "Creating public key credential",
-            explanation =
-                """
+      Issue.create(
+        id = "PublicKeyCredential",
+        briefDescription = "Creating public key credential",
+        explanation =
+          """
 Credential Manager API supports creating public key credential (Passkeys) starting Android 9 or higher. \
 Please check for the Android version before calling the method.
                 """,
-            category = Category.CORRECTNESS,
-            priority = 5,
-            severity = Severity.WARNING,
-            implementation = IMPLEMENTATION,
-            androidSpecific = true,
-        )
+        category = Category.CORRECTNESS,
+        priority = 5,
+        severity = Severity.WARNING,
+        implementation = IMPLEMENTATION,
+        androidSpecific = true,
+      )
 
     const val PUBLIC_KEY_CREDENTIAL_CLASS_FQNAME = "androidx.credentials.CreatePublicKeyCredentialRequest"
     const val MIN_SDK_FOR_PUBLIC_KEY_CREDENTIAL = 28
@@ -66,25 +66,20 @@ Please check for the Android version before calling the method.
 
   override fun getApplicableConstructorTypes() = listOf(PUBLIC_KEY_CREDENTIAL_CLASS_FQNAME)
 
-  override fun visitConstructor(
-      context: JavaContext,
-      node: UCallExpression,
-      constructor: PsiMethod,
-  ) {
+  override fun visitConstructor(context: JavaContext, node: UCallExpression, constructor: PsiMethod) {
     if (context.project.dependsOn(PLAY_SERVICES_DEPENDENCY) == true) {
       val api = ApiConstraint.atLeast(MIN_SDK_FOR_PUBLIC_KEY_CREDENTIAL)
       if (
-          VersionChecks.isWithinVersionCheckConditional(context, node, api) ||
-              VersionChecks.isPrecededByVersionCheckExit(context, node, api)
+        VersionChecks.isWithinVersionCheckConditional(context, node, api) || VersionChecks.isPrecededByVersionCheckExit(context, node, api)
       ) {
         return
       }
 
       val incident =
-          Incident(context)
-              .issue(ISSUE)
-              .location(context.getLocation(node))
-              .message("PublicKeyCredential is only supported from Android 9 (API level 28) and higher")
+        Incident(context)
+          .issue(ISSUE)
+          .location(context.getLocation(node))
+          .message("PublicKeyCredential is only supported from Android 9 (API level 28) and higher")
       context.report(incident, minSdkLessThan(MIN_SDK_FOR_PUBLIC_KEY_CREDENTIAL))
     }
   }

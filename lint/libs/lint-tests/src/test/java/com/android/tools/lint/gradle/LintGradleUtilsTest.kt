@@ -23,208 +23,208 @@ class LintGradleUtilsTest {
   @Test
   fun testGetIncludedPath() {
     assertEquals(
-        ":app",
-        findFirstIncludedModulePath(
-            """
-            pluginManagement {
-                repositories {
-                    maven(url="/Users/tnorbye/dev/studio/dev/out/repo")
-                    google {
-                        content {
-                            includeGroupByRegex("com\\.android.*")
-                            includeGroupByRegex("com\\.google.*")
-                            includeGroupByRegex("androidx.*")
-                        }
+      ":app",
+      findFirstIncludedModulePath(
+        """
+        pluginManagement {
+            repositories {
+                maven(url="/Users/tnorbye/dev/studio/dev/out/repo")
+                google {
+                    content {
+                        includeGroupByRegex("com\\.android.*")
+                        includeGroupByRegex("com\\.google.*")
+                        includeGroupByRegex("androidx.*")
                     }
-                    mavenCentral()
-                    gradlePluginPortal()
                 }
+                mavenCentral()
+                gradlePluginPortal()
             }
-            dependencyResolutionManagement {
-                repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
-                repositories {
-                    maven(url="/Users/tnorbye/dev/studio/dev/out/repo")
-                    google()
-                    mavenCentral()
-                }
+        }
+        dependencyResolutionManagement {
+            repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+            repositories {
+                maven(url="/Users/tnorbye/dev/studio/dev/out/repo")
+                google()
+                mavenCentral()
             }
+        }
 
-            rootProject.name = "My Application"
-            include(":app")
-            """
-                .trimIndent()
-        ),
+        rootProject.name = "My Application"
+        include(":app")
+        """
+          .trimIndent()
+      ),
     )
 
     assertEquals(
-        ":mobile",
-        findFirstIncludedModulePath(
-            """
-            include(
-                ":mobile",
-                ":core:data",
-                ":core:data-testing",
-                ":core:domain",
-                ":core:domain-testing",
-                ":core:designsystem",
-                ":tv",
-                ":wear",
-                ":glancewidget"
-            )
-            """
-                .trimIndent()
-        ),
+      ":mobile",
+      findFirstIncludedModulePath(
+        """
+        include(
+            ":mobile",
+            ":core:data",
+            ":core:data-testing",
+            ":core:domain",
+            ":core:domain-testing",
+            ":core:designsystem",
+            ":tv",
+            ":wear",
+            ":glancewidget"
+        )
+        """
+          .trimIndent()
+      ),
     )
 
     assertEquals(
-        ":app",
-        findFirstIncludedModulePath(
-            """
-            rootProject.name = "nowinandroid"
-            include ':app'
-            include ':benchmark'
-            include ':core-common'
-            include ':core-domain'
-            include ':core-domain-test'
-            include ':core-database'
-            """
-                .trimIndent()
-        ),
+      ":app",
+      findFirstIncludedModulePath(
+        """
+        rootProject.name = "nowinandroid"
+        include ':app'
+        include ':benchmark'
+        include ':core-common'
+        include ':core-domain'
+        include ':core-domain-test'
+        include ':core-database'
+        """
+          .trimIndent()
+      ),
     )
 
     assertEquals(
-        ":Corona-Warn-App",
-        findFirstIncludedModulePath(
-            """
-            include ':Corona-Warn-App', ':Server-Protocol-Buffer'
-            """
-                .trimIndent()
-        ),
+      ":Corona-Warn-App",
+      findFirstIncludedModulePath(
+        """
+        include ':Corona-Warn-App', ':Server-Protocol-Buffer'
+        """
+          .trimIndent()
+      ),
     )
 
     assertEquals(
-        ":servoview-local",
-        findFirstIncludedModulePath(
-            """
-            if (gradle.hasProperty('something')) {
-                include ':servoview-local'
-            } else {
-              include ':servoview'
-            }
-            """
-                .trimIndent()
-        ),
+      ":servoview-local",
+      findFirstIncludedModulePath(
+        """
+        if (gradle.hasProperty('something')) {
+            include ':servoview-local'
+        } else {
+          include ':servoview'
+        }
+        """
+          .trimIndent()
+      ),
     )
 
     assertEquals(
-        ":generativeai",
-        findFirstIncludedModulePath(
-            """
-            rootProject.name = "generativeai"
-            includeBuild("./plugins")
-            include(":generativeai")
-            include(":common")
-            """
-                .trimIndent()
-        ),
+      ":generativeai",
+      findFirstIncludedModulePath(
+        """
+        rootProject.name = "generativeai"
+        includeBuild("./plugins")
+        include(":generativeai")
+        include(":common")
+        """
+          .trimIndent()
+      ),
     )
 
     assertEquals(
-        ":slack-lint-checks",
-        findFirstIncludedModulePath(
-            """
-            include(":slack-lint-checks", ":slack-lint-annotations")
-            """
-                .trimIndent()
-        ),
+      ":slack-lint-checks",
+      findFirstIncludedModulePath(
+        """
+        include(":slack-lint-checks", ":slack-lint-annotations")
+        """
+          .trimIndent()
+      ),
     )
 
     assertEquals(
-        ":modules:features:account",
-        findFirstIncludedModulePath(
-            """
-            include(":modules:features:account")
-            include(":modules:features:cartheme")
-            include(":modules:features:discover")
-            """
-                .trimIndent()
-        ),
+      ":modules:features:account",
+      findFirstIncludedModulePath(
+        """
+        include(":modules:features:account")
+        include(":modules:features:cartheme")
+        include(":modules:features:discover")
+        """
+          .trimIndent()
+      ),
     )
 
     assertEquals(
-        ":app-feature-preview",
-        findFirstIncludedModulePath(
-            """
-            include(
-                ":app-feature-preview",
-                ":app-ui-catalog",
-            )
-            """
-                .trimIndent()
-        ),
+      ":app-feature-preview",
+      findFirstIncludedModulePath(
+        """
+        include(
+            ":app-feature-preview",
+            ":app-ui-catalog",
+        )
+        """
+          .trimIndent()
+      ),
     )
   }
 
   @Test
   fun getNonPaths() {
     assertNull(
-        findFirstIncludedModulePath(
-            """
-            pluginManagement {
-                includeBuild("build-logic")
-            }
-            """
-                .trimIndent()
-        )
+      findFirstIncludedModulePath(
+        """
+        pluginManagement {
+            includeBuild("build-logic")
+        }
+        """
+          .trimIndent()
+      )
     )
 
     assertNull(
-        findFirstIncludedModulePath(
-            """
-            include modulePrefix + 'demo'
-            """
-                .trimIndent()
-        )
+      findFirstIncludedModulePath(
+        """
+        include modulePrefix + 'demo'
+        """
+          .trimIndent()
+      )
     )
 
     assertNull(
-        findFirstIncludedModulePath(
-            """
-            includeBuild("${"$"}{settings.ext.flutterSdkPath}/packages/flutter_tools/gradle")
-            """
-                .trimIndent()
-        )
+      findFirstIncludedModulePath(
+        """
+        includeBuild("${"$"}{settings.ext.flutterSdkPath}/packages/flutter_tools/gradle")
+        """
+          .trimIndent()
+      )
     )
 
     assertNull(
-        findFirstIncludedModulePath(
-            """
-            //include ':benchmark'
-            """
-                .trimIndent()
-        )
+      findFirstIncludedModulePath(
+        """
+        //include ':benchmark'
+        """
+          .trimIndent()
+      )
     )
 
     assertNull(
-        findFirstIncludedModulePath(
-            """
-            plugins.each { name, path ->
-                def pluginDirectory = flutterProjectRoot.resolve(path).resolve('android').toFile()
-                include ":${"$"}name"
-                project(":${"$"}name").projectDir = pluginDirectory
-            }
-            """
-                .trimIndent()
-        )
+      findFirstIncludedModulePath(
+        """
+        plugins.each { name, path ->
+            def pluginDirectory = flutterProjectRoot.resolve(path).resolve('android').toFile()
+            include ":${"$"}name"
+            project(":${"$"}name").projectDir = pluginDirectory
+        }
+        """
+          .trimIndent()
+      )
     )
 
     assertNull(
-        findFirstIncludedModulePath(
-            """
-            include(":${"$"}path")
-            """
-                .trimIndent()
-        )
+      findFirstIncludedModulePath(
+        """
+        include(":${"$"}path")
+        """
+          .trimIndent()
+      )
     )
   }
 }

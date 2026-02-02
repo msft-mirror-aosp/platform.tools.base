@@ -42,19 +42,19 @@ class OpenForTestingDetector : Detector(), SourceCodeScanner {
     /** Overriding open-for-testing APIs */
     @JvmField
     val ISSUE =
-        Issue.create(
-            id = "OpenForTesting",
-            briefDescription = "Extending API only allowed from tests",
-            explanation =
-                """
+      Issue.create(
+        id = "OpenForTesting",
+        briefDescription = "Extending API only allowed from tests",
+        explanation =
+          """
                 Classes or methods annotated with `@OpenForTesting` are only allowed to be subclassed or overridden from \
                 unit tests.
                 """,
-            category = Category.CORRECTNESS,
-            priority = 4,
-            severity = Severity.ERROR,
-            implementation = IMPLEMENTATION,
-        )
+        category = Category.CORRECTNESS,
+        priority = 4,
+        severity = Severity.ERROR,
+        implementation = IMPLEMENTATION,
+      )
 
     const val OPEN_FOR_TESTING_ANNOTATION = "androidx.annotation.OpenForTesting"
   }
@@ -64,33 +64,33 @@ class OpenForTestingDetector : Detector(), SourceCodeScanner {
   override fun isApplicableAnnotationUsage(type: AnnotationUsageType): Boolean = type == METHOD_OVERRIDE || type == EXTENDS
 
   override fun visitAnnotationUsage(
-      context: JavaContext,
-      element: UElement,
-      annotationInfo: AnnotationInfo,
-      usageInfo: AnnotationUsageInfo,
+    context: JavaContext,
+    element: UElement,
+    annotationInfo: AnnotationInfo,
+    usageInfo: AnnotationUsageInfo,
   ) {
     if (context.isTestSource) {
       return
     }
 
     val message =
-        when (usageInfo.type) {
-          METHOD_OVERRIDE -> {
-            if (annotationInfo.origin != AnnotationOrigin.METHOD) {
-              return
-            }
-            val superMethod = usageInfo.referenced as PsiMethod
-            val containingClass = superMethod.containingClass
-            "`${containingClass?.name}.${superMethod.name}` should only be overridden from tests"
+      when (usageInfo.type) {
+        METHOD_OVERRIDE -> {
+          if (annotationInfo.origin != AnnotationOrigin.METHOD) {
+            return
           }
-          else -> {
-            if (annotationInfo.origin != AnnotationOrigin.CLASS) {
-              return
-            }
-            val superClass = usageInfo.referenced as PsiClass
-            "${superClass.name} should only be subclassed from tests"
-          }
+          val superMethod = usageInfo.referenced as PsiMethod
+          val containingClass = superMethod.containingClass
+          "`${containingClass?.name}.${superMethod.name}` should only be overridden from tests"
         }
+        else -> {
+          if (annotationInfo.origin != AnnotationOrigin.CLASS) {
+            return
+          }
+          val superClass = usageInfo.referenced as PsiClass
+          "${superClass.name} should only be subclassed from tests"
+        }
+      }
     context.report(ISSUE, element, context.getLocation(element), message)
   }
 }

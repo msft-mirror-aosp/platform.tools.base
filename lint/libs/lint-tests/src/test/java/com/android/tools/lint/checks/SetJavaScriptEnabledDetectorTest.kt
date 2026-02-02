@@ -25,9 +25,9 @@ class SetJavaScriptEnabledDetectorTest : AbstractCheckTest() {
   fun test() {
     //noinspection all // Sample code
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
                 package test.pkg;
 
                 import android.app.Activity;
@@ -66,17 +66,17 @@ class SetJavaScriptEnabledDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-                )
-                .indented()
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented()
+      )
+      .run()
+      .expect(
+        """
             src/test/pkg/SetJavaScriptEnabled.java:14: Warning: Using setJavaScriptEnabled can introduce XSS vulnerabilities into your application, review carefully [SetJavaScriptEnabled]
                     webView.getSettings().setJavaScriptEnabled(true); // bad
                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             0 errors, 1 warnings
             """
-        )
+      )
   }
 }

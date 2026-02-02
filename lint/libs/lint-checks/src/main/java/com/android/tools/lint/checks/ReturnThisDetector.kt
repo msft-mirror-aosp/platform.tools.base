@@ -45,19 +45,19 @@ class ReturnThisDetector : Detector(), SourceCodeScanner {
     /** Not returning this from annotated methods */
     @JvmField
     val ISSUE =
-        Issue.create(
-            id = "ReturnThis",
-            briefDescription = "Method must return `this`",
-            explanation =
-                """
+      Issue.create(
+        id = "ReturnThis",
+        briefDescription = "Method must return `this`",
+        explanation =
+          """
                 Methods annotated with `@ReturnThis` (usually in the super method that this method is overriding) should \
                 also `return this`.
                 """,
-            category = Category.CORRECTNESS,
-            priority = 4,
-            severity = Severity.ERROR,
-            implementation = IMPLEMENTATION,
-        )
+        category = Category.CORRECTNESS,
+        priority = 4,
+        severity = Severity.ERROR,
+        implementation = IMPLEMENTATION,
+      )
 
     const val RETURN_THIS_ANNOTATION = "androidx.annotation.ReturnThis"
   }
@@ -67,32 +67,32 @@ class ReturnThisDetector : Detector(), SourceCodeScanner {
   override fun isApplicableAnnotationUsage(type: AnnotationUsageType): Boolean = type == METHOD_OVERRIDE || type == DEFINITION
 
   override fun visitAnnotationUsage(
-      context: JavaContext,
-      element: UElement,
-      annotationInfo: AnnotationInfo,
-      usageInfo: AnnotationUsageInfo,
+    context: JavaContext,
+    element: UElement,
+    annotationInfo: AnnotationInfo,
+    usageInfo: AnnotationUsageInfo,
   ) {
     val method = if (usageInfo.type == DEFINITION) element.getParentOfType<UMethod>(true) ?: return else element as? UMethod ?: return
     method.accept(
-        object : AbstractUastVisitor() {
-          override fun visitReturnExpression(node: UReturnExpression): Boolean {
-            val jumpTarget = node.jumpTarget
-            if (jumpTarget != null && jumpTarget != method) {
-              return super.visitReturnExpression(node)
-            }
-
-            val expression = node.returnExpression
-            if (expression !is UThisExpression) {
-              val message = "This method should `return this` (because it has been annotated with `@ReturnThis`)"
-              context.report(ISSUE, node, context.getLocation(node), message)
-            }
+      object : AbstractUastVisitor() {
+        override fun visitReturnExpression(node: UReturnExpression): Boolean {
+          val jumpTarget = node.jumpTarget
+          if (jumpTarget != null && jumpTarget != method) {
             return super.visitReturnExpression(node)
           }
 
-          override fun visitClass(node: UClass): Boolean {
-            return true
+          val expression = node.returnExpression
+          if (expression !is UThisExpression) {
+            val message = "This method should `return this` (because it has been annotated with `@ReturnThis`)"
+            context.report(ISSUE, node, context.getLocation(node), message)
           }
+          return super.visitReturnExpression(node)
         }
+
+        override fun visitClass(node: UClass): Boolean {
+          return true
+        }
+      }
     )
   }
 }

@@ -26,7 +26,7 @@ class StorageDetectorTest : AbstractCheckTest() {
 
   fun testWrong() {
     val expected =
-        """
+      """
             src/test/pkg/StorageTest.java:8: Warning: Consider also using StorageManager#getAllocatableBytes and allocateBytes which will consider clearable cached data [UsableSpace]
                     return file.getUsableSpace();
                                 ~~~~~~~~~~~~~~
@@ -37,9 +37,9 @@ class StorageDetectorTest : AbstractCheckTest() {
             """
 
     lint()
-        .files(
-            kotlin(
-                    """
+      .files(
+        kotlin(
+            """
                 package test.pkg
 
                 import android.os.Build
@@ -51,10 +51,10 @@ class StorageDetectorTest : AbstractCheckTest() {
                 }
 
                 """
-                )
-                .indented(),
-            java(
-                    """
+          )
+          .indented(),
+        java(
+            """
                 package test.pkg;
 
                 import java.io.File;
@@ -66,18 +66,18 @@ class StorageDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-                )
-                .indented(),
-        )
-        .run()
-        .expect(expected)
+          )
+          .indented(),
+      )
+      .run()
+      .expect(expected)
   }
 
   fun testOk() {
     lint()
-        .files(
-            kotlin(
-                    """
+      .files(
+        kotlin(
+            """
                 package test.pkg
 
                 import android.os.Build
@@ -93,10 +93,10 @@ class StorageDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-                )
-                .indented(),
-            java(
-                    """
+          )
+          .indented(),
+        java(
+            """
                 package test.pkg;
 
                 import android.os.Build;
@@ -118,10 +118,10 @@ class StorageDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-                )
-                .indented(),
-        )
-        .run()
-        .expectClean()
+          )
+          .indented(),
+      )
+      .run()
+      .expectClean()
   }
 }

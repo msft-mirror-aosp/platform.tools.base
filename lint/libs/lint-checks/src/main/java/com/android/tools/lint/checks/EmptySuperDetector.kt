@@ -41,53 +41,53 @@ class EmptySuperDetector : Detector(), SourceCodeScanner {
     /** Missing call to super. */
     @JvmField
     val ISSUE =
-        Issue.create(
-            id = "EmptySuperCall",
-            briefDescription = "Calling an empty super method",
-            explanation =
-                """
+      Issue.create(
+        id = "EmptySuperCall",
+        briefDescription = "Calling an empty super method",
+        explanation =
+          """
                 For methods annotated with `@EmptySuper`, overriding methods should not also call the super implementation, either \
                 because it is empty, or perhaps it contains code not intended to be run when the method is overridden.
                 """,
-            category = Category.CORRECTNESS,
-            priority = 9,
-            severity = Severity.WARNING,
-            implementation = IMPLEMENTATION,
-        )
+        category = Category.CORRECTNESS,
+        priority = 9,
+        severity = Severity.WARNING,
+        implementation = IMPLEMENTATION,
+      )
 
     const val EMPTY_SUPER_ANNOTATION = "androidx.annotation.EmptySuper"
 
     /** Checks whether the given method overrides a method annotated with `@EmptySuper`, and if so, returns it (otherwise returns null) */
     private fun getEmptySuperMethods(evaluator: JavaEvaluator, method: UMethod): List<PsiMethod> =
-        method.javaPsi.findSuperMethods().filter { directSuper ->
-          evaluator.getAnnotations(directSuper, false).any { it.qualifiedName == EMPTY_SUPER_ANNOTATION }
-        }
+      method.javaPsi.findSuperMethods().filter { directSuper ->
+        evaluator.getAnnotations(directSuper, false).any { it.qualifiedName == EMPTY_SUPER_ANNOTATION }
+      }
   }
 
   override fun getApplicableUastTypes(): List<Class<out UElement>> = listOf(UMethod::class.java)
 
   override fun createUastHandler(context: JavaContext): UElementHandler =
-      object : UElementHandler() {
-        override fun visitMethod(node: UMethod) {
-          val evaluator = context.evaluator
-          val superMethods = getEmptySuperMethods(evaluator, node)
-          if (superMethods.isEmpty()) return
-          node.accept(
-              object : AbstractUastVisitor() {
-                override fun visitCallExpression(node: UCallExpression): Boolean {
-                  if (node.receiver is USuperExpression) {
-                    val resolved = node.resolve()
-                    val superMethod = superMethods.find { it.isEquivalentTo(resolved) }
-                    if (superMethod != null) {
-                      val message = "No need to call `super.${superMethod.name}`; the super method is defined to be empty"
-                      val location = context.getNameLocation(node)
-                      context.report(ISSUE, node, location, message)
-                    }
-                  }
-                  return super.visitCallExpression(node)
+    object : UElementHandler() {
+      override fun visitMethod(node: UMethod) {
+        val evaluator = context.evaluator
+        val superMethods = getEmptySuperMethods(evaluator, node)
+        if (superMethods.isEmpty()) return
+        node.accept(
+          object : AbstractUastVisitor() {
+            override fun visitCallExpression(node: UCallExpression): Boolean {
+              if (node.receiver is USuperExpression) {
+                val resolved = node.resolve()
+                val superMethod = superMethods.find { it.isEquivalentTo(resolved) }
+                if (superMethod != null) {
+                  val message = "No need to call `super.${superMethod.name}`; the super method is defined to be empty"
+                  val location = context.getNameLocation(node)
+                  context.report(ISSUE, node, location, message)
                 }
               }
-          )
-        }
+              return super.visitCallExpression(node)
+            }
+          }
+        )
       }
+    }
 }

@@ -60,20 +60,20 @@ enum class SourceSetType {
  *   to the given client.
  */
 open class JavaContext(
-    /** the driver running through the checks */
-    driver: LintDriver,
+  /** the driver running through the checks */
+  driver: LintDriver,
 
-    /** the project to run lint on which contains the given file */
-    project: Project,
+  /** the project to run lint on which contains the given file */
+  project: Project,
 
-    /**
-     * The main project if this project is a library project, or null if this is not a library project. The main project is the root project
-     * of all library projects, not necessarily the directly including project.
-     */
-    main: Project?,
+  /**
+   * The main project if this project is a library project, or null if this is not a library project. The main project is the root project
+   * of all library projects, not necessarily the directly including project.
+   */
+  main: Project?,
 
-    /** the file to be analyzed */
-    file: File,
+  /** the file to be analyzed */
+  file: File,
 ) : Context(driver, project, main, file) {
 
   /** The parse tree, when using PSI. */
@@ -102,18 +102,14 @@ open class JavaContext(
    * @return a location for the given node
    */
   fun getRangeLocation(from: PsiElement, fromDelta: Int, to: PsiElement, toDelta: Int): Location =
-      uastParser.getRangeLocation(this, from, fromDelta, to, toDelta)
+    uastParser.getRangeLocation(this, from, fromDelta, to, toDelta)
 
   fun getRangeLocation(from: UElement, fromDelta: Int, to: UElement, toDelta: Int): Location =
-      uastParser.getRangeLocation(this, from, fromDelta, to, toDelta)
+    uastParser.getRangeLocation(this, from, fromDelta, to, toDelta)
 
   // Disambiguate since UDeclarations implement both PsiElement and UElement
-  fun getRangeLocation(
-      from: UDeclaration,
-      fromDelta: Int,
-      to: UDeclaration,
-      toDelta: Int,
-  ): Location = uastParser.getRangeLocation(this, from as UElement, fromDelta, to, toDelta)
+  fun getRangeLocation(from: UDeclaration, fromDelta: Int, to: UDeclaration, toDelta: Int): Location =
+    uastParser.getRangeLocation(this, from as UElement, fromDelta, to, toDelta)
 
   /**
    * Returns a location for the given node range (from the starting offset of the first node to the ending offset of the second node).
@@ -125,10 +121,10 @@ open class JavaContext(
    */
   @Suppress("unused", "unused")
   fun getRangeLocation(from: PsiElement, fromDelta: Int, length: Int): Location =
-      uastParser.getRangeLocation(this, from, fromDelta, fromDelta + length)
+    uastParser.getRangeLocation(this, from, fromDelta, fromDelta + length)
 
   fun getRangeLocation(from: UElement, fromDelta: Int, length: Int): Location =
-      uastParser.getRangeLocation(this, from, fromDelta, fromDelta + length)
+    uastParser.getRangeLocation(this, from, fromDelta, fromDelta + length)
 
   /**
    * Returns a [Location] for the given element. This attempts to pick a shorter location range than the entire element; for a class or
@@ -204,11 +200,8 @@ open class JavaContext(
    * @param includeArguments whether we should include the arguments to the call
    * @return a location
    */
-  fun getCallLocation(
-      call: UCallExpression,
-      includeReceiver: Boolean,
-      includeArguments: Boolean,
-  ): Location = uastParser.getCallLocation(this, call, includeReceiver, includeArguments)
+  fun getCallLocation(call: UCallExpression, includeReceiver: Boolean, includeArguments: Boolean): Location =
+    uastParser.getCallLocation(this, call, includeReceiver, includeArguments)
 
   val evaluator: JavaEvaluator
     get() = uastParser.evaluator
@@ -249,13 +242,7 @@ open class JavaContext(
    * @param quickfixData optional data to pass to the IDE for use by a quickfix.
    */
   @JvmOverloads
-  fun report(
-      issue: Issue,
-      scope: PsiElement?,
-      location: Location,
-      message: String,
-      quickfixData: LintFix? = null,
-  ) {
+  fun report(issue: Issue, scope: PsiElement?, location: Location, message: String, quickfixData: LintFix? = null) {
     val incident = Incident(issue, message, location, scope, quickfixData)
     driver.client.report(this, incident)
   }
@@ -271,13 +258,7 @@ open class JavaContext(
    * @param quickfixData optional data to pass to the IDE for use by a quickfix.
    */
   @JvmOverloads
-  fun report(
-      issue: Issue,
-      scope: UElement?,
-      location: Location,
-      message: String,
-      quickfixData: LintFix? = null,
-  ) {
+  fun report(issue: Issue, scope: UElement?, location: Location, message: String, quickfixData: LintFix? = null) {
     val incident = Incident(issue, message, location, scope, quickfixData)
     driver.client.report(this, incident)
   }
@@ -287,57 +268,42 @@ open class JavaContext(
    * to make an explicit cast.
    */
   fun report(issue: Issue, scopeClass: UClass?, location: Location, message: String) =
-      report(issue, scopeClass as UElement?, location, message)
+    report(issue, scopeClass as UElement?, location, message)
 
   /**
    * [UClass] is both a [PsiElement] and a [UElement] so this method is here to make calling report(..., UClass, ...) easier without having
    * to make an explicit cast.
    */
-  fun report(
-      issue: Issue,
-      scopeClass: UClass?,
-      location: Location,
-      message: String,
-      quickfixData: LintFix?,
-  ) = report(issue, scopeClass as UElement?, location, message, quickfixData)
+  fun report(issue: Issue, scopeClass: UClass?, location: Location, message: String, quickfixData: LintFix?) =
+    report(issue, scopeClass as UElement?, location, message, quickfixData)
 
   /**
    * [UMethod] is both a [PsiElement] and a [UElement] so this method is here to make calling report(..., UMethod, ...) easier without
    * having to make an explicit cast.
    */
   fun report(issue: Issue, scopeClass: UMethod?, location: Location, message: String) =
-      report(issue, scopeClass as UElement?, location, message)
+    report(issue, scopeClass as UElement?, location, message)
 
   /**
    * [UMethod] is both a [PsiElement] and a [UElement] so this method is here to make calling report(..., UMethod, ...) easier without
    * having to make an explicit cast.
    */
-  fun report(
-      issue: Issue,
-      scopeClass: UMethod?,
-      location: Location,
-      message: String,
-      quickfixData: LintFix?,
-  ) = report(issue, scopeClass as UElement?, location, message, quickfixData)
+  fun report(issue: Issue, scopeClass: UMethod?, location: Location, message: String, quickfixData: LintFix?) =
+    report(issue, scopeClass as UElement?, location, message, quickfixData)
 
   /**
    * [UField] is both a [PsiElement] and a [UElement] so this method is here to make calling report(..., UField, ...) easier without having
    * to make an explicit cast.
    */
   fun report(issue: Issue, scopeClass: UField?, location: Location, message: String) =
-      report(issue, scopeClass as UElement?, location, message)
+    report(issue, scopeClass as UElement?, location, message)
 
   /**
    * [UField] is both a [PsiElement] and a [UElement] so this method is here to make calling report(..., UField, ...) easier without having
    * to make an explicit cast.
    */
-  fun report(
-      issue: Issue,
-      scopeClass: UField?,
-      location: Location,
-      message: String,
-      quickfixData: LintFix?,
-  ) = report(issue, scopeClass as UElement?, location, message, quickfixData)
+  fun report(issue: Issue, scopeClass: UField?, location: Location, message: String, quickfixData: LintFix?) =
+    report(issue, scopeClass as UElement?, location, message, quickfixData)
 
   override val suppressCommentPrefix: String?
     get() = SUPPRESS_JAVA_COMMENT_PREFIX
@@ -373,11 +339,7 @@ open class JavaContext(
   }
 
   @Suppress("DEPRECATION", "UnstableApiUsage")
-  @Deprecated(
-      "Use UastFacade instead",
-      ReplaceWith("org.jetbrains.uast.UastFacade"),
-      DeprecationLevel.HIDDEN,
-  )
+  @Deprecated("Use UastFacade instead", ReplaceWith("org.jetbrains.uast.UastFacade"), DeprecationLevel.HIDDEN)
   val uastContext: UastContext
     get() = uastFile?.getUastContext()!!
 
@@ -389,11 +351,11 @@ open class JavaContext(
     // TODO: Move to LintUtils etc
     @JvmStatic
     fun getMethodName(call: UElement): String? =
-        when (call) {
-          is UEnumConstant -> call.nameFromSource
-          is UCallExpression -> call.methodName ?: call.classReference?.resolvedName
-          else -> null
-        }
+      when (call) {
+        is UEnumConstant -> call.nameFromSource
+        is UCallExpression -> call.methodName ?: call.classReference?.resolvedName
+        else -> null
+      }
 
     /**
      * Searches for a name node corresponding to the given node

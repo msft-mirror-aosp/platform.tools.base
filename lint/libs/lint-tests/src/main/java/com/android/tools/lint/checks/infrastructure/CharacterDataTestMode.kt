@@ -25,15 +25,11 @@ import java.io.File
 
 /** Test mode which inserts unnecessary whitespace characters into the source code */
 class CharacterDataTestMode :
-    SourceTransformationTestMode(
-        description = "Converting text nodes to CDATA XML sections",
-        "TestMode.CDATA",
-        "cdata",
-    ) {
+  SourceTransformationTestMode(description = "Converting text nodes to CDATA XML sections", "TestMode.CDATA", "cdata") {
   override val diffExplanation: String =
-      // first line shorter: expecting to prefix that line with
-      // "org.junit.ComparisonFailure: "
-      """
+    // first line shorter: expecting to prefix that line with
+    // "org.junit.ComparisonFailure: "
+    """
         In XML, text content can be wrapped
         in special CDATA sections, like <!CDATA[this]]>. Code processing the
         XML documents need to handle this.
@@ -42,7 +38,7 @@ class CharacterDataTestMode :
         CDATA specific, you can turn off this test mode using
         `.skipTestModes($fieldName)`.
         """
-          .trimIndent()
+      .trimIndent()
 
   override fun applies(context: TestModeContext): Boolean {
     return context.projects.any { it.files.any { file -> file is TestFile.XmlTestFile && file.contents.contains("<string") } }

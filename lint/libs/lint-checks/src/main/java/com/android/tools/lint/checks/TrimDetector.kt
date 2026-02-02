@@ -51,11 +51,11 @@ class TrimDetector : Detector(), SourceCodeScanner {
     /** Redundant lambda in trim calls. */
     @JvmField
     val ISSUE =
-        Issue.create(
-            id = "TrimLambda",
-            briefDescription = "Unnecessary lambda with `trim()`",
-            explanation =
-                """
+      Issue.create(
+        id = "TrimLambda",
+        briefDescription = "Unnecessary lambda with `trim()`",
+        explanation =
+          """
           The Kotlin standard library `trim()` call takes an optional lambda \
           to specify which characters are considered whitespace.
 
@@ -66,11 +66,11 @@ class TrimDetector : Detector(), SourceCodeScanner {
           constitutes a whitespace character (`Char::isWhitespace`) and also \
           results in less bytecode at the call-site.
           """,
-            category = Category.CORRECTNESS,
-            priority = 6,
-            severity = Severity.INFORMATIONAL,
-            implementation = IMPLEMENTATION,
-        )
+        category = Category.CORRECTNESS,
+        priority = 6,
+        severity = Severity.INFORMATIONAL,
+        implementation = IMPLEMENTATION,
+      )
 
     private const val STRING_TRIM_OWNER = "kotlin.text.StringsKt__StringsKt"
   }
@@ -90,26 +90,22 @@ class TrimDetector : Detector(), SourceCodeScanner {
     }
   }
 
-  private fun createRemovalFix(
-      lambda: KtLambdaExpression,
-      context: JavaContext,
-      node: UCallExpression,
-  ): Pair<LintFix, String> {
+  private fun createRemovalFix(lambda: KtLambdaExpression, context: JavaContext, node: UCallExpression): Pair<LintFix, String> {
     val replacement =
-        if ((node.sourcePsi as? KtCallExpression)?.valueArgumentList?.rightParenthesis == null) {
-          "()"
-        } else {
-          ""
-        }
+      if ((node.sourcePsi as? KtCallExpression)?.valueArgumentList?.rightParenthesis == null) {
+        "()"
+      } else {
+        ""
+      }
     val fix =
-        fix()
-            .name("Remove lambda")
-            .replace()
-            .pattern("(\\s*\\Q${lambda.text}\\E)")
-            .with(replacement)
-            .range(context.getLocation(node))
-            .autoFix()
-            .build()
+      fix()
+        .name("Remove lambda")
+        .replace()
+        .pattern("(\\s*\\Q${lambda.text}\\E)")
+        .with(replacement)
+        .range(context.getLocation(node))
+        .autoFix()
+        .build()
     val message = "The lambda argument (`${lambda.text}`) is unnecessary"
     return Pair(fix, message)
   }
@@ -127,9 +123,9 @@ class TrimDetector : Detector(), SourceCodeScanner {
       val selector = statement.selectorExpression
 
       if (
-          selector is KtCallExpression &&
-              selector.valueArguments.isEmpty() &&
-              lambda.isLambdaParameterReference(statement.receiverExpression.skipParenthesizedExprDown())
+        selector is KtCallExpression &&
+          selector.valueArguments.isEmpty() &&
+          lambda.isLambdaParameterReference(statement.receiverExpression.skipParenthesizedExprDown())
       ) {
         // Make sure you're calling isWhitespace on the character
         analyze(selector) {

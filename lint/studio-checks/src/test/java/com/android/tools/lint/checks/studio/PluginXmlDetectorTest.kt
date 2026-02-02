@@ -24,14 +24,14 @@ class PluginXmlDetectorTest {
   @Test
   fun testUnresolvedExtensionClasses() {
     studioLint()
-        .files(
-            java("package test.pkg;\nclass SomeClassA {}").indented(),
-            java("package test.pkg;\nclass SomeClassB {}").indented(),
-            java("package test.pkg;\nclass SomeClassC {}").indented(),
-            @Suppress("PluginXmlValidity", "PluginXmlCapitalization")
-            xml(
-                    "res/META-INF/android-plugin.xml",
-                    """
+      .files(
+        java("package test.pkg;\nclass SomeClassA {}").indented(),
+        java("package test.pkg;\nclass SomeClassB {}").indented(),
+        java("package test.pkg;\nclass SomeClassC {}").indented(),
+        @Suppress("PluginXmlValidity", "PluginXmlCapitalization")
+        xml(
+            "res/META-INF/android-plugin.xml",
+            """
             <idea-plugin>
               <actions>
                 <action id="Android.SomeId" class="test.pkg.SomeClassA"/>
@@ -46,17 +46,17 @@ class PluginXmlDetectorTest {
               </extensions>
             </idea-plugin>
             """,
-                )
-                .indented(),
-        )
-        .issues(PluginXmlDetector.ISSUE)
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+      )
+      .issues(PluginXmlDetector.ISSUE)
+      .run()
+      .expect(
+        """
         javalib: Error: Class MissingClassA not found in the current module or its dependencies [PluginXmlUnresolvedClass]
         javalib: Error: Class MissingClassB not found in the current module or its dependencies [PluginXmlUnresolvedClass]
         2 errors, 0 warnings
         """
-        )
+      )
   }
 }

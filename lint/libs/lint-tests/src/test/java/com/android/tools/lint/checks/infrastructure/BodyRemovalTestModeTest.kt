@@ -43,25 +43,25 @@ class BodyRemovalTestModeTest {
   fun testBracesKotlin() {
     @Language("kotlin")
     val kotlin =
-        """
-        fun test(x: Int): Int {
-            if (x < -5) { test(x+1) } else { test(x+2) }
-            return if (x > 0) test(x-1) else 0
-        }
-        """
-            .trimIndent()
-            .trim()
+      """
+      fun test(x: Int): Int {
+          if (x < -5) { test(x+1) } else { test(x+2) }
+          return if (x > 0) test(x-1) else 0
+      }
+      """
+        .trimIndent()
+        .trim()
 
     @Language("kotlin")
     val expected =
-        """
-        fun test(x: Int): Int {
-            if (x < -5) test(x+1) else test(x+2)
-            return if (x > 0) { test(x-1) } else { 0 }
-        }
-        """
-            .trimIndent()
-            .trim()
+      """
+      fun test(x: Int): Int {
+          if (x < -5) test(x+1) else test(x+2)
+          return if (x > 0) { test(x-1) } else { 0 }
+      }
+      """
+        .trimIndent()
+        .trim()
     val converted = convertKotlin(kotlin)
     assertEquals(expected, converted)
   }
@@ -70,41 +70,41 @@ class BodyRemovalTestModeTest {
   fun testBracesJava() {
     @Language("java")
     val java =
-        """
-        @SuppressWarnings("ALL")
-        class Test {
-            void test(int x) {
-                if (x < -5) { test(x+1); } else { test(x+2); }
-                if (x > 0)
-                    test(x-1);
-                else if (x == -1)
-                    test(x+2) ;
-                else
-                    return;
-            }
-        }
-        """
-            .trimIndent()
-            .trim()
+      """
+      @SuppressWarnings("ALL")
+      class Test {
+          void test(int x) {
+              if (x < -5) { test(x+1); } else { test(x+2); }
+              if (x > 0)
+                  test(x-1);
+              else if (x == -1)
+                  test(x+2) ;
+              else
+                  return;
+          }
+      }
+      """
+        .trimIndent()
+        .trim()
 
     @Language("java")
     val expected =
-        """
-        @SuppressWarnings("ALL")
-        class Test {
-            void test(int x) {
-                if (x < -5) test(x+1); else test(x+2);
-                if (x > 0)
-                    { test(x-1); }
-                else if (x == -1)
-                    { test(x+2) ; }
-                else
-                    { return; }
-            }
-        }
-        """
-            .trimIndent()
-            .trim()
+      """
+      @SuppressWarnings("ALL")
+      class Test {
+          void test(int x) {
+              if (x < -5) test(x+1); else test(x+2);
+              if (x > 0)
+                  { test(x-1); }
+              else if (x == -1)
+                  { test(x+2) ; }
+              else
+                  { return; }
+          }
+      }
+      """
+        .trimIndent()
+        .trim()
     val converted = convertJava(java)
     assertEquals(expected, converted)
   }
@@ -113,31 +113,31 @@ class BodyRemovalTestModeTest {
   fun testExpressionBody() {
     @Language("kotlin")
     val kotlin =
-        """
-        fun test1(): Int {
-            // My comment
-            return 5
-        }
-        fun test2() {
-            return
-        }
-        """
-            .trimIndent()
-            .trim()
+      """
+      fun test1(): Int {
+          // My comment
+          return 5
+      }
+      fun test2() {
+          return
+      }
+      """
+        .trimIndent()
+        .trim()
 
     @Language("kotlin")
     val expected =
-        """
-        fun test1(): Int =
-            // My comment
-            5
+      """
+      fun test1(): Int =
+          // My comment
+          5
 
-        fun test2() {
-            return
-        }
-        """
-            .trimIndent()
-            .trim()
+      fun test2() {
+          return
+      }
+      """
+        .trimIndent()
+        .trim()
     val converted = convertKotlin(kotlin)
     assertEquals(expected, converted)
   }
@@ -146,32 +146,32 @@ class BodyRemovalTestModeTest {
   fun test196881523() {
     @Language("kotlin")
     val kotlin =
-        """
-        package test.pkg
-        class TimeProviderKt {
-            internal companion object {
-                @JvmStatic
-                fun getTimeStatically(): Int {
-                    return -1
-                }
-            }
-        }
-        """
-            .trimIndent()
-            .trim()
+      """
+      package test.pkg
+      class TimeProviderKt {
+          internal companion object {
+              @JvmStatic
+              fun getTimeStatically(): Int {
+                  return -1
+              }
+          }
+      }
+      """
+        .trimIndent()
+        .trim()
 
     @Language("kotlin")
     val expected =
-        "" +
-            "package test.pkg\n" +
-            "class TimeProviderKt {\n" +
-            "    internal companion object {\n" +
-            "        @JvmStatic\n" +
-            "        fun getTimeStatically(): Int =\n" +
-            "            -1\n" +
-            "        \n" +
-            "    }\n" +
-            "}"
+      "" +
+        "package test.pkg\n" +
+        "class TimeProviderKt {\n" +
+        "    internal companion object {\n" +
+        "        @JvmStatic\n" +
+        "        fun getTimeStatically(): Int =\n" +
+        "            -1\n" +
+        "        \n" +
+        "    }\n" +
+        "}"
     val converted = convertKotlin(kotlin)
     assertEquals(expected, converted)
   }
@@ -180,35 +180,35 @@ class BodyRemovalTestModeTest {
   fun testElse() {
     @Language("kotlin")
     val kotlin =
-        """
-        import android.os.Build
-        import androidx.annotation.RequiresApi
+      """
+      import android.os.Build
+      import androidx.annotation.RequiresApi
 
-        fun methodWithReflection() {
-            // We can't remove the braces here, because it would associate our outer else
-            // with the inner if statement!
-            if (false) {
-                if (Build.VERSION.SDK_INT < 28) return
-            } else {println("test")}
-        }
-        """
-            .trimIndent()
+      fun methodWithReflection() {
+          // We can't remove the braces here, because it would associate our outer else
+          // with the inner if statement!
+          if (false) {
+              if (Build.VERSION.SDK_INT < 28) return
+          } else {println("test")}
+      }
+      """
+        .trimIndent()
 
     @Language("kotlin")
     val expected =
-        """
-        import android.os.Build
-        import androidx.annotation.RequiresApi
+      """
+      import android.os.Build
+      import androidx.annotation.RequiresApi
 
-        fun methodWithReflection() {
-            // We can't remove the braces here, because it would associate our outer else
-            // with the inner if statement!
-            if (false) {
-                if (Build.VERSION.SDK_INT < 28) { return }
-            } else println("test")
-        }
-        """
-            .trimIndent()
+      fun methodWithReflection() {
+          // We can't remove the braces here, because it would associate our outer else
+          // with the inner if statement!
+          if (false) {
+              if (Build.VERSION.SDK_INT < 28) { return }
+          } else println("test")
+      }
+      """
+        .trimIndent()
 
     val converted = convertKotlin(kotlin)
     assertEquals(expected, converted)
@@ -218,16 +218,16 @@ class BodyRemovalTestModeTest {
   fun testElvis() {
     @Language("kotlin")
     val kotlin =
-        """
-        package test.pkg
+      """
+      package test.pkg
 
-        import android.app.FragmentManager
+      import android.app.FragmentManager
 
-        fun ok(f: FragmentManager) {
-            val transaction = f.beginTransaction() ?: return
-        }
-        """
-            .trimIndent()
+      fun ok(f: FragmentManager) {
+          val transaction = f.beginTransaction() ?: return
+      }
+      """
+        .trimIndent()
 
     @Suppress("UnnecessaryVariable") val expected = kotlin // expect no change here
     val converted = convertKotlin(kotlin)

@@ -24,11 +24,7 @@ import com.android.tools.lint.checks.infrastructure.TestFile
 import java.io.File
 
 internal class AndroidxTestMode :
-    SourceTransformationTestMode(
-        description = "AndroidX Test Mode",
-        "AbstractCheckTest.ANDROIDX_TEST_MODE",
-        "androidx",
-    ) {
+  SourceTransformationTestMode(description = "AndroidX Test Mode", "AbstractCheckTest.ANDROIDX_TEST_MODE", "androidx") {
   private fun applies(file: TestFile): Boolean {
     if (!(file.targetRelativePath.endsWith(DOT_KT) || file.targetRelativePath.endsWith(DOT_JAVA))) {
       return false
@@ -92,13 +88,13 @@ internal class AndroidxTestMode :
     var unchanged = true
     projectFolders.forEach { root ->
       root
-          .walk()
-          .filter { it.isFile && (it.path.endsWith(DOT_JAVA) || it.path.endsWith(DOT_KT)) }
-          .forEach {
-            if (replaceSource(it)) {
-              unchanged = false
-            }
+        .walk()
+        .filter { it.isFile && (it.path.endsWith(DOT_JAVA) || it.path.endsWith(DOT_KT)) }
+        .forEach {
+          if (replaceSource(it)) {
+            unchanged = false
           }
+        }
     }
 
     return if (unchanged) CANCEL else null
@@ -131,12 +127,12 @@ internal class AndroidxTestMode :
   }
 
   override val diffExplanation: String =
-      // first line shorter: expecting to prefix that line with
-      // "org.junit.ComparisonFailure: "
-      """
-      This test mode checks tests that
-      tests referencing the old `android.support` packages also correctly
-      handle the newer AndroidX names.
-      """
-          .trimIndent()
+    // first line shorter: expecting to prefix that line with
+    // "org.junit.ComparisonFailure: "
+    """
+    This test mode checks tests that
+    tests referencing the old `android.support` packages also correctly
+    handle the newer AndroidX names.
+    """
+      .trimIndent()
 }

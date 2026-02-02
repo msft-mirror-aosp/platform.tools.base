@@ -43,26 +43,21 @@ class ExtraTextDetector : ResourceXmlDetector() {
     /** The main issue discovered by this detector. */
     @JvmField
     val ISSUE =
-        Issue.create(
-            id = "ExtraText",
-            briefDescription = "Extraneous text in resource files",
-            explanation =
-                """
+      Issue.create(
+        id = "ExtraText",
+        briefDescription = "Extraneous text in resource files",
+        explanation =
+          """
             Non-value resource files should only contain elements and attributes. Any XML text content found \
             in the file is likely accidental (and potentially dangerous if the text resembles XML and the \
             developer believes the text to be functional).
             """,
-            category = Category.CORRECTNESS,
-            priority = 3,
-            severity = Severity.ERROR,
-            implementation =
-                Implementation(
-                    ExtraTextDetector::class.java,
-                    Scope.MANIFEST_AND_RESOURCE_SCOPE,
-                    Scope.RESOURCE_FILE_SCOPE,
-                    Scope.MANIFEST_SCOPE,
-                ),
-        )
+        category = Category.CORRECTNESS,
+        priority = 3,
+        severity = Severity.ERROR,
+        implementation =
+          Implementation(ExtraTextDetector::class.java, Scope.MANIFEST_AND_RESOURCE_SCOPE, Scope.RESOURCE_FILE_SCOPE, Scope.MANIFEST_SCOPE),
+      )
   }
 
   override fun appliesTo(folderType: ResourceFolderType): Boolean = folderType != VALUES && folderType != XML && folderType != RAW

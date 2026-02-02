@@ -66,16 +66,11 @@ import org.w3c.dom.Element
  *
  * StringFormatDetectorTest.testIncremental StringFormatDetectorTest.testAll UnusedResourceDetectorTest.testMultiProject2
  */
-class SuppressibleTestMode :
-    SourceTransformationTestMode(
-        description = "Suppressible",
-        "TestMode.SUPPRESSIBLE",
-        "suppressible",
-    ) {
+class SuppressibleTestMode : SourceTransformationTestMode(description = "Suppressible", "TestMode.SUPPRESSIBLE", "suppressible") {
   override val diffExplanation: String =
-      // first line shorter: expecting to prefix that line with
-      // "org.junit.ComparisonFailure: "
-      """
+    // first line shorter: expecting to prefix that line with
+    // "org.junit.ComparisonFailure: "
+    """
         Lint checks are suppressible
         using `@Suppress` and `@SuppressWarnings` (and in XML, `tools:ignore`).
         This requires the incident to be reported with the nearest AST node,
@@ -90,7 +85,7 @@ class SuppressibleTestMode :
         specific to suppressions, you can turn off this test mode using
         `.skipTestModes($fieldName)`.
         """
-          .trimIndent()
+      .trimIndent()
 
   override fun applies(context: TestModeContext): Boolean {
     // No point doing this check for all the false-positive checks (the expectsClean() tests)
@@ -103,10 +98,7 @@ class SuppressibleTestMode :
     return path.endsWith(DOT_KT) || path.endsWith(DOT_JAVA) || path.endsWith(DOT_XML)
   }
 
-  private fun getIncidents(
-      lintTextReport: String,
-      task: TestLintTask? = null,
-  ): List<LintIssueDocGenerator.Companion.ReportedIncident> {
+  private fun getIncidents(lintTextReport: String, task: TestLintTask? = null): List<LintIssueDocGenerator.Companion.ReportedIncident> {
     // If this unit test is referencing lint warnings that are not suppressible,
     // don't attempt to enforce suppressions
     if (lintTextReport.contains("is not allowed to be suppressed") && lintTextReport.contains(" [LintError]")) {
@@ -116,26 +108,26 @@ class SuppressibleTestMode :
     val issues = task?.checkedIssues ?: emptyList()
 
     return LintIssueDocGenerator.getOutputIncidents(lintTextReport)
-        // Skip internal instances
-        .filter { !it.id.startsWith("_") }
-        // Only include problems in XML, Java and Kotlin files
-        .filter { applies(it.path) }
-        .filter {
-          // Skip issues that analyze class files: @Suppress annotations aren't present in the
-          // bytecode.
-          val issue = issues.firstOrNull { issue -> it.id == issue.id }
-          val scope = issue?.implementation?.scope
-          scope == null ||
-              !(scope.contains(Scope.CLASS_FILE) || scope.contains(Scope.ALL_CLASS_FILES) || scope.contains(Scope.JAVA_LIBRARIES))
-        }
+      // Skip internal instances
+      .filter { !it.id.startsWith("_") }
+      // Only include problems in XML, Java and Kotlin files
+      .filter { applies(it.path) }
+      .filter {
+        // Skip issues that analyze class files: @Suppress annotations aren't present in the
+        // bytecode.
+        val issue = issues.firstOrNull { issue -> it.id == issue.id }
+        val scope = issue?.implementation?.scope
+        scope == null ||
+          !(scope.contains(Scope.CLASS_FILE) || scope.contains(Scope.ALL_CLASS_FILES) || scope.contains(Scope.JAVA_LIBRARIES))
+      }
   }
 
   override fun before(context: TestModeContext): Any? {
     val defaultResults =
-        context.results?.get(DEFAULT)
-            ?: error(
-                "The SuppressibleTestMode only works in conjunction with the DEFAULT test mode (which it uses to find error positions to suppress)"
-            )
+      context.results?.get(DEFAULT)
+        ?: error(
+          "The SuppressibleTestMode only works in conjunction with the DEFAULT test mode (which it uses to find error positions to suppress)"
+        )
 
     val client = context.driver?.client ?: TestLintClient().apply { task = context.task }
     val changed = rewrite(defaultResults.output, context.projectFolders, client.getSdkHome())
@@ -152,15 +144,15 @@ class SuppressibleTestMode :
     val pathToFile = mutableMapOf<String, File>()
     projectFolders.forEach { root ->
       root
-          .walk()
-          .filter { it.isFile && applies(it.path) }
-          .forEach {
-            for (path in paths) {
-              if (it.path.dos2unix().endsWith(path)) {
-                pathToFile[path] = it
-              }
+        .walk()
+        .filter { it.isFile && applies(it.path) }
+        .forEach {
+          for (path in paths) {
+            if (it.path.dos2unix().endsWith(path)) {
+              pathToFile[path] = it
             }
           }
+        }
     }
 
     var changed = false
@@ -181,18 +173,18 @@ class SuppressibleTestMode :
         val fileIncidents = outputIncidents.filter { it.path.endsWith(path) }
         assert(fileIncidents.isNotEmpty())
         val edits =
-            if (path.endsWith(DOT_XML)) {
-              rewriteXml(file, source, fileIncidents)
-            } else if (path.endsWith(DOT_JAVA) || path.endsWith(DOT_KT)) {
-              if (sdkHome != null) {
-                val javaContext = allContexts[file] ?: error("Didn't find JavaContext for $file")
-                rewriteKotlinOrJava(javaContext, source, fileIncidents)
-              } else {
-                emptyList()
-              }
+          if (path.endsWith(DOT_XML)) {
+            rewriteXml(file, source, fileIncidents)
+          } else if (path.endsWith(DOT_JAVA) || path.endsWith(DOT_KT)) {
+            if (sdkHome != null) {
+              val javaContext = allContexts[file] ?: error("Didn't find JavaContext for $file")
+              rewriteKotlinOrJava(javaContext, source, fileIncidents)
             } else {
-              error("Unexpected path $path")
+              emptyList()
             }
+          } else {
+            error("Unexpected path $path")
+          }
 
         if (edits.isNotEmpty()) {
           val edited = Edit.performEdits(source, edits)
@@ -211,11 +203,7 @@ class SuppressibleTestMode :
     return changed
   }
 
-  private fun rewriteXml(
-      file: File,
-      source: String,
-      incidents: List<LintIssueDocGenerator.Companion.ReportedIncident>,
-  ): List<Edit> {
+  private fun rewriteXml(file: File, source: String, incidents: List<LintIssueDocGenerator.Companion.ReportedIncident>): List<Edit> {
     val client = TestLintClient()
     val parser = client.xmlParser
     val root = parser.parseXml(source, file)?.documentElement ?: return emptyList()
@@ -299,12 +287,7 @@ class SuppressibleTestMode :
     return edits
   }
 
-  private fun Element.find(
-      offset: Int,
-      client: LintClient,
-      file: File,
-      parser: XmlParser,
-  ): Element {
+  private fun Element.find(offset: Int, client: LintClient, file: File, parser: XmlParser): Element {
     for (child in this) {
       val start = parser.getNodeStartOffset(client, file, child)
       if (offset >= start) {
@@ -319,9 +302,9 @@ class SuppressibleTestMode :
   }
 
   private fun rewriteKotlinOrJava(
-      context: JavaContext,
-      source: String,
-      incidents: List<LintIssueDocGenerator.Companion.ReportedIncident>,
+    context: JavaContext,
+    source: String,
+    incidents: List<LintIssueDocGenerator.Companion.ReportedIncident>,
   ): List<Edit> {
     val root = context.uastFile ?: return emptyList()
 
@@ -341,11 +324,11 @@ class SuppressibleTestMode :
       var curr = root.sourcePsi.findElementAt(offset)
       if (curr != null && curr !is PsiComment) {
         curr =
-            if (isKotlin(curr.language)) {
-              findKotlinSuppressElement(curr)
-            } else {
-              findJavaSuppressElement(curr)
-            }
+          if (isKotlin(curr.language)) {
+            findKotlinSuppressElement(curr)
+          } else {
+            findJavaSuppressElement(curr)
+          }
       }
 
       if (curr != null) {
@@ -399,12 +382,7 @@ class SuppressibleTestMode :
 
       val offset = element.startOffset
 
-      val suppress =
-          Context.Companion.getSuppressionDirective(
-              Context.SUPPRESS_JAVA_COMMENT_PREFIX,
-              source,
-              offset,
-          )
+      val suppress = Context.Companion.getSuppressionDirective(Context.SUPPRESS_JAVA_COMMENT_PREFIX, source, offset)
       if (suppress != null) {
         var start = source.lastIndexOf(Context.SUPPRESS_JAVA_COMMENT_PREFIX, offset)
         if (start != -1) {
@@ -417,16 +395,16 @@ class SuppressibleTestMode :
       }
 
       val code =
-          when (element) {
-            is PsiAnnotationOwner,
-            is PsiModifierListOwner ->
-                "@SuppressWarnings(${if (ids.size > 1) "{" else ""}${ids.joinToString(", ") { "\"$it\"" }}${if (ids.size > 1) "}" else ""}) "
-            is KtAnnotated -> "@${if (element is KtPackageDirective) "file:" else ""}Suppress(${ids.joinToString(", ") { "\"$it\"" }}) "
-            else -> {
-              val indent = getIndent(source, offset)
-              "//noinspection ${ids.joinToString(",")}\n$indent"
-            }
+        when (element) {
+          is PsiAnnotationOwner,
+          is PsiModifierListOwner ->
+            "@SuppressWarnings(${if (ids.size > 1) "{" else ""}${ids.joinToString(", ") { "\"$it\"" }}${if (ids.size > 1) "}" else ""}) "
+          is KtAnnotated -> "@${if (element is KtPackageDirective) "file:" else ""}Suppress(${ids.joinToString(", ") { "\"$it\"" }}) "
+          else -> {
+            val indent = getIndent(source, offset)
+            "//noinspection ${ids.joinToString(",")}\n$indent"
           }
+        }
       val edit = Edit(offset, offset, code, true, 1)
       edits.add(edit)
     }
@@ -463,13 +441,13 @@ class SuppressibleTestMode :
 
   private fun PsiElement.isKotlinSuppressLintTarget(): Boolean {
     return this is KtDeclaration &&
-        this !is KtFunctionLiteral &&
-        this !is KtDestructuringDeclaration &&
-        (this !is KtParameter || !this.isLambdaParameter) &&
-        this !is KtClassInitializer ||
-        // We also allow placing suppression via comments on imports and package statements
-        this is KtImportDirective ||
-        this is KtPackageDirective
+      this !is KtFunctionLiteral &&
+      this !is KtDestructuringDeclaration &&
+      (this !is KtParameter || !this.isLambdaParameter) &&
+      this !is KtClassInitializer ||
+      // We also allow placing suppression via comments on imports and package statements
+      this is KtImportDirective ||
+      this is KtPackageDirective
   }
 
   /** Like [findJavaAnnotationTarget], but also includes other PsiElements where we can place suppression comments */
@@ -477,14 +455,14 @@ class SuppressibleTestMode :
     // In addition to valid annotation targets we can also place suppress directives
     // using comments on import or package statements
     return findJavaAnnotationTarget(element)
-        ?: element.getParentOfType<PsiImportStatementBase>(false)
-        ?: element.getParentOfType<PsiPackageStatement>(false)
+      ?: element.getParentOfType<PsiImportStatementBase>(false)
+      ?: element.getParentOfType<PsiPackageStatement>(false)
   }
 
   private fun findJavaAnnotationTarget(element: PsiElement?): PsiModifierListOwner? {
     val modifier = PsiTreeUtil.getParentOfType(element, PsiModifierListOwner::class.java, false)
     return if (
-        modifier is PsiClassInitializer || modifier is PsiAnonymousClass || modifier is PsiParameter && modifier.isLambdaParameter()
+      modifier is PsiClassInitializer || modifier is PsiAnonymousClass || modifier is PsiParameter && modifier.isLambdaParameter()
     ) {
       findJavaAnnotationTarget(modifier.parent)
     } else {

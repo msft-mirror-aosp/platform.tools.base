@@ -32,7 +32,7 @@ class MethodId(val isVirtual: Boolean, name: String, paramTags: List<ClassId?>) 
   val paramTags = paramListPool.intern(paramTags)
 
   override fun equals(other: Any?) =
-      other is MethodId && name === other.name && isVirtual == other.isVirtual && paramTags === other.paramTags
+    other is MethodId && name === other.name && isVirtual == other.isVirtual && paramTags === other.paramTags
 
   override fun hashCode() = 31 * (31 * isVirtual.hashCode() + System.identityHashCode(paramTags)) + System.identityHashCode(name)
 
@@ -42,19 +42,19 @@ class MethodId(val isVirtual: Boolean, name: String, paramTags: List<ClassId?>) 
     private val paramListPool = InterningPool<List<ClassId?>>()
 
     operator fun invoke(method: PsiMethod): MethodId =
-        when {
-          method.name == "invoke" && method.containingClass?.qualifiedName?.startsWith("kotlin.jvm.functions.Function") == true ->
-              Invoke[method.parameterList.parametersCount]
-          else -> {
-            val typeParams = buildSet {
-              for (x in method.containingClass?.typeParameters ?: arrayOf()) x.name?.let(::add)
-              for (x in method.typeParameters) x.name?.let(::add)
-            }
-            val isVirtual = !method.isStatic() && !method.isConstructor
-            val params = method.parameterList.parameters.map { PsiTypeAdapter.translate(typeParams, it.type).erased() }
-            MethodId(isVirtual, method.name, params)
+      when {
+        method.name == "invoke" && method.containingClass?.qualifiedName?.startsWith("kotlin.jvm.functions.Function") == true ->
+          Invoke[method.parameterList.parametersCount]
+        else -> {
+          val typeParams = buildSet {
+            for (x in method.containingClass?.typeParameters ?: arrayOf()) x.name?.let(::add)
+            for (x in method.typeParameters) x.name?.let(::add)
           }
+          val isVirtual = !method.isStatic() && !method.isConstructor
+          val params = method.parameterList.parameters.map { PsiTypeAdapter.translate(typeParams, it.type).erased() }
+          MethodId(isVirtual, method.name, params)
         }
+      }
 
     operator fun invoke(method: KtNamedFunction): MethodId {
       val typeParams = buildSet {
@@ -68,9 +68,9 @@ class MethodId(val isVirtual: Boolean, name: String, paramTags: List<ClassId?>) 
     fun ofVirtual(method: KFunction<*>): MethodId {
       require(method.parameters.isNotEmpty() && method.parameters[0].kind == KParameter.Kind.INSTANCE) { "Method ${method.name} is static" }
       return MethodId(
-          true,
-          method.name,
-          method.parameters.subList(1, method.parameters.size).map { KTypeAdapter.translate(setOf(), it.type).erased() },
+        true,
+        method.name,
+        method.parameters.subList(1, method.parameters.size).map { KTypeAdapter.translate(setOf(), it.type).erased() },
       )
     }
 
@@ -78,11 +78,7 @@ class MethodId(val isVirtual: Boolean, name: String, paramTags: List<ClassId?>) 
       require(method.parameters.isEmpty() || method.parameters[0].kind != KParameter.Kind.INSTANCE) {
         "Method ${method.name} is not static"
       }
-      return MethodId(
-          false,
-          method.name,
-          method.parameters.map { KTypeAdapter.translate(setOf(), it.type).erased() },
-      )
+      return MethodId(false, method.name, method.parameters.map { KTypeAdapter.translate(setOf(), it.type).erased() })
     }
   }
 
@@ -117,23 +113,23 @@ class MethodId(val isVirtual: Boolean, name: String, paramTags: List<ClassId?>) 
  * more precise instantiated type parameters instead of resorting to the underlying type system.
  */
 internal data class MethodBody<out FX>(
-    val domains: List<Type<Nothing>>,
-    val initEnvironment: Env<Nothing>,
-    val returnTypeAnnotation: Type<Nothing>,
-    val status: Status<FX>,
-    val source: UElement,
+  val domains: List<Type<Nothing>>,
+  val initEnvironment: Env<Nothing>,
+  val returnTypeAnnotation: Type<Nothing>,
+  val status: Status<FX>,
+  val source: UElement,
 ) {
 
   override fun toString(): String {
     val zs = initEnvironment.types.format()
     val body = "(${domains.joinToString()}) -> $returnTypeAnnotation"
     val fx =
-        when (status) {
-          is Status.Abstract -> "\uD83D\uDD35"
-          is Status.BasicConstructor -> "\uD83D\uDEA7"
-          is Status.ForChecking -> "@ ${status.upperBound}"
-          is Status.ForInference -> "@ ???"
-        }
+      when (status) {
+        is Status.Abstract -> "\uD83D\uDD35"
+        is Status.BasicConstructor -> "\uD83D\uDEA7"
+        is Status.ForChecking -> "@ ${status.upperBound}"
+        is Status.ForInference -> "@ ???"
+      }
     return when {
       initEnvironment.types.isEmpty() -> "$body $fx"
       else -> "∀ $zs. $body $fx"
@@ -145,36 +141,26 @@ internal data class MethodBody<out FX>(
 
     data object BasicConstructor : Status<Nothing>
 
-    data class ForChecking<out FX>(
-        val upperBound: EffectAnnotation.Explicit<FX>,
-        val body: UExpression?,
-    ) : Status<FX>
+    data class ForChecking<out FX>(val upperBound: EffectAnnotation.Explicit<FX>, val body: UExpression?) : Status<FX>
 
-    data class ForInference<out FX>(
-        val body: UExpression,
-        val base: EffectAnnotation.Implicit<FX>,
-    ) : Status<FX>
+    data class ForInference<out FX>(val body: UExpression, val base: EffectAnnotation.Implicit<FX>) : Status<FX>
   }
 }
 
-internal fun <FX> returnType(
-    env: Set<String>,
-    m: PsiMethod,
-    classAdapter: TypeAdapter<PsiClass> = PsiClassAdapter,
-): Type<FX> =
-    when (val t = m.returnType) {
-      null ->
-          when {
-            m.isConstructor -> classAdapter.translate(env, m.containingClass!!)
-            // TODO?
-            else -> Type.WildCard
-          }
-      else -> PsiTypeAdapter.translate(env, t)
-    }
+internal fun <FX> returnType(env: Set<String>, m: PsiMethod, classAdapter: TypeAdapter<PsiClass> = PsiClassAdapter): Type<FX> =
+  when (val t = m.returnType) {
+    null ->
+      when {
+        m.isConstructor -> classAdapter.translate(env, m.containingClass!!)
+        // TODO?
+        else -> Type.WildCard
+      }
+    else -> PsiTypeAdapter.translate(env, t)
+  }
 
 internal fun PsiMethod.isStatic() = modifierList.hasModifierProperty(PsiModifier.STATIC)
 
 internal fun PsiMethod.isFinal() =
-    modifierList.hasModifierProperty(PsiModifier.FINAL) || modifierList.hasModifierProperty(PsiModifier.PRIVATE)
+  modifierList.hasModifierProperty(PsiModifier.FINAL) || modifierList.hasModifierProperty(PsiModifier.PRIVATE)
 
 internal fun PsiMethod.isExtension() = parameters.firstOrNull()?.name?.startsWith("\$this") == true

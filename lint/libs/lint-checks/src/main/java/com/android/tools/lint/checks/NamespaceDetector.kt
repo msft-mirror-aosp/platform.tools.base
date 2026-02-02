@@ -65,52 +65,42 @@ class NamespaceDetector : ResourceXmlDetector() {
           if (value.startsWith(URI_PREFIX)) {
             haveCustomNamespace = true
             val namespaces =
-                unusedNamespaces
-                    ?: run {
-                      val new = HashMap<String, Attr>()
-                      unusedNamespaces = new
-                      new
-                    }
+              unusedNamespaces
+                ?: run {
+                  val new = HashMap<String, Attr>()
+                  unusedNamespaces = new
+                  new
+                }
             namespaces[prefix.substring(XMLNS_PREFIX.length)] = attribute
           } else if (value.startsWith("urn:")) {
             continue
           } else if (!value.startsWith("http://")) {
             if (
-                context.isEnabled(TYPO) &&
-                    // In XML there can be random XML documents from users
-                    // with arbitrary schemas; let them use https if they want
-                    context.resourceFolderType != ResourceFolderType.XML
+              context.isEnabled(TYPO) &&
+                // In XML there can be random XML documents from users
+                // with arbitrary schemas; let them use https if they want
+                context.resourceFolderType != ResourceFolderType.XML
             ) {
               var fix: LintFix? = null
               if (value.startsWith("https://")) {
                 fix = fix().replace().text("https").with("http").name("Replace with http://${value.substring(8)}").build()
               }
               context.report(
-                  TYPO,
-                  attribute,
-                  context.getValueLocation(attribute),
-                  //noinspection LintImplUnexpectedDomain
-                  "Suspicious namespace: should start with `http://`",
-                  fix,
+                TYPO,
+                attribute,
+                context.getValueLocation(attribute),
+                //noinspection LintImplUnexpectedDomain
+                "Suspicious namespace: should start with `http://`",
+                fix,
               )
             }
             continue
           } else if (value != AUTO_URI && value.contains("auto") && value.startsWith("http://schemas.android.com/")) {
-            context.report(
-                RES_AUTO,
-                attribute,
-                context.getValueLocation(attribute),
-                "Suspicious namespace: Did you mean `$AUTO_URI`?",
-            )
+            context.report(RES_AUTO, attribute, context.getValueLocation(attribute), "Suspicious namespace: Did you mean `$AUTO_URI`?")
           } else if (
-              value == TOOLS_URI && (prefix == XMLNS_ANDROID || prefix.endsWith(APP_PREFIX) && prefix == XMLNS_PREFIX + APP_PREFIX)
+            value == TOOLS_URI && (prefix == XMLNS_ANDROID || prefix.endsWith(APP_PREFIX) && prefix == XMLNS_PREFIX + APP_PREFIX)
           ) {
-            context.report(
-                TYPO,
-                attribute,
-                context.getValueLocation(attribute),
-                "Suspicious namespace and prefix combination",
-            )
+            context.report(TYPO, attribute, context.getValueLocation(attribute), "Suspicious namespace and prefix combination")
           }
 
           if (!context.isEnabled(TYPO)) {
@@ -126,10 +116,10 @@ class NamespaceDetector : ResourceXmlDetector() {
               if (urlPrefix != URI_PREFIX && isEditableTo(URI_PREFIX, urlPrefix, 3)) {
                 val correctUri = URI_PREFIX + value.substring(resIndex + 5)
                 context.report(
-                    TYPO,
-                    attribute,
-                    context.getValueLocation(attribute),
-                    "Possible typo in URL: was `\"$value\"`, should " + "probably be `\"$correctUri\"`",
+                  TYPO,
+                  attribute,
+                  context.getValueLocation(attribute),
+                  "Possible typo in URL: was `\"$value\"`, should " + "probably be `\"$correctUri\"`",
                 )
               }
             }
@@ -148,31 +138,26 @@ class NamespaceDetector : ResourceXmlDetector() {
 
           if (value.equals(ANDROID_URI, ignoreCase = true)) {
             context.report(
-                TYPO,
-                attribute,
-                context.getValueLocation(attribute),
-                "URI is case sensitive: was `\"$value\"`, expected `\"$ANDROID_URI\"`",
-            )
-          } else {
-            context.report(
-                TYPO,
-                attribute,
-                context.getValueLocation(attribute),
-                "Unexpected namespace URI bound to the `\"android\"` " + "prefix, was `$value`, expected `$ANDROID_URI`",
-            )
-          }
-        } else if (
-            prefix != XMLNS_ANDROID &&
-                (prefix.endsWith(TOOLS_PREFIX) && prefix == XMLNS_PREFIX + TOOLS_PREFIX ||
-                    prefix.endsWith(APP_PREFIX) && prefix == XMLNS_PREFIX + APP_PREFIX)
-        ) {
-          val attribute = item as Attr
-          context.report(
               TYPO,
               attribute,
               context.getValueLocation(attribute),
-              "Suspicious namespace and prefix combination",
-          )
+              "URI is case sensitive: was `\"$value\"`, expected `\"$ANDROID_URI\"`",
+            )
+          } else {
+            context.report(
+              TYPO,
+              attribute,
+              context.getValueLocation(attribute),
+              "Unexpected namespace URI bound to the `\"android\"` " + "prefix, was `$value`, expected `$ANDROID_URI`",
+            )
+          }
+        } else if (
+          prefix != XMLNS_ANDROID &&
+            (prefix.endsWith(TOOLS_PREFIX) && prefix == XMLNS_PREFIX + TOOLS_PREFIX ||
+              prefix.endsWith(APP_PREFIX) && prefix == XMLNS_PREFIX + APP_PREFIX)
+        ) {
+          val attribute = item as Attr
+          context.report(TYPO, attribute, context.getValueLocation(attribute), "Suspicious namespace and prefix combination")
         }
       }
     }
@@ -180,8 +165,8 @@ class NamespaceDetector : ResourceXmlDetector() {
     if (haveCustomNamespace) {
       val project = context.project
       val checkCustomAttrs =
-          project.resourceNamespace == ResourceNamespace.RES_AUTO &&
-              (context.isEnabled(CUSTOM_VIEW) && project.isLibrary || context.isEnabled(RES_AUTO) && project.isGradleProject)
+        project.resourceNamespace == ResourceNamespace.RES_AUTO &&
+          (context.isEnabled(CUSTOM_VIEW) && project.isLibrary || context.isEnabled(RES_AUTO) && project.isGradleProject)
 
       if (checkCustomAttrs) {
         checkCustomNamespace(context, root)
@@ -193,12 +178,7 @@ class NamespaceDetector : ResourceXmlDetector() {
         val namespaces = unusedNamespaces
         if (namespaces != null && !namespaces.isEmpty()) {
           for ((prefix, attribute) in namespaces) {
-            context.report(
-                UNUSED,
-                attribute,
-                context.getLocation(attribute),
-                "Unused namespace `$prefix`",
-            )
+            context.report(UNUSED, attribute, context.getLocation(attribute), "Unused namespace `$prefix`")
           }
         }
       }
@@ -254,13 +234,7 @@ class NamespaceDetector : ResourceXmlDetector() {
         if (redundant) {
 
           val fix = fix().name("Delete namespace").set().remove(name).build()
-          context.report(
-              REDUNDANT,
-              attribute,
-              context.getLocation(attribute),
-              "This namespace declaration is redundant",
-              fix,
-          )
+          context.report(REDUNDANT, attribute, context.getLocation(attribute), "This namespace declaration is redundant", fix)
         }
       }
     }
@@ -282,17 +256,17 @@ class NamespaceDetector : ResourceXmlDetector() {
         if (uri != null && !uri.isEmpty() && uri.startsWith(URI_PREFIX) && uri != ANDROID_URI) {
           if (context.project.isGradleProject) {
             context.report(
-                RES_AUTO,
-                attribute,
-                context.getValueLocation(attribute),
-                "In Gradle projects, always use `$AUTO_URI` for custom " + "attributes",
+              RES_AUTO,
+              attribute,
+              context.getValueLocation(attribute),
+              "In Gradle projects, always use `$AUTO_URI` for custom " + "attributes",
             )
           } else {
             context.report(
-                CUSTOM_VIEW,
-                attribute,
-                context.getValueLocation(attribute),
-                "When using a custom namespace attribute in a library " + "project, use the namespace `\"$AUTO_URI\"` instead",
+              CUSTOM_VIEW,
+              attribute,
+              context.getValueLocation(attribute),
+              "When using a custom namespace attribute in a library " + "project, use the namespace `\"$AUTO_URI\"` instead",
             )
           }
         }
@@ -302,101 +276,96 @@ class NamespaceDetector : ResourceXmlDetector() {
 
   companion object {
     private val IMPLEMENTATION =
-        Implementation(
-            NamespaceDetector::class.java,
-            Scope.MANIFEST_AND_RESOURCE_SCOPE,
-            Scope.RESOURCE_FILE_SCOPE,
-            Scope.MANIFEST_SCOPE,
-        )
+      Implementation(NamespaceDetector::class.java, Scope.MANIFEST_AND_RESOURCE_SCOPE, Scope.RESOURCE_FILE_SCOPE, Scope.MANIFEST_SCOPE)
 
     /** Typos in the namespace. */
     @JvmField
     val TYPO =
-        Issue.create(
-            id = "NamespaceTypo",
-            briefDescription = "Misspelled namespace declaration",
-            explanation =
-                """
+      Issue.create(
+        id = "NamespaceTypo",
+        briefDescription = "Misspelled namespace declaration",
+        explanation =
+          """
                 Accidental misspellings in namespace declarations can lead to some very obscure \
                 error messages. This check looks for potential misspellings to help track these \
                 down.""",
-            category = Category.CORRECTNESS,
-            priority = 8,
-            severity = Severity.FATAL,
-            implementation = IMPLEMENTATION,
-        )
+        category = Category.CORRECTNESS,
+        priority = 8,
+        severity = Severity.FATAL,
+        implementation = IMPLEMENTATION,
+      )
 
     /** Unused namespace declarations. */
     @JvmField
     val UNUSED =
-        Issue.create(
-            id = "UnusedNamespace",
-            briefDescription = "Unused namespace",
-            explanation =
-                """
+      Issue.create(
+        id = "UnusedNamespace",
+        briefDescription = "Unused namespace",
+        explanation =
+          """
                 Unused namespace declarations take up space and require processing that is \
                 not necessary""",
-            category = Category.PERFORMANCE,
-            priority = 1,
-            severity = Severity.WARNING,
-            implementation = IMPLEMENTATION,
-        )
+        category = Category.PERFORMANCE,
+        priority = 1,
+        severity = Severity.WARNING,
+        implementation = IMPLEMENTATION,
+      )
 
     /** Unused namespace declarations. */
     @JvmField
     val REDUNDANT =
-        Issue.create(
-            id = "RedundantNamespace",
-            briefDescription = "Redundant namespace",
-            explanation =
-                """
+      Issue.create(
+        id = "RedundantNamespace",
+        briefDescription = "Redundant namespace",
+        explanation =
+          """
                 In Android XML documents, only specify the namespace on the root/document \
                 element. Namespace declarations elsewhere in the document are typically \
                 accidental leftovers from copy/pasting XML from other files or documentation.""",
-            category = Category.PERFORMANCE,
-            priority = 1,
-            severity = Severity.WARNING,
-            implementation = IMPLEMENTATION,
-        )
+        category = Category.PERFORMANCE,
+        priority = 1,
+        severity = Severity.WARNING,
+        implementation = IMPLEMENTATION,
+      )
 
     /** Using custom namespace attributes in a library project. */
     @JvmField
     val CUSTOM_VIEW =
-        Issue.create(
-            id = "LibraryCustomView",
-            briefDescription = "Custom views in libraries should use res-auto-namespace",
-            explanation =
-                """
+      Issue.create(
+        id = "LibraryCustomView",
+        briefDescription = "Custom views in libraries should use res-auto-namespace",
+        explanation =
+          """
                 When using a custom view with custom attributes in a library project, the \
                 layout must use the special namespace $AUTO_URI instead of a URI which includes \
                 the library project's own package. This will be used to automatically adjust \
                 the namespace of the attributes when the library resources are merged into \
                 the application project.""",
-            category = Category.CORRECTNESS,
-            priority = 6,
-            severity = Severity.FATAL,
-            implementation = IMPLEMENTATION,
-        )
+        category = Category.CORRECTNESS,
+        priority = 6,
+        severity = Severity.FATAL,
+        implementation = IMPLEMENTATION,
+      )
 
     /** Unused namespace declarations. */
     @JvmField
     val RES_AUTO =
-        Issue.create(
-            id = "ResAuto",
-            briefDescription = "Hardcoded Package in Namespace",
-            explanation =
-                """
+      Issue.create(
+        id = "ResAuto",
+        briefDescription = "Hardcoded Package in Namespace",
+        explanation =
+          """
                 In Gradle projects, the actual package used in the final APK can vary; for \
                 example,you can add a `.debug` package suffix in one version and not the other. \
                 Therefore, you should **not** hardcode the application package in the resource; \
                 instead, use the special namespace `http://schemas.android.com/apk/res-auto` \
                 which will cause the tools to figure out the right namespace for the resource \
                 regardless of the actual package used during the build.""",
-            category = Category.CORRECTNESS,
-            priority = 9,
-            severity = Severity.FATAL,
-            implementation = IMPLEMENTATION,
-        )
+        category = Category.CORRECTNESS,
+        priority = 9,
+        severity = Severity.FATAL,
+        implementation = IMPLEMENTATION,
+      )
 
     private const val XMLNS_A = "xmlns:a"
   }

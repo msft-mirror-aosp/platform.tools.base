@@ -29,33 +29,26 @@ interface EffectfulComputation<FX> : Lattice<FX> {
 fun <T, FX> Lattice<FX>.pure(value: T): Result<T, FX> = Result(value, bottom)
 
 /** Run [step] on each of [targets] only for the effect [FX] */
-fun <X : UElement, FX> EffectfulComputation<FX>.forM(
-    step: (X) -> Result<*, FX>,
-    targets: List<X>,
-): FX = foldM(Unit, { _, _ -> }, step, targets).effect
+fun <X : UElement, FX> EffectfulComputation<FX>.forM(step: (X) -> Result<*, FX>, targets: List<X>): FX =
+  foldM(Unit, { _, _ -> }, step, targets).effect
 
 /** Run [step] on each of [targets], only taking the last one's result */
-fun <X : UElement, T : Any, FX> EffectfulComputation<FX>.lastM(
-    step: (X) -> Result<T, FX>,
-    targets: List<X>,
-): Result<T, FX>? {
+fun <X : UElement, T : Any, FX> EffectfulComputation<FX>.lastM(step: (X) -> Result<T, FX>, targets: List<X>): Result<T, FX>? {
   val (t, fx) = step(targets.firstOrNull() ?: return null)
   return foldM(t, { _, x -> x }, step, targets.subList(1, targets.size), initFx = fx)
 }
 
 /** Run [step] on each of [targets], returning the corresponding [T]s and joined effect [FX] */
-fun <X : UElement, T, FX> EffectfulComputation<FX>.mapM(
-    step: (X) -> Result<T, FX>,
-    targets: List<X>,
-): Result<List<T>, FX> = foldM(ArrayList(targets.size), { l, t -> l.apply { add(t) } }, step, targets)
+fun <X : UElement, T, FX> EffectfulComputation<FX>.mapM(step: (X) -> Result<T, FX>, targets: List<X>): Result<List<T>, FX> =
+  foldM(ArrayList(targets.size), { l, t -> l.apply { add(t) } }, step, targets)
 
 /** Run [step] on each of [targets], [accum]-ulating result [R] besides joined effect [FX] */
 fun <X : UElement, T, R, FX> EffectfulComputation<FX>.foldM(
-    init: R,
-    accum: (R, T) -> R,
-    step: (X) -> Result<T, FX>,
-    targets: List<X>,
-    initFx: FX = bottom,
+  init: R,
+  accum: (R, T) -> R,
+  step: (X) -> Result<T, FX>,
+  targets: List<X>,
+  initFx: FX = bottom,
 ): Result<R, FX> {
   var acc = init
   var fx = initFx

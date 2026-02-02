@@ -27,11 +27,8 @@ import com.android.tools.lint.detector.api.getSeverity
  * Consult the lint.xml file, but override with the --enable and --disable flags supplied on the command line (as well as any other
  * applicable [LintCliFlags])
  */
-open class CliConfiguration(
-    configurations: ConfigurationHierarchy,
-    private val flags: LintCliFlags,
-    private val fatalOnly: Boolean,
-) : FlagConfiguration(configurations) {
+open class CliConfiguration(configurations: ConfigurationHierarchy, private val flags: LintCliFlags, private val fatalOnly: Boolean) :
+  FlagConfiguration(configurations) {
   override fun fatalOnly(): Boolean = fatalOnly
 
   override fun isWarningsAsErrors(): Boolean = flags.isWarningsAsErrors

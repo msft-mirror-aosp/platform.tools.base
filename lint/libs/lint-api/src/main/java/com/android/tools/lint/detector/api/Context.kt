@@ -54,27 +54,27 @@ import org.w3c.dom.Node
  * properties (so the detectors can share results), etc.
  */
 open class Context(
-    /** The driver running through the checks. */
-    val driver: LintDriver,
-    /** The project containing the file being checked. */
-    val project: Project,
-    /**
-     * The "main" project. For normal projects, this is the same as [project], but for library projects, it's the root project that includes
-     * (possibly indirectly) the various library projects and their library projects.
-     *
-     * Note that this is a property on the [Context], not the [Project], since a library project can be included from multiple different top
-     * level projects, so there isn't **one** main project, just one per main project being analyzed with its library projects.
-     */
-    private val main: Project?,
+  /** The driver running through the checks. */
+  val driver: LintDriver,
+  /** The project containing the file being checked. */
+  val project: Project,
+  /**
+   * The "main" project. For normal projects, this is the same as [project], but for library projects, it's the root project that includes
+   * (possibly indirectly) the various library projects and their library projects.
+   *
+   * Note that this is a property on the [Context], not the [Project], since a library project can be included from multiple different top
+   * level projects, so there isn't **one** main project, just one per main project being analyzed with its library projects.
+   */
+  private val main: Project?,
 
-    /**
-     * The file being checked. Note that this may not always be to a concrete file. For example, in the [Detector.beforeCheckProject]
-     * method, the context file is the directory of the project.
-     */
-    @JvmField val file: File,
+  /**
+   * The file being checked. Note that this may not always be to a concrete file. For example, in the [Detector.beforeCheckProject] method,
+   * the context file is the directory of the project.
+   */
+  @JvmField val file: File,
 
-    /** The contents of the file. */
-    private var contents: CharSequence? = null,
+  /** The contents of the file. */
+  private var contents: CharSequence? = null,
 ) {
 
   /** The current configuration controlling which checks are enabled etc. */
@@ -148,44 +148,36 @@ open class Context(
     when (node) {
       is UElement -> {
         val context: JavaContext =
-            if (this is JavaContext) {
-              this
-            } else {
-              val file = node.sourcePsi?.containingFile?.virtualFile?.let { VfsUtilCore.virtualToIoFile(it) } ?: file
-              JavaContext(driver, project, main, file).apply { uastParser = client.getUastParser(project) }
-            }
+          if (this is JavaContext) {
+            this
+          } else {
+            val file = node.sourcePsi?.containingFile?.virtualFile?.let { VfsUtilCore.virtualToIoFile(it) } ?: file
+            JavaContext(driver, project, main, file).apply { uastParser = client.getUastParser(project) }
+          }
         return when (type) {
           LocationType.DEFAULT -> context.getLocation(node)
           LocationType.ALL ->
-              if (node is UCallExpression) {
-                context.getCallLocation(node, includeReceiver = true, includeArguments = true)
-              } else {
-                context.uastParser.getLocation(context, node)
-              }
+            if (node is UCallExpression) {
+              context.getCallLocation(node, includeReceiver = true, includeArguments = true)
+            } else {
+              context.uastParser.getLocation(context, node)
+            }
           LocationType.NAME -> context.getNameLocation(node)
           LocationType.CALL_WITH_ARGUMENTS ->
-              context.getCallLocation(
-                  node as UCallExpression,
-                  includeReceiver = false,
-                  includeArguments = true,
-              )
+            context.getCallLocation(node as UCallExpression, includeReceiver = false, includeArguments = true)
           LocationType.CALL_WITH_RECEIVER ->
-              context.getCallLocation(
-                  node as UCallExpression,
-                  includeReceiver = true,
-                  includeArguments = false,
-              )
+            context.getCallLocation(node as UCallExpression, includeReceiver = true, includeArguments = false)
           LocationType.VALUE -> error("$type not supported for ${node.javaClass}")
         }
       }
       is PsiElement -> {
         val context: JavaContext =
-            if (this is JavaContext) {
-              this
-            } else {
-              val file = node.containingFile?.virtualFile?.let { VfsUtilCore.virtualToIoFile(it) } ?: file
-              JavaContext(driver, project, main, file).apply { uastParser = client.getUastParser(project) }
-            }
+          if (this is JavaContext) {
+            this
+          } else {
+            val file = node.containingFile?.virtualFile?.let { VfsUtilCore.virtualToIoFile(it) } ?: file
+            JavaContext(driver, project, main, file).apply { uastParser = client.getUastParser(project) }
+          }
         return when (type) {
           LocationType.DEFAULT -> context.getLocation(node)
           LocationType.ALL -> context.getLocation(node)
@@ -226,18 +218,18 @@ open class Context(
         }
 
         val context: XmlContext =
-            if (this is XmlContext) {
-              this
-            } else {
-              val doc = node.ownerDocument
-              val file =
-                  doc.getUserData(File::class.java.name) as? File
-                      ?: (doc.getUserData(PsiFile::class.java.name) as? PsiFile)?.virtualFile?.let { VfsUtilCore.virtualToIoFile(it) }
-                      ?: return Location.create(project.getManifestFiles().firstOrNull() ?: project.dir)
-              // We're only calling location methods here so we don't need an accurate
-              // folder type for example
-              XmlContext(driver, project, main, file, null, null, doc)
-            }
+          if (this is XmlContext) {
+            this
+          } else {
+            val doc = node.ownerDocument
+            val file =
+              doc.getUserData(File::class.java.name) as? File
+                ?: (doc.getUserData(PsiFile::class.java.name) as? PsiFile)?.virtualFile?.let { VfsUtilCore.virtualToIoFile(it) }
+                ?: return Location.create(project.getManifestFiles().firstOrNull() ?: project.dir)
+            // We're only calling location methods here so we don't need an accurate
+            // folder type for example
+            XmlContext(driver, project, main, file, null, null, doc)
+          }
         return when (type) {
           LocationType.ALL -> context.getLocation(node)
           LocationType.DEFAULT -> if (node is Element) context.getElementLocation(node) else context.getLocation(node)
@@ -287,13 +279,13 @@ open class Context(
     // Project context - need to find the right source file
     // when there's no merge manifest file
     val element =
-        when (node) {
-          is Element -> node
-          is Attr -> {
-            node.ownerElement
-          }
-          else -> null
+      when (node) {
+        is Element -> node
+        is Attr -> {
+          node.ownerElement
         }
+        else -> null
+      }
     if (element != null) {
       val projects = sequenceOf(project) + project.getAllLibraries().filter { !it.isExternalLibrary }
       for (p in projects) {
@@ -345,12 +337,7 @@ open class Context(
   )
   */
   @JvmOverloads
-  open fun report(
-      issue: Issue,
-      location: Location,
-      message: String,
-      quickfixData: LintFix? = null,
-  ) {
+  open fun report(issue: Issue, location: Location, message: String, quickfixData: LintFix? = null) {
     val incident = Incident(issue, location, message, quickfixData)
     driver.client.report(this, incident)
   }
@@ -416,13 +403,13 @@ open class Context(
     val configurations = driver.client.configurations
     val dir = file.parentFile
     return configurations.getConfigurationForFolder(dir)
-        ?: run {
-          // If this error was computed for a context where the context corresponds to
-          // a project instead of a file, the actual error may be in a different project (e.g.
-          // a library project), so adjust the configuration as necessary.
-          val project = driver.findProjectFor(file)
-          project?.getConfiguration(driver) ?: configuration
-        }
+      ?: run {
+        // If this error was computed for a context where the context corresponds to
+        // a project instead of a file, the actual error may be in a different project (e.g.
+        // a library project), so adjust the configuration as necessary.
+        val project = driver.findProjectFor(file)
+        project?.getConfiguration(driver) ?: configuration
+      }
   }
 
   /**
@@ -554,8 +541,8 @@ open class Context(
 
     private fun isSuppressedWithComment(line: String, category: Category): Boolean {
       return lineContainsId(line, category.name) ||
-          lineContainsId(line, category.fullName) ||
-          category.parent != null && isSuppressedWithComment(line, category.parent)
+        lineContainsId(line, category.fullName) ||
+        category.parent != null && isSuppressedWithComment(line, category.parent)
     }
 
     // Like line.contains(id), but requires word match (e.g. "MyId" is found
@@ -589,9 +576,9 @@ open class Context(
         // that since in the IDE issues are often prefixed by both
         val prefixStart = index - STUDIO_ID_PREFIX.length
         if (
-            index >= STUDIO_ID_PREFIX.length &&
-                line.regionMatches(prefixStart, STUDIO_ID_PREFIX, 0, STUDIO_ID_PREFIX.length) &&
-                (prefixStart == 0 || isWordDelimiter(line[prefixStart - 1]))
+          index >= STUDIO_ID_PREFIX.length &&
+            line.regionMatches(prefixStart, STUDIO_ID_PREFIX, 0, STUDIO_ID_PREFIX.length) &&
+            (prefixStart == 0 || isWordDelimiter(line[prefixStart - 1]))
         ) {
           return true
         }
@@ -602,11 +589,7 @@ open class Context(
 
     private fun isWordDelimiter(c: Char): Boolean = !c.isJavaIdentifierPart()
 
-    private fun findPrefixOnPreviousLine(
-        contents: CharSequence,
-        lineStart: Int,
-        prefix: String,
-    ): Int {
+    private fun findPrefixOnPreviousLine(contents: CharSequence, lineStart: Int, prefix: String): Int {
       // Search backwards on the previous line until you find the prefix start (also look
       // back on previous lines if the previous line(s) contain just whitespace
       val first = prefix[0]
@@ -643,12 +626,7 @@ open class Context(
      *
      * Warning: setting [driver] to null may lead to spurious errors when using multiple [LintDriver]s in the same process.
      */
-    fun checkForbidden(
-        methodName: String,
-        file: File,
-        driver: LintDriver?,
-        extraMessage: String = "",
-    ): Boolean {
+    fun checkForbidden(methodName: String, file: File, driver: LintDriver?, extraMessage: String = ""): Boolean {
       // LintDriver.currentDrivers.firstOrNull() is not guaranteed to return the desired
       // driver when there are multiple drivers. When driver is null, this method can produce
       // a false positive LintError (or a false negative).
@@ -658,31 +636,26 @@ open class Context(
         val warnings = detectorsWarned ?: HashSet<String>().also { detectorsWarned = it }
         if (warnings.add(detector)) {
           val stack = StringBuilder()
-          LintDriver.appendStackTraceSummary(
-              RuntimeException(),
-              stack,
-              skipFrames = 1,
-              maxFrames = 20,
-          )
+          LintDriver.appendStackTraceSummary(RuntimeException(), stack, skipFrames = 1, maxFrames = 20)
           val vendors = issues.mapNotNull { it.vendor ?: it.registry?.vendor }.toSet().sortedBy { it.identifier }
           val vendorString =
-              if (issues.isNotEmpty()) {
-                val sb = StringBuilder()
-                sb.append("\nIssue Vendors:\n")
-                for (vendor in vendors) {
-                  vendor.vendorName?.let { sb.append("Vendor: $it\n") }
-                  vendor.identifier?.let { sb.append("Identifier: $it\n") }
-                  vendor.contact?.let { sb.append("Contact: $it\n") }
-                  vendor.feedbackUrl?.let { sb.append("Feedback: $it\n") }
-                  sb.append("\n")
-                }
-                sb.toString()
-              } else {
-                ""
+            if (issues.isNotEmpty()) {
+              val sb = StringBuilder()
+              sb.append("\nIssue Vendors:\n")
+              for (vendor in vendors) {
+                vendor.vendorName?.let { sb.append("Vendor: $it\n") }
+                vendor.identifier?.let { sb.append("Identifier: $it\n") }
+                vendor.contact?.let { sb.append("Contact: $it\n") }
+                vendor.feedbackUrl?.let { sb.append("Feedback: $it\n") }
+                sb.append("\n")
               }
+              sb.toString()
+            } else {
+              ""
+            }
 
           val message =
-              """
+            """
             The lint detector
                 `$detector`
             called `$methodName` during module analysis.
@@ -699,13 +672,13 @@ open class Context(
 
             ${issues.joinToString(separator = ",") { "\"$it\"" }}
             """
-                  .trimIndent() + "\n" + vendorString + "Call stack: $stack"
+              .trimIndent() + "\n" + vendorString + "Call stack: $stack"
           LintClient.report(
-              client = currentDriver.client,
-              issue = IssueRegistry.LINT_ERROR,
-              message = message,
-              location = Location.create(file),
-              driver = currentDriver,
+            client = currentDriver.client,
+            issue = IssueRegistry.LINT_ERROR,
+            message = message,
+            location = Location.create(file),
+            driver = currentDriver,
           )
         }
 

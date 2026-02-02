@@ -44,11 +44,7 @@ interface PlatformLookup {
    * higher than 1, and if the highest version installed is at a lower API level than that, null will be returned instead. Does not include
    * add-ons.
    */
-  fun getLatestSdkTarget(
-      minApi: Int = 1,
-      includePreviews: Boolean = true,
-      includeAddOns: Boolean = false,
-  ): IAndroidTarget?
+  fun getLatestSdkTarget(minApi: Int = 1, includePreviews: Boolean = true, includeAddOns: Boolean = false): IAndroidTarget?
 
   /** Returns the platform installed for the given [buildTargetHash], if found. */
   fun getTarget(buildTargetHash: String): IAndroidTarget?

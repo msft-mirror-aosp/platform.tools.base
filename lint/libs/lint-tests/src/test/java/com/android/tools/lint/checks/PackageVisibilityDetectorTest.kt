@@ -25,10 +25,10 @@ class PackageVisibilityDetectorTest : AbstractCheckTest() {
 
   fun testCannotQueryPackages() {
     lint()
-        .files(manifest().targetSdk(30), kotlin(ACTIVITY_WITH_APP_QUERIES).indented())
-        .run()
-        .expect(
-            """
+      .files(manifest().targetSdk(30), kotlin(ACTIVITY_WITH_APP_QUERIES).indented())
+      .run()
+      .expect(
+        """
                 src/test/pkg/MainActivity.kt:14: Warning: As of Android 11, this method no longer returns information about all apps; see https://g.co/dev/packagevisibility for details [QueryPermissionsNeeded]
                         pm.getInstalledPackages(0) // ERROR
                            ~~~~~~~~~~~~~~~~~~~~
@@ -55,14 +55,14 @@ class PackageVisibilityDetectorTest : AbstractCheckTest() {
                                  ~~~~~~~~~~~~~~~~~~~
                 0 errors, 8 warnings
                 """
-        )
+      )
   }
 
   fun testCanQuerySomePackages() {
     lint()
-        .files(
-            manifest(
-                """<?xml version="1.0" encoding="utf-8"?>
+      .files(
+        manifest(
+          """<?xml version="1.0" encoding="utf-8"?>
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android" package="test.pkg">
                     <uses-sdk android:targetSdkVersion="30"/>
                     <queries>
@@ -70,12 +70,12 @@ class PackageVisibilityDetectorTest : AbstractCheckTest() {
                     </queries>
                 </manifest>
                 """
-            ),
-            kotlin(ACTIVITY_WITH_APP_QUERIES).indented(),
-        )
-        .run()
-        .expect(
-            """
+        ),
+        kotlin(ACTIVITY_WITH_APP_QUERIES).indented(),
+      )
+      .run()
+      .expect(
+        """
                 src/test/pkg/MainActivity.kt:14: Warning: As of Android 11, this method no longer returns information about all apps; see https://g.co/dev/packagevisibility for details [QueryPermissionsNeeded]
                         pm.getInstalledPackages(0) // ERROR
                            ~~~~~~~~~~~~~~~~~~~~
@@ -84,14 +84,14 @@ class PackageVisibilityDetectorTest : AbstractCheckTest() {
                            ~~~~~~~~~~~~~~~~~~~~~~~~
                 0 errors, 2 warnings
                 """
-        )
+      )
   }
 
   fun testCanQueryAllPackages() {
     lint()
-        .files(
-            manifest(
-                """<?xml version="1.0" encoding="utf-8"?>
+      .files(
+        manifest(
+          """<?xml version="1.0" encoding="utf-8"?>
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android" package="test.pkg">
                     <uses-sdk android:targetSdkVersion="30"/>
                     <!-- breaks manifest merging <uses-permission/> --><!-- Test for NPEs -->
@@ -99,18 +99,18 @@ class PackageVisibilityDetectorTest : AbstractCheckTest() {
                     <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES"/><!-- ERROR -->
                 </manifest>
                 """
-            ),
-            kotlin(ACTIVITY_WITH_APP_QUERIES).indented(),
-        )
-        .run()
-        .expect(
-            """
+        ),
+        kotlin(ACTIVITY_WITH_APP_QUERIES).indented(),
+      )
+      .run()
+      .expect(
+        """
                 AndroidManifest.xml:6: Error: A <queries> declaration should generally be used instead of QUERY_ALL_PACKAGES; see https://g.co/dev/packagevisibility for details [QueryAllPackagesPermission]
                                     <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES"/><!-- ERROR -->
                                                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 1 errors, 0 warnings
                 """
-        )
+      )
   }
 
   fun testTargetSdkTooLow() {
@@ -121,7 +121,7 @@ class PackageVisibilityDetectorTest : AbstractCheckTest() {
   companion object {
     @Language("kotlin")
     private const val ACTIVITY_WITH_APP_QUERIES =
-        """
+      """
             package test.pkg
 
             import android.app.Activity

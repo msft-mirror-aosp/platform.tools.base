@@ -72,9 +72,9 @@ class MemoryLeakTest {
 
   private fun doAnalysis() {
     lint()
-        .files(
-            gradle(
-                    """
+      .files(
+        gradle(
+            """
                 apply plugin: 'com.android.application'
 
                 android {
@@ -92,10 +92,10 @@ class MemoryLeakTest {
                     implementation 'androidx.appcompat:appcompat:5.0.2'
                 }
             """
-                )
-                .indented(),
-            kotlin(
-                    """
+          )
+          .indented(),
+        kotlin(
+            """
                 package com.gharrma.sampleapp
 
                 import androidx.appcompat.app.AppCompatActivity
@@ -116,10 +116,10 @@ class MemoryLeakTest {
                     }
                 }
             """
-                )
-                .indented(),
-            java(
-                    """
+          )
+          .indented(),
+        java(
+            """
                 package com.gharrma.sampleapp;
 
                 public class Utils {
@@ -130,11 +130,11 @@ class MemoryLeakTest {
                     }
                 }
             """
-                )
-                .indented(),
-            xml(
-                    "src/main/res/layout/activity_main.xml",
-                    """
+          )
+          .indented(),
+        xml(
+            "src/main/res/layout/activity_main.xml",
+            """
                 <androidx.constraintlayout.widget.ConstraintLayout
                         xmlns:android="http://schemas.android.com/apk/res/android"
                         xmlns:tools="http://schemas.android.com/tools"
@@ -154,37 +154,37 @@ class MemoryLeakTest {
 
                 </androidx.constraintlayout.widget.ConstraintLayout>
             """,
-                )
-                .indented(),
-            java(
-                    """
+          )
+          .indented(),
+        java(
+            """
                 // Stub to prevent MissingClass errors
                 package androidx.constraintlayout.widget;
                 public abstract class ConstraintLayout extends android.view.ViewGroup {
                     public ConstraintLayout() { super(null); }
                 }
                 """
-                )
-                .indented(),
-            java(
-                """
+          )
+          .indented(),
+        java(
+          """
                 package androidx.appcompat.app;
                 public class AppCompatActivity extends android.app.Activity {
                 }
                 """
-            ),
-            rClass("com.gharrma.sampleapp", "@layout/activity_main"),
-        )
-        // Needed to allow PrivateResourceDetector to run.
-        // Needed to allow GradleDetector to run.
-        .networkData(
-            "https://repo1.maven.org/maven2/androidx/appcompat/appcompat/maven-metadata.xml",
-            // Response doesn't matter for this test.
-            "<metadata modelVersion=\"1.1.0\"/>",
-        )
-        .issues(*BuiltinIssueRegistry().issues.toTypedArray())
-        .run()
-        .expectClean()
+        ),
+        rClass("com.gharrma.sampleapp", "@layout/activity_main"),
+      )
+      // Needed to allow PrivateResourceDetector to run.
+      // Needed to allow GradleDetector to run.
+      .networkData(
+        "https://repo1.maven.org/maven2/androidx/appcompat/appcompat/maven-metadata.xml",
+        // Response doesn't matter for this test.
+        "<metadata modelVersion=\"1.1.0\"/>",
+      )
+      .issues(*BuiltinIssueRegistry().issues.toTypedArray())
+      .run()
+      .expectClean()
   }
 
   @Test
@@ -201,19 +201,13 @@ class MemoryLeakTest {
     // code coverage (and thus a better chance at catching a leak).
     doAnalysis()
 
-    assertTrue(
-        "Utility function `countLiveInstancesOf()` appears to be broken.",
-        countLiveInstancesOf(Object::class.java.name) > 0,
-    )
+    assertTrue("Utility function `countLiveInstancesOf()` appears to be broken.", countLiveInstancesOf(Object::class.java.name) > 0)
 
     assertTrue(
-        "Detected Lint memory leak; KotlinCoreEnvironment is reachable",
-        countLiveInstancesOf(KotlinCoreEnvironment::class.java.name) == 0,
+      "Detected Lint memory leak; KotlinCoreEnvironment is reachable",
+      countLiveInstancesOf(KotlinCoreEnvironment::class.java.name) == 0,
     )
 
-    assertTrue(
-        "Detected Lint memory leak; PsiWhiteSpaceImpl is reachable",
-        countLiveInstancesOf(PsiWhiteSpaceImpl::class.java.name) == 0,
-    )
+    assertTrue("Detected Lint memory leak; PsiWhiteSpaceImpl is reachable", countLiveInstancesOf(PsiWhiteSpaceImpl::class.java.name) == 0)
   }
 }

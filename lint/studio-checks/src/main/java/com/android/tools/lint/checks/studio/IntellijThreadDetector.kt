@@ -79,10 +79,10 @@ class IntellijThreadDetector : Detector(), SourceCodeScanner {
   }
 
   override fun visitAnnotationUsage(
-      context: JavaContext,
-      element: UElement,
-      annotationInfo: AnnotationInfo,
-      usageInfo: AnnotationUsageInfo,
+    context: JavaContext,
+    element: UElement,
+    annotationInfo: AnnotationInfo,
+    usageInfo: AnnotationUsageInfo,
   ) {
     if (usageInfo.anyCloser { it.isThreadingAnnotation() }) {
       return
@@ -96,22 +96,22 @@ class IntellijThreadDetector : Detector(), SourceCodeScanner {
     when (usageInfo.type) {
       METHOD_CALL -> {
         checkThreading(
-            context,
-            element,
-            method,
-            getThreadContext(context, element) ?: return,
-            getThreadsFromMethod(context, method) ?: return,
+          context,
+          element,
+          method,
+          getThreadContext(context, element) ?: return,
+          getThreadsFromMethod(context, method) ?: return,
         )
       }
       METHOD_CALL_PARAMETER -> {
         val reference = element as? UCallableReferenceExpression ?: return
         val referencedMethod = reference.resolve() as? PsiMethod ?: return
         checkThreading(
-            context,
-            element,
-            referencedMethod,
-            usageInfo.annotations.map { it.qualifiedName },
-            getThreadsFromMethod(context, referencedMethod) ?: return,
+          context,
+          element,
+          referencedMethod,
+          usageInfo.annotations.map { it.qualifiedName },
+          getThreadsFromMethod(context, referencedMethod) ?: return,
         )
       }
       else -> {
@@ -136,28 +136,24 @@ class IntellijThreadDetector : Detector(), SourceCodeScanner {
    *   or its class.
    */
   private fun checkThreading(
-      context: JavaContext,
-      node: UElement,
-      method: PsiMethod,
-      callerThreads: List<String>,
-      calleeThreads: List<String>,
+    context: JavaContext,
+    node: UElement,
+    method: PsiMethod,
+    callerThreads: List<String>,
+    calleeThreads: List<String>,
   ) {
     val violation =
-        callerThreads
-            .asSequence()
-            .flatMap { caller -> calleeThreads.asSequence().map { callee -> Pair(caller, callee) } }
-            .mapNotNull { (caller, callee) -> checkForThreadViolation(caller, callee, method) }
-            .firstOrNull() ?: return
+      callerThreads
+        .asSequence()
+        .flatMap { caller -> calleeThreads.asSequence().map { callee -> Pair(caller, callee) } }
+        .mapNotNull { (caller, callee) -> checkForThreadViolation(caller, callee, method) }
+        .firstOrNull() ?: return
 
     report(context, node, violation)
   }
 
   /** Checks for a thread annotation violation, returning an error message if found. */
-  private fun checkForThreadViolation(
-      callerThread: String,
-      calleeThread: String,
-      method: PsiMethod,
-  ): String? {
+  private fun checkForThreadViolation(callerThread: String, calleeThread: String, method: PsiMethod): String? {
 
     // We enforce the following constraints:
     // (1) [UI responsiveness] Discourage {@UiThread, @AnyThread} --> {@Slow, @WorkerThread}
@@ -187,27 +183,27 @@ class IntellijThreadDetector : Detector(), SourceCodeScanner {
     }
 
     val methodDesc =
-        when (method.isConstructor) {
-          true -> "Constructor ${method.name}"
-          else -> "Method ${method.name}"
-        }
+      when (method.isConstructor) {
+        true -> "Constructor ${method.name}"
+        else -> "Method ${method.name}"
+      }
 
     val inferredThread =
-        when (callerThread) {
-          WORKER_THREAD,
-          SLOW -> "a worker thread"
-          UI_THREAD -> "the UI thread"
-          ANY_THREAD -> "any thread"
-          else -> return null
-        }
+      when (callerThread) {
+        WORKER_THREAD,
+        SLOW -> "a worker thread"
+        UI_THREAD -> "the UI thread"
+        ANY_THREAD -> "any thread"
+        else -> return null
+      }
 
     val calleeRequirement =
-        when (calleeThread) {
-          SLOW -> "$methodDesc is slow and thus should run on a worker thread"
-          WORKER_THREAD -> "$methodDesc is intended to run on a worker thread"
-          UI_THREAD -> "$methodDesc must run on the UI thread"
-          else -> return null
-        }
+      when (calleeThread) {
+        SLOW -> "$methodDesc is slow and thus should run on a worker thread"
+        WORKER_THREAD -> "$methodDesc is intended to run on a worker thread"
+        UI_THREAD -> "$methodDesc must run on the UI thread"
+        else -> return null
+      }
 
     return "$calleeRequirement, yet the currently inferred thread is $inferredThread"
   }
@@ -218,25 +214,12 @@ class IntellijThreadDetector : Detector(), SourceCodeScanner {
 
   /** Attempts to infer the current thread context at the site of the given method call. */
   private fun getThreadContext(context: JavaContext, methodCall: UElement): List<String>? {
-    val method =
-        methodCall
-            .getParentOfType(
-                UMethod::class.java,
-                true,
-                UAnonymousClass::class.java,
-                ULambdaExpression::class.java,
-            )
-            ?.javaPsi
+    val method = methodCall.getParentOfType(UMethod::class.java, true, UAnonymousClass::class.java, ULambdaExpression::class.java)?.javaPsi
 
     if (method != null) {
       val containingClass = methodCall.getContainingUClass()
       if (containingClass is UAnonymousClass) {
-        val anonClassCall =
-            methodCall.getParentOfType(
-                UObjectLiteralExpression::class.java,
-                true,
-                UCallExpression::class.java,
-            )
+        val anonClassCall = methodCall.getParentOfType(UObjectLiteralExpression::class.java, true, UCallExpression::class.java)
 
         // If it's an anonymous class, infer the context from the formal parameter
         // annotation
@@ -249,12 +232,12 @@ class IntellijThreadDetector : Detector(), SourceCodeScanner {
     // Similarly to the anonymous class call, this might be a lambda call, check for annotated
     // formal parameters that will give us the thread context
     val lambdaCall =
-        methodCall.getParentOfType<ULambdaExpression>(
-            ULambdaExpression::class.java,
-            true,
-            UAnonymousClass::class.java,
-            ULambdaExpression::class.java,
-        )
+      methodCall.getParentOfType<ULambdaExpression>(
+        ULambdaExpression::class.java,
+        true,
+        UAnonymousClass::class.java,
+        ULambdaExpression::class.java,
+      )
 
     return getThreadsFromExpressionContext(context, lambdaCall)
   }
@@ -263,28 +246,18 @@ class IntellijThreadDetector : Detector(), SourceCodeScanner {
    * Infers the thread context from a lambda or an anonymous class call expression. This will look into the formal parameters annotation to
    * infer the thread context for the given lambda.
    */
-  private fun getThreadsFromExpressionContext(
-      context: JavaContext,
-      lambdaCall: UExpression?,
-  ): List<String>? {
+  private fun getThreadsFromExpressionContext(context: JavaContext, lambdaCall: UExpression?): List<String>? {
     val lambdaCallExpression = lambdaCall?.uastParent as? UCallExpression ?: return null
     val lambdaArgument = lambdaCallExpression.getParameterForArgument(lambdaCall) ?: return null
 
     val annotations =
-        context.evaluator
-            .getAnnotations(lambdaArgument, false)
-            .filter { it.isThreadingAnnotation() }
-            .mapNotNull { it.qualifiedName }
-            .toList()
+      context.evaluator.getAnnotations(lambdaArgument, false).filter { it.isThreadingAnnotation() }.mapNotNull { it.qualifiedName }.toList()
 
     return if (annotations.isEmpty()) null else annotations
   }
 
   /** Attempts to infer the current thread context at the site of the given method call. */
-  private fun getThreadsFromMethod(
-      context: JavaContext,
-      originalMethod: PsiMethod?,
-  ): List<String>? {
+  private fun getThreadsFromMethod(context: JavaContext, originalMethod: PsiMethod?): List<String>? {
     var method = originalMethod
     if (method != null) {
       val evaluator = context.evaluator
@@ -334,10 +307,7 @@ class IntellijThreadDetector : Detector(), SourceCodeScanner {
     return null
   }
 
-  private fun addThreadAnnotations(
-      annotation: UAnnotation,
-      result: MutableList<String>?,
-  ): MutableList<String>? {
+  private fun addThreadAnnotations(annotation: UAnnotation, result: MutableList<String>?): MutableList<String>? {
     var resultList = result
     if (annotation.isThreadingAnnotation()) {
       if (resultList == null) {
@@ -362,21 +332,21 @@ class IntellijThreadDetector : Detector(), SourceCodeScanner {
     /** Calling methods on the wrong thread. */
     @JvmField
     val ISSUE =
-        Issue.create(
-            id = "WrongThread",
-            briefDescription = "Wrong Thread",
-            explanation =
-                """
+      Issue.create(
+        id = "WrongThread",
+        briefDescription = "Wrong Thread",
+        explanation =
+          """
                 Ensures that a method which expects to be called on a specific thread, is \
                 actually called from that thread. For example, calls on methods in widgets \
                 should always be made on the UI thread.
                 """,
-            //noinspection LintImplUnexpectedDomain
-            moreInfo = "http://go/do-not-freeze",
-            category = UI_RESPONSIVENESS,
-            priority = 6,
-            severity = Severity.ERROR,
-            implementation = IMPLEMENTATION,
-        )
+        //noinspection LintImplUnexpectedDomain
+        moreInfo = "http://go/do-not-freeze",
+        category = UI_RESPONSIVENESS,
+        priority = 6,
+        severity = Severity.ERROR,
+        implementation = IMPLEMENTATION,
+      )
   }
 }

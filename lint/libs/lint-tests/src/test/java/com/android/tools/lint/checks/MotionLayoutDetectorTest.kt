@@ -24,11 +24,11 @@ class MotionLayoutDetectorTest : AbstractCheckTest() {
 
   fun testExistingMotionSceneFile() {
     lint()
-        .files(
-            xml("res/xml/motion_scene.xml", "<MotionScene/>"),
-            xml(
-                    "res/layout/motion_test.xml",
-                    """
+      .files(
+        xml("res/xml/motion_scene.xml", "<MotionScene/>"),
+        xml(
+            "res/layout/motion_test.xml",
+            """
                 <android.support.constraint.motion.MotionLayout
                     xmlns:android="http://schemas.android.com/apk/res/android"
                     xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -38,19 +38,19 @@ class MotionLayoutDetectorTest : AbstractCheckTest() {
                     android:layout_height="match_parent">
                 </android.support.constraint.motion.MotionLayout>
                 """,
-                )
-                .indented(),
-        )
-        .run()
-        .expectClean()
+          )
+          .indented(),
+      )
+      .run()
+      .expectClean()
   }
 
   fun testMissingMotionSceneFile() {
     lint()
-        .files(
-            xml(
-                    "res/layout/motion_test.xml",
-                    """
+      .files(
+        xml(
+            "res/layout/motion_test.xml",
+            """
                 <android.support.constraint.motion.MotionLayout
                     xmlns:android="http://schemas.android.com/apk/res/android"
                     xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -60,27 +60,27 @@ class MotionLayoutDetectorTest : AbstractCheckTest() {
                     android:layout_height="match_parent">
                 </android.support.constraint.motion.MotionLayout>
                 """,
-                )
-                .indented()
-        )
-        .checkMessage({ _, _, _, _, _, data -> checkData("@xml/motion_scene", data) })
-        .run()
-        .expect(
-            """
+          )
+          .indented()
+      )
+      .checkMessage({ _, _, _, _, _, data -> checkData("@xml/motion_scene", data) })
+      .run()
+      .expect(
+        """
                 res/layout/motion_test.xml:5: Error: The motion scene file: @xml/motion_scene doesn't exist [MotionLayoutInvalidSceneFileReference]
                     app:layoutDescription="@xml/motion_scene"
                                            ~~~~~~~~~~~~~~~~~
                 1 errors, 0 warnings
                 """
-        )
+      )
   }
 
   fun testMissingMotionSceneFileDisabledInIncremental() {
     lint()
-        .files(
-            xml(
-                    "res/layout/motion_test.xml",
-                    """
+      .files(
+        xml(
+            "res/layout/motion_test.xml",
+            """
                 <android.support.constraint.motion.MotionLayout
                     xmlns:android="http://schemas.android.com/apk/res/android"
                     xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -90,20 +90,20 @@ class MotionLayoutDetectorTest : AbstractCheckTest() {
                     android:layout_height="match_parent">
                 </android.support.constraint.motion.MotionLayout>
                 """,
-                )
-                .indented()
-        )
-        .incremental("res/layout/motion_test.xml")
-        .run()
-        .expectClean()
+          )
+          .indented()
+      )
+      .incremental("res/layout/motion_test.xml")
+      .run()
+      .expectClean()
   }
 
   fun testInvalidLayoutDescription() {
     lint()
-        .files(
-            xml(
-                    "res/layout/motion_test.xml",
-                    """
+      .files(
+        xml(
+            "res/layout/motion_test.xml",
+            """
                 <android.support.constraint.motion.MotionLayout
                     xmlns:android="http://schemas.android.com/apk/res/android"
                     xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -113,27 +113,27 @@ class MotionLayoutDetectorTest : AbstractCheckTest() {
                     android:layout_height="match_parent">
                 </android.support.constraint.motion.MotionLayout>
                 """,
-                )
-                .indented()
-        )
-        .checkMessage({ _, _, _, _, _, data -> checkData("@xml/motion_test_scene", data) })
-        .run()
-        .expect(
-            """
+          )
+          .indented()
+      )
+      .checkMessage({ _, _, _, _, _, data -> checkData("@xml/motion_test_scene", data) })
+      .run()
+      .expect(
+        """
                 res/layout/motion_test.xml:5: Error: 5678 is an invalid value for layoutDescription [MotionLayoutInvalidSceneFileReference]
                     app:layoutDescription="5678"
                                            ~~~~
                 1 errors, 0 warnings
             """
-        )
+      )
   }
 
   fun testMissingLayoutDescription() {
     lint()
-        .files(
-            xml(
-                    "res/layout/motion_test.xml",
-                    """
+      .files(
+        xml(
+            "res/layout/motion_test.xml",
+            """
                 <android.support.constraint.motion.MotionLayout
                     xmlns:android="http://schemas.android.com/apk/res/android"
                     xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -142,19 +142,19 @@ class MotionLayoutDetectorTest : AbstractCheckTest() {
                     android:layout_height="match_parent">
                 </android.support.constraint.motion.MotionLayout>
                 """,
-                )
-                .indented()
-        )
-        .checkMessage({ _, _, _, _, _, data -> checkData("@xml/motion_test_scene", data) })
-        .run()
-        .expect(
-            """
+          )
+          .indented()
+      )
+      .checkMessage({ _, _, _, _, _, data -> checkData("@xml/motion_test_scene", data) })
+      .run()
+      .expect(
+        """
                 res/layout/motion_test.xml:1: Error: The attribute: layoutDescription is missing [MotionLayoutInvalidSceneFileReference]
                 <android.support.constraint.motion.MotionLayout
                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 1 errors, 0 warnings
             """
-        )
+      )
   }
 
   private fun checkData(expected: String, fixData: LintFix?) {

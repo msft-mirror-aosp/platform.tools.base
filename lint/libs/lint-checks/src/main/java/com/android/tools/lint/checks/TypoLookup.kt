@@ -33,12 +33,7 @@ import java.util.WeakHashMap
 import kotlin.text.Charsets
 
 /** Database of common typos / misspellings. */
-class TypoLookup
-private constructor(
-    private var data: ByteArray,
-    private var indices: IntArray,
-    private var wordCount: Int = 0,
-) {
+class TypoLookup private constructor(private var data: ByteArray, private var indices: IntArray, private var wordCount: Int = 0) {
   /**
    * Look up whether this word is a typo, and if so, return the typo itself and one or more likely meanings
    *
@@ -294,23 +289,19 @@ private constructor(
      * @param name name to use for cache file
      * @return a (possibly shared) instance of the typo database, or null if its data can't be found
      */
-    private operator fun get(
-        client: LintClient,
-        xmlStream: InputStream,
-        name: String,
-    ): TypoLookup? {
+    private operator fun get(client: LintClient, xmlStream: InputStream, name: String): TypoLookup? {
       val cacheDir = client.getCacheDir(null, true) ?: return null // should not happen since create=true above
 
       val binaryData =
-          File(
-              cacheDir,
-              name +
-                  // Incorporate version number in the filename to avoid upgrade filename
-                  // conflicts on Windows (such as issue #26663)
-                  '-'.toString() +
-                  BINARY_FORMAT_VERSION +
-                  ".bin",
-          )
+        File(
+          cacheDir,
+          name +
+            // Incorporate version number in the filename to avoid upgrade filename
+            // conflicts on Windows (such as issue #26663)
+            '-'.toString() +
+            BINARY_FORMAT_VERSION +
+            ".bin",
+        )
 
       @Suppress("ConstantConditionIf")
       if (DEBUG_FORCE_REGENERATE_BINARY) {
@@ -332,11 +323,7 @@ private constructor(
       return readData(client, xmlStream, binaryData)
     }
 
-    private fun readData(
-        client: LintClient,
-        xmlStream: InputStream,
-        binaryFile: File?,
-    ): TypoLookup? {
+    private fun readData(client: LintClient, xmlStream: InputStream, binaryFile: File?): TypoLookup? {
       binaryFile ?: return null
 
       if (!binaryFile.exists()) {
@@ -353,10 +340,7 @@ private constructor(
         buffer.rewind()
         for (anExpectedHeader in expectedHeader) {
           if (anExpectedHeader != buffer.get()) {
-            client.log(
-                null,
-                "Incorrect file header: not an typo database cache file, or a corrupt cache file",
-            )
+            client.log(null, "Incorrect file header: not an typo database cache file, or a corrupt cache file")
             return null
           }
         }
@@ -396,7 +380,7 @@ private constructor(
       val lines: Array<String>
       try {
         lines =
-            String(ByteStreams.toByteArray(xmlStream), Charsets.UTF_8).split("\n".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
+          String(ByteStreams.toByteArray(xmlStream), Charsets.UTF_8).split("\n".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
       } catch (e: IOException) {
         client.log(e, "Can't read typo database file")
         return false
@@ -526,14 +510,7 @@ private constructor(
     /** Comparison function: *only* used for ASCII strings. */
     @VisibleForTesting
     @JvmStatic
-    fun compare(
-        data: ByteArray,
-        offset: Int,
-        terminator: Byte,
-        s: CharSequence,
-        begin: Int,
-        initialEnd: Int,
-    ): Int {
+    fun compare(data: ByteArray, offset: Int, terminator: Byte, s: CharSequence, begin: Int, initialEnd: Int): Int {
       var end = initialEnd
       var i = offset
       var j = begin
@@ -594,14 +571,7 @@ private constructor(
     /** Comparison function used for general UTF-8 encoded strings. */
     @VisibleForTesting
     @JvmStatic
-    fun compare(
-        data: ByteArray,
-        offset: Int,
-        terminator: Byte,
-        s: ByteArray,
-        begin: Int,
-        initialEnd: Int,
-    ): Int {
+    fun compare(data: ByteArray, offset: Int, terminator: Byte, s: ByteArray, begin: Int, initialEnd: Int): Int {
       var end = initialEnd
       var i = offset
       var j = begin

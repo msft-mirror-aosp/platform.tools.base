@@ -26,11 +26,8 @@ package com.android.tools.lint.detector.api
  * the future without breaking detectors overriding the method to process the partial results.
  */
 class PartialResult
-private constructor(
-    val issue: Issue,
-    private val data: MutableMap<Project, LintMap>,
-    private val requestedProject: Project?,
-) : Iterable<Map.Entry<@JvmSuppressWildcards Project, @JvmSuppressWildcards LintMap>> {
+private constructor(val issue: Issue, private val data: MutableMap<Project, LintMap>, private val requestedProject: Project?) :
+  Iterable<Map.Entry<@JvmSuppressWildcards Project, @JvmSuppressWildcards LintMap>> {
   // @JvmSuppressWildcards above: Make it easy to iterate from Java
 
   constructor(issue: Issue, data: MutableMap<Project, LintMap>) : this(issue, data, null)
@@ -76,6 +73,6 @@ private constructor(
     /** This is **only** intended for use by lint to be able to create a clone with the [requestedProject] field set. */
     @JvmStatic
     fun withRequestedProject(partialResult: PartialResult, requestedProject: Project) =
-        PartialResult(partialResult.issue, partialResult.data, requestedProject)
+      PartialResult(partialResult.issue, partialResult.data, requestedProject)
   }
 }

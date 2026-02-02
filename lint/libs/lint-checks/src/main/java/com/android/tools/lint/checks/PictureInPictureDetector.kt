@@ -58,23 +58,23 @@ class PictureInPictureDetector : Detector(), SourceCodeScanner {
 
     @JvmField
     val ISSUE =
-        Issue.create(
-            id = "PictureInPictureIssue",
-            briefDescription = "Picture In Picture best practices not followed",
-            explanation =
-                """
+      Issue.create(
+        id = "PictureInPictureIssue",
+        briefDescription = "Picture In Picture best practices not followed",
+        explanation =
+          """
           Starting in Android 12, the recommended approach for enabling picture-in-picture (PiP) \
           has changed. If your app does not use the new approach, your app's transition animations \
           will be of poor quality compared to other apps. The new approach requires calling \
           `setAutoEnterEnabled(true)` and `setSourceRectHint(...)`.
         """,
-            moreInfo = "https://developer.android.com/develop/ui/views/picture-in-picture#smoother-transition",
-            category = Category.CORRECTNESS,
-            priority = 5,
-            severity = Severity.WARNING,
-            implementation = IMPLEMENTATION,
-            androidSpecific = true,
-        )
+        moreInfo = "https://developer.android.com/develop/ui/views/picture-in-picture#smoother-transition",
+        category = Category.CORRECTNESS,
+        priority = 5,
+        severity = Severity.WARNING,
+        implementation = IMPLEMENTATION,
+        androidSpecific = true,
+      )
 
     const val FOUND_AUTO_ENTER_USAGE = "autoEnterUsage"
     const val FOUND_SRC_RECT_HINT_USAGE = "sourceRectHintUsage"
@@ -84,13 +84,13 @@ class PictureInPictureDetector : Detector(), SourceCodeScanner {
   }
 
   override fun getApplicableMethodNames() =
-      listOf(
-          "setSourceRectHint",
-          "setAutoEnterEnabled",
-          "enterPictureInPictureMode",
-          "setPictureInPictureParams",
-          "trackPipAnimationHintView",
-      )
+    listOf(
+      "setSourceRectHint",
+      "setAutoEnterEnabled",
+      "enterPictureInPictureMode",
+      "setPictureInPictureParams",
+      "trackPipAnimationHintView",
+    )
 
   override fun visitMethodCall(context: JavaContext, node: UCallExpression, method: PsiMethod) {
     val map = context.getPartialResults(ISSUE).map()
@@ -99,7 +99,7 @@ class PictureInPictureDetector : Detector(), SourceCodeScanner {
     val containingClassFqn = containingClass.qualifiedName ?: return
 
     fun isMethod(methodName: String, classFqn: String): Boolean =
-        method.name == methodName && (containingClassFqn == classFqn || context.evaluator.extendsClass(containingClass, classFqn, false))
+      method.name == methodName && (containingClassFqn == classFqn || context.evaluator.extendsClass(containingClass, classFqn, false))
 
     when {
       isMethod("setAutoEnterEnabled", "android.app.PictureInPictureParams.Builder") -> {
@@ -167,14 +167,14 @@ class PictureInPictureDetector : Detector(), SourceCodeScanner {
     }
 
     context.report(
-        Incident(context)
-            .issue(ISSUE)
-            .location(context.getLocation(application))
-            .message(
-                "An activity in this app supports picture-in-picture and the " +
-                    "targetSdkVersion is 31 or above; it is therefore strongly recommended to call " +
-                    "both `setAutoEnterEnabled(true)` and `setSourceRectHint(...)`"
-            )
+      Incident(context)
+        .issue(ISSUE)
+        .location(context.getLocation(application))
+        .message(
+          "An activity in this app supports picture-in-picture and the " +
+            "targetSdkVersion is 31 or above; it is therefore strongly recommended to call " +
+            "both `setAutoEnterEnabled(true)` and `setSourceRectHint(...)`"
+        )
     )
   }
 }

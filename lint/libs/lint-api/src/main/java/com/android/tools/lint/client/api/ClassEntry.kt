@@ -76,14 +76,7 @@ class ClassEntry(val file: File, val jarFile: File?, val binDir: File, val bytes
 
   /** Visitor skimming classes and initializing a map of super classes */
   private class SuperclassVisitor constructor(private val map: MutableMap<String, String>) : ClassVisitor(ASM9) {
-    override fun visit(
-        version: Int,
-        access: Int,
-        name: String,
-        signature: String?,
-        superName: String?,
-        interfaces: Array<String>?,
-    ) {
+    override fun visit(version: Int, access: Int, name: String, signature: String?, superName: String?, interfaces: Array<String>?) {
       // Record super class in the map (but don't waste space on java.lang.Object)
       if (superName != null && "java/lang/Object" != superName) {
         map[name] = superName
@@ -118,11 +111,7 @@ class ClassEntry(val file: File, val jarFile: File?, val binDir: File, val bytes
      * @param classFolders the list of class folders to look in (to determine the package root)
      * @return the list of class entries, never null.
      */
-    fun fromClassFiles(
-        client: LintClient,
-        classFiles: List<File>,
-        classFolders: List<File>,
-    ): List<ClassEntry> {
+    fun fromClassFiles(client: LintClient, classFiles: List<File>, classFolders: List<File>): List<ClassEntry> {
       val entries: MutableList<ClassEntry> = ArrayList(classFiles.size)
       if (classFolders.isNotEmpty()) {
         for (file in classFiles) {
@@ -149,11 +138,7 @@ class ClassEntry(val file: File, val jarFile: File?, val binDir: File, val bytes
     }
 
     /** Given a classpath, add all the class files found within the directories and inside jar files */
-    private fun addEntries(
-        client: LintClient,
-        entries: MutableList<ClassEntry>,
-        classPath: List<File>,
-    ) {
+    private fun addEntries(client: LintClient, entries: MutableList<ClassEntry>, classPath: List<File>) {
       for (classPathEntry in classPath) {
         val name = classPathEntry.name
         if (name.endsWith(DOT_JAR)) {
@@ -259,11 +244,7 @@ class ClassEntry(val file: File, val jarFile: File?, val binDir: File, val bytes
      * @param classEntries the set of class entries to consult
      * @return a map from name to super class internal names
      */
-    fun createSuperClassMap(
-        client: LintClient,
-        libraryEntries: List<ClassEntry>,
-        classEntries: List<ClassEntry>,
-    ): Map<String, String> {
+    fun createSuperClassMap(client: LintClient, libraryEntries: List<ClassEntry>, classEntries: List<ClassEntry>): Map<String, String> {
       val size = libraryEntries.size + classEntries.size
       val map: MutableMap<String, String> = Maps.newHashMapWithExpectedSize(size)
       val visitor = SuperclassVisitor(map)
@@ -287,11 +268,7 @@ class ClassEntry(val file: File, val jarFile: File?, val binDir: File, val bytes
     }
 
     /** Adds in all the super classes found for the given class entries into the given map */
-    private fun addSuperClasses(
-        client: LintClient,
-        visitor: SuperclassVisitor,
-        entries: List<ClassEntry>,
-    ) {
+    private fun addSuperClasses(client: LintClient, visitor: SuperclassVisitor, entries: List<ClassEntry>) {
       val flags = ClassReader.SKIP_CODE or ClassReader.SKIP_DEBUG or ClassReader.SKIP_FRAMES
       for (entry in entries) {
         entry.visit(client, visitor, flags)
@@ -304,14 +281,7 @@ class ClassEntry(val file: File, val jarFile: File?, val binDir: File, val bytes
      * inside the jar file is given by [relative]). If the file is inside a `.jar` file, the path should be the relative file within the
      * path (because it will specially be interpreted to see if it's a multi release jar file).
      */
-    fun visit(
-        client: LintClient,
-        file: File,
-        relative: String?,
-        bytes: ByteArray,
-        visitor: ClassVisitor,
-        flags: Int = 0,
-    ): ClassVisitor? {
+    fun visit(client: LintClient, file: File, relative: String?, bytes: ByteArray, visitor: ClassVisitor, flags: Int = 0): ClassVisitor? {
       return try {
         val reader = ClassReader(bytes)
         reader.accept(visitor, flags)
@@ -322,19 +292,19 @@ class ClassEntry(val file: File, val jarFile: File?, val binDir: File, val bytes
         // we don't want to complain
         val message = t.message ?: t.toString()
         if (
-            relative != null &&
-                t is IllegalArgumentException &&
-                message.startsWith("Unsupported class file") &&
-                (relative.startsWith("META-INF/versions/") || relative.startsWith("META-INF\\versions\\"))
+          relative != null &&
+            t is IllegalArgumentException &&
+            message.startsWith("Unsupported class file") &&
+            (relative.startsWith("META-INF/versions/") || relative.startsWith("META-INF\\versions\\"))
         ) {
           return null
         }
 
         client.log(
-            null,
-            "Error processing %1\$s: broken class file? (%2\$s)",
-            file.path + if (relative != null) ":$relative" else "",
-            message,
+          null,
+          "Error processing %1\$s: broken class file? (%2\$s)",
+          file.path + if (relative != null) ":$relative" else "",
+          message,
         )
         null
       }

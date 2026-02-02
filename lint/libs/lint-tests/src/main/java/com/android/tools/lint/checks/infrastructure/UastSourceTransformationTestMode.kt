@@ -29,11 +29,8 @@ import org.jetbrains.uast.UFile
 import org.jetbrains.uast.visitor.AbstractUastVisitor
 import org.junit.rules.TemporaryFolder
 
-abstract class UastSourceTransformationTestMode(
-    description: String,
-    testMode: String,
-    folder: String,
-) : SourceTransformationTestMode(description, testMode, folder) {
+abstract class UastSourceTransformationTestMode(description: String, testMode: String, folder: String) :
+  SourceTransformationTestMode(description, testMode, folder) {
 
   /**
    * Transform the given AST in [root] which corresponds to the given [source] code, returning a list of edit operations. The [clientData]
@@ -43,20 +40,15 @@ abstract class UastSourceTransformationTestMode(
    * The result list should be a mutable list because the test infrastructure will merge these lists.
    */
   @Deprecated("Override the one with a testModeContext instead")
-  abstract fun transform(
-      source: String,
-      context: JavaContext,
-      root: UFile,
-      clientData: MutableMap<String, Any>,
-  ): MutableList<Edit>
+  abstract fun transform(source: String, context: JavaContext, root: UFile, clientData: MutableMap<String, Any>): MutableList<Edit>
 
   @Suppress("DEPRECATION")
   open fun transform(
-      source: String,
-      context: JavaContext,
-      root: UFile,
-      clientData: MutableMap<String, Any>,
-      testModeContext: TestModeContext,
+    source: String,
+    context: JavaContext,
+    root: UFile,
+    clientData: MutableMap<String, Any>,
+    testModeContext: TestModeContext,
   ): MutableList<Edit> = transform(source, context, root, clientData)
 
   protected open fun isRelevantFile(file: TestFile): Boolean {
@@ -65,13 +57,13 @@ abstract class UastSourceTransformationTestMode(
 
   override fun applies(context: TestModeContext): Boolean {
     return context.task.incrementalFileName == null &&
-        context.projects.any { project ->
-          project.files.any { file ->
-            if (file is BytecodeTestFile && file.type == BytecodeTestFile.Type.SOURCE_AND_BYTECODE)
-                file.getSources().any { isRelevantFile(it) }
-            else isRelevantFile(file)
-          }
+      context.projects.any { project ->
+        project.files.any { file ->
+          if (file is BytecodeTestFile && file.type == BytecodeTestFile.Type.SOURCE_AND_BYTECODE)
+            file.getSources().any { isRelevantFile(it) }
+          else isRelevantFile(file)
         }
+      }
   }
 
   override fun before(context: TestModeContext): Any? {
@@ -87,10 +79,10 @@ abstract class UastSourceTransformationTestMode(
   }
 
   open fun processTestFiles(
-      testContext: TestModeContext,
-      projectDir: File,
-      sdkHome: File?,
-      changeCallback: (JavaContext, String) -> Unit = { _, _ -> },
+    testContext: TestModeContext,
+    projectDir: File,
+    sdkHome: File?,
+    changeCallback: (JavaContext, String) -> Unit = { _, _ -> },
   ): Boolean {
     val (contexts, disposable) = parse(dir = projectDir, sdkHome = sdkHome)
     try {
@@ -102,44 +94,32 @@ abstract class UastSourceTransformationTestMode(
 
   // For unit tests only
   open fun processTestFiles(
-      testFiles: List<TestFile>,
-      sdkHome: File?,
-      // Whether a particular context should be transformed. This allows
-      // you to include stub files as well (for type resolution etc) without
-      // also getting those files transformed
-      contextFilter: (JavaContext) -> Boolean = { true },
-      changeCallback: (JavaContext, String) -> Unit = { _, _ -> },
+    testFiles: List<TestFile>,
+    sdkHome: File?,
+    // Whether a particular context should be transformed. This allows
+    // you to include stub files as well (for type resolution etc) without
+    // also getting those files transformed
+    contextFilter: (JavaContext) -> Boolean = { true },
+    changeCallback: (JavaContext, String) -> Unit = { _, _ -> },
   ): Boolean {
     return processTestFiles(testFiles, sdkHome, null, contextFilter, changeCallback)
   }
 
   // For unit tests only
   open fun processTestFiles(
-      testFiles: List<TestFile>,
-      sdkHome: File?,
-      testModeContext: TestModeContext?,
-      contextFilter: (JavaContext) -> Boolean,
-      changeCallback: (JavaContext, String) -> Unit,
+    testFiles: List<TestFile>,
+    sdkHome: File?,
+    testModeContext: TestModeContext?,
+    contextFilter: (JavaContext) -> Boolean,
+    changeCallback: (JavaContext, String) -> Unit,
   ): Boolean {
     val temporaryFolder = TemporaryFolder().apply { create() }
     try {
-      val (allContexts, disposable) =
-          parse(
-              temporaryFolder = temporaryFolder,
-              sdkHome = sdkHome,
-              testFiles = testFiles.toTypedArray(),
-          )
+      val (allContexts, disposable) = parse(temporaryFolder = temporaryFolder, sdkHome = sdkHome, testFiles = testFiles.toTypedArray())
       val contexts = allContexts.filter { contextFilter(it) }
       try {
         val context =
-            testModeContext
-                ?: TestModeContext(
-                    TestLintTask(),
-                    temporaryFolder.root,
-                    emptyList(),
-                    listOf(contexts.first().project.dir),
-                    null,
-                )
+          testModeContext ?: TestModeContext(TestLintTask(), temporaryFolder.root, emptyList(), listOf(contexts.first().project.dir), null)
         return processTestFiles(contexts, context, changeCallback)
       } finally {
         Disposer.dispose(disposable)
@@ -150,9 +130,9 @@ abstract class UastSourceTransformationTestMode(
   }
 
   private fun processTestFiles(
-      contexts: List<JavaContext>,
-      testContext: TestModeContext,
-      changeCallback: (JavaContext, String) -> Unit,
+    contexts: List<JavaContext>,
+    testContext: TestModeContext,
+    changeCallback: (JavaContext, String) -> Unit,
   ): Boolean {
     val fileEdits = processTestFiles(contexts, mutableMapOf(), testContext)
     if (fileEdits.isEmpty()) {
@@ -171,9 +151,9 @@ abstract class UastSourceTransformationTestMode(
   }
 
   protected open fun processTestFiles(
-      contexts: List<JavaContext>,
-      clientData: MutableMap<String, Any>,
-      testModeContext: TestModeContext,
+    contexts: List<JavaContext>,
+    clientData: MutableMap<String, Any>,
+    testModeContext: TestModeContext,
   ): List<Pair<JavaContext, List<Edit>>> {
     val result: MutableList<Pair<JavaContext, List<Edit>>> = mutableListOf()
     for (context in contexts.sortedBy { it.file.path }) {
@@ -220,38 +200,28 @@ abstract class UastSourceTransformationTestMode(
       return Edit(offset, offset + text.length, "", biasRight, depth)
     }
 
-    fun MutableList<Edit>.surround(
-        beginNode: UExpression,
-        endNode: UExpression,
-        open: String,
-        close: String,
-    ) {
+    fun MutableList<Edit>.surround(beginNode: UExpression, endNode: UExpression, open: String, close: String) {
       surround(beginNode.sourcePsi, endNode.sourcePsi, open, close)
     }
 
-    fun MutableList<Edit>.surround(
-        beginPsi: PsiElement?,
-        endPsi: PsiElement?,
-        open: String,
-        close: String,
-    ) {
+    fun MutableList<Edit>.surround(beginPsi: PsiElement?, endPsi: PsiElement?, open: String, close: String) {
       beginPsi ?: return
       endPsi ?: return
 
       val next = (endPsi as? KtLiteralStringTemplateEntry)?.nextSibling as? TreeElement
       val endDelta =
-          if (next != null && next.elementType == KtTokens.CLOSING_QUOTE) {
-            next.textLength
-          } else {
-            0
-          }
+        if (next != null && next.elementType == KtTokens.CLOSING_QUOTE) {
+          next.textLength
+        } else {
+          0
+        }
       val prev = (beginPsi as? KtLiteralStringTemplateEntry)?.prevSibling as? TreeElement
       val beginDelta =
-          if (prev != null && prev.elementType == KtTokens.OPEN_QUOTE) {
-            prev.textLength
-          } else {
-            0
-          }
+        if (prev != null && prev.elementType == KtTokens.OPEN_QUOTE) {
+          prev.textLength
+        } else {
+          0
+        }
 
       val start = beginPsi.textRange.startOffset - beginDelta
       val end = endPsi.textRange.endOffset + endDelta
@@ -259,40 +229,28 @@ abstract class UastSourceTransformationTestMode(
       add(insert(end, close, biasRight = false))
     }
 
-    fun MutableList<Edit>.unsurround(
-        beginNode: UExpression,
-        endNode: UExpression,
-        open: String,
-        close: String,
-        source: String,
-    ) {
+    fun MutableList<Edit>.unsurround(beginNode: UExpression, endNode: UExpression, open: String, close: String, source: String) {
       unsurround(beginNode.sourcePsi, endNode.sourcePsi, open, close, source)
     }
 
-    fun MutableList<Edit>.unsurround(
-        beginPsi: PsiElement?,
-        endPsi: PsiElement?,
-        open: String,
-        close: String,
-        source: String,
-    ) {
+    fun MutableList<Edit>.unsurround(beginPsi: PsiElement?, endPsi: PsiElement?, open: String, close: String, source: String) {
       beginPsi ?: return
       endPsi ?: return
 
       val next = (endPsi as? KtLiteralStringTemplateEntry)?.nextSibling as? TreeElement
       val endDelta =
-          if (next != null && next.elementType == KtTokens.CLOSING_QUOTE) {
-            next.textLength
-          } else {
-            0
-          }
+        if (next != null && next.elementType == KtTokens.CLOSING_QUOTE) {
+          next.textLength
+        } else {
+          0
+        }
       val prev = (beginPsi as? KtLiteralStringTemplateEntry)?.prevSibling as? TreeElement
       val beginDelta =
-          if (prev != null && prev.elementType == KtTokens.OPEN_QUOTE) {
-            prev.textLength
-          } else {
-            0
-          }
+        if (prev != null && prev.elementType == KtTokens.OPEN_QUOTE) {
+          prev.textLength
+        } else {
+          0
+        }
 
       val start = beginPsi.textRange.startOffset - beginDelta
       val end = endPsi.textRange.endOffset + endDelta - 1

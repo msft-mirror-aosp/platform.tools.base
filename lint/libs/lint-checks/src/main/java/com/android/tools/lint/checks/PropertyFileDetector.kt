@@ -63,13 +63,7 @@ class PropertyFileDetector : Detector() {
     }
   }
 
-  private fun checkLine(
-      context: Context,
-      contents: CharSequence,
-      offset: Int,
-      line: String,
-      valueStart: Int,
-  ) {
+  private fun checkLine(context: Context, contents: CharSequence, offset: Int, line: String, valueStart: Int) {
     val distributionPrefix = "distributionUrl=http\\"
     if (line.startsWith(distributionPrefix)) {
       val https = "https" + line.substring(distributionPrefix.length - 1)
@@ -77,10 +71,10 @@ class PropertyFileDetector : Detector() {
       val startOffset = offset + valueStart
       val endOffset = startOffset + 4 // 4: "http".length()
       val incident =
-          Incident(context, HTTP)
-              .message("Replace HTTP with HTTPS for better security; use $escaped")
-              .fix(fix().replace().text("http").with("https").build())
-              .location(Location.create(context.file, contents, startOffset, endOffset))
+        Incident(context, HTTP)
+          .message("Replace HTTP with HTTPS for better security; use $escaped")
+          .fix(fix().replace().text("http").with("https").build())
+          .location(Location.create(context.file, contents, startOffset, endOffset))
       report(incident, contents, startOffset)
     } else if (line.startsWith("systemProp.http.proxyPassword=") || line.startsWith("systemProp.https.proxyPassword=")) {
       if (isGitIgnored(context.client, context.file)) {
@@ -90,9 +84,9 @@ class PropertyFileDetector : Detector() {
       val startOffset = offset + valueStart
       val endOffset = line.length
       val incident =
-          Incident(context, PROXY_PASSWORD)
-              .message("Storing passwords in clear text is risky; " + "make sure this file is not shared or checked in via version control")
-              .location(Location.create(context.file, contents, startOffset, endOffset))
+        Incident(context, PROXY_PASSWORD)
+          .message("Storing passwords in clear text is risky; " + "make sure this file is not shared or checked in via version control")
+          .location(Location.create(context.file, contents, startOffset, endOffset))
       report(incident, contents, startOffset)
     } else if (line.indexOf('\\') != -1 || line.indexOf(':') != -1) {
       checkEscapes(context, contents, line, offset, valueStart)
@@ -149,13 +143,7 @@ class PropertyFileDetector : Detector() {
     return false
   }
 
-  private fun checkEscapes(
-      context: Context,
-      contents: CharSequence,
-      line: String,
-      offset: Int,
-      valueStart: Int,
-  ) {
+  private fun checkEscapes(context: Context, contents: CharSequence, line: String, offset: Int, valueStart: Int) {
     var escaped = false
     var hadNonPathEscape = false
     var errorStart = -1
@@ -200,12 +188,12 @@ class PropertyFileDetector : Detector() {
       val escapedPath = suggestEscapes(line.substring(valueStart, line.length))
 
       val message =
-          ("Windows file separators (`\\`) and drive letter " +
-              "separators (':') must be escaped (`\\\\`) in property files; use " +
-              escapedPath
-                  // String is already escaped for Java; must double escape for the raw text
-                  // format
-                  .replace("\\", "\\\\"))
+        ("Windows file separators (`\\`) and drive letter " +
+          "separators (':') must be escaped (`\\\\`) in property files; use " +
+          escapedPath
+            // String is already escaped for Java; must double escape for the raw text
+            // format
+            .replace("\\", "\\\\"))
       val startOffset = offset + errorStart
       val endOffset = offset + errorEnd + 1
 
@@ -224,56 +212,56 @@ class PropertyFileDetector : Detector() {
     /** Property file not escaped. */
     @JvmField
     val ESCAPE =
-        Issue.create(
-            id = "PropertyEscape",
-            briefDescription = "Incorrect property escapes",
-            explanation =
-                """
+      Issue.create(
+        id = "PropertyEscape",
+        briefDescription = "Incorrect property escapes",
+        explanation =
+          """
                 All backslashes and colons in .property files must be escaped with a \
                 backslash (\). This means that when writing a Windows path, you must \
                 escape the file separators, so the path \My\Files should be written as \
                 `key=\\My\\Files.`""",
-            category = Category.CORRECTNESS,
-            priority = 6,
-            severity = Severity.ERROR,
-            implementation = Implementation(PropertyFileDetector::class.java, Scope.PROPERTY_SCOPE),
-        )
+        category = Category.CORRECTNESS,
+        priority = 6,
+        severity = Severity.ERROR,
+        implementation = Implementation(PropertyFileDetector::class.java, Scope.PROPERTY_SCOPE),
+      )
 
     /** Using HTTP instead of HTTPS for the wrapper. */
     @JvmField
     val HTTP =
-        Issue.create(
-            id = "UsingHttp",
-            briefDescription = "Using HTTP instead of HTTPS",
-            explanation =
-                """
+      Issue.create(
+        id = "UsingHttp",
+        briefDescription = "Using HTTP instead of HTTPS",
+        explanation =
+          """
                 The Gradle Wrapper is available both via HTTP and HTTPS. HTTPS is more \
                 secure since it protects against man-in-the-middle attacks etc. Older \
                 projects created in Android Studio used HTTP but we now default to HTTPS \
                 and recommend upgrading existing projects.""",
-            moreInfo = "https://goo.gle/UsingHttp",
-            category = Category.SECURITY,
-            priority = 6,
-            severity = Severity.WARNING,
-            implementation = Implementation(PropertyFileDetector::class.java, Scope.PROPERTY_SCOPE),
-        )
+        moreInfo = "https://goo.gle/UsingHttp",
+        category = Category.SECURITY,
+        priority = 6,
+        severity = Severity.WARNING,
+        implementation = Implementation(PropertyFileDetector::class.java, Scope.PROPERTY_SCOPE),
+      )
 
     /** Using HTTP instead of HTTPS for the wrapper. */
     @JvmField
     val PROXY_PASSWORD =
-        Issue.create(
-            id = "ProxyPassword",
-            briefDescription = "Proxy Password in Cleartext",
-            explanation =
-                """
+      Issue.create(
+        id = "ProxyPassword",
+        briefDescription = "Proxy Password in Cleartext",
+        explanation =
+          """
                 Storing proxy server passwords in clear text is dangerous if this file is \
                 shared via version control. If this is deliberate or this is a truly private \
                 project, suppress this warning.""",
-            category = Category.SECURITY,
-            priority = 2,
-            severity = Severity.WARNING,
-            implementation = Implementation(PropertyFileDetector::class.java, Scope.PROPERTY_SCOPE),
-        )
+        category = Category.SECURITY,
+        priority = 2,
+        severity = Severity.WARNING,
+        implementation = Implementation(PropertyFileDetector::class.java, Scope.PROPERTY_SCOPE),
+      )
 
     fun suggestEscapes(value: String): String {
       val escaped = value.replace("\\:", ":").replace("\\\\", "\\")

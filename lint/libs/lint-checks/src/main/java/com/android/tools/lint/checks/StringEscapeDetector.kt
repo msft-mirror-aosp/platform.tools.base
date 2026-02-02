@@ -35,19 +35,19 @@ class StringEscapeDetector : ResourceXmlDetector() {
     /** Invalid XML escaping */
     @JvmField
     val STRING_ESCAPING =
-        create(
-            id = "StringEscaping",
-            briefDescription = "Invalid string escapes",
-            explanation =
-                """
+      create(
+        id = "StringEscaping",
+        briefDescription = "Invalid string escapes",
+        explanation =
+          """
                 Apostrophes (') must always be escaped (with a \\\\), unless they appear \
                 in a string which is itself escaped in double quotes (\").
                 """,
-            category = Category.MESSAGES,
-            priority = 9,
-            severity = Severity.ERROR,
-            implementation = Implementation(StringEscapeDetector::class.java, Scope.RESOURCE_FILE_SCOPE),
-        )
+        category = Category.MESSAGES,
+        priority = 9,
+        severity = Severity.ERROR,
+        implementation = Implementation(StringEscapeDetector::class.java, Scope.RESOURCE_FILE_SCOPE),
+      )
   }
 
   override fun getApplicableElements() = listOf(TAG_STRING, TAG_STRING_ARRAY, TAG_PLURALS)
@@ -87,12 +87,7 @@ class StringEscapeDetector : ResourceXmlDetector() {
    * Check the XML for the string format. This is a port of portions of the code in frameworks/base/libs/androidfw/ResourceTypes.cpp (and in
    * particular, the stringToValue and collectString methods)
    */
-  private fun checkXmlEscapes(
-      context: XmlContext,
-      textNode: Node,
-      element: Element,
-      string: String,
-  ) {
+  private fun checkXmlEscapes(context: XmlContext, textNode: Node, element: Element, string: String) {
     var s = 0
     var len = string.length
     val n = len
@@ -144,11 +139,11 @@ class StringEscapeDetector : ResourceXmlDetector() {
         val cp = string[p]
         if (cp == '"' || cp == '\'') {
           quoted =
-              if (quoted.code == 0) {
-                cp
-              } else {
-                0.toChar()
-              }
+            if (quoted.code == 0) {
+              cp
+            } else {
+              0.toChar()
+            }
           p++
         } else if (cp.isWhitespace()) {
           // Space outside of a quote -- consume all spaces and
@@ -177,12 +172,7 @@ class StringEscapeDetector : ResourceXmlDetector() {
                   val h = string[p]
                   if ((h < '0' || h > '9') && (h < 'a' || h > 'f') && (h < 'A' || h > 'F')) {
                     val location = context.getLocation(textNode, p, p + 1)
-                    context.report(
-                        STRING_ESCAPING,
-                        element,
-                        location,
-                        "Bad character in \\\\u unicode escape sequence",
-                    )
+                    context.report(STRING_ESCAPING, element, location, "Bad character in \\\\u unicode escape sequence")
                     return
                   }
                 }

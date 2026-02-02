@@ -8,9 +8,9 @@ class ContextReceiverDetectorTest {
   @Test
   fun testContextReceivers() {
     studioLint()
-        .files(
-            kotlin(
-                    """
+      .files(
+        kotlin(
+            """
             package test.pkg
 
             class Test {
@@ -32,13 +32,13 @@ class ContextReceiverDetectorTest {
               }
           }
           """
-                )
-                .indented()
-        )
-        .issues(ContextReceiverDetector.ISSUE)
-        .run()
-        .expect(
-            """
+          )
+          .indented()
+      )
+      .issues(ContextReceiverDetector.ISSUE)
+      .run()
+      .expect(
+        """
           src/test/pkg/Test.kt:9: Error: Do not use context receivers. They are an experimental feature at this time. [ContextReceiver]
               context(Test.Logger)
                       ~~~~~~~~~~~
@@ -47,6 +47,6 @@ class ContextReceiverDetectorTest {
                       ~~~~~~~~~~~
           2 errors, 0 warnings
         """
-        )
+      )
   }
 }

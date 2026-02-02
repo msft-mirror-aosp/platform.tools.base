@@ -36,7 +36,7 @@ class WrongThreadInterproceduralDetectorTest : AbstractCheckTest() {
 
   fun testThreadingFromJava() {
     val expected =
-        """
+      """
             src/test/pkg/Runnable.java:14: Error: Interprocedural thread annotation violation (UiThread to WorkerThread):
             Test#uiThreadStatic -> Test#unannotatedStatic -> Test#workerThreadStatic [WrongThreadInterprocedural]
               @UiThread static void uiThreadStatic() { unannotatedStatic(); }
@@ -69,9 +69,9 @@ class WrongThreadInterproceduralDetectorTest : AbstractCheckTest() {
             """
 
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
                     package test.pkg;
 
                     import androidx.annotation.UiThread;
@@ -152,19 +152,19 @@ class WrongThreadInterproceduralDetectorTest : AbstractCheckTest() {
                       }
                     }
                     """
-                )
-                .indented(),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .allowSystemErrors(true)
-        .allowDuplicates()
-        .run()
-        .expect(expected)
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .allowSystemErrors(true)
+      .allowDuplicates()
+      .run()
+      .expect(expected)
   }
 
   fun testThreadingFromKotlin() {
     val expected =
-        """
+      """
             src/test/pkg/Test.kt:9: Error: Interprocedural thread annotation violation (UiThread to WorkerThread):
             Test#uiThread -> Test#unannotated -> Test#workerThread [WrongThreadInterprocedural]
               @UiThread fun uiThread() { unannotated() }
@@ -196,9 +196,9 @@ class WrongThreadInterproceduralDetectorTest : AbstractCheckTest() {
             7 errors, 0 warnings
             """
     lint()
-        .files(
-            kotlin(
-                    """
+      .files(
+        kotlin(
+            """
                     package test.pkg
 
                     import androidx.annotation.UiThread
@@ -275,13 +275,13 @@ class WrongThreadInterproceduralDetectorTest : AbstractCheckTest() {
                       }
                     }
                     """
-                )
-                .indented(),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .allowDuplicates()
-        .run()
-        .expect(expected)
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .allowDuplicates()
+      .run()
+      .expect(expected)
   }
 
   override fun getDetector(): Detector {

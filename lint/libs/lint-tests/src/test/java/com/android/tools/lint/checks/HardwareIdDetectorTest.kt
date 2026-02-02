@@ -24,9 +24,9 @@ class HardwareIdDetectorTest : AbstractCheckTest() {
 
   fun testBluetoothAdapterGetAddressCall() {
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
                 package test.pkg;
 
                 import android.bluetooth.BluetoothAdapter;
@@ -38,33 +38,33 @@ class HardwareIdDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-                )
-                .indented()
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented()
+      )
+      .run()
+      .expect(
+        """
             src/test/pkg/AppUtils.java:8: Warning: Using getAddress to get device identifiers is not recommended [HardwareIds]
                     return adapter.getAddress();
                            ~~~~~~~~~~~~~~~~~~~~
             0 errors, 1 warnings
             """
-        )
+      )
   }
 
   fun testGetAddressCallInCatchBlock() {
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
                 package com.google.android.gms.common;
                 public class GooglePlayServicesNotAvailableException extends Exception {
                 }
                 """
-                )
-                .indented(),
-            java(
-                    """
+          )
+          .indented(),
+        java(
+            """
                 package com.google.android.gms;
                 import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
                 public class GmsSampleClient {
@@ -73,10 +73,10 @@ class HardwareIdDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-                )
-                .indented(),
-            java(
-                    """
+          )
+          .indented(),
+        java(
+            """
                 package test.pkg;
 
                 import android.bluetooth.BluetoothAdapter;
@@ -99,18 +99,18 @@ class HardwareIdDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-                )
-                .indented(),
-        )
-        .run()
-        .expectClean()
+          )
+          .indented(),
+      )
+      .run()
+      .expectClean()
   }
 
   fun testGetAndroidId() {
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
                 package test.pkg;
 
                 import android.content.Context;
@@ -123,25 +123,25 @@ class HardwareIdDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-                )
-                .indented()
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented()
+      )
+      .run()
+      .expect(
+        """
             src/test/pkg/AppUtils.java:9: Warning: Using getString to get device identifiers is not recommended [HardwareIds]
                     return Settings.Secure.getString(context.getContentResolver(), androidId);
                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             0 errors, 1 warnings
             """
-        )
+      )
   }
 
   fun testWifiInfoGetMacAddress() {
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
                 package test.pkg;
 
                 import android.content.Context;
@@ -153,25 +153,25 @@ class HardwareIdDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-                )
-                .indented()
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented()
+      )
+      .run()
+      .expect(
+        """
             src/test/pkg/AppUtils.java:8: Warning: Using getMacAddress to get device identifiers is not recommended [HardwareIds]
                     return info.getMacAddress();
                            ~~~~~~~~~~~~~~~~~~~~
             0 errors, 1 warnings
             """
-        )
+      )
   }
 
   fun testTelephoneManagerIdentifierCalls() {
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
                 package test.pkg;
 
                 import android.content.Context;
@@ -192,12 +192,12 @@ class HardwareIdDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-                )
-                .indented()
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented()
+      )
+      .run()
+      .expect(
+        """
             src/test/pkg/AppUtils.java:8: Warning: Using getDeviceId to get device identifiers is not recommended [HardwareIds]
                     return info.getDeviceId();
                            ~~~~~~~~~~~~~~~~~~
@@ -212,14 +212,14 @@ class HardwareIdDetectorTest : AbstractCheckTest() {
                            ~~~~~~~~~~~~~~~~~~~~~~
             0 errors, 4 warnings
             """
-        )
+      )
   }
 
   fun testBuildSerialUsage() {
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
                 package test.pkg;
 
                 import android.content.Context;
@@ -263,12 +263,12 @@ class HardwareIdDetectorTest : AbstractCheckTest() {
 
                 }
                 """
-                )
-                .indented()
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented()
+      )
+      .run()
+      .expect(
+        """
             src/test/pkg/HardwareIdDetectorTestData.java:16: Warning: Using SERIAL to get device identifiers is not recommended [HardwareIds]
                         serial = SERIAL;
                                  ~~~~~~
@@ -283,14 +283,14 @@ class HardwareIdDetectorTest : AbstractCheckTest() {
                                                          ~~~~~~~~~~~~~
             0 errors, 4 warnings
             """
-        )
+      )
   }
 
   fun testRoSerialUsage() {
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
                 package test.pkg;
 
                 import android.content.Context;
@@ -311,33 +311,33 @@ class HardwareIdDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-                )
-                .indented()
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented()
+      )
+      .run()
+      .expect(
+        """
             src/test/pkg/AppUtils.java:17: Warning: Using ro.serialno to get device identifiers is not recommended [HardwareIds]
                     return getSystemProperty(context, "ro.serialno");
                                                       ~~~~~~~~~~~~~
             0 errors, 1 warnings
             """
-        )
+      )
   }
 
   fun testMultipleRoSerialUsages() {
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
                 package com.google.android.gms.common;
                 public class GooglePlayServicesNotAvailableException extends Exception {
                 }
                 """
-                )
-                .indented(),
-            java(
-                    """
+          )
+          .indented(),
+        java(
+            """
                 package com.google.android.gms;
                 import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
                 public class GmsSampleClient {
@@ -346,10 +346,10 @@ class HardwareIdDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-                )
-                .indented(),
-            java(
-                    """
+          )
+          .indented(),
+        java(
+            """
                 package test.pkg;
 
                 import android.content.Context;
@@ -398,12 +398,12 @@ class HardwareIdDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-                )
-                .indented(),
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+      )
+      .run()
+      .expect(
+        """
             src/test/pkg/AppUtils.java:19: Warning: Using ro.serialno to get device identifiers is not recommended [HardwareIds]
                     return getSysProperty(RO_SERIAL, "default");
                                           ~~~~~~~~~
@@ -415,15 +415,15 @@ class HardwareIdDetectorTest : AbstractCheckTest() {
                                                       ~~~~~~~~~~~~~
             0 errors, 3 warnings
             """
-        )
+      )
   }
 
   fun testCrash() {
     // Regression test for https://issuetracker.google.com/121341637
     lint()
-        .files(
-            kotlin(
-                    """
+      .files(
+        kotlin(
+            """
                 package com.example.linterror33rc3
 
                 import androidx.annotation.StringRes
@@ -468,11 +468,11 @@ class HardwareIdDetectorTest : AbstractCheckTest() {
 
                 }
                 """
-                )
-                .indented(),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expectClean()
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expectClean()
   }
 }

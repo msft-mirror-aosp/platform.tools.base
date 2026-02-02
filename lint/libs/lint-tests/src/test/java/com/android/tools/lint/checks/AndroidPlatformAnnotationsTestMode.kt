@@ -42,10 +42,7 @@ import org.objectweb.asm.Opcodes.ASM9
 import org.objectweb.asm.TypePath
 
 internal class AndroidPlatformAnnotationsTestMode :
-    TestMode(
-        description = "Platform Annotations",
-        "AbstractCheckTest.PLATFORM_ANNOTATIONS_TEST_MODE",
-    ) {
+  TestMode(description = "Platform Annotations", "AbstractCheckTest.PLATFORM_ANNOTATIONS_TEST_MODE") {
   override val folderName: String = "platform-annotations"
   override val modifiesSources: Boolean = true
 
@@ -82,11 +79,11 @@ internal class AndroidPlatformAnnotationsTestMode :
       // VisibleForTesting
 
       if (
-          source.startsWith("RequiresApi", offset) ||
-              source.startsWith("Keep", offset) ||
-              source.startsWith("ChecksSdkIntAtLeast", offset) ||
-              source.startsWith("RestrictTo", offset) ||
-              source.startsWith("VisibleForTesting", offset)
+        source.startsWith("RequiresApi", offset) ||
+          source.startsWith("Keep", offset) ||
+          source.startsWith("ChecksSdkIntAtLeast", offset) ||
+          source.startsWith("RestrictTo", offset) ||
+          source.startsWith("VisibleForTesting", offset)
       ) {
         return false
       }
@@ -115,13 +112,13 @@ internal class AndroidPlatformAnnotationsTestMode :
     var unchanged = true
     projectFolders.forEach { root ->
       root
-          .walk()
-          .filter { it.isFile && (it.path.endsWith(DOT_JAVA) || it.path.endsWith(DOT_KT)) }
-          .forEach {
-            if (replaceAnnotationSource(it)) {
-              unchanged = false
-            }
+        .walk()
+        .filter { it.isFile && (it.path.endsWith(DOT_JAVA) || it.path.endsWith(DOT_KT)) }
+        .forEach {
+          if (replaceAnnotationSource(it)) {
+            unchanged = false
           }
+        }
 
       val annotationsJar = File(root, SUPPORT_ANNOTATIONS_JAR.targetRelativePath)
       if (annotationsJar.exists()) {
@@ -134,14 +131,14 @@ internal class AndroidPlatformAnnotationsTestMode :
   }
 
   override val diffExplanation: String =
-      // first line shorter: expecting to prefix that line with
-      // "org.junit.ComparisonFailure: "
-      """
-      This test mode checks tests that
-      contain annotation references that they also work with platform
-      annotations.
-      """
-          .trimIndent()
+    // first line shorter: expecting to prefix that line with
+    // "org.junit.ComparisonFailure: "
+    """
+    This test mode checks tests that
+    contain annotation references that they also work with platform
+    annotations.
+    """
+      .trimIndent()
 
   private fun rewriteAnnotationClass(bytes: ByteArray, path: String): ByteArray {
     return try {
@@ -159,75 +156,48 @@ internal class AndroidPlatformAnnotationsTestMode :
   private fun rewriteOuterClass(reader: ClassReader): ByteArray {
     val classWriter = ClassWriter(ASM9)
     val classVisitor =
-        object : ClassVisitor(ASM9, classWriter) {
-          override fun visit(
-              version: Int,
-              access: Int,
-              name: String,
-              signature: String?,
-              superName: String?,
-              interfaces: Array<out String>?,
-          ) {
-            super.visit(version, access, mapName(name), signature, superName, interfaces)
-          }
-
-          override fun visitInnerClass(
-              name: String?,
-              outerName: String?,
-              innerName: String?,
-              access: Int,
-          ) {
-            super.visitInnerClass(
-                name?.let { mapName(it) },
-                outerName?.let { mapName(it) },
-                innerName,
-                access,
-            )
-          }
-
-          override fun visitField(
-              access: Int,
-              name: String,
-              descriptor: String?,
-              signature: String?,
-              value: Any?,
-          ): FieldVisitor {
-            return super.visitField(access, name, descriptor?.let { mapName(it) }, signature, value)
-          }
-
-          override fun visitOuterClass(owner: String?, name: String?, descriptor: String?) {
-            super.visitOuterClass(owner, name, descriptor)
-          }
-
-          override fun visitTypeAnnotation(
-              typeRef: Int,
-              typePath: TypePath?,
-              descriptor: String?,
-              visible: Boolean,
-          ): AnnotationVisitor {
-            return super.visitTypeAnnotation(typeRef, typePath, descriptor, visible)
-          }
-
-          override fun visitAnnotation(descriptor: String?, visible: Boolean): AnnotationVisitor {
-            return super.visitAnnotation(descriptor, visible)
-          }
-
-          override fun visitMethod(
-              access: Int,
-              name: String,
-              descriptor: String?,
-              signature: String?,
-              exceptions: Array<out String>?,
-          ): MethodVisitor {
-            return super.visitMethod(
-                access,
-                name,
-                descriptor?.let { mapName(it) },
-                signature,
-                exceptions,
-            )
-          }
+      object : ClassVisitor(ASM9, classWriter) {
+        override fun visit(
+          version: Int,
+          access: Int,
+          name: String,
+          signature: String?,
+          superName: String?,
+          interfaces: Array<out String>?,
+        ) {
+          super.visit(version, access, mapName(name), signature, superName, interfaces)
         }
+
+        override fun visitInnerClass(name: String?, outerName: String?, innerName: String?, access: Int) {
+          super.visitInnerClass(name?.let { mapName(it) }, outerName?.let { mapName(it) }, innerName, access)
+        }
+
+        override fun visitField(access: Int, name: String, descriptor: String?, signature: String?, value: Any?): FieldVisitor {
+          return super.visitField(access, name, descriptor?.let { mapName(it) }, signature, value)
+        }
+
+        override fun visitOuterClass(owner: String?, name: String?, descriptor: String?) {
+          super.visitOuterClass(owner, name, descriptor)
+        }
+
+        override fun visitTypeAnnotation(typeRef: Int, typePath: TypePath?, descriptor: String?, visible: Boolean): AnnotationVisitor {
+          return super.visitTypeAnnotation(typeRef, typePath, descriptor, visible)
+        }
+
+        override fun visitAnnotation(descriptor: String?, visible: Boolean): AnnotationVisitor {
+          return super.visitAnnotation(descriptor, visible)
+        }
+
+        override fun visitMethod(
+          access: Int,
+          name: String,
+          descriptor: String?,
+          signature: String?,
+          exceptions: Array<out String>?,
+        ): MethodVisitor {
+          return super.visitMethod(access, name, descriptor?.let { mapName(it) }, signature, exceptions)
+        }
+      }
 
     reader.accept(classVisitor, 0)
     return classWriter.toByteArray()
@@ -247,16 +217,16 @@ internal class AndroidPlatformAnnotationsTestMode :
 
       // Preserve the STORED method of the input entry.
       val newEntry: JarEntry =
-          if (entry.method == JarEntry.STORED) {
-            val jarEntry = JarEntry(entry)
-            jarEntry.size = entry.size
-            jarEntry.compressedSize = entry.compressedSize
-            jarEntry.crc = entry.crc
-            jarEntry
-          } else {
-            // Create a new entry so that the compressed len is recomputed.
-            JarEntry(name)
-          }
+        if (entry.method == JarEntry.STORED) {
+          val jarEntry = JarEntry(entry)
+          jarEntry.size = entry.size
+          jarEntry.compressedSize = entry.compressedSize
+          jarEntry.crc = entry.crc
+          jarEntry
+        } else {
+          // Create a new entry so that the compressed len is recomputed.
+          JarEntry(name)
+        }
 
       newEntry.lastAccessTime = zeroTime
       newEntry.creationTime = zeroTime

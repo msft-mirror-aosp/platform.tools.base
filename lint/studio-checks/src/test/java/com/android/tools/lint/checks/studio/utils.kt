@@ -28,18 +28,18 @@ import com.android.tools.lint.checks.infrastructure.TestLintTask
  */
 internal fun studioLint(): TestLintTask {
   val task =
-      object : TestLintTask() {
+    object : TestLintTask() {
 
-        /**
-         * Creates a project description for the given files and marks it with [ProjectDescription.Type.JAVA], which makes
-         * [com.android.tools.lint.checks.infrastructure.TestLintClient.addBootClassPath] use the current JVM classes.
-         */
-        override fun files(vararg files: TestFile): TestLintTask {
-          val description = ProjectDescription(*files).type(ProjectDescription.Type.JAVA)
-          super.projects(description)
-          return this
-        }
+      /**
+       * Creates a project description for the given files and marks it with [ProjectDescription.Type.JAVA], which makes
+       * [com.android.tools.lint.checks.infrastructure.TestLintClient.addBootClassPath] use the current JVM classes.
+       */
+      override fun files(vararg files: TestFile): TestLintTask {
+        val description = ProjectDescription(*files).type(ProjectDescription.Type.JAVA)
+        super.projects(description)
+        return this
       }
+    }
   task.sdkHome(null)
   task.allowMissingSdk()
   return task

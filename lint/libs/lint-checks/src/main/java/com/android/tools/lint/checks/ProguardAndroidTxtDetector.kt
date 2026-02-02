@@ -27,13 +27,13 @@ import com.android.tools.lint.detector.api.Severity
 
 class ProguardAndroidTxtDetector : Detector(), GradleScanner {
   override fun checkMethodCall(
-      context: GradleContext,
-      statement: String,
-      parent: String?,
-      parentParent: String?,
-      namedArguments: Map<String, String>,
-      unnamedArguments: List<String>,
-      cookie: Any,
+    context: GradleContext,
+    statement: String,
+    parent: String?,
+    parentParent: String?,
+    namedArguments: Map<String, String>,
+    unnamedArguments: List<String>,
+    cookie: Any,
   ) {
     // Only apply to application plugin, since we really care more about `-dontoptimize`
     // at level of app optimization
@@ -41,16 +41,16 @@ class ProguardAndroidTxtDetector : Detector(), GradleScanner {
 
     if (statement == "getDefaultProguardFile") {
       if (
-          unnamedArguments.any { it.contains("proguard-android.txt") } || namedArguments.values.any { it.contains("proguard-android.txt") }
+        unnamedArguments.any { it.contains("proguard-android.txt") } || namedArguments.values.any { it.contains("proguard-android.txt") }
       ) {
         val incident =
-            Incident(
-                ISSUE,
-                cookie,
-                context.getLocation(cookie),
-                "Avoid `getDefaultProguardFile('proguard-android.txt')`",
-                fix().replace().pattern("proguard-android.txt").with("proguard-android-optimize.txt").build(),
-            )
+          Incident(
+            ISSUE,
+            cookie,
+            context.getLocation(cookie),
+            "Avoid `getDefaultProguardFile('proguard-android.txt')`",
+            fix().replace().pattern("proguard-android.txt").with("proguard-android-optimize.txt").build(),
+          )
         context.client.report(context, incident)
       }
     }
@@ -58,21 +58,21 @@ class ProguardAndroidTxtDetector : Detector(), GradleScanner {
 
   companion object {
     val ISSUE =
-        Issue.create(
-            id = "ProguardAndroidTxtUsage",
-            briefDescription = "Use proguard-android-optimize.txt to enable optimizations",
-            explanation =
-                "Support for `getDefaultProguardFile('proguard-android.txt')` will be removed in AGP 9.0" +
-                    " since it includes `-dontoptimize`, which prevents R8 from performing many" +
-                    " optimizations. Instead use" +
-                    " `getDefaultProguardFile('proguard-android-optimize.txt)`, and if needed," +
-                    " temporarily use `-dontoptimize` in a custom keep rule file while fixing breakages.",
-            category = Category.PERFORMANCE,
-            priority = 2,
-            severity = Severity.WARNING,
-            implementation = Implementation(ProguardAndroidTxtDetector::class.java, Scope.GRADLE_SCOPE),
-            moreInfo = "https://developer.android.com/topic/performance/app-optimization/enable-app-optimization",
-            androidSpecific = true,
-        )
+      Issue.create(
+        id = "ProguardAndroidTxtUsage",
+        briefDescription = "Use proguard-android-optimize.txt to enable optimizations",
+        explanation =
+          "Support for `getDefaultProguardFile('proguard-android.txt')` will be removed in AGP 9.0" +
+            " since it includes `-dontoptimize`, which prevents R8 from performing many" +
+            " optimizations. Instead use" +
+            " `getDefaultProguardFile('proguard-android-optimize.txt)`, and if needed," +
+            " temporarily use `-dontoptimize` in a custom keep rule file while fixing breakages.",
+        category = Category.PERFORMANCE,
+        priority = 2,
+        severity = Severity.WARNING,
+        implementation = Implementation(ProguardAndroidTxtDetector::class.java, Scope.GRADLE_SCOPE),
+        moreInfo = "https://developer.android.com/topic/performance/app-optimization/enable-app-optimization",
+        androidSpecific = true,
+      )
   }
 }

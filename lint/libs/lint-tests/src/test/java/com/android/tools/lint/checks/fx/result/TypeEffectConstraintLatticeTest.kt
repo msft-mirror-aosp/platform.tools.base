@@ -30,10 +30,10 @@ private typealias IntsFx = UnboundedSet<Int>
 private val UnitTypeEffectConstraintLattice = TypeEffectConstraintLattice(possibilityLattice<Int>())
 
 class TypeLatticeTest :
-    LatticeTest<Type<IntsFx>>(
-        lattice = UnitTypeEffectConstraintLattice.typeLattice,
-        poolInits = listOf(Type.Int, Type.Boolean, Sym.Param("x"), Sym.Param("x")["f", Sym.Param("y")]),
-    ) {
+  LatticeTest<Type<IntsFx>>(
+    lattice = UnitTypeEffectConstraintLattice.typeLattice,
+    poolInits = listOf(Type.Int, Type.Boolean, Sym.Param("x"), Sym.Param("x")["f", Sym.Param("y")]),
+  ) {
 
   @Test
   fun `widening works`() {
@@ -62,11 +62,7 @@ class TypeLatticeTest :
     // x.g()
     // -->
     // μα. x ⊔ α.f() ⊔ α.g()
-    testInductiveWidening(
-        x,
-        x["f"] to fix { listOf(x, it["f"]) },
-        x["g"] to fix { listOf(x, it["f"], it["g"]) },
-    )
+    testInductiveWidening(x, x["f"] to fix { listOf(x, it["f"]) }, x["g"] to fix { listOf(x, it["f"], it["g"]) })
 
     // x.h()
     // x.h().f().g()
@@ -74,9 +70,9 @@ class TypeLatticeTest :
     // -->
     // μα. x.h() ⊔ α.f().g()
     testInductiveWidening(
-        x["h"],
-        x["h"]["f"]["g"] to fix { listOf(x["h"], it["f"]["g"]) },
-        x["h"]["f"]["g"]["f"]["g"] to fix { listOf(x["h"], it["f"]["g"]) },
+      x["h"],
+      x["h"]["f"]["g"] to fix { listOf(x["h"], it["f"]["g"]) },
+      x["h"]["f"]["g"]["f"]["g"] to fix { listOf(x["h"], it["f"]["g"]) },
     )
   }
 
@@ -85,7 +81,7 @@ class TypeLatticeTest :
     Truth.assertThat(widen(x["f", Type.Int]["g"]["f", Type.String])).isEqualTo(fix { listOf(x["f", Type.Int], it["g"]["f", Type.String]) })
 
     Truth.assertThat(widen((fix { listOf(x["f", Type.Int], it["g"]["f", Type.String]) })["g"]["f", Type.Int]["g"]))
-        .isEqualTo(fix { listOf(x["f", Type.Int], it["g"], it["f", Type.String], it["f", Type.Int]["g"]) })
+      .isEqualTo(fix { listOf(x["f", Type.Int], it["g"], it["f", Type.String], it["f", Type.Int]["g"]) })
   }
 
   @Test
@@ -112,15 +108,15 @@ class TypeLatticeTest :
 }
 
 class EffectLatticeTest :
-    LatticeTest<Effect<IntsFx>>(
-        lattice = UnitTypeEffectConstraintLattice.effectLattice,
-        poolInits =
-            listOf(
-                Effect(persistentSetOf(1, 2, 3), persistentSetOf(x["f", Type.Int])),
-                Effect(persistentSetOf(2, 3, 4), persistentSetOf(x["f", Type.String])),
-                Effect(persistentSetOf(3, 4, 5), persistentSetOf(x["f", Type.Int, Type.String])),
-            ),
-    ) {
+  LatticeTest<Effect<IntsFx>>(
+    lattice = UnitTypeEffectConstraintLattice.effectLattice,
+    poolInits =
+      listOf(
+        Effect(persistentSetOf(1, 2, 3), persistentSetOf(x["f", Type.Int])),
+        Effect(persistentSetOf(2, 3, 4), persistentSetOf(x["f", Type.String])),
+        Effect(persistentSetOf(3, 4, 5), persistentSetOf(x["f", Type.Int, Type.String])),
+      ),
+  ) {
 
   @Test
   fun `symbolic invocations summarized`() {
@@ -130,47 +126,25 @@ class EffectLatticeTest :
     val fx = widen(fx1, widen(fx2, fx3))
     Truth.assertThat(fx.concrete).isEqualTo(persistentSetOf(1, 2, 3, 4, 5))
     Truth.assertThat(fx.invocations)
-        .isEqualTo(
-            persistentSetOf(
-                x["f", Type.Union(persistentSetOf(Type.Int, Type.String))],
-                x["f", Type.Int, Type.String],
-            )
-        )
+      .isEqualTo(persistentSetOf(x["f", Type.Union(persistentSetOf(Type.Int, Type.String))], x["f", Type.Int, Type.String]))
   }
 }
 
 class ConstraintLatticeTest :
-    LatticeTest<Constraint<IntsFx>>(
-        lattice = UnitTypeEffectConstraintLattice.constraintLattice,
-        poolInits =
-            listOf(
-                Constraint(
-                    persistentMapOf(x["f"] to persistentSetOf(1, 2, 3)),
-                    persistentMapOf(x["f"] to persistentSetOf(y["g"])),
-                ),
-                Constraint(
-                    persistentMapOf(x["g"] to persistentSetOf(2, 3, 4)),
-                    persistentMapOf(x["f"] to persistentSetOf(x["g"])),
-                ),
-                Constraint(
-                    persistentMapOf(x["f"] to persistentSetOf(2, 3, 4)),
-                    persistentMapOf(x["f"] to persistentSetOf(y["h"])),
-                ),
-            ),
-    ) {
+  LatticeTest<Constraint<IntsFx>>(
+    lattice = UnitTypeEffectConstraintLattice.constraintLattice,
+    poolInits =
+      listOf(
+        Constraint(persistentMapOf(x["f"] to persistentSetOf(1, 2, 3)), persistentMapOf(x["f"] to persistentSetOf(y["g"]))),
+        Constraint(persistentMapOf(x["g"] to persistentSetOf(2, 3, 4)), persistentMapOf(x["f"] to persistentSetOf(x["g"]))),
+        Constraint(persistentMapOf(x["f"] to persistentSetOf(2, 3, 4)), persistentMapOf(x["f"] to persistentSetOf(y["h"]))),
+      ),
+  ) {
 
   @Test
   fun `joining over constraints`() {
-    val c1 =
-        Constraint(
-            persistentMapOf(x["f"] to persistentSetOf(1, 2, 3)),
-            persistentMapOf(y["g"] to persistentSetOf(x["h"])),
-        )
-    val c2 =
-        Constraint(
-            persistentMapOf(x["f"] to persistentSetOf(2, 3, 4)),
-            persistentMapOf(y["g"] to persistentSetOf(x["m"])),
-        )
+    val c1 = Constraint(persistentMapOf(x["f"] to persistentSetOf(1, 2, 3)), persistentMapOf(y["g"] to persistentSetOf(x["h"])))
+    val c2 = Constraint(persistentMapOf(x["f"] to persistentSetOf(2, 3, 4)), persistentMapOf(y["g"] to persistentSetOf(x["m"])))
 
     val c = c1 join c2 // Most permissive constraint implied by `c1` and `c2`
     Truth.assertThat(c.concreteUpperbounds).isEqualTo(persistentMapOf(x["f"] to persistentSetOf(2, 3)))

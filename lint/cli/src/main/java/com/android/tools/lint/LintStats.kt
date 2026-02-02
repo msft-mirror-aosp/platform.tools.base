@@ -25,16 +25,16 @@ import kotlin.math.max
 
 /** Value object passed to [Reporter] instances providing statistics to include in the summary. */
 class LintStats(
-    val errorCount: Int,
-    val warningCount: Int,
-    val hintCount: Int = 0,
-    val baselineErrorCount: Int = 0,
-    val baselineWarningCount: Int = 0,
-    val baselineHintCount: Int = 0,
-    val baselineFixedCount: Int = 0,
-    val autoFixedCount: Int = 0,
-    val hasAutoFixCount: Int = 0,
-    // TODO: Timing stats too?
+  val errorCount: Int,
+  val warningCount: Int,
+  val hintCount: Int = 0,
+  val baselineErrorCount: Int = 0,
+  val baselineWarningCount: Int = 0,
+  val baselineHintCount: Int = 0,
+  val baselineFixedCount: Int = 0,
+  val autoFixedCount: Int = 0,
+  val hasAutoFixCount: Int = 0,
+  // TODO: Timing stats too?
 ) {
   fun count(): Int {
     return errorCount + warningCount + hintCount
@@ -109,15 +109,15 @@ class LintStats(
       }
 
       return LintStats(
-          errorCount,
-          warningCount,
-          hintCount,
-          baselineErrorCount,
-          baselineWarningCount,
-          baselineHintCount,
-          baselineFixedCount,
-          autofixed,
-          hasAutoFixCount,
+        errorCount,
+        warningCount,
+        hintCount,
+        baselineErrorCount,
+        baselineWarningCount,
+        baselineHintCount,
+        baselineFixedCount,
+        autofixed,
+        hasAutoFixCount,
       )
     }
   }

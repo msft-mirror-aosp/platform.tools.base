@@ -55,10 +55,10 @@ import org.jetbrains.uast.visitor.UastVisitor
  * If you just want to visit calls, consider using the [UastCallVisitor].
  */
 abstract class UImplicitCallExpression(
-    /** The original expression that is implicitly making a call to an overloaded function. */
-    val expression: UExpression,
-    /** The function being called. */
-    val operator: PsiMethod,
+  /** The original expression that is implicitly making a call to an overloaded function. */
+  val expression: UExpression,
+  /** The function being called. */
+  val operator: PsiMethod,
 ) : UCallExpression {
   abstract override val receiver: UExpression?
   abstract override val receiverType: PsiType?
@@ -195,11 +195,11 @@ fun UArrayAccessExpression.asCall(): UCallExpression? {
 fun UArrayAccessExpression.asCall(operator: PsiMethod): UCallExpression {
   val parent = this.uastParent as? UBinaryExpression
   val setter =
-      if (parent != null && parent.isAssignment()) {
-        parent.rightOperand
-      } else {
-        null
-      }
+    if (parent != null && parent.isAssignment()) {
+      parent.rightOperand
+    } else {
+      null
+    }
   return ArrayAccessAsCallExpression(this, setter, operator)
 }
 
@@ -225,10 +225,8 @@ fun UUnaryExpression.asCall(operator: PsiMethod): UCallExpression {
  *
  * See [UUnaryExpression.asCall].
  */
-private class UnaryExpressionAsCallExpression(
-    private val unary: UUnaryExpression,
-    operator: PsiMethod,
-) : UImplicitCallExpression(unary, operator) {
+private class UnaryExpressionAsCallExpression(private val unary: UUnaryExpression, operator: PsiMethod) :
+  UImplicitCallExpression(unary, operator) {
   override val receiver: UExpression
     get() = unary.operand
 
@@ -249,10 +247,8 @@ private class UnaryExpressionAsCallExpression(
  *
  * See [UBinaryExpression.asCall].
  */
-private class BinaryExpressionAsCallExpression(
-    private val binary: UBinaryExpression,
-    operator: PsiMethod,
-) : UImplicitCallExpression(binary, operator) {
+private class BinaryExpressionAsCallExpression(private val binary: UBinaryExpression, operator: PsiMethod) :
+  UImplicitCallExpression(binary, operator) {
   // See https://kotlinlang.org/docs/operator-overloading.html#binary-operations
   // All the operators are "a.something(b)" except for the containment operators
   // which are "b.contains(a)"
@@ -266,10 +262,10 @@ private class BinaryExpressionAsCallExpression(
 
   override val receiver: UExpression?
     get() =
-        when (binary.operator) {
-          UastBinaryOperator.ASSIGN -> (binary.leftOperand as? UArrayAccessExpression)?.receiver
-          else -> if (isSingleParameter) if (isReversed) binary.rightOperand else binary.leftOperand else null
-        }
+      when (binary.operator) {
+        UastBinaryOperator.ASSIGN -> (binary.leftOperand as? UArrayAccessExpression)?.receiver
+        else -> if (isSingleParameter) if (isReversed) binary.rightOperand else binary.leftOperand else null
+      }
 
   override val receiverType: PsiType?
     get() = receiver?.getExpressionType()
@@ -289,21 +285,21 @@ private class BinaryExpressionAsCallExpression(
         return newArguments
       }
       val newArguments =
-          if (isReversed) {
-            if (isSingleParameter) {
-              // extension function, second parameter is receiver
-              listOf(binary.leftOperand)
-            } else {
-              listOf(binary.rightOperand, binary.leftOperand)
-            }
+        if (isReversed) {
+          if (isSingleParameter) {
+            // extension function, second parameter is receiver
+            listOf(binary.leftOperand)
           } else {
-            if (isSingleParameter) {
-              // extension function, first parameter is receiver
-              listOf(binary.rightOperand)
-            } else {
-              listOf(binary.leftOperand, binary.rightOperand)
-            }
+            listOf(binary.rightOperand, binary.leftOperand)
           }
+        } else {
+          if (isSingleParameter) {
+            // extension function, first parameter is receiver
+            listOf(binary.rightOperand)
+          } else {
+            listOf(binary.leftOperand, binary.rightOperand)
+          }
+        }
       _arguments = newArguments
       return newArguments
     }
@@ -318,11 +314,11 @@ private class BinaryExpressionAsCallExpression(
     val arguments = this.valueArguments
     val argumentCount = arguments.size
     val start =
-        when (parameters.size) {
-          argumentCount -> 0
-          argumentCount + 1 -> 1
-          else -> return emptyMap()
-        }
+      when (parameters.size) {
+        argumentCount -> 0
+        argumentCount + 1 -> 1
+        else -> return emptyMap()
+      }
     return arguments.mapIndexed { index, value -> value to parameters[index + start] }.toMap()
   }
 }
@@ -333,9 +329,9 @@ private class BinaryExpressionAsCallExpression(
  * See [UArrayAccessExpression.asCall].
  */
 private class ArrayAccessAsCallExpression(
-    private val accessExpression: UArrayAccessExpression,
-    private val setter: UExpression?,
-    operator: PsiMethod,
+  private val accessExpression: UArrayAccessExpression,
+  private val setter: UExpression?,
+  operator: PsiMethod,
 ) : UImplicitCallExpression(accessExpression, operator) {
   override val receiver: UExpression
     get() = accessExpression.receiver
@@ -347,13 +343,13 @@ private class ArrayAccessAsCallExpression(
     get() {
       val indices = accessExpression.indices.firstOrNull()?.sourcePsi ?: return null
       var bracket =
-          if (indices is KtLiteralStringTemplateEntry) {
-            // With KotlinConverter.INSTANCE.setForceUInjectionHost enabled,
-            // we have to look at the parent instead to find the left bracket
-            indices.parent.prevSibling
-          } else {
-            indices.prevSibling
-          }
+        if (indices is KtLiteralStringTemplateEntry) {
+          // With KotlinConverter.INSTANCE.setForceUInjectionHost enabled,
+          // we have to look at the parent instead to find the left bracket
+          indices.parent.prevSibling
+        } else {
+          indices.prevSibling
+        }
       while (bracket is PsiWhiteSpace || bracket is PsiComment) {
         bracket = bracket.prevSibling
       }

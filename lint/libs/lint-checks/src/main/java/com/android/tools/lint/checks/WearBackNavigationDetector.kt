@@ -35,23 +35,23 @@ class WearBackNavigationDetector : WearDetector(), XmlScanner {
 
     @JvmField
     val ISSUE =
-        Issue.create(
-                id = "WearBackNavigation",
-                briefDescription = "Wear: Disabling Back navigation",
-                explanation =
-                    """
+      Issue.create(
+          id = "WearBackNavigation",
+          briefDescription = "Wear: Disabling Back navigation",
+          explanation =
+            """
               Disabling swipe-to-dismiss is generally not recommended for Wear applications because \
               the user expects to dismiss any screen with a swipe. \
               If your activity does not require swipe-to-dismiss to be disabled, the recommendation is to \
               remove the `android:windowSwipeToDismiss` attribute from your theme declaration.
             """,
-                category = Category.USABILITY,
-                severity = Severity.WARNING,
-                implementation = IMPLEMENTATION,
-                enabledByDefault = true,
-                androidSpecific = true,
-            )
-            .addMoreInfo("https://developer.android.com/training/wearables/views/exit#disabling-swipe-to-dismiss")
+          category = Category.USABILITY,
+          severity = Severity.WARNING,
+          implementation = IMPLEMENTATION,
+          enabledByDefault = true,
+          androidSpecific = true,
+        )
+        .addMoreInfo("https://developer.android.com/training/wearables/views/exit#disabling-swipe-to-dismiss")
   }
 
   override fun appliesTo(folderType: ResourceFolderType) = isWearProject && ResourceFolderType.VALUES == folderType
@@ -64,11 +64,11 @@ class WearBackNavigationDetector : WearDetector(), XmlScanner {
       val fix = fix().name("Delete `android:windowSwipeToDismiss` from theme").replace().with("").autoFix().build()
 
       context.report(
-          ISSUE,
-          element,
-          context.getLocation(element),
-          "Disabling swipe-to-dismiss is generally not recommended for Wear applications",
-          fix,
+        ISSUE,
+        element,
+        context.getLocation(element),
+        "Disabling swipe-to-dismiss is generally not recommended for Wear applications",
+        fix,
       )
     }
   }

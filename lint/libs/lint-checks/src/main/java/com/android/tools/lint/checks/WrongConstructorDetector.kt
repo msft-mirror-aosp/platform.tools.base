@@ -38,20 +38,20 @@ class WrongConstructorDetector : Detector(), SourceCodeScanner {
 
     @JvmField
     val ISSUE =
-        Issue.create(
-                id = "NotConstructor",
-                briefDescription = "Not a Constructor",
-                explanation =
-                    """
+      Issue.create(
+          id = "NotConstructor",
+          briefDescription = "Not a Constructor",
+          explanation =
+            """
                 This check catches methods that look like they were intended to be constructors, \
                 but aren't.
                 """,
-                category = Category.CORRECTNESS,
-                priority = 4,
-                severity = Severity.WARNING,
-                implementation = IMPLEMENTATION,
-            )
-            .setAliases(listOf("MethodNameSameAsClassName")) // IntelliJ inspection
+          category = Category.CORRECTNESS,
+          priority = 4,
+          severity = Severity.WARNING,
+          implementation = IMPLEMENTATION,
+        )
+        .setAliases(listOf("MethodNameSameAsClassName")) // IntelliJ inspection
   }
 
   override fun getApplicableUastTypes(): List<Class<out UElement>> = listOf(UMethod::class.java)
@@ -80,12 +80,7 @@ class WrongConstructorDetector : Detector(), SourceCodeScanner {
         @Suppress("UElementAsPsi") // UClass should get a name property
         val className = containingClass.name ?: return
         if (className == node.name) {
-          context.report(
-              ISSUE,
-              node,
-              context.getLocation(node),
-              "Method ${node.name} looks like a constructor but is a normal method",
-          )
+          context.report(ISSUE, node, context.getLocation(node), "Method ${node.name} looks like a constructor but is a normal method")
         }
       }
     }

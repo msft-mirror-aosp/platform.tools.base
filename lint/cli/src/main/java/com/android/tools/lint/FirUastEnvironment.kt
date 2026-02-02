@@ -55,11 +55,11 @@ import org.jetbrains.uast.kotlin.internal.FirKotlinUastLibraryPsiProviderService
  */
 class FirUastEnvironment
 private constructor(
-    override val coreAppEnv: CoreApplicationEnvironment,
-    override val ideaProject: MockProject,
-    override val kotlinCompilerConfig: CompilerConfiguration,
-    override val projectDisposable: Disposable,
-    override val isKMP: Boolean,
+  override val coreAppEnv: CoreApplicationEnvironment,
+  override val ideaProject: MockProject,
+  override val kotlinCompilerConfig: CompilerConfiguration,
+  override val projectDisposable: Disposable,
+  override val isKMP: Boolean,
 ) : UastEnvironment {
 
   class Configuration private constructor(override val kotlinCompilerConfig: CompilerConfiguration) : UastEnvironment.Configuration {
@@ -70,10 +70,7 @@ private constructor(
 
     override var useKlibLightElementProvider: Boolean = false
 
-    override fun addModules(
-        modules: List<UastEnvironment.Module>,
-        bootClassPaths: Iterable<File>?,
-    ) {
+    override fun addModules(modules: List<UastEnvironment.Module>, bootClassPaths: Iterable<File>?) {
       this.modules.addAll(modules)
       bootClassPaths?.let(this.classPaths::addAll)
     }
@@ -93,11 +90,11 @@ private constructor(
       val parentDisposable = Disposer.newDisposable("FirUastEnvironment.create")
       val analysisSession = createAnalysisSession(parentDisposable, config)
       return FirUastEnvironment(
-          analysisSession.coreApplicationEnvironment,
-          analysisSession.project as MockProject,
-          config.kotlinCompilerConfig,
-          parentDisposable,
-          config.isKMP,
+        analysisSession.coreApplicationEnvironment,
+        analysisSession.project as MockProject,
+        config.kotlinCompilerConfig,
+        parentDisposable,
+        config.isKMP,
       )
     }
   }
@@ -113,50 +110,38 @@ private fun createKotlinCompilerConfig(enableKotlinScripting: Boolean): Compiler
   if (enableKotlinScripting) {
     // TODO: [KtCompilerPluginsProvider] is a preferred way.
     // NB: hacky solution to pass the registrar to the registration point below.
-    config.add(
-        CompilerPluginRegistrar.COMPILER_PLUGIN_REGISTRARS,
-        ScriptingK2CompilerPluginRegistrar(),
-    )
+    config.add(CompilerPluginRegistrar.COMPILER_PLUGIN_REGISTRARS, ScriptingK2CompilerPluginRegistrar())
   }
 
   return config
 }
 
 @OptIn(KaExperimentalApi::class)
-private fun createAnalysisSession(
-    parentDisposable: Disposable,
-    config: FirUastEnvironment.Configuration,
-): StandaloneAnalysisAPISession {
+private fun createAnalysisSession(parentDisposable: Disposable, config: FirUastEnvironment.Configuration): StandaloneAnalysisAPISession {
   val analysisSession =
-      buildStandaloneAnalysisAPISession(
-          projectDisposable = parentDisposable,
-          compilerConfiguration = config.kotlinCompilerConfig,
-      ) {
-        appLock.withLock {
-          // Should register this before the project structure is built
-          registerCommonElementTypeConverters(application as MockApplication)
-        }
-        CoreApplicationEnvironment.registerExtensionPoint(
-            project.extensionArea,
-            KaResolveExtensionProvider.EP_NAME.name,
-            KaResolveExtensionProvider::class.java,
-        )
-        // Scripting support
-        registerProjectService(ScriptDefinitionProvider::class.java, CliScriptDefinitionProvider())
-        registerProjectService(
-            ClsJavaStubByVirtualFileCache::class.java,
-            ClsJavaStubByVirtualFileCache(),
-        )
-
-        appLock.withLock {
-          // TODO: Avoid creating AA session per test mode, while app env. is not disposed,
-          //  which led to duplicate app-level service registration.
-          // We need to re-register Application-level service before AA session is built.
-          reRegisterProgressManager(application as MockApplication)
-        }
-
-        buildKtModuleProvider(configureAnalysisApiProjectStructure(config))
+    buildStandaloneAnalysisAPISession(projectDisposable = parentDisposable, compilerConfiguration = config.kotlinCompilerConfig) {
+      appLock.withLock {
+        // Should register this before the project structure is built
+        registerCommonElementTypeConverters(application as MockApplication)
       }
+      CoreApplicationEnvironment.registerExtensionPoint(
+        project.extensionArea,
+        KaResolveExtensionProvider.EP_NAME.name,
+        KaResolveExtensionProvider::class.java,
+      )
+      // Scripting support
+      registerProjectService(ScriptDefinitionProvider::class.java, CliScriptDefinitionProvider())
+      registerProjectService(ClsJavaStubByVirtualFileCache::class.java, ClsJavaStubByVirtualFileCache())
+
+      appLock.withLock {
+        // TODO: Avoid creating AA session per test mode, while app env. is not disposed,
+        //  which led to duplicate app-level service registration.
+        // We need to re-register Application-level service before AA session is built.
+        reRegisterProgressManager(application as MockApplication)
+      }
+
+      buildKtModuleProvider(configureAnalysisApiProjectStructure(config))
+    }
   appLock.withLock {
     configureFirApplicationEnvironment(analysisSession.coreApplicationEnvironment, config)
     // https://youtrack.jetbrains.com/issue/KT-80366
@@ -169,48 +154,30 @@ private fun createAnalysisSession(
   return analysisSession
 }
 
-private fun configureFirProjectEnvironment(
-    analysisAPISession: StandaloneAnalysisAPISession,
-    config: UastEnvironment.Configuration,
-) {
+private fun configureFirProjectEnvironment(analysisAPISession: StandaloneAnalysisAPISession, config: UastEnvironment.Configuration) {
   val project = analysisAPISession.project as MockProject
 
   configureProjectEnvironment(project, config)
 
   val psiDeclarationProviderFactory =
-      KotlinStaticPsiDeclarationProviderFactory(
-          project,
-          analysisAPISession.coreApplicationEnvironment.jarFileSystem,
-      )
+    KotlinStaticPsiDeclarationProviderFactory(project, analysisAPISession.coreApplicationEnvironment.jarFileSystem)
 
-  project.registerService(
-      KotlinPsiDeclarationProviderFactory::class.java,
-      psiDeclarationProviderFactory,
-  )
+  project.registerService(KotlinPsiDeclarationProviderFactory::class.java, psiDeclarationProviderFactory)
 }
 
-private fun configureFirApplicationEnvironment(
-    appEnv: CoreApplicationEnvironment,
-    config: FirUastEnvironment.Configuration,
-) {
+private fun configureFirApplicationEnvironment(appEnv: CoreApplicationEnvironment, config: FirUastEnvironment.Configuration) {
   configureApplicationEnvironment(appEnv) {
     it.addExtension(UastLanguagePlugin.EP, FirKotlinUastLanguagePlugin())
 
     it.application.registerService(
-        FirKotlinUastLibraryPsiProviderService::class.java,
-        when (config.useKlibLightElementProvider) {
-          true -> KlibLightElementProvider::class.java
-          else -> DecompiledPsiDeclarationProvider::class.java
-        },
+      FirKotlinUastLibraryPsiProviderService::class.java,
+      when (config.useKlibLightElementProvider) {
+        true -> KlibLightElementProvider::class.java
+        else -> DecompiledPsiDeclarationProvider::class.java
+      },
     )
 
-    it.application.registerService(
-        BaseKotlinUastResolveProviderService::class.java,
-        FirCliKotlinUastResolveProviderService::class.java,
-    )
-    it.application.registerService(
-        FirKotlinUastResolveProviderService::class.java,
-        FirCliKotlinUastResolveProviderService::class.java,
-    )
+    it.application.registerService(BaseKotlinUastResolveProviderService::class.java, FirCliKotlinUastResolveProviderService::class.java)
+    it.application.registerService(FirKotlinUastResolveProviderService::class.java, FirCliKotlinUastResolveProviderService::class.java)
   }
 }

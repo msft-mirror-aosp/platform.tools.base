@@ -50,10 +50,10 @@ class PluralsDetector : ResourceXmlDetector() {
     val count = getChildCount(element)
     if (count == 0) {
       context.report(
-          MISSING,
-          element,
-          context.getLocation(element),
-          "There should be at least one quantity string in this `<plural>` definition",
+        MISSING,
+        element,
+        context.getLocation(element),
+        "There should be at least one quantity string in this `<plural>` definition",
       )
       return
     }
@@ -92,22 +92,22 @@ class PluralsDetector : ResourceXmlDetector() {
       }
       defined.add(quantity)
       if (
-          plurals.hasMultipleValuesForQuantity(language, quantity) && !haveFormattingParameter(child) && context.isEnabled(IMPLIED_QUANTITY)
+        plurals.hasMultipleValuesForQuantity(language, quantity) && !haveFormattingParameter(child) && context.isEnabled(IMPLIED_QUANTITY)
       ) {
         val example = plurals.findIntegerExamples(language, quantity)
         val append =
-            if (example == null) {
-              ""
-            } else {
-              " ($example)"
-            }
+          if (example == null) {
+            ""
+          } else {
+            " ($example)"
+          }
         val message =
-            """
+          """
                     The quantity `'$quantity'` matches more than one specific number in this locale$append, but the message did not \
                     include a formatting argument (such as `%d`). This is usually an internationalization error. See full issue \
                     explanation for more.
                     """
-                .trimIndent()
+            .trimIndent()
         context.report(IMPLIED_QUANTITY, child, context.getLocation(child), message)
       }
       i++
@@ -122,21 +122,21 @@ class PluralsDetector : ResourceXmlDetector() {
     if (!missing.isEmpty()) {
       val examplesLookup = PluralExamplesLookup.getInstance()
       val withExamples =
-          missing.map { form ->
-            val example = examplesLookup.findExample(language, form.name)?.formattedWithNumber()
-            if (example != null) {
-              "`${form.name}` (e.g. \"$example\")"
-            } else {
-              "`${form.name}`"
-            }
+        missing.map { form ->
+          val example = examplesLookup.findExample(language, form.name)?.formattedWithNumber()
+          if (example != null) {
+            "`${form.name}` (e.g. \"$example\")"
+          } else {
+            "`${form.name}`"
           }
+        }
       val languageDescription = getLanguageDescription(language)
       val message =
-          if (withExamples.size == 1) {
-            "For locale $languageDescription the following quantity should also be defined: ${withExamples.single()}"
-          } else {
-            "For locale $languageDescription the following quantities should also be defined: ${withExamples.joinToString(", ")}"
-          }
+        if (withExamples.size == 1) {
+          "For locale $languageDescription the following quantity should also be defined: ${withExamples.single()}"
+        } else {
+          "For locale $languageDescription the following quantities should also be defined: ${withExamples.joinToString(", ")}"
+        }
       val incident = Incident(MISSING, element, context.getLocation(element), message)
       val baselineDatabase = PluralsDatabase.OLDEST.getRelevant(language)
       if (baselineDatabase != null && missing.all { !baselineDatabase.contains(it) }) {
@@ -150,11 +150,11 @@ class PluralsDetector : ResourceXmlDetector() {
     extra.removeAll(relevant)
     if (extra.isNotEmpty()) {
       val message =
-          String.format(
-              "For language %1\$s the following quantities are not relevant: %2\$s",
-              getLanguageDescription(language),
-              Quantity.formatSet(extra),
-          )
+        String.format(
+          "For language %1\$s the following quantities are not relevant: %2\$s",
+          getLanguageDescription(language),
+          Quantity.formatSet(extra),
+        )
       context.report(EXTRA, element, context.getLocation(element), message)
     }
   }
@@ -165,11 +165,11 @@ class PluralsDetector : ResourceXmlDetector() {
     /** This locale should define a quantity string for the given quantity */
     @JvmField
     val MISSING =
-        create(
-            id = "MissingQuantity",
-            briefDescription = "Missing quantity translation",
-            explanation =
-                """
+      create(
+        id = "MissingQuantity",
+        briefDescription = "Missing quantity translation",
+        explanation =
+          """
                 Different languages have different rules for grammatical agreement with quantity. In English, for example, the quantity 1 \
                 is a special case. We write "1 book", but for any other quantity we'd write "n books". This distinction between singular \
                 and plural is very common, but other languages make finer distinctions.
@@ -180,21 +180,21 @@ class PluralsDetector : ResourceXmlDetector() {
                 For example, an English translation must provide a string for `quantity="one"`. Similarly, a Czech translation must \
                 provide a string for `quantity="few"`.
             """,
-            category = Category.MESSAGES,
-            priority = 8,
-            severity = Severity.ERROR,
-            implementation = IMPLEMENTATION,
-            moreInfo = "https://developer.android.com/guide/topics/resources/string-resource.html#Plurals",
-        )
+        category = Category.MESSAGES,
+        priority = 8,
+        severity = Severity.ERROR,
+        implementation = IMPLEMENTATION,
+        moreInfo = "https://developer.android.com/guide/topics/resources/string-resource.html#Plurals",
+      )
 
     /** This translation is not needed in this locale */
     @JvmField
     val EXTRA =
-        create(
-            id = "UnusedQuantity",
-            briefDescription = "Unused quantity translations",
-            explanation =
-                """
+      create(
+        id = "UnusedQuantity",
+        briefDescription = "Unused quantity translations",
+        explanation =
+          """
                 Android defines a number of different quantity strings, such as `zero`, `one`, `few` and `many`. However, many languages \
                 do not distinguish grammatically between all these different quantities.
 
@@ -204,21 +204,21 @@ class PluralsDetector : ResourceXmlDetector() {
                 For example, in Chinese, only the `other` quantity is used, so even if you provide translations for `zero` and `one`, \
                 these strings will **not** be returned when `getQuantityString()` is called, even with `0` or `1`.
             """,
-            category = Category.MESSAGES,
-            priority = 3,
-            severity = Severity.WARNING,
-            implementation = IMPLEMENTATION,
-            moreInfo = "https://developer.android.com/guide/topics/resources/string-resource.html#Plurals",
-        )
+        category = Category.MESSAGES,
+        priority = 3,
+        severity = Severity.WARNING,
+        implementation = IMPLEMENTATION,
+        moreInfo = "https://developer.android.com/guide/topics/resources/string-resource.html#Plurals",
+      )
 
     /** This plural does not use the quantity value */
     @JvmField
     val IMPLIED_QUANTITY =
-        create(
-            id = "ImpliedQuantity",
-            briefDescription = "Implied Quantities",
-            explanation =
-                """
+      create(
+        id = "ImpliedQuantity",
+        briefDescription = "Implied Quantities",
+        explanation =
+          """
                 Plural strings should generally include a `%s` or `%d` formatting argument. In locales like English, the `one` quantity \
                 only applies to a single value, 1, but that's not true everywhere. For example, in Slovene, the `one` quantity will apply \
                 to 1, 101, 201, 301, and so on. Similarly, there are locales where multiple values match the `zero` and `two` quantities.
@@ -226,12 +226,12 @@ class PluralsDetector : ResourceXmlDetector() {
                 In these locales, it is usually an error to have a message which does not include a formatting argument (such as '%d'), \
                 since it will not be clear from the grammar what quantity the quantity string is describing.
                 """,
-            category = Category.MESSAGES,
-            priority = 5,
-            severity = Severity.ERROR,
-            implementation = IMPLEMENTATION,
-            moreInfo = "https://developer.android.com/guide/topics/resources/string-resource.html#Plurals",
-        )
+        category = Category.MESSAGES,
+        priority = 5,
+        severity = Severity.ERROR,
+        implementation = IMPLEMENTATION,
+        moreInfo = "https://developer.android.com/guide/topics/resources/string-resource.html#Plurals",
+      )
 
     /**
      * Returns true if the given string/plurals item element contains a formatting parameter, possibly within HTML markup or xliff metadata

@@ -25,9 +25,9 @@ class ArrayInitDetectorTest : AbstractCheckTest() {
 
   fun testDocumentationExample() {
     lint()
-        .files(
-            kotlin(
-                    """
+      .files(
+        kotlin(
+            """
             package test.pkg
 
             fun testInit(size: Int, value: Int) {
@@ -35,34 +35,34 @@ class ArrayInitDetectorTest : AbstractCheckTest() {
                 val startPoints = remember { IntArray(4) { 0 } }
             }
             """
-                )
-                .indented()
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented()
+      )
+      .run()
+      .expect(
+        """
         src/test/pkg/test.kt:5: Hint: This initialization lambda ({ 0 }) is unnecessary and is less efficient [UnnecessaryArrayInit]
             val startPoints = remember { IntArray(4) { 0 } }
                                                      ~~~~~
         0 errors, 0 warnings, 1 hint
         """
-        )
-        .expectFixDiffs(
-            """
+      )
+      .expectFixDiffs(
+        """
         Autofix for src/test/pkg/test.kt line 5: Remove initialization:
         @@ -5 +5 @@
         -    val startPoints = remember { IntArray(4) { 0 } }
         +    val startPoints = remember { IntArray(4) }
         """
-        )
+      )
   }
 
   @Suppress("RemoveRedundantQualifierName")
   fun testScenarios() {
     lint()
-        .files(
-            kotlin(
-                    """
+      .files(
+        kotlin(
+            """
             package test.pkg
 
             fun testInit(size: Int, value: Int) {
@@ -98,12 +98,12 @@ class ArrayInitDetectorTest : AbstractCheckTest() {
               }
             }
             """
-                )
-                .indented()
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented()
+      )
+      .run()
+      .expect(
+        """
         src/test/pkg/test.kt:7: Hint: This initialization lambda ({ 0 }) is unnecessary and is less efficient [UnnecessaryArrayInit]
             ByteArray(size) { 0 }  // WARN 1
                             ~~~~~
@@ -121,9 +121,9 @@ class ArrayInitDetectorTest : AbstractCheckTest() {
                                        ~~~~~~
         0 errors, 0 warnings, 5 hints
         """
-        )
-        .expectFixDiffs(
-            """
+      )
+      .expectFixDiffs(
+        """
         Autofix for src/test/pkg/test.kt line 7: Remove initialization:
         @@ -7 +7 @@
         -    ByteArray(size) { 0 }  // WARN 1
@@ -145,6 +145,6 @@ class ArrayInitDetectorTest : AbstractCheckTest() {
         -    val scaleX = FloatArray(5) { 0f } // WARN 5
         +    val scaleX = FloatArray(5) // WARN 5
         """
-        )
+      )
   }
 }

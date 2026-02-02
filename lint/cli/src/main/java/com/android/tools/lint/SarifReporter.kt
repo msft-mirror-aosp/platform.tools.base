@@ -81,30 +81,30 @@ constructor(client: LintCliClient, output: File) : Reporter(client, output) {
 
   private fun getRoot(incident: Incident): File? {
     return root
-        ?: client.getRootDir()
-        ?: run {
-              val project = incident.project
-              if (project != null) {
-                // Workaround: we need the root project; and the client couldn't compute it.
-                // We don't just want the project directory, we want the root, which often
-                // is not the same; as a temporary workaround before this shows up in the
-                // model (see LintCliClient#getRootDir) we find the highest directory that
-                // supports build.grade/kts.
-                var dir = project.dir
-                while (true) {
-                  val parent = dir.parentFile ?: break
-                  if (File(parent, FN_BUILD_GRADLE).exists() || File(parent, FN_BUILD_GRADLE_KTS).exists()) {
-                    dir = parent
-                  } else {
-                    break
-                  }
-                }
-                dir
+      ?: client.getRootDir()
+      ?: run {
+          val project = incident.project
+          if (project != null) {
+            // Workaround: we need the root project; and the client couldn't compute it.
+            // We don't just want the project directory, we want the root, which often
+            // is not the same; as a temporary workaround before this shows up in the
+            // model (see LintCliClient#getRootDir) we find the highest directory that
+            // supports build.grade/kts.
+            var dir = project.dir
+            while (true) {
+              val parent = dir.parentFile ?: break
+              if (File(parent, FN_BUILD_GRADLE).exists() || File(parent, FN_BUILD_GRADLE_KTS).exists()) {
+                dir = parent
               } else {
-                null
+                break
               }
             }
-            .also { root = it }
+            dir
+          } else {
+            null
+          }
+        }
+        .also { root = it }
   }
 
   @Throws(IOException::class)
@@ -112,8 +112,8 @@ constructor(client: LintCliClient, output: File) : Reporter(client, output) {
     var indent = 0
     writer.indent(indent++).write("{\n")
     writer
-        .indent(indent)
-        .write("\"\$schema\" : \"https://docs.oasis-open.org/sarif/sarif/v2.1.0/errata01/os/schemas/sarif-schema-2.1.0.json\",\n")
+      .indent(indent)
+      .write("\"\$schema\" : \"https://docs.oasis-open.org/sarif/sarif/v2.1.0/errata01/os/schemas/sarif-schema-2.1.0.json\",\n")
 
     writer.indent(indent).write("\"version\" : \"2.1.0\",\n")
     writer.indent(indent++).write("\"runs\" : [\n")
@@ -195,10 +195,10 @@ constructor(client: LintCliClient, output: File) : Reporter(client, output) {
     writer.indent(indent).write("\"organization\": \"Google\",\n")
     writer.indent(indent).write("\"informationUri\": \"https://developer.android.com/studio/write/lint\",\n")
     writer.writeDescription(
-        indent,
-        "fullDescription",
-        "Static analysis originally for Android source code but now performing general analysis",
-        comma = true,
+      indent,
+      "fullDescription",
+      "Static analysis originally for Android source code but now performing general analysis",
+      comma = true,
     )
     writer.indent(indent).write("\"language\": \"en-US\",\n")
     writeRules(issues, indent)
@@ -373,24 +373,18 @@ constructor(client: LintCliClient, output: File) : Reporter(client, output) {
     var indent = indent
     val location = incident.location
     writer.indent(indent++).write("\"locations\": [\n")
-    writeSingleLocation(
-        incident,
-        location,
-        last = true,
-        indent = indent,
-        message = location.message,
-    )
+    writeSingleLocation(incident, location, last = true, indent = indent, message = location.message)
     writer.indent(--indent).write("],\n")
     location.secondary?.let { writeRelatedLocations(incident, it, indent) }
   }
 
   private fun writeSingleLocation(
-      incident: Incident,
-      location: Location,
-      last: Boolean,
-      indent: Int,
-      id: Int = -1,
-      message: String? = null,
+    incident: Incident,
+    location: Location,
+    last: Boolean,
+    indent: Int,
+    id: Int = -1,
+    message: String? = null,
   ) {
     var indent = indent
     writer.indent(indent++).write("{\n")
@@ -409,11 +403,11 @@ constructor(client: LintCliClient, output: File) : Reporter(client, output) {
     if (start != null && end != null) {
       val fileText = client.getSourceText(file)
       val segment =
-          if (fileText.isNotEmpty()) {
-            fileText.substring(start.offset, end.offset)
-          } else {
-            null
-          }
+        if (fileText.isNotEmpty()) {
+          fileText.substring(start.offset, end.offset)
+        } else {
+          null
+        }
 
       val context = computeContext(fileText, start, end)
 
@@ -476,31 +470,31 @@ constructor(client: LintCliClient, output: File) : Reporter(client, output) {
   private fun isBinary(file: File): Boolean {
     val path = file.path
     return isBitmapFile(file) ||
-        path.endsWith(DOT_JAR) ||
-        path.endsWith(DOT_CLASS) ||
-        path.endsWith(DOT_SRCJAR) ||
-        path.endsWith(DOT_AAR) ||
-        path.endsWith(DOT_DEX) ||
-        path.endsWith(".apk") ||
-        path.endsWith(".ser") ||
-        path.endsWith(".flat") ||
-        path.endsWith(".bin")
+      path.endsWith(DOT_JAR) ||
+      path.endsWith(DOT_CLASS) ||
+      path.endsWith(DOT_SRCJAR) ||
+      path.endsWith(DOT_AAR) ||
+      path.endsWith(DOT_DEX) ||
+      path.endsWith(".apk") ||
+      path.endsWith(".ser") ||
+      path.endsWith(".flat") ||
+      path.endsWith(".bin")
   }
 
   private fun writeArtifactLocation(incident: Incident, file: File, indent: Int, last: Boolean) {
     val uriBaseId: String?
     val root = getRoot(incident)
     val uri =
-        if (root != null && isParent(root, file)) {
-          uriBaseId = SRC_DIR_VAR
-          client.getDisplayPath(root, file, false).replace('\\', '/').escapeJson()
-        } else if (isParent(home, file)) {
-          uriBaseId = USER_HOME_VAR
-          client.getDisplayPath(home, file, false).replace('\\', '/').escapeJson()
-        } else {
-          uriBaseId = null
-          getFileUri(file).escapeJson()
-        }
+      if (root != null && isParent(root, file)) {
+        uriBaseId = SRC_DIR_VAR
+        client.getDisplayPath(root, file, false).replace('\\', '/').escapeJson()
+      } else if (isParent(home, file)) {
+        uriBaseId = USER_HOME_VAR
+        client.getDisplayPath(home, file, false).replace('\\', '/').escapeJson()
+      } else {
+        uriBaseId = null
+        getFileUri(file).escapeJson()
+      }
     writer.indent(indent).write("\"artifactLocation\": {\n")
     if (uriBaseId != null) {
       writer.indent(indent + 1).write("\"uriBaseId\": \"$uriBaseId\",\n")
@@ -517,11 +511,7 @@ constructor(client: LintCliClient, output: File) : Reporter(client, output) {
    * snippet, at the end of the line a few lines below. (When the error message is near the beginning of the file or the end of the file the
    * locations are of course clamped to the beginning or end of the file).
    */
-  private fun computeContext(
-      fileText: CharSequence,
-      lineStart: Position,
-      lineEnd: Position,
-  ): Pair<Position, Position>? {
+  private fun computeContext(fileText: CharSequence, lineStart: Position, lineEnd: Position): Pair<Position, Position>? {
     if (fileText.isEmpty()) {
       return null
     }
@@ -599,23 +589,23 @@ constructor(client: LintCliClient, output: File) : Reporter(client, output) {
     // See https://docs.oasis-open.org/sarif/sarif/v2.1.0/os/sarif-v2.1.0-os.html#_Toc34317881
     val lintFix = incident.fix ?: return
     val fixes =
-        if (lintFix is LintFix.LintFixGroup && lintFix.type == LintFix.GroupType.ALTERNATIVES) {
-          lintFix.fixes
-        } else {
-          listOf(lintFix)
-        }
+      if (lintFix is LintFix.LintFixGroup && lintFix.type == LintFix.GroupType.ALTERNATIVES) {
+        lintFix.fixes
+      } else {
+        listOf(lintFix)
+      }
 
     val performer = LintCliFixPerformer(client, false)
     val edits =
-        try {
-          fixes.map { fix -> Pair(fix, performer.computeEdits(incident, fix)) }
-        } catch (exception: Throwable) {
-          // Computing fixes can result in errors, e.g. with overlapping
-          // edits or invalid regular expressions etc; in this case,
-          // omit all the fixes
-          client.log(exception, "Couldn't compute fix edits for ${lintFix.getDisplayName()}")
-          return
-        }
+      try {
+        fixes.map { fix -> Pair(fix, performer.computeEdits(incident, fix)) }
+      } catch (exception: Throwable) {
+        // Computing fixes can result in errors, e.g. with overlapping
+        // edits or invalid regular expressions etc; in this case,
+        // omit all the fixes
+        client.log(exception, "Couldn't compute fix edits for ${lintFix.getDisplayName()}")
+        return
+      }
 
     var indent = indent
     writer.indent(indent++).write("\"fixes\": [\n")
@@ -624,12 +614,12 @@ constructor(client: LintCliClient, output: File) : Reporter(client, output) {
   }
 
   private fun writeQuickFix(
-      performer: LintCliFixPerformer,
-      incident: Incident,
-      fix: LintFix,
-      files: List<LintFixPerformer.PendingEditFile>,
-      last: Boolean,
-      indent: Int,
+    performer: LintCliFixPerformer,
+    incident: Incident,
+    fix: LintFix,
+    files: List<LintFixPerformer.PendingEditFile>,
+    last: Boolean,
+    indent: Int,
   ) {
     // Only write fixes that have corresponding edits, since there are quickfixes
     // in lint that just communicate data to the IDE to act on or for example to
@@ -654,12 +644,7 @@ constructor(client: LintCliClient, output: File) : Reporter(client, output) {
   }
 
   /** Returns a (by default 1-based line number, or 0-based if you pass 0 into [startLineNumber]) line number. */
-  private fun getLineNumber(
-      source: CharSequence,
-      offset: Int,
-      startOffset: Int = 0,
-      startLineNumber: Int = 1,
-  ): Int {
+  private fun getLineNumber(source: CharSequence, offset: Int, startOffset: Int = 0, startLineNumber: Int = 1): Int {
     var lineNumber = startLineNumber
     for (i in startOffset until min(offset, source.length)) {
       if (source[i] == '\n') {
@@ -677,11 +662,11 @@ constructor(client: LintCliClient, output: File) : Reporter(client, output) {
   }
 
   private fun writeArtifactChange(
-      performer: LintCliFixPerformer,
-      incident: Incident,
-      file: LintFixPerformer.PendingEditFile,
-      last: Boolean,
-      indent: Int,
+    performer: LintCliFixPerformer,
+    incident: Incident,
+    file: LintFixPerformer.PendingEditFile,
+    last: Boolean,
+    indent: Int,
   ) {
     val source = performer.getSourceText(file.file)
     var indent = indent
@@ -725,13 +710,7 @@ constructor(client: LintCliClient, output: File) : Reporter(client, output) {
     writer.indent(--indent).write("}${if (last) "\n" else ",\n"}")
   }
 
-  private fun Writer.writeDescription(
-      indent: Int,
-      name: String,
-      raw: String,
-      comma: Boolean = false,
-      newline: Boolean = false,
-  ): Writer {
+  private fun Writer.writeDescription(indent: Int, name: String, raw: String, comma: Boolean = false, newline: Boolean = false): Writer {
     writer.indent(indent).write("\"$name\": {\n")
     val text = RAW.convertTo(raw, TEXT)
     writer.indent(indent + 1).write("\"text\": \"${text.escapeJson()}\"")

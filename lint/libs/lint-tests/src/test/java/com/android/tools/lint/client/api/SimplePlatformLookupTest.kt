@@ -59,24 +59,20 @@ class SimplePlatformLookupTest {
   private fun checkWithFull(sdkFolder: File, checks: (PlatformLookup) -> Unit) {
     // Now process the same folder with the real SDK manager to see
     // how it does
-    val handler =
-        AndroidSdkHandler.getInstance(
-            FakeAndroidLocationsProvider(homeFolder.root.toPath()),
-            sdkFolder.toPath(),
-        )
+    val handler = AndroidSdkHandler.getInstance(FakeAndroidLocationsProvider(homeFolder.root.toPath()), sdkFolder.toPath())
 
     val logger =
-        object : ConsoleProgressIndicator() {
-          override fun logInfo(s: String) {}
+      object : ConsoleProgressIndicator() {
+        override fun logInfo(s: String) {}
 
-          override fun logVerbose(s: String) {}
+        override fun logVerbose(s: String) {}
 
-          override fun logError(s: String) {
-            fail(s)
-          }
-
-          override fun logWarning(s: String) {}
+        override fun logError(s: String) {
+          fail(s)
         }
+
+        override fun logWarning(s: String) {}
+      }
     val sdkLookup = SdkManagerPlatformLookup(handler, logger)
     checks(sdkLookup)
   }
@@ -85,9 +81,9 @@ class SimplePlatformLookupTest {
     // SimplePlatformLookup is internal so can't access it directly;
     // we'll have LintClient do it on our behalf:
     val client =
-        object : TestLintClient() {
-          override fun getSdkHome(): File = sdkFolder
-        }
+      object : TestLintClient() {
+        override fun getSdkHome(): File = sdkFolder
+      }
     val platformLookup = client.getPlatformLookup()!!
     assertNotSame(platformLookup.javaClass, SdkManagerPlatformLookup::class.java)
     return platformLookup
@@ -114,10 +110,7 @@ class SimplePlatformLookupTest {
   @Test
   fun testLatest() {
     checkQueries { lookup ->
-      assertEquals(
-          "Platform android-31; api=API 31, rev=2",
-          lookup.getLatestSdkTarget(includePreviews = false).describe(),
-      )
+      assertEquals("Platform android-31; api=API 31, rev=2", lookup.getLatestSdkTarget(includePreviews = false).describe())
     }
   }
 
@@ -131,8 +124,8 @@ class SimplePlatformLookupTest {
 
     checkWithSimple(sdkFolder) { lookup ->
       assertEquals(
-          "Platform android-36.1; api=API 36.1, extension level 17, rev=2",
-          lookup.getLatestSdkTarget(includePreviews = false).describe(),
+        "Platform android-36.1; api=API 36.1, extension level 17, rev=2",
+        lookup.getLatestSdkTarget(includePreviews = false).describe(),
       )
     }
   }
@@ -163,15 +156,9 @@ class SimplePlatformLookupTest {
       // Has both stable and preview at this level: return the stable one
       assertEquals("Platform android-29; api=API 29, rev=5", lookup.getTarget(29).describe())
       // Return preview if we specifically ask for it
-      assertEquals(
-          "Platform android-R; api=API 29, R preview, rev=4",
-          lookup.getTarget("android-R").describe(),
-      )
+      assertEquals("Platform android-R; api=API 29, R preview, rev=4", lookup.getTarget("android-R").describe())
       // Only has preview at that API level: return it
-      assertEquals(
-          "Platform android-O; api=API 25, O preview, rev=1",
-          lookup.getTarget(25).describe(),
-      )
+      assertEquals("Platform android-O; api=API 25, O preview, rev=1", lookup.getTarget(25).describe())
     }
   }
 
@@ -210,14 +197,8 @@ class SimplePlatformLookupTest {
 
     lookup.getTargets().asSequence().filter { !it.isPlatform }.firstOrNull { error("Expected only platforms") }
 
-    assertEquals(
-        "Add-on google:google_apis:18: api=18",
-        lookup.getTarget("google:google_apis:18").describe(),
-    )
-    assertEquals(
-        "Add-on barnes_and_noble_inc:nook_tablet:10: api=10",
-        lookup.getTarget("barnes_and_noble_inc:nook_tablet:10").describe(),
-    )
+    assertEquals("Add-on google:google_apis:18: api=18", lookup.getTarget("google:google_apis:18").describe())
+    assertEquals("Add-on barnes_and_noble_inc:nook_tablet:10: api=10", lookup.getTarget("barnes_and_noble_inc:nook_tablet:10").describe())
   }
 
   @Test
@@ -235,38 +216,38 @@ class SimplePlatformLookupTest {
 
       // Check sorting, correct parsing of package.xml and source.properties files
       assertEquals(
-          "Platform android-2; api=API 2, rev=1\n" +
-              "Platform android-3; api=API 3, rev=4\n" +
-              "Platform android-4; api=API 4, rev=3\n" +
-              "Platform android-5; api=API 5, rev=1\n" +
-              "Platform android-6; api=API 6, rev=1\n" +
-              "Platform android-7; api=API 7, rev=3\n" +
-              "Platform android-8; api=API 8, rev=3\n" +
-              "Platform android-9; api=API 9, rev=2\n" +
-              "Platform android-10; api=API 10, rev=2\n" +
-              "Platform android-11; api=API 11, rev=2\n" +
-              "Platform android-12; api=API 12, rev=3\n" +
-              "Platform android-13; api=API 13, rev=1\n" +
-              "Platform android-15; api=API 15, rev=5\n" +
-              "Platform android-16; api=API 16, rev=5\n" +
-              "Platform android-17; api=API 17, rev=3\n" +
-              "Platform android-18; api=API 18, rev=3\n" +
-              "Platform android-19; api=API 19, rev=4\n" +
-              "Platform android-20; api=API 20, rev=2\n" +
-              "Platform android-21; api=API 21, rev=2\n" +
-              "Platform android-22; api=API 22, rev=2\n" +
-              "Platform android-23; api=API 23, rev=3\n" +
-              "Platform android-24; api=API 24, rev=2\n" +
-              "Platform android-O; api=API 25, O preview, rev=1\n" +
-              "Platform android-26; api=API 26, rev=2\n" +
-              "Platform android-27; api=API 27, rev=3\n" +
-              "Platform android-28; api=API 28, rev=6\n" +
-              "Platform android-29; api=API 29, rev=5\n" +
-              "Platform android-R; api=API 29, R preview, rev=4\n" +
-              "Platform android-30; api=API 30, rev=3\n" +
-              "Platform android-S; api=API 30, S preview, rev=2\n" +
-              "Platform android-31; api=API 31, rev=2",
-          string,
+        "Platform android-2; api=API 2, rev=1\n" +
+          "Platform android-3; api=API 3, rev=4\n" +
+          "Platform android-4; api=API 4, rev=3\n" +
+          "Platform android-5; api=API 5, rev=1\n" +
+          "Platform android-6; api=API 6, rev=1\n" +
+          "Platform android-7; api=API 7, rev=3\n" +
+          "Platform android-8; api=API 8, rev=3\n" +
+          "Platform android-9; api=API 9, rev=2\n" +
+          "Platform android-10; api=API 10, rev=2\n" +
+          "Platform android-11; api=API 11, rev=2\n" +
+          "Platform android-12; api=API 12, rev=3\n" +
+          "Platform android-13; api=API 13, rev=1\n" +
+          "Platform android-15; api=API 15, rev=5\n" +
+          "Platform android-16; api=API 16, rev=5\n" +
+          "Platform android-17; api=API 17, rev=3\n" +
+          "Platform android-18; api=API 18, rev=3\n" +
+          "Platform android-19; api=API 19, rev=4\n" +
+          "Platform android-20; api=API 20, rev=2\n" +
+          "Platform android-21; api=API 21, rev=2\n" +
+          "Platform android-22; api=API 22, rev=2\n" +
+          "Platform android-23; api=API 23, rev=3\n" +
+          "Platform android-24; api=API 24, rev=2\n" +
+          "Platform android-O; api=API 25, O preview, rev=1\n" +
+          "Platform android-26; api=API 26, rev=2\n" +
+          "Platform android-27; api=API 27, rev=3\n" +
+          "Platform android-28; api=API 28, rev=6\n" +
+          "Platform android-29; api=API 29, rev=5\n" +
+          "Platform android-R; api=API 29, R preview, rev=4\n" +
+          "Platform android-30; api=API 30, rev=3\n" +
+          "Platform android-S; api=API 30, S preview, rev=2\n" +
+          "Platform android-31; api=API 31, rev=2",
+        string,
       )
     }
   }
@@ -292,10 +273,7 @@ class SimplePlatformLookupTest {
       val string = sb.toString().trim()
 
       // Check sorting, correct parsing of package.xml and source.properties files
-      assertEquals(
-          "Platform stable; api=API 26, rev=8\n" + "Platform experimental; api=API 30, rev=1",
-          string,
-      )
+      assertEquals("Platform stable; api=API 26, rev=8\n" + "Platform experimental; api=API 30, rev=1", string)
     }
   }
 
@@ -308,12 +286,12 @@ class SimplePlatformLookupTest {
       val target = lookup.getTarget("android-26")
       assertNotNull(target)
       assertEquals(
-          // Order should be same as in the optional.json file
-          "OptionalLibrary(org.apache.http.legacy,org.apache.http.legacy.jar,false)\n" +
-              "OptionalLibrary(android.test.mock,android.test.mock.jar,false)\n" +
-              "OptionalLibrary(android.test.base,android.test.base.jar,false)\n" +
-              "OptionalLibrary(android.test.runner,android.test.runner.jar,true)",
-          target?.optionalLibraries?.joinToString(separator = "\n") { it.describe() },
+        // Order should be same as in the optional.json file
+        "OptionalLibrary(org.apache.http.legacy,org.apache.http.legacy.jar,false)\n" +
+          "OptionalLibrary(android.test.mock,android.test.mock.jar,false)\n" +
+          "OptionalLibrary(android.test.base,android.test.base.jar,false)\n" +
+          "OptionalLibrary(android.test.runner,android.test.runner.jar,true)",
+        target?.optionalLibraries?.joinToString(separator = "\n") { it.describe() },
       )
     }
   }
@@ -418,14 +396,7 @@ class SimplePlatformLookupTest {
     return sdk
   }
 
-  private fun createSamplePlatform(
-      sdk: File,
-      hash: String,
-      api: Int,
-      codename: String?,
-      revision: Int,
-      minor: Int = 0,
-  ) {
+  private fun createSamplePlatform(sdk: File, hash: String, api: Int, codename: String?, revision: Int, minor: Int = 0) {
     val platforms = File(sdk, "platforms")
     val folder = File(platforms, hash)
     folder.mkdirs()
@@ -435,16 +406,16 @@ class SimplePlatformLookupTest {
     // Randomize if we're using source.properties files or package.xml
     if (Math.random() >= 0.5) {
       val content =
-          """
+        """
                 <?xml version="1.0" encoding="UTF-8" standalone="yes"?><ns5:sdk-repository xmlns:ns2="http://schemas.android.com/repository/android/common/01" xmlns:ns3="http://schemas.android.com/sdk/android/repo/addon2/01" xmlns:ns4="http://schemas.android.com/sdk/android/repo/sys-img2/01" xmlns:ns5="http://schemas.android.com/sdk/android/repo/repository2/01">
                 <localPackage path="platforms;$hash" obsolete="false"><type-details xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="ns5:platformDetailsType"><api-level>$api${if (api >= 36) ".$minor" else ""}</api-level>${if (codename != null || api <= 21) "<codename>${codename ?: ""}</codename>" else ""}${if (api >= 36) "<extension-level>17</extension-level><base-extension>true</base-extension>" else ""}<layoutlib api="12"/></type-details><revision><major>$revision</major></revision><display-name>Android SDK Platform 15, rev 5</display-name><dependencies><dependency path="tools"><min-revision><major>21</major></min-revision></dependency></dependencies></localPackage></ns5:sdk-repository>
                 """
-              .trimIndent()
+          .trimIndent()
       File(folder, "package.xml").writeText(content)
     } else {
       val content =
-          if (api <= 21)
-              """
+        if (api <= 21)
+          """
                 ### Android Tool: Source of this archive.
                 #Fri Oct 17 09:46:34 PDT 2014
                 AndroidVersion.ApiLevel=$api
@@ -457,9 +428,9 @@ class SimplePlatformLookupTest {
                 Platform.Version=$version
                 Platform.CodeName=${SdkVersionInfo.getBuildCode(api) ?: ""}
                 """
-                  .trimIndent()
-          else if (api < 36)
-              """
+            .trimIndent()
+        else if (api < 36)
+          """
                 Pkg.Desc=Android SDK Platform ${codename ?: version}
                 Pkg.UserSrc=false
                 Platform.Version=$version
@@ -470,9 +441,9 @@ class SimplePlatformLookupTest {
                 Layoutlib.Revision=$revision
                 Platform.MinToolsRev=22
                 """
-                  .trimIndent()
-          else
-              """
+            .trimIndent()
+        else
+          """
                 Pkg.Desc=Android SDK Platform ${codename ?: "$version.$minor"}
                 Pkg.UserSrc=false
                 Platform.Version=$version
@@ -485,13 +456,13 @@ class SimplePlatformLookupTest {
                 Layoutlib.Revision=$revision
                 Platform.MinToolsRev=22
                 """
-                  .trimIndent()
+            .trimIndent()
 
       File(folder, "source.properties").writeText(content)
     }
 
     val buildProp =
-        """
+      """
             # begin build properties
             # autogenerated by buildinfo.sh
             ro.build.display.id=sdk-eng ${SdkVersionInfo.getVersionString(api)} 1406430 test-keys
@@ -503,40 +474,40 @@ class SimplePlatformLookupTest {
             ro.build.date.utc=1409796408
             ro.build.type=eng
             """
-            .trimIndent()
+        .trimIndent()
     File(folder, "build.prop").writeText(buildProp)
 
     if (api >= 23) {
       val optional = File(folder, "optional")
       optional.mkdirs()
       File(optional, "optional.json")
-          .writeText(
-              """
-              [
-                {
-                  "name": "org.apache.http.legacy",
-                  "jar": "org.apache.http.legacy.jar",
-                  "manifest": false
-                },
-                {
-                  "name": "android.test.mock",
-                  "jar": "android.test.mock.jar",
-                  "manifest": false
-                },
-                {
-                  "name": "android.test.base",
-                  "jar": "android.test.base.jar",
-                  "manifest": false
-                },
-                {
-                  "name": "android.test.runner",
-                  "jar": "android.test.runner.jar",
-                  "manifest": true
-                }
-              ]
-              """
-                  .trimIndent()
-          )
+        .writeText(
+          """
+          [
+            {
+              "name": "org.apache.http.legacy",
+              "jar": "org.apache.http.legacy.jar",
+              "manifest": false
+            },
+            {
+              "name": "android.test.mock",
+              "jar": "android.test.mock.jar",
+              "manifest": false
+            },
+            {
+              "name": "android.test.base",
+              "jar": "android.test.base.jar",
+              "manifest": false
+            },
+            {
+              "name": "android.test.runner",
+              "jar": "android.test.runner.jar",
+              "manifest": true
+            }
+          ]
+          """
+            .trimIndent()
+        )
     }
   }
 
@@ -552,30 +523,24 @@ class SimplePlatformLookupTest {
 
     // Randomize if we're using source.properties files or package.xml
     val content =
-        """
+      """
             <?xml version="1.0" encoding="UTF-8" standalone="yes"?><ns2:repository xmlns:ns2="http://schemas.android.com/repository/android/common/01" xmlns:ns3="http://schemas.android.com/sdk/android/repo/addon2/01" xmlns:ns4="http://schemas.android.com/sdk/android/repo/sys-img2/01" xmlns:ns5="http://schemas.android.com/repository/android/generic/01" xmlns:ns6="http://schemas.android.com/sdk/android/repo/repository2/01">
             <localPackage path="add-ons;addon-$id-$vendor-$api" obsolete="false"><type-details xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="ns3:addonDetailsType"><api-level>$api</api-level><codename></codename><vendor><id>$vendor</id><display>$vendorName</display></vendor><tag><id>$id</id><display>$name</display></tag><libraries><library localJarPath="$id.jar" name="com.example.$id"><description>blahblahblah</description></library><library localJarPath="usb.jar" name="com.android.future.usb.accessory"><description>API for USB Accessories</description></library><library localJarPath="effects.jar" name="com.google.android.media.effects"><description>Collection of video effects</description></library></libraries></type-details><revision><major>4</major></revision><display-name>$name</display-name></localPackage></ns2:repository>
             """
-            .trimIndent()
+        .trimIndent()
     File(folder, "package.xml").writeText(content)
   }
 
-  class SdkManagerPlatformLookup(
-      private val sdkHandler: AndroidSdkHandler,
-      private val logger: ProgressIndicatorAdapter = TestLogger(),
-  ) : PlatformLookup {
-    override fun getLatestSdkTarget(
-        minApi: Int,
-        includePreviews: Boolean,
-        includeAddOns: Boolean,
-    ): IAndroidTarget? {
+  class SdkManagerPlatformLookup(private val sdkHandler: AndroidSdkHandler, private val logger: ProgressIndicatorAdapter = TestLogger()) :
+    PlatformLookup {
+    override fun getLatestSdkTarget(minApi: Int, includePreviews: Boolean, includeAddOns: Boolean): IAndroidTarget? {
       val targets = getTargets(includeAddOns)
       for (i in targets.indices.reversed()) {
         val target = targets[i]
         if (
-            (includeAddOns || target.isPlatform) &&
-                target.version.featureLevel >= minApi &&
-                (includePreviews || target.version.codename == null)
+          (includeAddOns || target.isPlatform) &&
+            target.version.featureLevel >= minApi &&
+            (includePreviews || target.version.codename == null)
         ) {
           return target
         }
@@ -602,14 +567,14 @@ class SimplePlatformLookupTest {
 
     override fun getTargets(includeAddOns: Boolean): List<IAndroidTarget> {
       return targets
-          ?: run {
-            sdkHandler
-                .getAndroidTargetManager(logger)
-                .getTargets(logger)
-                .filter { includeAddOns || it.isPlatform }
-                .toList()
-                .also { targets = it }
-          }
+        ?: run {
+          sdkHandler
+            .getAndroidTargetManager(logger)
+            .getTargets(logger)
+            .filter { includeAddOns || it.isPlatform }
+            .toList()
+            .also { targets = it }
+        }
     }
   }
 

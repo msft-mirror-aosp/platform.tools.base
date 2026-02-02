@@ -65,11 +65,11 @@ class SyntheticAccessorDetector : Detector(), SourceCodeScanner {
     /** The main issue discovered by this detector. */
     @JvmField
     val ISSUE =
-        Issue.create(
-                id = "SyntheticAccessor",
-                briefDescription = "Synthetic Accessor",
-                explanation =
-                    """
+      Issue.create(
+          id = "SyntheticAccessor",
+          briefDescription = "Synthetic Accessor",
+          explanation =
+            """
                 A private inner class which is accessed from the outer class will force \
                 the compiler to insert a synthetic accessor; this means that you are \
                 causing extra overhead. This is not important in small projects, but is \
@@ -78,19 +78,19 @@ class SyntheticAccessorDetector : Detector(), SourceCodeScanner {
                 is as small as possible for the cases where your library is used in an \
                 app running up against the 64K limit.
                 """,
-                moreInfo = null,
-                category = Category.PERFORMANCE,
-                priority = 2,
-                severity = Severity.WARNING,
-                androidSpecific = true,
-                enabledByDefault = false,
-                implementation = IMPLEMENTATION,
-            )
-            .setAliases(listOf("SyntheticAccessorCall", "PrivateMemberAccessBetweenOuterAndInnerClass"))
+          moreInfo = null,
+          category = Category.PERFORMANCE,
+          priority = 2,
+          severity = Severity.WARNING,
+          androidSpecific = true,
+          enabledByDefault = false,
+          implementation = IMPLEMENTATION,
+        )
+        .setAliases(listOf("SyntheticAccessorCall", "PrivateMemberAccessBetweenOuterAndInnerClass"))
   }
 
   override fun getApplicableUastTypes(): List<Class<out UElement>>? =
-      listOf(UCallExpression::class.java, USimpleNameReferenceExpression::class.java)
+    listOf(UCallExpression::class.java, USimpleNameReferenceExpression::class.java)
 
   override fun createUastHandler(context: JavaContext): UElementHandler? {
     return object : UElementHandler() {
@@ -230,66 +230,53 @@ class SyntheticAccessorDetector : Detector(), SourceCodeScanner {
     }
   }
 
-  private fun reportError(
-      context: JavaContext,
-      node: UElement,
-      member: PsiMember,
-      target: PsiClass,
-  ) {
+  private fun reportError(context: JavaContext, node: UElement, member: PsiMember, target: PsiClass) {
     val location =
-        if (node is UCallExpression) {
-          context.getCallLocation(node, true, false)
-        } else {
-          context.getLocation(node)
-        }
+      if (node is UCallExpression) {
+        context.getCallLocation(node, true, false)
+      } else {
+        context.getLocation(node)
+      }
 
     val isKotlin = isKotlin(member.language)
     val name = if (isKotlin) "Make internal" else "Make package protected"
 
     val fixRange =
-        if (member is KtLightMethod && (member.isGetter || member.isSetter)) {
-          // For Kotlin property accessors we have to modify the property declaration instead.
-          val ktProperty = member.kotlinOrigin as? KtProperty ?: return
-          context.getLocation(ktProperty)
-        } else {
-          context.getLocation(member)
-        }
+      if (member is KtLightMethod && (member.isGetter || member.isSetter)) {
+        // For Kotlin property accessors we have to modify the property declaration instead.
+        val ktProperty = member.kotlinOrigin as? KtProperty ?: return
+        context.getLocation(ktProperty)
+      } else {
+        context.getLocation(member)
+      }
 
     val fix =
-        fix()
-            .replace()
-            .name(name)
-            .sharedName(name)
-            .range(fixRange)
-            .text("private ")
-            .with(if (isKotlin) "internal " else "")
-            .autoFix()
-            .build()
+      fix().replace().name(name).sharedName(name).range(fixRange).text("private ").with(if (isKotlin) "internal " else "").autoFix().build()
 
     val memberType =
-        if (member is PsiField) {
-          "field `${member.name}`"
-        } else if (member is PsiMethod) {
-          if (member.isConstructor) {
-            if (context.evaluator.isStatic(member)) {
+      if (member is PsiField) {
+        "field `${member.name}`"
+      } else if (member is PsiMethod) {
+        if (member.isConstructor) {
+          if (context.evaluator.isStatic(member)) {
+            return
+          }
+          if (isKotlin) {
+            // Sealed class? This will create a private constructor we can't delete
+            if (context.evaluator.isSealed(member)) {
               return
             }
-            if (isKotlin) {
-              // Sealed class? This will create a private constructor we can't delete
-              if (context.evaluator.isSealed(member)) {
-                return
-              }
-              if (context.evaluator.isSealed(target)) {
-                return
-              }
+            if (context.evaluator.isSealed(target)) {
+              return
             }
-            "constructor"
-          } else {
-            "method `${member.name}`"
           }
+          "constructor"
         } else {
-          "member"
+          "method `${member.name}`"
         }
+      } else {
+        "member"
+      }
     val message = "Access to `private` $memberType of class `${target.name}` requires synthetic accessor"
     context.report(ISSUE, node, location, message, fix)
   }

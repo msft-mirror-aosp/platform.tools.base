@@ -68,18 +68,18 @@ class RequiresFeatureDetector : AbstractAnnotationDetector(), SourceCodeScanner 
   override fun applicableAnnotations(): List<String> = listOf(REQUIRES_FEATURE_ANNOTATION.oldName(), REQUIRES_FEATURE_ANNOTATION.newName())
 
   override fun visitAnnotationUsage(
-      context: JavaContext,
-      element: UElement,
-      annotationInfo: AnnotationInfo,
-      usageInfo: AnnotationUsageInfo,
+    context: JavaContext,
+    element: UElement,
+    annotationInfo: AnnotationInfo,
+    usageInfo: AnnotationUsageInfo,
   ) {
     val method = usageInfo.referenced as? PsiMethod ?: return
 
     val type = usageInfo.type
     if (
-        type != AnnotationUsageType.METHOD_CALL &&
-            type != AnnotationUsageType.METHOD_CALL_CLASS &&
-            type != AnnotationUsageType.METHOD_CALL_PACKAGE
+      type != AnnotationUsageType.METHOD_CALL &&
+        type != AnnotationUsageType.METHOD_CALL_CLASS &&
+        type != AnnotationUsageType.METHOD_CALL_PACKAGE
     ) {
       return
     }
@@ -91,10 +91,10 @@ class RequiresFeatureDetector : AbstractAnnotationDetector(), SourceCodeScanner 
     val checker = EnforcementChecker(name, reference)
     if (!checker.isWithinNameCheckConditional(context.evaluator, element) && !checker.isPrecededByFeatureCheck(element)) {
       context.report(
-          REQUIRES_FEATURE,
-          element,
-          context.getLocation(element),
-          "`${method.name}` should only be called if the feature `$name` is " + "present; to check call `$reference`",
+        REQUIRES_FEATURE,
+        element,
+        context.getLocation(element),
+        "`${method.name}` should only be called if the feature `$name` is " + "present; to check call `$reference`",
       )
     }
   }
@@ -119,10 +119,10 @@ class RequiresFeatureDetector : AbstractAnnotationDetector(), SourceCodeScanner 
   }
 
   class EnforcementChecker(
-      /** The name of the feature to check. */
-      private val featureName: String,
-      /** javadoc-syntax reference to the checker method; the first string parameter should be the feature name parameter */
-      enforcement: String,
+    /** The name of the feature to check. */
+    private val featureName: String,
+    /** javadoc-syntax reference to the checker method; the first string parameter should be the feature name parameter */
+    enforcement: String,
   ) {
     private val className: String?
     private val methodName: String
@@ -132,11 +132,11 @@ class RequiresFeatureDetector : AbstractAnnotationDetector(), SourceCodeScanner 
       val argBegin = if (paren != -1) paren else enforcement.length
       val hash = enforcement.indexOf('#')
       val classEnd =
-          if (hash != -1) {
-            hash
-          } else {
-            enforcement.lastIndexOf('.', argBegin)
-          }
+        if (hash != -1) {
+          hash
+        } else {
+          enforcement.lastIndexOf('.', argBegin)
+        }
       if (classEnd != -1) {
         className = enforcement.substring(0, classEnd)
         methodName = enforcement.substring(classEnd + 1, argBegin)
@@ -149,13 +149,7 @@ class RequiresFeatureDetector : AbstractAnnotationDetector(), SourceCodeScanner 
     fun isPrecededByFeatureCheck(element: UElement): Boolean {
       var current = element
 
-      var currentExpression =
-          current.getParentOfType<UExpression>(
-              UExpression::class.java,
-              true,
-              UMethod::class.java,
-              UClass::class.java,
-          )
+      var currentExpression = current.getParentOfType<UExpression>(UExpression::class.java, true, UMethod::class.java, UClass::class.java)
 
       while (currentExpression != null) {
         val visitor = FeatureCheckExitFinder(this, current)
@@ -167,22 +161,14 @@ class RequiresFeatureDetector : AbstractAnnotationDetector(), SourceCodeScanner 
 
         current = currentExpression
 
-        currentExpression =
-            currentExpression.getParentOfType(
-                UExpression::class.java,
-                true,
-                UMethod::class.java,
-                UClass::class.java,
-            )
+        currentExpression = currentExpression.getParentOfType(UExpression::class.java, true, UMethod::class.java, UClass::class.java)
       }
 
       return false
     }
 
-    private class FeatureCheckExitFinder(
-        private val enforcement: EnforcementChecker,
-        private val endElement: UElement,
-    ) : AbstractUastVisitor() {
+    private class FeatureCheckExitFinder(private val enforcement: EnforcementChecker, private val endElement: UElement) :
+      AbstractUastVisitor() {
 
       private var found = false
       private var done = false
@@ -250,11 +236,7 @@ class RequiresFeatureDetector : AbstractAnnotationDetector(), SourceCodeScanner 
     }
 
     @JvmOverloads
-    fun isWithinNameCheckConditional(
-        evaluator: JavaEvaluator,
-        element: UElement,
-        nameLookup: NameLookup? = null,
-    ): Boolean {
+    fun isWithinNameCheckConditional(evaluator: JavaEvaluator, element: UElement, nameLookup: NameLookup? = null): Boolean {
       var current = skipParenthesizedExprUp(element.uastParent)
       var prev = element
       while (current != null) {
@@ -300,18 +282,18 @@ class RequiresFeatureDetector : AbstractAnnotationDetector(), SourceCodeScanner 
               val match = Ref<UCallExpression>()
               val parameterName = parameter.name
               uMethod?.accept(
-                  object : AbstractUastVisitor() {
-                    override fun visitCallExpression(node: UCallExpression): Boolean {
-                      val callName = getMethodName(node)
-                      if (callName == parameterName) {
-                        // Potentially not correct due to scopes, but these lambda
-                        // utility methods tend to be short and for lambda function
-                        // calls, resolve on call returns null
-                        match.set(node)
-                      }
-                      return super.visitCallExpression(node)
+                object : AbstractUastVisitor() {
+                  override fun visitCallExpression(node: UCallExpression): Boolean {
+                    val callName = getMethodName(node)
+                    if (callName == parameterName) {
+                      // Potentially not correct due to scopes, but these lambda
+                      // utility methods tend to be short and for lambda function
+                      // calls, resolve on call returns null
+                      match.set(node)
                     }
+                    return super.visitCallExpression(node)
                   }
+                }
               )
               val lambdaInvocation = match.get()
               val newApiLookup = NameLookup(call.valueArguments)
@@ -330,12 +312,7 @@ class RequiresFeatureDetector : AbstractAnnotationDetector(), SourceCodeScanner 
       return false
     }
 
-    private fun isNameCheckConditional(
-        element: UElement,
-        and: Boolean,
-        prev: UElement?,
-        nameLookup: NameLookup?,
-    ): Boolean? {
+    private fun isNameCheckConditional(element: UElement, and: Boolean, prev: UElement?, nameLookup: NameLookup?): Boolean? {
       if (element is UPolyadicExpression) {
         val tokenType = element.operator
         if (and && tokenType === UastBinaryOperator.LOGICAL_AND) {
@@ -353,16 +330,16 @@ class RequiresFeatureDetector : AbstractAnnotationDetector(), SourceCodeScanner 
         // Property syntax reference to feature check utility method
         val resolved = element.resolve()
         if (
-            resolved is PsiMethod &&
-                element is UQualifiedReferenceExpression &&
-                element.selector.skipParenthesizedExprDown() is UCallExpression
+          resolved is PsiMethod &&
+            element is UQualifiedReferenceExpression &&
+            element.selector.skipParenthesizedExprDown() is UCallExpression
         ) {
           val call = element.selector.skipParenthesizedExprDown() as UCallExpression
           return isValidFeatureCheckCall(and, call, nameLookup)
         } else if (
-            resolved is PsiMethod &&
-                element is UQualifiedReferenceExpression &&
-                element.receiver.skipParenthesizedExprDown() is UReferenceExpression
+          resolved is PsiMethod &&
+            element is UQualifiedReferenceExpression &&
+            element.receiver.skipParenthesizedExprDown() is UReferenceExpression
         ) {
           // Method call via Kotlin property syntax
           return isValidFeatureCheckCall(and, element, resolved, nameLookup)
@@ -381,21 +358,12 @@ class RequiresFeatureDetector : AbstractAnnotationDetector(), SourceCodeScanner 
       return null
     }
 
-    private fun isValidFeatureCheckCall(
-        and: Boolean,
-        call: UCallExpression,
-        nameLookup: NameLookup?,
-    ): Boolean? {
+    private fun isValidFeatureCheckCall(and: Boolean, call: UCallExpression, nameLookup: NameLookup?): Boolean? {
       val method = call.resolve() ?: return null
       return isValidFeatureCheckCall(and, call, method, nameLookup)
     }
 
-    private fun isValidFeatureCheckCall(
-        and: Boolean,
-        call: UElement,
-        method: PsiMethod,
-        nameLookup: NameLookup?,
-    ): Boolean? {
+    private fun isValidFeatureCheckCall(and: Boolean, call: UElement, method: PsiMethod, nameLookup: NameLookup?): Boolean? {
       val name = method.name
 
       if (methodName == name && and) {
@@ -435,11 +403,11 @@ class RequiresFeatureDetector : AbstractAnnotationDetector(), SourceCodeScanner 
       if (!method.hasModifierProperty(PsiModifier.ABSTRACT)) {
         val body = UastFacade.getMethodBody(method) ?: return null
         val expressions: List<UExpression> =
-            if (body is UBlockExpression) {
-              body.expressions
-            } else {
-              listOf(body)
-            }
+          if (body is UBlockExpression) {
+            body.expressions
+          } else {
+            listOf(body)
+          }
 
         if (expressions.size == 1) {
           val statement = expressions[0].skipParenthesizedExprDown()
@@ -554,18 +522,18 @@ class RequiresFeatureDetector : AbstractAnnotationDetector(), SourceCodeScanner 
     /** Method result should be used. */
     @JvmField
     val REQUIRES_FEATURE =
-        Issue.create(
-            id = "RequiresFeature",
-            briefDescription = "Requires Feature",
-            explanation =
-                """
+      Issue.create(
+        id = "RequiresFeature",
+        briefDescription = "Requires Feature",
+        explanation =
+          """
                 Some APIs require optional features to be present. This check makes sure that \
                 calls to these APIs are surrounded by a check which enforces this.""",
-            category = Category.CORRECTNESS,
-            priority = 6,
-            severity = Severity.WARNING,
-            androidSpecific = true,
-            implementation = IMPLEMENTATION,
-        )
+        category = Category.CORRECTNESS,
+        priority = 6,
+        severity = Severity.WARNING,
+        androidSpecific = true,
+        implementation = IMPLEMENTATION,
+      )
   }
 }

@@ -23,18 +23,18 @@ class PublicKeyCredentialDetectorTest : AbstractCheckTest() {
 
   fun testDocumentationExample() {
     lint()
-        .files(
-            manifest().minSdk(27),
-            gradle(
-                    """
+      .files(
+        manifest().minSdk(27),
+        gradle(
+            """
             dependencies {
                 implementation 'androidx.credentials:credentials-play-services-auth:+'
             }
           """
-                )
-                .indented(),
-            kotlin(
-                    """
+          )
+          .indented(),
+        kotlin(
+            """
                 package test.pkg
 
                 import androidx.credentials.CreatePublicKeyCredentialRequest
@@ -45,27 +45,27 @@ class PublicKeyCredentialDetectorTest : AbstractCheckTest() {
                   }
                 }
                 """
-                )
-                .indented(),
-            publicKeyCredentialStub,
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+        publicKeyCredentialStub,
+      )
+      .run()
+      .expect(
+        """
         src/main/kotlin/test/pkg/Test.kt:7: Warning: PublicKeyCredential is only supported from Android 9 (API level 28) and higher [PublicKeyCredential]
             val request = CreatePublicKeyCredentialRequest()
                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         0 errors, 1 warnings
         """
-        )
+      )
   }
 
   fun testPublicKeyCredentialNoDependency() {
     lint()
-        .files(
-            manifest().minSdk(27),
-            kotlin(
-                    """
+      .files(
+        manifest().minSdk(27),
+        kotlin(
+            """
                 package test.pkg
 
                 import androidx.credentials.CreatePublicKeyCredentialRequest
@@ -76,28 +76,28 @@ class PublicKeyCredentialDetectorTest : AbstractCheckTest() {
                   }
                 }
                 """
-                )
-                .indented(),
-            publicKeyCredentialStub,
-        )
-        .run()
-        .expectClean()
+          )
+          .indented(),
+        publicKeyCredentialStub,
+      )
+      .run()
+      .expectClean()
   }
 
   fun testPublicKeyCredentialMinApiAtLeast28() {
     lint()
-        .files(
-            manifest().minSdk(28),
-            gradle(
-                    """
+      .files(
+        manifest().minSdk(28),
+        gradle(
+            """
             dependencies {
                 implementation 'androidx.credentials:credentials-play-services-auth:+'
             }
           """
-                )
-                .indented(),
-            kotlin(
-                    """
+          )
+          .indented(),
+        kotlin(
+            """
                 package test.pkg
 
                 import androidx.credentials.CreatePublicKeyCredentialRequest
@@ -108,28 +108,28 @@ class PublicKeyCredentialDetectorTest : AbstractCheckTest() {
                   }
                 }
                 """
-                )
-                .indented(),
-            publicKeyCredentialStub,
-        )
-        .run()
-        .expectClean()
+          )
+          .indented(),
+        publicKeyCredentialStub,
+      )
+      .run()
+      .expectClean()
   }
 
   fun testPublicKeyCredentialMinApiChecksInCode() {
     lint()
-        .files(
-            manifest().minSdk(27),
-            gradle(
-                    """
+      .files(
+        manifest().minSdk(27),
+        gradle(
+            """
             dependencies {
                 implementation 'androidx.credentials:credentials-play-services-auth:+'
             }
           """
-                )
-                .indented(),
-            kotlin(
-                    """
+          )
+          .indented(),
+        kotlin(
+            """
                 package test.pkg
 
                 import androidx.credentials.CreatePublicKeyCredentialRequest
@@ -146,21 +146,21 @@ class PublicKeyCredentialDetectorTest : AbstractCheckTest() {
                   }
                 }
                 """
-                )
-                .indented(),
-            publicKeyCredentialStub,
-        )
-        .run()
-        .expectClean()
+          )
+          .indented(),
+        publicKeyCredentialStub,
+      )
+      .run()
+      .expectClean()
   }
 }
 
 private val publicKeyCredentialStub: TestFile =
-    TestFiles.kotlin(
-            """
+  TestFiles.kotlin(
+      """
     package androidx.credentials
 
     class CreatePublicKeyCredentialRequest
     """
-        )
-        .indented()
+    )
+    .indented()

@@ -50,12 +50,7 @@ class InstantAppDetector : Detector(), SourceCodeScanner {
       return
     }
 
-    context.report(
-        ISSUE,
-        node,
-        context.getLocation(node),
-        "Instant Apps support will be removed by Google Play in December 2025",
-    )
+    context.report(ISSUE, node, context.getLocation(node), "Instant Apps support will be removed by Google Play in December 2025")
   }
 
   companion object {
@@ -63,20 +58,20 @@ class InstantAppDetector : Detector(), SourceCodeScanner {
 
     @JvmField
     val ISSUE =
-        Issue.create(
-            id = "InstantAppCall",
-            briefDescription = "Instant App call",
-            explanation =
-                """
+      Issue.create(
+        id = "InstantAppCall",
+        briefDescription = "Instant App call",
+        explanation =
+          """
           Instant Apps support will be removed by Google Play in December 2025. \
           Publishing and all Google Play Instant APIs will no longer work. \
           Tooling support will be removed in Android Studio Otter Feature Drop.
           """,
-            category = Category.CORRECTNESS,
-            priority = 5,
-            severity = Severity.WARNING,
-            implementation = IMPLEMENTATION,
-            androidSpecific = true,
-        )
+        category = Category.CORRECTNESS,
+        priority = 5,
+        severity = Severity.WARNING,
+        implementation = IMPLEMENTATION,
+        androidSpecific = true,
+      )
   }
 }

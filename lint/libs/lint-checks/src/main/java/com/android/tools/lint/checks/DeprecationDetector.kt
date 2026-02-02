@@ -80,12 +80,12 @@ class DeprecationDetector : ResourceXmlDetector(), SourceCodeScanner {
       val tagName = rootElement.tagName
       if (tagName.startsWith("android.preference.")) {
         context.report(
-            ISSUE,
-            rootElement,
-            context.getNameLocation(rootElement),
-            "The `android.preference` library is deprecated, it is " +
-                "recommended that you migrate to the AndroidX Preference " +
-                "library instead.",
+          ISSUE,
+          rootElement,
+          context.getNameLocation(rootElement),
+          "The `android.preference` library is deprecated, it is " +
+            "recommended that you migrate to the AndroidX Preference " +
+            "library instead.",
         )
         return
       }
@@ -97,12 +97,12 @@ class DeprecationDetector : ResourceXmlDetector(), SourceCodeScanner {
       val tagClass = parser.evaluator.findClass(rootElement.tagName) ?: return
       if (parser.evaluator.inheritsFrom(tagClass, CLASS_PREFERENCE, false)) {
         context.report(
-            ISSUE,
-            rootElement,
-            context.getNameLocation(rootElement),
-            "`$tagName` inherits from `android.preference.Preference` which is " +
-                "now deprecated, it is recommended that you migrate to the " +
-                "AndroidX Preference library.",
+          ISSUE,
+          rootElement,
+          context.getNameLocation(rootElement),
+          "`$tagName` inherits from `android.preference.Preference` which is " +
+            "now deprecated, it is recommended that you migrate to the " +
+            "AndroidX Preference library.",
         )
       }
     }
@@ -114,36 +114,36 @@ class DeprecationDetector : ResourceXmlDetector(), SourceCodeScanner {
 
   override fun getApplicableAttributes(): Collection<String> {
     return listOf(
-        ATTR_USER_SHARED_ID,
-        // TODO: fill_parent is deprecated as of API 8.
-        // We could warn about it, but it will probably be very noisy
-        // and make people disable the deprecation check; let's focus on
-        // some older flags for now
-        // "fill_parent",
-        ATTR_EDITABLE,
-        ATTR_INPUT_METHOD,
-        ATTR_AUTO_TEXT,
-        ATTR_CAPITALIZE,
-        ATTR_NAME,
-        ATTR_NUMERIC,
-        ATTR_PHONE_NUMBER,
-        ATTR_PASSWORD,
-        ATTR_PERMISSION,
-        ATTR_AUTO_REVOKE_PERMISSIONS,
-        // ATTR_SINGLE_LINE is marked deprecated, but (a) it's used a lot everywhere,
-        // including in our own apps, and (b) replacing it with the suggested replacement
-        // can lead to crashes; see issue 37137344
-        // ATTR_ENABLED is marked deprecated in android.R.attr but apparently
-        // using the suggested replacement of state_enabled doesn't work, see issue b/36943030
-        // These attributes are also deprecated; not yet enabled until we
-        // know the API level to apply the deprecation for:
-        // "ignored as of ICS (but deprecated earlier)"
-        // "fadingEdge",
-        // "This attribute is not used by the Android operating system."
-        // "restoreNeedsApplication",
-        // "This will create a non-standard UI appearance, because the search bar UI is
-        // changing to use only icons for its buttons."
-        // "searchButtonText",
+      ATTR_USER_SHARED_ID,
+      // TODO: fill_parent is deprecated as of API 8.
+      // We could warn about it, but it will probably be very noisy
+      // and make people disable the deprecation check; let's focus on
+      // some older flags for now
+      // "fill_parent",
+      ATTR_EDITABLE,
+      ATTR_INPUT_METHOD,
+      ATTR_AUTO_TEXT,
+      ATTR_CAPITALIZE,
+      ATTR_NAME,
+      ATTR_NUMERIC,
+      ATTR_PHONE_NUMBER,
+      ATTR_PASSWORD,
+      ATTR_PERMISSION,
+      ATTR_AUTO_REVOKE_PERMISSIONS,
+      // ATTR_SINGLE_LINE is marked deprecated, but (a) it's used a lot everywhere,
+      // including in our own apps, and (b) replacing it with the suggested replacement
+      // can lead to crashes; see issue 37137344
+      // ATTR_ENABLED is marked deprecated in android.R.attr but apparently
+      // using the suggested replacement of state_enabled doesn't work, see issue b/36943030
+      // These attributes are also deprecated; not yet enabled until we
+      // know the API level to apply the deprecation for:
+      // "ignored as of ICS (but deprecated earlier)"
+      // "fadingEdge",
+      // "This attribute is not used by the Android operating system."
+      // "restoreNeedsApplication",
+      // "This will create a non-standard UI appearance, because the search bar UI is
+      // changing to use only icons for its buttons."
+      // "searchButtonText",
     )
   }
 
@@ -167,9 +167,9 @@ class DeprecationDetector : ResourceXmlDetector(), SourceCodeScanner {
       ATTR_USER_SHARED_ID -> {
         if (!attribute.ownerElement.hasAttributeNS(ANDROID_URI, ATTR_SHARED_USER_MAX_SDK_VERSION)) {
           fix =
-              "Consider removing `$ATTR_USER_SHARED_ID` for new users by adding " +
-                  "`android:sharedUserMaxSdkVersion=\"32\"` to your manifest. " +
-                  "See https://developer.android.com/guide/topics/manifest/manifest-element for details."
+            "Consider removing `$ATTR_USER_SHARED_ID` for new users by adding " +
+              "`android:sharedUserMaxSdkVersion=\"32\"` to your manifest. " +
+              "See https://developer.android.com/guide/topics/manifest/manifest-element for details."
           val addFix = fix().set(ANDROID_URI, ATTR_SHARED_USER_MAX_SDK_VERSION, "32").build()
           context.report(ISSUE, attribute, context.getLocation(attribute), fix, addFix)
         }
@@ -184,11 +184,11 @@ class DeprecationDetector : ResourceXmlDetector(), SourceCodeScanner {
       ATTR_PERMISSION -> {
         if (TAG_SERVICE == attribute.ownerElement.tagName && CHOOSER_TARGET_SERVICE_PERM == attribute.value) {
           context.report(
-              ISSUE,
-              attribute,
-              context.getLocation(attribute),
-              "ChooserTargetService` is deprecated: Please see $SHARE_API_URL",
-              fix().url(SHARE_API_URL).build(),
+            ISSUE,
+            attribute,
+            context.getLocation(attribute),
+            "ChooserTargetService` is deprecated: Please see $SHARE_API_URL",
+            fix().url(SHARE_API_URL).build(),
           )
         }
         return
@@ -196,36 +196,36 @@ class DeprecationDetector : ResourceXmlDetector(), SourceCodeScanner {
       ATTR_NAME -> {
         if (TAG_META_DATA == attribute.ownerElement.tagName && APP_ACTIONS == attribute.value) {
           val incident =
-              Incident(
-                  ISSUE,
-                  attribute,
-                  context.getLocation(attribute),
-                  "App actions via actions.xml is deprecated; Please migrate to " + "shortcuts.xml. See $APP_ACTIONS_MIGRATION_URL.",
-                  fix().url(APP_ACTIONS_MIGRATION_URL).build(),
-              )
+            Incident(
+              ISSUE,
+              attribute,
+              context.getLocation(attribute),
+              "App actions via actions.xml is deprecated; Please migrate to " + "shortcuts.xml. See $APP_ACTIONS_MIGRATION_URL.",
+              fix().url(APP_ACTIONS_MIGRATION_URL).build(),
+            )
           context.report(incident, targetSdkAtLeast(21))
         }
         return
       }
       ATTR_EDITABLE -> {
         fix =
-            if (EDIT_TEXT != attribute.ownerElement.tagName) {
-              "Use an `<EditText>` to make it editable"
+          if (EDIT_TEXT != attribute.ownerElement.tagName) {
+            "Use an `<EditText>` to make it editable"
+          } else {
+            if (VALUE_TRUE == attribute.value) {
+              "`<EditText>` is already editable"
             } else {
-              if (VALUE_TRUE == attribute.value) {
-                "`<EditText>` is already editable"
-              } else {
-                "Use `inputType` instead"
-              }
+              "Use `inputType` instead"
             }
+          }
       }
       ATTR_SINGLE_LINE -> {
         fix =
-            if (VALUE_FALSE == attribute.value) {
-              "False is the default, so just remove the attribute"
-            } else {
-              "Use `maxLines=\"1\"` instead"
-            }
+          if (VALUE_FALSE == attribute.value) {
+            "False is the default, so just remove the attribute"
+          } else {
+            "Use `maxLines=\"1\"` instead"
+          }
       }
       else -> {
         fix = "Use `inputType` instead"
@@ -234,13 +234,7 @@ class DeprecationDetector : ResourceXmlDetector(), SourceCodeScanner {
         minSdk = 3
       }
     }
-    val incident =
-        Incident(
-            ISSUE,
-            attribute,
-            context.getLocation(attribute),
-            "`${attribute.name}` is deprecated: $fix",
-        )
+    val incident = Incident(ISSUE, attribute, context.getLocation(attribute), "`${attribute.name}` is deprecated: $fix")
     context.report(incident, minSdkAtLeast(minSdk))
   }
 
@@ -250,18 +244,14 @@ class DeprecationDetector : ResourceXmlDetector(), SourceCodeScanner {
     return listOf(FIREBASE_JOB_DISPATCHER_CLASS)
   }
 
-  override fun visitConstructor(
-      context: JavaContext,
-      node: UCallExpression,
-      constructor: PsiMethod,
-  ) {
+  override fun visitConstructor(context: JavaContext, node: UCallExpression, constructor: PsiMethod) {
     val url = "https://developer.android.com/topic/libraries/architecture/workmanager/migrating-fb"
     context.report(
-        ISSUE,
-        node,
-        context.getCallLocation(node, includeReceiver = false, includeArguments = false),
-        "Job scheduling with `FirebaseJobDispatcher` is deprecated: Use AndroidX `WorkManager` instead",
-        fix().url(url).build(),
+      ISSUE,
+      node,
+      context.getCallLocation(node, includeReceiver = false, includeArguments = false),
+      "Job scheduling with `FirebaseJobDispatcher` is deprecated: Use AndroidX `WorkManager` instead",
+      fix().url(url).build(),
     )
   }
 
@@ -275,11 +265,11 @@ class DeprecationDetector : ResourceXmlDetector(), SourceCodeScanner {
     }
     val url = "https://developer.android.com/topic/libraries/architecture/workmanager/migrating-gcm"
     context.report(
-        ISSUE,
-        node,
-        context.getCallLocation(node, includeReceiver = false, includeArguments = false),
-        "Job scheduling with `GcmNetworkManager` is deprecated: Use AndroidX `WorkManager` instead",
-        fix().url(url).build(),
+      ISSUE,
+      node,
+      context.getCallLocation(node, includeReceiver = false, includeArguments = false),
+      "Job scheduling with `GcmNetworkManager` is deprecated: Use AndroidX `WorkManager` instead",
+      fix().url(url).build(),
     )
   }
 
@@ -291,25 +281,25 @@ class DeprecationDetector : ResourceXmlDetector(), SourceCodeScanner {
     val location = context.getNameLocation(declaration)
     if (context.evaluator.inheritsFrom(declaration.javaPsi, CHOOSER_TARGET_SERVICE_CLASS)) {
       context.report(
-          ISSUE,
-          declaration,
-          location,
-          "`${declaration.nameFromSource}` extends the deprecated `ChooserTargetService`: Use the Share API instead",
-          fix().url(SHARE_API_URL).build(),
+        ISSUE,
+        declaration,
+        location,
+        "`${declaration.nameFromSource}` extends the deprecated `ChooserTargetService`: Use the Share API instead",
+        fix().url(SHARE_API_URL).build(),
       )
     } else if (context.evaluator.inheritsFromWatchFaceService(declaration)) {
       context.report(
-          ISSUE,
-          declaration,
-          location,
-          "`${declaration.nameFromSource}` extends the deprecated `WatchFaceService`: Use Watch Face Format instead",
-          fix().url(WATCH_FACE_FORMAT_URL).build(),
+        ISSUE,
+        declaration,
+        location,
+        "`${declaration.nameFromSource}` extends the deprecated `WatchFaceService`: Use Watch Face Format instead",
+        fix().url(WATCH_FACE_FORMAT_URL).build(),
       )
     }
   }
 
   private fun JavaEvaluator.inheritsFromWatchFaceService(declaration: UClass) =
-      inheritsFrom(declaration.javaPsi, CLASS_WATCHFACE_ANDROIDX, true) || inheritsFrom(declaration.javaPsi, CLASS_WATCHFACE_WSL, true)
+    inheritsFrom(declaration.javaPsi, CLASS_WATCHFACE_ANDROIDX, true) || inheritsFrom(declaration.javaPsi, CLASS_WATCHFACE_WSL, true)
 
   companion object {
     @Suppress("SpellCheckingInspection")
@@ -322,7 +312,7 @@ class DeprecationDetector : ResourceXmlDetector(), SourceCodeScanner {
     private const val CHOOSER_TARGET_SERVICE_PERM = "android.permission.BIND_CHOOSER_TARGET_SERVICE"
 
     private const val SHARE_API_URL =
-        "https://developer.android.com/training/sharing/receive.html?source=studio#providing-direct-share-targets"
+      "https://developer.android.com/training/sharing/receive.html?source=studio#providing-direct-share-targets"
 
     private const val APP_ACTIONS = "com.google.android.actions"
 
@@ -337,25 +327,25 @@ class DeprecationDetector : ResourceXmlDetector(), SourceCodeScanner {
     /** Usage of deprecated views or attributes. */
     @JvmField
     val ISSUE =
-        create(
-            id = "Deprecated",
-            briefDescription = "Using deprecated resources",
-            explanation =
-                """
+      create(
+        id = "Deprecated",
+        briefDescription = "Using deprecated resources",
+        explanation =
+          """
                 Deprecated views, attributes and so on are deprecated because there \
                 is a better way to do something. Do it that new way. You've been warned.
                 """,
-            category = Category.CORRECTNESS,
-            priority = 2,
-            severity = Severity.WARNING,
-            implementation =
-                Implementation(
-                    DeprecationDetector::class.java,
-                    EnumSet.of(Scope.MANIFEST, Scope.RESOURCE_FILE, Scope.JAVA_FILE),
-                    MANIFEST_SCOPE,
-                    RESOURCE_FILE_SCOPE,
-                    JAVA_FILE_SCOPE,
-                ),
-        )
+        category = Category.CORRECTNESS,
+        priority = 2,
+        severity = Severity.WARNING,
+        implementation =
+          Implementation(
+            DeprecationDetector::class.java,
+            EnumSet.of(Scope.MANIFEST, Scope.RESOURCE_FILE, Scope.JAVA_FILE),
+            MANIFEST_SCOPE,
+            RESOURCE_FILE_SCOPE,
+            JAVA_FILE_SCOPE,
+          ),
+      )
   }
 }

@@ -22,8 +22,8 @@ import org.junit.Test
 class AdbDeviceServicesCommandDetectorTest {
   companion object {
     private val adbDeviceServicesFile: TestFile =
-        TestFiles.kotlin(
-                """
+      TestFiles.kotlin(
+          """
                 package com.android.adblib
 
                 interface AdbDeviceServices {
@@ -34,17 +34,17 @@ class AdbDeviceServicesCommandDetectorTest {
                   fun <T> shellV2(): Flow<T>
                 }
                 """
-            )
-            .indented()
+        )
+        .indented()
   }
 
   @Test
   fun testUseOfExecMethodIsDiscouraged() {
     studioLint()
-        .files(
-            adbDeviceServicesFile,
-            TestFiles.kotlin(
-                    """
+      .files(
+        adbDeviceServicesFile,
+        TestFiles.kotlin(
+            """
                     package test.pkg
                     import com.android.adblib.AdbDeviceServices
 
@@ -52,28 +52,28 @@ class AdbDeviceServicesCommandDetectorTest {
                       adbDeviceServices.exec()
                     }
                 """
-                )
-                .indented(),
-        )
-        .issues(AdbDeviceServicesCommandDetector.ISSUE)
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+      )
+      .issues(AdbDeviceServicesCommandDetector.ISSUE)
+      .run()
+      .expect(
+        """
                 src/test/pkg/test.kt:5: Error: Use of com.android.adblib.AdbDeviceServices#exec is discouraged. Consider using AdbDeviceServices.shellCommand() instead [AdbDeviceServicesCommand]
                   adbDeviceServices.exec()
                   ~~~~~~~~~~~~~~~~~~~~~~~~
                 1 errors, 0 warnings
                 """
-        )
+      )
   }
 
   @Test
   fun testUseOfShellMethodIsDiscouraged() {
     studioLint()
-        .files(
-            adbDeviceServicesFile,
-            TestFiles.kotlin(
-                    """
+      .files(
+        adbDeviceServicesFile,
+        TestFiles.kotlin(
+            """
                     package test.pkg
                     import com.android.adblib.AdbDeviceServices
 
@@ -81,28 +81,28 @@ class AdbDeviceServicesCommandDetectorTest {
                       adbDeviceServices.shell()
                     }
                 """
-                )
-                .indented(),
-        )
-        .issues(AdbDeviceServicesCommandDetector.ISSUE)
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+      )
+      .issues(AdbDeviceServicesCommandDetector.ISSUE)
+      .run()
+      .expect(
+        """
                 src/test/pkg/test.kt:5: Error: Use of com.android.adblib.AdbDeviceServices#shell is discouraged. Consider using AdbDeviceServices.shellCommand() instead [AdbDeviceServicesCommand]
                   adbDeviceServices.shell()
                   ~~~~~~~~~~~~~~~~~~~~~~~~~
                 1 errors, 0 warnings
                 """
-        )
+      )
   }
 
   @Test
   fun testUseOfShellV2MethodIsDiscouraged() {
     studioLint()
-        .files(
-            adbDeviceServicesFile,
-            TestFiles.kotlin(
-                    """
+      .files(
+        adbDeviceServicesFile,
+        TestFiles.kotlin(
+            """
                     package test.pkg
                     import com.android.adblib.AdbDeviceServices
 
@@ -110,28 +110,28 @@ class AdbDeviceServicesCommandDetectorTest {
                       adbDeviceServices.shellV2()
                     }
                 """
-                )
-                .indented(),
-        )
-        .issues(AdbDeviceServicesCommandDetector.ISSUE)
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+      )
+      .issues(AdbDeviceServicesCommandDetector.ISSUE)
+      .run()
+      .expect(
+        """
                 src/test/pkg/test.kt:5: Error: Use of com.android.adblib.AdbDeviceServices#shellV2 is discouraged. Consider using AdbDeviceServices.shellCommand() instead [AdbDeviceServicesCommand]
                   adbDeviceServices.shellV2()
                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 1 errors, 0 warnings
                 """
-        )
+      )
   }
 
   @Test
   fun testUseOfExecMethodInUnrelatedClassIsNotTriggeringWarnings() {
     studioLint()
-        .files(
-            adbDeviceServicesFile,
-            TestFiles.kotlin(
-                    """
+      .files(
+        adbDeviceServicesFile,
+        TestFiles.kotlin(
+            """
                     package test.pkg
                     import com.android.adblib.AdbDeviceServices
 
@@ -148,22 +148,22 @@ class AdbDeviceServicesCommandDetectorTest {
                       fun exec()
                     }
                 """
-                )
-                .indented(),
-        )
-        .issues(AdbDeviceServicesCommandDetector.ISSUE)
-        .run()
-        .expect("No warnings.")
+          )
+          .indented(),
+      )
+      .issues(AdbDeviceServicesCommandDetector.ISSUE)
+      .run()
+      .expect("No warnings.")
   }
 
   @Test
   fun testDoesNotTriggerViolationsInAdblibInternalImplementation() {
     // Note that the name of the package which starts with com.android.adblib
     studioLint()
-        .files(
-            adbDeviceServicesFile,
-            TestFiles.kotlin(
-                    """
+      .files(
+        adbDeviceServicesFile,
+        TestFiles.kotlin(
+            """
                   package com.android.adblib.impl
 
                   import com.android.adblib.AdbDeviceServices
@@ -174,21 +174,21 @@ class AdbDeviceServicesCommandDetectorTest {
                       }
                   }
               """
-                )
-                .indented(),
-        )
-        .issues(AdbDeviceServicesCommandDetector.ISSUE)
-        .run()
-        .expect("No warnings.")
+          )
+          .indented(),
+      )
+      .issues(AdbDeviceServicesCommandDetector.ISSUE)
+      .run()
+      .expect("No warnings.")
   }
 
   @Test
   fun testDoesNotTriggerViolationsInAdblibInternalImplementationBasePackage() {
     studioLint()
-        .files(
-            adbDeviceServicesFile,
-            TestFiles.kotlin(
-                    """
+      .files(
+        adbDeviceServicesFile,
+        TestFiles.kotlin(
+            """
                   package com.android.adblib
 
                   import com.android.adblib.AdbDeviceServices
@@ -199,11 +199,11 @@ class AdbDeviceServicesCommandDetectorTest {
                       }
                   }
               """
-                )
-                .indented(),
-        )
-        .issues(AdbDeviceServicesCommandDetector.ISSUE)
-        .run()
-        .expect("No warnings.")
+          )
+          .indented(),
+      )
+      .issues(AdbDeviceServicesCommandDetector.ISSUE)
+      .run()
+      .expect("No warnings.")
   }
 }

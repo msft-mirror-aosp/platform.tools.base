@@ -22,8 +22,8 @@ import com.android.tools.lint.detector.api.Detector
 class ForegroundServiceTypesDetectorTest : AbstractCheckTest() {
   /** In MY_SERVICE file, startForeground() is a member in subclass of "android.app.Service" class (isMemberInSubClassOf() returns true). */
   private val MY_SERVICE =
-      java(
-          """package test.pkg;
+    java(
+      """package test.pkg;
 import android.app.Service;
 import android.content.Intent;
 import android.os.IBinder;
@@ -39,7 +39,7 @@ public class MyService extends Service {
       }
 }
 """
-      )
+    )
 
   /**
    * In MY_SERVICE_COMPAT file, androidx.core.app.ServiceCompat.startForeground() is called (instead of
@@ -47,8 +47,8 @@ public class MyService extends Service {
    * returns true).
    */
   private val MY_SERVICE_COMPAT =
-      java(
-          """package test.pkg;
+    java(
+      """package test.pkg;
 import android.app.Service;
 import android.content.Intent;
 import android.os.IBinder;
@@ -66,12 +66,12 @@ public class MyService extends Service {
       }
 }
 """
-      )
+    )
 
   /** In MY_CLASS, startForeground() is not member of subclass of "android.app.Service" class (isMemberInSubClassOf() returns false). */
   private val MY_CLASS =
-      java(
-          """package test.pkg;
+    java(
+      """package test.pkg;
 import android.content.Intent;
 public class MyClass {
     public int onStartCommand(Intent intent, int flags, int startId) {
@@ -81,12 +81,12 @@ public class MyClass {
       public void startForeground(int i, Object object) {;}
 }
 """
-      )
+    )
 
   private val serviceCompatStubs =
-      arrayOf(
-          java(
-                  """
+    arrayOf(
+      java(
+          """
                 package androidx.core.app;
                 import android.app.Notification;
                 import android.app.Service;
@@ -97,9 +97,9 @@ public class MyClass {
                           @Nullable Notification notification, int foregroundServiceType) {}
                 }
                 """
-              )
-              .indented()
-      )
+        )
+        .indented()
+    )
 
   override fun getDetector(): Detector {
     return ForegroundServiceTypesDetector()
@@ -117,10 +117,10 @@ public class MyClass {
    */
   fun testDocumentationExample() {
     lint()
-        .files(
-            xml(
-                "AndroidManifest.xml",
-                """<?xml version="1.0" encoding="utf-8"?>
+      .files(
+        xml(
+          "AndroidManifest.xml",
+          """<?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="test.pkg">
     <uses-sdk android:targetSdkVersion="34" />
@@ -134,27 +134,27 @@ public class MyClass {
 </manifest>
 
 """,
-            ),
-            MY_SERVICE,
-        )
-        .testModes(TestMode.DEFAULT)
-        .run()
-        .expect(
-            """src/test/pkg/MyService.java:8: Error: To call Service.startForeground(), the <service> element of manifest file must have the foregroundServiceType attribute specified [ForegroundServiceType]
+        ),
+        MY_SERVICE,
+      )
+      .testModes(TestMode.DEFAULT)
+      .run()
+      .expect(
+        """src/test/pkg/MyService.java:8: Error: To call Service.startForeground(), the <service> element of manifest file must have the foregroundServiceType attribute specified [ForegroundServiceType]
         startForeground(1, null);
         ~~~~~~~~~~~~~~~
 1 errors, 0 warnings
 """
-        )
+      )
   }
 
   /** Manifest file's targetSdkVersion is 33 (less than 34), lint does not report error. */
   fun testTargetSdkVersion33() {
     lint()
-        .files(
-            xml(
-                "AndroidManifest.xml",
-                """<?xml version="1.0" encoding="utf-8"?>
+      .files(
+        xml(
+          "AndroidManifest.xml",
+          """<?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="test.pkg">
     <uses-sdk android:targetSdkVersion="33" />
@@ -168,21 +168,21 @@ public class MyClass {
 </manifest>
 
 """,
-            ),
-            MY_SERVICE,
-        )
-        .testModes(TestMode.DEFAULT)
-        .run()
-        .expectClean()
+        ),
+        MY_SERVICE,
+      )
+      .testModes(TestMode.DEFAULT)
+      .run()
+      .expectClean()
   }
 
   /** Manifest file's <service> element has foregroundServiceType attribute, lint does not report error. */
   fun testStartForegroundHasType() {
     lint()
-        .files(
-            xml(
-                "AndroidManifest.xml",
-                """<?xml version="1.0" encoding="utf-8"?>
+      .files(
+        xml(
+          "AndroidManifest.xml",
+          """<?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="test.pkg">
     <uses-sdk android:targetSdkVersion="34" />
@@ -197,21 +197,21 @@ public class MyClass {
 </manifest>
 
 """,
-            ),
-            MY_SERVICE,
-        )
-        .testModes(TestMode.DEFAULT)
-        .run()
-        .expectClean()
+        ),
+        MY_SERVICE,
+      )
+      .testModes(TestMode.DEFAULT)
+      .run()
+      .expectClean()
   }
 
   /** The startForeground() is not a member in subclass of "android.app.Service" class, lint does not report error. */
   fun testStartForegroundOutOfService() {
     lint()
-        .files(
-            xml(
-                "AndroidManifest.xml",
-                """<?xml version="1.0" encoding="utf-8"?>
+      .files(
+        xml(
+          "AndroidManifest.xml",
+          """<?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="test.pkg">
     <uses-sdk android:targetSdkVersion="34" />
@@ -225,12 +225,12 @@ public class MyClass {
 </manifest>
 
 """,
-            ),
-            MY_CLASS,
-        )
-        .testModes(TestMode.DEFAULT)
-        .run()
-        .expectClean()
+        ),
+        MY_CLASS,
+      )
+      .testModes(TestMode.DEFAULT)
+      .run()
+      .expectClean()
   }
 
   /**
@@ -240,10 +240,10 @@ public class MyClass {
    */
   fun testStartForegroundNoServiceElement() {
     lint()
-        .files(
-            xml(
-                "AndroidManifest.xml",
-                """<?xml version="1.0" encoding="utf-8"?>
+      .files(
+        xml(
+          "AndroidManifest.xml",
+          """<?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="test.pkg">
     <uses-sdk android:targetSdkVersion="34" />
@@ -253,12 +253,12 @@ public class MyClass {
 </manifest>
 
 """,
-            ),
-            MY_SERVICE,
-        )
-        .testModes(TestMode.DEFAULT)
-        .run()
-        .expectClean()
+        ),
+        MY_SERVICE,
+      )
+      .testModes(TestMode.DEFAULT)
+      .run()
+      .expectClean()
   }
 
   /**
@@ -267,10 +267,10 @@ public class MyClass {
    */
   fun testStartForegroundFromServiceCompatMissingType() {
     lint()
-        .files(
-            xml(
-                "AndroidManifest.xml",
-                """<?xml version="1.0" encoding="utf-8"?>
+      .files(
+        xml(
+          "AndroidManifest.xml",
+          """<?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="test.pkg">
     <uses-sdk android:targetSdkVersion="34" />
@@ -284,19 +284,19 @@ public class MyClass {
 </manifest>
 
 """,
-            ),
-            MY_SERVICE_COMPAT,
-            *serviceCompatStubs,
-        )
-        .testModes(TestMode.DEFAULT)
-        .run()
-        .expect(
-            """src/test/pkg/MyService.java:10: Error: To call Service.startForeground(), the <service> element of manifest file must have the foregroundServiceType attribute specified [ForegroundServiceType]
+        ),
+        MY_SERVICE_COMPAT,
+        *serviceCompatStubs,
+      )
+      .testModes(TestMode.DEFAULT)
+      .run()
+      .expect(
+        """src/test/pkg/MyService.java:10: Error: To call Service.startForeground(), the <service> element of manifest file must have the foregroundServiceType attribute specified [ForegroundServiceType]
         ServiceCompat.startForeground(this, 1, null, 8);
                       ~~~~~~~~~~~~~~~
 1 errors, 0 warnings
 """
-        )
+      )
   }
 
   /**
@@ -305,10 +305,10 @@ public class MyClass {
    */
   fun testStartForegroundFromServiceCompatHasType() {
     lint()
-        .files(
-            xml(
-                "AndroidManifest.xml",
-                """<?xml version="1.0" encoding="utf-8"?>
+      .files(
+        xml(
+          "AndroidManifest.xml",
+          """<?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="test.pkg">
     <uses-sdk android:targetSdkVersion="34" />
@@ -323,21 +323,21 @@ public class MyClass {
 </manifest>
 
 """,
-            ),
-            MY_SERVICE_COMPAT,
-            *serviceCompatStubs,
-        )
-        .testModes(TestMode.DEFAULT)
-        .run()
-        .expectClean()
+        ),
+        MY_SERVICE_COMPAT,
+        *serviceCompatStubs,
+      )
+      .testModes(TestMode.DEFAULT)
+      .run()
+      .expectClean()
   }
 
   fun testMergedManifestHasForegroundServiceType() {
     lint()
-        .files(
-            manifest(
-                    "src/main/AndroidManifest.xml",
-                    """<?xml version="1.0" encoding="utf-8"?>
+      .files(
+        manifest(
+            "src/main/AndroidManifest.xml",
+            """<?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android"
               package="test.pkg">
               <uses-sdk android:targetSdkVersion="34" />
@@ -350,11 +350,11 @@ public class MyClass {
               </application>
           </manifest>
           """,
-                )
-                .indented(),
-            manifest(
-                    "src/debug/AndroidManifest.xml",
-                    """<?xml version="1.0" encoding="utf-8"?>
+          )
+          .indented(),
+        manifest(
+            "src/debug/AndroidManifest.xml",
+            """<?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android" xmlns:tools="http://schemas.android.com/tools" package="test.pkg">
               <application>
                   <service
@@ -364,10 +364,10 @@ public class MyClass {
               </application>
           </manifest>
           """,
-                )
-                .indented(),
-            gradle(
-                    """
+          )
+          .indented(),
+        gradle(
+            """
                 android {
                     compileSdkVersion 25
                     defaultConfig {
@@ -379,13 +379,13 @@ public class MyClass {
                     }
                 }
                 """
-                )
-                .indented(),
-            MY_SERVICE_COMPAT,
-            *serviceCompatStubs,
-        )
-        .issues(ISSUE_TYPE)
-        .run()
-        .expectClean()
+          )
+          .indented(),
+        MY_SERVICE_COMPAT,
+        *serviceCompatStubs,
+      )
+      .issues(ISSUE_TYPE)
+      .run()
+      .expectClean()
   }
 }

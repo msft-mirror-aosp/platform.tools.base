@@ -55,26 +55,26 @@ import org.jetbrains.uast.getParentOfType
 
 class ThreadDetector : AbstractAnnotationDetector(), SourceCodeScanner {
   override fun applicableAnnotations(): List<String> =
-      listOf(
-          UI_THREAD_ANNOTATION.oldName(),
-          UI_THREAD_ANNOTATION.newName(),
-          MAIN_THREAD_ANNOTATION.oldName(),
-          MAIN_THREAD_ANNOTATION.newName(),
-          BINDER_THREAD_ANNOTATION.oldName(),
-          BINDER_THREAD_ANNOTATION.newName(),
-          WORKER_THREAD_ANNOTATION.oldName(),
-          WORKER_THREAD_ANNOTATION.newName(),
-          ANY_THREAD_ANNOTATION.oldName(),
-          ANY_THREAD_ANNOTATION.newName(),
-      )
+    listOf(
+      UI_THREAD_ANNOTATION.oldName(),
+      UI_THREAD_ANNOTATION.newName(),
+      MAIN_THREAD_ANNOTATION.oldName(),
+      MAIN_THREAD_ANNOTATION.newName(),
+      BINDER_THREAD_ANNOTATION.oldName(),
+      BINDER_THREAD_ANNOTATION.newName(),
+      WORKER_THREAD_ANNOTATION.oldName(),
+      WORKER_THREAD_ANNOTATION.newName(),
+      ANY_THREAD_ANNOTATION.oldName(),
+      ANY_THREAD_ANNOTATION.newName(),
+    )
 
   override fun isApplicableAnnotationUsage(type: AnnotationUsageType): Boolean =
-      when (type) {
-        METHOD_CALL,
-        METHOD_CALL_PARAMETER,
-        METHOD_REFERENCE -> true
-        else -> false
-      }
+    when (type) {
+      METHOD_CALL,
+      METHOD_CALL_PARAMETER,
+      METHOD_REFERENCE -> true
+      else -> false
+    }
 
   /**
    * Keeps track of which UAST nodes have already been visited by [visitAnnotationUsage]. See [visitAnnotationUsage] for why this is needed.
@@ -86,10 +86,10 @@ class ThreadDetector : AbstractAnnotationDetector(), SourceCodeScanner {
   }
 
   override fun visitAnnotationUsage(
-      context: JavaContext,
-      element: UElement,
-      annotationInfo: AnnotationInfo,
-      usageInfo: AnnotationUsageInfo,
+    context: JavaContext,
+    element: UElement,
+    annotationInfo: AnnotationInfo,
+    usageInfo: AnnotationUsageInfo,
   ) {
     if (usageInfo.anyCloser { it.isThreadingAnnotation() }) {
       return
@@ -108,11 +108,11 @@ class ThreadDetector : AbstractAnnotationDetector(), SourceCodeScanner {
     when (usageInfo.type) {
       METHOD_CALL -> {
         checkThreading(
-            context,
-            element,
-            method,
-            getThreadContext(context, element) ?: return,
-            getThreadsFromMethod(context, method) ?: return,
+          context,
+          element,
+          method,
+          getThreadContext(context, element) ?: return,
+          getThreadsFromMethod(context, method) ?: return,
         )
       }
       METHOD_CALL_PARAMETER,
@@ -120,11 +120,11 @@ class ThreadDetector : AbstractAnnotationDetector(), SourceCodeScanner {
         val reference = element as? UCallableReferenceExpression ?: return
         val referencedMethod = reference.resolve() as? PsiMethod ?: return
         checkThreading(
-            context,
-            element,
-            referencedMethod,
-            getThreadsFromExpressionContext(context, reference) ?: return,
-            getThreadsFromMethod(context, referencedMethod) ?: return,
+          context,
+          element,
+          referencedMethod,
+          getThreadsFromExpressionContext(context, reference) ?: return,
+          getThreadsFromMethod(context, referencedMethod) ?: return,
         )
       }
       else -> {
@@ -149,11 +149,11 @@ class ThreadDetector : AbstractAnnotationDetector(), SourceCodeScanner {
    *   or its class.
    */
   private fun checkThreading(
-      context: JavaContext,
-      node: UElement,
-      method: PsiMethod,
-      callerThreads: List<String>,
-      calleeThreads: List<String>,
+    context: JavaContext,
+    node: UElement,
+    method: PsiMethod,
+    callerThreads: List<String>,
+    calleeThreads: List<String>,
   ) {
     // ALL calling contexts must be valid
     assert(callerThreads.isNotEmpty())
@@ -170,13 +170,13 @@ class ThreadDetector : AbstractAnnotationDetector(), SourceCodeScanner {
     }
 
     val message =
-        String.format(
-            "%1\$s %2\$s must be called from the %3\$s thread, currently inferred thread is %4\$s thread",
-            if (method.isConstructor) "Constructor" else "Method",
-            method.name,
-            describeThreads(calleeThreads, true),
-            describeThreads(callerThreads, false),
-        )
+      String.format(
+        "%1\$s %2\$s must be called from the %3\$s thread, currently inferred thread is %4\$s thread",
+        if (method.isConstructor) "Constructor" else "Method",
+        method.name,
+        describeThreads(calleeThreads, true),
+        describeThreads(callerThreads, false),
+      )
     val location = context.getLocation(node)
     report(context, THREAD, node, location, message)
   }
@@ -201,29 +201,29 @@ class ThreadDetector : AbstractAnnotationDetector(), SourceCodeScanner {
   }
 
   private fun describeThread(annotation: String): String =
-      when (annotation) {
-        UI_THREAD_ANNOTATION.oldName(),
-        UI_THREAD_ANNOTATION.newName() -> "UI"
-        MAIN_THREAD_ANNOTATION.oldName(),
-        MAIN_THREAD_ANNOTATION.newName() -> "main"
-        BINDER_THREAD_ANNOTATION.oldName(),
-        BINDER_THREAD_ANNOTATION.newName() -> "binder"
-        WORKER_THREAD_ANNOTATION.oldName(),
-        WORKER_THREAD_ANNOTATION.newName() -> "worker"
-        ANY_THREAD_ANNOTATION.oldName(),
-        ANY_THREAD_ANNOTATION.newName() -> "any"
-        else -> {
-          if (isPlatformAnnotation(annotation)) {
-            describeThread(toAndroidxAnnotation(annotation))
-          } else {
-            "other"
-          }
+    when (annotation) {
+      UI_THREAD_ANNOTATION.oldName(),
+      UI_THREAD_ANNOTATION.newName() -> "UI"
+      MAIN_THREAD_ANNOTATION.oldName(),
+      MAIN_THREAD_ANNOTATION.newName() -> "main"
+      BINDER_THREAD_ANNOTATION.oldName(),
+      BINDER_THREAD_ANNOTATION.newName() -> "binder"
+      WORKER_THREAD_ANNOTATION.oldName(),
+      WORKER_THREAD_ANNOTATION.newName() -> "worker"
+      ANY_THREAD_ANNOTATION.oldName(),
+      ANY_THREAD_ANNOTATION.newName() -> "any"
+      else -> {
+        if (isPlatformAnnotation(annotation)) {
+          describeThread(toAndroidxAnnotation(annotation))
+        } else {
+          "other"
         }
       }
+    }
 
   /** returns if all caller's thread annotations are accommodated by some from callee's */
   private fun isCompatibleThread(callers: List<String>, callees: List<String>): Boolean =
-      callers.all { caller -> callees.any { callee -> isCompatibleThread(caller, callee) } }
+    callers.all { caller -> callees.any { callee -> isCompatibleThread(caller, callee) } }
 
   /** returns if callee's thread annotation accommodates caller's */
   private fun isCompatibleThread(caller: String, callee: String): Boolean {
@@ -250,13 +250,7 @@ class ThreadDetector : AbstractAnnotationDetector(), SourceCodeScanner {
     val callerNameIndex = caller.lastIndexOf('.')
     val calleeNameIndex = callee.lastIndexOf('.')
     if (callerNameIndex != -1 && calleeNameIndex != -1) {
-      return caller.regionMatches(
-          callerNameIndex,
-          callee,
-          calleeNameIndex,
-          caller.length - callerNameIndex,
-          false,
-      )
+      return caller.regionMatches(callerNameIndex, callee, calleeNameIndex, caller.length - callerNameIndex, false)
     }
 
     return false
@@ -264,25 +258,12 @@ class ThreadDetector : AbstractAnnotationDetector(), SourceCodeScanner {
 
   /** Attempts to infer the current thread context at the site of the given method call. */
   private fun getThreadContext(context: JavaContext, methodCall: UElement): List<String>? {
-    val method =
-        methodCall
-            .getParentOfType(
-                UMethod::class.java,
-                true,
-                UAnonymousClass::class.java,
-                ULambdaExpression::class.java,
-            )
-            ?.javaPsi
+    val method = methodCall.getParentOfType(UMethod::class.java, true, UAnonymousClass::class.java, ULambdaExpression::class.java)?.javaPsi
 
     if (method != null) {
       val containingClass = methodCall.getContainingUClass()
       if (containingClass is UAnonymousClass) {
-        val anonClassCall =
-            methodCall.getParentOfType(
-                UObjectLiteralExpression::class.java,
-                true,
-                UCallExpression::class.java,
-            )
+        val anonClassCall = methodCall.getParentOfType(UObjectLiteralExpression::class.java, true, UCallExpression::class.java)
 
         // If it's an anonymous class, infer the context from the formal parameter
         // annotation
@@ -295,12 +276,7 @@ class ThreadDetector : AbstractAnnotationDetector(), SourceCodeScanner {
     // Similarly to the anonymous class call, this might be a lambda call, check for annotated
     // formal parameters that will give us the thread context
     val lambdaCall =
-        methodCall.getParentOfType(
-            ULambdaExpression::class.java,
-            true,
-            UAnonymousClass::class.java,
-            ULambdaExpression::class.java,
-        )
+      methodCall.getParentOfType(ULambdaExpression::class.java, true, UAnonymousClass::class.java, ULambdaExpression::class.java)
 
     return getThreadsFromExpressionContext(context, lambdaCall)
   }
@@ -309,19 +285,12 @@ class ThreadDetector : AbstractAnnotationDetector(), SourceCodeScanner {
    * Infers the thread context from a lambda or an anonymous class call expression. This will look into the formal parameters annotation to
    * infer the thread context for the given lambda.
    */
-  private fun getThreadsFromExpressionContext(
-      context: JavaContext,
-      lambdaCall: UExpression?,
-  ): List<String>? {
+  private fun getThreadsFromExpressionContext(context: JavaContext, lambdaCall: UExpression?): List<String>? {
     val lambdaCallExpression = lambdaCall?.uastParent as? UCallExpression ?: return null
     val lambdaArgument = lambdaCallExpression.getParameterForArgument(lambdaCall) ?: return null
 
     val annotations =
-        context.evaluator
-            .getAnnotations(lambdaArgument, false)
-            .filter { it.isThreadingAnnotation() }
-            .mapNotNull { it.qualifiedName }
-            .toList()
+      context.evaluator.getAnnotations(lambdaArgument, false).filter { it.isThreadingAnnotation() }.mapNotNull { it.qualifiedName }.toList()
     if (annotations.isNotEmpty()) {
       return annotations
     }
@@ -331,10 +300,7 @@ class ThreadDetector : AbstractAnnotationDetector(), SourceCodeScanner {
   }
 
   /** Attempts to infer the current thread context at the site of the given method call. */
-  private fun getThreadsFromMethod(
-      context: JavaContext,
-      originalMethod: PsiMethod?,
-  ): List<String>? {
+  private fun getThreadsFromMethod(context: JavaContext, originalMethod: PsiMethod?): List<String>? {
     var method = originalMethod
     if (method != null) {
       val evaluator = context.evaluator
@@ -384,14 +350,11 @@ class ThreadDetector : AbstractAnnotationDetector(), SourceCodeScanner {
     return null
   }
 
-  private fun addThreadAnnotations(
-      annotation: UAnnotation,
-      result: MutableList<String>?,
-  ): MutableList<String>? {
+  private fun addThreadAnnotations(annotation: UAnnotation, result: MutableList<String>?): MutableList<String>? {
     var resultList = result
     val name = annotation.qualifiedName
     if (
-        name != null && name.endsWith(THREAD_ANNOTATION_SUFFIX) && (SUPPORT_ANNOTATIONS_PREFIX.isPrefix(name) || isPlatformAnnotation(name))
+      name != null && name.endsWith(THREAD_ANNOTATION_SUFFIX) && (SUPPORT_ANNOTATIONS_PREFIX.isPrefix(name) || isPlatformAnnotation(name))
     ) {
       if (resultList == null) {
         resultList = ArrayList(4)
@@ -421,22 +384,22 @@ class ThreadDetector : AbstractAnnotationDetector(), SourceCodeScanner {
     /** Calling methods on the wrong thread. */
     @JvmField
     val THREAD =
-        Issue.create(
-            id = "WrongThread",
-            briefDescription = "Wrong Thread",
-            explanation =
-                """
+      Issue.create(
+        id = "WrongThread",
+        briefDescription = "Wrong Thread",
+        explanation =
+          """
                 Ensures that a method which expects to be called on a specific thread, is \
                 actually called from that thread. For example, calls on methods in widgets \
                 should always be made on the UI thread.
                 """,
-            moreInfo = "https://developer.android.com/guide/components/processes-and-threads.html#Threads",
-            category = Category.CORRECTNESS,
-            priority = 6,
-            severity = Severity.ERROR,
-            androidSpecific = true,
-            implementation = IMPLEMENTATION,
-        )
+        moreInfo = "https://developer.android.com/guide/components/processes-and-threads.html#Threads",
+        category = Category.CORRECTNESS,
+        priority = 6,
+        severity = Severity.ERROR,
+        androidSpecific = true,
+        implementation = IMPLEMENTATION,
+      )
   }
 }
 

@@ -45,26 +45,18 @@ import org.objectweb.asm.Opcodes.ASM9
 import org.objectweb.asm.Type
 
 /** Given a lint jar file, checks to see if the jar file looks compatible with the current version of lint. */
-class LintJarVerifier(
-    private val client: LintClient,
-    private val jarFile: File,
-    bytes: ByteArray,
-    private val skip: Boolean = false,
-) : ClassVisitor(ASM9) {
-  constructor(
-      client: LintClient,
-      jarFile: File,
-      skip: Boolean = false,
-  ) : this(client, jarFile, jarFile.readBytes(), skip)
+class LintJarVerifier(private val client: LintClient, private val jarFile: File, bytes: ByteArray, private val skip: Boolean = false) :
+  ClassVisitor(ASM9) {
+  constructor(client: LintClient, jarFile: File, skip: Boolean = false) : this(client, jarFile, jarFile.readBytes(), skip)
 
   /** Is the class with the given [internal] class name part of an API we want to check for validity? */
   private fun isRelevantApi(internal: String): Boolean {
     val relevant =
-        internal.startsWith("com/android/") ||
-            // Imported APIs
-            internal.startsWith("org/jetbrains/uast") ||
-            internal.startsWith("org/jetbrains/kotlin") ||
-            internal.startsWith("com/intellij")
+      internal.startsWith("com/android/") ||
+        // Imported APIs
+        internal.startsWith("org/jetbrains/uast") ||
+        internal.startsWith("org/jetbrains/kotlin") ||
+        internal.startsWith("com/intellij")
     // Libraries unlikely to change: org.w3c.dom, org.objectweb.asm, org.xmlpull, etc.
 
     return relevant && !bundledClasses.contains(internal)
@@ -222,23 +214,17 @@ class LintJarVerifier(
   private var inaccessible = false
 
   private val methodVisitor =
-      object : MethodVisitor(ASM9) {
-        override fun visitMethodInsn(
-            opcode: Int,
-            owner: String,
-            name: String,
-            descriptor: String,
-            isInterface: Boolean,
-        ) {
-          checkMethod(owner, name, descriptor)
-          super.visitMethodInsn(opcode, owner, name, descriptor, isInterface)
-        }
-
-        override fun visitFieldInsn(opcode: Int, owner: String, name: String, descriptor: String?) {
-          checkField(owner, name)
-          super.visitFieldInsn(opcode, owner, name, descriptor)
-        }
+    object : MethodVisitor(ASM9) {
+      override fun visitMethodInsn(opcode: Int, owner: String, name: String, descriptor: String, isInterface: Boolean) {
+        checkMethod(owner, name, descriptor)
+        super.visitMethodInsn(opcode, owner, name, descriptor, isInterface)
       }
+
+      override fun visitFieldInsn(opcode: Int, owner: String, name: String, descriptor: String?) {
+        checkField(owner, name)
+        super.visitFieldInsn(opcode, owner, name, descriptor)
+      }
+    }
 
   /**
    * Checks that the class for the given [internal] name is valid: relevant and exists in the current class node. If not, this method sets
@@ -319,13 +305,13 @@ class LintJarVerifier(
     val currentClassFile = currentClassFile
     val currentClass = currentClass
     incompatibleReferencer =
-        if (currentMethod == null || currentMethod == CONSTRUCTOR_NAME || currentMethod == CLASS_CONSTRUCTOR) {
-          currentClass
-        } else if (currentClassFile != null && currentClass != null && currentClassFile.contains(currentClass)) {
-          "${currentClass}.${currentMethod}"
-        } else {
-          currentClassFile + ":${currentClass}.${currentMethod}"
-        }
+      if (currentMethod == null || currentMethod == CONSTRUCTOR_NAME || currentMethod == CLASS_CONSTRUCTOR) {
+        currentClass
+      } else if (currentClassFile != null && currentClass != null && currentClassFile.contains(currentClass)) {
+        "${currentClass}.${currentMethod}"
+      } else {
+        currentClassFile + ":${currentClass}.${currentMethod}"
+      }
   }
 
   /**
@@ -424,14 +410,7 @@ class LintJarVerifier(
     }
   }
 
-  override fun visit(
-      version: Int,
-      access: Int,
-      name: String,
-      signature: String?,
-      superName: String?,
-      interfaces: Array<out String>?,
-  ) {
+  override fun visit(version: Int, access: Int, name: String, signature: String?, superName: String?, interfaces: Array<out String>?) {
     currentClass = name
     currentSuperClass = superName
     superName?.let { checkClass(it) }
@@ -440,11 +419,11 @@ class LintJarVerifier(
   }
 
   override fun visitMethod(
-      access: Int,
-      name: String?,
-      descriptor: String?,
-      signature: String?,
-      exceptions: Array<out String>?,
+    access: Int,
+    name: String?,
+    descriptor: String?,
+    signature: String?,
+    exceptions: Array<out String>?,
   ): MethodVisitor {
     currentMethod = name
     return methodVisitor

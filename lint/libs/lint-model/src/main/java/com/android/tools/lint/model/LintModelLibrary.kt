@@ -86,39 +86,39 @@ abstract class DefaultLintModelLibrary : LintModelLibrary {
 }
 
 class DefaultLintModelModuleLibrary(
-    override val identifier: String,
-    override val projectPath: String,
-    override val lintJar: File?,
-    override val provided: Boolean,
+  override val identifier: String,
+  override val projectPath: String,
+  override val lintJar: File?,
+  override val provided: Boolean,
 ) : DefaultLintModelLibrary(), LintModelModuleLibrary {
   override fun toString(): String = "LocalLibrary($projectPath)"
 }
 
 class DefaultLintModelAndroidLibrary(
-    override val identifier: String,
-    override val jarFiles: List<File>,
-    override val manifest: File,
-    override val folder: File,
-    override val resFolder: File,
-    override val assetsFolder: File,
-    override val lintJar: File?,
-    override val publicResources: File,
-    override val symbolFile: File,
-    override val externalAnnotations: File,
-    override val proguardRules: File,
-    override val provided: Boolean,
-    override val resolvedCoordinates: LintModelMavenName,
-    override val partialResultsDir: File? = null,
+  override val identifier: String,
+  override val jarFiles: List<File>,
+  override val manifest: File,
+  override val folder: File,
+  override val resFolder: File,
+  override val assetsFolder: File,
+  override val lintJar: File?,
+  override val publicResources: File,
+  override val symbolFile: File,
+  override val externalAnnotations: File,
+  override val proguardRules: File,
+  override val provided: Boolean,
+  override val resolvedCoordinates: LintModelMavenName,
+  override val partialResultsDir: File? = null,
 ) : DefaultLintModelLibrary(), LintModelAndroidLibrary {
   override fun toString(): String = "AndroidLibrary($resolvedCoordinates)"
 }
 
 class DefaultLintModelJavaLibrary(
-    override val identifier: String,
-    override val jarFiles: List<File>,
-    override val resolvedCoordinates: LintModelMavenName,
-    override val provided: Boolean,
-    override val partialResultsDir: File? = null,
+  override val identifier: String,
+  override val jarFiles: List<File>,
+  override val resolvedCoordinates: LintModelMavenName,
+  override val provided: Boolean,
+  override val partialResultsDir: File? = null,
 ) : DefaultLintModelLibrary(), LintModelJavaLibrary {
   override fun toString(): String = "JavaLibrary($resolvedCoordinates)"
 

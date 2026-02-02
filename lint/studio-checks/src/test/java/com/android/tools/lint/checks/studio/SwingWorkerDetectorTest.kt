@@ -24,9 +24,9 @@ class SwingWorkerDetectorTest {
   @Test
   fun testProblems() {
     studioLint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
                     package test.pkg;
                     import javax.swing.SwingWorker;
                     import java.util.List;
@@ -46,10 +46,10 @@ class SwingWorkerDetectorTest {
                         }
                     }
                 """
-                )
-                .indented(),
-            java(
-                """
+          )
+          .indented(),
+        java(
+          """
                     // Stub until test infrastructure passes the right class path for non-Android
                     // modules.
                     package javax.swing;
@@ -61,17 +61,17 @@ class SwingWorkerDetectorTest {
                         }
                     }
                 """
-            ),
-        )
-        .issues(SwingWorkerDetector.ISSUE)
-        .run()
-        .expect(
-            """
+        ),
+      )
+      .issues(SwingWorkerDetector.ISSUE)
+      .run()
+      .expect(
+        """
                 src/test/pkg/Test.java:7: Error: Do not use javax.swing.SwingWorker, use com.intellij.util.concurrency.SwingWorker instead. See go/do-not-freeze. [SwingWorker]
                         SwingWorker worker = new SwingWorker<Boolean, Integer>() {
                                                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 1 errors, 0 warnings
                 """
-        )
+      )
   }
 }

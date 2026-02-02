@@ -55,17 +55,17 @@ class LintFixPerformerTest {
   private fun fix() = LintFix.create()
 
   fun check(
-      file: File,
-      source: String,
-      vararg fixes: LintFix,
-      expected: String,
-      expectedOutput: String? = null,
-      expectedFailure: String? = null,
-      includeMarkers: Boolean = false,
-      updateImports: Boolean = true,
-      shortenAll: Boolean = includeMarkers,
-      location: Location? = null,
-      requireAutoFixable: Boolean = true,
+    file: File,
+    source: String,
+    vararg fixes: LintFix,
+    expected: String,
+    expectedOutput: String? = null,
+    expectedFailure: String? = null,
+    includeMarkers: Boolean = false,
+    updateImports: Boolean = true,
+    shortenAll: Boolean = includeMarkers,
+    location: Location? = null,
+    requireAutoFixable: Boolean = true,
   ) {
     val client = TestLintClient()
     if (requireAutoFixable) {
@@ -77,54 +77,49 @@ class LintFixPerformerTest {
     var output = ""
     val printStatistics = expectedOutput != null
     val performer =
-        object :
-            LintCliFixPerformer(
-                client,
-                printStatistics,
-                requireAutoFixable = requireAutoFixable,
-                includeMarkers = includeMarkers,
-                updateImports = updateImports,
-                shortenAll = shortenAll,
-            ) {
-          override fun writeFile(file: File, contents: String) {
-            after = contents
-          }
+      object :
+        LintCliFixPerformer(
+          client,
+          printStatistics,
+          requireAutoFixable = requireAutoFixable,
+          includeMarkers = includeMarkers,
+          updateImports = updateImports,
+          shortenAll = shortenAll,
+        ) {
+        override fun writeFile(file: File, contents: String) {
+          after = contents
+        }
 
-          override fun printStatistics(
-              writer: PrintWriter,
-              editMap: MutableMap<String, Int>,
-              appliedEditCount: Int,
-              editedFileCount: Int,
-          ) {
-            val stringWriter = StringWriter()
-            val collector = PrintWriter(stringWriter)
-            super.printStatistics(collector, editMap, appliedEditCount, editedFileCount)
-            output = stringWriter.toString()
-          }
+        override fun printStatistics(writer: PrintWriter, editMap: MutableMap<String, Int>, appliedEditCount: Int, editedFileCount: Int) {
+          val stringWriter = StringWriter()
+          val collector = PrintWriter(stringWriter)
+          super.printStatistics(collector, editMap, appliedEditCount, editedFileCount)
+          output = stringWriter.toString()
         }
+      }
     val testIncident =
-        Incident().apply {
-          issue =
-              Issue.create(
-                  "_FixPerformerTestIssue",
-                  "Sample",
-                  "Sample",
-                  Category.CORRECTNESS,
-                  5,
-                  Severity.WARNING,
-                  Implementation(LintDetectorDetector::class.java, Scope.RESOURCE_FILE_SCOPE),
-              )
-          if (location != null) {
-            this.location = location
-          }
+      Incident().apply {
+        issue =
+          Issue.create(
+            "_FixPerformerTestIssue",
+            "Sample",
+            "Sample",
+            Category.CORRECTNESS,
+            5,
+            Severity.WARNING,
+            Implementation(LintDetectorDetector::class.java, Scope.RESOURCE_FILE_SCOPE),
+          )
+        if (location != null) {
+          this.location = location
         }
+      }
     try {
       performer.fix(testIncident, fixes.toList())
     } catch (e: Throwable) {
       if (expectedFailure != null) {
         assertEquals(
-            expectedFailure.trimIndent().trim(),
-            e.message?.replace(file.path, file.name)?.replace(file.path.dos2unix(), file.name),
+          expectedFailure.trimIndent().trim(),
+          e.message?.replace(file.path, file.name)?.replace(file.path.dos2unix(), file.name),
         )
       } else {
         throw e
@@ -138,10 +133,10 @@ class LintFixPerformerTest {
   }
 
   private fun getFileAndRange(
-      fileName: String,
-      source: String,
-      startOffset: Int = 0,
-      endOffset: Int = source.length,
+    fileName: String,
+    source: String,
+    startOffset: Int = 0,
+    endOffset: Int = source.length,
   ): Pair<File, Location> {
     val file = temporaryFolder.newFile(fileName)
     file.writeText(source)
@@ -152,108 +147,108 @@ class LintFixPerformerTest {
   @Test
   fun testSingleReplace() {
     val source =
-        """
-        First line.
-        Second line.
-        Third line.
-        """
-            .trimIndent()
+      """
+      First line.
+      Second line.
+      Third line.
+      """
+        .trimIndent()
     val (file, range) = getFileAndRange("test.txt", source)
     val fix = fix().replace().text("Second").range(range).with("2nd").autoFix().build()
     check(
-        file,
-        source,
-        fix,
-        expected =
-            """
+      file,
+      source,
+      fix,
+      expected =
+        """
             First line.
             2nd line.
             Third line.""",
-        expectedOutput = "Applied 1 edits across 1 files for this fix: Replace with 2nd",
+      expectedOutput = "Applied 1 edits across 1 files for this fix: Replace with 2nd",
     )
   }
 
   @Test
   fun testRepeatedReplaceText() {
     val source =
-        """
-        First line.
-        Second line.
-        Third line.
-        """
-            .trimIndent()
+      """
+      First line.
+      Second line.
+      Third line.
+      """
+        .trimIndent()
     val (file, range) = getFileAndRange("test.txt", source)
     val fix = fix().replace().text("line").range(range).with("sentence").repeatedly().autoFix().build()
     check(
-        file,
-        source,
-        fix,
-        expected =
-            """
+      file,
+      source,
+      fix,
+      expected =
+        """
         First sentence.
         Second sentence.
         Third sentence.
         """,
-        expectedOutput = "Applied 3 edits across 1 files for this fix: Replace with sentence",
+      expectedOutput = "Applied 3 edits across 1 files for this fix: Replace with sentence",
     )
   }
 
   @Test
   fun testRepeatedReplacePattern() {
     val source =
-        """
-        First line.
-        Second line.
-        Third line.
-        """
-            .trimIndent()
+      """
+      First line.
+      Second line.
+      Third line.
+      """
+        .trimIndent()
     val (file, range) = getFileAndRange("test.txt", source)
     val fix = fix().replace().pattern("(\\b(.+) (line)(.))").range(range).with("\\k<3>: \\k<2>!").repeatedly().autoFix().build()
     check(
-        file,
-        source,
-        fix,
-        expected =
-            """
+      file,
+      source,
+      fix,
+      expected =
+        """
         line: First!
         line: Second!
         line: Third!
         """,
-        expectedOutput = "Applied 3 edits across 1 files for this fix: Replace with \\k<3>: \\k<2>!",
+      expectedOutput = "Applied 3 edits across 1 files for this fix: Replace with \\k<3>: \\k<2>!",
     )
   }
 
   @Test
   fun testImports() {
     val source =
-        """
-        @file:Suppress("UsePropertyAccessSyntax")
-        package test.pkg;
+      """
+      @file:Suppress("UsePropertyAccessSyntax")
+      package test.pkg;
 
-        import android.app.Activity; /* Comment here */
-        import static com.android.tools.SdkUtils.method; // line suffix
+      import android.app.Activity; /* Comment here */
+      import static com.android.tools.SdkUtils.method; // line suffix
 
-        class Test {
-        }
-        """
-            .trimIndent()
+      class Test {
+      }
+      """
+        .trimIndent()
 
     val (file, range) = getFileAndRange("Test.java", source)
     val fix =
-        fix()
-            .replace()
-            .text("Test")
-            .range(range)
-            .with("MainActivity")
-            .imports("java.util.List", "java.io.File", "absolutely.First", "zzz.definitely.Last")
-            .autoFix()
-            .build()
+      fix()
+        .replace()
+        .text("Test")
+        .range(range)
+        .with("MainActivity")
+        .imports("java.util.List", "java.io.File", "absolutely.First", "zzz.definitely.Last")
+        .autoFix()
+        .build()
     check(
-        file,
-        source,
-        fix,
-        expected =
-            """
+      file,
+      source,
+      fix,
+      expected =
+        """
         @file:Suppress("UsePropertyAccessSyntax")
         package test.pkg;
 
@@ -267,41 +262,41 @@ class LintFixPerformerTest {
         class MainActivity {
         }
         """,
-        expectedOutput = "Applied 5 edits across 1 files for this fix: Replace with MainActivity",
+      expectedOutput = "Applied 5 edits across 1 files for this fix: Replace with MainActivity",
     )
   }
 
   @Test
   fun testKeepStaticImportsSorted() {
     val source =
-        """
-        package test.pkg;
+      """
+      package test.pkg;
 
-        import static com.android.tools.SdkUtils.method;
-        import static java.util.Collections.size;
-        import android.app.Activity;
+      import static com.android.tools.SdkUtils.method;
+      import static java.util.Collections.size;
+      import android.app.Activity;
 
-        class Test {
-        }
-        """
-            .trimIndent()
+      class Test {
+      }
+      """
+        .trimIndent()
 
     val (file, range) = getFileAndRange("Test.java", source)
     val fix =
-        fix()
-            .replace()
-            .text("Test")
-            .range(range)
-            .with("MainActivity")
-            .imports("java.util.List", "java.io.File.delete", "android.app.Activity.isDestroyed")
-            .autoFix()
-            .build()
+      fix()
+        .replace()
+        .text("Test")
+        .range(range)
+        .with("MainActivity")
+        .imports("java.util.List", "java.io.File.delete", "android.app.Activity.isDestroyed")
+        .autoFix()
+        .build()
     check(
-        file,
-        source,
-        fix,
-        expected =
-            """
+      file,
+      source,
+      fix,
+      expected =
+        """
         package test.pkg;
 
         import static android.app.Activity.isDestroyed;
@@ -314,57 +309,57 @@ class LintFixPerformerTest {
         class MainActivity {
         }
         """,
-        expectedOutput = "Applied 4 edits across 1 files for this fix: Replace with MainActivity",
+      expectedOutput = "Applied 4 edits across 1 files for this fix: Replace with MainActivity",
     )
   }
 
   @Test
   fun testInsertFirstImport() {
     val source =
-        """
-        class Test {
-        }
-        """
-            .trimIndent()
+      """
+      class Test {
+      }
+      """
+        .trimIndent()
 
     val (file, range) = getFileAndRange("Test.java", source)
     val fix = fix().replace().text("Test").range(range).with("MainActivity").imports("java.util.List").autoFix().build()
     check(
-        file,
-        source,
-        fix,
-        expected =
-            """
+      file,
+      source,
+      fix,
+      expected =
+        """
         import java.util.List;
         class MainActivity {
         }
         """,
-        expectedOutput = "Applied 2 edits across 1 files for this fix: Replace with MainActivity",
+      expectedOutput = "Applied 2 edits across 1 files for this fix: Replace with MainActivity",
     )
   }
 
   @Test
   fun testInsertFirstImport2() {
     val source =
-        """
-        /*
-        package test.pkg;
-        import java.util.List;
-        */
-        package test.pkg; // Line comment
-        class Test {
-        }
-        """
-            .trimIndent()
+      """
+      /*
+      package test.pkg;
+      import java.util.List;
+      */
+      package test.pkg; // Line comment
+      class Test {
+      }
+      """
+        .trimIndent()
 
     val (file, range) = getFileAndRange("Test.java", source)
     val fix = fix().replace().text("Test").range(range).with("MainActivity").imports("java.util.List").autoFix().build()
     check(
-        file,
-        source,
-        fix,
-        expected =
-            """
+      file,
+      source,
+      fix,
+      expected =
+        """
         /*
         package test.pkg;
         import java.util.List;
@@ -374,35 +369,35 @@ class LintFixPerformerTest {
         class MainActivity {
         }
         """,
-        expectedOutput = "Applied 2 edits across 1 files for this fix: Replace with MainActivity",
+      expectedOutput = "Applied 2 edits across 1 files for this fix: Replace with MainActivity",
     )
   }
 
   @Test
   fun testInsertFirstImport3() {
     val source =
-        """
-        // Comment
-        @file:Suppress("UsePropertyAccessSyntax", "UNUSED_VARIABLE", "unused", "UNUSED_PARAMETER", "DEPRECATION", "(")
-        /**
-        Import like this:
-        package test.pkg;
-        import java.util.List;
-        */
-        package test.pkg // Line comment
-        class Test {
-        }
-        """
-            .trimIndent()
+      """
+      // Comment
+      @file:Suppress("UsePropertyAccessSyntax", "UNUSED_VARIABLE", "unused", "UNUSED_PARAMETER", "DEPRECATION", "(")
+      /**
+      Import like this:
+      package test.pkg;
+      import java.util.List;
+      */
+      package test.pkg // Line comment
+      class Test {
+      }
+      """
+        .trimIndent()
 
     val (file, range) = getFileAndRange("Test.kt", source)
     val fix = fix().replace().text("Test").range(range).with("MainActivity").imports("java.util.List.delete").autoFix().build()
     check(
-        file,
-        source,
-        fix,
-        expected =
-            """
+      file,
+      source,
+      fix,
+      expected =
+        """
         // Comment
         @file:Suppress("UsePropertyAccessSyntax", "UNUSED_VARIABLE", "unused", "UNUSED_PARAMETER", "DEPRECATION", "(")
         /**
@@ -415,7 +410,7 @@ class LintFixPerformerTest {
         class MainActivity {
         }
         """,
-        expectedOutput = "Applied 2 edits across 1 files for this fix: Replace with MainActivity",
+      expectedOutput = "Applied 2 edits across 1 files for this fix: Replace with MainActivity",
     )
   }
 
@@ -424,47 +419,47 @@ class LintFixPerformerTest {
     // Make sure we don't shorten symbols from the package or wildcard imports if
     // there are other explicit imports of the same symbol name.
     val source =
-        """
-        package test.pkg;
+      """
+      package test.pkg;
 
-        import android.app.Application;
-        import static com.android.tools.SdkUtils.method;
-        import java.util.*;
-        import java.util.concurrent.ExecutionException;
-        import java.util.concurrent.Future;
+      import android.app.Application;
+      import static com.android.tools.SdkUtils.method;
+      import java.util.*;
+      import java.util.concurrent.ExecutionException;
+      import java.util.concurrent.Future;
 
-        class Test {
-        }
-        """
-            .trimIndent()
+      class Test {
+      }
+      """
+        .trimIndent()
 
     val (file, range) = getFileAndRange("Test.java", source)
     val fix =
-        fix()
-            .replace()
-            .text("Test {")
-            .range(range)
-            .with(
-                "MainActivity extends android.app.Activity implements test.pkg.MyInterface, test.pkg.Future, java.util.List, java.util.ExecutionException, my.pkg.SomeQualifiedName {\n" +
-                    "    Charset charset = Charset.defaultCharset();\n" +
-                    "    Object locale = java.util.Locale.ROOT;\n" +
-                    "    java.nio.charset.Charset charset = java.nio.charset.StandardCharsets.UTF_8;\n" +
-                    "    java.nio.charset.Charset charset2 = kotlin.text.Charsets.UTF_8;\n" +
-                    "    @androidx.annotation.ChecksSdkIntAtLeast(api=android.os.Build.VERSION_CODES.ICE_CREAM_SANDWICH)\n" +
-                    "    public void test() { }"
-            )
-            .shortenNames()
-            .imports("android.app.Activity")
-            .autoFix()
-            .build()
+      fix()
+        .replace()
+        .text("Test {")
+        .range(range)
+        .with(
+          "MainActivity extends android.app.Activity implements test.pkg.MyInterface, test.pkg.Future, java.util.List, java.util.ExecutionException, my.pkg.SomeQualifiedName {\n" +
+            "    Charset charset = Charset.defaultCharset();\n" +
+            "    Object locale = java.util.Locale.ROOT;\n" +
+            "    java.nio.charset.Charset charset = java.nio.charset.StandardCharsets.UTF_8;\n" +
+            "    java.nio.charset.Charset charset2 = kotlin.text.Charsets.UTF_8;\n" +
+            "    @androidx.annotation.ChecksSdkIntAtLeast(api=android.os.Build.VERSION_CODES.ICE_CREAM_SANDWICH)\n" +
+            "    public void test() { }"
+        )
+        .shortenNames()
+        .imports("android.app.Activity")
+        .autoFix()
+        .build()
 
     // Just apply the quickfix; no imports added, no references shortened
     check(
-        file,
-        source,
-        fix,
-        expected =
-            """
+      file,
+      source,
+      fix,
+      expected =
+        """
         package test.pkg;
 
         import android.app.Application;
@@ -482,18 +477,18 @@ class LintFixPerformerTest {
             public void test() { }
         }
         """,
-        includeMarkers = false,
-        updateImports = false,
+      includeMarkers = false,
+      updateImports = false,
     )
 
     // Now update imports -- and rewrite code in the replacement to use the new and existing imports
     // for shortening. Don't infer additional imports from fully qualified names in the sources.
     check(
-        file,
-        source,
-        fix,
-        expected =
-            """
+      file,
+      source,
+      fix,
+      expected =
+        """
         package test.pkg;
 
         import android.app.Activity;
@@ -512,18 +507,18 @@ class LintFixPerformerTest {
             public void test() { }
         }
         """,
-        includeMarkers = false,
-        updateImports = true,
+      includeMarkers = false,
+      updateImports = true,
     )
 
     // Finally, apply imports and reference shortening, but also infer additional fully qualified
     // names in the replacement snippet and import those as well.
     check(
-        file,
-        source,
-        fix,
-        expected =
-            """
+      file,
+      source,
+      fix,
+      expected =
+        """
         package test.pkg;
 
         import android.app.Activity;
@@ -547,8 +542,8 @@ class LintFixPerformerTest {
             public void test() { }
         }
         """,
-        includeMarkers = true,
-        updateImports = true,
+      includeMarkers = true,
+      updateImports = true,
     )
   }
 
@@ -556,119 +551,119 @@ class LintFixPerformerTest {
   fun testDoNotShortenStrings() {
     // Make sure we don't shorten references in strings.
     val source =
-        """
-        package test.pkg;
+      """
+      package test.pkg;
 
-        class Test {
-        }
-        """
-            .trimIndent()
+      class Test {
+      }
+      """
+        .trimIndent()
 
     val (file, range) = getFileAndRange("Test.java", source, source.indexOf("class Test"))
     val fix =
-        fix()
-            .annotate(
-                "@android.annotation.EnforcePermission(allOf={\n" +
-                    "// android.permission.READ_CONTACTS is necessary because of X\n" +
-                    "\"android.permission.READ_CONTACTS\", \"android.permission.WRITE_CONTACTS\"})"
-            )
-            .range(range)
-            .autoFix()
-            .build()
+      fix()
+        .annotate(
+          "@android.annotation.EnforcePermission(allOf={\n" +
+            "// android.permission.READ_CONTACTS is necessary because of X\n" +
+            "\"android.permission.READ_CONTACTS\", \"android.permission.WRITE_CONTACTS\"})"
+        )
+        .range(range)
+        .autoFix()
+        .build()
 
     // Just apply the quickfix; no imports added, no references shortened
     check(
-        file,
-        source,
-        fix,
-        expected =
-            """
-            package test.pkg;
-            import android.annotation.EnforcePermission;
+      file,
+      source,
+      fix,
+      expected =
+        """
+        package test.pkg;
+        import android.annotation.EnforcePermission;
 
-            @EnforcePermission(allOf={
-            // android.permission.READ_CONTACTS is necessary because of X
-            "android.permission.READ_CONTACTS", "android.permission.WRITE_CONTACTS"})
-            class Test {
-            }
-            """
-                .trimIndent(),
-        includeMarkers = true,
-        updateImports = true,
+        @EnforcePermission(allOf={
+        // android.permission.READ_CONTACTS is necessary because of X
+        "android.permission.READ_CONTACTS", "android.permission.WRITE_CONTACTS"})
+        class Test {
+        }
+        """
+          .trimIndent(),
+      includeMarkers = true,
+      updateImports = true,
     )
   }
 
   @Test
   fun testClassInSamePackage() {
     val source =
+      """
+      package test.pkg;
+
+      public class MyHiddenMethodCaller {
+          public void callHiddenMethod(BaseClass base) throws Exception {
+              Class.forName("test.pkg.MyHiddenMethodCaller.BaseClass").getDeclaredMethod("hiddenMethod").invoke(base);
+          }
+      }
+      """
+        .trimIndent()
+
+    val (file, range) = getFileAndRange("Test.java", source, source.indexOf("public void callHiddenMethod"))
+    val fix =
+      fix()
+        .annotate(
+          "@GenerateKeepForMethod(\n" +
+            "  className = \"test.pkg.MyHiddenMethodCaller.BaseClass\",\n" +
+            "  methodName = \"hiddenMethod\",\n" +
+            "  params = {}\n" +
+            ")"
+        )
+        .range(range)
+        .autoFix()
+        .build()
+
+    // Just apply the quickfix; no imports added, no references shortened
+    check(
+      file,
+      source,
+      fix,
+      expected =
         """
         package test.pkg;
 
         public class MyHiddenMethodCaller {
+            @GenerateKeepForMethod(
+              className = "test.pkg.MyHiddenMethodCaller.BaseClass",
+              methodName = "hiddenMethod",
+              params = {}
+            )
             public void callHiddenMethod(BaseClass base) throws Exception {
                 Class.forName("test.pkg.MyHiddenMethodCaller.BaseClass").getDeclaredMethod("hiddenMethod").invoke(base);
             }
         }
         """
-            .trimIndent()
-
-    val (file, range) = getFileAndRange("Test.java", source, source.indexOf("public void callHiddenMethod"))
-    val fix =
-        fix()
-            .annotate(
-                "@GenerateKeepForMethod(\n" +
-                    "  className = \"test.pkg.MyHiddenMethodCaller.BaseClass\",\n" +
-                    "  methodName = \"hiddenMethod\",\n" +
-                    "  params = {}\n" +
-                    ")"
-            )
-            .range(range)
-            .autoFix()
-            .build()
-
-    // Just apply the quickfix; no imports added, no references shortened
-    check(
-        file,
-        source,
-        fix,
-        expected =
-            """
-            package test.pkg;
-
-            public class MyHiddenMethodCaller {
-                @GenerateKeepForMethod(
-                  className = "test.pkg.MyHiddenMethodCaller.BaseClass",
-                  methodName = "hiddenMethod",
-                  params = {}
-                )
-                public void callHiddenMethod(BaseClass base) throws Exception {
-                    Class.forName("test.pkg.MyHiddenMethodCaller.BaseClass").getDeclaredMethod("hiddenMethod").invoke(base);
-                }
-            }
-            """
-                .trimIndent(),
-        includeMarkers = true,
-        updateImports = true,
+          .trimIndent(),
+      includeMarkers = true,
+      updateImports = true,
     )
   }
 
   @Test
   fun testInvalidTextReplaceFix() {
     val source =
-        """
-        First line.
-        """
-            .trimIndent()
+      """
+      First line.
+      """
+        .trimIndent()
 
     val (file, range) = getFileAndRange("source.txt", source)
     val fix = fix().replace().text("Not Present").range(range).with("2nd").autoFix().build()
     check(
-        file,
-        source,
-        fix,
-        expected = "First line.",
-        expectedFailure =
-            """
+      file,
+      source,
+      fix,
+      expected = "First line.",
+      expectedFailure =
+        """
         Did not find "Not Present" in "First line." in source.txt as suggested in the quickfix.
 
         Consider calling ReplaceStringBuilder#range() to set a larger range to
@@ -686,12 +681,12 @@ class LintFixPerformerTest {
     val (file, range) = getFileAndRange("source.txt", source)
     val fix = fix().replace().pattern("(Not Present)").range(range).with("2nd").autoFix().build()
     check(
-        file,
-        source,
-        fix,
-        expected = "First line.",
-        expectedFailure =
-            """
+      file,
+      source,
+      fix,
+      expected = "First line.",
+      expectedFailure =
+        """
         Did not match pattern "(Not Present)" in "First line." in source.txt as suggested in the quickfix.
 
         (This fix is associated with the issue id `_FixPerformerTestIssue`,
@@ -704,27 +699,27 @@ class LintFixPerformerTest {
   fun testLineCleanup() {
     // Regression test for b/185853711
     val source =
-        """
-        import android.util.Log;
-        public class Test {
-        }
-        """
-            .trimIndent()
+      """
+      import android.util.Log;
+      public class Test {
+      }
+      """
+        .trimIndent()
 
     val startOffset = source.indexOf("public")
     val (file, range) = getFileAndRange("Test.java", source, startOffset, startOffset + "public".length)
     val fix = fix().replace().range(range).with("").autoFix().build()
     check(
-        file,
-        source,
-        fix,
-        expected =
-            """
+      file,
+      source,
+      fix,
+      expected =
+        """
         import android.util.Log;
          class Test {
         }
         """,
-        expectedOutput = "Applied 1 edits across 1 files for this fix: Delete",
+      expectedOutput = "Applied 1 edits across 1 files for this fix: Delete",
     )
   }
 
@@ -732,30 +727,30 @@ class LintFixPerformerTest {
   fun testMultipleReplaces() {
     // Ensures we reorder edits correctly
     val source =
-        """
-        First line.
-        Second line.
-        Third line.
-        """
-            .trimIndent()
+      """
+      First line.
+      Second line.
+      Third line.
+      """
+        .trimIndent()
 
     val (file, range) = getFileAndRange("test.txt", source)
     val fix1 = fix().replace().text("Third").range(range).with("3rd").autoFix().build()
     val fix2 = fix().replace().text("First").range(range).with("1st").autoFix().build()
     val fix3 = fix().replace().text("Second").range(range).with("2nd").autoFix().build()
     check(
-        file,
-        source,
-        fix1,
-        fix2,
-        fix3,
-        expected =
-            """
+      file,
+      source,
+      fix1,
+      fix2,
+      fix3,
+      expected =
+        """
             1st line.
             2nd line.
             3rd line.""",
-        expectedOutput =
-            """
+      expectedOutput =
+        """
         Applied 3 edits across 1 files
         1: Replace with 3rd
         1: Replace with 2nd
@@ -768,23 +763,23 @@ class LintFixPerformerTest {
   fun testXmlSetAttribute() {
     @Language("XML")
     val source =
-        """
-        <root>
-            <element1 attribute1="value1" />
-            <element2 attribute1="value1" attribute2="value2"/>
-        </root>
-        """
-            .trimIndent()
+      """
+      <root>
+          <element1 attribute1="value1" />
+          <element2 attribute1="value1" attribute2="value2"/>
+      </root>
+      """
+        .trimIndent()
 
     val (file, range) = getFileAndRange("test.xml", source, source.indexOf("attribute1"), source.length)
     val fix = fix().set(ANDROID_URI, "new_attribute", "new value").range(range).autoFix().build()
     check(
-        file,
-        source,
-        fix,
-        // language=XML
-        expected =
-            """
+      file,
+      source,
+      fix,
+      // language=XML
+      expected =
+        """
         <root xmlns:android="http://schemas.android.com/apk/res/android">
             <element1 android:new_attribute="new value" attribute1="value1" />
             <element2 attribute1="value1" attribute2="value2"/>
@@ -798,27 +793,27 @@ class LintFixPerformerTest {
     // Make sure that for selection we include the whole range, including escaped values
     @Language("XML")
     val source =
-        """
-        <root>
-            <element1 attribute1="value1" />
-        </root>
-        """
-            .trimIndent()
+      """
+      <root>
+          <element1 attribute1="value1" />
+      </root>
+      """
+        .trimIndent()
 
     val (file, range) = getFileAndRange("test.xml", source, source.indexOf("attribute1"), source.length)
     val fix = fix().set(ANDROID_URI, "new_attribute", "a < b & c > d").selectAll().range(range).autoFix().build()
     check(
-        file,
-        source,
-        fix,
-        // language=XML
-        expected =
-            """
+      file,
+      source,
+      fix,
+      // language=XML
+      expected =
+        """
         <root xmlns:android="http://schemas.android.com/apk/res/android">
             <element1 android:new_attribute="[a &lt; b &amp; c > d]|" attribute1="value1" />
         </root>
         """,
-        includeMarkers = true,
+      includeMarkers = true,
     )
   }
 
@@ -826,29 +821,29 @@ class LintFixPerformerTest {
   fun testXmlSetAttributeToSame() {
     @Language("XML")
     val source =
-        """
-        <root>
-            <element1 attribute1="value1" />
-            <element2 attribute1="value1" attribute2="value2"/>
-        </root>
-        """
-            .trimIndent()
+      """
+      <root>
+          <element1 attribute1="value1" />
+          <element2 attribute1="value1" attribute2="value2"/>
+      </root>
+      """
+        .trimIndent()
 
     val (file, range) = getFileAndRange("test.xml", source, source.indexOf("attribute2"), source.length)
     val fix = fix().set(null, "attribute2", "value2").range(range).autoFix().build()
     check(
-        file,
-        source,
-        fix,
-        // language=XML
-        expected =
-            """
+      file,
+      source,
+      fix,
+      // language=XML
+      expected =
+        """
         <root>
             <element1 attribute1="value1" />
             <element2 attribute1="value1" attribute2="value2"/>
         </root>
         """,
-        expectedOutput = "",
+      expectedOutput = "",
     )
   }
 
@@ -856,22 +851,22 @@ class LintFixPerformerTest {
   fun testXmlSetAttributeOrder1() {
     @Language("XML")
     val source =
-        """
-        <root xmlns:android="http://schemas.android.com/apk/res/android">
-            <element1 android:layout_width="wrap_content" android:width="foo" />
-        </root>
-        """
-            .trimIndent()
+      """
+      <root xmlns:android="http://schemas.android.com/apk/res/android">
+          <element1 android:layout_width="wrap_content" android:width="foo" />
+      </root>
+      """
+        .trimIndent()
 
     val (file, range) = getFileAndRange("test.xml", source, source.indexOf("element1"), source.length)
     val fix = fix().set(ANDROID_URI, "layout_height", "wrap_content").range(range).autoFix().build()
     check(
-        file,
-        source,
-        fix,
-        // language=XML
-        expected =
-            """
+      file,
+      source,
+      fix,
+      // language=XML
+      expected =
+        """
         <root xmlns:android="http://schemas.android.com/apk/res/android">
             <element1 android:layout_width="wrap_content" android:layout_height="wrap_content" android:width="foo" />
         </root>
@@ -883,22 +878,22 @@ class LintFixPerformerTest {
   fun testXmlSetAttributeOrder2() {
     @Language("XML")
     val source =
-        """
-        <root xmlns:android="http://schemas.android.com/apk/res/android">
-            <element1 android:layout_width="wrap_content" android:width="foo" />
-        </root>
-        """
-            .trimIndent()
+      """
+      <root xmlns:android="http://schemas.android.com/apk/res/android">
+          <element1 android:layout_width="wrap_content" android:width="foo" />
+      </root>
+      """
+        .trimIndent()
 
     val (file, range) = getFileAndRange("test.xml", source, source.indexOf("element1"), source.length)
     val fix = fix().set(ANDROID_URI, "id", "@+id/my_id").range(range).autoFix().build()
     check(
-        file,
-        source,
-        fix,
-        // language=XML
-        expected =
-            """
+      file,
+      source,
+      fix,
+      // language=XML
+      expected =
+        """
         <root xmlns:android="http://schemas.android.com/apk/res/android">
             <element1 android:id="@+id/my_id" android:layout_width="wrap_content" android:width="foo" />
         </root>
@@ -910,31 +905,31 @@ class LintFixPerformerTest {
   fun testXmlSetAttributeOrder3() {
     @Language("XML")
     val source =
-        """
-        <root xmlns:android="http://schemas.android.com/apk/res/android">
-            <element1 android:layout_weight="1.0" android:width="foo" />
-        </root>
-        """
-            .trimIndent()
+      """
+      <root xmlns:android="http://schemas.android.com/apk/res/android">
+          <element1 android:layout_weight="1.0" android:width="foo" />
+      </root>
+      """
+        .trimIndent()
 
     val (file, range) = getFileAndRange("test.xml", source, source.indexOf("element1"), source.length)
     // When we insert multiple attributes ensure that they're sorted relative to each other too,
     // not just relative to the existing attributes
     val fix =
-        fix()
-            .name("Set multiple attributes")
-            .composite(
-                fix().set(ANDROID_URI, "layout_width", "wrap_content").range(range).autoFix().build(),
-                fix().set(ANDROID_URI, "z-order", "5").range(range).autoFix().build(),
-                fix().set(ANDROID_URI, "layout_height", "wrap_content").range(range).autoFix().build(),
-            )
+      fix()
+        .name("Set multiple attributes")
+        .composite(
+          fix().set(ANDROID_URI, "layout_width", "wrap_content").range(range).autoFix().build(),
+          fix().set(ANDROID_URI, "z-order", "5").range(range).autoFix().build(),
+          fix().set(ANDROID_URI, "layout_height", "wrap_content").range(range).autoFix().build(),
+        )
     check(
-        file,
-        source,
-        fix,
-        // language=XML
-        expected =
-            """
+      file,
+      source,
+      fix,
+      // language=XML
+      expected =
+        """
         <root xmlns:android="http://schemas.android.com/apk/res/android">
             <element1 android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_weight="1.0" android:width="foo" android:z-order="5" />
         </root>
@@ -946,23 +941,23 @@ class LintFixPerformerTest {
   fun testXmlDeleteAttribute() {
     @Language("XML")
     val source =
-        """
-        <root>
-            <element1 attribute1="value1" />
-            <element2 attribute1="value1" attribute2="value2"/>
-        </root>
-        """
-            .trimIndent()
+      """
+      <root>
+          <element1 attribute1="value1" />
+          <element2 attribute1="value1" attribute2="value2"/>
+      </root>
+      """
+        .trimIndent()
 
     val (file, range) = getFileAndRange("test.xml", source, source.indexOf("element2"), source.length)
     val fix = fix().unset(null, "attribute2").range(range).autoFix().build()
     check(
-        file,
-        source,
-        fix,
-        // language=XML
-        expected =
-            """
+      file,
+      source,
+      fix,
+      // language=XML
+      expected =
+        """
         <root>
             <element1 attribute1="value1" />
             <element2 attribute1="value1" />
@@ -975,23 +970,23 @@ class LintFixPerformerTest {
   fun testXmlDeleteAttributeNamespace() {
     @Language("XML")
     val source =
-        """
-        <root xmlns:android="http://schemas.android.com/apk/res/android"
-              xmlns:tools="http://schemas.android.com/tools">
-            <element2 attribute1="value1" android:attribute1="value1" tools:attribute1="value1" />
-        </root>
-        """
-            .trimIndent()
+      """
+      <root xmlns:android="http://schemas.android.com/apk/res/android"
+            xmlns:tools="http://schemas.android.com/tools">
+          <element2 attribute1="value1" android:attribute1="value1" tools:attribute1="value1" />
+      </root>
+      """
+        .trimIndent()
 
     val (file, range) = getFileAndRange("test.xml", source, source.indexOf("element2"), source.length)
     val fix = fix().unset(ANDROID_URI, "attribute1").range(range).autoFix().build()
     check(
-        file,
-        source,
-        fix,
-        // language=XML
-        expected =
-            """
+      file,
+      source,
+      fix,
+      // language=XML
+      expected =
+        """
         <root xmlns:android="http://schemas.android.com/apk/res/android"
               xmlns:tools="http://schemas.android.com/tools">
             <element2 attribute1="value1" tools:attribute1="value1" />
@@ -1004,23 +999,23 @@ class LintFixPerformerTest {
   fun testXmlDeleteAttributePrefixNamespace() {
     @Language("XML")
     val source =
-        """
-        <root xmlns:a="http://schemas.android.com/apk/res/android"
-              xmlns:tools="http://schemas.android.com/tools">
-            <element2 attribute1="value1" a:attribute1="value1" tools:attribute1="value1" />
-        </root>
-        """
-            .trimIndent()
+      """
+      <root xmlns:a="http://schemas.android.com/apk/res/android"
+            xmlns:tools="http://schemas.android.com/tools">
+          <element2 attribute1="value1" a:attribute1="value1" tools:attribute1="value1" />
+      </root>
+      """
+        .trimIndent()
 
     val (file, range) = getFileAndRange("test.xml", source, source.indexOf("element2"), source.length)
     val fix = fix().unset(ANDROID_URI, "attribute1").range(range).autoFix().build()
     check(
-        file,
-        source,
-        fix,
-        expected =
-            // language=XML
-            """
+      file,
+      source,
+      fix,
+      expected =
+        // language=XML
+        """
         <root xmlns:a="http://schemas.android.com/apk/res/android"
               xmlns:tools="http://schemas.android.com/tools">
             <element2 attribute1="value1" tools:attribute1="value1" />
@@ -1033,24 +1028,24 @@ class LintFixPerformerTest {
   fun testXmlReplaceAttribute1() {
     @Language("XML")
     val source =
-        """
-        <root xmlns:a="http://schemas.android.com/apk/res/android"
-              xmlns:tools="http://schemas.android.com/tools">
-            <element2 a:attribute1="value1" tools:attribute1="value1" />
-        </root>
-        """
-            .trimIndent()
+      """
+      <root xmlns:a="http://schemas.android.com/apk/res/android"
+            xmlns:tools="http://schemas.android.com/tools">
+          <element2 a:attribute1="value1" tools:attribute1="value1" />
+      </root>
+      """
+        .trimIndent()
 
     val (file, range) = getFileAndRange("test.xml", source, source.indexOf("element2"), source.length)
     val fix = fix().replaceAttribute(ANDROID_URI, "attribute1", "value1", AUTO_URI).range(range).autoFix().build()
     assertEquals("Update to `app:attribute1`", fix.getDisplayName())
     check(
-        file,
-        source,
-        fix,
-        expected =
-            // language=XML
-            """
+      file,
+      source,
+      fix,
+      expected =
+        // language=XML
+        """
         <root xmlns:a="http://schemas.android.com/apk/res/android"
               xmlns:app="http://schemas.android.com/apk/res-auto" xmlns:tools="http://schemas.android.com/tools">
             <element2 app:attribute1="value1" tools:attribute1="value1" />
@@ -1059,36 +1054,33 @@ class LintFixPerformerTest {
     )
 
     assertEquals(
-        "Update to `attribute2`",
-        fix().replaceAttribute(ANDROID_URI, "attribute1", "value1", null, "attribute2").build().getDisplayName(),
+      "Update to `attribute2`",
+      fix().replaceAttribute(ANDROID_URI, "attribute1", "value1", null, "attribute2").build().getDisplayName(),
     )
-    assertEquals(
-        "Drop namespace prefix",
-        fix().replaceAttribute(ANDROID_URI, "attribute1", "value1", null).build().getDisplayName(),
-    )
+    assertEquals("Drop namespace prefix", fix().replaceAttribute(ANDROID_URI, "attribute1", "value1", null).build().getDisplayName())
   }
 
   @Test
   fun testXmlReplaceAttribute2() {
     @Language("XML")
     val source =
-        """
-        <root>
-            <element2 attribute1="value1" />
-        </root>
-        """
-            .trimIndent()
+      """
+      <root>
+          <element2 attribute1="value1" />
+      </root>
+      """
+        .trimIndent()
 
     val (file, range) = getFileAndRange("test.xml", source, source.indexOf("element2"), source.length)
     val fix = fix().replaceAttribute(null, "attribute1", "value1", null, "attribute2").range(range).autoFix().build()
     assertEquals("Update to `attribute2`", fix.getDisplayName())
     check(
-        file,
-        source,
-        fix,
-        expected =
-            // language=XML
-            """
+      file,
+      source,
+      fix,
+      expected =
+        // language=XML
+        """
         <root>
             <element2 attribute2="value1" />
         </root>
@@ -1100,13 +1092,13 @@ class LintFixPerformerTest {
   fun testXmlComposite() {
     @Language("XML")
     val source =
-        """
-        <root>
-            <element1 attribute1="value1" />
-            <element2 attribute1="value1" attribute2="value2"/>
-        </root>
-        """
-            .trimIndent()
+      """
+      <root>
+          <element1 attribute1="value1" />
+          <element2 attribute1="value1" attribute2="value2"/>
+      </root>
+      """
+        .trimIndent()
 
     val (file, range) = getFileAndRange("test.xml", source, source.indexOf("attribute1"), source.length)
     val unsetFix = fix().unset(null, "attribute1").range(range).build()
@@ -1118,20 +1110,20 @@ class LintFixPerformerTest {
       fail("Expected failure for missing display name")
     } catch (e: IllegalStateException) {
       assertEquals(
-          "You should explicitly set a display name for composite group actions; " +
-              "unlike string replacement, set attribute, etc. it cannot produce a good default on its own",
-          e.message,
+        "You should explicitly set a display name for composite group actions; " +
+          "unlike string replacement, set attribute, etc. it cannot produce a good default on its own",
+        e.message,
       )
     }
 
     val fix = fix().name("Set multiple attributes").composite(setFix, unsetFix).autoFix()
     check(
-        file,
-        source,
-        fix,
-        // language=XML
-        expected =
-            """
+      file,
+      source,
+      fix,
+      // language=XML
+      expected =
+        """
         <root xmlns:android="http://schemas.android.com/apk/res/android">
             <element1 android:new_attribute="new value" />
             <element2 attribute1="value1" attribute2="value2"/>
@@ -1144,112 +1136,112 @@ class LintFixPerformerTest {
   fun testXmlComposite2() {
     @Language("xml")
     val source =
-        """
-        <android.support.v7.widget.GridLayout xmlns:android="http://schemas.android.com/apk/res/android"
-            xmlns:tools="http://schemas.android.com/tools"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            tools:ignore="HardcodedText">
+      """
+      <android.support.v7.widget.GridLayout xmlns:android="http://schemas.android.com/apk/res/android"
+          xmlns:tools="http://schemas.android.com/tools"
+          android:layout_width="match_parent"
+          android:layout_height="match_parent"
+          tools:ignore="HardcodedText">
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_column="1"
-                android:text="2" />
+          <TextView
+              android:layout_width="wrap_content"
+              android:layout_height="wrap_content"
+              android:layout_column="1"
+              android:text="2" />
 
-        </android.support.v7.widget.GridLayout>
-        """
-            .trimIndent()
+      </android.support.v7.widget.GridLayout>
+      """
+        .trimIndent()
 
     val (file, range) =
-        getFileAndRange(
-            "test.xml",
-            source,
-            startOffset = source.indexOf("android:layout_column"),
-            endOffset = source.indexOf("android:layout_column") + "android:layout_column".length,
-        )
-    val fix =
-        fix()
-            .name("Update to app:layout_column")
-            .composite(
-                fix().set().attribute("layout_column").value("1").namespace(AUTO_URI).autoFix().build(),
-                fix().set().attribute("layout_column").value(null).namespace(ANDROID_URI).autoFix().build(),
-            )
-    check(
-        file,
+      getFileAndRange(
+        "test.xml",
         source,
-        fix,
-        expected =
-            "" +
-                "<android.support.v7.widget.GridLayout xmlns:android=\"http://schemas.android.com/apk/res/android\"\n" +
-                "    xmlns:app=\"http://schemas.android.com/apk/res-auto\" xmlns:tools=\"http://schemas.android.com/tools\"\n" +
-                "    android:layout_width=\"match_parent\"\n" +
-                "    android:layout_height=\"match_parent\"\n" +
-                "    tools:ignore=\"HardcodedText\">\n" +
-                "\n" +
-                "    <TextView\n" +
-                "        android:layout_width=\"wrap_content\"\n" +
-                "        android:layout_height=\"wrap_content\"\n" +
-                "        android:text=\"2\" app:layout_column=\"1\" />\n" +
-                "\n" +
-                "</android.support.v7.widget.GridLayout>\n",
-        expectedOutput = "Applied 5 edits across 1 files\n" + "2: Set layout_column=\"1\"\n" + "3: Delete layout_column",
-        location = range,
+        startOffset = source.indexOf("android:layout_column"),
+        endOffset = source.indexOf("android:layout_column") + "android:layout_column".length,
+      )
+    val fix =
+      fix()
+        .name("Update to app:layout_column")
+        .composite(
+          fix().set().attribute("layout_column").value("1").namespace(AUTO_URI).autoFix().build(),
+          fix().set().attribute("layout_column").value(null).namespace(ANDROID_URI).autoFix().build(),
+        )
+    check(
+      file,
+      source,
+      fix,
+      expected =
+        "" +
+          "<android.support.v7.widget.GridLayout xmlns:android=\"http://schemas.android.com/apk/res/android\"\n" +
+          "    xmlns:app=\"http://schemas.android.com/apk/res-auto\" xmlns:tools=\"http://schemas.android.com/tools\"\n" +
+          "    android:layout_width=\"match_parent\"\n" +
+          "    android:layout_height=\"match_parent\"\n" +
+          "    tools:ignore=\"HardcodedText\">\n" +
+          "\n" +
+          "    <TextView\n" +
+          "        android:layout_width=\"wrap_content\"\n" +
+          "        android:layout_height=\"wrap_content\"\n" +
+          "        android:text=\"2\" app:layout_column=\"1\" />\n" +
+          "\n" +
+          "</android.support.v7.widget.GridLayout>\n",
+      expectedOutput = "Applied 5 edits across 1 files\n" + "2: Set layout_column=\"1\"\n" + "3: Delete layout_column",
+      location = range,
     )
   }
 
   @Test
   fun testAttributeSorting() {
     val list =
-        listOf(
-            "xmlns:android",
-            "android:layout_width",
-            "android:layout_height",
-            "package",
-            "style",
-            "android:width",
-            "android:name",
-            "xmlns:tools",
-            "android:id",
-            "app:my_attr",
-            "layout",
-            "random",
-            "app:other_attr",
-            "color",
-            "tools:ignore",
-            "tools:targetApi",
-            "xliff:name",
-        )
+      listOf(
+        "xmlns:android",
+        "android:layout_width",
+        "android:layout_height",
+        "package",
+        "style",
+        "android:width",
+        "android:name",
+        "xmlns:tools",
+        "android:id",
+        "app:my_attr",
+        "layout",
+        "random",
+        "app:other_attr",
+        "color",
+        "tools:ignore",
+        "tools:targetApi",
+        "xliff:name",
+      )
     val shuffled = list.shuffled()
     val comparator =
-        Comparator<String> { a1, a2 ->
-          val prefix1 = a1.substringBefore(':', "")
-          val name1 = a1.substringAfter(':')
-          val prefix2 = a2.substringBefore(':', "")
-          val name2 = a2.substringAfter(':')
-          compareAttributeNames(prefix1, name1, prefix2, name2)
-        }
+      Comparator<String> { a1, a2 ->
+        val prefix1 = a1.substringBefore(':', "")
+        val name1 = a1.substringAfter(':')
+        val prefix2 = a2.substringBefore(':', "")
+        val name2 = a2.substringAfter(':')
+        compareAttributeNames(prefix1, name1, prefix2, name2)
+      }
     val sorted = shuffled.sortedWith(comparator)
     assertEquals(
-        "" +
-            "xmlns:android\n" +
-            "xmlns:tools\n" +
-            "android:id\n" +
-            "android:name\n" +
-            "layout\n" +
-            "package\n" +
-            "style\n" +
-            "android:layout_width\n" +
-            "android:layout_height\n" +
-            "android:width\n" +
-            "app:my_attr\n" +
-            "app:other_attr\n" +
-            "xliff:name\n" +
-            "random\n" +
-            "color\n" +
-            "tools:ignore\n" +
-            "tools:targetApi",
-        sorted.joinToString("\n"),
+      "" +
+        "xmlns:android\n" +
+        "xmlns:tools\n" +
+        "android:id\n" +
+        "android:name\n" +
+        "layout\n" +
+        "package\n" +
+        "style\n" +
+        "android:layout_width\n" +
+        "android:layout_height\n" +
+        "android:width\n" +
+        "app:my_attr\n" +
+        "app:other_attr\n" +
+        "xliff:name\n" +
+        "random\n" +
+        "color\n" +
+        "tools:ignore\n" +
+        "tools:targetApi",
+      sorted.joinToString("\n"),
     )
   }
 
@@ -1257,37 +1249,32 @@ class LintFixPerformerTest {
   fun testXmlRenameTag() {
     @Language("XML")
     val source =
-        """
-        <root xmlns:android="http://schemas.android.com/apk/res/android">
-            <element1 android:layout_width="wrap_content" android:width="foo">
-                <element2 />
-            </element1>
-        </root>
-        """
-            .trimIndent()
+      """
+      <root xmlns:android="http://schemas.android.com/apk/res/android">
+          <element1 android:layout_width="wrap_content" android:width="foo">
+              <element2 />
+          </element1>
+      </root>
+      """
+        .trimIndent()
 
     val (file, range) =
-        getFileAndRange(
-            "test.xml",
-            source,
-            source.indexOf("<element1"),
-            source.indexOf("</element1>") + "</element1>".length,
-        )
+      getFileAndRange("test.xml", source, source.indexOf("<element1"), source.indexOf("</element1>") + "</element1>".length)
     val fix = fix().renameTag("element1", "newElement", range).autoFix().build()
     check(
-        file,
-        source,
-        fix,
-        // language=XML
-        expected =
-            """
+      file,
+      source,
+      fix,
+      // language=XML
+      expected =
+        """
         <root xmlns:android="http://schemas.android.com/apk/res/android">
             <newElement android:layout_width="wrap_content" android:width="foo">
                 <element2 />
             </newElement>
         </root>
         """,
-        requireAutoFixable = false,
+      requireAutoFixable = false,
     )
   }
 
@@ -1296,38 +1283,38 @@ class LintFixPerformerTest {
     // Regression test for b/https://issuetracker.google.com/241573146
     @Language("java")
     val source =
-        """
-        package test.pkg;
-        import android.graphics.drawable.Drawable;
-        import android.graphics.Outline;
+      """
+      package test.pkg;
+      import android.graphics.drawable.Drawable;
+      import android.graphics.Outline;
 
-        class Test {
-            static void getOutline() {
-            }
+      class Test {
+          static void getOutline() {
+          }
 
-            static void getOutline2() {
-            }
-        }
-        """
-            .trimIndent()
+          static void getOutline2() {
+          }
+      }
+      """
+        .trimIndent()
 
     val (file, range) = getFileAndRange("Test.java", source)
     val fix =
-        fix()
-            .replace()
-            .text("()")
-            .with("(android.graphics.drawable.Drawable drawable, android.graphics.Outline outline)")
-            .repeatedly()
-            .shortenNames()
-            .autoFix()
-            .range(range)
-            .build()
+      fix()
+        .replace()
+        .text("()")
+        .with("(android.graphics.drawable.Drawable drawable, android.graphics.Outline outline)")
+        .repeatedly()
+        .shortenNames()
+        .autoFix()
+        .range(range)
+        .build()
     check(
-        file,
-        source,
-        fix,
-        expected =
-            """
+      file,
+      source,
+      fix,
+      expected =
+        """
         package test.pkg;
         import android.graphics.drawable.Drawable;
         import android.graphics.Outline;
@@ -1340,9 +1327,9 @@ class LintFixPerformerTest {
             }
         }
         """,
-        expectedOutput =
-            "Applied 2 edits across 1 files for this fix: Replace with (android.graphics.drawable.Drawable drawable, android.graphics.Outline outline)",
-        includeMarkers = true,
+      expectedOutput =
+        "Applied 2 edits across 1 files for this fix: Replace with (android.graphics.drawable.Drawable drawable, android.graphics.Outline outline)",
+      includeMarkers = true,
     )
   }
 
@@ -1350,23 +1337,23 @@ class LintFixPerformerTest {
   fun testAnnotate() {
     @Language("Java")
     val source =
-        """
-        public class Test {
-            /** Comment */
-            public void test() { }
-        }
-        """
-            .trimIndent()
+      """
+      public class Test {
+          /** Comment */
+          public void test() { }
+      }
+      """
+        .trimIndent()
 
     val (file, range) = getFileAndRange("Test.java", source, source.indexOf("/** Comment"), source.length)
     val fix = fix().annotate("androidx.annotation.UiThread", null, null).range(range).autoFix().build()
     check(
-        file,
-        source,
-        fix,
-        expected =
-            // language=Java
-            """
+      file,
+      source,
+      fix,
+      expected =
+        // language=Java
+        """
         import androidx.annotation.UiThread;
         public class Test {
             /** Comment */
@@ -1374,131 +1361,131 @@ class LintFixPerformerTest {
             public void test() { }
         }
         """,
-        includeMarkers = true,
+      includeMarkers = true,
     )
   }
 
   @Test
   fun testAnnotate2() {
     val source =
-        """
-        package p1.p2
-        /** My Property */
-        @Suppress("SomeInspection1")
-        const val someProperty = ""
-        """
-            .trimIndent()
+      """
+      package p1.p2
+      /** My Property */
+      @Suppress("SomeInspection1")
+      const val someProperty = ""
+      """
+        .trimIndent()
 
     val (file, range) = getFileAndRange("test.kt", source, startOffset = source.indexOf("/**"))
 
     val fix = fix().annotate("@kotlin.Suppress(\"SomeInspection2\")", null, null, false).range(range).select("Some(.*)2").build()
     check(
-        file,
-        source,
-        fix,
-        expected =
-            """
-            package p1.p2
-            /** My Property */
-            @Suppress("Some[Inspection]|2")
-            @Suppress("SomeInspection1")
-            const val someProperty = ""
-            """
-                .trimIndent(),
-        requireAutoFixable = false,
-        // Verify selection markers
-        includeMarkers = true,
+      file,
+      source,
+      fix,
+      expected =
+        """
+        package p1.p2
+        /** My Property */
+        @Suppress("Some[Inspection]|2")
+        @Suppress("SomeInspection1")
+        const val someProperty = ""
+        """
+          .trimIndent(),
+      requireAutoFixable = false,
+      // Verify selection markers
+      includeMarkers = true,
     )
   }
 
   @Test
   fun testAnnotateReplace() {
     val source =
-        """
-        package p1.p2
-        /** My Property */
-        @Suppress("SomeInspection1")
-        const val someProperty = ""
-        """
-            .trimIndent()
+      """
+      package p1.p2
+      /** My Property */
+      @Suppress("SomeInspection1")
+      const val someProperty = ""
+      """
+        .trimIndent()
 
     val (file, range) = getFileAndRange("test.kt", source, startOffset = source.indexOf("/**"))
 
     val fix =
-        fix()
-            .name("Add annotations")
-            .composite(fix().annotate("@kotlin.Suppress(\"SomeInspection2\")", null, null, true).range(range).build())
+      fix()
+        .name("Add annotations")
+        .composite(fix().annotate("@kotlin.Suppress(\"SomeInspection2\")", null, null, true).range(range).build())
     check(
-        file,
-        source,
-        fix,
-        expected =
-            """
-            package p1.p2
-            /** My Property */
-            @Suppress("SomeInspection2")
-            const val someProperty = ""
-            """
-                .trimIndent(),
-        requireAutoFixable = false,
+      file,
+      source,
+      fix,
+      expected =
+        """
+        package p1.p2
+        /** My Property */
+        @Suppress("SomeInspection2")
+        const val someProperty = ""
+        """
+          .trimIndent(),
+      requireAutoFixable = false,
     )
   }
 
   @Test
   fun testAnnotateFile() {
     val source =
-        """
-        package p1.p2
-        /** My Property */
-        @Suppress("SomeInspection1")
-        const val someProperty = ""
-        """
-            .trimIndent()
+      """
+      package p1.p2
+      /** My Property */
+      @Suppress("SomeInspection1")
+      const val someProperty = ""
+      """
+        .trimIndent()
 
     val (file, range) = getFileAndRange("test.kt", source, startOffset = source.indexOf("/**"))
 
     val fix = fix().name("Add annotations").annotate("@file:Suppress(\"SomeInspection2\")", null, null, true).range(range).build()
     check(
-        file,
-        source,
-        fix,
-        expected =
-            """
-            @file:Suppress("SomeInspection2")
-            package p1.p2
-            /** My Property */
-            @Suppress("SomeInspection1")
-            const val someProperty = ""
-            """
-                .trimIndent(),
-        requireAutoFixable = false,
+      file,
+      source,
+      fix,
+      expected =
+        """
+        @file:Suppress("SomeInspection2")
+        package p1.p2
+        /** My Property */
+        @Suppress("SomeInspection1")
+        const val someProperty = ""
+        """
+          .trimIndent(),
+      requireAutoFixable = false,
     )
   }
 
   @Test
   fun testAnnotateNoNewline() {
     val source =
-        """
-        package p1.p2
-        const val someProperty = ""
-        """
-            .trimIndent()
+      """
+      package p1.p2
+      const val someProperty = ""
+      """
+        .trimIndent()
 
     val (file, range) = getFileAndRange("test.kt", source, startOffset = source.indexOf("const val"))
 
     val fix = fix().name("Add annotations").annotate("@Suppress(\"SomeInspection1\")", null, null, true).range(range).build()
     check(
-        file,
-        source,
-        fix,
-        expected =
-            """
-            package p1.p2
-            @Suppress("SomeInspection1")
-            const val someProperty = ""
-            """
-                .trimIndent(),
-        requireAutoFixable = false,
+      file,
+      source,
+      fix,
+      expected =
+        """
+        package p1.p2
+        @Suppress("SomeInspection1")
+        const val someProperty = ""
+        """
+          .trimIndent(),
+      requireAutoFixable = false,
     )
   }
 
@@ -1508,32 +1495,32 @@ class LintFixPerformerTest {
     // annotation (and that we respect import statements)
     @Language("KT")
     val source =
-        """
-        import androidx.annotation.UiThread
-        class Test {
-            /** Comment
-              *
-              * /* nested comment 1 /* nested nested comment */ */
-              *    */
+      """
+      import androidx.annotation.UiThread
+      class Test {
+          /** Comment
+            *
+            * /* nested comment 1 /* nested nested comment */ */
+            *    */
 
-            // Also line comment
+          // Also line comment
 
-            @ExistingAnnotation(1)
-            inline fun test() {
-            }
-        }
-        """
-            .trimIndent()
+          @ExistingAnnotation(1)
+          inline fun test() {
+          }
+      }
+      """
+        .trimIndent()
 
     val (file, range) = getFileAndRange("test.kt", source, source.indexOf("/** Comment"), source.length)
     val fix = fix().annotate("androidx.annotation.UiThread", null, null).range(range).autoFix().build()
     check(
-        file,
-        source,
-        fix,
-        expected =
-            // language=KT
-            """
+      file,
+      source,
+      fix,
+      expected =
+        // language=KT
+        """
       import androidx.annotation.UiThread
       class Test {
           /** Comment
@@ -1555,59 +1542,59 @@ class LintFixPerformerTest {
   @Test
   fun testWhitespaceCleanup() {
     val source =
-        """
-        class Test {
-            public void test() {
-                // Comment
-            }
-        }
-        """
-            .trimIndent()
+      """
+      class Test {
+          public void test() {
+              // Comment
+          }
+      }
+      """
+        .trimIndent()
 
     val (file, range) = getFileAndRange("Test.java", source)
     val fix =
-        fix()
-            .name("Remove method")
-            .replace()
-            .text("public void test() {\n" + "        // Comment\n" + "    }")
-            .range(range)
-            .with("")
-            .autoFix()
-            .build()
+      fix()
+        .name("Remove method")
+        .replace()
+        .text("public void test() {\n" + "        // Comment\n" + "    }")
+        .range(range)
+        .with("")
+        .autoFix()
+        .build()
     check(
-        file,
-        source,
-        fix,
-        expected =
-            """
+      file,
+      source,
+      fix,
+      expected =
+        """
         class Test {
         }
         """,
-        expectedOutput = "Applied 3 edits across 1 files for this fix: Remove method",
+      expectedOutput = "Applied 3 edits across 1 files for this fix: Remove method",
     )
   }
 
   @Test
   fun testTrailingWhitespaceCleanup() {
     val source =
-        """
-        class Test { // comment
-        }
-        """
-            .trimIndent()
+      """
+      class Test { // comment
+      }
+      """
+        .trimIndent()
 
     val (file, range) = getFileAndRange("Test.java", source)
     val fix = fix().name("Remove comment").replace().text("// comment").range(range).with("").autoFix().build()
     check(
-        file,
-        source,
-        fix,
-        expected =
-            """
+      file,
+      source,
+      fix,
+      expected =
+        """
         class Test {
         }
         """,
-        expectedOutput = "Applied 2 edits across 1 files for this fix: Remove comment",
+      expectedOutput = "Applied 2 edits across 1 files for this fix: Remove comment",
     )
   }
 
@@ -1616,27 +1603,27 @@ class LintFixPerformerTest {
     // Insert multiple edits at the same location: verify that they are applied in the
     // same order
     val source =
-        """
-        [libraries]
-        androidx-activity-activityCompose = { module = "androidx.activity:activity-compose", version.ref = "activityCompose" }
-        """
-            .trimIndent()
+      """
+      [libraries]
+      androidx-activity-activityCompose = { module = "androidx.activity:activity-compose", version.ref = "activityCompose" }
+      """
+        .trimIndent()
     val (file, range) = getFileAndRange("test.txt", source)
     val fix =
-        fix()
-            .name("Add version")
-            .composite(
-                fix().replace().beginning().with("appCompat = \"1.5.1\"\n").range(range).build(),
-                fix().replace().beginning().with("[versions]\n").range(range).build(),
-            )
-            .autoFix()
+      fix()
+        .name("Add version")
+        .composite(
+          fix().replace().beginning().with("appCompat = \"1.5.1\"\n").range(range).build(),
+          fix().replace().beginning().with("[versions]\n").range(range).build(),
+        )
+        .autoFix()
 
     check(
-        file,
-        source,
-        fix,
-        expected =
-            """
+      file,
+      source,
+      fix,
+      expected =
+        """
         [versions]
         appCompat = "1.5.1"
         [libraries]
@@ -1650,36 +1637,36 @@ class LintFixPerformerTest {
     // Insert multiple edits at the same location: verify that they are applied in the
     // same order
     val source =
-        """
-        [libraries]
-        androidx-activity-activityCompose = { module = "androidx.activity:activity-compose", version.ref = "activityCompose" }
-        """
-            .trimIndent()
+      """
+      [libraries]
+      androidx-activity-activityCompose = { module = "androidx.activity:activity-compose", version.ref = "activityCompose" }
+      """
+        .trimIndent()
     val (file, range) = getFileAndRange("test.txt", source)
     val fix1 =
-        fix()
-            .name("Add appCompat")
-            .composite(
-                fix().replace().beginning().with("[versions]\n").priority(0).range(range).build(),
-                fix().replace().beginning().with("appCompat = \"1.5.1\"\n").priority(1).range(range).build(),
-            )
-            .autoFix()
+      fix()
+        .name("Add appCompat")
+        .composite(
+          fix().replace().beginning().with("[versions]\n").priority(0).range(range).build(),
+          fix().replace().beginning().with("appCompat = \"1.5.1\"\n").priority(1).range(range).build(),
+        )
+        .autoFix()
     val fix2 =
-        fix()
-            .name("Add activityCompose")
-            .composite(
-                fix().replace().beginning().with("[versions]\n").priority(0).range(range).build(),
-                fix().replace().beginning().with("activityCompose = \"1.7.0-alpha02\"\n").priority(2).range(range).build(),
-            )
-            .autoFix()
+      fix()
+        .name("Add activityCompose")
+        .composite(
+          fix().replace().beginning().with("[versions]\n").priority(0).range(range).build(),
+          fix().replace().beginning().with("activityCompose = \"1.7.0-alpha02\"\n").priority(2).range(range).build(),
+        )
+        .autoFix()
 
     check(
-        file,
-        source,
-        fix1,
-        fix2,
-        expected =
-            """
+      file,
+      source,
+      fix1,
+      fix2,
+      expected =
+        """
         [versions]
         appCompat = "1.5.1"
         activityCompose = "1.7.0-alpha02"
@@ -1696,10 +1683,7 @@ class LintFixPerformerTest {
 
   @Test
   fun testSkipComments() {
-    checkSkip(
-        " /* this /* is nested */ */ // line\n|test",
-        LintFixPerformer.Companion::skipCommentsAndWhitespace,
-    )
+    checkSkip(" /* this /* is nested */ */ // line\n|test", LintFixPerformer.Companion::skipCommentsAndWhitespace)
   }
 
   @Test
@@ -1732,10 +1716,7 @@ class LintFixPerformerTest {
 
   @Test
   fun testCollectNames() {
-    checkShorten(
-        "[foo.Bar]",
-        "/* not.Code /* nested */ not.Code */ val x = \"not.Code\"; val y = foo.Bar",
-    )
+    checkShorten("[foo.Bar]", "/* not.Code /* nested */ not.Code */ val x = \"not.Code\"; val y = foo.Bar")
     checkShorten("[foo.Bar]", "val x = \"\\\"not.Code\\\"\"; val y = foo.Bar")
   }
 }

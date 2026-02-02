@@ -29,27 +29,21 @@ import java.io.File
 class MissingResourcesPropertiesDetector : Detector(), GradleScanner {
 
   override fun checkDslPropertyAssignment(
-      context: GradleContext,
-      property: String,
-      value: String,
-      parent: String,
-      parentParent: String?,
-      propertyCookie: Any,
-      valueCookie: Any,
-      statementCookie: Any,
+    context: GradleContext,
+    property: String,
+    value: String,
+    parent: String,
+    parentParent: String?,
+    propertyCookie: Any,
+    valueCookie: Any,
+    statementCookie: Any,
   ) {
     // For automatic locale config generation, the "resources.properties" file must be in the app
     // module, directly under the "res" folder
     if (context.project.isLibrary) return
     if (property == "generateLocaleConfig" && value == "true") {
       if (context.project.resourceFolders.none { File(it, "resources.properties").exists() }) {
-        val incident =
-            Incident(
-                ISSUE,
-                propertyCookie,
-                context.getLocation(propertyCookie),
-                "Missing resources.properties file",
-            )
+        val incident = Incident(ISSUE, propertyCookie, context.getLocation(propertyCookie), "Missing resources.properties file")
         context.client.report(context, incident)
       }
     }
@@ -57,16 +51,16 @@ class MissingResourcesPropertiesDetector : Detector(), GradleScanner {
 
   companion object {
     val ISSUE =
-        Issue.create(
-            id = "MissingResourcesProperties",
-            briefDescription = "Missing resources.properties file",
-            explanation = "When `generateLocaleConfig` is turned on, the default locale must be specified in a resources.properties file.",
-            category = Category.CORRECTNESS,
-            priority = 2,
-            severity = Severity.WARNING,
-            implementation = Implementation(MissingResourcesPropertiesDetector::class.java, Scope.GRADLE_SCOPE),
-            moreInfo = "https://developer.android.com/r/studio-ui/build/automatic-per-app-languages",
-            androidSpecific = true,
-        )
+      Issue.create(
+        id = "MissingResourcesProperties",
+        briefDescription = "Missing resources.properties file",
+        explanation = "When `generateLocaleConfig` is turned on, the default locale must be specified in a resources.properties file.",
+        category = Category.CORRECTNESS,
+        priority = 2,
+        severity = Severity.WARNING,
+        implementation = Implementation(MissingResourcesPropertiesDetector::class.java, Scope.GRADLE_SCOPE),
+        moreInfo = "https://developer.android.com/r/studio-ui/build/automatic-per-app-languages",
+        androidSpecific = true,
+      )
   }
 }

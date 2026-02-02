@@ -66,22 +66,22 @@ import kotlin.math.min
 
 /** A reporter which emits lint results into an XML report. */
 open class XmlWriter(
-    /** Client handling IO, path normalization and error reporting. */
-    private val client: LintCliClient,
-    /** The type of report to create. */
-    private var type: XmlFileType,
-    /** Writer to send output to. */
-    private val writer: Writer,
-    /** Path variables to use when writing */
-    private val pathVariables: PathVariables,
+  /** Client handling IO, path normalization and error reporting. */
+  private val client: LintCliClient,
+  /** The type of report to create. */
+  private var type: XmlFileType,
+  /** Writer to send output to. */
+  private val writer: Writer,
+  /** Path variables to use when writing */
+  private val pathVariables: PathVariables,
 ) {
   constructor(
-      /** Client handling IO, path normalization and error reporting. */
-      client: LintCliClient,
-      /** File to write report to. */
-      output: File,
-      /** The type of report to create. */
-      type: XmlFileType,
+    /** Client handling IO, path normalization and error reporting. */
+    client: LintCliClient,
+    /** File to write report to. */
+    output: File,
+    /** The type of report to create. */
+    type: XmlFileType,
   ) : this(client, type, output.bufferedWriter(), client.pathVariables)
 
   /** Flush any buffered changes to the file. */
@@ -101,9 +101,9 @@ open class XmlWriter(
     // in the file format it was called an issue
     // Format 6: support for storing incidents, lint maps, and configured issues
     return listOfNotNull(
-        ATTR_FORMAT to "6",
-        client.getClientDisplayRevision()?.let { "by" to "lint $it" },
-        "type" to if (type != XmlFileType.REPORT) type.name.lowercase(Locale.ROOT) else null,
+      ATTR_FORMAT to "6",
+      client.getClientDisplayRevision()?.let { "by" to "lint $it" },
+      "type" to if (type != XmlFileType.REPORT) type.name.lowercase(Locale.ROOT) else null,
     )
   }
 
@@ -193,10 +193,10 @@ open class XmlWriter(
     writeAttribute(writer, indent + 1, ATTR_ID, issue.id)
     if (type != XmlFileType.BASELINE) {
       writeAttribute(
-          writer,
-          indent + 1,
-          ATTR_SEVERITY,
-          if (type.isPersistenceFile()) incident.severity.toName() else incident.severity.description,
+        writer,
+        indent + 1,
+        ATTR_SEVERITY,
+        if (type.isPersistenceFile()) incident.severity.toName() else incident.severity.description,
       )
     }
     writeAttribute(writer, indent + 1, ATTR_MESSAGE, incident.message)
@@ -233,18 +233,8 @@ open class XmlWriter(
 
     val applicableVariants = incident.applicableVariants
     if (applicableVariants != null && applicableVariants.variantSpecific) {
-      writeAttribute(
-          writer,
-          indent + 1,
-          ATTR_INCLUDED_VARIANTS,
-          Joiner.on(',').join(applicableVariants.includedVariantNames),
-      )
-      writeAttribute(
-          writer,
-          indent + 1,
-          ATTR_EXCLUDED_VARIANTS,
-          Joiner.on(',').join(applicableVariants.excludedVariantNames),
-      )
+      writeAttribute(writer, indent + 1, ATTR_INCLUDED_VARIANTS, Joiner.on(',').join(applicableVariants.includedVariantNames))
+      writeAttribute(writer, indent + 1, ATTR_EXCLUDED_VARIANTS, Joiner.on(',').join(applicableVariants.excludedVariantNames))
     }
 
     if (type == XmlFileType.REPORT_WITH_FIXES && (incident.fix != null || Reporter.hasAutoFix(issue))) {
@@ -300,12 +290,7 @@ open class XmlWriter(
     }
   }
 
-  private fun writeLintMap(
-      map: LintMap,
-      indent: Int = 2,
-      name: String? = null,
-      project: Project? = null,
-  ) {
+  private fun writeLintMap(map: LintMap, indent: Int = 2, name: String? = null, project: Project? = null) {
     val entries = LintMap.getInternalMap(map).entries
     if (entries.isEmpty()) {
       return
@@ -323,35 +308,35 @@ open class XmlWriter(
     writer.write(">\n")
     for ((key, value) in entries.sortedBy { it.key }) {
       val valueName =
-          when (value) {
-            is String -> ATTR_STRING
-            is Int -> ATTR_INT
-            is Boolean -> ATTR_BOOLEAN
-            is Severity -> ATTR_SEVERITY
-            is Location -> {
-              writeLocation(project, value, TAG_LOCATION, indent + 1, key)
-              continue
-            }
-            is LintMap -> {
-              writeLintMap(value, indent + 2, key, project)
-              continue
-            }
-            is Incident -> {
-              writeIncident(value, indent + 2)
-              continue
-            }
-            is Constraint -> {
-              val id = if (key != LintDriver.Companion.KEY_CONDITION) key else null
-              writeCondition(value, indent + 1, id)
-              continue
-            }
-            is ApiConstraint -> {
-              val id = if (key != LintDriver.Companion.KEY_CONDITION) key else null
-              writeApiLevels(value, indent, id)
-              continue
-            }
-            else -> error("Unexpected map value type ${value.javaClass}")
+        when (value) {
+          is String -> ATTR_STRING
+          is Int -> ATTR_INT
+          is Boolean -> ATTR_BOOLEAN
+          is Severity -> ATTR_SEVERITY
+          is Location -> {
+            writeLocation(project, value, TAG_LOCATION, indent + 1, key)
+            continue
           }
+          is LintMap -> {
+            writeLintMap(value, indent + 2, key, project)
+            continue
+          }
+          is Incident -> {
+            writeIncident(value, indent + 2)
+            continue
+          }
+          is Constraint -> {
+            val id = if (key != LintDriver.Companion.KEY_CONDITION) key else null
+            writeCondition(value, indent + 1, id)
+            continue
+          }
+          is ApiConstraint -> {
+            val id = if (key != LintDriver.Companion.KEY_CONDITION) key else null
+            writeApiLevels(value, indent, id)
+            continue
+          }
+          else -> error("Unexpected map value type ${value.javaClass}")
+        }
       indent(indent + 1)
       writer.write("<")
       writer.write(TAG_ENTRY)
@@ -364,13 +349,7 @@ open class XmlWriter(
     writer.write("</$TAG_MAP>\n")
   }
 
-  private fun writeLocation(
-      project: Project?,
-      location: Location,
-      tag: String = TAG_LOCATION,
-      indent: Int = 2,
-      key: String? = null,
-  ) {
+  private fun writeLocation(project: Project?, location: Location, tag: String = TAG_LOCATION, indent: Int = 2, key: String? = null) {
     indent(indent)
     val indented = indent + 1
     writer.write("<")
@@ -421,31 +400,31 @@ open class XmlWriter(
 
   private fun getPath(file: File, project: Project?): String {
     return PrettyPaths.getPath(
-        file,
-        project,
-        client,
-        useUnixPaths = type.unixPaths(),
-        // If we have path variables, use those
-        tryPathVariables = type.relativePaths() && type.variables(),
-        // We normally prefer path variables over ../ relative paths, but in a checkDependencies
-        // scenario it's normal for the baselines to point into sibling projects; keep the
-        // paths relocatable.
-        preferRelativePathOverPathVariables =
-            // We ignore the absolutePaths flag for baselines.
-            type == XmlFileType.BASELINE,
-        allowParentRelativePaths = type == XmlFileType.BASELINE && client.flags.isCheckDependencies,
-        preferRelativeOverAbsolute = type.relativePaths() || !client.flags.isFullPath,
+      file,
+      project,
+      client,
+      useUnixPaths = type.unixPaths(),
+      // If we have path variables, use those
+      tryPathVariables = type.relativePaths() && type.variables(),
+      // We normally prefer path variables over ../ relative paths, but in a checkDependencies
+      // scenario it's normal for the baselines to point into sibling projects; keep the
+      // paths relocatable.
+      preferRelativePathOverPathVariables =
+        // We ignore the absolutePaths flag for baselines.
+        type == XmlFileType.BASELINE,
+      allowParentRelativePaths = type == XmlFileType.BASELINE && client.flags.isCheckDependencies,
+      preferRelativeOverAbsolute = type.relativePaths() || !client.flags.isFullPath,
     )
   }
 
   /** Applies the quickfixes to a temporary doc and writes out the cumulative set of edits to apply to the doc. */
   private fun emitFixEdits(incident: Incident, lintFix: LintFix) {
     val fixes =
-        if (lintFix is LintFix.LintFixGroup && lintFix.type == LintFix.GroupType.ALTERNATIVES) {
-          lintFix.fixes
-        } else {
-          listOf(lintFix)
-        }
+      if (lintFix is LintFix.LintFixGroup && lintFix.type == LintFix.GroupType.ALTERNATIVES) {
+        lintFix.fixes
+      } else {
+        listOf(lintFix)
+      }
     for (fix in fixes) {
       emitEdit(incident, fix)
     }
@@ -576,11 +555,11 @@ open class XmlWriter(
       is LintFix.LintFixGroup -> {
         indent(indent)
         val tag =
-            when (lintFix.type) {
-              LintFix.GroupType.ALTERNATIVES -> TAG_FIX_ALTERNATIVES
-              LintFix.GroupType.COMPOSITE -> TAG_FIX_COMPOSITE
-              else -> error("Unexpected fix type ${lintFix.type}")
-            }
+          when (lintFix.type) {
+            LintFix.GroupType.ALTERNATIVES -> TAG_FIX_ALTERNATIVES
+            LintFix.GroupType.COMPOSITE -> TAG_FIX_COMPOSITE
+            else -> error("Unexpected fix type ${lintFix.type}")
+          }
         writer.write("<")
         writer.write(tag)
         emitFixSharedAttributes(lintFix, indented)
@@ -645,26 +624,26 @@ open class XmlWriter(
         emitFixSharedAttributes(lintFix, indented)
         for (key in lintFix.keys()) {
           val valueString =
-              // TODO: Encode type here?
-              when (val value = lintFix.get(key)) {
-                is String -> value
-                is Int,
-                is Boolean -> value.toString()
-                is File -> getPath(value, incident.project)
-                is List<*> ->
-                    // Strings are not allowed to contain ,
-                    value.joinToString {
-                      val s = it as String
-                      assert(!s.contains(","))
-                      s
-                    }
-                is PsiMethod,
-                is Throwable ->
-                    // Not supported for persistence
-                    null
-                is ApiConstraint -> ApiConstraint.serialize(value)
-                else -> error("Unexpected fix map value type ${value?.javaClass}")
-              } ?: continue
+            // TODO: Encode type here?
+            when (val value = lintFix.get(key)) {
+              is String -> value
+              is Int,
+              is Boolean -> value.toString()
+              is File -> getPath(value, incident.project)
+              is List<*> ->
+                // Strings are not allowed to contain ,
+                value.joinToString {
+                  val s = it as String
+                  assert(!s.contains(","))
+                  s
+                }
+              is PsiMethod,
+              is Throwable ->
+                // Not supported for persistence
+                null
+              is ApiConstraint -> ApiConstraint.serialize(value)
+              else -> error("Unexpected fix map value type ${value?.javaClass}")
+            } ?: continue
           writeAttribute(writer, -1, key, valueString)
         }
         writer.write("/>\n")
@@ -708,10 +687,7 @@ open class XmlWriter(
   }
 
   /** Writes the given list. */
-  fun writeIncidents(
-      incidents: List<Incident>,
-      extraAttributes: List<Pair<String, String?>> = emptyList(),
-  ) {
+  fun writeIncidents(incidents: List<Incident>, extraAttributes: List<Pair<String, String?>> = emptyList()) {
     writeProlog()
     val rootTag = if (type.isPersistenceFile()) TAG_INCIDENTS else TAG_ISSUES
     val attributeMap = (getDefaultRootAttributes() + extraAttributes).toMap()

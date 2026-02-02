@@ -40,40 +40,40 @@ class WebViewApiAvailabilityDetector : Detector(), SourceCodeScanner {
     // getRendererPriorityWaivedWhenNotVisible), and others weren't brought over yet (ex.
     // setDataDirectorySuffix). This list ensures we don't issue a warning for any of them.
     private val BLOCKED_METHODS =
-        setOf(
-            "getAccessibilityClassName",
-            "onProvideVirtualStructure",
-            "autofill",
-            "getRendererPriorityWaivedWhenNotVisible",
-            "getRendererRequestedPriority",
-            "onProvideAutofillVirtualStructure",
-            "setRendererPriorityPolicy",
-            "getTextClassifier",
-            "setTextClassifier",
-            "getWebViewClassLoader",
-            "disableWebView",
-            "setDataDirectorySuffix",
-            "getWebViewLooper",
-            "isVisibleToUserForAutofill",
-        )
+      setOf(
+        "getAccessibilityClassName",
+        "onProvideVirtualStructure",
+        "autofill",
+        "getRendererPriorityWaivedWhenNotVisible",
+        "getRendererRequestedPriority",
+        "onProvideAutofillVirtualStructure",
+        "setRendererPriorityPolicy",
+        "getTextClassifier",
+        "setTextClassifier",
+        "getWebViewClassLoader",
+        "disableWebView",
+        "setDataDirectorySuffix",
+        "getWebViewLooper",
+        "isVisibleToUserForAutofill",
+      )
 
     /** Main issue investigated by this detector. */
     @JvmField
     val ISSUE =
-        Issue.create(
-            id = "WebViewApiAvailability",
-            briefDescription = "WebView API Availability",
-            explanation =
-                "The `androidx.webkit` library is a static library you can add to your " +
-                    "Android application allowing you to use new APIs on older platform " +
-                    "versions, targeting more devices.",
-            category = Category.CORRECTNESS,
-            priority = 7,
-            severity = Severity.WARNING,
-            moreInfo = "https://developer.android.com/reference/androidx/webkit/package-summary",
-            implementation = Implementation(WebViewApiAvailabilityDetector::class.java, Scope.JAVA_FILE_SCOPE),
-            androidSpecific = true,
-        )
+      Issue.create(
+        id = "WebViewApiAvailability",
+        briefDescription = "WebView API Availability",
+        explanation =
+          "The `androidx.webkit` library is a static library you can add to your " +
+            "Android application allowing you to use new APIs on older platform " +
+            "versions, targeting more devices.",
+        category = Category.CORRECTNESS,
+        priority = 7,
+        severity = Severity.WARNING,
+        moreInfo = "https://developer.android.com/reference/androidx/webkit/package-summary",
+        implementation = Implementation(WebViewApiAvailabilityDetector::class.java, Scope.JAVA_FILE_SCOPE),
+        androidSpecific = true,
+      )
   }
 
   override fun getApplicableUastTypes(): List<Class<out UElement>> {
@@ -101,11 +101,11 @@ class WebViewApiAvailabilityDetector : Detector(), SourceCodeScanner {
       val client = context.client
       val apiLookup = ApiLookup.getOrNull(client, context.project.buildTarget) ?: return
       val api =
-          apiLookup.getMethodVersions(
-              WEBVIEW_CLASS_NAME,
-              method.name,
-              evaluator.getMethodDescription(method, includeName = false, includeReturn = false)!!,
-          )
+        apiLookup.getMethodVersions(
+          WEBVIEW_CLASS_NAME,
+          method.name,
+          evaluator.getMethodDescription(method, includeName = false, includeReturn = false)!!,
+        )
 
       // Note: we expect to bump the maximum sdk for future releases (but doing so requires
       // updating the deny list).
@@ -121,12 +121,12 @@ class WebViewApiAvailabilityDetector : Detector(), SourceCodeScanner {
       }
 
       val incident =
-          Incident(
-              issue = ISSUE,
-              scope = node,
-              location = context.getLocation(node),
-              message = "Consider using `WebViewCompat." + method.name + "` instead which will support more devices.",
-          )
+        Incident(
+          issue = ISSUE,
+          scope = node,
+          location = context.getLocation(node),
+          message = "Consider using `WebViewCompat." + method.name + "` instead which will support more devices.",
+        )
       context.report(incident)
     }
   }

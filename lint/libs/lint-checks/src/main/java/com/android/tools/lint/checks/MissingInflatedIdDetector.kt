@@ -71,8 +71,8 @@ class MissingInflatedIdDetector : Detector(), SourceCodeScanner {
 
     val globalAnalysis = context.isGlobalAnalysis()
     val resources =
-        if (globalAnalysis) context.client.getResources(context.mainProject, LOCAL_DEPENDENCIES)
-        else context.client.getResources(context.project, PROJECT_ONLY)
+      if (globalAnalysis) context.client.getResources(context.mainProject, LOCAL_DEPENDENCIES)
+      else context.client.getResources(context.project, PROJECT_ONLY)
     val items = resources.getResources(ResourceNamespace.TODO(), ResourceType.LAYOUT, layout)
 
     if (items.isNotEmpty()) {
@@ -97,10 +97,10 @@ class MissingInflatedIdDetector : Detector(), SourceCodeScanner {
     }
 
     val map =
-        map().apply {
-          put(KEY_LAYOUT, layout)
-          put(KEY_ID, id)
-        }
+      map().apply {
+        put(KEY_LAYOUT, layout)
+        put(KEY_ID, id)
+      }
     context.report(createIncident(context, node, layout, id), map)
   }
 
@@ -121,12 +121,7 @@ class MissingInflatedIdDetector : Detector(), SourceCodeScanner {
     return layoutMissingId(context, items, id)
   }
 
-  private fun createIncident(
-      context: JavaContext,
-      node: UCallExpression,
-      layout: String,
-      id: String,
-  ): Incident {
+  private fun createIncident(context: JavaContext, node: UCallExpression, layout: String, id: String): Incident {
     val message = "`@layout/$layout` does not contain a declaration with id `$id`"
     val idArgument = node.valueArguments.first()
     val incident = Incident(ISSUE, idArgument, context.getLocation(idArgument), message)
@@ -161,10 +156,7 @@ class MissingInflatedIdDetector : Detector(), SourceCodeScanner {
    * For a call like `inflate(R.layout.foo, null)` or `setContentView(R.layout.foo)`, returns `@layout/foo`. Deliberately ignores resources
    * like `android.R.id.some_id` since we don't want to initialize the resource repository for all the framework resources.
    */
-  private fun getFirstArgAsResource(
-      setContentView: UCallExpression,
-      context: JavaContext,
-  ): ResourceUrl? {
+  private fun getFirstArgAsResource(setContentView: UCallExpression, context: JavaContext): ResourceUrl? {
     val resourceArgument = setContentView.valueArguments.firstOrNull()?.skipParenthesizedExprDown() ?: return null
     val url = ResourceEvaluator.getResource(context.evaluator, resourceArgument) ?: return null
     return if (!url.isFramework) url else null
@@ -174,11 +166,11 @@ class MissingInflatedIdDetector : Detector(), SourceCodeScanner {
   private fun definesId(context: Context, file: PathString?, targetId: String): Boolean {
     file ?: return true
     val parser =
-        try {
-          context.client.createXmlPullParser(file) ?: return true
-        } catch (ignore: IOException) {
-          return true
-        }
+      try {
+        context.client.createXmlPullParser(file) ?: return true
+      } catch (ignore: IOException) {
+        return true
+      }
     try {
       while (true) {
         val event = parser.next()
@@ -206,26 +198,26 @@ class MissingInflatedIdDetector : Detector(), SourceCodeScanner {
   companion object {
     @JvmField
     val ISSUE =
-        Issue.create(
-            id = "MissingInflatedId",
-            briefDescription = "ID not found in inflated resource",
-            explanation =
-                """
+      Issue.create(
+        id = "MissingInflatedId",
+        briefDescription = "ID not found in inflated resource",
+        explanation =
+          """
           Checks calls to layout inflation and makes sure that the referenced ids \
           are found in the corresponding layout (or at least one of them, if the \
           layout has multiple configurations.)
           """,
-            category = Category.CORRECTNESS,
-            priority = 5,
-            severity = Severity.ERROR,
-            androidSpecific = true,
-            implementation =
-                Implementation(
-                    MissingInflatedIdDetector::class.java,
-                    EnumSet.of(Scope.ALL_RESOURCE_FILES, Scope.ALL_JAVA_FILES),
-                    Scope.JAVA_FILE_SCOPE,
-                ),
-        )
+        category = Category.CORRECTNESS,
+        priority = 5,
+        severity = Severity.ERROR,
+        androidSpecific = true,
+        implementation =
+          Implementation(
+            MissingInflatedIdDetector::class.java,
+            EnumSet.of(Scope.ALL_RESOURCE_FILES, Scope.ALL_JAVA_FILES),
+            Scope.JAVA_FILE_SCOPE,
+          ),
+      )
 
     private const val KEY_LAYOUT = "layout"
     private const val KEY_ID = "id"

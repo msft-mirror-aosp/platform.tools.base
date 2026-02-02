@@ -59,11 +59,11 @@ class MemberExtensionConflictDetector : Detector(), SourceCodeScanner {
 
     @JvmField
     val ISSUE =
-        Issue.create(
-            id = "MemberExtensionConflict",
-            briefDescription = MSG,
-            explanation =
-                """
+      Issue.create(
+        id = "MemberExtensionConflict",
+        briefDescription = MSG,
+        explanation =
+          """
             When both member and extension declarations are applicable, the resolution takes the member. \
             This also implies that, if an extension existed first, but then a member is added later, \
             the same call-site may end up with different call resolutions depending on target environment. \
@@ -71,17 +71,13 @@ class MemberExtensionConflictDetector : Detector(), SourceCodeScanner {
             earlier environment (i.e., without the new member, but only extension). More concrete example \
             is found at: https://issuetracker.google.com/issues/350432371
           """,
-            implementation = IMPLEMENTATION,
-            enabledByDefault = false,
-        )
+        implementation = IMPLEMENTATION,
+        enabledByDefault = false,
+      )
   }
 
   override fun getApplicableUastTypes(): List<Class<out UElement>> =
-      listOf(
-          UImportStatement::class.java,
-          UCallExpression::class.java,
-          USimpleNameReferenceExpression::class.java,
-      )
+    listOf(UImportStatement::class.java, UCallExpression::class.java, USimpleNameReferenceExpression::class.java)
 
   private val explicitlyImportedExtensions = mutableSetOf<CallableId>()
 
@@ -91,145 +87,141 @@ class MemberExtensionConflictDetector : Detector(), SourceCodeScanner {
 
   @OptIn(KaExperimentalApi::class)
   override fun createUastHandler(context: JavaContext): UElementHandler =
-      object : UElementHandler() {
-        override fun visitImportStatement(node: UImportStatement) {
-          // Regard star import as implicit import
-          if (node.isOnDemand) return
+    object : UElementHandler() {
+      override fun visitImportStatement(node: UImportStatement) {
+        // Regard star import as implicit import
+        if (node.isOnDemand) return
 
-          val importDirective = node.sourcePsi as? KtImportDirective ?: return
-          val importedReference = importDirective.importedReference ?: return
-          val ktReference = importedReference.getQualifiedElementSelector() as? KtReferenceExpression ?: return
-          analyze(ktReference) {
-            if (!isK2()) return
-            val symbols = ktReference.mainReference.resolveToSymbols()
-            for (symbol in symbols) {
-              if (symbol is KaCallableSymbol && symbol.isExtension) {
-                symbol.callableId?.let { explicitlyImportedExtensions.add(it) }
-              }
+        val importDirective = node.sourcePsi as? KtImportDirective ?: return
+        val importedReference = importDirective.importedReference ?: return
+        val ktReference = importedReference.getQualifiedElementSelector() as? KtReferenceExpression ?: return
+        analyze(ktReference) {
+          if (!isK2()) return
+          val symbols = ktReference.mainReference.resolveToSymbols()
+          for (symbol in symbols) {
+            if (symbol is KaCallableSymbol && symbol.isExtension) {
+              symbol.callableId?.let { explicitlyImportedExtensions.add(it) }
             }
           }
         }
-
-        override fun visitCallExpression(node: UCallExpression) {
-          // This conflict of member and extension only happens in Kotlin
-          if (!isKotlin(node.lang)) return
-
-          val sourcePsi = node.sourcePsi as? KtElement ?: return
-          analyze(sourcePsi) {
-            if (!isK2()) return
-            checkKtElement(node, sourcePsi)
-          }
-        }
-
-        override fun visitSimpleNameReferenceExpression(node: USimpleNameReferenceExpression) {
-          // This conflict of member and extension only happens in Kotlin
-          if (!isKotlin(node.lang)) return
-
-          val sourcePsi = node.sourcePsi as? KtElement ?: return
-          analyze(sourcePsi) {
-            if (!isK2()) return
-            checkKtElement(node, sourcePsi)
-          }
-        }
-
-        private fun KaSession.isK2(): Boolean {
-          // Collecting multiple applicable candidates only work for K2 AA
-          // Check KaSession name: KaFe10Session v.s. KaFirSession
-          return this::class.simpleName == "KaFirSession"
-        }
-
-        private fun KaSession.checkKtElement(node: UElement, ktElement: KtElement) {
-          val candidates =
-              ktElement
-                  .resolveToCallCandidates()
-                  // Only applicable candidates
-                  .filterIsInstance<KaApplicableCallCandidateInfo>()
-          // Early bail-out: no conflicts
-          if (candidates.size <= 1) {
-            return
-          }
-          val (extensions, members) = candidates.partition { it.hasExtensionReceiver() }
-          // Another bail-out: no members
-          if (members.isEmpty()) {
-            return
-          }
-          // Member is chosen over extension.
-          val filteredMember =
-              members.singleOrNull { member ->
-                // So, one of candidate members must be the "best" candidate.
-                member.isInBestCandidates &&
-                    // Also, the member should belong to a certain containing class, not local.
-                    // We can indirectly check that by retrieving its callable id
-                    // (since the local will not have a callable id).
-                    member.callableId() != null
-              }
-          // Otherwise, extension (along with explicit import) is chosen. Hence, no conflict.
-          if (filteredMember == null) {
-            return
-          }
-          // Extensions from Kotlin stdlib are inevitable, so we'd like to skip them
-          // *unless* users explicitly import them. Those are technically unused,
-          // so this warning will bring their attention to either remove import
-          // or introduce import alias if their intention was to use an extension.
-          val filteredExtensions = extensions.filter { !it.isFromKotlinBuiltIns() || it.isExplicitlyImported() }
-          // Yet another bail-out: no extensions
-          if (filteredExtensions.isEmpty()) {
-            return
-          }
-          // Just pick the first extension to report.
-          reportConflict(node, filteredMember, filteredExtensions.first())
-        }
-
-        private fun KaApplicableCallCandidateInfo.partialSymbol(): KaPartiallyAppliedSymbol<*, *>? {
-          return (candidate as? KaCallableMemberCall<*, *>)?.partiallyAppliedSymbol
-        }
-
-        private fun KaApplicableCallCandidateInfo.callableId(): CallableId? {
-          return partialSymbol()?.signature?.callableId
-        }
-
-        private fun KaApplicableCallCandidateInfo.hasExtensionReceiver(): Boolean {
-          return partialSymbol()?.extensionReceiver != null
-        }
-
-        private fun KaApplicableCallCandidateInfo.isExplicitlyImported(): Boolean {
-          val callableId = callableId() ?: return false
-          return callableId in explicitlyImportedExtensions
-        }
-
-        private fun KaApplicableCallCandidateInfo.isFromKotlinBuiltIns(): Boolean {
-          val callableId = callableId() ?: return false
-          return callableId.packageName.startsWith(StandardNames.BUILT_INS_PACKAGE_FQ_NAME)
-        }
-
-        private fun KaSession.reportConflict(
-            node: UElement,
-            member: KaCallCandidateInfo,
-            extension: KaCallCandidateInfo,
-        ) {
-          val mem = member.candidate.symbol()
-          val ext = extension.candidate.symbol() as? KaCallableSymbol ?: return
-          val message = buildString {
-            append("`${mem.name?.asString() ?: "<unnamed>"}`")
-            append(" is defined both as a member in class ")
-            val classSymbol = mem.containingDeclaration as? KaClassSymbol
-            append("`${classSymbol?.classId?.asFqNameString() ?: "<unknown>"}`")
-            append(" and an extension in package ")
-            append("`${ext.callableId?.packageName?.asString() ?: "<unknown>"}`. ")
-            append("The defined behavior for this is to use the member, ")
-            append("but since the extension is explicitly imported into this file, ")
-            append("there's a chance that this was not expected. ")
-            append("(One common way this happens is for members to be added to a class ")
-            append("after code was already written to use an extension).")
-          }
-          context.report(ISSUE, node, context.getLocation(node), message)
-        }
-
-        private fun KaCall.symbol(): KaSymbol =
-            when (this) {
-              is KaCompoundVariableAccessCall -> compoundOperation.operationPartiallyAppliedSymbol.symbol
-              is KaCompoundArrayAccessCall -> compoundOperation.operationPartiallyAppliedSymbol.symbol
-              is KaCallableMemberCall<*, *> -> symbol
-            }
       }
+
+      override fun visitCallExpression(node: UCallExpression) {
+        // This conflict of member and extension only happens in Kotlin
+        if (!isKotlin(node.lang)) return
+
+        val sourcePsi = node.sourcePsi as? KtElement ?: return
+        analyze(sourcePsi) {
+          if (!isK2()) return
+          checkKtElement(node, sourcePsi)
+        }
+      }
+
+      override fun visitSimpleNameReferenceExpression(node: USimpleNameReferenceExpression) {
+        // This conflict of member and extension only happens in Kotlin
+        if (!isKotlin(node.lang)) return
+
+        val sourcePsi = node.sourcePsi as? KtElement ?: return
+        analyze(sourcePsi) {
+          if (!isK2()) return
+          checkKtElement(node, sourcePsi)
+        }
+      }
+
+      private fun KaSession.isK2(): Boolean {
+        // Collecting multiple applicable candidates only work for K2 AA
+        // Check KaSession name: KaFe10Session v.s. KaFirSession
+        return this::class.simpleName == "KaFirSession"
+      }
+
+      private fun KaSession.checkKtElement(node: UElement, ktElement: KtElement) {
+        val candidates =
+          ktElement
+            .resolveToCallCandidates()
+            // Only applicable candidates
+            .filterIsInstance<KaApplicableCallCandidateInfo>()
+        // Early bail-out: no conflicts
+        if (candidates.size <= 1) {
+          return
+        }
+        val (extensions, members) = candidates.partition { it.hasExtensionReceiver() }
+        // Another bail-out: no members
+        if (members.isEmpty()) {
+          return
+        }
+        // Member is chosen over extension.
+        val filteredMember =
+          members.singleOrNull { member ->
+            // So, one of candidate members must be the "best" candidate.
+            member.isInBestCandidates &&
+              // Also, the member should belong to a certain containing class, not local.
+              // We can indirectly check that by retrieving its callable id
+              // (since the local will not have a callable id).
+              member.callableId() != null
+          }
+        // Otherwise, extension (along with explicit import) is chosen. Hence, no conflict.
+        if (filteredMember == null) {
+          return
+        }
+        // Extensions from Kotlin stdlib are inevitable, so we'd like to skip them
+        // *unless* users explicitly import them. Those are technically unused,
+        // so this warning will bring their attention to either remove import
+        // or introduce import alias if their intention was to use an extension.
+        val filteredExtensions = extensions.filter { !it.isFromKotlinBuiltIns() || it.isExplicitlyImported() }
+        // Yet another bail-out: no extensions
+        if (filteredExtensions.isEmpty()) {
+          return
+        }
+        // Just pick the first extension to report.
+        reportConflict(node, filteredMember, filteredExtensions.first())
+      }
+
+      private fun KaApplicableCallCandidateInfo.partialSymbol(): KaPartiallyAppliedSymbol<*, *>? {
+        return (candidate as? KaCallableMemberCall<*, *>)?.partiallyAppliedSymbol
+      }
+
+      private fun KaApplicableCallCandidateInfo.callableId(): CallableId? {
+        return partialSymbol()?.signature?.callableId
+      }
+
+      private fun KaApplicableCallCandidateInfo.hasExtensionReceiver(): Boolean {
+        return partialSymbol()?.extensionReceiver != null
+      }
+
+      private fun KaApplicableCallCandidateInfo.isExplicitlyImported(): Boolean {
+        val callableId = callableId() ?: return false
+        return callableId in explicitlyImportedExtensions
+      }
+
+      private fun KaApplicableCallCandidateInfo.isFromKotlinBuiltIns(): Boolean {
+        val callableId = callableId() ?: return false
+        return callableId.packageName.startsWith(StandardNames.BUILT_INS_PACKAGE_FQ_NAME)
+      }
+
+      private fun KaSession.reportConflict(node: UElement, member: KaCallCandidateInfo, extension: KaCallCandidateInfo) {
+        val mem = member.candidate.symbol()
+        val ext = extension.candidate.symbol() as? KaCallableSymbol ?: return
+        val message = buildString {
+          append("`${mem.name?.asString() ?: "<unnamed>"}`")
+          append(" is defined both as a member in class ")
+          val classSymbol = mem.containingDeclaration as? KaClassSymbol
+          append("`${classSymbol?.classId?.asFqNameString() ?: "<unknown>"}`")
+          append(" and an extension in package ")
+          append("`${ext.callableId?.packageName?.asString() ?: "<unknown>"}`. ")
+          append("The defined behavior for this is to use the member, ")
+          append("but since the extension is explicitly imported into this file, ")
+          append("there's a chance that this was not expected. ")
+          append("(One common way this happens is for members to be added to a class ")
+          append("after code was already written to use an extension).")
+        }
+        context.report(ISSUE, node, context.getLocation(node), message)
+      }
+
+      private fun KaCall.symbol(): KaSymbol =
+        when (this) {
+          is KaCompoundVariableAccessCall -> compoundOperation.operationPartiallyAppliedSymbol.symbol
+          is KaCompoundArrayAccessCall -> compoundOperation.operationPartiallyAppliedSymbol.symbol
+          is KaCallableMemberCall<*, *> -> symbol
+        }
+    }
 }

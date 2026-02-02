@@ -21,11 +21,11 @@ import org.jetbrains.kotlin.psi.KtClass
 import org.jetbrains.kotlin.psi.KtClassOrObject
 
 private val ktTokenToPsiModifier =
-    listOf(
-        KtTokens.PUBLIC_KEYWORD to PsiModifier.PUBLIC,
-        KtTokens.INTERNAL_KEYWORD to PsiModifier.PUBLIC,
-        KtTokens.PROTECTED_KEYWORD to PsiModifier.PROTECTED,
-    )
+  listOf(
+    KtTokens.PUBLIC_KEYWORD to PsiModifier.PUBLIC,
+    KtTokens.INTERNAL_KEYWORD to PsiModifier.PUBLIC,
+    KtTokens.PROTECTED_KEYWORD to PsiModifier.PROTECTED,
+  )
 
 internal fun KtClassOrObject.computeModifiersByPsi(hasAbstractMember: (KtClassOrObject) -> Boolean): Set<String> {
   val psiModifiers = hashSetOf<String>()
@@ -58,7 +58,7 @@ internal fun KtClassOrObject.computeModifiersByPsi(hasAbstractMember: (KtClassOr
 }
 
 private fun KtClassOrObject.isAbstract(hasAbstractMember: (KtClassOrObject) -> Boolean): Boolean =
-    hasModifier(KtTokens.ABSTRACT_KEYWORD) || isInterface || (isEnum && hasAbstractMember(this))
+  hasModifier(KtTokens.ABSTRACT_KEYWORD) || isInterface || (isEnum && hasAbstractMember(this))
 
 private val KtClassOrObject.isInterface: Boolean
   get() {

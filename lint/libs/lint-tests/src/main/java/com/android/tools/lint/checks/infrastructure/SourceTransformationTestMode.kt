@@ -109,11 +109,11 @@ abstract class SourceTransformationTestMode(description: String, testMode: Strin
 }
 
 class Edit(
-    val startOffset: Int,
-    val endOffset: Int,
-    val with: String,
-    private val biasRight: Boolean = false,
-    private val ordinal: Int = nextOrdinal++,
+  val startOffset: Int,
+  val endOffset: Int,
+  val with: String,
+  private val biasRight: Boolean = false,
+  private val ordinal: Int = nextOrdinal++,
 ) : Comparable<Edit> {
 
   override fun compareTo(other: Edit): Int {
@@ -192,19 +192,19 @@ internal fun ensureConflictFree(mode: TestMode, context: JavaContext, edits: Lis
   for (edit in edits.sorted()) {
     if (prev != null && prev.startOffset < edit.endOffset) {
       val message =
-          "" +
-              "Invalid source transform test mode (${mode.fieldName}):\n" +
-              "edits overlap; $prev and $edit.\n" +
-              "This means that the test mode is broken.\n" +
-              "Please file a bug with details; the source file where this happened is:\n" +
-              "${listFile(context.file.path, context.getContents()?.toString() ?: "")}\n" +
-              "and the list of edits is:\n" +
-              "$edits"
+        "" +
+          "Invalid source transform test mode (${mode.fieldName}):\n" +
+          "edits overlap; $prev and $edit.\n" +
+          "This means that the test mode is broken.\n" +
+          "Please file a bug with details; the source file where this happened is:\n" +
+          "${listFile(context.file.path, context.getContents()?.toString() ?: "")}\n" +
+          "and the list of edits is:\n" +
+          "$edits"
       if (
-          Throwable().fillInStackTrace().stackTrace.any {
-            val name = it.className
-            name.startsWith("com.android.tools.") && (!name.contains(".infrastructure.") || name.endsWith("Test"))
-          }
+        Throwable().fillInStackTrace().stackTrace.any {
+          val name = it.className
+          name.startsWith("com.android.tools.") && (!name.contains(".infrastructure.") || name.endsWith("Test"))
+        }
       ) {
         // For built-in tests we want to fail
         error(message)

@@ -47,9 +47,9 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
 
   fun testDocumentationExample() {
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
             package test.api;
             import android.annotation.FlaggedApi;
             import com.example.foobar.Flags;
@@ -60,10 +60,10 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
               public int apiField = 42;
             }
             """
-                )
-                .indented(),
-            java(
-                    """
+          )
+          .indented(),
+        java(
+            """
             package test.pkg;
             import test.api.MyApi;
             import com.example.foobar.Flags;
@@ -80,11 +80,11 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
               }
             }
             """
-                )
-                .indented(),
-            // Generated
-            java(
-                    """
+          )
+          .indented(),
+        // Generated
+        java(
+            """
             package com.example.foobar;
 
             public class Flags {
@@ -92,13 +92,13 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
                 public static boolean foobar() { return true; }
             }
             """
-                )
-                .indented(),
-            flaggedApiAnnotationStub,
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+        flaggedApiAnnotationStub,
+      )
+      .run()
+      .expect(
+        """
         src/test/pkg/Test.java:11: Error: Method apiMethod() is a flagged API and should be inside an if (Flags.foobar()) check (or annotate the surrounding method test with @FlaggedApi(Flags.FLAG_FOOBAR) to transfer requirement to caller) [FlaggedApi]
             api.apiMethod(); // ERROR 1
             ~~~~~~~~~~~~~~~
@@ -110,19 +110,19 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
                        ~~~~~~~~~~~
         3 errors, 0 warnings
         """
-        )
+      )
   }
 
   fun testNoFlagsClassPresent() {
     // Make sure the lint checks still flag API usages even if you don't
     // have the Flags class on the classpath
     lint()
-        .files(
-            bytecode(
-                "libs/annotation.jar",
-                flaggedApiAnnotationStub,
-                0x81415584,
-                """
+      .files(
+        bytecode(
+          "libs/annotation.jar",
+          flaggedApiAnnotationStub,
+          0x81415584,
+          """
           android/annotation/FlaggedApi.class:
           H4sIAAAAAAAA/4WRwU4CMRCG/yLLKqigookHo/FA9OIePXja4BJJcJfsVhPj
           wRRoNiWlS5ZCwqt58AF8KOOsJsKBxEP/Tjrf/O1MP7/ePwDc4sTFkYumi2MG
@@ -133,12 +133,12 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
           RR/DytQvHIpKqPyoi23aPYp2iCm/wpGoolbIbiF7hewXUkejICQOcPgNDPA2
           HOgBAAA=
           """,
-            ),
-            bytecode(
-                "libs/api.jar",
-                // Generated
-                java(
-                        """
+        ),
+        bytecode(
+          "libs/api.jar",
+          // Generated
+          java(
+              """
               package com.android.aconfig.test;
 
               public class Flags {
@@ -148,10 +148,10 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
                   }
               }
               """
-                    )
-                    .indented(),
-                0xa6233539,
-                """
+            )
+            .indented(),
+          0xa6233539,
+          """
             com/android/aconfig/test/Flags.class:
             H4sIAAAAAAAA/11Qy0oDQRCsztuYmBi9KCh4Uw+7ePKgCDEPERYDieTgJUx2
             x2VkMyO7E/GjvHgSPPgBfpTYOwYCHqa6p6aqu5jvn88vAOfYraOIdhXbVXQI
@@ -161,11 +161,11 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
             Hm/l8XKPN3h9NqmV0d+adRgcocBfARD2UEKZa4VvBVT5UJ6Esc7MAVfiWj79
             AL07wyZjxZFFljXQXEn3HcdDSm//dDluufGtX5zQZkOLAQAA
             """,
-            ),
-            bytecode(
-                "libs/api.jar",
-                java(
-                        """
+        ),
+        bytecode(
+          "libs/api.jar",
+          java(
+              """
               package test.api;
               import android.annotation.FlaggedApi;
               import com.android.aconfig.test.Flags;
@@ -176,10 +176,10 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
                 public int apiField = 42;
               }
               """
-                    )
-                    .indented(),
-                0x3ababae6,
-                """
+            )
+            .indented(),
+          0x3ababae6,
+          """
             test/api/MyApi.class:
             H4sIAAAAAAAA/0VQTUvDQBScbdOmTWtbP0E8iCe1hwRPHhShiIVCq1DF+za7
             xi3pbkk2RX+WBxE8+AP8UeLLIvXwHvvmzcwO7/vn8wvAOfYCeNhqooptHzs+
@@ -190,9 +190,9 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
             FXqRBfUmTcduBlr9D7B+r/+OypujB9QDWoJEnqO31qJ9x6D6p9Yd4JOg7f7Y
             QKd0JbRL1cux+QtqrrJkrAEAAA==
             """,
-            ),
-            java(
-                    """
+        ),
+        java(
+            """
             package test.pkg;
             import test.api.MyApi;
 
@@ -213,12 +213,12 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
                 }
             }
             """
-                )
-                .indented(),
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+      )
+      .run()
+      .expect(
+        """
         src/test/pkg/Test.java:6: Error: Method apiMethod() is a flagged API and should be inside an if (ExportedFlags.disabledro()) check (or annotate the surrounding method test with @FlaggedApi(ExportedFlags.disabledRo) to transfer requirement to caller) [FlaggedApi]
             api.apiMethod(); // ERROR 1
             ~~~~~~~~~~~~~~~
@@ -227,17 +227,17 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
                             ~~~~~~~~
         2 errors
         """
-        )
+      )
   }
 
   fun testCompiled() {
     lint()
-        .files(
-            compiled(
-                "libs/annotation.jar",
-                flaggedApiAnnotationStub,
-                0x81415584,
-                """
+      .files(
+        compiled(
+          "libs/annotation.jar",
+          flaggedApiAnnotationStub,
+          0x81415584,
+          """
           android/annotation/FlaggedApi.class:
           H4sIAAAAAAAA/4WRwU4CMRCG/yLLKqigookHo/FA9OIePXja4BJJcJfsVhPj
           wRRoNiWlS5ZCwqt58AF8KOOsJsKBxEP/Tjrf/O1MP7/ePwDc4sTFkYumi2MG
@@ -248,12 +248,12 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
           RR/DytQvHIpKqPyoi23aPYp2iCm/wpGoolbIbiF7hewXUkejICQOcPgNDPA2
           HOgBAAA=
           """,
-            ),
-            compiled(
-                "libs/api.jar",
-                // Generated
-                java(
-                        """
+        ),
+        compiled(
+          "libs/api.jar",
+          // Generated
+          java(
+              """
               package com.android.aconfig.test;
 
               public class Flags {
@@ -263,10 +263,10 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
                   }
               }
               """
-                    )
-                    .indented(),
-                0xc07ff6ad,
-                """
+            )
+            .indented(),
+          0xc07ff6ad,
+          """
           com/android/aconfig/test/Flags.class:
           H4sIAAAAAAAA/11PPUsDQRScl29jYmK0UVAQLNTirkyhCDExIhwGEklhEzZ3
           67Hhsgt3e/4qGyvBwh/gjxLfLRHBYue9nZ158/br++MTQB/7TZTRrWO3jh6h
@@ -276,11 +276,11 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
           eBuPV3i83/hFanCCEv8eIByggirXGt9KqPOhIpyxycwRV+JavXgHvTnDNmPN
           kWWWtdDeSA8dx0Mqr/90Be648Z0fKhia7H4BAAA=
           """,
-            ),
-            compiled(
-                "libs/api.jar",
-                java(
-                        """
+        ),
+        compiled(
+          "libs/api.jar",
+          java(
+              """
               package test.api;
               import android.annotation.FlaggedApi;
               import com.android.aconfig.test.Flags;
@@ -291,10 +291,10 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
                 public int apiField = 42;
               }
               """
-                    )
-                    .indented(),
-                0x6f573c19,
-                """
+            )
+            .indented(),
+          0x6f573c19,
+          """
           test/api/MyApi.class:
           H4sIAAAAAAAA/0VQTUvDQBB926ZNm9a2foJ4EEFQc0iOHhShCIVCq6DiVbbZ
           NW5Jd0uyKfizPIjgwR/gjxIni9TDDDNv3ns7O98/n18AzrEXwMNWG3Vs+9jx
@@ -305,9 +305,9 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
           cT3QCT/AwkH4jtqboweUAxqCRJ6jd9aifceg+Kc2HeCToOve2ECvciW0TzEo
           sPkLyuJbCJ8BAAA=
           """,
-            ),
-            java(
-                    """
+        ),
+        java(
+            """
             package test.pkg;
             import test.api.MyApi;
             import com.android.aconfig.test.Flags;
@@ -324,13 +324,13 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
               }
             }
             """
-                )
-                .indented(),
-        )
-        .skipTestModes(TestMode.SOURCE_ONLY)
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+      )
+      .skipTestModes(TestMode.SOURCE_ONLY)
+      .run()
+      .expect(
+        """
         src/test/pkg/Test.java:11: Error: Method apiMethod() is a flagged API and should be inside an if (Flags.disabledRo()) check (or annotate the surrounding method test with @FlaggedApi(Flags.FLAG_DISABLED_RO) to transfer requirement to caller) [FlaggedApi]
             api.apiMethod(); // ERROR 1
             ~~~~~~~~~~~~~~~
@@ -342,14 +342,14 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
                        ~~~~~~~~~~~
         3 errors, 0 warnings
         """
-        )
+      )
   }
 
   fun testCamelCaseFlagName() {
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
             package test.pkg;
             import test.api.MyApi;
             import com.android.aconfig.test.Flags;
@@ -363,10 +363,10 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
               }
             }
             """
-                )
-                .indented(),
-            java(
-                    """
+          )
+          .indented(),
+        java(
+            """
             package test.api;
             import android.annotation.FlaggedApi;
             import com.android.aconfig.test.Flags;
@@ -376,11 +376,11 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
               public void apiMethod() { }
             }
             """
-                )
-                .indented(),
-            // Generated code:
-            java(
-                    """
+          )
+          .indented(),
+        // Generated code:
+        java(
+            """
             package com.android.aconfig.test;
             public final class Flags {
                 public static final String FLAG_DISABLED_RO = "com.android.aconfig.test.disabled_ro";
@@ -409,28 +409,28 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
                 }
             }
             """
-                )
-                .indented(),
-            flaggedApiAnnotationStub,
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+        flaggedApiAnnotationStub,
+      )
+      .run()
+      .expect(
+        """
         src/test/pkg/Test.java:10: Error: Method apiMethod() is a flagged API and should be inside an if (Flags.enabledFixedRo()) check (or annotate the surrounding method test with @FlaggedApi(Flags.FLAG_ENABLED_FIXED_RO) to transfer requirement to caller) [FlaggedApi]
             api.apiMethod(); // ERROR 1
             ~~~~~~~~~~~~~~~
         1 errors, 0 warnings
         """
-        )
+      )
   }
 
   fun testPartOfApi() {
     // Make sure we don't flag calls to APIs from within other parts of the
     // same API (e.g. also annotated with the same annotation)
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
             package test.api;
             import android.annotation.FlaggedApi;
             import com.example.foobar.Flags;
@@ -440,10 +440,10 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
               public void apiMethod() { }
             }
             """
-                )
-                .indented(),
-            java(
-                    """
+          )
+          .indented(),
+        java(
+            """
             package test.api;
             import android.annotation.FlaggedApi;
             import com.example.foobar.Flags;
@@ -455,10 +455,10 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
               }
             }
             """
-                )
-                .indented(),
-            java(
-                    """
+          )
+          .indented(),
+        java(
+            """
             package test.api;
             import android.annotation.FlaggedApi;
             import com.example.foobar.Flags;
@@ -470,11 +470,11 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
               }
             }
             """
-                )
-                .indented(),
-            // Generated
-            java(
-                    """
+          )
+          .indented(),
+        // Generated
+        java(
+            """
             package com.example.foobar;
 
             public class Flags {
@@ -484,27 +484,27 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
                 public static boolean unrelated() { return true; }
             }
             """
-                )
-                .indented(),
-            flaggedApiAnnotationStub,
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+        flaggedApiAnnotationStub,
+      )
+      .run()
+      .expect(
+        """
         src/test/api/Test.java:8: Error: Method apiMethod() is a flagged API and should be inside an if (Flags.foobar()) check (or annotate the surrounding method apiMethod with @FlaggedApi(Flags.FLAG_FOOBAR) to transfer requirement to caller) [FlaggedApi]
               api.apiMethod(); // ERROR: Flagged, but different API so still an error
               ~~~~~~~~~~~~~~~
         1 errors, 0 warnings
         """
-        )
+      )
   }
 
   fun testBasic() {
     // Test case from b/303434307#comment2
     lint()
-        .files(
-            java(
-                """
+      .files(
+        java(
+          """
           package test.pkg;
 
           public final class Flags {
@@ -512,9 +512,9 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
               public static boolean myFlag() { return true; }
           }
           """
-            ),
-            java(
-                    """
+        ),
+        java(
+            """
             package test.pkg;
 
             import android.annotation.FlaggedApi;
@@ -533,20 +533,20 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
                 }
             }
             """
-                )
-                .indented(),
-            flaggedApiAnnotationStub,
-        )
-        .run()
-        .expectClean()
+          )
+          .indented(),
+        flaggedApiAnnotationStub,
+      )
+      .run()
+      .expectClean()
   }
 
   fun testInterprocedural() {
     // Test case from b/303434307#comment2
     lint()
-        .files(
-            java(
-                """
+      .files(
+        java(
+          """
           package test.pkg;
 
           public final class Flags {
@@ -554,9 +554,9 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
               public static boolean myFlag() { return true; }
           }
           """
-            ),
-            java(
-                    """
+        ),
+        java(
+            """
             package test.pkg;
 
             import android.annotation.FlaggedApi;
@@ -581,27 +581,27 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
                 }
             }
             """
-                )
-                .indented(),
-            flaggedApiAnnotationStub,
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+        flaggedApiAnnotationStub,
+      )
+      .run()
+      .expect(
+        """
         src/test/pkg/JavaTest.java:21: Error: Method flaggedApi() is a flagged API and should be inside an if (Flags.myFlag()) check (or annotate the surrounding method inner with @FlaggedApi(Flags.FLAG_MY_FLAG) to transfer requirement to caller) [FlaggedApi]
                 Foo.flaggedApi(); // ERROR
                 ~~~~~~~~~~~~~~~~
         1 errors, 0 warnings
         """
-        )
+      )
   }
 
   fun testApiGating() {
     // Test case from b/303434307#comment2
     lint()
-        .files(
-            java(
-                """
+      .files(
+        java(
+          """
           package test.pkg;
 
           public final class Flags {
@@ -609,9 +609,9 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
               public static boolean myFlag() { return true; }
           }
           """
-            ),
-            java(
-                    """
+        ),
+        java(
+            """
             package test.pkg;
 
             import android.annotation.FlaggedApi;
@@ -645,20 +645,20 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
                  }
             }
             """
-                )
-                .indented(),
-            flaggedApiAnnotationStub,
-        )
-        .run()
-        .expectClean()
+          )
+          .indented(),
+        flaggedApiAnnotationStub,
+      )
+      .run()
+      .expectClean()
   }
 
   fun testFinalFields() {
     // Test case from b/303434307#comment2
     lint()
-        .files(
-            java(
-                """
+      .files(
+        java(
+          """
           package test.pkg;
 
           public final class Flags {
@@ -666,9 +666,9 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
               public static boolean myFlag() { return true; }
           }
           """
-            ),
-            java(
-                    """
+        ),
+        java(
+            """
             package test.pkg;
 
             import android.annotation.FlaggedApi;
@@ -694,19 +694,19 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
                 }
             }
             """
-                )
-                .indented(),
-            flaggedApiAnnotationStub,
-        )
-        .run()
-        .expectClean()
+          )
+          .indented(),
+        flaggedApiAnnotationStub,
+      )
+      .run()
+      .expectClean()
   }
 
   fun testInverseLogic() {
     lint()
-        .files(
-            java(
-                """
+      .files(
+        java(
+          """
           package test.pkg;
 
           public final class Flags {
@@ -714,9 +714,9 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
               public static boolean myFlag() { return true; }
           }
           """
-            ),
-            java(
-                    """
+        ),
+        java(
+            """
             package test.pkg;
 
             import android.annotation.FlaggedApi;
@@ -737,19 +737,19 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
                 }
             }
             """
-                )
-                .indented(),
-            flaggedApiAnnotationStub,
-        )
-        .run()
-        .expectClean()
+          )
+          .indented(),
+        flaggedApiAnnotationStub,
+      )
+      .run()
+      .expectClean()
   }
 
   fun testAnded() {
     lint()
-        .files(
-            java(
-                """
+      .files(
+        java(
+          """
           package test.pkg;
 
           public final class Flags {
@@ -757,9 +757,9 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
               public static boolean myFlag() { return true; }
           }
           """
-            ),
-            java(
-                    """
+        ),
+        java(
+            """
             package test.pkg;
 
             import android.annotation.FlaggedApi;
@@ -798,19 +798,19 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
                 }
             }
             """
-                )
-                .indented(),
-            flaggedApiAnnotationStub,
-        )
-        .run()
-        .expectClean()
+          )
+          .indented(),
+        flaggedApiAnnotationStub,
+      )
+      .run()
+      .expectClean()
   }
 
   fun testEarlyReturns() {
     lint()
-        .files(
-            java(
-                """
+      .files(
+        java(
+          """
           package test.pkg;
 
           public final class Flags {
@@ -818,9 +818,9 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
               public static boolean myFlag() { return true; }
           }
           """
-            ),
-            java(
-                    """
+        ),
+        java(
+            """
             package test.pkg;
 
             import android.annotation.FlaggedApi;
@@ -854,13 +854,13 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
                 }
             }
             """
-                )
-                .indented(),
-            flaggedApiAnnotationStub,
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+        flaggedApiAnnotationStub,
+      )
+      .run()
+      .expect(
+        """
         src/test/pkg/JavaTest.java:29: Error: Method Foo() is a flagged API and should be inside an if (Flags.myFlag()) check (or annotate the surrounding method testEarlyReturn with @FlaggedApi(Flags.FLAG_MY_FLAG) to transfer requirement to caller) [FlaggedApi]
                 Foo f = new Foo(); // ERROR 1
                         ~~~~~~~~~
@@ -869,14 +869,14 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
                 ~~~~~~~~~~~~~~
         2 errors, 0 warnings
         """
-        )
+      )
   }
 
   fun testIgnoringStringFlags() {
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
             package test.pkg;
 
             import android.annotation.FlaggedApi;
@@ -893,19 +893,19 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
                 }
             }
             """
-                )
-                .indented(),
-            flaggedApiAnnotationStub,
-        )
-        .run()
-        .expectClean()
+          )
+          .indented(),
+        flaggedApiAnnotationStub,
+      )
+      .run()
+      .expectClean()
   }
 
   fun testAnnotations() {
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
             package test.pkg;
 
             import android.annotation.FlaggedApi;
@@ -918,13 +918,13 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
                 }
             }
             """
-                )
-                .indented(),
-            flaggedApiAnnotationStub,
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+        flaggedApiAnnotationStub,
+      )
+      .run()
+      .expect(
+        """
         src/test/pkg/JavaTest.java:7: Error: Invalid @FlaggedApi descriptor; should be package.name [FlaggedApi]
             @FlaggedApi("FLAG_MY_FLAG")
                         ~~~~~~~~~~~~~~
@@ -933,15 +933,15 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
                     ~~~~~~~~~~~~~~~~~~~~~~~
         1 errors, 1 warnings
         """
-        )
+      )
   }
 
   fun testTypedefs() {
     // Test case for b/316198280 -- don't flag Typedef references
     lint()
-        .files(
-            java(
-                """
+      .files(
+        java(
+          """
           package test.pkg;
 
           public final class Flags {
@@ -949,9 +949,9 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
               public static boolean myFlag() { return true; }
           }
           """
-            ),
-            java(
-                    """
+        ),
+        java(
+            """
             package test.pkg;
             import android.annotation.FlaggedApi;
             @FlaggedApi(Flags.FLAG_MY_FLAG)
@@ -961,10 +961,10 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
               public static final int MY_STRING_CONSTANT = "1";
             }
             """
-                )
-                .indented(),
-            kotlin(
-                """
+          )
+          .indented(),
+        kotlin(
+          """
           package test.pkg
           import androidx.annotation.IntDef
           import androidx.annotation.LongDef
@@ -985,9 +985,9 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
           @Retention(AnnotationRetention.SOURCE)
           annotation class MyKotlinTypeDef3
           """
-            ),
-            java(
-                    """
+        ),
+        java(
+            """
             package test.pkg;
             import androidx.annotation.IntDef;
             import test.pkg.Constants.MY_INT_CONSTANT;
@@ -1003,23 +1003,23 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
                 public static final int STATUS_UNAVAILABLE = 3;
             }
             """
-                )
-                .indented(),
-            flaggedApiAnnotationStub,
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expectClean()
+          )
+          .indented(),
+        flaggedApiAnnotationStub,
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expectClean()
   }
 
   fun testUsingCommandLineFlag() {
     // Ensure that the --include-aosp-issues flag pulls this check in
     // (and that without it, it's not included)
     val project =
-        getProjectDir(
-            null,
-            java(
-                    """
+      getProjectDir(
+        null,
+        java(
+            """
             package test.api;
             import android.annotation.FlaggedApi;
             import com.example.foobar.Flags;
@@ -1030,10 +1030,10 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
               public int apiField = 42;
             }
             """
-                )
-                .indented(),
-            java(
-                    """
+          )
+          .indented(),
+        java(
+            """
             package test.pkg;
             import test.api.MyApi;
             import com.example.foobar.Flags;
@@ -1050,11 +1050,11 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
               }
             }
             """
-                )
-                .indented(),
-            // Generated
-            java(
-                    """
+          )
+          .indented(),
+        // Generated
+        java(
+            """
             package com.example.foobar;
 
             public class Flags {
@@ -1062,59 +1062,50 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
                 public static boolean foobar() { return true; }
             }
             """
-                )
-                .indented(),
-            flaggedApiAnnotationStub,
-        )
+          )
+          .indented(),
+        flaggedApiAnnotationStub,
+      )
 
     // No warnings by default
     MainTest.checkDriver(
-        "No issues found.",
-        "",
-        // Expected exit code
-        LintCliFlags.ERRNO_SUCCESS,
-        arrayOf("-q", "--check", "FlaggedApi", "--disable", "LintError", project.path),
-        null,
-        null,
+      "No issues found.",
+      "",
+      // Expected exit code
+      LintCliFlags.ERRNO_SUCCESS,
+      arrayOf("-q", "--check", "FlaggedApi", "--disable", "LintError", project.path),
+      null,
+      null,
     )
 
     // No warnings by default
     MainTest.checkDriver(
-        """
-        src/test/pkg/Test.java:11: Error: Method apiMethod() is a flagged API and should be inside an if (Flags.foobar()) check (or annotate the surrounding method test with @FlaggedApi(Flags.FLAG_FOOBAR) to transfer requirement to caller) [FlaggedApi]
-            api.apiMethod(); // ERROR 1
-            ~~~~~~~~~~~~~~~
-        src/test/pkg/Test.java:12: Error: Field apiField is a flagged API and should be inside an if (Flags.foobar()) check (or annotate the surrounding method test with @FlaggedApi(Flags.FLAG_FOOBAR) to transfer requirement to caller) [FlaggedApi]
-            int val = api.apiField; // ERROR 2
-                          ~~~~~~~~
-        src/test/pkg/Test.java:13: Error: Class MyApi is a flagged API and should be inside an if (Flags.foobar()) check (or annotate the surrounding method test with @FlaggedApi(Flags.FLAG_FOOBAR) to transfer requirement to caller) [FlaggedApi]
-            Object o = MyApi.class; // ERROR 3
-                       ~~~~~~~~~~~
-        3 errors
-        """
-            .trimIndent(),
-        "",
-        // Expected exit code
-        LintCliFlags.ERRNO_ERRORS,
-        arrayOf(
-            "--include-aosp-issues",
-            "--exit-code",
-            "-q",
-            "--check",
-            "FlaggedApi",
-            "--disable",
-            "LintError",
-            project.path,
-        ),
-        null,
-        null,
+      """
+      src/test/pkg/Test.java:11: Error: Method apiMethod() is a flagged API and should be inside an if (Flags.foobar()) check (or annotate the surrounding method test with @FlaggedApi(Flags.FLAG_FOOBAR) to transfer requirement to caller) [FlaggedApi]
+          api.apiMethod(); // ERROR 1
+          ~~~~~~~~~~~~~~~
+      src/test/pkg/Test.java:12: Error: Field apiField is a flagged API and should be inside an if (Flags.foobar()) check (or annotate the surrounding method test with @FlaggedApi(Flags.FLAG_FOOBAR) to transfer requirement to caller) [FlaggedApi]
+          int val = api.apiField; // ERROR 2
+                        ~~~~~~~~
+      src/test/pkg/Test.java:13: Error: Class MyApi is a flagged API and should be inside an if (Flags.foobar()) check (or annotate the surrounding method test with @FlaggedApi(Flags.FLAG_FOOBAR) to transfer requirement to caller) [FlaggedApi]
+          Object o = MyApi.class; // ERROR 3
+                     ~~~~~~~~~~~
+      3 errors
+      """
+        .trimIndent(),
+      "",
+      // Expected exit code
+      LintCliFlags.ERRNO_ERRORS,
+      arrayOf("--include-aosp-issues", "--exit-code", "-q", "--check", "FlaggedApi", "--disable", "LintError", project.path),
+      null,
+      null,
     )
 
     // project.xml checks
     @Language("XML") val root = project
     val sdk = TestUtils.getSdk().toFile()
     val descriptor =
-        """
+      """
         <project>
         <root dir="$root" />
         <sdk dir='$sdk'/>
@@ -1127,107 +1118,89 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
         </module>
         </project>
         """
-            .trimIndent()
+        .trimIndent()
 
     val projectXml = File(project, "project.xml")
     projectXml.writeText(descriptor)
 
     MainTest.checkDriver(
-        """
-        src/test/pkg/Test.java:11: Error: Method apiMethod() is a flagged API and should be inside an if (Flags.foobar()) check (or annotate the surrounding method test with @FlaggedApi(Flags.FLAG_FOOBAR) to transfer requirement to caller) [FlaggedApi]
-            api.apiMethod(); // ERROR 1
-            ~~~~~~~~~~~~~~~
-        src/test/pkg/Test.java:12: Error: Field apiField is a flagged API and should be inside an if (Flags.foobar()) check (or annotate the surrounding method test with @FlaggedApi(Flags.FLAG_FOOBAR) to transfer requirement to caller) [FlaggedApi]
-            int val = api.apiField; // ERROR 2
-                          ~~~~~~~~
-        src/test/pkg/Test.java:13: Error: Class MyApi is a flagged API and should be inside an if (Flags.foobar()) check (or annotate the surrounding method test with @FlaggedApi(Flags.FLAG_FOOBAR) to transfer requirement to caller) [FlaggedApi]
-            Object o = MyApi.class; // ERROR 3
-                       ~~~~~~~~~~~
-        3 errors
-        """
-            .trimIndent(),
-        "",
-        // Expected exit code
-        LintCliFlags.ERRNO_ERRORS,
-        arrayOf(
-            "--exit-code",
-            "-q",
-            "--check",
-            "FlaggedApi",
-            "--disable",
-            "LintError",
-            "--project",
-            projectXml.path,
-        ),
-        null,
-        null,
+      """
+      src/test/pkg/Test.java:11: Error: Method apiMethod() is a flagged API and should be inside an if (Flags.foobar()) check (or annotate the surrounding method test with @FlaggedApi(Flags.FLAG_FOOBAR) to transfer requirement to caller) [FlaggedApi]
+          api.apiMethod(); // ERROR 1
+          ~~~~~~~~~~~~~~~
+      src/test/pkg/Test.java:12: Error: Field apiField is a flagged API and should be inside an if (Flags.foobar()) check (or annotate the surrounding method test with @FlaggedApi(Flags.FLAG_FOOBAR) to transfer requirement to caller) [FlaggedApi]
+          int val = api.apiField; // ERROR 2
+                        ~~~~~~~~
+      src/test/pkg/Test.java:13: Error: Class MyApi is a flagged API and should be inside an if (Flags.foobar()) check (or annotate the surrounding method test with @FlaggedApi(Flags.FLAG_FOOBAR) to transfer requirement to caller) [FlaggedApi]
+          Object o = MyApi.class; // ERROR 3
+                     ~~~~~~~~~~~
+      3 errors
+      """
+        .trimIndent(),
+      "",
+      // Expected exit code
+      LintCliFlags.ERRNO_ERRORS,
+      arrayOf("--exit-code", "-q", "--check", "FlaggedApi", "--disable", "LintError", "--project", projectXml.path),
+      null,
+      null,
     )
 
     // Redundantly also add the --include-aosp-issues to verify that we don't duplicate the warnings
     MainTest.checkDriver(
-        """
-        src/test/pkg/Test.java:11: Error: Method apiMethod() is a flagged API and should be inside an if (Flags.foobar()) check (or annotate the surrounding method test with @FlaggedApi(Flags.FLAG_FOOBAR) to transfer requirement to caller) [FlaggedApi]
-            api.apiMethod(); // ERROR 1
-            ~~~~~~~~~~~~~~~
-        src/test/pkg/Test.java:12: Error: Field apiField is a flagged API and should be inside an if (Flags.foobar()) check (or annotate the surrounding method test with @FlaggedApi(Flags.FLAG_FOOBAR) to transfer requirement to caller) [FlaggedApi]
-            int val = api.apiField; // ERROR 2
-                          ~~~~~~~~
-        src/test/pkg/Test.java:13: Error: Class MyApi is a flagged API and should be inside an if (Flags.foobar()) check (or annotate the surrounding method test with @FlaggedApi(Flags.FLAG_FOOBAR) to transfer requirement to caller) [FlaggedApi]
-            Object o = MyApi.class; // ERROR 3
-                       ~~~~~~~~~~~
-        3 errors
-        """
-            .trimIndent(),
-        "",
-        // Expected exit code
-        LintCliFlags.ERRNO_ERRORS,
-        arrayOf(
-            "--exit-code",
-            "--include-aosp-issues",
-            "-q",
-            "--check",
-            "FlaggedApi",
-            "--disable",
-            "LintError",
-            "--project",
-            projectXml.path,
-        ),
-        null,
-        null,
+      """
+      src/test/pkg/Test.java:11: Error: Method apiMethod() is a flagged API and should be inside an if (Flags.foobar()) check (or annotate the surrounding method test with @FlaggedApi(Flags.FLAG_FOOBAR) to transfer requirement to caller) [FlaggedApi]
+          api.apiMethod(); // ERROR 1
+          ~~~~~~~~~~~~~~~
+      src/test/pkg/Test.java:12: Error: Field apiField is a flagged API and should be inside an if (Flags.foobar()) check (or annotate the surrounding method test with @FlaggedApi(Flags.FLAG_FOOBAR) to transfer requirement to caller) [FlaggedApi]
+          int val = api.apiField; // ERROR 2
+                        ~~~~~~~~
+      src/test/pkg/Test.java:13: Error: Class MyApi is a flagged API and should be inside an if (Flags.foobar()) check (or annotate the surrounding method test with @FlaggedApi(Flags.FLAG_FOOBAR) to transfer requirement to caller) [FlaggedApi]
+          Object o = MyApi.class; // ERROR 3
+                     ~~~~~~~~~~~
+      3 errors
+      """
+        .trimIndent(),
+      "",
+      // Expected exit code
+      LintCliFlags.ERRNO_ERRORS,
+      arrayOf(
+        "--exit-code",
+        "--include-aosp-issues",
+        "-q",
+        "--check",
+        "FlaggedApi",
+        "--disable",
+        "LintError",
+        "--project",
+        projectXml.path,
+      ),
+      null,
+      null,
     )
 
     // Don't enable it if it's not an Android build
     projectXml.writeText(descriptor.replace("""android="true"""", """android="false""""))
 
     MainTest.checkDriver(
-        """
-        No issues found.
-        """
-            .trimIndent(),
-        "",
-        // Expected exit code
-        LintCliFlags.ERRNO_SUCCESS,
-        arrayOf(
-            "--exit-code",
-            "-q",
-            "--check",
-            "FlaggedApi",
-            "--disable",
-            "LintError",
-            "--project",
-            projectXml.path,
-        ),
-        null,
-        null,
+      """
+      No issues found.
+      """
+        .trimIndent(),
+      "",
+      // Expected exit code
+      LintCliFlags.ERRNO_SUCCESS,
+      arrayOf("--exit-code", "-q", "--check", "FlaggedApi", "--disable", "LintError", "--project", projectXml.path),
+      null,
+      null,
     )
   }
 
   fun testExportedFlags() {
     // Regression test for b/404565190
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
             package test.api;
             import android.annotation.FlaggedApi;
             import com.example.foobar.Flags;
@@ -1238,10 +1211,10 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
               public int apiField = 42;
             }
             """
-                )
-                .indented(),
-            java(
-                    """
+          )
+          .indented(),
+        java(
+            """
             package test.pkg;
             import test.api.MyApi;
             import com.example.foobar.ExportedFlags;
@@ -1258,11 +1231,11 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
               }
             }
             """
-                )
-                .indented(),
-            // Generated
-            java(
-                    """
+          )
+          .indented(),
+        // Generated
+        java(
+            """
             package com.example.foobar;
 
             public class Flags {
@@ -1270,10 +1243,10 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
                 public static boolean foobar() { return true; }
             }
             """
-                )
-                .indented(),
-            java(
-                    """
+          )
+          .indented(),
+        java(
+            """
             package com.example.foobar;
 
             public class ExportedFlags {
@@ -1281,13 +1254,13 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
                 public static boolean foobar() { return true; }
             }
             """
-                )
-                .indented(),
-            flaggedApiAnnotationStub,
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+        flaggedApiAnnotationStub,
+      )
+      .run()
+      .expect(
+        """
         src/test/pkg/Test.java:11: Error: Method apiMethod() is a flagged API and should be inside an if (Flags.foobar()) check (or annotate the surrounding method test with @FlaggedApi(Flags.FLAG_FOOBAR) to transfer requirement to caller) [FlaggedApi]
             api.apiMethod(); // ERROR 1
             ~~~~~~~~~~~~~~~
@@ -1299,13 +1272,13 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
                        ~~~~~~~~~~~
         3 errors
         """
-        )
+      )
   }
 
   fun testFlaggedApiAppearsInApiVersionsXml() {
     // Regression test for b/437399045
     ApiLookupTest.runLintWithCustomLookup(
-            """
+        """
         <api version="4">
           <class name="java/lang/Object" since="2">
             <method name="&lt;init>()V"/>
@@ -1323,17 +1296,17 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
           </class>
         </api>
         """,
-            false,
-            {
-              lint()
-                  .files(
-                      manifest().minSdk(30),
-                      // Use binary stub for the API file since lint's API check
-                      // ignores API elements found in source files
-                      binaryStub(
-                          "libs/api.jar",
-                          java(
-                                  """
+        false,
+        {
+          lint()
+            .files(
+              manifest().minSdk(30),
+              // Use binary stub for the API file since lint's API check
+              // ignores API elements found in source files
+              binaryStub(
+                "libs/api.jar",
+                java(
+                    """
                     package test.api;
                     import android.annotation.FlaggedApi;
                     import com.example.foobar.Flags;
@@ -1347,11 +1320,11 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
                        void newUnflaggedUnfinalizedMethod();
                     }
                     """
-                              )
-                              .indented(),
-                          // Generated
-                          java(
-                                  """
+                  )
+                  .indented(),
+                // Generated
+                java(
+                    """
                     package com.example.foobar;
                     import androidx.annotation.ChecksSdkIntAtLeast;
 
@@ -1361,11 +1334,11 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
                         public static boolean foobar() { return true; }
                     }
                     """
-                              )
-                              .indented(),
-                          flaggedApiAnnotationStub,
-                          TestFiles.java(
-                                  """
+                  )
+                  .indented(),
+                flaggedApiAnnotationStub,
+                TestFiles.java(
+                    """
                     package androidx.annotation;
                     import static java.lang.annotation.ElementType.FIELD;
                     import static java.lang.annotation.ElementType.METHOD;
@@ -1384,12 +1357,12 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
                         int extension() default 0;
                     }
                     """
-                              )
-                              .indented(),
-                      ),
-                      // Usage
-                      java(
-                              """
+                  )
+                  .indented(),
+              ),
+              // Usage
+              java(
+                  """
                   package test.pkg;
                   import test.api.FooManager;
                   import com.example.foobar.Flags;
@@ -1424,18 +1397,18 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
                     }
                   }
                   """
-                          )
-                          .indented(),
-                      flaggedApiAnnotationStub,
-                  )
-            },
-            FlaggedApiDetector.ISSUE,
-            ApiDetector.UNSUPPORTED,
-            ApiDetector.INLINED,
-            ApiDetector.OBSOLETE_SDK,
-        )
-        .expect(
-            """
+                )
+                .indented(),
+              flaggedApiAnnotationStub,
+            )
+        },
+        FlaggedApiDetector.ISSUE,
+        ApiDetector.UNSUPPORTED,
+        ApiDetector.INLINED,
+        ApiDetector.OBSOLETE_SDK,
+      )
+      .expect(
+        """
         src/test/pkg/Test.java:9: Error: Method newUnfinalizedMethod() is a flagged API and should be inside an if (Flags.foobar()) check (or annotate the surrounding method test with @FlaggedApi(Flags.FLAG_FOOBAR) to transfer requirement to caller) [FlaggedApi]
             fooManager.newUnfinalizedMethod(); // ERROR 1 (FlaggedApi)
             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1453,13 +1426,13 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         5 errors
         """
-        )
+      )
   }
 }
 
 private val flaggedApiAnnotationStub: TestFile =
-    java(
-            """
+  java(
+      """
       package android.annotation; // HIDE-FROM-DOCUMENTATION
 
       import static java.lang.annotation.ElementType.ANNOTATION_TYPE;
@@ -1478,5 +1451,5 @@ private val flaggedApiAnnotationStub: TestFile =
           String value();
       }
       """
-        )
-        .indented()
+    )
+    .indented()

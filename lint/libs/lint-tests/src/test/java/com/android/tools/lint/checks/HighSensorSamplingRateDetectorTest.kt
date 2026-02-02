@@ -21,9 +21,9 @@ class HighSensorSamplingRateDetectorTest : AbstractCheckTest() {
 
   fun testDocumentationExample() {
     lint()
-        .files(
-            manifest(
-                    """
+      .files(
+        manifest(
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="test.pkg">
 
@@ -39,25 +39,25 @@ class HighSensorSamplingRateDetectorTest : AbstractCheckTest() {
                     </application>
                 </manifest>
             """
-                )
-                .indented()
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented()
+      )
+      .run()
+      .expect(
+        """
             AndroidManifest.xml:4: Warning: Most apps don't need access to high sensor sampling rate. [HighSamplingRate]
                 <uses-permission android:name="android.permission.HIGH_SAMPLING_RATE_SENSORS"/>
                                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             0 errors, 1 warnings
             """
-        )
+      )
   }
 
   fun testNoHighSamplingRate() {
     lint()
-        .files(
-            manifest(
-                    """
+      .files(
+        manifest(
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="test.pkg">
 
@@ -69,10 +69,10 @@ class HighSensorSamplingRateDetectorTest : AbstractCheckTest() {
                     </application>
                 </manifest>
             """
-                )
-                .indented()
-        )
-        .run()
-        .expectClean()
+          )
+          .indented()
+      )
+      .run()
+      .expectClean()
   }
 }

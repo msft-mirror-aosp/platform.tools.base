@@ -66,9 +66,9 @@ fun Project.isDesignatedGradleRootHolder(client: LintClient): Boolean {
   if (moduleDirs != null) {
     for (moduleDir in moduleDirs) {
       if (
-          File(moduleDir, SdkConstants.FN_BUILD_GRADLE).exists() ||
-              File(moduleDir, SdkConstants.FN_BUILD_GRADLE_KTS).exists() ||
-              File(moduleDir, SdkConstants.FN_BUILD_GRADLE_DECLARATIVE).exists()
+        File(moduleDir, SdkConstants.FN_BUILD_GRADLE).exists() ||
+          File(moduleDir, SdkConstants.FN_BUILD_GRADLE_KTS).exists() ||
+          File(moduleDir, SdkConstants.FN_BUILD_GRADLE_DECLARATIVE).exists()
       ) {
         return dir.path.equals(moduleDir.path, ignoreCase = true)
       }
@@ -87,9 +87,9 @@ private fun findFirstIncludedModulePath(root: File): String? {
   for (file in rootFiles) {
     val name = file.name
     if (
-        name == SdkConstants.FN_SETTINGS_GRADLE ||
-            name == SdkConstants.FN_SETTINGS_GRADLE_KTS ||
-            name == SdkConstants.FN_SETTINGS_GRADLE_DECLARATIVE
+      name == SdkConstants.FN_SETTINGS_GRADLE ||
+        name == SdkConstants.FN_SETTINGS_GRADLE_KTS ||
+        name == SdkConstants.FN_SETTINGS_GRADLE_DECLARATIVE
     ) {
       if (file.isFile) {
         try {

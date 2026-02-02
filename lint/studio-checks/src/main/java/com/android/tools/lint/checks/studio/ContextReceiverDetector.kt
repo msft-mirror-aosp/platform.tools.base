@@ -41,18 +41,18 @@ class ContextReceiverDetector : Detector(), SourceCodeScanner {
 
     @JvmField
     val ISSUE =
-        Issue.create(
-            id = "ContextReceiver",
-            briefDescription = "Context receivers are only experimental",
-            explanation =
-                """
+      Issue.create(
+        id = "ContextReceiver",
+        briefDescription = "Context receivers are only experimental",
+        explanation =
+          """
                 Context receivers are experimental and not ready for broad use within Android Studio code.
           """,
-            category = CROSS_PLATFORM,
-            severity = Severity.ERROR,
-            platforms = STUDIO_PLATFORMS,
-            implementation = IMPLEMENTATION,
-        )
+        category = CROSS_PLATFORM,
+        severity = Severity.ERROR,
+        platforms = STUDIO_PLATFORMS,
+        implementation = IMPLEMENTATION,
+      )
   }
 
   override fun getApplicableUastTypes(): List<Class<out UElement>> {
@@ -65,10 +65,10 @@ class ContextReceiverDetector : Detector(), SourceCodeScanner {
         val ktFile = node.sourcePsi as? KtFile ?: return
         PsiTreeUtil.findChildrenOfType(ktFile, KtContextReceiver::class.java).forEach { contextReceiver ->
           context.report(
-              ISSUE,
-              contextReceiver,
-              context.getLocation(contextReceiver),
-              "Do not use context receivers. They are an experimental feature at this time.",
+            ISSUE,
+            contextReceiver,
+            context.getLocation(contextReceiver),
+            "Do not use context receivers. They are an experimental feature at this time.",
           )
         }
       }

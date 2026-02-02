@@ -42,1261 +42,1261 @@ class InferredThreadDetectorTest : AbstractCheckTest() {
 
   fun testUnsignedLiteral() {
     lint()
-        .files(
-            kotlin(
-                    """
-                    package test.pkg
-                    import androidx.annotation.AnyThread
-                    import androidx.annotation.UiThread
-
-                    @UiThread fun f(): UInt = 42
-
-                    @UiThread fun g() = 45UL
-
-                    @AnyThread fun h() {
-                        f()
-                        g()
-                    }
-                    """
-                        .trimIndent()
-                )
-                .indented(),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expect(
+      .files(
+        kotlin(
             """
-            src/test/pkg/test.kt:10: Error: Call must be from @{Main,Ui}Thread, but context is allowing @AnyThread [ThreadConstraint]
+            package test.pkg
+            import androidx.annotation.AnyThread
+            import androidx.annotation.UiThread
+
+            @UiThread fun f(): UInt = 42
+
+            @UiThread fun g() = 45UL
+
+            @AnyThread fun h() {
                 f()
-                ~~~
-            src/test/pkg/test.kt:11: Error: Call must be from @{Main,Ui}Thread, but context is allowing @AnyThread [ThreadConstraint]
                 g()
-                ~~~
-            2 errors
+            }
             """
-                .trimIndent()
-        )
+              .trimIndent()
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
+        src/test/pkg/test.kt:10: Error: Call must be from @{Main,Ui}Thread, but context is allowing @AnyThread [ThreadConstraint]
+            f()
+            ~~~
+        src/test/pkg/test.kt:11: Error: Call must be from @{Main,Ui}Thread, but context is allowing @AnyThread [ThreadConstraint]
+            g()
+            ~~~
+        2 errors
+        """
+          .trimIndent()
+      )
   }
 
   fun testBaseAssumption_forEach() {
     lint()
-        .files(
-            kotlin(
-                    """
-                    package test.pkg
-                    import androidx.annotation.WorkerThread
-                    import androidx.annotation.UiThread
-
-                    @WorkerThread fun worker() { }
-
-                    @UiThread fun ui(l : List<*>) {
-                        l.forEach { worker() }
-                    }
-                    """
-                        .trimIndent()
-                )
-                .indented(),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expect(
+      .files(
+        kotlin(
             """
-            src/test/pkg/test.kt:8: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+            package test.pkg
+            import androidx.annotation.WorkerThread
+            import androidx.annotation.UiThread
+
+            @WorkerThread fun worker() { }
+
+            @UiThread fun ui(l : List<*>) {
                 l.forEach { worker() }
-                  ~~~~~~~~~~~~~~~~~~~~
-            1 error
+            }
             """
-                .trimIndent()
-        )
+              .trimIndent()
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
+        src/test/pkg/test.kt:8: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+            l.forEach { worker() }
+              ~~~~~~~~~~~~~~~~~~~~
+        1 error
+        """
+          .trimIndent()
+      )
   }
 
   fun testBaseAssumption_commonScopingFunctions() {
     lint()
-        .files(
-            kotlin(
-                    """
-                    package test.pkg
-                    import androidx.annotation.WorkerThread
-                    import androidx.annotation.UiThread
-
-                    @WorkerThread fun worker() { }
-
-                    @WorkerThread fun Any.slow() { }
-
-                    @UiThread fun ui(l : List<*>) {
-                        Any().apply { worker() }
-                        42.also(Any::slow)
-                        with("foo") { slow() }
-                        "foo".let(Any::slow)
-                    }
-                    """
-                        .trimIndent()
-                )
-                .indented(),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expect(
+      .files(
+        kotlin(
             """
-            src/test/pkg/test.kt:10: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+            package test.pkg
+            import androidx.annotation.WorkerThread
+            import androidx.annotation.UiThread
+
+            @WorkerThread fun worker() { }
+
+            @WorkerThread fun Any.slow() { }
+
+            @UiThread fun ui(l : List<*>) {
                 Any().apply { worker() }
-                      ~~~~~~~~~~~~~~~~~~
-            src/test/pkg/test.kt:11: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
                 42.also(Any::slow)
-                   ~~~~~~~~~~~~~~~
-            src/test/pkg/test.kt:12: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
                 with("foo") { slow() }
-                ~~~~~~~~~~~~~~~~~~~~~~
-            src/test/pkg/test.kt:13: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
                 "foo".let(Any::slow)
-                      ~~~~~~~~~~~~~~
-            4 errors
+            }
             """
-                .trimIndent()
-        )
+              .trimIndent()
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
+        src/test/pkg/test.kt:10: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+            Any().apply { worker() }
+                  ~~~~~~~~~~~~~~~~~~
+        src/test/pkg/test.kt:11: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+            42.also(Any::slow)
+               ~~~~~~~~~~~~~~~
+        src/test/pkg/test.kt:12: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+            with("foo") { slow() }
+            ~~~~~~~~~~~~~~~~~~~~~~
+        src/test/pkg/test.kt:13: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+            "foo".let(Any::slow)
+                  ~~~~~~~~~~~~~~
+        4 errors
+        """
+          .trimIndent()
+      )
   }
 
   fun testInferredAny_376518592() {
     lint()
-        .files(
-            kotlin(
-                    """
-                    package test.pkg
-                    import androidx.annotation.AnyThread
-                    import androidx.annotation.UiThread
+      .files(
+        kotlin(
+            """
+            package test.pkg
+            import androidx.annotation.AnyThread
+            import androidx.annotation.UiThread
 
-                    @UiThread fun ui() { }
+            @UiThread fun ui() { }
 
-                    fun ignoreIt(f: () -> Unit) { }
+            fun ignoreIt(f: () -> Unit) { }
 
-                    @AnyThread fun g() = ignoreIt(::ui)
-                    """
-                        .trimIndent()
-                )
-                .indented(),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expectClean()
+            @AnyThread fun g() = ignoreIt(::ui)
+            """
+              .trimIndent()
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expectClean()
   }
 
   fun testInferredPolymorphic_376518592() {
     lint()
-        .files(
-            kotlin(
-                    """
-                    package test.pkg
-                    import androidx.annotation.AnyThread
-                    import androidx.annotation.UiThread
-                    import androidx.annotation.WorkerThread
-
-                    @UiThread fun ui() { }
-                    @WorkerThread fun worker() { }
-                    @AnyThread fun any() { }
-
-                    fun runIt(f: () -> Unit) = f()
-                    @UiThread fun runItOnUi(f: () -> Unit) = runIt(f)
-
-                    fun runUiOnUi() = runItOnUi(::ui) // OK
-                    fun runAnyOnUi() = runItOnUi(::any) // OK
-                    fun runWorkerOnUi() = runItOnUi(::worker) // ERROR
-
-                    """
-                        .trimIndent()
-                )
-                .indented(),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expect(
+      .files(
+        kotlin(
             """
-            src/test/pkg/test.kt:15: Error: Argument must run from @{Main,Ui}Thread, but is requiring @WorkerThread [ThreadConstraint]
+            package test.pkg
+            import androidx.annotation.AnyThread
+            import androidx.annotation.UiThread
+            import androidx.annotation.WorkerThread
+
+            @UiThread fun ui() { }
+            @WorkerThread fun worker() { }
+            @AnyThread fun any() { }
+
+            fun runIt(f: () -> Unit) = f()
+            @UiThread fun runItOnUi(f: () -> Unit) = runIt(f)
+
+            fun runUiOnUi() = runItOnUi(::ui) // OK
+            fun runAnyOnUi() = runItOnUi(::any) // OK
             fun runWorkerOnUi() = runItOnUi(::worker) // ERROR
-                                            ~~~~~~~~
-            1 errors, 0 warnings
+
             """
-                .trimIndent()
-        )
+              .trimIndent()
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
+        src/test/pkg/test.kt:15: Error: Argument must run from @{Main,Ui}Thread, but is requiring @WorkerThread [ThreadConstraint]
+        fun runWorkerOnUi() = runItOnUi(::worker) // ERROR
+                                        ~~~~~~~~
+        1 errors, 0 warnings
+        """
+          .trimIndent()
+      )
   }
 
   fun testUnsatisfiableStatementSequence() {
     lint()
-        .files(
-            kotlin(
-                    """
-                    package test.pkg
-                    import androidx.annotation.AnyThread
-                    import androidx.annotation.UiThread
-                    import androidx.annotation.WorkerThread
-
-                    @UiThread fun ui() { }
-                    @WorkerThread fun worker() { }
-                    @AnyThread fun any() { }
-
-                    fun sat() {
-                        ui()
-                        any()
-                    }
-
-                    fun unsat() {
-                        ui()
-                        worker() // ERROR
-                    }
-                    """
-                        .trimIndent()
-                )
-                .indented(),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expect(
+      .files(
+        kotlin(
             """
-            src/test/pkg/test.kt:17: Error: Statement must run from @WorkerThread, incompatible with earlier code that must run from @{Main,Ui}Thread [ThreadConstraint]
+            package test.pkg
+            import androidx.annotation.AnyThread
+            import androidx.annotation.UiThread
+            import androidx.annotation.WorkerThread
+
+            @UiThread fun ui() { }
+            @WorkerThread fun worker() { }
+            @AnyThread fun any() { }
+
+            fun sat() {
+                ui()
+                any()
+            }
+
+            fun unsat() {
+                ui()
                 worker() // ERROR
-                ~~~~~~~~
-            1 error
+            }
             """
-                .trimIndent()
-        )
+              .trimIndent()
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
+        src/test/pkg/test.kt:17: Error: Statement must run from @WorkerThread, incompatible with earlier code that must run from @{Main,Ui}Thread [ThreadConstraint]
+            worker() // ERROR
+            ~~~~~~~~
+        1 error
+        """
+          .trimIndent()
+      )
   }
 
   fun testUnsatisfiableInstantiation() {
     lint()
-        .files(
-            kotlin(
-                    """
-                    package test.pkg
-                    import androidx.annotation.AnyThread
-                    import androidx.annotation.UiThread
-                    import androidx.annotation.WorkerThread
-
-                    @UiThread fun ui() { }
-                    @WorkerThread fun worker() { }
-                    @AnyThread fun any() { }
-
-                    fun doBoth(fst: () -> Unit, snd: () -> Unit) { fst(); snd() }
-
-                    fun sat() = doBoth(::ui, ::any)
-
-                    fun unsat() = doBoth(::ui, ::worker) // ERROR
-                    """
-                        .trimIndent()
-                )
-                .indented(),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expect(
+      .files(
+        kotlin(
             """
-            src/test/pkg/test.kt:14: Error: Call results in an unsatisfiable thread requirement [ThreadConstraint]
+            package test.pkg
+            import androidx.annotation.AnyThread
+            import androidx.annotation.UiThread
+            import androidx.annotation.WorkerThread
+
+            @UiThread fun ui() { }
+            @WorkerThread fun worker() { }
+            @AnyThread fun any() { }
+
+            fun doBoth(fst: () -> Unit, snd: () -> Unit) { fst(); snd() }
+
+            fun sat() = doBoth(::ui, ::any)
+
             fun unsat() = doBoth(::ui, ::worker) // ERROR
-                          ~~~~~~~~~~~~~~~~~~~~~~
-            1 error
             """
-                .trimIndent()
-        )
+              .trimIndent()
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
+        src/test/pkg/test.kt:14: Error: Call results in an unsatisfiable thread requirement [ThreadConstraint]
+        fun unsat() = doBoth(::ui, ::worker) // ERROR
+                      ~~~~~~~~~~~~~~~~~~~~~~
+        1 error
+        """
+          .trimIndent()
+      )
   }
 
   fun testSimpleEta() {
     lint()
-        .files(
-            kotlin(
-                    """
-                    package test.pkg
-                    import androidx.annotation.AnyThread
-                    import androidx.annotation.UiThread
-                    import androidx.annotation.WorkerThread
-
-                    @UiThread fun ui() { }
-                    @WorkerThread fun worker() { }
-
-                    fun wrap(f: () -> Unit): () -> Unit = { f() }
-
-                    @WorkerThread fun wrapUi() = wrap(::ui) // OK
-                    @UiThread fun wrapWorker() = wrap(::worker) // OK
-
-                    @WorkerThread fun runWrappedUi0() = wrapUi()() // ERROR
-                    @WorkerThread fun runWrappedUi1() = wrapUi().invoke() // ERROR
-                    @WorkerThread fun runWrappedUi2() = wrap(::ui)() // ERROR
-                    @WorkerThread fun runWrappedUi3() = wrap(::ui).invoke() // ERROR
-                    @WorkerThread fun runWrappedWorker0() = wrap(::worker)()
-                    @WorkerThread fun runWrappedWorker1() = wrap(::worker).invoke()
-                    """
-                        .trimIndent()
-                )
-                .indented(),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expect(
+      .files(
+        kotlin(
             """
-            src/test/pkg/test.kt:14: Error: Call must be from @{Main,Ui}Thread, but context is allowing @WorkerThread [ThreadConstraint]
+            package test.pkg
+            import androidx.annotation.AnyThread
+            import androidx.annotation.UiThread
+            import androidx.annotation.WorkerThread
+
+            @UiThread fun ui() { }
+            @WorkerThread fun worker() { }
+
+            fun wrap(f: () -> Unit): () -> Unit = { f() }
+
+            @WorkerThread fun wrapUi() = wrap(::ui) // OK
+            @UiThread fun wrapWorker() = wrap(::worker) // OK
+
             @WorkerThread fun runWrappedUi0() = wrapUi()() // ERROR
-                                                ~~~~~~~~~~
-            src/test/pkg/test.kt:15: Error: Call must be from @{Main,Ui}Thread, but context is allowing @WorkerThread [ThreadConstraint]
             @WorkerThread fun runWrappedUi1() = wrapUi().invoke() // ERROR
-                                                         ~~~~~~~~
-            src/test/pkg/test.kt:16: Error: Call must be from @{Main,Ui}Thread, but context is allowing @WorkerThread [ThreadConstraint]
             @WorkerThread fun runWrappedUi2() = wrap(::ui)() // ERROR
-                                                ~~~~~~~~~~~~
-            src/test/pkg/test.kt:17: Error: Call must be from @{Main,Ui}Thread, but context is allowing @WorkerThread [ThreadConstraint]
             @WorkerThread fun runWrappedUi3() = wrap(::ui).invoke() // ERROR
-                                                           ~~~~~~~~
-            4 errors
+            @WorkerThread fun runWrappedWorker0() = wrap(::worker)()
+            @WorkerThread fun runWrappedWorker1() = wrap(::worker).invoke()
             """
-                .trimIndent()
-        )
+              .trimIndent()
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
+        src/test/pkg/test.kt:14: Error: Call must be from @{Main,Ui}Thread, but context is allowing @WorkerThread [ThreadConstraint]
+        @WorkerThread fun runWrappedUi0() = wrapUi()() // ERROR
+                                            ~~~~~~~~~~
+        src/test/pkg/test.kt:15: Error: Call must be from @{Main,Ui}Thread, but context is allowing @WorkerThread [ThreadConstraint]
+        @WorkerThread fun runWrappedUi1() = wrapUi().invoke() // ERROR
+                                                     ~~~~~~~~
+        src/test/pkg/test.kt:16: Error: Call must be from @{Main,Ui}Thread, but context is allowing @WorkerThread [ThreadConstraint]
+        @WorkerThread fun runWrappedUi2() = wrap(::ui)() // ERROR
+                                            ~~~~~~~~~~~~
+        src/test/pkg/test.kt:17: Error: Call must be from @{Main,Ui}Thread, but context is allowing @WorkerThread [ThreadConstraint]
+        @WorkerThread fun runWrappedUi3() = wrap(::ui).invoke() // ERROR
+                                                       ~~~~~~~~
+        4 errors
+        """
+          .trimIndent()
+      )
   }
 
   fun testInheritedBasicPathSensitivity() {
     lint()
-        .files(
-            kotlin(
-                    """
-                    package test.pkg
-                    import androidx.annotation.AnyThread
-                    import androidx.annotation.UiThread
-                    import androidx.annotation.WorkerThread
-
-                    abstract class Cat { abstract fun meow() }
-                    interface Dog { fun woof() }
-
-                    fun Any.speak() = when (this) {
-                        is Cat -> this.meow()
-                        is Dog -> this.woof()
-                        else -> { }
-                    }
-
-                    object Doggo: Dog { @UiThread override fun woof() { } }
-                    object Catto: Cat { @WorkerThread override fun meow() { } }
-
-                    @UiThread fun doggoSpeak() = Doggo.speak() // OK
-                    @UiThread fun cattoSpeak() = Catto.speak() // ERROR
-                    """
-                        .trimIndent()
-                )
-                .indented(),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expect(
+      .files(
+        kotlin(
             """
-            src/test/pkg/Cat.kt:19: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+            package test.pkg
+            import androidx.annotation.AnyThread
+            import androidx.annotation.UiThread
+            import androidx.annotation.WorkerThread
+
+            abstract class Cat { abstract fun meow() }
+            interface Dog { fun woof() }
+
+            fun Any.speak() = when (this) {
+                is Cat -> this.meow()
+                is Dog -> this.woof()
+                else -> { }
+            }
+
+            object Doggo: Dog { @UiThread override fun woof() { } }
+            object Catto: Cat { @WorkerThread override fun meow() { } }
+
+            @UiThread fun doggoSpeak() = Doggo.speak() // OK
             @UiThread fun cattoSpeak() = Catto.speak() // ERROR
-                                               ~~~~~~~
-            1 errors, 0 warnings
             """
-                .trimIndent()
-        )
+              .trimIndent()
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
+        src/test/pkg/Cat.kt:19: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+        @UiThread fun cattoSpeak() = Catto.speak() // ERROR
+                                           ~~~~~~~
+        1 errors, 0 warnings
+        """
+          .trimIndent()
+      )
   }
 
   fun testIncompatibleInheritance_361870417() {
     lint()
-        .files(
-            kotlin(
-                    """
-                    package test.pkg
-                    import androidx.annotation.AnyThread
-                    import androidx.annotation.UiThread
-                    import androidx.annotation.MainThread
-                    import androidx.annotation.WorkerThread
-
-                    interface Intf {
-                        @AnyThread fun f()
-                    }
-
-                    class Impl: Intf {
-                        @WorkerThread override fun f() { } // ERROR
-                    }
-
-                    @UiThread
-                    fun updateUi(impl: Impl) {
-                        impl.f()           // correctly fails
-                        (impl as Intf).f() // would-be problematic at run time, not caught here, trusting upcasting, assuming problem caught at overriding
-                    }
-                    """
-                        .trimIndent()
-                )
-                .indented(),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expect(
+      .files(
+        kotlin(
             """
-            src/test/pkg/Intf.kt:12: Error: @WorkerThread restricts @AnyThread (from super method Intf.f(…)) [ThreadConstraint]
+            package test.pkg
+            import androidx.annotation.AnyThread
+            import androidx.annotation.UiThread
+            import androidx.annotation.MainThread
+            import androidx.annotation.WorkerThread
+
+            interface Intf {
+                @AnyThread fun f()
+            }
+
+            class Impl: Intf {
                 @WorkerThread override fun f() { } // ERROR
-                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            src/test/pkg/Intf.kt:17: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+            }
+
+            @UiThread
+            fun updateUi(impl: Impl) {
                 impl.f()           // correctly fails
-                     ~~~
-            2 errors
+                (impl as Intf).f() // would-be problematic at run time, not caught here, trusting upcasting, assuming problem caught at overriding
+            }
             """
-                .trimIndent()
-        )
+              .trimIndent()
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
+        src/test/pkg/Intf.kt:12: Error: @WorkerThread restricts @AnyThread (from super method Intf.f(…)) [ThreadConstraint]
+            @WorkerThread override fun f() { } // ERROR
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        src/test/pkg/Intf.kt:17: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+            impl.f()           // correctly fails
+                 ~~~
+        2 errors
+        """
+          .trimIndent()
+      )
   }
 
   fun testCompatibleMultipleInheritance_361870417() {
     lint()
-        .files(
-            kotlin(
-                    """
-                    package test.pkg
-                    import androidx.annotation.AnyThread
-                    import androidx.annotation.UiThread
-                    import androidx.annotation.MainThread
-                    import androidx.annotation.WorkerThread
-                    import androidx.annotation.BinderThread
-
-                    interface Intf1 {
-                        @WorkerThread fun f()
-                    }
-
-                    interface Intf2 {
-                        @UiThread fun f()
-                    }
-
-                    interface Intf3 {
-                        @UiThread fun f()
-                    }
-
-                    class GoodImpl: Intf1, Intf2 {
-                        @UiThread @WorkerThread override fun f() { }
-                    }
-
-                    class AlsoGoodImpl: Intf1, Intf2 {
-                        @AnyThread override fun() { }
-                    }
-
-                    class BadImpl: Inttf1, Intf2 {
-                        @WorkerThread override fun f() { }
-                    }
-
-                    @UiThread fun ui() { }
-                    class AlsoBadImpl: Intf1, Intf2 {
-                        override fun f() { ui() }
-                    }
-
-                    class RealBadImpl: Intf1, Intf2, Intf3 {
-                        @BinderThread override fun f() { }
-                    }
-                    """
-                        .trimIndent()
-                )
-                .indented(),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expect(
+      .files(
+        kotlin(
             """
-            src/test/pkg/Intf1.kt:29: Error: @WorkerThread restricts @{Main,Ui}Thread (from super method Intf2.f(…)) [ThreadConstraint]
+            package test.pkg
+            import androidx.annotation.AnyThread
+            import androidx.annotation.UiThread
+            import androidx.annotation.MainThread
+            import androidx.annotation.WorkerThread
+            import androidx.annotation.BinderThread
+
+            interface Intf1 {
+                @WorkerThread fun f()
+            }
+
+            interface Intf2 {
+                @UiThread fun f()
+            }
+
+            interface Intf3 {
+                @UiThread fun f()
+            }
+
+            class GoodImpl: Intf1, Intf2 {
+                @UiThread @WorkerThread override fun f() { }
+            }
+
+            class AlsoGoodImpl: Intf1, Intf2 {
+                @AnyThread override fun() { }
+            }
+
+            class BadImpl: Inttf1, Intf2 {
                 @WorkerThread override fun f() { }
-                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            src/test/pkg/Intf1.kt:34: Error: Call must be from @{Main,Ui}Thread, but super method Intf1.f(…) is allowing @WorkerThread [ThreadConstraint]
+            }
+
+            @UiThread fun ui() { }
+            class AlsoBadImpl: Intf1, Intf2 {
                 override fun f() { ui() }
-                                   ~~~~
-            src/test/pkg/Intf1.kt:38: Error: @BinderThread restricts @WorkerThread (from super method Intf1.f(…)), and @{Main,Ui}Thread (from super method Intf2.f(…), and super method Intf3.f(…)) [ThreadConstraint]
+            }
+
+            class RealBadImpl: Intf1, Intf2, Intf3 {
                 @BinderThread override fun f() { }
-                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            3 errors
+            }
             """
-                .trimIndent()
-        )
+              .trimIndent()
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
+        src/test/pkg/Intf1.kt:29: Error: @WorkerThread restricts @{Main,Ui}Thread (from super method Intf2.f(…)) [ThreadConstraint]
+            @WorkerThread override fun f() { }
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        src/test/pkg/Intf1.kt:34: Error: Call must be from @{Main,Ui}Thread, but super method Intf1.f(…) is allowing @WorkerThread [ThreadConstraint]
+            override fun f() { ui() }
+                               ~~~~
+        src/test/pkg/Intf1.kt:38: Error: @BinderThread restricts @WorkerThread (from super method Intf1.f(…)), and @{Main,Ui}Thread (from super method Intf2.f(…), and super method Intf3.f(…)) [ThreadConstraint]
+            @BinderThread override fun f() { }
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        3 errors
+        """
+          .trimIndent()
+      )
   }
 
   fun testRespectingParameterAnnotation_384511995() {
     lint()
-        .files(
-            kotlin(
-                    """
-                    package test.pkg
-                    import androidx.annotation.AnyThread
-                    import androidx.annotation.UiThread
-                    import androidx.annotation.MainThread
-                    import androidx.annotation.WorkerThread
-
-                    @UiThread fun runWorkerFromUi(@WorkerThread f: () -> Unit) = f() // ERROR
-
-                    @WorkerThread fun runWorkerFromWorker(@WorkerThread f: () -> Unit) = f() // OK
-
-                    @AnyThread fun runWorkerFromAny(@WorkerThread f: () -> Unit) = f() // ERROR
-
-                    @UiThread fun runAnyFromUi(@AnyThread f: () -> Unit) = f() // OK
-
-                    """
-                        .trimIndent()
-                )
-                .indented(),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expect(
+      .files(
+        kotlin(
             """
-            src/test/pkg/test.kt:7: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+            package test.pkg
+            import androidx.annotation.AnyThread
+            import androidx.annotation.UiThread
+            import androidx.annotation.MainThread
+            import androidx.annotation.WorkerThread
+
             @UiThread fun runWorkerFromUi(@WorkerThread f: () -> Unit) = f() // ERROR
-                                                                         ~~~
-            src/test/pkg/test.kt:11: Error: Call must be from @WorkerThread, but context is allowing @AnyThread [ThreadConstraint]
+
+            @WorkerThread fun runWorkerFromWorker(@WorkerThread f: () -> Unit) = f() // OK
+
             @AnyThread fun runWorkerFromAny(@WorkerThread f: () -> Unit) = f() // ERROR
-                                                                           ~~~
-            2 errors, 0 warnings
+
+            @UiThread fun runAnyFromUi(@AnyThread f: () -> Unit) = f() // OK
+
             """
-                .trimIndent()
-        )
+              .trimIndent()
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
+        src/test/pkg/test.kt:7: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+        @UiThread fun runWorkerFromUi(@WorkerThread f: () -> Unit) = f() // ERROR
+                                                                     ~~~
+        src/test/pkg/test.kt:11: Error: Call must be from @WorkerThread, but context is allowing @AnyThread [ThreadConstraint]
+        @AnyThread fun runWorkerFromAny(@WorkerThread f: () -> Unit) = f() // ERROR
+                                                                       ~~~
+        2 errors, 0 warnings
+        """
+          .trimIndent()
+      )
   }
 
   fun testInferredFromCallingAnnotatedParameter_384511995() {
     lint()
-        .files(
-            kotlin(
-                    """
-                    package test.pkg
-                    import androidx.annotation.AnyThread
-                    import androidx.annotation.UiThread
-                    import androidx.annotation.MainThread
-                    import androidx.annotation.WorkerThread
-
-                    fun runUiWork(@UiThread f: () -> Unit) = f()
-
-                    fun runEasyWork(@AnyThread f: Runnable) = f.run()
-
-                    @UiThread fun runUiFromUi() = runUiWork { } // OK
-
-                    @AnyThread fun runUiFromAny() = runUiWork { } // ERROR
-
-                    @WorkerThread fun runAnyFromWorker() = runEasyWork { } // OK
-
-                    @AnyThread fun runAnyFromAny() = runEasyWork { } // OK
-                    """
-                        .trimIndent()
-                )
-                .indented(),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expect(
+      .files(
+        kotlin(
             """
-            src/test/pkg/test.kt:13: Error: Call must be from @{Main,Ui}Thread, but context is allowing @AnyThread [ThreadConstraint]
+            package test.pkg
+            import androidx.annotation.AnyThread
+            import androidx.annotation.UiThread
+            import androidx.annotation.MainThread
+            import androidx.annotation.WorkerThread
+
+            fun runUiWork(@UiThread f: () -> Unit) = f()
+
+            fun runEasyWork(@AnyThread f: Runnable) = f.run()
+
+            @UiThread fun runUiFromUi() = runUiWork { } // OK
+
             @AnyThread fun runUiFromAny() = runUiWork { } // ERROR
-                                            ~~~~~~~~~~~~~
-            1 errors, 0 warnings
+
+            @WorkerThread fun runAnyFromWorker() = runEasyWork { } // OK
+
+            @AnyThread fun runAnyFromAny() = runEasyWork { } // OK
             """
-                .trimIndent()
-        )
+              .trimIndent()
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
+        src/test/pkg/test.kt:13: Error: Call must be from @{Main,Ui}Thread, but context is allowing @AnyThread [ThreadConstraint]
+        @AnyThread fun runUiFromAny() = runUiWork { } // ERROR
+                                        ~~~~~~~~~~~~~
+        1 errors, 0 warnings
+        """
+          .trimIndent()
+      )
   }
 
   fun testMultipleAnnotations_361843462() {
     lint()
-        .files(
-            kotlin(
-                    """
-                    package test.pkg
-                    import androidx.annotation.AnyThread
-                    import androidx.annotation.UiThread
-                    import androidx.annotation.MainThread
-                    import androidx.annotation.WorkerThread
-
-                    interface Intf {
-                        @AnyThread
-                        fun f() {}
-                    }
-
-                    @WorkerThread
-                    object Impl: Intf {
-                        override fun f() {} // ERROR not subsuming `Intf`'s annotation
-                    }
-
-                    @UiThread
-                    fun main(impl: Impl) = impl.f() // ERROR inconsistency with `Impl`'s annotation
-                    """
-                        .trimIndent()
-                )
-                .indented(),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expect(
+      .files(
+        kotlin(
             """
-            src/test/pkg/Intf.kt:14: Error: @WorkerThread restricts @AnyThread (from super method Intf.f(…)) [ThreadConstraint]
+            package test.pkg
+            import androidx.annotation.AnyThread
+            import androidx.annotation.UiThread
+            import androidx.annotation.MainThread
+            import androidx.annotation.WorkerThread
+
+            interface Intf {
+                @AnyThread
+                fun f() {}
+            }
+
+            @WorkerThread
+            object Impl: Intf {
                 override fun f() {} // ERROR not subsuming `Intf`'s annotation
-                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            src/test/pkg/Intf.kt:18: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+            }
+
+            @UiThread
             fun main(impl: Impl) = impl.f() // ERROR inconsistency with `Impl`'s annotation
-                                        ~~~
-            2 errors
             """
-                .trimIndent()
-        )
+              .trimIndent()
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
+        src/test/pkg/Intf.kt:14: Error: @WorkerThread restricts @AnyThread (from super method Intf.f(…)) [ThreadConstraint]
+            override fun f() {} // ERROR not subsuming `Intf`'s annotation
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        src/test/pkg/Intf.kt:18: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+        fun main(impl: Impl) = impl.f() // ERROR inconsistency with `Impl`'s annotation
+                                    ~~~
+        2 errors
+        """
+          .trimIndent()
+      )
   }
 
   fun testMultipleAnnotationsFixed_361843462() {
     lint()
-        .files(
-            kotlin(
-                    """
-                    package test.pkg
-                    import androidx.annotation.AnyThread
-                    import androidx.annotation.UiThread
-                    import androidx.annotation.MainThread
-                    import androidx.annotation.WorkerThread
+      .files(
+        kotlin(
+            """
+            package test.pkg
+            import androidx.annotation.AnyThread
+            import androidx.annotation.UiThread
+            import androidx.annotation.MainThread
+            import androidx.annotation.WorkerThread
 
-                    interface Intf {
-                        @AnyThread
-                        fun f() {}
-                    }
+            interface Intf {
+                @AnyThread
+                fun f() {}
+            }
 
-                    @WorkerThread
-                    object Impl: Intf {
-                        @AnyThread override fun f() {} // OK
-                    }
+            @WorkerThread
+            object Impl: Intf {
+                @AnyThread override fun f() {} // OK
+            }
 
-                    @UiThread
-                    fun main(impl: Impl) = impl.f() // OK
-                    """
-                        .trimIndent()
-                )
-                .indented(),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expectClean()
+            @UiThread
+            fun main(impl: Impl) = impl.f() // OK
+            """
+              .trimIndent()
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expectClean()
   }
 
   fun testEarlyReturn() {
     lint()
-        .files(
-            kotlin(
-                    """
-                    package test.pkg
-                    import androidx.annotation.AnyThread
-                    import androidx.annotation.UiThread
-                    import androidx.annotation.MainThread
-                    import androidx.annotation.WorkerThread
-                    import androidx.annotation.BinderThread
-
-                    fun earlyReturnId(value: () -> Unit): () -> Unit {
-                        return value
-                        42
-                    }
-
-                    @UiThread fun ui() { }
-
-                    @WorkerThread fun worker() { earlyReturnId(::ui).invoke() }
-                    """
-                        .trimIndent()
-                )
-                .indented(),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expect(
+      .files(
+        kotlin(
             """
-            src/test/pkg/test.kt:15: Error: Call must be from @{Main,Ui}Thread, but context is allowing @WorkerThread [ThreadConstraint]
+            package test.pkg
+            import androidx.annotation.AnyThread
+            import androidx.annotation.UiThread
+            import androidx.annotation.MainThread
+            import androidx.annotation.WorkerThread
+            import androidx.annotation.BinderThread
+
+            fun earlyReturnId(value: () -> Unit): () -> Unit {
+                return value
+                42
+            }
+
+            @UiThread fun ui() { }
+
             @WorkerThread fun worker() { earlyReturnId(::ui).invoke() }
-                                                             ~~~~~~~~
-            1 errors, 0 warnings
             """
-                .trimIndent()
-        )
+              .trimIndent()
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
+        src/test/pkg/test.kt:15: Error: Call must be from @{Main,Ui}Thread, but context is allowing @WorkerThread [ThreadConstraint]
+        @WorkerThread fun worker() { earlyReturnId(::ui).invoke() }
+                                                         ~~~~~~~~
+        1 errors, 0 warnings
+        """
+          .trimIndent()
+      )
   }
 
   fun testGenericId() {
     lint()
-        .files(
-            kotlin(
-                    """
-                    package test.pkg
-                    import androidx.annotation.AnyThread
-                    import androidx.annotation.UiThread
-                    import androidx.annotation.MainThread
-                    import androidx.annotation.WorkerThread
-                    import androidx.annotation.BinderThread
-
-                    fun<X> id(value: X) = value
-
-                    @UiThread fun ui() { }
-
-                    @WorkerThread fun worker() {
-                       id(::ui).invoke()
-                       id(::ui)()
-                    }
-                    """
-                        .trimIndent()
-                )
-                .indented(),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expect(
+      .files(
+        kotlin(
             """
-            src/test/pkg/test.kt:13: Error: Call must be from @{Main,Ui}Thread, but context is allowing @WorkerThread [ThreadConstraint]
+            package test.pkg
+            import androidx.annotation.AnyThread
+            import androidx.annotation.UiThread
+            import androidx.annotation.MainThread
+            import androidx.annotation.WorkerThread
+            import androidx.annotation.BinderThread
+
+            fun<X> id(value: X) = value
+
+            @UiThread fun ui() { }
+
+            @WorkerThread fun worker() {
                id(::ui).invoke()
-                        ~~~~~~~~
-            src/test/pkg/test.kt:14: Error: Call must be from @{Main,Ui}Thread, but context is allowing @WorkerThread [ThreadConstraint]
                id(::ui)()
-               ~~~~~~~~~~
-            2 errors
+            }
             """
-                .trimIndent()
-        )
+              .trimIndent()
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
+        src/test/pkg/test.kt:13: Error: Call must be from @{Main,Ui}Thread, but context is allowing @WorkerThread [ThreadConstraint]
+           id(::ui).invoke()
+                    ~~~~~~~~
+        src/test/pkg/test.kt:14: Error: Call must be from @{Main,Ui}Thread, but context is allowing @WorkerThread [ThreadConstraint]
+           id(::ui)()
+           ~~~~~~~~~~
+        2 errors
+        """
+          .trimIndent()
+      )
   }
 
   // TODO it doesn't know what `x(x)` is
   fun ignore_testOmega() {
     lint()
-        .files(
-            kotlin(
-                    """
-                    package test.pkg
-                    import androidx.annotation.AnyThread
-                    import androidx.annotation.UiThread
-                    import androidx.annotation.MainThread
-                    import androidx.annotation.WorkerThread
-                    import androidx.annotation.BinderThread
+      .files(
+        kotlin(
+            """
+            package test.pkg
+            import androidx.annotation.AnyThread
+            import androidx.annotation.UiThread
+            import androidx.annotation.MainThread
+            import androidx.annotation.WorkerThread
+            import androidx.annotation.BinderThread
 
-                    object SelfApp: (SelfApp) -> SelfApp {
-                        override fun invoke(x: SelfApp) = x(x)
-                    }
-                    """
-                        .trimIndent()
-                )
-                .indented(),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expectClean()
+            object SelfApp: (SelfApp) -> SelfApp {
+                override fun invoke(x: SelfApp) = x(x)
+            }
+            """
+              .trimIndent()
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expectClean()
   }
 
   // TODO (b/390023468)
   fun ignore_testOmega_open() {
     lint()
-        .files(
-            kotlin(
-                    """
-                    package test.pkg
-                    import androidx.annotation.AnyThread
-                    import androidx.annotation.UiThread
-                    import androidx.annotation.MainThread
-                    import androidx.annotation.WorkerThread
-                    import androidx.annotation.BinderThread
+      .files(
+        kotlin(
+            """
+            package test.pkg
+            import androidx.annotation.AnyThread
+            import androidx.annotation.UiThread
+            import androidx.annotation.MainThread
+            import androidx.annotation.WorkerThread
+            import androidx.annotation.BinderThread
 
-                    interface SelfApp: (SelfApp) -> SelfApp
+            interface SelfApp: (SelfApp) -> SelfApp
 
-                    object UiOmega: SelfApp {
-                        @UiThread override fun invoke(x: SelfApp) = x(x)
-                    }
+            object UiOmega: SelfApp {
+                @UiThread override fun invoke(x: SelfApp) = x(x)
+            }
 
-                    object WorkerOmega: SelfApp {
-                        @WorkerThread override fun invoke(x: SelfApp) = x(x)
-                    }
-                    """
-                        .trimIndent()
-                )
-                .indented(),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expectWarningCount(2)
+            object WorkerOmega: SelfApp {
+                @WorkerThread override fun invoke(x: SelfApp) = x(x)
+            }
+            """
+              .trimIndent()
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expectWarningCount(2)
   }
 
   fun testRecursion_Precise() {
     lint()
-        .files(
-            kotlin(
-                    """
-                    package test.pkg
-                    import androidx.annotation.AnyThread
-                    import androidx.annotation.UiThread
-                    import androidx.annotation.MainThread
-                    import androidx.annotation.WorkerThread
-                    import androidx.annotation.BinderThread
+      .files(
+        kotlin(
+            """
+            package test.pkg
+            import androidx.annotation.AnyThread
+            import androidx.annotation.UiThread
+            import androidx.annotation.MainThread
+            import androidx.annotation.WorkerThread
+            import androidx.annotation.BinderThread
 
-                    interface Tick { fun tick(): Tock }
-                    interface Tock { fun tock(): Tick }
+            interface Tick { fun tick(): Tock }
+            interface Tock { fun tock(): Tick }
 
-                    fun onTick(b: Boolean, i: Tick): Tick = if (b) i else onTock(b, i.tick()).tock()
-                    fun onTock(b: Boolean, o: Tock): Tock = if (b) o else onTick(b, o.tock()).tick()
+            fun onTick(b: Boolean, i: Tick): Tick = if (b) i else onTock(b, i.tick()).tock()
+            fun onTock(b: Boolean, o: Tock): Tock = if (b) o else onTick(b, o.tock()).tick()
 
-                    object TickImpl1: Tick { @UiThread @WorkerThread override fun tick() = TockImpl1 }
-                    object TockImpl1: Tock { @UiThread @BinderThread override fun tock() = TickImpl2 }
-                    object TickImpl2: Tick {                         override fun tick() = TockImpl2 }
-                    object TockImpl2: Tock {                         override fun tock() = TickImpl1 }
+            object TickImpl1: Tick { @UiThread @WorkerThread override fun tick() = TockImpl1 }
+            object TockImpl1: Tock { @UiThread @BinderThread override fun tock() = TickImpl2 }
+            object TickImpl2: Tick {                         override fun tick() = TockImpl2 }
+            object TockImpl2: Tock {                         override fun tock() = TickImpl1 }
 
-                    @UiThread
-                    fun main(b: Boolean) = onTick(b, TickImpl1)
-                    """
-                        .trimIndent()
-                )
-                .indented(),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expectClean()
+            @UiThread
+            fun main(b: Boolean) = onTick(b, TickImpl1)
+            """
+              .trimIndent()
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expectClean()
   }
 
   fun testRecursion_Sound_1() {
     lint()
-        .files(
-            kotlin(
-                    """
-                    package test.pkg
-                    import androidx.annotation.AnyThread
-                    import androidx.annotation.UiThread
-                    import androidx.annotation.MainThread
-                    import androidx.annotation.WorkerThread
-                    import androidx.annotation.BinderThread
-
-                    interface Tick { fun tick(): Tock }
-                    interface Tock { fun tock(): Tick }
-
-                    fun onTick(b: Boolean, i: Tick): Tick = if (b) i else onTock(b, i.tick()).tock()
-                    fun onTock(b: Boolean, o: Tock): Tock = if (b) o else onTick(b, o.tock()).tick()
-
-                    object TickImpl1: Tick { @UiThread @WorkerThread override fun tick() = TockImpl1 }
-                    object TockImpl1: Tock { @UiThread @BinderThread override fun tock() = TickImpl2 }
-                    object TickImpl2: Tick {                         override fun tick() = TockImpl2 }
-                    object TockImpl2: Tock {                         override fun tock() = TickImpl1 }
-
-                    @WorkerThread
-                    fun main(b: Boolean) = onTick(b, TickImpl1)
-                    """
-                        .trimIndent()
-                )
-                .indented(),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expect(
+      .files(
+        kotlin(
             """
-            src/test/pkg/Tick.kt:20: Error: Call must be from @{Main,Ui}Thread, but context is allowing @WorkerThread [ThreadConstraint]
+            package test.pkg
+            import androidx.annotation.AnyThread
+            import androidx.annotation.UiThread
+            import androidx.annotation.MainThread
+            import androidx.annotation.WorkerThread
+            import androidx.annotation.BinderThread
+
+            interface Tick { fun tick(): Tock }
+            interface Tock { fun tock(): Tick }
+
+            fun onTick(b: Boolean, i: Tick): Tick = if (b) i else onTock(b, i.tick()).tock()
+            fun onTock(b: Boolean, o: Tock): Tock = if (b) o else onTick(b, o.tock()).tick()
+
+            object TickImpl1: Tick { @UiThread @WorkerThread override fun tick() = TockImpl1 }
+            object TockImpl1: Tock { @UiThread @BinderThread override fun tock() = TickImpl2 }
+            object TickImpl2: Tick {                         override fun tick() = TockImpl2 }
+            object TockImpl2: Tock {                         override fun tock() = TickImpl1 }
+
+            @WorkerThread
             fun main(b: Boolean) = onTick(b, TickImpl1)
-                                   ~~~~~~~~~~~~~~~~~~~~
-            1 errors, 0 warnings
             """
-                .trimIndent()
-        )
+              .trimIndent()
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
+        src/test/pkg/Tick.kt:20: Error: Call must be from @{Main,Ui}Thread, but context is allowing @WorkerThread [ThreadConstraint]
+        fun main(b: Boolean) = onTick(b, TickImpl1)
+                               ~~~~~~~~~~~~~~~~~~~~
+        1 errors, 0 warnings
+        """
+          .trimIndent()
+      )
   }
 
   fun testRecursion_Sound_2() {
     lint()
-        .files(
-            kotlin(
-                    """
-                    package test.pkg
-                    import androidx.annotation.AnyThread
-                    import androidx.annotation.UiThread
-                    import androidx.annotation.MainThread
-                    import androidx.annotation.WorkerThread
-                    import androidx.annotation.BinderThread
-
-                    interface Tick { fun tick(): Tock }
-                    interface Tock { fun tock(): Tick }
-
-                    fun onTick(b: Boolean, i: Tick): Tick = if (b) i else onTock(b, i.tick()).tock()
-                    fun onTock(b: Boolean, o: Tock): Tock = if (b) o else onTick(b, o.tock()).tick()
-
-                    object TickImpl1: Tick { @UiThread @WorkerThread override fun tick() = TockImpl1 }
-                    object TockImpl1: Tock { @UiThread @BinderThread override fun tock() = TickImpl2 }
-                    object TickImpl2: Tick {                         override fun tick() = TockImpl2 }
-                    object TockImpl2: Tock {                         override fun tock() = TickImpl1 }
-
-                    @BinderThread
-                    fun main(b: Boolean) = onTick(b, TickImpl1)
-                    """
-                        .trimIndent()
-                )
-                .indented(),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expect(
+      .files(
+        kotlin(
             """
-            src/test/pkg/Tick.kt:20: Error: Call must be from @{Main,Ui}Thread, but context is allowing @BinderThread [ThreadConstraint]
+            package test.pkg
+            import androidx.annotation.AnyThread
+            import androidx.annotation.UiThread
+            import androidx.annotation.MainThread
+            import androidx.annotation.WorkerThread
+            import androidx.annotation.BinderThread
+
+            interface Tick { fun tick(): Tock }
+            interface Tock { fun tock(): Tick }
+
+            fun onTick(b: Boolean, i: Tick): Tick = if (b) i else onTock(b, i.tick()).tock()
+            fun onTock(b: Boolean, o: Tock): Tock = if (b) o else onTick(b, o.tock()).tick()
+
+            object TickImpl1: Tick { @UiThread @WorkerThread override fun tick() = TockImpl1 }
+            object TockImpl1: Tock { @UiThread @BinderThread override fun tock() = TickImpl2 }
+            object TickImpl2: Tick {                         override fun tick() = TockImpl2 }
+            object TockImpl2: Tock {                         override fun tock() = TickImpl1 }
+
+            @BinderThread
             fun main(b: Boolean) = onTick(b, TickImpl1)
-                                   ~~~~~~~~~~~~~~~~~~~~
-            1 errors, 0 warnings
             """
-                .trimIndent()
-        )
+              .trimIndent()
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
+        src/test/pkg/Tick.kt:20: Error: Call must be from @{Main,Ui}Thread, but context is allowing @BinderThread [ThreadConstraint]
+        fun main(b: Boolean) = onTick(b, TickImpl1)
+                               ~~~~~~~~~~~~~~~~~~~~
+        1 errors, 0 warnings
+        """
+          .trimIndent()
+      )
   }
 
   fun testRecursion_accum() {
     lint()
-        .files(
-            java(
-                    """
-                    package test.pkg;
+      .files(
+        java(
+            """
+            package test.pkg;
 
-                    public class Test {
-                        interface Thing {
-                            Thing nextThing();
-                        }
+            public class Test {
+                interface Thing {
+                    Thing nextThing();
+                }
 
-                        private boolean helper(Thing thing) {
-                            if (new Random().nextBoolean()) {
-                                return helper(thing.nextThing());
-                            } else {
-                                return false;
-                            }
-                        }
+                private boolean helper(Thing thing) {
+                    if (new Random().nextBoolean()) {
+                        return helper(thing.nextThing());
+                    } else {
+                        return false;
                     }
-                    """
-                        .trimIndent()
-                )
-                .indented(),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expectClean()
+                }
+            }
+            """
+              .trimIndent()
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expectClean()
   }
 
   fun testRecursion_accum_virtual() {
     lint()
-        .files(
-            java(
-                    """
-                    package test.pkg;
+      .files(
+        java(
+            """
+            package test.pkg;
 
-                    public class Test {
-                        interface Thing {
-                            Thing nextThing();
-                        }
+            public class Test {
+                interface Thing {
+                    Thing nextThing();
+                }
 
-                        boolean helper(Thing thing) {
-                            if (new Random().nextBoolean()) {
-                                return helper(thing.nextThing());
-                            } else {
-                                return false;
-                            }
-                        }
+                boolean helper(Thing thing) {
+                    if (new Random().nextBoolean()) {
+                        return helper(thing.nextThing());
+                    } else {
+                        return false;
                     }
-                    """
-                        .trimIndent()
-                )
-                .indented(),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expectClean()
+                }
+            }
+            """
+              .trimIndent()
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expectClean()
   }
 
   fun testPolymorphicRecursion() {
     lint()
-        .files(
-            kotlin(
-                    """
-                    package test.pkg
-                    import androidx.annotation.AnyThread
-                    import androidx.annotation.UiThread
-
-                    sealed interface LList<out T> {
-                      object Empty: LList<Nothing>
-                      class Cons<out T>(val first: T, val rest: LList<T>): LList<T>
-                    }
-
-                    fun<S, T> LList<S>.map(f: (S) -> T): LList<T> =
-                      when (this) {
-                        is LList.Empty -> LList.Empty
-                        is LList.Cons -> LList.Cons(f(first), rest.map(f))
-                      }
-
-                    sealed interface Nested<out T> {
-                      object Empty: Nested<Nothing>
-                      class Cons<out T>(val first: T, val rest: Nested<LList<T>>): Nested<T>
-                    }
-
-                    fun<S, T> Nested<S>.map(f: (S) -> T): Nested<T> =
-                      when (this) {
-                        is Nested.Empty -> Nested.Empty
-                        is Nested.Cons -> Nested.Cons(f(first), rest.map { it.map(f) })
-                      }
-
-                    @UiThread fun ui(n: Int): String = n.toString()
-
-                    @AnyThread fun f(c: LList<Int>) = c.map(::ui)
-                    """
-                        .trimIndent()
-                )
-                .indented(),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expect(
+      .files(
+        kotlin(
             """
-            src/test/pkg/LList.kt:29: Error: Call must be from @{Main,Ui}Thread, but context is allowing @AnyThread [ThreadConstraint]
+            package test.pkg
+            import androidx.annotation.AnyThread
+            import androidx.annotation.UiThread
+
+            sealed interface LList<out T> {
+              object Empty: LList<Nothing>
+              class Cons<out T>(val first: T, val rest: LList<T>): LList<T>
+            }
+
+            fun<S, T> LList<S>.map(f: (S) -> T): LList<T> =
+              when (this) {
+                is LList.Empty -> LList.Empty
+                is LList.Cons -> LList.Cons(f(first), rest.map(f))
+              }
+
+            sealed interface Nested<out T> {
+              object Empty: Nested<Nothing>
+              class Cons<out T>(val first: T, val rest: Nested<LList<T>>): Nested<T>
+            }
+
+            fun<S, T> Nested<S>.map(f: (S) -> T): Nested<T> =
+              when (this) {
+                is Nested.Empty -> Nested.Empty
+                is Nested.Cons -> Nested.Cons(f(first), rest.map { it.map(f) })
+              }
+
+            @UiThread fun ui(n: Int): String = n.toString()
+
             @AnyThread fun f(c: LList<Int>) = c.map(::ui)
-                                                ~~~~~~~~~
-            1 error
             """
-                .trimIndent()
-        )
+              .trimIndent()
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
+        src/test/pkg/LList.kt:29: Error: Call must be from @{Main,Ui}Thread, but context is allowing @AnyThread [ThreadConstraint]
+        @AnyThread fun f(c: LList<Int>) = c.map(::ui)
+                                            ~~~~~~~~~
+        1 error
+        """
+          .trimIndent()
+      )
   }
 
   fun testOpenRecursiveCallback() {
     lint()
-        .files(
-            kotlin(
-                    """
-                    // Example from minimizing
-                    // androidx.compose.foundation.lazy.layout.CacheWindowLogic.scheduleNextItemIfNeeded
+      .files(
+        kotlin(
+            """
+            // Example from minimizing
+            // androidx.compose.foundation.lazy.layout.CacheWindowLogic.scheduleNextItemIfNeeded
 
-                    interface Scope {
-                      fun schedule(work: (Int) -> Unit)
-                    }
+            interface Scope {
+              fun schedule(work: (Int) -> Unit)
+            }
 
-                    fun Scope.g(n: Int) {
-                      f()
-                    }
+            fun Scope.g(n: Int) {
+              f()
+            }
 
-                    fun Scope.f() {
-                      schedule { n -> g(n) }
-                    }
+            fun Scope.f() {
+              schedule { n -> g(n) }
+            }
 
-                    // Self-contained example of same recursive pattern, reusing standard interface
-                    fun f(handle: (() -> Unit) -> Unit) {
-                      handle { f(handle) }
-                    }
-                    """
-                        .trimIndent()
-                )
-                .indented()
-        )
-        .run()
-        .expectClean()
+            // Self-contained example of same recursive pattern, reusing standard interface
+            fun f(handle: (() -> Unit) -> Unit) {
+              handle { f(handle) }
+            }
+            """
+              .trimIndent()
+          )
+          .indented()
+      )
+      .run()
+      .expectClean()
   }
 
   // Reduced test from com.google.intelligence.trieste.query.parser.Parserkt
   fun testHoRecursion() {
     lint()
-        .files(
-            kotlin(
-                    """
-                    sealed class Result<out T> {
-                      class Ok<out T>(val value: T) : Result<T>()
-                      object Err : Result<Nothing>()
-                    }
+      .files(
+        kotlin(
+            """
+            sealed class Result<out T> {
+              class Ok<out T>(val value: T) : Result<T>()
+              object Err : Result<Nothing>()
+            }
 
-                    fun<S, T> Result<S>.bind(f: (S) -> Result<T>): Result<T> =
-                      when (this) {
-                        is Result.Ok -> f(value)
-                        is Result.Err -> this
-                      }
+            fun<S, T> Result<S>.bind(f: (S) -> Result<T>): Result<T> =
+              when (this) {
+                is Result.Ok -> f(value)
+                is Result.Err -> this
+              }
 
-                    interface Parser<T> {
-                      fun parse(): Result<T>
-                    }
+            interface Parser<T> {
+              fun parse(): Result<T>
+            }
 
-                    class ManyOf<T>(val base: Parser<T>): Parser<Nothing> {
-                      override fun parse(): Result<Nothing> = base.parse().bind { parse() }
-                    }
-                    """
-                        .trimIndent()
-                )
-                .indented()
-        )
-        .run()
-        .expectClean()
+            class ManyOf<T>(val base: Parser<T>): Parser<Nothing> {
+              override fun parse(): Result<Nothing> = base.parse().bind { parse() }
+            }
+            """
+              .trimIndent()
+          )
+          .indented()
+      )
+      .run()
+      .expectClean()
   }
 
   // Reduced test from com.google.intelligence.trieste.query.parser.Parserkt
   fun testHoRecursion_localFn() {
     lint()
-        .files(
-            kotlin(
-                    """
-                    sealed class Result<out T> {
-                      class Ok<out T>(val value: T) : Result<T>()
-                      object Err : Result<Nothing>()
-                    }
+      .files(
+        kotlin(
+            """
+            sealed class Result<out T> {
+              class Ok<out T>(val value: T) : Result<T>()
+              object Err : Result<Nothing>()
+            }
 
-                    fun<S, T> Result<S>.bind(f: (S) -> Result<T>): Result<T> =
-                      when (this) {
-                        is Result.Ok -> f(value)
-                        is Result.Err -> this
-                      }
+            fun<S, T> Result<S>.bind(f: (S) -> Result<T>): Result<T> =
+              when (this) {
+                is Result.Ok -> f(value)
+                is Result.Err -> this
+              }
 
-                    interface Parser<T> {
-                      fun parse(): Result<T>
-                    }
+            interface Parser<T> {
+              fun parse(): Result<T>
+            }
 
-                    class ManyOf<T>(val base: Parser<T>): Parser<Nothing> {
-                      override fun parse(): Result<Nothing> {
-                        fun loop(): Result<Nothing> = base.parse().bind { loop() }
-                        return loop()
-                      }
-                    }
-                    """
-                        .trimIndent()
-                )
-                .indented()
-        )
-        .run()
-        .expectClean()
+            class ManyOf<T>(val base: Parser<T>): Parser<Nothing> {
+              override fun parse(): Result<Nothing> {
+                fun loop(): Result<Nothing> = base.parse().bind { loop() }
+                return loop()
+              }
+            }
+            """
+              .trimIndent()
+          )
+          .indented()
+      )
+      .run()
+      .expectClean()
   }
 
   // Reduced test from com.google.common.reflect.TypeToken.TypeCollector
   fun testRecursiveBranching() {
     lint()
-        .files(
-            java(
-                    """
-                    public abstract class Test<T> {
-                      private void f(T type) {
-                        prop(type).toString();
-                        T t1 = next(type);
-                        f(t1);
-                        T t2 = next(type);
-                        f(t2);
-                      }
+      .files(
+        java(
+            """
+            public abstract class Test<T> {
+              private void f(T type) {
+                prop(type).toString();
+                T t1 = next(type);
+                f(t1);
+                T t2 = next(type);
+                f(t2);
+              }
 
-                      abstract Object prop(T type);
+              abstract Object prop(T type);
 
-                      abstract T next(T type);
-                    }
-                    """
-                        .trimIndent()
-                )
-                .indented()
-        )
-        .run()
-        .expectClean()
+              abstract T next(T type);
+            }
+            """
+              .trimIndent()
+          )
+          .indented()
+      )
+      .run()
+      .expectClean()
   }
 
   // Test reduced from org.locationtech.jts.geom.Geometry.java
   fun testSymbolExplosion() {
     lint()
-        .files(
-            java(
-                    """
-                    public abstract class Geometry {
-                      public boolean intersects(Geometry g) {
-                        if (!getEnvelopeInternal().intersects(g.getEnvelopeInternal()))
-                          return false;
+      .files(
+        java(
+            """
+            public abstract class Geometry {
+              public boolean intersects(Geometry g) {
+                if (!getEnvelopeInternal().intersects(g.getEnvelopeInternal()))
+                  return false;
 
-                        if (isRectangle()) return true;
-                        if (g.isRectangle()) return true;
+                if (isRectangle()) return true;
+                if (g.isRectangle()) return true;
 
-                        if (isGeometryCollection() || g.isGeometryCollection()) {
-                          for (int i = 0; i < getNumEntries(); i++) {
-                            for (int j = 0; j < g.getNumEntries(); j++) {
-                              if (getGeometryN(i).intersects(g.getGeometryN(j))) {
-                                return true;
-                              }
-                            }
-                          }
-                          return false;
-                        }
-                        return relate(g).isIntersects();
-                      }
-
-                      abstract public Envelope getEnvelopeInternal();
-
-                      abstract public boolean isRectangle();
-
-                      abstract public boolean isGeometryCollection();
-
-                      abstract public int getNumEntries();
-
-                      abstract public Geometry getGeometryN(int i);
-
-                      abstract IntersectionMatrix relate(Geometry g);
-
-                      interface Envelope {
-                        boolean intersects(Envelope e);
-                      }
-
-                      interface IntersectionMatrix {
-                        boolean isIntersects();
+                if (isGeometryCollection() || g.isGeometryCollection()) {
+                  for (int i = 0; i < getNumEntries(); i++) {
+                    for (int j = 0; j < g.getNumEntries(); j++) {
+                      if (getGeometryN(i).intersects(g.getGeometryN(j))) {
+                        return true;
                       }
                     }
-                    """
-                        .trimIndent()
-                )
-                .indented()
-        )
-        .run()
-        .expectClean()
+                  }
+                  return false;
+                }
+                return relate(g).isIntersects();
+              }
+
+              abstract public Envelope getEnvelopeInternal();
+
+              abstract public boolean isRectangle();
+
+              abstract public boolean isGeometryCollection();
+
+              abstract public int getNumEntries();
+
+              abstract public Geometry getGeometryN(int i);
+
+              abstract IntersectionMatrix relate(Geometry g);
+
+              interface Envelope {
+                boolean intersects(Envelope e);
+              }
+
+              interface IntersectionMatrix {
+                boolean isIntersects();
+              }
+            }
+            """
+              .trimIndent()
+          )
+          .indented()
+      )
+      .run()
+      .expectClean()
   }
 
   // Test reduced from .../dfu/FirmwareUpdateStateMachine
   fun testNested() {
     lint()
-        .files(
-            java(
-                    """
-                    final class Test {
+      .files(
+        java(
+            """
+            final class Test {
 
-                      private Container rec(Tag root) {
-                        return root.container().map(rec(root));
-                      }
+              private Container rec(Tag root) {
+                return root.container().map(rec(root));
+              }
 
-                      interface Tag {
-                        Container container();
-                      }
+              interface Tag {
+                Container container();
+              }
 
-                      static final class Container {
-                        public Container map(Object f) {
-                          return this;
-                        }
-                      }
-                    }
-                    """
-                        .trimIndent()
-                )
-                .indented()
-        )
-        .run()
-        .expectClean()
+              static final class Container {
+                public Container map(Object f) {
+                  return this;
+                }
+              }
+            }
+            """
+              .trimIndent()
+          )
+          .indented()
+      )
+      .run()
+      .expectClean()
   }
 
   // Test reduced from third_party/.../kotlin-result/../result/Zip.kt
   fun testNestedLambda() {
     val start = System.currentTimeMillis()
     lint()
-        .files(
-            kotlin(
-                    """
-                    sealed class Res<out V>
-                    class Ok<out V>(val value: V) : Res<V>()
-                    object Err : Res<Nothing>()
+      .files(
+        kotlin(
+            """
+            sealed class Res<out V>
+            class Ok<out V>(val value: V) : Res<V>()
+            object Err : Res<Nothing>()
 
-                    fun <T1, T2, T3, T4, T5, V> zip(
-                      result1: () -> Res<T1>,
-                      result2: () -> Res<T2>,
-                      result3: () -> Res<T3>,
-                      result4: () -> Res<T4>,
-                      result5: () -> Res<T5>,
-                      transform: (T1, T2, T3, T4, T5) -> V
-                    ): Res<V> =
-                      result1().bind { v1 ->
-                        result2().bind { v2 ->
-                          result3().bind { v3 ->
-                            result4().bind { v4 ->
-                              result5().map { v5 ->
-                                transform(v1, v2, v3, v4, v5)
-                              }
-                            }
-                          }
-                        }
+            fun <T1, T2, T3, T4, T5, V> zip(
+              result1: () -> Res<T1>,
+              result2: () -> Res<T2>,
+              result3: () -> Res<T3>,
+              result4: () -> Res<T4>,
+              result5: () -> Res<T5>,
+              transform: (T1, T2, T3, T4, T5) -> V
+            ): Res<V> =
+              result1().bind { v1 ->
+                result2().bind { v2 ->
+                  result3().bind { v3 ->
+                    result4().bind { v4 ->
+                      result5().map { v5 ->
+                        transform(v1, v2, v3, v4, v5)
                       }
+                    }
+                  }
+                }
+              }
 
-                    private infix fun <V, U> Res<V>.map(transform: (V) -> U): Res<U> =
-                      when (this) {
-                        is Ok -> Ok(transform(value))
-                        is Err -> this
-                      }
+            private infix fun <V, U> Res<V>.map(transform: (V) -> U): Res<U> =
+              when (this) {
+                is Ok -> Ok(transform(value))
+                is Err -> this
+              }
 
-                    private infix fun <V, U> Res<V>.bind(transform: (V) -> Res<U>): Res<U> =
-                      when (this) {
-                        is Ok -> transform(value)
-                        is Err -> this
-                      }
+            private infix fun <V, U> Res<V>.bind(transform: (V) -> Res<U>): Res<U> =
+              when (this) {
+                is Ok -> transform(value)
+                is Err -> this
+              }
 
-                    """
-                        .trimIndent()
-                )
-                .indented()
-        )
-        .run()
-        .expectClean()
+            """
+              .trimIndent()
+          )
+          .indented()
+      )
+      .run()
+      .expectClean()
     val end = System.currentTimeMillis()
     // Before the fix, this test took ~115s on an M3 Pro. After the fix, it takes <2s (including
     // project initialization time). We give it 10x leeway.
@@ -1306,390 +1306,390 @@ class InferredThreadDetectorTest : AbstractCheckTest() {
   // Test reduced from ...trix.ritz.shared.model.channels.ReadableChannel
   fun testNestedLambda2() {
     lint()
-        .testModes(TestMode.DEFAULT)
-        .files(
-            java(
-                    """
-                    public interface ReadableChannel<V> {
+      .testModes(TestMode.DEFAULT)
+      .files(
+        java(
+            """
+            public interface ReadableChannel<V> {
 
-                      void forEach(Consume1<V> callback);
+              void forEach(Consume1<V> callback);
 
-                      default <X> void join1(ReadableChannel<X> other, Consume2<V, X> callback) {
-                        forEach(a -> other.forEach(b -> callback.apply(a, b)));
-                      }
+              default <X> void join1(ReadableChannel<X> other, Consume2<V, X> callback) {
+                forEach(a -> other.forEach(b -> callback.apply(a, b)));
+              }
 
-                      default <X> void join2(ReadableChannel<X> other, Consume2<V, X> callback) {
-                        join1(other, (a, b) -> other.forEach(c -> callback.apply(a, b)));
-                      }
+              default <X> void join2(ReadableChannel<X> other, Consume2<V, X> callback) {
+                join1(other, (a, b) -> other.forEach(c -> callback.apply(a, b)));
+              }
 
-                      interface Consume1<V2> {
-                        void accept(V2 value);
-                      }
+              interface Consume1<V2> {
+                void accept(V2 value);
+              }
 
-                      interface Consume2<A, B> {
-                        void apply(A a, B b);
-                      }
-                    }
-                    """
-                        .trimIndent()
-                )
-                .indented()
-        )
-        .run()
-        .expectClean()
+              interface Consume2<A, B> {
+                void apply(A a, B b);
+              }
+            }
+            """
+              .trimIndent()
+          )
+          .indented()
+      )
+      .run()
+      .expectClean()
     // This program never converged before the fix.
   }
 
   // Test reduced from .../dfu/FirmwareUpdateStateMachine
   fun testNestedLambda3() {
     lint()
-        .files(
-            java(
-                    """
-                    import java.util.function.Function;
+      .files(
+        java(
+            """
+            import java.util.function.Function;
 
-                    public class Test {
-                      private void trigger(Event event) {
-                        execute(event.tag());
-                      }
+            public class Test {
+              private void trigger(Event event) {
+                execute(event.tag());
+              }
 
-                      private void execute(Tag tag) {
-                        tag.sig()
-                          .flatMap(ignore -> recursiveExecuteFirmware(tag))
-                          .tapError(() -> trigger(new Event.Impl()));
-                      }
+              private void execute(Tag tag) {
+                tag.sig()
+                  .flatMap(ignore -> recursiveExecuteFirmware(tag))
+                  .tapError(() -> trigger(new Event.Impl()));
+              }
 
-                      private Sig<Void> recursiveExecuteFirmware(Tag tag) {
-                        return tag.sig()
-                          .flatMap(ignore -> Sig.from())
-                          .flatMap(ignore -> recursiveExecuteFirmware(tag));
-                      }
+              private Sig<Void> recursiveExecuteFirmware(Tag tag) {
+                return tag.sig()
+                  .flatMap(ignore -> Sig.from())
+                  .flatMap(ignore -> recursiveExecuteFirmware(tag));
+              }
 
-                      interface Event {
-                        Tag tag();
+              interface Event {
+                Tag tag();
 
-                        class Impl implements Event {
-                          @Override public Tag tag() {
-                            throw new IllegalStateException();
-                          }
-                        }
-                      }
+                class Impl implements Event {
+                  @Override public Tag tag() {
+                    throw new IllegalStateException();
+                  }
+                }
+              }
 
-                      interface Tag {
-                        Sig<Integer> sig();
-                      }
+              interface Tag {
+                Sig<Integer> sig();
+              }
 
-                      static class Sig<T> {
-                        <U> Sig<U> flatMap(Function<T, Sig<U>> f) {
-                          return new FMapped<>();
-                        }
+              static class Sig<T> {
+                <U> Sig<U> flatMap(Function<T, Sig<U>> f) {
+                  return new FMapped<>();
+                }
 
-                        void tapError(Runnable consumer) { }
+                void tapError(Runnable consumer) { }
 
-                        static Sig<Boolean> from() {
-                          throw new IllegalStateException();
-                        }
+                static Sig<Boolean> from() {
+                  throw new IllegalStateException();
+                }
 
-                        static class FMapped<U, T> extends Sig<U> {
-                          FMapped() { }
-                        }
-                      }
-                    }
-                    """
-                        .trimIndent()
-                )
-                .indented()
-        )
-        .run()
-        .expectClean()
+                static class FMapped<U, T> extends Sig<U> {
+                  FMapped() { }
+                }
+              }
+            }
+            """
+              .trimIndent()
+          )
+          .indented()
+      )
+      .run()
+      .expectClean()
     // This program never converged before the fix
   }
 
   fun testInterpreter_bigStep() {
     lint()
-        .files(
-            kotlin(
-                    """
-                    import androidx.annotation.AnyThread
-                    import androidx.annotation.UiThread
-                    import androidx.annotation.WorkerThread
-
-                    /******************************
-                     *  Syntax
-                     ******************************/
-                    sealed interface Prim: Exp, Val, HostVal {
-                      object Add1: Prim
-                      object IsInt: Prim
-                      object IsProc: Prim
-                    }
-                    sealed interface Exp
-                    class App(val fn: Exp, val arg: Exp): Exp
-                    class Lam(val param: String, val body: Exp): Exp
-                    class If0(val cnd: Exp, val thn: Exp, val els: Exp): Exp
-                    class Num(val unboxed: Int): Exp, Val, HostVal
-                    class Var(val name: String): Exp
-
-                    /******************************
-                     * Runtime
-                     ******************************/
-                    sealed interface Env<out T> {
-                      object Mt: Env<Nothing>
-                      class Cons<out T>(val key: String, val value: T, val rest: Env<T>): Env<T>
-                    }
-                    sealed interface Val
-                    class Clo(val param: String, val body: Exp, val env: Env<Val>): Val
-                    private operator fun<T> Env<T>.get(x: String): T = when (this) {
-                      is Env.Cons -> if (key == x) value else rest[x]
-                      is Env.Mt -> throw LookupException()
-                    }
-                    private fun<T> T.isZero(): Boolean = this is Num && unboxed == 0
-
-                    /******************************
-                     * Direct big-step interpreter
-                     ******************************/
-                    fun Exp.eval(): Val = ev(Env.Mt)
-
-                    @WorkerThread
-                    private fun Exp.ev(env: Env<Val>): Val = when (this) {
-                      is Lam -> Clo(param, body, env)
-                      is Var -> env[name]
-                      is App -> fn.ev(env).ap(arg.ev(env))
-                      is If0 -> (if (cnd.ev(env).isZero()) thn else els).ev(env)
-                      is Num -> this
-                      is Prim -> this
-                    }
-
-                    @AnyThread
-                    private fun Val.ap(x: Val): Val = when (this) {
-                      is Clo -> body.ev(Env.Cons(param, x, env))
-                      is Prim -> primAp(x)
-                      is Num -> throw MisApplication()
-                    }
-                    private fun Prim.primAp(x: Val): Val = when (this) {
-                      Prim.Add1 -> if (x is Num) Num(x.unboxed + 1) else throw MisAdd1()
-                      Prim.IsInt -> Num(if (x is Num) 0 else 1)
-                      Prim.IsProc -> Num(if (x is Clo || x is Prim) 0 else 1)
-                    }
-                    """
-                        .trimIndent()
-                )
-                .indented(),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expect(
+      .files(
+        kotlin(
             """
-            src/Prim.kt:52: Error: Call must be from @WorkerThread, but context is allowing @AnyThread [ThreadConstraint]
+            import androidx.annotation.AnyThread
+            import androidx.annotation.UiThread
+            import androidx.annotation.WorkerThread
+
+            /******************************
+             *  Syntax
+             ******************************/
+            sealed interface Prim: Exp, Val, HostVal {
+              object Add1: Prim
+              object IsInt: Prim
+              object IsProc: Prim
+            }
+            sealed interface Exp
+            class App(val fn: Exp, val arg: Exp): Exp
+            class Lam(val param: String, val body: Exp): Exp
+            class If0(val cnd: Exp, val thn: Exp, val els: Exp): Exp
+            class Num(val unboxed: Int): Exp, Val, HostVal
+            class Var(val name: String): Exp
+
+            /******************************
+             * Runtime
+             ******************************/
+            sealed interface Env<out T> {
+              object Mt: Env<Nothing>
+              class Cons<out T>(val key: String, val value: T, val rest: Env<T>): Env<T>
+            }
+            sealed interface Val
+            class Clo(val param: String, val body: Exp, val env: Env<Val>): Val
+            private operator fun<T> Env<T>.get(x: String): T = when (this) {
+              is Env.Cons -> if (key == x) value else rest[x]
+              is Env.Mt -> throw LookupException()
+            }
+            private fun<T> T.isZero(): Boolean = this is Num && unboxed == 0
+
+            /******************************
+             * Direct big-step interpreter
+             ******************************/
+            fun Exp.eval(): Val = ev(Env.Mt)
+
+            @WorkerThread
+            private fun Exp.ev(env: Env<Val>): Val = when (this) {
+              is Lam -> Clo(param, body, env)
+              is Var -> env[name]
+              is App -> fn.ev(env).ap(arg.ev(env))
+              is If0 -> (if (cnd.ev(env).isZero()) thn else els).ev(env)
+              is Num -> this
+              is Prim -> this
+            }
+
+            @AnyThread
+            private fun Val.ap(x: Val): Val = when (this) {
               is Clo -> body.ev(Env.Cons(param, x, env))
-                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            1 error
+              is Prim -> primAp(x)
+              is Num -> throw MisApplication()
+            }
+            private fun Prim.primAp(x: Val): Val = when (this) {
+              Prim.Add1 -> if (x is Num) Num(x.unboxed + 1) else throw MisAdd1()
+              Prim.IsInt -> Num(if (x is Num) 0 else 1)
+              Prim.IsProc -> Num(if (x is Clo || x is Prim) 0 else 1)
+            }
             """
-                .trimIndent()
-        )
+              .trimIndent()
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
+        src/Prim.kt:52: Error: Call must be from @WorkerThread, but context is allowing @AnyThread [ThreadConstraint]
+          is Clo -> body.ev(Env.Cons(param, x, env))
+                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        1 error
+        """
+          .trimIndent()
+      )
   }
 
   fun testInterpreter_cekMachine() {
     lint()
-        .files(
-            kotlin(
-                    """
+      .files(
+        kotlin(
+            """
 
-                    /******************************
-                     *  Syntax
-                     ******************************/
-                    sealed interface Prim: Exp, Val, HostVal {
-                      object Add1: Prim
-                      object IsInt: Prim
-                      object IsProc: Prim
-                    }
-                    sealed interface Exp
-                    class App(val fn: Exp, val arg: Exp): Exp
-                    class Lam(val param: String, val body: Exp): Exp
-                    class If0(val cnd: Exp, val thn: Exp, val els: Exp): Exp
-                    class Num(val unboxed: Int): Exp, Val, HostVal
-                    class Var(val name: String): Exp
+            /******************************
+             *  Syntax
+             ******************************/
+            sealed interface Prim: Exp, Val, HostVal {
+              object Add1: Prim
+              object IsInt: Prim
+              object IsProc: Prim
+            }
+            sealed interface Exp
+            class App(val fn: Exp, val arg: Exp): Exp
+            class Lam(val param: String, val body: Exp): Exp
+            class If0(val cnd: Exp, val thn: Exp, val els: Exp): Exp
+            class Num(val unboxed: Int): Exp, Val, HostVal
+            class Var(val name: String): Exp
 
-                    /******************************
-                     * Runtime
-                     ******************************/
-                    sealed interface Env<out T> {
-                      object Mt: Env<Nothing>
-                      class Cons<out T>(val key: String, val value: T, val rest: Env<T>): Env<T>
-                    }
-                    sealed interface Val
-                    class Clo(val param: String, val body: Exp, val env: Env<Val>): Val
-                    private operator fun<T> Env<T>.get(x: String): T = when (this) {
-                      is Env.Cons -> if (key == x) value else rest[x]
-                      is Env.Mt -> throw LookupException()
-                    }
-                    private fun<T> T.isZero(): Boolean = this is Num && unboxed == 0
-                    private fun Prim.primAp(x: Val): Val = when (this) {
-                      Prim.Add1 -> if (x is Num) Num(x.unboxed + 1) else throw MisAdd1()
-                      Prim.IsInt -> Num(if (x is Num) 0 else 1)
-                      Prim.IsProc -> Num(if (x is Clo || x is Prim) 0 else 1)
-                    }
+            /******************************
+             * Runtime
+             ******************************/
+            sealed interface Env<out T> {
+              object Mt: Env<Nothing>
+              class Cons<out T>(val key: String, val value: T, val rest: Env<T>): Env<T>
+            }
+            sealed interface Val
+            class Clo(val param: String, val body: Exp, val env: Env<Val>): Val
+            private operator fun<T> Env<T>.get(x: String): T = when (this) {
+              is Env.Cons -> if (key == x) value else rest[x]
+              is Env.Mt -> throw LookupException()
+            }
+            private fun<T> T.isZero(): Boolean = this is Num && unboxed == 0
+            private fun Prim.primAp(x: Val): Val = when (this) {
+              Prim.Add1 -> if (x is Num) Num(x.unboxed + 1) else throw MisAdd1()
+              Prim.IsInt -> Num(if (x is Num) 0 else 1)
+              Prim.IsProc -> Num(if (x is Clo || x is Prim) 0 else 1)
+            }
 
-                    /******************************
-                     * CEK machine
-                     ******************************/
-                    sealed interface State
-                    sealed class Ongoing(val kont: K): State {
-                      class Ev(val control: Exp, val env: Env<Val>, kont: K): Ongoing(kont)
-                      class Co(val ans: Val, kont: K): Ongoing(kont)
-                    }
-                    class Ans(val ans: Val): State
-                    sealed interface K {
-                      object Mt: K
-                      class Fn(val arg: Exp, val env: Env<Val>, val rest: K): K
-                      class Ar(val fn: Val, val rest: K): K
-                      class If(val thn: Exp, val els: Exp, val env: Env<Val>, val rest: K): K
-                    }
-                    private fun Ongoing.step(): State = when (this) {
-                      is Ongoing.Ev -> when (control) {
-                        is Lam -> Ongoing.Co(Clo(control.param, control.body, env), kont)
-                        is Var -> Ongoing.Co(env[control.name], kont)
-                        is App -> Ongoing.Ev(control.fn, env, K.Fn(control.arg, env, kont))
-                        is If0 -> Ongoing.Ev(control.cnd, env, K.If(control.thn, control.els, env, kont))
-                        is Num -> Ongoing.Co(control, kont)
-                        is Prim -> Ongoing.Co(control, kont)
-                      }
-                      is Ongoing.Co -> when (kont) {
-                        is K.Mt -> Ans(ans)
-                        is K.Fn -> Ongoing.Ev(kont.arg, kont.env, K.Ar(ans, kont.rest))
-                        is K.Ar -> when (kont.fn) {
-                          is Clo -> Ongoing.Ev(kont.fn.body, Env.Cons(kont.fn.param, ans, kont.fn.env), kont.rest)
-                          is Prim -> Ongoing.Co(kont.fn.primAp(ans), kont.rest)
-                          is Num -> throw MisApplication()
-                        }
-                        is K.If -> Ongoing.Ev(if (ans.isZero()) kont.thn else kont.els, kont.env, kont.rest)
-                      }
-                    }
-                    fun evalStep(e: Exp): Val {
-                      tailrec fun run(s: Ongoing): Val = when (val s1 = s.step()) {
-                        is Ans -> s1.ans
-                        is Ongoing -> run(s1)
-                      }
-                      return run(Ongoing.Ev(e, Env.Mt, K.Mt))
-                    }
-                    """
-                        .trimIndent()
-                )
-                .indented(),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expectClean()
+            /******************************
+             * CEK machine
+             ******************************/
+            sealed interface State
+            sealed class Ongoing(val kont: K): State {
+              class Ev(val control: Exp, val env: Env<Val>, kont: K): Ongoing(kont)
+              class Co(val ans: Val, kont: K): Ongoing(kont)
+            }
+            class Ans(val ans: Val): State
+            sealed interface K {
+              object Mt: K
+              class Fn(val arg: Exp, val env: Env<Val>, val rest: K): K
+              class Ar(val fn: Val, val rest: K): K
+              class If(val thn: Exp, val els: Exp, val env: Env<Val>, val rest: K): K
+            }
+            private fun Ongoing.step(): State = when (this) {
+              is Ongoing.Ev -> when (control) {
+                is Lam -> Ongoing.Co(Clo(control.param, control.body, env), kont)
+                is Var -> Ongoing.Co(env[control.name], kont)
+                is App -> Ongoing.Ev(control.fn, env, K.Fn(control.arg, env, kont))
+                is If0 -> Ongoing.Ev(control.cnd, env, K.If(control.thn, control.els, env, kont))
+                is Num -> Ongoing.Co(control, kont)
+                is Prim -> Ongoing.Co(control, kont)
+              }
+              is Ongoing.Co -> when (kont) {
+                is K.Mt -> Ans(ans)
+                is K.Fn -> Ongoing.Ev(kont.arg, kont.env, K.Ar(ans, kont.rest))
+                is K.Ar -> when (kont.fn) {
+                  is Clo -> Ongoing.Ev(kont.fn.body, Env.Cons(kont.fn.param, ans, kont.fn.env), kont.rest)
+                  is Prim -> Ongoing.Co(kont.fn.primAp(ans), kont.rest)
+                  is Num -> throw MisApplication()
+                }
+                is K.If -> Ongoing.Ev(if (ans.isZero()) kont.thn else kont.els, kont.env, kont.rest)
+              }
+            }
+            fun evalStep(e: Exp): Val {
+              tailrec fun run(s: Ongoing): Val = when (val s1 = s.step()) {
+                is Ans -> s1.ans
+                is Ongoing -> run(s1)
+              }
+              return run(Ongoing.Ev(e, Env.Mt, K.Mt))
+            }
+            """
+              .trimIndent()
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expectClean()
   }
 
   fun testInterpreter_compilation() {
     lint()
-        .files(
-            kotlin(
-                    """
-                    import androidx.annotation.AnyThread
-                    import androidx.annotation.UiThread
-                    import androidx.annotation.WorkerThread
+      .files(
+        kotlin(
+            """
+            import androidx.annotation.AnyThread
+            import androidx.annotation.UiThread
+            import androidx.annotation.WorkerThread
 
-                    /******************************
-                     *  Syntax
-                     ******************************/
-                    sealed interface Prim: Exp, Val, HostVal {
-                      object Add1: Prim
-                      object IsInt: Prim
-                      object IsProc: Prim
-                    }
-                    sealed interface Exp
-                    class App(val fn: Exp, val arg: Exp): Exp
-                    class Lam(val param: String, val body: Exp): Exp
-                    class If0(val cnd: Exp, val thn: Exp, val els: Exp): Exp
-                    class Num(val unboxed: Int): Exp, Val, HostVal
-                    class Var(val name: String): Exp
+            /******************************
+             *  Syntax
+             ******************************/
+            sealed interface Prim: Exp, Val, HostVal {
+              object Add1: Prim
+              object IsInt: Prim
+              object IsProc: Prim
+            }
+            sealed interface Exp
+            class App(val fn: Exp, val arg: Exp): Exp
+            class Lam(val param: String, val body: Exp): Exp
+            class If0(val cnd: Exp, val thn: Exp, val els: Exp): Exp
+            class Num(val unboxed: Int): Exp, Val, HostVal
+            class Var(val name: String): Exp
 
-                    /******************************
-                     * Runtime
-                     ******************************/
-                    sealed interface Env<out T> {
-                      object Mt: Env<Nothing>
-                      class Cons<out T>(val key: String, val value: T, val rest: Env<T>): Env<T>
-                    }
-                    sealed interface Val
-                    class Clo(val param: String, val body: Exp, val env: Env<Val>): Val
-                    private operator fun<T> Env<T>.get(x: String): T = when (this) {
-                      is Env.Cons -> if (key == x) value else rest[x]
-                      is Env.Mt -> throw LookupException()
-                    }
-                    private fun<T> T.isZero(): Boolean = this is Num && unboxed == 0
-                    private fun Prim.primAp(x: Val): Val = when (this) {
-                      Prim.Add1 -> if (x is Num) Num(x.unboxed + 1) else throw MisAdd1()
-                      Prim.IsInt -> Num(if (x is Num) 0 else 1)
-                      Prim.IsProc -> Num(if (x is Clo || x is Prim) 0 else 1)
-                    }
+            /******************************
+             * Runtime
+             ******************************/
+            sealed interface Env<out T> {
+              object Mt: Env<Nothing>
+              class Cons<out T>(val key: String, val value: T, val rest: Env<T>): Env<T>
+            }
+            sealed interface Val
+            class Clo(val param: String, val body: Exp, val env: Env<Val>): Val
+            private operator fun<T> Env<T>.get(x: String): T = when (this) {
+              is Env.Cons -> if (key == x) value else rest[x]
+              is Env.Mt -> throw LookupException()
+            }
+            private fun<T> T.isZero(): Boolean = this is Num && unboxed == 0
+            private fun Prim.primAp(x: Val): Val = when (this) {
+              Prim.Add1 -> if (x is Num) Num(x.unboxed + 1) else throw MisAdd1()
+              Prim.IsInt -> Num(if (x is Num) 0 else 1)
+              Prim.IsProc -> Num(if (x is Clo || x is Prim) 0 else 1)
+            }
 
-                    /******************************
-                     * Compile then run
-                     ******************************/
-                    @WorkerThread
-                    fun Exp.evalComp(): HostVal = comp()(Env.Mt)
+            /******************************
+             * Compile then run
+             ******************************/
+            @WorkerThread
+            fun Exp.evalComp(): HostVal = comp()(Env.Mt)
 
-                    sealed interface HostVal
-                    private fun interface Proc: HostVal, (HostVal) -> HostVal
+            sealed interface HostVal
+            private fun interface Proc: HostVal, (HostVal) -> HostVal
 
-                    @AnyThread
-                    private fun Exp.comp(): (Env<HostVal>) -> HostVal = when (this) {
-                      is Lam -> {
-                        val c = body.comp()
-                        val x = param
-                        fun(env) = Proc { v -> c(Env.Cons(x, v, env)) }
-                      }
-                      is Var -> {
-                        val name = name
-                        fun(env) = env[name]
-                      }
-                      is App -> {
-                        val fn = fn.comp()
-                        val arg = arg.comp()
-                        fun(env): HostVal {
-                          val f = fn(env)
-                          val v = arg(env)
-                          return when (f) {
-                            is Proc -> f(v)
-                            is Prim -> when (f) {
-                              Prim.Add1 -> if (v is Num) Num(v.unboxed + 1) else throw MisAdd1()
-                              Prim.IsInt -> Num(if (v is Num) 0 else 1)
-                              Prim.IsProc -> Num(if (v is Proc) 0 else 1)
-                            }
-                            is Num -> throw MisApplication()
-                          }
-                        }
-                      }
-                      is If0 -> {
-                        val cnd = cnd.comp()
-                        val thn = thn.comp()
-                        val els = els.comp()
-                        fun(env) = (if (cnd(env).isZero()) thn else els)(env)
-                      }
-                      is Num -> fun(_) = this
-                      is Prim -> fun(_) = this
+            @AnyThread
+            private fun Exp.comp(): (Env<HostVal>) -> HostVal = when (this) {
+              is Lam -> {
+                val c = body.comp()
+                val x = param
+                fun(env) = Proc { v -> c(Env.Cons(x, v, env)) }
+              }
+              is Var -> {
+                val name = name
+                fun(env) = env[name]
+              }
+              is App -> {
+                val fn = fn.comp()
+                val arg = arg.comp()
+                fun(env): HostVal {
+                  val f = fn(env)
+                  val v = arg(env)
+                  return when (f) {
+                    is Proc -> f(v)
+                    is Prim -> when (f) {
+                      Prim.Add1 -> if (v is Num) Num(v.unboxed + 1) else throw MisAdd1()
+                      Prim.IsInt -> Num(if (v is Num) 0 else 1)
+                      Prim.IsProc -> Num(if (v is Proc) 0 else 1)
                     }
-                    class LookupException: Exception()
-                    class MisApplication: Exception()
-                    class MisAdd1: Exception()
-                    """
-                        .trimIndent()
-                )
-                .indented(),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expectClean()
+                    is Num -> throw MisApplication()
+                  }
+                }
+              }
+              is If0 -> {
+                val cnd = cnd.comp()
+                val thn = thn.comp()
+                val els = els.comp()
+                fun(env) = (if (cnd(env).isZero()) thn else els)(env)
+              }
+              is Num -> fun(_) = this
+              is Prim -> fun(_) = this
+            }
+            class LookupException: Exception()
+            class MisApplication: Exception()
+            class MisAdd1: Exception()
+            """
+              .trimIndent()
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expectClean()
   }
 
   // TODO(b/390023468)
   fun `test submethod inconsistent with assumption on unannotated supermethod eventually noticed`() {
     lint()
-        .files(
-            kotlin(
-                    """
+      .files(
+        kotlin(
+            """
           import androidx.annotation.UiThread
           import androidx.annotation.WorkerThread
 
@@ -1711,30 +1711,30 @@ class InferredThreadDetectorTest : AbstractCheckTest() {
 
           fun main_falseNeg() = run_falseNeg(Impl() as Intf) // TODO
           """
-                )
-                .indented(),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expect(
-            """
-            src/Intf.kt:16: Error: Call must be from @{Main,Ui}Thread, but context is allowing @WorkerThread [ThreadConstraint]
-            @WorkerThread fun run_caught(impl: Impl) = impl.runIt { }
-                                                            ~~~~~~~~~
-            src/Intf.kt:18: Error: Argument must allow calling runIt() from @WorkerThread, but that call is requiring @{Main,Ui}Thread [ThreadConstraint]
-            fun main_caught() = run_falseNeg(Impl())
-                                             ~~~~~~
-            2 errors, 0 warnings
-            """
-                .trimIndent()
-        )
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
+        src/Intf.kt:16: Error: Call must be from @{Main,Ui}Thread, but context is allowing @WorkerThread [ThreadConstraint]
+        @WorkerThread fun run_caught(impl: Impl) = impl.runIt { }
+                                                        ~~~~~~~~~
+        src/Intf.kt:18: Error: Argument must allow calling runIt() from @WorkerThread, but that call is requiring @{Main,Ui}Thread [ThreadConstraint]
+        fun main_caught() = run_falseNeg(Impl())
+                                         ~~~~~~
+        2 errors, 0 warnings
+        """
+          .trimIndent()
+      )
   }
 
   fun `test vararg`() {
     lint()
-        .files(
-            kotlin(
-                    """
+      .files(
+        kotlin(
+            """
           import androidx.annotation.UiThread
           import androidx.annotation.WorkerThread
 
@@ -1756,28 +1756,28 @@ class InferredThreadDetectorTest : AbstractCheckTest() {
 
 
           """
-                )
-                .indented(),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expect(
-            """
-            src/UiWork.kt:18: Error: Call must be from @{Main,Ui}Thread, but context is allowing @WorkerThread [ThreadConstraint]
-            @WorkerThread fun runEachUi() = runEach(UiWork(), UiWork()) // nope
-                                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            1 error
-            """
-                .trimIndent()
-        )
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
+        src/UiWork.kt:18: Error: Call must be from @{Main,Ui}Thread, but context is allowing @WorkerThread [ThreadConstraint]
+        @WorkerThread fun runEachUi() = runEach(UiWork(), UiWork()) // nope
+                                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        1 error
+        """
+          .trimIndent()
+      )
   }
 
   fun `test kotlin properties`() {
     if (useFirUast()) return // TODO(b/406309278)
     lint()
-        .files(
-            kotlin(
-                    """
+      .files(
+        kotlin(
+            """
           import androidx.annotation.UiThread
           import androidx.annotation.WorkerThread
           import androidx.annotation.AnyThread
@@ -1874,100 +1874,100 @@ class InferredThreadDetectorTest : AbstractCheckTest() {
 
           fun<X> id(x: X): X = x
           """
-                )
-                .indented(),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expect(
-            """
-            src/Test1.kt:27: Error: Call must be from @{Main,Ui}Thread, but context is allowing @WorkerThread [ThreadConstraint]
-                  get() = uiWork() // error
-                          ~~~~~~~~
-            src/Test1.kt:37: Error: Property call must be from @{Main,Ui}Thread, but context is allowing @AnyThread [ThreadConstraint]
-                    inferredUiProp // error
-                    ~~~~~~~~~~~~~~
-            src/Test1.kt:63: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
-                   get() = heavyWork() // error
-                           ~~~~~~~~~~~
-            src/Test1.kt:73: Error: Property call must be from @WorkerThread, but context is allowing @AnyThread [ThreadConstraint]
-                    workerProp // error
-                    ~~~~~~~~~~
-            src/Test1.kt:77: Error: Call must be from @WorkerThread, but context is allowing @AnyThread [ThreadConstraint]
-                    workerProp = 0 // error
-                    ~~~~~~~~~~~~~~
-            src/Test1.kt:84: Error: Property call must be from @{Main,Ui}Thread, but context is allowing @AnyThread [ThreadConstraint]
-                test.uiProp == 32 // error
-                ~~~~~~~~~~~
-            src/Test1.kt:85: Error: Call must be from @{Main,Ui}Thread, but context is allowing @AnyThread [ThreadConstraint]
-                test.uiProp++ // error
-                ~~~~~~~~~~~~~
-            src/Test1.kt:91: Error: Call must be from @WorkerThread, but context is allowing @AnyThread [ThreadConstraint]
-                test.workerProp = 42
-                ~~~~~~~~~~~~~~~~~~~~
-            src/Test1.kt:92: Error: Call must be from @WorkerThread, but context is allowing @AnyThread [ThreadConstraint]
-                id(Test2()).workerProp = 43
-                ~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            9 errors
-            """
-                .trimIndent()
-        )
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
+        src/Test1.kt:27: Error: Call must be from @{Main,Ui}Thread, but context is allowing @WorkerThread [ThreadConstraint]
+              get() = uiWork() // error
+                      ~~~~~~~~
+        src/Test1.kt:37: Error: Property call must be from @{Main,Ui}Thread, but context is allowing @AnyThread [ThreadConstraint]
+                inferredUiProp // error
+                ~~~~~~~~~~~~~~
+        src/Test1.kt:63: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+               get() = heavyWork() // error
+                       ~~~~~~~~~~~
+        src/Test1.kt:73: Error: Property call must be from @WorkerThread, but context is allowing @AnyThread [ThreadConstraint]
+                workerProp // error
+                ~~~~~~~~~~
+        src/Test1.kt:77: Error: Call must be from @WorkerThread, but context is allowing @AnyThread [ThreadConstraint]
+                workerProp = 0 // error
+                ~~~~~~~~~~~~~~
+        src/Test1.kt:84: Error: Property call must be from @{Main,Ui}Thread, but context is allowing @AnyThread [ThreadConstraint]
+            test.uiProp == 32 // error
+            ~~~~~~~~~~~
+        src/Test1.kt:85: Error: Call must be from @{Main,Ui}Thread, but context is allowing @AnyThread [ThreadConstraint]
+            test.uiProp++ // error
+            ~~~~~~~~~~~~~
+        src/Test1.kt:91: Error: Call must be from @WorkerThread, but context is allowing @AnyThread [ThreadConstraint]
+            test.workerProp = 42
+            ~~~~~~~~~~~~~~~~~~~~
+        src/Test1.kt:92: Error: Call must be from @WorkerThread, but context is allowing @AnyThread [ThreadConstraint]
+            id(Test2()).workerProp = 43
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        9 errors
+        """
+          .trimIndent()
+      )
   }
 
   fun `test unannotated local variable having refined type`() {
     lint()
-        .files(
-            kotlin(
-                    """
-                    import androidx.annotation.WorkerThread
-                    import androidx.annotation.AnyThread
-
-                    @WorkerThread fun work() { }
-
-                    @AnyThread
-                    fun wrapWork(): () -> Unit {
-                        val doer = { work() }
-                        return doer
-                    }
-
-                    fun wrapWorkAnnotated(): () -> Unit {
-                        val doer : () -> Unit = { work() }
-                        return doer
-                    }
-
-                    fun runIt(run: () -> Unit) = run()
-
-                    @AnyThread
-                    fun main() {
-                        runIt(wrapWork())
-                        runIt(wrapWorkAnnotated())
-                    }
-                    """
-                        .trimIndent()
-                )
-                .indented(),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expect(
+      .files(
+        kotlin(
             """
-            src/test.kt:21: Error: Call must be from @WorkerThread, but context is allowing @AnyThread [ThreadConstraint]
+            import androidx.annotation.WorkerThread
+            import androidx.annotation.AnyThread
+
+            @WorkerThread fun work() { }
+
+            @AnyThread
+            fun wrapWork(): () -> Unit {
+                val doer = { work() }
+                return doer
+            }
+
+            fun wrapWorkAnnotated(): () -> Unit {
+                val doer : () -> Unit = { work() }
+                return doer
+            }
+
+            fun runIt(run: () -> Unit) = run()
+
+            @AnyThread
+            fun main() {
                 runIt(wrapWork())
-                ~~~~~~~~~~~~~~~~~
-            src/test.kt:22: Error: Call must be from @WorkerThread, but context is allowing @AnyThread [ThreadConstraint]
                 runIt(wrapWorkAnnotated())
-                ~~~~~~~~~~~~~~~~~~~~~~~~~~
-            2 errors
+            }
             """
-                .trimIndent()
-        )
+              .trimIndent()
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
+        src/test.kt:21: Error: Call must be from @WorkerThread, but context is allowing @AnyThread [ThreadConstraint]
+            runIt(wrapWork())
+            ~~~~~~~~~~~~~~~~~
+        src/test.kt:22: Error: Call must be from @WorkerThread, but context is allowing @AnyThread [ThreadConstraint]
+            runIt(wrapWorkAnnotated())
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~
+        2 errors
+        """
+          .trimIndent()
+      )
   }
 
   fun testOverloadedOperators() {
     lint()
-        .files(
-            kotlin(
-                    """
+      .files(
+        kotlin(
+            """
           import androidx.annotation.UiThread
           import androidx.annotation.WorkerThread
           import androidx.annotation.AnyThread
@@ -2015,48 +2015,48 @@ class InferredThreadDetectorTest : AbstractCheckTest() {
               }
           }
           """
-                )
-                .indented(),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expect(
-            """
-            src/Value.kt:37: Error: Call must be from @WorkerThread, but context is allowing @AnyThread [ThreadConstraint]
-                    value += value
-                    ~~~~~~~~~~~~~~
-            src/Value.kt:38: Error: Call must be from @WorkerThread, but context is allowing @AnyThread [ThreadConstraint]
-                    value[42]
-                    ~~~~~~~~~
-            src/Value.kt:39: Error: Call must be from @WorkerThread, but context is allowing @AnyThread [ThreadConstraint]
-                    value["foo"] = 42
-                    ~~~~~~~~~~~~~~~~~
-            src/Value.kt:40: Error: Call must be from @WorkerThread, but context is allowing @AnyThread [ThreadConstraint]
-                    value("qux")
-                    ~~~~~~~~~~~~
-            src/Value.kt:41: Error: Call must be from @WorkerThread, but context is allowing @AnyThread [ThreadConstraint]
-                    value -= value
-                    ~~~~~~~~~~~~~~
-            src/Value.kt:42: Error: Call must be from @WorkerThread, but context is allowing @AnyThread [ThreadConstraint]
-                    value["bar"]
-                    ~~~~~~~~~~~~
-            src/Value.kt:43: Error: Call must be from @WorkerThread, but context is allowing @AnyThread [ThreadConstraint]
-                    value[21] = "word"
-                    ~~~~~~~~~~~~~~~~~~
-            src/Value.kt:44: Error: Call must be from @WorkerThread, but context is allowing @AnyThread [ThreadConstraint]
-                    value("qux", 0)
-                    ~~~~~~~~~~~~~~~
-            8 errors
-            """
-                .trimIndent()
-        )
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
+        src/Value.kt:37: Error: Call must be from @WorkerThread, but context is allowing @AnyThread [ThreadConstraint]
+                value += value
+                ~~~~~~~~~~~~~~
+        src/Value.kt:38: Error: Call must be from @WorkerThread, but context is allowing @AnyThread [ThreadConstraint]
+                value[42]
+                ~~~~~~~~~
+        src/Value.kt:39: Error: Call must be from @WorkerThread, but context is allowing @AnyThread [ThreadConstraint]
+                value["foo"] = 42
+                ~~~~~~~~~~~~~~~~~
+        src/Value.kt:40: Error: Call must be from @WorkerThread, but context is allowing @AnyThread [ThreadConstraint]
+                value("qux")
+                ~~~~~~~~~~~~
+        src/Value.kt:41: Error: Call must be from @WorkerThread, but context is allowing @AnyThread [ThreadConstraint]
+                value -= value
+                ~~~~~~~~~~~~~~
+        src/Value.kt:42: Error: Call must be from @WorkerThread, but context is allowing @AnyThread [ThreadConstraint]
+                value["bar"]
+                ~~~~~~~~~~~~
+        src/Value.kt:43: Error: Call must be from @WorkerThread, but context is allowing @AnyThread [ThreadConstraint]
+                value[21] = "word"
+                ~~~~~~~~~~~~~~~~~~
+        src/Value.kt:44: Error: Call must be from @WorkerThread, but context is allowing @AnyThread [ThreadConstraint]
+                value("qux", 0)
+                ~~~~~~~~~~~~~~~
+        8 errors
+        """
+          .trimIndent()
+      )
   }
 
   fun testLocalFunction() {
     lint()
-        .files(
-            kotlin(
-                    """
+      .files(
+        kotlin(
+            """
           import androidx.annotation.UiThread
           import androidx.annotation.WorkerThread
           import androidx.annotation.AnyThread
@@ -2072,30 +2072,30 @@ class InferredThreadDetectorTest : AbstractCheckTest() {
               id(::work)() // ERROR
           }
           """
-                )
-                .indented(),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expect(
-            """
-            src/test.kt:12: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
-                id(::work).invoke() // ERROR
-                           ~~~~~~~~
-            src/test.kt:13: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
-                id(::work)() // ERROR
-                ~~~~~~~~~~~~
-            2 errors
-            """
-                .trimIndent()
-        )
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
+        src/test.kt:12: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+            id(::work).invoke() // ERROR
+                       ~~~~~~~~
+        src/test.kt:13: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+            id(::work)() // ERROR
+            ~~~~~~~~~~~~
+        2 errors
+        """
+          .trimIndent()
+      )
   }
 
   fun testLocalFunctionInsideClass() {
     lint()
-        .files(
-            kotlin(
-                    """
+      .files(
+        kotlin(
+            """
           import androidx.annotation.UiThread
           import androidx.annotation.WorkerThread
           import androidx.annotation.AnyThread
@@ -2111,77 +2111,77 @@ class InferredThreadDetectorTest : AbstractCheckTest() {
               }
           }
           """
-                )
-                .indented(),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expect(
-            """
-            src/Test.kt:12: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
-                    id(::work)() // ERROR
-                    ~~~~~~~~~~~~
-            1 error
-            """
-                .trimIndent()
-        )
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
+        src/Test.kt:12: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+                id(::work)() // ERROR
+                ~~~~~~~~~~~~
+        1 error
+        """
+          .trimIndent()
+      )
   }
 
   fun testSwappedArgumentByName() {
     lint()
-        .files(
-            kotlin(
-                    """
-                    import androidx.annotation.UiThread
-                    import androidx.annotation.WorkerThread
-                    import androidx.annotation.AnyThread
-
-                    @UiThread fun ui() { }
-                    @WorkerThread fun worker() { }
-
-                    fun acceptCallbacks(used: () -> Unit, ignored: () -> Unit) = used()
-
-                    @UiThread fun ok_unnamed() = acceptCallbacks(::ui, ::worker)
-
-                    @UiThread fun ok_named_param() = acceptCallbacks(used = ::ui, ignored = ::worker)
-
-                    @UiThread fun ok_named_param_swapped() = acceptCallbacks(ignored = ::worker, used = ::ui)
-
-                    @UiThread fun error() = acceptCallbacks(::worker, ::ui)
-
-                    @UiThread fun error_named_param() = acceptCallbacks(used = ::worker, ignored = ::ui)
-
-                    @UiThread fun error_named_param_swapped() = acceptCallbacks(ignored = ::ui, used = ::worker)
-
-                    """
-                        .trimIndent()
-                )
-                .indented(),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expect(
+      .files(
+        kotlin(
             """
-            src/test.kt:16: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+            import androidx.annotation.UiThread
+            import androidx.annotation.WorkerThread
+            import androidx.annotation.AnyThread
+
+            @UiThread fun ui() { }
+            @WorkerThread fun worker() { }
+
+            fun acceptCallbacks(used: () -> Unit, ignored: () -> Unit) = used()
+
+            @UiThread fun ok_unnamed() = acceptCallbacks(::ui, ::worker)
+
+            @UiThread fun ok_named_param() = acceptCallbacks(used = ::ui, ignored = ::worker)
+
+            @UiThread fun ok_named_param_swapped() = acceptCallbacks(ignored = ::worker, used = ::ui)
+
             @UiThread fun error() = acceptCallbacks(::worker, ::ui)
-                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            src/test.kt:18: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+
             @UiThread fun error_named_param() = acceptCallbacks(used = ::worker, ignored = ::ui)
-                                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            src/test.kt:20: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+
             @UiThread fun error_named_param_swapped() = acceptCallbacks(ignored = ::ui, used = ::worker)
-                                                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            3 errors
+
             """
-                .trimIndent()
-        )
+              .trimIndent()
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
+        src/test.kt:16: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+        @UiThread fun error() = acceptCallbacks(::worker, ::ui)
+                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        src/test.kt:18: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+        @UiThread fun error_named_param() = acceptCallbacks(used = ::worker, ignored = ::ui)
+                                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        src/test.kt:20: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+        @UiThread fun error_named_param_swapped() = acceptCallbacks(ignored = ::ui, used = ::worker)
+                                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        3 errors
+        """
+          .trimIndent()
+      )
   }
 
   fun testOverloadedReceiver() {
     lint()
-        .files(
-            kotlin(
-                    """
+      .files(
+        kotlin(
+            """
           package mykotlin
           import androidx.annotation.UiThread
           import androidx.annotation.WorkerThread
@@ -2199,10 +2199,10 @@ class InferredThreadDetectorTest : AbstractCheckTest() {
               }
           }
           """
-                )
-                .indented(),
-            java(
-                    """
+          )
+          .indented(),
+        java(
+            """
             package myjava;
             import androidx.annotation.UiThread;
             import androidx.annotation.WorkerThread;
@@ -2219,36 +2219,36 @@ class InferredThreadDetectorTest : AbstractCheckTest() {
                 }
             }
           """
-                )
-                .indented(),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expect(
-            """
-            src/myjava/JOuter.java:10: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
-                        JOuter.this.jf(); // ERROR
-                                    ~~~~
-            src/myjava/JOuter.java:11: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
-                        jf(); // ERROR
-                        ~~~~
-            src/mykotlin/Outer.kt:11: Error: Call must be from @{Main,Ui}Thread, but context is allowing @WorkerThread [ThreadConstraint]
-                        this@Outer.f() // ERROR
-                                   ~~~
-            src/mykotlin/Outer.kt:12: Error: Call must be from @{Main,Ui}Thread, but context is allowing @WorkerThread [ThreadConstraint]
-                        f() // ERROR
-                        ~~~
-            4 errors
-            """
-                .trimIndent()
-        )
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
+        src/myjava/JOuter.java:10: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+                    JOuter.this.jf(); // ERROR
+                                ~~~~
+        src/myjava/JOuter.java:11: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+                    jf(); // ERROR
+                    ~~~~
+        src/mykotlin/Outer.kt:11: Error: Call must be from @{Main,Ui}Thread, but context is allowing @WorkerThread [ThreadConstraint]
+                    this@Outer.f() // ERROR
+                               ~~~
+        src/mykotlin/Outer.kt:12: Error: Call must be from @{Main,Ui}Thread, but context is allowing @WorkerThread [ThreadConstraint]
+                    f() // ERROR
+                    ~~~
+        4 errors
+        """
+          .trimIndent()
+      )
   }
 
   fun testAnonObjectUnderStaticMethod() {
     lint()
-        .files(
-            kotlin(
-                    """
+      .files(
+        kotlin(
+            """
           import androidx.annotation.UiThread
           import androidx.annotation.WorkerThread
           import androidx.annotation.AnyThread
@@ -2276,146 +2276,146 @@ class InferredThreadDetectorTest : AbstractCheckTest() {
 
           interface Param { }
           """
-                )
-                .indented(),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expect(
-            """
-            src/Interface.kt:23: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
-                runIntf(Interface.getInstance(object : Param { }))
-                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            1 error
-            """
-                .trimIndent()
-        )
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
+        src/Interface.kt:23: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+            runIntf(Interface.getInstance(object : Param { }))
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        1 error
+        """
+          .trimIndent()
+      )
   }
 
   fun testTypeParamInstantiation() {
     lint()
-        .files(
-            java(
-                    """
-                    import androidx.annotation.UiThread;
-                    import androidx.annotation.WorkerThread;
-
-                    class Test {
-                      interface Box<T> {
-                        T unbox();
-                      }
-
-                      static<T> T indirectlyUnbox(Box<T> b) {
-                          return b.unbox();
-                      }
-
-                      static class Worker {
-                          @WorkerThread void work() { }
-                      }
-
-                      @UiThread static void ui(Box<Worker> b) {
-                          indirectlyUnbox(b).work();
-                      }
-
-                      /* TODO b/437405527
-                      interface WorkerBox extends Box<Worker> { }
-                      @UiThread static void ui1(WorkerBox b) {
-                          indirectlyUnbox(b).work();
-                      }
-                      */
-                    }
-                    """
-                        .trimIndent()
-                )
-                .indented(),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expect(
+      .files(
+        java(
             """
-            src/Test.java:18: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+            import androidx.annotation.UiThread;
+            import androidx.annotation.WorkerThread;
+
+            class Test {
+              interface Box<T> {
+                T unbox();
+              }
+
+              static<T> T indirectlyUnbox(Box<T> b) {
+                  return b.unbox();
+              }
+
+              static class Worker {
+                  @WorkerThread void work() { }
+              }
+
+              @UiThread static void ui(Box<Worker> b) {
                   indirectlyUnbox(b).work();
-                                     ~~~~~~
-            1 error
+              }
+
+              /* TODO b/437405527
+              interface WorkerBox extends Box<Worker> { }
+              @UiThread static void ui1(WorkerBox b) {
+                  indirectlyUnbox(b).work();
+              }
+              */
+            }
             """
-                .trimIndent()
-        )
+              .trimIndent()
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
+        src/Test.java:18: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+              indirectlyUnbox(b).work();
+                                 ~~~~~~
+        1 error
+        """
+          .trimIndent()
+      )
   }
 
   fun testDifferentModules() {
     val project1 =
-        project()
-            .files(
-                kotlin(
-                        """
-                        package module1
-                        import androidx.annotation.WorkerThread
+      project()
+        .files(
+          kotlin(
+              """
+              package module1
+              import androidx.annotation.WorkerThread
 
-                        @WorkerThread fun work() { }
+              @WorkerThread fun work() { }
 
-                        fun runIt(f: () -> Unit) = f()
+              fun runIt(f: () -> Unit) = f()
 
-                        fun ignoreIt(f: () -> Unit) { }
-                        """
-                            .trimIndent()
-                    )
-                    .indented(),
-                SUPPORT_ANNOTATIONS_JAR,
+              fun ignoreIt(f: () -> Unit) { }
+              """
+                .trimIndent()
             )
+            .indented(),
+          SUPPORT_ANNOTATIONS_JAR,
+        )
 
     val project2 =
-        project()
-            .files(
-                kotlin(
-                        """
-                        package module2
-                        import androidx.annotation.UiThread
-                        import androidx.annotation.WorkerThread
-                        import module1.work
-                        import module1.runIt
-                        import module1.ignoreIt
+      project()
+        .files(
+          kotlin(
+              """
+              package module2
+              import androidx.annotation.UiThread
+              import androidx.annotation.WorkerThread
+              import module1.work
+              import module1.runIt
+              import module1.ignoreIt
 
-                        @UiThread fun main() = work() // error
+              @UiThread fun main() = work() // error
 
-                        @WorkerThread fun runWorkerOnWorker() = runIt(::work) // ok
+              @WorkerThread fun runWorkerOnWorker() = runIt(::work) // ok
 
-                        @UiThread fun ignoreWorkerOnUi() = ignoreIt(::work) // ok
+              @UiThread fun ignoreWorkerOnUi() = ignoreIt(::work) // ok
 
-                        @UiThread fun runWorkerOnUi() = runIt(::runWorkerOnWorker) // error
-                        """
-                            .trimIndent()
-                    )
-                    .indented(),
-                SUPPORT_ANNOTATIONS_JAR,
+              @UiThread fun runWorkerOnUi() = runIt(::runWorkerOnWorker) // error
+              """
+                .trimIndent()
             )
-            .dependsOn(project1)
+            .indented(),
+          SUPPORT_ANNOTATIONS_JAR,
+        )
+        .dependsOn(project1)
 
     val project3 =
-        project()
-            .files(
-                kotlin(
-                        """
-                        package module3
-                        import androidx.annotation.UiThread
-                        import androidx.annotation.WorkerThread
-                        import module1.runIt
-                        import module2.runWorkerOnUi
+      project()
+        .files(
+          kotlin(
+              """
+              package module3
+              import androidx.annotation.UiThread
+              import androidx.annotation.WorkerThread
+              import module1.runIt
+              import module2.runWorkerOnUi
 
-                        @WorkerThread fun main() = runIt(::runWorkerOnUi) // error
-                        """
-                            .trimIndent()
-                    )
-                    .indented(),
-                SUPPORT_ANNOTATIONS_JAR,
+              @WorkerThread fun main() = runIt(::runWorkerOnUi) // error
+              """
+                .trimIndent()
             )
-            .dependsOn(project1)
-            .dependsOn(project2)
+            .indented(),
+          SUPPORT_ANNOTATIONS_JAR,
+        )
+        .dependsOn(project1)
+        .dependsOn(project2)
 
     lint()
-        .projects(project1, project2, project3)
-        .run()
-        .expect(
-            """
+      .projects(project1, project2, project3)
+      .run()
+      .expect(
+        """
         src/module3/test.kt:7: Error: Call must be from @{Main,Ui}Thread, but context is allowing @WorkerThread [ThreadConstraint]
 @WorkerThread fun main() = runIt(::runWorkerOnUi) // error
                            ~~~~~~~~~~~~~~~~~~~~~~
@@ -2427,96 +2427,96 @@ class InferredThreadDetectorTest : AbstractCheckTest() {
                                 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 3 errors
         """
-        )
+      )
   }
 
   /* Old tests from [ThreadDetectorTest] */
 
   fun testThreading() {
     lint()
-        .files(
-            java(
-                "src/test/pkg/ThreadTest.java",
-                "" +
-                    "package test.pkg;\n" +
-                    "\n" +
-                    "import androidx.annotation.MainThread;\n" +
-                    "import androidx.annotation.UiThread;\n" +
-                    "import androidx.annotation.WorkerThread;\n" +
-                    "\n" +
-                    "public class ThreadTest {\n" +
-                    "    public static AsyncTask testTask() {\n" +
-                    "\n" +
-                    "        return new AsyncTask() {\n" +
-                    "            final CustomView view = new CustomView();\n" +
-                    "\n" +
-                    "            @Override\n" +
-                    "            protected void doInBackground(Object... params) {\n" +
-                    "                onPreExecute(); // ERROR\n" +
-                    "                view.paint(); // OK, subclass more permissive\n" +
-                    "                publishProgress(); // OK\n" +
-                    "            }\n" +
-                    "\n" +
-                    "            @Override\n" +
-                    "            protected void onPreExecute() {\n" +
-                    "                publishProgress(); // ERROR\n" +
-                    "                onProgressUpdate(); // OK\n" +
-                    "            }\n" +
-                    "        };\n" +
-                    "    }\n" +
-                    "\n" +
-                    "    @UiThread\n" +
-                    "    public static class View {\n" +
-                    "        public void paint() {\n" +
-                    "        }\n" +
-                    "    }\n" +
-                    "\n" +
-                    "    public static class CustomView extends View {\n" +
-                    "        @Override public void paint() {\n" +
-                    "        }\n" +
-                    "    }\n" +
-                    "\n" +
-                    "    public abstract static class AsyncTask {\n" +
-                    "        @WorkerThread\n" +
-                    "        protected abstract void doInBackground(Object... params);\n" +
-                    "\n" +
-                    "        @MainThread\n" +
-                    "        protected void onPreExecute() {\n" +
-                    "        }\n" +
-                    "\n" +
-                    "        @MainThread\n" +
-                    "        protected void onProgressUpdate(Object... values) {\n" +
-                    "        }\n" +
-                    "\n" +
-                    "        @WorkerThread\n" +
-                    "        protected final void publishProgress(Object... values) {\n" +
-                    "        }\n" +
-                    "    }\n" +
-                    "}\n",
-            ),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expect(
-            """
-            src/test/pkg/ThreadTest.java:15: Error: Call must be from @{Main,Ui}Thread, but super method AsyncTask.doInBackground(…) is allowing @WorkerThread [ThreadConstraint]
-                            onPreExecute(); // ERROR
-                            ~~~~~~~~~~~~~~
-            src/test/pkg/ThreadTest.java:22: Error: Call must be from @WorkerThread, but super method AsyncTask.onPreExecute(…) is allowing @{Main,Ui}Thread [ThreadConstraint]
-                            publishProgress(); // ERROR
-                            ~~~~~~~~~~~~~~~~~
-            2 errors
-            """
-                .trimIndent()
-        )
+      .files(
+        java(
+          "src/test/pkg/ThreadTest.java",
+          "" +
+            "package test.pkg;\n" +
+            "\n" +
+            "import androidx.annotation.MainThread;\n" +
+            "import androidx.annotation.UiThread;\n" +
+            "import androidx.annotation.WorkerThread;\n" +
+            "\n" +
+            "public class ThreadTest {\n" +
+            "    public static AsyncTask testTask() {\n" +
+            "\n" +
+            "        return new AsyncTask() {\n" +
+            "            final CustomView view = new CustomView();\n" +
+            "\n" +
+            "            @Override\n" +
+            "            protected void doInBackground(Object... params) {\n" +
+            "                onPreExecute(); // ERROR\n" +
+            "                view.paint(); // OK, subclass more permissive\n" +
+            "                publishProgress(); // OK\n" +
+            "            }\n" +
+            "\n" +
+            "            @Override\n" +
+            "            protected void onPreExecute() {\n" +
+            "                publishProgress(); // ERROR\n" +
+            "                onProgressUpdate(); // OK\n" +
+            "            }\n" +
+            "        };\n" +
+            "    }\n" +
+            "\n" +
+            "    @UiThread\n" +
+            "    public static class View {\n" +
+            "        public void paint() {\n" +
+            "        }\n" +
+            "    }\n" +
+            "\n" +
+            "    public static class CustomView extends View {\n" +
+            "        @Override public void paint() {\n" +
+            "        }\n" +
+            "    }\n" +
+            "\n" +
+            "    public abstract static class AsyncTask {\n" +
+            "        @WorkerThread\n" +
+            "        protected abstract void doInBackground(Object... params);\n" +
+            "\n" +
+            "        @MainThread\n" +
+            "        protected void onPreExecute() {\n" +
+            "        }\n" +
+            "\n" +
+            "        @MainThread\n" +
+            "        protected void onProgressUpdate(Object... values) {\n" +
+            "        }\n" +
+            "\n" +
+            "        @WorkerThread\n" +
+            "        protected final void publishProgress(Object... values) {\n" +
+            "        }\n" +
+            "    }\n" +
+            "}\n",
+        ),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
+        src/test/pkg/ThreadTest.java:15: Error: Call must be from @{Main,Ui}Thread, but super method AsyncTask.doInBackground(…) is allowing @WorkerThread [ThreadConstraint]
+                        onPreExecute(); // ERROR
+                        ~~~~~~~~~~~~~~
+        src/test/pkg/ThreadTest.java:22: Error: Call must be from @WorkerThread, but super method AsyncTask.onPreExecute(…) is allowing @{Main,Ui}Thread [ThreadConstraint]
+                        publishProgress(); // ERROR
+                        ~~~~~~~~~~~~~~~~~
+        2 errors
+        """
+          .trimIndent()
+      )
   }
 
   fun testFieldReferencesOk() {
     lint()
-        .files(
-            java(
-                    "src/test/pkg/ThreadTest.java",
-                    """
+      .files(
+        java(
+            "src/test/pkg/ThreadTest.java",
+            """
                 package test.pkg;
 
                 import androidx.annotation.MainThread;
@@ -2538,198 +2538,198 @@ class InferredThreadDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """,
-                )
-                .indented(),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expectClean()
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expectClean()
   }
 
   fun testConstructor() {
     lint()
-        .files(
-            LintDetectorTest.java(
-                "src/test/pkg/ConstructorTest.java",
-                "" +
-                    "package test.pkg;\n" +
-                    "\n" +
-                    "import androidx.annotation.DrawableRes;\n" +
-                    "import androidx.annotation.IntRange;\n" +
-                    "import androidx.annotation.UiThread;\n" +
-                    "import androidx.annotation.WorkerThread;\n" +
-                    "\n" +
-                    "public class ConstructorTest {\n" +
-                    "    @UiThread\n" +
-                    "    ConstructorTest(@DrawableRes int iconResId, @IntRange(from = 5) int start) {\n" +
-                    "    }\n" +
-                    "\n" +
-                    "    public void testParameters() {\n" +
-                    "        new ConstructorTest(1, 3);\n" +
-                    "    }\n" +
-                    "\n" +
-                    "    @WorkerThread\n" +
-                    "    public void testMethod(int res, int range) {\n" +
-                    "        new ConstructorTest(res, range);\n" +
-                    "    }\n" +
-                    "}\n",
-            ),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expect(
-            """
-            src/test/pkg/ConstructorTest.java:19: Error: Call must be from @{Main,Ui}Thread, but context is allowing @WorkerThread [ThreadConstraint]
-                    new ConstructorTest(res, range);
-                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            1 errors, 0 warnings
-            """
-                .trimIndent()
-        )
+      .files(
+        LintDetectorTest.java(
+          "src/test/pkg/ConstructorTest.java",
+          "" +
+            "package test.pkg;\n" +
+            "\n" +
+            "import androidx.annotation.DrawableRes;\n" +
+            "import androidx.annotation.IntRange;\n" +
+            "import androidx.annotation.UiThread;\n" +
+            "import androidx.annotation.WorkerThread;\n" +
+            "\n" +
+            "public class ConstructorTest {\n" +
+            "    @UiThread\n" +
+            "    ConstructorTest(@DrawableRes int iconResId, @IntRange(from = 5) int start) {\n" +
+            "    }\n" +
+            "\n" +
+            "    public void testParameters() {\n" +
+            "        new ConstructorTest(1, 3);\n" +
+            "    }\n" +
+            "\n" +
+            "    @WorkerThread\n" +
+            "    public void testMethod(int res, int range) {\n" +
+            "        new ConstructorTest(res, range);\n" +
+            "    }\n" +
+            "}\n",
+        ),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
+        src/test/pkg/ConstructorTest.java:19: Error: Call must be from @{Main,Ui}Thread, but context is allowing @WorkerThread [ThreadConstraint]
+                new ConstructorTest(res, range);
+                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        1 errors, 0 warnings
+        """
+          .trimIndent()
+      )
   }
 
   fun testThreadingIssue207313() {
     // Regression test for scenario in
     //  https://code.google.com/p/android/issues/detail?id=207313
     lint()
-        .files(
-            java(
-                "src/test/pkg/BigClass.java",
-                "" +
-                    "package test.pkg;\n" +
-                    "\n" +
-                    "import androidx.annotation.UiThread;\n" +
-                    "import androidx.annotation.WorkerThread;\n" +
-                    "\n" +
-                    "@UiThread // it's here to prevent putting it on all 100 methods\n" +
-                    "class BigClass {\n" +
-                    "    void f1() { }\n" +
-                    "    void f2() { }\n" +
-                    "    //...\n" +
-                    "    void f100() { }\n" +
-                    "    @WorkerThread // this single method is not UI, it's something else\n" +
-                    "    void g() { }\n" +
-                    "    BigClass() { }\n" +
-                    "}\n",
-            ),
-            java(
-                "src/test/pkg/BigClassClient.java",
-                "" +
-                    "package test.pkg;\n" +
-                    "\n" +
-                    "import androidx.annotation.UiThread;\n" +
-                    "import androidx.annotation.WorkerThread;\n" +
-                    "\n" +
-                    "@SuppressWarnings(\"unused\")\n" +
-                    "public class BigClassClient {\n" +
-                    "    @WorkerThread\n" +
-                    "    void worker() {\n" +
-                    "        BigClass o = new BigClass();\n" +
-                    "        o.f1();   // correct WrongThread: must be called from the UI thread currently inferred thread is worker\n" +
-                    "        o.f2();   // correct WrongThread: must be called from the UI thread currently inferred thread is worker\n" +
-                    "        o.f100(); // correct WrongThread: must be called from the UI thread currently inferred thread is worker\n" +
-                    "        o.g();    // unexpected WrongThread: must be called from the UI thread currently inferred thread is worker\n" +
-                    "    }\n" +
-                    "    @UiThread\n" +
-                    "    void ui() {\n" +
-                    "        BigClass o = new BigClass();\n" +
-                    "        o.f1();   // no problem\n" +
-                    "        o.f2();   // no problem\n" +
-                    "        o.f100(); // no problem\n" +
-                    "        o.g();    // correct WrongThread: must be called from the worker thread currently inferred thread is UI\n" +
-                    "    }\n" +
-                    "}\n",
-            ),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expect(
-            """
-            src/test/pkg/BigClassClient.java:11: Error: Call must be from @{Main,Ui}Thread, but context is allowing @WorkerThread [ThreadConstraint]
-                    o.f1();   // correct WrongThread: must be called from the UI thread currently inferred thread is worker
-                      ~~~~
-            src/test/pkg/BigClassClient.java:12: Error: Call must be from @{Main,Ui}Thread, but context is allowing @WorkerThread [ThreadConstraint]
-                    o.f2();   // correct WrongThread: must be called from the UI thread currently inferred thread is worker
-                      ~~~~
-            src/test/pkg/BigClassClient.java:13: Error: Call must be from @{Main,Ui}Thread, but context is allowing @WorkerThread [ThreadConstraint]
-                    o.f100(); // correct WrongThread: must be called from the UI thread currently inferred thread is worker
-                      ~~~~~~
-            src/test/pkg/BigClassClient.java:22: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
-                    o.g();    // correct WrongThread: must be called from the worker thread currently inferred thread is UI
-                      ~~~
-            4 errors
-            """
-                .trimIndent()
-        )
+      .files(
+        java(
+          "src/test/pkg/BigClass.java",
+          "" +
+            "package test.pkg;\n" +
+            "\n" +
+            "import androidx.annotation.UiThread;\n" +
+            "import androidx.annotation.WorkerThread;\n" +
+            "\n" +
+            "@UiThread // it's here to prevent putting it on all 100 methods\n" +
+            "class BigClass {\n" +
+            "    void f1() { }\n" +
+            "    void f2() { }\n" +
+            "    //...\n" +
+            "    void f100() { }\n" +
+            "    @WorkerThread // this single method is not UI, it's something else\n" +
+            "    void g() { }\n" +
+            "    BigClass() { }\n" +
+            "}\n",
+        ),
+        java(
+          "src/test/pkg/BigClassClient.java",
+          "" +
+            "package test.pkg;\n" +
+            "\n" +
+            "import androidx.annotation.UiThread;\n" +
+            "import androidx.annotation.WorkerThread;\n" +
+            "\n" +
+            "@SuppressWarnings(\"unused\")\n" +
+            "public class BigClassClient {\n" +
+            "    @WorkerThread\n" +
+            "    void worker() {\n" +
+            "        BigClass o = new BigClass();\n" +
+            "        o.f1();   // correct WrongThread: must be called from the UI thread currently inferred thread is worker\n" +
+            "        o.f2();   // correct WrongThread: must be called from the UI thread currently inferred thread is worker\n" +
+            "        o.f100(); // correct WrongThread: must be called from the UI thread currently inferred thread is worker\n" +
+            "        o.g();    // unexpected WrongThread: must be called from the UI thread currently inferred thread is worker\n" +
+            "    }\n" +
+            "    @UiThread\n" +
+            "    void ui() {\n" +
+            "        BigClass o = new BigClass();\n" +
+            "        o.f1();   // no problem\n" +
+            "        o.f2();   // no problem\n" +
+            "        o.f100(); // no problem\n" +
+            "        o.g();    // correct WrongThread: must be called from the worker thread currently inferred thread is UI\n" +
+            "    }\n" +
+            "}\n",
+        ),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
+        src/test/pkg/BigClassClient.java:11: Error: Call must be from @{Main,Ui}Thread, but context is allowing @WorkerThread [ThreadConstraint]
+                o.f1();   // correct WrongThread: must be called from the UI thread currently inferred thread is worker
+                  ~~~~
+        src/test/pkg/BigClassClient.java:12: Error: Call must be from @{Main,Ui}Thread, but context is allowing @WorkerThread [ThreadConstraint]
+                o.f2();   // correct WrongThread: must be called from the UI thread currently inferred thread is worker
+                  ~~~~
+        src/test/pkg/BigClassClient.java:13: Error: Call must be from @{Main,Ui}Thread, but context is allowing @WorkerThread [ThreadConstraint]
+                o.f100(); // correct WrongThread: must be called from the UI thread currently inferred thread is worker
+                  ~~~~~~
+        src/test/pkg/BigClassClient.java:22: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+                o.g();    // correct WrongThread: must be called from the worker thread currently inferred thread is UI
+                  ~~~
+        4 errors
+        """
+          .trimIndent()
+      )
   }
 
   fun testThreadingIssue207302() {
     // Regression test for
     //    https://code.google.com/p/android/issues/detail?id=207302
     lint()
-        .files(
-            java(
-                "src/test/pkg/TestPostRunnable.java",
-                "" +
-                    "package test.pkg;\n" +
-                    "\n" +
-                    "import androidx.annotation.WorkerThread;\n" +
-                    "import android.view.View;\n" +
-                    "\n" +
-                    "public class TestPostRunnable {\n" +
-                    "    View view;\n" +
-                    "    @WorkerThread\n" +
-                    "    void f() {\n" +
-                    "        view.post(new Runnable() {\n" +
-                    "            @Override public void run() {\n" +
-                    "                // stuff on UI thread\n" +
-                    "            }\n" +
-                    "        });\n" +
-                    "    }\n" +
-                    "}",
-            ),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expectClean()
+      .files(
+        java(
+          "src/test/pkg/TestPostRunnable.java",
+          "" +
+            "package test.pkg;\n" +
+            "\n" +
+            "import androidx.annotation.WorkerThread;\n" +
+            "import android.view.View;\n" +
+            "\n" +
+            "public class TestPostRunnable {\n" +
+            "    View view;\n" +
+            "    @WorkerThread\n" +
+            "    void f() {\n" +
+            "        view.post(new Runnable() {\n" +
+            "            @Override public void run() {\n" +
+            "                // stuff on UI thread\n" +
+            "            }\n" +
+            "        });\n" +
+            "    }\n" +
+            "}",
+        ),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expectClean()
   }
 
   fun testAnyThread() {
     lint()
-        .files(
-            java(
-                "src/test/pkg/AnyThreadTest.java",
-                "" +
-                    "package test.pkg;\n" +
-                    "\n" +
-                    "import androidx.annotation.AnyThread;\n" +
-                    "import androidx.annotation.UiThread;\n" +
-                    "import androidx.annotation.WorkerThread;\n" +
-                    "\n" +
-                    "@UiThread\n" +
-                    "class AnyThreadTest {\n" +
-                    "    @AnyThread\n" +
-                    "    static void threadSafe() {\n" +
-                    "        worker(); // ERROR\n" +
-                    "    }\n" +
-                    "    @WorkerThread\n" +
-                    "    static void worker() {\n" +
-                    "        threadSafe(); // OK\n" +
-                    "    }\n" +
-                    "}\n",
-            ),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expect(
-            """
-            src/test/pkg/AnyThreadTest.java:11: Error: Call must be from @WorkerThread, but context is allowing @AnyThread [ThreadConstraint]
-                    worker(); // ERROR
-                    ~~~~~~~~
-            1 errors, 0 warnings
-            """
-                .trimIndent()
-        )
+      .files(
+        java(
+          "src/test/pkg/AnyThreadTest.java",
+          "" +
+            "package test.pkg;\n" +
+            "\n" +
+            "import androidx.annotation.AnyThread;\n" +
+            "import androidx.annotation.UiThread;\n" +
+            "import androidx.annotation.WorkerThread;\n" +
+            "\n" +
+            "@UiThread\n" +
+            "class AnyThreadTest {\n" +
+            "    @AnyThread\n" +
+            "    static void threadSafe() {\n" +
+            "        worker(); // ERROR\n" +
+            "    }\n" +
+            "    @WorkerThread\n" +
+            "    static void worker() {\n" +
+            "        threadSafe(); // OK\n" +
+            "    }\n" +
+            "}\n",
+        ),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
+        src/test/pkg/AnyThreadTest.java:11: Error: Call must be from @WorkerThread, but context is allowing @AnyThread [ThreadConstraint]
+                worker(); // ERROR
+                ~~~~~~~~
+        1 errors, 0 warnings
+        """
+          .trimIndent()
+      )
   }
 
   fun testMultipleThreads() {
@@ -2738,141 +2738,141 @@ class InferredThreadDetectorTest : AbstractCheckTest() {
     // threading annotation on the target, but if multiple threads are
     // found in the context, all of them must be valid for all targets
     lint()
-        .files(
-            java(
-                "src/test/pkg/MultiThreadTest.java",
-                "" +
-                    "package test.pkg;\n" +
-                    "\n" +
-                    "import androidx.annotation.BinderThread;\n" +
-                    "import androidx.annotation.UiThread;\n" +
-                    "import androidx.annotation.WorkerThread;\n" +
-                    "\n" +
-                    "class MultiThreadTest {\n" +
-                    "    @UiThread\n" +
-                    "    @WorkerThread\n" +
-                    "    private static void callee() {\n" +
-                    "    }\n" +
-                    "\n" +
-                    "    @WorkerThread\n" +
-                    "    private static void call1() {\n" +
-                    "        callee(); // OK - context is included in target\n" +
-                    "    }\n" +
-                    "\n" +
-                    "    @BinderThread\n" +
-                    "    @WorkerThread\n" +
-                    "    private static void call2() {\n" +
-                    "        callee(); // Not ok: thread could be binder thread, not supported by target\n" +
-                    "    }\n" +
-                    "\n" +
-                    "    // Same case as call2 but different order to make sure we don't just test the first one:\n" +
-                    "    @WorkerThread\n" +
-                    "    @BinderThread\n" +
-                    "    private static void call3() {\n" +
-                    "        callee(); // Not ok: thread could be binder thread, not supported by target\n" +
-                    "    }\n" +
-                    "}\n",
-            ),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expect(
-            """
-            src/test/pkg/MultiThreadTest.java:21: Error: Call must be from @{Main,Ui}Thread|@WorkerThread, but context is allowing @WorkerThread|@BinderThread [ThreadConstraint]
-                    callee(); // Not ok: thread could be binder thread, not supported by target
-                    ~~~~~~~~
-            src/test/pkg/MultiThreadTest.java:28: Error: Call must be from @{Main,Ui}Thread|@WorkerThread, but context is allowing @WorkerThread|@BinderThread [ThreadConstraint]
-                    callee(); // Not ok: thread could be binder thread, not supported by target
-                    ~~~~~~~~
-            2 errors, 0 warnings
-            """
-                .trimIndent()
-        )
+      .files(
+        java(
+          "src/test/pkg/MultiThreadTest.java",
+          "" +
+            "package test.pkg;\n" +
+            "\n" +
+            "import androidx.annotation.BinderThread;\n" +
+            "import androidx.annotation.UiThread;\n" +
+            "import androidx.annotation.WorkerThread;\n" +
+            "\n" +
+            "class MultiThreadTest {\n" +
+            "    @UiThread\n" +
+            "    @WorkerThread\n" +
+            "    private static void callee() {\n" +
+            "    }\n" +
+            "\n" +
+            "    @WorkerThread\n" +
+            "    private static void call1() {\n" +
+            "        callee(); // OK - context is included in target\n" +
+            "    }\n" +
+            "\n" +
+            "    @BinderThread\n" +
+            "    @WorkerThread\n" +
+            "    private static void call2() {\n" +
+            "        callee(); // Not ok: thread could be binder thread, not supported by target\n" +
+            "    }\n" +
+            "\n" +
+            "    // Same case as call2 but different order to make sure we don't just test the first one:\n" +
+            "    @WorkerThread\n" +
+            "    @BinderThread\n" +
+            "    private static void call3() {\n" +
+            "        callee(); // Not ok: thread could be binder thread, not supported by target\n" +
+            "    }\n" +
+            "}\n",
+        ),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
+        src/test/pkg/MultiThreadTest.java:21: Error: Call must be from @{Main,Ui}Thread|@WorkerThread, but context is allowing @WorkerThread|@BinderThread [ThreadConstraint]
+                callee(); // Not ok: thread could be binder thread, not supported by target
+                ~~~~~~~~
+        src/test/pkg/MultiThreadTest.java:28: Error: Call must be from @{Main,Ui}Thread|@WorkerThread, but context is allowing @WorkerThread|@BinderThread [ThreadConstraint]
+                callee(); // Not ok: thread could be binder thread, not supported by target
+                ~~~~~~~~
+        2 errors, 0 warnings
+        """
+          .trimIndent()
+      )
   }
 
   fun testMultipleThreadNonTrivialSubsumption() {
     lint()
-        .files(
-            java(
-                "src/test/pkg/MultiThreadTest.java",
-                "" +
-                    "package test.pkg;\n" +
-                    "\n" +
-                    "import androidx.annotation.BinderThread;\n" +
-                    "import androidx.annotation.UiThread;\n" +
-                    "import androidx.annotation.WorkerThread;\n" +
-                    "import androidx.annotation.MainThread;\n" +
-                    "\n" +
-                    "class MultiThreadTest {\n" +
-                    "    @UiThread\n" +
-                    "    @WorkerThread\n" +
-                    "    private static void callee() {\n" +
-                    "    }\n" +
-                    "\n" +
-                    "    @MainThread\n" +
-                    "    @WorkerThread\n" +
-                    "    private static void caller() {\n" +
-                    "        callee(); // OK - context is included in target\n" +
-                    "    }\n" +
-                    "}\n",
-            ),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expectClean()
+      .files(
+        java(
+          "src/test/pkg/MultiThreadTest.java",
+          "" +
+            "package test.pkg;\n" +
+            "\n" +
+            "import androidx.annotation.BinderThread;\n" +
+            "import androidx.annotation.UiThread;\n" +
+            "import androidx.annotation.WorkerThread;\n" +
+            "import androidx.annotation.MainThread;\n" +
+            "\n" +
+            "class MultiThreadTest {\n" +
+            "    @UiThread\n" +
+            "    @WorkerThread\n" +
+            "    private static void callee() {\n" +
+            "    }\n" +
+            "\n" +
+            "    @MainThread\n" +
+            "    @WorkerThread\n" +
+            "    private static void caller() {\n" +
+            "        callee(); // OK - context is included in target\n" +
+            "    }\n" +
+            "}\n",
+        ),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expectClean()
   }
 
   fun testStaticMethod() {
     // Regression test for
     //  https://code.google.com/p/android/issues/detail?id=175397
     lint()
-        .files(
-            java(
-                "src/test/pkg/StaticMethods.java",
-                "" +
-                    "package test.pkg;\n" +
-                    "\n" +
-                    "import android.content.Context;\n" +
-                    "import android.os.AsyncTask;\n" +
-                    "import androidx.annotation.WorkerThread;\n" +
-                    "import android.view.View;\n" +
-                    "\n" +
-                    "public class StaticMethods extends View {\n" +
-                    "    public StaticMethods(Context context) {\n" +
-                    "        super(context);\n" +
-                    "    }\n" +
-                    "\n" +
-                    "    class MyAsyncTask extends AsyncTask<Long, Void, Boolean> {\n" +
-                    "        @Override\n" +
-                    "        protected Boolean doInBackground(Long... sizes) {\n" +
-                    "            return workerThreadMethod();\n" +
-                    "        }\n" +
-                    "\n" +
-                    "        @Override\n" +
-                    "        protected void onPostExecute(Boolean isEnoughFree) {\n" +
-                    "        }\n" +
-                    "    }\n" +
-                    "\n" +
-                    "    // Static utility method which happens to be in a custom view,\n" +
-                    "    // but doesn't require UI thread.\n" +
-                    "    public static boolean workerThreadMethod() {\n" +
-                    "        return true;\n" +
-                    "    }\n" +
-                    "}",
-            ),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expectClean()
+      .files(
+        java(
+          "src/test/pkg/StaticMethods.java",
+          "" +
+            "package test.pkg;\n" +
+            "\n" +
+            "import android.content.Context;\n" +
+            "import android.os.AsyncTask;\n" +
+            "import androidx.annotation.WorkerThread;\n" +
+            "import android.view.View;\n" +
+            "\n" +
+            "public class StaticMethods extends View {\n" +
+            "    public StaticMethods(Context context) {\n" +
+            "        super(context);\n" +
+            "    }\n" +
+            "\n" +
+            "    class MyAsyncTask extends AsyncTask<Long, Void, Boolean> {\n" +
+            "        @Override\n" +
+            "        protected Boolean doInBackground(Long... sizes) {\n" +
+            "            return workerThreadMethod();\n" +
+            "        }\n" +
+            "\n" +
+            "        @Override\n" +
+            "        protected void onPostExecute(Boolean isEnoughFree) {\n" +
+            "        }\n" +
+            "    }\n" +
+            "\n" +
+            "    // Static utility method which happens to be in a custom view,\n" +
+            "    // but doesn't require UI thread.\n" +
+            "    public static boolean workerThreadMethod() {\n" +
+            "        return true;\n" +
+            "    }\n" +
+            "}",
+        ),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expectClean()
   }
 
   fun testThreadingWithinLambdas() {
     // Regression test for https://code.google.com/p/android/issues/detail?id=223101
     lint()
-        .files(
-            java(
-                    // language=java
-                    """package test.pkg;
+      .files(
+        java(
+            // language=java
+            """package test.pkg;
 
                 import android.app.Activity;
                 import android.os.Bundle;
@@ -2907,162 +2907,162 @@ class InferredThreadDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-                )
-                .indented(),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expect(
-            """
-            src/test/pkg/LambdaThreadTest.java:26: Error: Call must be from @WorkerThread, but a super method is allowing @{Main,Ui}Thread [ThreadConstraint]
-                                    doInUiThread(new Runnable() {
-                                                 ^
-            src/test/pkg/LambdaThreadTest.java:31: Error: Call must be from @WorkerThread, but a super method is allowing @{Main,Ui}Thread [ThreadConstraint]
-                                    doInUiThread(() -> compute());
-                                                       ~~~~~~~~~
-            src/test/pkg/LambdaThreadTest.java:32: Error: Call must be from @WorkerThread, but a super method is allowing @{Main,Ui}Thread [ThreadConstraint]
-                                    doInUiThread(LambdaThreadTest::compute);
-                                                 ~~~~~~~~~~~~~~~~~~~~~~~~~
-            3 errors
-            """
-                .trimIndent()
-        )
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
+        src/test/pkg/LambdaThreadTest.java:26: Error: Call must be from @WorkerThread, but a super method is allowing @{Main,Ui}Thread [ThreadConstraint]
+                                doInUiThread(new Runnable() {
+                                             ^
+        src/test/pkg/LambdaThreadTest.java:31: Error: Call must be from @WorkerThread, but a super method is allowing @{Main,Ui}Thread [ThreadConstraint]
+                                doInUiThread(() -> compute());
+                                                   ~~~~~~~~~
+        src/test/pkg/LambdaThreadTest.java:32: Error: Call must be from @WorkerThread, but a super method is allowing @{Main,Ui}Thread [ThreadConstraint]
+                                doInUiThread(LambdaThreadTest::compute);
+                                             ~~~~~~~~~~~~~~~~~~~~~~~~~
+        3 errors
+        """
+          .trimIndent()
+      )
   }
 
   fun testThreadsInLambdas() {
     // Regression test for b/38069472
     lint()
-        .files(
-            LintDetectorTest.manifest().minSdk(1),
-            java(
-                "" +
-                    "package test.pkg;\n" +
-                    "\n" +
-                    "import androidx.annotation.MainThread;\n" +
-                    "import androidx.annotation.WorkerThread;\n" +
-                    "\n" +
-                    "import java.util.concurrent.Executor;\n" +
-                    "\n" +
-                    "public abstract class ApiCallInLambda<T> {\n" +
-                    "    Executor networkExecutor;\n" +
-                    "    @MainThread\n" +
-                    "    private void fetchFromNetwork(T data) {\n" +
-                    "        networkExecutor.execute(() -> {\n" +
-                    "            Call<T> call = createCall();\n" +
-                    "        });\n" +
-                    "    }\n" +
-                    "\n" +
-                    "    @WorkerThread\n" +
-                    "    protected abstract Call<T> createCall();\n" +
-                    "\n" +
-                    "    private static class Call<T> {\n" +
-                    "    }\n" +
-                    "}\n"
-            ),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expectClean()
+      .files(
+        LintDetectorTest.manifest().minSdk(1),
+        java(
+          "" +
+            "package test.pkg;\n" +
+            "\n" +
+            "import androidx.annotation.MainThread;\n" +
+            "import androidx.annotation.WorkerThread;\n" +
+            "\n" +
+            "import java.util.concurrent.Executor;\n" +
+            "\n" +
+            "public abstract class ApiCallInLambda<T> {\n" +
+            "    Executor networkExecutor;\n" +
+            "    @MainThread\n" +
+            "    private void fetchFromNetwork(T data) {\n" +
+            "        networkExecutor.execute(() -> {\n" +
+            "            Call<T> call = createCall();\n" +
+            "        });\n" +
+            "    }\n" +
+            "\n" +
+            "    @WorkerThread\n" +
+            "    protected abstract Call<T> createCall();\n" +
+            "\n" +
+            "    private static class Call<T> {\n" +
+            "    }\n" +
+            "}\n"
+        ),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expectClean()
   }
 
   fun testWrongThread() {
 
     lint()
-        .files(
-            LintDetectorTest.java(
-                "" +
-                    "package test.pkg;\n" +
-                    "import androidx.annotation.MainThread;\n" +
-                    "import androidx.annotation.UiThread;\n" +
-                    "import androidx.annotation.WorkerThread;\n" +
-                    "\n" +
-                    "public class X {\n" +
-                    "    public AsyncTask testTask() {\n" +
-                    "\n" +
-                    "        return new AsyncTask() {\n" +
-                    "            final CustomView view = new CustomView();\n" +
-                    "\n" +
-                    "            @Override\n" +
-                    "            protected void doInBackground(Object... params) {\n" +
-                    "                onPreExecute(); // ERROR\n" +
-                    "                view.paint(); // ERROR\n" +
-                    "                publishProgress(); // OK\n" +
-                    "            }\n" +
-                    "\n" +
-                    "            @Override\n" +
-                    "            protected void onPreExecute() {\n" +
-                    "                publishProgress(); // ERROR\n" +
-                    "                onProgressUpdate(); // OK\n" +
-                    "            }\n" +
-                    "        };\n" +
-                    "    }\n" +
-                    "\n" +
-                    "    @UiThread\n" +
-                    "    public static class View {\n" +
-                    "        public void paint() {\n" +
-                    "        }\n" +
-                    "    }\n" +
-                    "    @some.pkg.UnrelatedNameEndsWithThread\n" +
-                    "    public static void test1(View view) {\n" +
-                    "        view.paint();\n" +
-                    "    }\n" +
-                    "\n" +
-                    "    @UiThread\n" +
-                    "    public static void test2(View view) {\n" +
-                    "        test1(view);\n" +
-                    "    }\n" +
-                    "\n" +
-                    "    @UiThread\n" +
-                    "    public static void test3(View view) {\n" +
-                    "        TestClass.test4();\n" +
-                    "    }\n" +
-                    "\n" +
-                    "    @some.pkg.UnrelatedNameEndsWithThread\n" +
-                    "    public static class TestClass {\n" +
-                    "        public static void test4() {\n" +
-                    "        }\n" +
-                    "    }\n" +
-                    "\n" +
-                    "    public static class CustomView extends View {\n" +
-                    "    }\n" +
-                    "\n" +
-                    "    public static abstract class AsyncTask {\n" +
-                    "        @WorkerThread\n" +
-                    "        protected abstract void doInBackground(Object... params);\n" +
-                    "\n" +
-                    "        @MainThread\n" +
-                    "        protected void onPreExecute() {\n" +
-                    "        }\n" +
-                    "\n" +
-                    "        @MainThread\n" +
-                    "        protected void onProgressUpdate(Object... values) {\n" +
-                    "        }\n" +
-                    "\n" +
-                    "        @WorkerThread\n" +
-                    "        protected final void publishProgress(Object... values) {\n" +
-                    "        }\n" +
-                    "    }\n" +
-                    "}\n"
-            ),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .allowCompilationErrors()
-        .run()
-        .expect(
-            """
-            src/test/pkg/X.java:14: Error: Call must be from @{Main,Ui}Thread, but super method AsyncTask.doInBackground(…) is allowing @WorkerThread [ThreadConstraint]
-                            onPreExecute(); // ERROR
-                            ~~~~~~~~~~~~~~
-            src/test/pkg/X.java:15: Error: Call must be from @{Main,Ui}Thread, but super method AsyncTask.doInBackground(…) is allowing @WorkerThread [ThreadConstraint]
-                            view.paint(); // ERROR
-                                 ~~~~~~~
-            src/test/pkg/X.java:21: Error: Call must be from @WorkerThread, but super method AsyncTask.onPreExecute(…) is allowing @{Main,Ui}Thread [ThreadConstraint]
-                            publishProgress(); // ERROR
-                            ~~~~~~~~~~~~~~~~~
-            3 errors
-            """
-                .trimIndent()
-        )
+      .files(
+        LintDetectorTest.java(
+          "" +
+            "package test.pkg;\n" +
+            "import androidx.annotation.MainThread;\n" +
+            "import androidx.annotation.UiThread;\n" +
+            "import androidx.annotation.WorkerThread;\n" +
+            "\n" +
+            "public class X {\n" +
+            "    public AsyncTask testTask() {\n" +
+            "\n" +
+            "        return new AsyncTask() {\n" +
+            "            final CustomView view = new CustomView();\n" +
+            "\n" +
+            "            @Override\n" +
+            "            protected void doInBackground(Object... params) {\n" +
+            "                onPreExecute(); // ERROR\n" +
+            "                view.paint(); // ERROR\n" +
+            "                publishProgress(); // OK\n" +
+            "            }\n" +
+            "\n" +
+            "            @Override\n" +
+            "            protected void onPreExecute() {\n" +
+            "                publishProgress(); // ERROR\n" +
+            "                onProgressUpdate(); // OK\n" +
+            "            }\n" +
+            "        };\n" +
+            "    }\n" +
+            "\n" +
+            "    @UiThread\n" +
+            "    public static class View {\n" +
+            "        public void paint() {\n" +
+            "        }\n" +
+            "    }\n" +
+            "    @some.pkg.UnrelatedNameEndsWithThread\n" +
+            "    public static void test1(View view) {\n" +
+            "        view.paint();\n" +
+            "    }\n" +
+            "\n" +
+            "    @UiThread\n" +
+            "    public static void test2(View view) {\n" +
+            "        test1(view);\n" +
+            "    }\n" +
+            "\n" +
+            "    @UiThread\n" +
+            "    public static void test3(View view) {\n" +
+            "        TestClass.test4();\n" +
+            "    }\n" +
+            "\n" +
+            "    @some.pkg.UnrelatedNameEndsWithThread\n" +
+            "    public static class TestClass {\n" +
+            "        public static void test4() {\n" +
+            "        }\n" +
+            "    }\n" +
+            "\n" +
+            "    public static class CustomView extends View {\n" +
+            "    }\n" +
+            "\n" +
+            "    public static abstract class AsyncTask {\n" +
+            "        @WorkerThread\n" +
+            "        protected abstract void doInBackground(Object... params);\n" +
+            "\n" +
+            "        @MainThread\n" +
+            "        protected void onPreExecute() {\n" +
+            "        }\n" +
+            "\n" +
+            "        @MainThread\n" +
+            "        protected void onProgressUpdate(Object... values) {\n" +
+            "        }\n" +
+            "\n" +
+            "        @WorkerThread\n" +
+            "        protected final void publishProgress(Object... values) {\n" +
+            "        }\n" +
+            "    }\n" +
+            "}\n"
+        ),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .allowCompilationErrors()
+      .run()
+      .expect(
+        """
+        src/test/pkg/X.java:14: Error: Call must be from @{Main,Ui}Thread, but super method AsyncTask.doInBackground(…) is allowing @WorkerThread [ThreadConstraint]
+                        onPreExecute(); // ERROR
+                        ~~~~~~~~~~~~~~
+        src/test/pkg/X.java:15: Error: Call must be from @{Main,Ui}Thread, but super method AsyncTask.doInBackground(…) is allowing @WorkerThread [ThreadConstraint]
+                        view.paint(); // ERROR
+                             ~~~~~~~
+        src/test/pkg/X.java:21: Error: Call must be from @WorkerThread, but super method AsyncTask.onPreExecute(…) is allowing @{Main,Ui}Thread [ThreadConstraint]
+                        publishProgress(); // ERROR
+                        ~~~~~~~~~~~~~~~~~
+        3 errors
+        """
+          .trimIndent()
+      )
   }
 
   /**
@@ -3072,41 +3072,41 @@ class InferredThreadDetectorTest : AbstractCheckTest() {
   fun testStaticWrongThread() {
 
     lint()
-        .files(
-            LintDetectorTest.java(
-                "" +
-                    "package test.pkg;\n" +
-                    "\n" +
-                    "import android.content.Context;\n" +
-                    "import android.os.AsyncTask;\n" +
-                    "import androidx.annotation.WorkerThread;\n" +
-                    "import android.view.View;\n" +
-                    "\n" +
-                    "public class X extends View {\n" +
-                    "    public X(Context context) {\n" +
-                    "        super(context);\n" +
-                    "    }\n" +
-                    "\n" +
-                    "    class MyAsyncTask extends AsyncTask<Long, Void, Boolean> {\n" +
-                    "        @Override\n" +
-                    "        protected Boolean doInBackground(Long... sizes) {\n" +
-                    "            return workedThreadMethod();\n" +
-                    "        }\n" +
-                    "\n" +
-                    "        @Override\n" +
-                    "        protected void onPostExecute(Boolean isEnoughFree) {\n" +
-                    "        }\n" +
-                    "    }\n" +
-                    "\n" +
-                    "    public static boolean workedThreadMethod() {\n" +
-                    "        return true;\n" +
-                    "    }\n" +
-                    "}"
-            ),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expectClean()
+      .files(
+        LintDetectorTest.java(
+          "" +
+            "package test.pkg;\n" +
+            "\n" +
+            "import android.content.Context;\n" +
+            "import android.os.AsyncTask;\n" +
+            "import androidx.annotation.WorkerThread;\n" +
+            "import android.view.View;\n" +
+            "\n" +
+            "public class X extends View {\n" +
+            "    public X(Context context) {\n" +
+            "        super(context);\n" +
+            "    }\n" +
+            "\n" +
+            "    class MyAsyncTask extends AsyncTask<Long, Void, Boolean> {\n" +
+            "        @Override\n" +
+            "        protected Boolean doInBackground(Long... sizes) {\n" +
+            "            return workedThreadMethod();\n" +
+            "        }\n" +
+            "\n" +
+            "        @Override\n" +
+            "        protected void onPostExecute(Boolean isEnoughFree) {\n" +
+            "        }\n" +
+            "    }\n" +
+            "\n" +
+            "    public static boolean workedThreadMethod() {\n" +
+            "        return true;\n" +
+            "    }\n" +
+            "}"
+        ),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expectClean()
   }
 
   fun testAnyThread2() {
@@ -3116,121 +3116,121 @@ class InferredThreadDetectorTest : AbstractCheckTest() {
     // 207302: @WorkerThread cannot call View.post
 
     lint()
-        .files(
-            LintDetectorTest.java(
-                "" +
-                    "package test.pkg;\n" +
-                    "\n" +
-                    "import androidx.annotation.BinderThread;\n" +
-                    "import androidx.annotation.MainThread;\n" +
-                    "import androidx.annotation.UiThread;\n" +
-                    "import androidx.annotation.WorkerThread;\n" +
-                    "\n" +
-                    "@SuppressWarnings({\"WeakerAccess\", \"unused\"})\n" +
-                    "public class X {\n" +
-                    "    @UiThread\n" +
-                    "    static class AnyThreadTest {\n" +
-                    "        //    @AnyThread\n" +
-                    "        void threadSafe() {\n" +
-                    "            worker(); // ERROR\n" +
-                    "        }\n" +
-                    "\n" +
-                    "        @WorkerThread\n" +
-                    "        void worker() {\n" +
-                    "            threadSafe(); // OK\n" +
-                    "        }\n" +
-                    "\n" +
-                    "        // Multi thread test\n" +
-                    "        @UiThread\n" +
-                    "        @WorkerThread\n" +
-                    "        private void callee() {\n" +
-                    "        }\n" +
-                    "\n" +
-                    "        @WorkerThread\n" +
-                    "        private void call1() {\n" +
-                    "            callee(); // OK - context is included in target\n" +
-                    "        }\n" +
-                    "\n" +
-                    "        @BinderThread\n" +
-                    "        @WorkerThread\n" +
-                    "        private void call2() {\n" +
-                    "            callee(); // Not ok: thread could be binder thread, not supported by target\n" +
-                    "        }\n" +
-                    "    }\n" +
-                    "\n" +
-                    "    public static AsyncTask testTask() {\n" +
-                    "\n" +
-                    "        return new AsyncTask() {\n" +
-                    "            final CustomView view = new CustomView();\n" +
-                    "\n" +
-                    "            @Override\n" +
-                    "            protected void doInBackground(Object... params) {\n" +
-                    "                onPreExecute(); // ERROR\n" +
-                    "                view.paint(); // ERROR\n" +
-                    "                publishProgress(); // OK\n" +
-                    "            }\n" +
-                    "\n" +
-                    "            @Override\n" +
-                    "            protected void onPreExecute() {\n" +
-                    "                publishProgress(); // ERROR\n" +
-                    "                onProgressUpdate(); // OK\n" +
-                    "            }\n" +
-                    "        };\n" +
-                    "    }\n" +
-                    "\n" +
-                    "    @UiThread\n" +
-                    "    public static class View {\n" +
-                    "        public void paint() {\n" +
-                    "        }\n" +
-                    "    }\n" +
-                    "\n" +
-                    "    public static class CustomView extends View {\n" +
-                    "        @Override public void paint() {\n" +
-                    "        }\n" +
-                    "    }\n" +
-                    "\n" +
-                    "    public abstract static class AsyncTask {\n" +
-                    "        @WorkerThread\n" +
-                    "        protected abstract void doInBackground(Object... params);\n" +
-                    "\n" +
-                    "        @MainThread\n" +
-                    "        protected void onPreExecute() {\n" +
-                    "        }\n" +
-                    "\n" +
-                    "        @MainThread\n" +
-                    "        protected void onProgressUpdate(Object... values) {\n" +
-                    "        }\n" +
-                    "\n" +
-                    "        @WorkerThread\n" +
-                    "        protected final void publishProgress(Object... values) {\n" +
-                    "        }\n" +
-                    "    }\n" +
-                    "}\n"
-            ),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expect(
-            """
-            src/test/pkg/X.java:14: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
-                        worker(); // ERROR
-                        ~~~~~~~~
-            src/test/pkg/X.java:19: Error: Call must be from @{Main,Ui}Thread, but context is allowing @WorkerThread [ThreadConstraint]
-                        threadSafe(); // OK
-                        ~~~~~~~~~~~~
-            src/test/pkg/X.java:36: Error: Call must be from @{Main,Ui}Thread|@WorkerThread, but context is allowing @WorkerThread|@BinderThread [ThreadConstraint]
-                        callee(); // Not ok: thread could be binder thread, not supported by target
-                        ~~~~~~~~
-            src/test/pkg/X.java:47: Error: Call must be from @{Main,Ui}Thread, but super method AsyncTask.doInBackground(…) is allowing @WorkerThread [ThreadConstraint]
-                            onPreExecute(); // ERROR
-                            ~~~~~~~~~~~~~~
-            src/test/pkg/X.java:54: Error: Call must be from @WorkerThread, but super method AsyncTask.onPreExecute(…) is allowing @{Main,Ui}Thread [ThreadConstraint]
-                            publishProgress(); // ERROR
-                            ~~~~~~~~~~~~~~~~~
-            5 errors
-            """
-                .trimIndent()
-        )
+      .files(
+        LintDetectorTest.java(
+          "" +
+            "package test.pkg;\n" +
+            "\n" +
+            "import androidx.annotation.BinderThread;\n" +
+            "import androidx.annotation.MainThread;\n" +
+            "import androidx.annotation.UiThread;\n" +
+            "import androidx.annotation.WorkerThread;\n" +
+            "\n" +
+            "@SuppressWarnings({\"WeakerAccess\", \"unused\"})\n" +
+            "public class X {\n" +
+            "    @UiThread\n" +
+            "    static class AnyThreadTest {\n" +
+            "        //    @AnyThread\n" +
+            "        void threadSafe() {\n" +
+            "            worker(); // ERROR\n" +
+            "        }\n" +
+            "\n" +
+            "        @WorkerThread\n" +
+            "        void worker() {\n" +
+            "            threadSafe(); // OK\n" +
+            "        }\n" +
+            "\n" +
+            "        // Multi thread test\n" +
+            "        @UiThread\n" +
+            "        @WorkerThread\n" +
+            "        private void callee() {\n" +
+            "        }\n" +
+            "\n" +
+            "        @WorkerThread\n" +
+            "        private void call1() {\n" +
+            "            callee(); // OK - context is included in target\n" +
+            "        }\n" +
+            "\n" +
+            "        @BinderThread\n" +
+            "        @WorkerThread\n" +
+            "        private void call2() {\n" +
+            "            callee(); // Not ok: thread could be binder thread, not supported by target\n" +
+            "        }\n" +
+            "    }\n" +
+            "\n" +
+            "    public static AsyncTask testTask() {\n" +
+            "\n" +
+            "        return new AsyncTask() {\n" +
+            "            final CustomView view = new CustomView();\n" +
+            "\n" +
+            "            @Override\n" +
+            "            protected void doInBackground(Object... params) {\n" +
+            "                onPreExecute(); // ERROR\n" +
+            "                view.paint(); // ERROR\n" +
+            "                publishProgress(); // OK\n" +
+            "            }\n" +
+            "\n" +
+            "            @Override\n" +
+            "            protected void onPreExecute() {\n" +
+            "                publishProgress(); // ERROR\n" +
+            "                onProgressUpdate(); // OK\n" +
+            "            }\n" +
+            "        };\n" +
+            "    }\n" +
+            "\n" +
+            "    @UiThread\n" +
+            "    public static class View {\n" +
+            "        public void paint() {\n" +
+            "        }\n" +
+            "    }\n" +
+            "\n" +
+            "    public static class CustomView extends View {\n" +
+            "        @Override public void paint() {\n" +
+            "        }\n" +
+            "    }\n" +
+            "\n" +
+            "    public abstract static class AsyncTask {\n" +
+            "        @WorkerThread\n" +
+            "        protected abstract void doInBackground(Object... params);\n" +
+            "\n" +
+            "        @MainThread\n" +
+            "        protected void onPreExecute() {\n" +
+            "        }\n" +
+            "\n" +
+            "        @MainThread\n" +
+            "        protected void onProgressUpdate(Object... values) {\n" +
+            "        }\n" +
+            "\n" +
+            "        @WorkerThread\n" +
+            "        protected final void publishProgress(Object... values) {\n" +
+            "        }\n" +
+            "    }\n" +
+            "}\n"
+        ),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
+        src/test/pkg/X.java:14: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+                    worker(); // ERROR
+                    ~~~~~~~~
+        src/test/pkg/X.java:19: Error: Call must be from @{Main,Ui}Thread, but context is allowing @WorkerThread [ThreadConstraint]
+                    threadSafe(); // OK
+                    ~~~~~~~~~~~~
+        src/test/pkg/X.java:36: Error: Call must be from @{Main,Ui}Thread|@WorkerThread, but context is allowing @WorkerThread|@BinderThread [ThreadConstraint]
+                    callee(); // Not ok: thread could be binder thread, not supported by target
+                    ~~~~~~~~
+        src/test/pkg/X.java:47: Error: Call must be from @{Main,Ui}Thread, but super method AsyncTask.doInBackground(…) is allowing @WorkerThread [ThreadConstraint]
+                        onPreExecute(); // ERROR
+                        ~~~~~~~~~~~~~~
+        src/test/pkg/X.java:54: Error: Call must be from @WorkerThread, but super method AsyncTask.onPreExecute(…) is allowing @{Main,Ui}Thread [ThreadConstraint]
+                        publishProgress(); // ERROR
+                        ~~~~~~~~~~~~~~~~~
+        5 errors
+        """
+          .trimIndent()
+      )
   }
 
   fun testMismatchedAnnotationPackages() {
@@ -3238,9 +3238,9 @@ class InferredThreadDetectorTest : AbstractCheckTest() {
     // as synonymous
     // Regression test for 74351531.
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
                     package test.pkg;
 
                     @SuppressWarnings("ClassNameDiffersFromFileName")
@@ -3270,10 +3270,10 @@ class InferredThreadDetectorTest : AbstractCheckTest() {
                         }
                     }
                 """
-                )
-                .indented(),
-            java(
-                """
+          )
+          .indented(),
+        java(
+          """
                     package android.support.annotation;
 
                     import static java.lang.annotation.ElementType.METHOD;
@@ -3291,20 +3291,20 @@ class InferredThreadDetectorTest : AbstractCheckTest() {
                     public @interface WorkerThread {
                     }
                 """
-            ),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expectClean()
+        ),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expectClean()
   }
 
   fun testAnyThread80002895() {
     // Regression test for
     // 80002895 : WrongThread doesn't support @AnyThread
     lint()
-        .files(
-            java(
-                """
+      .files(
+        java(
+          """
                 package test.pkg;
 
                 import android.os.Handler;
@@ -3384,19 +3384,19 @@ class InferredThreadDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-            ),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expectClean()
+        ),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expectClean()
   }
 
   /** Similar to [testAnyThread80002895], but respect explicit weaker type annotation */
   fun testAnyThread80002895_conservative() {
     lint()
-        .files(
-            java(
-                """
+      .files(
+        java(
+          """
                 package test.pkg;
 
                 import android.os.Handler;
@@ -3476,30 +3476,30 @@ class InferredThreadDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-            ),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expect(
-            """
-            src/test/pkg/BackgroundSomething.java:20: Error: Call must be from @{Main,Ui}Thread, but context is allowing @WorkerThread [ThreadConstraint]
-                                    listeners.started();
-                                              ~~~~~~~~~
-            src/test/pkg/BackgroundSomething.java:22: Error: Call must be from @{Main,Ui}Thread, but context is allowing @WorkerThread [ThreadConstraint]
-                                    listeners.finished();
-                                              ~~~~~~~~~~
-            2 errors, 0 warnings
-            """
-                .trimIndent()
-        )
+        ),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
+        src/test/pkg/BackgroundSomething.java:20: Error: Call must be from @{Main,Ui}Thread, but context is allowing @WorkerThread [ThreadConstraint]
+                                listeners.started();
+                                          ~~~~~~~~~
+        src/test/pkg/BackgroundSomething.java:22: Error: Call must be from @{Main,Ui}Thread, but context is allowing @WorkerThread [ThreadConstraint]
+                                listeners.finished();
+                                          ~~~~~~~~~~
+        2 errors, 0 warnings
+        """
+          .trimIndent()
+      )
   }
 
   /** Similar to [testAnyThread80002895], but sub-listener called outside of `Handler.post` */
   fun testAnyThread80002895_wrong() {
     lint()
-        .files(
-            java(
-                """
+      .files(
+        java(
+          """
                 package test.pkg;
 
                 import android.os.Handler;
@@ -3569,29 +3569,29 @@ class InferredThreadDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-            ),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expect(
-            """
-            src/test/pkg/BackgroundSomething.java:56: Error: Call must be from @{Main,Ui}Thread, but context is allowing @AnyThread [ThreadConstraint]
-                                            listener.started();
-                                                     ~~~~~~~~~
-            src/test/pkg/BackgroundSomething.java:65: Error: Call must be from @{Main,Ui}Thread, but context is allowing @AnyThread [ThreadConstraint]
-                                            listener.finished();
-                                                     ~~~~~~~~~~
-            2 errors, 0 warnings
-            """
-                .trimIndent()
-        )
+        ),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
+        src/test/pkg/BackgroundSomething.java:56: Error: Call must be from @{Main,Ui}Thread, but context is allowing @AnyThread [ThreadConstraint]
+                                        listener.started();
+                                                 ~~~~~~~~~
+        src/test/pkg/BackgroundSomething.java:65: Error: Call must be from @{Main,Ui}Thread, but context is allowing @AnyThread [ThreadConstraint]
+                                        listener.finished();
+                                                 ~~~~~~~~~~
+        2 errors, 0 warnings
+        """
+          .trimIndent()
+      )
   }
 
   fun testAnonymousInnerClasses() {
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
                 package test.pkg;
 
                 import androidx.annotation.UiThread;
@@ -3636,19 +3636,19 @@ class InferredThreadDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-                )
-                .indented(),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expectClean()
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expectClean()
   }
 
   fun testAnonymousInnerClasses2() {
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
                 package test.pkg;
 
                 import android.annotation.SuppressLint;
@@ -3688,19 +3688,19 @@ class InferredThreadDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-                )
-                .indented(),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expectClean()
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expectClean()
   }
 
   fun testLambdas() {
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
                 package test.pkg;
 
                 import android.app.Activity;
@@ -3731,19 +3731,19 @@ class InferredThreadDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-                )
-                .indented(),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expectClean()
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expectClean()
   }
 
   fun testFunctionalInterfacesJava() {
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
                     package test.pkg;
 
                     import androidx.annotation.MainThread;
@@ -3770,30 +3770,30 @@ class InferredThreadDetectorTest : AbstractCheckTest() {
                         }
                     }
                 """
-                )
-                .indented(),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expect(
-            """
-            src/test/pkg/Test.java:19: Error: Call must be from @{Main,Ui}Thread, but super method Foo.foo(…) is allowing @WorkerThread [ThreadConstraint]
-                    test(() -> { uiMethod(); }); // ERROR
-                                 ~~~~~~~~~~
-            src/test/pkg/Test.java:23: Error: Call must be from @{Main,Ui}Thread, but super method Foo.foo(…) is allowing @WorkerThread [ThreadConstraint]
-                    test(this::uiMethod); // ERROR
-                         ~~~~~~~~~~~~~~
-            2 errors
-            """
-                .trimIndent()
-        )
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
+        src/test/pkg/Test.java:19: Error: Call must be from @{Main,Ui}Thread, but super method Foo.foo(…) is allowing @WorkerThread [ThreadConstraint]
+                test(() -> { uiMethod(); }); // ERROR
+                             ~~~~~~~~~~
+        src/test/pkg/Test.java:23: Error: Call must be from @{Main,Ui}Thread, but super method Foo.foo(…) is allowing @WorkerThread [ThreadConstraint]
+                test(this::uiMethod); // ERROR
+                     ~~~~~~~~~~~~~~
+        2 errors
+        """
+          .trimIndent()
+      )
   }
 
   fun testFunctionalInterfacesKotlin_indirect() {
     lint()
-        .files(
-            kotlin(
-                    """
+      .files(
+        kotlin(
+            """
                     package test.pkg
 
                     import androidx.annotation.MainThread
@@ -3821,31 +3821,31 @@ class InferredThreadDetectorTest : AbstractCheckTest() {
                         }
                     }
                 """
-                )
-                .indented(),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expect(
-            """
-            src/test/pkg/Test.kt:20: Error: Call must be from @{Main,Ui}Thread, but super method Foo.foo(…) is allowing @WorkerThread [ThreadConstraint]
-                    test { indirectUiMethod() } // ERROR
-                           ~~~~~~~~~~~~~~~~~~
-            src/test/pkg/Test.kt:24: Error: Call must be from @{Main,Ui}Thread, but super method Foo.foo(…) is allowing @WorkerThread [ThreadConstraint]
-                    test(this::indirectUiMethod) // ERROR
-                         ~~~~~~~~~~~~~~~~~~~~~~
-            2 errors
-            """
-                .trimIndent()
-        )
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
+        src/test/pkg/Test.kt:20: Error: Call must be from @{Main,Ui}Thread, but super method Foo.foo(…) is allowing @WorkerThread [ThreadConstraint]
+                test { indirectUiMethod() } // ERROR
+                       ~~~~~~~~~~~~~~~~~~
+        src/test/pkg/Test.kt:24: Error: Call must be from @{Main,Ui}Thread, but super method Foo.foo(…) is allowing @WorkerThread [ThreadConstraint]
+                test(this::indirectUiMethod) // ERROR
+                     ~~~~~~~~~~~~~~~~~~~~~~
+        2 errors
+        """
+          .trimIndent()
+      )
   }
 
   /** Old tests from [WrongTheadInterproceduralDetectorTest] */
   fun testThreadingFromJava() {
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
                     package test.pkg;
 
                     import androidx.annotation.UiThread;
@@ -3926,49 +3926,49 @@ class InferredThreadDetectorTest : AbstractCheckTest() {
                       }
                     }
                     """
-                )
-                .indented(),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .allowSystemErrors(true)
-        .run()
-        .expect(
-            """
-            src/test/pkg/Runnable.java:14: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
-              @UiThread static void uiThreadStatic() { unannotatedStatic(); }
-                                                       ~~~~~~~~~~~~~~~~~~~
-            src/test/pkg/Runnable.java:18: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
-              @UiThread void uiThread() { unannotated(); }
-                                          ~~~~~~~~~~~~~
-            src/test/pkg/Runnable.java:25: Error: Call must be from @{Main,Ui}Thread, but context is allowing @WorkerThread [ThreadConstraint]
-                runIt(() -> runUi());
-                ~~~~~~~~~~~~~~~~~~~~
-            src/test/pkg/Runnable.java:56: Error: Argument must allow calling run() from @{Main,Ui}Thread, but that call is requiring @WorkerThread [ThreadConstraint]
-                runWithIt(new A(), this::b);
-                                   ~~~~~~~
-            src/test/pkg/Runnable.java:57: Error: Argument must allow calling run() from @WorkerThread, but that call is requiring @{Main,Ui}Thread [ThreadConstraint]
-                runWithIt(new B(), this::a);
-                                   ~~~~~~~
-            src/test/pkg/Runnable.java:57: Error: Statement must run from @WorkerThread, incompatible with earlier code that must run from @{Main,Ui}Thread [ThreadConstraint]
-                runWithIt(new B(), this::a);
-                ~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            src/test/pkg/Runnable.java:71: Error: Call must be from @WorkerThread, but a super method is allowing @{Main,Ui}Thread [ThreadConstraint]
-                invokeLater(() -> c());
-                                  ~~~
-            src/test/pkg/Runnable.java:76: Error: Call must be from @{Main,Ui}Thread, but a super method is allowing @WorkerThread [ThreadConstraint]
-                invokeInBackground(() -> d());
-                                         ~~~
-            8 errors
-            """
-                .trimIndent()
-        )
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .allowSystemErrors(true)
+      .run()
+      .expect(
+        """
+        src/test/pkg/Runnable.java:14: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+          @UiThread static void uiThreadStatic() { unannotatedStatic(); }
+                                                   ~~~~~~~~~~~~~~~~~~~
+        src/test/pkg/Runnable.java:18: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+          @UiThread void uiThread() { unannotated(); }
+                                      ~~~~~~~~~~~~~
+        src/test/pkg/Runnable.java:25: Error: Call must be from @{Main,Ui}Thread, but context is allowing @WorkerThread [ThreadConstraint]
+            runIt(() -> runUi());
+            ~~~~~~~~~~~~~~~~~~~~
+        src/test/pkg/Runnable.java:56: Error: Argument must allow calling run() from @{Main,Ui}Thread, but that call is requiring @WorkerThread [ThreadConstraint]
+            runWithIt(new A(), this::b);
+                               ~~~~~~~
+        src/test/pkg/Runnable.java:57: Error: Argument must allow calling run() from @WorkerThread, but that call is requiring @{Main,Ui}Thread [ThreadConstraint]
+            runWithIt(new B(), this::a);
+                               ~~~~~~~
+        src/test/pkg/Runnable.java:57: Error: Statement must run from @WorkerThread, incompatible with earlier code that must run from @{Main,Ui}Thread [ThreadConstraint]
+            runWithIt(new B(), this::a);
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        src/test/pkg/Runnable.java:71: Error: Call must be from @WorkerThread, but a super method is allowing @{Main,Ui}Thread [ThreadConstraint]
+            invokeLater(() -> c());
+                              ~~~
+        src/test/pkg/Runnable.java:76: Error: Call must be from @{Main,Ui}Thread, but a super method is allowing @WorkerThread [ThreadConstraint]
+            invokeInBackground(() -> d());
+                                     ~~~
+        8 errors
+        """
+          .trimIndent()
+      )
   }
 
   fun testThreadingFromKotlin() {
     lint()
-        .files(
-            kotlin(
-                    """
+      .files(
+        kotlin(
+            """
                     package test.pkg
 
                     import androidx.annotation.UiThread
@@ -4045,41 +4045,41 @@ class InferredThreadDetectorTest : AbstractCheckTest() {
                       }
                     }
                     """
-                )
-                .indented(),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expect(
-            """
-            src/test/pkg/Test.kt:9: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
-              @UiThread fun uiThread() { unannotated() }
-                                         ~~~~~~~~~~~~~
-            src/test/pkg/Test.kt:15: Error: Call must be from @{Main,Ui}Thread, but context is allowing @WorkerThread [ThreadConstraint]
-              @WorkerThread fun callRunIt() { runIt({ runUi() }) }
-                                              ~~~~~~~~~~~~~~~~~~
-            src/test/pkg/Test.kt:39: Error: Argument must run from @{Main,Ui}Thread, but is requiring @WorkerThread [ThreadConstraint]
-                runWithIt(A(), this::b)
-                               ~~~~~~~
-            src/test/pkg/Test.kt:40: Error: Argument must run from @WorkerThread, but is requiring @{Main,Ui}Thread [ThreadConstraint]
-                runWithIt(B(), this::a)
-                               ~~~~~~~
-            src/test/pkg/Test.kt:40: Error: Statement must run from @WorkerThread, incompatible with earlier code that must run from @{Main,Ui}Thread [ThreadConstraint]
-                runWithIt(B(), this::a)
-                ~~~~~~~~~~~~~~~~~~~~~~~
-            src/test/pkg/Test.kt:50: Error: Call must be from @WorkerThread, but a super method is allowing @{Main,Ui}Thread [ThreadConstraint]
-                invokeLater({ c() })
-                              ~~~
-            src/test/pkg/Test.kt:55: Error: Call must be from @{Main,Ui}Thread, but a super method is allowing @WorkerThread [ThreadConstraint]
-                invokeInBackground({ d() })
-                                     ~~~
-            src/test/pkg/Test.kt:60: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
-                @UiThread fun uiThreadStatic() { unannotatedStatic() }
-                                                 ~~~~~~~~~~~~~~~~~~~
-            8 errors
-            """
-                .trimIndent()
-        )
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
+        src/test/pkg/Test.kt:9: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+          @UiThread fun uiThread() { unannotated() }
+                                     ~~~~~~~~~~~~~
+        src/test/pkg/Test.kt:15: Error: Call must be from @{Main,Ui}Thread, but context is allowing @WorkerThread [ThreadConstraint]
+          @WorkerThread fun callRunIt() { runIt({ runUi() }) }
+                                          ~~~~~~~~~~~~~~~~~~
+        src/test/pkg/Test.kt:39: Error: Argument must run from @{Main,Ui}Thread, but is requiring @WorkerThread [ThreadConstraint]
+            runWithIt(A(), this::b)
+                           ~~~~~~~
+        src/test/pkg/Test.kt:40: Error: Argument must run from @WorkerThread, but is requiring @{Main,Ui}Thread [ThreadConstraint]
+            runWithIt(B(), this::a)
+                           ~~~~~~~
+        src/test/pkg/Test.kt:40: Error: Statement must run from @WorkerThread, incompatible with earlier code that must run from @{Main,Ui}Thread [ThreadConstraint]
+            runWithIt(B(), this::a)
+            ~~~~~~~~~~~~~~~~~~~~~~~
+        src/test/pkg/Test.kt:50: Error: Call must be from @WorkerThread, but a super method is allowing @{Main,Ui}Thread [ThreadConstraint]
+            invokeLater({ c() })
+                          ~~~
+        src/test/pkg/Test.kt:55: Error: Call must be from @{Main,Ui}Thread, but a super method is allowing @WorkerThread [ThreadConstraint]
+            invokeInBackground({ d() })
+                                 ~~~
+        src/test/pkg/Test.kt:60: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+            @UiThread fun uiThreadStatic() { unannotatedStatic() }
+                                             ~~~~~~~~~~~~~~~~~~~
+        8 errors
+        """
+          .trimIndent()
+      )
   }
 }
 

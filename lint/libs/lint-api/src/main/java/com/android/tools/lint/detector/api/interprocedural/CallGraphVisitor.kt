@@ -51,9 +51,9 @@ import org.jetbrains.uast.visitor.AbstractUastVisitor
  * If [conservative] is true, then adds edges to all overriding methods of each call target. This trades precision for soundness.
  */
 class CallGraphVisitor(
-    private val receiverEval: DispatchReceiverEvaluator,
-    private val classHierarchy: ClassHierarchy,
-    private val conservative: Boolean = false,
+  private val receiverEval: DispatchReceiverEvaluator,
+  private val classHierarchy: ClassHierarchy,
+  private val conservative: Boolean = false,
 ) : AbstractUastVisitor() {
   private val mutableCallGraph: MutableCallGraph = MutableCallGraph()
   val callGraph: CallGraph
@@ -75,11 +75,11 @@ class CallGraphVisitor(
     if (superClass != null) {
       val constructors = node.constructors()
       val thoseWithoutExplicitSuper =
-          constructors.filter {
-            val explicitSuperFinder = ExplicitSuperConstructorCallFinder()
-            it.accept(explicitSuperFinder)
-            !explicitSuperFinder.foundExplicitCall
-          }
+        constructors.filter {
+          val explicitSuperFinder = ExplicitSuperConstructorCallFinder()
+          it.accept(explicitSuperFinder)
+          !explicitSuperFinder.foundExplicitCall
+        }
       val callers: Collection<UElement> = if (constructors.isNotEmpty()) thoseWithoutExplicitSuper else listOf(node)
       val callee: UElement = superClass.constructors().find { it.uastParameters.isEmpty() } ?: superClass
       with(mutableCallGraph) {
@@ -95,40 +95,40 @@ class CallGraphVisitor(
 
     // Find surrounding context.
     val parent =
-        node.getParentOfType(
-            /*strict*/ true,
-            UMethod::class.java,
-            ULambdaExpression::class.java,
-            UClassInitializer::class.java,
-            UField::class.java,
-        )
+      node.getParentOfType(
+        /*strict*/ true,
+        UMethod::class.java,
+        ULambdaExpression::class.java,
+        UClassInitializer::class.java,
+        UField::class.java,
+      )
 
     // Find the caller(s) based on surrounding context.
     val callers: Collection<UElement> =
-        when (parent) {
-          is UMethod,
-          is ULambdaExpression -> {
-            // Method or lambda caller.
-            listOf(parent)
-          }
-          is UClassInitializer,
-          is UField -> {
-            // Implicit constructor callers due to class initializer.
-            val decl = parent as UDeclaration
-            if (decl.isStatic) {
-              // Ignore static initializers for now.
-              return super.visitCallExpression(node)
-            }
-            val containingClass = decl.getContainingUClass() ?: return super.visitCallExpression(node) // No containing class.
-            val ctors = containingClass.constructors()
-            // For default constructors we use the containing class as the caller.
-            if (ctors.isNotEmpty()) ctors else listOf(containingClass)
-          }
-          else -> {
-            // No caller found; this can happen for, e.g., annotation instantiations.
+      when (parent) {
+        is UMethod,
+        is ULambdaExpression -> {
+          // Method or lambda caller.
+          listOf(parent)
+        }
+        is UClassInitializer,
+        is UField -> {
+          // Implicit constructor callers due to class initializer.
+          val decl = parent as UDeclaration
+          if (decl.isStatic) {
+            // Ignore static initializers for now.
             return super.visitCallExpression(node)
           }
+          val containingClass = decl.getContainingUClass() ?: return super.visitCallExpression(node) // No containing class.
+          val ctors = containingClass.constructors()
+          // For default constructors we use the containing class as the caller.
+          if (ctors.isNotEmpty()) ctors else listOf(containingClass)
         }
+        else -> {
+          // No caller found; this can happen for, e.g., annotation instantiations.
+          return super.visitCallExpression(node)
+        }
+      }
 
     val callerNodes = callers.map { mutableCallGraph.getNode(it) }
 
@@ -143,8 +143,8 @@ class CallGraphVisitor(
       if (node.isConstructorCall()) {
         // Found a call to a default constructor; create an edge to the instantiated class.
         val constructedClass =
-            node.classReference?.resolve()?.navigationElement.toUElement() as? UClass
-                ?: return super.visitCallExpression(node) // Unable to resolve class.
+          node.classReference?.resolve()?.navigationElement.toUElement() as? UClass
+            ?: return super.visitCallExpression(node) // Unable to resolve class.
         addEdge(constructedClass, DIRECT)
       } else if (node.methodName == "invoke") {
         // This is likely an invocation of a function expression, such as a Kotlin lambda.
@@ -186,23 +186,23 @@ class CallGraphVisitor(
 
   /** Returns whether this method could be the runtime target of a call. */
   private fun UMethod.isCallable() =
-      when {
-        javaPsi.hasModifierProperty(PsiModifier.ABSTRACT) -> false
-        javaPsi.containingClass?.isInterface == true -> {
-          javaPsi.hasModifierProperty(PsiModifier.DEFAULT)
-        }
-        else -> true
+    when {
+      javaPsi.hasModifierProperty(PsiModifier.ABSTRACT) -> false
+      javaPsi.containingClass?.isInterface == true -> {
+        javaPsi.hasModifierProperty(PsiModifier.DEFAULT)
       }
+      else -> true
+    }
 
   /** Returns whether this method is statically dispatched. */
   private fun UMethod.isStaticallyDispatched(): Boolean {
     val parentClass = javaPsi.containingClass ?: return true
     return isConstructor ||
-        isStatic ||
-        isFinal ||
-        visibility == UastVisibility.PRIVATE ||
-        parentClass is PsiAnonymousClass ||
-        parentClass.hasModifierProperty(PsiModifier.FINAL)
+      isStatic ||
+      isFinal ||
+      visibility == UastVisibility.PRIVATE ||
+      parentClass is PsiAnonymousClass ||
+      parentClass.hasModifierProperty(PsiModifier.FINAL)
   }
 
   /** Tries to find an explicit call to a super constructor. Assumes the first element visited is a constructor. */

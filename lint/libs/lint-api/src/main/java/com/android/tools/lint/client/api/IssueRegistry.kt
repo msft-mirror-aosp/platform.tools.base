@@ -137,12 +137,12 @@ abstract class IssueRegistry protected constructor() {
    * @return a list of new detector instances
    */
   internal fun createDetectors(
-      driver: LintDriver,
-      project: Project,
-      configuration: Configuration,
-      scope: EnumSet<Scope>,
-      platforms: EnumSet<Platform>,
-      scopeToDetectors: MutableMap<Scope, MutableList<Detector>>?,
+    driver: LintDriver,
+    project: Project,
+    configuration: Configuration,
+    scope: EnumSet<Scope>,
+    platforms: EnumSet<Platform>,
+    scopeToDetectors: MutableMap<Scope, MutableList<Detector>>?,
   ): List<Detector> {
 
     val issues = getIssuesForScope(scope)
@@ -161,13 +161,13 @@ abstract class IssueRegistry protected constructor() {
       val implementation = issue.implementation
       val detectorClass: Class<out Detector> = implementation.detectorClass
       val issueScope =
-          implementation.scope.let {
-            if (!it.contains(Scope.TEST_SOURCES) && configuration.isIncludeInTests(issue)) {
-              EnumSet.copyOf(it).apply { add(Scope.TEST_SOURCES) }
-            } else {
-              it
-            }
+        implementation.scope.let {
+          if (!it.contains(Scope.TEST_SOURCES) && configuration.isIncludeInTests(issue)) {
+            EnumSet.copyOf(it).apply { add(Scope.TEST_SOURCES) }
+          } else {
+            it
           }
+        }
       if (!detectorClasses.contains(detectorClass)) {
         // Determine if the issue is enabled
         if (!configuration.isEnabled(issue)) {
@@ -209,13 +209,7 @@ abstract class IssueRegistry protected constructor() {
           }
         }
       } catch (t: Throwable) {
-        LintDriver.handleDetectorError(
-            driver,
-            t,
-            "Can't initialize detector ${clz.name}.\n",
-            null,
-            project,
-        )
+        LintDriver.handleDetectorError(driver, t, "Can't initialize detector ${clz.name}.\n", null, project)
       }
     }
 
@@ -407,18 +401,18 @@ abstract class IssueRegistry protected constructor() {
     /** Issue reported by lint (not a specific detector) when it cannot even parse an XML file prior to analysis. */
     @JvmField // temporarily
     val PARSER_ERROR =
-        Issue.create(
-            id = "ParserError",
-            briefDescription = "Parser Errors",
-            explanation =
-                """
+      Issue.create(
+        id = "ParserError",
+        briefDescription = "Parser Errors",
+        explanation =
+          """
                 Lint will ignore any files that contain fatal parsing errors. These may \
                 contain other errors, or contain code which affects issues in other files.""",
-            category = Category.LINT,
-            priority = 10,
-            severity = Severity.ERROR,
-            implementation = EMPTY_IMPLEMENTATION,
-        )
+        category = Category.LINT,
+        priority = 10,
+        severity = Severity.ERROR,
+        implementation = EMPTY_IMPLEMENTATION,
+      )
 
     /**
      * Issue reported by lint for various other issues which prevents lint from running normally when it's not necessarily an error in the
@@ -426,11 +420,11 @@ abstract class IssueRegistry protected constructor() {
      */
     @JvmField // temporarily
     val LINT_ERROR =
-        Issue.create(
-            id = "LintError",
-            briefDescription = "Lint Failure",
-            explanation =
-                """
+      Issue.create(
+        id = "LintError",
+        briefDescription = "Lint Failure",
+        explanation =
+          """
                 This issue type represents a problem running lint itself. Examples include \
                 failure to find bytecode for source files (which means certain detectors \
                 could not be run), parsing errors in lint configuration files, etc.
@@ -438,11 +432,11 @@ abstract class IssueRegistry protected constructor() {
                 These errors are not errors in your own code, but they are shown to make it \
                 clear that some checks were not completed.
                 """,
-            category = Category.LINT,
-            priority = 10,
-            severity = Severity.ERROR,
-            implementation = EMPTY_IMPLEMENTATION,
-        )
+        category = Category.LINT,
+        priority = 10,
+        severity = Severity.ERROR,
+        implementation = EMPTY_IMPLEMENTATION,
+      )
 
     /**
      * Issue reported by lint for various other issues which may prevent lint from running normally when it's not necessarily an error in
@@ -450,48 +444,48 @@ abstract class IssueRegistry protected constructor() {
      */
     @JvmField // temporarily
     val LINT_WARNING =
-        Issue.create(
-            id = "LintWarning",
-            briefDescription = "Lint Failure",
-            explanation =
-                """
+      Issue.create(
+        id = "LintWarning",
+        briefDescription = "Lint Failure",
+        explanation =
+          """
                 This issue type represents a problem running lint itself. Examples include \
                 unsupported tags in configuration files, etc.
 
                 These errors are not errors in your own code, but they are shown to make it \
                 clear that some checks were not completed.
                 """,
-            category = Category.LINT,
-            priority = 5,
-            severity = Severity.WARNING,
-            implementation = EMPTY_IMPLEMENTATION,
-        )
+        category = Category.LINT,
+        priority = 5,
+        severity = Severity.WARNING,
+        implementation = EMPTY_IMPLEMENTATION,
+      )
 
     /** Lint is configured with references to an issue id that it does not recognize. */
     @JvmField
     val UNKNOWN_ISSUE_ID =
-        Issue.create(
-            id = "UnknownIssueId",
-            briefDescription = "Unknown Lint Issue Id",
-            explanation =
-                """
+      Issue.create(
+        id = "UnknownIssueId",
+        briefDescription = "Unknown Lint Issue Id",
+        explanation =
+          """
                 Lint will report this issue if it is configured with an issue id it does \
                 not recognize in for example Gradle files or `lint.xml` configuration files.
                 """,
-            category = Category.LINT,
-            priority = 1,
-            severity = Severity.WARNING,
-            implementation = EMPTY_IMPLEMENTATION,
-        )
+        category = Category.LINT,
+        priority = 1,
+        severity = Severity.WARNING,
+        implementation = EMPTY_IMPLEMENTATION,
+      )
 
     /** When lint runs in partial analysis mode, any issues that are turned off in a library cannot be re-enabled in the main project. */
     @JvmField
     val CANNOT_ENABLE_HIDDEN =
-        Issue.create(
-            id = "CannotEnableHidden",
-            briefDescription = "Issue Already Disabled",
-            explanation =
-                """
+      Issue.create(
+        id = "CannotEnableHidden",
+        briefDescription = "Issue Already Disabled",
+        explanation =
+          """
                 Any issues that are specifically disabled in a library cannot be re-enabled \
                 in a dependent project. To fix this you need to also enable the issue in \
                 the library project.
@@ -500,11 +494,11 @@ abstract class IssueRegistry protected constructor() {
                 enabled in a dependent project; they must also be enabled in all the \
                 libraries the project depends on.)
                 """,
-            category = Category.LINT,
-            priority = 1,
-            severity = Severity.WARNING,
-            implementation = EMPTY_IMPLEMENTATION,
-        )
+        category = Category.LINT,
+        priority = 1,
+        severity = Severity.WARNING,
+        implementation = EMPTY_IMPLEMENTATION,
+      )
 
     /**
      * Issue reported by lint for various other issues which prevents lint from running normally when it's not necessarily an error in the
@@ -512,11 +506,11 @@ abstract class IssueRegistry protected constructor() {
      */
     @JvmField
     val BASELINE_USED =
-        Issue.create(
-            id = "LintBaseline",
-            briefDescription = "Baseline Applied",
-            explanation =
-                """
+      Issue.create(
+        id = "LintBaseline",
+        briefDescription = "Baseline Applied",
+        explanation =
+          """
           Lint can be configured with a "baseline"; a set of current issues found \
           in a codebase, which future runs of lint will silently ignore. Only new \
           issues not found in the baseline are reported.
@@ -533,11 +527,11 @@ abstract class IssueRegistry protected constructor() {
           have a false sense of security if you forgot that you've checked in a \
           baseline file.
           """,
-            category = Category.LINT,
-            priority = 10,
-            severity = Severity.INFORMATIONAL,
-            implementation = EMPTY_IMPLEMENTATION,
-        )
+        category = Category.LINT,
+        priority = 10,
+        severity = Severity.INFORMATIONAL,
+        implementation = EMPTY_IMPLEMENTATION,
+      )
 
     /**
      * Reported when there are entries in the baseline that no longer seem to be reported, and is likely fixed (or the issue has been
@@ -545,11 +539,11 @@ abstract class IssueRegistry protected constructor() {
      */
     @JvmField
     val BASELINE_FIXED =
-        Issue.create(
-            id = "LintBaselineFixed",
-            briefDescription = "Baselined Issues Fixed",
-            explanation =
-                """
+      Issue.create(
+        id = "LintBaselineFixed",
+        briefDescription = "Baselined Issues Fixed",
+        explanation =
+          """
           If a lint baseline describes a problem which is no longer reported, \
           then the problem has either been fixed, or perhaps the issue type has \
           been disabled. In any case, the entry can be removed from the baseline \
@@ -557,20 +551,20 @@ abstract class IssueRegistry protected constructor() {
           complain rather than just silently starting to match the old baseline \
           entry again.)
           """,
-            category = Category.LINT,
-            priority = 10,
-            severity = Severity.INFORMATIONAL,
-            implementation = EMPTY_IMPLEMENTATION,
-        )
+        category = Category.LINT,
+        priority = 10,
+        severity = Severity.INFORMATIONAL,
+        implementation = EMPTY_IMPLEMENTATION,
+      )
 
     /** Issue reported by lint when it encounters old lint checks that haven't been updated to the latest APIs. */
     @JvmField // temporarily
     val OBSOLETE_LINT_CHECK =
-        Issue.create(
-            id = "ObsoleteLintCustomCheck",
-            briefDescription = "Obsolete custom lint check",
-            explanation =
-                """
+      Issue.create(
+        id = "ObsoleteLintCustomCheck",
+        briefDescription = "Obsolete custom lint check",
+        explanation =
+          """
                 Lint can be extended with "custom checks": additional checks implemented \
                 by developers and libraries to for example enforce specific API usages \
                 required by a library or a company coding style guideline.
@@ -584,19 +578,19 @@ abstract class IssueRegistry protected constructor() {
                 It may also flag issues found to be using a **newer** version of the API, \
                 meaning that you need to use a newer version of lint (or Android Studio \
                 or Gradle plugin etc) to work with these checks.""",
-            category = Category.LINT,
-            priority = 10,
-            severity = Severity.WARNING,
-            implementation = EMPTY_IMPLEMENTATION,
-        )
+        category = Category.LINT,
+        priority = 10,
+        severity = Severity.WARNING,
+        implementation = EMPTY_IMPLEMENTATION,
+      )
 
     /** Vendor used for the built-in lint checks. */
     val AOSP_VENDOR =
-        Vendor(
-            vendorName = "Android Open Source Project",
-            feedbackUrl = "https://issuetracker.google.com/issues/new?component=192708",
-            contact = "https://groups.google.com/g/lint-dev",
-        )
+      Vendor(
+        vendorName = "Android Open Source Project",
+        feedbackUrl = "https://issuetracker.google.com/issues/new?component=192708",
+        contact = "https://groups.google.com/g/lint-dev",
+      )
 
     /** Reset the registry such that it recomputes its available issues. */
     fun reset() {

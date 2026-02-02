@@ -57,11 +57,11 @@ class RestrictionsDetector : ResourceXmlDetector() {
 
   /** Validates the `<restriction>` **children** of the given element. */
   private fun validateNestedRestrictions(
-      context: XmlContext,
-      element: Element,
-      restrictionType: String?,
-      keys: MutableMap<String, Element>,
-      depth: Int,
+    context: XmlContext,
+    element: Element,
+    restrictionType: String?,
+    keys: MutableMap<String, Element>,
+    depth: Int,
   ) {
     assert(depth == 0 || restrictionType != null)
 
@@ -74,10 +74,10 @@ class RestrictionsDetector : ResourceXmlDetector() {
       val defaultValue = element.getAttributeNodeNS(ANDROID_URI, VALUE_DEFAULT_VALUE)
       if (defaultValue != null) {
         context.report(
-            ISSUE,
-            element,
-            context.getLocation(defaultValue),
-            "Restriction type `$restrictionType` should not have a default value",
+          ISSUE,
+          element,
+          context.getLocation(defaultValue),
+          "Restriction type `$restrictionType` should not have a default value",
         )
       }
       for (child in children) {
@@ -91,59 +91,54 @@ class RestrictionsDetector : ResourceXmlDetector() {
       } else if (restrictionType == VALUE_BUNDLE_ARRAY) {
         if (children.size != 1) {
           context.report(
-              ISSUE,
-              element,
-              context.getElementLocation(element),
-              "Expected exactly one child for restriction of type `bundle_array`",
+            ISSUE,
+            element,
+            context.getElementLocation(element),
+            "Expected exactly one child for restriction of type `bundle_array`",
           )
         }
       } else {
         assert(restrictionType == VALUE_BUNDLE)
         if (children.isEmpty()) {
           context.report(
-              ISSUE,
-              element,
-              context.getElementLocation(element),
-              "Restriction type `bundle` should have at least one nested restriction",
+            ISSUE,
+            element,
+            context.getElementLocation(element),
+            "Restriction type `bundle` should have at least one nested restriction",
           )
         }
       }
 
       if (children.size > MAX_NUMBER_OF_NESTED_RESTRICTIONS) {
         context.report(
-            ISSUE,
-            element,
-            context.getElementLocation(element),
-            // TODO: Reference Google Play store restriction here in error message,
-            // e.g. that violating this will cause APK to be rejected?
-            "Invalid nested restriction: too many nested restrictions (was ${children.size}, max $MAX_NUMBER_OF_NESTED_RESTRICTIONS)",
+          ISSUE,
+          element,
+          context.getElementLocation(element),
+          // TODO: Reference Google Play store restriction here in error message,
+          // e.g. that violating this will cause APK to be rejected?
+          "Invalid nested restriction: too many nested restrictions (was ${children.size}, max $MAX_NUMBER_OF_NESTED_RESTRICTIONS)",
         )
       } else if (depth > MAX_NESTING_DEPTH) {
         // Same comment as for MAX_NUMBER_OF_NESTED_RESTRICTIONS: include source?
         context.report(
-            ISSUE,
-            element,
-            context.getElementLocation(element),
-            "Invalid nested restriction: nesting depth $depth too large (max $MAX_NESTING_DEPTH",
+          ISSUE,
+          element,
+          context.getElementLocation(element),
+          "Invalid nested restriction: nesting depth $depth too large (max $MAX_NESTING_DEPTH",
         )
       }
     } else if (children.isNotEmpty()) {
       context.report(
-          ISSUE,
-          element,
-          context.getNameLocation(element),
-          "Only restrictions of type `bundle` and `bundle_array` can have one or multiple nested restriction elements",
+        ISSUE,
+        element,
+        context.getNameLocation(element),
+        "Only restrictions of type `bundle` and `bundle_array` can have one or multiple nested restriction elements",
       )
     }
   }
 
   /** Validates a `<restriction>` element (and recurses to validate the children) */
-  private fun validateRestriction(
-      context: XmlContext,
-      node: Node,
-      depth: Int,
-      keys: MutableMap<String, Element>,
-  ) {
+  private fun validateRestriction(context: XmlContext, node: Node, depth: Int, keys: MutableMap<String, Element>) {
 
     if (node.nodeType != Node.ELEMENT_NODE) {
       return
@@ -165,12 +160,7 @@ class RestrictionsDetector : ResourceXmlDetector() {
       key.startsWith(STRING_PREFIX) -> {
         val attribute = element.getAttributeNodeNS(ANDROID_URI, ATTR_KEY)
         val valueLocation = context.getValueLocation(attribute)
-        context.report(
-            ISSUE,
-            element,
-            valueLocation,
-            "Keys cannot be localized, they should be specified with a string literal",
-        )
+        context.report(ISSUE, element, valueLocation, "Keys cannot be localized, they should be specified with a string literal")
       }
       keys.containsKey(key) -> {
         val thisAttribute = element.getAttributeNodeNS(ANDROID_URI, ATTR_KEY)
@@ -189,8 +179,8 @@ class RestrictionsDetector : ResourceXmlDetector() {
       // entries and entryValues are required if restrictionType is choice or multi-select.
 
       checkRequiredAttribute(context, element, VALUE_ENTRIES) != null ||
-          // deliberate short circuit evaluation
-          checkRequiredAttribute(context, element, VALUE_ENTRY_VALUES) != null
+        // deliberate short circuit evaluation
+        checkRequiredAttribute(context, element, VALUE_ENTRY_VALUES) != null
     } else if (restrictionType == VALUE_HIDDEN) {
       // hidden type must have a defaultValue
       checkRequiredAttribute(context, element, VALUE_DEFAULT_VALUE)
@@ -213,34 +203,20 @@ class RestrictionsDetector : ResourceXmlDetector() {
   private fun verifyRestrictionTagName(context: XmlContext, element: Element): Boolean {
     val tagName = element.tagName
     if (tagName != TAG_RESTRICTION) {
-      context.report(
-          ISSUE,
-          element,
-          context.getNameLocation(element),
-          "Unexpected tag `<$tagName>`, expected `<$TAG_RESTRICTION>`",
-      )
+      context.report(ISSUE, element, context.getNameLocation(element), "Unexpected tag `<$tagName>`, expected `<$TAG_RESTRICTION>`")
       return false
     }
     return true
   }
 
-  private fun checkRequiredAttribute(
-      context: XmlContext,
-      element: Element,
-      attribute: String,
-  ): String? {
+  private fun checkRequiredAttribute(context: XmlContext, element: Element, attribute: String): String? {
     var fullAttribute = attribute
     if (!element.hasAttributeNS(ANDROID_URI, fullAttribute)) {
       val prefix: String? = element.lookupPrefix(ANDROID_URI)
       if (prefix != null) {
         fullAttribute = "$prefix:$fullAttribute"
       }
-      context.report(
-          ISSUE,
-          element,
-          context.getElementLocation(element),
-          "Missing required attribute `$fullAttribute`",
-      )
+      context.report(ISSUE, element, context.getElementLocation(element), "Missing required attribute `$fullAttribute`")
       return null
     }
     return element.getAttributeNS(ANDROID_URI, fullAttribute)
@@ -257,16 +233,16 @@ class RestrictionsDetector : ResourceXmlDetector() {
     /** Validation of `<restrictions>` XML elements. */
     @JvmField
     val ISSUE =
-        Issue.create(
-            id = "ValidRestrictions",
-            briefDescription = "Invalid Restrictions Descriptor",
-            explanation = "Ensures that an applications restrictions XML file is properly formed",
-            moreInfo = "https://developer.android.com/reference/android/content/RestrictionsManager.html",
-            category = Category.CORRECTNESS,
-            priority = 5,
-            severity = Severity.FATAL,
-            implementation = Implementation(RestrictionsDetector::class.java, Scope.RESOURCE_FILE_SCOPE),
-        )
+      Issue.create(
+        id = "ValidRestrictions",
+        briefDescription = "Invalid Restrictions Descriptor",
+        explanation = "Ensures that an applications restrictions XML file is properly formed",
+        moreInfo = "https://developer.android.com/reference/android/content/RestrictionsManager.html",
+        category = Category.CORRECTNESS,
+        priority = 5,
+        severity = Severity.FATAL,
+        implementation = Implementation(RestrictionsDetector::class.java, Scope.RESOURCE_FILE_SCOPE),
+      )
 
     const val TAG_RESTRICTIONS = "restrictions"
     private const val TAG_RESTRICTION = "restriction"

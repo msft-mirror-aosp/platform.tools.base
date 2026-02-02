@@ -58,11 +58,7 @@ class UnboundedSetTest {
     for (s in pool) Truth.assertThat(s.map { it }).isEqualTo(s)
   }
 
-  private fun <X, Y, Z> testMapPreservingComposition(
-      pool: List<UnboundedSet<X>>,
-      fst: (X) -> Y,
-      snd: (Y) -> Z,
-  ) {
+  private fun <X, Y, Z> testMapPreservingComposition(pool: List<UnboundedSet<X>>, fst: (X) -> Y, snd: (Y) -> Z) {
     for (s in pool) {
       val s1 = s.map(fst).map(snd)
       val s2 = s.map { snd(fst(it)) }
@@ -72,13 +68,10 @@ class UnboundedSetTest {
 }
 
 class ConstraintLatticeTest :
-    LatticeTest<UnboundedSet<String>>(
-        lattice = constraintLattice(),
-        poolInits = listOf(unboundedSetOf("Ui"), unboundedSetOf("Binder"), unboundedSetOf("Worker")),
-    )
+  LatticeTest<UnboundedSet<String>>(
+    lattice = constraintLattice(),
+    poolInits = listOf(unboundedSetOf("Ui"), unboundedSetOf("Binder"), unboundedSetOf("Worker")),
+  )
 
 class PossibilityLatticeTest :
-    LatticeTest<UnboundedSet<String>>(
-        lattice = possibilityLattice(),
-        poolInits = listOf(unboundedSetOf("Cat"), unboundedSetOf("Dog")),
-    )
+  LatticeTest<UnboundedSet<String>>(lattice = possibilityLattice(), poolInits = listOf(unboundedSetOf("Cat"), unboundedSetOf("Dog")))

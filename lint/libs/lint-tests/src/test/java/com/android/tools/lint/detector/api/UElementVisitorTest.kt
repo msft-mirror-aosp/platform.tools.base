@@ -32,9 +32,9 @@ class UElementVisitorTest : AbstractCheckTest() {
   fun testSubclassVisitedOnlyOnce() {
     // Regression test for b/204342275: UElementVisitor visits subclasses twice in some cases.
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
                 package test.pkg;
 
                 class Test {
@@ -48,12 +48,12 @@ class UElementVisitorTest : AbstractCheckTest() {
                     class C4 {}
                 }
                 """
-                )
-                .indented()
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented()
+      )
+      .run()
+      .expect(
+        """
             src/test/pkg/Test.java:4: Warning: Visited I1 [_TestIssueId]
                 interface I1 {}
                           ~~
@@ -71,14 +71,14 @@ class UElementVisitorTest : AbstractCheckTest() {
                       ~~
             0 errors, 5 warnings
             """
-        )
+      )
   }
 
   fun testVisitNamedExpression() {
     lint()
-        .files(
-            kotlin(
-                    """
+      .files(
+        kotlin(
+            """
             annotation class Foo(val name: String)
 
             @Foo("test")
@@ -89,20 +89,20 @@ class UElementVisitorTest : AbstractCheckTest() {
             fun test2() {
             }
             """
-                )
-                .indented(),
-            java(
-                    """
+          )
+          .indented(),
+        java(
+            """
             @Foo(name = "test")
             public class Test {
             }
             """
-                )
-                .indented(),
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+      )
+      .run()
+      .expect(
+        """
         src/Foo.kt:3: Warning: Visited name [_TestIssueId]
         @Foo("test")
              ~~~~~~
@@ -114,14 +114,14 @@ class UElementVisitorTest : AbstractCheckTest() {
              ~~~~~~~~~~~~~
         0 errors, 3 warnings
         """
-        )
+      )
   }
 
   fun testPatternExpressions() {
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
             package test.pkg;
             public class JavaTest {
                 public void testInstanceofMatching(Object obj) {
@@ -130,12 +130,12 @@ class UElementVisitorTest : AbstractCheckTest() {
                 }
             }
             """
-                )
-                .indented()
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented()
+      )
+      .run()
+      .expect(
+        """
         src/test/pkg/JavaTest.java:4: Warning: Visited pattern expression s [_TestIssueId]
                 if (obj instanceof String s) {
                                    ~~~~~~~~
@@ -144,7 +144,7 @@ class UElementVisitorTest : AbstractCheckTest() {
                     ~~~~~~~~~~~~~~~~~~~~~~~
         0 errors, 2 warnings
         """
-        )
+      )
   }
 
   fun testAnnotationTargets_propertyParameter() {
@@ -152,9 +152,9 @@ class UElementVisitorTest : AbstractCheckTest() {
     // https://kotlinlang.org/docs/annotations.html#annotation-use-site-targets
     // @property use-site is not visible to Java
     lint()
-        .files(
-            kotlin(
-                    """
+      .files(
+        kotlin(
+            """
             package test.pkg
 
             annotation class Anno
@@ -170,13 +170,13 @@ class UElementVisitorTest : AbstractCheckTest() {
               var annotatedWithDefault: Int,
             )
           """
-                )
-                .indented()
-        )
-        .skipTestModes(TestMode.JVM_OVERLOADS)
-        .run()
-        .expect(
-            """
+          )
+          .indented()
+      )
+      .skipTestModes(TestMode.JVM_OVERLOADS)
+      .run()
+      .expect(
+        """
 src/test/pkg/Anno.kt:6: Warning: Visited annotation (again, via visitElement) test.pkg.Anno [_TestIssueId]
   @get:Anno
   ~~~~~~~~~
@@ -197,7 +197,7 @@ src/test/pkg/Anno.kt:12: Warning: Visited annotation test.pkg.Anno [_TestIssueId
   ~~~~~
 0 errors, 6 warnings
         """
-        )
+      )
   }
 
   fun testAnnotationTargets_withDefaultValue() {
@@ -205,9 +205,9 @@ src/test/pkg/Anno.kt:12: Warning: Visited annotation test.pkg.Anno [_TestIssueId
     // https://kotlinlang.org/docs/annotations.html#annotation-use-site-targets
     // @property use-site is not visible to Java
     lint()
-        .files(
-            kotlin(
-                    """
+      .files(
+        kotlin(
+            """
             package test.pkg
 
             annotation class Anno
@@ -223,13 +223,13 @@ src/test/pkg/Anno.kt:12: Warning: Visited annotation test.pkg.Anno [_TestIssueId
               var annotatedWithDefault: Int = 3,
             )
           """
-                )
-                .indented()
-        )
-        .skipTestModes(TestMode.JVM_OVERLOADS)
-        .run()
-        .expect(
-            """
+          )
+          .indented()
+      )
+      .skipTestModes(TestMode.JVM_OVERLOADS)
+      .run()
+      .expect(
+        """
 src/test/pkg/Anno.kt:6: Warning: Visited annotation (again, via visitElement) test.pkg.Anno [_TestIssueId]
   @get:Anno
   ~~~~~~~~~
@@ -250,7 +250,7 @@ src/test/pkg/Anno.kt:12: Warning: Visited annotation test.pkg.Anno [_TestIssueId
   ~~~~~
 0 errors, 6 warnings
         """
-        )
+      )
   }
 
   fun testAnnotationTargets_regularProperty() {
@@ -258,9 +258,9 @@ src/test/pkg/Anno.kt:12: Warning: Visited annotation test.pkg.Anno [_TestIssueId
     // https://kotlinlang.org/docs/annotations.html#annotation-use-site-targets
     // @property use-site is not visible to Java
     lint()
-        .files(
-            kotlin(
-                    """
+      .files(
+        kotlin(
+            """
             package test.pkg
 
             annotation class Anno
@@ -276,13 +276,13 @@ src/test/pkg/Anno.kt:12: Warning: Visited annotation test.pkg.Anno [_TestIssueId
               var annotatedWithDefault: Int = 3
             }
           """
-                )
-                .indented()
-        )
-        .skipTestModes(TestMode.JVM_OVERLOADS)
-        .run()
-        .expect(
-            """
+          )
+          .indented()
+      )
+      .skipTestModes(TestMode.JVM_OVERLOADS)
+      .run()
+      .expect(
+        """
 src/test/pkg/Anno.kt:6: Warning: Visited annotation (again, via visitElement) test.pkg.Anno [_TestIssueId]
   @get:Anno
   ~~~~~~~~~
@@ -309,7 +309,7 @@ src/test/pkg/Anno.kt:12: Warning: Visited annotation test.pkg.Anno [_TestIssueId
   ~~~~~
 0 errors, 8 warnings
         """
-        )
+      )
   }
 
   override fun getDetector(): Detector = TestDetector()
@@ -321,21 +321,16 @@ src/test/pkg/Anno.kt:12: Warning: Visited annotation test.pkg.Anno [_TestIssueId
     override fun applicableSuperClasses(): List<String> = listOf("test.pkg.Test.I1", "test.pkg.Test.I2")
 
     override fun visitClass(context: JavaContext, declaration: UClass) {
-      context.report(
-          TEST_ISSUE,
-          declaration,
-          context.getNameLocation(declaration),
-          "Visited `${declaration.nameFromSource}`",
-      )
+      context.report(TEST_ISSUE, declaration, context.getNameLocation(declaration), "Visited `${declaration.nameFromSource}`")
     }
 
     override fun getApplicableUastTypes(): List<Class<out UElement>> {
       return listOf(
-          UAnnotation::class.java,
-          UNamedExpression::class.java,
-          UPatternExpression::class.java,
-          UBinaryExpressionWithPattern::class.java,
-          UElement::class.java,
+        UAnnotation::class.java,
+        UNamedExpression::class.java,
+        UPatternExpression::class.java,
+        UBinaryExpressionWithPattern::class.java,
+        UElement::class.java,
       )
     }
 
@@ -347,39 +342,29 @@ src/test/pkg/Anno.kt:12: Warning: Visited annotation test.pkg.Anno [_TestIssueId
 
         override fun visitBinaryExpressionWithPattern(node: UBinaryExpressionWithPattern) {
           context.report(
-              TEST_ISSUE,
-              node,
-              context.getNameLocation(node),
-              "Visited pattern expression with type `${node.patternExpression?.variable?.nameFromSource}`",
+            TEST_ISSUE,
+            node,
+            context.getNameLocation(node),
+            "Visited pattern expression with type `${node.patternExpression?.variable?.nameFromSource}`",
           )
         }
 
         override fun visitPatternExpression(node: UPatternExpression) {
-          context.report(
-              TEST_ISSUE,
-              node,
-              context.getNameLocation(node),
-              "Visited pattern expression `${node.variable?.nameFromSource}`",
-          )
+          context.report(TEST_ISSUE, node, context.getNameLocation(node), "Visited pattern expression `${node.variable?.nameFromSource}`")
         }
 
         override fun visitAnnotation(node: UAnnotation) {
           if (node.qualifiedName?.contains("Anno") != true) return
-          context.report(
-              TEST_ISSUE,
-              node,
-              context.getNameLocation(node),
-              "Visited annotation `${node.qualifiedName}`",
-          )
+          context.report(TEST_ISSUE, node, context.getNameLocation(node), "Visited annotation `${node.qualifiedName}`")
         }
 
         override fun visitElement(node: UElement) {
           if (node.asSafely<UAnnotation>()?.qualifiedName?.contains("Anno") != true) return
           context.report(
-              TEST_ISSUE,
-              node,
-              context.getNameLocation(node),
-              "Visited annotation (again, via visitElement) `${node.qualifiedName}`",
+            TEST_ISSUE,
+            node,
+            context.getNameLocation(node),
+            "Visited annotation (again, via visitElement) `${node.qualifiedName}`",
           )
         }
       }
@@ -388,14 +373,14 @@ src/test/pkg/Anno.kt:12: Warning: Visited annotation test.pkg.Anno [_TestIssueId
 
   companion object {
     val TEST_ISSUE =
-        Issue.create(
-            "_TestIssueId",
-            "Not applicable",
-            "Not applicable",
-            Category.CORRECTNESS,
-            5,
-            Severity.WARNING,
-            Implementation(TestDetector::class.java, Scope.JAVA_FILE_SCOPE),
-        )
+      Issue.create(
+        "_TestIssueId",
+        "Not applicable",
+        "Not applicable",
+        Category.CORRECTNESS,
+        5,
+        Severity.WARNING,
+        Implementation(TestDetector::class.java, Scope.JAVA_FILE_SCOPE),
+      )
   }
 }

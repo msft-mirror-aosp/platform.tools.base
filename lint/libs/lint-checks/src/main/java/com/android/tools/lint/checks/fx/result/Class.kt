@@ -49,10 +49,10 @@ sealed interface ClassId {
 
     override fun toString(): String {
       val untilBracket =
-          when (val i = fqn.indexOf('<')) {
-            -1 -> fqn
-            else -> fqn.substring(0, i)
-          }
+        when (val i = fqn.indexOf('<')) {
+          -1 -> fqn
+          else -> fqn.substring(0, i)
+        }
       return when (val j = untilBracket.lastIndexOf('.')) {
         -1 -> fqn
         else -> fqn.substring(j + 1, fqn.length)
@@ -137,10 +137,10 @@ sealed interface ClassId {
 
     fun asContainingClassAndInnermostMethod(): Pair<ClassId, MethodId> {
       val parentClassId =
-          when {
-            path.size == 1 -> root
-            else -> Local(root, path.subList(0, path.size - 1))
-          }
+        when {
+          path.size == 1 -> root
+          else -> Local(root, path.subList(0, path.size - 1))
+        }
       return parentClassId to path.last()
     }
 
@@ -150,10 +150,10 @@ sealed interface ClassId {
   companion object {
 
     fun of(ref: PsiClass): ClassId =
-        when (val fqn = ref.qualifiedName) {
-          null -> Anon(ref)
-          else -> of(fqn)
-        }
+      when (val fqn = ref.qualifiedName) {
+        null -> Anon(ref)
+        else -> of(fqn)
+      }
 
     fun of(fqn: String): ClassId = Common.entries.find { fqn in it.aliases } ?: Named.of(fqn)
 
@@ -173,18 +173,18 @@ sealed interface ClassId {
     val Array: ClassId = Common.Array
 
     fun encoder(guardEncoder: Encoder<Any>, methodIdEncoder: Encoder<MethodId>): Encoder<ClassId> =
-        Encoder.fix { self ->
-          val int = Encoder.int
-          val str = Encoder.internedString
-          Encoder.sum(
-              case<_, Named>(str.adapt(Named::fqn, ::Named)),
-              case<_, Anon.Precise>(Encoder.product(Anon::Precise, str, int, int, int)),
-              case<_, Anon.Imprecise>(Encoder.product(Anon::Imprecise, str, int)),
-              case<_, Common>(Encoder.enum()),
-              case<_, Guarded>(Encoder.product(ClassId::Guarded, guardEncoder, self)),
-              case<_, Local>(Encoder.product(ClassId::Local, self, methodIdEncoder.zeroOrMore())),
-          )
-        }
+      Encoder.fix { self ->
+        val int = Encoder.int
+        val str = Encoder.internedString
+        Encoder.sum(
+          case<_, Named>(str.adapt(Named::fqn, ::Named)),
+          case<_, Anon.Precise>(Encoder.product(Anon::Precise, str, int, int, int)),
+          case<_, Anon.Imprecise>(Encoder.product(Anon::Imprecise, str, int)),
+          case<_, Common>(Encoder.enum()),
+          case<_, Guarded>(Encoder.product(ClassId::Guarded, guardEncoder, self)),
+          case<_, Local>(Encoder.product(ClassId::Local, self, methodIdEncoder.zeroOrMore())),
+        )
+      }
   }
 }
 
@@ -216,9 +216,9 @@ sealed interface ClassId {
  * type parameters instead of resorting to the underlying type system.
  */
 internal data class ClassBody<out FX>(
-    val supers: List<ClassId>,
-    val methods: PersistentMap<MethodId, MethodBody<FX>>,
-    val initEnvironment: Env<Nothing>,
+  val supers: List<ClassId>,
+  val methods: PersistentMap<MethodId, MethodBody<FX>>,
+  val initEnvironment: Env<Nothing>,
 ) {
   companion object {
     val empty = ClassBody<Nothing>(listOf(), persistentMapOf(), Env.empty)

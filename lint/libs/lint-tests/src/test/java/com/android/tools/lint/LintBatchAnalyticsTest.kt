@@ -59,11 +59,11 @@ class LintBatchAnalyticsTest : AbstractCheckTest() {
 
   fun testAnalytics() {
     val project =
-        getProjectDir(
-            null,
-            manifest().minSdk(1),
-            java(
-                    """
+      getProjectDir(
+        null,
+        manifest().minSdk(1),
+        java(
+            """
                 package test.pkg;
                 @SuppressWarnings("ClassNameDiffersFromFileName")
                 public class MyTest {
@@ -71,29 +71,29 @@ class LintBatchAnalyticsTest : AbstractCheckTest() {
                     String s2 = "/sdcard/mydir";
                 }
                 """
-                )
-                .indented(),
-        )
+          )
+          .indented(),
+      )
     MainTest.checkDriver(
-        null,
-        null,
+      null,
+      null,
 
-        // Expected exit code
-        LintCliFlags.ERRNO_SUCCESS,
+      // Expected exit code
+      LintCliFlags.ERRNO_SUCCESS,
 
-        // Args
-        arrayOf(
-            "--check",
-            "SdCardPath",
-            "--sdk-home", // SDK is needed to get version number for the baseline
-            TestUtils.getSdk().toString(),
-            "--disable",
-            "LintError",
-            "-Werror",
-            project.path,
-        ),
-        null,
-        null,
+      // Args
+      arrayOf(
+        "--check",
+        "SdCardPath",
+        "--sdk-home", // SDK is needed to get version number for the baseline
+        TestUtils.getSdk().toString(),
+        "--disable",
+        "LintError",
+        "-Werror",
+        project.path,
+      ),
+      null,
+      null,
     )
 
     val usages = usageTracker.usages

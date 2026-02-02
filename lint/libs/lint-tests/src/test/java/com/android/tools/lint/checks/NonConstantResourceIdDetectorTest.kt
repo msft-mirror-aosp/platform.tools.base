@@ -27,10 +27,10 @@ class NonConstantResourceIdDetectorTest : AbstractCheckTest() {
 
   fun `test java detects constant resource ids in switch block`() {
     lint()
-        .files(
-            rClass,
-            java(
-                """
+      .files(
+        rClass,
+        java(
+          """
                 package test.pkg;
 
                 public class SwitchTest {
@@ -55,11 +55,11 @@ class NonConstantResourceIdDetectorTest : AbstractCheckTest() {
                     }
 
                 }"""
-            ),
-        )
-        .run()
-        .expect(
-            """
+        ),
+      )
+      .run()
+      .expect(
+        """
             src/test/pkg/SwitchTest.java:13: Warning: Resource IDs will be non-final by default in Android Gradle Plugin version 8.0, avoid using them in switch case statements [NonConstantResourceId]
                                         case R.styleable.FontFamilyFont_android_fontWeight: someValue = 1; break;
                                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -68,16 +68,16 @@ class NonConstantResourceIdDetectorTest : AbstractCheckTest() {
                                              ~~~~~~~~~
             0 errors, 2 warnings
             """
-        )
+      )
   }
 
   fun `test kotlin does not report resource id usages in when expressions`() {
     @Suppress("LiftReturnOrAssignment")
     lint()
-        .files(
-            rClass,
-            kotlin(
-                """package test.pkg
+      .files(
+        rClass,
+        kotlin(
+          """package test.pkg
 
                     class WhenTest {
 
@@ -94,26 +94,26 @@ class NonConstantResourceIdDetectorTest : AbstractCheckTest() {
                         }
                     }
                 """
-            ),
-        )
-        .run()
-        .expectClean()
+        ),
+      )
+      .run()
+      .expectClean()
   }
 
   fun `test java detects non constant resource ids in annotations`() {
     lint()
-        .files(
-            rClass,
-            java(
-                """
+      .files(
+        rClass,
+        java(
+          """
                     package test.pkg;
                     public @interface TestAnnotation {
                         int resourceId() default null;
                     }
                 """
-            ),
-            java(
-                """
+        ),
+        java(
+          """
                 package test.pkg;
 
                 public class JavaAnnotationTest {
@@ -136,11 +136,11 @@ class NonConstantResourceIdDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-            ),
-        )
-        .run()
-        .expect(
-            """
+        ),
+      )
+      .run()
+      .expect(
+        """
             src/test/pkg/JavaAnnotationTest.java:8: Warning: Resource IDs will be non-final by default in Android Gradle Plugin version 8.0, avoid using them as annotation attributes [NonConstantResourceId]
                                 @TestAnnotation(resourceId = R.styleable.FontFamilyFont_android_fontWeight)
                                                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -149,22 +149,22 @@ class NonConstantResourceIdDetectorTest : AbstractCheckTest() {
                                                              ~~~~~~~~~
             0 errors, 2 warnings
             """
-        )
+      )
   }
 
   fun `test kotlin detects non constant resource ids in annotations`() {
     lint()
-        .files(
-            rClass,
-            kotlin(
-                """
+      .files(
+        rClass,
+        kotlin(
+          """
                     package test.pkg
 
                     annotation class TestAnnotation(val resourceId : Int)
                 """
-            ),
-            kotlin(
-                """
+        ),
+        kotlin(
+          """
                 package test.pkg
 
                 class KtAnnotationTest {
@@ -178,11 +178,11 @@ class NonConstantResourceIdDetectorTest : AbstractCheckTest() {
                     fun annotatedMethodWithNonConstantResourceId(value : Int) : Int = 0
                 }
             """
-            ),
-        )
-        .run()
-        .expect(
-            """
+        ),
+      )
+      .run()
+      .expect(
+        """
             src/test/pkg/KtAnnotationTest.kt:5: Warning: Resource IDs will be non-final by default in Android Gradle Plugin version 8.0, avoid using them as annotation attributes [NonConstantResourceId]
                                 @TestAnnotation(resourceId = R.styleable.FontFamilyFont_android_fontWeight)
                                                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -191,16 +191,16 @@ class NonConstantResourceIdDetectorTest : AbstractCheckTest() {
                                                              ~~~~~~~~~
             0 errors, 2 warnings
         """
-        )
+      )
   }
 
   fun test260752253() {
     // Regression test for issue 260752253
     @Suppress("DuplicateBranchesInSwitch")
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
                 package test.pkg;
 
                 import android.app.Activity;
@@ -229,13 +229,13 @@ class NonConstantResourceIdDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-                )
-                .indented(),
-            rClass("test.pkg", "@id/text", "@id/bottom"),
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+        rClass("test.pkg", "@id/text", "@id/bottom"),
+      )
+      .run()
+      .expect(
+        """
             src/test/pkg/SubActivity.java:13: Warning: Resource IDs will be non-final by default in Android Gradle Plugin version 8.0, avoid using them in switch case statements [NonConstantResourceId]
                         case R.id.text: {
                              ~~~~~~~~~
@@ -244,15 +244,15 @@ class NonConstantResourceIdDetectorTest : AbstractCheckTest() {
                              ~~~~~
             0 errors, 2 warnings
             """
-        )
+      )
   }
 
   fun testKotlinConst() {
     // Regression test for 260752253
     lint()
-        .files(
-            kotlin(
-                    """
+      .files(
+        kotlin(
+            """
                 package test.pkg
                 class MainActivity {
                     companion object {
@@ -263,21 +263,21 @@ class NonConstantResourceIdDetectorTest : AbstractCheckTest() {
                 }
                 const val resId4 = R.id.text // ERROR
                 """
-                )
-                .indented(),
-            java(
-                """
+          )
+          .indented(),
+        java(
+          """
                     package test.pkg;
                     class Test {
                         public int resId5 = R.id.text;
                     }
                 """
-            ),
-            rClass("test.pkg", "@id/text"),
-        )
-        .run()
-        .expect(
-            """
+        ),
+        rClass("test.pkg", "@id/text"),
+      )
+      .run()
+      .expect(
+        """
             src/test/pkg/MainActivity.kt:4: Warning: Resource IDs will be non-final by default in Android Gradle Plugin version 8.0, avoid using them in const fields [NonConstantResourceId]
                     const val resId = R.id.text // ERROR
                                       ~~~~~~~~~
@@ -286,12 +286,12 @@ class NonConstantResourceIdDetectorTest : AbstractCheckTest() {
                                ~~~~~~~~~
             0 errors, 2 warnings
             """
-        )
+      )
   }
 
   private val rClass: TestFile =
-      java(
-              """
+    java(
+        """
         package test.pkg;
 
         public final class R {
@@ -309,6 +309,6 @@ class NonConstantResourceIdDetectorTest : AbstractCheckTest() {
                     public static final int FontFamily_fontProviderQuery = 5;
             }
         }"""
-          )
-          .indented()
+      )
+      .indented()
 }

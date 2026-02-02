@@ -62,84 +62,84 @@ class PageAlignmentDetector : DependencyDetector<PageAlignmentDetector.PageAlign
    */
   override fun isDependencyKnownSafe(group: String, artifact: String, version: String): Boolean {
     val lastBroken =
-        when (group) {
-          "androidx.appsearch" -> if (artifact == "appsearch-local-storage") "1.1.0-alpha03" else null
-          "androidx.datastore" -> if (artifact == "datastore-core-android") "1.1.0-beta01" else null
-          "androidx.graphics" -> {
-            when (artifact) {
-              "graphics-core" -> "1.0.0-beta01"
-              "graphics-path" -> "1.0.0-beta02"
-              else -> null
-            }
+      when (group) {
+        "androidx.appsearch" -> if (artifact == "appsearch-local-storage") "1.1.0-alpha03" else null
+        "androidx.datastore" -> if (artifact == "datastore-core-android") "1.1.0-beta01" else null
+        "androidx.graphics" -> {
+          when (artifact) {
+            "graphics-core" -> "1.0.0-beta01"
+            "graphics-path" -> "1.0.0-beta02"
+            else -> null
           }
-          "androidx.tracing" -> if (artifact == "tracing-perfetto-binary") "1.0.0" else null
-          "com.crashlytics.sdk.android" -> if (artifact == "crashlytics-ndk") "2.1.1" else null
-          "com.google.ai.edge.litert" -> {
-            when (artifact) {
-              "litert-gpu" -> "1.0.1"
-              "litert" -> "1.0.1"
-              else -> null
-            }
-          }
-          "com.google.android.games" -> if (artifact == "memory-advice") "0.24" else null
-          "com.google.android.gms" -> {
-            when (artifact) {
-              "play-services-tflite-java" -> "16.2.0-beta02"
-              "play-services-vision-face-contour-internal" -> "16.1.0"
-              "play-services-vision-image-labeling-internal" -> "16.1.0"
-              else -> null
-            }
-          }
-          "com.google.android.libraries.navigation" -> if (artifact == "navigation") "5.2.5" else null
-          "com.google.ar" -> if (artifact == "core") "1.42.0" else null
-          "com.google.ar.sceneform" -> {
-            when (artifact) {
-              "animation" -> "1.17.1"
-              "assets" -> "1.17.1"
-              "core" -> "1.17.1"
-              "filament-android" -> "1.17.1"
-              else -> null
-            }
-          }
-          "com.google.firebase" -> {
-            when (artifact) {
-              "firebase-crashlytics-ndk" -> "19.0.1"
-              "firebase-ml-natural-language-language-id-model" -> "20.0.8"
-              "firebase-ml-natural-language-smart-reply-model" -> "20.0.8"
-              "firebase-ml-natural-language-translate-model" -> "20.0.9"
-              "firebase-ml-vision-barcode-model" -> "16.1.2"
-              "firebase-ml-vision-internal-vkp" -> "17.0.2"
-              else -> null
-            }
-          }
-          "com.google.mediapipe" -> {
-            when (artifact) {
-              "solution-core" -> "0.10.20"
-              "tasks-audio" -> "0.20230731"
-              "tasks-genai" -> "0.10.20"
-              "tasks-text" -> "0.20230731"
-              "tasks-vision-image-generator" -> "0.10.20"
-              "tasks-vision" -> "0.20230731"
-              else -> null
-            }
-          }
-          "com.google.mlkit" -> {
-            when (artifact) {
-              "barcode-scanning" -> "17.2.0"
-              "digital-ink-recognition" -> "18.1.0"
-              "entity-extraction" -> "16.0.0-beta5"
-              "language-id" -> "17.0.5"
-              "mediapipe-internal" -> "17.0.0-beta9"
-              "smart-reply" -> "17.0.3"
-              "text-recognition-bundled-common" -> "16.0.0"
-              "translate" -> "17.0.2"
-              "vision-internal-vkp" -> "18.2.2"
-              else -> null
-            }
-          }
-          "org.chromium.net" -> if (artifact == "cronet-embedded") "119.6045.31" else null
-          else -> null
         }
+        "androidx.tracing" -> if (artifact == "tracing-perfetto-binary") "1.0.0" else null
+        "com.crashlytics.sdk.android" -> if (artifact == "crashlytics-ndk") "2.1.1" else null
+        "com.google.ai.edge.litert" -> {
+          when (artifact) {
+            "litert-gpu" -> "1.0.1"
+            "litert" -> "1.0.1"
+            else -> null
+          }
+        }
+        "com.google.android.games" -> if (artifact == "memory-advice") "0.24" else null
+        "com.google.android.gms" -> {
+          when (artifact) {
+            "play-services-tflite-java" -> "16.2.0-beta02"
+            "play-services-vision-face-contour-internal" -> "16.1.0"
+            "play-services-vision-image-labeling-internal" -> "16.1.0"
+            else -> null
+          }
+        }
+        "com.google.android.libraries.navigation" -> if (artifact == "navigation") "5.2.5" else null
+        "com.google.ar" -> if (artifact == "core") "1.42.0" else null
+        "com.google.ar.sceneform" -> {
+          when (artifact) {
+            "animation" -> "1.17.1"
+            "assets" -> "1.17.1"
+            "core" -> "1.17.1"
+            "filament-android" -> "1.17.1"
+            else -> null
+          }
+        }
+        "com.google.firebase" -> {
+          when (artifact) {
+            "firebase-crashlytics-ndk" -> "19.0.1"
+            "firebase-ml-natural-language-language-id-model" -> "20.0.8"
+            "firebase-ml-natural-language-smart-reply-model" -> "20.0.8"
+            "firebase-ml-natural-language-translate-model" -> "20.0.9"
+            "firebase-ml-vision-barcode-model" -> "16.1.2"
+            "firebase-ml-vision-internal-vkp" -> "17.0.2"
+            else -> null
+          }
+        }
+        "com.google.mediapipe" -> {
+          when (artifact) {
+            "solution-core" -> "0.10.20"
+            "tasks-audio" -> "0.20230731"
+            "tasks-genai" -> "0.10.20"
+            "tasks-text" -> "0.20230731"
+            "tasks-vision-image-generator" -> "0.10.20"
+            "tasks-vision" -> "0.20230731"
+            else -> null
+          }
+        }
+        "com.google.mlkit" -> {
+          when (artifact) {
+            "barcode-scanning" -> "17.2.0"
+            "digital-ink-recognition" -> "18.1.0"
+            "entity-extraction" -> "16.0.0-beta5"
+            "language-id" -> "17.0.5"
+            "mediapipe-internal" -> "17.0.0-beta9"
+            "smart-reply" -> "17.0.3"
+            "text-recognition-bundled-common" -> "16.0.0"
+            "translate" -> "17.0.2"
+            "vision-internal-vkp" -> "18.2.2"
+            else -> null
+          }
+        }
+        "org.chromium.net" -> if (artifact == "cronet-embedded") "119.6045.31" else null
+        else -> null
+      }
     if (lastBroken == null) {
       // The above list includes all cases of maven.google.com libraries that contain
       // JNI libraries where at least one version has code that is not 16 KB aligned.
@@ -150,10 +150,10 @@ class PageAlignmentDetector : DependencyDetector<PageAlignmentDetector.PageAlign
       // it's not required; this is just an optimization path to avoid I/O for *most*
       // libraries.)
       return group.startsWith("androidx.") ||
-          group.startsWith("com.google.") ||
-          group.startsWith("com.android.") ||
-          group == "org.chromium.net" ||
-          group.startsWith("com.crashlytics.")
+        group.startsWith("com.google.") ||
+        group.startsWith("com.android.") ||
+        group == "org.chromium.net" ||
+        group.startsWith("com.crashlytics.")
     } else {
       val parsedVersion = Version.parse(version)
       val parsedLastBrokenVersion = Version.parse(lastBroken)
@@ -194,11 +194,11 @@ class PageAlignmentDetector : DependencyDetector<PageAlignmentDetector.PageAlign
 
     @JvmField
     val ISSUE =
-        Issue.create(
-            id = "Aligned16KB",
-            briefDescription = "Native library dependency not 16 KB aligned",
-            explanation =
-                """
+      Issue.create(
+        id = "Aligned16KB",
+        briefDescription = "Native library dependency not 16 KB aligned",
+        explanation =
+          """
           Android has traditionally used 4 KB memory page sizes. However, to support \
           future devices that only work with 16 KB aligned libraries apps containing \
           native libraries need to be built with 16 KB alignment.
@@ -223,18 +223,12 @@ class PageAlignmentDetector : DependencyDetector<PageAlignmentDetector.PageAlign
           compatible version. Updating your libraries proactively will help ensure \
           your app works properly on a wider range of devices.
           """,
-            category = Category.CORRECTNESS,
-            priority = 2,
-            severity = Severity.WARNING,
-            implementation =
-                Implementation(
-                    PageAlignmentDetector::class.java,
-                    GRADLE_AND_TOML_SCOPE,
-                    GRADLE_SCOPE,
-                    TOML_SCOPE,
-                ),
-            androidSpecific = true,
-            moreInfo = "https://developer.android.com/guide/practices/page-sizes",
-        )
+        category = Category.CORRECTNESS,
+        priority = 2,
+        severity = Severity.WARNING,
+        implementation = Implementation(PageAlignmentDetector::class.java, GRADLE_AND_TOML_SCOPE, GRADLE_SCOPE, TOML_SCOPE),
+        androidSpecific = true,
+        moreInfo = "https://developer.android.com/guide/practices/page-sizes",
+      )
   }
 }

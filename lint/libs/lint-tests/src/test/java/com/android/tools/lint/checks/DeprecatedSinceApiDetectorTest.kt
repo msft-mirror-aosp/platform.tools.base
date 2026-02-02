@@ -26,10 +26,10 @@ class DeprecatedSinceApiDetectorTest : AbstractCheckTest() {
 
   fun testDocumentationExample() {
     lint()
-        .files(
-            manifest().minSdk(24),
-            kotlin(
-                    """
+      .files(
+        manifest().minSdk(24),
+        kotlin(
+            """
             @file:Suppress("UNUSED_PARAMETER", "UNUSED_VARIABLE", "unused")
             package test.pkg
             import androidx.annotation.DeprecatedSinceApi
@@ -79,13 +79,13 @@ class DeprecatedSinceApiDetectorTest : AbstractCheckTest() {
             }
 
             """
-                )
-                .indented(),
-            deprecatedSdkVersionStub,
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+        deprecatedSdkVersionStub,
+      )
+      .run()
+      .expect(
+        """
         src/test/pkg/Test.kt:9: Warning: This method is deprecated as of API level 21 [DeprecatedSinceApi]
                 api.noLongerNecessary1(0) // WARN 1
                 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -106,15 +106,15 @@ class DeprecatedSinceApiDetectorTest : AbstractCheckTest() {
                               ~~~~~~~~~~~~~~~~~
         0 errors, 6 warnings
         """
-        )
+      )
   }
 
   fun testMethodOverride() {
     lint()
-        .files(
-            manifest().minSdk(24),
-            kotlin(
-                    """
+      .files(
+        manifest().minSdk(24),
+        kotlin(
+            """
             package test.pkg
 
             import android.content.Intent
@@ -127,12 +127,12 @@ class DeprecatedSinceApiDetectorTest : AbstractCheckTest() {
                 }
             }
                 """
-                )
-                .indented(),
-            // Stubs
-            deprecatedSdkVersionStub,
-            java(
-                    """
+          )
+          .indented(),
+        // Stubs
+        deprecatedSdkVersionStub,
+        java(
+            """
             /*HIDE-FROM-DOCUMENTATION*/
             package androidx.core.app;
             import android.app.Service;
@@ -149,12 +149,12 @@ class DeprecatedSinceApiDetectorTest : AbstractCheckTest() {
                 }
             }
             """
-                )
-                .indented(),
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+      )
+      .run()
+      .expect(
+        """
         src/test/pkg/MyNotificationService.kt:8: Warning: This method is deprecated as of API level 19; SDKs past 19 have no need for side channeling. [DeprecatedSinceApi]
             override fun onBind(intent: Intent?): IBinder? {
                          ~~~~~~
@@ -163,13 +163,13 @@ class DeprecatedSinceApiDetectorTest : AbstractCheckTest() {
                        ~~~~~~~~~~~~~~~~~~~~
         0 errors, 2 warnings
         """
-        )
+      )
   }
 }
 
 val deprecatedSdkVersionStub: TestFile =
-    kotlin(
-            """
+  kotlin(
+      """
       package androidx.annotation
       import kotlin.annotation.AnnotationTarget.ANNOTATION_CLASS
       import kotlin.annotation.AnnotationTarget.CLASS
@@ -185,5 +185,5 @@ val deprecatedSdkVersionStub: TestFile =
           val message: String = ""
       )
       """
-        )
-        .indented()
+    )
+    .indented()

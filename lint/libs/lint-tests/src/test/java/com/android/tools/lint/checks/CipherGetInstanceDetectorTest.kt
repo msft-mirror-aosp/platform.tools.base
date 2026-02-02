@@ -26,7 +26,7 @@ class CipherGetInstanceDetectorTest : AbstractCheckTest() {
 
   fun testCipherGetInstanceAES() {
     val expected =
-        """
+      """
             src/test/pkg/CipherGetInstanceAES.java:8: Warning: Cipher.getInstance should not be called without setting the encryption mode and padding [GetInstance]
                 Cipher.getInstance("AES");
                                    ~~~~~
@@ -34,9 +34,9 @@ class CipherGetInstanceDetectorTest : AbstractCheckTest() {
             """
 
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
                 package test.pkg;
 
                 import javax.crypto.Cipher;
@@ -48,16 +48,16 @@ class CipherGetInstanceDetectorTest : AbstractCheckTest() {
                   }
                 }
                 """
-                )
-                .indented()
-        )
-        .run()
-        .expect(expected)
+          )
+          .indented()
+      )
+      .run()
+      .expect(expected)
   }
 
   fun testCipherGetInstanceDES() {
     val expected =
-        """
+      """
             src/test/pkg/CipherGetInstanceDES.java:8: Warning: Cipher.getInstance should not be called without setting the encryption mode and padding [GetInstance]
                 Cipher.getInstance("DES");
                                    ~~~~~
@@ -65,9 +65,9 @@ class CipherGetInstanceDetectorTest : AbstractCheckTest() {
             """
 
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
                 package test.pkg;
 
                 import javax.crypto.Cipher;
@@ -79,16 +79,16 @@ class CipherGetInstanceDetectorTest : AbstractCheckTest() {
                   }
                 }
                 """
-                )
-                .indented()
-        )
-        .run()
-        .expect(expected)
+          )
+          .indented()
+      )
+      .run()
+      .expect(expected)
   }
 
   fun testCipherGetInstanceAESECB() {
     val expected =
-        """
+      """
             src/test/pkg/CipherGetInstanceAESECB.java:8: Warning: ECB encryption mode should not be used [GetInstance]
                 Cipher.getInstance("AES/ECB/NoPadding");
                                    ~~~~~~~~~~~~~~~~~~~
@@ -96,9 +96,9 @@ class CipherGetInstanceDetectorTest : AbstractCheckTest() {
             """
 
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
                     package test.pkg;
 
                     import javax.crypto.Cipher;
@@ -110,19 +110,19 @@ class CipherGetInstanceDetectorTest : AbstractCheckTest() {
                       }
                     }
                     """
-                )
-                .indented()
-        )
-        .run()
-        .expect(expected)
+          )
+          .indented()
+      )
+      .run()
+      .expect(expected)
   }
 
   fun testCipherGetInstanceAESCBC() {
 
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
                 package test.pkg;
 
                 import javax.crypto.Cipher;
@@ -133,11 +133,11 @@ class CipherGetInstanceDetectorTest : AbstractCheckTest() {
                   }
                 }
                 """
-                )
-                .indented()
-        )
-        .run()
-        .expectClean()
+          )
+          .indented()
+      )
+      .run()
+      .expectClean()
   }
 
   // http://b.android.com/204099 Generate a warning only when ECB mode
@@ -145,9 +145,9 @@ class CipherGetInstanceDetectorTest : AbstractCheckTest() {
   fun testAsymmetricCipherRSA() {
 
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
                 package test.pkg;
 
                 import javax.crypto.Cipher;
@@ -159,16 +159,16 @@ class CipherGetInstanceDetectorTest : AbstractCheckTest() {
                   }
                 }
                 """
-                )
-                .indented()
-        )
-        .run()
-        .expectClean()
+          )
+          .indented()
+      )
+      .run()
+      .expectClean()
   }
 
   fun testResolveConstants() {
     val expected =
-        """
+      """
             src/test/pkg/CipherGetInstanceTest.java:11: Warning: ECB encryption mode should not be used (was "DES/ECB/NoPadding") [GetInstance]
                     Cipher des = Cipher.getInstance(Constants.DES);
                                                     ~~~~~~~~~~~~~
@@ -176,9 +176,9 @@ class CipherGetInstanceDetectorTest : AbstractCheckTest() {
             """
 
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
                 package test.pkg;
 
                 import java.security.NoSuchAlgorithmException;
@@ -197,16 +197,16 @@ class CipherGetInstanceDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-                )
-                .indented()
-        )
-        .run()
-        .expect(expected)
+          )
+          .indented()
+      )
+      .run()
+      .expect(expected)
   }
 
   fun testDeprecatedProvider() {
     val expected =
-        """
+      """
                 src/test/pkg/BCProviderTest.java:16: Warning: The BC provider is deprecated and when targetSdkVersion is moved to P this method will throw a NoSuchAlgorithmException. To fix this you should stop specifying a provider and use the default implementation [DeprecatedProvider]
                         Cipher.getInstance("AES/CBC/PKCS7PADDING", "BC"); // Error
                                                                    ~~~~
@@ -222,9 +222,9 @@ class CipherGetInstanceDetectorTest : AbstractCheckTest() {
                 0 errors, 4 warnings
                     """
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
                 package test.pkg;
 
                 import javax.crypto.Cipher;
@@ -248,26 +248,26 @@ class CipherGetInstanceDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-                )
-                .indented()
-        )
-        .run()
-        .expect(expected)
+          )
+          .indented()
+      )
+      .run()
+      .expect(expected)
   }
 
   fun testDeprecatedProviderForHigher() {
     val expected =
-        """
+      """
             src/test/pkg/BCProviderTest.java:8: Warning: The BC provider is deprecated and as of Android P this method will throw a NoSuchAlgorithmException. To fix this you should stop specifying a provider and use the default implementation [DeprecatedProvider]
                     Cipher.getInstance("AES/CBC/PKCS7PADDING", "BC"); // Error
                                                                ~~~~
             0 errors, 1 warnings
             """
     lint()
-        .files(
-            manifest().targetSdk(28),
-            java(
-                    """
+      .files(
+        manifest().targetSdk(28),
+        java(
+            """
                 package test.pkg;
 
                 import javax.crypto.Cipher;
@@ -279,19 +279,19 @@ class CipherGetInstanceDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-                )
-                .indented(),
-        )
-        .run()
-        .expect(expected)
+          )
+          .indented(),
+      )
+      .run()
+      .expect(expected)
   }
 
   fun test263115741() {
     lint()
-        .files(
-            manifest().targetSdk(28),
-            java(
-                    """
+      .files(
+        manifest().targetSdk(28),
+        java(
+            """
                 package test.pkg;
 
                 import static android.os.Build.VERSION.SDK_INT;
@@ -321,17 +321,17 @@ class CipherGetInstanceDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-                )
-                .indented(),
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+      )
+      .run()
+      .expect(
+        """
             src/test/pkg/TestCipher.java:26: Warning: The BC provider is deprecated and as of Android P this method will throw a NoSuchAlgorithmException. To fix this you should stop specifying a provider and use the default implementation [DeprecatedProvider]
                             Cipher.getInstance("RSA/NONE/OAEPWithSHA256AndMGF1Padding", "BC"); // ERROR
                                                                                         ~~~~
             0 errors, 1 warnings
             """
-        )
+      )
   }
 }

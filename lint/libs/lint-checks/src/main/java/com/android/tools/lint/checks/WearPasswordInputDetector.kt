@@ -45,46 +45,36 @@ import org.w3c.dom.Attr
 class WearPasswordInputDetector : WearDetector(), XmlScanner, SourceCodeScanner {
   companion object Issues {
     private val IMPLEMENTATION =
-        Implementation(
-            WearPasswordInputDetector::class.java,
-            Scope.JAVA_AND_RESOURCE_FILES,
-            Scope.RESOURCE_FILE_SCOPE,
-            Scope.JAVA_FILE_SCOPE,
-        )
+      Implementation(WearPasswordInputDetector::class.java, Scope.JAVA_AND_RESOURCE_FILES, Scope.RESOURCE_FILE_SCOPE, Scope.JAVA_FILE_SCOPE)
 
     @JvmField
     val ISSUE =
-        Issue.create(
-                id = "WearPasswordInput",
-                briefDescription = "Wear: Using password input",
-                explanation =
-                    """
+      Issue.create(
+          id = "WearPasswordInput",
+          briefDescription = "Wear: Using password input",
+          explanation =
+            """
           Your app must not ask the user to input password directly on the Wear device.
         """,
-                category = Category.USABILITY,
-                severity = Severity.ERROR,
-                implementation = IMPLEMENTATION,
-                enabledByDefault = true,
-            )
-            .addMoreInfo("https://developer.android.com/training/wearables/apps/auth-wear#auth-methods")
+          category = Category.USABILITY,
+          severity = Severity.ERROR,
+          implementation = IMPLEMENTATION,
+          enabledByDefault = true,
+        )
+        .addMoreInfo("https://developer.android.com/training/wearables/apps/auth-wear#auth-methods")
 
     private const val MESSAGE = "Don't ask Wear OS users for a password"
 
     private val VALUE_PASSWORD_INPUT_TYPES =
-        setOf(
-            VALUE_NUMBER_PASSWORD,
-            VALUE_TEXT_PASSWORD,
-            VALUE_TEXT_VISIBLE_PASSWORD,
-            VALUE_TEXT_WEB_PASSWORD,
-        )
+      setOf(VALUE_NUMBER_PASSWORD, VALUE_TEXT_PASSWORD, VALUE_TEXT_VISIBLE_PASSWORD, VALUE_TEXT_WEB_PASSWORD)
 
     private val TYPE_PASSWORD_INPUT_TYPES =
-        listOf(
-            REF_TYPE_TEXT_VARIATION_PASSWORD,
-            REF_TYPE_NUMBER_VARIATION_PASSWORD,
-            REF_TYPE_TEXT_VARIATION_VISIBLE_PASSWORD,
-            REF_TYPE_TEXT_VARIATION_WEB_PASSWORD,
-        )
+      listOf(
+        REF_TYPE_TEXT_VARIATION_PASSWORD,
+        REF_TYPE_NUMBER_VARIATION_PASSWORD,
+        REF_TYPE_TEXT_VARIATION_VISIBLE_PASSWORD,
+        REF_TYPE_TEXT_VARIATION_WEB_PASSWORD,
+      )
   }
 
   override fun appliesTo(folderType: ResourceFolderType) = ResourceFolderType.LAYOUT == folderType
@@ -93,11 +83,7 @@ class WearPasswordInputDetector : WearDetector(), XmlScanner, SourceCodeScanner 
 
   override fun getApplicableReferenceNames() = TYPE_PASSWORD_INPUT_TYPES
 
-  override fun visitReference(
-      context: JavaContext,
-      reference: UReferenceExpression,
-      referenced: PsiElement,
-  ) {
+  override fun visitReference(context: JavaContext, reference: UReferenceExpression, referenced: PsiElement) {
     if (isWearProject && context.evaluator.isMemberInClass(referenced as? PsiField, FQCN_INPUT_TYPE)) {
       context.report(Incident(ISSUE, context.getLocation(reference), MESSAGE))
     }

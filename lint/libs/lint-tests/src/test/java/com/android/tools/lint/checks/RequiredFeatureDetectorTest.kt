@@ -25,9 +25,9 @@ class RequiredFeatureDetectorTest : AbstractCheckTest() {
 
   fun testDocumentationExample() {
     lint()
-        .files(
-            manifest(
-                    """
+      .files(
+        manifest(
+            """
             <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                 package="test.pkg">
 
@@ -61,12 +61,12 @@ class RequiredFeatureDetectorTest : AbstractCheckTest() {
 
             </manifest>
             """
-                )
-                .indented()
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented()
+      )
+      .run()
+      .expect(
+        """
         AndroidManifest.xml:7: Warning: Consider whether this feature (android.hardware.camera.autofocus) really is required for the app to function; you can set android:required="false" to indicate that the feature is used but not required [UnnecessaryRequiredFeature]
             <uses-feature android:name="android.hardware.camera.autofocus" /> <!-- WARN 1 -->
                                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -99,9 +99,9 @@ class RequiredFeatureDetectorTest : AbstractCheckTest() {
                                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         0 errors, 10 warnings
         """
-        )
-        .expectFixDiffs(
-            """
+      )
+      .expectFixDiffs(
+        """
         Fix for AndroidManifest.xml line 7: Set required="false":
         @@ -11 +11,3 @@
         -    <uses-feature android:name="android.hardware.camera.autofocus" /> <!-- WARN 1 -->
@@ -161,6 +161,6 @@ class RequiredFeatureDetectorTest : AbstractCheckTest() {
         -        android:required="true" /> <!-- WARN 10 -->
         +        android:required="false" /> <!-- WARN 10 -->
         """
-        )
+      )
   }
 }

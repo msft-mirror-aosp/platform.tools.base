@@ -22,20 +22,13 @@ import org.junit.Test
 
 class TestLintResultTest {
   private fun getDiff(
-      before: String,
-      after: String,
-      windowSize: Int = 0,
-      diffCompatMode: Boolean = false,
-      diffCompatMode2: Boolean = false,
+    before: String,
+    after: String,
+    windowSize: Int = 0,
+    diffCompatMode: Boolean = false,
+    diffCompatMode2: Boolean = false,
   ): String {
-    return TestLintResult.Companion.getDiff(
-        before,
-        after,
-        windowSize,
-        diffCompatMode,
-        diffCompatMode2,
-        true,
-    )
+    return TestLintResult.Companion.getDiff(before, after, windowSize, diffCompatMode, diffCompatMode2, true)
   }
 
   @Test
@@ -43,297 +36,297 @@ class TestLintResultTest {
     assertEquals("", getDiff("", ""))
     assertEquals("", getDiff("aaa", "aaa"))
     assertEquals(
-        """
-        @@ -1 +1
-        - aaa
-        + bbb
-        """
-            .trimIndent(),
-        getDiff("aaa", "bbb"),
+      """
+      @@ -1 +1
+      - aaa
+      + bbb
+      """
+        .trimIndent(),
+      getDiff("aaa", "bbb"),
     )
     assertEquals(
+      """
+      @@ -1 +1
+      - this
+      @@ -4 +3
+      + new
+      """
+        .trimIndent(),
+      getDiff(
         """
-        @@ -1 +1
-        - this
-        @@ -4 +3
-        + new
+        this
+        is
+        a
+        test
         """
-            .trimIndent(),
-        getDiff(
-            """
-            this
-            is
-            a
-            test
-            """
-                .trimIndent(),
-            """
-            is
-            a
-            new
-            test
-            """
-                .trimIndent(),
-        ),
+          .trimIndent(),
+        """
+        is
+        a
+        new
+        test
+        """
+          .trimIndent(),
+      ),
     )
     assertEquals(
+      """
+      @@ -4 +4
+      - line4
+      - line5
+      @@ -8 +6
+      - line8
+      + line7.5
+      """
+        .trimIndent(),
+      getDiff(
         """
-        @@ -4 +4
-        - line4
-        - line5
-        @@ -8 +6
-        - line8
-        + line7.5
+        line1
+        line2
+        line3
+        line4
+        line5
+        line6
+        line7
+        line8
+        line9
         """
-            .trimIndent(),
-        getDiff(
-            """
-            line1
-            line2
-            line3
-            line4
-            line5
-            line6
-            line7
-            line8
-            line9
-            """
-                .trimIndent(),
-            """
-            line1
-            line2
-            line3
-            line6
-            line7
-            line7.5
-            line9
-            """
-                .trimIndent(),
-        ),
+          .trimIndent(),
+        """
+        line1
+        line2
+        line3
+        line6
+        line7
+        line7.5
+        line9
+        """
+          .trimIndent(),
+      ),
     )
 
     assertEquals(
+      """
+      @@ -4 +4
+        line1
+        line2
+        line3
+      - line4
+      - line5
+        line6
+        line7
+      - line8
+      + line7.5
+        line9
+      """
+        .trimIndent(),
+      getDiff(
         """
-        @@ -4 +4
-          line1
-          line2
-          line3
-        - line4
-        - line5
-          line6
-          line7
-        - line8
-        + line7.5
-          line9
+        line1
+        line2
+        line3
+        line4
+        line5
+        line6
+        line7
+        line8
+        line9
         """
-            .trimIndent(),
-        getDiff(
-            """
-            line1
-            line2
-            line3
-            line4
-            line5
-            line6
-            line7
-            line8
-            line9
-            """
-                .trimIndent(),
-            """
-            line1
-            line2
-            line3
-            line6
-            line7
-            line7.5
-            line9
-            """
-                .trimIndent(),
-            3,
-        ),
+          .trimIndent(),
+        """
+        line1
+        line2
+        line3
+        line6
+        line7
+        line7.5
+        line9
+        """
+          .trimIndent(),
+        3,
+      ),
     )
     assertEquals(
+      """
+      @@ -8 +8
+      -         android:id="@+id/textView1"
+      +         android:id="@+id/output"
+      @@ -19 +19
+      -         android:layout_alignLeft="@+id/textView1"
+      -         android:layout_below="@+id/textView1"
+      +         android:layout_alignLeft="@+id/output"
+      +         android:layout_below="@+id/output"
+      """
+        .trimIndent(),
+      getDiff(
         """
-        @@ -8 +8
-        -         android:id="@+id/textView1"
-        +         android:id="@+id/output"
-        @@ -19 +19
-        -         android:layout_alignLeft="@+id/textView1"
-        -         android:layout_below="@+id/textView1"
-        +         android:layout_alignLeft="@+id/output"
-        +         android:layout_below="@+id/output"
+        <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+            xmlns:tools="http://schemas.android.com/tools"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            tools:context=".MainActivity" >
+
+            <TextView
+                android:id="@+id/textView1"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerVertical="true"
+                android:layout_toRightOf="@+id/button2"
+                android:text="@string/hello_world" />
+
+            <Button
+                android:id="@+id/button1"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignLeft="@+id/textView1"
+                android:layout_below="@+id/textView1"
+                android:layout_marginLeft="22dp"
+                android:layout_marginTop="24dp"
+                android:text="Button" />
+
+            <Button
+                android:id="@+id/button2"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentLeft="true"
+                android:layout_alignParentTop="true"
+                android:text="Button" />
+
+        </RelativeLayout>
         """
-            .trimIndent(),
-        getDiff(
-            """
-            <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-                xmlns:tools="http://schemas.android.com/tools"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                tools:context=".MainActivity" >
+          .trimIndent(),
+        """
+        <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+            xmlns:tools="http://schemas.android.com/tools"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            tools:context=".MainActivity" >
 
-                <TextView
-                    android:id="@+id/textView1"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_centerVertical="true"
-                    android:layout_toRightOf="@+id/button2"
-                    android:text="@string/hello_world" />
+            <TextView
+                android:id="@+id/output"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerVertical="true"
+                android:layout_toRightOf="@+id/button2"
+                android:text="@string/hello_world" />
 
-                <Button
-                    android:id="@+id/button1"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_alignLeft="@+id/textView1"
-                    android:layout_below="@+id/textView1"
-                    android:layout_marginLeft="22dp"
-                    android:layout_marginTop="24dp"
-                    android:text="Button" />
+            <Button
+                android:id="@+id/button1"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignLeft="@+id/output"
+                android:layout_below="@+id/output"
+                android:layout_marginLeft="22dp"
+                android:layout_marginTop="24dp"
+                android:text="Button" />
 
-                <Button
-                    android:id="@+id/button2"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_alignParentLeft="true"
-                    android:layout_alignParentTop="true"
-                    android:text="Button" />
+            <Button
+                android:id="@+id/button2"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentLeft="true"
+                android:layout_alignParentTop="true"
+                android:text="Button" />
 
-            </RelativeLayout>
-            """
-                .trimIndent(),
-            """
-            <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-                xmlns:tools="http://schemas.android.com/tools"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                tools:context=".MainActivity" >
-
-                <TextView
-                    android:id="@+id/output"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_centerVertical="true"
-                    android:layout_toRightOf="@+id/button2"
-                    android:text="@string/hello_world" />
-
-                <Button
-                    android:id="@+id/button1"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_alignLeft="@+id/output"
-                    android:layout_below="@+id/output"
-                    android:layout_marginLeft="22dp"
-                    android:layout_marginTop="24dp"
-                    android:text="Button" />
-
-                <Button
-                    android:id="@+id/button2"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_alignParentLeft="true"
-                    android:layout_alignParentTop="true"
-                    android:text="Button" />
-
-            </RelativeLayout>
-            """
-                .trimIndent(),
-        ),
+        </RelativeLayout>
+        """
+          .trimIndent(),
+      ),
     )
   }
 
   @Test
   fun testMyDiff() {
     val a =
-        """
-        <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-            xmlns:tools="http://schemas.android.com/tools"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            tools:context=".MainActivity" >
+      """
+      <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+          xmlns:tools="http://schemas.android.com/tools"
+          android:layout_width="match_parent"
+          android:layout_height="match_parent"
+          tools:context=".MainActivity" >
 
-            <TextView
-                android:id="@+id/textView1"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_centerVertical="true"
-                android:layout_toRightOf="@+id/button2"
-                android:text="@string/hello_world" />
+          <TextView
+              android:id="@+id/textView1"
+              android:layout_width="wrap_content"
+              android:layout_height="wrap_content"
+              android:layout_centerVertical="true"
+              android:layout_toRightOf="@+id/button2"
+              android:text="@string/hello_world" />
 
-            <Button
-                android:id="@+id/button1"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignLeft="@+id/textView1"
-                android:layout_below="@+id/textView1"
-                android:layout_marginLeft="22dp"
-                android:layout_marginTop="24dp"
-                android:text="Button" />
+          <Button
+              android:id="@+id/button1"
+              android:layout_width="wrap_content"
+              android:layout_height="wrap_content"
+              android:layout_alignLeft="@+id/textView1"
+              android:layout_below="@+id/textView1"
+              android:layout_marginLeft="22dp"
+              android:layout_marginTop="24dp"
+              android:text="Button" />
 
-            <Button
-                android:id="@+id/button2"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignParentLeft="true"
-                android:layout_alignParentTop="true"
-                android:text="Button" />
+          <Button
+              android:id="@+id/button2"
+              android:layout_width="wrap_content"
+              android:layout_height="wrap_content"
+              android:layout_alignParentLeft="true"
+              android:layout_alignParentTop="true"
+              android:text="Button" />
 
-        </RelativeLayout>
-        """
-            .trimIndent()
+      </RelativeLayout>
+      """
+        .trimIndent()
     val b =
-        """
-        <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-            xmlns:tools="http://schemas.android.com/tools"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            tools:context=".MainActivity" >
+      """
+      <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+          xmlns:tools="http://schemas.android.com/tools"
+          android:layout_width="match_parent"
+          android:layout_height="match_parent"
+          tools:context=".MainActivity" >
 
-            <TextView
+          <TextView
+              android:id="@+id/textView1"
+              android:layout_width="wrap_content"
+              android:layout_height="wrap_content"
+              android:layout_height2="wrap_content"
+              android:layout_height3="wrap_content"
+              android:layout_centerVertical="true"
+              android:layout_toRightOf="@+id/button2"
+              android:text="@string/hello_world" />
+
+          <Button
+              android:id="@+id/button1"
+              android:layout_width="wrap_content"
+              android:layout_height="wrap_content"
+              android:layout_alignLeft="@+id/textView1"
+              android:layout_below="@+id/textView1"
+              android:layout_marginLeft="22dp"
+              android:layout_marginTop="24dp"
+              android:text="Button" />
+
+          <Button
+              android:id="@+id/button2"
+              android:layout_width="wrap_content"
+              android:layout_height="wrap_content"
+              android:layout_alignParentLeft="true"
+              android:layout_alignParentTop="true"
+              android:text="Button" />
+
+      </RelativeLayout>
+      """
+        .trimIndent()
+    assertEquals(
+      """
+      @@ -11 +11
                 android:id="@+id/textView1"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_height2="wrap_content"
-                android:layout_height3="wrap_content"
+      +         android:layout_height2="wrap_content"
+      +         android:layout_height3="wrap_content"
                 android:layout_centerVertical="true"
                 android:layout_toRightOf="@+id/button2"
                 android:text="@string/hello_world" />
-
-            <Button
-                android:id="@+id/button1"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignLeft="@+id/textView1"
-                android:layout_below="@+id/textView1"
-                android:layout_marginLeft="22dp"
-                android:layout_marginTop="24dp"
-                android:text="Button" />
-
-            <Button
-                android:id="@+id/button2"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignParentLeft="true"
-                android:layout_alignParentTop="true"
-                android:text="Button" />
-
-        </RelativeLayout>
-        """
-            .trimIndent()
-    assertEquals(
-        """
-        @@ -11 +11
-                  android:id="@+id/textView1"
-                  android:layout_width="wrap_content"
-                  android:layout_height="wrap_content"
-        +         android:layout_height2="wrap_content"
-        +         android:layout_height3="wrap_content"
-                  android:layout_centerVertical="true"
-                  android:layout_toRightOf="@+id/button2"
-                  android:text="@string/hello_world" />
-        """
-            .trimIndent(),
-        getDiff(a, b, 3),
+      """
+        .trimIndent(),
+      getDiff(a, b, 3),
     )
   }
 
@@ -348,156 +341,156 @@ class TestLintResultTest {
   fun testDiffAtEnd() {
     val a = "" + "[versions]\n" + "\n" + "[libraries]"
     val b =
-        "" +
-            "[versions]\n" +
-            "appcompat = \"1.5.1\"\n" +
-            "\n" +
-            "[libraries]\n" +
-            "androidx-appcompat = { module = \"androidx.appcompat:appcompat\", version.ref = \"appcompat\" }"
+      "" +
+        "[versions]\n" +
+        "appcompat = \"1.5.1\"\n" +
+        "\n" +
+        "[libraries]\n" +
+        "androidx-appcompat = { module = \"androidx.appcompat:appcompat\", version.ref = \"appcompat\" }"
     assertThat(getDiff(a, b, 1))
-        .isEqualTo(
-            "" +
-                "@@ -2 +2\n" +
-                "  [versions]\n" +
-                "+ appcompat = \"1.5.1\"\n" +
-                "\n" +
-                "  [libraries]\n" +
-                "+ androidx-appcompat = { module = \"androidx.appcompat:appcompat\", version.ref = \"appcompat\" }"
-        )
+      .isEqualTo(
+        "" +
+          "@@ -2 +2\n" +
+          "  [versions]\n" +
+          "+ appcompat = \"1.5.1\"\n" +
+          "\n" +
+          "  [libraries]\n" +
+          "+ androidx-appcompat = { module = \"androidx.appcompat:appcompat\", version.ref = \"appcompat\" }"
+      )
     assertThat(getDiff(a, b, 2))
-        .isEqualTo(
-            "" +
-                "@@ -2 +2\n" +
-                "  [versions]\n" +
-                "+ appcompat = \"1.5.1\"\n" +
-                "\n" +
-                "  [libraries]\n" +
-                "+ androidx-appcompat = { module = \"androidx.appcompat:appcompat\", version.ref = \"appcompat\" }"
-        )
+      .isEqualTo(
+        "" +
+          "@@ -2 +2\n" +
+          "  [versions]\n" +
+          "+ appcompat = \"1.5.1\"\n" +
+          "\n" +
+          "  [libraries]\n" +
+          "+ androidx-appcompat = { module = \"androidx.appcompat:appcompat\", version.ref = \"appcompat\" }"
+      )
     assertThat(getDiff(a, b, 3))
-        .isEqualTo(
-            "" +
-                "@@ -2 +2\n" +
-                "  [versions]\n" +
-                "+ appcompat = \"1.5.1\"\n" +
-                "\n" +
-                "  [libraries]\n" +
-                "+ androidx-appcompat = { module = \"androidx.appcompat:appcompat\", version.ref = \"appcompat\" }"
-        )
+      .isEqualTo(
+        "" +
+          "@@ -2 +2\n" +
+          "  [versions]\n" +
+          "+ appcompat = \"1.5.1\"\n" +
+          "\n" +
+          "  [libraries]\n" +
+          "+ androidx-appcompat = { module = \"androidx.appcompat:appcompat\", version.ref = \"appcompat\" }"
+      )
   }
 
   @Test
   fun testOverlaps() {
     val a =
-        """
-        [versions]
-        version=1
-        [libraries]
-        different1
-        [bundles]
-        """
-            .trimIndent()
+      """
+      [versions]
+      version=1
+      [libraries]
+      different1
+      [bundles]
+      """
+        .trimIndent()
     val b =
-        """
-        [versions]
-        appcompat = "1.5.1"
-        version=1
-        [libraries]
-        different2
-        [bundles]
-        androidx-appcompat = { module = "androidx.appcompat:appcompat", version.ref = "appcompat" }
-        """
-            .trimIndent()
+      """
+      [versions]
+      appcompat = "1.5.1"
+      version=1
+      [libraries]
+      different2
+      [bundles]
+      androidx-appcompat = { module = "androidx.appcompat:appcompat", version.ref = "appcompat" }
+      """
+        .trimIndent()
     assertThat(getDiff(a, b, 1))
-        .isEqualTo(
-            """
-            @@ -2 +2
-              [versions]
-            + appcompat = "1.5.1"
-              version=1
-              [libraries]
-            - different1
-            + different2
-              [bundles]
-            + androidx-appcompat = { module = "androidx.appcompat:appcompat", version.ref = "appcompat" }
-            """
-                .trimIndent()
-        )
+      .isEqualTo(
+        """
+        @@ -2 +2
+          [versions]
+        + appcompat = "1.5.1"
+          version=1
+          [libraries]
+        - different1
+        + different2
+          [bundles]
+        + androidx-appcompat = { module = "androidx.appcompat:appcompat", version.ref = "appcompat" }
+        """
+          .trimIndent()
+      )
     assertThat(getDiff(a, b, 2))
-        .isEqualTo(
-            "" +
-                "@@ -2 +2\n" +
-                "  [versions]\n" +
-                "+ appcompat = \"1.5.1\"\n" +
-                "  version=1\n" +
-                "  [libraries]\n" +
-                "- different1\n" +
-                "+ different2\n" +
-                "  [bundles]\n" +
-                "+ androidx-appcompat = { module = \"androidx.appcompat:appcompat\", version.ref = \"appcompat\" }"
-        )
+      .isEqualTo(
+        "" +
+          "@@ -2 +2\n" +
+          "  [versions]\n" +
+          "+ appcompat = \"1.5.1\"\n" +
+          "  version=1\n" +
+          "  [libraries]\n" +
+          "- different1\n" +
+          "+ different2\n" +
+          "  [bundles]\n" +
+          "+ androidx-appcompat = { module = \"androidx.appcompat:appcompat\", version.ref = \"appcompat\" }"
+      )
     assertThat(getDiff(a, b, 3))
-        .isEqualTo(
-            "" +
-                "@@ -2 +2\n" +
-                "  [versions]\n" +
-                "+ appcompat = \"1.5.1\"\n" +
-                "  version=1\n" +
-                "  [libraries]\n" +
-                "- different1\n" +
-                "+ different2\n" +
-                "  [bundles]\n" +
-                "+ androidx-appcompat = { module = \"androidx.appcompat:appcompat\", version.ref = \"appcompat\" }"
-        )
+      .isEqualTo(
+        "" +
+          "@@ -2 +2\n" +
+          "  [versions]\n" +
+          "+ appcompat = \"1.5.1\"\n" +
+          "  version=1\n" +
+          "  [libraries]\n" +
+          "- different1\n" +
+          "+ different2\n" +
+          "  [bundles]\n" +
+          "+ androidx-appcompat = { module = \"androidx.appcompat:appcompat\", version.ref = \"appcompat\" }"
+      )
   }
 
   @Test
   fun testOverlap2() {
     val before =
-        """
-        import android.graphics.drawable.VectorDrawable
+      """
+      import android.graphics.drawable.VectorDrawable
 
-        class VectorDrawableProvider {
-            fun getVectorDrawable(): VectorDrawable {
-                with(this) {
-                    return VectorDrawable()
-                }
-            }
-        }
-        """
-            .trimIndent()
+      class VectorDrawableProvider {
+          fun getVectorDrawable(): VectorDrawable {
+              with(this) {
+                  return VectorDrawable()
+              }
+          }
+      }
+      """
+        .trimIndent()
 
     val after =
-        """
-        import android.graphics.drawable.VectorDrawable
-        import android.os.Build
-        import android.support.annotation.RequiresApi
+      """
+      import android.graphics.drawable.VectorDrawable
+      import android.os.Build
+      import android.support.annotation.RequiresApi
 
-        class VectorDrawableProvider {
-            @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
-            fun getVectorDrawable(): VectorDrawable {
-                with(this) {
-                    return VectorDrawable()
-                }
-            }
-        }
-        """
-            .trimIndent()
+      class VectorDrawableProvider {
+          @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
+          fun getVectorDrawable(): VectorDrawable {
+              with(this) {
+                  return VectorDrawable()
+              }
+          }
+      }
+      """
+        .trimIndent()
 
     assertThat(getDiff(before, after, 1))
-        .isEqualTo(
-            """
-            @@ -2 +2
-              import android.graphics.drawable.VectorDrawable
-            + import android.os.Build
-            + import android.support.annotation.RequiresApi
+      .isEqualTo(
+        """
+        @@ -2 +2
+          import android.graphics.drawable.VectorDrawable
+        + import android.os.Build
+        + import android.support.annotation.RequiresApi
 
-              class VectorDrawableProvider {
-            +     @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
-                  fun getVectorDrawable(): VectorDrawable {
-            """
-                .trimIndent()
-        )
+          class VectorDrawableProvider {
+        +     @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
+              fun getVectorDrawable(): VectorDrawable {
+        """
+          .trimIndent()
+      )
   }
 
   @Test
@@ -506,111 +499,111 @@ class TestLintResultTest {
     // treat a fix diff as if the deleted and inserted lines are adjacent;
     // there is a line in the middle the diff was omitting.
     val before =
-        """
-        1
-        2
-        3
-        4
-        """
-            .trimIndent()
+      """
+      1
+      2
+      3
+      4
+      """
+        .trimIndent()
     val after =
-        """
-        1
-        new
-        2
-        4
-        """
-            .trimIndent()
+      """
+      1
+      new
+      2
+      4
+      """
+        .trimIndent()
 
     assertEquals(
-        """
-        @@ -2 +2
-        + new
-        @@ -3 +4
-        - 3
-        """
-            .trimIndent(),
-        getDiff(before, after, 0),
+      """
+      @@ -2 +2
+      + new
+      @@ -3 +4
+      - 3
+      """
+        .trimIndent(),
+      getDiff(before, after, 0),
     )
     assertEquals(
-        """
-        @@ -2 +2
-        + new
-        - 3
-        """
-            .trimIndent(),
-        getDiff(before, after, 0, diffCompatMode2 = true),
+      """
+      @@ -2 +2
+      + new
+      - 3
+      """
+        .trimIndent(),
+      getDiff(before, after, 0, diffCompatMode2 = true),
     )
   }
 
   @Test
   fun testDoNotMergeNearby2() {
     val before =
-        """
-        1
-        2
-        3
-        4
-        5
-        """
-            .trimIndent()
+      """
+      1
+      2
+      3
+      4
+      5
+      """
+        .trimIndent()
     val after =
-        """
-        1
-        new
-        2
-        4
-        5
-        """
-            .trimIndent()
+      """
+      1
+      new
+      2
+      4
+      5
+      """
+        .trimIndent()
     assertEquals(
-        """
-        @@ -2 +2
-        + new
-        @@ -3 +4
-        - 3
-        """
-            .trimIndent(),
-        getDiff(before, after, 0),
+      """
+      @@ -2 +2
+      + new
+      @@ -3 +4
+      - 3
+      """
+        .trimIndent(),
+      getDiff(before, after, 0),
     )
   }
 
   @Test
   fun testDoNotMergeNearby3() {
     val before =
-        """
-        1
-        2
-        3
-        4a
-        5
-        """
-            .trimIndent()
+      """
+      1
+      2
+      3
+      4a
+      5
+      """
+        .trimIndent()
     val after =
-        """
-        1
-        new1
-        2
-        3
-        4b
-        5
-        new2
-        """
-            .trimIndent()
+      """
+      1
+      new1
+      2
+      3
+      4b
+      5
+      new2
+      """
+        .trimIndent()
     assertThat(getDiff(before, after, 1))
-        .isEqualTo(
-            """
-            @@ -2 +2
-              1
-            + new1
-              2
-              3
-            - 4a
-            + 4b
-              5
-            + new2
-            """
-                .trimIndent()
-        )
+      .isEqualTo(
+        """
+        @@ -2 +2
+          1
+        + new1
+          2
+          3
+        - 4a
+        + 4b
+          5
+        + new2
+        """
+          .trimIndent()
+      )
   }
 }

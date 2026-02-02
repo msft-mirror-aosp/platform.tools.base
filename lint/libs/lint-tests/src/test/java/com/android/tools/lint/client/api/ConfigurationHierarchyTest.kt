@@ -39,67 +39,67 @@ class ConfigurationHierarchyTest : AbstractCheckTest() {
   fun testLinXmlInSourceFolders() {
     // Checks that lint.xml can be applied in different folders in a hierarchical way
     lint()
-        .files(
-            kotlin(
-                    """
+      .files(
+        kotlin(
+            """
                 package test.pkg1.subpkg1
                 class MyTest {
                     val s: String = "/sdcard/mydir" // OK: suppressed via test/lint.xml
                 }
                 """
-                )
-                .indented(),
-            kotlin(
-                    """
+          )
+          .indented(),
+        kotlin(
+            """
                 package test.pkg2.subpkg1
                 class MyTest {
                     val s: String = "/sdcard/mydir" // Error: severity set via test/pkg2/lint.xml
                 }
                 """
-                )
-                .indented(),
-            kotlin(
-                    """
+          )
+          .indented(),
+        kotlin(
+            """
                 package test.pkg2.subpkg2
                 class MyTest {
                     val s: String = "/sdcard/mydir" // Warning: severity set via test/pkg2/subpkg2
                 }
                 """
-                )
-                .indented(),
-            xml(
-                    "src/main/kotlin/test/lint.xml",
-                    """
+          )
+          .indented(),
+        xml(
+            "src/main/kotlin/test/lint.xml",
+            """
                 <lint>
                     <issue id="SdCardPath" severity="ignore" />
                 </lint>
                 """,
-                )
-                .indented(),
-            xml(
-                    "src/main/kotlin/test/pkg2/lint.xml",
-                    """
+          )
+          .indented(),
+        xml(
+            "src/main/kotlin/test/pkg2/lint.xml",
+            """
                 <lint>
                     <issue id="SdCardPath" severity="error" />
                 </lint>
                 """,
-                )
-                .indented(),
-            xml(
-                    "src/main/kotlin/test/pkg2/subpkg2/lint.xml",
-                    """
+          )
+          .indented(),
+        xml(
+            "src/main/kotlin/test/pkg2/subpkg2/lint.xml",
+            """
                 <lint>
                     <issue id="SdCardPath" severity="warning" />
                 </lint>
                 """,
-                )
-                .indented(),
-            gradle(""), // Trigger src/main/java source sets
-        )
-        .issues(SdCardDetector.ISSUE)
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+        gradle(""), // Trigger src/main/java source sets
+      )
+      .issues(SdCardDetector.ISSUE)
+      .run()
+      .expect(
+        """
             src/main/kotlin/test/pkg2/subpkg1/MyTest.kt:3: Error: Do not hardcode "/sdcard/"; use Environment.getExternalStorageDirectory().getPath() instead [SdCardPath]
                 val s: String = "/sdcard/mydir" // Error: severity set via test/pkg2/lint.xml
                                  ~~~~~~~~~~~~~
@@ -108,13 +108,13 @@ class ConfigurationHierarchyTest : AbstractCheckTest() {
                                  ~~~~~~~~~~~~~
             1 errors, 1 warnings
             """
-        )
+      )
   }
 
   /** Manifest with a number of problems. */
   private val manifest =
-      manifest(
-              """
+    manifest(
+        """
             <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                  package="com.example.helloworld"
                  android:versionCode="@dimen/versionCode"
@@ -128,44 +128,44 @@ class ConfigurationHierarchyTest : AbstractCheckTest() {
                <uses-library android:name="android.test.runner" android:required="false" />
             </manifest>
             """
-          )
-          .indented()
+      )
+      .indented()
 
   /** The set of issues to be looked for in [manifest] */
   private val manifestIssues =
-      arrayOf(
-          ManifestDetector.ORDER,
-          ManifestDetector.DUPLICATE_USES_FEATURE,
-          ManifestDetector.ILLEGAL_REFERENCE,
-          ManifestDetector.MULTIPLE_USES_SDK,
-          ManifestDetector.WRONG_PARENT,
-      )
+    arrayOf(
+      ManifestDetector.ORDER,
+      ManifestDetector.DUPLICATE_USES_FEATURE,
+      ManifestDetector.ILLEGAL_REFERENCE,
+      ManifestDetector.MULTIPLE_USES_SDK,
+      ManifestDetector.WRONG_PARENT,
+    )
 
   fun testLintXmlSeverityInheritance() {
     // Tests the inheritance of severity among libraries and app modules and shared dirs
     val indirectLib =
-        project(
-                manifest,
-                xml(
-                        "lint.xml",
-                        """
+      project(
+          manifest,
+          xml(
+              "lint.xml",
+              """
                 <lint>
                     <!-- overrides inherited -->
                     <issue id="ManifestOrder" severity="error" />
                 </lint>
                 """,
-                    )
-                    .indented(),
-                gradle("apply plugin: 'com.android.library'"),
             )
-            .name("indirectLib")
+            .indented(),
+          gradle("apply plugin: 'com.android.library'"),
+        )
+        .name("indirectLib")
 
     val lib =
-        project(
-                manifest,
-                xml(
-                        "lint.xml",
-                        """
+      project(
+          manifest,
+          xml(
+              "lint.xml",
+              """
                 <lint>
                     <!-- This will turn it off in lib and in indirect lib. It will not affect app. -->
                     <issue id="WrongManifestParent" severity="ignore" />
@@ -173,19 +173,19 @@ class ConfigurationHierarchyTest : AbstractCheckTest() {
                     <issue id="ManifestOrder" severity="error" />
                 </lint>
                 """,
-                    )
-                    .indented(),
-                gradle("apply plugin: 'com.android.library'"),
             )
-            .dependsOn(indirectLib)
-            .name("lib")
+            .indented(),
+          gradle("apply plugin: 'com.android.library'"),
+        )
+        .dependsOn(indirectLib)
+        .name("lib")
 
     val main =
-        project(
-                manifest,
-                xml(
-                        "../lint.xml",
-                        """
+      project(
+          manifest,
+          xml(
+              "../lint.xml",
+              """
                 <lint>
                     <!-- This is in a parent of all; will work everywhere -->
                     <issue id="DuplicateUsesFeature" severity="ignore" />
@@ -193,38 +193,38 @@ class ConfigurationHierarchyTest : AbstractCheckTest() {
                     <issue id="IllegalResourceRef" severity="ignore"/>
                 </lint>
             """,
-                    )
-                    .indented(),
-                xml(
-                        "lint.xml",
-                        """
+            )
+            .indented(),
+          xml(
+              "lint.xml",
+              """
                 <lint>
                     <!-- This will turn it off both in app and in lib -->
                     <issue id="MultipleUsesSdk" severity="ignore" />
                 </lint>
                 """,
-                    )
-                    .indented(),
-                gradle("apply plugin: 'com.android.application'"),
             )
-            .dependsOn(lib)
-            .name("app")
+            .indented(),
+          gradle("apply plugin: 'com.android.application'"),
+        )
+        .dependsOn(lib)
+        .name("app")
 
     val temp = TemporaryFolder()
     temp.create()
     lint()
-        .issues(*manifestIssues)
-        .projects(main)
-        .rootDirectory(temp.root.canonicalFile)
-        // TODO -- remove this after fixing bug listed below
-        .testModes(TestMode.PARTIAL)
-        .reportFrom(main)
-        .allowManifestMergerErrors(true)
-        .run()
-        .expect(
-            // TODO: The second entry is wrong; we're not handling *indirect* configuration
-            // chains in the merge incident setup
-            """
+      .issues(*manifestIssues)
+      .projects(main)
+      .rootDirectory(temp.root.canonicalFile)
+      // TODO -- remove this after fixing bug listed below
+      .testModes(TestMode.PARTIAL)
+      .reportFrom(main)
+      .allowManifestMergerErrors(true)
+      .run()
+      .expect(
+        // TODO: The second entry is wrong; we're not handling *indirect* configuration
+        // chains in the merge incident setup
+        """
                 src/main/AndroidManifest.xml:11: Error: The <uses-library> element must be a direct child of the <application> element [WrongManifestParent]
                    <uses-library android:name="android.test.runner" android:required="false" />
                     ~~~~~~~~~~~~
@@ -239,7 +239,7 @@ class ConfigurationHierarchyTest : AbstractCheckTest() {
                     ~~~~~~~~
                 4 errors, 0 warnings
                 """
-        )
+      )
     temp.delete()
   }
 
@@ -249,29 +249,29 @@ class ConfigurationHierarchyTest : AbstractCheckTest() {
     // so this is checked separately.
 
     val indirectLib =
-        project(
-                manifest,
-                xml(
-                        "lint.xml",
-                        """
+      project(
+          manifest,
+          xml(
+              "lint.xml",
+              """
                 <lint>
                     <issue id="ManifestOrder">
                         <ignore regexp="AndroidManifest.xml" />
                     </issue>
                 </lint>
                 """,
-                    )
-                    .indented(),
-                gradle("apply plugin: 'com.android.library'"),
             )
-            .name("indirectLib")
+            .indented(),
+          gradle("apply plugin: 'com.android.library'"),
+        )
+        .name("indirectLib")
 
     val lib =
-        project(
-                manifest,
-                xml(
-                        "lint.xml",
-                        """
+      project(
+          manifest,
+          xml(
+              "lint.xml",
+              """
                 <lint>
                     <!-- This will turn it off in lib and in indirect lib. It will not affect app. -->
                     <issue id="WrongManifestParent">
@@ -279,19 +279,19 @@ class ConfigurationHierarchyTest : AbstractCheckTest() {
                     </issue>
                 </lint>
                 """,
-                    )
-                    .indented(),
-                gradle("apply plugin: 'com.android.library'"),
             )
-            .dependsOn(indirectLib)
-            .name("lib")
+            .indented(),
+          gradle("apply plugin: 'com.android.library'"),
+        )
+        .dependsOn(indirectLib)
+        .name("lib")
 
     val main =
-        project(
-                manifest,
-                xml(
-                        "../lint.xml",
-                        """
+      project(
+          manifest,
+          xml(
+              "../lint.xml",
+              """
                 <lint>
                     <issue id="OldTargetApi" severity="hide" />
                     <issue id="AllowBackup" severity="hide" />
@@ -305,11 +305,11 @@ class ConfigurationHierarchyTest : AbstractCheckTest() {
                     </issue>
                 </lint>
             """,
-                    )
-                    .indented(),
-                xml(
-                        "lint.xml",
-                        """
+            )
+            .indented(),
+          xml(
+              "lint.xml",
+              """
                 <lint>
                     <!-- This will turn it off in all of app, lib and indirectlib -->
                     <issue id="MultipleUsesSdk">
@@ -317,26 +317,26 @@ class ConfigurationHierarchyTest : AbstractCheckTest() {
                     </issue>
                 </lint>
                 """,
-                    )
-                    .indented(),
-                gradle("apply plugin: 'com.android.application'"),
             )
-            .dependsOn(lib)
-            .name("app")
+            .indented(),
+          gradle("apply plugin: 'com.android.application'"),
+        )
+        .dependsOn(lib)
+        .name("app")
 
     lint()
-        .issues(*manifestIssues)
-        .useTestConfiguration(false)
-        .reportFrom(main)
-        // TODO -- remove this after fixing bug listed below
-        .testModes(TestMode.PARTIAL)
-        .projects(main)
-        .allowManifestMergerErrors(true)
-        .run()
-        .expect(
-            // TODO: Here the second result is wrong; somehow when computing the configuration
-            // hierarchy in library merging were not comprehensively.
-            """
+      .issues(*manifestIssues)
+      .useTestConfiguration(false)
+      .reportFrom(main)
+      // TODO -- remove this after fixing bug listed below
+      .testModes(TestMode.PARTIAL)
+      .projects(main)
+      .allowManifestMergerErrors(true)
+      .run()
+      .expect(
+        // TODO: Here the second result is wrong; somehow when computing the configuration
+        // hierarchy in library merging were not comprehensively.
+        """
             src/main/AndroidManifest.xml:11: Error: The <uses-library> element must be a direct child of the <application> element [WrongManifestParent]
                <uses-library android:name="android.test.runner" android:required="false" />
                 ~~~~~~~~~~~~
@@ -351,7 +351,7 @@ class ConfigurationHierarchyTest : AbstractCheckTest() {
                 ~~~~~~~~
             2 errors, 2 warnings
             """
-        )
+      )
   }
 
   fun testFlagsAndLintXmlInteraction() {
@@ -359,10 +359,10 @@ class ConfigurationHierarchyTest : AbstractCheckTest() {
     // especially when there is both a lint.xml file and a manual lintConfig(xmlfile)
     // option specified in the same place
     lint()
-        .files(
-            manifest,
-            gradle(
-                    """
+      .files(
+        manifest,
+        gradle(
+            """
                 apply plugin: 'com.android.application'
                 android {
                     lintOptions {
@@ -381,11 +381,11 @@ class ConfigurationHierarchyTest : AbstractCheckTest() {
                     }
                 }
                 """
-                )
-                .indented(),
-            xml(
-                    "default-lint.xml",
-                    """
+          )
+          .indented(),
+        xml(
+            "default-lint.xml",
+            """
                 <lint>
                     <!-- Conflicts with build.gradle setting; Gradle wins -->
                     <issue id="DuplicateUsesFeature" severity="fatal" />
@@ -396,20 +396,20 @@ class ConfigurationHierarchyTest : AbstractCheckTest() {
                     <issue id="OldTargetApi" severity="error" />
                 </lint>
             """,
-                )
-                .indented(),
-            xml(
-                    "../lint.xml",
-                    """
+          )
+          .indented(),
+        xml(
+            "../lint.xml",
+            """
                 <lint>
                     <issue id="AllowBackup" severity="ignore" />
                 </lint>
                 """,
-                )
-                .indented(),
-            xml(
-                    "lint.xml",
-                    """
+          )
+          .indented(),
+        xml(
+            "lint.xml",
+            """
                 <lint>
                     <!-- Defined in same folder as build.gradle. Gradle wins and turns it off. -->
                     <issue id="IllegalResourceRef" severity="fatal" />
@@ -419,33 +419,33 @@ class ConfigurationHierarchyTest : AbstractCheckTest() {
                     <issue id="OldTargetApi" severity="ignore" />
                 </lint>
                 """,
-                )
-                .indented(),
-            xml(
-                    "src/lint.xml",
-                    """
+          )
+          .indented(),
+        xml(
+            "src/lint.xml",
+            """
                 <lint>
                     <issue id="MissingApplicationIcon" severity="ignore" />
                 </lint>
             """,
-                )
-                .indented(),
-            xml(
-                    "src/main/lint.xml",
-                    """
+          )
+          .indented(),
+        xml(
+            "src/main/lint.xml",
+            """
                 <lint>
                     <!-- Overrides setting in build.gradle because it's closer to the source -->
                     <issue id="MultipleUsesSdk" severity="fatal" />
                 </lint>
             """,
-                )
-                .indented(),
-        )
-        .issues(*manifestIssues)
-        .allowManifestMergerErrors(true)
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+      )
+      .issues(*manifestIssues)
+      .allowManifestMergerErrors(true)
+      .run()
+      .expect(
+        """
 src/main/AndroidManifest.xml:10: Error: There should only be a single <uses-sdk> element in the manifest: merge these together [MultipleUsesSdk]
    <uses-sdk android:minSdkVersion="15" />
     ~~~~~~~~
@@ -454,17 +454,17 @@ src/main/AndroidManifest.xml:10: Error: There should only be a single <uses-sdk>
     ~~~~~~~~
 1 errors, 0 warnings
             """
-        )
+      )
   }
 
   fun testOverrideAndFallbackConfigurations() {
     val project =
-        getProjectDir(
-            null,
-            manifest().minSdk(1),
-            xml(
-                    "lint.xml",
-                    """
+      getProjectDir(
+        null,
+        manifest().minSdk(1),
+        xml(
+            "lint.xml",
+            """
                     <lint>
                         <!-- // Overridden in override.xml: this is ignored -->
                         <issue id="DuplicateDefinition" severity="fatal"/>
@@ -474,61 +474,61 @@ src/main/AndroidManifest.xml:10: Error: There should only be a single <uses-sdk>
                         <issue id="SdCardPath" severity="ignore"/>
                     </lint>
                     """,
-                )
-                .indented(),
-            xml(
-                    "fallback.xml",
-                    """
+          )
+          .indented(),
+        xml(
+            "fallback.xml",
+            """
                 <lint>
                     <issue id="DuplicateIds" severity="fatal"/>
                 </lint>
                 """,
-                )
-                .indented(),
-            xml(
-                    "override.xml",
-                    """
+          )
+          .indented(),
+        xml(
+            "override.xml",
+            """
                 <lint>
                     <issue id="DuplicateDefinition" severity="ignore"/>
                 </lint>
                 """,
-                )
-                .indented(),
-            xml(
-                    "res/layout/test.xml",
-                    """
+          )
+          .indented(),
+        xml(
+            "res/layout/test.xml",
+            """
                 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android">
                     <Button android:id='@+id/duplicated'/>    <Button android:id='@+id/duplicated'/></LinearLayout>
                 """,
-                )
-                .indented(),
-            xml(
-                    "res/values/duplicates.xml",
-                    """
+          )
+          .indented(),
+        xml(
+            "res/values/duplicates.xml",
+            """
                 <resources>
                     <item type="id" name="name" />
                     <item type="id" name="name" />
                 </resources>
                 """,
-                )
-                .indented(),
-            kotlin("val path = \"/sdcard/path\""),
-        )
+          )
+          .indented(),
+        kotlin("val path = \"/sdcard/path\""),
+      )
     checkDriver(
-        "No issues found.",
-        "", // Expected exit code
-        LintCliFlags.ERRNO_SUCCESS,
-        arrayOf<String>(
-            "--disable",
-            "LintError",
-            "--disable",
-            "UnusedResources,ButtonStyle,UnusedResources,AllowBackup,LintError",
-            "--config",
-            File(project, "fallback.xml").path,
-            "--override-config",
-            File(project, "override.xml").path,
-            project.path,
-        ),
+      "No issues found.",
+      "", // Expected exit code
+      LintCliFlags.ERRNO_SUCCESS,
+      arrayOf<String>(
+        "--disable",
+        "LintError",
+        "--disable",
+        "UnusedResources,ButtonStyle,UnusedResources,AllowBackup,LintError",
+        "--config",
+        File(project, "fallback.xml").path,
+        "--override-config",
+        File(project, "override.xml").path,
+        project.path,
+      ),
     )
   }
 
@@ -540,61 +540,61 @@ src/main/AndroidManifest.xml:10: Error: There should only be a single <uses-sdk>
     // always consult the override first) to not automatically jump to the fallback
     // via getParent there, since we need to go back to the local lint file first.
     val project =
-        getProjectDir(
-            null,
-            manifest().minSdk(1),
-            xml(
-                    "fallback.xml",
-                    """
+      getProjectDir(
+        null,
+        manifest().minSdk(1),
+        xml(
+            "fallback.xml",
+            """
                 <lint>
                     <issue id="DuplicateIds" severity="ignore"/>
                 </lint>
                 """,
-                )
-                .indented(),
-            xml(
-                    "override.xml",
-                    """
+          )
+          .indented(),
+        xml(
+            "override.xml",
+            """
                 <lint>
                     <issue id="DuplicateDefinition" severity="ignore"/>
                 </lint>
                 """,
-                )
-                .indented(),
-            xml(
-                    "res/layout/test.xml",
-                    """
+          )
+          .indented(),
+        xml(
+            "res/layout/test.xml",
+            """
                 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android">
                     <Button android:id='@+id/duplicated'/>    <Button android:id='@+id/duplicated'/></LinearLayout>
                 """,
-                )
-                .indented(),
-            xml(
-                    "res/values/duplicates.xml",
-                    """
+          )
+          .indented(),
+        xml(
+            "res/values/duplicates.xml",
+            """
                 <resources>
                     <item type="id" name="name" />
                     <item type="id" name="name" />
                 </resources>
                 """,
-                )
-                .indented(),
-        )
+          )
+          .indented(),
+      )
     checkDriver(
-        "No issues found.",
-        "", // Expected exit code
-        LintCliFlags.ERRNO_SUCCESS,
-        arrayOf<String>(
-            "--disable",
-            "LintError",
-            "--disable",
-            "UnusedResources,ButtonStyle,UnusedResources,AllowBackup",
-            "--config",
-            File(project, "fallback.xml").path,
-            "--override-config",
-            File(project, "override.xml").path,
-            project.path,
-        ),
+      "No issues found.",
+      "", // Expected exit code
+      LintCliFlags.ERRNO_SUCCESS,
+      arrayOf<String>(
+        "--disable",
+        "LintError",
+        "--disable",
+        "UnusedResources,ButtonStyle,UnusedResources,AllowBackup",
+        "--config",
+        File(project, "fallback.xml").path,
+        "--override-config",
+        File(project, "override.xml").path,
+        project.path,
+      ),
     )
   }
 
@@ -618,90 +618,85 @@ src/main/AndroidManifest.xml:10: Error: There should only be a single <uses-sdk>
     //  (before fix: parent edge was here, connecting back to the top)
     //
     val project =
-        getProjectDir(
-            null,
-            manifest().minSdk(1),
-            xml(
-                    "misc/config.xml",
-                    """
+      getProjectDir(
+        null,
+        manifest().minSdk(1),
+        xml(
+            "misc/config.xml",
+            """
                 <lint>
                     <issue id="DuplicateIds" severity="ignore"/>
                 </lint>
                 """,
-                )
-                .indented(),
-            xml(
-                    "build/temp/override.xml",
-                    """
+          )
+          .indented(),
+        xml(
+            "build/temp/override.xml",
+            """
                 <lint>
                     <issue id="DuplicateDefinition" severity="ignore"/>
                 </lint>
                 """,
-                )
-                .indented(),
-            xml(
-                    "res/layout/test.xml",
-                    """
+          )
+          .indented(),
+        xml(
+            "res/layout/test.xml",
+            """
                 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android">
                     <Button android:id='@+id/duplicated'/>    <Button android:id='@+id/duplicated'/></LinearLayout>
                 """,
-                )
-                .indented(),
-            xml(
-                    "res/values/duplicates.xml",
-                    """
+          )
+          .indented(),
+        xml(
+            "res/values/duplicates.xml",
+            """
                 <resources>
                     <item type="id" name="name" />
                     <item type="id" name="name" />
                 </resources>
                 """,
-                )
-                .indented(),
-        )
+          )
+          .indented(),
+      )
     checkDriver(
-        "No issues found.",
-        "", // Expected exit code
-        LintCliFlags.ERRNO_SUCCESS,
-        arrayOf(
-            "--disable",
-            "LintError",
-            "--disable",
-            "UnusedResources,ButtonStyle,UnusedResources,AllowBackup",
-            "--config",
-            File(project, "misc/config.xml").path,
-            "--override-config",
-            File(project, "build/temp/override.xml").path,
-            project.path,
-        ),
+      "No issues found.",
+      "", // Expected exit code
+      LintCliFlags.ERRNO_SUCCESS,
+      arrayOf(
+        "--disable",
+        "LintError",
+        "--disable",
+        "UnusedResources,ButtonStyle,UnusedResources,AllowBackup",
+        "--config",
+        File(project, "misc/config.xml").path,
+        "--override-config",
+        File(project, "build/temp/override.xml").path,
+        project.path,
+      ),
     )
   }
 
-  private fun checkDriver(
-      expectedOutput: String,
-      expectedError: String,
-      expectedExitCode: Int,
-      args: Array<String>,
-  ) {
+  private fun checkDriver(expectedOutput: String, expectedError: String, expectedExitCode: Int, args: Array<String>) {
     checkDriver(expectedOutput, expectedError, expectedExitCode, args, this::cleanup, null)
   }
 
   fun testProvisionalFiltering() {
     // Tests the inheritance of severity among modules when using provisional reporting
     val lib =
-        project(
-                manifest().minSdk(2),
-                xml(
-                        "lint.xml",
-                        """
+      project(
+          manifest().minSdk(2),
+          xml(
+              "lint.xml",
+              """
                 <lint>
                     <issue id="UseValueOf" severity="error" />
                 </lint>
                 """,
-                    )
-                    .indented(),
-                gradle("apply plugin: 'com.android.library'"),
-                kotlin(
-                    """
+            )
+            .indented(),
+          gradle("apply plugin: 'com.android.library'"),
+          kotlin(
+            """
                     package test.pkg
                     fun test() {
                         val x = "/sdcard/warning"
@@ -709,40 +704,40 @@ src/main/AndroidManifest.xml:10: Error: There should only be a single <uses-sdk>
                         val z = java.lang.Integer(42)
                     }
                 """
-                ),
-            )
-            .name("lib")
+          ),
+        )
+        .name("lib")
 
     val main =
-        project(
-                manifest().minSdk(5),
-                xml(
-                        "lint.xml",
-                        """
+      project(
+          manifest().minSdk(5),
+          xml(
+              "lint.xml",
+              """
                 <lint>
                     <issue id="NewApi" severity="warning" />
                     <issue id="SdCardPath" severity="ignore" />
                     <issue id="UseValueOf" severity="warning" />
                 </lint>
             """,
-                    )
-                    .indented(),
-                gradle("apply plugin: 'com.android.application'"),
             )
-            .dependsOn(lib)
-            .name("app")
+            .indented(),
+          gradle("apply plugin: 'com.android.application'"),
+        )
+        .dependsOn(lib)
+        .name("app")
 
     // The UseValueOf issue should be reported as error, since specifically configured for lib
     // The SdCardPath issue should be hidden, since only defined in app, and should inherit
     // The NewApi issue should have severity warning, as inherited from app
 
     lint()
-        .issues(ApiDetector.UNSUPPORTED, SdCardDetector.ISSUE, JavaPerformanceDetector.USE_VALUE_OF)
-        .reportFrom(main)
-        .projects(lib, main)
-        .run()
-        .expect(
-            """
+      .issues(ApiDetector.UNSUPPORTED, SdCardDetector.ISSUE, JavaPerformanceDetector.USE_VALUE_OF)
+      .reportFrom(main)
+      .projects(lib, main)
+      .run()
+      .expect(
+        """
                 ../lib/src/main/kotlin/test/pkg/test.kt:5: Warning: Call requires API level 14 (current min is 5): android.widget.GridLayout() [NewApi]
                                         val y = android.widget.GridLayout(null)
                                                                ~~~~~~~~~~
@@ -751,56 +746,56 @@ src/main/AndroidManifest.xml:10: Error: There should only be a single <uses-sdk>
                                                 ~~~~~~~~~~~~~~~~~~~~~
                 1 errors, 1 warnings
                 """
-        )
+      )
   }
 
   fun testWarningsAsErrors() {
     // Regression test for
     //   201177846: Lint warningsAsErrors not escalating warning to error
     lint()
-        .files(
-            kotlin(
-                    """
+      .files(
+        kotlin(
+            """
                 package test.pkg
                 class MyTest {
                     val s: String = "/sdcard/mydir" // ERROR, not warning
                 }
                 """
-                )
-                .indented(),
-            xml(
-                    "lint.xml",
-                    """
+          )
+          .indented(),
+        xml(
+            "lint.xml",
+            """
                 <lint>
 
                 </lint>
                 """,
-                )
-                .indented(),
-            gradle(""), // Trigger src/main/java source sets
-        )
-        .useTestConfiguration(false)
-        .overrideConfig(
-            xml(
-                    "lint-override.xml",
-                    """
+          )
+          .indented(),
+        gradle(""), // Trigger src/main/java source sets
+      )
+      .useTestConfiguration(false)
+      .overrideConfig(
+        xml(
+            "lint-override.xml",
+            """
                     <lint>
                         <issue id="SdCardPath" severity="error" />
                     </lint>
                     """,
-                )
-                .indented()
-        )
-        .issues(SdCardDetector.ISSUE)
-        .run()
-        .expect(
-            """
+          )
+          .indented()
+      )
+      .issues(SdCardDetector.ISSUE)
+      .run()
+      .expect(
+        """
                 src/main/kotlin/test/pkg/MyTest.kt:3: Error: Do not hardcode "/sdcard/"; use Environment.getExternalStorageDirectory().getPath() instead [SdCardPath]
                     val s: String = "/sdcard/mydir" // ERROR, not warning
                                      ~~~~~~~~~~~~~
                 1 errors, 0 warnings
                 """
-        )
+      )
   }
 
   fun testIgnoreParentConfiguration() {
@@ -811,11 +806,11 @@ src/main/AndroidManifest.xml:10: Error: There should only be a single <uses-sdk>
     val lib = project(kotlin("fun testLib() { }"), gradle("apply plugin: 'com.android.library'")).name("lib")
 
     val main =
-        project(
-                kotlin("fun testApp() { }"),
-                xml(
-                        "../lint.xml",
-                        """
+      project(
+          kotlin("fun testApp() { }"),
+          xml(
+              "../lint.xml",
+              """
                 <lint>
                     <!-- This is in a parent of all; will work everywhere.
                          The `MyIssueId` issue is not available in all modules, so
@@ -825,26 +820,26 @@ src/main/AndroidManifest.xml:10: Error: There should only be a single <uses-sdk>
                     <issue id="MyIssueId" severity="ignore" />
                 </lint>
             """,
-                    )
-                    .indented(),
-                gradle("apply plugin: 'com.android.application'"),
             )
-            .dependsOn(lib)
-            .name("app")
+            .indented(),
+          gradle("apply plugin: 'com.android.application'"),
+        )
+        .dependsOn(lib)
+        .name("app")
 
     val temp = TemporaryFolder()
     temp.create()
     lint()
-        // HardcodedValuesDetector must be present to verify issue-validation; see
-        // LintCliClient#validateIssueIds
-        .issues(HardcodedValuesDetector.ISSUE, *manifestIssues)
-        .projects(main)
-        .rootDirectory(temp.root.canonicalFile)
-        .useTestConfiguration(false)
-        .allowDuplicates()
-        .reportFrom(main)
-        .run()
-        .expectClean()
+      // HardcodedValuesDetector must be present to verify issue-validation; see
+      // LintCliClient#validateIssueIds
+      .issues(HardcodedValuesDetector.ISSUE, *manifestIssues)
+      .projects(main)
+      .rootDirectory(temp.root.canonicalFile)
+      .useTestConfiguration(false)
+      .allowDuplicates()
+      .reportFrom(main)
+      .run()
+      .expectClean()
     temp.delete()
   }
 
@@ -856,20 +851,20 @@ src/main/AndroidManifest.xml:10: Error: There should only be a single <uses-sdk>
     val lib = project(kotlin("fun testLib() { }")).name("lib")
 
     val main =
-        project(
-                kotlin("fun testApp() { }"),
-                xml(
-                        "lint.xml",
-                        """
+      project(
+          kotlin("fun testApp() { }"),
+          xml(
+              "lint.xml",
+              """
                 <lint>
                     <issue id="SomeUnknownIssue1" severity="ignore" />
                 </lint>
             """,
-                    )
-                    .indented(),
             )
-            .dependsOn(lib)
-            .name("app")
+            .indented(),
+        )
+        .dependsOn(lib)
+        .name("app")
 
     val temp = TemporaryFolder()
     temp.create()
@@ -893,23 +888,23 @@ src/main/AndroidManifest.xml:10: Error: There should only be a single <uses-sdk>
       }
     }
     checkDriver(
-        "" +
-            "build.gradle: Warning: Unknown issue id \"SomeUnknownIssue2\" [UnknownIssueId]\n" +
-            "lint.xml:2: Warning: Unknown issue id \"SomeUnknownIssue1\" [UnknownIssueId]\n" +
-            "    <issue id=\"SomeUnknownIssue1\" severity=\"ignore\" />\n" +
-            "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
-            "0 errors, 2 warnings",
-        "", // Expected exit code
-        LintCliFlags.ERRNO_SUCCESS,
-        arrayOf<String>(
-            "--disable",
-            "LintError",
-            "--disable",
-            "UnusedResources,ButtonStyle,UnusedResources,AllowBackup,LintError,SomeUnknownIssue2",
-            projectDir.path,
-        ),
-        null,
-        listener,
+      "" +
+        "build.gradle: Warning: Unknown issue id \"SomeUnknownIssue2\" [UnknownIssueId]\n" +
+        "lint.xml:2: Warning: Unknown issue id \"SomeUnknownIssue1\" [UnknownIssueId]\n" +
+        "    <issue id=\"SomeUnknownIssue1\" severity=\"ignore\" />\n" +
+        "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
+        "0 errors, 2 warnings",
+      "", // Expected exit code
+      LintCliFlags.ERRNO_SUCCESS,
+      arrayOf<String>(
+        "--disable",
+        "LintError",
+        "--disable",
+        "UnusedResources,ButtonStyle,UnusedResources,AllowBackup,LintError,SomeUnknownIssue2",
+        projectDir.path,
+      ),
+      null,
+      listener,
     )
 
     temp.delete()

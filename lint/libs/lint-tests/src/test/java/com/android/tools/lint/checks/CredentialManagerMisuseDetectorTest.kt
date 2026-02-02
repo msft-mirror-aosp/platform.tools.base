@@ -23,15 +23,15 @@ class CredentialManagerMisuseDetectorTest : AbstractCheckTest() {
 
   fun testDocumentationExample() {
     lint()
-        .projects(
-            STUB_LIBRARY,
-            project()
-                .type(ProjectDescription.Type.APP)
-                .name("app")
-                .dependsOn(STUB_LIBRARY)
-                .files(
-                    kotlin(
-                            """
+      .projects(
+        STUB_LIBRARY,
+        project()
+          .type(ProjectDescription.Type.APP)
+          .name("app")
+          .dependsOn(STUB_LIBRARY)
+          .files(
+            kotlin(
+                """
                 package com.example.app
 
                 import android.content.Context
@@ -71,13 +71,13 @@ class CredentialManagerMisuseDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-                        )
-                        .indented()
-                ),
-        )
-        .run()
-        .expect(
-            """
+              )
+              .indented()
+          ),
+      )
+      .run()
+      .expect(
+        """
         src/com/example/app/Foo.kt:26: Warning: Call to CredentialManager.getCredential without use of NoCredentialException [CredentialManagerMisuse]
                     credentialManager.getCredential(context, request)
                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -92,20 +92,20 @@ class CredentialManagerMisuseDetectorTest : AbstractCheckTest() {
                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         0 errors, 4 warnings
         """
-        )
+      )
   }
 
   fun testCatchException() {
     lint()
-        .projects(
-            STUB_LIBRARY,
-            project()
-                .type(ProjectDescription.Type.APP)
-                .name("app")
-                .dependsOn(STUB_LIBRARY)
-                .files(
-                    kotlin(
-                            """
+      .projects(
+        STUB_LIBRARY,
+        project()
+          .type(ProjectDescription.Type.APP)
+          .name("app")
+          .dependsOn(STUB_LIBRARY)
+          .files(
+            kotlin(
+                """
                 package com.example.app
 
                 import android.content.Context
@@ -145,25 +145,25 @@ class CredentialManagerMisuseDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-                        )
-                        .indented()
-                ),
-        )
-        .run()
-        .expectClean()
+              )
+              .indented()
+          ),
+      )
+      .run()
+      .expectClean()
   }
 
   fun testIfIsException() {
     lint()
-        .projects(
-            STUB_LIBRARY,
-            project()
-                .type(ProjectDescription.Type.APP)
-                .name("app")
-                .dependsOn(STUB_LIBRARY)
-                .files(
-                    kotlin(
-                            """
+      .projects(
+        STUB_LIBRARY,
+        project()
+          .type(ProjectDescription.Type.APP)
+          .name("app")
+          .dependsOn(STUB_LIBRARY)
+          .files(
+            kotlin(
+                """
                 package com.example.app
 
                 import android.content.Context
@@ -205,25 +205,25 @@ class CredentialManagerMisuseDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-                        )
-                        .indented()
-                ),
-        )
-        .run()
-        .expectClean()
+              )
+              .indented()
+          ),
+      )
+      .run()
+      .expectClean()
   }
 
   fun testWhenIsException() {
     lint()
-        .projects(
-            STUB_LIBRARY,
-            project()
-                .type(ProjectDescription.Type.APP)
-                .name("app")
-                .dependsOn(STUB_LIBRARY)
-                .files(
-                    kotlin(
-                            """
+      .projects(
+        STUB_LIBRARY,
+        project()
+          .type(ProjectDescription.Type.APP)
+          .name("app")
+          .dependsOn(STUB_LIBRARY)
+          .files(
+            kotlin(
+                """
                 package com.example.app
 
                 import android.content.Context
@@ -265,25 +265,25 @@ class CredentialManagerMisuseDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-                        )
-                        .indented()
-                ),
-        )
-        .run()
-        .expectClean()
+              )
+              .indented()
+          ),
+      )
+      .run()
+      .expectClean()
   }
 
   fun testJavaCatchException() {
     lint()
-        .projects(
-            STUB_LIBRARY,
-            project()
-                .type(ProjectDescription.Type.APP)
-                .name("app")
-                .dependsOn(STUB_LIBRARY)
-                .files(
-                    kotlin(
-                            """
+      .projects(
+        STUB_LIBRARY,
+        project()
+          .type(ProjectDescription.Type.APP)
+          .name("app")
+          .dependsOn(STUB_LIBRARY)
+          .files(
+            kotlin(
+                """
                 package com.example.app
 
                 import android.content.Context
@@ -319,10 +319,10 @@ class CredentialManagerMisuseDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-                        )
-                        .indented(),
-                    java(
-                            """
+              )
+              .indented(),
+            java(
+                """
                 package com.example.app;
 
                 import androidx.credentials.exceptions.NoCredentialException;
@@ -339,25 +339,25 @@ class CredentialManagerMisuseDetectorTest : AbstractCheckTest() {
                     public static void c() {}
                 }
                 """
-                        )
-                        .indented(),
-                ),
-        )
-        .run()
-        .expectClean()
+              )
+              .indented(),
+          ),
+      )
+      .run()
+      .expectClean()
   }
 
   fun testJavaCatchMultiException() {
     lint()
-        .projects(
-            STUB_LIBRARY,
-            project()
-                .type(ProjectDescription.Type.APP)
-                .name("app")
-                .dependsOn(STUB_LIBRARY)
-                .files(
-                    kotlin(
-                            """
+      .projects(
+        STUB_LIBRARY,
+        project()
+          .type(ProjectDescription.Type.APP)
+          .name("app")
+          .dependsOn(STUB_LIBRARY)
+          .files(
+            kotlin(
+                """
                 package com.example.app
 
                 import android.content.Context
@@ -393,10 +393,10 @@ class CredentialManagerMisuseDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-                        )
-                        .indented(),
-                    java(
-                            """
+              )
+              .indented(),
+            java(
+                """
                 package com.example.app;
 
                 import androidx.credentials.exceptions.NoCredentialException;
@@ -414,25 +414,25 @@ class CredentialManagerMisuseDetectorTest : AbstractCheckTest() {
                     public static void c() {}
                 }
                 """
-                        )
-                        .indented(),
-                ),
-        )
-        .run()
-        .expectClean()
+              )
+              .indented(),
+          ),
+      )
+      .run()
+      .expectClean()
   }
 
   fun testCatchInOtherModule() {
     lint()
-        .projects(
-            STUB_LIBRARY,
-            project()
-                .type(ProjectDescription.Type.LIBRARY)
-                .name("lib")
-                .dependsOn(STUB_LIBRARY)
-                .files(
-                    java(
-                            """
+      .projects(
+        STUB_LIBRARY,
+        project()
+          .type(ProjectDescription.Type.LIBRARY)
+          .name("lib")
+          .dependsOn(STUB_LIBRARY)
+          .files(
+            java(
+                """
                 package com.example.app;
 
                 import androidx.credentials.exceptions.NoCredentialException;
@@ -449,17 +449,17 @@ class CredentialManagerMisuseDetectorTest : AbstractCheckTest() {
                     public static void c() {}
                 }
                 """
-                        )
-                        .indented()
-                ),
-            project()
-                .type(ProjectDescription.Type.APP)
-                .name("app")
-                .dependsOn(STUB_LIBRARY)
-                .dependsOn("lib")
-                .files(
-                    kotlin(
-                            """
+              )
+              .indented()
+          ),
+        project()
+          .type(ProjectDescription.Type.APP)
+          .name("app")
+          .dependsOn(STUB_LIBRARY)
+          .dependsOn("lib")
+          .files(
+            kotlin(
+                """
                 package com.example.app
 
                 import android.content.Context
@@ -495,27 +495,27 @@ class CredentialManagerMisuseDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-                        )
-                        .indented()
-                ),
-        )
-        .run()
-        .expectClean()
+              )
+              .indented()
+          ),
+      )
+      .run()
+      .expectClean()
   }
 
   fun testBadCallInOtherModule() {
     // The getCredential calls are in a library; the warnings are still reported
     // once we reach the app module.
     lint()
-        .projects(
-            STUB_LIBRARY,
-            project()
-                .type(ProjectDescription.Type.LIBRARY)
-                .name("lib")
-                .dependsOn(STUB_LIBRARY)
-                .files(
-                    kotlin(
-                            """
+      .projects(
+        STUB_LIBRARY,
+        project()
+          .type(ProjectDescription.Type.LIBRARY)
+          .name("lib")
+          .dependsOn(STUB_LIBRARY)
+          .files(
+            kotlin(
+                """
                 package com.example.app
 
                 import android.content.Context
@@ -551,16 +551,16 @@ class CredentialManagerMisuseDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-                        )
-                        .indented()
-                ),
-            project()
-                .type(ProjectDescription.Type.APP)
-                .name("app")
-                .dependsOn("lib")
-                .files(
-                    java(
-                            """
+              )
+              .indented()
+          ),
+        project()
+          .type(ProjectDescription.Type.APP)
+          .name("app")
+          .dependsOn("lib")
+          .files(
+            java(
+                """
                 package com.example.app;
 
                 public class Bar {
@@ -569,13 +569,13 @@ class CredentialManagerMisuseDetectorTest : AbstractCheckTest() {
                     public static void c() {}
                 }
                 """
-                        )
-                        .indented()
-                ),
-        )
-        .run()
-        .expect(
-            """
+              )
+              .indented()
+          ),
+      )
+      .run()
+      .expect(
+        """
         ../lib/src/com/example/app/Foo.kt:26: Warning: Call to CredentialManager.getCredential without use of NoCredentialException [CredentialManagerMisuse]
                     credentialManager.getCredential(context, request)
                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -590,15 +590,15 @@ class CredentialManagerMisuseDetectorTest : AbstractCheckTest() {
                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         0 errors, 4 warnings
         """
-        )
+      )
   }
 }
 
 private val STUB_LIBRARY =
-    ProjectDescription()
-        .files(
-            TestFiles.kotlin(
-                    """
+  ProjectDescription()
+    .files(
+      TestFiles.kotlin(
+          """
           package androidx.credentials
 
           /*HIDE-FROM-DOCUMENTATION*/
@@ -650,10 +650,10 @@ private val STUB_LIBRARY =
           class NoCredentialException : GetCredentialException
           interface CredentialManagerCallback<R : Any?, E : Any>
           """
-                )
-                .indented(),
-            TestFiles.kotlin(
-                    """
+        )
+        .indented(),
+      TestFiles.kotlin(
+          """
           package androidx.credentials.exceptions
 
           /*HIDE-FROM-DOCUMENTATION*/
@@ -662,8 +662,8 @@ private val STUB_LIBRARY =
           class GetCredentialCustomException : GetCredentialException
           class NoCredentialException : GetCredentialException
           """
-                )
-                .indented(),
         )
-        .type(ProjectDescription.Type.LIBRARY)
-        .name("StubLib")
+        .indented(),
+    )
+    .type(ProjectDescription.Type.LIBRARY)
+    .name("StubLib")

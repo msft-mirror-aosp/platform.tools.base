@@ -23,9 +23,9 @@ class IntentWillNullActionDetectorTest : AbstractCheckTest() {
 
   fun testDocumentationExample() {
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
                 package test.pkg;
 
                 import android.content.Intent;
@@ -40,20 +40,20 @@ class IntentWillNullActionDetectorTest : AbstractCheckTest() {
                     }
                 }
             """
-                )
-                .indented()
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented()
+      )
+      .run()
+      .expect(
+        """
             src/test/pkg/TestActivity.java:10: Warning: This intent has no action set and is not explicit by component. You should either make this intent explicit by component or set an action matching the targeted intent filter. [IntentWithNullActionLaunch]
                     Intent intent = new Intent();
                                     ~~~~~~~~~~~~
             0 errors, 1 warnings
             """
-        )
-        .expectFixDiffs(
-            """
+      )
+      .expectFixDiffs(
+        """
             Fix for src/test/pkg/TestActivity.java line 10: Set action...:
             @@ -10 +10 @@
             -        Intent intent = new Intent();
@@ -63,14 +63,14 @@ class IntentWillNullActionDetectorTest : AbstractCheckTest() {
             -        Intent intent = new Intent();
             +        Intent intent = new Intent().setClassName("[app.package.name]|", "your.classname");
         """
-        )
+      )
   }
 
   fun testClassInConstructorKotlin() {
     lint()
-        .files(
-            kotlin(
-                    """
+      .files(
+        kotlin(
+            """
                 package test.pkg
 
                 import android.content.Intent
@@ -85,18 +85,18 @@ class IntentWillNullActionDetectorTest : AbstractCheckTest() {
                     }
                 }
             """
-                )
-                .indented()
-        )
-        .run()
-        .expectClean()
+          )
+          .indented()
+      )
+      .run()
+      .expectClean()
   }
 
   fun testClassInConstructorJava() {
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
                 package test.pkg;
 
                 import android.os.Bundle;
@@ -113,19 +113,19 @@ class IntentWillNullActionDetectorTest : AbstractCheckTest() {
 
                 }
             """
-                )
-                .indented()
-        )
-        .requireCompileSdk()
-        .run()
-        .expectClean()
+          )
+          .indented()
+      )
+      .requireCompileSdk()
+      .run()
+      .expectClean()
   }
 
   fun testIntentWithNullAction_actionSetByConstructor() {
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
                 package test.pkg;
 
                 import android.content.Intent;
@@ -140,18 +140,18 @@ class IntentWillNullActionDetectorTest : AbstractCheckTest() {
                     }
                 }
             """
-                )
-                .indented()
-        )
-        .run()
-        .expectClean()
+          )
+          .indented()
+      )
+      .run()
+      .expectClean()
   }
 
   fun testIntentWithNullAction_actionSetWithSetAction() {
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
                 package test.pkg;
 
                 import android.content.Intent;
@@ -166,20 +166,20 @@ class IntentWillNullActionDetectorTest : AbstractCheckTest() {
                     }
                 }
             """
-                )
-                .indented()
-        )
-        .skipTestModes(TestMode.PARENTHESIZED)
-        .run()
-        .expectClean()
+          )
+          .indented()
+      )
+      .skipTestModes(TestMode.PARENTHESIZED)
+      .run()
+      .expectClean()
   }
 
   fun testIntentWithNullAction_actionSetToNullWithConstructorResetWithSetAction() {
     @Suppress("ConstantValue")
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
                 package test.pkg;
 
                 import android.content.Intent;
@@ -196,18 +196,18 @@ class IntentWillNullActionDetectorTest : AbstractCheckTest() {
                     }
                 }
             """
-                )
-                .indented()
-        )
-        .run()
-        .expectClean()
+          )
+          .indented()
+      )
+      .run()
+      .expectClean()
   }
 
   fun testIntentWithNullAction_setComponentExplicitWithInternalPackage() {
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
                 package test.pkg;
 
                 import android.content.ComponentName;
@@ -225,29 +225,29 @@ class IntentWillNullActionDetectorTest : AbstractCheckTest() {
                     }
                 }
             """
-                )
-                .indented(),
-            manifest(
-                    """
+          )
+          .indented(),
+        manifest(
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                         package="test.pkg">
                     <application>
                     </application>
                 </manifest>
                 """
-                )
-                .indented(),
-        )
-        .skipTestModes(TestMode.PARENTHESIZED)
-        .run()
-        .expectClean()
+          )
+          .indented(),
+      )
+      .skipTestModes(TestMode.PARENTHESIZED)
+      .run()
+      .expectClean()
   }
 
   fun testIntentWithNullAction_setComponentExplicitWithExternalPackage() {
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
                 package test.pkg;
 
                 import android.content.ComponentName;
@@ -265,29 +265,29 @@ class IntentWillNullActionDetectorTest : AbstractCheckTest() {
                     }
                 }
             """
-                )
-                .indented(),
-            manifest(
-                    """
+          )
+          .indented(),
+        manifest(
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                         package="test.pkg">
                     <application>
                     </application>
                 </manifest>
                 """
-                )
-                .indented(),
-        )
-        .skipTestModes(TestMode.PARENTHESIZED)
-        .run()
-        .expectClean()
+          )
+          .indented(),
+      )
+      .skipTestModes(TestMode.PARENTHESIZED)
+      .run()
+      .expectClean()
   }
 
   fun testIntentWithNullAction_setClassNameWithInternalPackage() {
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
                 package test.pkg;
 
                 import android.content.Intent;
@@ -303,29 +303,29 @@ class IntentWillNullActionDetectorTest : AbstractCheckTest() {
                     }
                 }
             """
-                )
-                .indented(),
-            manifest(
-                    """
+          )
+          .indented(),
+        manifest(
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                         package="test.pkg">
                     <application>
                     </application>
                 </manifest>
                 """
-                )
-                .indented(),
-        )
-        .skipTestModes(TestMode.PARENTHESIZED)
-        .run()
-        .expectClean()
+          )
+          .indented(),
+      )
+      .skipTestModes(TestMode.PARENTHESIZED)
+      .run()
+      .expectClean()
   }
 
   fun testIntentWithNullAction_setClassNameWithExternalPackage() {
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
                 package test.pkg;
 
                 import android.content.Intent;
@@ -341,29 +341,29 @@ class IntentWillNullActionDetectorTest : AbstractCheckTest() {
                     }
                 }
             """
-                )
-                .indented(),
-            manifest(
-                    """
+          )
+          .indented(),
+        manifest(
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                         package="test.pkg">
                     <application>
                     </application>
                 </manifest>
                 """
-                )
-                .indented(),
-        )
-        .testModes(TestMode.PARTIAL)
-        .run()
-        .expectClean()
+          )
+          .indented(),
+      )
+      .testModes(TestMode.PARTIAL)
+      .run()
+      .expectClean()
   }
 
   fun testIntentWithNullAction_explicitByPackage() {
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
                 package test.pkg;
 
                 import android.content.Intent;
@@ -379,20 +379,20 @@ class IntentWillNullActionDetectorTest : AbstractCheckTest() {
                     }
                 }
             """
-                )
-                .indented()
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented()
+      )
+      .run()
+      .expect(
+        """
             src/test/pkg/TestActivity.java:10: Warning: This intent has no action set and is not explicit by component. You should either make this intent explicit by component or set an action matching the targeted intent filter. [IntentWithNullActionLaunch]
                     Intent intent = new Intent();
                                     ~~~~~~~~~~~~
             0 errors, 1 warnings
             """
-        )
-        .expectFixDiffs(
-            """
+      )
+      .expectFixDiffs(
+        """
             Fix for src/test/pkg/TestActivity.java line 10: Set action...:
             @@ -10 +10 @@
             -        Intent intent = new Intent();
@@ -402,14 +402,14 @@ class IntentWillNullActionDetectorTest : AbstractCheckTest() {
             -        Intent intent = new Intent();
             +        Intent intent = new Intent().setClassName("[app.package.name]|", "your.classname");
         """
-        )
+      )
   }
 
   fun testIntentWithNullAction_implicitIntentKotlin() {
     lint()
-        .files(
-            kotlin(
-                    """
+      .files(
+        kotlin(
+            """
                 package test.pkg
 
                 import android.content.Intent
@@ -423,21 +423,21 @@ class IntentWillNullActionDetectorTest : AbstractCheckTest() {
                     }
                 }
             """
-                )
-                .indented()
-        )
-        .isolated("src/test/pkg/TestActivity.kt")
-        .run()
-        .expect(
-            """
+          )
+          .indented()
+      )
+      .isolated("src/test/pkg/TestActivity.kt")
+      .run()
+      .expect(
+        """
             src/test/pkg/TestActivity.kt:9: Warning: This intent has no action set and is not explicit by component. You should either make this intent explicit by component or set an action matching the targeted intent filter. [IntentWithNullActionLaunch]
                     val intent = Intent()
                                  ~~~~~~~~
             0 errors, 1 warnings
             """
-        )
-        .expectFixDiffs(
-            """
+      )
+      .expectFixDiffs(
+        """
             Fix for src/test/pkg/TestActivity.kt line 9: Set action...:
             @@ -9 +9 @@
             -        val intent = Intent()
@@ -447,14 +447,14 @@ class IntentWillNullActionDetectorTest : AbstractCheckTest() {
             -        val intent = Intent()
             +        val intent = Intent().setClassName("[app.package.name]|", "your.classname")
         """
-        )
+      )
   }
 
   fun testIntentWithNullAction_implicitIntent_onTheFlyAnalysis() {
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
                 package test.pkg;
 
                 import android.content.Intent;
@@ -469,21 +469,21 @@ class IntentWillNullActionDetectorTest : AbstractCheckTest() {
                     }
                 }
             """
-                )
-                .indented()
-        )
-        .isolated("src/test/pkg/TestActivity.java")
-        .run()
-        .expect(
-            """
+          )
+          .indented()
+      )
+      .isolated("src/test/pkg/TestActivity.java")
+      .run()
+      .expect(
+        """
             src/test/pkg/TestActivity.java:10: Warning: This intent has no action set and is not explicit by component. You should either make this intent explicit by component or set an action matching the targeted intent filter. [IntentWithNullActionLaunch]
                     Intent intent = new Intent();
                                     ~~~~~~~~~~~~
             0 errors, 1 warnings
             """
-        )
-        .expectFixDiffs(
-            """
+      )
+      .expectFixDiffs(
+        """
             Fix for src/test/pkg/TestActivity.java line 10: Set action...:
             @@ -10 +10 @@
             -        Intent intent = new Intent();
@@ -493,14 +493,14 @@ class IntentWillNullActionDetectorTest : AbstractCheckTest() {
             -        Intent intent = new Intent();
             +        Intent intent = new Intent().setClassName("[app.package.name]|", "your.classname");
         """
-        )
+      )
   }
 
   fun testIntentWithNullAction_actionSetByConstructor_onTheFlyAnalysis() {
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
                 package test.pkg;
 
                 import android.content.Intent;
@@ -515,19 +515,19 @@ class IntentWillNullActionDetectorTest : AbstractCheckTest() {
                     }
                 }
             """
-                )
-                .indented()
-        )
-        .isolated("src/test/pkg/TestActivity.java")
-        .run()
-        .expectClean()
+          )
+          .indented()
+      )
+      .isolated("src/test/pkg/TestActivity.java")
+      .run()
+      .expectClean()
   }
 
   fun testIntentWithNullAction_actionSetWithSetAction_onTheFlyAnalysis() {
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
                 package test.pkg;
 
                 import android.content.Intent;
@@ -542,21 +542,21 @@ class IntentWillNullActionDetectorTest : AbstractCheckTest() {
                     }
                 }
             """
-                )
-                .indented()
-        )
-        .isolated("src/test/pkg/TestActivity.java")
-        .skipTestModes(TestMode.PARENTHESIZED)
-        .run()
-        .expectClean()
+          )
+          .indented()
+      )
+      .isolated("src/test/pkg/TestActivity.java")
+      .skipTestModes(TestMode.PARENTHESIZED)
+      .run()
+      .expectClean()
   }
 
   fun testIntentWithNullAction_actionSetToNullWithConstructorResetWithSetAction_onTheFlyAnalysis() {
     @Suppress("ConstantValue")
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
                 package test.pkg;
 
                 import android.content.Intent;
@@ -573,19 +573,19 @@ class IntentWillNullActionDetectorTest : AbstractCheckTest() {
                     }
                 }
             """
-                )
-                .indented()
-        )
-        .isolated("src/test/pkg/TestActivity.java")
-        .run()
-        .expectClean()
+          )
+          .indented()
+      )
+      .isolated("src/test/pkg/TestActivity.java")
+      .run()
+      .expectClean()
   }
 
   fun testIntentWithNullAction_setComponentExplicitWithInternalPackage_onTheFlyAnalysis() {
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
                 package test.pkg;
 
                 import android.content.ComponentName;
@@ -603,30 +603,30 @@ class IntentWillNullActionDetectorTest : AbstractCheckTest() {
                     }
                 }
             """
-                )
-                .indented(),
-            manifest(
-                    """
+          )
+          .indented(),
+        manifest(
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                         package="test.pkg">
                     <application>
                     </application>
                 </manifest>
                 """
-                )
-                .indented(),
-        )
-        .isolated("src/test/pkg/TestActivity.java")
-        .skipTestModes(TestMode.PARENTHESIZED)
-        .run()
-        .expectClean()
+          )
+          .indented(),
+      )
+      .isolated("src/test/pkg/TestActivity.java")
+      .skipTestModes(TestMode.PARENTHESIZED)
+      .run()
+      .expectClean()
   }
 
   fun testIntentWithNullAction_setComponentExplicitWithExternalPackage_onTheFlyAnalysis() {
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
                 package test.pkg;
 
                 import android.content.ComponentName;
@@ -644,30 +644,30 @@ class IntentWillNullActionDetectorTest : AbstractCheckTest() {
                     }
                 }
             """
-                )
-                .indented(),
-            manifest(
-                    """
+          )
+          .indented(),
+        manifest(
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                         package="test.pkg">
                     <application>
                     </application>
                 </manifest>
                 """
-                )
-                .indented(),
-        )
-        .skipTestModes(TestMode.PARENTHESIZED)
-        .isolated("src/test/pkg/TestActivity.java")
-        .run()
-        .expectClean()
+          )
+          .indented(),
+      )
+      .skipTestModes(TestMode.PARENTHESIZED)
+      .isolated("src/test/pkg/TestActivity.java")
+      .run()
+      .expectClean()
   }
 
   fun testIntentWithNullAction_setClassNameWithInternalPackage_onTheFlyAnalysis() {
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
                 package test.pkg;
 
                 import android.content.Intent;
@@ -683,30 +683,30 @@ class IntentWillNullActionDetectorTest : AbstractCheckTest() {
                     }
                 }
             """
-                )
-                .indented(),
-            manifest(
-                    """
+          )
+          .indented(),
+        manifest(
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                         package="test.pkg">
                     <application>
                     </application>
                 </manifest>
                 """
-                )
-                .indented(),
-        )
-        .skipTestModes(TestMode.PARENTHESIZED)
-        .isolated("src/test/pkg/TestActivity.java")
-        .run()
-        .expectClean()
+          )
+          .indented(),
+      )
+      .skipTestModes(TestMode.PARENTHESIZED)
+      .isolated("src/test/pkg/TestActivity.java")
+      .run()
+      .expectClean()
   }
 
   fun testIntentWithNullAction_setClassNameWithExternalPackage_onTheFlyAnalysis() {
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
                 package test.pkg;
 
                 import android.content.Intent;
@@ -722,29 +722,29 @@ class IntentWillNullActionDetectorTest : AbstractCheckTest() {
                     }
                 }
             """
-                )
-                .indented(),
-            manifest(
-                    """
+          )
+          .indented(),
+        manifest(
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                         package="test.pkg">
                     <application>
                     </application>
                 </manifest>
                 """
-                )
-                .indented(),
-        )
-        .testModes(TestMode.PARTIAL)
-        .run()
-        .expectClean()
+          )
+          .indented(),
+      )
+      .testModes(TestMode.PARTIAL)
+      .run()
+      .expectClean()
   }
 
   fun testIntentWithNullAction_explicitByPackage_onTheFlyAnalysis() {
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
                 package test.pkg;
 
                 import android.content.Intent;
@@ -760,21 +760,21 @@ class IntentWillNullActionDetectorTest : AbstractCheckTest() {
                     }
                 }
             """
-                )
-                .indented()
-        )
-        .isolated("src/test/pkg/TestActivity.java")
-        .run()
-        .expect(
-            """
+          )
+          .indented()
+      )
+      .isolated("src/test/pkg/TestActivity.java")
+      .run()
+      .expect(
+        """
             src/test/pkg/TestActivity.java:10: Warning: This intent has no action set and is not explicit by component. You should either make this intent explicit by component or set an action matching the targeted intent filter. [IntentWithNullActionLaunch]
                     Intent intent = new Intent();
                                     ~~~~~~~~~~~~
             0 errors, 1 warnings
             """
-        )
-        .expectFixDiffs(
-            """
+      )
+      .expectFixDiffs(
+        """
             Fix for src/test/pkg/TestActivity.java line 10: Set action...:
             @@ -10 +10 @@
             -        Intent intent = new Intent();
@@ -784,14 +784,14 @@ class IntentWillNullActionDetectorTest : AbstractCheckTest() {
             -        Intent intent = new Intent();
             +        Intent intent = new Intent().setClassName("[app.package.name]|", "your.classname");
         """
-        )
+      )
   }
 
   fun testIntentWithNullAction_useOfAHelperMethodWithIntentAsParameter() {
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
                 package test.pkg;
 
                 import android.content.ComponentName;
@@ -813,21 +813,21 @@ class IntentWillNullActionDetectorTest : AbstractCheckTest() {
                     }
                 }
             """
-                )
-                .indented(),
-            manifest(
-                    """
+          )
+          .indented(),
+        manifest(
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                         package="test.pkg">
                     <application>
                     </application>
                 </manifest>
                 """
-                )
-                .indented(),
-        )
-        .skipTestModes(TestMode.PARENTHESIZED)
-        .run()
-        .expectClean()
+          )
+          .indented(),
+      )
+      .skipTestModes(TestMode.PARENTHESIZED)
+      .run()
+      .expectClean()
   }
 }

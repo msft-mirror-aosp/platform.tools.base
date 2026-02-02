@@ -43,47 +43,47 @@ class ChildCountDetector : LayoutDetector() {
     /** The main issue discovered by this detector. */
     @JvmField
     val SCROLLVIEW_ISSUE =
-        Issue.create(
-            id = "ScrollViewCount",
-            briefDescription = "`ScrollView` can have only one child",
-            explanation =
-                """
+      Issue.create(
+        id = "ScrollViewCount",
+        briefDescription = "`ScrollView` can have only one child",
+        explanation =
+          """
             A `ScrollView` can only have one child widget. If you want more children, wrap them \
             in a container layout.""",
-            category = Category.CORRECTNESS,
-            priority = 8,
-            severity = Severity.WARNING,
-            implementation = IMPLEMENTATION,
-        )
+        category = Category.CORRECTNESS,
+        priority = 8,
+        severity = Severity.WARNING,
+        implementation = IMPLEMENTATION,
+      )
 
     /** The main issue discovered by this detector. */
     @JvmField
     val ADAPTER_VIEW_ISSUE =
-        Issue.create(
-            id = "AdapterViewChildren",
-            briefDescription = "`AdapterView` cannot have children in XML",
-            explanation =
-                """
+      Issue.create(
+        id = "AdapterViewChildren",
+        briefDescription = "`AdapterView` cannot have children in XML",
+        explanation =
+          """
             An `AdapterView` such as a `ListView`s must be configured with data from Java code, such as a \
             `ListAdapter`.""",
-            moreInfo = "https://developer.android.com/reference/android/widget/AdapterView.html",
-            category = Category.CORRECTNESS,
-            priority = 10,
-            severity = Severity.WARNING,
-            implementation = IMPLEMENTATION,
-        )
+        moreInfo = "https://developer.android.com/reference/android/widget/AdapterView.html",
+        category = Category.CORRECTNESS,
+        priority = 10,
+        severity = Severity.WARNING,
+        implementation = IMPLEMENTATION,
+      )
   }
 
   override fun getApplicableElements(): Collection<String> =
-      listOf(
-          SCROLL_VIEW,
-          HORIZONTAL_SCROLL_VIEW,
-          LIST_VIEW,
-          GRID_VIEW,
-          CLASS_NESTED_SCROLL_VIEW.oldName(),
-          CLASS_NESTED_SCROLL_VIEW.newName(),
-          // TODO: Shouldn't Spinner be in this list too? (Was not there in layoutopt)
-      )
+    listOf(
+      SCROLL_VIEW,
+      HORIZONTAL_SCROLL_VIEW,
+      LIST_VIEW,
+      GRID_VIEW,
+      CLASS_NESTED_SCROLL_VIEW.oldName(),
+      CLASS_NESTED_SCROLL_VIEW.newName(),
+      // TODO: Shouldn't Spinner be in this list too? (Was not there in layoutopt)
+    )
 
   override fun visitElement(context: XmlContext, element: Element) {
     var childCount = 0
@@ -94,28 +94,18 @@ class ChildCountDetector : LayoutDetector() {
     }
     val tagName = element.tagName
     if (
-        tagName == SCROLL_VIEW ||
-            tagName == HORIZONTAL_SCROLL_VIEW ||
-            tagName == CLASS_NESTED_SCROLL_VIEW.oldName() ||
-            tagName == CLASS_NESTED_SCROLL_VIEW.newName()
+      tagName == SCROLL_VIEW ||
+        tagName == HORIZONTAL_SCROLL_VIEW ||
+        tagName == CLASS_NESTED_SCROLL_VIEW.oldName() ||
+        tagName == CLASS_NESTED_SCROLL_VIEW.newName()
     ) {
       if (childCount > 1) {
-        context.report(
-            SCROLLVIEW_ISSUE,
-            element,
-            context.getNameLocation(element),
-            "A scroll view can have only one child",
-        )
+        context.report(SCROLLVIEW_ISSUE, element, context.getNameLocation(element), "A scroll view can have only one child")
       }
     } else {
       // Adapter view
       if (childCount > 0) {
-        context.report(
-            ADAPTER_VIEW_ISSUE,
-            element,
-            context.getNameLocation(element),
-            "A list/grid should have no children declared in XML",
-        )
+        context.report(ADAPTER_VIEW_ISSUE, element, context.getNameLocation(element), "A list/grid should have no children declared in XML")
       }
     }
   }

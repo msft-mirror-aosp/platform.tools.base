@@ -83,11 +83,8 @@ abstract class Configuration(val configurations: ConfigurationHierarchy) {
    * @return true if this issue should be suppressed
    */
   @Deprecated(
-      "Use the new isIgnored(Context, Incident) method instead",
-      ReplaceWith(
-          "isIgnored(Incident(context, incident))",
-          "com.android.tools.lint.detector.api.Incident",
-      ),
+    "Use the new isIgnored(Context, Incident) method instead",
+    ReplaceWith("isIgnored(Incident(context, incident))", "com.android.tools.lint.detector.api.Incident"),
   )
   fun isIgnored(context: Context, issue: Issue, location: Location?, message: String): Boolean {
     return isIgnored(context, Incident(issue, location ?: Location.NONE, message))
@@ -128,11 +125,7 @@ abstract class Configuration(val configurations: ConfigurationHierarchy) {
    * infrastructure forces the tested issues to not be hidden) without specifying what the severity should be (normally
    * [Issue.defaultSeverity]).
    */
-  open fun getDefinedSeverity(
-      issue: Issue,
-      source: Configuration = this,
-      visibleDefault: Severity = issue.defaultSeverity,
-  ): Severity? {
+  open fun getDefinedSeverity(issue: Issue, source: Configuration = this, visibleDefault: Severity = issue.defaultSeverity): Severity? {
     if (!isOverriding && source === this) {
       overrides?.let {
         it.getDefinedSeverity(issue, source, visibleDefault)?.let { severity ->
@@ -145,10 +138,7 @@ abstract class Configuration(val configurations: ConfigurationHierarchy) {
   }
 
   /** The default severity of an issue; should be [Severity.IGNORE] for disabled issues, not its severity when it's enabled. */
-  protected open fun getDefaultSeverity(
-      issue: Issue,
-      visibleDefault: Severity = issue.defaultSeverity,
-  ): Severity {
+  protected open fun getDefaultSeverity(issue: Issue, visibleDefault: Severity = issue.defaultSeverity): Severity {
     return if (!issue.isEnabledByDefault()) Severity.IGNORE else visibleDefault
   }
 
@@ -270,13 +260,7 @@ abstract class Configuration(val configurations: ConfigurationHierarchy) {
    * @param registry the fully initialized registry (might include custom lint checks from libraries etc.)
    * @param allowed issue ids specifically allowed (don't warn)
    */
-  open fun validateIssueIds(
-      client: LintClient,
-      driver: LintDriver,
-      project: Project?,
-      registry: IssueRegistry,
-      allowed: Set<String>,
-  ) {
+  open fun validateIssueIds(client: LintClient, driver: LintDriver, project: Project?, registry: IssueRegistry, allowed: Set<String>) {
     parent?.validateIssueIds(client, driver, project, registry, allowed)
   }
 
@@ -296,13 +280,13 @@ abstract class Configuration(val configurations: ConfigurationHierarchy) {
    */
   fun getConfiguredIssues(registry: IssueRegistry, specificOnly: Boolean): Map<String, Severity> {
     return configuredIssues
-        ?: run {
-          val map = mutableMapOf<String, Severity>()
-          overrides?.addConfiguredIssues(map, registry, specificOnly)
-          addConfiguredIssues(map, registry, specificOnly)
-          configuredIssues = map
-          map
-        }
+      ?: run {
+        val map = mutableMapOf<String, Severity>()
+        overrides?.addConfiguredIssues(map, registry, specificOnly)
+        addConfiguredIssues(map, registry, specificOnly)
+        configuredIssues = map
+        map
+      }
   }
 
   private var configuredIssues: Map<String, Severity>? = null
@@ -315,12 +299,12 @@ abstract class Configuration(val configurations: ConfigurationHierarchy) {
    * If [specificOnly] is true, it will ignore generic configuration matches (such as references to "all" or flags like checkAllWarnings).
    */
   abstract fun addConfiguredIssues(
-      targetMap: MutableMap<String, Severity>,
-      registry: IssueRegistry,
-      specificOnly: Boolean,
-      // TODO: IF you enable all warnings with -w, those will be enabled individually
-      // here. Decide if that's the right behavior. Probably more relevant for
-      // -nowarn.
+    targetMap: MutableMap<String, Severity>,
+    registry: IssueRegistry,
+    specificOnly: Boolean,
+    // TODO: IF you enable all warnings with -w, those will be enabled individually
+    // here. Decide if that's the right behavior. Probably more relevant for
+    // -nowarn.
   )
 
   /**
@@ -333,11 +317,7 @@ abstract class Configuration(val configurations: ConfigurationHierarchy) {
    * If [severityOnly] is true, limit the search to configurations that set the issue severity (as opposed to option configuration, setting
    * ignore paths, etc.)
    */
-  fun getIssueConfigLocation(
-      issue: String,
-      specificOnly: Boolean = false,
-      severityOnly: Boolean = false,
-  ): Location? {
+  fun getIssueConfigLocation(issue: String, specificOnly: Boolean = false, severityOnly: Boolean = false): Location? {
     overrides?.getLocalIssueConfigLocation(issue, specificOnly, severityOnly, this)?.let {
       return it
     }
@@ -350,54 +330,54 @@ abstract class Configuration(val configurations: ConfigurationHierarchy) {
    * configurations too (and should not recurse).
    */
   open fun getLocalIssueConfigLocation(
-      issue: String,
-      specificOnly: Boolean = false,
-      severityOnly: Boolean = false,
-      source: Configuration = this,
+    issue: String,
+    specificOnly: Boolean = false,
+    severityOnly: Boolean = false,
+    source: Configuration = this,
   ): Location? = null
 
   /** Convenience method for configurations to report unknown issue id problems. */
   protected fun reportNonExistingIssueId(
-      client: LintClient,
-      driver: LintDriver?,
-      issueRegistry: IssueRegistry,
-      project: Project?,
-      id: String,
+    client: LintClient,
+    driver: LintDriver?,
+    issueRegistry: IssueRegistry,
+    project: Project?,
+    id: String,
   ) {
     val newId = IssueRegistry.getNewId(id)
     val message =
-        if (newId != null) {
-          return
-        } else if (IssueRegistry.isDeletedIssueId(id)) {
-          // Recently deleted, but avoid complaining about leftover configuration
-          return
-        } else if (JarFileIssueRegistry.isRejectedIssueId(id)) {
-          // Issue was not loaded (perhaps incompatible with this version of lint);
-          // we're already complaining about that, so don't also complain that
-          // it's an "unknown" issue
-          return
-        } else {
-          getUnknownIssueIdErrorMessage(id, issueRegistry)
-        }
+      if (newId != null) {
+        return
+      } else if (IssueRegistry.isDeletedIssueId(id)) {
+        // Recently deleted, but avoid complaining about leftover configuration
+        return
+      } else if (JarFileIssueRegistry.isRejectedIssueId(id)) {
+        // Issue was not loaded (perhaps incompatible with this version of lint);
+        // we're already complaining about that, so don't also complain that
+        // it's an "unknown" issue
+        return
+      } else {
+        getUnknownIssueIdErrorMessage(id, issueRegistry)
+      }
 
     if (driver != null) {
       val severity = getSeverity(IssueRegistry.UNKNOWN_ISSUE_ID)
       if (severity !== Severity.IGNORE) {
         val location =
-            getIssueConfigLocation(id, specificOnly = true, severityOnly = false)
-                ?: if (project != null) {
-                  guessGradleLocation(project)
-                } else {
-                  Location.create(File("(unknown location; supplied by command line flags)"))
-                }
+          getIssueConfigLocation(id, specificOnly = true, severityOnly = false)
+            ?: if (project != null) {
+              guessGradleLocation(project)
+            } else {
+              Location.create(File("(unknown location; supplied by command line flags)"))
+            }
         LintClient.report(
-            client = client,
-            issue = IssueRegistry.UNKNOWN_ISSUE_ID,
-            message = message,
-            driver = driver,
-            project = project,
-            location = location,
-            fix = LintFix.create().data(ATTR_ID, id),
+          client = client,
+          issue = IssueRegistry.UNKNOWN_ISSUE_ID,
+          message = message,
+          driver = driver,
+          project = project,
+          location = location,
+          fix = LintFix.create().data(ATTR_ID, id),
         )
       }
     }
@@ -428,11 +408,7 @@ abstract class Configuration(val configurations: ConfigurationHierarchy) {
       return message.toString()
     }
 
-    private fun appendIssueDescription(
-        message: StringBuilder,
-        id: String,
-        issueRegistry: IssueRegistry,
-    ) {
+    private fun appendIssueDescription(message: StringBuilder, id: String, issueRegistry: IssueRegistry) {
       message.append("'").append(id).append("'")
       val issue = issueRegistry.getIssue(id)
       if (issue != null) {

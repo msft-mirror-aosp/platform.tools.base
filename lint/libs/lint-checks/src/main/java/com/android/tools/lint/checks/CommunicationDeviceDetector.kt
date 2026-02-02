@@ -69,11 +69,11 @@ class CommunicationDeviceDetector : Detector(), SourceCodeScanner {
     /** Calling `setCommunicationDevice()` without `clearCommunicationDevice()` */
     @JvmField
     val ISSUE =
-        Issue.create(
-            id = "SetAndClearCommunicationDevice",
-            briefDescription = "Clearing communication device",
-            explanation =
-                """
+      Issue.create(
+        id = "SetAndClearCommunicationDevice",
+        briefDescription = "Clearing communication device",
+        explanation =
+          """
                 After selecting the audio device for communication use cases using \
                 `setCommunicationDevice(AudioDeviceInfo device)`, the selection is active as long \
                 as the requesting application process lives, until `clearCommunicationDevice()` \
@@ -81,12 +81,12 @@ class CommunicationDeviceDetector : Detector(), SourceCodeScanner {
                 the request when a call ends or the requesting activity or service is stopped or \
                 destroyed.
                 """,
-            category = Category.CORRECTNESS,
-            priority = 5,
-            severity = Severity.WARNING,
-            implementation = IMPLEMENTATION,
-            androidSpecific = true,
-        )
+        category = Category.CORRECTNESS,
+        priority = 5,
+        severity = Severity.WARNING,
+        implementation = IMPLEMENTATION,
+        androidSpecific = true,
+      )
 
     const val FOUND_CLEAR_COMMUNICATION_DEVICE = "foundClearCommunicationDevice"
 
@@ -177,10 +177,10 @@ class CommunicationDeviceDetector : Detector(), SourceCodeScanner {
     for (perModuleLintMap in partialResults.maps()) {
       for (key in perModuleLintMap) {
         context.report(
-            Incident(context)
-                .issue(ISSUE)
-                .location(perModuleLintMap.getLocation(key)!!)
-                .message("Must call `clearCommunicationDevice()` " + "after `setCommunicationDevice()`")
+          Incident(context)
+            .issue(ISSUE)
+            .location(perModuleLintMap.getLocation(key)!!)
+            .message("Must call `clearCommunicationDevice()` " + "after `setCommunicationDevice()`")
         )
       }
     }
@@ -211,13 +211,13 @@ class CommunicationDeviceDetector : Detector(), SourceCodeScanner {
   }
 
   private fun PsiElement.getFqName(): String? =
-      when (val element = namedUnwrappedElement) {
-        is PsiMember ->
-            element.getName()?.let { name ->
-              val prefix = element.containingClass?.qualifiedName
-              (if (prefix != null) "$prefix.$name" else name)
-            }
-        is KtNamedDeclaration -> element.fqName.toString()
-        else -> null
-      }
+    when (val element = namedUnwrappedElement) {
+      is PsiMember ->
+        element.getName()?.let { name ->
+          val prefix = element.containingClass?.qualifiedName
+          (if (prefix != null) "$prefix.$name" else name)
+        }
+      is KtNamedDeclaration -> element.fqName.toString()
+      else -> null
+    }
 }

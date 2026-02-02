@@ -34,15 +34,15 @@ class PrettyPaths {
      * @param preferRelativeOverAbsolute should relative paths be used instead of absolute paths, when path variables aren't used?
      */
     fun getPath(
-        file: File,
-        project: Project?,
-        client: LintClient,
-        useUnixPaths: Boolean,
-        tryPathVariables: Boolean,
-        pathVariables: PathVariables = client.pathVariables,
-        preferRelativePathOverPathVariables: Boolean,
-        allowParentRelativePaths: Boolean,
-        preferRelativeOverAbsolute: Boolean,
+      file: File,
+      project: Project?,
+      client: LintClient,
+      useUnixPaths: Boolean,
+      tryPathVariables: Boolean,
+      pathVariables: PathVariables = client.pathVariables,
+      preferRelativePathOverPathVariables: Boolean,
+      allowParentRelativePaths: Boolean,
+      preferRelativeOverAbsolute: Boolean,
     ): String {
       var path: String? = null
 

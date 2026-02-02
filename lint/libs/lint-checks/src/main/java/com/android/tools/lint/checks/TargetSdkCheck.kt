@@ -53,24 +53,24 @@ object TargetSdkRequirements {
 sealed interface TargetSdkCheckResult {
 
   data class Expired(
-      val requiredVersion: Int,
-      val message: String = "Google Play requires that apps target API level $requiredVersion or higher.",
+    val requiredVersion: Int,
+    val message: String = "Google Play requires that apps target API level $requiredVersion or higher.",
   ) : TargetSdkCheckResult
 
   data class Expiring(
-      val requiredVersion: Int,
-      val message: String =
-          "Google Play will soon require that apps target API " +
-              "level $requiredVersion or higher. This will be required for new apps and updates " +
-              "starting on August 31, $MINIMUM_TARGET_SDK_VERSION_YEAR.",
+    val requiredVersion: Int,
+    val message: String =
+      "Google Play will soon require that apps target API " +
+        "level $requiredVersion or higher. This will be required for new apps and updates " +
+        "starting on August 31, $MINIMUM_TARGET_SDK_VERSION_YEAR.",
   ) : TargetSdkCheckResult
 
   data class NotLatest(val highestVersion: Int) : TargetSdkCheckResult {
     val message: String
       get() =
-          "Not targeting the latest versions of Android; compatibility " +
-              "modes apply. Consider testing and updating this version. " +
-              "Consult the `android.os.Build.VERSION_CODES` javadoc for details."
+        "Not targeting the latest versions of Android; compatibility " +
+          "modes apply. Consider testing and updating this version. " +
+          "Consult the `android.os.Build.VERSION_CODES` javadoc for details."
   }
 
   object NoIssue : TargetSdkCheckResult {

@@ -25,9 +25,9 @@ class BuildListDetectorTest : AbstractCheckTest() {
 
   fun testDocumentationExample() {
     lint()
-        .files(
-            kotlin(
-                    """
+      .files(
+        kotlin(
+            """
             class Cubic(id: Int)
             val _morphMatch = listOf(1)
             fun asCubics_broken(progress: Float): List<Cubic> {
@@ -38,43 +38,43 @@ class BuildListDetectorTest : AbstractCheckTest() {
                 }
             }
             """
-                )
-                .indented()
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented()
+      )
+      .run()
+      .expect(
+        """
         src/Cubic.kt:4: Warning: No add calls within buildList lambda; this is usually a mistake [BuildListAdds]
             return buildList { // ERROR
                    ~~~~~~~~~
         0 errors, 1 warnings
         """
-        )
+      )
   }
 
   fun testAddAll() {
     lint()
-        .files(
-            kotlin(
-                    """
+      .files(
+        kotlin(
+            """
             fun test(existing: List<String>): List<String> {
                 return buildList { // OK
                     addAll(existing)
                 }
             }
             """
-                )
-                .indented()
-        )
-        .run()
-        .expectClean()
+          )
+          .indented()
+      )
+      .run()
+      .expectClean()
   }
 
   fun testWrongList() {
     lint()
-        .files(
-            kotlin(
-                    """
+      .files(
+        kotlin(
+            """
             fun test(): List<String> {
                 val list = mutableListOf<String>()
                 return buildList { // ERROR
@@ -94,25 +94,25 @@ class BuildListDetectorTest : AbstractCheckTest() {
                 }
             }
             """
-                )
-                .indented()
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented()
+      )
+      .run()
+      .expect(
+        """
         src/test.kt:3: Warning: No add calls within buildList lambda; this is usually a mistake [BuildListAdds]
             return buildList { // ERROR
                    ~~~~~~~~~
         0 errors, 1 warnings
         """
-        )
+      )
   }
 
   fun testCustomAdd() {
     lint()
-        .files(
-            kotlin(
-                    """
+      .files(
+        kotlin(
+            """
             fun example(): List<String> {
               return buildList {
                 addIfPresent("test")
@@ -125,37 +125,37 @@ class BuildListDetectorTest : AbstractCheckTest() {
               }
             }
             """
-                )
-                .indented()
-        )
-        .run()
-        .expectClean()
+          )
+          .indented()
+      )
+      .run()
+      .expectClean()
   }
 
   fun test331666842() {
     lint()
-        .files(
-            kotlin(
-                    """
+      .files(
+        kotlin(
+            """
             fun test() {
               buildList {
                 this += ""
               }
             }
             """
-                )
-                .indented()
-        )
-        .run()
-        .expectClean()
+          )
+          .indented()
+      )
+      .run()
+      .expectClean()
   }
 
   fun testMethodReferences() {
     // Regression test for 331666842 comment 2
     lint()
-        .files(
-            kotlin(
-                    """
+      .files(
+        kotlin(
+            """
             import android.database.Cursor
 
             fun testOk1(): List<String> {
@@ -194,25 +194,25 @@ class BuildListDetectorTest : AbstractCheckTest() {
                     }
             }
             """
-                )
-                .indented()
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented()
+      )
+      .run()
+      .expect(
+        """
         src/PartData.kt:19: Warning: No add calls within buildList lambda; this is usually a mistake [BuildListAdds]
           return buildList { // ERROR: wrong list
                  ~~~~~~~~~
         0 errors, 1 warnings
         """
-        )
+      )
   }
 
   fun testScenarios() {
     lint()
-        .files(
-            kotlin(
-                    """
+      .files(
+        kotlin(
+            """
             fun example(b: List<String>) {
                 buildList { add(" ") } // OK
                 buildList { addAll(listOf("", "")) } // OK
@@ -256,10 +256,10 @@ class BuildListDetectorTest : AbstractCheckTest() {
 
             private fun returnsNewList(l: MutableList<String>) = listOf(1, 2, 3) + l
             """
-                )
-                .indented()
-        )
-        .run()
-        .expectClean()
+          )
+          .indented()
+      )
+      .run()
+      .expectClean()
   }
 }

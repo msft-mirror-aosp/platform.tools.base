@@ -29,229 +29,229 @@ class TranslucentViewDetectorTest : AbstractCheckTest() {
 
   fun testThemeInActivityManifest() {
     lint()
-        .files(manifestWithActivityTheme, themeFile)
-        .run()
-        .expect(
-            "" +
-                "res/values/styles.xml:7: Warning: Should not specify screen orientation with translucent or floating theme [TranslucentOrientation]\n" +
-                "        <item name=\"android:windowIsFloating\">true</item>\n" +
-                "                    ~~~~~~~~~~~~~~~~~~~~~~~~\n" +
-                "    AndroidManifest.xml:9: <No location-specific message>\n" +
-                "            android:screenOrientation=\"landscape\"\n" +
-                "                                       ~~~~~~~~~\n" +
-                "0 errors, 1 warnings"
-        )
+      .files(manifestWithActivityTheme, themeFile)
+      .run()
+      .expect(
+        "" +
+          "res/values/styles.xml:7: Warning: Should not specify screen orientation with translucent or floating theme [TranslucentOrientation]\n" +
+          "        <item name=\"android:windowIsFloating\">true</item>\n" +
+          "                    ~~~~~~~~~~~~~~~~~~~~~~~~\n" +
+          "    AndroidManifest.xml:9: <No location-specific message>\n" +
+          "            android:screenOrientation=\"landscape\"\n" +
+          "                                       ~~~~~~~~~\n" +
+          "0 errors, 1 warnings"
+      )
   }
 
   fun testThemeInApplicationManifest() {
     lint()
-        .files(manifestWithApplicationTheme, themeFile)
-        .run()
-        .expect(
-            "" +
-                "res/values/styles.xml:7: Warning: Should not specify screen orientation with translucent or floating theme [TranslucentOrientation]\n" +
-                "        <item name=\"android:windowIsFloating\">true</item>\n" +
-                "                    ~~~~~~~~~~~~~~~~~~~~~~~~\n" +
-                "    AndroidManifest.xml:10: <No location-specific message>\n" +
-                "            android:screenOrientation=\"landscape\" />\n" +
-                "                                       ~~~~~~~~~\n" +
-                "0 errors, 1 warnings"
-        )
+      .files(manifestWithApplicationTheme, themeFile)
+      .run()
+      .expect(
+        "" +
+          "res/values/styles.xml:7: Warning: Should not specify screen orientation with translucent or floating theme [TranslucentOrientation]\n" +
+          "        <item name=\"android:windowIsFloating\">true</item>\n" +
+          "                    ~~~~~~~~~~~~~~~~~~~~~~~~\n" +
+          "    AndroidManifest.xml:10: <No location-specific message>\n" +
+          "            android:screenOrientation=\"landscape\" />\n" +
+          "                                       ~~~~~~~~~\n" +
+          "0 errors, 1 warnings"
+      )
   }
 
   fun testThemeInActivityManifest292069881() {
     // Regression test for https://issuetracker.google.com/292069881
     lint()
-        .files(
-            manifest(
-                "" +
-                    "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
-                    "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n" +
-                    "    package=\"test.pkg\">\n" +
-                    "     <uses-sdk android:minSdkVersion=\"16\" android:targetSdkVersion=\"26\" />\n" +
-                    "    <application\n" +
-                    "        android:icon=\"@mipmap/ic_launcher\"\n" +
-                    "        android:label=\"@string/app_name\">\n" +
-                    "        <activity android:name=\".OtherActivity\"\n" +
-                    "            android:screenOrientation=\"landscape\"\n" +
-                    "            android:theme=\"@style/AppTheme\" />\n" +
-                    "        <activity android:name=\".MainActivity\"\n" +
-                    "            android:screenOrientation=\"landscape\"\n" +
-                    "            android:theme=\"@style/AppTheme\" />\n" +
-                    "        <activity android:name=\".Unrelated\"\n" +
-                    "            android:screenOrientation=\"landscape\"\n" +
-                    "            android:theme=\"@style/OpaqueTheme\" />\n" +
-                    "    </application>\n" +
-                    "</manifest>"
-            ),
-            themeFile,
-        )
-        .run()
-        .expect(
-            "" +
-                "res/values/styles.xml:7: Warning: Should not specify screen orientation with translucent or floating theme [TranslucentOrientation]\n" +
-                "        <item name=\"android:windowIsFloating\">true</item>\n" +
-                "                    ~~~~~~~~~~~~~~~~~~~~~~~~\n" +
-                "    AndroidManifest.xml:9: <No location-specific message>\n" +
-                "            android:screenOrientation=\"landscape\"\n" +
-                "                                       ~~~~~~~~~\n" +
-                "    AndroidManifest.xml:12: <No location-specific message>\n" +
-                "            android:screenOrientation=\"landscape\"\n" +
-                "                                       ~~~~~~~~~\n" +
-                "0 errors, 1 warnings"
-        )
+      .files(
+        manifest(
+          "" +
+            "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
+            "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n" +
+            "    package=\"test.pkg\">\n" +
+            "     <uses-sdk android:minSdkVersion=\"16\" android:targetSdkVersion=\"26\" />\n" +
+            "    <application\n" +
+            "        android:icon=\"@mipmap/ic_launcher\"\n" +
+            "        android:label=\"@string/app_name\">\n" +
+            "        <activity android:name=\".OtherActivity\"\n" +
+            "            android:screenOrientation=\"landscape\"\n" +
+            "            android:theme=\"@style/AppTheme\" />\n" +
+            "        <activity android:name=\".MainActivity\"\n" +
+            "            android:screenOrientation=\"landscape\"\n" +
+            "            android:theme=\"@style/AppTheme\" />\n" +
+            "        <activity android:name=\".Unrelated\"\n" +
+            "            android:screenOrientation=\"landscape\"\n" +
+            "            android:theme=\"@style/OpaqueTheme\" />\n" +
+            "    </application>\n" +
+            "</manifest>"
+        ),
+        themeFile,
+      )
+      .run()
+      .expect(
+        "" +
+          "res/values/styles.xml:7: Warning: Should not specify screen orientation with translucent or floating theme [TranslucentOrientation]\n" +
+          "        <item name=\"android:windowIsFloating\">true</item>\n" +
+          "                    ~~~~~~~~~~~~~~~~~~~~~~~~\n" +
+          "    AndroidManifest.xml:9: <No location-specific message>\n" +
+          "            android:screenOrientation=\"landscape\"\n" +
+          "                                       ~~~~~~~~~\n" +
+          "    AndroidManifest.xml:12: <No location-specific message>\n" +
+          "            android:screenOrientation=\"landscape\"\n" +
+          "                                       ~~~~~~~~~\n" +
+          "0 errors, 1 warnings"
+      )
   }
 
   fun testOrientationBehind() {
     // Regression test for https://issuetracker.google.com/292114818
     lint()
-        .files(
-            manifest(
-                "" +
-                    "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
-                    "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n" +
-                    "    package=\"test.pkg\">\n" +
-                    "     <uses-sdk android:minSdkVersion=\"16\" android:targetSdkVersion=\"26\" />\n" +
-                    "    <application\n" +
-                    "        android:icon=\"@mipmap/ic_launcher\"\n" +
-                    "        android:label=\"@string/app_name\">\n" +
-                    "        <activity android:name=\".MainActivity\"\n" +
-                    "            android:screenOrientation=\"behind\"\n" +
-                    "            android:theme=\"@style/AppTheme\" />\n" +
-                    "    </application>\n" +
-                    "</manifest>"
-            ),
-            themeFile,
-        )
-        .run()
-        .expectClean()
+      .files(
+        manifest(
+          "" +
+            "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
+            "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n" +
+            "    package=\"test.pkg\">\n" +
+            "     <uses-sdk android:minSdkVersion=\"16\" android:targetSdkVersion=\"26\" />\n" +
+            "    <application\n" +
+            "        android:icon=\"@mipmap/ic_launcher\"\n" +
+            "        android:label=\"@string/app_name\">\n" +
+            "        <activity android:name=\".MainActivity\"\n" +
+            "            android:screenOrientation=\"behind\"\n" +
+            "            android:theme=\"@style/AppTheme\" />\n" +
+            "    </application>\n" +
+            "</manifest>"
+        ),
+        themeFile,
+      )
+      .run()
+      .expectClean()
   }
 
   fun testThemeFromActivity() {
     // Like previous test, but instead of specifying theme in manifest, specifies it
     // via code in the activity
     lint()
-        .files(
-            manifestWithoutTheme,
-            themeFile,
-            java(
-                "" +
-                    "package test.pkg;\n" +
-                    "\n" +
-                    "import android.os.Bundle;\n" +
-                    "import android.app.Activity;\n" +
-                    "\n" +
-                    "@SuppressWarnings(\"unused\")\n" +
-                    "public class MainActivity extends Activity {\n" +
-                    "    @Override\n" +
-                    "    protected void onCreate(Bundle savedInstanceState) {\n" +
-                    "        super.onCreate(savedInstanceState);\n" +
-                    "        setTheme(R.style.AppTheme);\n" +
-                    "        setContentView(R.layout.activity_main);\n" +
-                    "    }\n" +
-                    "}\n"
-            ),
-            rClass("test.pkg", "@style/AppTheme", "@layout/activity_main"),
-        )
-        .run()
-        .expect(
-            "" +
-                "res/values/styles.xml:7: Warning: Should not specify screen orientation with translucent or floating theme [TranslucentOrientation]\n" +
-                "        <item name=\"android:windowIsFloating\">true</item>\n" +
-                "                    ~~~~~~~~~~~~~~~~~~~~~~~~\n" +
-                "    AndroidManifest.xml:9: <No location-specific message>\n" +
-                "            android:screenOrientation=\"landscape\" />\n" +
-                "                                       ~~~~~~~~~\n" +
-                "0 errors, 1 warnings"
-        )
+      .files(
+        manifestWithoutTheme,
+        themeFile,
+        java(
+          "" +
+            "package test.pkg;\n" +
+            "\n" +
+            "import android.os.Bundle;\n" +
+            "import android.app.Activity;\n" +
+            "\n" +
+            "@SuppressWarnings(\"unused\")\n" +
+            "public class MainActivity extends Activity {\n" +
+            "    @Override\n" +
+            "    protected void onCreate(Bundle savedInstanceState) {\n" +
+            "        super.onCreate(savedInstanceState);\n" +
+            "        setTheme(R.style.AppTheme);\n" +
+            "        setContentView(R.layout.activity_main);\n" +
+            "    }\n" +
+            "}\n"
+        ),
+        rClass("test.pkg", "@style/AppTheme", "@layout/activity_main"),
+      )
+      .run()
+      .expect(
+        "" +
+          "res/values/styles.xml:7: Warning: Should not specify screen orientation with translucent or floating theme [TranslucentOrientation]\n" +
+          "        <item name=\"android:windowIsFloating\">true</item>\n" +
+          "                    ~~~~~~~~~~~~~~~~~~~~~~~~\n" +
+          "    AndroidManifest.xml:9: <No location-specific message>\n" +
+          "            android:screenOrientation=\"landscape\" />\n" +
+          "                                       ~~~~~~~~~\n" +
+          "0 errors, 1 warnings"
+      )
   }
 
   override fun getDetector(): Detector = TranslucentViewDetector()
 
   private val themeFile =
-      xml(
-          "res/values/styles.xml",
-          "" +
-              "<resources>\n" +
-              "\n" +
-              "    <style name=\"AppTheme\" parent=\"Theme.AppCompat.Light.DarkActionBar\">\n" +
-              "        <item name=\"colorPrimary\">@color/colorPrimary</item>\n" +
-              "        <item name=\"colorPrimaryDark\">@color/colorPrimaryDark</item>\n" +
-              "        <item name=\"colorAccent\">@color/colorAccent</item>\n" +
-              "        <item name=\"android:windowIsFloating\">true</item>\n" +
-              "        <item name=\"android:windowIsTranslucent\">true</item>\n" +
-              "    </style>\n" +
-              "\n" +
-              "    <style name=\"SubTheme\" parent=\"AppTheme\">\n" +
-              "    </style>\n" +
-              "\n" +
-              "</resources>\n",
-      )
+    xml(
+      "res/values/styles.xml",
+      "" +
+        "<resources>\n" +
+        "\n" +
+        "    <style name=\"AppTheme\" parent=\"Theme.AppCompat.Light.DarkActionBar\">\n" +
+        "        <item name=\"colorPrimary\">@color/colorPrimary</item>\n" +
+        "        <item name=\"colorPrimaryDark\">@color/colorPrimaryDark</item>\n" +
+        "        <item name=\"colorAccent\">@color/colorAccent</item>\n" +
+        "        <item name=\"android:windowIsFloating\">true</item>\n" +
+        "        <item name=\"android:windowIsTranslucent\">true</item>\n" +
+        "    </style>\n" +
+        "\n" +
+        "    <style name=\"SubTheme\" parent=\"AppTheme\">\n" +
+        "    </style>\n" +
+        "\n" +
+        "</resources>\n",
+    )
 
   private val manifestWithActivityThemeNoTargetSdk =
-      manifest(
-          "" +
-              "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
-              "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n" +
-              "    package=\"test.pkg\">\n" +
-              "\n" +
-              "    <application\n" +
-              "        android:icon=\"@mipmap/ic_launcher\"\n" +
-              "        android:label=\"@string/app_name\">\n" +
-              "        <activity android:name=\".MainActivity\"\n" +
-              "            android:screenOrientation=\"landscape\"\n" +
-              "            android:theme=\"@style/AppTheme\" />\n" +
-              "    </application>\n" +
-              "</manifest>"
-      )
+    manifest(
+      "" +
+        "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
+        "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n" +
+        "    package=\"test.pkg\">\n" +
+        "\n" +
+        "    <application\n" +
+        "        android:icon=\"@mipmap/ic_launcher\"\n" +
+        "        android:label=\"@string/app_name\">\n" +
+        "        <activity android:name=\".MainActivity\"\n" +
+        "            android:screenOrientation=\"landscape\"\n" +
+        "            android:theme=\"@style/AppTheme\" />\n" +
+        "    </application>\n" +
+        "</manifest>"
+    )
 
   private val manifestWithActivityTheme =
-      manifest(
-          "" +
-              "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
-              "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n" +
-              "    package=\"test.pkg\">\n" +
-              "     <uses-sdk android:minSdkVersion=\"16\" android:targetSdkVersion=\"26\" />\n" +
-              "    <application\n" +
-              "        android:icon=\"@mipmap/ic_launcher\"\n" +
-              "        android:label=\"@string/app_name\">\n" +
-              "        <activity android:name=\".MainActivity\"\n" +
-              "            android:screenOrientation=\"landscape\"\n" +
-              "            android:theme=\"@style/AppTheme\" />\n" +
-              "    </application>\n" +
-              "</manifest>"
-      )
+    manifest(
+      "" +
+        "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
+        "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n" +
+        "    package=\"test.pkg\">\n" +
+        "     <uses-sdk android:minSdkVersion=\"16\" android:targetSdkVersion=\"26\" />\n" +
+        "    <application\n" +
+        "        android:icon=\"@mipmap/ic_launcher\"\n" +
+        "        android:label=\"@string/app_name\">\n" +
+        "        <activity android:name=\".MainActivity\"\n" +
+        "            android:screenOrientation=\"landscape\"\n" +
+        "            android:theme=\"@style/AppTheme\" />\n" +
+        "    </application>\n" +
+        "</manifest>"
+    )
 
   private val manifestWithoutTheme =
-      manifest(
-          "" +
-              "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
-              "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n" +
-              "    package=\"test.pkg\">\n" +
-              "     <uses-sdk android:minSdkVersion=\"16\" android:targetSdkVersion=\"26\" />\n" +
-              "    <application\n" +
-              "        android:icon=\"@mipmap/ic_launcher\"\n" +
-              "        android:label=\"@string/app_name\">\n" +
-              "        <activity android:name=\".MainActivity\"\n" +
-              "            android:screenOrientation=\"landscape\" />\n" +
-              "    </application>\n" +
-              "</manifest>"
-      )
+    manifest(
+      "" +
+        "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
+        "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n" +
+        "    package=\"test.pkg\">\n" +
+        "     <uses-sdk android:minSdkVersion=\"16\" android:targetSdkVersion=\"26\" />\n" +
+        "    <application\n" +
+        "        android:icon=\"@mipmap/ic_launcher\"\n" +
+        "        android:label=\"@string/app_name\">\n" +
+        "        <activity android:name=\".MainActivity\"\n" +
+        "            android:screenOrientation=\"landscape\" />\n" +
+        "    </application>\n" +
+        "</manifest>"
+    )
 
   private val manifestWithApplicationTheme =
-      manifest(
-          "" +
-              "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
-              "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n" +
-              "    package=\"test.pkg\">\n" +
-              "     <uses-sdk android:minSdkVersion=\"16\" android:targetSdkVersion=\"26\" />\n" +
-              "    <application\n" +
-              "        android:icon=\"@mipmap/ic_launcher\"\n" +
-              "        android:label=\"@string/app_name\"\n" +
-              "        android:theme=\"@style/AppTheme\">\n" +
-              "        <activity android:name=\".MainActivity\"\n" +
-              "            android:screenOrientation=\"landscape\" />\n" +
-              "    </application>\n" +
-              "</manifest>"
-      )
+    manifest(
+      "" +
+        "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
+        "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n" +
+        "    package=\"test.pkg\">\n" +
+        "     <uses-sdk android:minSdkVersion=\"16\" android:targetSdkVersion=\"26\" />\n" +
+        "    <application\n" +
+        "        android:icon=\"@mipmap/ic_launcher\"\n" +
+        "        android:label=\"@string/app_name\"\n" +
+        "        android:theme=\"@style/AppTheme\">\n" +
+        "        <activity android:name=\".MainActivity\"\n" +
+        "            android:screenOrientation=\"landscape\" />\n" +
+        "    </application>\n" +
+        "</manifest>"
+    )
 }

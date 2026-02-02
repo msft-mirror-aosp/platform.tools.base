@@ -47,19 +47,15 @@ class SecretDetector : Detector(), SourceCodeScanner {
 
   override fun getApplicableConstructorTypes() = listOf(FQN_MODEL)
 
-  override fun visitConstructor(
-      context: JavaContext,
-      node: UCallExpression,
-      constructor: PsiMethod,
-  ) {
+  override fun visitConstructor(context: JavaContext, node: UCallExpression, constructor: PsiMethod) {
     val keyArg = node.getArgumentForParameter(CONSTRUCTOR_API_KEY_PARAM_INDEX)?.skipParenthesizedExprDown() ?: return
     if (isLiteralStringKey(keyArg) || isReferenceToLocalVariableStringKey(keyArg) || isReferenceToFieldStringKey(keyArg, context)) {
       context.report(
-          ISSUE,
-          keyArg,
-          context.getLocation(keyArg),
-          "This argument looks like an API key that has come from source code; API keys should not be included in source code",
-          fix().url("https://developers.google.com/maps/documentation/android-sdk/secrets-gradle-plugin").build(),
+        ISSUE,
+        keyArg,
+        context.getLocation(keyArg),
+        "This argument looks like an API key that has come from source code; API keys should not be included in source code",
+        fix().url("https://developers.google.com/maps/documentation/android-sdk/secrets-gradle-plugin").build(),
       )
     }
   }
@@ -128,20 +124,20 @@ class SecretDetector : Detector(), SourceCodeScanner {
 
     @JvmField
     val ISSUE =
-        Issue.create(
-            id = "SecretInSource",
-            briefDescription = "Secret in source code",
-            explanation =
-                """
+      Issue.create(
+        id = "SecretInSource",
+        briefDescription = "Secret in source code",
+        explanation =
+          """
           Including secrets, such as API keys, in source code is a security risk. \
           It is generally best practice to not include API keys in source code, \
           and instead use something like the Secrets Gradle Plugin for Android.
           """,
-            category = Category.SECURITY,
-            priority = 9,
-            severity = Severity.WARNING,
-            implementation = Implementation(SecretDetector::class.java, Scope.JAVA_FILE_SCOPE),
-            moreInfo = "https://developers.google.com/maps/documentation/android-sdk/secrets-gradle-plugin",
-        )
+        category = Category.SECURITY,
+        priority = 9,
+        severity = Severity.WARNING,
+        implementation = Implementation(SecretDetector::class.java, Scope.JAVA_FILE_SCOPE),
+        moreInfo = "https://developers.google.com/maps/documentation/android-sdk/secrets-gradle-plugin",
+      )
   }
 }

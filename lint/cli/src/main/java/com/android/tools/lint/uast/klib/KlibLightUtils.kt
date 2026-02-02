@@ -56,10 +56,10 @@ import org.jetbrains.kotlin.light.classes.symbol.methods.SymbolLightNoArgConstru
 import org.jetbrains.kotlin.light.classes.symbol.methods.SymbolLightRepeatableAnnotationContainerMethod
 
 internal fun KaSession.createFacadeForTopLevelCallable(
-    callableSymbol: KaCallableSymbol,
-    kaModule: KaModule,
-    psiManager: PsiManager,
-    containingFile: PsiFile?,
+  callableSymbol: KaCallableSymbol,
+  kaModule: KaModule,
+  psiManager: PsiManager,
+  containingFile: PsiFile?,
 ): KlibLightFakeFacadeClass? {
   require(callableSymbol is KaNamedFunctionSymbol || callableSymbol is KaKotlinPropertySymbol) {
     "Can only create a facade class for top-level named function or property symbol"
@@ -84,74 +84,74 @@ internal fun KaSession.createFacadeForTopLevelCallable(
 
 internal val SymbolLightMethodBase.extractSymbolPointer: KaSymbolPointer<KaFunctionSymbol>?
   get() =
-      when (this) {
-        is SymbolLightMethod<*> -> {
-          // this.functionSymbolPointer
-          val field = SymbolLightMethod::class.java.getDeclaredField("functionSymbolPointer")
-          field.isAccessible = true
-          @Suppress("UNCHECKED_CAST")
-          field.get(this) as KaSymbolPointer<KaFunctionSymbol>
-        }
-        is SymbolLightAccessorMethod -> {
-          // TODO: What about containingPropertySymbolPointer?
-          // this.propertyAccessorSymbolPointer
-          val field = SymbolLightAccessorMethod::class.java.getDeclaredField("propertyAccessorSymbolPointer")
-          field.isAccessible = true
-          @Suppress("UNCHECKED_CAST")
-          field.get(this) as KaSymbolPointer<KaFunctionSymbol>
-        }
-        is SymbolLightNoArgConstructor -> {
-          // Can be null.
-          // this.functionSymbolPointer
-          val field = SymbolLightNoArgConstructor::class.java.getDeclaredField("functionSymbolPointer")
-          field.isAccessible = true
-          @Suppress("UNCHECKED_CAST")
-          field.get(this) as KaSymbolPointer<KaFunctionSymbol>
-        }
-        is SymbolLightRepeatableAnnotationContainerMethod -> null
-        is SymbolLightMethodForScript -> null
-        else -> null
+    when (this) {
+      is SymbolLightMethod<*> -> {
+        // this.functionSymbolPointer
+        val field = SymbolLightMethod::class.java.getDeclaredField("functionSymbolPointer")
+        field.isAccessible = true
+        @Suppress("UNCHECKED_CAST")
+        field.get(this) as KaSymbolPointer<KaFunctionSymbol>
       }
+      is SymbolLightAccessorMethod -> {
+        // TODO: What about containingPropertySymbolPointer?
+        // this.propertyAccessorSymbolPointer
+        val field = SymbolLightAccessorMethod::class.java.getDeclaredField("propertyAccessorSymbolPointer")
+        field.isAccessible = true
+        @Suppress("UNCHECKED_CAST")
+        field.get(this) as KaSymbolPointer<KaFunctionSymbol>
+      }
+      is SymbolLightNoArgConstructor -> {
+        // Can be null.
+        // this.functionSymbolPointer
+        val field = SymbolLightNoArgConstructor::class.java.getDeclaredField("functionSymbolPointer")
+        field.isAccessible = true
+        @Suppress("UNCHECKED_CAST")
+        field.get(this) as KaSymbolPointer<KaFunctionSymbol>
+      }
+      is SymbolLightRepeatableAnnotationContainerMethod -> null
+      is SymbolLightMethodForScript -> null
+      else -> null
+    }
 
 internal val SymbolLightField.extractSymbolPointer: KaSymbolPointer<KaDeclarationSymbol>?
   get() =
-      when (this) {
-        is SymbolLightFieldForProperty -> {
-          // this.propertySymbolPointer
-          val field = SymbolLightFieldForProperty::class.java.getDeclaredField("propertySymbolPointer")
-          field.isAccessible = true
-          @Suppress("UNCHECKED_CAST")
-          field.get(this) as KaSymbolPointer<KaDeclarationSymbol>
-        }
-        is SymbolLightFieldForObject -> {
-          // this.objectSymbolPointer
-          val field = SymbolLightFieldForObject::class.java.getDeclaredField("objectSymbolPointer")
-          field.isAccessible = true
-          @Suppress("UNCHECKED_CAST")
-          field.get(this) as KaSymbolPointer<KaDeclarationSymbol>
-        }
-        is SymbolLightFieldForEnumEntry -> null
-        else -> null
+    when (this) {
+      is SymbolLightFieldForProperty -> {
+        // this.propertySymbolPointer
+        val field = SymbolLightFieldForProperty::class.java.getDeclaredField("propertySymbolPointer")
+        field.isAccessible = true
+        @Suppress("UNCHECKED_CAST")
+        field.get(this) as KaSymbolPointer<KaDeclarationSymbol>
       }
+      is SymbolLightFieldForObject -> {
+        // this.objectSymbolPointer
+        val field = SymbolLightFieldForObject::class.java.getDeclaredField("objectSymbolPointer")
+        field.isAccessible = true
+        @Suppress("UNCHECKED_CAST")
+        field.get(this) as KaSymbolPointer<KaDeclarationSymbol>
+      }
+      is SymbolLightFieldForEnumEntry -> null
+      else -> null
+    }
 
 @Suppress("UnstableApiUsage")
 @OptIn(SymbolInternals::class, KaPlatformInterface::class)
 internal fun KaSession.getPsiFile(symbol: KaSymbol, psiManager: PsiManager): PsiFile? {
   // If we end up using PSI stubs, this hack shouldn't be needed.
   val containerSource =
-      (symbol as? KaClassLikeSymbol)?.firSymbol?.sourceElement ?: (symbol as? KaCallableSymbol)?.firSymbol?.fir?.containerSource
+    (symbol as? KaClassLikeSymbol)?.firSymbol?.sourceElement ?: (symbol as? KaCallableSymbol)?.firSymbol?.fir?.containerSource
 
   if (containerSource == null) {
     // This hack sort of works for the built-ins module.
     // We just need some file.
     (symbol.containingModule.baseContentScope as? AbstractFilesScope?)?.let { scope ->
       scope.filesIfCollection
-          ?.firstOrNull { it.isFile }
-          ?.let { virtualFile ->
-            psiManager.findFile(virtualFile)?.let {
-              return it
-            }
+        ?.firstOrNull { it.isFile }
+        ?.let { virtualFile ->
+          psiManager.findFile(virtualFile)?.let {
+            return it
           }
+        }
     }
     throw IllegalStateException("Could not get container source from $this")
   }
@@ -161,10 +161,10 @@ internal fun KaSession.getPsiFile(symbol: KaSymbol, psiManager: PsiManager): Psi
   val klibFile = containerSource.klib.libraryFile
 
   val virtualFile =
-      when {
-        klibFile.isDirectory -> VirtualFileManager.getInstance().findFileByNioPath(Paths.get(klibFile.toString()))
-        else -> VirtualFileManager.getInstance().getFileSystem("jar").findFileByPath("$klibFile!/")
-      } ?: throw IllegalStateException("Could not get virtual file for klib: $klibFile")
+    when {
+      klibFile.isDirectory -> VirtualFileManager.getInstance().findFileByNioPath(Paths.get(klibFile.toString()))
+      else -> VirtualFileManager.getInstance().getFileSystem("jar").findFileByPath("$klibFile!/")
+    } ?: throw IllegalStateException("Could not get virtual file for klib: $klibFile")
 
   // TODO: We may have to do better than this by returning a PsiJavaFile/PsiClassOwner that
   //  implements getPackageName (as this appears to have a few uses).

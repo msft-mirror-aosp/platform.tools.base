@@ -61,11 +61,11 @@ class TranslucentViewDetector : Detector(), XmlScanner, SourceCodeScanner {
     /** Mixing Translucency and Orientation. */
     @JvmField
     val ISSUE =
-        Issue.create(
-            id = "TranslucentOrientation",
-            briefDescription = "Mixing screenOrientation and translucency",
-            explanation =
-                """
+      Issue.create(
+        id = "TranslucentOrientation",
+        briefDescription = "Mixing screenOrientation and translucency",
+        explanation =
+          """
             Specifying a fixed screen orientation with a translucent theme isn't supported \
             on apps with `targetSdkVersion` O or greater since there can be an another activity \
             visible behind your activity with a conflicting request.
@@ -78,15 +78,12 @@ class TranslucentViewDetector : Detector(), XmlScanner, SourceCodeScanner {
             Devices running platform version O or greater will throw an exception in your \
             app if this state is detected.
             """,
-            category = Category.CORRECTNESS,
-            priority = 8,
-            severity = Severity.WARNING,
-            implementation =
-                Implementation(
-                    TranslucentViewDetector::class.java,
-                    EnumSet.of(Scope.MANIFEST, Scope.ALL_RESOURCE_FILES, Scope.JAVA_FILE),
-                ),
-        )
+        category = Category.CORRECTNESS,
+        priority = 8,
+        severity = Severity.WARNING,
+        implementation =
+          Implementation(TranslucentViewDetector::class.java, EnumSet.of(Scope.MANIFEST, Scope.ALL_RESOURCE_FILES, Scope.JAVA_FILE)),
+      )
   }
 
   private var interestingActivities: MutableList<String>? = null
@@ -136,24 +133,24 @@ class TranslucentViewDetector : Detector(), XmlScanner, SourceCodeScanner {
 
   private fun addActivity(name: String) {
     val activities =
-        interestingActivities
-            ?: run {
-              val newList = mutableListOf<String>()
-              interestingActivities = newList
-              newList
-            }
+      interestingActivities
+        ?: run {
+          val newList = mutableListOf<String>()
+          interestingActivities = newList
+          newList
+        }
     activities.add(name)
   }
 
   private fun addTheme(theme: String?) {
     theme ?: return
     val themes =
-        interestingThemes
-            ?: run {
-              val newList = mutableListOf<String>()
-              interestingThemes = newList
-              newList
-            }
+      interestingThemes
+        ?: run {
+          val newList = mutableListOf<String>()
+          interestingThemes = newList
+          newList
+        }
     themes.add(theme)
   }
 

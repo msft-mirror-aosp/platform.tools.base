@@ -24,9 +24,9 @@ class CustomViewDetectorTest : AbstractCheckTest() {
 
   fun testDocumentationExample() {
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
             package test.pkg;
 
             import android.content.Context;
@@ -79,10 +79,10 @@ class CustomViewDetectorTest : AbstractCheckTest() {
                 }
             }
             """
-                )
-                .indented(),
-            java(
-                    """
+          )
+          .indented(),
+        java(
+            """
             package test.pkg;
 
             public final class R {
@@ -135,12 +135,12 @@ class CustomViewDetectorTest : AbstractCheckTest() {
                 }
             }
             """
-                )
-                .indented(),
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+      )
+      .run()
+      .expect(
+        """
         src/test/pkg/CustomView1.java:18: Warning: By convention, the custom view (CustomView1) and the declare-styleable (MyDeclareStyleable) should have the same name (various editor features rely on this convention) [CustomViewStyleable]
                 context.obtainStyledAttributes(R.styleable.MyDeclareStyleable);
                                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -161,7 +161,7 @@ class CustomViewDetectorTest : AbstractCheckTest() {
                                                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         0 errors, 6 warnings
         """
-        )
+      )
   }
 
   fun testObtainOnCall() {
@@ -169,9 +169,9 @@ class CustomViewDetectorTest : AbstractCheckTest() {
     // a call rather than a variable reference
 
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
             package test.pkg;
 
             import android.content.Context;
@@ -192,10 +192,10 @@ class CustomViewDetectorTest : AbstractCheckTest() {
                 }
             }
             """
-                )
-                .indented(),
-            java(
-                    """
+          )
+          .indented(),
+        java(
+            """
             package test.pkg;
 
             public final class R {
@@ -206,18 +206,18 @@ class CustomViewDetectorTest : AbstractCheckTest() {
                 }
             }
             """
-                )
-                .indented(),
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+      )
+      .run()
+      .expect(
+        """
         src/test/pkg/AppBulletView.java:16: Warning: By convention, the custom view (AppBulletView) and the declare-styleable (Bullet) should have the same name (various editor features rely on this convention) [CustomViewStyleable]
                 TypedArray array = getContext().obtainStyledAttributes(attrs, R.styleable.Bullet);
                                                                               ~~~~~~~~~~~~~~~~~~
         0 errors, 1 warnings
         """
-        )
+      )
   }
 
   fun testKtx() {
@@ -226,9 +226,9 @@ class CustomViewDetectorTest : AbstractCheckTest() {
     // (Same as testObtainOnCall but ported to Kotlin and switched
     // from platform obtainStyledAttributes to KTX withStyledAttributes.)
     lint()
-        .files(
-            kotlin(
-                    """
+      .files(
+        kotlin(
+            """
             package test.pkg
 
             import android.content.Context
@@ -244,10 +244,10 @@ class CustomViewDetectorTest : AbstractCheckTest() {
                 }
             }
             """
-                )
-                .indented(),
-            java(
-                    """
+          )
+          .indented(),
+        java(
+            """
             package test.pkg;
 
             public final class R {
@@ -258,12 +258,12 @@ class CustomViewDetectorTest : AbstractCheckTest() {
                 }
             }
             """
-                )
-                .indented(),
-            // KTX stub
-            kotlin(
-                    "src/androidx/core/content/Context.kt",
-                    """
+          )
+          .indented(),
+        // KTX stub
+        kotlin(
+            "src/androidx/core/content/Context.kt",
+            """
             // HIDE-FROM-DOCUMENTATION
             package androidx.core.content
 
@@ -281,17 +281,17 @@ class CustomViewDetectorTest : AbstractCheckTest() {
             ) {
             }
             """,
-                )
-                .indented(),
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+      )
+      .run()
+      .expect(
+        """
         src/test/pkg/AppBulletView.kt:10: Warning: By convention, the custom view (AppBulletView) and the declare-styleable (Bullet) should have the same name (various editor features rely on this convention) [CustomViewStyleable]
                 context.withStyledAttributes(attrs, R.styleable.Bullet)  {
                                                     ~~~~~~~~~~~~~~~~~~
         0 errors, 1 warning
         """
-        )
+      )
   }
 }

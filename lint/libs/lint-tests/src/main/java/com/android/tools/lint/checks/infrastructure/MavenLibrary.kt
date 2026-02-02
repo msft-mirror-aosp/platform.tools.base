@@ -15,9 +15,5 @@
  */
 package com.android.tools.lint.checks.infrastructure
 
-internal class MavenLibrary(
-    val artifact: String,
-    type: BytecodeTestFile.Type,
-    stubSources: List<TestFile>,
-    compileOnly: List<TestFile>,
-) : StubClassFile(componentToJar(artifact), type, stubSources, compileOnly)
+internal class MavenLibrary(val artifact: String, type: BytecodeTestFile.Type, stubSources: List<TestFile>, compileOnly: List<TestFile>) :
+  StubClassFile(componentToJar(artifact), type, stubSources, compileOnly)

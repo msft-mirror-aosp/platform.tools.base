@@ -16,7 +16,4 @@
 
 package com.android.tools.lint.detector.api.interprocedural
 
-data class CallGraphResult(
-    val callGraph: CallGraph,
-    val receiverEval: IntraproceduralDispatchReceiverEvaluator,
-)
+data class CallGraphResult(val callGraph: CallGraph, val receiverEval: IntraproceduralDispatchReceiverEvaluator)

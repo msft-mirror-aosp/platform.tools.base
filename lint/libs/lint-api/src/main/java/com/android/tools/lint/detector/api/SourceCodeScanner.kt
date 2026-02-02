@@ -167,13 +167,7 @@ interface SourceCodeScanner : FileScanner {
    * @param name the resource name, such as "main" from `R.layout.main`
    * @param isFramework whether the resource is a framework resource (android.R) or a local project resource (R)
    */
-  fun visitResourceReference(
-      context: JavaContext,
-      node: UElement,
-      type: ResourceType,
-      name: String,
-      isFramework: Boolean,
-  )
+  fun visitResourceReference(context: JavaContext, node: UElement, type: ResourceType, name: String, isFramework: Boolean)
 
   /**
    * Returns a list of fully qualified names for super classes that this detector cares about. If not null, this detector will **only** be
@@ -262,12 +256,7 @@ interface SourceCodeScanner : FileScanner {
    *
    * For more information, see the annotations chapter of the lint api guide.
    */
-  fun visitAnnotationUsage(
-      context: JavaContext,
-      element: UElement,
-      annotationInfo: AnnotationInfo,
-      usageInfo: AnnotationUsageInfo,
-  )
+  fun visitAnnotationUsage(context: JavaContext, element: UElement, annotationInfo: AnnotationInfo, usageInfo: AnnotationUsageInfo)
 
   /**
    * Called whenever the given XML element or attribute [reference] of a class, method or field element that has been annotated with one of
@@ -278,12 +267,7 @@ interface SourceCodeScanner : FileScanner {
    *
    * For more information, see the annotations chapter of the lint api guide.
    */
-  fun visitAnnotationUsage(
-      context: XmlContext,
-      reference: Node,
-      annotationInfo: AnnotationInfo,
-      usageInfo: AnnotationUsageInfo,
-  )
+  fun visitAnnotationUsage(context: XmlContext, reference: Node, annotationInfo: AnnotationInfo, usageInfo: AnnotationUsageInfo)
 
   /**
    * Called whenever the given element references an element that has been annotated with one of the annotations returned from
@@ -313,16 +297,16 @@ interface SourceCodeScanner : FileScanner {
    */
   @Deprecated("Migrate to visitAnnotationUsage(JavaContext, UElement, AnnotationInfo, AnnotationUsageInfo)")
   fun visitAnnotationUsage(
-      context: JavaContext,
-      usage: UElement,
-      type: AnnotationUsageType,
-      annotation: UAnnotation,
-      qualifiedName: String,
-      method: PsiMethod?,
-      annotations: List<UAnnotation>,
-      allMemberAnnotations: List<UAnnotation>,
-      allClassAnnotations: List<UAnnotation>,
-      allPackageAnnotations: List<UAnnotation>,
+    context: JavaContext,
+    usage: UElement,
+    type: AnnotationUsageType,
+    annotation: UAnnotation,
+    qualifiedName: String,
+    method: PsiMethod?,
+    annotations: List<UAnnotation>,
+    allMemberAnnotations: List<UAnnotation>,
+    allClassAnnotations: List<UAnnotation>,
+    allPackageAnnotations: List<UAnnotation>,
   )
 
   /**
@@ -354,17 +338,17 @@ interface SourceCodeScanner : FileScanner {
    */
   @Deprecated("Migrate to visitAnnotationUsage(JavaContext, UElement, AnnotationInfo, AnnotationUsageInfo)")
   fun visitAnnotationUsage(
-      context: JavaContext,
-      usage: UElement,
-      type: AnnotationUsageType,
-      annotation: UAnnotation,
-      qualifiedName: String,
-      method: PsiMethod?,
-      referenced: PsiElement?,
-      annotations: List<UAnnotation>,
-      allMemberAnnotations: List<UAnnotation>,
-      allClassAnnotations: List<UAnnotation>,
-      allPackageAnnotations: List<UAnnotation>,
+    context: JavaContext,
+    usage: UElement,
+    type: AnnotationUsageType,
+    annotation: UAnnotation,
+    qualifiedName: String,
+    method: PsiMethod?,
+    referenced: PsiElement?,
+    annotations: List<UAnnotation>,
+    allMemberAnnotations: List<UAnnotation>,
+    allClassAnnotations: List<UAnnotation>,
+    allPackageAnnotations: List<UAnnotation>,
   )
 
   /**

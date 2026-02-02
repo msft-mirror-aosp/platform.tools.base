@@ -26,9 +26,9 @@ class ReturnThisDetectorTest : AbstractCheckTest() {
 
   fun testDocumentationExample() {
     lint()
-        .files(
-            kotlin(
-                    """
+      .files(
+        kotlin(
+            """
                 import androidx.annotation.ReturnThis
 
                 @ReturnThis
@@ -50,27 +50,27 @@ class ReturnThisDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-                )
-                .indented(),
-            returnThisStub,
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+        returnThisStub,
+      )
+      .run()
+      .expect(
+        """
             src/Builder.kt:18: Error: This method should return this (because it has been annotated with @ReturnThis) [ReturnThis]
                     return MyClass()
                     ~~~~~~~~~~~~~~~~
             1 errors, 0 warnings
             """
-        )
+      )
   }
 
   fun testSkipNested() {
     @Suppress("ObjectLiteralToLambda", "ConstantConditionIf")
     lint()
-        .files(
-            kotlin(
-                    """
+      .files(
+        kotlin(
+            """
                 import androidx.annotation.ReturnThis
 
                 open class Builder {
@@ -101,13 +101,13 @@ class ReturnThisDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-                )
-                .indented(),
-            returnThisStub,
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+        returnThisStub,
+      )
+      .run()
+      .expect(
+        """
             src/Builder.kt:6: Error: This method should return this (because it has been annotated with @ReturnThis) [ReturnThis]
                     return Builder() // ERROR 1
                     ~~~~~~~~~~~~~~~~
@@ -116,13 +116,13 @@ class ReturnThisDetectorTest : AbstractCheckTest() {
                                               ~~~~~~~~~~~~~~~~
             2 errors, 0 warnings
             """
-        )
+      )
   }
 }
 
 val returnThisStub: TestFile =
-    kotlin(
-            """
+  kotlin(
+      """
     package androidx.annotation
     import kotlin.annotation.AnnotationTarget.CLASS
     import kotlin.annotation.AnnotationTarget.FUNCTION
@@ -131,5 +131,5 @@ val returnThisStub: TestFile =
     @Target(FUNCTION, CLASS)
     annotation class ReturnThis
     """
-        )
-        .indented()
+    )
+    .indented()

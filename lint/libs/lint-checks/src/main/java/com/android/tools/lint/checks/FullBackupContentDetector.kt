@@ -48,13 +48,7 @@ class FullBackupContentDetector : ResourceXmlDetector() {
         // Specific check for <cross-platform-transfer>.
         if (child.tagName == TAG_CROSS_PLATFORM_TRANSFER && child.getAttribute(ATTR_PLATFORM).isEmpty()) {
           val quickfix = fix().set().todo(namespace = null, attribute = ATTR_PLATFORM).build()
-          context.report(
-              ISSUE,
-              child,
-              context.getNameLocation(child),
-              "Missing required attribute `$ATTR_PLATFORM`",
-              quickfix,
-          )
+          context.report(ISSUE, child, context.getNameLocation(child), "Missing required attribute `$ATTR_PLATFORM`", quickfix)
         }
 
         // Non-specific checks.
@@ -81,13 +75,7 @@ class FullBackupContentDetector : ResourceXmlDetector() {
           TAG_CROSS_PLATFORM_TRANSFER == root.tagName && TAG_PLATFORM_SPECIFIC_PARAMS == tag -> {
             // No validation of <platform-specific-params>, for now.
           }
-          else ->
-              context.report(
-                  ISSUE,
-                  element,
-                  context.getNameLocation(element),
-                  "Unexpected element `<$tag>`",
-              )
+          else -> context.report(ISSUE, element, context.getNameLocation(element), "Unexpected element `<$tag>`")
         }
       }
       i++
@@ -138,12 +126,7 @@ class FullBackupContentDetector : ResourceXmlDetector() {
       }
       if (!hasPrefix) {
         val pathNode = exclude.getAttributeNode(ATTR_PATH)
-        context.report(
-            ISSUE,
-            exclude,
-            context.getValueLocation(pathNode),
-            "`$excludePath` is not in an included path",
-        )
+        context.report(ISSUE, exclude, context.getValueLocation(pathNode), "`$excludePath` is not in an included path")
       }
     }
   }
@@ -152,28 +135,13 @@ class FullBackupContentDetector : ResourceXmlDetector() {
     val pathNode = element.getAttributeNode(ATTR_PATH) ?: return ""
     val value = pathNode.value
     if (value.contains("//")) {
-      context.report(
-          ISSUE,
-          element,
-          context.getValueLocation(pathNode),
-          "Paths are not allowed to contain `//`",
-      )
+      context.report(ISSUE, element, context.getValueLocation(pathNode), "Paths are not allowed to contain `//`")
     } else if (value.contains("..")) {
-      context.report(
-          ISSUE,
-          element,
-          context.getValueLocation(pathNode),
-          "Paths are not allowed to contain `..`",
-      )
+      context.report(ISSUE, element, context.getValueLocation(pathNode), "Paths are not allowed to contain `..`")
     } else if (value.contains("/")) {
       val domain = element.getAttribute(ATTR_DOMAIN)
       if (DOMAIN_SHARED_PREF == domain || DOMAIN_DATABASE == domain) {
-        context.report(
-            ISSUE,
-            element,
-            context.getValueLocation(pathNode),
-            "Subdirectories are not allowed for domain `$domain`",
-        )
+        context.report(ISSUE, element, context.getValueLocation(pathNode), "Subdirectories are not allowed for domain `$domain`")
       }
     }
     return value
@@ -183,10 +151,10 @@ class FullBackupContentDetector : ResourceXmlDetector() {
     val domainNode = element.getAttributeNode(ATTR_DOMAIN)
     if (domainNode == null) {
       context.report(
-          ISSUE,
-          element,
-          context.getElementLocation(element),
-          "Missing domain attribute, expected one of ${VALID_DOMAINS.joinToString(", ")}",
+        ISSUE,
+        element,
+        context.getElementLocation(element),
+        "Missing domain attribute, expected one of ${VALID_DOMAINS.joinToString(", ")}",
       )
       return null
     }
@@ -197,10 +165,10 @@ class FullBackupContentDetector : ResourceXmlDetector() {
       }
     }
     context.report(
-        ISSUE,
-        element,
-        context.getValueLocation(domainNode),
-        "Unexpected domain `$domain`, expected one of ${VALID_DOMAINS.joinToString(", ")}",
+      ISSUE,
+      element,
+      context.getValueLocation(domainNode),
+      "Unexpected domain `$domain`, expected one of ${VALID_DOMAINS.joinToString(", ")}",
     )
     return domain
   }
@@ -209,20 +177,20 @@ class FullBackupContentDetector : ResourceXmlDetector() {
     /** Validation of `<data-extraction-rules` and `<full-backup-content>` XML elements. */
     @JvmField
     val ISSUE =
-        create(
-            id = "FullBackupContent",
-            briefDescription = "Valid Full Backup Content File",
-            explanation =
-                """
+      create(
+        id = "FullBackupContent",
+        briefDescription = "Valid Full Backup Content File",
+        explanation =
+          """
                 Ensures that `<data-extraction-rules`> and `<full-backup-content>` files, which configure \
                 backup options, are valid.
                 """,
-            category = Category.CORRECTNESS,
-            priority = 5,
-            severity = Severity.FATAL,
-            moreInfo = "https://android-developers.googleblog.com/2015/07/auto-backup-for-apps-made-simple.html",
-            implementation = Implementation(FullBackupContentDetector::class.java, Scope.RESOURCE_FILE_SCOPE),
-        )
+        category = Category.CORRECTNESS,
+        priority = 5,
+        severity = Severity.FATAL,
+        moreInfo = "https://android-developers.googleblog.com/2015/07/auto-backup-for-apps-made-simple.html",
+        implementation = Implementation(FullBackupContentDetector::class.java, Scope.RESOURCE_FILE_SCOPE),
+      )
 
     private const val DOMAIN_SHARED_PREF = "sharedpref"
     private const val DOMAIN_ROOT = "root"
@@ -245,16 +213,16 @@ class FullBackupContentDetector : ResourceXmlDetector() {
 
     /** Valid domains; see FullBackup#getTokenForXmlDomain for authoritative list. */
     private val VALID_DOMAINS =
-        arrayOf(
-            DOMAIN_FILE,
-            DOMAIN_DATABASE,
-            DOMAIN_SHARED_PREF,
-            DOMAIN_EXTERNAL,
-            DOMAIN_ROOT,
-            DOMAIN_DEVICE_FILE,
-            DOMAIN_DEVICE_DATABASE,
-            DOMAIN_DEVICE_SHAREDPREF,
-            DOMAIN_DEVICE_ROOT,
-        )
+      arrayOf(
+        DOMAIN_FILE,
+        DOMAIN_DATABASE,
+        DOMAIN_SHARED_PREF,
+        DOMAIN_EXTERNAL,
+        DOMAIN_ROOT,
+        DOMAIN_DEVICE_FILE,
+        DOMAIN_DEVICE_DATABASE,
+        DOMAIN_DEVICE_SHAREDPREF,
+        DOMAIN_DEVICE_ROOT,
+      )
   }
 }

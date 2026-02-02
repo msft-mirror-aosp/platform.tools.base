@@ -47,7 +47,7 @@ class AccessibilityWindowStateChangedDetector : Detector(), SourceCodeScanner {
   override fun visitMethodCall(context: JavaContext, node: UCallExpression, method: PsiMethod) {
 
     fun isViewMethod(methodName: String, vararg argumentTypes: String): Boolean =
-        method.name == methodName && context.evaluator.methodMatches(method, CLASS_VIEW, allowInherit = true, *argumentTypes)
+      method.name == methodName && context.evaluator.methodMatches(method, CLASS_VIEW, allowInherit = true, *argumentTypes)
 
     when {
       isViewMethod("sendAccessibilityEvent", TYPE_INT) -> checkSendAccessibilityEvent(context, node)
@@ -56,11 +56,7 @@ class AccessibilityWindowStateChangedDetector : Detector(), SourceCodeScanner {
 
   override fun getApplicableReferenceNames() = listOf("TYPE_WINDOW_STATE_CHANGED")
 
-  override fun visitReference(
-      context: JavaContext,
-      reference: UReferenceExpression,
-      referenced: PsiElement,
-  ) {
+  override fun visitReference(context: JavaContext, reference: UReferenceExpression, referenced: PsiElement) {
     checkTypeWindowStateChangedWithinOverride(context, reference, referenced)
   }
 
@@ -70,18 +66,14 @@ class AccessibilityWindowStateChangedDetector : Detector(), SourceCodeScanner {
     if (value != TYPE_WINDOW_STATE_CHANGED) return
 
     context.report(
-        issue = ISSUE,
-        scope = node,
-        location = context.getCallLocation(node, includeReceiver = true, includeArguments = true),
-        message = WINDOW_STATE_CHANGED_EVENT_MESSAGE,
+      issue = ISSUE,
+      scope = node,
+      location = context.getCallLocation(node, includeReceiver = true, includeArguments = true),
+      message = WINDOW_STATE_CHANGED_EVENT_MESSAGE,
     )
   }
 
-  private fun checkTypeWindowStateChangedWithinOverride(
-      context: JavaContext,
-      reference: UReferenceExpression,
-      referenced: PsiElement,
-  ) {
+  private fun checkTypeWindowStateChangedWithinOverride(context: JavaContext, reference: UReferenceExpression, referenced: PsiElement) {
     // "referenced" must be AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED.
     val field = referenced as? PsiField ?: return
     if (field.name != "TYPE_WINDOW_STATE_CHANGED") return
@@ -99,10 +91,10 @@ class AccessibilityWindowStateChangedDetector : Detector(), SourceCodeScanner {
     if (!context.evaluator.isOverride(parentMethod, includeInterfaces = false)) return
 
     context.report(
-        issue = ISSUE,
-        scope = reference,
-        location = context.getLocation(reference),
-        message = WINDOW_STATE_CHANGED_EVENT_MESSAGE,
+      issue = ISSUE,
+      scope = reference,
+      location = context.getLocation(reference),
+      message = WINDOW_STATE_CHANGED_EVENT_MESSAGE,
     )
   }
 
@@ -110,19 +102,19 @@ class AccessibilityWindowStateChangedDetector : Detector(), SourceCodeScanner {
     private const val TYPE_WINDOW_STATE_CHANGED = 1 shl 5
 
     private const val WINDOW_STATE_CHANGED_EVENT_MESSAGE =
-        "Manually populating or sending TYPE_WINDOW_STATE_CHANGED events should be avoided. " +
-            "They may be ignored on certain versions of Android. " +
-            "Prefer setting UI metadata using `View.onInitializeAccessibilityNodeInfo`, " +
-            "`Activity.setTitle`, `ViewCompat.setAccessibilityPaneTitle`, etc. " +
-            "to inform users of crucial changes to the UI."
+      "Manually populating or sending TYPE_WINDOW_STATE_CHANGED events should be avoided. " +
+        "They may be ignored on certain versions of Android. " +
+        "Prefer setting UI metadata using `View.onInitializeAccessibilityNodeInfo`, " +
+        "`Activity.setTitle`, `ViewCompat.setAccessibilityPaneTitle`, etc. " +
+        "to inform users of crucial changes to the UI."
 
     @JvmField
     val ISSUE =
-        Issue.create(
-            id = "AccessibilityWindowStateChangedEvent",
-            briefDescription = "Use of accessibility window state change events",
-            explanation =
-                """
+      Issue.create(
+        id = "AccessibilityWindowStateChangedEvent",
+        briefDescription = "Use of accessibility window state change events",
+        explanation =
+          """
           Sending or populating `TYPE_WINDOW_STATE_CHANGED` events in your code \
           is strongly discouraged. \
           Instead, prefer to use or extend system-provided widgets that are as far down Android's \
@@ -141,15 +133,11 @@ class AccessibilityWindowStateChangedDetector : Detector(), SourceCodeScanner {
           this metadata, and so trying to manually send this event will result in duplicate \
           events, or the event may be ignored entirely.
           """,
-            category = Category.A11Y,
-            priority = 5,
-            severity = Severity.WARNING,
-            implementation =
-                Implementation(
-                    AccessibilityWindowStateChangedDetector::class.java,
-                    Scope.JAVA_FILE_SCOPE,
-                ),
-            androidSpecific = true,
-        )
+        category = Category.A11Y,
+        priority = 5,
+        severity = Severity.WARNING,
+        implementation = Implementation(AccessibilityWindowStateChangedDetector::class.java, Scope.JAVA_FILE_SCOPE),
+        androidSpecific = true,
+      )
   }
 }

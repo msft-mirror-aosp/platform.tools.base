@@ -70,33 +70,33 @@ import org.jetbrains.uast.skipParenthesizedExprUp
 
 class CheckResultDetector : AbstractAnnotationDetector(), SourceCodeScanner {
   override fun applicableAnnotations(): List<String> =
-      listOf(
-          // Match all annotations named *.CheckResult or *.CheckReturnValue; there are many:
-          // android.support.annotation.CheckResult
-          // androidx.annotation.CheckResult
-          // edu.umd.cs.findbugs.annotations.CheckReturnValue
-          // javax.annotation.CheckReturnValue
-          // io.reactivex.annotations.CheckReturnValue
-          // io.reactivex.rxjava3.annotations.CheckReturnValue
-          // com.google.errorprone.annotations.CheckReturnValue
-          // com.google.protobuf.CheckReturnValue
-          // org.mockito.CheckReturnValue
-          // as well as com.google.errorprone.annotations.CanIgnoreReturnValue
-          "CheckResult",
-          "CheckReturnValue",
-          "CanIgnoreReturnValue",
-          "org.jetbrains.annotations.Contract",
-      )
+    listOf(
+      // Match all annotations named *.CheckResult or *.CheckReturnValue; there are many:
+      // android.support.annotation.CheckResult
+      // androidx.annotation.CheckResult
+      // edu.umd.cs.findbugs.annotations.CheckReturnValue
+      // javax.annotation.CheckReturnValue
+      // io.reactivex.annotations.CheckReturnValue
+      // io.reactivex.rxjava3.annotations.CheckReturnValue
+      // com.google.errorprone.annotations.CheckReturnValue
+      // com.google.protobuf.CheckReturnValue
+      // org.mockito.CheckReturnValue
+      // as well as com.google.errorprone.annotations.CanIgnoreReturnValue
+      "CheckResult",
+      "CheckReturnValue",
+      "CanIgnoreReturnValue",
+      "org.jetbrains.annotations.Contract",
+    )
 
   override fun isApplicableAnnotationUsage(type: AnnotationUsageType): Boolean {
     return type != AnnotationUsageType.METHOD_OVERRIDE && super.isApplicableAnnotationUsage(type)
   }
 
   override fun visitAnnotationUsage(
-      context: JavaContext,
-      element: UElement,
-      annotationInfo: AnnotationInfo,
-      usageInfo: AnnotationUsageInfo,
+    context: JavaContext,
+    element: UElement,
+    annotationInfo: AnnotationInfo,
+    usageInfo: AnnotationUsageInfo,
   ) {
     val qualifiedName = annotationInfo.qualifiedName
     if (qualifiedName.endsWith(".CanIgnoreReturnValue")) {
@@ -169,25 +169,20 @@ class CheckResultDetector : AbstractAnnotationDetector(), SourceCodeScanner {
       if (suggested != null) {
         // TODO: Resolve suggest attribute (e.g. prefix annotation class if it starts
         // with "#" etc?
-        message =
-            String.format(
-                "The result of `%1\$s` is not used; did you mean to call `%2\$s`?",
-                methodName,
-                suggested,
-            )
+        message = String.format("The result of `%1\$s` is not used; did you mean to call `%2\$s`?", methodName, suggested)
       } else if ("intersect" == methodName && context.evaluator.isMemberInClass(method, "android.graphics.Rect")) {
         message +=
-            ". If the rectangles do not intersect, no change is made and the " +
-                "original rectangle is not modified. These methods return false to " +
-                "indicate that this has happened."
+          ". If the rectangles do not intersect, no change is made and the " +
+            "original rectangle is not modified. These methods return false to " +
+            "indicate that this has happened."
       }
 
       val fix =
-          if (suggested != null) {
-            fix().data(KEY_SUGGESTION, suggested)
-          } else {
-            null
-          }
+        if (suggested != null) {
+          fix().data(KEY_SUGGESTION, suggested)
+        } else {
+          null
+        }
 
       val location = context.getLocation(element)
       report(context, issue, element, location, message, fix)
@@ -211,10 +206,10 @@ class CheckResultDetector : AbstractAnnotationDetector(), SourceCodeScanner {
           return true
         }
       } else if (
-          (nextStatement == null ||
-              nextStatement is UContinueExpression ||
-              nextStatement is UBreakExpression ||
-              nextStatement is UReturnExpression) && parentIsTryBlock(statement)
+        (nextStatement == null ||
+          nextStatement is UContinueExpression ||
+          nextStatement is UBreakExpression ||
+          nextStatement is UReturnExpression) && parentIsTryBlock(statement)
       ) {
         // Something like a
         //    try {
@@ -229,8 +224,7 @@ class CheckResultDetector : AbstractAnnotationDetector(), SourceCodeScanner {
       //noinspection ExternalAnnotations
       val annotations = containingMethod?.uAnnotations
       if (
-          annotations != null &&
-              annotations.any { it.qualifiedName == "org.junit.Test" && it.findDeclaredAttributeValue("expected") != null }
+        annotations != null && annotations.any { it.qualifiedName == "org.junit.Test" && it.findDeclaredAttributeValue("expected") != null }
       ) {
         return true
       }
@@ -333,9 +327,9 @@ class CheckResultDetector : AbstractAnnotationDetector(), SourceCodeScanner {
 
       var curr: UElement = prev.uastParent ?: return true
       while (
-          curr is UQualifiedReferenceExpression && curr.selector === prev ||
-              curr is UParenthesizedExpression ||
-              curr.isIncorrectImplicitReturnInLambda()
+        curr is UQualifiedReferenceExpression && curr.selector === prev ||
+          curr is UParenthesizedExpression ||
+          curr.isIncorrectImplicitReturnInLambda()
       ) {
         prev = curr
         curr = curr.uastParent ?: return true
@@ -377,10 +371,10 @@ class CheckResultDetector : AbstractAnnotationDetector(), SourceCodeScanner {
         if (parent is ULambdaExpression && sourcePsi != null && isKotlin(sourcePsi.language)) {
           val expressionType = parent.getExpressionType()?.canonicalText
           if (
-              expressionType != null &&
-                  !expressionType.contains("error.NonExistentClass") && // some type of resolve problem
-                  expressionType.startsWith("kotlin.jvm.functions.Function") &&
-                  expressionType.endsWith("kotlin.Unit>")
+            expressionType != null &&
+              !expressionType.contains("error.NonExistentClass") && // some type of resolve problem
+              expressionType.startsWith("kotlin.jvm.functions.Function") &&
+              expressionType.endsWith("kotlin.Unit>")
           ) {
             val call = skipParenthesizedExprUp(parent.uastParent) as? UCallExpression
             if (call != null && call.resolve() == null) {
@@ -453,47 +447,43 @@ class CheckResultDetector : AbstractAnnotationDetector(), SourceCodeScanner {
     const val KEY_SUGGESTION = "suggestion"
 
     private val IMPLEMENTATION =
-        Implementation(
-            CheckResultDetector::class.java,
-            EnumSet.of(Scope.JAVA_FILE, Scope.TEST_SOURCES),
-            Scope.JAVA_FILE_SCOPE,
-        )
+      Implementation(CheckResultDetector::class.java, EnumSet.of(Scope.JAVA_FILE, Scope.TEST_SOURCES), Scope.JAVA_FILE_SCOPE)
 
     /** Method result should be used. */
     @JvmField
     val CHECK_RESULT =
-        Issue.create(
-            id = "CheckResult",
-            briefDescription = "Ignoring results",
-            explanation =
-                """
+      Issue.create(
+        id = "CheckResult",
+        briefDescription = "Ignoring results",
+        explanation =
+          """
                 Some methods have no side effects, and calling them without doing something \
                 with the result is suspicious.""",
-            category = Category.CORRECTNESS,
-            priority = 6,
-            severity = Severity.WARNING,
-            implementation = IMPLEMENTATION,
-        )
+        category = Category.CORRECTNESS,
+        priority = 6,
+        severity = Severity.WARNING,
+        implementation = IMPLEMENTATION,
+      )
 
     /** Failing to enforce security by just calling check permission. */
     @JvmField
     val CHECK_PERMISSION =
-        Issue.create(
-            id = "UseCheckPermission",
-            briefDescription = "Using the result of check permission calls",
-            explanation =
-                """
+      Issue.create(
+        id = "UseCheckPermission",
+        briefDescription = "Using the result of check permission calls",
+        explanation =
+          """
                 You normally want to use the result of checking a permission; these methods \
                 return whether the permission is held; they do not throw an error if the \
                 permission is not granted. Code which does not do anything with the return \
                 value probably meant to be calling the enforce methods instead, e.g. rather \
                 than `Context#checkCallingPermission` it should call \
                 `Context#enforceCallingPermission`.""",
-            category = Category.SECURITY,
-            priority = 6,
-            severity = Severity.WARNING,
-            androidSpecific = true,
-            implementation = IMPLEMENTATION,
-        )
+        category = Category.SECURITY,
+        priority = 6,
+        severity = Severity.WARNING,
+        androidSpecific = true,
+        implementation = IMPLEMENTATION,
+      )
   }
 }

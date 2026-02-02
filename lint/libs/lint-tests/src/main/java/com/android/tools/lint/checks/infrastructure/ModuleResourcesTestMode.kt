@@ -29,11 +29,11 @@ import com.android.tools.lint.LintResourceRepository
  * resource during the analysis phase).
  */
 internal class ModuleResourcesTestMode :
-    SourceTransformationTestMode(
-        description = "Resources In Separate Module Test Mode",
-        testMode = "TestMode.MODULE_RESOURCES",
-        folder = "module-resources",
-    ) {
+  SourceTransformationTestMode(
+    description = "Resources In Separate Module Test Mode",
+    testMode = "TestMode.MODULE_RESOURCES",
+    folder = "module-resources",
+  ) {
 
   override fun usePartialAnalysis(): Boolean = true
 
@@ -86,9 +86,9 @@ internal class ModuleResourcesTestMode :
     val values = ProjectDescription(*project.files.filter { it.isValueXmlResource() }.toTypedArray()).name("values")
 
     val files =
-        ProjectDescription(*project.files.filter { it.isXmlResource() && !it.isValueXmlResource() }.toTypedArray())
-            .name("resources")
-            .dependsOn(values)
+      ProjectDescription(*project.files.filter { it.isXmlResource() && !it.isValueXmlResource() }.toTypedArray())
+        .name("resources")
+        .dependsOn(values)
 
     val code = ProjectDescription(*project.files.filter { !it.isXmlResource() }.toTypedArray()).name(project.name).dependsOn(files)
 
@@ -105,13 +105,13 @@ internal class ModuleResourcesTestMode :
   }
 
   override val diffExplanation: String =
-      """
-      The lint detector is triggering
-      a lint error when resources are moved into their own module and
-      the detector is attempting to access resources from the resource
-      repository in other modules than the current one.
-      """
-          .trimIndent()
+    """
+    The lint detector is triggering
+    a lint error when resources are moved into their own module and
+    the detector is attempting to access resources from the resource
+    repository in other modules than the current one.
+    """
+      .trimIndent()
 }
 
 private fun TestFile.isXmlResource(): Boolean = targetRelativePath.endsWith(DOT_XML) && !isManifest()

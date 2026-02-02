@@ -40,46 +40,46 @@ import org.objectweb.asm.tree.MethodNode
 
 /** A [Context] used when checking .class files. */
 class ClassContext(
-    /** the driver running through the checks */
-    driver: LintDriver,
+  /** the driver running through the checks */
+  driver: LintDriver,
 
-    /** the project containing the file being checked */
-    project: Project,
+  /** the project containing the file being checked */
+  project: Project,
 
-    /**
-     * The "main" project. For normal projects, this is the same as [.project], but for library projects, it's the root project that
-     * includes (possibly indirectly) the various library projects and their library projects.
-     *
-     * Note that this is a property on the [Context], not the [Project], since a library project can be included from multiple different top
-     * level projects, so there isn't **one** main project, just one per main project being analyzed with its library projects.
-     */
-    main: Project?,
+  /**
+   * The "main" project. For normal projects, this is the same as [.project], but for library projects, it's the root project that includes
+   * (possibly indirectly) the various library projects and their library projects.
+   *
+   * Note that this is a property on the [Context], not the [Project], since a library project can be included from multiple different top
+   * level projects, so there isn't **one** main project, just one per main project being analyzed with its library projects.
+   */
+  main: Project?,
 
-    /** the file being checked */
-    file: File,
+  /** the file being checked */
+  file: File,
 
-    /**
-     * The jar file, if any. If this is null, the .class file is a real file on disk, otherwise it represents a relative path within the jar
-     * file.
-     *
-     * @return the jar file, or null
-     */
-    val jarFile: File?,
+  /**
+   * The jar file, if any. If this is null, the .class file is a real file on disk, otherwise it represents a relative path within the jar
+   * file.
+   *
+   * @return the jar file, or null
+   */
+  val jarFile: File?,
 
-    /** the root binary directory containing this .class file */
-    private val binDir: File,
+  /** the root binary directory containing this .class file */
+  private val binDir: File,
 
-    /** The class file byte data. */
-    val bytecode: ByteArray,
+  /** The class file byte data. */
+  val bytecode: ByteArray,
 
-    /** The class file DOM root node. */
-    val classNode: ClassNode,
+  /** The class file DOM root node. */
+  val classNode: ClassNode,
 
-    /** Whether this class is part of a library (rather than corresponding to one of the source files in this project. */
-    val isFromClassLibrary: Boolean,
+  /** Whether this class is part of a library (rather than corresponding to one of the source files in this project. */
+  val isFromClassLibrary: Boolean,
 
-    /** The contents of the source file, if source file is known/found. */
-    private var sourceContents: CharSequence?,
+  /** The contents of the source file, if source file is known/found. */
+  private var sourceContents: CharSequence?,
 ) : Context(driver, project, main, file) {
 
   /** The source file, if known/found. */
@@ -125,10 +125,10 @@ class ClassContext(
         if (parentPath.startsWith(topPath)) {
           val start = topPath.length + 1
           val relative =
-              if (start > parentPath.length) {
-                // default package?
-                ""
-              } else parentPath.substring(start)
+            if (start > parentPath.length) {
+              // default package?
+              ""
+            } else parentPath.substring(start)
           val sources = project.getJavaSourceFolders()
           for (dir in sources) {
             val sourceFile = File(dir, relative + File.separator + source)
@@ -189,12 +189,7 @@ class ClassContext(
    * @param hints additional hints about the pattern search (provided `patternStart` is non null)
    * @return a location, never null
    */
-  fun getLocationForLine(
-      line: Int,
-      patternStart: String?,
-      patternEnd: String?,
-      hints: SearchHints?,
-  ): Location {
+  fun getLocationForLine(line: Int, patternStart: String?, patternEnd: String?, hints: SearchHints?): Location {
     val sourceFile = getSourceFile()
     if (sourceFile != null) {
       // ASM line numbers are 1-based, and lint line numbers are 0-based
@@ -269,13 +264,7 @@ class ClassContext(
    * @param location the location of the issue, or null if not known
    * @param message the message for this warning
    */
-  fun report(
-      issue: Issue,
-      method: MethodNode?,
-      instruction: AbstractInsnNode?,
-      location: Location,
-      message: String,
-  ) {
+  fun report(issue: Issue, method: MethodNode?, instruction: AbstractInsnNode?, location: Location, message: String) {
     if (method != null && driver.isSuppressed(issue, classNode, method, instruction)) {
       return
     }
@@ -312,11 +301,11 @@ class ClassContext(
     // around it for a suitable tag, such as the class name.
     var pattern: String
     pattern =
-        if (isAnonymousClass(classNode.name)) {
-          classNode.superName
-        } else {
-          classNode.name
-        }
+      if (isAnonymousClass(classNode.name)) {
+        classNode.superName
+      } else {
+        classNode.name
+      }
     var index = pattern.lastIndexOf('$')
     if (index != -1) {
       pattern = pattern.substring(index + 1)
@@ -326,12 +315,7 @@ class ClassContext(
       pattern = pattern.substring(index + 1)
     }
 
-    return getLocationForLine(
-        findLineNumber(classNode),
-        pattern,
-        null,
-        SearchHints.create(BACKWARD).matchJavaSymbol(),
-    )
+    return getLocationForLine(findLineNumber(classNode), pattern, null, SearchHints.create(BACKWARD).matchJavaSymbol())
   }
 
   /**
@@ -351,22 +335,17 @@ class ClassContext(
     if (methodNode.name == CONSTRUCTOR_NAME) {
       searchMode = EOL_BACKWARD
       pattern =
-          if (isAnonymousClass(classNode.name)) {
-            classNode.superName.substring(classNode.superName.lastIndexOf('/') + 1)
-          } else {
-            classNode.name.substring(classNode.name.lastIndexOf('$') + 1)
-          }
+        if (isAnonymousClass(classNode.name)) {
+          classNode.superName.substring(classNode.superName.lastIndexOf('/') + 1)
+        } else {
+          classNode.name.substring(classNode.name.lastIndexOf('$') + 1)
+        }
     } else {
       searchMode = BACKWARD
       pattern = methodNode.name
     }
 
-    return getLocationForLine(
-        findLineNumber(methodNode),
-        pattern,
-        null,
-        SearchHints.create(searchMode).matchJavaSymbol(),
-    )
+    return getLocationForLine(findLineNumber(methodNode), pattern, null, SearchHints.create(searchMode).matchJavaSymbol())
   }
 
   /**

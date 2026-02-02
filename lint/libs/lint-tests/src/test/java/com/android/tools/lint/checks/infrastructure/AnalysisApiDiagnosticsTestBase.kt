@@ -31,51 +31,45 @@ import org.jetbrains.kotlin.config.toKotlinVersion
 
 internal interface AnalysisApiDiagnosticsTestBase {
 
-  fun checkDiagnostics_NullableFromJava_jspecify(
-      expectedMessage: String,
-      kotlinLanguageVersion: String? = null,
-  ) {
+  fun checkDiagnostics_NullableFromJava_jspecify(expectedMessage: String, kotlinLanguageVersion: String? = null) {
     lint()
-        .apply {
-          val languageLevel = LanguageVersion.fromVersionString(kotlinLanguageVersion) ?: LanguageVersion.LATEST_STABLE
-          val apiVersion = ApiVersion.createByLanguageVersion(languageLevel)
-          kotlinLanguageLevel =
-              LanguageVersionSettingsImpl(
-                  languageLevel,
-                  apiVersion,
-                  // TODO: need to pass/parse (compiler) CLI argument
-                  // -Xjspecify-annotations=strict
-                  mapOf(
-                      JvmAnalysisFlags.javaTypeEnhancementState to
-                          JavaTypeEnhancementStateParser(
-                                  MessageCollector.NONE,
-                                  languageLevel.toKotlinVersion(),
-                              )
-                              .parse(
-                                  jsr305Args = null,
-                                  supportCompatqualCheckerFrameworkAnnotations = null,
-                                  jspecifyState = "strict",
-                                  nullabilityAnnotations = null,
-                              )
-                  ),
-                  // TODO: need to pass/parse (compiler) CLI argument
-                  // -Xtype-enhancement-improvements-strict-mode
-                  mapOf(LanguageFeature.TypeEnhancementImprovementsInStrictMode to LanguageFeature.State.ENABLED),
-              )
-        }
-        .files(
-            kotlin(
-                    "src/main.kt",
-                    """
+      .apply {
+        val languageLevel = LanguageVersion.fromVersionString(kotlinLanguageVersion) ?: LanguageVersion.LATEST_STABLE
+        val apiVersion = ApiVersion.createByLanguageVersion(languageLevel)
+        kotlinLanguageLevel =
+          LanguageVersionSettingsImpl(
+            languageLevel,
+            apiVersion,
+            // TODO: need to pass/parse (compiler) CLI argument
+            // -Xjspecify-annotations=strict
+            mapOf(
+              JvmAnalysisFlags.javaTypeEnhancementState to
+                JavaTypeEnhancementStateParser(MessageCollector.NONE, languageLevel.toKotlinVersion())
+                  .parse(
+                    jsr305Args = null,
+                    supportCompatqualCheckerFrameworkAnnotations = null,
+                    jspecifyState = "strict",
+                    nullabilityAnnotations = null,
+                  )
+            ),
+            // TODO: need to pass/parse (compiler) CLI argument
+            // -Xtype-enhancement-improvements-strict-mode
+            mapOf(LanguageFeature.TypeEnhancementImprovementsInStrictMode to LanguageFeature.State.ENABLED),
+          )
+      }
+      .files(
+        kotlin(
+            "src/main.kt",
+            """
           import p.J
 
           fun go(j: J) = j.s().length
       """,
-                )
-                .indented(),
-            java(
-                    "src/p/J.java",
-                    """
+          )
+          .indented(),
+        java(
+            "src/p/J.java",
+            """
           package p;
           import org.jspecify.annotations.Nullable;
 
@@ -83,13 +77,13 @@ internal interface AnalysisApiDiagnosticsTestBase {
             @Nullable String s();
           }
         """,
-                )
-                .indented(),
-            bytecode(
-                "libs/jspecify.jar",
-                java(
-                    "src/org/jspecify/annotations/Nullable.java",
-                    """
+          )
+          .indented(),
+        bytecode(
+          "libs/jspecify.jar",
+          java(
+            "src/org/jspecify/annotations/Nullable.java",
+            """
               package org.jspecify.annotations;
               import static java.lang.annotation.ElementType.TYPE_USE;
               import static java.lang.annotation.RetentionPolicy.RUNTIME;
@@ -100,9 +94,9 @@ internal interface AnalysisApiDiagnosticsTestBase {
               @Retention(RUNTIME)
               public @interface Nullable {}
             """,
-                ),
-                0x8eacd2bc,
-                """
+          ),
+          0x8eacd2bc,
+          """
                 org/jspecify/annotations/Nullable.class:
                 H4sIAAAAAAAA/4WMzUrDQBSFz63W1Gq1LkXEn0WXzgOICxcpCFpLmgriQqbh
                 GiZMJyWZFPJqLnwAH0q8ETSbggMz98y53zmfX+8fAG5wFKBDuMiLVGXlihPz
@@ -111,22 +105,22 @@ internal interface AnalysisApiDiagnosticsTestBase {
                 S3Y+rlcscC9+noav81lION/MR+wFFyX06B9kmluT1AIG0XwS3z2EIwJhS24X
                 zekg+Hl72JV5Iqovu70XEGMfAxw0P8Yhht//N/zNjAEAAA==
                 """,
-            ),
-        )
-        .issues(TestDiagnosticsDetector.ID)
-        .testModes(TestMode.DEFAULT)
-        .allowMissingSdk()
-        .allowCompilationErrors()
-        .run()
-        .expect(expectedMessage)
+        ),
+      )
+      .issues(TestDiagnosticsDetector.ID)
+      .testModes(TestMode.DEFAULT)
+      .allowMissingSdk()
+      .allowCompilationErrors()
+      .run()
+      .expect(expectedMessage)
   }
 
   fun checkDiagnostics_NullableFromJava_androidx(expectedMessage: String) {
     lint()
-        .files(
-            kotlin(
-                    "src/main.kt",
-                    """
+      .files(
+        kotlin(
+            "src/main.kt",
+            """
           @file:Suppress("UNUSED_VARIABLE")
           import my.flags.Flag
 
@@ -136,11 +130,11 @@ internal interface AnalysisApiDiagnosticsTestBase {
             val unused = v.compareTo("foo")
           }
       """,
-                )
-                .indented(),
-            java(
-                    "src/my/flags/Flag.java",
-                    """
+          )
+          .indented(),
+        java(
+            "src/my/flags/Flag.java",
+            """
           package my.flags;
           import androidx.annotation.Nullable;
 
@@ -161,24 +155,24 @@ internal interface AnalysisApiDiagnosticsTestBase {
             }
           }
         """,
-                )
-                .indented(),
-            AbstractCheckTest.SUPPORT_ANNOTATIONS_JAR,
-        )
-        .issues(TestDiagnosticsDetector.ID)
-        .testModes(TestMode.DEFAULT)
-        .allowMissingSdk()
-        .allowCompilationErrors()
-        .run()
-        .expect(expectedMessage)
+          )
+          .indented(),
+        AbstractCheckTest.SUPPORT_ANNOTATIONS_JAR,
+      )
+      .issues(TestDiagnosticsDetector.ID)
+      .testModes(TestMode.DEFAULT)
+      .allowMissingSdk()
+      .allowCompilationErrors()
+      .run()
+      .expect(expectedMessage)
   }
 
   fun checkDiagnostics_NullableFromKt(expectedMessage: String) {
     lint()
-        .files(
-            kotlin(
-                    "src/main.kt",
-                    """
+      .files(
+        kotlin(
+            "src/main.kt",
+            """
           @file:Suppress("UNUSED_VARIABLE")
           import my.flags.Flag
 
@@ -188,11 +182,11 @@ internal interface AnalysisApiDiagnosticsTestBase {
             val unused = v.compareTo("foo")
           }
         """,
-                )
-                .indented(),
-            kotlin(
-                    "src/my/flags/Flag.kt",
-                    """
+          )
+          .indented(),
+        kotlin(
+            "src/my/flags/Flag.kt",
+            """
           package my.flags
 
           class Flag<T>(val value: T) {
@@ -205,14 +199,14 @@ internal interface AnalysisApiDiagnosticsTestBase {
             }
           }
         """,
-                )
-                .indented(),
-        )
-        .issues(TestDiagnosticsDetector.ID)
-        .testModes(TestMode.DEFAULT)
-        .allowMissingSdk()
-        .allowCompilationErrors()
-        .run()
-        .expect(expectedMessage)
+          )
+          .indented(),
+      )
+      .issues(TestDiagnosticsDetector.ID)
+      .testModes(TestMode.DEFAULT)
+      .allowMissingSdk()
+      .allowCompilationErrors()
+      .run()
+      .expect(expectedMessage)
   }
 }

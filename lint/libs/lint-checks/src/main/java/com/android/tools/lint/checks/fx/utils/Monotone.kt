@@ -64,10 +64,7 @@ interface DependentMonotone<K, V> : ((K) -> V, K) -> V {
  * An example of a reasonable [Monotone] implementation is an abstract interpreter or type inference that structurally recurses on
  * expressions, but relies on the bootstrapping function for assumptions on top-level bindings.
  */
-fun <K : Any, V> DependentMonotone<K, V>.leastFixPoint(
-    domain: Collection<K>,
-    bootstrap: Memo<K, V> = persistentMapOf(),
-): Memo<K, V> {
+fun <K : Any, V> DependentMonotone<K, V>.leastFixPoint(domain: Collection<K>, bootstrap: Memo<K, V> = persistentMapOf()): Memo<K, V> {
   var known: Memo<K, V> = bootstrap
   var dependencies: Deps<K> = persistentMapOf()
   val workSet = UniqueDeque(domain)
@@ -78,10 +75,10 @@ fun <K : Any, V> DependentMonotone<K, V>.leastFixPoint(
     // Update dependencies and accumulate new work
     for (newCallee in newCallees) {
       val callers =
-          when (val existingCallers = dependencies[newCallee]) {
-            null -> persistentSetOf(argument).also { workSet.addFirst(newCallee) }
-            else -> existingCallers + argument
-          }
+        when (val existingCallers = dependencies[newCallee]) {
+          null -> persistentSetOf(argument).also { workSet.addFirst(newCallee) }
+          else -> existingCallers + argument
+        }
       dependencies += newCallee to callers
     }
 
@@ -102,11 +99,7 @@ fun <K : Any, V> DependentMonotone<K, V>.leastFixPoint(
 fun <K : Any, V> DependentMonotone<K, V>.leastFixPoint(vararg points: K): Memo<K, V> = leastFixPoint(points.asList())
 
 /** Accumulate new results and dependencies */
-private fun <K, V> DependentMonotone<K, V>.step(
-    knownResults: Memo<K, V>,
-    knownDeps: Map<K, Set<K>>,
-    point: K,
-): StepResult<K, V> {
+private fun <K, V> DependentMonotone<K, V>.step(knownResults: Memo<K, V>, knownDeps: Map<K, Set<K>>, point: K): StepResult<K, V> {
   val lattice = latticeAt(point)
   // Check for new, un-subsumed result
   val recur = LoggedFunction(knownResults) { latticeAt(it).bottom }

@@ -20,9 +20,9 @@ class AccessibilityViewScrollActionsDetectorTest : AbstractCheckTest() {
 
   fun testDocumentationExample() {
     lint()
-        .files(
-            kotlin(
-                    """
+      .files(
+        kotlin(
+            """
         package com.my.app
 
         import android.content.Context
@@ -44,27 +44,27 @@ class AccessibilityViewScrollActionsDetectorTest : AbstractCheckTest() {
           }
         }
         """
-                )
-                .indented()
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented()
+      )
+      .run()
+      .expect(
+        """
         src/com/my/app/MyView.kt:11: Warning: Views that behave like ScrollView and support ACTION_SCROLL_{FORWARD,BACKWARD} should also support ACTION_SCROLL_{LEFT,RIGHT} and/or ACTION_SCROLL_{UP,DOWN} [AccessibilityScrollActions]
           override fun onInitializeAccessibilityNodeInfo(info: AccessibilityNodeInfo) {
           ^
         0 errors, 1 warnings
         """
-        )
+      )
   }
 
   fun testMissingActionScrollWithGetAccessibilityClassNameOverrideKotlin() {
     // We include a few different ways of providing the getAccessibilityClassName override in
     // Kotlin.
     lint()
-        .files(
-            kotlin(
-                    """
+      .files(
+        kotlin(
+            """
         package com.my.app
 
         import android.content.Context
@@ -139,12 +139,12 @@ class AccessibilityViewScrollActionsDetectorTest : AbstractCheckTest() {
           override fun getAccessibilityClassName(): CharSequence = "MyView"
         }
         """
-                )
-                .indented()
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented()
+      )
+      .run()
+      .expect(
+        """
         src/com/my/app/MyView.kt:9: Warning: Views that behave like ScrollView and support ACTION_SCROLL_{FORWARD,BACKWARD} should also support ACTION_SCROLL_{LEFT,RIGHT} and/or ACTION_SCROLL_{UP,DOWN} [AccessibilityScrollActions]
           override fun onInitializeAccessibilityNodeInfo(info: AccessibilityNodeInfo) {
           ^
@@ -162,15 +162,15 @@ class AccessibilityViewScrollActionsDetectorTest : AbstractCheckTest() {
           ^
         0 errors, 5 warnings
         """
-        )
+      )
   }
 
   fun testMissingActionScrollWithGetAccessibilityClassNameOverrideJava() {
     // We include a few different ways of providing the getAccessibilityClassName override in Java.
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
         package com.my.app;
 
         import android.content.Context;
@@ -252,12 +252,12 @@ class AccessibilityViewScrollActionsDetectorTest : AbstractCheckTest() {
         }
 
         """
-                )
-                .indented()
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented()
+      )
+      .run()
+      .expect(
+        """
         src/com/my/app/MyViewJava.java:13: Warning: Views that behave like ScrollView and support ACTION_SCROLL_{FORWARD,BACKWARD} should also support ACTION_SCROLL_{LEFT,RIGHT} and/or ACTION_SCROLL_{UP,DOWN} [AccessibilityScrollActions]
             @Override
             ^
@@ -269,15 +269,15 @@ class AccessibilityViewScrollActionsDetectorTest : AbstractCheckTest() {
             ^
         0 errors, 3 warnings
         """
-        )
+      )
   }
 
   fun testMissingActionScrollNoWarning() {
     // No warning because this View does not seem to be imitating a ScrollView.
     lint()
-        .files(
-            kotlin(
-                    """
+      .files(
+        kotlin(
+            """
         package com.my.app
 
         import android.content.Context
@@ -293,19 +293,19 @@ class AccessibilityViewScrollActionsDetectorTest : AbstractCheckTest() {
           }
         }
         """
-                )
-                .indented()
-        )
-        .run()
-        .expectClean()
+          )
+          .indented()
+      )
+      .run()
+      .expectClean()
   }
 
   fun testMissingActionScrollWithCollectionInfo() {
     // The warning also triggers if the View has collection info.
     lint()
-        .files(
-            kotlin(
-                    """
+      .files(
+        kotlin(
+            """
         package com.my.app
 
         import android.content.Context
@@ -338,27 +338,27 @@ class AccessibilityViewScrollActionsDetectorTest : AbstractCheckTest() {
           }
         }
         """
-                )
-                .indented()
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented()
+      )
+      .run()
+      .expect(
+        """
         src/com/my/app/MyView.kt:12: Warning: Views that behave like ScrollView and support ACTION_SCROLL_{FORWARD,BACKWARD} should also support ACTION_SCROLL_{LEFT,RIGHT} and/or ACTION_SCROLL_{UP,DOWN} [AccessibilityScrollActions]
           override fun onInitializeAccessibilityNodeInfo(info: AccessibilityNodeInfo) {
           ^
         0 errors, 1 warnings
         """
-        )
+      )
   }
 
   fun testMissingActionScrollWithAccessibilityClassNameInfo() {
     // The warning also triggers if the "ScrollView" accessibility class name is provided in
     // onInitializeAccessibilityNodeInfo.
     lint()
-        .files(
-            kotlin(
-                    """
+      .files(
+        kotlin(
+            """
         package com.my.app
 
         import android.content.Context
@@ -404,12 +404,12 @@ class AccessibilityViewScrollActionsDetectorTest : AbstractCheckTest() {
           }
         }
         """
-                )
-                .indented()
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented()
+      )
+      .run()
+      .expect(
+        """
         src/com/my/app/MyView.kt:9: Warning: Views that behave like ScrollView and support ACTION_SCROLL_{FORWARD,BACKWARD} should also support ACTION_SCROLL_{LEFT,RIGHT} and/or ACTION_SCROLL_{UP,DOWN} [AccessibilityScrollActions]
           override fun onInitializeAccessibilityNodeInfo(info: AccessibilityNodeInfo) {
           ^
@@ -418,14 +418,14 @@ class AccessibilityViewScrollActionsDetectorTest : AbstractCheckTest() {
           ^
         0 errors, 2 warnings
         """
-        )
+      )
   }
 
   fun testActionScrollCorrect() {
     lint()
-        .files(
-            kotlin(
-                    """
+      .files(
+        kotlin(
+            """
         package com.my.app
 
         import android.content.Context
@@ -446,19 +446,19 @@ class AccessibilityViewScrollActionsDetectorTest : AbstractCheckTest() {
           }
         }
         """
-                )
-                .indented()
-        )
-        .run()
-        .expectClean()
+          )
+          .indented()
+      )
+      .run()
+      .expectClean()
   }
 
   fun testMissingActionScrollViaOtherAddActionOverload() {
     // There is an overload of addAction that takes an int.
     lint()
-        .files(
-            kotlin(
-                    """
+      .files(
+        kotlin(
+            """
         package com.my.app
 
         import android.content.Context
@@ -482,26 +482,26 @@ class AccessibilityViewScrollActionsDetectorTest : AbstractCheckTest() {
           }
         }
         """
-                )
-                .indented()
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented()
+      )
+      .run()
+      .expect(
+        """
         src/com/my/app/MyView.kt:12: Warning: Views that behave like ScrollView and support ACTION_SCROLL_{FORWARD,BACKWARD} should also support ACTION_SCROLL_{LEFT,RIGHT} and/or ACTION_SCROLL_{UP,DOWN} [AccessibilityScrollActions]
           @Suppress("DEPRECATION")
           ^
         0 errors, 1 warnings
         """
-        )
+      )
   }
 
   fun testMissingActionScrollEscaped() {
     // We report no warning if the info parameter escapes (excluding calls to the super method).
     lint()
-        .files(
-            kotlin(
-                    """
+      .files(
+        kotlin(
+            """
         package com.my.app
 
         import android.content.Context
@@ -524,10 +524,10 @@ class AccessibilityViewScrollActionsDetectorTest : AbstractCheckTest() {
 
         }
         """
-                )
-                .indented()
-        )
-        .run()
-        .expectClean()
+          )
+          .indented()
+      )
+      .run()
+      .expectClean()
   }
 }

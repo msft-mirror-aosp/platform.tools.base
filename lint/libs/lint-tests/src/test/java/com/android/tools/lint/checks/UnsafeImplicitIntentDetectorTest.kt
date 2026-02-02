@@ -23,9 +23,9 @@ class UnsafeImplicitIntentDetectorTest : AbstractCheckTest() {
 
   fun testDocumentationExample() {
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
                 package test.pkg;
 
                 import android.content.Intent;
@@ -40,10 +40,10 @@ class UnsafeImplicitIntentDetectorTest : AbstractCheckTest() {
                     }
                 }
             """
-                )
-                .indented(),
-            manifest(
-                    """
+          )
+          .indented(),
+        manifest(
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                         package="test.pkg">
                     <application>
@@ -56,20 +56,20 @@ class UnsafeImplicitIntentDetectorTest : AbstractCheckTest() {
                     </application>
                 </manifest>
                 """
-                )
-                .indented(),
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+      )
+      .run()
+      .expect(
+        """
             src/test/pkg/TestActivity.java:10: Error: The intent action some.fake.action.LAUNCH (used to start an activity) matches the intent filter of a non-exported component test.pkg.TestActivity from a manifest. If you are trying to invoke this specific component via the action then you should make the intent explicit by calling Intent.set{Component,Class,ClassName}. [UnsafeImplicitIntentLaunch]
                     Intent intent = new Intent("some.fake.action.LAUNCH");
                                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             1 errors, 0 warnings
             """
-        )
-        .expectFixDiffs(
-            """
+      )
+      .expectFixDiffs(
+        """
         Fix for src/test/pkg/TestActivity.java line 10: Set class name:
         @@ -10 +10 @@
         -        Intent intent = new Intent("some.fake.action.LAUNCH");
@@ -79,14 +79,14 @@ class UnsafeImplicitIntentDetectorTest : AbstractCheckTest() {
         -        Intent intent = new Intent("some.fake.action.LAUNCH");
         +        Intent intent = new Intent("some.fake.action.LAUNCH").setPackage([/* TODO: provide the application ID. For example: */ getPackageName()]|);
         """
-        )
+      )
   }
 
   fun testImplicitIntentIgnoredIfUnused() {
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
                 package test.pkg;
 
                 import android.content.Intent;
@@ -100,10 +100,10 @@ class UnsafeImplicitIntentDetectorTest : AbstractCheckTest() {
                     }
                 }
             """
-                )
-                .indented(),
-            manifest(
-                    """
+          )
+          .indented(),
+        manifest(
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                         package="test.pkg">
                     <application>
@@ -116,18 +116,18 @@ class UnsafeImplicitIntentDetectorTest : AbstractCheckTest() {
                     </application>
                 </manifest>
                 """
-                )
-                .indented(),
-        )
-        .run()
-        .expectClean()
+          )
+          .indented(),
+      )
+      .run()
+      .expectClean()
   }
 
   fun testImplicitIntentMatchesNonExportedComponent_actionSetFromSetter() {
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
                 package test.pkg;
 
                 import android.content.Intent;
@@ -143,10 +143,10 @@ class UnsafeImplicitIntentDetectorTest : AbstractCheckTest() {
                     }
                 }
             """
-                )
-                .indented(),
-            manifest(
-                    """
+          )
+          .indented(),
+        manifest(
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                         package="test.pkg">
                     <application>
@@ -159,20 +159,20 @@ class UnsafeImplicitIntentDetectorTest : AbstractCheckTest() {
                     </application>
                 </manifest>
                 """
-                )
-                .indented(),
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+      )
+      .run()
+      .expect(
+        """
             src/test/pkg/TestActivity.java:11: Error: The intent action some.fake.action.LAUNCH (used to start an activity) matches the intent filter of a non-exported component test.pkg.TestActivity from a manifest. If you are trying to invoke this specific component via the action then you should make the intent explicit by calling Intent.set{Component,Class,ClassName}. [UnsafeImplicitIntentLaunch]
                     intent.setAction("some.fake.action.LAUNCH");
                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             1 errors, 0 warnings
             """
-        )
-        .expectFixDiffs(
-            """
+      )
+      .expectFixDiffs(
+        """
             Fix for src/test/pkg/TestActivity.java line 11: Set class name:
             @@ -11 +11 @@
             -        intent.setAction("some.fake.action.LAUNCH");
@@ -182,14 +182,14 @@ class UnsafeImplicitIntentDetectorTest : AbstractCheckTest() {
             -        intent.setAction("some.fake.action.LAUNCH");
             +        intent.setAction("some.fake.action.LAUNCH").setPackage([/* TODO: provide the application ID. For example: */ getPackageName()]|);
         """
-        )
+      )
   }
 
   fun testIntentMatchesNonExportedComponent_explicitViaSetClass_actionSetFromConstructor() {
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
                 package test.pkg;
 
                 import android.content.Intent;
@@ -209,10 +209,10 @@ class UnsafeImplicitIntentDetectorTest : AbstractCheckTest() {
                     }
                 }
             """
-                )
-                .indented(),
-            manifest(
-                    """
+          )
+          .indented(),
+        manifest(
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                         package="test.pkg">
                     <application>
@@ -225,19 +225,19 @@ class UnsafeImplicitIntentDetectorTest : AbstractCheckTest() {
                     </application>
                 </manifest>
                 """
-                )
-                .indented(),
-        )
-        .issues(UnsafeImplicitIntentDetector.ISSUE)
-        .run()
-        .expectClean()
+          )
+          .indented(),
+      )
+      .issues(UnsafeImplicitIntentDetector.ISSUE)
+      .run()
+      .expectClean()
   }
 
   fun testIntentMatchesNonExportedComponent_explicitViaSetClassName_actionSetFromConstructor() {
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
                 package test.pkg;
 
                 import android.content.Intent;
@@ -257,10 +257,10 @@ class UnsafeImplicitIntentDetectorTest : AbstractCheckTest() {
                     }
                 }
             """
-                )
-                .indented(),
-            manifest(
-                    """
+          )
+          .indented(),
+        manifest(
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                         package="test.pkg">
                     <application>
@@ -273,19 +273,19 @@ class UnsafeImplicitIntentDetectorTest : AbstractCheckTest() {
                     </application>
                 </manifest>
                 """
-                )
-                .indented(),
-        )
-        .issues(UnsafeImplicitIntentDetector.ISSUE)
-        .run()
-        .expectClean()
+          )
+          .indented(),
+      )
+      .issues(UnsafeImplicitIntentDetector.ISSUE)
+      .run()
+      .expectClean()
   }
 
   fun testIntentMatchesNonExportedComponent_explicitViaSetComponent_actionSetFromConstructor() {
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
                 package test.pkg;
 
                 import android.content.Intent;
@@ -306,10 +306,10 @@ class UnsafeImplicitIntentDetectorTest : AbstractCheckTest() {
                     }
                 }
             """
-                )
-                .indented(),
-            manifest(
-                    """
+          )
+          .indented(),
+        manifest(
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                         package="test.pkg">
                     <application>
@@ -322,19 +322,19 @@ class UnsafeImplicitIntentDetectorTest : AbstractCheckTest() {
                     </application>
                 </manifest>
                 """
-                )
-                .indented(),
-        )
-        .issues(UnsafeImplicitIntentDetector.ISSUE)
-        .run()
-        .expectClean()
+          )
+          .indented(),
+      )
+      .issues(UnsafeImplicitIntentDetector.ISSUE)
+      .run()
+      .expectClean()
   }
 
   fun testIntentMatchesNonExportedComponent_explicitViaSetPackage_actionSetFromConstructor() {
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
                 package test.pkg;
 
                 import android.content.Intent;
@@ -354,10 +354,10 @@ class UnsafeImplicitIntentDetectorTest : AbstractCheckTest() {
                     }
                 }
             """
-                )
-                .indented(),
-            manifest(
-                    """
+          )
+          .indented(),
+        manifest(
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                         package="test.pkg">
                     <application>
@@ -370,19 +370,19 @@ class UnsafeImplicitIntentDetectorTest : AbstractCheckTest() {
                     </application>
                 </manifest>
                 """
-                )
-                .indented(),
-        )
-        .issues(UnsafeImplicitIntentDetector.ISSUE)
-        .run()
-        .expectClean()
+          )
+          .indented(),
+      )
+      .issues(UnsafeImplicitIntentDetector.ISSUE)
+      .run()
+      .expectClean()
   }
 
   fun testIntentMatchesNonExportedComponent_explicitViaSetClass_actionSetFromSetter() {
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
                 package test.pkg;
 
                 import android.content.Intent;
@@ -403,10 +403,10 @@ class UnsafeImplicitIntentDetectorTest : AbstractCheckTest() {
                     }
                 }
             """
-                )
-                .indented(),
-            manifest(
-                    """
+          )
+          .indented(),
+        manifest(
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                         package="test.pkg">
                     <application>
@@ -419,19 +419,19 @@ class UnsafeImplicitIntentDetectorTest : AbstractCheckTest() {
                     </application>
                 </manifest>
                 """
-                )
-                .indented(),
-        )
-        .issues(UnsafeImplicitIntentDetector.ISSUE)
-        .run()
-        .expectClean()
+          )
+          .indented(),
+      )
+      .issues(UnsafeImplicitIntentDetector.ISSUE)
+      .run()
+      .expectClean()
   }
 
   fun testIntentMatchesNonExportedComponent_explicitViaSetClassName_actionSetFromSetter() {
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
                 package test.pkg;
 
                 import android.content.Intent;
@@ -452,10 +452,10 @@ class UnsafeImplicitIntentDetectorTest : AbstractCheckTest() {
                     }
                 }
             """
-                )
-                .indented(),
-            manifest(
-                    """
+          )
+          .indented(),
+        manifest(
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                         package="test.pkg">
                     <application>
@@ -468,19 +468,19 @@ class UnsafeImplicitIntentDetectorTest : AbstractCheckTest() {
                     </application>
                 </manifest>
                 """
-                )
-                .indented(),
-        )
-        .issues(UnsafeImplicitIntentDetector.ISSUE)
-        .run()
-        .expectClean()
+          )
+          .indented(),
+      )
+      .issues(UnsafeImplicitIntentDetector.ISSUE)
+      .run()
+      .expectClean()
   }
 
   fun testIntentMatchesNonExportedComponent_explicitViaSetComponent_actionSetFromSetter() {
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
                 package test.pkg;
 
                 import android.content.Intent;
@@ -502,10 +502,10 @@ class UnsafeImplicitIntentDetectorTest : AbstractCheckTest() {
                     }
                 }
             """
-                )
-                .indented(),
-            manifest(
-                    """
+          )
+          .indented(),
+        manifest(
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                         package="test.pkg">
                     <application>
@@ -518,19 +518,19 @@ class UnsafeImplicitIntentDetectorTest : AbstractCheckTest() {
                     </application>
                 </manifest>
                 """
-                )
-                .indented(),
-        )
-        .issues(UnsafeImplicitIntentDetector.ISSUE)
-        .run()
-        .expectClean()
+          )
+          .indented(),
+      )
+      .issues(UnsafeImplicitIntentDetector.ISSUE)
+      .run()
+      .expectClean()
   }
 
   fun testIntentMatchesNonExportedComponent_explicitViaSetPackage_actionSetFromSetter() {
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
                 package test.pkg;
 
                 import android.content.Intent;
@@ -551,10 +551,10 @@ class UnsafeImplicitIntentDetectorTest : AbstractCheckTest() {
                     }
                 }
             """
-                )
-                .indented(),
-            manifest(
-                    """
+          )
+          .indented(),
+        manifest(
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                         package="test.pkg">
                     <application>
@@ -567,19 +567,19 @@ class UnsafeImplicitIntentDetectorTest : AbstractCheckTest() {
                     </application>
                 </manifest>
                 """
-                )
-                .indented(),
-        )
-        .issues(UnsafeImplicitIntentDetector.ISSUE)
-        .run()
-        .expectClean()
+          )
+          .indented(),
+      )
+      .issues(UnsafeImplicitIntentDetector.ISSUE)
+      .run()
+      .expectClean()
   }
 
   fun testImplicitIntentMatchesNonExportedComponent_actionSetFromConstructorThenSetter() {
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
                 package test.pkg;
 
                 import android.content.Intent;
@@ -595,10 +595,10 @@ class UnsafeImplicitIntentDetectorTest : AbstractCheckTest() {
                     }
                 }
             """
-                )
-                .indented(),
-            manifest(
-                    """
+          )
+          .indented(),
+        manifest(
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                         package="test.pkg">
                     <application>
@@ -611,20 +611,20 @@ class UnsafeImplicitIntentDetectorTest : AbstractCheckTest() {
                     </application>
                 </manifest>
                 """
-                )
-                .indented(),
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+      )
+      .run()
+      .expect(
+        """
             src/test/pkg/TestActivity.java:11: Error: The intent action some.fake.action.LAUNCH (used to start an activity) matches the intent filter of a non-exported component test.pkg.TestActivity from a manifest. If you are trying to invoke this specific component via the action then you should make the intent explicit by calling Intent.set{Component,Class,ClassName}. [UnsafeImplicitIntentLaunch]
                     intent.setAction("some.fake.action.LAUNCH");
                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             1 errors, 0 warnings
             """
-        )
-        .expectFixDiffs(
-            """
+      )
+      .expectFixDiffs(
+        """
         Fix for src/test/pkg/TestActivity.java line 11: Set class name:
         @@ -11 +11 @@
         -        intent.setAction("some.fake.action.LAUNCH");
@@ -634,14 +634,14 @@ class UnsafeImplicitIntentDetectorTest : AbstractCheckTest() {
         -        intent.setAction("some.fake.action.LAUNCH");
         +        intent.setAction("some.fake.action.LAUNCH").setPackage([/* TODO: provide the application ID. For example: */ getPackageName()]|);
         """
-        )
+      )
   }
 
   fun testImplicitIntentMatchesNonExportedComponent_actionSetMultipleTimes() {
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
                 package test.pkg;
 
                 import android.content.Intent;
@@ -661,10 +661,10 @@ class UnsafeImplicitIntentDetectorTest : AbstractCheckTest() {
                     }
                 }
             """
-                )
-                .indented(),
-            manifest(
-                    """
+          )
+          .indented(),
+        manifest(
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                         package="test.pkg">
                     <application>
@@ -679,13 +679,13 @@ class UnsafeImplicitIntentDetectorTest : AbstractCheckTest() {
                     </application>
                 </manifest>
                 """
-                )
-                .indented(),
-        )
-        .issues(UnsafeImplicitIntentDetector.ISSUE)
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+      )
+      .issues(UnsafeImplicitIntentDetector.ISSUE)
+      .run()
+      .expect(
+        """
         src/test/pkg/TestActivity.java:10: Error: The intent action some.fake.action.A (used to start an activity) matches the intent filter of a non-exported component test.pkg.TestActivity from a manifest. If you are trying to invoke this specific component via the action then you should make the intent explicit by calling Intent.set{Component,Class,ClassName}. [UnsafeImplicitIntentLaunch]
                 Intent intent = new Intent("some.fake.action.A");
                                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -697,9 +697,9 @@ class UnsafeImplicitIntentDetectorTest : AbstractCheckTest() {
                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         3 errors, 0 warnings
         """
-        )
-        .expectFixDiffs(
-            """
+      )
+      .expectFixDiffs(
+        """
           Fix for src/test/pkg/TestActivity.java line 10: Set class name:
           @@ -10 +10 @@
           -        Intent intent = new Intent("some.fake.action.A");
@@ -725,14 +725,14 @@ class UnsafeImplicitIntentDetectorTest : AbstractCheckTest() {
           -          intent.setAction("some.fake.action.C");
           +          intent.setAction("some.fake.action.C").setPackage([/* TODO: provide the application ID. For example: */ getPackageName()]|);
           """
-        )
+      )
   }
 
   fun testExplicitIntentWithContextAndClassName_actionNotSet() {
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
                 package test.pkg;
 
                 import android.content.Intent;
@@ -750,10 +750,10 @@ class UnsafeImplicitIntentDetectorTest : AbstractCheckTest() {
                 class SomeOtherActivity extends Activity {
                 }
             """
-                )
-                .indented(),
-            manifest(
-                    """
+          )
+          .indented(),
+        manifest(
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                         package="test.pkg">
                     <application>
@@ -772,19 +772,19 @@ class UnsafeImplicitIntentDetectorTest : AbstractCheckTest() {
                     </application>
                 </manifest>
                 """
-                )
-                .indented(),
-        )
-        .issues(UnsafeImplicitIntentDetector.ISSUE)
-        .run()
-        .expectClean()
+          )
+          .indented(),
+      )
+      .issues(UnsafeImplicitIntentDetector.ISSUE)
+      .run()
+      .expectClean()
   }
 
   fun testDocumentationExample_onTheFlyAnalysis() {
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
                 package test.pkg;
 
                 import android.content.Intent;
@@ -799,10 +799,10 @@ class UnsafeImplicitIntentDetectorTest : AbstractCheckTest() {
                     }
                 }
             """
-                )
-                .indented(),
-            manifest(
-                    """
+          )
+          .indented(),
+        manifest(
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                         package="test.pkg">
                     <application>
@@ -815,21 +815,21 @@ class UnsafeImplicitIntentDetectorTest : AbstractCheckTest() {
                     </application>
                 </manifest>
                 """
-                )
-                .indented(),
-        )
-        .isolated("src/test/pkg/TestActivity.java")
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+      )
+      .isolated("src/test/pkg/TestActivity.java")
+      .run()
+      .expect(
+        """
             src/test/pkg/TestActivity.java:10: Error: The intent action some.fake.action.LAUNCH (used to start an activity) matches the intent filter of a non-exported component test.pkg.TestActivity from a manifest. If you are trying to invoke this specific component via the action then you should make the intent explicit by calling Intent.set{Component,Class,ClassName}. [UnsafeImplicitIntentLaunch]
                     Intent intent = new Intent("some.fake.action.LAUNCH");
                                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             1 errors, 0 warnings
             """
-        )
-        .expectFixDiffs(
-            """
+      )
+      .expectFixDiffs(
+        """
         Fix for src/test/pkg/TestActivity.java line 10: Set class name:
         @@ -10 +10 @@
         -        Intent intent = new Intent("some.fake.action.LAUNCH");
@@ -839,14 +839,14 @@ class UnsafeImplicitIntentDetectorTest : AbstractCheckTest() {
         -        Intent intent = new Intent("some.fake.action.LAUNCH");
         +        Intent intent = new Intent("some.fake.action.LAUNCH").setPackage([/* TODO: provide the application ID. For example: */ getPackageName()]|);
         """
-        )
+      )
   }
 
   fun testImplicitIntentMatchesNonExportedComponent_actionSetFromSetter_onTheFlyAnalysis() {
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
                 package test.pkg;
 
                 import android.content.Intent;
@@ -862,10 +862,10 @@ class UnsafeImplicitIntentDetectorTest : AbstractCheckTest() {
                     }
                 }
             """
-                )
-                .indented(),
-            manifest(
-                    """
+          )
+          .indented(),
+        manifest(
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                         package="test.pkg">
                     <application>
@@ -878,21 +878,21 @@ class UnsafeImplicitIntentDetectorTest : AbstractCheckTest() {
                     </application>
                 </manifest>
                 """
-                )
-                .indented(),
-        )
-        .isolated("src/test/pkg/TestActivity.java")
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+      )
+      .isolated("src/test/pkg/TestActivity.java")
+      .run()
+      .expect(
+        """
             src/test/pkg/TestActivity.java:11: Error: The intent action some.fake.action.LAUNCH (used to start an activity) matches the intent filter of a non-exported component test.pkg.TestActivity from a manifest. If you are trying to invoke this specific component via the action then you should make the intent explicit by calling Intent.set{Component,Class,ClassName}. [UnsafeImplicitIntentLaunch]
                     intent.setAction("some.fake.action.LAUNCH");
                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             1 errors, 0 warnings
             """
-        )
-        .expectFixDiffs(
-            """
+      )
+      .expectFixDiffs(
+        """
             Fix for src/test/pkg/TestActivity.java line 11: Set class name:
             @@ -11 +11 @@
             -        intent.setAction("some.fake.action.LAUNCH");
@@ -902,14 +902,14 @@ class UnsafeImplicitIntentDetectorTest : AbstractCheckTest() {
             -        intent.setAction("some.fake.action.LAUNCH");
             +        intent.setAction("some.fake.action.LAUNCH").setPackage([/* TODO: provide the application ID. For example: */ getPackageName()]|);
         """
-        )
+      )
   }
 
   fun testIntentMatchesNonExportedComponent_explicitViaSetClass_actionSetFromConstructor_onTheFlyAnalysis() {
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
                 package test.pkg;
 
                 import android.content.Intent;
@@ -928,10 +928,10 @@ class UnsafeImplicitIntentDetectorTest : AbstractCheckTest() {
                 class SomeActivity extends Activity {
                 }
             """
-                )
-                .indented(),
-            manifest(
-                    """
+          )
+          .indented(),
+        manifest(
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                         package="test.pkg">
                     <application>
@@ -944,20 +944,20 @@ class UnsafeImplicitIntentDetectorTest : AbstractCheckTest() {
                     </application>
                 </manifest>
                 """
-                )
-                .indented(),
-        )
-        .issues(UnsafeImplicitIntentDetector.ISSUE)
-        .isolated("src/test/pkg/TestActivity.java")
-        .run()
-        .expectClean()
+          )
+          .indented(),
+      )
+      .issues(UnsafeImplicitIntentDetector.ISSUE)
+      .isolated("src/test/pkg/TestActivity.java")
+      .run()
+      .expectClean()
   }
 
   fun testIntentMatchesNonExportedComponent_explicitViaSetClassName_actionSetFromConstructor_onTheFlyAnalysis() {
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
                 package test.pkg;
 
                 import android.content.Intent;
@@ -976,10 +976,10 @@ class UnsafeImplicitIntentDetectorTest : AbstractCheckTest() {
                 class SomeActivity extends Activity {
                 }
             """
-                )
-                .indented(),
-            manifest(
-                    """
+          )
+          .indented(),
+        manifest(
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                         package="test.pkg">
                     <application>
@@ -992,20 +992,20 @@ class UnsafeImplicitIntentDetectorTest : AbstractCheckTest() {
                     </application>
                 </manifest>
                 """
-                )
-                .indented(),
-        )
-        .issues(UnsafeImplicitIntentDetector.ISSUE)
-        .isolated("src/test/pkg/TestActivity.java")
-        .run()
-        .expectClean()
+          )
+          .indented(),
+      )
+      .issues(UnsafeImplicitIntentDetector.ISSUE)
+      .isolated("src/test/pkg/TestActivity.java")
+      .run()
+      .expectClean()
   }
 
   fun testIntentMatchesNonExportedComponent_explicitViaSetComponent_actionSetFromConstructor_onTheFlyAnalysis() {
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
                 package test.pkg;
 
                 import android.content.Intent;
@@ -1026,10 +1026,10 @@ class UnsafeImplicitIntentDetectorTest : AbstractCheckTest() {
                     }
                 }
             """
-                )
-                .indented(),
-            manifest(
-                    """
+          )
+          .indented(),
+        manifest(
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                         package="test.pkg">
                     <application>
@@ -1042,20 +1042,20 @@ class UnsafeImplicitIntentDetectorTest : AbstractCheckTest() {
                     </application>
                 </manifest>
                 """
-                )
-                .indented(),
-        )
-        .issues(UnsafeImplicitIntentDetector.ISSUE)
-        .isolated("src/test/pkg/TestActivity.java")
-        .run()
-        .expectClean()
+          )
+          .indented(),
+      )
+      .issues(UnsafeImplicitIntentDetector.ISSUE)
+      .isolated("src/test/pkg/TestActivity.java")
+      .run()
+      .expectClean()
   }
 
   fun testIntentMatchesNonExportedComponent_explicitViaSetPackage_actionSetFromConstructor_onTheFlyAnalysis() {
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
                 package test.pkg;
 
                 import android.content.Intent;
@@ -1075,10 +1075,10 @@ class UnsafeImplicitIntentDetectorTest : AbstractCheckTest() {
                     }
                 }
             """
-                )
-                .indented(),
-            manifest(
-                    """
+          )
+          .indented(),
+        manifest(
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                         package="test.pkg">
                     <application>
@@ -1091,20 +1091,20 @@ class UnsafeImplicitIntentDetectorTest : AbstractCheckTest() {
                     </application>
                 </manifest>
                 """
-                )
-                .indented(),
-        )
-        .issues(UnsafeImplicitIntentDetector.ISSUE)
-        .isolated("src/test/pkg/TestActivity.java")
-        .run()
-        .expectClean()
+          )
+          .indented(),
+      )
+      .issues(UnsafeImplicitIntentDetector.ISSUE)
+      .isolated("src/test/pkg/TestActivity.java")
+      .run()
+      .expectClean()
   }
 
   fun testIntentMatchesNonExportedComponent_explicitViaSetClass_actionSetFromSetter_onTheFlyAnalysis() {
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
                 package test.pkg;
 
                 import android.content.Intent;
@@ -1125,10 +1125,10 @@ class UnsafeImplicitIntentDetectorTest : AbstractCheckTest() {
                     }
                 }
             """
-                )
-                .indented(),
-            manifest(
-                    """
+          )
+          .indented(),
+        manifest(
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                         package="test.pkg">
                     <application>
@@ -1141,20 +1141,20 @@ class UnsafeImplicitIntentDetectorTest : AbstractCheckTest() {
                     </application>
                 </manifest>
                 """
-                )
-                .indented(),
-        )
-        .issues(UnsafeImplicitIntentDetector.ISSUE)
-        .isolated("src/test/pkg/TestActivity.java")
-        .run()
-        .expectClean()
+          )
+          .indented(),
+      )
+      .issues(UnsafeImplicitIntentDetector.ISSUE)
+      .isolated("src/test/pkg/TestActivity.java")
+      .run()
+      .expectClean()
   }
 
   fun testIntentMatchesNonExportedComponent_explicitViaSetClassName_actionSetFromSetter_onTheFlyAnalysis() {
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
                 package test.pkg;
 
                 import android.content.Intent;
@@ -1175,10 +1175,10 @@ class UnsafeImplicitIntentDetectorTest : AbstractCheckTest() {
                     }
                 }
             """
-                )
-                .indented(),
-            manifest(
-                    """
+          )
+          .indented(),
+        manifest(
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                         package="test.pkg">
                     <application>
@@ -1191,20 +1191,20 @@ class UnsafeImplicitIntentDetectorTest : AbstractCheckTest() {
                     </application>
                 </manifest>
                 """
-                )
-                .indented(),
-        )
-        .issues(UnsafeImplicitIntentDetector.ISSUE)
-        .isolated("src/test/pkg/TestActivity.java")
-        .run()
-        .expectClean()
+          )
+          .indented(),
+      )
+      .issues(UnsafeImplicitIntentDetector.ISSUE)
+      .isolated("src/test/pkg/TestActivity.java")
+      .run()
+      .expectClean()
   }
 
   fun testIntentMatchesNonExportedComponent_explicitViaSetComponent_actionSetFromSetter_onTheFlyAnalysis() {
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
                 package test.pkg;
 
                 import android.content.Intent;
@@ -1226,10 +1226,10 @@ class UnsafeImplicitIntentDetectorTest : AbstractCheckTest() {
                     }
                 }
             """
-                )
-                .indented(),
-            manifest(
-                    """
+          )
+          .indented(),
+        manifest(
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                         package="test.pkg">
                     <application>
@@ -1242,20 +1242,20 @@ class UnsafeImplicitIntentDetectorTest : AbstractCheckTest() {
                     </application>
                 </manifest>
                 """
-                )
-                .indented(),
-        )
-        .issues(UnsafeImplicitIntentDetector.ISSUE)
-        .isolated("src/test/pkg/TestActivity.java")
-        .run()
-        .expectClean()
+          )
+          .indented(),
+      )
+      .issues(UnsafeImplicitIntentDetector.ISSUE)
+      .isolated("src/test/pkg/TestActivity.java")
+      .run()
+      .expectClean()
   }
 
   fun testIntentMatchesNonExportedComponent_explicitViaSetPackage_actionSetFromSetter_onTheFlyAnalysis() {
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
                 package test.pkg;
 
                 import android.content.Intent;
@@ -1276,10 +1276,10 @@ class UnsafeImplicitIntentDetectorTest : AbstractCheckTest() {
                     }
                 }
             """
-                )
-                .indented(),
-            manifest(
-                    """
+          )
+          .indented(),
+        manifest(
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                         package="test.pkg">
                     <application>
@@ -1292,20 +1292,20 @@ class UnsafeImplicitIntentDetectorTest : AbstractCheckTest() {
                     </application>
                 </manifest>
                 """
-                )
-                .indented(),
-        )
-        .issues(UnsafeImplicitIntentDetector.ISSUE)
-        .isolated("src/test/pkg/TestActivity.java")
-        .run()
-        .expectClean()
+          )
+          .indented(),
+      )
+      .issues(UnsafeImplicitIntentDetector.ISSUE)
+      .isolated("src/test/pkg/TestActivity.java")
+      .run()
+      .expectClean()
   }
 
   fun testImplicitIntentMatchesNonExportedComponent_actionSetFromConstructorThenSetter_onTheFlyAnalysis() {
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
                 package test.pkg;
 
                 import android.content.Intent;
@@ -1321,10 +1321,10 @@ class UnsafeImplicitIntentDetectorTest : AbstractCheckTest() {
                     }
                 }
             """
-                )
-                .indented(),
-            manifest(
-                    """
+          )
+          .indented(),
+        manifest(
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                         package="test.pkg">
                     <application>
@@ -1337,21 +1337,21 @@ class UnsafeImplicitIntentDetectorTest : AbstractCheckTest() {
                     </application>
                 </manifest>
                 """
-                )
-                .indented(),
-        )
-        .isolated("src/test/pkg/TestActivity.java")
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+      )
+      .isolated("src/test/pkg/TestActivity.java")
+      .run()
+      .expect(
+        """
             src/test/pkg/TestActivity.java:11: Error: The intent action some.fake.action.LAUNCH (used to start an activity) matches the intent filter of a non-exported component test.pkg.TestActivity from a manifest. If you are trying to invoke this specific component via the action then you should make the intent explicit by calling Intent.set{Component,Class,ClassName}. [UnsafeImplicitIntentLaunch]
                     intent.setAction("some.fake.action.LAUNCH");
                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             1 errors, 0 warnings
             """
-        )
-        .expectFixDiffs(
-            """
+      )
+      .expectFixDiffs(
+        """
         Fix for src/test/pkg/TestActivity.java line 11: Set class name:
         @@ -11 +11 @@
         -        intent.setAction("some.fake.action.LAUNCH");
@@ -1361,14 +1361,14 @@ class UnsafeImplicitIntentDetectorTest : AbstractCheckTest() {
         -        intent.setAction("some.fake.action.LAUNCH");
         +        intent.setAction("some.fake.action.LAUNCH").setPackage([/* TODO: provide the application ID. For example: */ getPackageName()]|);
         """
-        )
+      )
   }
 
   fun testImplicitIntentMatchesNonExportedComponent_actionSetMultipleTimes_onTheFlyAnalysis() {
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
                 package test.pkg;
 
                 import android.content.Intent;
@@ -1388,10 +1388,10 @@ class UnsafeImplicitIntentDetectorTest : AbstractCheckTest() {
                     }
                 }
             """
-                )
-                .indented(),
-            manifest(
-                    """
+          )
+          .indented(),
+        manifest(
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                         package="test.pkg">
                     <application>
@@ -1406,14 +1406,14 @@ class UnsafeImplicitIntentDetectorTest : AbstractCheckTest() {
                     </application>
                 </manifest>
                 """
-                )
-                .indented(),
-        )
-        .issues(UnsafeImplicitIntentDetector.ISSUE)
-        .isolated("src/test/pkg/TestActivity.java")
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+      )
+      .issues(UnsafeImplicitIntentDetector.ISSUE)
+      .isolated("src/test/pkg/TestActivity.java")
+      .run()
+      .expect(
+        """
         src/test/pkg/TestActivity.java:10: Error: The intent action some.fake.action.A (used to start an activity) matches the intent filter of a non-exported component test.pkg.TestActivity from a manifest. If you are trying to invoke this specific component via the action then you should make the intent explicit by calling Intent.set{Component,Class,ClassName}. [UnsafeImplicitIntentLaunch]
                 Intent intent = new Intent("some.fake.action.A");
                                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1425,9 +1425,9 @@ class UnsafeImplicitIntentDetectorTest : AbstractCheckTest() {
                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         3 errors, 0 warnings
         """
-        )
-        .expectFixDiffs(
-            """
+      )
+      .expectFixDiffs(
+        """
           Fix for src/test/pkg/TestActivity.java line 10: Set class name:
           @@ -10 +10 @@
           -        Intent intent = new Intent("some.fake.action.A");
@@ -1453,14 +1453,14 @@ class UnsafeImplicitIntentDetectorTest : AbstractCheckTest() {
           -          intent.setAction("some.fake.action.C");
           +          intent.setAction("some.fake.action.C").setPackage([/* TODO: provide the application ID. For example: */ getPackageName()]|);
           """
-        )
+      )
   }
 
   fun testExplicitIntentWithContextAndClassName_actionNotSet_onTheFlyAnalysis() {
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
                 package test.pkg;
 
                 import android.content.Intent;
@@ -1475,10 +1475,10 @@ class UnsafeImplicitIntentDetectorTest : AbstractCheckTest() {
                     }
                 }
             """
-                )
-                .indented(),
-            manifest(
-                    """
+          )
+          .indented(),
+        manifest(
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                         package="test.pkg">
                     <application>
@@ -1497,20 +1497,20 @@ class UnsafeImplicitIntentDetectorTest : AbstractCheckTest() {
                     </application>
                 </manifest>
                 """
-                )
-                .indented(),
-        )
-        .issues(UnsafeImplicitIntentDetector.ISSUE)
-        .isolated("src/test/pkg/TestActivity.java")
-        .run()
-        .expectClean()
+          )
+          .indented(),
+      )
+      .issues(UnsafeImplicitIntentDetector.ISSUE)
+      .isolated("src/test/pkg/TestActivity.java")
+      .run()
+      .expectClean()
   }
 
   fun testImplicitIntentMatchesNonExportedComponent_actionSetFromSetter_kotlin() {
     lint()
-        .files(
-            kotlin(
-                    """
+      .files(
+        kotlin(
+            """
                 package test.pkg
 
                 import android.content.Intent
@@ -1525,10 +1525,10 @@ class UnsafeImplicitIntentDetectorTest : AbstractCheckTest() {
                     }
                 }
             """
-                )
-                .indented(),
-            manifest(
-                    """
+          )
+          .indented(),
+        manifest(
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                         package="test.pkg">
                     <application>
@@ -1541,20 +1541,20 @@ class UnsafeImplicitIntentDetectorTest : AbstractCheckTest() {
                     </application>
                 </manifest>
                 """
-                )
-                .indented(),
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+      )
+      .run()
+      .expect(
+        """
             src/test/pkg/TestActivity.kt:10: Error: The intent action some.fake.action.LAUNCH (used to start an activity) matches the intent filter of a non-exported component test.pkg.TestActivity from a manifest. If you are trying to invoke this specific component via the action then you should make the intent explicit by calling Intent.set{Component,Class,ClassName}. [UnsafeImplicitIntentLaunch]
                     intent.setAction("some.fake.action.LAUNCH")
                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             1 errors, 0 warnings
             """
-        )
-        .expectFixDiffs(
-            """
+      )
+      .expectFixDiffs(
+        """
         Fix for src/test/pkg/TestActivity.kt line 10: Set class name:
         @@ -10 +10 @@
         -        intent.setAction("some.fake.action.LAUNCH")
@@ -1564,14 +1564,14 @@ class UnsafeImplicitIntentDetectorTest : AbstractCheckTest() {
         -        intent.setAction("some.fake.action.LAUNCH")
         +        intent.setAction("some.fake.action.LAUNCH").setPackage([/* TODO: provide the application ID. For example: */ packageName]|)
         """
-        )
+      )
   }
 
   fun testImplicitIntentMatchesNonExportedComponent_actionSetFromSetter_kotlin_onTheFlyAnalysis() {
     lint()
-        .files(
-            kotlin(
-                    """
+      .files(
+        kotlin(
+            """
                 package test.pkg
 
                 import android.content.Intent
@@ -1586,10 +1586,10 @@ class UnsafeImplicitIntentDetectorTest : AbstractCheckTest() {
                     }
                 }
             """
-                )
-                .indented(),
-            manifest(
-                    """
+          )
+          .indented(),
+        manifest(
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                         package="test.pkg">
                     <application>
@@ -1602,21 +1602,21 @@ class UnsafeImplicitIntentDetectorTest : AbstractCheckTest() {
                     </application>
                 </manifest>
                 """
-                )
-                .indented(),
-        )
-        .isolated("src/test/pkg/TestActivity.kt")
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+      )
+      .isolated("src/test/pkg/TestActivity.kt")
+      .run()
+      .expect(
+        """
             src/test/pkg/TestActivity.kt:10: Error: The intent action some.fake.action.LAUNCH (used to start an activity) matches the intent filter of a non-exported component test.pkg.TestActivity from a manifest. If you are trying to invoke this specific component via the action then you should make the intent explicit by calling Intent.set{Component,Class,ClassName}. [UnsafeImplicitIntentLaunch]
                     intent.setAction("some.fake.action.LAUNCH")
                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             1 errors, 0 warnings
             """
-        )
-        .expectFixDiffs(
-            """
+      )
+      .expectFixDiffs(
+        """
         Fix for src/test/pkg/TestActivity.kt line 10: Set class name:
         @@ -10 +10 @@
         -        intent.setAction("some.fake.action.LAUNCH")
@@ -1626,14 +1626,14 @@ class UnsafeImplicitIntentDetectorTest : AbstractCheckTest() {
         -        intent.setAction("some.fake.action.LAUNCH")
         +        intent.setAction("some.fake.action.LAUNCH").setPackage([/* TODO: provide the application ID. For example: */ packageName]|)
         """
-        )
+      )
   }
 
   fun testImplicitIntentMatchesNonExportedComponent_actionSetFromConstructor_kotlin() {
     lint()
-        .files(
-            kotlin(
-                    """
+      .files(
+        kotlin(
+            """
                 package test.pkg
 
                 import android.content.Intent
@@ -1647,10 +1647,10 @@ class UnsafeImplicitIntentDetectorTest : AbstractCheckTest() {
                     }
                 }
             """
-                )
-                .indented(),
-            manifest(
-                    """
+          )
+          .indented(),
+        manifest(
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                         package="test.pkg">
                     <application>
@@ -1663,20 +1663,20 @@ class UnsafeImplicitIntentDetectorTest : AbstractCheckTest() {
                     </application>
                 </manifest>
                 """
-                )
-                .indented(),
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+      )
+      .run()
+      .expect(
+        """
             src/test/pkg/TestActivity.kt:9: Error: The intent action some.fake.action.LAUNCH (used to start an activity) matches the intent filter of a non-exported component test.pkg.TestActivity from a manifest. If you are trying to invoke this specific component via the action then you should make the intent explicit by calling Intent.set{Component,Class,ClassName}. [UnsafeImplicitIntentLaunch]
                     val intent = Intent("some.fake.action.LAUNCH")
                                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             1 errors, 0 warnings
             """
-        )
-        .expectFixDiffs(
-            """
+      )
+      .expectFixDiffs(
+        """
         Fix for src/test/pkg/TestActivity.kt line 9: Set class name:
         @@ -9 +9 @@
         -        val intent = Intent("some.fake.action.LAUNCH")
@@ -1686,14 +1686,14 @@ class UnsafeImplicitIntentDetectorTest : AbstractCheckTest() {
         -        val intent = Intent("some.fake.action.LAUNCH")
         +        val intent = Intent("some.fake.action.LAUNCH").setPackage([/* TODO: provide the application ID. For example: */ packageName]|)
         """
-        )
+      )
   }
 
   fun testImplicitIntentMatchesNonExportedComponent_actionSetFromConstructor_kotlin_onTheFlyAnalysis() {
     lint()
-        .files(
-            kotlin(
-                    """
+      .files(
+        kotlin(
+            """
                 package test.pkg
 
                 import android.content.Intent
@@ -1707,10 +1707,10 @@ class UnsafeImplicitIntentDetectorTest : AbstractCheckTest() {
                     }
                 }
             """
-                )
-                .indented(),
-            manifest(
-                    """
+          )
+          .indented(),
+        manifest(
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                         package="test.pkg">
                     <application>
@@ -1723,21 +1723,21 @@ class UnsafeImplicitIntentDetectorTest : AbstractCheckTest() {
                     </application>
                 </manifest>
                 """
-                )
-                .indented(),
-        )
-        .isolated("src/test/pkg/TestActivity.kt")
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+      )
+      .isolated("src/test/pkg/TestActivity.kt")
+      .run()
+      .expect(
+        """
             src/test/pkg/TestActivity.kt:9: Error: The intent action some.fake.action.LAUNCH (used to start an activity) matches the intent filter of a non-exported component test.pkg.TestActivity from a manifest. If you are trying to invoke this specific component via the action then you should make the intent explicit by calling Intent.set{Component,Class,ClassName}. [UnsafeImplicitIntentLaunch]
                     val intent = Intent("some.fake.action.LAUNCH")
                                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             1 errors, 0 warnings
             """
-        )
-        .expectFixDiffs(
-            """
+      )
+      .expectFixDiffs(
+        """
         Fix for src/test/pkg/TestActivity.kt line 9: Set class name:
         @@ -9 +9 @@
         -        val intent = Intent("some.fake.action.LAUNCH")
@@ -1747,18 +1747,18 @@ class UnsafeImplicitIntentDetectorTest : AbstractCheckTest() {
         -        val intent = Intent("some.fake.action.LAUNCH")
         +        val intent = Intent("some.fake.action.LAUNCH").setPackage([/* TODO: provide the application ID. For example: */ packageName]|)
         """
-        )
+      )
   }
 
   fun testImplicitIntentMatchesNonExportedComponent_multipleProjects() {
     lint()
-        .projects(
-            project()
-                .name("lib")
-                .type(ProjectDescription.Type.LIBRARY)
-                .files(
-                    kotlin(
-                            """
+      .projects(
+        project()
+          .name("lib")
+          .type(ProjectDescription.Type.LIBRARY)
+          .files(
+            kotlin(
+                """
                     package test.pkg.lib
 
                     import android.content.Intent
@@ -1772,16 +1772,16 @@ class UnsafeImplicitIntentDetectorTest : AbstractCheckTest() {
                         }
                     }
                 """
-                        )
-                        .indented()
-                ),
-            project()
-                .name("app")
-                .dependsOn("lib")
-                .type(ProjectDescription.Type.APP)
-                .files(
-                    kotlin(
-                            """
+              )
+              .indented()
+          ),
+        project()
+          .name("app")
+          .dependsOn("lib")
+          .type(ProjectDescription.Type.APP)
+          .files(
+            kotlin(
+                """
                     package test.pkg.app
 
                     import android.content.Intent
@@ -1795,10 +1795,10 @@ class UnsafeImplicitIntentDetectorTest : AbstractCheckTest() {
                         }
                     }
                 """
-                        )
-                        .indented(),
-                    manifest(
-                            """
+              )
+              .indented(),
+            manifest(
+                """
                     <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                             package="test.pkg">
                         <application>
@@ -1817,13 +1817,13 @@ class UnsafeImplicitIntentDetectorTest : AbstractCheckTest() {
                         </application>
                     </manifest>
                     """
-                        )
-                        .indented(),
-                ),
-        )
-        .run()
-        .expect(
-            """
+              )
+              .indented(),
+          ),
+      )
+      .run()
+      .expect(
+        """
             src/test/pkg/app/TestActivityApp.kt:10: Error: The intent action some.fake.action.D (used to send a broadcast) matches the intent filter of a non-exported component test.pkg.MyReceiver from a manifest. If you are trying to invoke this specific component via the action then you should make the intent explicit by calling Intent.set{Component,Class,ClassName}. [UnsafeImplicitIntentLaunch]
                     sendBroadcast(Intent().setAction("some.fake.action.D"))
                                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1832,9 +1832,9 @@ class UnsafeImplicitIntentDetectorTest : AbstractCheckTest() {
                                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             2 errors, 0 warnings
             """
-        )
-        .expectFixDiffs(
-            """
+      )
+      .expectFixDiffs(
+        """
             Fix for src/test/pkg/app/TestActivityApp.kt line 10: Set class name:
             @@ -10 +10 @@
             -        sendBroadcast(Intent().setAction("some.fake.action.D"))
@@ -1852,18 +1852,18 @@ class UnsafeImplicitIntentDetectorTest : AbstractCheckTest() {
             -        sendBroadcast(Intent().setAction("some.fake.action.B"))
             +        sendBroadcast(Intent().setAction("some.fake.action.B").setPackage([/* TODO: provide the application ID. For example: */ packageName]|))
             """
-        )
+      )
   }
 
   fun testImplicitIntentMultipleProjectsWithManifestAndRegisteredReceivers() {
     lint()
-        .projects(
-            project()
-                .name("lib")
-                .type(ProjectDescription.Type.LIBRARY)
-                .files(
-                    kotlin(
-                            """
+      .projects(
+        project()
+          .name("lib")
+          .type(ProjectDescription.Type.LIBRARY)
+          .files(
+            kotlin(
+                """
                     package com.lib
 
                     import android.annotation.SuppressLint
@@ -1906,10 +1906,10 @@ class UnsafeImplicitIntentDetectorTest : AbstractCheckTest() {
                         }
                     }
                 """
-                        )
-                        .indented(),
-                    manifest(
-                            """
+              )
+              .indented(),
+            manifest(
+                """
                     <manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.lib">
                         <application>
                             <receiver android:name="x.lib.Receiver" android:exported="false">
@@ -1921,16 +1921,16 @@ class UnsafeImplicitIntentDetectorTest : AbstractCheckTest() {
                         </application>
                     </manifest>
                     """
-                        )
-                        .indented(),
-                ),
-            project()
-                .name("app")
-                .dependsOn("lib")
-                .type(ProjectDescription.Type.APP)
-                .files(
-                    java(
-                        """
+              )
+              .indented(),
+          ),
+        project()
+          .name("app")
+          .dependsOn("lib")
+          .type(ProjectDescription.Type.APP)
+          .files(
+            java(
+              """
               package androidx.core.content;
 
               import android.content.Context;
@@ -1944,9 +1944,9 @@ class UnsafeImplicitIntentDetectorTest : AbstractCheckTest() {
                 }
               }
               """
-                    ),
-                    kotlin(
-                            """
+            ),
+            kotlin(
+                """
                     package com.app
 
                     import android.annotation.SuppressLint
@@ -1994,10 +1994,10 @@ class UnsafeImplicitIntentDetectorTest : AbstractCheckTest() {
                         }
                     }
                 """
-                        )
-                        .indented(),
-                    manifest(
-                            """
+              )
+              .indented(),
+            manifest(
+                """
                     <manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.app">
                         <application>
                             <receiver android:name="x.app.Receiver" android:exported="false">
@@ -2009,13 +2009,13 @@ class UnsafeImplicitIntentDetectorTest : AbstractCheckTest() {
                         </application>
                     </manifest>
                     """
-                        )
-                        .indented(),
-                ),
-        )
-        .run()
-        .expect(
-            """
+              )
+              .indented(),
+          ),
+      )
+      .run()
+      .expect(
+        """
 src/com/app/AppActivity.kt:13: Error: The intent action com.lib.manifest.receiver.action (used to send a broadcast) matches the intent filter of a non-exported component x.lib.Receiver from a manifest. If you are trying to invoke this specific component via the action then you should make the intent explicit by calling Intent.set{Component,Class,ClassName}. [UnsafeImplicitIntentLaunch]
         sendBroadcast(Intent("com.lib.manifest.receiver.action")) // 18
                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -2066,7 +2066,7 @@ src/com/app/AppActivity.kt:30: Error: The intent action com.app.dynamic.receiver
                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 16 errors, 0 warnings
             """
-        )
+      )
   }
 
   fun testImplicitIntentDifferentTypesOfComponents() {
@@ -2076,9 +2076,9 @@ src/com/app/AppActivity.kt:30: Error: The intent action com.app.dynamic.receiver
     // Services are always ignored, as an exception is thrown for implicit
     // service intents since Lollipop
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
                 package test.pkg;
 
                 import android.content.Intent;
@@ -2114,10 +2114,10 @@ src/com/app/AppActivity.kt:30: Error: The intent action com.app.dynamic.receiver
                     }
                 }
             """
-                )
-                .indented(),
-            manifest(
-                    """
+          )
+          .indented(),
+        manifest(
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                         package="com.app">
                     <application>
@@ -2146,12 +2146,12 @@ src/com/app/AppActivity.kt:30: Error: The intent action com.app.dynamic.receiver
                     </application>
                 </manifest>
                 """
-                )
-                .indented(),
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+      )
+      .run()
+      .expect(
+        """
             src/test/pkg/TestActivity.java:11: Error: The intent action some.fake.action.A (used to send a broadcast) matches the intent filter of a non-exported component x.app.MyReceiver from a manifest. If you are trying to invoke this specific component via the action then you should make the intent explicit by calling Intent.set{Component,Class,ClassName}. [UnsafeImplicitIntentLaunch]
                     intent.setAction("some.fake.action.A");
                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -2166,6 +2166,6 @@ src/com/app/AppActivity.kt:30: Error: The intent action com.app.dynamic.receiver
                                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             4 errors, 0 warnings
             """
-        )
+      )
   }
 }

@@ -28,88 +28,60 @@ import org.jetbrains.uast.UElement
 class VersionChecks {
   companion object {
     @Deprecated(
-        message = "Use com.android.tools.lint.detector.api.VersionChecks.isWithinVersionCheckConditional instead",
-        replaceWith =
-            ReplaceWith(
-                "com.android.tools.lint.detector.api.VersionChecks.isWithinVersionCheckConditional(context, element, api, lowerBound)"
-            ),
+      message = "Use com.android.tools.lint.detector.api.VersionChecks.isWithinVersionCheckConditional instead",
+      replaceWith =
+        ReplaceWith("com.android.tools.lint.detector.api.VersionChecks.isWithinVersionCheckConditional(context, element, api, lowerBound)"),
+    )
+    @JvmStatic
+    @JvmOverloads
+    fun isWithinVersionCheckConditional(context: JavaContext, element: UElement, api: Int, lowerBound: Boolean = true): Boolean {
+      return com.android.tools.lint.detector.api.VersionChecks.isWithinVersionCheckConditional(context, element, api, lowerBound)
+    }
+
+    @Deprecated(
+      message = "Use com.android.tools.lint.detector.api.VersionChecks.isWithinVersionCheckConditional instead",
+      replaceWith =
+        ReplaceWith(
+          "com.android.tools.lint.detector.api.VersionChecks.isWithinVersionCheckConditional(client, evaluator, element, api, lowerBound)"
+        ),
     )
     @JvmStatic
     @JvmOverloads
     fun isWithinVersionCheckConditional(
-        context: JavaContext,
-        element: UElement,
-        api: Int,
-        lowerBound: Boolean = true,
+      client: LintClient,
+      evaluator: JavaEvaluator,
+      element: UElement,
+      api: Int,
+      lowerBound: Boolean = true,
     ): Boolean {
-      return com.android.tools.lint.detector.api.VersionChecks.isWithinVersionCheckConditional(
-          context,
-          element,
-          api,
-          lowerBound,
-      )
+      return com.android.tools.lint.detector.api.VersionChecks.isWithinVersionCheckConditional(client, evaluator, element, api, lowerBound)
     }
 
     @Deprecated(
-        message = "Use com.android.tools.lint.detector.api.VersionChecks.isWithinVersionCheckConditional instead",
-        replaceWith =
-            ReplaceWith(
-                "com.android.tools.lint.detector.api.VersionChecks.isWithinVersionCheckConditional(client, evaluator, element, api, lowerBound)"
-            ),
-    )
-    @JvmStatic
-    @JvmOverloads
-    fun isWithinVersionCheckConditional(
-        client: LintClient,
-        evaluator: JavaEvaluator,
-        element: UElement,
-        api: Int,
-        lowerBound: Boolean = true,
-    ): Boolean {
-      return com.android.tools.lint.detector.api.VersionChecks.isWithinVersionCheckConditional(
-          client,
-          evaluator,
-          element,
-          api,
-          lowerBound,
-      )
-    }
-
-    @Deprecated(
-        message = "Use com.android.tools.lint.detector.api.VersionChecks.isPrecededByVersionCheckExit instead",
-        replaceWith = ReplaceWith("com.android.tools.lint.detector.api.VersionChecks.isPrecededByVersionCheckExit(context, element, api)"),
+      message = "Use com.android.tools.lint.detector.api.VersionChecks.isPrecededByVersionCheckExit instead",
+      replaceWith = ReplaceWith("com.android.tools.lint.detector.api.VersionChecks.isPrecededByVersionCheckExit(context, element, api)"),
     )
     @JvmStatic
     fun isPrecededByVersionCheckExit(context: JavaContext, element: UElement, api: Int): Boolean {
-      return com.android.tools.lint.detector.api.VersionChecks.isPrecededByVersionCheckExit(
-          context,
-          element,
-          api,
-      )
+      return com.android.tools.lint.detector.api.VersionChecks.isPrecededByVersionCheckExit(context, element, api)
     }
 
     @Deprecated(
-        message = "Use com.android.tools.lint.detector.api.VersionChecks.isPrecededByVersionCheckExit instead",
-        replaceWith =
-            ReplaceWith(
-                "com.android.tools.lint.detector.api.VersionChecks.isPrecededByVersionCheckExit(client, evaluator, element, api, project)"
-            ),
+      message = "Use com.android.tools.lint.detector.api.VersionChecks.isPrecededByVersionCheckExit instead",
+      replaceWith =
+        ReplaceWith(
+          "com.android.tools.lint.detector.api.VersionChecks.isPrecededByVersionCheckExit(client, evaluator, element, api, project)"
+        ),
     )
     @JvmStatic
     fun isPrecededByVersionCheckExit(
-        client: LintClient,
-        evaluator: JavaEvaluator,
-        element: UElement,
-        api: Int,
-        project: Project? = null,
+      client: LintClient,
+      evaluator: JavaEvaluator,
+      element: UElement,
+      api: Int,
+      project: Project? = null,
     ): Boolean {
-      return com.android.tools.lint.detector.api.VersionChecks.isPrecededByVersionCheckExit(
-          client,
-          evaluator,
-          element,
-          api,
-          project,
-      )
+      return com.android.tools.lint.detector.api.VersionChecks.isPrecededByVersionCheckExit(client, evaluator, element, api, project)
     }
   }
 }

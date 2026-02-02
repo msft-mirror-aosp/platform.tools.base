@@ -179,13 +179,7 @@ class TypoDetector : ResourceXmlDetector() {
     }
   }
 
-  private fun checkForExclamation(
-      context: XmlContext,
-      node: Node,
-      text: String,
-      index: Int,
-      begin: Int,
-  ) {
+  private fun checkForExclamation(context: XmlContext, node: Node, text: String, index: Int, begin: Int) {
     // Peek ahead: if we find punctuation or lower case letter don't flag it
     var problem = true
     var found1 = text[index] == '1'
@@ -212,25 +206,19 @@ class TypoDetector : ResourceXmlDetector() {
       val actual = text.substring(begin, end)
       val intended = actual.replace('1', '!')
       val fix = fix().name("Replace with \"$intended\"").replace().text(actual).with(intended).range(context.getLocation(node)).build()
-      context.report(
-          ISSUE,
-          node,
-          context.getLocation(node, begin, end),
-          "Did you mean \"$intended\" instead of \"$actual\"?",
-          fix,
-      )
+      context.report(ISSUE, node, context.getLocation(node, begin, end), "Did you mean \"$intended\" instead of \"$actual\"?", fix)
     }
   }
 
   private fun checkRepeatedWords(
-      context: XmlContext,
-      element: Element,
-      node: Node,
-      text: String,
-      lastWordBegin: Int,
-      lastWordEnd: Int,
-      begin: Int,
-      end: Int,
+    context: XmlContext,
+    element: Element,
+    node: Node,
+    text: String,
+    lastWordBegin: Int,
+    lastWordEnd: Int,
+    begin: Int,
+    end: Int,
   ) {
     if (lastWordBegin != -1 && end - begin == lastWordEnd - lastWordBegin && end - begin > 1) {
       // See whether we have a repeated word
@@ -252,14 +240,14 @@ class TypoDetector : ResourceXmlDetector() {
   }
 
   private fun checkUtf8Text(
-      context: XmlContext,
-      element: Element,
-      node: Node,
-      utf8Text: ByteArray,
-      byteStart: Int,
-      byteEnd: Int,
-      text: String,
-      charStart: Int,
+    context: XmlContext,
+    element: Element,
+    node: Node,
+    utf8Text: ByteArray,
+    byteStart: Int,
+    byteEnd: Int,
+    text: String,
+    charStart: Int,
   ) {
     var charStart = charStart
     var lastWordBegin = -1
@@ -318,16 +306,7 @@ class TypoDetector : ResourceXmlDetector() {
       if (replacements != null && isTranslatable(element)) {
         reportTypo(context, node, text, charStart, replacements)
       }
-      checkRepeatedWords(
-          context,
-          element,
-          node,
-          text,
-          lastWordBegin,
-          lastWordEnd,
-          charStart,
-          charEnd,
-      )
+      checkRepeatedWords(context, element, node, text, lastWordBegin, lastWordEnd, charStart, charEnd)
       lastWordBegin = charStart
       lastWordEnd = charEnd
       charStart = charEnd
@@ -335,13 +314,7 @@ class TypoDetector : ResourceXmlDetector() {
   }
 
   /** Report the typo found at the given offset and suggest the given replacements */
-  private fun reportTypo(
-      context: XmlContext,
-      node: Node,
-      text: String,
-      begin: Int,
-      replacements: List<String>,
-  ) {
+  private fun reportTypo(context: XmlContext, node: Node, text: String, begin: Int, replacements: List<String>) {
     if (replacements.size < 2) {
       return
     }
@@ -373,40 +346,33 @@ class TypoDetector : ResourceXmlDetector() {
     }
     val fix = fixBuilder.build()
     message =
-        if (first != null && first.equals(word, ignoreCase = true)) {
-          if (first == word) {
-            return
-          }
-          "\"$word\" is usually capitalized as \"$first\""
-        } else {
-          "\"$word\" is a common misspelling; did you mean $sb?"
+      if (first != null && first.equals(word, ignoreCase = true)) {
+        if (first == word) {
+          return
         }
+        "\"$word\" is usually capitalized as \"$first\""
+      } else {
+        "\"$word\" is a common misspelling; did you mean $sb?"
+      }
     val end = begin + word.length
     context.report(ISSUE, node, context.getLocation(node, begin, end), message, fix)
   }
 
   /** Reports a repeated word */
-  private fun reportRepeatedWord(
-      context: XmlContext,
-      node: Node,
-      text: String,
-      lastWordBegin: Int,
-      begin: Int,
-      end: Int,
-  ) {
+  private fun reportRepeatedWord(context: XmlContext, node: Node, text: String, lastWordBegin: Int, begin: Int, end: Int) {
     val word = text.substring(begin, end)
     if (isAllowed(word)) {
       return
     }
     val message = "Repeated word \"$word\" in message: possible typo"
     val replace =
-        if (lastWordBegin > 1 && text[lastWordBegin - 1] == ' ') {
-          " $word"
-        } else if (end < text.length - 1 && text[end] == ' ') {
-          "$word "
-        } else {
-          word
-        }
+      if (lastWordBegin > 1 && text[lastWordBegin - 1] == ' ') {
+        " $word"
+      } else if (end < text.length - 1 && text[end] == ' ') {
+        "$word "
+      } else {
+        word
+      }
     val fix = fix().name("Delete repeated word").replace().text(replace).with("").build()
     val location = context.getLocation(node, lastWordBegin, end)
     context.report(ISSUE, node, location, message, fix)
@@ -415,18 +381,18 @@ class TypoDetector : ResourceXmlDetector() {
   companion object {
     @JvmField
     val ISSUE =
-        create(
-            id = "Typos",
-            briefDescription = "Spelling error",
-            explanation =
-                """
+      create(
+        id = "Typos",
+        briefDescription = "Spelling error",
+        explanation =
+          """
                 This check looks through the string definitions, and if it finds any words \
                 that look like likely misspellings, they are flagged.""",
-            category = Category.MESSAGES,
-            priority = 7,
-            severity = Severity.WARNING,
-            implementation = Implementation(TypoDetector::class.java, RESOURCE_FILE_SCOPE),
-        )
+        category = Category.MESSAGES,
+        priority = 7,
+        severity = Severity.WARNING,
+        implementation = Implementation(TypoDetector::class.java, RESOURCE_FILE_SCOPE),
+      )
 
     private fun onlySpace(text: String, fromInclusive: Int, toExclusive: Int): Boolean {
       for (i in fromInclusive until toExclusive) {

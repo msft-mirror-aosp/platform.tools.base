@@ -132,11 +132,11 @@ abstract class XmlParser {
    * element range if it fits on a single line; otherwise it will use just the tag name range.
    */
   fun getElementLocation(
-      context: XmlContext,
-      element: Element,
-      node: Node? = null,
-      namespace: String? = null,
-      attribute: String? = null,
+    context: XmlContext,
+    element: Element,
+    node: Node? = null,
+    namespace: String? = null,
+    attribute: String? = null,
   ): Location {
     if (node != null) {
       return getLocation(context, node)
@@ -144,11 +144,11 @@ abstract class XmlParser {
 
     if (attribute != null) {
       val attr =
-          if (namespace != null) {
-            element.getAttributeNodeNS(namespace, attribute)
-          } else {
-            element.getAttributeNode(attribute)
-          }
+        if (namespace != null) {
+          element.getAttributeNodeNS(namespace, attribute)
+        } else {
+          element.getAttributeNode(attribute)
+        }
       if (attr != null) {
         return getLocation(context, attr)
       }
@@ -251,12 +251,7 @@ abstract class XmlParser {
     return getLocation(client, item, false, false)
   }
 
-  open fun getLocation(
-      client: LintClient,
-      item: ResourceItem,
-      nameOnly: Boolean = false,
-      valueOnly: Boolean = false,
-  ): Location? {
+  open fun getLocation(client: LintClient, item: ResourceItem, nameOnly: Boolean = false, valueOnly: Boolean = false): Location? {
     if (item is Location.LocationAware) {
       val location = item.getLocation()
       // Normally the resource item location includes the whole element range.
@@ -289,12 +284,12 @@ abstract class XmlParser {
   }
 
   private fun createLocation(
-      client: LintClient,
-      file: File,
-      name: String,
-      type: ResourceType,
-      nameOnly: Boolean,
-      valueOnly: Boolean,
+    client: LintClient,
+    file: File,
+    name: String,
+    type: ResourceType,
+    nameOnly: Boolean,
+    valueOnly: Boolean,
   ): Location? {
     // For elements and attributes we have to work harder
     val text = client.readFile(file)

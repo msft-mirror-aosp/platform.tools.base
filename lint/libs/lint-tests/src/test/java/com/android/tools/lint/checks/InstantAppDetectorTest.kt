@@ -23,10 +23,10 @@ class InstantAppDetectorTest : AbstractCheckTest() {
 
   fun testDocumentationExample() {
     lint()
-        .files(
-            manifest().targetSdk(31),
-            kotlin(
-                    """
+      .files(
+        manifest().targetSdk(31),
+        kotlin(
+            """
             package com.example.app
 
             import android.app.Activity
@@ -38,27 +38,27 @@ class InstantAppDetectorTest : AbstractCheckTest() {
               }
             }
             """
-                )
-                .indented(),
-            instantAppsStub,
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+        instantAppsStub,
+      )
+      .run()
+      .expect(
+        """
         src/com/example/app/MyApp.kt:8: Warning: Instant Apps support will be removed by Google Play in December 2025 [InstantAppCall]
             InstantApps.showInstallPrompt(activity, null, 0, null)
             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         0 errors, 1 warning
         """
-        )
+      )
   }
 
   fun testNoWarningWhenDeprecated() {
     lint()
-        .files(
-            manifest().targetSdk(31),
-            kotlin(
-                    """
+      .files(
+        manifest().targetSdk(31),
+        kotlin(
+            """
             package com.example.app
 
             import android.app.Activity
@@ -70,18 +70,18 @@ class InstantAppDetectorTest : AbstractCheckTest() {
               }
             }
             """
-                )
-                .indented(),
-            instantAppsStubDeprecated,
-        )
-        .run()
-        .expectClean()
+          )
+          .indented(),
+        instantAppsStubDeprecated,
+      )
+      .run()
+      .expectClean()
   }
 }
 
 private val instantAppsStub: TestFile =
-    java(
-            """
+  java(
+      """
       /* HIDE-FROM-DOCUMENTATION */
       package com.google.android.gms.instantapps;
 
@@ -98,12 +98,12 @@ private val instantAppsStub: TestFile =
         private InstantApps() {}
       }
       """
-        )
-        .indented()
+    )
+    .indented()
 
 private val instantAppsStubDeprecated: TestFile =
-    java(
-            """
+  java(
+      """
       /* HIDE-FROM-DOCUMENTATION */
       package com.google.android.gms.instantapps;
 
@@ -122,5 +122,5 @@ private val instantAppsStubDeprecated: TestFile =
         private InstantApps() {}
       }
       """
-        )
-        .indented()
+    )
+    .indented()

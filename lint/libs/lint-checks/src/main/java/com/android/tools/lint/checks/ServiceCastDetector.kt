@@ -110,9 +110,9 @@ class ServiceCastDetector : Detector(), SourceCodeScanner {
     val qualifier = call.receiver
     val resolvedMethod = call.resolve()
     if (
-        resolvedMethod != null &&
-            (evaluator.isMemberInSubClassOf(resolvedMethod, SdkConstants.CLASS_ACTIVITY, false) ||
-                (evaluator.isMemberInSubClassOf(resolvedMethod, SdkConstants.CLASS_VIEW, false)))
+      resolvedMethod != null &&
+        (evaluator.isMemberInSubClassOf(resolvedMethod, SdkConstants.CLASS_ACTIVITY, false) ||
+          (evaluator.isMemberInSubClassOf(resolvedMethod, SdkConstants.CLASS_VIEW, false)))
     ) {
       reportWifiServiceLeak(WIFI_MANAGER, context, call)
       return
@@ -136,11 +136,7 @@ class ServiceCastDetector : Detector(), SourceCodeScanner {
    * @param element the reference to be checked
    * @param call the original getSystemService call to report an error against
    */
-  private fun checkContextReference(
-      context: JavaContext,
-      element: UElement?,
-      call: UCallExpression,
-  ): Boolean {
+  private fun checkContextReference(context: JavaContext, element: UElement?, call: UCallExpression): Boolean {
     if (element == null) {
       return false
     }
@@ -196,12 +192,7 @@ class ServiceCastDetector : Detector(), SourceCodeScanner {
    *
    * Returns true if it finds and reports a problem.
    */
-  private fun checkWifiContextType(
-      context: JavaContext,
-      call: UCallExpression,
-      type: PsiType,
-      flagPlainContext: Boolean,
-  ): Boolean {
+  private fun checkWifiContextType(context: JavaContext, call: UCallExpression, type: PsiType, flagPlainContext: Boolean): Boolean {
     val evaluator = context.evaluator
     if (type is PsiClassType) {
       val psiClass = type.resolve()
@@ -256,50 +247,50 @@ class ServiceCastDetector : Detector(), SourceCodeScanner {
     /** Invalid cast to a type from the service constant */
     @JvmField
     val ISSUE: Issue =
-        Issue.create(
-            id = "ServiceCast",
-            briefDescription = "Wrong system service casts",
-            explanation =
-                """
+      Issue.create(
+        id = "ServiceCast",
+        briefDescription = "Wrong system service casts",
+        explanation =
+          """
           When you call `Context#getSystemService()`, the result is typically cast to \
           a specific interface. This lint check ensures that the cast is compatible with \
           the expected type of the return value.
           """,
-            category = Category.CORRECTNESS,
-            priority = 6,
-            severity = Severity.ERROR,
-            implementation = IMPLEMENTATION,
-            androidSpecific = true,
-        )
+        category = Category.CORRECTNESS,
+        priority = 6,
+        severity = Severity.ERROR,
+        implementation = IMPLEMENTATION,
+        androidSpecific = true,
+      )
 
     /** Using Wi-Fi manager from the wrong context */
     @JvmField
     val WIFI_MANAGER: Issue =
-        Issue.create(
-            id = "WifiManagerLeak",
-            briefDescription = "WifiManager Leak",
-            explanation =
-                """
+      Issue.create(
+        id = "WifiManagerLeak",
+        briefDescription = "WifiManager Leak",
+        explanation =
+          """
           On versions prior to Android N (24), initializing the `WifiManager` via \
           `Context#getSystemService` can cause a memory leak if the context is not \
           the application context. Change `context.getSystemService(...)` to \
           `context.getApplicationContext().getSystemService(...)`.
           """,
-            category = Category.CORRECTNESS,
-            priority = 6,
-            severity = Severity.ERROR,
-            implementation = IMPLEMENTATION,
-            androidSpecific = true,
-        )
+        category = Category.CORRECTNESS,
+        priority = 6,
+        severity = Severity.ERROR,
+        implementation = IMPLEMENTATION,
+        androidSpecific = true,
+      )
 
     /** Using Wi-Fi manager from the wrong context: unknown Context origin */
     @JvmField
     val WIFI_MANAGER_UNCERTAIN: Issue =
-        Issue.create(
-            id = "WifiManagerPotentialLeak",
-            briefDescription = "WifiManager Potential Leak",
-            explanation =
-                """
+      Issue.create(
+        id = "WifiManagerPotentialLeak",
+        briefDescription = "WifiManager Potential Leak",
+        explanation =
+          """
           On versions prior to Android N (24), initializing the `WifiManager` \
           via `Context#getSystemService` can cause a memory leak if the context \
           is not the application context.
@@ -311,12 +302,12 @@ class ServiceCastDetector : Detector(), SourceCodeScanner {
           you should consider changing `context.getSystemService(...)` to \
           `context.getApplicationContext().getSystemService(...)`.
           """,
-            category = Category.CORRECTNESS,
-            priority = 6,
-            severity = Severity.WARNING,
-            implementation = IMPLEMENTATION,
-            androidSpecific = true,
-        )
+        category = Category.CORRECTNESS,
+        priority = 6,
+        severity = Severity.WARNING,
+        implementation = IMPLEMENTATION,
+        androidSpecific = true,
+      )
 
     private const val GET_APPLICATION_CONTEXT = "getApplicationContext"
     private const val WIFI_SERVICE = "WIFI_SERVICE"

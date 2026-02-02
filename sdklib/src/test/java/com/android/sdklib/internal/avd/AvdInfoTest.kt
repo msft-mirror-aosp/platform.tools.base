@@ -17,24 +17,23 @@ package com.android.sdklib.internal.avd
 
 import com.android.sdklib.AndroidVersion
 import com.android.sdklib.SystemImageTags
-import com.android.sdklib.devices.Abi
 import com.google.common.truth.Truth.assertThat
-import org.junit.Test
 import java.nio.file.Paths
+import org.junit.Test
 
 class AvdInfoTest {
-    @Test
-    fun testEmptyPropertiesBehavior() {
-        val iniFile = Paths.get("my_device.ini")
-        val folder = Paths.get("my_device.avd")
-        val avd = AvdInfo(iniFile, folder, null, emptyMap())
+  @Test
+  fun testEmptyPropertiesBehavior() {
+    val iniFile = Paths.get("my_device.ini")
+    val folder = Paths.get("my_device.avd")
+    val avd = AvdInfo(iniFile, folder, null, emptyMap())
 
-        assertThat(avd.abiType).isNull()
-        assertThat(avd.displayName).isEqualTo("my device")
-        assertThat(avd.tag).isEqualTo(SystemImageTags.DEFAULT_TAG)
-        assertThat(avd.hasPlayStore()).isFalse()
-        assertThat(avd.androidVersion).isEqualTo(AndroidVersion.DEFAULT)
-        assertThat(avd.deviceManufacturer).isEmpty()
-        assertThat(avd.deviceName).isEmpty()
-    }
+    assertThat(avd.abiType).isNull()
+    assertThat(avd.displayName).isEqualTo("my device")
+    assertThat(avd.tag).isEqualTo(SystemImageTags.DEFAULT_TAG)
+    assertThat(avd.hasPlayStore()).isFalse()
+    assertThat(avd.androidVersion).isEqualTo(AndroidVersion.DEFAULT)
+    assertThat(avd.deviceManufacturer).isEmpty()
+    assertThat(avd.deviceName).isEmpty()
+  }
 }

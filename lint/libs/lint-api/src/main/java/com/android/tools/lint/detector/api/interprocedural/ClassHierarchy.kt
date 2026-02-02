@@ -48,9 +48,9 @@ class MutableClassHierarchy : ClassHierarchy {
 
   fun addMethod(subMethod: UMethod) {
     subMethod.javaPsi
-        .findSuperMethods()
-        .mapNotNull { it.navigationElement.toUElementOfType<UMethod>() }
-        .forEach { directOverrides.put(it, subMethod) }
+      .findSuperMethods()
+      .mapNotNull { it.navigationElement.toUElementOfType<UMethod>() }
+      .forEach { directOverrides.put(it, subMethod) }
   }
 }
 

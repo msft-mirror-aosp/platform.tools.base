@@ -149,14 +149,14 @@ abstract class DependencyDetector<T : DependencyDetector.DependencyIssue> : Dete
   }
 
   override fun checkDslPropertyAssignment(
-      context: GradleContext,
-      property: String,
-      value: String,
-      parent: String,
-      parentParent: String?,
-      propertyCookie: Any,
-      valueCookie: Any,
-      statementCookie: Any,
+    context: GradleContext,
+    property: String,
+    value: String,
+    parent: String,
+    parentParent: String?,
+    propertyCookie: Any,
+    valueCookie: Any,
+    statementCookie: Any,
   ) {
     val targets = reportCoordinates
     if (!context.driver.isIsolated() && targets == null) {
@@ -222,12 +222,7 @@ abstract class DependencyDetector<T : DependencyDetector.DependencyIssue> : Dete
     }
   }
 
-  private fun checkArtifactReference(
-      context: Context,
-      groupId: String?,
-      artifactId: String,
-      locationProvider: () -> Location,
-  ) {
+  private fun checkArtifactReference(context: Context, groupId: String?, artifactId: String, locationProvider: () -> Location) {
     groupId ?: return
 
     val full = context.isGlobalAnalysis()

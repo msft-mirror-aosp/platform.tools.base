@@ -43,68 +43,68 @@ class IfToWhenTestModeTest {
   fun testBasic() {
     @Language("kotlin")
     val kotlin =
-        """
-        @file:Suppress("ALL")
-        fun test(owner: String, name: String, desc: String): Int {
-            if (owner == "foo") {
-                println("here")
-            } else if (name == "bar") {
-                println("here2")
-                println("here3")
-            } else {
-                while (true) {
-                    if (owner == "baz") { // only if statements not within other if statements get nested
-                        println("here4")
-                        break
-                    }
-                }
-                println("fallback")
-            }
-            return if (owner.length < 5) {
-                0
-            } else {
-                owner.length
-            }
-        }
-        """
-            .trimIndent()
-            .trim()
+      """
+      @file:Suppress("ALL")
+      fun test(owner: String, name: String, desc: String): Int {
+          if (owner == "foo") {
+              println("here")
+          } else if (name == "bar") {
+              println("here2")
+              println("here3")
+          } else {
+              while (true) {
+                  if (owner == "baz") { // only if statements not within other if statements get nested
+                      println("here4")
+                      break
+                  }
+              }
+              println("fallback")
+          }
+          return if (owner.length < 5) {
+              0
+          } else {
+              owner.length
+          }
+      }
+      """
+        .trimIndent()
+        .trim()
 
     @Language("kotlin")
     val expected =
-        """
-        @file:Suppress("ALL")
-        fun test(owner: String, name: String, desc: String): Int {
-            when {
-            owner == "foo" -> {
-                println("here")
-            }
-            name == "bar" -> {
-                println("here2")
-                println("here3")
-            }
-            else -> {
-                while (true) {
-                    if (owner == "baz") { // only if statements not within other if statements get nested
-                        println("here4")
-                        break
-                    }
-                }
-                println("fallback")
-            }
-            }
-            return when {
-            owner.length < 5 -> {
-                0
-            }
-            else -> {
-                owner.length
-            }
-            }
-        }
-        """
-            .trimIndent()
-            .trim()
+      """
+      @file:Suppress("ALL")
+      fun test(owner: String, name: String, desc: String): Int {
+          when {
+          owner == "foo" -> {
+              println("here")
+          }
+          name == "bar" -> {
+              println("here2")
+              println("here3")
+          }
+          else -> {
+              while (true) {
+                  if (owner == "baz") { // only if statements not within other if statements get nested
+                      println("here4")
+                      break
+                  }
+              }
+              println("fallback")
+          }
+          }
+          return when {
+          owner.length < 5 -> {
+              0
+          }
+          else -> {
+              owner.length
+          }
+          }
+      }
+      """
+        .trimIndent()
+        .trim()
 
     val modified = convertToWhen(kotlin)
     assertEquals(expected, modified)
@@ -114,46 +114,46 @@ class IfToWhenTestModeTest {
   fun testJava() {
     @Language("java")
     val java =
-        """
-        package test.pkg;
-        import android.util.List;
-        @SuppressWarnings("ALL")
-        public class Test {
-            void test(int i) {
-                if (i == 5) {
-                    System.out.println("case 1");
-                } else if (i == 6) {
-                    System.out.println("case 2");
-                } else {
-                    System.out.println("case 3");
-                }
-            }
-        }
-        """
-            .trimIndent()
-            .trim()
+      """
+      package test.pkg;
+      import android.util.List;
+      @SuppressWarnings("ALL")
+      public class Test {
+          void test(int i) {
+              if (i == 5) {
+                  System.out.println("case 1");
+              } else if (i == 6) {
+                  System.out.println("case 2");
+              } else {
+                  System.out.println("case 3");
+              }
+          }
+      }
+      """
+        .trimIndent()
+        .trim()
 
     @Suppress("DanglingJavadoc", "PointlessBooleanExpression", "ConstantConditions")
     @Language("java")
     val expected =
-        """
-        package test.pkg;
-        import android.util.List;
-        @SuppressWarnings("ALL")
-        public class Test {
-            void test(int i) {
-                if (i == 5) {
-                    System.out.println("case 1");
-                } else if (i == 6) {
-                    System.out.println("case 2");
-                } else {
-                    System.out.println("case 3");
-                }
-            }
-        }
-        """
-            .trimIndent()
-            .trim()
+      """
+      package test.pkg;
+      import android.util.List;
+      @SuppressWarnings("ALL")
+      public class Test {
+          void test(int i) {
+              if (i == 5) {
+                  System.out.println("case 1");
+              } else if (i == 6) {
+                  System.out.println("case 2");
+              } else {
+                  System.out.println("case 3");
+              }
+          }
+      }
+      """
+        .trimIndent()
+        .trim()
     val modified = convertToSwitch(java)
     assertEquals(expected, modified)
   }
@@ -162,44 +162,44 @@ class IfToWhenTestModeTest {
   fun testKotlin2() {
     @Language("kotlin")
     val kotlin =
-        """
-        @file:Suppress("ALL")
-        package test.pkg
+      """
+      @file:Suppress("ALL")
+      package test.pkg
 
-        import android.os.Build
+      import android.os.Build
 
-        inline fun <T> T.applyForOreoOrAbove2(block: T.() -> Unit) {
-            return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                block()
-            } else {
-                error("Unexpected")
-            }
-        }
-        """
-            .trimIndent()
-            .trim()
+      inline fun <T> T.applyForOreoOrAbove2(block: T.() -> Unit) {
+          return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+              block()
+          } else {
+              error("Unexpected")
+          }
+      }
+      """
+        .trimIndent()
+        .trim()
 
     @Language("kotlin")
     val expected =
-        """
-        @file:Suppress("ALL")
-        package test.pkg
+      """
+      @file:Suppress("ALL")
+      package test.pkg
 
-        import android.os.Build
+      import android.os.Build
 
-        inline fun <T> T.applyForOreoOrAbove2(block: T.() -> Unit) {
-            return when {
-            Build.VERSION.SDK_INT >= Build.VERSION_CODES.O -> {
-                block()
-            }
-            else -> {
-                error("Unexpected")
-            }
-            }
-        }
-        """
-            .trimIndent()
-            .trim()
+      inline fun <T> T.applyForOreoOrAbove2(block: T.() -> Unit) {
+          return when {
+          Build.VERSION.SDK_INT >= Build.VERSION_CODES.O -> {
+              block()
+          }
+          else -> {
+              error("Unexpected")
+          }
+          }
+      }
+      """
+        .trimIndent()
+        .trim()
 
     val modified = convertToWhen(kotlin)
     assertEquals(expected, modified)

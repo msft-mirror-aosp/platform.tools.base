@@ -102,11 +102,11 @@ internal class PartialTestMode : TestMode(description = "Automatic Partial Analy
 
           val task = context.task
           val description =
-              try {
-                task.dirToProjectDescription[dir.canonicalFile]
-              } catch (ignore: IOException) {
-                task.dirToProjectDescription[dir]
-              } ?: continue
+            try {
+              task.dirToProjectDescription[dir.canonicalFile]
+            } catch (ignore: IOException) {
+              task.dirToProjectDescription[dir]
+            } ?: continue
           projects.add(description)
         }
 
@@ -116,21 +116,21 @@ internal class PartialTestMode : TestMode(description = "Automatic Partial Analy
   }
 
   override val diffExplanation: String =
-      """
-      Lint results computed provisionally do
-      not match those computed without provisional support enabled. This
-      means that the detector is not handling provisional support correctly,
-      which means that it will not work correctly as part of incremental
-      Gradle builds, where projects are now analyzed separately and the
-      results merged to generate the report.
+    """
+    Lint results computed provisionally do
+    not match those computed without provisional support enabled. This
+    means that the detector is not handling provisional support correctly,
+    which means that it will not work correctly as part of incremental
+    Gradle builds, where projects are now analyzed separately and the
+    results merged to generate the report.
 
-      Alternatively, if this difference is expected, you can set the
-      `testModes(...)` to include only one of these two, or turn off
-      the equality check altogether via `.expectIdenticalTestModeOutput(false)`.
-      You can then check each output by passing in a `testMode` parameter
-      to `expect`(...).
-      """
-          .trimIndent()
+    Alternatively, if this difference is expected, you can set the
+    `testModes(...)` to include only one of these two, or turn off
+    the equality check altogether via `.expectIdenticalTestModeOutput(false)`.
+    You can then check each output by passing in a `testMode` parameter
+    to `expect`(...).
+    """
+      .trimIndent()
 
   /**
    * Replaces the minSdkVersion in the given manifest with [minSdk] (unless it's -1) and the targetSdkVersion with [targetSdk] (unless it's
@@ -162,7 +162,7 @@ internal class PartialTestMode : TestMode(description = "Automatic Partial Analy
       try {
         currentMin = minSdkVersion.toIntOrNull() ?: 1
         currentTarget =
-            targetSdkVersion.toIntOrNull() ?: getApiByBuildCode(targetSdkVersion, false).let { if (it == -1) currentMin else it }
+          targetSdkVersion.toIntOrNull() ?: getApiByBuildCode(targetSdkVersion, false).let { if (it == -1) currentMin else it }
         // Coerce min to not be higher than current min,
         // and coerce target to fall between new min and current target
         newMinSdk = min(newMinSdk, currentMin)

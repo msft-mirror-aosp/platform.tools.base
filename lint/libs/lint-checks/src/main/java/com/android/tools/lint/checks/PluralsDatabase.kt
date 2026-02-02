@@ -24,11 +24,7 @@ import com.android.tools.lint.detector.api.formatList
 import java.util.Arrays
 import java.util.EnumSet
 
-abstract class PluralsDatabase(
-    private val languageCodes: Array<String>,
-    private val languageFlags: IntArray,
-    internal val apiLevel: Int,
-) {
+abstract class PluralsDatabase(private val languageCodes: Array<String>, private val languageFlags: IntArray, internal val apiLevel: Int) {
   private val plurals = mutableMapOf<String, EnumSet<Quantity>>()
 
   init {
@@ -137,12 +133,12 @@ abstract class PluralsDatabase(
     const val FLAG_MULTIPLE_TWO = 1 shl 7
 
     private val datasets =
-        mapOf(
-            VersionCodes.R to CLDR36Database,
-            VersionCodes.S to CLDR38Database,
-            VersionCodes.S_V2 to CLDR38Database,
-            VersionCodes.TIRAMISU to CLDR41Database,
-        )
+      mapOf(
+        VersionCodes.R to CLDR36Database,
+        VersionCodes.S to CLDR38Database,
+        VersionCodes.S_V2 to CLDR38Database,
+        VersionCodes.TIRAMISU to CLDR41Database,
+      )
 
     val OLDEST
       get() = CLDR36Database

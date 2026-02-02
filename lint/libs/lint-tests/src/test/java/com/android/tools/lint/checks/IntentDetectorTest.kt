@@ -27,9 +27,9 @@ class IntentDetectorTest : AbstractCheckTest() {
   fun testBasic() {
     // Regression test for https://issuetracker.google.com/36967533
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
                 package test.pkg;
 
                 import android.content.Intent;
@@ -102,12 +102,12 @@ class IntentDetectorTest : AbstractCheckTest() {
                             }
                         }
                 }"""
-                )
-                .indented()
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented()
+      )
+      .run()
+      .expect(
+        """
         src/test/pkg/IntentTest.java:18: Warning: Calling setType after calling setData will clear the data: Call setDataAndType instead? [IntentReset]
                     intent.setType(type); // ERROR 1.1
                            ~~~~~~~~~~~~~
@@ -122,16 +122,16 @@ class IntentDetectorTest : AbstractCheckTest() {
                     ~~~~~~~~~~~~~~~~~~~~
         0 errors, 2 warnings
         """
-        )
+      )
   }
 
   fun testConstructor() {
     // URI specified in Intent constructor
     // Regression test for https://issuetracker.google.com/73183202
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
                 package test.pkg;
 
                 import android.app.Activity;
@@ -149,12 +149,12 @@ class IntentDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-                )
-                .indented()
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented()
+      )
+      .run()
+      .expect(
+        """
         src/test/pkg/IntentReset.java:12: Warning: Calling setType after setting URI in Intent constructor will clear the data: Call setDataAndType instead? [IntentReset]
                 myIntent.setType("text/plain");
                          ~~~~~~~~~~~~~~~~~~~~~
@@ -163,15 +163,15 @@ class IntentDetectorTest : AbstractCheckTest() {
                                                                  ~~~
         0 errors, 1 warning
         """
-        )
+      )
   }
 
   fun testChained() {
     // Regression test for issue 205738500
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
                 package test.pkg;
 
                 import android.content.Intent;
@@ -185,12 +185,12 @@ class IntentDetectorTest : AbstractCheckTest() {
                         }
 
                 }"""
-                )
-                .indented()
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented()
+      )
+      .run()
+      .expect(
+        """
         src/test/pkg/IntentTest.java:9: Warning: Calling setType after calling setData will clear the data: Call setDataAndType instead? [IntentReset]
                     intent.setData(uri).setFlags(0).setType(type); // ERROR 1
                                                     ~~~~~~~~~~~~~
@@ -205,7 +205,7 @@ class IntentDetectorTest : AbstractCheckTest() {
                     ~~~~~~~~~~~~~~~~~~~~
         0 errors, 2 warnings
         """
-        )
+      )
   }
 
   fun testConstructorDifferentBlockKotlin() {
@@ -213,9 +213,9 @@ class IntentDetectorTest : AbstractCheckTest() {
     // When the data is set in the constructor, it does not matter that the type is set in a
     // different block; we can still report it.
     lint()
-        .files(
-            kotlin(
-                    """
+      .files(
+        kotlin(
+            """
             package com.example.app
 
             import android.content.Intent
@@ -228,17 +228,17 @@ class IntentDetectorTest : AbstractCheckTest() {
             }
 
             """
-                )
-                .indented()
-        )
-        // Changing to:
-        //   (type) = "image/*"
-        // makes this no longer get visited as a call to setType. We could probably handle this case
-        // in DataFlowAnalyzer, but it is probably not worth it.
-        .skipTestModes(TestMode.PARENTHESIZED)
-        .run()
-        .expect(
-            """
+          )
+          .indented()
+      )
+      // Changing to:
+      //   (type) = "image/*"
+      // makes this no longer get visited as a call to setType. We could probably handle this case
+      // in DataFlowAnalyzer, but it is probably not worth it.
+      .skipTestModes(TestMode.PARENTHESIZED)
+      .run()
+      .expect(
+        """
         src/com/example/app/test.kt:8: Warning: Calling setType after setting URI in Intent constructor will clear the data: Call setDataAndType instead? [IntentReset]
             type = "image/*"
             ~~~~~~~~~~~~~~~~
@@ -247,7 +247,7 @@ class IntentDetectorTest : AbstractCheckTest() {
                                                    ~~~
         0 errors, 1 warning
         """
-        )
+      )
   }
 
   fun testConstructorDifferentBlockJava() {
@@ -255,9 +255,9 @@ class IntentDetectorTest : AbstractCheckTest() {
     // When the data is set in the constructor, it does not matter that the type is set
     // (conditionally) in a different block; we can still report it.
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
             package com.example.app;
 
             import android.app.Activity;
@@ -276,12 +276,12 @@ class IntentDetectorTest : AbstractCheckTest() {
                 }
             }
             """
-                )
-                .indented()
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented()
+      )
+      .run()
+      .expect(
+        """
         src/com/example/app/MyActivity.java:13: Warning: Calling setType after setting URI in Intent constructor will clear the data: Call setDataAndType instead? [IntentReset]
                   myIntent.setType("text/plain");
                            ~~~~~~~~~~~~~~~~~~~~~
@@ -290,6 +290,6 @@ class IntentDetectorTest : AbstractCheckTest() {
                                                                  ~~~
         0 errors, 1 warning
         """
-        )
+      )
   }
 }

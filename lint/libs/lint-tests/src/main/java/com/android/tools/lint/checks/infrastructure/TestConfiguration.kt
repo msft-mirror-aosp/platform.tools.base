@@ -28,11 +28,7 @@ import org.junit.Assert.fail
 
 class TestConfiguration(private val task: TestLintTask, configurations: ConfigurationHierarchy) : Configuration(configurations) {
 
-  override fun getDefinedSeverity(
-      issue: Issue,
-      source: Configuration,
-      visibleDefault: Severity,
-  ): Severity {
+  override fun getDefinedSeverity(issue: Issue, source: Configuration, visibleDefault: Severity): Severity {
     val override = overrideSeverity(task, issue, visibleDefault)
     if (override != null) {
       return override
@@ -52,11 +48,7 @@ class TestConfiguration(private val task: TestLintTask, configurations: Configur
     return if (task.checkedIssues.contains(issue)) getNonIgnoredSeverity(visibleDefault, issue) else Severity.IGNORE
   }
 
-  override fun addConfiguredIssues(
-      targetMap: MutableMap<String, Severity>,
-      registry: IssueRegistry,
-      specificOnly: Boolean,
-  ) {
+  override fun addConfiguredIssues(targetMap: MutableMap<String, Severity>, registry: IssueRegistry, specificOnly: Boolean) {
     parent?.addConfiguredIssues(targetMap, registry, specificOnly)
 
     for (issue in registry.issues) {
@@ -105,14 +97,14 @@ class TestConfiguration(private val task: TestLintTask, configurations: Configur
 
 fun overrideSeverity(task: TestLintTask, issue: Issue, default: Severity): Severity? {
   val enabled =
-      when (issue) {
-        IssueRegistry.LINT_ERROR,
-        IssueRegistry.LINT_WARNING -> task.allowSystemErrors || !task.allowCompilationErrors
-        IssueRegistry.PARSER_ERROR -> !task.allowSystemErrors
-        IssueRegistry.OBSOLETE_LINT_CHECK -> !task.allowObsoleteLintChecks
-        IssueRegistry.UNKNOWN_ISSUE_ID -> true
-        else -> null
-      }
+    when (issue) {
+      IssueRegistry.LINT_ERROR,
+      IssueRegistry.LINT_WARNING -> task.allowSystemErrors || !task.allowCompilationErrors
+      IssueRegistry.PARSER_ERROR -> !task.allowSystemErrors
+      IssueRegistry.OBSOLETE_LINT_CHECK -> !task.allowObsoleteLintChecks
+      IssueRegistry.UNKNOWN_ISSUE_ID -> true
+      else -> null
+    }
   return if (enabled != null) {
     if (enabled) default else Severity.IGNORE
   } else {

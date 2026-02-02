@@ -29,13 +29,13 @@ import java.util.EnumSet
  * set to for example affect how the lint check uses a particular API it depends on.
  */
 open class TestMode(
-    /** Display name of this test type. Included in diffs if the output varies by test type to annotate the two output versions. */
-    open val description: String,
-    /**
-     * The qualified name of the canonical field referencing this test mode. This is used by test output to provide guidance on how to run
-     * with or without this test mode.
-     */
-    open val fieldName: String,
+  /** Display name of this test type. Included in diffs if the output varies by test type to annotate the two output versions. */
+  open val description: String,
+  /**
+   * The qualified name of the canonical field referencing this test mode. This is used by test output to provide guidance on how to run
+   * with or without this test mode.
+   */
+  open val fieldName: String,
 ) : Iterable<TestMode> {
   /**
    * Folder name to write the test project into. By passing the same name for multiple test types they can share the same install (since
@@ -109,10 +109,10 @@ open class TestMode(
     }
 
     fun deleteCompiledSources(
-        projects: Collection<ProjectDescription>,
-        context: TestModeContext,
-        deleteSourceFiles: Boolean = false,
-        deleteBinaryFiles: Boolean = false,
+      projects: Collection<ProjectDescription>,
+      context: TestModeContext,
+      deleteSourceFiles: Boolean = false,
+      deleteBinaryFiles: Boolean = false,
     ) {
       // Delete sources for any compiled files since when analyzing a project
       // you can only see the local sources.
@@ -173,98 +173,98 @@ open class TestMode(
 
     @JvmField
     val BYTECODE_ONLY =
-        object : TestMode("Bytecode Only", "TestMode.BYTECODE_ONLY") {
-          override val folderName: String = "bytecode"
+      object : TestMode("Bytecode Only", "TestMode.BYTECODE_ONLY") {
+        override val folderName: String = "bytecode"
 
-          override fun applies(context: TestModeContext): Boolean {
-            return context.projects.any {
-              it.files.any { file -> file is BytecodeTestFile && file.type == BytecodeTestFile.Type.SOURCE_AND_BYTECODE }
-            }
+        override fun applies(context: TestModeContext): Boolean {
+          return context.projects.any {
+            it.files.any { file -> file is BytecodeTestFile && file.type == BytecodeTestFile.Type.SOURCE_AND_BYTECODE }
           }
-
-          override fun before(context: TestModeContext): Any? {
-            deleteCompiledSources(context.projects, context, deleteSourceFiles = true)
-            return null
-          }
-
-          override val diffExplanation: String =
-              """
-              The unit test was re-run with only the bytecode from the `compiled()` test files,
-              not the sources, and the output did not match. This is sometimes expected (since
-              it's common to include source details in error messages), and in those cases, you
-              can set the `testModes(...)` to include only one of these two, or turn off
-              the equality check altogether via `.expectIdenticalTestModeOutput(false)`.
-              You can then check each output by passing in a `testMode` parameter
-              to `expect`(...).
-              """
-                  .trimIndent()
         }
+
+        override fun before(context: TestModeContext): Any? {
+          deleteCompiledSources(context.projects, context, deleteSourceFiles = true)
+          return null
+        }
+
+        override val diffExplanation: String =
+          """
+          The unit test was re-run with only the bytecode from the `compiled()` test files,
+          not the sources, and the output did not match. This is sometimes expected (since
+          it's common to include source details in error messages), and in those cases, you
+          can set the `testModes(...)` to include only one of these two, or turn off
+          the equality check altogether via `.expectIdenticalTestModeOutput(false)`.
+          You can then check each output by passing in a `testMode` parameter
+          to `expect`(...).
+          """
+            .trimIndent()
+      }
 
     @JvmField
     val SOURCE_ONLY =
-        object : TestMode("Source Only", "TestMode.SOURCE_ONLY") {
-          override val folderName: String = "source"
+      object : TestMode("Source Only", "TestMode.SOURCE_ONLY") {
+        override val folderName: String = "source"
 
-          override fun applies(context: TestModeContext): Boolean {
-            // Same check as for BYTECODE_ONLY: Do we have at least one compiled file with
-            // both source and bytecode?
-            return BYTECODE_ONLY.applies(context)
-          }
-
-          override fun before(context: TestModeContext): Any? {
-            deleteCompiledSources(context.projects, context, deleteBinaryFiles = true)
-            return null
-          }
-
-          override val diffExplanation: String =
-              """
-              The unit test was re-run with only the source files from the `compiled()` test files,
-              not the bytecode, and the output did not match. This is sometimes expected,
-              and in those cases, you can set the `testModes(...)` to include only one of these two,
-              or turn off the equality check altogether via `.expectIdenticalTestModeOutput(false)`.
-              You can then check each output by passing in a `testMode` parameter
-              to `expect`(...).
-              """
-                  .trimIndent()
+        override fun applies(context: TestModeContext): Boolean {
+          // Same check as for BYTECODE_ONLY: Do we have at least one compiled file with
+          // both source and bytecode?
+          return BYTECODE_ONLY.applies(context)
         }
+
+        override fun before(context: TestModeContext): Any? {
+          deleteCompiledSources(context.projects, context, deleteBinaryFiles = true)
+          return null
+        }
+
+        override val diffExplanation: String =
+          """
+          The unit test was re-run with only the source files from the `compiled()` test files,
+          not the bytecode, and the output did not match. This is sometimes expected,
+          and in those cases, you can set the `testModes(...)` to include only one of these two,
+          or turn off the equality check altogether via `.expectIdenticalTestModeOutput(false)`.
+          You can then check each output by passing in a `testMode` parameter
+          to `expect`(...).
+          """
+            .trimIndent()
+      }
 
     @JvmField
     val RESOURCE_REPOSITORIES =
-        object : TestMode("AGP Resource Repository", "TestMode.RESOURCE_REPOSITORIES") {
+      object : TestMode("AGP Resource Repository", "TestMode.RESOURCE_REPOSITORIES") {
 
-          override fun applies(context: TestModeContext): Boolean {
-            return context.task.requestedResourceRepository
-          }
-
-          override fun before(context: TestModeContext): Any? {
-            context.task.forceAgpResourceRepository = true
-            return null
-          }
-
-          override fun after(context: TestModeContext) {
-            context.task.forceAgpResourceRepository = false
-          }
-
-          override val diffExplanation: String =
-              """
-              The unit test output varies whe using lint's resource
-              repository (optimized for lint's use-cases) and the AGP
-              resource repository. This is a bug in lint. Please report it.
-              """
-                  .trimIndent()
-
-          override fun sameOutput(expected: String, actual: String, type: OutputKind): Boolean {
-            // Allow differences in locations on the same line (e.g. one repository may point to
-            // the whole element, the other a specific attribute
-            return super.sameOutput(transformOutput(expected), transformOutput(actual), type)
-          }
-
-          fun transformOutput(s: String): String = s.replace("~", "").trimLines()
-
-          private fun String.trimLines(): String {
-            return this.lineSequence().map { it.trimEnd() }.joinToString("\n")
-          }
+        override fun applies(context: TestModeContext): Boolean {
+          return context.task.requestedResourceRepository
         }
+
+        override fun before(context: TestModeContext): Any? {
+          context.task.forceAgpResourceRepository = true
+          return null
+        }
+
+        override fun after(context: TestModeContext) {
+          context.task.forceAgpResourceRepository = false
+        }
+
+        override val diffExplanation: String =
+          """
+          The unit test output varies whe using lint's resource
+          repository (optimized for lint's use-cases) and the AGP
+          resource repository. This is a bug in lint. Please report it.
+          """
+            .trimIndent()
+
+        override fun sameOutput(expected: String, actual: String, type: OutputKind): Boolean {
+          // Allow differences in locations on the same line (e.g. one repository may point to
+          // the whole element, the other a specific attribute
+          return super.sameOutput(transformOutput(expected), transformOutput(actual), type)
+        }
+
+        fun transformOutput(s: String): String = s.replace("~", "").trimLines()
+
+        private fun String.trimLines(): String {
+          return this.lineSequence().map { it.trimEnd() }.joinToString("\n")
+        }
+      }
 
     /**
      * Provisional testing support which attempts to find errors in partial analysis handling from detectors. For single project tests, it
@@ -305,32 +305,32 @@ open class TestMode(
 
     @JvmField
     val SOURCE_TRANSFORMATION_GROUP: TestMode =
-        UastSourceTransformationTestModeGroup(
-            PARENTHESIZED,
-            FULLY_QUALIFIED,
-            REORDER_ARGUMENTS,
-            BODY_REMOVAL,
-            TYPE_ALIAS,
-            IMPORT_ALIAS,
-            IF_TO_WHEN,
-            JVM_OVERLOADS,
-            WHITESPACE,
-        )
+      UastSourceTransformationTestModeGroup(
+        PARENTHESIZED,
+        FULLY_QUALIFIED,
+        REORDER_ARGUMENTS,
+        BODY_REMOVAL,
+        TYPE_ALIAS,
+        IMPORT_ALIAS,
+        IF_TO_WHEN,
+        JVM_OVERLOADS,
+        WHITESPACE,
+      )
 
     /** Returns all default included test modes. */
     @JvmStatic
     fun values(): List<TestMode> =
-        listOf(
-            DEFAULT,
-            RESOURCE_REPOSITORIES,
-            PARTIAL,
-            MODULE_RESOURCES,
-            BYTECODE_ONLY,
-            SOURCE_ONLY,
-            CDATA,
-            SOURCE_TRANSFORMATION_GROUP,
-            SUPPRESSIBLE,
-        )
+      listOf(
+        DEFAULT,
+        RESOURCE_REPOSITORIES,
+        PARTIAL,
+        MODULE_RESOURCES,
+        BYTECODE_ONLY,
+        SOURCE_ONLY,
+        CDATA,
+        SOURCE_TRANSFORMATION_GROUP,
+        SUPPRESSIBLE,
+      )
   }
 
   open fun partition(context: TestModeContext): List<TestMode> = listOf(this)
@@ -343,13 +343,13 @@ open class TestMode(
    * test modes which extend [TestMode] and implement its methods.
    */
   class TestModeContext(
-      val task: TestLintTask,
-      val rootDir: File,
-      val projects: List<ProjectDescription>,
-      val projectFolders: List<File>,
-      val clientState: Any?,
-      val driver: LintDriver? = null,
-      val lintContext: Context? = null,
-      val results: Map<TestMode, TestResultState>? = null,
+    val task: TestLintTask,
+    val rootDir: File,
+    val projects: List<ProjectDescription>,
+    val projectFolders: List<File>,
+    val clientState: Any?,
+    val driver: LintDriver? = null,
+    val lintContext: Context? = null,
+    val results: Map<TestMode, TestResultState>? = null,
   )
 }

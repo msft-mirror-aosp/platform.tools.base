@@ -92,10 +92,10 @@ class NonConstantResourceIdDetector : Detector(), SourceCodeScanner {
     private fun reportNonConstantUsage(element: UElement, where: String) {
       val location = context.getLocation(element)
       context.report(
-          NON_CONSTANT_RESOURCE_ID,
-          element,
-          location,
-          "Resource IDs will be non-final by default in Android Gradle Plugin version 8.0, " + "avoid using them $where",
+        NON_CONSTANT_RESOURCE_ID,
+        element,
+        location,
+        "Resource IDs will be non-final by default in Android Gradle Plugin version 8.0, " + "avoid using them $where",
       )
     }
 
@@ -117,21 +117,21 @@ class NonConstantResourceIdDetector : Detector(), SourceCodeScanner {
   companion object {
     @JvmField
     val NON_CONSTANT_RESOURCE_ID =
-        Issue.create(
-            id = "NonConstantResourceId",
-            briefDescription = "Checks use of resource IDs in places requiring constants",
-            explanation =
-                """
+      Issue.create(
+        id = "NonConstantResourceId",
+        briefDescription = "Checks use of resource IDs in places requiring constants",
+        explanation =
+          """
                 Avoid the usage of resource IDs where constant expressions are required.
 
                 A future version of the Android Gradle Plugin will generate R classes with \
                 non-constant IDs in order to improve the performance of incremental compilation.
                 """,
-            category = Category.CORRECTNESS,
-            priority = 5,
-            severity = Severity.WARNING,
-            androidSpecific = true,
-            implementation = Implementation(NonConstantResourceIdDetector::class.java, Scope.JAVA_FILE_SCOPE),
-        )
+        category = Category.CORRECTNESS,
+        priority = 5,
+        severity = Severity.WARNING,
+        androidSpecific = true,
+        implementation = Implementation(NonConstantResourceIdDetector::class.java, Scope.JAVA_FILE_SCOPE),
+      )
   }
 }

@@ -37,28 +37,28 @@ class CategoryTest : TestCase() {
     categories.sort()
 
     assertEquals(
-        "" +
-            "Lint\n" +
-            "Correctness\n" +
-            "Correctness:Messages\n" +
-            "Correctness:Chrome OS\n" +
-            "Security\n" +
-            "Compliance\n" +
-            "Performance\n" +
-            "Performance:Application Size\n" +
-            "Usability:Typography\n" +
-            "Usability:Icons\n" +
-            "Usability\n" +
-            "Productivity\n" +
-            "Accessibility\n" +
-            "Internationalization\n" +
-            "Internationalization:Bidirectional Text\n" +
-            "Testing\n" +
-            "Interoperability\n" +
-            "Interoperability:Kotlin Interoperability\n" +
-            "Interoperability:Java Interoperability\n" +
-            "Lint Implementation Issues",
-        Joiner.on("\n").join(categories),
+      "" +
+        "Lint\n" +
+        "Correctness\n" +
+        "Correctness:Messages\n" +
+        "Correctness:Chrome OS\n" +
+        "Security\n" +
+        "Compliance\n" +
+        "Performance\n" +
+        "Performance:Application Size\n" +
+        "Usability:Typography\n" +
+        "Usability:Icons\n" +
+        "Usability\n" +
+        "Productivity\n" +
+        "Accessibility\n" +
+        "Internationalization\n" +
+        "Internationalization:Bidirectional Text\n" +
+        "Testing\n" +
+        "Interoperability\n" +
+        "Interoperability:Kotlin Interoperability\n" +
+        "Interoperability:Java Interoperability\n" +
+        "Lint Implementation Issues",
+      Joiner.on("\n").join(categories),
     )
   }
 

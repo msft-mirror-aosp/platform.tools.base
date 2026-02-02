@@ -24,9 +24,9 @@ class ForkJoinPoolDetectorTest {
   @Test
   fun testProblems() {
     studioLint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
                     package test.pkg;
                     import java.util.concurrent.Executor;
                     import java.util.concurrent.ForkJoinPool;
@@ -41,13 +41,13 @@ class ForkJoinPoolDetectorTest {
                         }
                     }
                 """
-                )
-                .indented()
-        )
-        .issues(ForkJoinPoolDetector.COMMON_FJ_POOL, ForkJoinPoolDetector.NEW_FJ_POOL)
-        .run()
-        .expect(
-            """
+          )
+          .indented()
+      )
+      .issues(ForkJoinPoolDetector.COMMON_FJ_POOL, ForkJoinPoolDetector.NEW_FJ_POOL)
+      .run()
+      .expect(
+        """
                 src/test/pkg/Test.java:9: Error: Avoid using common ForkJoinPool, directly or indirectly (for example via CompletableFuture). It has a limited set of threads on some machines which leads to hangs. See go/do-not-freeze. [CommonForkJoinPool]
                         ForkJoinPool.commonPool(); // WARN
                                      ~~~~~~~~~~
@@ -56,6 +56,6 @@ class ForkJoinPoolDetectorTest {
                         ~~~~~~~~~~~~~~~~~~
                 2 errors, 0 warnings
                 """
-        )
+      )
   }
 }

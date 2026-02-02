@@ -49,30 +49,10 @@ class TomlUtilitiesTest {
     GradleDetector.reservedQuickfixNames = mutableMapOf("libraries" to mutableSetOf("foo", "foo-v10"))
     libraryName("google-foo-v10", "com.google:foo:1.0", includeVersions = true)
     GradleDetector.reservedQuickfixNames =
-        mutableMapOf(
-            "libraries" to
-                mutableSetOf(
-                    "foo",
-                    "foo-v10",
-                    "google-foo",
-                    "google-foo-v10",
-                    "com-google-foo",
-                    "com-google-foo-v10",
-                )
-        )
+      mutableMapOf("libraries" to mutableSetOf("foo", "foo-v10", "google-foo", "google-foo-v10", "com-google-foo", "com-google-foo-v10"))
     libraryName("com-google-foo2", "com.google:foo:1.0")
     GradleDetector.reservedQuickfixNames =
-        mutableMapOf(
-            "libraries" to
-                mutableSetOf(
-                    "foo",
-                    "foo-v10",
-                    "google-foo",
-                    "google-foo-v10",
-                    "com-google-foo",
-                    "com-google-foo-v10",
-                )
-        )
+      mutableMapOf("libraries" to mutableSetOf("foo", "foo-v10", "google-foo", "google-foo-v10", "com-google-foo", "com-google-foo-v10"))
     libraryName("com-google-foo-v10-x2", "com.google:foo:1.0", includeVersions = true)
   }
 
@@ -90,68 +70,57 @@ class TomlUtilitiesTest {
     // If there is a preferred version variable, use it -- unless it exists, or we allow reuse
     versionName("myVariable", "com.google:foo:1.0", versionVariable = "myVariable")
     versionName("foo", "com.google:foo:1.0", "myVariable", versionVariable = "myVariable")
-    versionName(
-        "myVariable",
-        "com.google:foo:1.0",
-        "myVariable",
-        versionVariable = "myVariable",
-        allowExistingVersionVar = true,
-    )
+    versionName("myVariable", "com.google:foo:1.0", "myVariable", versionVariable = "myVariable", allowExistingVersionVar = true)
   }
 
   // Test fixtures below
 
-  private fun libraryName(
-      expected: String,
-      coordinateString: String,
-      vararg variableNames: String,
-      includeVersions: Boolean = false,
-  ) {
+  private fun libraryName(expected: String, coordinateString: String, vararg variableNames: String, includeVersions: Boolean = false) {
     check(
-        expected,
-        coordinateString,
-        { dependency, libraries, include, _, _ -> pickLibraryVariableName(dependency, libraries, include) },
-        includeVersions,
-        null,
-        false,
-        *variableNames,
+      expected,
+      coordinateString,
+      { dependency, libraries, include, _, _ -> pickLibraryVariableName(dependency, libraries, include) },
+      includeVersions,
+      null,
+      false,
+      *variableNames,
     )
   }
 
   private fun versionName(
-      expected: String,
-      coordinateString: String,
-      vararg variableNames: String,
-      includeVersions: Boolean = false,
-      versionVariable: String? = null,
-      allowExistingVersionVar: Boolean = false,
+    expected: String,
+    coordinateString: String,
+    vararg variableNames: String,
+    includeVersions: Boolean = false,
+    versionVariable: String? = null,
+    allowExistingVersionVar: Boolean = false,
   ) {
     check(
-        expected,
-        coordinateString,
-        { gc, map, _, _, _ -> pickVersionVariableName(gc, map, versionVariable, allowExistingVersionVar) },
-        includeVersions,
-        versionVariable,
-        allowExistingVersionVar,
-        *variableNames,
+      expected,
+      coordinateString,
+      { gc, map, _, _, _ -> pickVersionVariableName(gc, map, versionVariable, allowExistingVersionVar) },
+      includeVersions,
+      versionVariable,
+      allowExistingVersionVar,
+      *variableNames,
     )
   }
 
   private fun check(
-      expected: String,
-      coordinateString: String,
-      suggestName:
-          (
-              dependency: Dependency,
-              libraryMap: Map<String, LintTomlValue>,
-              includeVersionInKey: Boolean,
-              preferred: String?,
-              allowExisting: Boolean,
-          ) -> String,
-      includeVersions: Boolean,
-      versionVariable: String?,
-      allowExisting: Boolean,
-      vararg variableNames: String,
+    expected: String,
+    coordinateString: String,
+    suggestName:
+      (
+        dependency: Dependency,
+        libraryMap: Map<String, LintTomlValue>,
+        includeVersionInKey: Boolean,
+        preferred: String?,
+        allowExisting: Boolean,
+      ) -> String,
+    includeVersions: Boolean,
+    versionVariable: String?,
+    allowExisting: Boolean,
+    vararg variableNames: String,
   ) {
     val dependency = Dependency.parse(coordinateString)
     val map = LinkedHashMap<String, LintTomlValue>()

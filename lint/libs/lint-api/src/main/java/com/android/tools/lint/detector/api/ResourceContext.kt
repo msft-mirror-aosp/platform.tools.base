@@ -35,12 +35,12 @@ import java.io.File
  *   your code for the next tools release.**
  */
 open class ResourceContext(
-    driver: LintDriver,
-    project: Project,
-    main: Project?,
-    file: File,
-    val resourceFolderType: ResourceFolderType?,
-    contents: CharSequence?,
+  driver: LintDriver,
+  project: Project,
+  main: Project?,
+  file: File,
+  val resourceFolderType: ResourceFolderType?,
+  contents: CharSequence?,
 ) : Context(driver, project, main, file, contents) {
   private var folderConfiguration: FolderConfiguration? = null
 

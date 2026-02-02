@@ -35,35 +35,35 @@ fun <T> unboundedSetOf(vararg elements: T): UnboundedSet<T> = persistentSetOf(*e
 fun <T> unboundedSetOfAll(): UnboundedSet<T> = null
 
 infix fun <T> UnboundedSet<T>.isSubsetOf(that: UnboundedSet<T>) =
-    when {
-      that == null -> true
-      this == null -> false
-      else -> that.containsAll(this)
-    }
+  when {
+    that == null -> true
+    this == null -> false
+    else -> that.containsAll(this)
+  }
 
 infix fun <T> UnboundedSet<T>.intersectedWith(that: UnboundedSet<T>): UnboundedSet<T> =
-    when {
-      this != null && that != null -> this intersect that
-      else -> this ?: that
-    }
+  when {
+    this != null && that != null -> this intersect that
+    else -> this ?: that
+  }
 
 infix fun <T> UnboundedSet<T>.unionedWith(that: UnboundedSet<T>): UnboundedSet<T> =
-    when {
-      this != null && that != null -> this + that
-      else -> null
-    }
+  when {
+    this != null && that != null -> this + that
+    else -> null
+  }
 
 private val possibilityLattice =
-    object : Lattice<UnboundedSet<Nothing>> {
-      override val bottom = persistentSetOf<Nothing>()
-      override val top = null
+  object : Lattice<UnboundedSet<Nothing>> {
+    override val bottom = persistentSetOf<Nothing>()
+    override val top = null
 
-      override fun meetOf(first: UnboundedSet<Nothing>, second: UnboundedSet<Nothing>) = first intersectedWith second
+    override fun meetOf(first: UnboundedSet<Nothing>, second: UnboundedSet<Nothing>) = first intersectedWith second
 
-      override fun joinOf(first: UnboundedSet<Nothing>, second: UnboundedSet<Nothing>) = first unionedWith second
+    override fun joinOf(first: UnboundedSet<Nothing>, second: UnboundedSet<Nothing>) = first unionedWith second
 
-      override fun precede(first: UnboundedSet<Nothing>, second: UnboundedSet<Nothing>) = first isSubsetOf second
-    }
+    override fun precede(first: UnboundedSet<Nothing>, second: UnboundedSet<Nothing>) = first isSubsetOf second
+  }
 
 private val constraintLattice = possibilityLattice.dual()
 

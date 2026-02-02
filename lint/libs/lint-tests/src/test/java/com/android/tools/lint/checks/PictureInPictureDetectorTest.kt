@@ -24,10 +24,10 @@ class PictureInPictureDetectorTest : AbstractCheckTest() {
 
   fun testDocumentationExample() {
     lint()
-        .files(
-            androidManifest,
-            kotlin(
-                    """
+      .files(
+        androidManifest,
+        kotlin(
+            """
             package test.pkg
 
             import android.app.Activity
@@ -38,26 +38,26 @@ class PictureInPictureDetectorTest : AbstractCheckTest() {
               }
             }
             """
-                )
-                .indented(),
-            enterPipModeStub,
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+        enterPipModeStub,
+      )
+      .run()
+      .expect(
+        """
         AndroidManifest.xml:9: Warning: An activity in this app supports picture-in-picture and the targetSdkVersion is 31 or above; it is therefore strongly recommended to call both setAutoEnterEnabled(true) and setSourceRectHint(...) [PictureInPictureIssue]
             <application
              ~~~~~~~~~~~
         0 errors, 1 warnings
       """
-        )
+      )
   }
 
   fun testTargetSdkVersion() {
     lint()
-        .files(
-            manifest(
-                    """
+      .files(
+        manifest(
+            """
             <manifest
               package="test.pkg"
               xmlns:android="http://schemas.android.com/apk/res/android">
@@ -87,10 +87,10 @@ class PictureInPictureDetectorTest : AbstractCheckTest() {
 
             </manifest>
             """
-                )
-                .indented(),
-            kotlin(
-                    """
+          )
+          .indented(),
+        kotlin(
+            """
             package test.pkg
 
             import android.app.Activity
@@ -101,20 +101,20 @@ class PictureInPictureDetectorTest : AbstractCheckTest() {
               }
             }
             """
-                )
-                .indented(),
-            enterPipModeStub,
-        )
-        .run()
-        .expectClean()
+          )
+          .indented(),
+        enterPipModeStub,
+      )
+      .run()
+      .expectClean()
   }
 
   fun testForNewPipApproachUsedCorrectly() {
     lint()
-        .files(
-            androidManifest,
-            kotlin(
-                    """
+      .files(
+        androidManifest,
+        kotlin(
+            """
             package test.pkg
 
             import android.app.Activity
@@ -130,22 +130,22 @@ class PictureInPictureDetectorTest : AbstractCheckTest() {
               }
             }
             """
-                )
-                .indented(),
-            enterPipModeStub,
-            pipParamsBuilderStub,
-            rectStub,
-        )
-        .run()
-        .expectClean()
+          )
+          .indented(),
+        enterPipModeStub,
+        pipParamsBuilderStub,
+        rectStub,
+      )
+      .run()
+      .expectClean()
   }
 
   fun testForNewPipApproachAlmostUsedCorrectly() {
     lint()
-        .files(
-            androidManifest,
-            kotlin(
-                    """
+      .files(
+        androidManifest,
+        kotlin(
+            """
             package test.pkg
 
             import android.app.Activity
@@ -161,28 +161,28 @@ class PictureInPictureDetectorTest : AbstractCheckTest() {
               }
             }
             """
-                )
-                .indented(),
-            enterPipModeStub,
-            pipParamsBuilderStub,
-            rectStub,
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+        enterPipModeStub,
+        pipParamsBuilderStub,
+        rectStub,
+      )
+      .run()
+      .expect(
+        """
           AndroidManifest.xml:9: Warning: An activity in this app supports picture-in-picture and the targetSdkVersion is 31 or above; it is therefore strongly recommended to call both setAutoEnterEnabled(true) and setSourceRectHint(...) [PictureInPictureIssue]
               <application
                ~~~~~~~~~~~
           0 errors, 1 warnings
         """
-        )
+      )
   }
 
   fun testForNoPipActivity() {
     lint()
-        .files(
-            manifest(
-                    """
+      .files(
+        manifest(
+            """
             <manifest
               package="test.pkg"
               xmlns:android="http://schemas.android.com/apk/res/android">
@@ -211,10 +211,10 @@ class PictureInPictureDetectorTest : AbstractCheckTest() {
 
             </manifest>
             """
-                )
-                .indented(),
-            kotlin(
-                    """
+          )
+          .indented(),
+        kotlin(
+            """
             package test.pkg
 
             import android.app.Activity
@@ -225,20 +225,20 @@ class PictureInPictureDetectorTest : AbstractCheckTest() {
               }
             }
             """
-                )
-                .indented(),
-            enterPipModeStub,
-        )
-        .run()
-        .expectClean()
+          )
+          .indented(),
+        enterPipModeStub,
+      )
+      .run()
+      .expectClean()
   }
 
   fun testNoPipMethodCalls() {
     lint()
-        .files(
-            androidManifest,
-            kotlin(
-                    """
+      .files(
+        androidManifest,
+        kotlin(
+            """
             package test.pkg
 
             import android.app.Activity
@@ -249,17 +249,17 @@ class PictureInPictureDetectorTest : AbstractCheckTest() {
               }
             }
             """
-                )
-                .indented(),
-            enterPipModeStub,
-        )
-        .run()
-        .expectClean()
+          )
+          .indented(),
+        enterPipModeStub,
+      )
+      .run()
+      .expectClean()
   }
 
   private val androidManifest: TestFile =
-      manifest(
-              """
+    manifest(
+        """
         <manifest
           package="test.pkg"
           xmlns:android="http://schemas.android.com/apk/res/android">
@@ -289,12 +289,12 @@ class PictureInPictureDetectorTest : AbstractCheckTest() {
 
         </manifest>
         """
-          )
-          .indented()
+      )
+      .indented()
 
   private val enterPipModeStub: TestFile =
-      java(
-              """
+    java(
+        """
         package android.app;
         /*HIDE-FROM-DOCUMENTATION*/
 
@@ -303,12 +303,12 @@ class PictureInPictureDetectorTest : AbstractCheckTest() {
           public void setPictureInPictureParams(PictureInPictureParams params);
         }
         """
-          )
-          .indented()
+      )
+      .indented()
 
   private val pipParamsBuilderStub: TestFile =
-      java(
-              """
+    java(
+        """
         package android.app;
         /*HIDE-FROM-DOCUMENTATION*/
 
@@ -321,17 +321,17 @@ class PictureInPictureDetectorTest : AbstractCheckTest() {
           }
         }
         """
-          )
-          .indented()
+      )
+      .indented()
 
   private val rectStub: TestFile =
-      java(
-              """
+    java(
+        """
         package android.graphics;
         /*HIDE-FROM-DOCUMENTATION*/
 
         class Rect {}
         """
-          )
-          .indented()
+      )
+      .indented()
 }

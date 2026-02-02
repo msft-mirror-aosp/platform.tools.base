@@ -79,10 +79,10 @@ interface Encoder<T> {
 
     /** Recursive [Encoder] defined in terms of itself on a smaller component of [T] */
     fun <T> fix(make: (Encoder<T>) -> Encoder<T>): Encoder<T> =
-        object {
-              val self: Encoder<T> = Delay { make(self) }
-            }
-            .self
+      object {
+          val self: Encoder<T> = Delay { make(self) }
+        }
+        .self
 
     /** Trivial constant [Encoder] that always decodes to [value] */
     fun <T> const(value: T): Encoder<T> = Const(value)
@@ -104,7 +104,7 @@ interface Encoder<T> {
      * product might be optimized.
      */
     infix fun <T> Encoder<T>.withDefault(default: T): Encoder<T> =
-        WithHintedDefault(if (this is WithHintedDefault) encoder else this, default)
+      WithHintedDefault(if (this is WithHintedDefault) encoder else this, default)
 
     /** Encoder for [T]? */
     fun <T : Any> Encoder<T>.orNull(): Encoder<T?> = Nullable(this)
@@ -114,12 +114,9 @@ interface Encoder<T> {
 
     /** Encoder for [PersistentMap] of keys [K] and values [V] */
     fun <K, V> map(key: Encoder<K>, value: Encoder<V>): Encoder<PersistentMap<K, V>> =
-        product(::Pair, key, value)
-            .zeroOrMore()
-            .adapt(
-                to = PersistentMap<K, V>::toList,
-                from = { it.fold(persistentMapOf(), PersistentMap<K, V>::plus) },
-            )
+      product(::Pair, key, value)
+        .zeroOrMore()
+        .adapt(to = PersistentMap<K, V>::toList, from = { it.fold(persistentMapOf(), PersistentMap<K, V>::plus) })
 
     /** Encoder for [PersistentSet] of [T] */
     fun <T> set(elem: Encoder<T>): Encoder<PersistentSet<T>> = elem.zeroOrMore().adapt(PersistentSet<T>::toList, List<T>::toPersistentSet)
@@ -128,39 +125,32 @@ interface Encoder<T> {
     inline fun <T, reified S : T> Encoder<T>.subType(): Encoder<S> = adapt({ it }, { it as S })
 
     /** Encoder for class [P], given ones on its fields [T0] and [T1] */
-    inline fun <reified P : Any, T0, T1> product(
-        constructor: KFunction2<T0, T1, P>,
-        enc0: Encoder<T0>,
-        enc1: Encoder<T1>,
-    ): Encoder<P> = P::class.uncheckedProduct(constructor, enc0, enc1)
+    inline fun <reified P : Any, T0, T1> product(constructor: KFunction2<T0, T1, P>, enc0: Encoder<T0>, enc1: Encoder<T1>): Encoder<P> =
+      P::class.uncheckedProduct(constructor, enc0, enc1)
 
     /** Encoder for class [P], given ones on its fields [T0], [T1], and [T2] */
     inline fun <reified P : Any, T0, T1, T2> product(
-        constructor: KFunction3<T0, T1, T2, P>,
-        enc0: Encoder<T0>,
-        enc1: Encoder<T1>,
-        enc2: Encoder<T2>,
+      constructor: KFunction3<T0, T1, T2, P>,
+      enc0: Encoder<T0>,
+      enc1: Encoder<T1>,
+      enc2: Encoder<T2>,
     ): Encoder<P> = P::class.uncheckedProduct(constructor, enc0, enc1, enc2)
 
     /** Encoder for class [P], given ones on its fields [T0], [T1], [T2], and [T3] */
     inline fun <reified P : Any, T0, T1, T2, T3> product(
-        constructor: KFunction4<T0, T1, T2, T3, P>,
-        enc0: Encoder<T0>,
-        enc1: Encoder<T1>,
-        enc2: Encoder<T2>,
-        enc3: Encoder<T3>,
+      constructor: KFunction4<T0, T1, T2, T3, P>,
+      enc0: Encoder<T0>,
+      enc1: Encoder<T1>,
+      enc2: Encoder<T2>,
+      enc3: Encoder<T3>,
     ): Encoder<P> = P::class.uncheckedProduct(constructor, enc0, enc1, enc2, enc3)
 
-    fun <P : Any> KClass<P>.uncheckedProduct(
-        constructor: KFunction<P>,
-        vararg encoders: Encoder<*>,
-    ): Encoder<P> = Product(this, constructor, encoders)
+    fun <P : Any> KClass<P>.uncheckedProduct(constructor: KFunction<P>, vararg encoders: Encoder<*>): Encoder<P> =
+      Product(this, constructor, encoders)
 
     /** Given an encoder for subtype [Ti] of [T], make a [Case] of encoder for [T] */
-    inline fun <T, reified Ti : T & Any> case(
-        encoder: Encoder<Ti>,
-        name: String = Ti::class.java.simpleName,
-    ): Case<T, Ti> = Case(name, encoder) { it as? Ti }
+    inline fun <T, reified Ti : T & Any> case(encoder: Encoder<Ti>, name: String = Ti::class.java.simpleName): Case<T, Ti> =
+      Case(name, encoder) { it as? Ti }
   }
 
   private class WithHintedDefault<T>(val encoder: Encoder<T>, val default: T) : Encoder<T> by encoder
@@ -173,10 +163,7 @@ interface Encoder<T> {
     override fun decodeFrom(stream: InputStream, state: DecodingState<*>): T = const
   }
 
-  private class Primitive<T>(
-      private val read: (InputStream) -> T,
-      private val write: (OutputStream, T) -> Unit,
-  ) : Encoder<T> {
+  private class Primitive<T>(private val read: (InputStream) -> T, private val write: (OutputStream, T) -> Unit) : Encoder<T> {
     override fun encodeTo(stream: OutputStream, state: EncodingState<*>, value: T) = write(stream, value)
 
     override fun decodeFrom(stream: InputStream, state: DecodingState<*>) = read(stream)
@@ -190,36 +177,28 @@ interface Encoder<T> {
 
   private class Nullable<T : Any>(private val base: Encoder<T>) : Encoder<T?> {
     override fun encodeTo(stream: OutputStream, state: EncodingState<*>, value: T?) =
-        when (value) {
-          null -> stream.writeBoolean(false)
-          else -> {
-            stream.writeBoolean(true)
-            base.encodeTo(stream, state, value)
-          }
+      when (value) {
+        null -> stream.writeBoolean(false)
+        else -> {
+          stream.writeBoolean(true)
+          base.encodeTo(stream, state, value)
         }
+      }
 
     override fun decodeFrom(stream: InputStream, state: DecodingState<*>): T? =
-        when (stream.readBoolean()) {
-          false -> null
-          true -> base.decodeFrom(stream, state)
-        }
+      when (stream.readBoolean()) {
+        false -> null
+        true -> base.decodeFrom(stream, state)
+      }
   }
 
-  private class Adapter<S, T>(
-      private val base: Encoder<T>,
-      private val to: (S) -> T,
-      private val from: (T) -> S,
-  ) : Encoder<S> {
+  private class Adapter<S, T>(private val base: Encoder<T>, private val to: (S) -> T, private val from: (T) -> S) : Encoder<S> {
     override fun encodeTo(stream: OutputStream, state: EncodingState<*>, value: S) = base.encodeTo(stream, state, to(value))
 
     override fun decodeFrom(stream: InputStream, state: DecodingState<*>): S = from(base.decodeFrom(stream, state))
   }
 
-  private class Product<P : Any>(
-      klass: KClass<P>,
-      private val constructor: KFunction<P>,
-      encoders: Array<out Encoder<*>>,
-  ) : Encoder<P> {
+  private class Product<P : Any>(klass: KClass<P>, private val constructor: KFunction<P>, encoders: Array<out Encoder<*>>) : Encoder<P> {
     init {
       require(encoders.size <= Byte.SIZE_BITS) {
         "Product of more than ${Byte.SIZE_BITS} flattened components not supported. Break it down."
@@ -229,48 +208,48 @@ interface Encoder<T> {
     private val shouldTryCompressing = encoders.any { it is WithHintedDefault }
 
     private val fields: Array<Field<P, *>> =
-        Array(encoders.size) { i ->
-          val param = constructor.parameters[i]
-          val prop =
-              klass.memberProperties.find { it.name == param.name }
-                  ?: throw IllegalArgumentException("Class `${klass.simpleName}` has no field `${param.name}`")
-          fun <T> uncheckedField(prop: KProperty1<P, *>, enc: Encoder<T>) = Field(prop as KProperty1<P, T>, enc)
-          uncheckedField(prop, encoders[i])
-        }
+      Array(encoders.size) { i ->
+        val param = constructor.parameters[i]
+        val prop =
+          klass.memberProperties.find { it.name == param.name }
+            ?: throw IllegalArgumentException("Class `${klass.simpleName}` has no field `${param.name}`")
+        fun <T> uncheckedField(prop: KProperty1<P, *>, enc: Encoder<T>) = Field(prop as KProperty1<P, T>, enc)
+        uncheckedField(prop, encoders[i])
+      }
 
     override fun encodeTo(stream: OutputStream, state: EncodingState<*>, value: P) =
-        if (shouldTryCompressing) {
-          val fieldsToEncode = mutableListOf<Field<P, *>>()
-          var mask: Byte = 0.toByte()
-          for ((i, field) in fields.withIndex()) {
-            val enc = field.encoder
-            if (enc !is WithHintedDefault || enc.default != field.access(value)) {
-              mask = (mask.toInt() or (1 shl i)).toByte()
-              fieldsToEncode.add(field)
-            }
+      if (shouldTryCompressing) {
+        val fieldsToEncode = mutableListOf<Field<P, *>>()
+        var mask: Byte = 0.toByte()
+        for ((i, field) in fields.withIndex()) {
+          val enc = field.encoder
+          if (enc !is WithHintedDefault || enc.default != field.access(value)) {
+            mask = (mask.toInt() or (1 shl i)).toByte()
+            fieldsToEncode.add(field)
           }
+        }
 
-          stream.writeByte(mask)
-          for (field in fieldsToEncode) field.encode(stream, state, value)
-        } else for (field in fields) field.encode(stream, state, value)
+        stream.writeByte(mask)
+        for (field in fieldsToEncode) field.encode(stream, state, value)
+      } else for (field in fields) field.encode(stream, state, value)
 
     override fun decodeFrom(stream: InputStream, state: DecodingState<*>): P {
       val args =
-          if (shouldTryCompressing) {
-            val mask = stream.readByte().toInt()
-            val args =
-                Array(fields.size) { i ->
-                  val field = fields[i]
-                  val enc = field.encoder
-                  when {
-                    enc is WithHintedDefault && mask and (1 shl i) == 0 -> enc.default
-                    else -> field.decode(stream, state)
-                  }
-                }
-            args
-          } else {
-            Array(fields.size) { fields[it].decode(stream, state) }
-          }
+        if (shouldTryCompressing) {
+          val mask = stream.readByte().toInt()
+          val args =
+            Array(fields.size) { i ->
+              val field = fields[i]
+              val enc = field.encoder
+              when {
+                enc is WithHintedDefault && mask and (1 shl i) == 0 -> enc.default
+                else -> field.decode(stream, state)
+              }
+            }
+          args
+        } else {
+          Array(fields.size) { fields[it].decode(stream, state) }
+        }
       return constructor.call(*args)
     }
 
@@ -284,10 +263,10 @@ interface Encoder<T> {
   private class Sum<S>(private val cases: Array<out Case<S, *>>) : Encoder<S> {
 
     private val indexEncoder: Encoder<Int> =
-        when {
-          cases.size < Byte.MAX_VALUE -> byte.adapt({ it.toByte() }, { it.toInt() })
-          else -> int
-        }
+      when {
+        cases.size < Byte.MAX_VALUE -> byte.adapt({ it.toByte() }, { it.toInt() })
+        else -> int
+      }
 
     override fun encodeTo(stream: OutputStream, state: EncodingState<*>, value: S) {
       for ((i, case) in cases.withIndex()) {
@@ -297,7 +276,7 @@ interface Encoder<T> {
     }
 
     override fun decodeFrom(stream: InputStream, state: DecodingState<*>): S =
-        cases[indexEncoder.decodeFrom(stream, state)].decodeFrom(stream, state)
+      cases[indexEncoder.decodeFrom(stream, state)].decodeFrom(stream, state)
   }
 
   private class ZeroOrMore<T>(private val elem: Encoder<T>) : Encoder<List<T>> {
@@ -307,7 +286,7 @@ interface Encoder<T> {
     }
 
     override fun decodeFrom(stream: InputStream, state: DecodingState<*>): List<T> =
-        List(stream.readInt()) { elem.decodeFrom(stream, state) }
+      List(stream.readInt()) { elem.decodeFrom(stream, state) }
   }
 
   private class Delay<T>(ref: () -> Encoder<T>) : Encoder<T> {
@@ -318,35 +297,27 @@ interface Encoder<T> {
     override fun decodeFrom(stream: InputStream, state: DecodingState<*>): T = delegate.decodeFrom(stream, state)
   }
 
-  class Case<T, Ti : T & Any>(
-      val name: String,
-      private val encoder: Encoder<Ti>,
-      private val tryCast: (T) -> Ti?,
-  ) : Encoder<Ti> by encoder {
+  class Case<T, Ti : T & Any>(val name: String, private val encoder: Encoder<Ti>, private val tryCast: (T) -> Ti?) :
+    Encoder<Ti> by encoder {
     override fun toString() = name
 
-    internal fun tryEncodeTo(
-        stream: OutputStream,
-        state: EncodingState<*>,
-        value: T,
-        writeIndex: () -> Unit,
-    ): Boolean =
-        when (val value0 = tryCast(value)) {
-          null -> false
-          else -> {
-            writeIndex()
-            encoder.encodeTo(stream, state, value0)
-            true
-          }
+    internal fun tryEncodeTo(stream: OutputStream, state: EncodingState<*>, value: T, writeIndex: () -> Unit): Boolean =
+      when (val value0 = tryCast(value)) {
+        null -> false
+        else -> {
+          writeIndex()
+          encoder.encodeTo(stream, state, value0)
+          true
         }
+      }
   }
 
   class EncodingState<S : OutputStream>(interning: List<Pair<Encoder<*>, S>>) {
     private val records =
-        interning.map { (encoder, stream) ->
-          require(encoder is Interned) { "Encoder $encoder is not interned" }
-          Record(encoder.base, mutableMapOf(), mutableListOf(), stream)
-        }
+      interning.map { (encoder, stream) ->
+        require(encoder is Interned) { "Encoder $encoder is not interned" }
+        Record(encoder.base, mutableMapOf(), mutableListOf(), stream)
+      }
 
     /**
      * The index of the last intern stream flushed at the end. If flushing one stream results in growing an already flushed intern stream,
@@ -355,16 +326,16 @@ interface Encoder<T> {
     private var lastFinalizingIndex: Int = -1
 
     fun <T> intern(rawEncoder: Encoder<T>, value: T): Int =
-        when (val recordIndex = records.indexOfFirst { it.rawEncoder == rawEncoder }) {
-          !in records.indices ->
-              throw IllegalArgumentException("$rawEncoder not registered for interning in ${records.map { it.rawEncoder }}")
-          in 0..lastFinalizingIndex ->
-              throw IllegalStateException(
-                  "Circular reference in interned values not supported. " +
-                      "Interning new value at #$recordIndex while flushing #$lastFinalizingIndex."
-              )
-          else -> intern(records[recordIndex] as Record<T>, value)
-        }
+      when (val recordIndex = records.indexOfFirst { it.rawEncoder == rawEncoder }) {
+        !in records.indices ->
+          throw IllegalArgumentException("$rawEncoder not registered for interning in ${records.map { it.rawEncoder }}")
+        in 0..lastFinalizingIndex ->
+          throw IllegalStateException(
+            "Circular reference in interned values not supported. " +
+              "Interning new value at #$recordIndex while flushing #$lastFinalizingIndex."
+          )
+        else -> intern(records[recordIndex] as Record<T>, value)
+      }
 
     private fun <T> intern(record: Record<T>, value: T): Int {
       val (_, memo, values, _) = record
@@ -393,19 +364,19 @@ interface Encoder<T> {
     }
 
     private data class Record<T>(
-        val rawEncoder: Encoder<T>,
-        val memo: MutableMap<T, Int>,
-        val values: MutableList<T>,
-        val stream: OutputStream,
+      val rawEncoder: Encoder<T>,
+      val memo: MutableMap<T, Int>,
+      val values: MutableList<T>,
+      val stream: OutputStream,
     )
   }
 
   class DecodingState<S : InputStream>(interning: List<Pair<Encoder<*>, S>>) {
     private val records =
-        interning.map { (encoder, stream) ->
-          require(encoder is Interned) { "Encoder $encoder is not interned" }
-          Record(encoder.base, mutableListOf())
-        }
+      interning.map { (encoder, stream) ->
+        require(encoder is Interned) { "Encoder $encoder is not interned" }
+        Record(encoder.base, mutableListOf())
+      }
     private var lastLoaded: Int = interning.size
 
     init {
@@ -423,15 +394,15 @@ interface Encoder<T> {
     }
 
     fun <T> valueAt(rawEncoder: Encoder<T>, index: Int): T =
-        when (val recordIndex = records.indexOfFirst { it.rawEncoder == rawEncoder }) {
-          !in records.indices -> throw IllegalStateException("$rawEncoder not registered for interning in ${records.map { it.rawEncoder }}")
-          !in lastLoaded until records.size ->
-              throw IllegalStateException(
-                  "Circular reference in interned values not supported. " +
-                      "Loading interned value from #$recordIndex while having loaded down to #$lastLoaded"
-              )
-          else -> valueAt(records[recordIndex] as Record<T>, index)
-        }
+      when (val recordIndex = records.indexOfFirst { it.rawEncoder == rawEncoder }) {
+        !in records.indices -> throw IllegalStateException("$rawEncoder not registered for interning in ${records.map { it.rawEncoder }}")
+        !in lastLoaded until records.size ->
+          throw IllegalStateException(
+            "Circular reference in interned values not supported. " +
+              "Loading interned value from #$recordIndex while having loaded down to #$lastLoaded"
+          )
+        else -> valueAt(records[recordIndex] as Record<T>, index)
+      }
 
     private fun <T> valueAt(record: Record<T>, index: Int): T {
       val (_, memo) = record
@@ -457,7 +428,7 @@ private fun InputStream.readBoolean(): Boolean = read() != 0
 private fun OutputStream.writeBoolean(b: Boolean) = write(if (b) 1 else 0)
 
 private fun InputStream.readLong(): Long =
-    (0 until Long.SIZE_BYTES).fold(0L) { res, i -> res or (read().toLong() shl (i * Byte.SIZE_BITS)) }
+  (0 until Long.SIZE_BYTES).fold(0L) { res, i -> res or (read().toLong() shl (i * Byte.SIZE_BITS)) }
 
 private fun OutputStream.writeLong(l: Long) {
   for (i in 0 until Long.SIZE_BYTES) write((l ushr (i * Byte.SIZE_BITS)).toInt())
@@ -472,10 +443,7 @@ private fun OutputStream.writeString(s: String) {
 private fun InputStream.readString(): String = readNBytes(readInt()).decodeToString()
 
 /** Return a [String] encoding of the value, as well as an extra [String] for each interned [Encoder] */
-fun <T> Encoder<T>.encodeAsStrings(
-    value: T,
-    vararg internedEncoders: Encoder<*>,
-): Pair<String, List<String>> {
+fun <T> Encoder<T>.encodeAsStrings(value: T, vararg internedEncoders: Encoder<*>): Pair<String, List<String>> {
   val mainStream = ByteArrayOutputStream()
   val internStreams = List(internedEncoders.size, ::ByteArrayOutputStream)
   encodeAndFinalize(mainStream, Encoder.EncodingState(internedEncoders zip internStreams), value)
@@ -486,22 +454,19 @@ fun <T> Encoder<T>.encodeAsStrings(
 }
 
 /** Decode [String] and interned values */
-fun <T> Encoder<T>.decodeFromStrings(
-    mainEncoding: String,
-    vararg interns: Pair<Encoder<*>, String>,
-): T =
-    with(Base64.getDecoder()) {
-      fun String.toDecodingStream() = ByteArrayInputStream(decode(this))
-      val state = Encoder.DecodingState(interns.map { (enc, str) -> enc to str.toDecodingStream() })
-      decodeFrom(mainEncoding.toDecodingStream(), state)
-    }
+fun <T> Encoder<T>.decodeFromStrings(mainEncoding: String, vararg interns: Pair<Encoder<*>, String>): T =
+  with(Base64.getDecoder()) {
+    fun String.toDecodingStream() = ByteArrayInputStream(decode(this))
+    val state = Encoder.DecodingState(interns.map { (enc, str) -> enc to str.toDecodingStream() })
+    decodeFrom(mainEncoding.toDecodingStream(), state)
+  }
 
 fun <T> Encoder<T>.encodeToDir(value: T, dirPath: String, vararg internedEncoders: Encoder<*>) {
   fun outStream(fileName: String) =
-      with(Paths.get(dirPath, fileName).toFile()) {
-        if (!exists()) createNewFile()
-        FileOutputStream(this)
-      }
+    with(Paths.get(dirPath, fileName).toFile()) {
+      if (!exists()) createNewFile()
+      FileOutputStream(this)
+    }
   val mainStream = outStream(PREFIX_DATA)
   val internStreams = List(internedEncoders.size) { outStream("$PREFIX_DATA$it") }
   encodeAndFinalize(mainStream, Encoder.EncodingState(internedEncoders zip internStreams), value)
@@ -519,11 +484,7 @@ fun <T> Encoder<T>.decodeFromDir(dirPath: String, vararg internEncoders: Encoder
   }
 }
 
-private fun <S : OutputStream, T> Encoder<T>.encodeAndFinalize(
-    stream: S,
-    state: Encoder.EncodingState<S>,
-    value: T,
-) {
+private fun <S : OutputStream, T> Encoder<T>.encodeAndFinalize(stream: S, state: Encoder.EncodingState<S>, value: T) {
   try {
     encodeTo(stream, state, value)
   } finally {

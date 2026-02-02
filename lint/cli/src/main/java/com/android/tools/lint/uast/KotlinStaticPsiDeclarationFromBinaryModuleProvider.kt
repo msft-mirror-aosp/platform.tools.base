@@ -57,11 +57,11 @@ import org.jetbrains.kotlin.util.capitalizeDecapitalize.decapitalizeSmart
 typealias SymbolWithPackage = Pair<PsiNameIdentifierOwner, FqName>
 
 private class KotlinStaticPsiDeclarationFromBinaryModuleProvider(
-    private val project: Project,
-    val scope: GlobalSearchScope,
-    private val packagePartProvider: PackagePartProvider,
-    private val libraryModules: Collection<KaLibraryModule>,
-    private val jarFileSystem: VirtualFileSystem,
+  private val project: Project,
+  val scope: GlobalSearchScope,
+  private val packagePartProvider: PackagePartProvider,
+  private val libraryModules: Collection<KaLibraryModule>,
+  private val jarFileSystem: VirtualFileSystem,
 ) : KotlinPsiDeclarationProvider() {
 
   private val psiManager by lazyPub { project.getService(PsiManager::class.java) }
@@ -79,11 +79,11 @@ private class KotlinStaticPsiDeclarationFromBinaryModuleProvider(
       // parts.
       val packageParts = packagePartProvider.findPackageParts(fqName.asString()).map { it.replace("/", ".") }
       val fqNames =
-          packageParts.ifEmpty {
-            (javaFileManager as? KotlinCliJavaFileManager)?.knownClassNamesInPackage(fqName)?.map { name ->
-              fqName.child(Name.identifier(name)).asString()
-            }
-          } ?: return@getOrPut emptyList()
+        packageParts.ifEmpty {
+          (javaFileManager as? KotlinCliJavaFileManager)?.knownClassNamesInPackage(fqName)?.map { name ->
+            fqName.child(Name.identifier(name)).asString()
+          }
+        } ?: return@getOrPut emptyList()
       fqNames.flatMap { fqName -> javaFileManager.findClasses(fqName, scope).asIterable() }.distinct()
     }
   }
@@ -106,87 +106,77 @@ private class KotlinStaticPsiDeclarationFromBinaryModuleProvider(
 
   private inline fun <reified T : PsiNameIdentifierOwner> getSymbolsInKlibPackage(targetPackage: FqName): Collection<T> {
     return getSymbolsInKlib()
-        .mapNotNull { (symbol, packageName) -> if (packageName == targetPackage) symbol else null }
-        .filterIsInstance<T>()
+      .mapNotNull { (symbol, packageName) -> if (packageName == targetPackage) symbol else null }
+      .filterIsInstance<T>()
   }
 
   @OptIn(KaExperimentalApi::class)
   private fun getSymbolsInKlib(): Collection<SymbolWithPackage> {
     return libraryModules
-        .filter { it.binaryRoots.any { it.extension == KLIB_FILE_EXTENSION } }
-        .flatMap { binaryModule ->
-          symbolsInKlibCache.getOrPut(binaryModule) {
-            val virtualFiles =
-                binaryModule.binaryVirtualFiles +
-                    binaryModule.binaryRoots
-                        .filter { it.extension == KLIB_FILE_EXTENSION }
-                        .flatMap { binaryRoot ->
-                          val root =
-                              jarFileSystem.findFileByPath(binaryRoot.toAbsolutePath().toString() + JAR_SEPARATOR)
-                                  ?: return@flatMap emptyList()
-                          klibMetaFiles(root)
-                        }
-            virtualFiles.flatMap { virtualFile ->
-              val fileStub = buildStubByVirtualFile(virtualFile) ?: return@flatMap emptyList()
-              val fakeFile =
-                  object : KtFile(KtClassFileViewProvider(psiManager, virtualFile), isCompiled = true) {
-                    override fun getStub() = fileStub
-
-                    override fun isPhysical() = false
-                  }
-              fileStub.psi = fakeFile
-
-              fun processStub(
-                  parent: StubElement<*>,
-                  stub: StubElement<*>,
-              ): Iterable<PsiNameIdentifierOwner> {
-                return when (stub) {
-                  is KotlinClassStubImpl -> {
-                    listOfNotNull(buildPsiSymbolByKotlinStub(psiManager, fileStub.psi, stub)) +
-                        stub.childrenStubs.flatMap { processStub(stub, it) }
-                  }
-                  is KotlinObjectStubImpl -> {
-                    listOfNotNull(buildPsiSymbolByKotlinStub(psiManager, fileStub.psi, stub)) +
-                        stub.childrenStubs.flatMap { processStub(stub, it) }
-                  }
-                  is KotlinPlaceHolderStubImpl -> {
-                    if (stub.stubType == KtStubElementTypes.CLASS_BODY) {
-                      stub.childrenStubs.filterIsInstance<KotlinClassOrObjectStub<*>>().flatMap { processStub(parent, it) }
-                    } else emptyList()
-                  }
-                  is KotlinPropertyStubImpl,
-                  is KotlinFunctionStubImpl -> {
-                    // Only process top level declarations by checking parent is file.
-                    if (parent is KotlinFileStubImpl) {
-                      listOfNotNull(
-                          buildPsiSymbolByKotlinStub(
-                              psiManager,
-                              fileStub.psi,
-                              stub as KotlinStubBaseImpl<*>,
-                          )
-                      )
-                    } else emptyList()
-                  }
-                  else -> emptyList()
+      .filter { it.binaryRoots.any { it.extension == KLIB_FILE_EXTENSION } }
+      .flatMap { binaryModule ->
+        symbolsInKlibCache.getOrPut(binaryModule) {
+          val virtualFiles =
+            binaryModule.binaryVirtualFiles +
+              binaryModule.binaryRoots
+                .filter { it.extension == KLIB_FILE_EXTENSION }
+                .flatMap { binaryRoot ->
+                  val root =
+                    jarFileSystem.findFileByPath(binaryRoot.toAbsolutePath().toString() + JAR_SEPARATOR) ?: return@flatMap emptyList()
+                  klibMetaFiles(root)
                 }
-              }
+          virtualFiles.flatMap { virtualFile ->
+            val fileStub = buildStubByVirtualFile(virtualFile) ?: return@flatMap emptyList()
+            val fakeFile =
+              object : KtFile(KtClassFileViewProvider(psiManager, virtualFile), isCompiled = true) {
+                override fun getStub() = fileStub
 
-              val packageName = fileStub.getPackageName()
-              // PsiMethod/Field build without containingClass will not have a way to have package
-              // name recorded, so we store that separately
-              fileStub.childrenStubs.flatMap { processStub(fileStub, it) }.map { it to packageName }
+                override fun isPhysical() = false
+              }
+            fileStub.psi = fakeFile
+
+            fun processStub(parent: StubElement<*>, stub: StubElement<*>): Iterable<PsiNameIdentifierOwner> {
+              return when (stub) {
+                is KotlinClassStubImpl -> {
+                  listOfNotNull(buildPsiSymbolByKotlinStub(psiManager, fileStub.psi, stub)) +
+                    stub.childrenStubs.flatMap { processStub(stub, it) }
+                }
+                is KotlinObjectStubImpl -> {
+                  listOfNotNull(buildPsiSymbolByKotlinStub(psiManager, fileStub.psi, stub)) +
+                    stub.childrenStubs.flatMap { processStub(stub, it) }
+                }
+                is KotlinPlaceHolderStubImpl -> {
+                  if (stub.stubType == KtStubElementTypes.CLASS_BODY) {
+                    stub.childrenStubs.filterIsInstance<KotlinClassOrObjectStub<*>>().flatMap { processStub(parent, it) }
+                  } else emptyList()
+                }
+                is KotlinPropertyStubImpl,
+                is KotlinFunctionStubImpl -> {
+                  // Only process top level declarations by checking parent is file.
+                  if (parent is KotlinFileStubImpl) {
+                    listOfNotNull(buildPsiSymbolByKotlinStub(psiManager, fileStub.psi, stub as KotlinStubBaseImpl<*>))
+                  } else emptyList()
+                }
+                else -> emptyList()
+              }
             }
+
+            val packageName = fileStub.getPackageName()
+            // PsiMethod/Field build without containingClass will not have a way to have package
+            // name recorded, so we store that separately
+            fileStub.childrenStubs.flatMap { processStub(fileStub, it) }.map { it to packageName }
           }
         }
+      }
   }
 
   private fun KotlinFileStubImpl.getPackageName(): FqName {
     return childrenStubs.filterIsInstance<KotlinPlaceHolderStubImpl<*>>().firstNotNullOfOrNull { (it.psi as? KtPackageDirective)?.fqName }
-        ?: FqName.ROOT
+      ?: FqName.ROOT
   }
 
   private class KtClassFileViewProvider(psiManager: PsiManager, virtualFile: VirtualFile) :
-      SingleRootFileViewProvider(psiManager, virtualFile, true, KotlinLanguage.INSTANCE)
+    SingleRootFileViewProvider(psiManager, virtualFile, true, KotlinLanguage.INSTANCE)
 
   override fun getClassesByClassId(classId: ClassId): Collection<PsiClass> {
     JavaToKotlinClassMap.mapKotlinToJava(classId.asSingleFqName().toUnsafe())?.let {
@@ -207,12 +197,12 @@ private class KotlinStaticPsiDeclarationFromBinaryModuleProvider(
   override fun getProperties(variableLikeSymbol: KaVariableSymbol): Collection<PsiMember> {
     val callableId = variableLikeSymbol.callableId ?: return emptyList()
     val classes =
-        callableId.classId?.let { classId ->
-          val classFromCurrentClassId = getClassesByClassId(classId)
-          // property in companion object is actually materialized at the containing class.
-          val classFromOuterClassID = classId.outerClassId?.let { getClassesByClassId(it) } ?: emptyList()
-          classFromCurrentClassId + classFromOuterClassID
-        } ?: getClassesInPackage(callableId.packageName)
+      callableId.classId?.let { classId ->
+        val classFromCurrentClassId = getClassesByClassId(classId)
+        // property in companion object is actually materialized at the containing class.
+        val classFromOuterClassID = classId.outerClassId?.let { getClassesByClassId(it) } ?: emptyList()
+        classFromCurrentClassId + classFromOuterClassID
+      } ?: getClassesInPackage(callableId.packageName)
     if (classes.isEmpty()) {
       return getTopLevelPropertiesInKlib(callableId.packageName, variableLikeSymbol.name.identifier)
     }
@@ -221,37 +211,37 @@ private class KotlinStaticPsiDeclarationFromBinaryModuleProvider(
     val getterJvmName = propertySymbol?.getter?.getJvmNameFromAnnotation() ?: propertySymbol?.getJvmNameFromAnnotation()
     val setterJvmName = propertySymbol?.setter?.getJvmNameFromAnnotation() ?: propertySymbol?.getJvmNameFromAnnotation()
     return classes
-        .flatMap { psiClass ->
-          psiClass.children.filterIsInstance<PsiMember>().filter { psiMember ->
-            if (psiMember !is PsiMethod && psiMember !is PsiField) return@filter false
-            val name = psiMember.name ?: return@filter false
-            val id = callableId.callableName.identifier
-            // PsiField a.k.a. backing field
-            if (name == id) return@filter true
-            // PsiMethod, i.e., accessors
-            if (name == getterJvmName || name == setterJvmName) return@filter true
-            val nameWithoutPrefix = name.nameWithoutAccessorPrefix ?: return@filter false
-            // E.g., getJVM_FIELD -> JVM_FIELD
-            nameWithoutPrefix == id ||
-                // E.g., getFooBar -> FooBar -> fooBar
-                nameWithoutPrefix.decapitalizeSmart().let { decapitalizedPrefix ->
-                  decapitalizedPrefix.endsWith(id) ||
-                      // value class mangling: getColor-hash
-                      // internal mangling: getColor$moduleName
-                      isMangled(decapitalizedPrefix, id)
-                }
-          }
+      .flatMap { psiClass ->
+        psiClass.children.filterIsInstance<PsiMember>().filter { psiMember ->
+          if (psiMember !is PsiMethod && psiMember !is PsiField) return@filter false
+          val name = psiMember.name ?: return@filter false
+          val id = callableId.callableName.identifier
+          // PsiField a.k.a. backing field
+          if (name == id) return@filter true
+          // PsiMethod, i.e., accessors
+          if (name == getterJvmName || name == setterJvmName) return@filter true
+          val nameWithoutPrefix = name.nameWithoutAccessorPrefix ?: return@filter false
+          // E.g., getJVM_FIELD -> JVM_FIELD
+          nameWithoutPrefix == id ||
+            // E.g., getFooBar -> FooBar -> fooBar
+            nameWithoutPrefix.decapitalizeSmart().let { decapitalizedPrefix ->
+              decapitalizedPrefix.endsWith(id) ||
+                // value class mangling: getColor-hash
+                // internal mangling: getColor$moduleName
+                isMangled(decapitalizedPrefix, id)
+            }
         }
-        .toList()
+      }
+      .toList()
   }
 
   private val String.nameWithoutAccessorPrefix: String?
     get() =
-        when {
-          this.startsWith("get") || this.startsWith("set") -> substring(3)
-          this.startsWith("is") -> substring(2)
-          else -> null
-        }
+      when {
+        this.startsWith("get") || this.startsWith("set") -> substring(3)
+        this.startsWith("is") -> substring(2)
+        else -> null
+      }
 
   override fun getFunctions(functionLikeSymbol: KaFunctionSymbol): Collection<PsiMethod> {
     val callableId = functionLikeSymbol.callableId ?: return emptyList()
@@ -263,15 +253,15 @@ private class KotlinStaticPsiDeclarationFromBinaryModuleProvider(
     val jvmName = functionLikeSymbol.getJvmNameFromAnnotation()
     val id = jvmName ?: callableId.callableName.identifier
     return classes
-        .flatMap { psiClass ->
-          psiClass.methods.filter { psiMethod ->
-            psiMethod.name == id ||
-                // value class mangling: functionName-hash
-                // internal mangling: functionName$moduleName
-                isMangled(psiMethod.name, id)
-          }
+      .flatMap { psiClass ->
+        psiClass.methods.filter { psiMethod ->
+          psiMethod.name == id ||
+            // value class mangling: functionName-hash
+            // internal mangling: functionName$moduleName
+            isMangled(psiMethod.name, id)
         }
-        .toList()
+      }
+      .toList()
   }
 
   private fun isMangled(name: String, prefix: String): Boolean {
@@ -280,17 +270,15 @@ private class KotlinStaticPsiDeclarationFromBinaryModuleProvider(
   }
 }
 
-internal class KotlinStaticPsiDeclarationProviderFactory(
-    private val project: Project,
-    private val jarFileSystem: VirtualFileSystem,
-) : KotlinPsiDeclarationProviderFactory() {
+internal class KotlinStaticPsiDeclarationProviderFactory(private val project: Project, private val jarFileSystem: VirtualFileSystem) :
+  KotlinPsiDeclarationProviderFactory() {
 
   private val libraryModules: Collection<KaLibraryModule> by lazyPub {
     val projectStructureProvider = project.getServiceIfCreated(KotlinProjectStructureProvider::class.java)
     (projectStructureProvider as? KotlinStaticProjectStructureProvider)
-        ?.allModules
-        ?.flatMap { it.directFriendDependencies + it.directRegularDependencies + it.directDependsOnDependencies }
-        ?.filterIsInstance<KaLibraryModule>() ?: emptyList()
+      ?.allModules
+      ?.flatMap { it.directFriendDependencies + it.directRegularDependencies + it.directDependsOnDependencies }
+      ?.filterIsInstance<KaLibraryModule>() ?: emptyList()
   }
 
   // TODO: For now, [createPsiDeclarationProvider] is always called with the project scope, hence
@@ -300,11 +288,11 @@ internal class KotlinStaticPsiDeclarationProviderFactory(
   private val provider: KotlinStaticPsiDeclarationFromBinaryModuleProvider by lazyPub {
     val searchScope = GlobalSearchScope.allScope(project)
     KotlinStaticPsiDeclarationFromBinaryModuleProvider(
-        project,
-        searchScope,
-        project.createPackagePartProvider(searchScope),
-        libraryModules,
-        jarFileSystem,
+      project,
+      searchScope,
+      project.createPackagePartProvider(searchScope),
+      libraryModules,
+      jarFileSystem,
     )
   }
 
@@ -313,11 +301,11 @@ internal class KotlinStaticPsiDeclarationProviderFactory(
       provider
     } else {
       KotlinStaticPsiDeclarationFromBinaryModuleProvider(
-          project,
-          searchScope,
-          project.createPackagePartProvider(searchScope),
-          libraryModules,
-          jarFileSystem,
+        project,
+        searchScope,
+        project.createPackagePartProvider(searchScope),
+        libraryModules,
+        jarFileSystem,
       )
     }
   }

@@ -90,19 +90,19 @@ class TestLintRunner(private val task: TestLintTask) {
       ensureConfigured()
       validateInputs()
       val rootDir: File =
-          when {
-            rootDirectory != null -> rootDirectory
-            testName != null -> File(tempDir, testName)
-            else -> tempDir
-          }.let {
-            try {
-              // Use canonical path to make sure we don't end up failing
-              // to chop off the prefix from Project#getDisplayPath
-              it.canonicalFile
-            } catch (ignore: IOException) {
-              it
-            }
+        when {
+          rootDirectory != null -> rootDirectory
+          testName != null -> File(tempDir, testName)
+          else -> tempDir
+        }.let {
+          try {
+            // Use canonical path to make sure we don't end up failing
+            // to chop off the prefix from Project#getDisplayPath
+            it.canonicalFile
+          } catch (ignore: IOException) {
+            it
           }
+        }
 
       // Make sure tests don't pick up random things outside the test directory.
       // I had accidentally placed a file named lint.xml in /tmp, and this caused
@@ -135,14 +135,14 @@ class TestLintRunner(private val task: TestLintTask) {
         // in this test, produce a fake result which pinpoints the problem:
         for (mode in notApplicable) {
           results[mode] =
-              TestResultState(
-                      createClient(),
-                      rootDir,
-                      "No output because the configured test mode $mode is not " + "applicable in this project context",
-                      emptyList(),
-                      null,
-                  )
-                  .apply { skipped = true }
+            TestResultState(
+                createClient(),
+                rootDir,
+                "No output because the configured test mode $mode is not " + "applicable in this project context",
+                emptyList(),
+                null,
+              )
+              .apply { skipped = true }
         }
 
         val defaultMode = pickDefaultMode(results)
@@ -166,11 +166,7 @@ class TestLintRunner(private val task: TestLintTask) {
     }
   }
 
-  private fun getTestModeFiles(
-      mode: TestMode,
-      rootDir: File,
-      projectMap: MutableMap<String, List<File>>,
-  ): Pair<File, List<File>> {
+  private fun getTestModeFiles(mode: TestMode, rootDir: File, projectMap: MutableMap<String, List<File>>): Pair<File, List<File>> {
     // Look up output folder for projects; this allows
     // multiple test types to share a single project tree
     // (for example, UInjectionHost mode does not modify
@@ -189,12 +185,12 @@ class TestLintRunner(private val task: TestLintTask) {
   }
 
   private fun TestLintTask.runMode(
-      mode: TestMode,
-      notApplicable: HashSet<TestMode>,
-      rootDir: File,
-      projectMap: MutableMap<String, List<File>>,
-      results: MutableMap<TestMode, TestResultState>,
-      forceCleanDir: Boolean = false,
+    mode: TestMode,
+    notApplicable: HashSet<TestMode>,
+    rootDir: File,
+    projectMap: MutableMap<String, List<File>>,
+    results: MutableMap<TestMode, TestResultState>,
+    forceCleanDir: Boolean = false,
   ) {
     currentTestMode = mode
     firstThrowable = null
@@ -209,10 +205,10 @@ class TestLintRunner(private val task: TestLintTask) {
     }
     val (root, files) = getTestModeFiles(mode, rootDir, projectMap)
     val partitions =
-        results[TestMode.DEFAULT]?.let {
-          val state = TestModeContext(this, root, projectList, files, null, results = results)
-          mode.partition(state)
-        } ?: listOf(mode)
+      results[TestMode.DEFAULT]?.let {
+        val state = TestModeContext(this, root, projectList, files, null, results = results)
+        mode.partition(state)
+      } ?: listOf(mode)
 
     if (partitions.size == 1 && partitions[0] == mode) {
       runMode(mode, notApplicable, rootDir, projectMap, results, root, projectList, files)
@@ -224,14 +220,14 @@ class TestLintRunner(private val task: TestLintTask) {
   }
 
   private fun TestLintTask.runMode(
-      mode: TestMode,
-      notApplicable: HashSet<TestMode>,
-      rootDir: File,
-      projectMap: MutableMap<String, List<File>>,
-      results: MutableMap<TestMode, TestResultState>,
-      root: File,
-      projectList: List<ProjectDescription>,
-      files: List<File>,
+    mode: TestMode,
+    notApplicable: HashSet<TestMode>,
+    rootDir: File,
+    projectMap: MutableMap<String, List<File>>,
+    results: MutableMap<TestMode, TestResultState>,
+    root: File,
+    projectList: List<ProjectDescription>,
+    files: List<File>,
   ) {
     val beforeState = TestModeContext(this, root, projectList, files, null, results = results)
     val clientState: Any? = mode.before(beforeState)
@@ -287,12 +283,7 @@ class TestLintRunner(private val task: TestLintTask) {
     }
   }
 
-  private fun checkLint(
-      client: TestLintClient,
-      rootDir: File,
-      files: List<File>,
-      mode: TestMode,
-  ): TestResultState {
+  private fun checkLint(client: TestLintClient, rootDir: File, files: List<File>, mode: TestMode): TestResultState {
     client.addCleanupDir(rootDir)
     client.setLintTask(task)
     return try {
@@ -315,11 +306,7 @@ class TestLintRunner(private val task: TestLintTask) {
   }
 
   /** Makes sure that the test output for the two test modes matches */
-  private fun checkConsistentOutput(
-      results: Map<TestMode, TestResultState>,
-      mode: TestMode,
-      first: TestMode,
-  ) {
+  private fun checkConsistentOutput(results: Map<TestMode, TestResultState>, mode: TestMode, first: TestMode) {
     if (mode == first) {
       return
     }
@@ -334,20 +321,20 @@ class TestLintRunner(private val task: TestLintTask) {
       var actualLabel = mode.description + "\n(To run in isolation, change .run() to .testModes(${mode.fieldName}).run())\n$line\n\n"
       if (mode == TestMode.SUPPRESSIBLE) {
         actualLabel =
-            actualLabel.trimEnd() +
-                "\n(Expected all of these warnings to disappear, not to equal the left hand side,\n" +
-                "because suppress annotations have been inserted.\n\n"
+          actualLabel.trimEnd() +
+            "\n(Expected all of these warnings to disappear, not to equal the left hand side,\n" +
+            "because suppress annotations have been inserted.\n\n"
       }
       val message =
-          mode.diffExplanation
-              ?: """
+        mode.diffExplanation
+          ?: """
                 The lint output was different between the test types
                 $first and $mode.
 
                 If this difference is expected, you can set the
                 eventType() set to include only one of these two.
                 """
-                  .trimIndent()
+            .trimIndent()
 
       // We've already checked that the output does not match. Now include
       // the mode labels in the assertion (which will fail) to clearly label
@@ -358,22 +345,14 @@ class TestLintRunner(private val task: TestLintTask) {
       if (modifications.isNotEmpty()) {
         val originalFiles = modifications.joinToString("\n") { listFile(it.path, it.before) }
         val modifiedFiles = modifications.joinToString("\n") { listFile(it.path, it.after) }
-        assertEquals(
-            message,
-            "$expectedLabel$expected$originalFiles",
-            "$actualLabel$actual$modifiedFiles",
-        )
+        assertEquals(message, "$expectedLabel$expected$originalFiles", "$actualLabel$actual$modifiedFiles")
       } else {
         assertEquals(message, "$expectedLabel$expected", "$actualLabel$actual")
       }
     }
   }
 
-  private fun getModifications(
-      results: Map<TestMode, TestResultState>,
-      mode: TestMode,
-      resultState: TestResultState,
-  ): List<ChangedFile> {
+  private fun getModifications(results: Map<TestMode, TestResultState>, mode: TestMode, resultState: TestResultState): List<ChangedFile> {
     val changedFiles: MutableList<ChangedFile> = mutableListOf()
     val defaultState = results[TestMode.DEFAULT]
     if (mode.modifiesSources && mode != TestMode.DEFAULT && defaultState != null) {
@@ -388,13 +367,7 @@ class TestLintRunner(private val task: TestLintTask) {
   private class ChangedFile(val path: String, val before: String, val after: String)
 
   // Add non-binary files that differ between the two folders
-  private fun addChangedFiles(
-      changed: MutableList<ChangedFile>,
-      dir1: File,
-      dir2: File,
-      path: String,
-      depth: Int,
-  ) {
+  private fun addChangedFiles(changed: MutableList<ChangedFile>, dir1: File, dir2: File, path: String, depth: Int) {
     val list = dir1.listFiles() ?: return
     for (file1 in list) {
       val name = file1.name
@@ -407,12 +380,12 @@ class TestLintRunner(private val task: TestLintTask) {
         addChangedFiles(changed, file1, file2, fullPath, depth + 1)
       } else {
         if (
-            file1.isFile &&
-                file2.isFile &&
-                !name.endsWith(DOT_JAR) &&
-                !name.endsWith(DOT_CLASS) &&
-                !name.endsWith(DOT_KOTLIN_MODULE) &&
-                !isBitmapFile(file1)
+          file1.isFile &&
+            file2.isFile &&
+            !name.endsWith(DOT_JAR) &&
+            !name.endsWith(DOT_CLASS) &&
+            !name.endsWith(DOT_KOTLIN_MODULE) &&
+            !isBitmapFile(file1)
         ) {
           val contents1 = file1.readText()
           val contents2 = file2.readText()
@@ -450,19 +423,19 @@ class TestLintRunner(private val task: TestLintTask) {
     val client: TestLintClient
     with(task) {
       client =
-          if (clientFactory != null) {
-            clientFactory.create()
-          } else {
-            ensureClientNameInitialized()
-            val clientName = clientName
-            try {
-              TestLintClient()
-            } finally {
-              if (clientName != LintClient.CLIENT_UNKNOWN) {
-                LintClient.clientName = clientName
-              }
+        if (clientFactory != null) {
+          clientFactory.create()
+        } else {
+          ensureClientNameInitialized()
+          val clientName = clientName
+          try {
+            TestLintClient()
+          } finally {
+            if (clientName != LintClient.CLIENT_UNKNOWN) {
+              LintClient.clientName = clientName
             }
           }
+        }
       if (!useTestConfiguration && overrideConfigFile != null) {
         val configurations = client.configurations
         if (configurations.overrides == null) {
@@ -473,11 +446,11 @@ class TestLintRunner(private val task: TestLintTask) {
       client.task = this
 
       val rootDir: File =
-          when {
-            rootDirectory != null -> rootDirectory
-            testName != null -> File(tempDir, testName)
-            else -> tempDir
-          }
+        when {
+          rootDirectory != null -> rootDirectory
+          testName != null -> File(tempDir, testName)
+          else -> tempDir
+        }
 
       client.pathVariables.add("TEST_ROOT", rootDir, false)
       rootDirectory?.let { client.pathVariables.add("ROOT", it) }
@@ -641,11 +614,11 @@ class TestLintRunner(private val task: TestLintTask) {
       val newList = testMode.configureProjects(currentList)
       if (newList !== currentList) {
         val reportFrom =
-            when {
-              projects.reportFrom == null -> null
-              newList.contains(projects.reportFrom) -> projects.reportFrom
-              else -> newList.lastOrNull()
-            }
+          when {
+            projects.reportFrom == null -> null
+            newList.contains(projects.reportFrom) -> projects.reportFrom
+            else -> newList.lastOrNull()
+          }
         return ProjectDescriptionList(newList.toMutableList(), reportFrom)
       }
     }
@@ -689,10 +662,10 @@ class TestLintRunner(private val task: TestLintTask) {
       JsonParser.parseString(json)
     } catch (e: JsonParseException) {
       throw RuntimeException(
-          "Couldn't parse JSON test data: ${e.localizedMessage}\n" +
-              "If intentional, set `.allowCompilationErrors()` on the lint() test task.\n" +
-              "Exact file content=\n\"\"\"$json\"\"\"",
-          e,
+        "Couldn't parse JSON test data: ${e.localizedMessage}\n" +
+          "If intentional, set `.allowCompilationErrors()` on the lint() test task.\n" +
+          "Exact file content=\n\"\"\"$json\"\"\"",
+        e,
       )
     }
   }
@@ -702,18 +675,18 @@ class TestLintRunner(private val task: TestLintTask) {
       if (xml.isNotEmpty()) {
         if (xml[0] != '<' && xml.trim().startsWith("<?xml")) {
           throw java.lang.RuntimeException(
-              "XML prologues (<?xml ...>) cannot be indented; that is not valid XML. " +
-                  "Did you forget to call `indented()` on the xml test file?"
+            "XML prologues (<?xml ...>) cannot be indented; that is not valid XML. " +
+              "Did you forget to call `indented()` on the xml test file?"
           )
         }
         XmlUtils.parseDocument(xml, true)
       }
     } catch (e: SAXException) {
       throw RuntimeException(
-          "Couldn't parse XML test file: ${e.localizedMessage}\n" +
-              "If intentional, set `.allowCompilationErrors()` on the lint() test task.\n" +
-              "Exact file content=\n\"\"\"$xml\"\"\"",
-          e,
+        "Couldn't parse XML test file: ${e.localizedMessage}\n" +
+          "If intentional, set `.allowCompilationErrors()` on the lint() test task.\n" +
+          "Exact file content=\n\"\"\"$xml\"\"\"",
+        e,
       )
     }
   }

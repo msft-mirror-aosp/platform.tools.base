@@ -67,9 +67,9 @@ class JavaScriptInterfaceDetector : Detector(), SourceCodeScanner {
 
       val location = context.getNameLocation(node)
       val message =
-          "None of the methods in the added interface (${cls.name}) have " +
-              "been annotated with `@android.webkit.JavascriptInterface`; they will not " +
-              "be visible in API 17"
+        "None of the methods in the added interface (${cls.name}) have " +
+          "been annotated with `@android.webkit.JavascriptInterface`; they will not " +
+          "be visible in API 17"
       val incident = Incident(ISSUE, node, location, message)
       context.report(incident, targetSdkAtLeast(17))
     }
@@ -86,12 +86,7 @@ class JavaScriptInterfaceDetector : Detector(), SourceCodeScanner {
         for (annotation in node.uAnnotations) {
           if (annotation.qualifiedName == JAVASCRIPT_INTERFACE_CLS) {
             val incident =
-                Incident(
-                    ISSUE,
-                    node as UElement,
-                    context.getNameLocation(node),
-                    "Must be public when using `@JavascriptInterface`",
-                )
+              Incident(ISSUE, node as UElement, context.getNameLocation(node), "Must be public when using `@JavascriptInterface`")
             context.report(incident, isAndroidProject())
           }
         }
@@ -103,23 +98,23 @@ class JavaScriptInterfaceDetector : Detector(), SourceCodeScanner {
     /** The main issue discovered by this detector. */
     @JvmField
     val ISSUE =
-        Issue.create(
-                id = "JavascriptInterface",
-                briefDescription = "Missing @JavascriptInterface on methods",
-                explanation =
-                    """
+      Issue.create(
+          id = "JavascriptInterface",
+          briefDescription = "Missing @JavascriptInterface on methods",
+          explanation =
+            """
                 As of API 17, you must annotate methods in objects registered with the \
                 `addJavascriptInterface` method with a `@JavascriptInterface` annotation.
                 """,
-                category = Category.SECURITY,
-                moreInfo =
-                    "https://developer.android.com/reference/android/webkit/WebView.html#addJavascriptInterface(java.lang.Object, java.lang.String)",
-                androidSpecific = true,
-                priority = 8,
-                severity = Severity.ERROR,
-                implementation = Implementation(JavaScriptInterfaceDetector::class.java, Scope.JAVA_FILE_SCOPE),
-            )
-            .addMoreInfo("https://goo.gle/JavascriptInterface")
+          category = Category.SECURITY,
+          moreInfo =
+            "https://developer.android.com/reference/android/webkit/WebView.html#addJavascriptInterface(java.lang.Object, java.lang.String)",
+          androidSpecific = true,
+          priority = 8,
+          severity = Severity.ERROR,
+          implementation = Implementation(JavaScriptInterfaceDetector::class.java, Scope.JAVA_FILE_SCOPE),
+        )
+        .addMoreInfo("https://goo.gle/JavascriptInterface")
 
     private const val ADD_JAVASCRIPT_INTERFACE = "addJavascriptInterface"
     private const val JAVASCRIPT_INTERFACE_CLS = "android.webkit.JavascriptInterface"

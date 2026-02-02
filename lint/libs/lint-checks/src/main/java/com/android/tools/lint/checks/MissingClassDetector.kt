@@ -97,12 +97,12 @@ class MissingClassDetector : LayoutDetector(), ClassScanner {
   }
 
   override fun appliesTo(folderType: ResourceFolderType): Boolean =
-      folderType == VALUES ||
-          folderType == LAYOUT ||
-          folderType == XML ||
-          folderType == DRAWABLE ||
-          folderType == MENU ||
-          folderType == TRANSITION
+    folderType == VALUES ||
+      folderType == LAYOUT ||
+      folderType == XML ||
+      folderType == DRAWABLE ||
+      folderType == MENU ||
+      folderType == TRANSITION
 
   override fun visitElement(context: XmlContext, element: Element) {
     val tag = element.tagName
@@ -116,21 +116,21 @@ class MissingClassDetector : LayoutDetector(), ClassScanner {
           val className = resolvePlaceHolders(context.project, attr.value) ?: return
           if (className.isEmpty()) return
           checkClassReference(
-              context,
-              pkg,
-              className,
-              attr,
-              element,
-              requireInstantiatable = true,
-              expectedParent =
-                  when (tag) {
-                    TAG_ACTIVITY -> CLASS_ACTIVITY
-                    TAG_SERVICE -> CLASS_SERVICE
-                    TAG_RECEIVER -> CLASS_BROADCASTRECEIVER
-                    TAG_PROVIDER -> CLASS_CONTENTPROVIDER
-                    TAG_APPLICATION -> CLASS_APPLICATION
-                    else -> null
-                  },
+            context,
+            pkg,
+            className,
+            attr,
+            element,
+            requireInstantiatable = true,
+            expectedParent =
+              when (tag) {
+                TAG_ACTIVITY -> CLASS_ACTIVITY
+                TAG_SERVICE -> CLASS_SERVICE
+                TAG_RECEIVER -> CLASS_BROADCASTRECEIVER
+                TAG_PROVIDER -> CLASS_CONTENTPROVIDER
+                TAG_APPLICATION -> CLASS_APPLICATION
+                else -> null
+              },
           )
         }
       }
@@ -146,37 +146,22 @@ class MissingClassDetector : LayoutDetector(), ClassScanner {
         when {
           tag.indexOf('.') > 0 -> {
             checkClassReference(
-                context,
-                null,
-                tag,
-                element,
-                element,
-                // Already doing hierarchy checks in Studio, don't duplicate effort
-                expectedParent = if (isStudio) null else CLASS_VIEW,
+              context,
+              null,
+              tag,
+              element,
+              element,
+              // Already doing hierarchy checks in Studio, don't duplicate effort
+              expectedParent = if (isStudio) null else CLASS_VIEW,
             )
           }
           tag == VIEW_TAG -> {
             val attr = element.getAttributeNode(ATTR_CLASS) ?: return
-            checkClassReference(
-                context,
-                null,
-                attr.value,
-                attr,
-                element,
-                expectedParent = if (isStudio) null else CLASS_VIEW,
-            )
+            checkClassReference(context, null, attr.value, attr, element, expectedParent = if (isStudio) null else CLASS_VIEW)
           }
           tag == VIEW_FRAGMENT -> {
             val attr = element.getAttributeNodeNS(ANDROID_URI, ATTR_NAME) ?: element.getAttributeNode(ATTR_CLASS) ?: return
-            checkClassReference(
-                context,
-                null,
-                attr.value,
-                attr,
-                element,
-                requireInstantiatable = true,
-                expectedParent = CLASS_FRAGMENT,
-            )
+            checkClassReference(context, null, attr.value, attr, element, requireInstantiatable = true, expectedParent = CLASS_FRAGMENT)
           }
         }
       }
@@ -187,14 +172,7 @@ class MissingClassDetector : LayoutDetector(), ClassScanner {
           }
           tag == "drawable" -> {
             val attr = element.getAttributeNode(ATTR_CLASS) ?: return
-            checkClassReference(
-                context,
-                null,
-                attr.value,
-                attr,
-                element,
-                expectedParent = "android.graphics.drawable.Drawable",
-            )
+            checkClassReference(context, null, attr.value, attr, element, expectedParent = "android.graphics.drawable.Drawable")
           }
         }
       }
@@ -202,49 +180,26 @@ class MissingClassDetector : LayoutDetector(), ClassScanner {
         if (tag == "transition" || tag == "pathMotion") {
           val attr = element.getAttributeNode(ATTR_CLASS) ?: return
           val expectedParent = if (tag == "transition") "android.transition.Transition" else "android.transition.PathMotion"
-          checkClassReference(
-              context,
-              null,
-              attr.value,
-              attr,
-              element,
-              expectedParent = expectedParent,
-          )
+          checkClassReference(context, null, attr.value, attr, element, expectedParent = expectedParent)
         }
       }
       XML -> {
         if (tag == TAG_HEADER) {
           val attr = element.getAttributeNodeNS(ANDROID_URI, ATTR_FRAGMENT) ?: return
-          checkClassReference(
-              context,
-              null,
-              attr.value,
-              attr,
-              element,
-              requireInstantiatable = true,
-              expectedParent = CLASS_FRAGMENT,
-          )
+          checkClassReference(context, null, attr.value, attr, element, requireInstantiatable = true, expectedParent = CLASS_FRAGMENT)
         }
       }
       MENU -> {
         if (tag == TAG_ITEM) {
           val view =
-              element.getAttributeNodeNS(AUTO_URI, ATTR_ACTION_VIEW_CLASS)
-                  ?: element.getAttributeNodeNS(ANDROID_URI, ATTR_ACTION_VIEW_CLASS)
+            element.getAttributeNodeNS(AUTO_URI, ATTR_ACTION_VIEW_CLASS) ?: element.getAttributeNodeNS(ANDROID_URI, ATTR_ACTION_VIEW_CLASS)
           if (view != null) {
-            checkClassReference(
-                context,
-                null,
-                view.value,
-                view,
-                element,
-                expectedParent = CLASS_VIEW,
-            )
+            checkClassReference(context, null, view.value, view, element, expectedParent = CLASS_VIEW)
           }
           val provider =
-              element.getAttributeNodeNS(AUTO_URI, ATTR_ACTION_PROVIDER_CLASS)
-                  ?: element.getAttributeNodeNS(ANDROID_URI, ATTR_ACTION_PROVIDER_CLASS)
-                  ?: return
+            element.getAttributeNodeNS(AUTO_URI, ATTR_ACTION_PROVIDER_CLASS)
+              ?: element.getAttributeNodeNS(ANDROID_URI, ATTR_ACTION_PROVIDER_CLASS)
+              ?: return
           // Consider checking for one of the action provider parent classes
           checkClassReference(context, null, provider.value, provider, element)
         }
@@ -261,13 +216,13 @@ class MissingClassDetector : LayoutDetector(), ClassScanner {
   }
 
   private fun checkClassReference(
-      context: XmlContext,
-      pkg: String?,
-      className: String,
-      classNameNode: Node,
-      element: Element,
-      requireInstantiatable: Boolean = false,
-      expectedParent: String? = null,
+    context: XmlContext,
+    pkg: String?,
+    className: String,
+    classNameNode: Node,
+    element: Element,
+    requireInstantiatable: Boolean = false,
+    expectedParent: String? = null,
   ) {
     if (className.isEmpty()) {
       return
@@ -279,15 +234,15 @@ class MissingClassDetector : LayoutDetector(), ClassScanner {
         return // not a manifest file; no implicit package
       }
       fqcn =
-          if (dotIndex == 0) {
-            pkg + className
-          } else {
-            // According to the <activity> manifest element documentation, this is not
-            // valid (http://developer.android.com/guide/topics/manifest/activity-element.html)
-            // but it appears in manifest files and appears to be supported by the runtime
-            // so handle this in code as well:
-            "$pkg.$className"
-          }
+        if (dotIndex == 0) {
+          pkg + className
+        } else {
+          // According to the <activity> manifest element documentation, this is not
+          // valid (http://developer.android.com/guide/topics/manifest/activity-element.html)
+          // but it appears in manifest files and appears to be supported by the runtime
+          // so handle this in code as well:
+          "$pkg.$className"
+        }
     } else {
       // else: the class name is already a fully qualified class name
       fqcn = className
@@ -322,13 +277,7 @@ class MissingClassDetector : LayoutDetector(), ClassScanner {
     }
   }
 
-  private fun checkExpectedParent(
-      context: XmlContext,
-      evaluator: JavaEvaluator,
-      nameNode: Node,
-      cls: PsiClass,
-      expectedParent: String,
-  ) {
+  private fun checkExpectedParent(context: XmlContext, evaluator: JavaEvaluator, nameNode: Node, cls: PsiClass, expectedParent: String) {
     if (!evaluator.inheritsFrom(cls, expectedParent, false)) {
       if (expectedParent == CLASS_FRAGMENT) {
         checkExpectedParent(context, evaluator, nameNode, cls, CLASS_V4_FRAGMENT.oldName())
@@ -377,22 +326,16 @@ class MissingClassDetector : LayoutDetector(), ClassScanner {
       }
 
       val message =
-          if (expectedParent.contains("Fragment")) {
-            "`${cls.name}` must be a fragment"
-          } else {
-            "`${cls.name}` must extend $expectedParent"
-          }
+        if (expectedParent.contains("Fragment")) {
+          "`${cls.name}` must be a fragment"
+        } else {
+          "`${cls.name}` must extend $expectedParent"
+        }
       context.report(INSTANTIATABLE, getRefLocation(context, nameNode), message)
     }
   }
 
-  private fun checkInnerClassReference(
-      context: XmlContext,
-      cls: PsiClass,
-      className: String,
-      nameNode: Node,
-      element: Element,
-  ) {
+  private fun checkInnerClassReference(context: XmlContext, cls: PsiClass, className: String, nameNode: Node, element: Element) {
     val name = cls.name
     if (cls.containingClass == null || name == null || className.contains("$")) {
       return
@@ -406,13 +349,7 @@ class MissingClassDetector : LayoutDetector(), ClassScanner {
   }
 
   /** Make sure [cls] is instantiatable. */
-  private fun checkInstantiatable(
-      context: XmlContext,
-      evaluator: JavaEvaluator,
-      cls: PsiClass,
-      fqcn: String,
-      nameNode: Node,
-  ) {
+  private fun checkInstantiatable(context: XmlContext, evaluator: JavaEvaluator, cls: PsiClass, fqcn: String, nameNode: Node) {
     if (evaluator.isPrivate(cls)) {
       val message = "This class should be public (`$fqcn`)"
       context.report(INSTANTIATABLE, getRefLocation(context, nameNode), message)
@@ -458,64 +395,59 @@ class MissingClassDetector : LayoutDetector(), ClassScanner {
   private fun reportMissing(location: Location, fqcn: String, context: Context) {
     val parentFile = location.file.parentFile
     val target =
-        if (parentFile != null) {
-          val parent = parentFile.name
-          when (val type = ResourceFolderType.getFolderType(parent)) {
-            null -> "manifest"
-            LAYOUT -> "layout file"
-            XML -> "preference header file"
-            VALUES -> "analytics file"
-            else -> {
-              "${type.getName().lowercase(Locale.US)} file"
-            }
+      if (parentFile != null) {
+        val parent = parentFile.name
+        when (val type = ResourceFolderType.getFolderType(parent)) {
+          null -> "manifest"
+          LAYOUT -> "layout file"
+          XML -> "preference header file"
+          VALUES -> "analytics file"
+          else -> {
+            "${type.getName().lowercase(Locale.US)} file"
           }
-        } else {
-          "the manifest"
         }
+      } else {
+        "the manifest"
+      }
     val message = "Class referenced in the $target, `$fqcn`, was not found in the project or the libraries"
     context.report(MISSING, location, message)
   }
 
   companion object {
     val IMPLEMENTATION =
-        Implementation(
-            MissingClassDetector::class.java,
-            Scope.MANIFEST_AND_RESOURCE_SCOPE,
-            Scope.MANIFEST_SCOPE,
-            Scope.RESOURCE_FILE_SCOPE,
-        )
+      Implementation(MissingClassDetector::class.java, Scope.MANIFEST_AND_RESOURCE_SCOPE, Scope.MANIFEST_SCOPE, Scope.RESOURCE_FILE_SCOPE)
 
     /** Manifest or layout referenced classes missing from the project or libraries. */
     @JvmField
     val MISSING =
-        Issue.create(
-                id = "MissingClass",
-                briefDescription = "Missing registered class",
-                explanation =
-                    """
+      Issue.create(
+          id = "MissingClass",
+          briefDescription = "Missing registered class",
+          explanation =
+            """
                     If a class is referenced in the manifest or in a layout file, it must \
                     also exist in the project (or in one of the libraries included by the \
                     project. This check helps uncover typos in registration names, or \
                     attempts to rename or move classes without updating the XML references \
                     properly.
                     """,
-                category = Category.CORRECTNESS,
-                priority = 8,
-                severity = Severity.ERROR,
-                moreInfo = "https://developer.android.com/guide/topics/manifest/manifest-intro.html",
-                androidSpecific = true,
-                implementation = IMPLEMENTATION,
-            )
-            .setAliases(listOf("MissingRegistered"))
+          category = Category.CORRECTNESS,
+          priority = 8,
+          severity = Severity.ERROR,
+          moreInfo = "https://developer.android.com/guide/topics/manifest/manifest-intro.html",
+          androidSpecific = true,
+          implementation = IMPLEMENTATION,
+        )
+        .setAliases(listOf("MissingRegistered"))
 
     /** Are activity, service, receiver etc subclasses instantiatable? */
     @JvmField
     val INSTANTIATABLE =
-        Issue.create(
-            id = "Instantiatable",
-            briefDescription = "Registered class is not instantiatable",
-            explanation =
-                """
+      Issue.create(
+        id = "Instantiatable",
+        briefDescription = "Registered class is not instantiatable",
+        explanation =
+          """
           Activities, services, broadcast receivers etc. registered in the \
           manifest file (or for custom views, in a layout file) must be \
           "instantiatable" by the system, which means that the class must \
@@ -526,21 +458,21 @@ class MissingClassDetector : LayoutDetector(), ClassScanner {
           components yourself, consider disabling this Lint issue in order \
           to avoid false positives.
           """,
-            category = Category.CORRECTNESS,
-            priority = 6,
-            severity = Severity.FATAL,
-            androidSpecific = true,
-            implementation = IMPLEMENTATION,
-        )
+        category = Category.CORRECTNESS,
+        priority = 6,
+        severity = Severity.FATAL,
+        androidSpecific = true,
+        implementation = IMPLEMENTATION,
+      )
 
     /** Is the right character used for inner class separators? */
     @JvmField
     val INNERCLASS =
-        Issue.create(
-            id = "InnerclassSeparator",
-            briefDescription = "Inner classes should use `${"$"}` rather than `.`",
-            explanation =
-                """
+      Issue.create(
+        id = "InnerclassSeparator",
+        briefDescription = "Inner classes should use `${"$"}` rather than `.`",
+        explanation =
+          """
                     When you reference an inner class in a manifest file, you must use '$' \
                     instead of '.' as the separator character, i.e. Outer${"$"}Inner instead of \
                     Outer.Inner.
@@ -549,11 +481,11 @@ class MissingClassDetector : LayoutDetector(), ClassScanner {
                     it's because you are using uppercase characters in your package name, which \
                     is not conventional.)
                     """,
-            category = Category.CORRECTNESS,
-            priority = 3,
-            severity = Severity.WARNING,
-            androidSpecific = true,
-            implementation = IMPLEMENTATION,
-        )
+        category = Category.CORRECTNESS,
+        priority = 3,
+        severity = Severity.WARNING,
+        androidSpecific = true,
+        implementation = IMPLEMENTATION,
+      )
   }
 }

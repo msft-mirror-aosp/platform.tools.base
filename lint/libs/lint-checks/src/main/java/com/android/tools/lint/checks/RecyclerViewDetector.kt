@@ -94,15 +94,15 @@ class RecyclerViewDetector : Detector(), SourceCodeScanner {
 
   override fun visitMethodCall(context: JavaContext, node: UCallExpression, method: PsiMethod) {
     if (
-        method.name == NOTIFY_DATA_SET_CHANGED &&
-            (context.evaluator.isMemberInSubClassOf(method, SUPERCLASS_SUPPORTLIB) ||
-                context.evaluator.isMemberInSubClassOf(method, SUPERCLASS_ANDROIDX))
+      method.name == NOTIFY_DATA_SET_CHANGED &&
+        (context.evaluator.isMemberInSubClassOf(method, SUPERCLASS_SUPPORTLIB) ||
+          context.evaluator.isMemberInSubClassOf(method, SUPERCLASS_ANDROIDX))
     ) {
       context.report(
-          CLEAR_ALL_DATA,
-          context.getLocation(node),
-          "It will always be more efficient to use more specific change events if " +
-              "you can. Rely on `notifyDataSetChanged` as a last resort.",
+        CLEAR_ALL_DATA,
+        context.getLocation(node),
+        "It will always be more efficient to use more specific change events if " +
+          "you can. Rely on `notifyDataSetChanged` as a last resort.",
       )
     }
   }
@@ -113,15 +113,11 @@ class RecyclerViewDetector : Detector(), SourceCodeScanner {
       variablePrefix = "ViewHolder"
     }
     val message =
-        "Do not treat position as fixed; only use immediately " + "and call `$variablePrefix.getAdapterPosition()` to look it up later"
+      "Do not treat position as fixed; only use immediately " + "and call `$variablePrefix.getAdapterPosition()` to look it up later"
     context.report(FIXED_POSITION, parameter, context.getLocation(parameter), message)
   }
 
-  private fun checkDataBinders(
-      context: JavaContext,
-      declaration: UMethod,
-      references: List<UCallExpression>?,
-  ) {
+  private fun checkDataBinders(context: JavaContext, declaration: UMethod, references: List<UCallExpression>?) {
     if (references != null && references.isNotEmpty()) {
       val targets = Lists.newArrayList<UCallExpression>()
       val sources = Lists.newArrayList<UCallExpression>()
@@ -160,10 +156,10 @@ class RecyclerViewDetector : Detector(), SourceCodeScanner {
         var reachesTarget = false
         for (target in targets) {
           if (
-              sourceDataBinder == getDataBinderReference(target.receiver) &&
-                  // TODO: Provide full control flow graph, or at least provide an
-                  // isReachable method which can take multiple targets
-                  isReachableFrom(declaration, source, target)
+            sourceDataBinder == getDataBinderReference(target.receiver) &&
+              // TODO: Provide full control flow graph, or at least provide an
+              // isReachable method which can take multiple targets
+              isReachableFrom(declaration, source, target)
           ) {
             reachesTarget = true
             break
@@ -172,11 +168,11 @@ class RecyclerViewDetector : Detector(), SourceCodeScanner {
         if (!reachesTarget) {
           val lhs = sourceBinderReference.asSourceString()
           val message =
-              "You must call `$lhs.executePendingBindings()` " +
-                  "before the `onBind` method exits, otherwise, the DataBinding " +
-                  "library will update the UI in the next animation frame " +
-                  "causing a delayed update & potential jumps if the item " +
-                  "resizes."
+            "You must call `$lhs.executePendingBindings()` " +
+              "before the `onBind` method exits, otherwise, the DataBinding " +
+              "library will update the UI in the next animation frame " +
+              "causing a delayed update & potential jumps if the item " +
+              "resizes."
           val location = context.getLocation(source)
           context.report(DATA_BINDER, source, location, message)
         }
@@ -285,12 +281,12 @@ class RecyclerViewDetector : Detector(), SourceCodeScanner {
 
         if (dataBinder != null) {
           val list =
-              dataBinders
-                  ?: run {
-                    val new = Lists.newArrayList<UCallExpression>()
-                    dataBinders = new
-                    new
-                  }
+            dataBinders
+              ?: run {
+                val new = Lists.newArrayList<UCallExpression>()
+                dataBinders = new
+                new
+              }
           list.add(node)
         }
       }
@@ -304,11 +300,11 @@ class RecyclerViewDetector : Detector(), SourceCodeScanner {
 
     @JvmField
     val FIXED_POSITION =
-        Issue.create(
-            id = "RecyclerView",
-            briefDescription = "RecyclerView Problems",
-            explanation =
-                """
+      Issue.create(
+        id = "RecyclerView",
+        briefDescription = "RecyclerView Problems",
+        explanation =
+          """
                 `RecyclerView` will **not** call `onBindViewHolder` again when the position \
                 of the item changes in the data set unless the item itself is invalidated or \
                 the new position cannot be determined.
@@ -320,50 +316,50 @@ class RecyclerViewDetector : Detector(), SourceCodeScanner {
                 If you need the position of an item later on (e.g. in a click listener), use \
                 `getAdapterPosition()` which will have the updated adapter position.
                 """,
-            category = Category.CORRECTNESS,
-            priority = 8,
-            androidSpecific = true,
-            severity = Severity.ERROR,
-            implementation = IMPLEMENTATION,
-        )
+        category = Category.CORRECTNESS,
+        priority = 8,
+        androidSpecific = true,
+        severity = Severity.ERROR,
+        implementation = IMPLEMENTATION,
+      )
 
     @JvmField
     val DATA_BINDER =
-        Issue.create(
-            id = "PendingBindings",
-            briefDescription = "Missing Pending Bindings",
-            explanation =
-                """
+      Issue.create(
+        id = "PendingBindings",
+        briefDescription = "Missing Pending Bindings",
+        explanation =
+          """
                 When using a `ViewDataBinding` in a `onBindViewHolder` method, you **must** \
                 call `executePendingBindings()` before the method exits; otherwise the data \
                 binding runtime will update the UI in the next animation frame causing a \
                 delayed update and potential jumps if the item resizes.
                 """,
-            category = Category.CORRECTNESS,
-            priority = 8,
-            androidSpecific = true,
-            severity = Severity.ERROR,
-            implementation = IMPLEMENTATION,
-        )
+        category = Category.CORRECTNESS,
+        priority = 8,
+        androidSpecific = true,
+        severity = Severity.ERROR,
+        implementation = IMPLEMENTATION,
+      )
 
     @JvmField
     val CLEAR_ALL_DATA =
-        Issue.create(
-            id = "NotifyDataSetChanged",
-            briefDescription = "Invalidating All RecyclerView Data",
-            explanation =
-                """
+      Issue.create(
+        id = "NotifyDataSetChanged",
+        briefDescription = "Invalidating All RecyclerView Data",
+        explanation =
+          """
                 The `RecyclerView` adapter's `onNotifyDataSetChanged` method does not specify what \
                 about the data set has changed, forcing any observers to assume that all existing \
                 items and structure may no longer be valid. `LayoutManager`s will be forced to \
                 fully rebind and relayout all visible views.
                 """,
-            category = Category.PERFORMANCE,
-            priority = 8,
-            androidSpecific = true,
-            severity = Severity.WARNING,
-            implementation = IMPLEMENTATION,
-        )
+        category = Category.PERFORMANCE,
+        priority = 8,
+        androidSpecific = true,
+        severity = Severity.WARNING,
+        implementation = IMPLEMENTATION,
+      )
 
     private const val ON_BIND_VIEW_HOLDER = "onBindViewHolder"
     private const val NOTIFY_DATA_SET_CHANGED = "notifyDataSetChanged"

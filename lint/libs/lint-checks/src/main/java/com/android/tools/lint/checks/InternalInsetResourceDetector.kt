@@ -58,34 +58,29 @@ class InternalInsetResourceDetector : Detector(), SourceCodeScanner {
     }
 
     if (defTypeArg == "dimen" && defPackageArg == "android") {
-      context.report(
-          ISSUE,
-          node,
-          context.getLocation(node),
-          "Using internal inset dimension resource `$nameArg` is not supported",
-      )
+      context.report(ISSUE, node, context.getLocation(node), "Using internal inset dimension resource `$nameArg` is not supported")
     }
   }
 
   companion object {
     @JvmField
     val ISSUE =
-        Issue.create(
-            id = "InternalInsetResource",
-            briefDescription = "Using internal inset dimension resource",
-            explanation =
-                """
+      Issue.create(
+        id = "InternalInsetResource",
+        briefDescription = "Using internal inset dimension resource",
+        explanation =
+          """
                     The internal inset dimension resources are not a supported way to \
                     retrieve the relevant insets for your application. The insets are \
                     dynamic values that can change while your app is visible, and your \
                     app's window may not intersect with the system UI. \
                     To get the relevant value for your app and listen to updates, use \
                     `androidx.core.view.WindowInsetsCompat` and related APIs.""",
-            category = Category.CORRECTNESS,
-            priority = 6,
-            severity = Severity.WARNING,
-            androidSpecific = true,
-            implementation = Implementation(InternalInsetResourceDetector::class.java, Scope.JAVA_FILE_SCOPE),
-        )
+        category = Category.CORRECTNESS,
+        priority = 6,
+        severity = Severity.WARNING,
+        androidSpecific = true,
+        implementation = Implementation(InternalInsetResourceDetector::class.java, Scope.JAVA_FILE_SCOPE),
+      )
   }
 }

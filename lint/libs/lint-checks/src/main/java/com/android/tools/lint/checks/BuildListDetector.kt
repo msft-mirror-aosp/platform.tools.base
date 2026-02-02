@@ -44,19 +44,19 @@ class BuildListDetector : Detector(), SourceCodeScanner {
     /** Missing Add Call */
     @JvmField
     val ISSUE =
-        Issue.create(
-            id = "BuildListAdds",
-            briefDescription = "Missing `add` call in `buildList`",
-            explanation =
-                """
+      Issue.create(
+        id = "BuildListAdds",
+        briefDescription = "Missing `add` call in `buildList`",
+        explanation =
+          """
           The `buildList { }` standard library function is a convenient way to \
           build lists, but you need to actually call `add` on the items.
           """,
-            category = Category.CORRECTNESS,
-            priority = 6,
-            severity = Severity.WARNING,
-            implementation = IMPLEMENTATION,
-        )
+        category = Category.CORRECTNESS,
+        priority = 6,
+        severity = Severity.WARNING,
+        implementation = IMPLEMENTATION,
+      )
 
     private const val BUILD_LIST_OWNER_CLASS_PART = "kotlin.collections.CollectionsKt__CollectionsKt"
     private const val BUILD_LIST_OWNER_FACADE = "kotlin.collections.CollectionsKt"
@@ -67,52 +67,49 @@ class BuildListDetector : Detector(), SourceCodeScanner {
   override fun visitMethodCall(context: JavaContext, node: UCallExpression, method: PsiMethod) {
     val evaluator = context.evaluator
     if (
-        node.valueArgumentCount == 1 &&
-            evaluator.isMemberInClass(method) { fqName -> fqName == BUILD_LIST_OWNER_CLASS_PART || fqName == BUILD_LIST_OWNER_FACADE }
+      node.valueArgumentCount == 1 &&
+        evaluator.isMemberInClass(method) { fqName -> fqName == BUILD_LIST_OWNER_CLASS_PART || fqName == BUILD_LIST_OWNER_FACADE }
     ) {
       val argument = node.valueArguments[0] as? ULambdaExpression ?: return
       val lambda = argument.sourcePsi as? KtLambdaExpression ?: return
       var isAdding = false
       val literal = lambda.functionLiteral
       lambda.accept(
-          @Suppress("LintImplPsiEquals")
-          object : KtTreeVisitor<Void>() {
-            override fun visitCallExpression(expression: KtCallExpression, data: Void?): Void? {
-              // .add(xyz)
-              checkImplicitReceiver(expression)
-              return super.visitCallExpression(expression, data)
-            }
+        @Suppress("LintImplPsiEquals")
+        object : KtTreeVisitor<Void>() {
+          override fun visitCallExpression(expression: KtCallExpression, data: Void?): Void? {
+            // .add(xyz)
+            checkImplicitReceiver(expression)
+            return super.visitCallExpression(expression, data)
+          }
 
-            override fun visitDoubleColonExpression(
-                expression: KtDoubleColonExpression,
-                data: Void?,
-            ): Void? {
-              // ::add, this::add, list::add, etc.
-              checkImplicitReceiver(expression)
-              return super.visitDoubleColonExpression(expression, data)
-            }
+          override fun visitDoubleColonExpression(expression: KtDoubleColonExpression, data: Void?): Void? {
+            // ::add, this::add, list::add, etc.
+            checkImplicitReceiver(expression)
+            return super.visitDoubleColonExpression(expression, data)
+          }
 
-            private fun checkImplicitReceiver(ktExpression: KtExpression) {
-              analyze(ktExpression) {
-                val receiverVal = getImplicitReceiverValue(ktExpression)
-                val psi = receiverVal?.getImplicitReceiverPsi()
-                if (psi == literal) {
-                  isAdding = true
-                }
+          private fun checkImplicitReceiver(ktExpression: KtExpression) {
+            analyze(ktExpression) {
+              val receiverVal = getImplicitReceiverValue(ktExpression)
+              val psi = receiverVal?.getImplicitReceiverPsi()
+              if (psi == literal) {
+                isAdding = true
               }
-            }
-
-            override fun visitThisExpression(expression: KtThisExpression, data: Void?): Void? {
-              analyze(expression) {
-                val reference = expression.getTargetLabel()?.mainReference ?: expression.instanceReference.mainReference
-                val psi = reference.resolveToSymbol()?.psi
-                if (psi == literal) {
-                  isAdding = true
-                }
-              }
-              return super.visitThisExpression(expression, data)
             }
           }
+
+          override fun visitThisExpression(expression: KtThisExpression, data: Void?): Void? {
+            analyze(expression) {
+              val reference = expression.getTargetLabel()?.mainReference ?: expression.instanceReference.mainReference
+              val psi = reference.resolveToSymbol()?.psi
+              if (psi == literal) {
+                isAdding = true
+              }
+            }
+            return super.visitThisExpression(expression, data)
+          }
+        }
       )
 
       if (!isAdding) {

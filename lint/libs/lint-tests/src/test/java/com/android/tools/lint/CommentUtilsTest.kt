@@ -10,49 +10,49 @@ class CommentUtilsTest {
   @Test
   fun testJavaComments() {
     assertEquals(
-        DOT_JAVA,
-        """
-        import androidx.recyclerview.widget.RecyclerView
-        public class MyClass { String s = "/* This comment is \"in\" a string */" }
-        """
-            .trimIndent()
-            .trim(),
-        stripComments(
-                """
+      DOT_JAVA,
+      """
+      import androidx.recyclerview.widget.RecyclerView
+      public class MyClass { String s = "/* This comment is \"in\" a string */" }
+      """
+        .trimIndent()
+        .trim(),
+      stripComments(
+          """
         /** Comment */
         import androidx.recyclerview.widget.RecyclerView // unnecessary
           // Line comment
         public class MyClass { String s = "/* This comment is \"in\" a string */" }""",
-                DOT_JAVA,
-            )
-            .trimIndent()
-            .trim(),
+          DOT_JAVA,
+        )
+        .trimIndent()
+        .trim(),
     )
   }
 
   @Test
   fun testJavaCommentsNotLineComments() {
     assertEquals(
-        """
-        import androidx.recyclerview.widget.RecyclerView; // unnecessary
-          // Line comment
-        public class MyClass { String s = "/* This comment is \"in\" a string */"; }
-        """
-            .trimIndent()
-            .trim(),
-        stripComments(
-                // language=Java
-                """
+      """
+      import androidx.recyclerview.widget.RecyclerView; // unnecessary
+        // Line comment
+      public class MyClass { String s = "/* This comment is \"in\" a string */"; }
+      """
+        .trimIndent()
+        .trim(),
+      stripComments(
+          // language=Java
+          """
           /** Comment */
           import androidx.recyclerview.widget.RecyclerView; // unnecessary
             // Line comment
           public class MyClass { String s = "/* This comment is \"in\" a string */"; }
           """,
-                DOT_JAVA,
-                stripLineComments = false,
-            )
-            .trimIndent()
-            .trim(),
+          DOT_JAVA,
+          stripLineComments = false,
+        )
+        .trimIndent()
+        .trim(),
     )
   }
 
@@ -60,25 +60,25 @@ class CommentUtilsTest {
   fun testKotlinComments() {
     // includes nested comments
     assertEquals(
-        """
-        fun test1() { }
+      """
+      fun test1() { }
 
-        fun test2() { }
-        """
-            .trimIndent()
-            .trim(),
-        stripComments(
-                // language=Kt
-                """
+      fun test2() { }
+      """
+        .trimIndent()
+        .trim(),
+      stripComments(
+          // language=Kt
+          """
                 // Line comment /*
                 /**/ /***/ fun test1() { }
                 /* /* */ fun wrong() { } */
                 fun test2() { }
                 """,
-                DOT_KT,
-            )
-            .trimIndent()
-            .trim(),
+          DOT_KT,
+        )
+        .trimIndent()
+        .trim(),
     )
   }
 
@@ -86,25 +86,25 @@ class CommentUtilsTest {
   fun testXmlComments() {
     // includes nested comments
     assertEquals(
-        // language=XML
-        """
-        <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-            package="com.android.example.appwithdatabinding" >
+      // language=XML
+      """
+      <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+          package="com.android.example.appwithdatabinding" >
 
-            <application
-                android:allowBackup="true"
-                android:icon="@drawable/ic_launcher"
-                android:label="@string/app_name"
-                android:theme="@style/AppTheme" >
-            </application>
+          <application
+              android:allowBackup="true"
+              android:icon="@drawable/ic_launcher"
+              android:label="@string/app_name"
+              android:theme="@style/AppTheme" >
+          </application>
 
-        </manifest>
-        """
-            .trimIndent()
-            .trim(),
-        stripComments(
-                // language=XML
-                """
+      </manifest>
+      """
+        .trimIndent()
+        .trim(),
+      stripComments(
+          // language=XML
+          """
           <manifest xmlns:android="http://schemas.android.com/apk/res/android"
               package="com.android.example.appwithdatabinding" >
 
@@ -118,10 +118,10 @@ class CommentUtilsTest {
 
           </manifest>
           """,
-                DOT_XML,
-            )
-            .trimIndent()
-            .trim(),
+          DOT_XML,
+        )
+        .trimIndent()
+        .trim(),
     )
   }
 }

@@ -8,35 +8,35 @@ class WearMaterialThemeDetectorTest : AbstractCheckTest() {
   }
 
   private val materialStub =
-      kotlin(
-              """
+    kotlin(
+        """
     package androidx.compose.material
 
     class MaterialTheme
 
     class Icon
     """
-          )
-          .indented()
+      )
+      .indented()
 
   private val materialWearStub =
-      kotlin(
-              """
+    kotlin(
+        """
     package androidx.wear.compose.material
 
     class MaterialTheme
   """
-          )
-          .indented()
+      )
+      .indented()
 
   fun testJava() {
     //noinspection all // Sample code
     lint()
-        .files(
-            materialStub,
-            materialWearStub,
-            manifest(
-                    """
+      .files(
+        materialStub,
+        materialWearStub,
+        manifest(
+            """
                         <manifest xmlns:android="http://schemas.android.com/apk/res/android" package="test.pkg">
                             <uses-feature android:name="android.hardware.type.watch" />
                             <application
@@ -45,10 +45,10 @@ class WearMaterialThemeDetectorTest : AbstractCheckTest() {
                             </application>
                         </manifest>
                         """
-                )
-                .indented(),
-            java(
-                    """
+          )
+          .indented(),
+        java(
+            """
                 package test.pkg;
 
                 import androidx.compose.material.MaterialTheme; // ERROR
@@ -57,27 +57,27 @@ class WearMaterialThemeDetectorTest : AbstractCheckTest() {
                 public class BadImport {
                 }
                 """
-                )
-                .indented(),
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+      )
+      .run()
+      .expect(
+        """
             src/test/pkg/BadImport.java:3: Error: Don't use androidx.compose.material.MaterialTheme in a Wear OS project; use androidx.wear.compose.material.MaterialTheme instead [WearMaterialTheme]
             import androidx.compose.material.MaterialTheme; // ERROR
             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             1 errors, 0 warnings
             """
-        )
+      )
   }
 
   fun testKotlin() {
     lint()
-        .files(
-            materialStub,
-            materialWearStub,
-            manifest(
-                    """
+      .files(
+        materialStub,
+        materialWearStub,
+        manifest(
+            """
                         <manifest xmlns:android="http://schemas.android.com/apk/res/android" package="test.pkg">
                             <uses-feature android:name="android.hardware.type.watch" />
                             <application
@@ -86,24 +86,24 @@ class WearMaterialThemeDetectorTest : AbstractCheckTest() {
                             </application>
                         </manifest>
                         """
-                )
-                .indented(),
-            kotlin(
-                    """
+          )
+          .indented(),
+        kotlin(
+            """
                 import androidx.compose.material.MaterialTheme // ERROR
                 import androidx.compose.material.Icon // OK
                 """
-                )
-                .indented(),
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+      )
+      .run()
+      .expect(
+        """
             src/test.kt:1: Error: Don't use androidx.compose.material.MaterialTheme in a Wear OS project; use androidx.wear.compose.material.MaterialTheme instead [WearMaterialTheme]
             import androidx.compose.material.MaterialTheme // ERROR
             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             1 errors, 0 warnings
             """
-        )
+      )
   }
 }

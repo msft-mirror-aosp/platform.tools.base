@@ -68,30 +68,25 @@ class PrivateResourceDetector
     private const val KEY_URL = "url"
 
     private val IMPLEMENTATION =
-        Implementation(
-            PrivateResourceDetector::class.java,
-            Scope.JAVA_AND_RESOURCE_FILES,
-            Scope.JAVA_FILE_SCOPE,
-            Scope.RESOURCE_FILE_SCOPE,
-        )
+      Implementation(PrivateResourceDetector::class.java, Scope.JAVA_AND_RESOURCE_FILES, Scope.JAVA_FILE_SCOPE, Scope.RESOURCE_FILE_SCOPE)
 
     @JvmField
     val ISSUE: Issue =
-        Issue.create(
-            id = "PrivateResource",
-            briefDescription = "Using private resources",
-            explanation =
-                """
+      Issue.create(
+        id = "PrivateResource",
+        briefDescription = "Using private resources",
+        explanation =
+          """
           Private resources should not be referenced; the may not be present everywhere, \
           and even where they are they may disappear without notice.
 
           To fix this, copy the resource into your own project instead.
           """,
-            category = Category.CORRECTNESS,
-            priority = 3,
-            severity = Severity.WARNING,
-            implementation = IMPLEMENTATION,
-        )
+        category = Category.CORRECTNESS,
+        priority = 3,
+        severity = Severity.WARNING,
+        implementation = IMPLEMENTATION,
+      )
   }
 
   /** List of resource URLs overriding private resources locally */
@@ -102,13 +97,7 @@ class PrivateResourceDetector
     return true
   }
 
-  override fun visitResourceReference(
-      context: JavaContext,
-      node: UElement,
-      type: ResourceType,
-      name: String,
-      isFramework: Boolean,
-  ) {
+  override fun visitResourceReference(context: JavaContext, node: UElement, type: ResourceType, name: String, isFramework: Boolean) {
     if (!isFramework && isPrivate(context, type, name)) {
       // See if it's a local package reference
       var foreignPackage = false
@@ -157,11 +146,7 @@ class PrivateResourceDetector
     return false
   }
 
-  private fun referencedInMain(
-      context: Context,
-      resourceType: ResourceType,
-      name: String,
-  ): Boolean {
+  private fun referencedInMain(context: Context, resourceType: ResourceType, name: String): Boolean {
     val client = context.client
     val mainProject = context.mainProject
     val repository = client.getResources(mainProject, ResourceRepositoryScope.LOCAL_DEPENDENCIES)
@@ -186,14 +171,7 @@ class PrivateResourceDetector
 
   /** Check resource definitions: overriding a private resource from an upstream library? */
   override fun getApplicableElements(): List<String> {
-    return listOf(
-        TAG_STYLE,
-        TAG_RESOURCES,
-        TAG_ARRAY,
-        TAG_STRING_ARRAY,
-        TAG_INTEGER_ARRAY,
-        TAG_PLURALS,
-    )
+    return listOf(TAG_STYLE, TAG_RESOURCES, TAG_ARRAY, TAG_STRING_ARRAY, TAG_INTEGER_ARRAY, TAG_PLURALS)
   }
 
   override fun visitElement(context: XmlContext, element: Element) {
@@ -215,11 +193,11 @@ class PrivateResourceDetector
       }
     } else {
       assert(
-          TAG_STYLE == element.tagName ||
-              TAG_ARRAY == element.tagName ||
-              TAG_PLURALS == element.tagName ||
-              TAG_INTEGER_ARRAY == element.tagName ||
-              TAG_STRING_ARRAY == element.tagName
+        TAG_STYLE == element.tagName ||
+          TAG_ARRAY == element.tagName ||
+          TAG_PLURALS == element.tagName ||
+          TAG_INTEGER_ARRAY == element.tagName ||
+          TAG_STRING_ARRAY == element.tagName
       )
       for (item in XmlUtils.getSubTags(element)) {
         checkChildRefs(context, item)
@@ -334,15 +312,11 @@ class PrivateResourceDetector
     return false
   }
 
-  private fun createOverrideErrorMessage(
-      context: Context,
-      type: ResourceType,
-      name: String,
-  ): String {
+  private fun createOverrideErrorMessage(context: Context, type: ResourceType, name: String): String {
     val libraryName: String = getLibraryName(context, type, name)
     return "Overriding `@$type/$name` which is marked as private in $libraryName. If " +
-        "deliberate, use tools:override=\"true\", otherwise pick a " +
-        "different name."
+      "deliberate, use tools:override=\"true\", otherwise pick a " +
+      "different name."
   }
 
   private fun createUsageErrorMessage(context: Context, type: ResourceType, name: String): String {

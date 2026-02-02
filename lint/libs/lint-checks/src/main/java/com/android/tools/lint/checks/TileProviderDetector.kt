@@ -51,64 +51,60 @@ class TileProviderDetector : WearDetector(), XmlScanner, BinaryResourceScanner {
 
     const val MIN_PREVIEW_SIZE = 384
 
-    val IMPLEMENTATION =
-        Implementation(
-            TileProviderDetector::class.java,
-            EnumSet.of(Scope.BINARY_RESOURCE_FILE, Scope.MANIFEST),
-        )
+    val IMPLEMENTATION = Implementation(TileProviderDetector::class.java, EnumSet.of(Scope.BINARY_RESOURCE_FILE, Scope.MANIFEST))
 
     @JvmField
     val TILE_PROVIDER_PERMISSIONS =
-        Issue.create(
-            id = "TileProviderPermissions",
-            briefDescription = "TileProvider does not set permission",
-            explanation =
-                """
+      Issue.create(
+        id = "TileProviderPermissions",
+        briefDescription = "TileProvider does not set permission",
+        explanation =
+          """
                 TileProviders should require the `com.google.android.wearable.permission.BIND_TILE_PROVIDER` \
                 permission to prevent arbitrary apps from binding to it.
             """,
-            category = Category.SECURITY,
-            priority = 6,
-            severity = Severity.WARNING,
-            implementation = Implementation(TileProviderDetector::class.java, Scope.MANIFEST_SCOPE),
-            androidSpecific = true,
-        )
+        category = Category.SECURITY,
+        priority = 6,
+        severity = Severity.WARNING,
+        implementation = Implementation(TileProviderDetector::class.java, Scope.MANIFEST_SCOPE),
+        androidSpecific = true,
+      )
 
     @JvmField
     val SQUARE_AND_ROUND_TILE_PREVIEWS =
-        Issue.create(
-                id = "SquareAndRoundTilePreviews",
-                briefDescription = "TileProvider does not have round and square previews",
-                explanation =
-                    """
+      Issue.create(
+          id = "SquareAndRoundTilePreviews",
+          briefDescription = "TileProvider does not have round and square previews",
+          explanation =
+            """
                 Tile projects should specify preview resources for different screen shapes. \
                 The preview resource is specified in the manifest under tile service. \
                 And you have to make sure they have resources for different screen shapes.
             """,
-                category = Category.ICONS,
-                priority = 6,
-                severity = Severity.WARNING,
-                implementation = IMPLEMENTATION,
-                androidSpecific = true,
-            )
-            .addMoreInfo("https://developer.android.com/design/ui/wear/guides/surfaces/tiles#tile-previews")
+          category = Category.ICONS,
+          priority = 6,
+          severity = Severity.WARNING,
+          implementation = IMPLEMENTATION,
+          androidSpecific = true,
+        )
+        .addMoreInfo("https://developer.android.com/design/ui/wear/guides/surfaces/tiles#tile-previews")
 
     @JvmField
     val TILE_PREVIEW_IMAGE_FORMAT =
-        Issue.create(
-                id = "TilePreviewImageFormat",
-                briefDescription = "Tile preview is not compliant with standards",
-                explanation =
-                    """
+      Issue.create(
+          id = "TilePreviewImageFormat",
+          briefDescription = "Tile preview is not compliant with standards",
+          explanation =
+            """
                 Tile projects should specify preview resources with aspect ratio 1:1 and at least ${MIN_PREVIEW_SIZE}px by ${MIN_PREVIEW_SIZE}px in size.
             """,
-                category = Category.ICONS,
-                priority = 6,
-                severity = Severity.ERROR,
-                implementation = IMPLEMENTATION,
-                androidSpecific = true,
-            )
-            .addMoreInfo("https://developer.android.com/design/ui/wear/guides/surfaces/tiles#tile-previews")
+          category = Category.ICONS,
+          priority = 6,
+          severity = Severity.ERROR,
+          implementation = IMPLEMENTATION,
+          androidSpecific = true,
+        )
+        .addMoreInfo("https://developer.android.com/design/ui/wear/guides/surfaces/tiles#tile-previews")
 
     const val BIND_TILE_PROVIDER_PERMISSION = "com.google.android.wearable.permission.BIND_TILE_PROVIDER"
     const val TILES_PREVIEW_ATTR_NAME = "androidx.wear.tiles.PREVIEW"
@@ -132,12 +128,12 @@ class TileProviderDetector : WearDetector(), XmlScanner, BinaryResourceScanner {
   }
 
   data class IconInfo(
-      val issueScope: Node,
-      val issueLocation: Location,
-      var foundRoundPreview: Boolean = false,
-      var foundSquarePreview: Boolean = false,
-      var wrongAspectRatio: Boolean = false,
-      var smallImageSize: Boolean = false,
+    val issueScope: Node,
+    val issueLocation: Location,
+    var foundRoundPreview: Boolean = false,
+    var foundSquarePreview: Boolean = false,
+    var wrongAspectRatio: Boolean = false,
+    var smallImageSize: Boolean = false,
   )
 
   private val foundIcons: MutableMap<String, IconInfo> = mutableMapOf()
@@ -153,32 +149,27 @@ class TileProviderDetector : WearDetector(), XmlScanner, BinaryResourceScanner {
       // a missing resource.
       if (metadata.foundRoundPreview xor metadata.foundSquarePreview) {
         context.report(
-            Incident(
-                SQUARE_AND_ROUND_TILE_PREVIEWS,
-                metadata.issueScope,
-                metadata.issueLocation,
-                "Tiles need a preview asset in both drawable-round and drawable",
-            )
+          Incident(
+            SQUARE_AND_ROUND_TILE_PREVIEWS,
+            metadata.issueScope,
+            metadata.issueLocation,
+            "Tiles need a preview asset in both drawable-round and drawable",
+          )
         )
       }
       if (metadata.wrongAspectRatio) {
         context.report(
-            Incident(
-                TILE_PREVIEW_IMAGE_FORMAT,
-                metadata.issueScope,
-                metadata.issueLocation,
-                "Tile previews should have 1:1 aspect ratio",
-            )
+          Incident(TILE_PREVIEW_IMAGE_FORMAT, metadata.issueScope, metadata.issueLocation, "Tile previews should have 1:1 aspect ratio")
         )
       }
       if (metadata.smallImageSize) {
         context.report(
-            Incident(
-                TILE_PREVIEW_IMAGE_FORMAT,
-                metadata.issueScope,
-                metadata.issueLocation,
-                "Tile previews should be at least ${MIN_PREVIEW_SIZE}px by ${MIN_PREVIEW_SIZE}px",
-            )
+          Incident(
+            TILE_PREVIEW_IMAGE_FORMAT,
+            metadata.issueScope,
+            metadata.issueLocation,
+            "Tile previews should be at least ${MIN_PREVIEW_SIZE}px by ${MIN_PREVIEW_SIZE}px",
+          )
         )
       }
     }
@@ -254,14 +245,7 @@ class TileProviderDetector : WearDetector(), XmlScanner, BinaryResourceScanner {
       }
     }
     if (foundMetaData == null) {
-      context.report(
-          Incident(
-              SQUARE_AND_ROUND_TILE_PREVIEWS,
-              service,
-              context.getLocation(service),
-              "Tiles need preview assets",
-          )
-      )
+      context.report(Incident(SQUARE_AND_ROUND_TILE_PREVIEWS, service, context.getLocation(service), "Tiles need preview assets"))
     }
   }
 
@@ -269,21 +253,21 @@ class TileProviderDetector : WearDetector(), XmlScanner, BinaryResourceScanner {
     val permission = service.getAttributeNS(ANDROID_URI, ATTR_PERMISSION)
     if (permission != BIND_TILE_PROVIDER_PERMISSION) {
       val fix =
-          fix()
-              .set()
-              .attribute(ATTR_PERMISSION)
-              .value(BIND_TILE_PROVIDER_PERMISSION)
-              .android()
-              .name(if (permission.isEmpty()) "Add BIND_TILE_PROVIDER permission" else "Change permission to BIND_TILE_PROVIDER")
-              .build()
+        fix()
+          .set()
+          .attribute(ATTR_PERMISSION)
+          .value(BIND_TILE_PROVIDER_PERMISSION)
+          .android()
+          .name(if (permission.isEmpty()) "Add BIND_TILE_PROVIDER permission" else "Change permission to BIND_TILE_PROVIDER")
+          .build()
       context.report(
-          Incident(
-              TILE_PROVIDER_PERMISSIONS,
-              service,
-              context.getNameLocation(service),
-              "TileProvider does not specify BIND_TILE_PROVIDER permission",
-              fix,
-          )
+        Incident(
+          TILE_PROVIDER_PERMISSIONS,
+          service,
+          context.getNameLocation(service),
+          "TileProvider does not specify BIND_TILE_PROVIDER permission",
+          fix,
+        )
       )
     }
   }

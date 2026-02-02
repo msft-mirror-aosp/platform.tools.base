@@ -73,8 +73,8 @@ class LintJarApiMigrationTest {
     var verifier = LintJarVerifier(client, jarFile)
     assertFalse(verifier.isCompatible())
     assertEquals(
-        "In androidx.navigation.common.lint.LintUtilKt.isClassReference: org.jetbrains.kotlin.analysis.api.session.KtAnalysisSessionProvider#Companion",
-        verifier.toString(),
+      "In androidx.navigation.common.lint.LintUtilKt.isClassReference: org.jetbrains.kotlin.analysis.api.session.KtAnalysisSessionProvider#Companion",
+      verifier.toString(),
     )
     assertTrue(verifier.needsApiMigration())
 
@@ -98,10 +98,10 @@ class LintJarApiMigrationTest {
   @Test
   fun testMigrateAnalyze() {
     val file =
-        bytecode(
-            "code.jar",
-            kotlin(
-                    """
+      bytecode(
+        "code.jar",
+        kotlin(
+            """
             package test.pkg
 
             import org.jetbrains.kotlin.analysis.api.analyze
@@ -113,19 +113,19 @@ class LintJarApiMigrationTest {
                 }
             }
             """
-                )
-                .indented(),
-            // To compute this, use
-            // lint().files(file, *getLintClassPath(),
-            //  LibraryReferenceTestFile(File("/downloaded/kotlin-compiler-31.7.0-alpha03.jar")),
-            // ).createProjects(tempFolder)
-            0xcf74546,
-            """
+          )
+          .indented(),
+        // To compute this, use
+        // lint().files(file, *getLintClassPath(),
+        //  LibraryReferenceTestFile(File("/downloaded/kotlin-compiler-31.7.0-alpha03.jar")),
+        // ).createProjects(tempFolder)
+        0xcf74546,
+        """
         META-INF/main.kotlin_module:
         H4sIAAAAAAAA/2NgYGBmYGBgBGJOBijgEuLiKEktLtEryE4XYgsBsrxLlBi0
         GAAvgr4WLAAAAA==
         """,
-            """
+        """
         test/pkg/TestKt.class:
         H4sIAAAAAAAA/+1WX1cTRxT/TUJYWCIiSDVYFSXWECNLwh81WG2MYFMCoiBW
         aUsnYYAlm910d4lo66kfoO/tN+hLn/qQY/vQ8tSHntOvVHsnGyQgSlQee042
@@ -162,12 +162,12 @@ class LintJarApiMigrationTest {
         vwB/BksZiAyWsZLBKvQM1lBYAHNgoLiAJgcBB3QaWxzK1re0uZ02l+j5pipk
         /we5oQ7XfQ8AAA==
         """,
-        )
+      )
 
     checkBytecodeMigration(
-        file,
-        "testAnalyze",
-        """
+      file,
+      "testAnalyze",
+      """
       @@ -15 +15 @@
       - GETSTATIC org/jetbrains/kotlin/analysis/api/session/KtAnalysisSessionProvider.Companion : Lorg/jetbrains/kotlin/analysis/api/session/KtAnalysisSessionProvider＄Companion;
       + GETSTATIC org/jetbrains/kotlin/analysis/api/session/KaSessionProvider.Companion : Lorg/jetbrains/kotlin/analysis/api/session/KaSessionProvider＄Companion;
@@ -254,38 +254,38 @@ class LintJarApiMigrationTest {
       + LINENUMBER 20 L18
       ...
       """,
-        true,
-        maxLines = 84,
-        checkSource =
-            kotlin(
-                """
+      true,
+      maxLines = 84,
+      checkSource =
+        kotlin(
+          """
           fun self1(s: String) = s
           fun self2(s: String?) = s
           """
-            ),
-        checks = { ktFile, migratedClass ->
-          // This method is invoked with ktFile containing the PSI representation of the above
-          // `checkSource`source field, and migratedClass containing the bytecode migrated version
-          // of the original source above.
-          //
-          // In this case, our migrated code is performing analysis API lookups to see if a Kotlin
-          // expression is nullable. To make sure that the modified code is actually executing
-          // correctly, we'll use reflection to call into this migrated code, passing in valid KT
-          // elements, and checking that the results are correct. In this specific case, we'll
-          // use the kotlin expression method bodies, where the first one is not nullable and the
-          // second one is.
-          fun canBeNull(ktExpression: KtExpression): Boolean {
-            val method = migratedClass.declaredMethods[0]
-            return method.invoke(null, ktExpression) as Boolean
-          }
-          val func1 = ktFile.declarations[0] as KtNamedFunction
-          val func2 = ktFile.declarations[1] as KtNamedFunction
-          val exp1 = func1.bodyExpression as KtExpression
-          val exp2 = func2.bodyExpression as KtExpression
+        ),
+      checks = { ktFile, migratedClass ->
+        // This method is invoked with ktFile containing the PSI representation of the above
+        // `checkSource`source field, and migratedClass containing the bytecode migrated version
+        // of the original source above.
+        //
+        // In this case, our migrated code is performing analysis API lookups to see if a Kotlin
+        // expression is nullable. To make sure that the modified code is actually executing
+        // correctly, we'll use reflection to call into this migrated code, passing in valid KT
+        // elements, and checking that the results are correct. In this specific case, we'll
+        // use the kotlin expression method bodies, where the first one is not nullable and the
+        // second one is.
+        fun canBeNull(ktExpression: KtExpression): Boolean {
+          val method = migratedClass.declaredMethods[0]
+          return method.invoke(null, ktExpression) as Boolean
+        }
+        val func1 = ktFile.declarations[0] as KtNamedFunction
+        val func2 = ktFile.declarations[1] as KtNamedFunction
+        val exp1 = func1.bodyExpression as KtExpression
+        val exp2 = func2.bodyExpression as KtExpression
 
-          assertEquals(false, canBeNull(exp1))
-          assertEquals(true, canBeNull(exp2))
-        },
+        assertEquals(false, canBeNull(exp1))
+        assertEquals(true, canBeNull(exp2))
+      },
     )
   }
 
@@ -294,10 +294,10 @@ class LintJarApiMigrationTest {
     // resolveCall should be moved from INVOKESTATIC to INVOKEINTERFACE.
     // Also, isNothing was renamed to isNothingType.
     val file =
-        bytecode(
-            "code.jar",
-            kotlin(
-                    """
+      bytecode(
+        "code.jar",
+        kotlin(
+            """
             package test.pkg
 
             import org.jetbrains.kotlin.analysis.api.analyze
@@ -311,15 +311,15 @@ class LintJarApiMigrationTest {
                 }
             }
             """
-                )
-                .indented(),
-            0x9d1d5f7f,
-            """
+          )
+          .indented(),
+        0x9d1d5f7f,
+        """
         META-INF/main.kotlin_module:
         H4sIAAAAAAAA/2NgYGBmYGBgBGJOBijgEuLiKEktLtEryE4XYgsBsrxLlBi0
         GAAvgr4WLAAAAA==
         """,
-            """
+        """
         test/pkg/TestKt.class:
         H4sIAAAAAAAA/+1X3VMTVxT/3QRYWAIiihqsipLWgMiSICjBaimCTQkfEsQK
         bXETLrBks5vubiJY29La7/ahj51x+tyZTp86U4b2oeWpD/1X+j/UnpsNEhAl
@@ -359,40 +359,40 @@ class LintJarApiMigrationTest {
         SEzUGJqU4UtRrMhLX1Ee/F829r1s4Gvy70XytkVBsKfhjcKJIhtFDnejWMJy
         FPfw/jSYjfv4YBplNsptfGij0qZofUOba2nzCj0f55k++Q82DTtNrhEAAA==
         """,
-        )
+      )
 
     checkBytecodeMigration(
-        file,
-        "returnsString",
-        """
+      file,
+      "returnsString",
+      """
       ...
       - INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/KtAnalysisSession.resolveCall (Lorg/jetbrains/kotlin/psi/KtElement;)Lorg/jetbrains/kotlin/analysis/api/calls/KtCallInfo;
       + INVOKEINTERFACE org/jetbrains/kotlin/analysis/api/KaSession.resolveToCall (Lorg/jetbrains/kotlin/psi/KtElement;)Lorg/jetbrains/kotlin/analysis/api/resolution/KaCallInfo; (itf)
       ...
       """,
-        skipFirst = 36,
-        maxLines = 2,
-        showDiff = true,
-        checkSource =
-            kotlin(
-                """
+      skipFirst = 36,
+      maxLines = 2,
+      showDiff = true,
+      checkSource =
+        kotlin(
+          """
           fun stringMethod(): String = "hello"
           fun intMethod(): Int = 42
           fun call1() = stringMethod()
           fun call2() = intMethod()
           """
-            ),
-        checks = { ktFile, migratedClass ->
-          fun isString(ktExpression: KtExpression): Boolean {
-            val method = migratedClass.declaredMethods[0]
-            return method.invoke(null, ktExpression) as Boolean
-          }
-          val call1 = (ktFile.declarations[2] as KtNamedFunction).bodyExpression as KtCallExpression
-          val call2 = (ktFile.declarations[3] as KtNamedFunction).bodyExpression as KtCallExpression
+        ),
+      checks = { ktFile, migratedClass ->
+        fun isString(ktExpression: KtExpression): Boolean {
+          val method = migratedClass.declaredMethods[0]
+          return method.invoke(null, ktExpression) as Boolean
+        }
+        val call1 = (ktFile.declarations[2] as KtNamedFunction).bodyExpression as KtCallExpression
+        val call2 = (ktFile.declarations[3] as KtNamedFunction).bodyExpression as KtCallExpression
 
-          assertEquals(true, isString(call1))
-          assertEquals(false, isString(call2))
-        },
+        assertEquals(true, isString(call1))
+        assertEquals(false, isString(call2))
+      },
     )
   }
 
@@ -401,11 +401,11 @@ class LintJarApiMigrationTest {
     // Verify code which tripped up bytecode verifier in google3
     @Suppress("KotlinConstantConditions")
     val file =
-        bytecode(
-            "code.jar",
-            kotlin(
-                    "src/test/pkg/test.kt",
-                    """
+      bytecode(
+        "code.jar",
+        kotlin(
+            "src/test/pkg/test.kt",
+            """
             package test.pkg
             import com.intellij.psi.PsiElement
             import org.jetbrains.kotlin.analysis.api.analyze
@@ -449,14 +449,14 @@ class LintJarApiMigrationTest {
                 }
             }
             """,
-                )
-                .indented(),
-            0x4899033,
-            """
+          )
+          .indented(),
+        0x4899033,
+        """
         META-INF/main.kotlin_module:
         H4sIAAAAAAAA/2NgYGBmYGBgBGJOBijgEuLiKEktLtEryE4XYgsBsrxLlBi0
         GAAvgr4WLAAAAA==""",
-            """
+        """
         test/pkg/TestKt.class:
         H4sIAAAAAAAA/+1YaVhc1Rl+D9uFyxLCFiZRQwIaQkiGgQGSIcYQAopAiBKT
         ZlFyGS7kwjBD514IsYuxrd2tba0LttHaDautjdbSxFYlttVWrd03be2+/m77
@@ -527,12 +527,12 @@ class LintJarApiMigrationTest {
         V1kvcyN/Y/NmiflmiXnJSkz83a5oBH7AoPnhQSS34ket+HErfoKftuJn+Hkr
         foFfHoQw8Su8dhAZJppN3GbiuIlDJlJNvG5KYquJX9sOnENZb/D5rT3nd/8H
         gGho19MhAAA=""",
-        )
+      )
 
     checkBytecodeMigration(
-        file,
-        "getImplicitReceiverPsi",
-        """
+      file,
+      "getImplicitReceiverPsi",
+      """
       @@ -11 +11 @@
       -  INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/calls/KtImplicitReceiverValue.getSymbol ()Lorg/jetbrains/kotlin/analysis/api/symbols/KtSymbol;
       +  INVOKEINTERFACE org/jetbrains/kotlin/analysis/api/resolution/KaImplicitReceiverValue.getSymbol ()Lorg/jetbrains/kotlin/analysis/api/symbols/KaSymbol; (itf)
@@ -553,25 +553,25 @@ class LintJarApiMigrationTest {
       -  INVOKEINTERFACE org/jetbrains/kotlin/analysis/api/symbols/KtSymbol.getPsi ()Lcom/intellij/psi/PsiElement; (itf)
       +  INVOKEINTERFACE org/jetbrains/kotlin/analysis/api/symbols/KaSymbol.getPsi ()Lcom/intellij/psi/PsiElement; (itf)
       """,
-        showDiff = true,
-        checkSource =
-            kotlin(
-                """
+      showDiff = true,
+      checkSource =
+        kotlin(
+          """
           class Foo {
              // The implicit receiver of method2 is "this" is Foo.this
              fun method1(): Int = method2()
              fun method2(): Int = 42
           }
           """
-            ),
-        checks = { ktFile, migratedClass ->
-          fun getImplicitReceiverPsi(ktExpression: KtExpression): PsiElement? {
-            val method = migratedClass.declaredMethods.find { it.name == "getPsiForReceiver" }!!
-            return method.invoke(null, ktExpression) as PsiElement?
-          }
-          val call = ((ktFile.declarations[0] as KtClass).declarations[0] as KtNamedFunction).bodyExpression as KtCallExpression
-          assertEquals("Foo", (getImplicitReceiverPsi(call) as KtClass).name)
-        },
+        ),
+      checks = { ktFile, migratedClass ->
+        fun getImplicitReceiverPsi(ktExpression: KtExpression): PsiElement? {
+          val method = migratedClass.declaredMethods.find { it.name == "getPsiForReceiver" }!!
+          return method.invoke(null, ktExpression) as PsiElement?
+        }
+        val call = ((ktFile.declarations[0] as KtClass).declarations[0] as KtNamedFunction).bodyExpression as KtCallExpression
+        assertEquals("Foo", (getImplicitReceiverPsi(call) as KtClass).name)
+      },
     )
   }
 
@@ -580,10 +580,10 @@ class LintJarApiMigrationTest {
     // isNothing was renamed to isNothingType.
 
     val file =
-        bytecode(
-            "code.jar",
-            kotlin(
-                    """
+      bytecode(
+        "code.jar",
+        kotlin(
+            """
             package test.pkg
 
             import org.jetbrains.kotlin.analysis.api.analyze
@@ -597,15 +597,15 @@ class LintJarApiMigrationTest {
                 }
             }
             """
-                )
-                .indented(),
-            0x58432e00,
-            """
+          )
+          .indented(),
+        0x58432e00,
+        """
         META-INF/main.kotlin_module:
         H4sIAAAAAAAA/2NgYGBmYGBgBGJOBijgEuLiKEktLtEryE4XYgsBsrxLlBi0
         GAAvgr4WLAAAAA==
         """,
-            """
+        """
         test/pkg/TestKt.class:
         H4sIAAAAAAAA/+1X3VMTVxT/3QRYWAIiihqsipLWgMiSICjBaimCTQkfEsQK
         bXETLrBks5vubiJY29La7/ahj51x+tyZTp86U4b2oeWpD/1X+j/UnpsNEhAl
@@ -645,12 +645,12 @@ class LintJarApiMigrationTest {
         SEzUGJqU4UtRrMhLX1Ee/F829r1s4Gvy70XytkVBsKfhjcKJIhtFDnejWMJy
         FPfw/jSYjfv4YBplNsptfGij0qZofUOba2nzCj0f55k++Q/xZ3BarxEAAA==
         """,
-        )
+      )
 
     checkBytecodeMigration(
-        file,
-        "isNothingType",
-        """
+      file,
+      "isNothingType",
+      """
       ...
       + IFNULL L15
       @@ -85,4 +80,4 @@
@@ -662,29 +662,29 @@ class LintJarApiMigrationTest {
       + GOTO L16
       ...
       """,
-        skipFirst = 59,
-        maxLines = 8,
-        showDiff = true,
-        checkSource =
-            kotlin(
-                """
+      skipFirst = 59,
+      maxLines = 8,
+      showDiff = true,
+      checkSource =
+        kotlin(
+          """
           fun method1(): String = "hello"
           fun method2(): Nothing = TODO()
           fun call1() = method1()
           fun call2() = method2()
           """
-            ),
-        checks = { ktFile, migratedClass ->
-          fun isNothing(ktExpression: KtExpression): Boolean {
-            val method = migratedClass.declaredMethods[0]
-            return method.invoke(null, ktExpression) as Boolean
-          }
-          val call1 = (ktFile.declarations[2] as KtNamedFunction).bodyExpression as KtCallExpression
-          val call2 = (ktFile.declarations[3] as KtNamedFunction).bodyExpression as KtCallExpression
+        ),
+      checks = { ktFile, migratedClass ->
+        fun isNothing(ktExpression: KtExpression): Boolean {
+          val method = migratedClass.declaredMethods[0]
+          return method.invoke(null, ktExpression) as Boolean
+        }
+        val call1 = (ktFile.declarations[2] as KtNamedFunction).bodyExpression as KtCallExpression
+        val call2 = (ktFile.declarations[3] as KtNamedFunction).bodyExpression as KtCallExpression
 
-          assertEquals(false, isNothing(call1))
-          assertEquals(true, isNothing(call2))
-        },
+        assertEquals(false, isNothing(call1))
+        assertEquals(true, isNothing(call2))
+      },
     )
   }
 
@@ -692,10 +692,10 @@ class LintJarApiMigrationTest {
   fun testSuperTypes() {
     // Check getAllSuperTypes renaming and type providers
     val file =
-        bytecode(
-            "code.jar",
-            kotlin(
-                    """
+      bytecode(
+        "code.jar",
+        kotlin(
+            """
             package test.pkg
 
             import org.jetbrains.kotlin.analysis.api.analyze
@@ -708,15 +708,15 @@ class LintJarApiMigrationTest {
                 }
             }
             """
-                )
-                .indented(),
-            0x36d63860,
-            """
+          )
+          .indented(),
+        0x36d63860,
+        """
         META-INF/main.kotlin_module:
         H4sIAAAAAAAA/2NgYGBmYGBgBGJOBijgEuLiKEktLtEryE4XYgsBsrxLlBi0
         GAAvgr4WLAAAAA==
         """,
-            """
+        """
         test/pkg/TestKt.class:
         H4sIAAAAAAAA/+1XXVMTVxh+ThJYsiAioiXYWpRYQ0SWhA81sSpFsDEJoiBW
         aWs3yQGWbHbT3U0E+2XbGad/oDO97PSmt51eMLYXLVe96A/pz6h9TzZI+BCC
@@ -755,12 +755,12 @@ class LintJarApiMigrationTest {
         Hf4/PQ789MA35N8L5G2NArI0B28C+QT0BAowEjBRTOBTWHNgNmw4c/DZaLBR
         suG3KXIibq20+RE9yxWmlf8AmOlRJfwQAAA=
         """,
-        )
+      )
 
     checkBytecodeMigration(
-        file,
-        "getExpressionTypes",
-        """
+      file,
+      "getExpressionTypes",
+      """
       ...
       @@ -69 +64 @@
       -  INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/KtAnalysisSession.getKtType (Lorg/jetbrains/kotlin/psi/KtExpression;)Lorg/jetbrains/kotlin/analysis/api/types/KtType;
@@ -782,35 +782,35 @@ class LintJarApiMigrationTest {
       -  GOTO L18
       ...
       """,
-        skipFirst = 22,
-        maxLines = 18,
-        showDiff = true,
-        checkSource =
-            kotlin(
-                """
+      skipFirst = 22,
+      maxLines = 18,
+      showDiff = true,
+      checkSource =
+        kotlin(
+          """
           fun method1(): String = "hello"
           fun method2(): List<String> = emptyList()
           fun call1() = method1()
           fun call2() = method2()
           """
-            ),
-        checks = { ktFile, migratedClass ->
-          fun getFirstSuperTypeName(ktExpression: KtExpression): Any? {
-            val method = migratedClass.declaredMethods[0]
-            return method.invoke(null, ktExpression)
-          }
-          val call1 = (ktFile.declarations[2] as KtNamedFunction).bodyExpression as KtCallExpression
-          val call2 = (ktFile.declarations[3] as KtNamedFunction).bodyExpression as KtCallExpression
+        ),
+      checks = { ktFile, migratedClass ->
+        fun getFirstSuperTypeName(ktExpression: KtExpression): Any? {
+          val method = migratedClass.declaredMethods[0]
+          return method.invoke(null, ktExpression)
+        }
+        val call1 = (ktFile.declarations[2] as KtNamedFunction).bodyExpression as KtCallExpression
+        val call2 = (ktFile.declarations[3] as KtNamedFunction).bodyExpression as KtCallExpression
 
-          assertEquals(
-              "[kotlin/Comparable<kotlin/String>, kotlin/CharSequence, java/io/Serializable, kotlin/Any]",
-              getFirstSuperTypeName(call1).toString(),
-          )
-          assertEquals(
-              "[kotlin/collections/Collection<kotlin/String>, kotlin/collections/Iterable<kotlin/String>, kotlin/Any]",
-              getFirstSuperTypeName(call2).toString(),
-          )
-        },
+        assertEquals(
+          "[kotlin/Comparable<kotlin/String>, kotlin/CharSequence, java/io/Serializable, kotlin/Any]",
+          getFirstSuperTypeName(call1).toString(),
+        )
+        assertEquals(
+          "[kotlin/collections/Collection<kotlin/String>, kotlin/collections/Iterable<kotlin/String>, kotlin/Any]",
+          getFirstSuperTypeName(call2).toString(),
+        )
+      },
     )
   }
 
@@ -820,10 +820,10 @@ class LintJarApiMigrationTest {
     //   v.s.
     // KtTypeReference.getKtType() -> getType()
     val file =
-        bytecode(
-            "code.jar",
-            kotlin(
-                    """
+      bytecode(
+        "code.jar",
+        kotlin(
+            """
             package test.pkg
 
             import org.jetbrains.kotlin.analysis.api.analyze
@@ -841,15 +841,15 @@ class LintJarApiMigrationTest {
                 }
             }
           """
-                )
-                .indented(),
-            0xe843a1a9,
-            """
+          )
+          .indented(),
+        0xe843a1a9,
+        """
                 META-INF/main.kotlin_module:
                 H4sIAAAAAAAA/2NgYGBmYGBgBGJOBijgEuLiKEktLtEryE4XYgsBsrxLlBi0
                 GAAvgr4WLAAAAA==
                 """,
-            """
+        """
                 test/pkg/TestKt.class:
                 H4sIAAAAAAAA/+1W21MTVxj/ndw22URFVCTghUrUEAIhAVGCWqmipgSlhmIR
                 WrsJB1iS7Ka7S7w8+R+0Tp8cpzOdzlheOmPbBy/tVGk704f+UbXfySbcBdQ+
@@ -887,12 +887,12 @@ class LintJarApiMigrationTest {
                 3JiYgDOFyRQ+TeEz3EzhcygpZJGbADMxBT4Blwm3iWkTPpOSI1Kzk4RnaagV
                 prl/AZ8r8z6sDgAA
                 """,
-        )
+      )
 
     checkBytecodeMigration(
-        file,
-        "twoTypes",
-        """
+      file,
+      "twoTypes",
+      """
       @@ -82 +82 @@
       -  INVOKEINTERFACE org/jetbrains/kotlin/analysis/api/KaSession.getKtType (Lorg/jetbrains/kotlin/psi/KtExpression;)Lorg/jetbrains/kotlin/analysis/api/types/KaType; (itf)
       +  INVOKEINTERFACE org/jetbrains/kotlin/analysis/api/KaSession.getExpressionType (Lorg/jetbrains/kotlin/psi/KtExpression;)Lorg/jetbrains/kotlin/analysis/api/types/KaType; (itf)
@@ -900,28 +900,28 @@ class LintJarApiMigrationTest {
       -  INVOKEINTERFACE org/jetbrains/kotlin/analysis/api/KaSession.getKtType (Lorg/jetbrains/kotlin/psi/KtTypeReference;)Lorg/jetbrains/kotlin/analysis/api/types/KaType; (itf)
       +  INVOKEINTERFACE org/jetbrains/kotlin/analysis/api/KaSession.getType (Lorg/jetbrains/kotlin/psi/KtTypeReference;)Lorg/jetbrains/kotlin/analysis/api/types/KaType; (itf)
       """,
-        maxLines = 17,
-        showDiff = true,
-        checkSource =
-            kotlin(
-                """
+      maxLines = 17,
+      showDiff = true,
+      checkSource =
+        kotlin(
+          """
           fun method1(): String = "hello"
           fun method2(): List<String> = emptyList()
           fun call1() = method1()
           fun call2() = method2()
           """
-            ),
-        checks = { ktFile, migratedClass ->
-          fun getTwoTypes(element: KtElement): Any? {
-            val method = migratedClass.declaredMethods[0]
-            return method.invoke(null, element)
-          }
-          val method1 = (ktFile.declarations[0] as KtNamedFunction).typeReference as KtTypeReference
-          val call2 = (ktFile.declarations[3] as KtNamedFunction).bodyExpression as KtCallExpression
+        ),
+      checks = { ktFile, migratedClass ->
+        fun getTwoTypes(element: KtElement): Any? {
+          val method = migratedClass.declaredMethods[0]
+          return method.invoke(null, element)
+        }
+        val method1 = (ktFile.declarations[0] as KtNamedFunction).typeReference as KtTypeReference
+        val call2 = (ktFile.declarations[3] as KtNamedFunction).bodyExpression as KtCallExpression
 
-          assertEquals("kotlin/String", getTwoTypes(method1))
-          assertEquals("kotlin/collections/List<kotlin/String>", getTwoTypes(call2))
-        },
+        assertEquals("kotlin/String", getTwoTypes(method1))
+        assertEquals("kotlin/collections/List<kotlin/String>", getTwoTypes(call2))
+      },
     )
   }
 
@@ -929,10 +929,10 @@ class LintJarApiMigrationTest {
   fun testClassIdIfNonLocal() {
     // From AutoboxingStateCreationDetector#getSuggestedReplacementName
     val file =
-        bytecode(
-            "code.jar",
-            kotlin(
-                    """
+      bytecode(
+        "code.jar",
+        kotlin(
+            """
             package test.pkg
 
             import org.jetbrains.kotlin.analysis.api.analyze
@@ -951,15 +951,15 @@ class LintJarApiMigrationTest {
                 }
             }
           """
-                )
-                .indented(),
-            0xabf45445,
-            """
+          )
+          .indented(),
+        0xabf45445,
+        """
         META-INF/main.kotlin_module:
         H4sIAAAAAAAA/2NgYGBmYGBgBGJOBijgEuLiKEktLtEryE4XYgsBsrxLlBi0
         GAAvgr4WLAAAAA==
         """,
-            """
+        """
         test/pkg/TestKt.class:
         H4sIAAAAAAAA/+1X3XMTVRT/3STNttvQhspHAwqFBk1L2zRpoZhioUKLoWlF
         UqsVFG6S23SbZDfubgLFL3zzX/DdkSdmGGdEqI4w6OiMb/4X/hGOeO5uQktb
@@ -1000,12 +1000,12 @@ class LintJarApiMigrationTest {
         9RN6FMqHQ+DDp7LPwsZnVOr/97t/0u9wk0I4QgHNU0YWL8GbhJbEUhIFFJMo
         QU/CQPkSmIUPYV6Cz0KTBcui0YmSI1PT5qScoeoQXfsb61He9Y0QAAA=
         """,
-        )
+      )
 
     checkBytecodeMigration(
-        file,
-        "getSuggestedReplacementName",
-        """
+      file,
+      "getSuggestedReplacementName",
+      """
       @@ -80 +80 @@
       -  INVOKEINTERFACE org/jetbrains/kotlin/analysis/api/KaSession.getKtType (Lorg/jetbrains/kotlin/psi/KtTypeReference;)Lorg/jetbrains/kotlin/analysis/api/types/KaType; (itf)
       +  INVOKEINTERFACE org/jetbrains/kotlin/analysis/api/KaSession.getType (Lorg/jetbrains/kotlin/psi/KtTypeReference;)Lorg/jetbrains/kotlin/analysis/api/types/KaType; (itf)
@@ -1016,25 +1016,25 @@ class LintJarApiMigrationTest {
       -  INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/symbols/KaClassSymbol.getClassIdIfNonLocal ()Lorg/jetbrains/kotlin/name/ClassId;
       +  INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/symbols/KaClassSymbol.getClassId ()Lorg/jetbrains/kotlin/name/ClassId;
       """,
-        showDiff = true,
-        checkSource =
-            kotlin(
-                """
+      showDiff = true,
+      checkSource =
+        kotlin(
+          """
           fun method1(): String = "hello"
           fun method2(): List<String> = emptyList()
           """
-            ),
-        checks = { ktFile, migratedClass ->
-          fun getTypeName(element: KtElement): Any? {
-            val method = migratedClass.declaredMethods[0]
-            return method.invoke(null, element)
-          }
-          val method1 = (ktFile.declarations[0] as KtNamedFunction).typeReference as KtTypeReference
-          val method2 = (ktFile.declarations[1] as KtNamedFunction).typeReference as KtTypeReference
+        ),
+      checks = { ktFile, migratedClass ->
+        fun getTypeName(element: KtElement): Any? {
+          val method = migratedClass.declaredMethods[0]
+          return method.invoke(null, element)
+        }
+        val method1 = (ktFile.declarations[0] as KtNamedFunction).typeReference as KtTypeReference
+        val method2 = (ktFile.declarations[1] as KtNamedFunction).typeReference as KtTypeReference
 
-          assertEquals("kotlin.String", getTypeName(method1))
-          assertEquals("kotlin.collections.List", getTypeName(method2))
-        },
+        assertEquals("kotlin.String", getTypeName(method1))
+        assertEquals("kotlin.collections.List", getTypeName(method2))
+      },
     )
   }
 
@@ -1042,10 +1042,10 @@ class LintJarApiMigrationTest {
   fun testGetClassOrObjectSymbolByClassId() {
     // From http://aosp/3483011
     val file =
-        bytecode(
-            "code.jar",
-            kotlin(
-                    """
+      bytecode(
+        "code.jar",
+        kotlin(
+            """
             package test.pkg
 
             import org.jetbrains.kotlin.analysis.api.analyze
@@ -1063,15 +1063,15 @@ class LintJarApiMigrationTest {
               }
             }
           """
-                )
-                .indented(),
-            0xbd30f596,
-            """
+          )
+          .indented(),
+        0xbd30f596,
+        """
                 META-INF/main.kotlin_module:
                 H4sIAAAAAAAA/2NgYGBmYGBgBGJOBijgEuLiKEktLtEryE4XYgsBsrxLlBi0
                 GAAvgr4WLAAAAA==
                 """,
-            """
+        """
                 test/pkg/TestKt.class:
                 H4sIAAAAAAAA/+1XW3cbVxX+jmR5pJGsOEqcWg6kbq1S+SpLTu1GjgtOagfV
                 spNGrl0n0DCSx/bY0oyiGalxgBKgXALtryisvLSw6EPStGvRAFl0wTvQZ34A
@@ -1115,12 +1115,12 @@ class LintJarApiMigrationTest {
                 CuUUKng7hRvYTOEmvnsVwsT38P2rbO/gMfGOiVUTayZ8HOM9QgQJcYv/Hzqk
                 P/oPD3yvF/ERAAA=
                 """,
-        )
+      )
 
     checkBytecodeMigration(
-        file,
-        "isSubtypeOf",
-        """
+      file,
+      "isSubtypeOf",
+      """
       @@ -85 +85 @@
       - INVOKEINTERFACE org/jetbrains/kotlin/analysis/api/KaSession.getClassOrObjectSymbol (Lorg/jetbrains/kotlin/psi/KtClassOrObject;)Lorg/jetbrains/kotlin/analysis/api/symbols/KaClassSymbol; (itf)
       + INVOKEINTERFACE org/jetbrains/kotlin/analysis/api/KaSession.getClassSymbol (Lorg/jetbrains/kotlin/psi/KtClassOrObject;)Lorg/jetbrains/kotlin/analysis/api/symbols/KaClassSymbol; (itf)
@@ -1128,23 +1128,23 @@ class LintJarApiMigrationTest {
       - INVOKEINTERFACE org/jetbrains/kotlin/analysis/api/KaSession.getClassOrObjectSymbolByClassId (Lorg/jetbrains/kotlin/name/ClassId;)Lorg/jetbrains/kotlin/analysis/api/symbols/KaClassSymbol; (itf)
       + INVOKEINTERFACE org/jetbrains/kotlin/analysis/api/KaSession.findClass (Lorg/jetbrains/kotlin/name/ClassId;)Lorg/jetbrains/kotlin/analysis/api/symbols/KaClassSymbol; (itf)
       """,
-        showDiff = true,
-        checkSource =
-            kotlin(
-                """
+      showDiff = true,
+      checkSource =
+        kotlin(
+          """
             package another.test.pkg
             open class Base
             class Sub : Base()
           """
-            ),
-        checks = { ktFile, migratedClass ->
-          fun checkIsSubTypeOf(ktClass: KtClass?, fqn: String): Any? {
-            val method = migratedClass.declaredMethods[0]
-            return method.invoke(null, ktClass, fqn)
-          }
-          val sub = ktFile.declarations.filterIsInstance<KtClass>().lastOrNull()
-          assertEquals(true, checkIsSubTypeOf(sub, "another.test.pkg.Base"))
-        },
+        ),
+      checks = { ktFile, migratedClass ->
+        fun checkIsSubTypeOf(ktClass: KtClass?, fqn: String): Any? {
+          val method = migratedClass.declaredMethods[0]
+          return method.invoke(null, ktClass, fqn)
+        }
+        val sub = ktFile.declarations.filterIsInstance<KtClass>().lastOrNull()
+        assertEquals(true, checkIsSubTypeOf(sub, "another.test.pkg.Base"))
+      },
     )
   }
 
@@ -1152,10 +1152,10 @@ class LintJarApiMigrationTest {
   fun testAnnotationsList() {
     // b/393478604#comment10
     val file =
-        bytecode(
-            "code.jar",
-            kotlin(
-                    """
+      bytecode(
+        "code.jar",
+        kotlin(
+            """
             package test.pkg
 
             import org.jetbrains.kotlin.analysis.api.analyze
@@ -1169,15 +1169,15 @@ class LintJarApiMigrationTest {
               }
             }
           """
-                )
-                .indented(),
-            0xac5c720e,
-            """
+          )
+          .indented(),
+        0xac5c720e,
+        """
                 META-INF/main.kotlin_module:
                 H4sIAAAAAAAA/2NgYGBmYGBgBGJOBijgEuLiKEktLtEryE4XYgsBsrxLlBi0
                 GAAvgr4WLAAAAA==
                 """,
-            """
+        """
                 test/pkg/TestKt.class:
                 H4sIAAAAAAAA/+1XW3AbZxX+fl288kpWHMW5yAnFjRXqOHZkyY6dyEnATZ1W
                 WHHSOs0VYtby2llbWjnatRsHKIZeuFMoEAjXtlz80icYQgwMMTBDZxieeYPX
@@ -1227,12 +1227,12 @@ class LintJarApiMigrationTest {
                 I6brCJP3Reb9Sxfhz+KlLL6cxVfwchZfxdey+DquX4Sw8A188yLnVQQt3LDw
                 vIUXLFSTxo/l8SbEt/n7jiP63f8AxygasCMUAAA=
                 """,
-        )
+      )
 
     checkBytecodeMigration(
-        file,
-        "isAnnotated",
-        """
+      file,
+      "isAnnotated",
+      """
       @@ -85 +85 @@
       - INVOKEINTERFACE org/jetbrains/kotlin/analysis/api/KaSession.getClassOrObjectSymbol (Lorg/jetbrains/kotlin/psi/KtClassOrObject;)Lorg/jetbrains/kotlin/analysis/api/symbols/KaClassSymbol; (itf)
       + INVOKEINTERFACE org/jetbrains/kotlin/analysis/api/KaSession.getClassSymbol (Lorg/jetbrains/kotlin/psi/KtClassOrObject;)Lorg/jetbrains/kotlin/analysis/api/symbols/KaClassSymbol; (itf)
@@ -1241,37 +1241,37 @@ class LintJarApiMigrationTest {
       - INVOKEINTERFACE org/jetbrains/kotlin/analysis/api/annotations/KaAnnotationList.getAnnotationInfos ()Ljava/util/List; (itf)
       + INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/symbols/KaClassSymbol.getAnnotations ()Lorg/jetbrains/kotlin/analysis/api/annotations/KaAnnotationList;
       """,
-        showDiff = true,
-        checkSource =
-            kotlin(
-                """
+      showDiff = true,
+      checkSource =
+        kotlin(
+          """
             package another.test.pkg
             annotation class MyAnno
 
             @MyAnno
             class Test
           """
-            ),
-        checks = { ktFile, migratedClass ->
-          fun checkIsAnnotated(ktClass: KtClass?, fqn: String): Any? {
-            val method = migratedClass.declaredMethods[0]
-            return method.invoke(null, ktClass, fqn)
-          }
-          val sub = ktFile.declarations.filterIsInstance<KtClass>().lastOrNull()
-          assertEquals(true, checkIsAnnotated(sub, "another.test.pkg.MyAnno"))
-        },
+        ),
+      checks = { ktFile, migratedClass ->
+        fun checkIsAnnotated(ktClass: KtClass?, fqn: String): Any? {
+          val method = migratedClass.declaredMethods[0]
+          return method.invoke(null, ktClass, fqn)
+        }
+        val sub = ktFile.declarations.filterIsInstance<KtClass>().lastOrNull()
+        assertEquals(true, checkIsAnnotated(sub, "another.test.pkg.MyAnno"))
+      },
     )
   }
 
   @Test
   fun testMigrateLintUtil1() {
     val file =
-        bytecode(
-            "code.jar",
-            kotlin(
-                    "src/androidx/navigation/lint/common/LintUtil.kt",
-                    // Old version of this utility: no parameters
-                    """
+      bytecode(
+        "code.jar",
+        kotlin(
+            "src/androidx/navigation/lint/common/LintUtil.kt",
+            // Old version of this utility: no parameters
+            """
             package androidx.navigation.lint.common
 
             import org.jetbrains.uast.UExpression
@@ -1281,15 +1281,15 @@ class LintJarApiMigrationTest {
                 TODO() // implementation doesn't matter
             }
             """,
-                )
-                .indented(),
-            0x1f81deac,
-            """
+          )
+          .indented(),
+        0x1f81deac,
+        """
         META-INF/main.kotlin_module:
         H4sIAAAAAAAA/2NgYGBmYGBgBGJOBijg0uWST8xLKcrPTKnQy0ssy0xPLMnM
         z9PLycwr0UvOz83NzxPi8gFyQksyc7xLlBi0GAC8YwKBRwAAAA==
         """,
-            """
+        """
         androidx/navigation/lint/common/LintUtilKt.class:
         H4sIAAAAAAAA/5VSUU8TQRD+9lpaKCDlFCxFEaVKqcoV45MlJAqYXCxIQJoY
         nrbXpSy92yN7ew2P/CuNJsqzP8o4V4poITEmu7PfzM7MN7M7P35++QbgJaoM
@@ -1307,12 +1307,12 @@ class LintJarApiMigrationTest {
         r2E6n9POsr5iYbknF+HQ+arPXTxAysWsi3su7mPOxQPMu3iIRwdgERZQOsBQ
         lKzHEZ70VuEXRwdRL0gEAAA=
         """,
-        )
+      )
 
     checkBytecodeMigration(
-        file,
-        "isClassReference",
-        """
+      file,
+      "isClassReference",
+      """
         @Lorg/jetbrains/annotations/NotNull;([]) // invisible
           // annotable parameter count: 1 (invisible)
           @Lorg/jetbrains/annotations/NotNull;([]) // invisible, parameter 0
@@ -1328,10 +1328,10 @@ class LintJarApiMigrationTest {
           MAXSTACK = 4
           MAXLOCALS = 1
         """,
-        showDiff = false,
-        checkSource =
-            kotlin(
-                """
+      showDiff = false,
+      checkSource =
+        kotlin(
+          """
           class MyClass {
             companion object {}
           }
@@ -1343,41 +1343,41 @@ class LintJarApiMigrationTest {
           fun test2() = MyObject.prop
           fun test3() = MyObject::class
           """
-            ),
-        checks = { ktFile, migratedClass ->
-          fun UExpression.isClassReferenceReflection(): Pair<Boolean, String?> {
-            val method = migratedClass.declaredMethods[0]
-            @Suppress("UNCHECKED_CAST")
-            return method.invoke(null, this) as Pair<Boolean, String?>
-          }
+        ),
+      checks = { ktFile, migratedClass ->
+        fun UExpression.isClassReferenceReflection(): Pair<Boolean, String?> {
+          val method = migratedClass.declaredMethods[0]
+          @Suppress("UNCHECKED_CAST")
+          return method.invoke(null, this) as Pair<Boolean, String?>
+        }
 
-          val functions = ktFile.declarations.filterIsInstance<KtNamedFunction>()
-          val expression1 = functions[0].bodyExpression.toUElement() as UExpression
-          val expression2 = functions[1].bodyExpression.toUElement() as UExpression
-          val expression3 = functions[2].bodyExpression.toUElement() as UExpression
+        val functions = ktFile.declarations.filterIsInstance<KtNamedFunction>()
+        val expression1 = functions[0].bodyExpression.toUElement() as UExpression
+        val expression2 = functions[1].bodyExpression.toUElement() as UExpression
+        val expression3 = functions[2].bodyExpression.toUElement() as UExpression
 
-          // The real implementation in LintUtils:
-          assertEquals(false to "MyObject", expression1.isClassReference())
-          assertEquals(false to null, expression2.isClassReference())
-          assertEquals(false to null, expression3.isClassReference())
+        // The real implementation in LintUtils:
+        assertEquals(false to "MyObject", expression1.isClassReference())
+        assertEquals(false to null, expression2.isClassReference())
+        assertEquals(false to null, expression3.isClassReference())
 
-          // The migrated, reflection wrapped version
-          assertEquals(false to "MyObject", expression1.isClassReferenceReflection())
-          assertEquals(false to null, expression2.isClassReferenceReflection())
-          assertEquals(false to null, expression3.isClassReferenceReflection())
-        },
+        // The migrated, reflection wrapped version
+        assertEquals(false to "MyObject", expression1.isClassReferenceReflection())
+        assertEquals(false to null, expression2.isClassReferenceReflection())
+        assertEquals(false to null, expression3.isClassReferenceReflection())
+      },
     )
   }
 
   @Test
   fun testMigrateLintUtil2() {
     val file =
-        bytecode(
-            "code.jar",
-            kotlin(
-                    "src/androidx/navigation/lint/common/LintUtil.kt",
-                    // New version of this class: added multiple parameters and defaults
-                    """
+      bytecode(
+        "code.jar",
+        kotlin(
+            "src/androidx/navigation/lint/common/LintUtil.kt",
+            // New version of this class: added multiple parameters and defaults
+            """
             package androidx.navigation.lint.common
 
             import org.jetbrains.uast.UExpression
@@ -1397,15 +1397,15 @@ class LintJarApiMigrationTest {
                 return expression.isClassReference(checkClass = true)
             }
             """,
-                )
-                .indented(),
-            0xb00733eb,
-            """
+          )
+          .indented(),
+        0xb00733eb,
+        """
         META-INF/main.kotlin_module:
         H4sIAAAAAAAA/2NgYGBmYGBgBGJOBijg0uWST8xLKcrPTKnQy0ssy0xPLMnM
         z9PLycwr0UvOz83NzxPi8gFyQksyc7xLlBi0GAC8YwKBRwAAAA==
         """,
-            """
+        """
         androidx/navigation/lint/common/LintUtilKt.class:
         H4sIAAAAAAAA/51UXW8bRRQ9s15/bex0bUhx7DS0xFDHQNcNpXw4TSlpkFY4
         oWpopCQS0sSeuBuvd6OddZQnlN/AG/+ib0QgQZ75UYg7k21K7UBbLO/MmXtn
@@ -1430,20 +1430,20 @@ class LintJarApiMigrationTest {
         h6yLpLS5i5SLD1185OJj3HLhoOVSFyztgkl8gju7mJK4IfGpxF39r0tUJBoS
         aYlZiZrE3N9oxKqtmgcAAA==
         """,
-        )
+      )
 
     checkBytecodeMigration(
-        file,
-        "isClassReference\$default",
-        """
+      file,
+      "isClassReference\$default",
+      """
       @@ -40 +40 @@
       - INVOKESTATIC androidx/navigation/lint/common/LintUtilKt.isClassReference (Lorg/jetbrains/uast/UExpression;ZZZ)Lkotlin/Pair;
       + INVOKESTATIC com/android/tools/lint/detector/api/UastLintUtilsKt.isClassReference (Lorg/jetbrains/uast/UExpression;ZZZ)Lkotlin/Pair;
       """,
-        showDiff = true,
-        checkSource =
-            kotlin(
-                """
+      showDiff = true,
+      checkSource =
+        kotlin(
+          """
           class MyClass {
             companion object {}
           }
@@ -1455,46 +1455,46 @@ class LintJarApiMigrationTest {
           fun test2() = MyObject.prop
           fun test3() = MyObject::class
           """
-            ),
-        checks = { ktFile, migratedClass ->
-          fun UExpression.isClassReferenceReflection1(): Pair<Boolean, String?> {
-            val method = migratedClass.declaredMethods.find { it.name == "usageExample1" }
-            @Suppress("UNCHECKED_CAST")
-            return method!!.invoke(null, this) as Pair<Boolean, String?>
-          }
-          fun UExpression.isClassReferenceReflection2(): Pair<Boolean, String?> {
-            val method = migratedClass.declaredMethods.find { it.name == "usageExample2" }
-            @Suppress("UNCHECKED_CAST")
-            return method!!.invoke(null, this) as Pair<Boolean, String?>
-          }
+        ),
+      checks = { ktFile, migratedClass ->
+        fun UExpression.isClassReferenceReflection1(): Pair<Boolean, String?> {
+          val method = migratedClass.declaredMethods.find { it.name == "usageExample1" }
+          @Suppress("UNCHECKED_CAST")
+          return method!!.invoke(null, this) as Pair<Boolean, String?>
+        }
+        fun UExpression.isClassReferenceReflection2(): Pair<Boolean, String?> {
+          val method = migratedClass.declaredMethods.find { it.name == "usageExample2" }
+          @Suppress("UNCHECKED_CAST")
+          return method!!.invoke(null, this) as Pair<Boolean, String?>
+        }
 
-          val functions = ktFile.declarations.filterIsInstance<KtNamedFunction>()
-          val expression1 = functions[0].bodyExpression.toUElement() as UExpression
-          val expression2 = functions[1].bodyExpression.toUElement() as UExpression
-          val expression3 = functions[2].bodyExpression.toUElement() as UExpression
+        val functions = ktFile.declarations.filterIsInstance<KtNamedFunction>()
+        val expression1 = functions[0].bodyExpression.toUElement() as UExpression
+        val expression2 = functions[1].bodyExpression.toUElement() as UExpression
+        val expression3 = functions[2].bodyExpression.toUElement() as UExpression
 
-          // The real implementation in LintUtils:
-          assertEquals(false to "MyObject", expression1.isClassReference())
-          assertEquals(false to null, expression2.isClassReference())
-          assertEquals(false to null, expression3.isClassReference())
+        // The real implementation in LintUtils:
+        assertEquals(false to "MyObject", expression1.isClassReference())
+        assertEquals(false to null, expression2.isClassReference())
+        assertEquals(false to null, expression3.isClassReference())
 
-          // The migrated, reflection wrapped version
-          assertEquals(false to "MyObject", expression1.isClassReferenceReflection1())
-          assertEquals(false to null, expression2.isClassReferenceReflection1())
-          assertEquals(false to null, expression3.isClassReferenceReflection1())
-          // Using different sets of default parameters at the call site
-          assertEquals(false to "MyObject", expression1.isClassReferenceReflection2())
-          assertEquals(false to null, expression2.isClassReferenceReflection2())
-          assertEquals(false to null, expression3.isClassReferenceReflection2())
-        },
+        // The migrated, reflection wrapped version
+        assertEquals(false to "MyObject", expression1.isClassReferenceReflection1())
+        assertEquals(false to null, expression2.isClassReferenceReflection1())
+        assertEquals(false to null, expression3.isClassReferenceReflection1())
+        // Using different sets of default parameters at the call site
+        assertEquals(false to "MyObject", expression1.isClassReferenceReflection2())
+        assertEquals(false to null, expression2.isClassReferenceReflection2())
+        assertEquals(false to null, expression3.isClassReferenceReflection2())
+      },
     )
   }
 
   private fun getNavigationLintUtilsClass(): BinaryTestFile {
     val file =
-        base64gzip(
-            "navigation-common-2.8.0-beta04-lint.jar-androidx/navigation/common/lint/LintUtilKt.class",
-            """
+      base64gzip(
+        "navigation-common-2.8.0-beta04-lint.jar-androidx/navigation/common/lint/LintUtilKt.class",
+        """
           H4sIAAAAAAAA/+1Z61sU1xn/HRYYGBbE9RI2mgQFIxBguCjoikaC0BAWRPFS
           tW0yLAOM7M7gzkDEtI1pm5pLa3qN1d5vkqY3m7YU0zbBtE3a9PIfNE//hX7p
           hz5N7O/MLLDAihj90A99HmbOu+e8l995z3vOed/h7fdefQ3AbvxNoEq3BpK2
@@ -1550,16 +1550,16 @@ class LintJarApiMigrationTest {
           wAypLM7uIVyj1wLy6MDvsI7z+6P8uIwN+BPbXHJvZPs2H0WkfmTjzx5LDv5C
           sf9/nv3f/DyLv3r/q2BOw4VSTiDQibxOpo8yEjoRRGEnirDqBITDHbf6BFMf
           hByscbDW+1vnMMxlCBRRxV18SjzW8H8BcrXIZAUZAAA=""",
-        )
+      )
     return file
   }
 
   @Test
   fun verifyAnalyzeRewriting3() {
     val file =
-        base64gzip(
-            "runtime-android-1.7.0-beta07-lint.jar-androidx/compose/runtime/lint/AutoboxingStateCreationDetector.getSuggestedReplacementName.class",
-            """
+      base64gzip(
+        "runtime-android-1.7.0-beta07-lint.jar-androidx/compose/runtime/lint/AutoboxingStateCreationDetector.getSuggestedReplacementName.class",
+        """
         H4sIAAAAAAAA/+1Ze1gc1RX/XXZhYHaBDYkkS2KDslFeyQIhJBKNbgjohgVi
         ICQxNnTYHciEZYbszCLYV2qrbW2t77axrbW2NfZhm1qLibUa09a09uW7ah/2
         /X7Y9+Prpz33zpBdYEmWJF//qR/M3HPvPefcc84995xzZx97+YGHAFyAfzNc
@@ -1631,11 +1631,11 @@ class LintJarApiMigrationTest {
         FeyAKww5DE+YolYhgSgKoxi+HWAm5qFkB15jYr6JBSbOMFFqYqFJ93r+7zdR
         ZmKxiSUmzjQ52lIT5SbOErNnm6gwERDwMvE+x8S5JipNVJmoNlFjolbk/iIS
         ZTk9K8SSwf8C+5Hyq1MjAAA=""",
-        )
+      )
     checkBytecodeMigration(
-        file,
-        "getSuggestedReplacementName",
-        """
+      file,
+      "getSuggestedReplacementName",
+      """
       @@ -44 +44 @@
       - GETSTATIC org/jetbrains/kotlin/analysis/api/session/KtAnalysisSessionProvider.Companion : Lorg/jetbrains/kotlin/analysis/api/session/KtAnalysisSessionProvider＄Companion;
       + GETSTATIC org/jetbrains/kotlin/analysis/api/session/KaSessionProvider.Companion : Lorg/jetbrains/kotlin/analysis/api/session/KaSessionProvider＄Companion;
@@ -1838,7 +1838,7 @@ class LintJarApiMigrationTest {
       @@ -238,38 +217,38 @@
       ...
       """,
-        true,
+      true,
     )
   }
 
@@ -1846,17 +1846,9 @@ class LintJarApiMigrationTest {
     return replace('$', '＄')
   }
 
-  private fun checkMigratedFunction(
-      kotlinTestSource: TestFile,
-      bytecode: ByteArray,
-      checks: (KtFile, Class<*>) -> Unit,
-  ) {
+  private fun checkMigratedFunction(kotlinTestSource: TestFile, bytecode: ByteArray, checks: (KtFile, Class<*>) -> Unit) {
     val (context, disposable) =
-        parseFirst(
-            temporaryFolder = temporaryFolder,
-            sdkHome = TestUtils.getSdk().toFile(),
-            testFiles = arrayOf(kotlinTestSource.indented()),
-        )
+      parseFirst(temporaryFolder = temporaryFolder, sdkHome = TestUtils.getSdk().toFile(), testFiles = arrayOf(kotlinTestSource.indented()))
     val psiFile = context.psiFile as KtFile
 
     val cr = ClassReader(bytecode)
@@ -1865,11 +1857,11 @@ class LintJarApiMigrationTest {
     val className = cn.name.replace("/", ".").replace("$", ".")
 
     val classLoader =
-        object : ClassLoader(this.javaClass.classLoader) {
-          override fun findClass(name: String): Class<*> {
-            return defineClass(name, bytecode, 0, bytecode.size)
-          }
+      object : ClassLoader(this.javaClass.classLoader) {
+        override fun findClass(name: String): Class<*> {
+          return defineClass(name, bytecode, 0, bytecode.size)
         }
+      }
 
     val clazz = classLoader.loadClass(className)
 
@@ -1878,35 +1870,31 @@ class LintJarApiMigrationTest {
   }
 
   private fun checkBytecodeMigration(
-      file: TestFile,
-      methodName: String,
-      expected: String,
-      showDiff: Boolean,
-      skipFirst: Int = 0,
-      maxLines: Int = 200,
-      checkSource: TestFile? = null,
-      checks: ((KtFile, Class<*>) -> Unit)? = null,
+    file: TestFile,
+    methodName: String,
+    expected: String,
+    showDiff: Boolean,
+    skipFirst: Int = 0,
+    maxLines: Int = 200,
+    checkSource: TestFile? = null,
+    checks: ((KtFile, Class<*>) -> Unit)? = null,
   ) {
     val bytes =
-        if (file is BinaryTestFile) file.binaryContents
-        else if (file is BytecodeTestFile) {
-          (file.getBytecodeFiles().map { it as BinaryTestFile }.single { it.targetRelativePath.endsWith(DOT_CLASS) }).binaryContents
-        } else {
-          error("Unsupported test file type")
-        }
+      if (file is BinaryTestFile) file.binaryContents
+      else if (file is BytecodeTestFile) {
+        (file.getBytecodeFiles().map { it as BinaryTestFile }.single { it.targetRelativePath.endsWith(DOT_CLASS) }).binaryContents
+      } else {
+        error("Unsupported test file type")
+      }
     var before = prettyPrint(bytes, methodName).trimIndent()
 
     val client =
-        object : TestLintClient() {
-          override fun log(
-              severity: Severity,
-              exception: Throwable?,
-              format: String?,
-              vararg args: Any,
-          ) = error("Didn't expect output: $format")
+      object : TestLintClient() {
+        override fun log(severity: Severity, exception: Throwable?, format: String?, vararg args: Any) =
+          error("Didn't expect output: $format")
 
-          override fun log(exception: Throwable?, format: String?, vararg args: Any) = error("Didn't expect output: $format")
-        }
+        override fun log(exception: Throwable?, format: String?, vararg args: Any) = error("Didn't expect output: $format")
+      }
     val newBytes = LintJarApiMigration(client).migrateClass(bytes)
     var after = prettyPrint(newBytes, methodName).trimIndent()
 
@@ -1917,40 +1905,40 @@ class LintJarApiMigrationTest {
 
     val trimmedExpected = expected.trimIndent()
     val output =
-        if (showDiff) {
-          val diff = getDiff(before, after)
-          // Drop irrelevant diffs: contains only label, line number and frame diffs
-          var offset = 0
-          val chunks = mutableListOf<String>()
-          while (true) {
-            val index = diff.indexOf("@@ ", offset + 1)
-            if (index == -1) {
-              chunks.add(diff.substring(offset, diff.length))
-              break
-            }
-            chunks.add(diff.substring(offset, index))
-            offset = index
+      if (showDiff) {
+        val diff = getDiff(before, after)
+        // Drop irrelevant diffs: contains only label, line number and frame diffs
+        var offset = 0
+        val chunks = mutableListOf<String>()
+        while (true) {
+          val index = diff.indexOf("@@ ", offset + 1)
+          if (index == -1) {
+            chunks.add(diff.substring(offset, diff.length))
+            break
           }
-          val relevant =
-              chunks.filter { s ->
-                val lines = s.lines()
-                val irrelevant =
-                    lines.all {
-                      val content = it.substringAfter("+ ").substringAfter("- ").trimStart()
-                      it.isBlank() ||
-                          it.startsWith("@@ ") ||
-                          content.startsWith("L") && content[1].isDigit() ||
-                          content.startsWith("LINENUMBER") ||
-                          content.startsWith("LOCALVARIABLE ") ||
-                          content.startsWith("MAXSTACK ") ||
-                          content.startsWith("FRAME ")
-                    }
-                !irrelevant
-              }
-          relevant.joinToString("").escapeDollar().trim()
-        } else {
-          after.escapeDollar().trim()
+          chunks.add(diff.substring(offset, index))
+          offset = index
         }
+        val relevant =
+          chunks.filter { s ->
+            val lines = s.lines()
+            val irrelevant =
+              lines.all {
+                val content = it.substringAfter("+ ").substringAfter("- ").trimStart()
+                it.isBlank() ||
+                  it.startsWith("@@ ") ||
+                  content.startsWith("L") && content[1].isDigit() ||
+                  content.startsWith("LINENUMBER") ||
+                  content.startsWith("LOCALVARIABLE ") ||
+                  content.startsWith("MAXSTACK ") ||
+                  content.startsWith("FRAME ")
+              }
+            !irrelevant
+          }
+        relevant.joinToString("").escapeDollar().trim()
+      } else {
+        after.escapeDollar().trim()
+      }
 
     val truncated = getTruncatedOutput(output, skipFirst, maxLines)
     assertEquals(trimmedExpected.trim(), truncated.trim())

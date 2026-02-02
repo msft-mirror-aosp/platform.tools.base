@@ -25,7 +25,7 @@ class SecureRandomDetectorTest : AbstractCheckTest() {
 
   fun testSeed() {
     val expected =
-        """
+      """
             src/test/pkg/SecureRandomTest.java:12: Warning: It is dangerous to seed SecureRandom with the current time because that value is more predictable to an attacker than the default seed [SecureRandom]
                     random1.setSeed(System.currentTimeMillis()); // Wrong
                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -62,10 +62,10 @@ class SecureRandomDetectorTest : AbstractCheckTest() {
             0 errors, 11 warnings
             """
     lint()
-        .files(
-            java(
-                    "src/test/pkg/SecureRandomTest.java",
-                    """
+      .files(
+        java(
+            "src/test/pkg/SecureRandomTest.java",
+            """
                     package test.pkg;
 
                     import java.security.SecureRandom;
@@ -125,10 +125,10 @@ class SecureRandomDetectorTest : AbstractCheckTest() {
 
                     }
                     """,
-                )
-                .indented()
-        )
-        .run()
-        .expect(expected)
+          )
+          .indented()
+      )
+      .run()
+      .expect(expected)
   }
 }

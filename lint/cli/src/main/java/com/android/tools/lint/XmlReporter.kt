@@ -26,15 +26,15 @@ import java.io.IOException
 /** A reporter which emits lint results into an XML report. */
 class XmlReporter
 constructor(
-    /** Client handling IO, path normalization and error reporting. */
-    client: LintCliClient,
-    /** File to write report to. */
-    output: File,
-    /**
-     * The type of XML file to create; this is used to control details like whether locations are annotated with the surrounding source
-     * contents.
-     */
-    var type: XmlFileType,
+  /** Client handling IO, path normalization and error reporting. */
+  client: LintCliClient,
+  /** File to write report to. */
+  output: File,
+  /**
+   * The type of XML file to create; this is used to control details like whether locations are annotated with the surrounding source
+   * contents.
+   */
+  var type: XmlFileType,
 ) : Reporter(client, output) {
 
   var pathVariables: PathVariables = client.pathVariables
@@ -57,12 +57,12 @@ constructor(
   /** Sets a custom attribute to be written out on the root element of the report. */
   fun setAttribute(name: String, value: String) {
     val attributes =
-        attributes
-            ?: run {
-              val newMap = mutableMapOf<String, String>()
-              attributes = newMap
-              newMap
-            }
+      attributes
+        ?: run {
+          val newMap = mutableMapOf<String, String>()
+          attributes = newMap
+          newMap
+        }
     attributes[name] = value
   }
 
@@ -72,7 +72,7 @@ constructor(
     val xmlWriter = XmlWriter(client, type, writer, pathVariables)
 
     val clientAttributes: List<Pair<String, String?>> =
-        attributes?.asSequence()?.sortedBy { it.key }?.map { Pair(it.key, it.value) }?.toList() ?: emptyList()
+      attributes?.asSequence()?.sortedBy { it.key }?.map { Pair(it.key, it.value) }?.toList() ?: emptyList()
     xmlWriter.writeIncidents(incidents, clientAttributes)
   }
 }

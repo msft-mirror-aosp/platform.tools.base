@@ -40,26 +40,26 @@ class ExternalAnnotationsDetector : Detector(), SourceCodeScanner {
 
     @JvmField
     val ISSUE =
-        Issue.create(
-            id = "ExternalAnnotations",
-            briefDescription = "External annotations not considered",
-            explanation =
-                """
+      Issue.create(
+        id = "ExternalAnnotations",
+        briefDescription = "External annotations not considered",
+        explanation =
+          """
                 Lint supports XML files with "external annotations", which means any detectors that \
                 recognize certain annotations should get them from `JavaEvaluator.getAllAnnotations` \
                 and not by calling `uAnnotations` directly on UAST or PSI elements.
             """,
-            severity = Severity.ERROR,
-            implementation = Implementation(ExternalAnnotationsDetector::class.java, Scope.JAVA_FILE_SCOPE),
-        )
+        severity = Severity.ERROR,
+        implementation = Implementation(ExternalAnnotationsDetector::class.java, Scope.JAVA_FILE_SCOPE),
+      )
 
     private val relevantClasses =
-        listOf(
-            "com.intellij.psi.PsiModifierListOwner",
-            "com.intellij.psi.PsiAnnotationOwner",
-            "org.jetbrains.uast.UAnnotated",
-            "com.intellij.lang.jvm.JvmAnnotatedElement",
-        )
+      listOf(
+        "com.intellij.psi.PsiModifierListOwner",
+        "com.intellij.psi.PsiAnnotationOwner",
+        "org.jetbrains.uast.UAnnotated",
+        "com.intellij.lang.jvm.JvmAnnotatedElement",
+      )
   }
 
   override fun getApplicableMethodNames() = listOf("getAnnotations", "getUAnnotations")
@@ -72,11 +72,7 @@ class ExternalAnnotationsDetector : Detector(), SourceCodeScanner {
   }
 
   // For references to Kotlin properties.
-  override fun visitReference(
-      context: JavaContext,
-      reference: UReferenceExpression,
-      referenced: PsiElement,
-  ) {
+  override fun visitReference(context: JavaContext, reference: UReferenceExpression, referenced: PsiElement) {
     if (isKotlin(referenced.language)) {
       check(reference, referenced as? PsiMember ?: return, context)
     }
@@ -86,10 +82,10 @@ class ExternalAnnotationsDetector : Detector(), SourceCodeScanner {
     val evaluator = context.evaluator
     if (relevantClasses.any { evaluator.isMemberInClass(member, it) } && isRelevantCaller(expression, evaluator)) {
       context.report(
-          ISSUE,
-          expression,
-          context.getLocation(expression),
-          "${member.name} used instead of `JavaEvaluator.getAllAnnotations`.",
+        ISSUE,
+        expression,
+        context.getLocation(expression),
+        "${member.name} used instead of `JavaEvaluator.getAllAnnotations`.",
       )
     }
   }
@@ -97,6 +93,6 @@ class ExternalAnnotationsDetector : Detector(), SourceCodeScanner {
   private fun isRelevantCaller(node: UExpression, evaluator: JavaEvaluator): Boolean {
     val callerClass = node.getContainingUMethod()?.javaPsi?.containingClass ?: return false
     return evaluator.inheritsFrom(callerClass, Detector::class.java.name, false) ||
-        callerClass.qualifiedName.orEmpty().startsWith("com.android.tools.lint.")
+      callerClass.qualifiedName.orEmpty().startsWith("com.android.tools.lint.")
   }
 }

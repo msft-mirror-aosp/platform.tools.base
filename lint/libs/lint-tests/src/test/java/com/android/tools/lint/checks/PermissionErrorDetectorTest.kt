@@ -43,37 +43,32 @@ class PermissionErrorDetectorTest : AbstractCheckTest() {
 
   override fun lint(): TestLintTask {
     return super.lint()
-        // When switching to merging, clear out the platform cache (to simulate
-        // running lint where the analysis tasks have been cached so have not
-        // run in the current process. It would be better if the lint testing
-        // infrastructure did this automatically (e.g. loading everything into
-        // separate class loaders to enforce true separation) but that's hard to
-        // set up now.
-        .listener(
-            object : LintListener {
-              private var mode: LintDriver.DriverMode? = null
+      // When switching to merging, clear out the platform cache (to simulate
+      // running lint where the analysis tasks have been cached so have not
+      // run in the current process. It would be better if the lint testing
+      // infrastructure did this automatically (e.g. loading everything into
+      // separate class loaders to enforce true separation) but that's hard to
+      // set up now.
+      .listener(
+        object : LintListener {
+          private var mode: LintDriver.DriverMode? = null
 
-              override fun update(
-                  driver: LintDriver,
-                  type: LintListener.EventType,
-                  project: Project?,
-                  context: Context?,
-              ) {
-                if (driver.mode != mode) {
-                  PermissionErrorDetector.clearPlatformPermissions()
-                }
-                mode = driver.mode
-              }
+          override fun update(driver: LintDriver, type: LintListener.EventType, project: Project?, context: Context?) {
+            if (driver.mode != mode) {
+              PermissionErrorDetector.clearPlatformPermissions()
             }
-        )
+            mode = driver.mode
+          }
+        }
+      )
   }
 
   @Test
   fun testDocumentationExamplePermissionNamingConvention() {
     lint()
-        .files(
-            manifest(
-                    """
+      .files(
+        manifest(
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                   xmlns:tools="http://schemas.android.com/tools"
                   package="com.example.helloworld">
@@ -87,13 +82,13 @@ class PermissionErrorDetectorTest : AbstractCheckTest() {
                   <permission android:name="FOO_BAR" />
                 </manifest>
                 """
-                )
-                .indented()
-        )
-        .issues(PERMISSION_NAMING_CONVENTION)
-        .run()
-        .expect(
-            """
+          )
+          .indented()
+      )
+      .issues(PERMISSION_NAMING_CONVENTION)
+      .run()
+      .expect(
+        """
                 AndroidManifest.xml:7: Warning: com.example.helloworld.FOO_BAR does not follow recommended naming convention [PermissionNamingConvention]
                   <permission android:name="com.example.helloworld.FOO_BAR" />
                                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -111,16 +106,16 @@ class PermissionErrorDetectorTest : AbstractCheckTest() {
                                             ~~~~~~~
                 0 errors, 5 warnings
                 """
-        )
-        .expectFixDiffs("")
+      )
+      .expectFixDiffs("")
   }
 
   @Test
   fun testDocumentationExampleKnownPermissionError() {
     lint()
-        .files(
-            manifest(
-                    """
+      .files(
+        manifest(
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                   xmlns:tools="http://schemas.android.com/tools"
                   package="com.example.helloworld">
@@ -133,13 +128,13 @@ class PermissionErrorDetectorTest : AbstractCheckTest() {
                   </application>
                 </manifest>
                 """
-                )
-                .indented()
-        )
-        .issues(KNOWN_PERMISSION_ERROR)
-        .run()
-        .expect(
-            """
+          )
+          .indented()
+      )
+      .issues(KNOWN_PERMISSION_ERROR)
+      .run()
+      .expect(
+        """
         AndroidManifest.xml:4: Error: true is not a valid permission value [KnownPermissionError]
           <application android:permission="true">
                                            ~~~~
@@ -160,16 +155,16 @@ class PermissionErrorDetectorTest : AbstractCheckTest() {
                                                                ~~~~~
         6 errors
         """
-        )
-        .expectFixDiffs("")
+      )
+      .expectFixDiffs("")
   }
 
   @Test
   fun testKnownPermissionErrorOk() {
     lint()
-        .files(
-            manifest(
-                    """
+      .files(
+        manifest(
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                   xmlns:tools="http://schemas.android.com/tools"
                   package="com.example.helloworld">
@@ -178,20 +173,20 @@ class PermissionErrorDetectorTest : AbstractCheckTest() {
                   </application>
                 </manifest>
                 """
-                )
-                .indented()
-        )
-        .issues(KNOWN_PERMISSION_ERROR)
-        .run()
-        .expectClean()
+          )
+          .indented()
+      )
+      .issues(KNOWN_PERMISSION_ERROR)
+      .run()
+      .expectClean()
   }
 
   @Test
   fun testDocumentationExampleReservedSystemPermission() {
     lint()
-        .files(
-            manifest(
-                    """
+      .files(
+        manifest(
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                   xmlns:tools="http://schemas.android.com/tools"
                   package="com.example.helloworld">
@@ -202,13 +197,13 @@ class PermissionErrorDetectorTest : AbstractCheckTest() {
                   </application>
                 </manifest>
                 """
-                )
-                .indented()
-        )
-        .issues(RESERVED_SYSTEM_PERMISSION)
-        .run()
-        .expect(
-            """
+          )
+          .indented()
+      )
+      .issues(RESERVED_SYSTEM_PERMISSION)
+      .run()
+      .expect(
+        """
                 AndroidManifest.xml:4: Error: android.permission.BIND_APPWIDGET is a reserved permission [ReservedSystemPermission]
                   <permission android:name="android.permission.BIND_APPWIDGET" />
                                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -217,15 +212,15 @@ class PermissionErrorDetectorTest : AbstractCheckTest() {
                                             ~~~~~~~~~~~~~~~~~~~~~~~~~
                 2 errors, 0 warnings
                 """
-        )
+      )
   }
 
   @Test
   fun testReservedSystemPermissionOk() {
     lint()
-        .files(
-            manifest(
-                    """
+      .files(
+        manifest(
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                   xmlns:tools="http://schemas.android.com/tools"
                   package="com.example.helloworld">
@@ -235,20 +230,20 @@ class PermissionErrorDetectorTest : AbstractCheckTest() {
                   </application>
                 </manifest>
                 """
-                )
-                .indented()
-        )
-        .issues(RESERVED_SYSTEM_PERMISSION)
-        .run()
-        .expectClean()
+          )
+          .indented()
+      )
+      .issues(RESERVED_SYSTEM_PERMISSION)
+      .run()
+      .expectClean()
   }
 
   @Test
   fun testDocumentationExampleSystemPermissionTypo() {
     lint()
-        .files(
-            manifest(
-                    """
+      .files(
+        manifest(
+            """
                 <manifest
                   xmlns:android="http://schemas.android.com/apk/res/android"
                   xmlns:tools="http://schemas.android.com/tools"
@@ -265,13 +260,13 @@ class PermissionErrorDetectorTest : AbstractCheckTest() {
                     </application>
                   </manifest>
                   """
-                )
-                .indented()
-        )
-        .issues(SYSTEM_PERMISSION_TYPO)
-        .run()
-        .expect(
-            """
+          )
+          .indented()
+      )
+      .issues(SYSTEM_PERMISSION_TYPO)
+      .run()
+      .expect(
+        """
         AndroidManifest.xml:5: Warning: Did you mean android.permission.BIND_NFC_SERVICE? [SystemPermissionTypo]
           <uses-permission android:name="android.permission.BIND_NCF_SERVICE" />
                                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -295,9 +290,9 @@ class PermissionErrorDetectorTest : AbstractCheckTest() {
                                                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         0 errors, 7 warnings
         """
-        )
-        .expectFixDiffs(
-            """
+      )
+      .expectFixDiffs(
+        """
         Fix for AndroidManifest.xml line 5: Replace with android.permission.BIND_NFC_SERVICE:
         @@ -5 +5 @@
         -  <uses-permission android:name="android.permission.BIND_NCF_SERVICE" />
@@ -327,15 +322,15 @@ class PermissionErrorDetectorTest : AbstractCheckTest() {
         -    <provider android:name="name7" android:permission="android.permission.BIND_NCF_SERVICE" />
         +    <provider android:name="name7" android:permission="android.permission.BIND_NFC_SERVICE" />
         """
-        )
+      )
   }
 
   @Test
   fun testSystemPermissionTypoPrefix() {
     lint()
-        .files(
-            manifest(
-                    """
+      .files(
+        manifest(
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                   package="com.example.helloworld">
                   <application>
@@ -345,35 +340,35 @@ class PermissionErrorDetectorTest : AbstractCheckTest() {
                   </application>
                 </manifest>
                 """
-                )
-                .indented()
-        )
-        .issues(SYSTEM_PERMISSION_TYPO)
-        .run()
-        .expect(
-            """
+          )
+          .indented()
+      )
+      .issues(SYSTEM_PERMISSION_TYPO)
+      .run()
+      .expect(
+        """
         AndroidManifest.xml:5: Warning: Did you mean android.permission.BIND_NFC_SERVICE? [SystemPermissionTypo]
             <service android:name="service1" android:permission="android.Manifest.permission.BIND_NFC_SERVICE" />
                                                                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         0 errors, 1 warning
         """
-        )
-        .expectFixDiffs(
-            """
+      )
+      .expectFixDiffs(
+        """
         Fix for AndroidManifest.xml line 5: Replace with android.permission.BIND_NFC_SERVICE:
         @@ -5 +5 @@
         -    <service android:name="service1" android:permission="android.Manifest.permission.BIND_NFC_SERVICE" />
         +    <service android:name="service1" android:permission="android.permission.BIND_NFC_SERVICE" />
         """
-        )
+      )
   }
 
   @Test
   fun testSystemPermissionTypoOk() {
     lint()
-        .files(
-            manifest(
-                    """
+      .files(
+        manifest(
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                   xmlns:tools="http://schemas.android.com/tools"
                   package="com.example.helloworld">
@@ -383,12 +378,12 @@ class PermissionErrorDetectorTest : AbstractCheckTest() {
                   </application>
                 </manifest>
                 """
-                )
-                .indented()
-        )
-        .issues(SYSTEM_PERMISSION_TYPO)
-        .run()
-        .expectClean()
+          )
+          .indented()
+      )
+      .issues(SYSTEM_PERMISSION_TYPO)
+      .run()
+      .expectClean()
   }
 
   @Test
@@ -400,11 +395,11 @@ class PermissionErrorDetectorTest : AbstractCheckTest() {
     val temporaryFolder = TemporaryFolder(temp)
     temporaryFolder.create()
     val parsed =
-        com.android.tools.lint.checks.infrastructure.parseFirst(
-            sdkHome = TestUtils.getSdk().toFile(),
-            temporaryFolder = temporaryFolder,
-            testFiles = arrayOf(java("class Test { }")),
-        )
+      com.android.tools.lint.checks.infrastructure.parseFirst(
+        sdkHome = TestUtils.getSdk().toFile(),
+        temporaryFolder = temporaryFolder,
+        testFiles = arrayOf(java("class Test { }")),
+      )
     val disposable = Disposable {
       Disposer.dispose(parsed.second)
       temp.deleteRecursively()
@@ -414,54 +409,36 @@ class PermissionErrorDetectorTest : AbstractCheckTest() {
     val project = context.project
 
     // well-known cases are handled
+    assertEquals("android.permission.BIND_NFC_SERVICE", findAlmostPlatformPermission(project, "android.permission.BIND_NCF_SERVICE"))
     assertEquals(
-        "android.permission.BIND_NFC_SERVICE",
-        findAlmostPlatformPermission(project, "android.permission.BIND_NCF_SERVICE"),
+      "android.permission.BIND_NFC_SERVICE",
+      findAlmostPlatformPermission(project, "android.Manifest.permission.BIND_NCF_SERVICE"),
+    )
+    assertEquals("android.permission.BIND_NFC_SERVICE", findAlmostPlatformPermission(project, "android.permission.bind_ncf_service"))
+    assertEquals(
+      "android.permission.BIND_NFC_SERVICE",
+      findAlmostPlatformPermission(project, "android.permission\n      .BIND_NCF_@@--~~SERVICE"),
     )
     assertEquals(
-        "android.permission.BIND_NFC_SERVICE",
-        findAlmostPlatformPermission(project, "android.Manifest.permission.BIND_NCF_SERVICE"),
-    )
-    assertEquals(
-        "android.permission.BIND_NFC_SERVICE",
-        findAlmostPlatformPermission(project, "android.permission.bind_ncf_service"),
-    )
-    assertEquals(
-        "android.permission.BIND_NFC_SERVICE",
-        findAlmostPlatformPermission(project, "android.permission\n      .BIND_NCF_@@--~~SERVICE"),
-    )
-    assertEquals(
-        "android.permission.BLUETOOTH_PRIVILEGED",
-        findAlmostPlatformPermission(
-            project,
-            """
-            |                android.permission.BIND_NFC_SERVICE |
-            |                android.permission.SYSTEM_ALERT_WINDOW |
-            |                android.permission.BLUETOOTH_PRIVILEGED
-            """
-                .trimMargin(),
-        ),
+      "android.permission.BLUETOOTH_PRIVILEGED",
+      findAlmostPlatformPermission(
+        project,
+        """
+        |                android.permission.BIND_NFC_SERVICE |
+        |                android.permission.SYSTEM_ALERT_WINDOW |
+        |                android.permission.BLUETOOTH_PRIVILEGED
+        """
+          .trimMargin(),
+      ),
     )
 
     // Matching based on just the name part
+    assertEquals("android.permission.BIND_NFC_SERVICE", findAlmostPlatformPermission(project, "@ndr\$oid@.BIND_NCF_SERVICE"))
+    assertEquals("android.permission.BIND_NFC_SERVICE", findAlmostPlatformPermission(project, "\${MY_SUBSTITUTION}.BIND_NCF_SERVICE"))
+    assertEquals("android.permission.BIND_NFC_SERVICE", findAlmostPlatformPermission(project, "android.BIND_NCF_SERVICE"))
     assertEquals(
-        "android.permission.BIND_NFC_SERVICE",
-        findAlmostPlatformPermission(project, "@ndr\$oid@.BIND_NCF_SERVICE"),
-    )
-    assertEquals(
-        "android.permission.BIND_NFC_SERVICE",
-        findAlmostPlatformPermission(project, "\${MY_SUBSTITUTION}.BIND_NCF_SERVICE"),
-    )
-    assertEquals(
-        "android.permission.BIND_NFC_SERVICE",
-        findAlmostPlatformPermission(project, "android.BIND_NCF_SERVICE"),
-    )
-    assertEquals(
-        "android.permission.BIND_NFC_SERVICE",
-        findAlmostPlatformPermission(
-            project,
-            "adroid.prmission.BIND_NCF_SERVICE",
-        ), // typos in package name
+      "android.permission.BIND_NFC_SERVICE",
+      findAlmostPlatformPermission(project, "adroid.prmission.BIND_NCF_SERVICE"), // typos in package name
     )
 
     //  assure we don't match one valid permission against another
@@ -474,10 +451,7 @@ class PermissionErrorDetectorTest : AbstractCheckTest() {
     assertNull(findAlmostPlatformPermission(project, "my.custom.package.CMERA"))
 
     // assure the edit distance logic behaves as expected per the MAX_EDIT_DISTANCE const
-    assertEquals(
-        "android.permission.BIND_NFC_SERVICE",
-        findAlmostPlatformPermission(project, "android.permission.BIND_NFC_SERVZZZ"),
-    )
+    assertEquals("android.permission.BIND_NFC_SERVICE", findAlmostPlatformPermission(project, "android.permission.BIND_NFC_SERVZZZ"))
     assertNull(findAlmostPlatformPermission(project, "android.permission.BIND_NFC_SERZZZZ"))
 
     Disposer.dispose(disposable)
@@ -496,9 +470,9 @@ class PermissionErrorDetectorTest : AbstractCheckTest() {
   @Test
   fun testDocumentationExampleCustomPermissionTypo() {
     lint()
-        .files(
-            manifest(
-                    """
+      .files(
+        manifest(
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                   xmlns:tools="http://schemas.android.com/tools"
                   package="com.example.helloworld">
@@ -515,13 +489,13 @@ class PermissionErrorDetectorTest : AbstractCheckTest() {
                   </application>
                 </manifest>
                 """
-                )
-                .indented()
-        )
-        .issues(CUSTOM_PERMISSION_TYPO)
-        .run()
-        .expect(
-            """
+          )
+          .indented()
+      )
+      .issues(CUSTOM_PERMISSION_TYPO)
+      .run()
+      .expect(
+        """
         AndroidManifest.xml:9: Warning: Did you mean my.custom.permission.FOOBAR? [CustomPermissionTypo]
             <service android:name="service1" android:permission="my.custom.permission.FOOBOB" />
             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -530,9 +504,9 @@ class PermissionErrorDetectorTest : AbstractCheckTest() {
             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         0 errors, 2 warnings
         """
-        )
-        .expectFixDiffs(
-            """
+      )
+      .expectFixDiffs(
+        """
         Fix for AndroidManifest.xml line 9: Replace with my.custom.permission.FOOBAR:
         @@ -9 +9 @@
         -    <service android:name="service1" android:permission="my.custom.permission.FOOBOB" />
@@ -542,15 +516,15 @@ class PermissionErrorDetectorTest : AbstractCheckTest() {
         -    <activity android:name="activity1" android:permission="my.custom.permission.BAZQXX" />
         +    <activity android:name="activity1" android:permission="my.custom.permission.BAZQUXX" />
         """
-        )
+      )
   }
 
   @Test
   fun testCustomPermissionTypoOk() {
     lint()
-        .files(
-            manifest(
-                    """
+      .files(
+        manifest(
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                   package="com.example.helloworld">
                   <permission android:name="my.custom.permission.FOOBAR" />
@@ -561,20 +535,20 @@ class PermissionErrorDetectorTest : AbstractCheckTest() {
                   </application>
                 </manifest>
                 """
-                )
-                .indented()
-        )
-        .issues(CUSTOM_PERMISSION_TYPO)
-        .run()
-        .expectClean()
+          )
+          .indented()
+      )
+      .issues(CUSTOM_PERMISSION_TYPO)
+      .run()
+      .expectClean()
   }
 
   @Test
   fun testCustomPermissionTypoWithMergedManifest() {
     val library =
-        project(
-                manifest(
-                        """
+      project(
+          manifest(
+              """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="com.example.helloworld.lib"
                     android:versionCode="1"
@@ -589,15 +563,15 @@ class PermissionErrorDetectorTest : AbstractCheckTest() {
                     </application>
                 </manifest>
                 """
-                    )
-                    .indented()
             )
-            .type(ProjectDescription.Type.LIBRARY)
-            .name("Library")
+            .indented()
+        )
+        .type(ProjectDescription.Type.LIBRARY)
+        .name("Library")
     val main =
-        project(
-                manifest(
-                        """
+      project(
+          manifest(
+              """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="com.example.helloworld.app"
                     android:versionCode="1"
@@ -610,39 +584,39 @@ class PermissionErrorDetectorTest : AbstractCheckTest() {
                     </application>
                 </manifest>
                 """
-                    )
-                    .indented()
             )
-            .name("App")
-            .dependsOn(library)
+            .indented()
+        )
+        .name("App")
+        .dependsOn(library)
 
     lint()
-        .projects(main, library)
-        .issues(CUSTOM_PERMISSION_TYPO)
-        .run()
-        .expect(
-            """
+      .projects(main, library)
+      .issues(CUSTOM_PERMISSION_TYPO)
+      .run()
+      .expect(
+        """
                 AndroidManifest.xml:6: Warning: Did you mean my.custom.permission.FOOBAR? [CustomPermissionTypo]
                     <uses-permission android:name="my.custom.permission.FOOBOB" />
                                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 0 errors, 1 warnings
                 """
-        )
-        .expectFixDiffs(
-            """
+      )
+      .expectFixDiffs(
+        """
                 Fix for AndroidManifest.xml line 6: Replace with my.custom.permission.FOOBAR:
                 @@ -6 +6 @@
                 -    <uses-permission android:name="my.custom.permission.FOOBOB" />
                 +    <uses-permission android:name="my.custom.permission.FOOBAR" />
                 """
-        )
+      )
   }
 
   fun testDemonstrateMultipleIssuesAtSameLocation() {
     val main =
-        project(
-            manifest(
-                    """
+      project(
+        manifest(
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                   xmlns:tools="http://schemas.android.com/tools"
                   package="com.example.helloworld">
@@ -652,14 +626,14 @@ class PermissionErrorDetectorTest : AbstractCheckTest() {
                   </application>
                 </manifest>
                 """
-                )
-                .indented()
-        )
+          )
+          .indented()
+      )
     lint()
-        .projects(main)
-        .run()
-        .expect(
-            """
+      .projects(main)
+      .run()
+      .expect(
+        """
         AndroidManifest.xml:6: Warning: Did you mean android.permission.BIND_APPWIDGET? [CustomPermissionTypo]
             <service android:name="myservice" android:permission="android.permission.BINDAPPWIDGET" />
             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -674,24 +648,15 @@ class PermissionErrorDetectorTest : AbstractCheckTest() {
                                                                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         1 error, 3 warnings
         """
-        )
+      )
   }
 
   @Test
   fun testFindAlmostCustomPermission() {
     val customPermissions = listOf("my.custom.permission.FOO_BAR", "my.custom.permission.BAZ_QUXX")
-    assertEquals(
-        findAlmostCustomPermission("my.custom.permission.FOOB", customPermissions),
-        "my.custom.permission.FOO_BAR",
-    )
-    assertEquals(
-        findAlmostCustomPermission("my.custom.permission.BAZQUXX", customPermissions),
-        "my.custom.permission.BAZ_QUXX",
-    )
-    assertEquals(
-        findAlmostCustomPermission("my.custom.permission.BAZ_QZZZ", customPermissions),
-        "my.custom.permission.BAZ_QUXX",
-    )
+    assertEquals(findAlmostCustomPermission("my.custom.permission.FOOB", customPermissions), "my.custom.permission.FOO_BAR")
+    assertEquals(findAlmostCustomPermission("my.custom.permission.BAZQUXX", customPermissions), "my.custom.permission.BAZ_QUXX")
+    assertEquals(findAlmostCustomPermission("my.custom.permission.BAZ_QZZZ", customPermissions), "my.custom.permission.BAZ_QUXX")
     assertNull(findAlmostCustomPermission("my.custom.permission.BAZ_ZZZZ", customPermissions))
   }
 

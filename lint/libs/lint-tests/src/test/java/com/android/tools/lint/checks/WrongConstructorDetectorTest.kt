@@ -25,9 +25,9 @@ class WrongConstructorDetectorTest : AbstractCheckTest() {
 
   fun testDocumentationExample() {
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
                 package test.pkg;
 
                 public class PnrUtils {
@@ -36,25 +36,25 @@ class WrongConstructorDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-                )
-                .indented()
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented()
+      )
+      .run()
+      .expect(
+        """
             src/test/pkg/PnrUtils.java:4: Warning: Method PnrUtils looks like a constructor but is a normal method [NotConstructor]
                public PnrUtils PnrUtils() {
                ^
             0 errors, 1 warnings
             """
-        )
+      )
   }
 
   fun testBasic() {
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
                 package test.pkg;
 
                   @SuppressWarnings({"unused", "InstantiationOfUtilityClass"})
@@ -67,10 +67,10 @@ class WrongConstructorDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-                )
-                .indented(),
-            java(
-                    """
+          )
+          .indented(),
+        java(
+            """
                 package test.pkg;
 
                 @SuppressWarnings({"unused", "InstantiationOfUtilityClass"})
@@ -80,10 +80,10 @@ class WrongConstructorDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-                )
-                .indented(),
-            java(
-                    """
+          )
+          .indented(),
+        java(
+            """
                 package test.pkg;
 
                 @SuppressWarnings({"unused", "InstantiationOfUtilityClass", "MethodNameSameAsClassName"})
@@ -93,10 +93,10 @@ class WrongConstructorDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-                )
-                .indented(),
-            kotlin(
-                    """
+          )
+          .indented(),
+        kotlin(
+            """
                 @file:Suppress("unused")
 
                 import android.content.Context
@@ -109,10 +109,10 @@ class WrongConstructorDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-                )
-                .indented(),
-            kotlin(
-                    """
+          )
+          .indented(),
+        kotlin(
+            """
                 @file:Suppress("unused")
 
                 class Test(i: Int) {
@@ -137,27 +137,27 @@ class WrongConstructorDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-                )
-                .indented(),
-            kotlin(
-                    "src/test/pkg/File.kt",
-                    """
+          )
+          .indented(),
+        kotlin(
+            "src/test/pkg/File.kt",
+            """
                 package test.pkg
                 fun FileKt() { } // OK
                 """,
-                )
-                .indented(),
-            kotlin(
-                    """
+          )
+          .indented(),
+        kotlin(
+            """
                 @file:JvmName("MyClass")
                 fun MyClass() { } // OK
                 """
-                )
-                .indented(),
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+      )
+      .run()
+      .expect(
+        """
             src/test/pkg/JQPlacesObject.java:7: Warning: Method JQPlacesObject looks like a constructor but is a normal method [NotConstructor]
                 public void JQPlacesObject() { // WARN 1
                 ^
@@ -166,14 +166,14 @@ class WrongConstructorDetectorTest : AbstractCheckTest() {
                 ^
             0 errors, 2 warnings
             """
-        )
+      )
   }
 
   fun testJavaRecord() {
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
             package my.pkg;
 
             import java.nio.file.Path;
@@ -187,10 +187,10 @@ class WrongConstructorDetectorTest : AbstractCheckTest() {
               Path path();
             }
           """
-                )
-                .indented(),
-            java(
-                    """
+          )
+          .indented(),
+        java(
+            """
             package my.pkg;
 
             import java.nio.file.Path;
@@ -212,12 +212,12 @@ class WrongConstructorDetectorTest : AbstractCheckTest() {
               }
             }
           """
-                )
-                .indented(),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .javaLanguageLevel("16")
-        .run()
-        .expectClean()
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .javaLanguageLevel("16")
+      .run()
+      .expectClean()
   }
 }

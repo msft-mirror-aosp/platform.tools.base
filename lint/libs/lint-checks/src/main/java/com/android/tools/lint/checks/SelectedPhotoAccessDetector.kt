@@ -43,24 +43,24 @@ class SelectedPhotoAccessDetector : Detector(), XmlScanner {
 
     @JvmField
     val ISSUE =
-        Issue.create(
-                id = "SelectedPhotoAccess",
-                briefDescription = "Behavior change when requesting photo library access",
-                explanation =
-                    """
+      Issue.create(
+          id = "SelectedPhotoAccess",
+          briefDescription = "Behavior change when requesting photo library access",
+          explanation =
+            """
                   Selected Photo Access is a new ability for users to share partial access to their photo library \
                   when apps request access to their device storage on Android 14+.
 
                   Instead of letting the system manage the selection lifecycle, we recommend you adapt \
                   your app to handle partial access to the photo library.
                   """,
-                category = Category.CORRECTNESS,
-                priority = 5,
-                severity = Severity.WARNING,
-                implementation = Implementation(SelectedPhotoAccessDetector::class.java, Scope.MANIFEST_SCOPE),
-                androidSpecific = true,
-            )
-            .addMoreInfo("https://developer.android.com/about/versions/14/changes/partial-photo-video-access")
+          category = Category.CORRECTNESS,
+          priority = 5,
+          severity = Severity.WARNING,
+          implementation = Implementation(SelectedPhotoAccessDetector::class.java, Scope.MANIFEST_SCOPE),
+          androidSpecific = true,
+        )
+        .addMoreInfo("https://developer.android.com/about/versions/14/changes/partial-photo-video-access")
   }
 
   override fun checkMergedProject(context: Context) {
@@ -75,12 +75,12 @@ class SelectedPhotoAccessDetector : Detector(), XmlScanner {
         "android.permission.READ_MEDIA_IMAGES",
         "android.permission.READ_MEDIA_VIDEO" -> {
           readMediaAttributeUsage +=
-              Incident(
-                  ISSUE,
-                  node,
-                  context.getLocation(attributeNodeNS, LocationType.VALUE),
-                  "Your app is currently not handling Selected Photos Access introduced in Android 14+",
-              )
+            Incident(
+              ISSUE,
+              node,
+              context.getLocation(attributeNodeNS, LocationType.VALUE),
+              "Your app is currently not handling Selected Photos Access introduced in Android 14+",
+            )
         }
         "android.permission.READ_MEDIA_VISUAL_USER_SELECTED" -> {
           return

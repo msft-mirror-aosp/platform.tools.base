@@ -25,10 +25,10 @@ class AlarmDetectorTest : AbstractCheckTest() {
 
   fun testBasic() {
     lint()
-        .files(
-            java(
-                    "src/test/pkg/AlarmTest.java",
-                    """
+      .files(
+        java(
+            "src/test/pkg/AlarmTest.java",
+            """
                     package test.pkg;
 
                     import android.app.AlarmManager;
@@ -52,12 +52,12 @@ class AlarmDetectorTest : AbstractCheckTest() {
                         }
                     }
                     """,
-                )
-                .indented()
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented()
+      )
+      .run()
+      .expect(
+        """
             src/test/pkg/AlarmTest.java:9: Warning: Value will be forced up to 5000 as of Android 5.1; don't rely on this to be exact [ShortAlarm]
                     alarmManager.setRepeating(AlarmManager.ELAPSED_REALTIME, 50, 10, null); // ERROR
                                                                              ~~
@@ -72,64 +72,64 @@ class AlarmDetectorTest : AbstractCheckTest() {
                                                                                    ~~~~~~~~~
             0 errors, 4 warnings
             """
-        )
+      )
   }
 
   fun testExactAlarmPermissions() {
     lint()
-        .files(
-            manifest(
-                    """
+      .files(
+        manifest(
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
                     <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
                     <uses-sdk android:targetSdkVersion="32" />
                 </manifest>
                 """
-                )
-                .indented()
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented()
+      )
+      .run()
+      .expect(
+        """
             AndroidManifest.xml:2: Error: USE_EXACT_ALARM can only be used when targeting API level 33 or higher [ExactAlarm]
                 <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
                                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             1 errors, 0 warnings
             """
-        )
+      )
   }
 
   fun testExactAlarmPermissionsClean() {
     lint()
-        .files(
-            manifest(
-                    """
+      .files(
+        manifest(
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
                     <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
                     <uses-sdk android:targetSdkVersion="33" />
                 </manifest>
                 """
-                )
-                .indented()
-        )
-        .run()
-        .expectClean()
+          )
+          .indented()
+      )
+      .run()
+      .expectClean()
   }
 
   fun testScheduleExactAlarmBasic() {
     lint()
-        .files(
-            manifest(
-                    """
+      .files(
+        manifest(
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
                     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
                     <uses-sdk android:targetSdkVersion="33" />
                 </manifest>
                 """
-                )
-                .indented(),
-            kotlin(
-                    """
+          )
+          .indented(),
+        kotlin(
+            """
                 package test.pkg;
 
                 import android.app.AlarmManager;
@@ -144,34 +144,34 @@ class AlarmDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-                )
-                .indented(),
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+      )
+      .run()
+      .expect(
+        """
             src/test/pkg/AlarmTest.kt:7: Error: When scheduling exact alarms, apps should explicitly call AlarmManager#canScheduleExactAlarms or handle `SecurityException`s [ScheduleExactAlarm]
                   alarmManager.setExact(AlarmManager.ELAPSED_REALTIME, 5000, null)
                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             1 errors, 0 warnings
             """
-        )
+      )
   }
 
   fun testScheduleExactAlarmPermissionCheck() {
     lint()
-        .files(
-            manifest(
-                    """
+      .files(
+        manifest(
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
                     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
                     <uses-sdk android:targetSdkVersion="33" />
                 </manifest>
                 """
-                )
-                .indented(),
-            kotlin(
-                    """
+          )
+          .indented(),
+        kotlin(
+            """
                 package test.pkg
 
                 import android.app.AlarmManager
@@ -185,27 +185,27 @@ class AlarmDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-                )
-                .indented(),
-        )
-        .run()
-        .expectClean()
+          )
+          .indented(),
+      )
+      .run()
+      .expectClean()
   }
 
   fun testScheduleExactAlarmPermissionCheckCompat() {
     lint()
-        .files(
-            manifest(
-                    """
+      .files(
+        manifest(
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.example.app">
                     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
                     <uses-sdk android:targetSdkVersion="33" />
                 </manifest>
                 """
-                )
-                .indented(),
-            kotlin(
-                    """
+          )
+          .indented(),
+        kotlin(
+            """
                 package test.pkg
 
                 import android.app.AlarmManager
@@ -219,10 +219,10 @@ class AlarmDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-                )
-                .indented(),
-            java(
-                    """
+          )
+          .indented(),
+        java(
+            """
             package androidx.core.app;
 
             import android.app.AlarmManager;
@@ -231,27 +231,27 @@ class AlarmDetectorTest : AbstractCheckTest() {
               public static boolean canScheduleExactAlarms(AlarmManager alarmManager) {}
             }
             """
-                )
-                .indented(),
-        )
-        .run()
-        .expectClean()
+          )
+          .indented(),
+      )
+      .run()
+      .expectClean()
   }
 
   fun testScheduleExactAlarmWrongManifest() {
     lint()
-        .files(
-            manifest(
-                    """
+      .files(
+        manifest(
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
                     <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
                     <uses-sdk android:targetSdkVersion="33" />
                 </manifest>
                 """
-                )
-                .indented(),
-            kotlin(
-                    """
+          )
+          .indented(),
+        kotlin(
+            """
                 package test.pkg;
 
                 import android.app.AlarmManager;
@@ -262,27 +262,27 @@ class AlarmDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-                )
-                .indented(),
-        )
-        .run()
-        .expectClean()
+          )
+          .indented(),
+      )
+      .run()
+      .expectClean()
   }
 
   fun testScheduleExactAlarmWrongVersion() {
     lint()
-        .files(
-            manifest(
-                    """
+      .files(
+        manifest(
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
                     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
                     <uses-sdk android:targetSdkVersion="30" />
                 </manifest>
                 """
-                )
-                .indented(),
-            kotlin(
-                    """
+          )
+          .indented(),
+        kotlin(
+            """
                 package test.pkg;
 
                 import android.app.AlarmManager;
@@ -293,10 +293,10 @@ class AlarmDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-                )
-                .indented(),
-        )
-        .run()
-        .expectClean()
+          )
+          .indented(),
+      )
+      .run()
+      .expectClean()
   }
 }

@@ -43,31 +43,27 @@ import org.jetbrains.uast.UVariable
 class TerminologyDetector : Detector(), SourceCodeScanner, OtherFileScanner {
   companion object {
     private val IMPLEMENTATION =
-        Implementation(
-            TerminologyDetector::class.java,
-            EnumSet.of(Scope.JAVA_FILE, Scope.OTHER, Scope.TEST_SOURCES),
-            Scope.JAVA_FILE_SCOPE,
-        )
+      Implementation(TerminologyDetector::class.java, EnumSet.of(Scope.JAVA_FILE, Scope.OTHER, Scope.TEST_SOURCES), Scope.JAVA_FILE_SCOPE)
 
     /** Looks for terminology that has suggested replacements for our codebase. */
     val ISSUE =
-        Issue.create(
-            id = "WrongTerminology",
-            briefDescription = "Code uses deprecated terminology",
-            explanation =
-                """
+      Issue.create(
+        id = "WrongTerminology",
+        briefDescription = "Code uses deprecated terminology",
+        explanation =
+          """
                     Our codebase follows the recommendations in \
                     https://developers.google.com/style/word-list. This lint check \
                     flags accidental usages in names, strings and comments of terminology that \
                     is not recommended.
                     """,
-            category = Category.CORRECTNESS,
-            priority = 10,
-            severity = Severity.FATAL,
-            androidSpecific = false,
-            moreInfo = "https://developers.google.com/style/word-list",
-            implementation = IMPLEMENTATION,
-        )
+        category = Category.CORRECTNESS,
+        priority = 10,
+        severity = Severity.FATAL,
+        androidSpecific = false,
+        moreInfo = "https://developers.google.com/style/word-list",
+        implementation = IMPLEMENTATION,
+      )
   }
 
   // Implements OtherFileScanner
@@ -101,13 +97,7 @@ class TerminologyDetector : Detector(), SourceCodeScanner, OtherFileScanner {
   // Implements SourceFileScanner
 
   override fun getApplicableUastTypes(): List<Class<out UElement?>> {
-    return listOf(
-        UFile::class.java,
-        UVariable::class.java,
-        UMethod::class.java,
-        UClass::class.java,
-        ULiteralExpression::class.java,
-    )
+    return listOf(UFile::class.java, UVariable::class.java, UMethod::class.java, UClass::class.java, ULiteralExpression::class.java)
   }
 
   override fun createUastHandler(context: JavaContext): UElementHandler {
@@ -149,11 +139,7 @@ class TerminologyDetector : Detector(), SourceCodeScanner, OtherFileScanner {
 
       private fun checkDeclaration(node: UDeclaration, name: String?) {
         name ?: return
-        checkCommentStateMachine(
-            context,
-            JavaContext.findNameElement(node as UElement) ?: node,
-            name,
-        )
+        checkCommentStateMachine(context, JavaContext.findNameElement(node as UElement) ?: node, name)
         for (comment in node.comments) {
           val contents = comment.text
           if (checkedComments.add(contents)) {
@@ -172,13 +158,13 @@ class TerminologyDetector : Detector(), SourceCodeScanner, OtherFileScanner {
   }
 
   private fun report(
-      context: Context,
-      element: UElement?,
-      source: CharSequence,
-      start: Int,
-      end: Int,
-      suggestion: String,
-      checkWholeWords: Boolean = false,
+    context: Context,
+    element: UElement?,
+    source: CharSequence,
+    start: Int,
+    end: Int,
+    suggestion: String,
+    checkWholeWords: Boolean = false,
   ) {
     if (checkWholeWords && !matchesWholeWords(source, start, end)) {
       return
@@ -215,53 +201,53 @@ class TerminologyDetector : Detector(), SourceCodeScanner, OtherFileScanner {
       // match on plain file; either matching file name or file contents
       val fileName = context.file.name
       val location =
-          if (fileName == source.toString()) {
-            val index = message.indexOf("\"", message.indexOf("\"") + 1) + 1
-            message.insert(index, " in filename")
-            // Filename match
-            Location.create(context.file)
-          } else {
-            // Content match
-            Location.create(context.file, source, start, end)
-          }
+        if (fileName == source.toString()) {
+          val index = message.indexOf("\"", message.indexOf("\"") + 1) + 1
+          message.insert(index, " in filename")
+          // Filename match
+          Location.create(context.file)
+        } else {
+          // Content match
+          Location.create(context.file, source, start, end)
+        }
       context.report(ISSUE, location, message.toString())
     }
   }
 
   private fun getStringLocation(
-      context: JavaContext,
-      argument: UElement,
-      string: String,
-      location: Location = context.getLocation(argument),
+    context: JavaContext,
+    argument: UElement,
+    string: String,
+    location: Location = context.getLocation(argument),
   ): Location {
     val start = location.start?.offset ?: return location
     val end = location.end?.offset ?: return location
     val contents = context.getContents()
     var index = contents?.indexOf(string, ignoreCase = false, startIndex = start) ?: return location
     val result =
-        if (index != -1) {
-          if (index > end) {
-            // Look for earlier occurrence too. We're seeking the string in the given
-            // expression/argument position. If it's included as a literal, it will be
-            // between start and end. But if we find one *after* the end, that's likely
-            // another, unrelated one. Instead, find it earlier in the source; this is most
-            // likely an earlier assignment which is then referenced in the expression.
-            val alt = contents.lastIndexOf(string, ignoreCase = false, startIndex = start)
-            if (alt != -1) {
-              index = alt
-            }
+      if (index != -1) {
+        if (index > end) {
+          // Look for earlier occurrence too. We're seeking the string in the given
+          // expression/argument position. If it's included as a literal, it will be
+          // between start and end. But if we find one *after* the end, that's likely
+          // another, unrelated one. Instead, find it earlier in the source; this is most
+          // likely an earlier assignment which is then referenced in the expression.
+          val alt = contents.lastIndexOf(string, ignoreCase = false, startIndex = start)
+          if (alt != -1) {
+            index = alt
           }
-          if (isPolyadicFromStringTemplate(argument) && argument.operands.size == 1 && location.source === argument.operands[0]) {
-            context.getRangeLocation(argument.operands[0], index - start, string.length)
-          } else {
-            context.getRangeLocation(argument, index - start, string.length)
-          }
-        } else {
-          // Couldn't find string; this typically happens if the string value is split across
-          // multiple string literals (line concatenations)  or has escapes etc. Just
-          // use the reference location.
-          location
         }
+        if (isPolyadicFromStringTemplate(argument) && argument.operands.size == 1 && location.source === argument.operands[0]) {
+          context.getRangeLocation(argument.operands[0], index - start, string.length)
+        } else {
+          context.getRangeLocation(argument, index - start, string.length)
+        }
+      } else {
+        // Couldn't find string; this typically happens if the string value is split across
+        // multiple string literals (line concatenations)  or has escapes etc. Just
+        // use the reference location.
+        location
+      }
 
     if (result.start == null) {
       return Location.create(context.file, contents, index, index + string.length)
@@ -281,9 +267,9 @@ class TerminologyDetector : Detector(), SourceCodeScanner, OtherFileScanner {
       val first = source[start]
       val prev = source[start - 1]
       if (
-          prev.isJavaIdentifierPart() &&
-              // Allow camel case
-              !(prev.isLowerCase() && first.isUpperCase())
+        prev.isJavaIdentifierPart() &&
+          // Allow camel case
+          !(prev.isLowerCase() && first.isUpperCase())
       ) {
         return false
       }
@@ -295,9 +281,9 @@ class TerminologyDetector : Detector(), SourceCodeScanner, OtherFileScanner {
       val last = source[end - 1]
       val next = source[end]
       if (
-          next.isJavaIdentifierPart() &&
-              // Allow camel case
-              !(last.isLowerCase() && next.isUpperCase())
+        next.isJavaIdentifierPart() &&
+          // Allow camel case
+          !(last.isLowerCase() && next.isUpperCase())
       ) {
         return false
       }
@@ -328,618 +314,618 @@ class TerminologyDetector : Detector(), SourceCodeScanner, OtherFileScanner {
         1 -> {
           begin = i - 1
           state =
-              when (c) {
-                'b',
-                'B' -> 2
-                'f',
-                'F' -> 3
-                'g',
-                'G' -> 4
-                's',
-                'S' -> 5
-                'w',
-                'W' -> 6
-                else -> 1
-              }
+            when (c) {
+              'b',
+              'B' -> 2
+              'f',
+              'F' -> 3
+              'g',
+              'G' -> 4
+              's',
+              'S' -> 5
+              'w',
+              'W' -> 6
+              else -> 1
+            }
         }
         2 -> {
           state =
-              when (c) {
-                'l',
-                'L' -> 8
-                else -> {
-                  i--
-                  1
-                }
+            when (c) {
+              'l',
+              'L' -> 8
+              else -> {
+                i--
+                1
               }
+            }
         }
         3 -> {
           state =
-              when (c) {
-                '*' -> 7
-                'u',
-                'U' -> 9
-                else -> {
-                  i--
-                  1
-                }
+            when (c) {
+              '*' -> 7
+              'u',
+              'U' -> 9
+              else -> {
+                i--
+                1
               }
+            }
         }
         4 -> {
           state =
-              when (c) {
-                'r',
-                'R' -> 13
-                else -> {
-                  i--
-                  1
-                }
+            when (c) {
+              'r',
+              'R' -> 13
+              else -> {
+                i--
+                1
               }
+            }
         }
         5 -> {
           state =
-              when (c) {
-                'h',
-                'H' -> 11
-                'l',
-                'L' -> 12
-                else -> {
-                  i--
-                  1
-                }
+            when (c) {
+              'h',
+              'H' -> 11
+              'l',
+              'L' -> 12
+              else -> {
+                i--
+                1
               }
+            }
         }
         6 -> {
           state =
-              when (c) {
-                'h',
-                'H' -> 10
-                else -> {
-                  i--
-                  1
-                }
+            when (c) {
+              'h',
+              'H' -> 10
+              else -> {
+                i--
+                1
               }
+            }
         }
         7 -> {
           state =
-              when (c) {
-                'c',
-                'C' -> 19
-                else -> {
-                  i--
-                  1
-                }
+            when (c) {
+              'c',
+              'C' -> 19
+              else -> {
+                i--
+                1
               }
+            }
         }
         8 -> {
           state =
-              when (c) {
-                'a',
-                'A' -> 17
-                else -> {
-                  i--
-                  1
-                }
+            when (c) {
+              'a',
+              'A' -> 17
+              else -> {
+                i--
+                1
               }
+            }
         }
         9 -> {
           state =
-              when (c) {
-                'c',
-                'C' -> 20
-                else -> {
-                  i--
-                  1
-                }
+            when (c) {
+              'c',
+              'C' -> 20
+              else -> {
+                i--
+                1
               }
+            }
         }
         10 -> {
           state =
-              when (c) {
-                'i',
-                'I' -> 16
-                else -> {
-                  i--
-                  1
-                }
+            when (c) {
+              'i',
+              'I' -> 16
+              else -> {
+                i--
+                1
               }
+            }
         }
         11 -> {
           state =
-              when (c) {
-                'i',
-                'I' -> 15
-                else -> {
-                  i--
-                  1
-                }
+            when (c) {
+              'i',
+              'I' -> 15
+              else -> {
+                i--
+                1
               }
+            }
         }
         12 -> {
           state =
-              when (c) {
-                'a',
-                'A' -> 14
-                else -> {
-                  i--
-                  1
-                }
+            when (c) {
+              'a',
+              'A' -> 14
+              else -> {
+                i--
+                1
               }
+            }
         }
         13 -> {
           state =
-              when (c) {
-                'a',
-                'A' -> 18
-                else -> {
-                  i--
-                  1
-                }
+            when (c) {
+              'a',
+              'A' -> 18
+              else -> {
+                i--
+                1
               }
+            }
         }
         14 -> {
           state =
-              when (c) {
-                'v',
-                'V' -> 27
-                else -> {
-                  i--
-                  1
-                }
+            when (c) {
+              'v',
+              'V' -> 27
+              else -> {
+                i--
+                1
               }
+            }
         }
         15 -> {
           state =
-              when (c) {
-                't',
-                'T' -> {
-                  report(context, element, source, begin, i, "?", true)
-                  1
-                }
-                else -> {
-                  i--
-                  1
-                }
+            when (c) {
+              't',
+              'T' -> {
+                report(context, element, source, begin, i, "?", true)
+                1
               }
+              else -> {
+                i--
+                1
+              }
+            }
         }
         16 -> {
           state =
-              when (c) {
-                't',
-                'T' -> 21
-                else -> {
-                  i--
-                  1
-                }
+            when (c) {
+              't',
+              'T' -> 21
+              else -> {
+                i--
+                1
               }
+            }
         }
         17 -> {
           state =
-              when (c) {
-                'c',
-                'C' -> 22
-                else -> {
-                  i--
-                  1
-                }
+            when (c) {
+              'c',
+              'C' -> 22
+              else -> {
+                i--
+                1
               }
+            }
         }
         18 -> {
           state =
-              when (c) {
-                'n',
-                'N' -> 25
-                else -> {
-                  i--
-                  1
-                }
+            when (c) {
+              'n',
+              'N' -> 25
+              else -> {
+                i--
+                1
               }
+            }
         }
         19 -> {
           state =
-              when (c) {
-                'k',
-                'K' -> {
-                  report(context, element, source, begin, i, "?", true)
-                  1
-                }
-                else -> {
-                  i--
-                  1
-                }
+            when (c) {
+              'k',
+              'K' -> {
+                report(context, element, source, begin, i, "?", true)
+                1
               }
+              else -> {
+                i--
+                1
+              }
+            }
         }
         20 -> {
           state =
-              when (c) {
-                'k',
-                'K' -> {
-                  report(context, element, source, begin, i, "?", true)
-                  1
-                }
-                else -> {
-                  i--
-                  1
-                }
+            when (c) {
+              'k',
+              'K' -> {
+                report(context, element, source, begin, i, "?", true)
+                1
               }
+              else -> {
+                i--
+                1
+              }
+            }
         }
         21 -> {
           state =
-              when (c) {
-                'e',
-                'E' -> 29
-                else -> {
-                  i--
-                  1
-                }
+            when (c) {
+              'e',
+              'E' -> 29
+              else -> {
+                i--
+                1
               }
+            }
         }
         22 -> {
           state =
-              when (c) {
-                'k',
-                'K' -> 32
-                else -> {
-                  i--
-                  1
-                }
+            when (c) {
+              'k',
+              'K' -> 32
+              else -> {
+                i--
+                1
               }
+            }
         }
         25 -> {
           state =
-              when (c) {
-                'd',
-                'D' -> 33
-                else -> {
-                  i--
-                  1
-                }
+            when (c) {
+              'd',
+              'D' -> 33
+              else -> {
+                i--
+                1
               }
+            }
         }
         27 -> {
           state =
-              when (c) {
-                'e',
-                'E' -> {
-                  report(context, element, source, begin, i, "secondary", true)
-                  1
-                }
-                else -> {
-                  i--
-                  1
-                }
+            when (c) {
+              'e',
+              'E' -> {
+                report(context, element, source, begin, i, "secondary", true)
+                1
               }
+              else -> {
+                i--
+                1
+              }
+            }
         }
         28 -> {
           state =
-              when (c) {
-                'n',
-                'N' -> 40
-                else -> {
-                  i--
-                  1
-                }
+            when (c) {
+              'n',
+              'N' -> 40
+              else -> {
+                i--
+                1
               }
+            }
         }
         29 -> {
           state =
-              when (c) {
-                'l',
-                'L' -> 35
-                '-' -> 38
-                else -> {
-                  i--
-                  1
-                }
+            when (c) {
+              'l',
+              'L' -> 35
+              '-' -> 38
+              else -> {
+                i--
+                1
               }
+            }
         }
         30 -> {
           state =
-              when (c) {
-                'n',
-                'N' -> 36
-                else -> {
-                  i--
-                  1
-                }
+            when (c) {
+              'n',
+              'N' -> 36
+              else -> {
+                i--
+                1
               }
+            }
         }
         32 -> {
           state =
-              when (c) {
-                'l',
-                'L' -> 34
-                '-' -> 37
-                else -> {
-                  i--
-                  1
-                }
+            when (c) {
+              'l',
+              'L' -> 34
+              '-' -> 37
+              else -> {
+                i--
+                1
               }
+            }
         }
         33 -> {
           state =
-              when (c) {
-                'f',
-                'F' -> 39
-                else -> {
-                  i--
-                  1
-                }
+            when (c) {
+              'f',
+              'F' -> 39
+              else -> {
+                i--
+                1
               }
+            }
         }
         34 -> {
           state =
-              when (c) {
-                'i',
-                'I' -> 44
-                else -> {
-                  i--
-                  1
-                }
+            when (c) {
+              'i',
+              'I' -> 44
+              else -> {
+                i--
+                1
               }
+            }
         }
         35 -> {
           state =
-              when (c) {
-                'i',
-                'I' -> 42
-                else -> {
-                  i--
-                  1
-                }
+            when (c) {
+              'i',
+              'I' -> 42
+              else -> {
+                i--
+                1
               }
+            }
         }
         36 -> {
           state =
-              when (c) {
-                'g',
-                'G' -> {
-                  report(context, element, source, begin, i, "?", true)
-                  1
-                }
-                else -> {
-                  i--
-                  1
-                }
+            when (c) {
+              'g',
+              'G' -> {
+                report(context, element, source, begin, i, "?", true)
+                1
               }
+              else -> {
+                i--
+                1
+              }
+            }
         }
         37 -> {
           state =
-              when (c) {
-                'l',
-                'L' -> 45
-                else -> {
-                  i--
-                  1
-                }
+            when (c) {
+              'l',
+              'L' -> 45
+              else -> {
+                i--
+                1
               }
+            }
         }
         38 -> {
           state =
-              when (c) {
-                'l',
-                'L' -> 43
-                else -> {
-                  i--
-                  1
-                }
+            when (c) {
+              'l',
+              'L' -> 43
+              else -> {
+                i--
+                1
               }
+            }
         }
         39 -> {
           state =
-              when (c) {
-                'a',
-                'A' -> 46
-                else -> {
-                  i--
-                  3
-                }
+            when (c) {
+              'a',
+              'A' -> 46
+              else -> {
+                i--
+                3
               }
+            }
         }
         40 -> {
           state =
-              when (c) {
-                'g',
-                'G' -> {
-                  report(context, element, source, begin, i, "?", true)
-                  1
-                }
-                else -> {
-                  i--
-                  1
-                }
+            when (c) {
+              'g',
+              'G' -> {
+                report(context, element, source, begin, i, "?", true)
+                1
               }
+              else -> {
+                i--
+                1
+              }
+            }
         }
         42 -> {
           state =
-              when (c) {
-                's',
-                'S' -> 48
-                else -> {
-                  i--
-                  1
-                }
+            when (c) {
+              's',
+              'S' -> 48
+              else -> {
+                i--
+                1
               }
+            }
         }
         43 -> {
           state =
-              when (c) {
-                'i',
-                'I' -> 50
-                else -> {
-                  i--
-                  1
-                }
+            when (c) {
+              'i',
+              'I' -> 50
+              else -> {
+                i--
+                1
               }
+            }
         }
         44 -> {
           state =
-              when (c) {
-                's',
-                'S' -> 49
-                else -> {
-                  i--
-                  1
-                }
+            when (c) {
+              's',
+              'S' -> 49
+              else -> {
+                i--
+                1
               }
+            }
         }
         45 -> {
           state =
-              when (c) {
-                'i',
-                'I' -> 52
-                else -> {
-                  i--
-                  1
-                }
+            when (c) {
+              'i',
+              'I' -> 52
+              else -> {
+                i--
+                1
               }
+            }
         }
         46 -> {
           state =
-              when (c) {
-                't',
-                'T' -> 51
-                else -> {
-                  i--
-                  1
-                }
+            when (c) {
+              't',
+              'T' -> 51
+              else -> {
+                i--
+                1
               }
+            }
         }
         48 -> {
           state =
-              when (c) {
-                't',
-                'T' -> {
-                  report(context, element, source, i - 9, i, "include", false)
-                  1
-                }
-                else -> {
-                  i--
-                  5
-                }
+            when (c) {
+              't',
+              'T' -> {
+                report(context, element, source, i - 9, i, "include", false)
+                1
               }
+              else -> {
+                i--
+                5
+              }
+            }
         }
         49 -> {
           state =
-              when (c) {
-                't',
-                'T' -> {
-                  report(context, element, source, i - 9, i, "exclude", false)
-                  1
-                }
-                else -> {
-                  i--
-                  5
-                }
+            when (c) {
+              't',
+              'T' -> {
+                report(context, element, source, i - 9, i, "exclude", false)
+                1
               }
+              else -> {
+                i--
+                5
+              }
+            }
         }
         50 -> {
           state =
-              when (c) {
-                's',
-                'S' -> 56
-                else -> {
-                  i--
-                  1
-                }
+            when (c) {
+              's',
+              'S' -> 56
+              else -> {
+                i--
+                1
               }
+            }
         }
         51 -> {
           state =
-              when (c) {
-                'h',
-                'H' -> 53
-                else -> {
-                  i--
-                  1
-                }
+            when (c) {
+              'h',
+              'H' -> 53
+              else -> {
+                i--
+                1
               }
+            }
         }
         52 -> {
           state =
-              when (c) {
-                's',
-                'S' -> 54
-                else -> {
-                  i--
-                  1
-                }
+            when (c) {
+              's',
+              'S' -> 54
+              else -> {
+                i--
+                1
               }
+            }
         }
         53 -> {
           state =
-              when (c) {
-                'e',
-                'E' -> 60
-                else -> {
-                  i--
-                  1
-                }
+            when (c) {
+              'e',
+              'E' -> 60
+              else -> {
+                i--
+                1
               }
+            }
         }
         54 -> {
           state =
-              when (c) {
-                't',
-                'T' -> {
-                  report(context, element, source, i - 10, i, "exclude", false)
-                  1
-                }
-                else -> {
-                  i--
-                  5
-                }
+            when (c) {
+              't',
+              'T' -> {
+                report(context, element, source, i - 10, i, "exclude", false)
+                1
               }
+              else -> {
+                i--
+                5
+              }
+            }
         }
         56 -> {
           state =
-              when (c) {
-                't',
-                'T' -> {
-                  report(context, element, source, i - 10, i, "include", false)
-                  1
-                }
-                else -> {
-                  i--
-                  5
-                }
+            when (c) {
+              't',
+              'T' -> {
+                report(context, element, source, i - 10, i, "include", false)
+                1
               }
+              else -> {
+                i--
+                5
+              }
+            }
         }
         60 -> {
           state =
-              when (c) {
-                'r',
-                'R' -> 61
-                else -> {
-                  i--
-                  1
-                }
+            when (c) {
+              'r',
+              'R' -> 61
+              else -> {
+                i--
+                1
               }
+            }
         }
         61 -> {
           state =
-              when (c) {
-                'e',
-                'E' -> 62
-                else -> {
-                  i--
-                  1
-                }
+            when (c) {
+              'e',
+              'E' -> 62
+              else -> {
+                i--
+                1
               }
+            }
         }
         62 -> {
           state =
-              when (c) {
-                'd',
-                'D' -> {
-                  report(context, element, source, begin, i, "baseline", true)
-                  1
-                }
-                else -> {
-                  i--
-                  1
-                }
+            when (c) {
+              'd',
+              'D' -> {
+                report(context, element, source, begin, i, "baseline", true)
+                1
               }
+              else -> {
+                i--
+                1
+              }
+            }
         }
       }
     }

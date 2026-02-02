@@ -27,21 +27,17 @@ import com.android.tools.lint.model.LintModelLintOptions
 import org.junit.Assert
 
 class TestLintOptionsConfiguration(
-    private val task: TestLintTask,
-    private val project: Project,
-    configurations: ConfigurationHierarchy,
-    lintOptions: LintModelLintOptions,
-    fatalOnly: Boolean,
+  private val task: TestLintTask,
+  private val project: Project,
+  configurations: ConfigurationHierarchy,
+  lintOptions: LintModelLintOptions,
+  fatalOnly: Boolean,
 ) : LintOptionsConfiguration(configurations, lintOptions, fatalOnly) {
   init {
     associatedLocation = Location.create(project.dir)
   }
 
-  override fun getDefinedSeverity(
-      issue: Issue,
-      source: Configuration,
-      visibleDefault: Severity,
-  ): Severity {
+  override fun getDefinedSeverity(issue: Issue, source: Configuration, visibleDefault: Severity): Severity {
     val override = overrideSeverity(task, issue, visibleDefault)
     if (override != null) {
       return override

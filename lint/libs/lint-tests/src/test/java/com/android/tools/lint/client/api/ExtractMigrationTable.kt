@@ -53,33 +53,25 @@ fun main() {
   // oldApi (Lsome/entity;Lsome/other/entity;) -> newApi
   val apiMap = mutableMapOf<String, String>()
   val currentSources =
-      // when using specific version of source snapshot:
-      //
-      // File(".../Downloads/kotlinc-source/kotlin-compiler-source-v2.1.0.jar")
-      //
-      // when using the current version of source snapshot in prebuilts:
-      File(
-          TestUtils.getWorkspaceRoot().toFile(),
-          "prebuilts/tools/common/lint-psi/kotlin-compiler/kotlin-compiler-sources.jar",
-      )
+    // when using specific version of source snapshot:
+    //
+    // File(".../Downloads/kotlinc-source/kotlin-compiler-source-v2.1.0.jar")
+    //
+    // when using the current version of source snapshot in prebuilts:
+    File(TestUtils.getWorkspaceRoot().toFile(), "prebuilts/tools/common/lint-psi/kotlin-compiler/kotlin-compiler-sources.jar")
 
   val parentDisposable = Disposer.newDisposable("ExtractMigrationTable")
-  val env =
-      KotlinCoreEnvironment.createForProduction(
-          parentDisposable,
-          CompilerConfiguration(),
-          JVM_CONFIG_FILES,
-      )
+  val env = KotlinCoreEnvironment.createForProduction(parentDisposable, CompilerConfiguration(), JVM_CONFIG_FILES)
 
   JarInputStream(ByteArrayInputStream(currentSources.readBytes())).use { jis ->
     var entry = jis.nextJarEntry
     while (entry != null) {
       val fileName = entry.name
       if (
-          fileName.endsWith(DOT_KT) &&
-              !entry.isDirectory &&
-              fileName.contains("org/jetbrains/kotlin/analysis/api/") &&
-              !fileName.contains("Test")
+        fileName.endsWith(DOT_KT) &&
+          !entry.isDirectory &&
+          fileName.contains("org/jetbrains/kotlin/analysis/api/") &&
+          !fileName.contains("Test")
       ) {
         val text = String(jis.readAllBytes(), Charsets.UTF_8)
         extract(env, fileName, text, typeMap, subMap, apiMap)
@@ -133,273 +125,273 @@ private fun <K, V> printMap(m: Map<K, V>, kFormatter: (K) -> String, vFormatter:
 }
 
 private fun extract(
-    env: KotlinCoreEnvironment,
-    fileName: String,
-    text: String,
-    typeMap: MutableMap<String, String>,
-    subMap: MutableMap<String, Collection<String>>,
-    apiMap: MutableMap<String, String>,
+  env: KotlinCoreEnvironment,
+  fileName: String,
+  text: String,
+  typeMap: MutableMap<String, String>,
+  subMap: MutableMap<String, Collection<String>>,
+  apiMap: MutableMap<String, String>,
 ) {
   val factory = KtPsiFactory(env.project)
   val ktFile = factory.createFile(fileName, text)
   ktFile.acceptChildren(
-      object : KtVisitorVoid() {
-        var pkg = ""
-        val imports = mutableMapOf<String, String>()
+    object : KtVisitorVoid() {
+      var pkg = ""
+      val imports = mutableMapOf<String, String>()
 
-        override fun visitPackageDirective(directive: KtPackageDirective) {
-          pkg = directive.qualifiedName
-        }
+      override fun visitPackageDirective(directive: KtPackageDirective) {
+        pkg = directive.qualifiedName
+      }
 
-        override fun visitImportList(importList: KtImportList) {
-          importList.acceptChildren(this)
-        }
+      override fun visitImportList(importList: KtImportList) {
+        importList.acceptChildren(this)
+      }
 
-        override fun visitImportDirective(importDirective: KtImportDirective) {
-          val fqName = importDirective.importedFqName
-          val name = fqName?.shortName()?.identifier
-          if (name != null) {
-            imports[name] = fqName.asString()
-          }
-        }
-
-        override fun visitTypeAlias(typeAlias: KtTypeAlias) {
-          val name = typeAlias.name?.substringBefore("<") ?: return
-          // Known cases to skip (not used for backwards compatibility,
-          // but for other type reuse within AA)
-          when (name) {
-            "KaScopeNameFilter" -> return
-          }
-          var alias = typeAlias.getTypeReference()?.text?.substringBefore("<") ?: return
-          if (alias.startsWith("@")) {
-            val end = skipAnnotation(alias, 0)
-            if (end > 0) {
-              alias = alias.substring(end).trim()
-            }
-          }
-          val fqn =
-              if ("." in alias) {
-                alias
-              } else {
-                imports[alias] ?: "$pkg.$alias"
-              }
-
-          typeMap["$pkg.$name"] = fqn
-        }
-
-        var cls = ""
-
-        private fun isFrontendAgnostic(name: String): Boolean {
-          return "Fir" !in name && "Fe10" !in name
-        }
-
-        override fun visitClass(klass: KtClass) {
-          klass.name?.let { name ->
-            cls = name
-            // Only interested in frontend-agnostic Ka* entities
-            if (name.startsWith("Ka") && isFrontendAgnostic(name)) {
-              val supers = mutableListOf<String>()
-              for (entry in klass.superTypeListEntries) {
-                val superT = entry.typeReference?.getTypeText()
-                if (superT != null) {
-                  val fqn = tryLikelyFullyQualifiedName(superT)
-                  if (fqn.isNotEmpty() && fqn != superT && isFrontendAgnostic(fqn)) {
-                    supers.add(fqn)
-                  }
-                }
-              }
-              if (supers.isNotEmpty()) {
-                subMap["$pkg.$name"] = supers
-              }
-            }
-          }
-          klass.acceptChildren(this)
-        }
-
-        override fun visitClassOrObject(classOrObject: KtClassOrObject) {
-          classOrObject.name?.let { cls = it }
-          classOrObject.acceptChildren(this)
-        }
-
-        override fun visitClassBody(classBody: KtClassBody) {
-          classBody.acceptChildren(this)
-        }
-
-        private val REPLACED_PATTERN = Pattern.compile("""ReplaceWith\("(.+)"\)""", Pattern.DOTALL)
-
-        override fun visitNamedFunction(function: KtNamedFunction) {
-          val deprecated = getDeprecatedAnnotation(function) ?: return
-          val attr = getReplaceWith(deprecated) ?: return
-          val name = function.name ?: return
-          val attrValue = attr.getArgumentExpression()?.text ?: return
-          val matcher = REPLACED_PATTERN.matcher(attrValue)
-          if (matcher.find()) {
-            val replaced = matcher.group(1)
-            mapApi(name + " " + computeSignature(function), replaced)
-          }
-        }
-
-        override fun visitProperty(property: KtProperty) {
-          val deprecated = getDeprecatedAnnotation(property) ?: return
-          val attr = getReplaceWith(deprecated) ?: return
-          val name = property.name ?: return
-          val attrValue = attr.getArgumentExpression()?.text ?: return
-          val matcher = REPLACED_PATTERN.matcher(attrValue)
-          if (matcher.find()) {
-            val replaced = matcher.group(1)
-            mapApi(toPropertyGetterName(name) + " " + computeSignature(property), replaced)
-          }
-        }
-
-        private fun mapApi(name: String, replaced: String) {
-          if (" in " in replaced || " as " in replaced || " as? " in replaced) {
-            // E.g., ReplaceWith("classId in annotations")
-            // E.g., ReplaceWith("this.getSymbol() as? S")
-            // TODO: chain (of property access, followed by contains call or type cast)
-            println("MISSING: $pkg.$cls#$name -> $replaced")
-          } else if ('[' in replaced && ']' in replaced) {
-            // E.g. ReplaceWith("annotations[classId]")
-            // TODO: chain (of property access and array access)
-            println("MISSING: $pkg.$cls#$name -> $replaced")
-          } else if ('.' in replaced) {
-            // E.g. ReplaceWith("types.commonSupertype"))
-            // TODO: chain (of property accesses)
-            println("MISSING: $pkg.$cls#$name -> $replaced")
-          } else if ('{' in replaced && '}' == replaced.last()) {
-            // TODO: trailing lambda?
-            // E.g. ReplacedWith("getBuildKtModuleProvider { }")
-            println("MISSING: $pkg.$cls#$name -> $replaced")
-          } else if ('!' == replaced[0]) {
-            // TODO: negation
-            // E.g. ReplacedWith("!isSubtypeOf(other, errorTypePolicy")
-            println("MISSING: $pkg.$cls#$name -> $replaced")
-          } else if ('(' in replaced && ')' in replaced) {
-            // E.g., ReplaceWith("resolveToCall()") -> resolveToCall
-            apiMap["$pkg.$cls.$name"] = replaced.substringBefore("(")
-          } else {
-            // E.g., ReplaceWith("expressionType") -> getExpressionType
-            apiMap["$pkg.$cls.$name"] = toPropertyGetterName(replaced)
-          }
-        }
-
-        private fun toPropertyGetterName(name: String): String {
-          return if (name.startsWith("is") || name.startsWith("get")) {
-            name
-          } else {
-            "get" + name.replaceFirstChar { if (it.isLowerCase()) it.titlecase(getDefault()) else it.toString() }
-          }
-        }
-
-        private fun getDeprecatedAnnotation(annotated: KtAnnotated): KtAnnotationEntry? {
-          // Finding @Deprecated(...)
-          return annotated.annotationEntries.find { entry -> entry.typeReference?.text?.contains("Deprecated") == true }
-        }
-
-        private fun getReplaceWith(annotationEntry: KtAnnotationEntry): ValueArgument? {
-          // Finding @Deprecated(..., replaceWith = ReplaceWith("..."), ...)
-          return annotationEntry.valueArguments.find { arg ->
-            arg.getArgumentName()?.asName?.identifier == "replaceWith" ||
-                arg.getArgumentExpression()?.text?.startsWith("ReplaceWith(") == true
-          }
-        }
-
-        private fun tryLikelyFullyQualifiedName(type: String): String {
-          // From `import org.jetbrains.kotlin.analysis.api.$Entity`,
-          // we can map $Entity back to its fully qualified name
-          imports[type]?.let {
-            return it
-          }
-          return when {
-            type.startsWith("Kt") -> {
-              // KT PSI is likely(?) used via start import
-              "org.jetbrains.kotlin.psi.$type"
-            }
-            type.startsWith("Ka") -> {
-              // Ka* entities can be reused without import as they're in the same package
-              "$pkg.$type"
-            }
-            else -> type
-          }
-        }
-
-        private fun computeSignature(callable: KtCallableDeclaration): String {
-
-          fun dropNullity(type: String): String {
-            return if (type.last() == '?') type.substringBefore('?') else type
-          }
-
-          // TODO: functional type, (primitive | nested) arrays
-          fun typeTextToJvmSignature(type: String): String {
-            return when (type) {
-              "Boolean" -> "Z"
-              "Byte" -> "B"
-              "Short" -> "S"
-              "Int" -> "I"
-              "Long" -> "J"
-              "Float" -> "F"
-              "Double" -> "D"
-              else -> {
-                val nonNullType = dropNullity(type)
-                val fqn = tryLikelyFullyQualifiedName(nonNullType)
-                if (fqn != nonNullType) {
-                  fqn
-                } else {
-                  when {
-                    type.startsWith("Collection") -> {
-                      "java.util.Collection"
-                    }
-                    type.startsWith("List") -> {
-                      "java.util.List"
-                    }
-                    '<' in type -> {
-                      // Erase type parameters
-                      nonNullType.substringBefore('<')
-                    }
-                    else -> nonNullType
-                  }
-                }
-              }
-            }
-          }
-
-          // TODO: how to check a subtype of KaSessionComponent
-          fun isKaSessionComponent(type: String): Boolean {
-            return type.endsWith("Provider") || type.endsWith("Optimizer") || type.endsWith("Resolver") || type.endsWith("Checker")
-          }
-
-          return buildString {
-            append("(")
-            val rcvTxt = callable.receiverTypeReference?.getTypeText()
-            val fqn =
-                if (rcvTxt != null) {
-                  // Extension receiver (static call)
-                  typeTextToJvmSignature(rcvTxt)
-                } else {
-                  // Dispatch receiver (virtual/interface call)
-                  // Except a subtype of KaSessionComponent which will be inlined to mix-in
-                  if (isKaSessionComponent(cls)) {
-                    ""
-                  } else {
-                    "$pkg.$cls"
-                  }
-                }
-            if (fqn.isNotEmpty()) {
-              append("L${getInternalName(fqn)};")
-            }
-            for (param in callable.valueParameters) {
-              val paramTxt = param.typeReference?.getTypeText() ?: continue
-              val pt = typeTextToJvmSignature(paramTxt)
-              if (pt.length == 1) {
-                // primitive
-                append(pt)
-              } else {
-                append("L${getInternalName(pt)};")
-              }
-            }
-            append(")")
-            // TODO: return type
-          }
+      override fun visitImportDirective(importDirective: KtImportDirective) {
+        val fqName = importDirective.importedFqName
+        val name = fqName?.shortName()?.identifier
+        if (name != null) {
+          imports[name] = fqName.asString()
         }
       }
+
+      override fun visitTypeAlias(typeAlias: KtTypeAlias) {
+        val name = typeAlias.name?.substringBefore("<") ?: return
+        // Known cases to skip (not used for backwards compatibility,
+        // but for other type reuse within AA)
+        when (name) {
+          "KaScopeNameFilter" -> return
+        }
+        var alias = typeAlias.getTypeReference()?.text?.substringBefore("<") ?: return
+        if (alias.startsWith("@")) {
+          val end = skipAnnotation(alias, 0)
+          if (end > 0) {
+            alias = alias.substring(end).trim()
+          }
+        }
+        val fqn =
+          if ("." in alias) {
+            alias
+          } else {
+            imports[alias] ?: "$pkg.$alias"
+          }
+
+        typeMap["$pkg.$name"] = fqn
+      }
+
+      var cls = ""
+
+      private fun isFrontendAgnostic(name: String): Boolean {
+        return "Fir" !in name && "Fe10" !in name
+      }
+
+      override fun visitClass(klass: KtClass) {
+        klass.name?.let { name ->
+          cls = name
+          // Only interested in frontend-agnostic Ka* entities
+          if (name.startsWith("Ka") && isFrontendAgnostic(name)) {
+            val supers = mutableListOf<String>()
+            for (entry in klass.superTypeListEntries) {
+              val superT = entry.typeReference?.getTypeText()
+              if (superT != null) {
+                val fqn = tryLikelyFullyQualifiedName(superT)
+                if (fqn.isNotEmpty() && fqn != superT && isFrontendAgnostic(fqn)) {
+                  supers.add(fqn)
+                }
+              }
+            }
+            if (supers.isNotEmpty()) {
+              subMap["$pkg.$name"] = supers
+            }
+          }
+        }
+        klass.acceptChildren(this)
+      }
+
+      override fun visitClassOrObject(classOrObject: KtClassOrObject) {
+        classOrObject.name?.let { cls = it }
+        classOrObject.acceptChildren(this)
+      }
+
+      override fun visitClassBody(classBody: KtClassBody) {
+        classBody.acceptChildren(this)
+      }
+
+      private val REPLACED_PATTERN = Pattern.compile("""ReplaceWith\("(.+)"\)""", Pattern.DOTALL)
+
+      override fun visitNamedFunction(function: KtNamedFunction) {
+        val deprecated = getDeprecatedAnnotation(function) ?: return
+        val attr = getReplaceWith(deprecated) ?: return
+        val name = function.name ?: return
+        val attrValue = attr.getArgumentExpression()?.text ?: return
+        val matcher = REPLACED_PATTERN.matcher(attrValue)
+        if (matcher.find()) {
+          val replaced = matcher.group(1)
+          mapApi(name + " " + computeSignature(function), replaced)
+        }
+      }
+
+      override fun visitProperty(property: KtProperty) {
+        val deprecated = getDeprecatedAnnotation(property) ?: return
+        val attr = getReplaceWith(deprecated) ?: return
+        val name = property.name ?: return
+        val attrValue = attr.getArgumentExpression()?.text ?: return
+        val matcher = REPLACED_PATTERN.matcher(attrValue)
+        if (matcher.find()) {
+          val replaced = matcher.group(1)
+          mapApi(toPropertyGetterName(name) + " " + computeSignature(property), replaced)
+        }
+      }
+
+      private fun mapApi(name: String, replaced: String) {
+        if (" in " in replaced || " as " in replaced || " as? " in replaced) {
+          // E.g., ReplaceWith("classId in annotations")
+          // E.g., ReplaceWith("this.getSymbol() as? S")
+          // TODO: chain (of property access, followed by contains call or type cast)
+          println("MISSING: $pkg.$cls#$name -> $replaced")
+        } else if ('[' in replaced && ']' in replaced) {
+          // E.g. ReplaceWith("annotations[classId]")
+          // TODO: chain (of property access and array access)
+          println("MISSING: $pkg.$cls#$name -> $replaced")
+        } else if ('.' in replaced) {
+          // E.g. ReplaceWith("types.commonSupertype"))
+          // TODO: chain (of property accesses)
+          println("MISSING: $pkg.$cls#$name -> $replaced")
+        } else if ('{' in replaced && '}' == replaced.last()) {
+          // TODO: trailing lambda?
+          // E.g. ReplacedWith("getBuildKtModuleProvider { }")
+          println("MISSING: $pkg.$cls#$name -> $replaced")
+        } else if ('!' == replaced[0]) {
+          // TODO: negation
+          // E.g. ReplacedWith("!isSubtypeOf(other, errorTypePolicy")
+          println("MISSING: $pkg.$cls#$name -> $replaced")
+        } else if ('(' in replaced && ')' in replaced) {
+          // E.g., ReplaceWith("resolveToCall()") -> resolveToCall
+          apiMap["$pkg.$cls.$name"] = replaced.substringBefore("(")
+        } else {
+          // E.g., ReplaceWith("expressionType") -> getExpressionType
+          apiMap["$pkg.$cls.$name"] = toPropertyGetterName(replaced)
+        }
+      }
+
+      private fun toPropertyGetterName(name: String): String {
+        return if (name.startsWith("is") || name.startsWith("get")) {
+          name
+        } else {
+          "get" + name.replaceFirstChar { if (it.isLowerCase()) it.titlecase(getDefault()) else it.toString() }
+        }
+      }
+
+      private fun getDeprecatedAnnotation(annotated: KtAnnotated): KtAnnotationEntry? {
+        // Finding @Deprecated(...)
+        return annotated.annotationEntries.find { entry -> entry.typeReference?.text?.contains("Deprecated") == true }
+      }
+
+      private fun getReplaceWith(annotationEntry: KtAnnotationEntry): ValueArgument? {
+        // Finding @Deprecated(..., replaceWith = ReplaceWith("..."), ...)
+        return annotationEntry.valueArguments.find { arg ->
+          arg.getArgumentName()?.asName?.identifier == "replaceWith" ||
+            arg.getArgumentExpression()?.text?.startsWith("ReplaceWith(") == true
+        }
+      }
+
+      private fun tryLikelyFullyQualifiedName(type: String): String {
+        // From `import org.jetbrains.kotlin.analysis.api.$Entity`,
+        // we can map $Entity back to its fully qualified name
+        imports[type]?.let {
+          return it
+        }
+        return when {
+          type.startsWith("Kt") -> {
+            // KT PSI is likely(?) used via start import
+            "org.jetbrains.kotlin.psi.$type"
+          }
+          type.startsWith("Ka") -> {
+            // Ka* entities can be reused without import as they're in the same package
+            "$pkg.$type"
+          }
+          else -> type
+        }
+      }
+
+      private fun computeSignature(callable: KtCallableDeclaration): String {
+
+        fun dropNullity(type: String): String {
+          return if (type.last() == '?') type.substringBefore('?') else type
+        }
+
+        // TODO: functional type, (primitive | nested) arrays
+        fun typeTextToJvmSignature(type: String): String {
+          return when (type) {
+            "Boolean" -> "Z"
+            "Byte" -> "B"
+            "Short" -> "S"
+            "Int" -> "I"
+            "Long" -> "J"
+            "Float" -> "F"
+            "Double" -> "D"
+            else -> {
+              val nonNullType = dropNullity(type)
+              val fqn = tryLikelyFullyQualifiedName(nonNullType)
+              if (fqn != nonNullType) {
+                fqn
+              } else {
+                when {
+                  type.startsWith("Collection") -> {
+                    "java.util.Collection"
+                  }
+                  type.startsWith("List") -> {
+                    "java.util.List"
+                  }
+                  '<' in type -> {
+                    // Erase type parameters
+                    nonNullType.substringBefore('<')
+                  }
+                  else -> nonNullType
+                }
+              }
+            }
+          }
+        }
+
+        // TODO: how to check a subtype of KaSessionComponent
+        fun isKaSessionComponent(type: String): Boolean {
+          return type.endsWith("Provider") || type.endsWith("Optimizer") || type.endsWith("Resolver") || type.endsWith("Checker")
+        }
+
+        return buildString {
+          append("(")
+          val rcvTxt = callable.receiverTypeReference?.getTypeText()
+          val fqn =
+            if (rcvTxt != null) {
+              // Extension receiver (static call)
+              typeTextToJvmSignature(rcvTxt)
+            } else {
+              // Dispatch receiver (virtual/interface call)
+              // Except a subtype of KaSessionComponent which will be inlined to mix-in
+              if (isKaSessionComponent(cls)) {
+                ""
+              } else {
+                "$pkg.$cls"
+              }
+            }
+          if (fqn.isNotEmpty()) {
+            append("L${getInternalName(fqn)};")
+          }
+          for (param in callable.valueParameters) {
+            val paramTxt = param.typeReference?.getTypeText() ?: continue
+            val pt = typeTextToJvmSignature(paramTxt)
+            if (pt.length == 1) {
+              // primitive
+              append(pt)
+            } else {
+              append("L${getInternalName(pt)};")
+            }
+          }
+          append(")")
+          // TODO: return type
+        }
+      }
+    }
   )
 }

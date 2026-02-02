@@ -43,5 +43,5 @@ internal abstract class KotlinPsiDeclarationProviderFactory {
 }
 
 internal fun Project.createPsiDeclarationProvider(searchScope: GlobalSearchScope): KotlinPsiDeclarationProvider? =
-    // TODO: avoid using fail-safe service loading once the factory has an easy-to-register ctor.
-    getServiceIfCreated(KotlinPsiDeclarationProviderFactory::class.java)?.createPsiDeclarationProvider(searchScope)
+  // TODO: avoid using fail-safe service loading once the factory has an easy-to-register ctor.
+  getServiceIfCreated(KotlinPsiDeclarationProviderFactory::class.java)?.createPsiDeclarationProvider(searchScope)

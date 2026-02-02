@@ -66,10 +66,10 @@ class CredentialManagerDependencyDetector : Detector(), XmlScanner {
     if (project.dependsOn("androidx.credentials:credentials-play-services-auth") == true) return
 
     context.report(
-        CREDENTIAL_DEP,
-        context.getLocation(application),
-        "This app supports Android 13 and depends on `androidx.credentials:credentials`, " +
-            "and so should also depend on `androidx.credentials:credentials-play-services-auth`",
+      CREDENTIAL_DEP,
+      context.getLocation(application),
+      "This app supports Android 13 and depends on `androidx.credentials:credentials`, " +
+        "and so should also depend on `androidx.credentials:credentials-play-services-auth`",
     )
   }
 
@@ -79,11 +79,11 @@ class CredentialManagerDependencyDetector : Detector(), XmlScanner {
 
     @JvmField
     val CREDENTIAL_DEP =
-        Issue.create(
-            id = "CredentialDependency",
-            briefDescription = "`credentials-play-services-auth` is Required",
-            explanation =
-                """
+      Issue.create(
+        id = "CredentialDependency",
+        briefDescription = "`credentials-play-services-auth` is Required",
+        explanation =
+          """
           The dependency `androidx.credentials:credentials-play-services-auth` is required \
           for Android 13 and below \
           to get support from Play services for the Credential Manager API \
@@ -91,12 +91,12 @@ class CredentialManagerDependencyDetector : Detector(), XmlScanner {
           For Android 14 and above, this is optional. Please check release notes for the \
           latest version.
           """,
-            moreInfo = "https://developer.android.com/jetpack/androidx/releases/credentials",
-            category = Category.CORRECTNESS,
-            priority = 5,
-            severity = Severity.WARNING,
-            implementation = IMPLEMENTATION,
-            androidSpecific = true,
-        )
+        moreInfo = "https://developer.android.com/jetpack/androidx/releases/credentials",
+        category = Category.CORRECTNESS,
+        priority = 5,
+        severity = Severity.WARNING,
+        implementation = IMPLEMENTATION,
+        androidSpecific = true,
+      )
   }
 }

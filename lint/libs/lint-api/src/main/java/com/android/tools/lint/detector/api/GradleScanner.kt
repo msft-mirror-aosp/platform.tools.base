@@ -29,13 +29,13 @@ interface GradleScanner : FileScanner {
    */
   @Deprecated("Replace with checkDslPropertyAssignment that includes a property cookie")
   fun checkDslPropertyAssignment(
-      context: GradleContext,
-      property: String,
-      value: String,
-      parent: String,
-      parentParent: String?,
-      valueCookie: Any,
-      statementCookie: Any,
+    context: GradleContext,
+    property: String,
+    value: String,
+    parent: String,
+    parentParent: String?,
+    valueCookie: Any,
+    statementCookie: Any,
   )
 
   /**
@@ -49,14 +49,14 @@ interface GradleScanner : FileScanner {
    * assignment.
    */
   fun checkDslPropertyAssignment(
-      context: GradleContext,
-      property: String,
-      value: String,
-      parent: String,
-      parentParent: String?,
-      propertyCookie: Any,
-      valueCookie: Any,
-      statementCookie: Any,
+    context: GradleContext,
+    property: String,
+    value: String,
+    parent: String,
+    parentParent: String?,
+    propertyCookie: Any,
+    valueCookie: Any,
+    statementCookie: Any,
   )
 
   /**
@@ -68,12 +68,12 @@ interface GradleScanner : FileScanner {
    */
   @Deprecated("Replace with checkMethodCall that includes a parentParent name")
   fun checkMethodCall(
-      context: GradleContext,
-      statement: String,
-      parent: String?,
-      namedArguments: Map<String, String>,
-      unnamedArguments: List<String>,
-      cookie: Any,
+    context: GradleContext,
+    statement: String,
+    parent: String?,
+    namedArguments: Map<String, String>,
+    unnamedArguments: List<String>,
+    cookie: Any,
   )
 
   /**
@@ -84,13 +84,13 @@ interface GradleScanner : FileScanner {
    * and the [cookie] describes the range and can be passed to [GradleContext.getLocation].
    */
   fun checkMethodCall(
-      context: GradleContext,
-      statement: String,
-      parent: String?,
-      parentParent: String?,
-      namedArguments: Map<String, String>,
-      unnamedArguments: List<String>,
-      cookie: Any,
+    context: GradleContext,
+    statement: String,
+    parent: String?,
+    parentParent: String?,
+    namedArguments: Map<String, String>,
+    unnamedArguments: List<String>,
+    cookie: Any,
   )
 
   /**

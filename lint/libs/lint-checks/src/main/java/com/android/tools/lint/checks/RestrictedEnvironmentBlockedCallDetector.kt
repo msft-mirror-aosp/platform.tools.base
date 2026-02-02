@@ -75,11 +75,7 @@ class RestrictedEnvironmentBlockedCallDetector : Detector(), SourceCodeScanner {
   private val relevantExprs: MutableMap<UElement, MutableList<RelevantExpr>> = mutableMapOf()
 
   private sealed interface RelevantExpr {
-    data class BlockedCall(
-        val callExpression: UCallExpression,
-        val from: Int,
-        val environment: String,
-    ) : RelevantExpr
+    data class BlockedCall(val callExpression: UCallExpression, val from: Int, val environment: String) : RelevantExpr
 
     data class EnvironmentCheck(val expression: UExpression, val environment: String) : RelevantExpr
   }
@@ -124,18 +120,18 @@ class RestrictedEnvironmentBlockedCallDetector : Detector(), SourceCodeScanner {
   override fun applicableAnnotations() = listOf(RESTRICTED_ANNOTATION_FQN, CHECKS_SANDBOX_ANNOTATION_FQN)
 
   override fun isApplicableAnnotationUsage(type: AnnotationUsageType) =
-      when (type) {
-        AnnotationUsageType.METHOD_CALL,
-        AnnotationUsageType.FIELD_REFERENCE,
-        AnnotationUsageType.VARIABLE_REFERENCE -> true
-        else -> false
-      }
+    when (type) {
+      AnnotationUsageType.METHOD_CALL,
+      AnnotationUsageType.FIELD_REFERENCE,
+      AnnotationUsageType.VARIABLE_REFERENCE -> true
+      else -> false
+    }
 
   override fun visitAnnotationUsage(
-      context: JavaContext,
-      element: UElement,
-      annotationInfo: AnnotationInfo,
-      usageInfo: AnnotationUsageInfo,
+    context: JavaContext,
+    element: UElement,
+    annotationInfo: AnnotationInfo,
+    usageInfo: AnnotationUsageInfo,
   ) {
     when (annotationInfo.qualifiedName) {
       RESTRICTED_ANNOTATION_FQN -> {
@@ -207,12 +203,7 @@ class RestrictedEnvironmentBlockedCallDetector : Detector(), SourceCodeScanner {
     return lastMethodOrBlock
   }
 
-  private fun visitBlockedCall(
-      context: JavaContext,
-      callExpression: UCallExpression,
-      blockedSinceTargetSdk: Int,
-      environment: String,
-  ) {
+  private fun visitBlockedCall(context: JavaContext, callExpression: UCallExpression, blockedSinceTargetSdk: Int, environment: String) {
     // Check outer annotations, and potentially return early.
     for (anno in callExpression.outerAnnotations(context)) {
       if (anno.qualifiedName != RESTRICTED_ANNOTATION_FQN) continue
@@ -268,8 +259,8 @@ class RestrictedEnvironmentBlockedCallDetector : Detector(), SourceCodeScanner {
               message += " when `targetSdk` is ${expr.from} or above"
             }
             context.report(
-                Incident(ISSUE, context.getLocation(expr.callExpression), message),
-                LintMap().put(LINT_MAP_ENVIRONMENT_KEY, expr.environment).put(LINT_MAP_TARGET_SDK_KEY, expr.from),
+              Incident(ISSUE, context.getLocation(expr.callExpression), message),
+              LintMap().put(LINT_MAP_ENVIRONMENT_KEY, expr.environment).put(LINT_MAP_TARGET_SDK_KEY, expr.from),
             )
           }
         }
@@ -308,19 +299,15 @@ class RestrictedEnvironmentBlockedCallDetector : Detector(), SourceCodeScanner {
     // We could use JAVA_FILE_SCOPE so that the check runs on-the-fly; however, at the time of
     // writing, the warnings will not show because the sandboxed SDK is usually (always?) a
     // separate module with no code.
-    private val IMPLEMENTATION =
-        Implementation(
-            RestrictedEnvironmentBlockedCallDetector::class.java,
-            EnumSet.of(Scope.ALL_JAVA_FILES),
-        )
+    private val IMPLEMENTATION = Implementation(RestrictedEnvironmentBlockedCallDetector::class.java, EnumSet.of(Scope.ALL_JAVA_FILES))
 
     @JvmField
     val ISSUE =
-        Issue.create(
-            id = "PrivacySandboxBlockedCall",
-            briefDescription = "Call is blocked in the Privacy Sandbox",
-            explanation =
-                """
+      Issue.create(
+        id = "PrivacySandboxBlockedCall",
+        briefDescription = "Call is blocked in the Privacy Sandbox",
+        explanation =
+          """
           Many APIs are unavailable in the Privacy Sandbox, depending on the `targetSdk`.
 
           If your code is designed to run in the sandbox (and never outside the sandbox) then you should remove the \
@@ -335,42 +322,42 @@ class RestrictedEnvironmentBlockedCallDetector : Detector(), SourceCodeScanner {
           This check is disabled by default, and should only be enabled in modules that may execute in the \
           Privacy Sandbox.
           """,
-            category = Category.CORRECTNESS,
-            priority = 5,
-            severity = Severity.WARNING,
-            implementation = IMPLEMENTATION,
-            androidSpecific = true,
-            enabledByDefault = false,
-        )
+        category = Category.CORRECTNESS,
+        priority = 5,
+        severity = Severity.WARNING,
+        implementation = IMPLEMENTATION,
+        androidSpecific = true,
+        enabledByDefault = false,
+      )
 
     /**
      * A map of hardcoded fully-qualified class names (the keys) that are blocked in the Privacy Sandbox, starting at the given targetSdk
      * (the values). These will hopefully not be needed from a certain compileSdk because the classes/methods will be annotated.
      */
     private val BLOCKED_CLASSES_FROM =
-        hashMapOf(
-            "android.hardware.biometrics.BiometricManager" to 34,
-            "android.app.blob.BlobStoreManager" to 34,
-            "android.os.BugReportManager" to 34,
-            "android.content.pm.CrossProfileApps" to 34,
-            "android.app.admin.DevicePolicyManager" to 34,
-            "android.content.pm.verify.domain.DomainVerificationManager" to 34,
-            "android.security.FileIntegrityManager" to 34,
-            "android.hardware.fingerprint.FingerprintManager" to 34,
-            "android.health.connect.HealthConnectManager" to 34,
-            "android.app.people.PeopleManager" to 34,
-            "android.app.sdksandbox.SdkSandboxManager" to 34,
-            "android.content.pm.ShortcutManager" to 34,
-            "android.app.slice.SliceManager" to 34,
-            "android.companion.virtual.VirtualDeviceManager" to 34,
-            "android.net.VpnManager" to 34,
-            "android.net.wifi.WifiManager" to 34,
-            "android.net.wifi.aware.WifiAwareManager" to 34,
-            "android.net.wifi.p2p.WifiP2pManager" to 34,
-            "android.location.CountryDetector" to 1,
-            "android.app.tare.EconomyManager" to 1,
-            "android.app.trust.TrustManager" to 1,
-            "android.hardware.devicestate.DeviceStateManager" to 1,
-        )
+      hashMapOf(
+        "android.hardware.biometrics.BiometricManager" to 34,
+        "android.app.blob.BlobStoreManager" to 34,
+        "android.os.BugReportManager" to 34,
+        "android.content.pm.CrossProfileApps" to 34,
+        "android.app.admin.DevicePolicyManager" to 34,
+        "android.content.pm.verify.domain.DomainVerificationManager" to 34,
+        "android.security.FileIntegrityManager" to 34,
+        "android.hardware.fingerprint.FingerprintManager" to 34,
+        "android.health.connect.HealthConnectManager" to 34,
+        "android.app.people.PeopleManager" to 34,
+        "android.app.sdksandbox.SdkSandboxManager" to 34,
+        "android.content.pm.ShortcutManager" to 34,
+        "android.app.slice.SliceManager" to 34,
+        "android.companion.virtual.VirtualDeviceManager" to 34,
+        "android.net.VpnManager" to 34,
+        "android.net.wifi.WifiManager" to 34,
+        "android.net.wifi.aware.WifiAwareManager" to 34,
+        "android.net.wifi.p2p.WifiP2pManager" to 34,
+        "android.location.CountryDetector" to 1,
+        "android.app.tare.EconomyManager" to 1,
+        "android.app.trust.TrustManager" to 1,
+        "android.hardware.devicestate.DeviceStateManager" to 1,
+      )
   }
 }

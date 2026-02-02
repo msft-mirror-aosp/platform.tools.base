@@ -41,32 +41,28 @@ import org.jetbrains.uast.getContainingUClass
 /** Makes sure that in tests, `@SdkSuppress` is used instead of `@RequiresApi`. */
 class SdkSuppressDetector : Detector(), SourceCodeScanner {
   companion object {
-    private val IMPLEMENTATION =
-        Implementation(
-            SdkSuppressDetector::class.java,
-            EnumSet.of(Scope.JAVA_FILE, Scope.TEST_SOURCES),
-        )
+    private val IMPLEMENTATION = Implementation(SdkSuppressDetector::class.java, EnumSet.of(Scope.JAVA_FILE, Scope.TEST_SOURCES))
 
     /** Using `@RequiresApi` instead of `SdkSuppress` in tests. */
     @JvmField
     val ISSUE =
-        Issue.create(
-            id = "UseSdkSuppress",
-            briefDescription = "Using `@SdkSuppress` instead of `@RequiresApi`",
-            explanation =
-                """
+      Issue.create(
+        id = "UseSdkSuppress",
+        briefDescription = "Using `@SdkSuppress` instead of `@RequiresApi`",
+        explanation =
+          """
           In tests, you should be using `@SdkSuppress` instead of `@RequiresApi`. \
           The `@RequiresApi` annotation is used to propagate a version requirement \
           out to the caller of the API -- but the testing framework is only looking \
           for `@SdkSuppress`, which it uses to skip tests that are intended for \
           newer versions.
           """,
-            category = Category.CORRECTNESS,
-            priority = 4,
-            severity = Severity.ERROR,
-            implementation = IMPLEMENTATION,
-            androidSpecific = true,
-        )
+        category = Category.CORRECTNESS,
+        priority = 4,
+        severity = Severity.ERROR,
+        implementation = IMPLEMENTATION,
+        androidSpecific = true,
+      )
 
     private const val TEST_ANNOTATION = "org.junit.Test"
 
@@ -74,21 +70,21 @@ class SdkSuppressDetector : Detector(), SourceCodeScanner {
   }
 
   override fun applicableAnnotations(): List<String> =
-      listOf(
-          REQUIRES_API_ANNOTATION.oldName(),
-          REQUIRES_API_ANNOTATION.newName(),
-          /* Not enforced yet since @SdkSuppress doesn't support extensions yet;see b/257429573
-          REQUIRES_EXTENSION_ANNOTATION,
-           */
-      )
+    listOf(
+      REQUIRES_API_ANNOTATION.oldName(),
+      REQUIRES_API_ANNOTATION.newName(),
+      /* Not enforced yet since @SdkSuppress doesn't support extensions yet;see b/257429573
+      REQUIRES_EXTENSION_ANNOTATION,
+       */
+    )
 
   override fun isApplicableAnnotationUsage(type: AnnotationUsageType): Boolean = type == DEFINITION
 
   override fun visitAnnotationUsage(
-      context: JavaContext,
-      element: UElement,
-      annotationInfo: AnnotationInfo,
-      usageInfo: AnnotationUsageInfo,
+    context: JavaContext,
+    element: UElement,
+    annotationInfo: AnnotationInfo,
+    usageInfo: AnnotationUsageInfo,
   ) {
     if (!context.isTestSource) {
       return
@@ -116,31 +112,31 @@ class SdkSuppressDetector : Detector(), SourceCodeScanner {
 
     val source = annotation.sourcePsi?.text
     val fix =
-        if (source != null) {
-          val index = source.indexOf('=').let { if (it != -1) it else source.indexOf('(') }
-          val valueStart = index + 1
-          val value = source.substring(valueStart).trim()
-          fix()
-              .replace()
-              .text(source)
-              .with("@androidx.test.filters.SdkSuppress(minSdkVersion=$value")
-              .range(context.getLocation(element))
-              .reformat(true)
-              .shortenNames()
-              .build()
-        } else {
-          null
-        }
+      if (source != null) {
+        val index = source.indexOf('=').let { if (it != -1) it else source.indexOf('(') }
+        val valueStart = index + 1
+        val value = source.substring(valueStart).trim()
+        fix()
+          .replace()
+          .text(source)
+          .with("@androidx.test.filters.SdkSuppress(minSdkVersion=$value")
+          .range(context.getLocation(element))
+          .reformat(true)
+          .shortenNames()
+          .build()
+      } else {
+        null
+      }
     val message = StringBuilder("Don't use @RequiresApi from tests; use @SdkSuppress")
 
     // Include name of annotated method (or class or field) to make baseline message more unique
     val name =
-        when (annotated) {
-          is UMethod -> annotated.name
-          is UVariable -> annotated.name
-          is UClass -> @Suppress("UElementAsPsi") annotated.name
-          else -> null
-        }
+      when (annotated) {
+        is UMethod -> annotated.name
+        is UVariable -> annotated.name
+        is UClass -> @Suppress("UElementAsPsi") annotated.name
+        else -> null
+      }
     if (name != null) {
       message.append(" on `$name`")
     }

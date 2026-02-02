@@ -46,18 +46,18 @@ class ChildInNonViewGroupDetector : LayoutDetector() {
     /** The main issue discovered by this detector. */
     @JvmField
     val CHILD_IN_NON_VIEW_GROUP_ISSUE =
-        Issue.create(
-            id = "ChildInNonViewGroup",
-            briefDescription = "Only view groups can have children",
-            explanation =
-                """
+      Issue.create(
+        id = "ChildInNonViewGroup",
+        briefDescription = "Only view groups can have children",
+        explanation =
+          """
             Only classes inheriting from `ViewGroup` can have children.
             """,
-            category = Category.CORRECTNESS,
-            priority = 8,
-            severity = Severity.ERROR,
-            implementation = IMPLEMENTATION,
-        )
+        category = Category.CORRECTNESS,
+        priority = 8,
+        severity = Severity.ERROR,
+        implementation = IMPLEMENTATION,
+      )
   }
 
   override fun getApplicableElements(): Collection<String> = ALL
@@ -79,12 +79,12 @@ class ChildInNonViewGroupDetector : LayoutDetector() {
   }
 
   private fun XmlContext.reportWrongParent(element: Element) =
-      report(
-          CHILD_IN_NON_VIEW_GROUP_ISSUE,
-          element,
-          getNameLocation(element),
-          "A ${element.parentNode.nodeName} should have no children declared in XML",
-      )
+    report(
+      CHILD_IN_NON_VIEW_GROUP_ISSUE,
+      element,
+      getNameLocation(element),
+      "A ${element.parentNode.nodeName} should have no children declared in XML",
+    )
 
   private fun SdkInfo.isChildOfViewGroup(element: Element): Boolean = isSubViewOf(VIEW_GROUP, element.parentNode.nodeName)
 }

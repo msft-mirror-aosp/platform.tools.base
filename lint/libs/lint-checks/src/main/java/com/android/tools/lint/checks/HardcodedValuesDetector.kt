@@ -44,20 +44,20 @@ class HardcodedValuesDetector : LayoutDetector() {
 
   override fun getApplicableAttributes(): Collection<String> {
     return listOf(
-        // Layouts
-        ATTR_TEXT,
-        ATTR_CONTENT_DESCRIPTION,
-        ATTR_HINT,
-        ATTR_LABEL,
-        ATTR_PROMPT,
-        "textOn",
-        "textOff",
+      // Layouts
+      ATTR_TEXT,
+      ATTR_CONTENT_DESCRIPTION,
+      ATTR_HINT,
+      ATTR_LABEL,
+      ATTR_PROMPT,
+      "textOn",
+      "textOff",
 
-        // Menus
-        ATTR_TITLE,
+      // Menus
+      ATTR_TITLE,
 
-        // App restrictions
-        ATTR_DESCRIPTION,
+      // App restrictions
+      ATTR_DESCRIPTION,
     )
   }
 
@@ -82,10 +82,10 @@ class HardcodedValuesDetector : LayoutDetector() {
         return
       }
       if (
-          value == "Large Text" ||
-              value == "Medium Text" ||
-              value == "Small Text" ||
-              value.startsWith("New ") && (value == "New Text" || value == "New " + attribute.ownerElement.tagName)
+        value == "Large Text" ||
+          value == "Medium Text" ||
+          value == "Small Text" ||
+          value.startsWith("New ") && (value == "New Text" || value == "New " + attribute.ownerElement.tagName)
       ) {
         // The layout editor initially places the label "New Button", "New TextView",
         // etc on widgets dropped on the layout editor. Again, users are unlikely
@@ -104,10 +104,10 @@ class HardcodedValuesDetector : LayoutDetector() {
       }
 
       context.report(
-          ISSUE,
-          attribute,
-          context.getLocation(attribute),
-          String.format("Hardcoded string \"%1\$s\", should use `@string` resource", value),
+        ISSUE,
+        attribute,
+        context.getLocation(attribute),
+        String.format("Hardcoded string \"%1\$s\", should use `@string` resource", value),
       )
     }
   }
@@ -118,11 +118,11 @@ class HardcodedValuesDetector : LayoutDetector() {
     /** The main issue discovered by this detector. */
     @JvmField
     val ISSUE =
-        Issue.create(
-            id = "HardcodedText",
-            briefDescription = "Hardcoded text",
-            explanation =
-                """
+      Issue.create(
+        id = "HardcodedText",
+        briefDescription = "Hardcoded text",
+        explanation =
+          """
                 Hardcoding text attributes directly in layout files is bad for several reasons:
 
                 * When creating configuration variations (for example for landscape or \
@@ -135,10 +135,10 @@ class HardcodedValuesDetector : LayoutDetector() {
                 There are quickfixes to automatically extract this hardcoded string into a \
                 resource lookup.
                 """,
-            category = Category.I18N,
-            priority = 5,
-            severity = Severity.WARNING,
-            implementation = Implementation(HardcodedValuesDetector::class.java, Scope.RESOURCE_FILE_SCOPE),
-        )
+        category = Category.I18N,
+        priority = 5,
+        severity = Severity.WARNING,
+        implementation = Implementation(HardcodedValuesDetector::class.java, Scope.RESOURCE_FILE_SCOPE),
+      )
   }
 }

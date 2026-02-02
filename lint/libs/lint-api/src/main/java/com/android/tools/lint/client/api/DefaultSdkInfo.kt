@@ -232,9 +232,9 @@ internal class DefaultSdkInfo : SdkInfo() {
   }
 
   private fun getInterface(cls: String): String? =
-      when (cls) {
-        CHECKED_TEXT_VIEW,
-        COMPOUND_BUTTON -> CHECKABLE
-        else -> null
-      }
+    when (cls) {
+      CHECKED_TEXT_VIEW,
+      COMPOUND_BUTTON -> CHECKABLE
+      else -> null
+    }
 }

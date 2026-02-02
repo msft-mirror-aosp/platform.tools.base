@@ -37,15 +37,15 @@ import org.jetbrains.kotlin.psi.stubs.impl.KotlinStubBaseImpl
 internal fun klibMetaFiles(root: VirtualFile): Collection<VirtualFile> {
   return buildList {
     VfsUtilCore.visitChildrenRecursively(
-        root,
-        object : VirtualFileVisitor<Void>() {
-          override fun visitFile(file: VirtualFile): Boolean {
-            if (file.fileType == KlibMetaFileType) {
-              add(file)
-            }
-            return true
+      root,
+      object : VirtualFileVisitor<Void>() {
+        override fun visitFile(file: VirtualFile): Boolean {
+          if (file.fileType == KlibMetaFileType) {
+            add(file)
           }
-        },
+          return true
+        }
+      },
     )
   }
 }
@@ -55,11 +55,7 @@ internal fun buildStubByVirtualFile(file: VirtualFile): KotlinFileStubImpl? {
   return KotlinKlibMetadataDecompiler().stubBuilder.buildFileStub(fileContent) as? KotlinFileStubImpl
 }
 
-internal fun buildPsiSymbolByKotlinStub(
-    psiManager: PsiManager,
-    ktFile: KtFile,
-    ktStub: KotlinStubBaseImpl<*>,
-): PsiNameIdentifierOwner? {
+internal fun buildPsiSymbolByKotlinStub(psiManager: PsiManager, ktFile: KtFile, ktStub: KotlinStubBaseImpl<*>): PsiNameIdentifierOwner? {
   return when (ktStub) {
     is KotlinClassStubImpl -> {
       val ktClass = ktStub.psi

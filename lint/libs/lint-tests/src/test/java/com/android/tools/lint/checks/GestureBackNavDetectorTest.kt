@@ -26,11 +26,11 @@ class GestureBackNavDetectorTest : AbstractCheckTest() {
 
   fun testDocumentationExample() {
     lint()
-        .files(
-            manifest(MANIFEST_35_TRUE),
-            java(
-                    "src/test/pkg/KeyEventKeyCodeBackTest.java",
-                    """
+      .files(
+        manifest(MANIFEST_35_TRUE),
+        java(
+            "src/test/pkg/KeyEventKeyCodeBackTest.java",
+            """
                 package test.pkg;
 
                 import android.app.Activity;
@@ -52,12 +52,12 @@ class GestureBackNavDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """,
-                )
-                .indented(),
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+      )
+      .run()
+      .expect(
+        """
          src/test/pkg/KeyEventKeyCodeBackTest.java:11: Warning: If intercepting back events, this should be handled through the registration of callbacks; see https://developer.android.com/guide/navigation/custom-back/predictive-back-gesture [GestureBackNavigation]
                 if (KeyEvent.KEYCODE_BACK == keyCode) {
                     ~~~~~~~~~~~~~~~~~~~~~
@@ -66,25 +66,21 @@ class GestureBackNavDetectorTest : AbstractCheckTest() {
                         ~~~~~~~~~~~~~
         0 errors, 2 warnings
         """
-        )
-        .expectFixDiffs(
-            """
+      )
+      .expectFixDiffs(
+        """
         Show URL for src/test/pkg/KeyEventKeyCodeBackTest.java line 11: https://developer.android.com/guide/navigation/custom-back/predictive-back-gesture
         Show URL for src/test/pkg/KeyEventKeyCodeBackTest.java line 17: https://developer.android.com/guide/navigation/custom-back/predictive-back-gesture
         """
-        )
+      )
   }
 
   fun testOverridesTrue() {
     lint()
-        .files(
-            manifest(MANIFEST_35_TRUE),
-            java(JAVA_FILE_WITH_OVERRIDES),
-            kotlin(KOTLIN_FILE_WITH_OVERRIDES),
-        )
-        .run()
-        .expect(
-            """
+      .files(manifest(MANIFEST_35_TRUE), java(JAVA_FILE_WITH_OVERRIDES), kotlin(KOTLIN_FILE_WITH_OVERRIDES))
+      .run()
+      .expect(
+        """
         src/com/example/MyActivity.java:12: Warning: onBackPressed is no longer called for back gestures; migrate to AndroidX's backward compatible OnBackPressedDispatcher [GestureBackNavigation]
             public void onBackPressed() {
                         ~~~~~~~~~~~~~
@@ -99,41 +95,23 @@ class GestureBackNavDetectorTest : AbstractCheckTest() {
                          ~~~~~~~~~~~~~
         0 errors, 4 warnings
         """
-        )
+      )
   }
 
   fun testOverridesDefault() {
-    lint()
-        .files(
-            manifest(MANIFEST_35_DEFAULT),
-            java(JAVA_FILE_WITH_OVERRIDES),
-            kotlin(KOTLIN_FILE_WITH_OVERRIDES),
-        )
-        .run()
-        .expectClean()
+    lint().files(manifest(MANIFEST_35_DEFAULT), java(JAVA_FILE_WITH_OVERRIDES), kotlin(KOTLIN_FILE_WITH_OVERRIDES)).run().expectClean()
   }
 
   fun testOverridesFalse() {
-    lint()
-        .files(
-            manifest(MANIFEST_35_FALSE),
-            java(JAVA_FILE_WITH_OVERRIDES),
-            kotlin(KOTLIN_FILE_WITH_OVERRIDES),
-        )
-        .run()
-        .expectClean()
+    lint().files(manifest(MANIFEST_35_FALSE), java(JAVA_FILE_WITH_OVERRIDES), kotlin(KOTLIN_FILE_WITH_OVERRIDES)).run().expectClean()
   }
 
   fun testOverrides36True() {
     lint()
-        .files(
-            manifest(MANIFEST_36_TRUE),
-            java(JAVA_FILE_WITH_OVERRIDES),
-            kotlin(KOTLIN_FILE_WITH_OVERRIDES),
-        )
-        .run()
-        .expect(
-            """
+      .files(manifest(MANIFEST_36_TRUE), java(JAVA_FILE_WITH_OVERRIDES), kotlin(KOTLIN_FILE_WITH_OVERRIDES))
+      .run()
+      .expect(
+        """
         src/com/example/MyActivity.java:12: Error: onBackPressed is no longer called for back gestures; migrate to AndroidX's backward compatible OnBackPressedDispatcher [GestureBackNavigation]
             public void onBackPressed() {
                         ~~~~~~~~~~~~~
@@ -148,19 +126,15 @@ class GestureBackNavDetectorTest : AbstractCheckTest() {
                          ~~~~~~~~~~~~~
         4 errors, 0 warnings
         """
-        )
+      )
   }
 
   fun testOverrides36Default() {
     lint()
-        .files(
-            manifest(MANIFEST_36_DEFAULT),
-            java(JAVA_FILE_WITH_OVERRIDES),
-            kotlin(KOTLIN_FILE_WITH_OVERRIDES),
-        )
-        .run()
-        .expect(
-            """
+      .files(manifest(MANIFEST_36_DEFAULT), java(JAVA_FILE_WITH_OVERRIDES), kotlin(KOTLIN_FILE_WITH_OVERRIDES))
+      .run()
+      .expect(
+        """
         src/com/example/MyActivity.java:12: Error: onBackPressed is no longer called for back gestures; migrate to AndroidX's backward compatible OnBackPressedDispatcher [GestureBackNavigation]
             public void onBackPressed() {
                         ~~~~~~~~~~~~~
@@ -175,34 +149,27 @@ class GestureBackNavDetectorTest : AbstractCheckTest() {
                          ~~~~~~~~~~~~~
         4 errors, 0 warnings
         """
-        )
+      )
   }
 
   fun testOverrides36False() {
-    lint()
-        .files(
-            manifest(MANIFEST_36_FALSE),
-            java(JAVA_FILE_WITH_OVERRIDES),
-            kotlin(KOTLIN_FILE_WITH_OVERRIDES),
-        )
-        .run()
-        .expectClean()
+    lint().files(manifest(MANIFEST_36_FALSE), java(JAVA_FILE_WITH_OVERRIDES), kotlin(KOTLIN_FILE_WITH_OVERRIDES)).run().expectClean()
   }
 
   fun testKeyCodeBackSwitchJava() {
     val expected =
-        """
+      """
             src/test/pkg/KeyEventKeyCodeBackTest.java:12: Warning: If intercepting back events, this should be handled through the registration of callbacks; see https://developer.android.com/guide/navigation/custom-back/predictive-back-gesture [GestureBackNavigation]
                       case KeyEvent.KEYCODE_BACK:
                            ~~~~~~~~~~~~~~~~~~~~~
             0 errors, 1 warnings
             """
     lint()
-        .files(
-            manifest(MANIFEST_35_TRUE),
-            java(
-                    "src/test/pkg/KeyEventKeyCodeBackTest.java",
-                    """
+      .files(
+        manifest(MANIFEST_35_TRUE),
+        java(
+            "src/test/pkg/KeyEventKeyCodeBackTest.java",
+            """
                 package test.pkg;
 
                 import android.app.Activity;
@@ -222,27 +189,27 @@ class GestureBackNavDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """,
-                )
-                .indented(),
-        )
-        .run()
-        .expect(expected)
+          )
+          .indented(),
+      )
+      .run()
+      .expect(expected)
   }
 
   fun testKeyCodeIfStatementKotlin() {
     val expected =
-        """
+      """
             src/test/pkg/KeyEventKeyCodeBackTest.kt:10: Warning: If intercepting back events, this should be handled through the registration of callbacks; see https://developer.android.com/guide/navigation/custom-back/predictive-back-gesture [GestureBackNavigation]
                     if (KeyEvent.KEYCODE_BACK == keyCode) {
                         ~~~~~~~~~~~~~~~~~~~~~
             0 errors, 1 warnings
             """
     lint()
-        .files(
-            manifest(MANIFEST_35_TRUE),
-            kotlin(
-                    "src/test/pkg/KeyEventKeyCodeBackTest.kt",
-                    """
+      .files(
+        manifest(MANIFEST_35_TRUE),
+        kotlin(
+            "src/test/pkg/KeyEventKeyCodeBackTest.kt",
+            """
                 package test.pkg
 
                 import android.app.Activity
@@ -258,27 +225,27 @@ class GestureBackNavDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """,
-                )
-                .indented(),
-        )
-        .run()
-        .expect(expected)
+          )
+          .indented(),
+      )
+      .run()
+      .expect(expected)
   }
 
   fun testKeyCodeBackSwitchKotlin() {
     val expected =
-        """
+      """
             src/test/pkg/KeyEventKeyCodeBackTest.kt:10: Warning: If intercepting back events, this should be handled through the registration of callbacks; see https://developer.android.com/guide/navigation/custom-back/predictive-back-gesture [GestureBackNavigation]
                       KeyEvent.KEYCODE_BACK -> println("keycode back")
                       ~~~~~~~~~~~~~~~~~~~~~
             0 errors, 1 warnings
             """
     lint()
-        .files(
-            manifest(MANIFEST_35_TRUE),
-            kotlin(
-                    "src/test/pkg/KeyEventKeyCodeBackTest.kt",
-                    """
+      .files(
+        manifest(MANIFEST_35_TRUE),
+        kotlin(
+            "src/test/pkg/KeyEventKeyCodeBackTest.kt",
+            """
                 package test.pkg
 
                 import android.app.Activity
@@ -294,27 +261,27 @@ class GestureBackNavDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """,
-                )
-                .indented(),
-        )
-        .run()
-        .expect(expected)
+          )
+          .indented(),
+      )
+      .run()
+      .expect(expected)
   }
 
   fun testDialogOnKeyListenerSwitchKotlin() {
     val expected =
-        """
+      """
             src/test/pkg/KeyEventKeyCodeBackTest.kt:11: Warning: If intercepting back events, this should be handled through the registration of callbacks; see https://developer.android.com/guide/navigation/custom-back/predictive-back-gesture [GestureBackNavigation]
                       KeyEvent.KEYCODE_BACK -> println("keycode back")
                       ~~~~~~~~~~~~~~~~~~~~~
             0 errors, 1 warnings
             """
     lint()
-        .files(
-            manifest(MANIFEST_35_TRUE),
-            kotlin(
-                    "src/test/pkg/KeyEventKeyCodeBackTest.kt",
-                    """
+      .files(
+        manifest(MANIFEST_35_TRUE),
+        kotlin(
+            "src/test/pkg/KeyEventKeyCodeBackTest.kt",
+            """
                 package test.pkg
 
                 import android.view.KeyEvent
@@ -331,22 +298,22 @@ class GestureBackNavDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """,
-                )
-                .indented(),
-        )
-        .run()
-        .expect(expected)
+          )
+          .indented(),
+      )
+      .run()
+      .expect(expected)
   }
 
   fun testKeyCodeCheckInUtil() {
     // We do not report references to KEYCODE_BACK in utility methods.
     // We only report references that are trivially in an Activity or Dialog subclass.
     lint()
-        .files(
-            manifest(MANIFEST_35_TRUE),
-            kotlin(
-                    "src/test/pkg/KeyEventKeyCodeBackTest.kt",
-                    """
+      .files(
+        manifest(MANIFEST_35_TRUE),
+        kotlin(
+            "src/test/pkg/KeyEventKeyCodeBackTest.kt",
+            """
                 package test.pkg
 
                 import android.app.Activity
@@ -367,20 +334,20 @@ class GestureBackNavDetectorTest : AbstractCheckTest() {
                      }
                  }
                 """,
-                )
-                .indented(),
-        )
-        .run()
-        .expectClean()
+          )
+          .indented(),
+      )
+      .run()
+      .expectClean()
   }
 
   fun testKeyUpCleanKotlin() {
     lint()
-        .files(
-            manifest(MANIFEST_35_TRUE),
-            kotlin(
-                    "src/test/pkg/KeyEventKeyCodeBackTest.kt",
-                    """
+      .files(
+        manifest(MANIFEST_35_TRUE),
+        kotlin(
+            "src/test/pkg/KeyEventKeyCodeBackTest.kt",
+            """
                 package test.pkg
 
                 import android.app.Activity
@@ -394,18 +361,18 @@ class GestureBackNavDetectorTest : AbstractCheckTest() {
                    }
                 }
                 """,
-                )
-                .indented(),
-        )
-        .run()
-        .expectClean()
+          )
+          .indented(),
+      )
+      .run()
+      .expectClean()
   }
 
   fun testEnableBackInvokeDisabled() {
     lint()
-        .files(
-            manifest(
-                """
+      .files(
+        manifest(
+          """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="test.pkg">
 
@@ -425,10 +392,10 @@ class GestureBackNavDetectorTest : AbstractCheckTest() {
 
                 </manifest>
             """
-            ),
-            kotlin(
-                    "src/test/pkg/KeyEventKeyCodeBackTest.kt",
-                    """
+        ),
+        kotlin(
+            "src/test/pkg/KeyEventKeyCodeBackTest.kt",
+            """
                 package test.pkg
 
                 import android.app.Activity
@@ -450,20 +417,20 @@ class GestureBackNavDetectorTest : AbstractCheckTest() {
                      }
                  }
                 """,
-                )
-                .indented(),
-        )
-        .run()
-        .expectClean()
+          )
+          .indented(),
+      )
+      .run()
+      .expectClean()
   }
 
   fun testApi36() {
     lint()
-        .files(
-            manifest(MANIFEST_36_DEFAULT),
-            kotlin(
-                    "src/test/pkg/KeyEventKeyCodeBackTest.kt",
-                    """
+      .files(
+        manifest(MANIFEST_36_DEFAULT),
+        kotlin(
+            "src/test/pkg/KeyEventKeyCodeBackTest.kt",
+            """
             package test.pkg
 
             import android.app.Activity
@@ -478,27 +445,27 @@ class GestureBackNavDetectorTest : AbstractCheckTest() {
               }
             }
             """,
-                )
-                .indented(),
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+      )
+      .run()
+      .expect(
+        """
         src/test/pkg/KeyEventKeyCodeBackTest.kt:9: Error: If intercepting back events, this should be handled through the registration of callbacks; see https://developer.android.com/guide/navigation/custom-back/predictive-back-gesture [GestureBackNavigation]
               KeyEvent.KEYCODE_BACK -> println("keycode back")
               ~~~~~~~~~~~~~~~~~~~~~
         1 error
         """
-        )
+      )
   }
 
   fun testApi36OptOut() {
     lint()
-        .files(
-            manifest(MANIFEST_36_FALSE),
-            kotlin(
-                    "src/test/pkg/KeyEventKeyCodeBackTest.kt",
-                    """
+      .files(
+        manifest(MANIFEST_36_FALSE),
+        kotlin(
+            "src/test/pkg/KeyEventKeyCodeBackTest.kt",
+            """
             package test.pkg
 
             import android.app.Activity
@@ -513,17 +480,17 @@ class GestureBackNavDetectorTest : AbstractCheckTest() {
               }
             }
             """,
-                )
-                .indented(),
-        )
-        .run()
-        .expectClean()
+          )
+          .indented(),
+      )
+      .run()
+      .expectClean()
   }
 }
 
 @Language("JAVA")
 private const val JAVA_FILE_WITH_OVERRIDES =
-    """
+  """
 package com.example;
 
 import android.app.Activity;
@@ -553,7 +520,7 @@ class MyDialog extends Dialog {
 
 @Language("kotlin")
 private const val KOTLIN_FILE_WITH_OVERRIDES =
-    """
+  """
 package com.example.kotlin
 
 import android.app.Activity
@@ -575,7 +542,7 @@ class MyDialog(context: Context) : Dialog(context) {
 
 @Language("XML")
 private const val MANIFEST_35_DEFAULT =
-    """
+  """
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="test.pkg">
 
@@ -600,7 +567,7 @@ private const val MANIFEST_35_DEFAULT =
 
 @Language("XML")
 private const val MANIFEST_35_TRUE =
-    """
+  """
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="test.pkg">
 
@@ -626,7 +593,7 @@ private const val MANIFEST_35_TRUE =
 
 @Language("XML")
 private const val MANIFEST_35_FALSE =
-    """
+  """
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="test.pkg">
 
@@ -652,7 +619,7 @@ private const val MANIFEST_35_FALSE =
 
 @Language("XML")
 private const val MANIFEST_36_DEFAULT =
-    """
+  """
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="test.pkg">
 
@@ -677,7 +644,7 @@ private const val MANIFEST_36_DEFAULT =
 
 @Language("XML")
 private const val MANIFEST_36_TRUE =
-    """
+  """
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="test.pkg">
 
@@ -703,7 +670,7 @@ private const val MANIFEST_36_TRUE =
 
 @Language("XML")
 private const val MANIFEST_36_FALSE =
-    """
+  """
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="test.pkg">
 

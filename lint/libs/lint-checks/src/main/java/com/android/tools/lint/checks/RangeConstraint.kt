@@ -33,11 +33,7 @@ abstract class RangeConstraint {
   }
 
   /** For a given allowed constraint, returns a string describing how the [actual] constraint is not fully contained. */
-  abstract fun describeDelta(
-      actual: RangeConstraint,
-      actualLabel: String,
-      allowedLabel: String,
-  ): String
+  abstract fun describeDelta(actual: RangeConstraint, actualLabel: String, allowedLabel: String): String
 
   /** Intersect two ranges */
   abstract infix fun and(other: RangeConstraint?): RangeConstraint

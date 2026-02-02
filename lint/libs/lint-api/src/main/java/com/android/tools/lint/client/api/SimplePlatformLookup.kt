@@ -86,20 +86,16 @@ internal class SimplePlatformLookup(private val sdkHome: File) : PlatformLookup 
     return getTargets().firstOrNull { it.hashString() == buildTargetHash }
   }
 
-  override fun getLatestSdkTarget(
-      minApi: Int,
-      includePreviews: Boolean,
-      includeAddOns: Boolean,
-  ): IAndroidTarget? {
+  override fun getLatestSdkTarget(minApi: Int, includePreviews: Boolean, includeAddOns: Boolean): IAndroidTarget? {
     if (includeAddOns) {
       error("Add-ons not supported in this platform lookup")
     }
     val latest =
-        if (includePreviews) {
-          targets.lastOrNull { it.isPlatform }
-        } else {
-          targets.lastOrNull { it.isPlatform && it.version.codename == null }
-        } ?: return null
+      if (includePreviews) {
+        targets.lastOrNull { it.isPlatform }
+      } else {
+        targets.lastOrNull { it.isPlatform && it.version.codename == null }
+      } ?: return null
     return if (latest.version.androidApiLevel.majorVersion >= minApi) latest else null
   }
 
@@ -124,12 +120,7 @@ internal class SimplePlatformLookup(private val sdkHome: File) : PlatformLookup 
      * following the standard layout (the full SDK manager allows more arbitrary renames of top level folders etc; that's not supported
      * here.)
      */
-    private fun addPlatforms(
-        into: MutableList<IAndroidTarget>,
-        sdkHome: File,
-        folder: String,
-        prefix: String?,
-    ) {
+    private fun addPlatforms(into: MutableList<IAndroidTarget>, sdkHome: File, folder: String, prefix: String?) {
       val platformFolders = File(sdkHome, folder).listFiles() ?: return
       for (platformFolder in platformFolders) {
         val name = platformFolder.name
@@ -260,22 +251,16 @@ internal class SimplePlatformLookup(private val sdkHome: File) : PlatformLookup 
           val extensionLevel = prop.getProperty("AndroidVersion.ExtensionLevel")?.toIntOrNull()
           val isBaseExtension = prop.getProperty("AndroidVersion.IsBaseSdk") != "false"
           val androidVersion =
-              prop.getProperty("AndroidVersion.ApiLevel")?.let {
-                val level = AndroidApiLevel.fromString(it)
-                if (level != null) {
-                  AndroidVersion(level, codeName, extensionLevel, isBaseExtension)
-                } else {
-                  null
-                }
+            prop.getProperty("AndroidVersion.ApiLevel")?.let {
+              val level = AndroidApiLevel.fromString(it)
+              if (level != null) {
+                AndroidVersion(level, codeName, extensionLevel, isBaseExtension)
+              } else {
+                null
               }
+            }
           if (platformVersion != null && androidVersion != null) {
-            return PlatformTarget(
-                location,
-                sourceProperties.parentFile!!.name,
-                androidVersion,
-                revision,
-                true,
-            )
+            return PlatformTarget(location, sourceProperties.parentFile!!.name, androidVersion, revision, true)
           }
         }
       } catch (_: IOException) {}
@@ -399,17 +384,17 @@ internal class SimplePlatformLookup(private val sdkHome: File) : PlatformLookup 
         if (name != null && jar != null) {
           val jarPath = File(optional, jar.replace('/', separatorChar)).toPath()
           val library =
-              object : OptionalLibrary {
-                override fun getName(): String = name
+            object : OptionalLibrary {
+              override fun getName(): String = name
 
-                override fun getJar(): Path = jarPath
+              override fun getJar(): Path = jarPath
 
-                override fun getDescription(): String = name
+              override fun getDescription(): String = name
 
-                override fun isManifestEntryRequired(): Boolean = manifest
+              override fun isManifestEntryRequired(): Boolean = manifest
 
-                override fun getLocalJarPath(): String = getJar().fileName.toString()
-              }
+              override fun getLocalJarPath(): String = getJar().fileName.toString()
+            }
           libraries.add(library)
         }
       }
@@ -425,11 +410,11 @@ internal class SimplePlatformLookup(private val sdkHome: File) : PlatformLookup 
    * name for previews. For normal SDK releases, [platform] is true, and for add-ons it's false.
    */
   private class PlatformTarget(
-      val location: File,
-      val buildTargetHash: String,
-      private val version: AndroidVersion,
-      private val revision: Int,
-      private val platform: Boolean,
+    val location: File,
+    val buildTargetHash: String,
+    private val version: AndroidVersion,
+    private val revision: Int,
+    private val platform: Boolean,
   ) : IAndroidTarget, Comparable<IAndroidTarget> {
     override fun isPlatform(): Boolean = platform
 

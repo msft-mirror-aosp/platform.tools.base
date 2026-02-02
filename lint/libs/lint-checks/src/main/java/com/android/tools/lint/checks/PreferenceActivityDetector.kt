@@ -82,10 +82,7 @@ class PreferenceActivityDetector : Detector(), XmlScanner, SourceCodeScanner {
             location.secondary = context.getLocation(declaration)
           }
           val incident = Incident(ISSUE, element, location, message)
-          context.report(
-              incident,
-              map().put(KEY_OVERRIDES, overrides).put(KEY_IMPLICIT, implicitlyExportedPreS),
-          )
+          context.report(incident, map().put(KEY_OVERRIDES, overrides).put(KEY_IMPLICIT, implicitlyExportedPreS))
         }
       }
     }
@@ -127,10 +124,7 @@ class PreferenceActivityDetector : Detector(), XmlScanner, SourceCodeScanner {
       // the class itself rather than the export line in the manifest
       val location = context.getNameLocation(declaration)
       val incident = Incident(ISSUE, declaration, location, message)
-      context.report(
-          incident,
-          map().put(KEY_OVERRIDES, overrides).put(KEY_IMPLICIT, implicitlyExportedPreS),
-      )
+      context.report(incident, map().put(KEY_OVERRIDES, overrides).put(KEY_IMPLICIT, implicitlyExportedPreS))
     }
   }
 
@@ -163,31 +157,31 @@ class PreferenceActivityDetector : Detector(), XmlScanner, SourceCodeScanner {
 
   companion object {
     private val IMPLEMENTATION =
-        Implementation(
-            PreferenceActivityDetector::class.java,
-            EnumSet.of(Scope.MANIFEST, Scope.JAVA_FILE),
-            Scope.MANIFEST_SCOPE,
-            Scope.JAVA_FILE_SCOPE,
-        )
+      Implementation(
+        PreferenceActivityDetector::class.java,
+        EnumSet.of(Scope.MANIFEST, Scope.JAVA_FILE),
+        Scope.MANIFEST_SCOPE,
+        Scope.JAVA_FILE_SCOPE,
+      )
 
     @JvmField
     val ISSUE =
-        Issue.create(
-                id = "ExportedPreferenceActivity",
-                briefDescription = "PreferenceActivity should not be exported",
-                explanation =
-                    """
+      Issue.create(
+          id = "ExportedPreferenceActivity",
+          briefDescription = "PreferenceActivity should not be exported",
+          explanation =
+            """
                 Fragment injection gives anyone who can send your `PreferenceActivity` an intent \
                 the ability to load any fragment, with any arguments, in your process.""",
-                moreInfo =
-                    //noinspection LintImplUnexpectedDomain
-                    "http://securityintelligence.com/new-vulnerability-android-framework-fragment-injection",
-                category = Category.SECURITY,
-                priority = 8,
-                severity = Severity.WARNING,
-                implementation = IMPLEMENTATION,
-            )
-            .addMoreInfo("https://goo.gle/ExportedPreferenceActivity")
+          moreInfo =
+            //noinspection LintImplUnexpectedDomain
+            "http://securityintelligence.com/new-vulnerability-android-framework-fragment-injection",
+          category = Category.SECURITY,
+          priority = 8,
+          severity = Severity.WARNING,
+          implementation = IMPLEMENTATION,
+        )
+        .addMoreInfo("https://goo.gle/ExportedPreferenceActivity")
 
     private const val PREFERENCE_ACTIVITY = "android.preference.PreferenceActivity"
     private const val IS_VALID_FRAGMENT = "isValidFragment"

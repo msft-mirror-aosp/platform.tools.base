@@ -20,9 +20,9 @@ class ManifestAttributeDetectorTest : AbstractCheckTest() {
 
   fun testDocumentationExample() {
     lint()
-        .files(
-            manifest(
-                    """
+      .files(
+        manifest(
+            """
             <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                 package="com.example.app">
               <application>
@@ -63,12 +63,12 @@ class ManifestAttributeDetectorTest : AbstractCheckTest() {
               </application>
             </manifest>
             """
-                )
-                .indented()
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented()
+      )
+      .run()
+      .expect(
+        """
         AndroidManifest.xml:7: Warning: Attribute process on <activity-alias> com.example.ActivityAlias is invalid, and will be silently ignored. This attribute is always ignored on <activity-alias>. [InvalidManifestAttribute]
                 android:process=":process"
                 ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -83,7 +83,7 @@ class ManifestAttributeDetectorTest : AbstractCheckTest() {
                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         0 errors, 4 warnings
         """
-        )
+      )
   }
 
   fun testSkipUnknownAttributes() {
@@ -92,9 +92,9 @@ class ManifestAttributeDetectorTest : AbstractCheckTest() {
     // (b) An attribute like "aaa" will already fail the build, and Studio will already show a
     // warning in the editor, so we don't want to double-report.
     lint()
-        .files(
-            manifest(
-                    """
+      .files(
+        manifest(
+            """
             <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                 package="com.example.app">
               <application>
@@ -107,10 +107,10 @@ class ManifestAttributeDetectorTest : AbstractCheckTest() {
               </application>
             </manifest>
             """
-                )
-                .indented()
-        )
-        .run()
-        .expectClean()
+          )
+          .indented()
+      )
+      .run()
+      .expectClean()
   }
 }

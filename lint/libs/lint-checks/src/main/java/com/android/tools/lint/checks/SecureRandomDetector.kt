@@ -47,17 +47,17 @@ class SecureRandomDetector : Detector(), SourceCodeScanner {
     val seedArgument = arguments[0].skipParenthesizedExprDown() ?: return
     val evaluator = context.evaluator
     if (
-        evaluator.isMemberInClass(method, JAVA_SECURITY_SECURE_RANDOM) ||
-            evaluator.isMemberInSubClassOf(method, JAVA_UTIL_RANDOM, false) && isSecureRandomReceiver(node)
+      evaluator.isMemberInClass(method, JAVA_SECURITY_SECURE_RANDOM) ||
+        evaluator.isMemberInSubClassOf(method, JAVA_UTIL_RANDOM, false) && isSecureRandomReceiver(node)
     ) {
       // Called with a fixed seed?
       val seed = ConstantEvaluator.evaluate(context, seedArgument)
       if (seed != null) {
         context.report(
-            ISSUE,
-            node,
-            context.getLocation(node),
-            "Do not call `setSeed()` on a `SecureRandom` with a fixed seed: " + "it is not secure. Use `getSeed()`.",
+          ISSUE,
+          node,
+          context.getLocation(node),
+          "Do not call `setSeed()` on a `SecureRandom` with a fixed seed: " + "it is not secure. Use `getSeed()`.",
         )
       } else {
         // Called with a simple System.currentTimeMillis() seed or something like that?
@@ -66,12 +66,12 @@ class SecureRandomDetector : Detector(), SourceCodeScanner {
           val methodName = seedMethod.name
           if (methodName == "currentTimeMillis" || methodName == "nanoTime") {
             context.report(
-                ISSUE,
-                node,
-                context.getLocation(node),
-                "It is dangerous to seed `SecureRandom` with the current " +
-                    "time because that value is more predictable to " +
-                    "an attacker than the default seed",
+              ISSUE,
+              node,
+              context.getLocation(node),
+              "It is dangerous to seed `SecureRandom` with the current " +
+                "time because that value is more predictable to " +
+                "an attacker than the default seed",
             )
           }
         }
@@ -94,22 +94,22 @@ class SecureRandomDetector : Detector(), SourceCodeScanner {
     /** Unregistered activities and services. */
     @JvmField
     val ISSUE =
-        Issue.create(
-                id = "SecureRandom",
-                briefDescription = "Using a fixed seed with `SecureRandom`",
-                explanation =
-                    """
+      Issue.create(
+          id = "SecureRandom",
+          briefDescription = "Using a fixed seed with `SecureRandom`",
+          explanation =
+            """
                 Specifying a fixed seed will cause the instance to return a predictable \
                 sequence of numbers. This may be useful for testing but it is not appropriate \
                 for secure use.
                 """,
-                moreInfo = "https://goo.gle/SecureRandom",
-                category = Category.SECURITY,
-                priority = 9,
-                severity = Severity.WARNING,
-                implementation = Implementation(SecureRandomDetector::class.java, Scope.JAVA_FILE_SCOPE),
-            )
-            .addMoreInfo("https://developer.android.com/reference/java/security/SecureRandom.html")
+          moreInfo = "https://goo.gle/SecureRandom",
+          category = Category.SECURITY,
+          priority = 9,
+          severity = Severity.WARNING,
+          implementation = Implementation(SecureRandomDetector::class.java, Scope.JAVA_FILE_SCOPE),
+        )
+        .addMoreInfo("https://developer.android.com/reference/java/security/SecureRandom.html")
 
     const val JAVA_SECURITY_SECURE_RANDOM = "java.security.SecureRandom"
     const val JAVA_UTIL_RANDOM = "java.util.Random"

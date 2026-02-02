@@ -46,8 +46,8 @@ fun main() {
   val serviceCast = "tools/base/lint/libs/lint-checks/src/main/java/com/android/tools/lint/checks/ServiceCastDetector.kt"
   val viewDetectorFile = resolveWorkspacePath(serviceCast).toFile()
   val contextFile =
-      File("${System.getenv("ANDROID_SDK_HOME")}/sources/android-35/android/content/Context.java").let { if (it.isFile) it else null }
-          ?: File("${System.getenv("ANDROID_BUILD_TOP")}/frameworks/base/core/java/android/content/Context.java")
+    File("${System.getenv("ANDROID_SDK_HOME")}/sources/android-35/android/content/Context.java").let { if (it.isFile) it else null }
+      ?: File("${System.getenv("ANDROID_BUILD_TOP")}/frameworks/base/core/java/android/content/Context.java")
   val extractor = ServiceCastDataGenerator(viewDetectorFile, contextFile)
   extractor.analyze()
 }
@@ -72,10 +72,7 @@ class ServiceCastDataGenerator(private val viewDetectorFile: File, contextSource
     temporaryFolder.create()
 
     val (context, contextDisposable) =
-        parseFirst(
-            temporaryFolder = temporaryFolder,
-            testFiles = arrayOf(java(contextSourceFile.readText())),
-        )
+      parseFirst(temporaryFolder = temporaryFolder, testFiles = arrayOf(java(contextSourceFile.readText())))
     this.context = context
 
     extractCurrentCasts()
@@ -91,19 +88,19 @@ class ServiceCastDataGenerator(private val viewDetectorFile: File, contextSource
     val allNames = (currentMap.keys + docFields.keys + extractedMap.keys + typedefList + seeMap.keys).toSortedSet()
 
     val description =
-        """
-        There are a number of different clues to the names which are supported by getSystemService.
-        Unfortunately when system service are added, not all the expected places are updated correctly
-        (e.g. javadoc, the ServiceName typedef, etc), so we're collecting data from different sources.
+      """
+      There are a number of different clues to the names which are supported by getSystemService.
+      Unfortunately when system service are added, not all the expected places are updated correctly
+      (e.g. javadoc, the ServiceName typedef, etc), so we're collecting data from different sources.
 
-        Legend:
-        Today: Service name already in ServiceCastDetector today
-        Field: There is a field in Context which looks like a service name
-        Typedef: The @ServiceName typedef explicitly lists this field
-        MethodDoc: The name is mentioned in the dt/dd definition javadoc for getSystemService
-        See: The name is mentioned in the @see pairs at the bottom of the javadoc for getSystemService
-        """
-            .trimIndent()
+      Legend:
+      Today: Service name already in ServiceCastDetector today
+      Field: There is a field in Context which looks like a service name
+      Typedef: The @ServiceName typedef explicitly lists this field
+      MethodDoc: The name is mentioned in the dt/dd definition javadoc for getSystemService
+      See: The name is mentioned in the @see pairs at the bottom of the javadoc for getSystemService
+      """
+        .trimIndent()
     println(description)
 
     val format = "%-35s %-10s %-10s %-10s %-10s %-10s"
@@ -133,8 +130,8 @@ class ServiceCastDataGenerator(private val viewDetectorFile: File, contextSource
     for (currentKey in currentKeys) {
       if (!newNames.contains(currentKey)) {
         println(
-            "Warning: Key `$currentKey` is in our current service cast map but is missing " +
-                "from the newly extracted data; has it been deleted?"
+          "Warning: Key `$currentKey` is in our current service cast map but is missing " +
+            "from the newly extracted data; has it been deleted?"
         )
       }
     }
@@ -238,12 +235,12 @@ class ServiceCastDataGenerator(private val viewDetectorFile: File, contextSource
   private fun extractFromDoc() {
     // Find the javadoc for the getSystemService(String) method in Context and extract its doc.
     val getContextMethod =
-        context.uastFile!!.classes[0].uastDeclarations.single {
-          it is UMethod &&
-              it.name == "getSystemService" &&
-              it.uastParameters.size == 1 &&
-              it.uastParameters.single().typeFromPsi?.canonicalText == "java.lang.String"
-        }
+      context.uastFile!!.classes[0].uastDeclarations.single {
+        it is UMethod &&
+          it.name == "getSystemService" &&
+          it.uastParameters.size == 1 &&
+          it.uastParameters.single().typeFromPsi?.canonicalText == "java.lang.String"
+      }
     val doc = (getContextMethod.sourcePsi as PsiMethod).docComment
     val s = doc?.text ?: error("Couldn't find method doc")
     var i = 0
@@ -350,10 +347,10 @@ class ServiceCastDataGenerator(private val viewDetectorFile: File, contextSource
               if (!value.contains(".")) {
                 val suffix = ".$serviceClass"
                 val imported =
-                    imports.firstOrNull {
-                      val imp = it.importReference
-                      imp?.sourcePsi?.text?.endsWith(suffix) == true
-                    }
+                  imports.firstOrNull {
+                    val imp = it.importReference
+                    imp?.sourcePsi?.text?.endsWith(suffix) == true
+                  }
                 if (imported != null) {
                   serviceClass = imported.importReference?.sourcePsi?.text ?: error("Unexpectedly couldn't get fully qualified name")
                 } else {

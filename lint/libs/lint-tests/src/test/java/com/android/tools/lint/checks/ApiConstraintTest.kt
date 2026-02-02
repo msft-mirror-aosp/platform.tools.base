@@ -52,8 +52,8 @@ class ApiConstraintTest {
   @Test
   fun testToString() {
     assertEquals(
-        "API level = 5 or API level = 9 or API level ≥ 11 and API level < 15 or API level = 25",
-        (exactly(5) or exactly(9) or range(11, 15) or exactly(25)).toString(),
+      "API level = 5 or API level = 9 or API level ≥ 11 and API level < 15 or API level = 25",
+      (exactly(5) or exactly(9) or range(11, 15) or exactly(25)).toString(),
     )
     assertEquals("API level ≥ 15", atLeast(15).toString())
     assertEquals("API level ≥ 16", above(15).toString())
@@ -64,14 +64,11 @@ class ApiConstraintTest {
     assertEquals("No API levels", (above(24) and below(22)).toString())
     assertEquals("All API levels", (atLeast(11) or atMost(23)).toString())
 
-    assertEquals(
-        "API level ≥ 30 and SDK 31: version ≥ 2 and SDK 33: version ≥ 2",
-        multiSdkAllOf("0:30,31:2,33:2").toString(),
-    )
+    assertEquals("API level ≥ 30 and SDK 31: version ≥ 2 and SDK 33: version ≥ 2", multiSdkAllOf("0:30,31:2,33:2").toString())
     assertEquals("API level ≥ 31 or SDK 34: version ≥ 3", multiSdkAnyOf("0:31,34:3").toString())
     assertEquals(
-        "API level ≥ 30 and SDK 31: version ≥ 2 and SDK 33: version ≥ 2 and any of (API level ≥ 31 or SDK 34: version ≥ 3)",
-        max(multiSdkAllOf("0:30,31:2,33:2"), multiSdkAnyOf("0:31,34:3")).toString(),
+      "API level ≥ 30 and SDK 31: version ≥ 2 and SDK 33: version ≥ 2 and any of (API level ≥ 31 or SDK 34: version ≥ 3)",
+      max(multiSdkAllOf("0:30,31:2,33:2"), multiSdkAnyOf("0:31,34:3")).toString(),
     )
   }
 
@@ -270,14 +267,8 @@ class ApiConstraintTest {
     assertEquals("No API levels", atLeast(26).asNonNegatable().not().toString())
     assertTrue(multiSdkAnyOf("0:15,30:2").negatable())
     assertFalse(multiSdkAnyOf("0:15,30:2").asNonNegatable().negatable())
-    assertEquals(
-        "API level < 15 and SDK 30: version = 1",
-        multiSdkAnyOf("0:15,30:2").not().toString(),
-    )
-    assertEquals(
-        "No API levels and SDK 30: No versions",
-        multiSdkAnyOf("0:15,30:2").asNonNegatable().not().toString(),
-    )
+    assertEquals("API level < 15 and SDK 30: version = 1", multiSdkAnyOf("0:15,30:2").not().toString())
+    assertEquals("No API levels and SDK 30: No versions", multiSdkAnyOf("0:15,30:2").asNonNegatable().not().toString())
   }
 
   @Test
@@ -295,14 +286,8 @@ class ApiConstraintTest {
 
     assertEquals("{:15-∞,:2-∞;30}", serialize(multiSdkAnyOf("0:15,30:2")))
     assertEquals("{15-∞:,2-∞;30:}", serialize(multiSdkAllOf("0:15,30:2")))
-    assertEquals(
-        multiSdkAnyOf("0:15,30:2").toString(),
-        deserialize(multiSdkAnyOf("0:15,30:2").serialize()).toString(),
-    )
-    assertEquals(
-        multiSdkAllOf("0:15,30:2").toString(),
-        deserialize(multiSdkAllOf("0:15,30:2").serialize()).toString(),
-    )
+    assertEquals(multiSdkAnyOf("0:15,30:2").toString(), deserialize(multiSdkAnyOf("0:15,30:2").serialize()).toString())
+    assertEquals(multiSdkAllOf("0:15,30:2").toString(), deserialize(multiSdkAllOf("0:15,30:2").serialize()).toString())
 
     val combined = max(multiSdkAllOf("0:15,30:2"), multiSdkAnyOf("0:17,30:4"))
     assertEquals("{15-∞:17-∞,2-∞;30:4-∞;30}", combined.serialize())
@@ -339,10 +324,7 @@ class ApiConstraintTest {
 
     assertEquals("API level ≥ 15", (multiSdkAnyOf("0:15,30:2") and atLeast(11)).toString())
 
-    assertEquals(
-        "version ≥ 3",
-        (multiSdkAnyOf("0:15,30:2") and multiSdkAnyOf("30:3,31:4")).toString(),
-    )
+    assertEquals("version ≥ 3", (multiSdkAnyOf("0:15,30:2") and multiSdkAnyOf("30:3,31:4")).toString())
   }
 
   @Test
@@ -359,35 +341,20 @@ class ApiConstraintTest {
 
     assertEquals("version ≥ 11", (atLeast(11, 2) or atLeast(15, 2)).toString())
 
-    assertEquals(
-        "SDK 2: version ≥ 11 or SDK 3: version ≥ 11",
-        (atLeast(11, 2) or atLeast(11, 3)).toString(),
-    )
+    assertEquals("SDK 2: version ≥ 11 or SDK 3: version ≥ 11", (atLeast(11, 2) or atLeast(11, 3)).toString())
+
+    assertEquals("API level ≥ 11 or SDK 30: version ≥ 2", (atLeast(11) or multiSdkAnyOf("0:15,30:2")).toString())
+
+    assertEquals("API level ≥ 11 or SDK 30: version ≥ 2", (multiSdkAnyOf("0:15,30:2") or atLeast(11)).toString())
 
     assertEquals(
-        "API level ≥ 11 or SDK 30: version ≥ 2",
-        (atLeast(11) or multiSdkAnyOf("0:15,30:2")).toString(),
+      "API level ≥ 15 or SDK 30: version ≥ 2 or SDK 31: version ≥ 4",
+      (multiSdkAnyOf("0:15,30:2") or multiSdkAnyOf("30:3,31:4")).toString(),
     )
 
-    assertEquals(
-        "API level ≥ 11 or SDK 30: version ≥ 2",
-        (multiSdkAnyOf("0:15,30:2") or atLeast(11)).toString(),
-    )
+    assertEquals("SDK 1000000: version < 5 or API level < 29", (atMost(4, 1000000) or atMost(28, 0)).toString())
 
-    assertEquals(
-        "API level ≥ 15 or SDK 30: version ≥ 2 or SDK 31: version ≥ 4",
-        (multiSdkAnyOf("0:15,30:2") or multiSdkAnyOf("30:3,31:4")).toString(),
-    )
-
-    assertEquals(
-        "SDK 1000000: version < 5 or API level < 29",
-        (atMost(4, 1000000) or atMost(28, 0)).toString(),
-    )
-
-    assertEquals(
-        "API level < 29 or SDK 1000000: version < 5",
-        (atMost(28, 0) or atMost(4, 1000000)).toString(),
-    )
+    assertEquals("API level < 29 or SDK 1000000: version < 5", (atMost(28, 0) or atMost(4, 1000000)).toString())
   }
 
   @Test
@@ -409,93 +376,61 @@ class ApiConstraintTest {
     assertEquals("No versions", max(NONE, atLeast(15)).toString())
     assertEquals("API level ≥ 15", max(atLeast(11), atLeast(15)).toString())
 
+    assertEquals("SDK 2: version ≥ 11 and SDK 3: version ≥ 11", max(atLeast(11, 2), atLeast(11, 3)).toString())
+
+    assertEquals("API level ≥ 15 and SDK 30: version ≥ 2", max(atLeast(11), multiSdkAllOf("0:15,30:2")).toString())
+
     assertEquals(
-        "SDK 2: version ≥ 11 and SDK 3: version ≥ 11",
-        max(atLeast(11, 2), atLeast(11, 3)).toString(),
+      "API level ≥ 11 and any of (API level ≥ 15 or SDK 30: version ≥ 2)",
+      max(atLeast(11), multiSdkAnyOf("0:15,30:2")).toString(),
+    )
+
+    assertEquals("API level ≥ 17 and optionally SDK 30: version ≥ 2", max(atLeast(17), multiSdkAnyOf("0:15,30:2")).toString())
+
+    assertEquals(
+      "API level ≥ 17 and any of (API level ≥ 19 or SDK 30: version ≥ 2)",
+      max(atLeast(17), multiSdkAnyOf("0:19,30:2")).toString(),
     )
 
     assertEquals(
-        "API level ≥ 15 and SDK 30: version ≥ 2",
-        max(atLeast(11), multiSdkAllOf("0:15,30:2")).toString(),
+      "API level ≥ 11 and any of (API level ≥ 15 or SDK 30: version ≥ 2)",
+      max(multiSdkAnyOf("0:15,30:2"), atLeast(11)).toString(),
     )
 
-    assertEquals(
-        "API level ≥ 11 and any of (API level ≥ 15 or SDK 30: version ≥ 2)",
-        max(atLeast(11), multiSdkAnyOf("0:15,30:2")).toString(),
-    )
+    assertEquals("API level ≥ 15 and SDK 30: version ≥ 2", max(multiSdkAllOf("0:15,30:2"), atLeast(11)).toString())
+
+    assertEquals("API level ≥ 15 and SDK 30: version ≥ 2", max(multiSdkAllOf("0:15,30:2"), atLeast(11), false).toString())
+
+    assertEquals("API level ≥ 15 or SDK 30: version ≥ 2", max(multiSdkAnyOf("0:15,30:2"), atLeast(11), true).toString())
 
     assertEquals(
-        "API level ≥ 17 and optionally SDK 30: version ≥ 2",
-        max(atLeast(17), multiSdkAnyOf("0:15,30:2")).toString(),
+      "API level ≥ 33 or SDK 30: version ≥ 3 or SDK 31: version ≥ 2 or SDK 100: version ≥ 5",
+      max(multiSdkAnyOf("0:33,30:2,31:2"), multiSdkAnyOf("0:31,30:3,100:5")).toString(),
     )
 
-    assertEquals(
-        "API level ≥ 17 and any of (API level ≥ 19 or SDK 30: version ≥ 2)",
-        max(atLeast(17), multiSdkAnyOf("0:19,30:2")).toString(),
-    )
+    assertEquals("API level = 14 or API level ≥ 16", max(below(10) or exactly(14) or atLeast(16), atLeast(10)).toString())
 
     assertEquals(
-        "API level ≥ 11 and any of (API level ≥ 15 or SDK 30: version ≥ 2)",
-        max(multiSdkAnyOf("0:15,30:2"), atLeast(11)).toString(),
-    )
-
-    assertEquals(
-        "API level ≥ 15 and SDK 30: version ≥ 2",
-        max(multiSdkAllOf("0:15,30:2"), atLeast(11)).toString(),
-    )
-
-    assertEquals(
-        "API level ≥ 15 and SDK 30: version ≥ 2",
-        max(multiSdkAllOf("0:15,30:2"), atLeast(11), false).toString(),
-    )
-
-    assertEquals(
-        "API level ≥ 15 or SDK 30: version ≥ 2",
-        max(multiSdkAnyOf("0:15,30:2"), atLeast(11), true).toString(),
-    )
-
-    assertEquals(
-        "API level ≥ 33 or SDK 30: version ≥ 3 or SDK 31: version ≥ 2 or SDK 100: version ≥ 5",
-        max(multiSdkAnyOf("0:33,30:2,31:2"), multiSdkAnyOf("0:31,30:3,100:5")).toString(),
-    )
-
-    assertEquals(
-        "API level = 14 or API level ≥ 16",
-        max(below(10) or exactly(14) or atLeast(16), atLeast(10)).toString(),
-    )
-
-    assertEquals(
-        "API level = 14 or API level ≥ 16 or SDK 2: version ≥ 13",
-        max(below(10) or exactly(14) or atLeast(16), atLeast(10) or atLeast(13, 2), true).toString(),
+      "API level = 14 or API level ≥ 16 or SDK 2: version ≥ 13",
+      max(below(10) or exactly(14) or atLeast(16), atLeast(10) or atLeast(13, 2), true).toString(),
     )
 
     val some = multiSdkAnyOf("30:2,31:2")
     val always = multiSdkAllOf("0:33,30:4")
-    assertEquals(
-        "SDK 30: version ≥ 4 and API level ≥ 33 and optionally SDK 31: version ≥ 2",
-        max(some, always).toString(),
-    )
-    assertEquals(
-        "API level ≥ 33 and SDK 30: version ≥ 4 and optionally SDK 31: version ≥ 2",
-        max(always, some).toString(),
-    )
+    assertEquals("SDK 30: version ≥ 4 and API level ≥ 33 and optionally SDK 31: version ≥ 2", max(some, always).toString())
+    assertEquals("API level ≥ 33 and SDK 30: version ≥ 4 and optionally SDK 31: version ≥ 2", max(always, some).toString())
   }
 
   val registry =
-      ExtensionSdkRegistry(
-          listOf(
-              ExtensionSdk.ANDROID_SDK,
-              ExtensionSdk("R Extensions", "R-ext", 30, "android.os.Build\$VERSION_CODES.R"),
-              ExtensionSdk("S Extensions", "S-ext", 31, "android.os.Build\$VERSION_CODES.S"),
-              ExtensionSdk("T Extensions", "T-ext", 33, "android.os.Build\$VERSION_CODES.T"),
-              ExtensionSdk(
-                  "Ad Services Extensions",
-                  "AD_SERVICES-ext",
-                  1000000,
-                  "android.os.ext.SdkExtensions.AD_SERVICES",
-              ),
-          )
+    ExtensionSdkRegistry(
+      listOf(
+        ExtensionSdk.ANDROID_SDK,
+        ExtensionSdk("R Extensions", "R-ext", 30, "android.os.Build\$VERSION_CODES.R"),
+        ExtensionSdk("S Extensions", "S-ext", 31, "android.os.Build\$VERSION_CODES.S"),
+        ExtensionSdk("T Extensions", "T-ext", 33, "android.os.Build\$VERSION_CODES.T"),
+        ExtensionSdk("Ad Services Extensions", "AD_SERVICES-ext", 1000000, "android.os.ext.SdkExtensions.AD_SERVICES"),
       )
+    )
 
   @Test
   fun testSdkExtensions() {
@@ -504,21 +439,15 @@ class ApiConstraintTest {
 
     assertEquals("0:33,30:2,31:2,33:2", ApiConstraint.MultiSdkApiConstraint.describe(allConstraint))
 
-    assertEquals(
-        "API level ≥ 33 and SDK 30: version ≥ 2 and SDK 31: version ≥ 2 and SDK 33: version ≥ 2",
-        allConstraint.toString(),
-    )
+    assertEquals("API level ≥ 33 and SDK 30: version ≥ 2 and SDK 31: version ≥ 2 and SDK 33: version ≥ 2", allConstraint.toString())
 
     assertEquals(
-        "API level ≥ 33 and R Extensions: version ≥ 2 and S Extensions: version ≥ 2 and T Extensions: version ≥ 2",
-        allConstraint.toString(registry),
+      "API level ≥ 33 and R Extensions: version ≥ 2 and S Extensions: version ≥ 2 and T Extensions: version ≥ 2",
+      allConstraint.toString(registry),
     )
 
     val constraint2 = multiSdk("0:34,1000000:4,33:4")
-    assertEquals(
-        "API level ≥ 34 or Ad Services Extensions: version ≥ 4 or T Extensions: version ≥ 4",
-        constraint2.toString(registry),
-    )
+    assertEquals("API level ≥ 34 or Ad Services Extensions: version ≥ 4 or T Extensions: version ≥ 4", constraint2.toString(registry))
 
     val requires31 = atLeast(31)
     val requires34 = atLeast(34)
@@ -542,7 +471,7 @@ class ApiConstraintTest {
   fun testGetRequirementFromManifest1() {
     @Language("xml")
     val xml =
-        """
+      """
             <manifest xmlns:android="http://schemas.android.com/apk/res/android">
                 <uses-sdk android:minSdkVersion="31" android:targetSdkVersion="31">
                   <extension-sdk android:sdkVersion="30" android:minExtensionVersion="12" />
@@ -553,10 +482,7 @@ class ApiConstraintTest {
 
     val document = XmlUtils.parseDocumentSilently(xml, true)!!
     val usesSdkTag = document.getElementsByTagName("uses-sdk").item(0)!!
-    assertEquals(
-        "SDK 30: version ≥ 12 and SDK 31: version ≥ 8",
-        ApiConstraint.getFromUsesSdk(usesSdkTag as Element).toString(),
-    )
+    assertEquals("SDK 30: version ≥ 12 and SDK 31: version ≥ 8", ApiConstraint.getFromUsesSdk(usesSdkTag as Element).toString())
   }
 
   @Test
@@ -565,7 +491,7 @@ class ApiConstraintTest {
     // add one for the minSdkVersion too
     @Language("xml")
     val xml =
-        """
+      """
             <manifest xmlns:android="http://schemas.android.com/apk/res/android">
                 <uses-sdk android:minSdkVersion="31" android:targetSdkVersion="31">
                   <extension-sdk android:sdkVersion="29" android:minExtensionVersion="5" />
@@ -576,10 +502,7 @@ class ApiConstraintTest {
 
     val document = XmlUtils.parseDocumentSilently(xml, true)!!
     val usesSdkTag = document.getElementsByTagName("uses-sdk").item(0) as Element
-    assertEquals(
-        "API level ≥ 31 and SDK 29: version ≥ 5 and SDK 30: version ≥ 12",
-        ApiConstraint.getFromUsesSdk(usesSdkTag).toString(),
-    )
+    assertEquals("API level ≥ 31 and SDK 29: version ≥ 5 and SDK 30: version ≥ 12", ApiConstraint.getFromUsesSdk(usesSdkTag).toString())
   }
 
   @Test
@@ -588,7 +511,7 @@ class ApiConstraintTest {
     // on the <uses-sdk>
     @Language("xml")
     val xml =
-        """
+      """
             <manifest xmlns:android="http://schemas.android.com/apk/res/android">
                 <uses-sdk>
                   <extension-sdk android:sdkVersion="30" android:minExtensionVersion="12" />
@@ -599,10 +522,7 @@ class ApiConstraintTest {
 
     val document = XmlUtils.parseDocumentSilently(xml, true)!!
     val usesSdkTag = document.getElementsByTagName("uses-sdk").item(0)!!
-    assertEquals(
-        "SDK 30: version ≥ 12 and SDK 31: version ≥ 8",
-        ApiConstraint.getFromUsesSdk(usesSdkTag as Element).toString(),
-    )
+    assertEquals("SDK 30: version ≥ 12 and SDK 31: version ≥ 8", ApiConstraint.getFromUsesSdk(usesSdkTag as Element).toString())
   }
 
   @Test
@@ -637,33 +557,17 @@ class ApiConstraintTest {
     checkFirstMissing("API level ≥ 36", atLeast30, atLeast36)
     checkFirstMissing("API level ≥ 36", atLeast30, atLeast36 or atLeast(4, 3))
     checkFirstMissing("API level ≥ 36", atLeast30 or atLeastSdk37_4, atLeast36)
-    checkFirstMissing(
-        "Ad Services Extensions: version ≥ 4",
-        atLeast34 or atLeastSdk30_4,
-        atLeastAdsSdk_4 or atLeastSdk30_4,
-    )
+    checkFirstMissing("Ad Services Extensions: version ≥ 4", atLeast34 or atLeastSdk30_4, atLeastAdsSdk_4 or atLeastSdk30_4)
     // It might seem more natural for this to list
     // Ad Services Extensions: version ≥ 4
     // as the first missing, since we *may* have R, but we
     // definitely don't have the Ads SDK, but our policy is to
     // always list the *first* requirement in the required vector
     // first; it's an ordered list.
-    checkFirstMissing(
-        "R Extensions: version ≥ 4",
-        atLeast34 or atLeastSdk30_4,
-        atLeastSdk30_4 or atLeastAdsSdk_4,
-    )
-    checkFirstMissing(
-        "R Extensions: version ≥ 4",
-        atLeast34 or atLeastSdk30_4,
-        atLeastSdk30_4 or atLeastAdsSdk_4,
-    )
+    checkFirstMissing("R Extensions: version ≥ 4", atLeast34 or atLeastSdk30_4, atLeastSdk30_4 or atLeastAdsSdk_4)
+    checkFirstMissing("R Extensions: version ≥ 4", atLeast34 or atLeastSdk30_4, atLeastSdk30_4 or atLeastAdsSdk_4)
 
-    checkFirstMissing(
-        "R Extensions: version ≥ 4",
-        multiSdk("0:30,30:4"),
-        multiSdk("30:4,1000000:4"),
-    )
+    checkFirstMissing("R Extensions: version ≥ 4", multiSdk("0:30,30:4"), multiSdk("30:4,1000000:4"))
   }
 
   @Test
@@ -679,7 +583,7 @@ class ApiConstraintTest {
 
     @Language("xml")
     val xml =
-        """
+      """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
                     <uses-sdk android:minSdkVersion="ZZ" android:targetSdkVersion="ZZ">
                       <extension-sdk android:sdkVersion="$prev" android:minExtensionVersion="5" />
@@ -691,10 +595,7 @@ class ApiConstraintTest {
     val document = XmlUtils.parseDocumentSilently(xml, true)!!
     val usesSdkTag = document.getElementsByTagName("uses-sdk").item(0) as Element
     val fromUsesSdk = ApiConstraint.getFromUsesSdk(usesSdkTag)
-    assertEquals(
-        "API level ≥ $future and SDK $prev: version ≥ 5 and SDK $current: version ≥ 12",
-        fromUsesSdk?.toString(),
-    )
+    assertEquals("API level ≥ $future and SDK $prev: version ≥ 5 and SDK $current: version ≥ 12", fromUsesSdk?.toString())
   }
 
   private fun multiSdk(desc: String, anyOf: Boolean = true): ApiConstraint = ApiConstraint.MultiSdkApiConstraint.create(desc, anyOf)

@@ -117,8 +117,8 @@ interface LintModelLibraryResolver {
 // Default implementations
 
 class DefaultLintModelDependencyGraph(
-    override val roots: List<LintModelDependency>,
-    private val libraryResolver: LintModelLibraryResolver,
+  override val roots: List<LintModelDependency>,
+  private val libraryResolver: LintModelLibraryResolver,
 ) : LintModelDependencyGraph {
   /** All libraries that we depend on, keyed by the identifier */
   private val transitiveDependencies = mutableMapOf<String, LintModelDependency>()
@@ -154,11 +154,11 @@ class DefaultLintModelDependencyGraph(
 
   override fun findLibrary(mavenName: String, direct: Boolean): LintModelLibrary? {
     val identifier =
-        if (direct) {
-          roots.firstOrNull { it.artifactName == mavenName }?.identifier
-        } else {
-          mavenTransitiveDependencies[mavenName]?.identifier
-        }
+      if (direct) {
+        roots.firstOrNull { it.artifactName == mavenName }?.identifier
+      } else {
+        mavenTransitiveDependencies[mavenName]?.identifier
+      }
 
     // Not found?
     identifier ?: return null
@@ -185,11 +185,11 @@ class DefaultLintModelDependencyGraph(
 }
 
 open class DefaultLintModelDependency(
-    override val identifier: String,
-    override val artifactName: String,
-    override val requestedCoordinates: String?,
-    override val dependencies: List<LintModelDependency>,
-    private val libraryResolver: LintModelLibraryResolver,
+  override val identifier: String,
+  override val artifactName: String,
+  override val requestedCoordinates: String?,
+  override val dependencies: List<LintModelDependency>,
+  private val libraryResolver: LintModelLibraryResolver,
 ) : LintModelDependency {
   override fun findLibrary(): LintModelLibrary? = libraryResolver.getLibrary(identifier)
 
@@ -198,9 +198,9 @@ open class DefaultLintModelDependency(
 }
 
 class DefaultLintModelDependencies(
-    override val compileDependencies: LintModelDependencyGraph,
-    override val packageDependencies: LintModelDependencyGraph,
-    private val libraryResolver: LintModelLibraryResolver,
+  override val compileDependencies: LintModelDependencyGraph,
+  override val packageDependencies: LintModelDependencyGraph,
+  private val libraryResolver: LintModelLibraryResolver,
 ) : LintModelDependencies {
   override fun getLibraryResolver(): LintModelLibraryResolver = libraryResolver
 

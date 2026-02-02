@@ -44,34 +44,34 @@ class ClassNameTest {
     assertEquals("Foo", getClassName("object Foo : Bar() { }"))
     assertEquals("Foo", getClassName("class Foo(val foo: String) : Bar() { }"))
     assertEquals(
-        "ApiCallTest3",
-        getClassName(
-            // language=JAVA
-            """
+      "ApiCallTest3",
+      getClassName(
+        // language=JAVA
+        """
         /**
          * Call test where the parent class is some other project class which in turn
          * extends the public API
          */
         public class ApiCallTest3 extends Intermediate {}
         """
-        ),
+      ),
     )
   }
 
   @Test
   fun testAnnotationAttribute() {
     val source =
-        ClassName(
-            // language=KT
-            """
+      ClassName(
+        // language=KT
+        """
         package test.pkg
         import androidx.annotation.Discouraged
         @Discouraged(message="Don't use this class")
         open class Button
         open class ToggleButton : Button
         """,
-            DOT_KT,
-        )
+        DOT_KT,
+      )
     assertEquals("test.pkg", source.packageName)
     assertEquals("Button", source.className)
     assertEquals("test/pkg/Button.kt", source.relativePath())
@@ -80,9 +80,9 @@ class ClassNameTest {
   @Test
   fun testJavaInterface() {
     val source =
-        ClassName(
-            // language=JAVA
-            """
+      ClassName(
+        // language=JAVA
+        """
         import java.lang.annotation.*;
         import static java.lang.annotation.ElementType.FIELD;
         import static java.lang.annotation.RetentionPolicy.CLASS;
@@ -91,8 +91,8 @@ class ClassNameTest {
           int value();
         }
         """,
-            DOT_JAVA,
-        )
+        DOT_JAVA,
+      )
     assertEquals(null, source.packageName)
     assertEquals("BindColor", source.className)
     assertEquals("BindColor.java", source.relativePath())
@@ -103,31 +103,25 @@ class ClassNameTest {
     // Make sure that in Kotlin where there may be no class declaration (e.g. package
     // functions) we don't accidentally match on T::class.java in the source code.
     assertNull(
-        "Foo",
-        ClassName(
-                // language=KT
-                """
+      "Foo",
+      ClassName(
+          // language=KT
+          """
           package test.pkg
           import android.content.Context
           inline fun <reified T> Context.systemService1() = getSystemService(T::class.java)
           inline fun Context.systemService2() = getSystemService(String::class.java)
           """
-            )
-            .className,
+        )
+        .className,
     )
   }
 
   @Test
   fun testObjectInPackage() {
     // https://groups.google.com/g/lint-dev/c/MF1KJP4hijo/m/3QkHST3IAAAJ
-    assertEquals(
-        "com.test.classes.test",
-        getPackage("package com.test.classes.test; class Foo { }"),
-    )
-    assertEquals(
-        "com.test.objects.test",
-        getPackage("package com.test.objects.test; class Foo { }"),
-    )
+    assertEquals("com.test.classes.test", getPackage("package com.test.classes.test; class Foo { }"))
+    assertEquals("com.test.objects.test", getPackage("package com.test.objects.test; class Foo { }"))
     assertEquals("Foo", getClassName("package com.test.objects.test; class Foo { }"))
   }
 
@@ -135,30 +129,30 @@ class ClassNameTest {
   fun testImportInPackage() {
     // http://b/119884022 ClassName#CLASS_PATTERN invalid regexp
     assertEquals(
-        "foo",
-        getPackage(
-            // language=JAVA
-            """
-            package foo;
-            import foo.interfaces.ThisIsNotClassName;
-            public class NavigationView extends View {
-            }
-            """
-                .trimIndent()
-        ),
+      "foo",
+      getPackage(
+        // language=JAVA
+        """
+        package foo;
+        import foo.interfaces.ThisIsNotClassName;
+        public class NavigationView extends View {
+        }
+        """
+          .trimIndent()
+      ),
     )
     assertEquals(
-        "NavigationView",
-        getClassName(
-            // language=JAVA
-            """
-            package foo;
-            import foo.interfaces.ThisIsNotClassName;
-            public class NavigationView extends View {
-            }
-            """
-                .trimIndent()
-        ),
+      "NavigationView",
+      getClassName(
+        // language=JAVA
+        """
+        package foo;
+        import foo.interfaces.ThisIsNotClassName;
+        public class NavigationView extends View {
+        }
+        """
+          .trimIndent()
+      ),
     )
   }
 
@@ -170,10 +164,10 @@ class ClassNameTest {
   @Test
   fun testAnnotations2() {
     assertEquals(
-        "MyClassName",
-        getClassName(
-            // language=JAVA
-            """
+      "MyClassName",
+      getClassName(
+        // language=JAVA
+        """
         @Anno('\u0000')
         /* class Comment */
         public class MyClassName { }
@@ -181,17 +175,17 @@ class ClassNameTest {
         @interface Anno {
             char value();
         }"""
-        ),
+      ),
     )
   }
 
   @Test
   fun testGetClassName() {
     assertEquals(
-        "ClickableViewAccessibilityTest",
-        getClassName(
-            // language=JAVA
-            """
+      "ClickableViewAccessibilityTest",
+      getClassName(
+        // language=JAVA
+        """
         package test.pkg;
 
         import android.content.Context;
@@ -207,53 +201,53 @@ class ClassNameTest {
             }
         }
         """
-        ),
+      ),
     )
   }
 
   @Test
   fun testStripComments() {
     assertEquals(
-        """
-        public class MyClass { String s = "/* This comment is \"in\" a string */" }
-        """
-            .trimIndent()
-            .trim(),
-        stripComments(
-                // language=JAVA
-                """
+      """
+      public class MyClass { String s = "/* This comment is \"in\" a string */" }
+      """
+        .trimIndent()
+        .trim(),
+      stripComments(
+          // language=JAVA
+          """
           /** Comment */
           // Line comment
           public class MyClass { String s = "/* This comment is \"in\" a string */" }""",
-                DOT_JAVA,
-            )
-            .trimIndent()
-            .trim(),
+          DOT_JAVA,
+        )
+        .trimIndent()
+        .trim(),
     )
   }
 
   @Test
   fun testStripCommentsNesting() {
     assertEquals(
-        """
-        fun test1() { }
+      """
+      fun test1() { }
 
-        fun test2() { }
-        """
-            .trimIndent()
-            .trim(),
-        stripComments(
-                // language=KT
-                """
+      fun test2() { }
+      """
+        .trimIndent()
+        .trim(),
+      stripComments(
+          // language=KT
+          """
           // Line comment /*
           /**/ /***/ fun test1() { }
           /* /* */ fun wrong() { } */
           fun test2() { }
           """,
-                DOT_KT,
-            )
-            .trimIndent()
-            .trim(),
+          DOT_KT,
+        )
+        .trimIndent()
+        .trim(),
     )
   }
 
@@ -261,11 +255,11 @@ class ClassNameTest {
   fun testGetEnumClass() {
     @Language("kotlin")
     val source =
-        """
-        package com.android.tools.lint.detector.api
-        enum class Severity { FATAL, ERROR, WARNING, INFORMATIONAL, IGNORE }
-        """
-            .trimIndent()
+      """
+      package com.android.tools.lint.detector.api
+      enum class Severity { FATAL, ERROR, WARNING, INFORMATIONAL, IGNORE }
+      """
+        .trimIndent()
     val className = ClassName(source, DOT_KT)
     assertEquals("com.android.tools.lint.detector.api", className.packageName)
     assertEquals("Severity", className.className)
@@ -276,18 +270,18 @@ class ClassNameTest {
   fun test195004772() {
     @Language("java")
     val source =
-        """
-        // Copyright 2007, Google Inc.
-        /** The classes in this is package provide a variety of utility services. */
-        @CheckReturnValue
-        @ParametersAreNonnullByDefault
-        @NullMarked
-        package com.google.common.util;
+      """
+      // Copyright 2007, Google Inc.
+      /** The classes in this is package provide a variety of utility services. */
+      @CheckReturnValue
+      @ParametersAreNonnullByDefault
+      @NullMarked
+      package com.google.common.util;
 
-        import javax.annotation.ParametersAreNonnullByDefault;
-        import org.jspecify.nullness.NullMarked;
-        """
-            .trimIndent()
+      import javax.annotation.ParametersAreNonnullByDefault;
+      import org.jspecify.nullness.NullMarked;
+      """
+        .trimIndent()
     assertEquals("com.google.common.util", ClassName(source).packageName)
     assertNull(ClassName(source).className)
   }
@@ -296,19 +290,19 @@ class ClassNameTest {
   fun testJvmName() {
     @Language("KT")
     val source =
-        """
-        @file:kotlin.jvm.JvmName("PreconditionsKt")
-        package kotlin
+      """
+      @file:kotlin.jvm.JvmName("PreconditionsKt")
+      package kotlin
 
-        fun assert(value: Boolean) {
-            @Suppress("Assert", "KotlinAssert")
-            assert(value) { "Assertion failed" }
-        }
+      fun assert(value: Boolean) {
+          @Suppress("Assert", "KotlinAssert")
+          assert(value) { "Assertion failed" }
+      }
 
-        fun assert(value: Boolean, lazyMessage: () -> Any) {
-        }
-        """
-            .trimIndent()
+      fun assert(value: Boolean, lazyMessage: () -> Any) {
+      }
+      """
+        .trimIndent()
     val cls = ClassName(source, DOT_KT)
     assertEquals("PreconditionsKt", cls.jvmName)
     assertEquals("kotlin", cls.packageName)
@@ -320,32 +314,29 @@ class ClassNameTest {
   fun testSkip() {
     @Language("KT")
     val source =
-        """
-        package com.android.tools.idea.preview.animation
-        object InspectorPainter {
-          object Slider {
-            fun getTickIncrement(slider: JSlider, minimumTickSize: Int = MINIMUM_TICK_DISTANCE): Int {
-              if (slider.maximum == 0 || slider.width == 0) return slider.maximum
-              val increment =
-                (minimumTickSize.toFloat() / slider.width * (slider.maximum - slider.minimum)).toInt()
-              TICK_INCREMENTS.forEach {
-                if (increment >= it) return@getTickIncrement (increment / (it - 1)) * it
-              }
-              return 1
+      """
+      package com.android.tools.idea.preview.animation
+      object InspectorPainter {
+        object Slider {
+          fun getTickIncrement(slider: JSlider, minimumTickSize: Int = MINIMUM_TICK_DISTANCE): Int {
+            if (slider.maximum == 0 || slider.width == 0) return slider.maximum
+            val increment =
+              (minimumTickSize.toFloat() / slider.width * (slider.maximum - slider.minimum)).toInt()
+            TICK_INCREMENTS.forEach {
+              if (increment >= it) return@getTickIncrement (increment / (it - 1)) * it
             }
+            return 1
           }
         }
-        """
-            .trimIndent()
+      }
+      """
+        .trimIndent()
 
     val path = "src/com/android/tools/idea/preview/animation/InspectorPainter.kt"
     val className = ClassName(source, path.substring(path.lastIndexOf('.')))
     assertEquals("InspectorPainter", className.jvmName)
     assertEquals("InspectorPainter", className.className)
     assertEquals("com.android.tools.idea.preview.animation", className.packageName)
-    assertEquals(
-        "com/android/tools/idea/preview/animation/InspectorPainter.kt",
-        className.relativePath(),
-    )
+    assertEquals("com/android/tools/idea/preview/animation/InspectorPainter.kt", className.relativePath())
   }
 }

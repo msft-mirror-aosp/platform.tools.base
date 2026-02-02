@@ -59,11 +59,11 @@ class WakelockDetector : Detector(), ClassScanner, SourceCodeScanner {
     /** Problems using wakelocks */
     @JvmField
     val ISSUE: Issue =
-        create(
-            id = "Wakelock",
-            briefDescription = "Incorrect `WakeLock` usage",
-            explanation =
-                """
+      create(
+        id = "Wakelock",
+        briefDescription = "Incorrect `WakeLock` usage",
+        explanation =
+          """
           Failing to release a wakelock properly can keep the Android device in a high power mode, \
           which reduces battery life. There are several causes of this, such as releasing the wake \
           lock in `onDestroy()` instead of in `onPause()`, failing to call `release()` in all \
@@ -74,33 +74,33 @@ class WakelockDetector : Detector(), ClassScanner, SourceCodeScanner {
           platform as the user moves between applications and doesn't require a special permission. \
           See https://developer.android.com/reference/android/view/WindowManager.LayoutParams.html#FLAG_KEEP_SCREEN_ON.
           """,
-            category = Category.PERFORMANCE,
-            priority = 9,
-            severity = Severity.WARNING,
-            androidSpecific = true,
-            implementation = IMPLEMENTATION,
-        )
+        category = Category.PERFORMANCE,
+        priority = 9,
+        severity = Severity.WARNING,
+        androidSpecific = true,
+        implementation = IMPLEMENTATION,
+      )
 
     /** Using non-timeout version of wakelock acquire */
     @JvmField
     val TIMEOUT: Issue =
-        create(
-            id = "WakelockTimeout",
-            briefDescription = "Using wakeLock without timeout",
-            explanation =
-                """
+      create(
+        id = "WakelockTimeout",
+        briefDescription = "Using wakeLock without timeout",
+        explanation =
+          """
           Wakelocks have two acquire methods: one with a timeout, and one without. You should \
           generally always use the one with a timeout. A typical timeout is 10 minutes. If the task \
           takes longer than it is critical that it happens (i.e. can't use `JobScheduler`) then \
           maybe they should consider a foreground service instead (which is a stronger run guarantee \
           and lets the user know something long/important is happening).
           """,
-            category = Category.PERFORMANCE,
-            priority = 9,
-            severity = Severity.WARNING,
-            androidSpecific = true,
-            implementation = IMPLEMENTATION,
-        )
+        category = Category.PERFORMANCE,
+        priority = 9,
+        severity = Severity.WARNING,
+        androidSpecific = true,
+        implementation = IMPLEMENTATION,
+      )
 
     private const val WAKELOCK_OWNER = "android.os.PowerManager.WakeLock"
     private const val POWER_MANAGER_OWNER = "android.os.PowerManager"
@@ -115,11 +115,7 @@ class WakelockDetector : Detector(), ClassScanner, SourceCodeScanner {
 
   override fun afterCheckRootProject(context: Context) {
     if (!hasRelease && firstAcquireLocation != null) {
-      context.report(
-          ISSUE,
-          firstAcquireLocation!!,
-          "Found a wakelock `acquire()` but no `release()` calls anywhere",
-      )
+      context.report(ISSUE, firstAcquireLocation!!, "Found a wakelock `acquire()` but no `release()` calls anywhere")
     }
   }
 
@@ -147,11 +143,11 @@ class WakelockDetector : Detector(), ClassScanner, SourceCodeScanner {
         }
 
         if (
-            !hasRelease &&
-                !hasAcquireCall &&
-                firstAcquireLocation == null &&
-                !context.driver.isIsolated() &&
-                !context.driver.isSuppressed(context, ISSUE, node)
+          !hasRelease &&
+            !hasAcquireCall &&
+            firstAcquireLocation == null &&
+            !context.driver.isIsolated() &&
+            !context.driver.isSuppressed(context, ISSUE, node)
         ) {
           firstAcquireLocation = context.getLocation(node)
         }
@@ -161,23 +157,18 @@ class WakelockDetector : Detector(), ClassScanner, SourceCodeScanner {
         if (context.isEnabled(TIMEOUT)) {
           val location = context.getLocation(node)
           val fix =
-              fix()
-                  .name("Set timeout to 10 minutes")
-                  .replace()
-                  .pattern("acquire\\s*\\(()\\s*\\)")
-                  .with("10*60*1000L /*10 minutes*/")
-                  .build()
+            fix().name("Set timeout to 10 minutes").replace().pattern("acquire\\s*\\(()\\s*\\)").with("10*60*1000L /*10 minutes*/").build()
 
           context.report(
-              TIMEOUT,
-              node,
-              location,
-              "" +
-                  "Provide a timeout when requesting a wakelock with " +
-                  "`PowerManager.Wakelock.acquire(long timeout)`. This will ensure the OS will " +
-                  "cleanup any wakelocks that last longer than you intend, and will save your " +
-                  "user's battery.",
-              fix,
+            TIMEOUT,
+            node,
+            location,
+            "" +
+              "Provide a timeout when requesting a wakelock with " +
+              "`PowerManager.Wakelock.acquire(long timeout)`. This will ensure the OS will " +
+              "cleanup any wakelocks that last longer than you intend, and will save your " +
+              "user's battery.",
+            fix,
           )
         }
 
@@ -214,12 +205,7 @@ class WakelockDetector : Detector(), ClassScanner, SourceCodeScanner {
         if (containingMethod != null && containingMethod.name == "onDestroy") {
           val containingClass = containingMethod.javaPsi.containingClass
           if (containingClass != null && context.evaluator.inheritsFrom(containingClass, ANDROID_APP_ACTIVITY)) {
-            context.report(
-                ISSUE,
-                node,
-                context.getLocation(node),
-                "Wakelocks should be released in `onPause`, not `onDestroy`",
-            )
+            context.report(ISSUE, node, context.getLocation(node), "Wakelocks should be released in `onPause`, not `onDestroy`")
           }
         }
       }
@@ -237,12 +223,12 @@ class WakelockDetector : Detector(), ClassScanner, SourceCodeScanner {
             val both = PARTIAL_WAKE_LOCK or ACQUIRE_CAUSES_WAKEUP
             if ((constant and both) == both) {
               context.report(
-                  ISSUE,
-                  node,
-                  context.getLocation(arguments.first()),
-                  "Should not set both `PARTIAL_WAKE_LOCK` and `ACQUIRE_CAUSES_WAKEUP`. " +
-                      "If you do not want the screen to turn on, get rid of " +
-                      "`ACQUIRE_CAUSES_WAKEUP`",
+                ISSUE,
+                node,
+                context.getLocation(arguments.first()),
+                "Should not set both `PARTIAL_WAKE_LOCK` and `ACQUIRE_CAUSES_WAKEUP`. " +
+                  "If you do not want the screen to turn on, get rid of " +
+                  "`ACQUIRE_CAUSES_WAKEUP`",
               )
             }
           }
@@ -266,53 +252,53 @@ class WakelockDetector : Detector(), ClassScanner, SourceCodeScanner {
 
     val releaseCalls = mutableListOf<UCallExpression>()
     method.accept(
-        object : AbstractUastVisitor() {
-          override fun visitCallExpression(node: UCallExpression): Boolean {
-            if (node.isReleaseCall()) {
-              releaseCalls.add(node)
-            }
-            return super.visitCallExpression(node)
+      object : AbstractUastVisitor() {
+        override fun visitCallExpression(node: UCallExpression): Boolean {
+          if (node.isReleaseCall()) {
+            releaseCalls.add(node)
           }
+          return super.visitCallExpression(node)
         }
+      }
     )
     if (releaseCalls.isEmpty()) {
       return
     }
 
     val graph =
-        ControlFlowGraph.create(
-            method,
-            builder =
-                object : ControlFlowGraph.Companion.Builder(strict = false, trackCallThrows = true) {
-                  override fun canThrow(reference: UElement, method: PsiMethod): Boolean {
-                    val name = method.name
-                    if (name == ACQUIRE_METHOD || name == RELEASE_METHOD || name == IS_HELD_METHOD) {
-                      return false
-                    }
-                    return super.canThrow(reference, method)
-                  }
+      ControlFlowGraph.create(
+        method,
+        builder =
+          object : ControlFlowGraph.Companion.Builder(strict = false, trackCallThrows = true) {
+            override fun canThrow(reference: UElement, method: PsiMethod): Boolean {
+              val name = method.name
+              if (name == ACQUIRE_METHOD || name == RELEASE_METHOD || name == IS_HELD_METHOD) {
+                return false
+              }
+              return super.canThrow(reference, method)
+            }
 
-                  override fun checkBranchPaths(conditional: UExpression): ControlFlowGraph.FollowBranch {
-                    // If you check for isHeld
-                    val selector = conditional.findSelector()
-                    if (selector is UCallExpression) {
-                      val resolved = selector.resolve()
-                      if (resolved?.name == IS_HELD_METHOD && resolved.containingClass?.qualifiedName == WAKELOCK_OWNER) {
-                        return ControlFlowGraph.FollowBranch.THEN
-                      }
-                    } else if (selector is UBinaryExpression) {
-                      // If lock != null { lock.release } is fine
-                      val condition = selector.operator
-                      if (condition == UastBinaryOperator.NOT_EQUALS || condition == UastBinaryOperator.IDENTITY_NOT_EQUALS) {
-                        if (selector.rightOperand.isNullLiteral()) {
-                          return ControlFlowGraph.FollowBranch.THEN
-                        }
-                      }
-                    }
-                    return super.checkBranchPaths(conditional)
+            override fun checkBranchPaths(conditional: UExpression): ControlFlowGraph.FollowBranch {
+              // If you check for isHeld
+              val selector = conditional.findSelector()
+              if (selector is UCallExpression) {
+                val resolved = selector.resolve()
+                if (resolved?.name == IS_HELD_METHOD && resolved.containingClass?.qualifiedName == WAKELOCK_OWNER) {
+                  return ControlFlowGraph.FollowBranch.THEN
+                }
+              } else if (selector is UBinaryExpression) {
+                // If lock != null { lock.release } is fine
+                val condition = selector.operator
+                if (condition == UastBinaryOperator.NOT_EQUALS || condition == UastBinaryOperator.IDENTITY_NOT_EQUALS) {
+                  if (selector.rightOperand.isNullLiteral()) {
+                    return ControlFlowGraph.FollowBranch.THEN
                   }
-                },
-        )
+                }
+              }
+              return super.checkBranchPaths(conditional)
+            }
+          },
+      )
 
     val exitPaths = mutableListOf<List<Edge>>()
     val releaseNodes = mutableListOf<Node>()
@@ -345,22 +331,12 @@ class WakelockDetector : Detector(), ClassScanner, SourceCodeScanner {
         return
       }
       val call = releaseNodes.first().instruction
-      val location: Location =
-          context.getCallLocation(
-              call as UCallExpression,
-              includeReceiver = false,
-              includeArguments = false,
-          )
+      val location: Location = context.getCallLocation(call as UCallExpression, includeReceiver = false, includeArguments = false)
       var last = location
       for (i in 1 until releaseNodes.size) {
         val release = releaseNodes[i]
         val element = release.instruction
-        val secondary =
-            context.getCallLocation(
-                element as UCallExpression,
-                includeReceiver = false,
-                includeArguments = false,
-            )
+        val secondary = context.getCallLocation(element as UCallExpression, includeReceiver = false, includeArguments = false)
         last.secondary = secondary
         last = secondary
       }
@@ -369,37 +345,37 @@ class WakelockDetector : Detector(), ClassScanner, SourceCodeScanner {
   }
 
   private fun dfs(
-      graph: ControlFlowGraph<UElement>,
-      startNode: Node,
-      exitPaths: MutableList<List<Edge>>,
-      releaseNodes: MutableList<Node>,
+    graph: ControlFlowGraph<UElement>,
+    startNode: Node,
+    exitPaths: MutableList<List<Edge>>,
+    releaseNodes: MutableList<Node>,
   ): Int {
     return graph.dfs(
-        ControlFlowGraph.IntBitsDomain,
-        object : ControlFlowGraph.DfsRequest<UElement, Int>(startNode) {
-          override fun visitNode(node: Node, path: List<Edge>, status: Int): Int {
-            return if (node.isExit()) {
-              exitPaths.add(path)
-              SEEN_EXIT or (if (path.any { it.isException }) SEEN_EXCEPTION else 0)
-            } else {
-              0
-            }
+      ControlFlowGraph.IntBitsDomain,
+      object : ControlFlowGraph.DfsRequest<UElement, Int>(startNode) {
+        override fun visitNode(node: Node, path: List<Edge>, status: Int): Int {
+          return if (node.isExit()) {
+            exitPaths.add(path)
+            SEEN_EXIT or (if (path.any { it.isException }) SEEN_EXCEPTION else 0)
+          } else {
+            0
           }
+        }
 
-          override fun prune(node: Node, path: List<Edge>, status: Int): Boolean {
-            val instruction = node.instruction
-            return if (instruction is UCallExpression && instruction.isReleaseCall()) {
-              releaseNodes.add(node)
-              true
-            } else {
-              false
-            }
+        override fun prune(node: Node, path: List<Edge>, status: Int): Boolean {
+          val instruction = node.instruction
+          return if (instruction is UCallExpression && instruction.isReleaseCall()) {
+            releaseNodes.add(node)
+            true
+          } else {
+            false
           }
+        }
 
-          override fun isDone(status: Int): Boolean {
-            return (status and SEEN_EXIT) != 0
-          }
-        },
+        override fun isDone(status: Int): Boolean {
+          return (status and SEEN_EXIT) != 0
+        }
+      },
     )
   }
 }

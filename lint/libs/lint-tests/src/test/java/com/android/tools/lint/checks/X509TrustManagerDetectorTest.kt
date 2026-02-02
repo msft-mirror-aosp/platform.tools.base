@@ -25,9 +25,9 @@ class X509TrustManagerDetectorTest : AbstractCheckTest() {
 
   fun testTrustsAll() {
     lint()
-        .files(
-            manifest(
-                    """
+      .files(
+        manifest(
+            """
 
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="test.pkg"
@@ -47,10 +47,10 @@ class X509TrustManagerDetectorTest : AbstractCheckTest() {
                 </manifest>
 
                 """
-                )
-                .indented(),
-            java(
-                    """
+          )
+          .indented(),
+        java(
+            """
                 package test.pkg;
 
                 import android.app.IntentService;
@@ -96,12 +96,12 @@ class X509TrustManagerDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-                )
-                .indented(),
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+      )
+      .run()
+      .expect(
+        """
             src/test/pkg/InsecureTLSIntentService.java:22: Warning: checkClientTrusted is empty, which could cause insecure network traffic due to trusting arbitrary TLS/SSL certificates presented by peers [TrustAllX509TrustManager]
                     public void checkClientTrusted(java.security.cert.X509Certificate[] certs, String authType) {
                                 ~~~~~~~~~~~~~~~~~~
@@ -113,7 +113,7 @@ class X509TrustManagerDetectorTest : AbstractCheckTest() {
                                                                        ~~~~~~~~~~~~~~~~
             0 errors, 3 warnings
             """
-        )
+      )
 
     // TODO: Test bytecode check via library jar?
     // "bytecode/InsecureTLSIntentService.java.txt=>src/test/pkg/InsecureTLSIntentService.java",
@@ -123,9 +123,9 @@ class X509TrustManagerDetectorTest : AbstractCheckTest() {
 
   fun testCustom() {
     lint()
-        .files(
-            manifest(
-                    """
+      .files(
+        manifest(
+            """
 
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="test.pkg"
@@ -144,10 +144,10 @@ class X509TrustManagerDetectorTest : AbstractCheckTest() {
 
                 </manifest>
                 """
-                )
-                .indented(),
-            java(
-                    """
+          )
+          .indented(),
+        java(
+            """
                 package test.pkg;
 
                 import android.app.IntentService;
@@ -211,18 +211,18 @@ class X509TrustManagerDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-                )
-                .indented(),
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+      )
+      .run()
+      .expect(
+        """
             src/test/pkg/ExampleTLSIntentService.java:22: Warning: Implementing a custom X509TrustManager is error-prone and likely to be insecure. It is likely to disable certificate validation altogether, and is non-trivial to implement correctly without calling Android's default implementation. [CustomX509TrustManager]
                     trustManagerExample = new TrustManager[]{new X509TrustManager() {
                                                                  ~~~~~~~~~~~~~~~~
             0 errors, 1 warnings
             """
-        )
+      )
   }
 
   @Suppress("removal")
@@ -230,11 +230,11 @@ class X509TrustManagerDetectorTest : AbstractCheckTest() {
     // Regression test for
     // https://issuetracker.google.com/270065082
     lint()
-        .files(
-            compiled(
-                "libs/library.jar",
-                java(
-                        """
+      .files(
+        compiled(
+          "libs/library.jar",
+          java(
+              """
               package test.pkg;
 
               import java.util.List;
@@ -248,10 +248,10 @@ class X509TrustManagerDetectorTest : AbstractCheckTest() {
                           throws CertificateException;
               }
               """
-                    )
-                    .indented(),
-                0x2a622729,
-                """
+            )
+            .indented(),
+          0x2a622729,
+          """
             test/pkg/ExtendedX509TrustManager.class:
             H4sIAAAAAAAA/7WRP0sDQRDF38SYM/FfsFewi41rIyKRNBKriMVZCNqsm/Hc
             5NiE3blw1n4rCz+AH0rcS0AFI9hYDLx5vJn9Mfv2/vIK4ATtBBsJNhNsEXbM
@@ -261,21 +261,21 @@ class X509TrustManagerDetectorTest : AbstractCheckTest() {
             hL0FjGNRIeTq50xnGe030s8rNgiEWqyV+L1UJ9SxGvtG7OrRTbAWVQ3NqFtz
             tf4BCHqzYQsCAAA=
             """,
-            )
         )
-        .issues(X509TrustManagerDetector.TRUSTS_ALL)
-        .run()
-        .expectClean()
+      )
+      .issues(X509TrustManagerDetector.TRUSTS_ALL)
+      .run()
+      .expectClean()
   }
 
   @Suppress("RedundantThrows")
   fun testBytecodeSuppress() {
     lint()
-        .files(
-            bytecode(
-                "libs/library.jar",
-                java(
-                        """
+      .files(
+        bytecode(
+          "libs/library.jar",
+          java(
+              """
               package test.pkg;
 
               import javax.net.ssl.X509TrustManager;
@@ -300,10 +300,10 @@ class X509TrustManagerDetectorTest : AbstractCheckTest() {
                   }
               }
               """
-                    )
-                    .indented(),
-                0x6b722ea6,
-                """
+            )
+            .indented(),
+          0x6b722ea6,
+          """
           test/pkg/MyTestX509TrustManager.class:
           H4sIAAAAAAAA/41STW8TMRB9k6+FEPqRAi2NAPXUhAPLhQMEIUURSJVSkEhU
           IfXkOMPidutEtjdq/1U5VeqBH8CPQswuoaBQqRw882w9v5nn8fcfl98A9NCq
@@ -316,11 +316,11 @@ class X509TrustManagerDetectorTest : AbstractCheckTest() {
           klx9egH6KoDQkFgrDiOJd7GCckF9KKucM5ZpDawudNfQFLQiaEPWvUOQx31B
           D24WWb9RZBNbi6a3F02X6HxJJeflJUrY/glTTopv9gIAAA==
           """,
-            ),
-            bytecode(
-                "libs/library.jar",
-                java(
-                        """
+        ),
+        bytecode(
+          "libs/library.jar",
+          java(
+              """
               package test.pkg;
 
               import static java.lang.annotation.ElementType.CONSTRUCTOR;
@@ -340,10 +340,10 @@ class X509TrustManagerDetectorTest : AbstractCheckTest() {
                   String[] value();
               }
               """
-                    )
-                    .indented(),
-                0xecef59c8,
-                """
+            )
+            .indented(),
+          0xecef59c8,
+          """
           test/pkg/SuppressLint.class:
           H4sIAAAAAAAA/4WRQU/CMBTHXxGYgCKoaDwYjQeiF3fx5qnOEUmqI9skMRzM
           IC9LcXTL1pHw1Tz4AfxQxlcP4oHEQ//9v/bX92/az6/3DwDgcGxBhUFPY6Ht
@@ -354,11 +354,11 @@ class X509TrustManagerDetectorTest : AbstractCheckTest() {
           CB4EfQYMtmjU6HsYvb8F2+Qq0PjRJrRoviG3Q4w1gTrCLrSN7BnpGOka2Tdy
           AIcGQ+jB0Td2Z2BM8wEAAA==
           """,
-            ),
-        )
-        .issues(X509TrustManagerDetector.TRUSTS_ALL)
-        .skipTestModes(TestMode.PARTIAL)
-        .run()
-        .expectClean()
+        ),
+      )
+      .issues(X509TrustManagerDetector.TRUSTS_ALL)
+      .skipTestModes(TestMode.PARTIAL)
+      .run()
+      .expectClean()
   }
 }
