@@ -2178,7 +2178,7 @@ abstract class UastInputs {
   val useK2Uast: Boolean
     @Suppress("UnstableApiUsage")
     get() {
-      return useK2UastManualSetting.orNull ?: kotlinLanguageVersion?.let { Version.parse(it) >= Version.prefixInfimum("2") } ?: false
+      return useK2UastManualSetting.orNull ?: kotlinLanguageVersion?.let { Version.parse(it) >= Version.prefixInfimum("2") } ?: true
     }
 
   @get:Internal
