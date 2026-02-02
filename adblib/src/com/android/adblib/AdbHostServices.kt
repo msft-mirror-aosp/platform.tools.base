@@ -237,12 +237,15 @@ data class ServerStatus(
     UNKNOWN,
     LIBUSB,
     NATIVE,
+    USB_DISABLED,
   }
 
   enum class MdnsBackend {
     UNKNOWN,
     BONJOUR,
     OPENSCREEN,
+    LIBADBMDNS,
+    MDNS_DISABLED,
   }
 
   companion object {

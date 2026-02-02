@@ -190,6 +190,7 @@ internal class AdbHostServicesImpl(
       when (status.usbBackend) {
         DevicesProto.AdbServerStatus.UsbBackend.NATIVE -> ServerStatus.UsbBackend.NATIVE
         DevicesProto.AdbServerStatus.UsbBackend.LIBUSB -> ServerStatus.UsbBackend.LIBUSB
+        DevicesProto.AdbServerStatus.UsbBackend.USB_DISABLED -> ServerStatus.UsbBackend.USB_DISABLED
         null,
         DevicesProto.AdbServerStatus.UsbBackend.UNRECOGNIZED,
         DevicesProto.AdbServerStatus.UsbBackend.UNKNOWN_USB -> ServerStatus.UsbBackend.UNKNOWN
@@ -198,6 +199,8 @@ internal class AdbHostServicesImpl(
       when (status.mdnsBackend) {
         DevicesProto.AdbServerStatus.MdnsBackend.BONJOUR -> ServerStatus.MdnsBackend.BONJOUR
         DevicesProto.AdbServerStatus.MdnsBackend.OPENSCREEN -> ServerStatus.MdnsBackend.OPENSCREEN
+        DevicesProto.AdbServerStatus.MdnsBackend.LIBADBMDNS -> ServerStatus.MdnsBackend.LIBADBMDNS
+        DevicesProto.AdbServerStatus.MdnsBackend.MDNS_DISABLED -> ServerStatus.MdnsBackend.MDNS_DISABLED
         null,
         DevicesProto.AdbServerStatus.MdnsBackend.UNRECOGNIZED,
         DevicesProto.AdbServerStatus.MdnsBackend.UNKNOWN_MDNS -> ServerStatus.MdnsBackend.UNKNOWN
