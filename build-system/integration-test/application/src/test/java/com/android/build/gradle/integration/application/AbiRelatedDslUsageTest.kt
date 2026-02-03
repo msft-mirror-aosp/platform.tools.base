@@ -88,7 +88,7 @@ class AbiRelatedDslUsageTest {
       assertThat(issues).isEmpty()
     } else {
       issues.checkSingleIssue(
-        type = com.android.builder.model.v2.ide.SyncIssue.TYPE_GENERIC,
+        type = com.android.builder.model.v2.ide.SyncIssue.TYPE_CONFLICTING_ABI_CONFIG,
         severity = com.android.builder.model.v2.ide.SyncIssue.SEVERITY_ERROR,
         message = "Conflicting configuration : 'x86' in ndk abiFilters cannot be present when splits abi filters are set : armeabi-v7a",
       )
@@ -199,7 +199,7 @@ class AbiRelatedDslUsageTest {
     val issues = rootBuild.issues?.syncIssues ?: throw RuntimeException("Missing issues model")
 
     issues.checkSingleIssue(
-      type = com.android.builder.model.v2.ide.SyncIssue.TYPE_GENERIC,
+      type = com.android.builder.model.v2.ide.SyncIssue.TYPE_RENDERSCRIPT_NOT_SUPPORTED_ON_RISCV,
       severity = com.android.builder.model.v2.ide.SyncIssue.SEVERITY_ERROR,
       message =
         "Project ${project.name} uses RenderScript. Cannot build for ABIs: [riscv64] because RenderScript is not supported on Riscv.",
@@ -247,7 +247,7 @@ class AbiRelatedDslUsageTest {
     val issues = rootBuild.issues?.syncIssues ?: throw RuntimeException("Missing issues model")
 
     issues.checkSingleIssue(
-      type = com.android.builder.model.v2.ide.SyncIssue.TYPE_GENERIC,
+      type = com.android.builder.model.v2.ide.SyncIssue.TYPE_CANNOT_BUILD_SELECTED_TARGET_ABI,
       severity = com.android.builder.model.v2.ide.SyncIssue.SEVERITY_WARNING,
       message = "Cannot build selected target ABI: mips, supported ABIs are: x86",
     )
@@ -299,7 +299,7 @@ class AbiRelatedDslUsageTest {
     val issues = rootBuild.issues?.syncIssues ?: throw RuntimeException("Missing issues model")
 
     issues.checkSingleIssue(
-      type = com.android.builder.model.v2.ide.SyncIssue.TYPE_GENERIC,
+      type = com.android.builder.model.v2.ide.SyncIssue.TYPE_CANNOT_BUILD_SELECTED_TARGET_ABI,
       severity = com.android.builder.model.v2.ide.SyncIssue.SEVERITY_WARNING,
       message = "Cannot build selected target ABI: x86, supported ABIs are: FilterConfiguration(filterType=ABI, identifier=armeabi-v7a)",
     )

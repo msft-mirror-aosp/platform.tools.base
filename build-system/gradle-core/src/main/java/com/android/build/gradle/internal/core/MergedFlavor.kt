@@ -61,7 +61,7 @@ class MergedFlavor(name: String, private val _applicationId: Property<String>, p
 
       if (!services.projectOptions.get(BooleanOption.ENABLE_LEGACY_API)) {
         services.issueReporter.reportError(
-          IssueReporter.Type.GENERIC,
+          IssueReporter.Type.ACCESSING_DEPRECATED_LEGACY_MODEL,
           RuntimeException(
             """
                                 Access to deprecated legacy com.android.builder.model.ProductFlavor.getApplicationId() requires compatibility mode for Property values in new com.android.build.api.variant.VariantOutput.versionCode
@@ -190,6 +190,6 @@ class MergedFlavor(name: String, private val _applicationId: Property<String>, p
                 |}"""
         .trimMargin()
 
-    services.issueReporter.reportError(IssueReporter.Type.GENERIC, message)
+    services.issueReporter.reportError(IssueReporter.Type.CANNOT_SET_ON_MERGED_FLAVOR, message)
   }
 }

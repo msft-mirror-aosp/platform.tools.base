@@ -86,7 +86,14 @@ class OptimizationCreationConfigImpl(
                 "Default file $fileName should not be used as a consumer configuration file."
               }
 
-            internalServices.issueReporter.reportError(IssueReporter.Type.GENERIC, errorMessage)
+            val type =
+              if (isDynamicFeature) {
+                IssueReporter.Type.DEFAULT_PROGUARD_FILE_IN_NON_BASE_MODULE
+              } else {
+                IssueReporter.Type.DEFAULT_PROGUARD_FILE_AS_CONSUMER_FILE
+              }
+
+            internalServices.issueReporter.reportError(type, errorMessage)
           }
         }
       }

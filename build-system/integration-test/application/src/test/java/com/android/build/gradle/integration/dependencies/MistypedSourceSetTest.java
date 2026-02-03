@@ -22,10 +22,13 @@ import static com.android.build.gradle.integration.common.utils.TestFileUtils.ap
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp;
 import com.android.builder.model.v2.ide.SyncIssue;
+
 import com.google.common.collect.Iterables;
-import java.util.Collection;
+
 import org.junit.Rule;
 import org.junit.Test;
+
+import java.util.Collection;
 
 public class MistypedSourceSetTest {
     @Rule
@@ -77,7 +80,7 @@ public class MistypedSourceSetTest {
         assertThat(syncIssues).hasSize(1);
 
         SyncIssue issue = Iterables.getOnlyElement(syncIssues);
-        assertThat(issue.getType()).isEqualTo(SyncIssue.TYPE_GENERIC);
+        assertThat(issue.getType()).isEqualTo(SyncIssue.TYPE_UNRECOGNIZED_SOURCE_SET);
         assertThat(issue.getSeverity()).isEqualTo(SyncIssue.SEVERITY_ERROR);
         assertThat(issue.getMessage()).contains("blooo");
     }

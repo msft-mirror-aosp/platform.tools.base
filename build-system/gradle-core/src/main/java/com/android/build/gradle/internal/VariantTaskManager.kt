@@ -398,7 +398,7 @@ abstract class VariantTaskManager<VariantBuilderT : VariantBuilder, VariantT : V
         // it's not a Kotlin or AndroidX project.
         if (ktxDataBindingDslValue == true) {
           globalConfig.services.issueReporter.reportWarning(
-            IssueReporter.Type.GENERIC,
+            IssueReporter.Type.DATABINDING_KTX_NO_EFFECT,
             "The `android.dataBinding.addKtx` DSL option has no effect because " +
               "the `android.useAndroidX` property is not enabled or " +
               "the project does not use Kotlin.",
@@ -420,7 +420,7 @@ abstract class VariantTaskManager<VariantBuilderT : VariantBuilder, VariantT : V
         ) {
           val depString = "${dependency.group}:${dependency.name}:${dependency.version}"
           globalConfig.services.issueReporter.reportError(
-            IssueReporter.Type.GENERIC,
+            IssueReporter.Type.DATABINDING_ANNOTATION_PROCESSOR_VERSION_MISMATCH,
             "Data Binding annotation processor version needs to match the" +
               " Android Gradle Plugin version. You can remove the kapt" +
               " dependency " +
@@ -633,7 +633,7 @@ abstract class VariantTaskManager<VariantBuilderT : VariantBuilder, VariantT : V
         val dependencyId = "${dependency.group}:${dependency.name}:${dependency.version ?: ""}".trimEnd(':')
 
         issueReporter.reportWarning(
-          IssueReporter.Type.GENERIC,
+          IssueReporter.Type.MULTIDEX_NOT_NEEDED,
           """
                         The multidex library is included as a dependency, but it is not needed for apps
                         with minSdk >= 21. Please remove dependency '$dependencyId' from '${project.path}'.

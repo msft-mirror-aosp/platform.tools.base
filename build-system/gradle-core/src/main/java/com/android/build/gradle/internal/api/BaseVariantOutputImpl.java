@@ -34,13 +34,16 @@ import com.android.build.gradle.internal.services.DslServices;
 import com.android.build.gradle.tasks.ManifestProcessorTask;
 import com.android.build.gradle.tasks.ProcessAndroidResources;
 import com.android.builder.errors.IssueReporter;
+
 import com.google.common.collect.ImmutableList;
-import java.io.File;
-import java.util.Collection;
-import java.util.stream.Collectors;
+
 import org.gradle.api.GradleException;
 import org.gradle.api.Task;
 import org.gradle.api.tasks.TaskProvider;
+
+import java.io.File;
+import java.util.Collection;
+import java.util.stream.Collectors;
 
 /**
  * Implementation of the base variant output. This is the base class for items common to apps,
@@ -207,7 +210,7 @@ public abstract class BaseVariantOutputImpl implements BaseVariantOutput {
         if (!testOutputFile.getName().equals(outputFileName)) {
             services.getIssueReporter()
                     .reportWarning(
-                            IssueReporter.Type.GENERIC,
+                            IssueReporter.Type.RELATIVE_PATH_NOT_SUPPORTED_IN_OUTPUT_FILE_NAME,
                             "Setting outputFileName to '"
                                     + outputFileName
                                     + "' can result in incorrect behavior. Relative paths are not "

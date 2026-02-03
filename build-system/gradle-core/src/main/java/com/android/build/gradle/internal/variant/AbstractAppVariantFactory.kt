@@ -74,7 +74,7 @@ abstract class AbstractAppVariantFactory<
     for (buildType in model.buildTypes.values) {
       if (buildType.buildType.isMinifyEnabled) {
         issueReporter.reportError(
-          IssueReporter.Type.GENERIC,
+          IssueReporter.Type.MINIFY_ENABLED_IN_DYNAMIC_FEATURE,
           """
                             Dynamic feature modules cannot set minifyEnabled to true. minifyEnabled is set to true in build type '${buildType.buildType.name}'.
                             To enable minification for a dynamic feature module, set minifyEnabled to true in the base module.
@@ -109,16 +109,16 @@ abstract class AbstractAppVariantFactory<
       ("abiFilters should not be declared in dynamic-features. Dynamic-features use the " +
         "abiFilters declared in the application module.")
     if (!model.defaultConfigData.defaultConfig.ndkConfig.abiFilters.isEmpty()) {
-      issueReporter.reportWarning(IssueReporter.Type.GENERIC, message)
+      issueReporter.reportWarning(IssueReporter.Type.ABI_FILTERS_IN_DYNAMIC_FEATURE, message)
     }
     for (buildType in model.buildTypes.values) {
       if (buildType.buildType.ndkConfig.abiFilters.isNotEmpty()) {
-        issueReporter.reportWarning(IssueReporter.Type.GENERIC, message)
+        issueReporter.reportWarning(IssueReporter.Type.ABI_FILTERS_IN_DYNAMIC_FEATURE, message)
       }
     }
     for (productFlavor in model.productFlavors.values) {
       if (productFlavor.productFlavor.ndkConfig.abiFilters.isNotEmpty()) {
-        issueReporter.reportWarning(IssueReporter.Type.GENERIC, message)
+        issueReporter.reportWarning(IssueReporter.Type.ABI_FILTERS_IN_DYNAMIC_FEATURE, message)
       }
     }
   }
@@ -136,7 +136,7 @@ abstract class AbstractAppVariantFactory<
     val versionCode = model.defaultConfigData.defaultConfig.versionCode
     if (versionCode != null && versionCode < 1) {
       issueReporter.reportError(
-        IssueReporter.Type.GENERIC,
+        IssueReporter.Type.INVALID_VERSION_CODE,
         """
                         android.defaultConfig.versionCode is set to $versionCode, but it should be a positive integer.
                         See https://developer.android.com/studio/publish/versioning#appversioning for more information.
@@ -151,7 +151,7 @@ abstract class AbstractAppVariantFactory<
         return
       }
       issueReporter.reportError(
-        IssueReporter.Type.GENERIC,
+        IssueReporter.Type.INVALID_VERSION_CODE,
         ("versionCode is set to $flavorVersionCode in product flavor " +
           "${flavorData.productFlavor.name}, but it should be a positive integer. " +
           "See https://developer.android.com/studio/publish/versioning#appversioning for more information."),

@@ -765,14 +765,14 @@ class MinifyFeaturesTest {
       .containsExactlyElementsIn(
         listOf(
           IssueReporter.Severity.ERROR.severity to
-            IssueReporter.Type.GENERIC.type to
+            IssueReporter.Type.MINIFY_ENABLED_IN_DYNAMIC_FEATURE.type to
             """
             Dynamic feature modules cannot set minifyEnabled to true. minifyEnabled is set to true in build type 'minified'.
             To enable minification for a dynamic feature module, set minifyEnabled to true in the base module.
             """
               .trimIndent(),
           IssueReporter.Severity.WARNING.severity to
-            IssueReporter.Type.GENERIC.type to
+            IssueReporter.Type.DEBUGGABLE_AND_MINIFIED_ENABLED.type to
             "BuildType 'minified' is both debuggable and has 'isMinifyEnabled' set to true.\n" +
               "All code optimizations and obfuscation are disabled for debuggable builds.",
         )
@@ -799,7 +799,7 @@ class MinifyFeaturesTest {
     val container = project.modelV2().ignoreSyncIssues().fetchModels().container
     val syncIssues = container.getProject(otherFeature2GradlePath).issues?.syncIssues!!
     Truth.assertThat(syncIssues.size).isEqualTo(1)
-    Truth.assertThat(syncIssues.first().type).isEqualTo(SyncIssue.TYPE_GENERIC)
+    Truth.assertThat(syncIssues.first().type).isEqualTo(SyncIssue.TYPE_DEFAULT_PROGUARD_FILE_IN_NON_BASE_MODULE)
     Truth.assertThat(syncIssues.first().data).isNull()
     Truth.assertThat(syncIssues.first().message).contains("should not be specified in this module.")
   }

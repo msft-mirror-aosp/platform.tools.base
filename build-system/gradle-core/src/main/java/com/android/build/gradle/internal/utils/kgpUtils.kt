@@ -265,7 +265,7 @@ fun handleKotlinSourceSets(
 
         if (nonDefaultKotlinSrcDirs.isNotEmpty()) {
           projectServices.issueReporter.reportError(
-            Type.GENERIC,
+            Type.KOTLIN_SOURCE_SET_NOT_ALLOWED,
             "Using kotlin.sourceSets DSL to add Kotlin sources is not allowed with built-in Kotlin.\n" +
               "Kotlin source set '${androidSourceSet.name}' contains: ${kotlinSourceSet.kotlin.srcDirs}\n" +
               "Solution: Use android.sourceSets DSL instead.\n" +

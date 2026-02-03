@@ -366,7 +366,7 @@ class LintTaskManager(
 
       versionToName.forEach { (variantSdkLevel, names) ->
         globalTaskCreationConfig.services.issueReporter.reportError(
-          IssueReporter.Type.GENERIC,
+          IssueReporter.Type.LINT_TARGET_SDK_LESS_THAN_ANDROID_TARGET_SDK,
           String.format(
             Locale.US,
             "lint.targetSdk (%d) for non library is smaller than android.targetSdk (%d)" +

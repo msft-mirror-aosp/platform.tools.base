@@ -1350,7 +1350,7 @@ abstract class TaskManager(@JvmField protected val project: Project, @JvmField p
           creationConfig.optimizationCreationConfig.packageScopeEnabled
       ) {
         creationConfig.services.issueReporter.reportError(
-          IssueReporter.Type.GENERIC,
+          IssueReporter.Type.R8_GRADUAL_API_FLAG_REQUIRED,
           "Cannot use optimization.packageScope without setting android.r8.gradual.support flag.",
         )
       }

@@ -149,13 +149,13 @@ class DexingImpl(
       val langDesugarEnabled = langSupportType == Java8LangSupport.D8 || langSupportType == Java8LangSupport.R8
       if (libDesugarEnabled && !langDesugarEnabled) {
         component.services.issueReporter.reportError(
-          IssueReporter.Type.GENERIC,
+          IssueReporter.Type.CORE_LIBRARY_DESUGARING_REQUIRES_D8_OR_R8,
           "In order to use core library desugaring, " + "please enable java 8 language desugaring with D8 or R8.",
         )
       }
       if (libDesugarEnabled && !dexingType.isMultiDex) {
         component.services.issueReporter.reportError(
-          IssueReporter.Type.GENERIC,
+          IssueReporter.Type.CORE_LIBRARY_DESUGARING_REQUIRES_MULTIDEX,
           "In order to use core library desugaring, " + "please enable multidex.",
         )
       }

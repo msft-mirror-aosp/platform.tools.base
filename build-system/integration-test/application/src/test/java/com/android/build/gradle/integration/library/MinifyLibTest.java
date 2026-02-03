@@ -84,7 +84,8 @@ public class MinifyLibTest {
 
         assertThat(syncIssues.size()).isEqualTo(1);
         SyncIssue issue = syncIssues.iterator().next();
-        assertThat(issue.getType()).isEqualTo(SyncIssue.TYPE_GENERIC);
+        assertThat(issue.getType())
+                .isEqualTo(SyncIssue.TYPE_DEFAULT_PROGUARD_FILE_AS_CONSUMER_FILE);
         assertThat(issue.getSeverity()).isEqualTo(SyncIssue.SEVERITY_ERROR);
         assertThat(issue.getMessage())
                 .contains(

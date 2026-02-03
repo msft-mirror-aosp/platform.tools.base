@@ -2307,7 +2307,7 @@ internal fun getLintMavenArtifactVersion(
   val parsed = AgpVersion.tryParse(versionOverride)
   if (parsed == null) {
     reporter?.reportError(
-      IssueReporter.Type.GENERIC,
+      IssueReporter.Type.LINT_VERSION_OVERRIDE_INVALID,
       """
                     Could not parse lint version override '$versionOverride'
                     Recommendation: Remove or update the gradle property ${StringOption.LINT_VERSION_OVERRIDE.propertyName} to be at least $agpVersion
@@ -2325,7 +2325,7 @@ internal fun getLintMavenArtifactVersion(
 
   if (normalizedParsed < default) {
     reporter?.reportError(
-      IssueReporter.Type.GENERIC,
+      IssueReporter.Type.LINT_VERSION_OVERRIDE_INVALID,
       """
                     Lint must be at least version $agpVersion
                     Recommendation: Remove or update the gradle property ${StringOption.LINT_VERSION_OVERRIDE.propertyName} to be at least $agpVersion

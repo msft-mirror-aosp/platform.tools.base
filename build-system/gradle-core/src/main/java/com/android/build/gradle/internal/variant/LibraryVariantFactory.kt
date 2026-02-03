@@ -192,7 +192,7 @@ class LibraryVariantFactory(dslServices: DslServices) :
     if (defaultConfig.applicationId != null) {
       val applicationId = defaultConfig.applicationId!!
       issueReporter.reportError(
-        IssueReporter.Type.GENERIC,
+        IssueReporter.Type.APPLICATION_ID_NOT_ALLOWED_IN_LIBRARY,
         "Library projects cannot set applicationId. applicationId is set to" + " '$applicationId' in default config.",
         applicationId,
       )
@@ -200,7 +200,7 @@ class LibraryVariantFactory(dslServices: DslServices) :
     if (defaultConfig.applicationIdSuffix != null) {
       val applicationIdSuffix = defaultConfig.applicationIdSuffix!!
       issueReporter.reportError(
-        IssueReporter.Type.GENERIC,
+        IssueReporter.Type.APPLICATION_ID_SUFFIX_NOT_ALLOWED_IN_LIBRARY,
         "Library projects cannot set applicationIdSuffix. applicationIdSuffix is " + "set to '$applicationIdSuffix' in default config.",
         applicationIdSuffix,
       )
@@ -209,7 +209,7 @@ class LibraryVariantFactory(dslServices: DslServices) :
       if (buildType.buildType.applicationIdSuffix != null) {
         val applicationIdSuffix = buildType.buildType.applicationIdSuffix!!
         issueReporter.reportError(
-          IssueReporter.Type.GENERIC,
+          IssueReporter.Type.APPLICATION_ID_SUFFIX_NOT_ALLOWED_IN_LIBRARY,
           "Library projects cannot set applicationIdSuffix. applicationIdSuffix " +
             "is set to '$applicationIdSuffix' in build type " +
             "'${buildType.buildType.name}'.",
@@ -221,7 +221,7 @@ class LibraryVariantFactory(dslServices: DslServices) :
       if (productFlavor.productFlavor.applicationId != null) {
         val applicationId = productFlavor.productFlavor.applicationId!!
         issueReporter.reportError(
-          IssueReporter.Type.GENERIC,
+          IssueReporter.Type.APPLICATION_ID_NOT_ALLOWED_IN_LIBRARY,
           "Library projects cannot set applicationId. applicationId is set to " +
             "'$applicationId' in flavor '${productFlavor.productFlavor.name}'.",
           applicationId,
@@ -230,7 +230,7 @@ class LibraryVariantFactory(dslServices: DslServices) :
       if (productFlavor.productFlavor.applicationIdSuffix != null) {
         val applicationIdSuffix = productFlavor.productFlavor.applicationIdSuffix!!
         issueReporter.reportError(
-          IssueReporter.Type.GENERIC,
+          IssueReporter.Type.APPLICATION_ID_SUFFIX_NOT_ALLOWED_IN_LIBRARY,
           "Library projects cannot set applicationIdSuffix. applicationIdSuffix " +
             "is set to '$applicationIdSuffix' in flavor" +
             " '${productFlavor.productFlavor.name}'.",

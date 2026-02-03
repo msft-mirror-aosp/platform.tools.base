@@ -36,7 +36,7 @@ class DynamicAppMultidexTest {
 
     Truth.assertThat(syncIssues.size).isEqualTo(1)
     Truth.assertThat(syncIssues.first().severity).isEqualTo(IssueReporter.Severity.WARNING.severity)
-    Truth.assertThat(syncIssues.first().type).isEqualTo(SyncIssue.TYPE_GENERIC)
+    Truth.assertThat(syncIssues.first().type).isEqualTo(SyncIssue.TYPE_DYNAMIC_FEATURE_MULTIDEX_SET_IN_DSL)
     Truth.assertThat(syncIssues.first().data).isNull()
     Truth.assertThat(syncIssues.first().message)
       .isEqualTo(

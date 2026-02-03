@@ -42,6 +42,9 @@ internal fun populateAssetPacksConfigurations(
     }
   }
   if (!notFound.isEmpty()) {
-    issueReporter.reportError(IssueReporter.Type.GENERIC, "Unable to find matching projects for Asset Packs: $notFound")
+    issueReporter.reportError(
+      IssueReporter.Type.ASSET_PACK_PROJECT_NOT_FOUND,
+      "Unable to find matching projects for Asset Packs: $notFound",
+    )
   }
 }
