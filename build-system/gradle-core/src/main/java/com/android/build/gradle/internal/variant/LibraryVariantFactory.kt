@@ -27,6 +27,7 @@ import com.android.build.api.variant.impl.LibraryVariantBuilderImpl
 import com.android.build.api.variant.impl.LibraryVariantImpl
 import com.android.build.gradle.internal.api.BaseVariantImpl
 import com.android.build.gradle.internal.component.LibraryCreationConfig
+import com.android.build.gradle.internal.core.LibraryVariantSources
 import com.android.build.gradle.internal.core.VariantSources
 import com.android.build.gradle.internal.core.dsl.LibraryVariantDslInfo
 import com.android.build.gradle.internal.dependency.VariantDependencies
@@ -93,7 +94,7 @@ class LibraryVariantFactory(dslServices: DslServices) :
         buildFeatures,
         variantDslInfo,
         variantDependencies,
-        variantSources,
+        variantSources as LibraryVariantSources,
         paths,
         artifacts,
         variantData,

@@ -21,8 +21,10 @@ import com.android.build.api.dsl.ApkSigningConfig as DslSigningConfig
 import com.android.build.api.dsl.CompileOptions
 import com.android.build.api.dsl.Installation
 import com.android.build.api.dsl.Lint
+import com.android.build.api.variant.InternalLibrarySources
 import com.android.build.api.variant.InternalSources
 import com.android.build.api.variant.impl.SourceDirectoriesImpl
+import com.android.build.gradle.internal.api.DefaultAndroidLibrarySourceSet
 import com.android.build.gradle.internal.api.DefaultAndroidSourceDirectorySet
 import com.android.build.gradle.internal.api.DefaultAndroidSourceSet
 import com.android.build.gradle.internal.component.ComponentCreationConfig
@@ -202,6 +204,12 @@ internal fun DefaultAndroidSourceSet.convert(
         .toSet(),
     keepRulesDirectories =
       ((keepRules as DefaultAndroidSourceDirectorySet).srcDirs + variantSourcesForList(mixin.mapNotNull { it.sources.keepRules })).toSet(),
+    aarKeepRulesDirectories =
+      (this as? DefaultAndroidLibrarySourceSet)?.let {
+        ((it.aarKeepRules as DefaultAndroidSourceDirectorySet).srcDirs +
+            variantSourcesForList(mixin.mapNotNull { component -> (component.sources as? InternalLibrarySources)?.aarKeepRules }))
+          .toSet()
+      },
     resDirectories = if (features.androidResources) resDirectories else null,
     assetsDirectories = (assetsDirectories + variantSourcesForList(mixin.mapNotNull { it.sources.assets })).toSet(),
     jniLibsDirectories = (jniLibsDirectories + variantSourcesForList(mixin.mapNotNull { it.sources.jniLibs })).toSet(),
@@ -225,6 +233,7 @@ internal fun DefaultAndroidSourceSet.convert(sources: InternalSources) =
     renderscriptDirectories = variantSourcesForModel(sources.renderscript),
     baselineProfileDirectories = variantSourcesForModel(sources.baselineProfiles),
     keepRulesDirectories = variantSourcesForModel(sources.keepRules),
+    aarKeepRulesDirectories = if (sources is InternalLibrarySources) variantSourcesForModel(sources.aarKeepRules) else null,
     resDirectories = variantSourcesForModel(sources.res),
     assetsDirectories = variantSourcesForModel(sources.assets),
     jniLibsDirectories = variantSourcesForModel(sources.jniLibs),

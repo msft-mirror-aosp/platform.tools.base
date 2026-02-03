@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,20 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.build.api.variant.impl
+package com.android.build.gradle.api
 
-enum class SourceType(val folder: String) {
-  AIDL("aidl"),
-  ASSETS("assets"),
-  KOTLIN("kotlin"),
-  JAVA("java"),
-  JNI_LIBS("jniLibs"),
-  ML_MODELS("mlModels"),
-  RENDERSCRIPT("renderscript"),
-  RES("res"),
-  SHADERS("shaders"),
-  JAVA_RESOURCES("resources"),
-  BASELINE_PROFILES("baselineProfiles"),
-  KEEP_RULES("keepRules"),
-  AAR_KEEP_RULES("aarKeepRules"),
-}
+@Deprecated("Deprecated and moved to a new package", ReplaceWith("com.android.build.api.dsl.AndroidLibrarySourceSet"))
+interface AndroidLibrarySourceSet : AndroidSourceSet, com.android.build.api.dsl.AndroidLibrarySourceSet

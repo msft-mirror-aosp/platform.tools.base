@@ -23,9 +23,9 @@ import com.google.wireless.android.sdk.stats.GradleBuildVariant
 import javax.inject.Inject
 import org.gradle.api.model.ObjectFactory
 
-open class AnalyticsEnabledSources
+open class AnalyticsEnabledSources<SourcesT : Sources>
 @Inject
-constructor(open val delegate: Sources, val stats: GradleBuildVariant.Builder, val objectFactory: ObjectFactory) : Sources by delegate {
+constructor(val delegate: SourcesT, val stats: GradleBuildVariant.Builder, val objectFactory: ObjectFactory) : Sources by delegate {
 
   override val java: SourceDirectories.Flat?
     get() =

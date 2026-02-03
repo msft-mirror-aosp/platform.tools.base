@@ -681,3 +681,6 @@ https://issuetracker.google.com/476099690
 https://issuetracker.google.com/477630142
   * com.android.build.api.dsl.KeepRules.getIncludeDefault: boolean ()
   * com.android.build.api.dsl.KeepRules.setIncludeDefault: void (boolean)
+https://issuetracker.google.com/481403863
+  * com.android.build.api.dsl.AndroidLibrarySourceSet.aarKeepRules: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.AndroidSourceDirectorySet, kotlin.Unit>)
+  * com.android.build.api.dsl.AndroidLibrarySourceSet.getAarKeepRules: com.android.build.api.dsl.AndroidSourceDirectorySet ()

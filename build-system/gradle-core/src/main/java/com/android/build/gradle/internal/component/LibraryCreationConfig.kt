@@ -16,4 +16,8 @@
 
 package com.android.build.gradle.internal.component
 
-interface LibraryCreationConfig : VariantCreationConfig, AarCreationConfig, PublishableCreationConfig, TargetSdkAwareConfig
+import com.android.build.api.variant.InternalLibrarySources
+
+interface LibraryCreationConfig : VariantCreationConfig, AarCreationConfig, PublishableCreationConfig, TargetSdkAwareConfig {
+  override val sources: InternalLibrarySources
+}

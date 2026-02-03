@@ -57,7 +57,7 @@ class GroovyExtensionsTest {
 
   @Test
   fun testLibraryExtension() {
-    validate("Library", InternalLibraryExtension::class.java, LibraryExtensionImpl::class.java)
+    validateLibrary("Library", InternalLibraryExtension::class.java, LibraryExtensionImpl::class.java)
   }
 
   @Test
@@ -127,7 +127,28 @@ class GroovyExtensionsTest {
       else -> typeName
     }
 
+  // There are own normalization rules for library
+  private fun Type.normalizedLibraryTypeName(componentPrefix: String): String =
+    when (typeName) {
+      "org.gradle.api.NamedDomainObjectContainer<com.android.build.gradle.api.AndroidSourceSet>" ->
+        "org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.AndroidLibrarySourceSet>"
+      else -> normalizedTypeName(componentPrefix)
+    }
+
   private fun validate(componentPrefix: String, extensionClass: Class<*>, implClass: Class<*>) {
+    validate(componentPrefix, extensionClass, implClass, { normalizedTypeName(it) })
+  }
+
+  private fun validateLibrary(componentPrefix: String, extensionClass: Class<*>, implClass: Class<*>) {
+    validate(componentPrefix, extensionClass, implClass, { normalizedLibraryTypeName(it) })
+  }
+
+  private fun validate(
+    componentPrefix: String,
+    extensionClass: Class<*>,
+    implClass: Class<*>,
+    normalizer: Type.(String) -> String = { normalizedTypeName(it) },
+  ) {
 
     val actualOverrides =
       extensionClass.methods.filter { it.parameters.singleOrNull()?.type == Action::class.java }.associate { it.name to it.gradleBlockType }
@@ -153,7 +174,7 @@ class GroovyExtensionsTest {
       .containsExactlyElementsIn(requiredOverrides.keys)
 
     assertWithMessage("All action methods should have the same block type as the block method")
-      .that(actualOverrides.mapValues { it.value.normalizedTypeName(componentPrefix) })
+      .that(actualOverrides.mapValues { it.value.normalizer(componentPrefix) })
       .named("Map from method name to action receiver type")
       .containsExactlyEntriesIn(requiredOverrides.mapValues { it.value.typeName })
 

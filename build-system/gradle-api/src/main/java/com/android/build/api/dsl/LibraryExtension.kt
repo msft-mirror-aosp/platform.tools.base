@@ -274,7 +274,7 @@ interface LibraryExtension : CommonExtension, TestedExtension {
    * Note that the Android plugin uses its own implementation of source sets. For more information about the properties you can configure in
    * this block, see [AndroidSourceSet].
    */
-  override val sourceSets: NamedDomainObjectContainer<out AndroidSourceSet>
+  override val sourceSets: NamedDomainObjectContainer<out AndroidLibrarySourceSet>
 
   /**
    * Encapsulates source set configurations for all variants.
@@ -282,7 +282,7 @@ interface LibraryExtension : CommonExtension, TestedExtension {
    * Note that the Android plugin uses its own implementation of source sets. For more information about the properties you can configure in
    * this block, see [AndroidSourceSet].
    */
-  fun sourceSets(action: NamedDomainObjectContainer<out AndroidSourceSet>.() -> Unit)
+  fun sourceSets(action: NamedDomainObjectContainer<AndroidLibrarySourceSet>.() -> Unit)
 
   /**
    * Specifies options for the lint tool.

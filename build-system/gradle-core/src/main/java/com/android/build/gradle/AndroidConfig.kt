@@ -429,7 +429,7 @@ interface AndroidConfig {
    *
    * @see com.android.build.gradle.internal.dsl.AndroidSourceSetFactory
    */
-  val sourceSets: NamedDomainObjectContainer<AndroidSourceSet>
+  val sourceSets: NamedDomainObjectContainer<out AndroidSourceSet>
 
   /** build outputs for all variants */
   val buildOutputs: Collection<BaseVariantOutput>

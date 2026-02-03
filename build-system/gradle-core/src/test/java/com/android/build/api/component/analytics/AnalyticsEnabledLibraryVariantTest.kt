@@ -21,6 +21,7 @@ import com.android.build.api.variant.AndroidTest
 import com.android.build.api.variant.DeviceTest
 import com.android.build.api.variant.DeviceTestBuilder
 import com.android.build.api.variant.JniLibsTestedComponentPackaging
+import com.android.build.api.variant.LibrarySources
 import com.android.build.api.variant.LibraryVariant
 import com.android.build.api.variant.ResourcesPackaging
 import com.android.build.api.variant.TestFixtures
@@ -164,5 +165,20 @@ class AnalyticsEnabledLibraryVariantTest {
       .isEqualTo(VariantPropertiesMethodType.ANDROID_TEST_VALUE)
     verify(delegate, times(1)).deviceTests
     verify(delegate, times(1)).androidTest
+  }
+
+  @Test
+  fun sources() {
+    val sources = mock<LibrarySources>()
+    whenever(delegate.sources).thenReturn(sources)
+
+    val sourcesProxy = proxy.sources
+    Truth.assertThat(sourcesProxy).isInstanceOf(AnalyticsEnabledLibrarySources::class.java)
+    Truth.assertThat((sourcesProxy as AnalyticsEnabledLibrarySources).delegate).isEqualTo(sources)
+
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessList.first().type)
+      .isEqualTo(VariantPropertiesMethodType.COMPONENT_SOURCES_ACCESS_VALUE)
+    verify(delegate, times(1)).sources
   }
 }

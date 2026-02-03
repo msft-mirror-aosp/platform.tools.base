@@ -41,7 +41,7 @@ constructor(
   private val project: Project,
   private val publishPackage: Boolean,
 ) : AndroidSourceSet, SourceProvider {
-  private val sourceSetName = AndroidSourceSetName(name)
+  protected val sourceSetName = AndroidSourceSetName(name)
 
   final override val java: AndroidSourceDirectorySet
   final override val kotlin: com.android.build.api.dsl.AndroidSourceDirectorySet
@@ -57,7 +57,7 @@ constructor(
   final override val jniLibs: AndroidSourceDirectorySet
   final override val shaders: AndroidSourceDirectorySet
   final override val mlModels: AndroidSourceDirectorySet
-  private val displayName: String = convertNameToDisplayName()
+  protected val displayName: String = convertNameToDisplayName()
 
   init {
     java = DefaultAndroidSourceDirectorySet(displayName, "Java source", project, SourceArtifactType.JAVA_SOURCES)

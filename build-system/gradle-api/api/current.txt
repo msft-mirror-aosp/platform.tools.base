@@ -366,6 +366,12 @@ package com.android.build.api.dsl {
     property @org.gradle.api.Incubating public abstract org.gradle.api.provider.Property<java.lang.String> packName;
   }
 
+  public interface AndroidLibrarySourceSet extends com.android.build.api.dsl.AndroidSourceSet {
+    method @org.gradle.api.Incubating public void aarKeepRules(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.AndroidSourceDirectorySet,kotlin.Unit> action);
+    method @InaccessibleFromKotlin @org.gradle.api.Incubating public com.android.build.api.dsl.AndroidSourceDirectorySet getAarKeepRules();
+    property @org.gradle.api.Incubating public abstract com.android.build.api.dsl.AndroidSourceDirectorySet aarKeepRules;
+  }
+
   public interface AndroidResources {
     method @Deprecated public void additionalParameters(String params);
     method @Deprecated public void additionalParameters(java.lang.String... params);
@@ -1616,6 +1622,7 @@ package com.android.build.api.dsl {
     method @InaccessibleFromKotlin @org.gradle.api.Incubating public org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.Prefab> getPrefab();
     method @InaccessibleFromKotlin public org.gradle.api.NamedDomainObjectContainer<? extends com.android.build.api.dsl.LibraryProductFlavor> getProductFlavors();
     method @InaccessibleFromKotlin public com.android.build.api.dsl.LibraryPublishing getPublishing();
+    method @InaccessibleFromKotlin public org.gradle.api.NamedDomainObjectContainer<? extends com.android.build.api.dsl.AndroidLibrarySourceSet> getSourceSets();
     method public void installation(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.LibraryInstallation,kotlin.Unit> action);
     method @Deprecated @org.gradle.api.Incubating public void jacoco(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.JacocoOptions,kotlin.Unit> action);
     method @org.gradle.declarative.dsl.model.annotations.Configuring public void lint(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.Lint,kotlin.Unit> action);
@@ -1626,7 +1633,7 @@ package com.android.build.api.dsl {
     method public void publishing(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.LibraryPublishing,kotlin.Unit> action);
     method public void release(org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.LibraryBuildType>, kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.LibraryBuildType,kotlin.Unit> action);
     method public void signingConfigs(kotlin.jvm.functions.Function1<? super org.gradle.api.NamedDomainObjectContainer<? extends com.android.build.api.dsl.ApkSigningConfig>,kotlin.Unit> action);
-    method public void sourceSets(kotlin.jvm.functions.Function1<? super org.gradle.api.NamedDomainObjectContainer<? extends com.android.build.api.dsl.AndroidSourceSet>,kotlin.Unit> action);
+    method public void sourceSets(kotlin.jvm.functions.Function1<? super org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.AndroidLibrarySourceSet>,kotlin.Unit> action);
     method public void splits(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.Splits,kotlin.Unit> action);
     method public void testCoverage(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.TestCoverage,kotlin.Unit> action);
     method public void testOptions(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.TestOptions,kotlin.Unit> action);
@@ -1652,7 +1659,7 @@ package com.android.build.api.dsl {
     property public abstract org.gradle.api.NamedDomainObjectContainer<? extends com.android.build.api.dsl.LibraryProductFlavor> productFlavors;
     property public abstract com.android.build.api.dsl.LibraryPublishing publishing;
     property public abstract org.gradle.api.NamedDomainObjectContainer<? extends com.android.build.api.dsl.ApkSigningConfig> signingConfigs;
-    property public abstract org.gradle.api.NamedDomainObjectContainer<? extends com.android.build.api.dsl.AndroidSourceSet> sourceSets;
+    property public abstract org.gradle.api.NamedDomainObjectContainer<? extends com.android.build.api.dsl.AndroidLibrarySourceSet> sourceSets;
     property public abstract com.android.build.api.dsl.Splits splits;
     property public abstract com.android.build.api.dsl.TestCoverage testCoverage;
     property public abstract com.android.build.api.dsl.TestOptions testOptions;
@@ -3326,6 +3333,11 @@ package com.android.build.api.variant {
   }
 
   public interface LibraryAndroidComponentsExtension extends com.android.build.api.variant.AndroidComponentsExtension<com.android.build.api.dsl.LibraryExtension,com.android.build.api.variant.LibraryVariantBuilder,com.android.build.api.variant.LibraryVariant> {
+  }
+
+  public interface LibrarySources extends com.android.build.api.variant.Sources {
+    method @InaccessibleFromKotlin public com.android.build.api.variant.SourceDirectories.Flat? getAarKeepRules();
+    property public abstract com.android.build.api.variant.SourceDirectories.Flat? aarKeepRules;
   }
 
   public interface LibraryVariant extends com.android.build.api.variant.Variant com.android.build.api.variant.CanMinifyCode com.android.build.api.variant.CanProduceConsumerProguardFiles com.android.build.api.variant.GeneratesAar com.android.build.api.variant.HasAndroidTest com.android.build.api.variant.HasDeviceTests com.android.build.api.variant.HasHostTests com.android.build.api.variant.HasTestFixtures com.android.build.api.variant.HasUnitTest {

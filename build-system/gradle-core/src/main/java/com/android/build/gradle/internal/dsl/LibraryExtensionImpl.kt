@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.internal.dsl
 
+import com.android.build.api.dsl.AndroidLibrarySourceSet
 import com.android.build.api.dsl.ApkSigningConfig
 import com.android.build.api.dsl.ComposeOptions
 import com.android.build.api.dsl.LibraryAndroidResources
@@ -186,15 +187,15 @@ constructor(
     action.execute(testOptions)
   }
 
-  override val sourceSets: NamedDomainObjectContainer<AndroidSourceSet>
-    get() = sourceSetManager.sourceSetsContainer
+  override val sourceSets: NamedDomainObjectContainer<com.android.build.gradle.api.AndroidLibrarySourceSet>
+    get() = sourceSetManager.sourceSetsContainer as NamedDomainObjectContainer<com.android.build.gradle.api.AndroidLibrarySourceSet>
 
-  override fun sourceSets(action: NamedDomainObjectContainer<out com.android.build.api.dsl.AndroidSourceSet>.() -> Unit) {
-    sourceSetManager.executeAction(action)
+  override fun sourceSets(action: NamedDomainObjectContainer<AndroidLibrarySourceSet>.() -> Unit) {
+    action.invoke(sourceSets as NamedDomainObjectContainer<AndroidLibrarySourceSet>)
   }
 
   override fun sourceSets(action: Action<NamedDomainObjectContainer<AndroidSourceSet>>) {
-    action.execute(sourceSets)
+    action.execute(sourceSets as NamedDomainObjectContainer<AndroidSourceSet>)
   }
 
   final override val lintOptions: LintOptions by

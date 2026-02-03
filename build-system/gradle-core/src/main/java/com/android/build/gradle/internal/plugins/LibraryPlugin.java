@@ -34,12 +34,14 @@ import com.android.build.gradle.internal.component.LibraryCreationConfig;
 import com.android.build.gradle.internal.component.TestComponentCreationConfig;
 import com.android.build.gradle.internal.component.TestFixturesCreationConfig;
 import com.android.build.gradle.internal.core.dsl.LibraryVariantDslInfo;
+import com.android.build.gradle.internal.dependency.LibrarySourceSetManager;
 import com.android.build.gradle.internal.dsl.BuildType;
 import com.android.build.gradle.internal.dsl.DefaultConfig;
 import com.android.build.gradle.internal.dsl.LibraryExtensionImpl;
 import com.android.build.gradle.internal.dsl.ProductFlavor;
 import com.android.build.gradle.internal.dsl.SdkComponentsImpl;
 import com.android.build.gradle.internal.dsl.SigningConfig;
+import com.android.build.gradle.internal.scope.DelayedActionsExecutor;
 import com.android.build.gradle.internal.services.DslServices;
 import com.android.build.gradle.internal.services.VersionedSdkLoaderService;
 import com.android.build.gradle.internal.tasks.factory.BootClasspathConfig;
@@ -48,8 +50,10 @@ import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfig;
 import com.android.build.gradle.internal.tasks.factory.TaskManagerConfig;
 import com.android.build.gradle.internal.testing.ManagedDeviceRegistry;
 import com.android.build.gradle.internal.variant.ComponentInfo;
+import com.android.build.gradle.internal.variant.LegacyVariantInputManager;
 import com.android.build.gradle.internal.variant.LibraryVariantFactory;
 import com.android.build.gradle.options.BooleanOption;
+import com.android.builder.core.ComponentTypeImpl;
 import com.android.builder.model.v2.ide.ProjectType;
 
 import com.google.wireless.android.sdk.stats.GradleBuildProject;
@@ -96,6 +100,28 @@ public class LibraryPlugin
             BuildEventsListenerRegistry listenerRegistry,
             BuildFeatures buildFeatures) {
         super(registry, componentFactory, listenerRegistry, buildFeatures);
+    }
+
+    private LegacyVariantInputManager variantInputModel;
+
+    @NonNull
+    @Override
+    public LegacyVariantInputManager getVariantInputModel() {
+        if (variantInputModel == null) {
+            variantInputModel =
+                    withProject(
+                            "LegacyVariantInputManager",
+                            project ->
+                                    new LegacyVariantInputManager(
+                                            getDslServices(),
+                                            ComponentTypeImpl.LIBRARY,
+                                            new LibrarySourceSetManager(
+                                                    project,
+                                                    isPackagePublished(),
+                                                    getDslServices(),
+                                                    new DelayedActionsExecutor())));
+        }
+        return variantInputModel;
     }
 
     @NonNull

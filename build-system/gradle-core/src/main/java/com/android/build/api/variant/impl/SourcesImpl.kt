@@ -38,30 +38,32 @@ import org.gradle.api.provider.Provider
  * @param variantSourceProvider optional variant specific [DefaultAndroidSourceSet] if there is one, null otherwise (if the application does
  *   not have product flavor, there won't be one).
  */
-class SourcesImpl(
+open class SourcesImpl(
   private val defaultSourceProvider: DefaultSourcesProvider,
   private val variantServices: VariantServices,
   override val multiFlavorSourceProvider: DefaultAndroidSourceSet?,
-  override val variantSourceProvider: DefaultAndroidSourceSet?,
+  _variantSourceProvider: DefaultAndroidSourceSet?,
 ) : InternalSources {
 
+  override val variantSourceProvider: DefaultAndroidSourceSet? = _variantSourceProvider
+
   override val java =
-    FlatSourceDirectoriesForJavaImpl(SourceType.JAVA.folder, variantServices, variantSourceProvider?.java?.filter).also {
+    FlatSourceDirectoriesForJavaImpl(SourceType.JAVA.folder, variantServices, _variantSourceProvider?.java?.filter).also {
       sourceDirectoriesImpl ->
       defaultSourceProvider.getJava(sourceDirectoriesImpl).run { sourceDirectoriesImpl.addStaticOrGeneratedSources(this) }
-      updateSourceDirectories(sourceDirectoriesImpl, variantSourceProvider?.java)
+      updateSourceDirectories(sourceDirectoriesImpl, _variantSourceProvider?.java)
     }
 
   override val kotlin =
     FlatSourceDirectoriesImpl(SourceType.KOTLIN.folder, variantServices, null).also { sourceDirectoriesImpl ->
       defaultSourceProvider.getKotlin(sourceDirectoriesImpl).run { sourceDirectoriesImpl.addStaticOrGeneratedSources(this) }
-      updateSourceDirectories(sourceDirectoriesImpl, variantSourceProvider?.kotlin as DefaultAndroidSourceDirectorySet?)
+      updateSourceDirectories(sourceDirectoriesImpl, _variantSourceProvider?.kotlin as DefaultAndroidSourceDirectorySet?)
     }
 
   override val baselineProfiles =
     FlatSourceDirectoriesImpl(SourceType.BASELINE_PROFILES.folder, variantServices, null).also { sourceDirectoriesImpl ->
       defaultSourceProvider.getBaselineProfiles(sourceDirectoriesImpl).run { sourceDirectoriesImpl.addStaticOrGeneratedSources(this) }
-      updateSourceDirectories(sourceDirectoriesImpl, variantSourceProvider?.baselineProfiles as DefaultAndroidSourceDirectorySet?)
+      updateSourceDirectories(sourceDirectoriesImpl, _variantSourceProvider?.baselineProfiles as DefaultAndroidSourceDirectorySet?)
     }
 
   override val manifests =
@@ -73,75 +75,76 @@ class SourcesImpl(
   override val keepRules =
     FlatSourceDirectoriesImpl(SourceType.KEEP_RULES.folder, variantServices, null).also { sourceDirectoriesImpl ->
       defaultSourceProvider.getKeepRules(sourceDirectoriesImpl).run { sourceDirectoriesImpl.addStaticOrGeneratedSources(this) }
-      updateSourceDirectories(sourceDirectoriesImpl, variantSourceProvider?.keepRules as DefaultAndroidSourceDirectorySet?)
+      updateSourceDirectories(sourceDirectoriesImpl, _variantSourceProvider?.keepRules as DefaultAndroidSourceDirectorySet?)
     }
 
   override val res =
-    ResSourceDirectoriesImpl(SourceType.RES.folder, variantServices, variantSourceProvider?.res?.filter).let { sourceDirectoriesImpl ->
+    ResSourceDirectoriesImpl(SourceType.RES.folder, variantServices, _variantSourceProvider?.res?.filter).let { sourceDirectoriesImpl ->
       val defaultResDirectories = defaultSourceProvider.getRes(sourceDirectoriesImpl) ?: return@let null
       defaultResDirectories.run { forEach { sourceDirectoriesImpl.addStaticSources(it) } }
-      updateSourceDirectories(sourceDirectoriesImpl, variantSourceProvider?.res)
+      updateSourceDirectories(sourceDirectoriesImpl, _variantSourceProvider?.res)
       return@let sourceDirectoriesImpl
     }
 
   override val resources =
-    FlatSourceDirectoriesImpl(SourceType.JAVA_RESOURCES.folder, variantServices, variantSourceProvider?.resources?.filter).also {
+    FlatSourceDirectoriesImpl(SourceType.JAVA_RESOURCES.folder, variantServices, _variantSourceProvider?.resources?.filter).also {
       sourceDirectoriesImpl ->
       defaultSourceProvider.getResources(sourceDirectoriesImpl).run { sourceDirectoriesImpl.addStaticOrGeneratedSources(this) }
-      updateSourceDirectories(sourceDirectoriesImpl, variantSourceProvider?.resources)
+      updateSourceDirectories(sourceDirectoriesImpl, _variantSourceProvider?.resources)
     }
 
   override val assets =
-    LayeredSourceDirectoriesImpl(SourceType.ASSETS.folder, variantServices, variantSourceProvider?.assets?.filter).also {
+    LayeredSourceDirectoriesImpl(SourceType.ASSETS.folder, variantServices, _variantSourceProvider?.assets?.filter).also {
       sourceDirectoriesImpl ->
       defaultSourceProvider.getAssets(sourceDirectoriesImpl).run { forEach { sourceDirectoriesImpl.addStaticSources(it) } }
-      updateSourceDirectories(sourceDirectoriesImpl, variantSourceProvider?.assets)
+      updateSourceDirectories(sourceDirectoriesImpl, _variantSourceProvider?.assets)
     }
 
   override val jniLibs =
-    LayeredSourceDirectoriesImpl(SourceType.JNI_LIBS.folder, variantServices, variantSourceProvider?.jniLibs?.filter).also {
+    LayeredSourceDirectoriesImpl(SourceType.JNI_LIBS.folder, variantServices, _variantSourceProvider?.jniLibs?.filter).also {
       sourceDirectoriesImpl ->
       defaultSourceProvider.getJniLibs(sourceDirectoriesImpl).run { forEach { sourceDirectoriesImpl.addStaticSources(it) } }
-      updateSourceDirectories(sourceDirectoriesImpl, variantSourceProvider?.jniLibs)
+      updateSourceDirectories(sourceDirectoriesImpl, _variantSourceProvider?.jniLibs)
     }
 
   override val shaders =
-    LayeredSourceDirectoriesImpl(SourceType.SHADERS.folder, variantServices, variantSourceProvider?.shaders?.filter).let {
+    LayeredSourceDirectoriesImpl(SourceType.SHADERS.folder, variantServices, _variantSourceProvider?.shaders?.filter).let {
       sourceDirectoriesImpl ->
       val listOfDirectoryEntries = defaultSourceProvider.getShaders(sourceDirectoriesImpl) ?: return@let null
 
       listOfDirectoryEntries.run { forEach { sourceDirectoriesImpl.addStaticSources(it) } }
-      updateSourceDirectories(sourceDirectoriesImpl, variantSourceProvider?.shaders)
+      updateSourceDirectories(sourceDirectoriesImpl, _variantSourceProvider?.shaders)
       return@let sourceDirectoriesImpl
     }
 
   override val mlModels =
-    LayeredSourceDirectoriesImpl(SourceType.ML_MODELS.folder, variantServices, variantSourceProvider?.mlModels?.filter).let {
+    LayeredSourceDirectoriesImpl(SourceType.ML_MODELS.folder, variantServices, _variantSourceProvider?.mlModels?.filter).let {
       sourceDirectoriesImpl ->
       val defaultMlModelsDirectories = defaultSourceProvider.getMlModels(sourceDirectoriesImpl) ?: return@let null
       defaultMlModelsDirectories.run { forEach { sourceDirectoriesImpl.addStaticSources(it) } }
-      updateSourceDirectories(sourceDirectoriesImpl, variantSourceProvider?.mlModels)
+      updateSourceDirectories(sourceDirectoriesImpl, _variantSourceProvider?.mlModels)
       return@let sourceDirectoriesImpl
     }
 
   override val aidl by
     lazy(LazyThreadSafetyMode.NONE) {
-      FlatSourceDirectoriesImpl(SourceType.AIDL.folder, variantServices, variantSourceProvider?.aidl?.filter).let { sourceDirectoriesImpl ->
+      FlatSourceDirectoriesImpl(SourceType.AIDL.folder, variantServices, _variantSourceProvider?.aidl?.filter).let { sourceDirectoriesImpl
+        ->
         val defaultAidlDirectories = defaultSourceProvider.getAidl(sourceDirectoriesImpl) ?: return@let null
         sourceDirectoriesImpl.addStaticOrGeneratedSources(defaultAidlDirectories)
-        updateSourceDirectories(sourceDirectoriesImpl, variantSourceProvider?.aidl)
+        updateSourceDirectories(sourceDirectoriesImpl, _variantSourceProvider?.aidl)
         return@let sourceDirectoriesImpl
       }
     }
 
   override val renderscript by
     lazy(LazyThreadSafetyMode.NONE) {
-      FlatSourceDirectoriesImpl(SourceType.RENDERSCRIPT.folder, variantServices, variantSourceProvider?.renderscript?.filter).let {
+      FlatSourceDirectoriesImpl(SourceType.RENDERSCRIPT.folder, variantServices, _variantSourceProvider?.renderscript?.filter).let {
         sourceDirectoriesImpl ->
         val defaultRenderscriptDirectories = defaultSourceProvider.getRenderscript(sourceDirectoriesImpl) ?: return@let null
 
         sourceDirectoriesImpl.addStaticOrGeneratedSources(defaultRenderscriptDirectories)
-        updateSourceDirectories(sourceDirectoriesImpl, variantSourceProvider?.renderscript)
+        updateSourceDirectories(sourceDirectoriesImpl, _variantSourceProvider?.renderscript)
         return@let sourceDirectoriesImpl
       }
     }
@@ -227,7 +230,7 @@ class SourcesImpl(
    * since the variant specific folders are owned by this abstraction (so users can add it if needed). TODO, make the VariantSources
    * unavailable to other components in AGP as they should all use this [SourcesImpl] from now on.
    */
-  private fun updateSourceDirectories(target: SourceDirectoriesImpl, sourceSet: AndroidSourceDirectorySet?) {
+  protected fun updateSourceDirectories(target: SourceDirectoriesImpl, sourceSet: AndroidSourceDirectorySet?) {
     if (sourceSet != null) {
       (sourceSet as DefaultAndroidSourceDirectorySet).addLateAdditionDelegate(target)
       for (srcDir in sourceSet.srcDirs) {

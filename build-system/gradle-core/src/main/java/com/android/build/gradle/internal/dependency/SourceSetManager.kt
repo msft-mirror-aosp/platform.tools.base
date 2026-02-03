@@ -29,20 +29,22 @@ import com.android.builder.core.ComponentType
 import com.android.builder.errors.IssueReporter
 import org.gradle.api.Action
 import org.gradle.api.NamedDomainObjectContainer
+import org.gradle.api.NamedDomainObjectFactory
 import org.gradle.api.Project
 import org.gradle.api.artifacts.Configuration
 import org.gradle.api.artifacts.ConfigurationContainer
 import org.gradle.api.logging.Logger
 import org.gradle.api.logging.Logging
 
-class SourceSetManager(
+open class SourceSetManager(
   project: Project,
   publishPackage: Boolean,
   private val dslServices: DslServices,
   private val buildArtifactActions: DelayedActionsExecutor,
+  sourceSetFactory: NamedDomainObjectFactory<AndroidSourceSet> = AndroidSourceSetFactory(project, publishPackage, dslServices),
 ) {
-  val sourceSetsContainer: NamedDomainObjectContainer<AndroidSourceSet> =
-    project.container(AndroidSourceSet::class.java, AndroidSourceSetFactory(project, publishPackage, dslServices))
+  open val sourceSetsContainer: NamedDomainObjectContainer<AndroidSourceSet> =
+    project.container(AndroidSourceSet::class.java, sourceSetFactory)
   private val configurations: ConfigurationContainer = project.configurations
   private val logger: Logger = Logging.getLogger(this.javaClass)
 

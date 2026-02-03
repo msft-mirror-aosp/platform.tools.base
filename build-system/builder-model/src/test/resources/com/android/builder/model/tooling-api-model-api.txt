@@ -4,7 +4,7 @@ ATTENTION REVIEWER: If this needs to be changed, please make sure changes
 below are backwards compatible.
 -------------------------------------------------------------------------
 Sha256 of below classes:
-97a71f7fdaa6ecf065bade581bd47bcd8f3bed1efe8f98e44079d11fbc2df95a
+92d383afc9e83378bff093a43eee588cd79b4f8c53e3a35e144ef605f32accb8
 -------------------------------------------------------------------------
 com.android.builder.model.AaptOptions
 com.android.builder.model.AaptOptions$Namespacing extends java.lang.Enum
@@ -691,6 +691,7 @@ com.android.builder.model.v2.ide.ProjectType.getEntries: kotlin.enums.EnumEntrie
 com.android.builder.model.v2.ide.ProjectType.valueOf: com.android.builder.model.v2.ide.ProjectType (java.lang.String)
 com.android.builder.model.v2.ide.ProjectType.values: com.android.builder.model.v2.ide.ProjectType[] ()
 com.android.builder.model.v2.ide.SourceProvider implements com.android.builder.model.v2.AndroidModel
+com.android.builder.model.v2.ide.SourceProvider.getAarKeepRulesDirectories: java.util.Collection<java.io.File> ()
 com.android.builder.model.v2.ide.SourceProvider.getAidlDirectories: java.util.Collection<java.io.File> ()
 com.android.builder.model.v2.ide.SourceProvider.getAssetsDirectories: java.util.Collection<java.io.File> ()
 com.android.builder.model.v2.ide.SourceProvider.getBaselineProfileDirectories: java.util.Collection<java.io.File> ()

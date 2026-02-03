@@ -16,6 +16,7 @@
 
 package com.android.build.api.component.impl
 
+import com.android.build.api.dsl.AndroidLibrarySourceSet
 import com.android.build.api.variant.impl.DirectoryEntries
 import com.android.build.api.variant.impl.DirectoryEntry
 import com.android.build.api.variant.impl.FileBasedDirectoryEntryImpl
@@ -25,6 +26,7 @@ import com.android.build.api.variant.impl.SourceDirectoriesImpl
 import com.android.build.api.variant.impl.TaskProviderBasedDirectoryEntryImpl
 import com.android.build.gradle.api.AndroidSourceDirectorySet
 import com.android.build.gradle.api.AndroidSourceSet
+import com.android.build.gradle.internal.api.DefaultAndroidLibrarySourceSet
 import com.android.build.gradle.internal.api.DefaultAndroidSourceDirectorySet
 import com.android.build.gradle.internal.api.DefaultAndroidSourceSet
 import com.android.build.gradle.internal.component.ComponentCreationConfig
@@ -38,7 +40,7 @@ import java.io.File
 import java.util.Collections
 
 /** Computes the default sources for all [com.android.build.api.variant.impl.SourceType]s. */
-class DefaultSourcesProviderImpl(val component: ComponentCreationConfig, val variantSources: VariantSources) : DefaultSourcesProvider {
+open class DefaultSourcesProviderImpl(val component: ComponentCreationConfig, val variantSources: VariantSources) : DefaultSourcesProvider {
 
   override fun getJava(lateAdditionsDelegate: FlatSourceDirectoriesImpl): List<DirectoryEntry> =
     component.defaultJavaSources(lateAdditionsDelegate)
@@ -199,5 +201,29 @@ class DefaultSourcesProviderImpl(val component: ComponentCreationConfig, val var
         androidSourceDirectorySet.srcDirs.map { directory -> FileBasedDirectoryEntryImpl(sourceProvider.name, directory) }.toMutableList(),
       )
     }
+  }
+}
+
+class LibrarySourcesProviderImpl(component: ComponentCreationConfig, variantSources: VariantSources) :
+  DefaultSourcesProviderImpl(component, variantSources), LibrarySourcesProvider {
+
+  override fun getAarKeepRules(lateAdditionsDelegate: FlatSourceDirectoriesImpl): List<DirectoryEntry> =
+    flattenLibrarySourceProviders(lateAdditionsDelegate, AndroidLibrarySourceSet::aarKeepRules)
+
+  private fun flattenLibrarySourceProviders(
+    lateAdditionsDelegate: SourceDirectoriesImpl,
+    sourceDirectory: (sourceSet: DefaultAndroidLibrarySourceSet) -> com.android.build.api.dsl.AndroidSourceDirectorySet,
+  ): List<DirectoryEntry> {
+    val sourceSets = mutableListOf<DirectoryEntry>()
+    // Variant sources are added independently later so that they can be added to the model
+    for (sourceProvider in variantSources.getSortedSourceProviders(false)) {
+      val sourceSet = sourceProvider as? DefaultAndroidLibrarySourceSet ?: continue
+      val androidSourceDirectorySet = sourceDirectory(sourceSet) as DefaultAndroidSourceDirectorySet
+      androidSourceDirectorySet.addLateAdditionDelegate(lateAdditionsDelegate)
+      for (srcDir in androidSourceDirectorySet.srcDirs) {
+        sourceSets.add(FileBasedDirectoryEntryImpl(name = sourceSet.name, directory = srcDir, filter = androidSourceDirectorySet.filter))
+      }
+    }
+    return sourceSets
   }
 }
