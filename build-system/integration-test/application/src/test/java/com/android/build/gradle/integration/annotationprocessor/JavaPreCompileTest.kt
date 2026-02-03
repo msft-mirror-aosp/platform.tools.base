@@ -16,14 +16,13 @@
 
 package com.android.build.gradle.integration.annotationprocessor
 
-import com.android.build.gradle.integration.common.fixture.app.EmptyActivityProjectBuilder
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
 import com.android.build.gradle.integration.common.runner.FilterableParameterized
-import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.build.gradle.internal.scope.InternalArtifactType.ANNOTATION_PROCESSOR_LIST
 import com.android.build.gradle.internal.scope.getOutputDir
 import com.android.build.gradle.tasks.ANNOTATION_PROCESSOR_LIST_FILE_NAME
 import com.google.common.truth.Truth.assertThat
-import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -33,33 +32,37 @@ import org.junit.runners.Parameterized
 class JavaPreCompileTest(private val useKapt: Boolean) {
 
   companion object {
-
     @Parameterized.Parameters(name = "useKapt_{0}") @JvmStatic fun parameters() = listOf(true, false)
   }
 
-  @get:Rule val project = EmptyActivityProjectBuilder().apply { useKotlin = useKapt }.disableBuiltInKotlin().build()
-
-  @Before
-  fun setUp() {
-    val annotationProcessorConfig = if (useKapt) "kapt" else "annotationProcessor"
-    TestFileUtils.appendToFile(
-      project.getSubproject("app").buildFile,
-      """
-            dependencies {
-                compileOnly "com.google.auto.service:auto-service:1.0-rc2"
-                $annotationProcessorConfig "com.google.auto.service:auto-service:1.0-rc2"
-            }
-            """
-        .trimIndent(),
-    )
-  }
+  @get:Rule
+  val rule =
+    GradleRule.from {
+      if (useKapt) {
+        androidKotlinApplication {
+          applyPlugin(PluginType.ANDROID_BUILT_IN_KAPT)
+          dependencies {
+            compileOnly("com.google.auto.service:auto-service:1.0-rc2")
+            add("kapt", "com.google.auto.service:auto-service:1.0-rc2")
+          }
+        }
+      } else {
+        androidJavaApplication {
+          dependencies {
+            compileOnly("com.google.auto.service:auto-service:1.0-rc2")
+            add("annotationProcessor", "com.google.auto.service:auto-service:1.0-rc2")
+          }
+        }
+      }
+    }
 
   @Test
   fun `check output`() {
-    project.executor().run(":app:javaPreCompileDebug")
+    rule.build.executor.run(":app:javaPreCompileDebug")
 
+    val app = rule.build.androidApplication(":app")
     val annotationProcessorList =
-      ANNOTATION_PROCESSOR_LIST.getOutputDir(project.getSubproject("app").buildDir)
+      ANNOTATION_PROCESSOR_LIST.getOutputDir(app.buildDir.toFile())
         .resolve("debug/javaPreCompileDebug/$ANNOTATION_PROCESSOR_LIST_FILE_NAME")
         .readText()
     assertThat(annotationProcessorList)

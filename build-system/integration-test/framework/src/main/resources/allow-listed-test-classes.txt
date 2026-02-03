@@ -5,7 +5,6 @@ com.android.build.gradle.integration.analytics.ProfileContentTest
 com.android.build.gradle.integration.analytics.ProjectIdAnonymizationTest
 com.android.build.gradle.integration.annotationprocessor.AutoServiceTest
 com.android.build.gradle.integration.annotationprocessor.IncrementalJavaCompileWithAPsTest
-com.android.build.gradle.integration.annotationprocessor.JavaPreCompileTest
 com.android.build.gradle.integration.annotationprocessor.KspJavaPreCompileTest
 com.android.build.gradle.integration.api.AllClassesAccessTest
 com.android.build.gradle.integration.api.ApiCompatibilityTest

@@ -19,6 +19,7 @@ package com.android.build.gradle.integration.common.fixture.project.builder
 import com.android.Version
 import com.android.build.api.dsl.Lint
 import com.android.build.gradle.integration.common.fixture.project.builder.kotlin.KotlinExtension
+import com.android.build.gradle.internal.utils.ANDROID_BUILT_IN_KAPT_PLUGIN_ID
 import com.android.build.gradle.internal.utils.ANDROID_BUILT_IN_KOTLIN_PLUGIN_ID
 import com.android.build.gradle.internal.utils.KOTLIN_ANDROID_PLUGIN_ID
 import com.android.testutils.TestUtils
@@ -103,6 +104,8 @@ sealed class PluginType(
 
   @Deprecated("Unnecessary with AGP 9.0 default behavior (built-in kotlin enabled)")
   object ANDROID_BUILT_IN_KOTLIN : AgpPlugin(ANDROID_BUILT_IN_KOTLIN_PLUGIN_ID)
+
+  object ANDROID_BUILT_IN_KAPT : AgpPlugin(ANDROID_BUILT_IN_KAPT_PLUGIN_ID)
 
   object LINT :
     PluginTypeWithExtension<Lint>(
