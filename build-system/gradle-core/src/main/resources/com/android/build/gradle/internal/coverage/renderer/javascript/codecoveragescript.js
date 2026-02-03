@@ -37,12 +37,15 @@ const App = {
                 const moduleName = link.dataset.moduleName;
                 const packageName = link.dataset.packageName;
                 const className = link.dataset.className;
-                const testSuiteName = link.dataset.testSuiteName;
 
-                const classObj = this.findClassObject(moduleName, packageName, className, testSuiteName);
+                const classObj = this.findClassObject(moduleName, packageName, className);
 
                 if (classObj) {
-                    this.showSourceView(classObj, { moduleName, testSuiteName });
+                    const context = {
+                        moduleName: moduleName,
+                        testSuiteName: CoverageReportApp.state.filters.testSuite
+                    };
+                    this.showSourceView(classObj, context);
                 } else {
                     console.error("Class data not found for source view.");
                 }
@@ -50,25 +53,19 @@ const App = {
         });
     },
 
-    findClassObject(moduleName, packageName, className, testSuiteName) {
+    findClassObject(moduleName, packageName, className) {
         if (typeof fullReport === 'undefined') return null;
 
         const module = fullReport.modules.find(m => m.name === moduleName);
         if (!module) return null;
 
-        let packages = module.packages || [];
-        if (testSuiteName) {
-            const suite = (module.testSuites || []).find(ts => ts.name === testSuiteName);
-            if (suite) packages = suite.packages || [];
-        }
-
-        const pkg = packages.find(p => p.name === packageName);
+        const pkg = (module.packages || []).find(p => p.name === packageName);
         if (!pkg) return null;
 
         return (pkg.classes || []).find(c => c.name === className);
     },
 
-    showSourceView(classData, context = {}) {
+    showSourceView(classData, context) {
         document.getElementById('report-view').style.display = 'none';
         document.getElementById('source-view').style.display = 'block';
 
@@ -86,7 +83,6 @@ const CoverageReportApp = {
         viewMode: 'flat', // 'flat' or 'tree'
         currentView: 'modules', // 'modules', 'packages', 'classes'
         selectedModule: null,
-        selectedTestSuite: null,
         selectedPackage: null,
         filters: { module: 'all', testSuite: 'Aggregated', variants: [], search: '' },
         sort: { by: 'name', order: 'asc' },
@@ -151,7 +147,7 @@ const CoverageReportApp = {
 
     populateFilters() {
         // Test Suites
-        const allTestSuites = this.fullReport.modules.flatMap(m => (m.testSuites || []).map(ts => ts.name));
+        const allTestSuites = this.fullReport.modules.flatMap(m => (m.testSuiteCoverages || []).map(ts => ts.name).filter(name => name !== 'Aggregated'));
         const uniqueTestSuites = [...new Set(allTestSuites)];
         const testSuiteOptions = [
             { name: 'Aggregated', value: 'Aggregated' },
@@ -418,38 +414,13 @@ const CoverageReportApp = {
     },
 
     setupSearchData() {
-        const { testSuite } = this.state.filters;
-        const allItems = this.fullReport.modules.flatMap(m => {
+        this.state.searchableList = this.fullReport.modules.flatMap(m => {
             const moduleItem = {...m, type: 'module'};
-            let packagesAndClasses;
-
-            if (testSuite === 'Aggregated') {
-                packagesAndClasses = (m.packages || []).flatMap(p =>
-                    [{...p, type:'package', moduleName: m.name}, ...p.classes.map(c => ({...c, type:'class', moduleName: m.name, packageName: p.name}))]
-                );
-                return [moduleItem, ...packagesAndClasses];
-            } else {
-                const testSuiteItems = (m.testSuites || [])
-                    .filter(ts => ts.name === testSuite)
-                    .flatMap(ts => {
-                        const packages = (ts.packages || []).flatMap(p =>
-                            [{...p, type:'package', moduleName: m.name, testSuiteName: ts.name}, ...p.classes.map(c => ({...c, type:'class', moduleName: m.name, testSuiteName: ts.name, packageName: p.name}))]
-                        );
-                        return packages; // No need to add test suite as a searchable item anymore
-                    });
-                return [moduleItem, ...testSuiteItems];
-            }
+            const packagesAndClasses = (m.packages || []).flatMap(p =>
+                [{...p, type:'package', moduleName: m.name}, ...p.classes.map(c => ({...c, type:'class', moduleName: m.name, packageName: p.name}))]
+            );
+            return [moduleItem, ...packagesAndClasses];
         });
-
-        if (this.state.viewMode === 'tree') {
-            this.state.searchableList = allItems;
-        } else {
-             switch(this.state.currentView) {
-                case 'packages': this.state.searchableList = allItems.filter(i => i.type === 'package'); break;
-                case 'classes': this.state.searchableList = allItems.filter(i => i.type === 'class'); break;
-                default: this.state.searchableList = allItems.filter(i => i.type === 'module'); break;
-            }
-        }
     },
 
     getSortedData(data) {
@@ -561,54 +532,50 @@ const CoverageReportApp = {
     },
 
     getFilteredData() {
-        const { viewMode, currentView, currentHierarchy, selectedModule, selectedTestSuite, selectedPackage, filters } = this.state;
-        let data;
+        const { viewMode, currentView, selectedModule, selectedPackage, filters } = this.state;
         let modulesSource = this.fullReport.modules;
 
         if (filters.module !== 'all') {
             modulesSource = modulesSource.filter(m => m.name === filters.module);
         }
 
+        const getEffectiveCoverage = (item) => {
+            if (!item.testSuiteCoverages) return [];
+
+            const suite = item.testSuiteCoverages.find(ts => ts.name === filters.testSuite);
+            // If a suite is not found for a given item (e.g., a test didn't cover this class),
+            // return an empty array.
+            return suite ? suite.variantCoverages : [];
+        };
+
+        const addEffectiveCoverage = (item, type, context = {}) => {
+            const newItem = { ...item, type, ...context, testSuiteName: this.state.filters.testSuite  };
+            newItem.variantCoverages = getEffectiveCoverage(item);
+            return newItem;
+        };
+
         const allModules = this.fullReport.modules.map(m => ({ ...m, type: 'module' }));
 
+        let data;
         if (viewMode === 'tree') {
-            if (filters.testSuite === 'Aggregated') {
-                data = modulesSource;
-            } else {
-                const suiteName = filters.testSuite;
-                data = modulesSource.map(m => {
-                    const relevantSuites = (m.testSuites || []).filter(ts => ts.name === suiteName);
-                    if (relevantSuites.length === 0) return null;
-                    const newPackages = relevantSuites.flatMap(ts => (ts.packages || []));
-                    return { ...m, packages: newPackages, testSuites: relevantSuites };
-                }).filter(Boolean);
-            }
+            data = modulesSource.map(m => {
+                const moduleWithCoverage = addEffectiveCoverage(m, 'module');
+                moduleWithCoverage.packages = (m.packages || []).map(p => {
+                    const pkgWithCoverage = addEffectiveCoverage(p, 'package');
+                    pkgWithCoverage.classes = (p.classes || []).map(c => addEffectiveCoverage(c, 'class'));
+                    return pkgWithCoverage;
+                });
+                return moduleWithCoverage;
+            });
         } else {
-            let allPackages, allClasses;
-            if (filters.testSuite === 'Aggregated') {
-                allPackages = modulesSource.flatMap(m =>
-                    (m.packages || []).map(p => ({ ...p, type: 'package', moduleName: m.name }))
-                );
-                allClasses = modulesSource.flatMap(m =>
-                    (m.packages || []).flatMap(p =>
-                        (p.classes || []).map(c => ({ ...c, type: 'class', packageName: p.name, moduleName: m.name }))
-                    )
-                );
-            } else {
-                const suiteName = filters.testSuite;
-                const modulesWithSuite = modulesSource.filter(m => (m.testSuites || []).some(ts => ts.name === suiteName));
-                allPackages = modulesWithSuite.flatMap(m =>
-                    (m.testSuites || []).filter(ts => ts.name === suiteName)
-                    .flatMap(ts => (ts.packages || []).map(p => ({ ...p, type: 'package', moduleName: m.name, testSuiteName: ts.name })))
-                );
-                allClasses = modulesWithSuite.flatMap(m =>
-                    (m.testSuites || []).filter(ts => ts.name === suiteName)
-                    .flatMap(ts => (ts.packages || []).flatMap(p =>
-                        (p.classes || []).map(c => ({ ...c, type: 'class', packageName: p.name, moduleName: m.name, testSuiteName: ts.name }))
-                    ))
-                );
-            }
-            const allModules = modulesSource.map(m => ({ ...m, type: 'module' }));
+            const allPackages = modulesSource.flatMap(m =>
+                (m.packages || []).map(p => addEffectiveCoverage(p, 'package', { moduleName: m.name }))
+            );
+            const allClasses = allPackages.flatMap(p =>
+                (p.classes || []).map(c => addEffectiveCoverage(c, 'class', { packageName: p.name, moduleName: p.moduleName }))
+            );
+            const allModules = modulesSource.map(m => addEffectiveCoverage(m, 'module'));
+
             if (selectedPackage) data = allClasses.filter(c => c.packageName === selectedPackage && c.moduleName === selectedModule);
             else if (selectedModule) data = allPackages.filter(p => p.moduleName === selectedModule);
             else if (currentView === 'packages') data = allPackages;

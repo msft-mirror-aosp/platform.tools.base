@@ -25,7 +25,7 @@ import com.android.build.gradle.internal.coverage.renderer.builders.PackageRepor
 import com.android.build.gradle.internal.coverage.renderer.builders.SourceFileReportBuilder
 import com.android.build.gradle.internal.coverage.renderer.builders.SourceFileReportsBuilder
 import com.android.build.gradle.internal.coverage.renderer.builders.TestSuiteFileCoverageBuilder
-import com.android.build.gradle.internal.coverage.renderer.builders.TestSuiteReportBuilder
+import com.android.build.gradle.internal.coverage.renderer.builders.TestSuiteReportCoverageBuilder
 import com.android.build.gradle.internal.coverage.renderer.builders.VariantFileCoverageBuilder
 import com.android.build.gradle.internal.coverage.renderer.data.CoverageInfo
 import com.android.build.gradle.internal.coverage.renderer.data.VariantCoverage
@@ -65,7 +65,6 @@ import com.android.build.gradle.internal.coverage.renderer.xmlparser.utils.findP
 import com.android.build.gradle.internal.coverage.renderer.xmlparser.utils.parseSingleCounter
 import java.io.File
 import javax.xml.parsers.DocumentBuilderFactory
-import kotlin.text.substringBefore
 import org.w3c.dom.Element
 
 /**
@@ -110,22 +109,17 @@ object XMLTransformer {
 
     val moduleReportBuilder = coverageBuilder.moduleReportBuilders.getOrPut(context.moduleName) { ModuleReportBuilder(context.moduleName) }
     val overallCoverage = parseCoverageCounters(rootElement)
-    updateAggregatedCoverages(context, overallCoverage, coverageBuilder.aggregatedVariantCoverages, moduleReportBuilder)
+    updateAggregatedCoverages(context, overallCoverage, coverageBuilder.aggregatedVariantCoverages)
 
-    val testSuiteBuilder = getOrCreateTestSuiteBuilder(context, overallCoverage, moduleReportBuilder)
+    moduleReportBuilder.testSuiteCoverages
+      .getOrPut(context.testSuiteName) { TestSuiteReportCoverageBuilder(context.testSuiteName) }
+      .variantCoverages
+      .add(VariantCoverage(context.variantName, overallCoverage.instruction, overallCoverage.branch))
 
     val sourceFileLocations = parseSourceFileLocations(doc.documentElement)
 
     for (packageNode in rootElement.getElementsByTagName(TAG_PACKAGE).elements) {
-      parsePackage(
-        packageNode,
-        context,
-        projectBaseDir,
-        moduleReportBuilder,
-        testSuiteBuilder,
-        sourceFileReportsBuilder,
-        sourceFileLocations,
-      )
+      parsePackage(packageNode, context, projectBaseDir, moduleReportBuilder, sourceFileReportsBuilder, sourceFileLocations)
     }
   }
 
@@ -142,7 +136,6 @@ object XMLTransformer {
     context: ReportContext,
     overallCoverage: AllCounters,
     aggregatedVariantCoverages: MutableMap<String, VariantCoverage>,
-    moduleReportBuilder: ModuleReportBuilder,
   ) {
     val projectCoverage =
       aggregatedVariantCoverages.getOrPut(context.variantName) {
@@ -152,22 +145,6 @@ object XMLTransformer {
     val newTotal = projectCoverage.instruction.total + overallCoverage.instruction.total
     aggregatedVariantCoverages[context.variantName] =
       projectCoverage.copy(instruction = CoverageInfo(calculatePercent(newCovered, newTotal), newCovered, newTotal))
-
-    if (context.testSuiteName == VALUE_AGGREGATED) {
-      moduleReportBuilder.variantCoverages.add(VariantCoverage(context.variantName, overallCoverage.instruction, overallCoverage.branch))
-    }
-  }
-
-  private fun getOrCreateTestSuiteBuilder(
-    context: ReportContext,
-    overallCoverage: AllCounters,
-    moduleReportBuilder: ModuleReportBuilder,
-  ): TestSuiteReportBuilder? {
-    if (context.testSuiteName == VALUE_AGGREGATED) return null
-
-    return moduleReportBuilder.testSuites
-      .getOrPut(context.testSuiteName) { TestSuiteReportBuilder(context.testSuiteName, context.moduleName) }
-      .also { it.variantCoverages.add(VariantCoverage(context.variantName, overallCoverage.instruction, overallCoverage.branch)) }
   }
 
   private fun parsePackage(
@@ -175,7 +152,6 @@ object XMLTransformer {
     context: ReportContext,
     projectBaseDir: File,
     moduleReportBuilder: ModuleReportBuilder,
-    testSuiteBuilder: TestSuiteReportBuilder?,
     sourceFileReportsBuilder: SourceFileReportsBuilder,
     sourceFileLocations: List<String>,
   ) {
@@ -183,20 +159,17 @@ object XMLTransformer {
     val packageCounters = parseCoverageCounters(packageNode)
     val packageVariantCoverage = VariantCoverage(context.variantName, packageCounters.instruction, packageCounters.branch)
 
-    // If a specific testSuiteBuilder exists, the package belongs to it.
-    // Otherwise (for aggregated reports), it belongs directly to the moduleBuilder.
-    val packageReportBuilder =
-      if (testSuiteBuilder != null) {
-        testSuiteBuilder.packages.getOrPut(packageName) { PackageReportBuilder(packageName, context.moduleName, context.testSuiteName) }
-      } else {
-        moduleReportBuilder.packages.getOrPut(packageName) { PackageReportBuilder(packageName, context.moduleName, context.testSuiteName) }
-      }
-    packageReportBuilder.variantCoverages.add(packageVariantCoverage)
+    val packageReportBuilder = moduleReportBuilder.packages.getOrPut(packageName) { PackageReportBuilder(packageName, context.moduleName) }
+
+    packageReportBuilder.testSuiteCoverages
+      .getOrPut(context.testSuiteName) { TestSuiteReportCoverageBuilder(context.testSuiteName) }
+      .variantCoverages
+      .add(packageVariantCoverage)
 
     val sourceFileNameToPath = mutableMapOf<String, String>()
 
     for (classNode in packageNode.getElementsByTagName(TAG_CLASS).elements) {
-      parseClass(classNode, context, packageName, packageReportBuilder, context.testSuiteName)
+      parseClass(classNode, context, packageName, packageReportBuilder)
     }
 
     for (sourceFileNode in packageNode.getElementsByTagName(TAG_SOURCE_FILE).elements) {
@@ -216,22 +189,18 @@ object XMLTransformer {
     updateSourceFilePathsInClassBuilders(context.variantName, sourceFileNameToPath, packageReportBuilder)
   }
 
-  private fun parseClass(
-    classNode: Element,
-    context: ReportContext,
-    packageName: String,
-    packageReportBuilder: PackageReportBuilder,
-    testSuiteName: String,
-  ) {
+  private fun parseClass(classNode: Element, context: ReportContext, packageName: String, packageReportBuilder: PackageReportBuilder) {
     val className = classNode.getAttribute(ATTR_NAME).substringAfterLast('/').takeIf { it.isNotEmpty() } ?: VALUE_DEFAULT
     val sourceFileName = classNode.getAttribute(ATTR_SOURCE_FILENAME)
     val classCounters = parseCoverageCounters(classNode)
     val classVariantCoverage = VariantCoverage(context.variantName, classCounters.instruction, classCounters.branch)
 
-    val classReportBuilder =
-      packageReportBuilder.classes
-        .getOrPut(className) { ClassReportBuilder(className, packageName, sourceFileName, testSuiteName) }
-        .also { it.variantCoverages.add(classVariantCoverage) }
+    val classReportBuilder = packageReportBuilder.classes.getOrPut(className) { ClassReportBuilder(className, packageName, sourceFileName) }
+
+    classReportBuilder.testSuiteCoverages
+      .getOrPut(context.testSuiteName) { TestSuiteReportCoverageBuilder(context.testSuiteName) }
+      .variantCoverages
+      .add(classVariantCoverage)
 
     for (methodNode in classNode.getElementsByTagName(TAG_METHOD).elements) {
       parseMethod(methodNode, context.variantName, classReportBuilder)
