@@ -470,7 +470,6 @@ com.android.build.gradle.integration.lint.LintWithAndWithoutK2UastTest
 com.android.build.gradle.integration.lint.LintXmlConfigurationTest
 com.android.build.gradle.integration.lint.TestFixturesProjectLintModelIntegrationTest
 com.android.build.gradle.integration.lint.UpdateLintBaselineStandaloneTest
-com.android.build.gradle.integration.lint.UpdateLintBaselineTest
 com.android.build.gradle.integration.manifest.ManifestFullyQualifiedClassNamesTest
 com.android.build.gradle.integration.manifest.ProcessApplicationManifestTest
 com.android.build.gradle.integration.manifest.ProcessManifestTest
