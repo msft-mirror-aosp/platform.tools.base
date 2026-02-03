@@ -418,7 +418,7 @@ public class LocalMavenRepositoryGenerator {
 
         // No NOTICE found for this artifact. It must be added manually if it will
         // ever be used by the commandlinetools SDK component. That component can
-        // detect if the NOTICE file is missing, and issue and error, so we do not
+        // detect if the NOTICE file is missing, and issue an error, so we do not
         // need to issue a warning here.
     }
 
