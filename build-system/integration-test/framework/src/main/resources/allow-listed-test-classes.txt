@@ -106,7 +106,6 @@ com.android.build.gradle.integration.application.Java11CompileTest
 com.android.build.gradle.integration.application.Java11CompositeBuildTest
 com.android.build.gradle.integration.application.Java11WithKotlinCompileTest
 com.android.build.gradle.integration.application.JavaCompileTest
-com.android.build.gradle.integration.application.JavaCompileWithToolChainTest
 com.android.build.gradle.integration.application.JetifierTest
 com.android.build.gradle.integration.application.KaptTest
 com.android.build.gradle.integration.application.KotlinAppTest
