@@ -38,7 +38,6 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
 
@@ -188,7 +187,7 @@ class ClosedSessionException(message: String) : CancellationException(message)
 /**
  * Returns a [StateFlow] that emits a new [TrackedDeviceList] everytime a device state change is detected by the ADB Host.
  *
- * The implementation uses a [stateIn] operator with the following characteristics:
+ * The returned [StateFlow] has the following characteristics:
  * * The initial value of the returned [StateFlow] is always an empty [TrackedDeviceList] with `flowStatus` of
  *   [StateFlowStatus.isStartOfFlow]. This is because it may take some time to collect the initial list of devices.
  * * The upstream flow is a [AdbHostServices.trackDevices] that is retried after a delay of [retryDelay] in case of error.
@@ -196,14 +195,11 @@ class ClosedSessionException(message: String) : CancellationException(message)
  *       downstream flows and the [TrackedDeviceList.connectionId] is incremented.
  * * The returned [StateFlow] is unique to this [AdbSession], meaning all collectors of the returned flow share a single underlying
  *   [AdbHostServices.trackDevices] connection.
- * * The returned [StateFlow] activates a [AdbHostServices.trackDevices] connection only when there are active downstream flows, see
- *   [SharingStarted.WhileSubscribed].
+ * * The returned [StateFlow] activates a [AdbHostServices.trackDevices] connection when this property is first accessed. The connection
+ *   remains active until the [AdbSession.scope] is canceled, ensuring that the latest device list is always available.
  * * The returned [StateFlow] runs in a separate coroutine in the [AdbSession.scope]. If the scope is cancelled, the [StateFlow] stops
  *   emitting new values, but downstream flows are not terminated. It is up to the caller to use an appropriate [CoroutineScope] when
  *   collecting the returned flow. A typical usage would be to use the [AdbSession.scope] when collecting, for example:
- *
- *   ``` val session: AdbSession session.scope.launch { session.trackDevices.flowOn(Dispatchers.Default).collect { // Collect until session
- *   scope is cancelled. } } ```
  *
  *   ``` val session: AdbSession session.scope.launch { session.trackDevices.flowOn(Dispatchers.Default).collect { // Collect until session
  *   scope is cancelled. } } ```
@@ -213,7 +209,8 @@ class ClosedSessionException(message: String) : CancellationException(message)
  * * Because the [StateFlow] use the [BufferOverflow.DROP_OLDEST] strategy, slow downstream flows don't prevent other (more efficient)
  *   downstream flows from collecting new values when available.
  *
- * **Note**: [DeviceInfo] entries of the [DeviceList] are always of the [long format][AdbHostServices.DeviceInfoFormat.LONG_FORMAT].
+ * **Note**: [DeviceInfo] entries of the [DeviceList] are parsed from the [long format][AdbHostServices.DeviceInfoFormat.LONG_FORMAT] (or
+ * [binary proto format][AdbHostServices.DeviceInfoFormat.BINARY_PROTO_FORMAT] if supported by the ADB server).
  */
 fun AdbSession.trackDevices(retryDelay: Duration = property(TRACK_DEVICES_RETRY_DELAY)): StateFlow<TrackedDeviceList> {
   data class MyKey(val duration: Duration) : Key<SessionDeviceTracker>("trackDevices")
