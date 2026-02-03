@@ -774,7 +774,8 @@ class MinifyFeaturesTest {
           IssueReporter.Severity.WARNING.severity to
             IssueReporter.Type.DEBUGGABLE_AND_MINIFIED_ENABLED.type to
             "BuildType 'minified' is both debuggable and has 'isMinifyEnabled' set to true.\n" +
-              "All code optimizations and obfuscation are disabled for debuggable builds.",
+              "All code optimizations and obfuscation are disabled for debuggable builds.\n" +
+              "Add android.sync.suppressAgpWarnings=DEBUGGABLE_AND_MINIFIED_ENABLED to the gradle.properties file to suppress this warning.",
         )
       )
   }

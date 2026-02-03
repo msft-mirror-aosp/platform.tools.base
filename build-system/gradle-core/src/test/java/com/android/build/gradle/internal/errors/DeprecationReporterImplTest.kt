@@ -60,6 +60,8 @@ class DeprecationReporterImplTest {
   }
 
   private val issueReporter = FakeSyncIssueReporter()
+  private val suppressAgpWarningsSuffix =
+    "\nAdd android.sync.suppressAgpWarnings=UNSUPPORTED_PROJECT_OPTION_USE to the gradle.properties file to suppress this warning."
   private val reporter =
     DeprecationReporterImpl(issueReporter, ProjectOptions(FakeProviderFactory(FakeProviderFactory.factory, ImmutableMap.of())), "")
 
@@ -82,7 +84,11 @@ class DeprecationReporterImplTest {
 
     assertThat(issueReporter.errors).isEmpty()
     assertThat(issueReporter.warnings)
-      .containsExactly("The option setting 'android.experimental.option=true' is experimental.\n" + "The current default is 'false'.")
+      .containsExactly(
+        "The option setting 'android.experimental.option=true' is experimental.\n" +
+          "The current default is 'false'." +
+          suppressAgpWarningsSuffix
+      )
   }
 
   @Test
@@ -102,7 +108,8 @@ class DeprecationReporterImplTest {
       .containsExactly(
         "The option setting 'android.deprecated.option=true' is deprecated.\n" +
           "The current default is 'false'.\n" +
-          "It will be removed in version 8.0 of the Android Gradle plugin."
+          "It will be removed in version 8.0 of the Android Gradle plugin." +
+          suppressAgpWarningsSuffix
       )
   }
 
@@ -116,7 +123,8 @@ class DeprecationReporterImplTest {
         "The option 'android.removed.option' is deprecated.\n" +
           "The current default is 'false'.\n" +
           "It was removed in version 8.0 of the Android Gradle plugin.\n" +
-          "Extra message."
+          "Extra message." +
+          suppressAgpWarningsSuffix
       )
   }
 
@@ -170,20 +178,20 @@ class DeprecationReporterImplTest {
         The option setting 'android.experimental.option=true' is experimental.
         The current default is 'false'.
         """
-          .trimIndent(),
+          .trimIndent() + suppressAgpWarningsSuffix,
         """
         The option setting 'android.deprecated.option=true' is deprecated.
         The current default is 'false'.
         It will be removed in version 8.0 of the Android Gradle plugin.
         """
-          .trimIndent(),
+          .trimIndent() + suppressAgpWarningsSuffix,
         """
         The option 'android.removed.option' is deprecated.
         The current default is 'false'.
         It was removed in version 8.0 of the Android Gradle plugin.
         Extra message.
         """
-          .trimIndent(),
+          .trimIndent() + suppressAgpWarningsSuffix,
       )
   }
 
@@ -198,7 +206,7 @@ class DeprecationReporterImplTest {
         The option setting 'android.deprecated.optional.option=true' is deprecated.
         It will be removed in version 8.0 of the Android Gradle plugin.
         """
-          .trimIndent()
+          .trimIndent() + suppressAgpWarningsSuffix
       )
   }
 
@@ -209,7 +217,9 @@ class DeprecationReporterImplTest {
     assertThat(issueReporter.errors).isEmpty()
     assertThat(issueReporter.warnings)
       .containsExactly(
-        "The option setting 'android.experimentalWithPlannedDeprecation.option=true' is experimental.\n" + "The current default is 'false'."
+        "The option setting 'android.experimentalWithPlannedDeprecation.option=true' is experimental.\n" +
+          "The current default is 'false'." +
+          suppressAgpWarningsSuffix
       )
   }
 
@@ -232,7 +242,7 @@ class DeprecationReporterImplTest {
         The current default is 'false'.
         It will be removed in version 10.0 of the Android Gradle plugin.
         """
-          .trimIndent()
+          .trimIndent() + suppressAgpWarningsSuffix
       )
   }
 }

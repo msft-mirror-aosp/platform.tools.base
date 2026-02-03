@@ -249,7 +249,9 @@ class AbiRelatedDslUsageTest {
     issues.checkSingleIssue(
       type = com.android.builder.model.v2.ide.SyncIssue.TYPE_CANNOT_BUILD_SELECTED_TARGET_ABI,
       severity = com.android.builder.model.v2.ide.SyncIssue.SEVERITY_WARNING,
-      message = "Cannot build selected target ABI: mips, supported ABIs are: x86",
+      message =
+        "Cannot build selected target ABI: mips, supported ABIs are: x86\n" +
+          "Add android.sync.suppressAgpWarnings=CANNOT_BUILD_SELECTED_TARGET_ABI to the gradle.properties file to suppress this warning.",
     )
   }
 
@@ -301,7 +303,9 @@ class AbiRelatedDslUsageTest {
     issues.checkSingleIssue(
       type = com.android.builder.model.v2.ide.SyncIssue.TYPE_CANNOT_BUILD_SELECTED_TARGET_ABI,
       severity = com.android.builder.model.v2.ide.SyncIssue.SEVERITY_WARNING,
-      message = "Cannot build selected target ABI: x86, supported ABIs are: FilterConfiguration(filterType=ABI, identifier=armeabi-v7a)",
+      message =
+        "Cannot build selected target ABI: x86, supported ABIs are: FilterConfiguration(filterType=ABI, identifier=armeabi-v7a)\n" +
+          "Add android.sync.suppressAgpWarnings=CANNOT_BUILD_SELECTED_TARGET_ABI to the gradle.properties file to suppress this warning.",
     )
   }
 
