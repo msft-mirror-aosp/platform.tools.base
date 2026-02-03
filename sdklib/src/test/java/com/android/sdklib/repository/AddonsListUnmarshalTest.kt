@@ -101,6 +101,11 @@ class AddonsListUnmarshalTest {
     unmarshalAndVerify("addons-list/v6/addons.xml") { list -> verifyV3Plus(list) }
   }
 
+  @Test
+  fun testAddonsListV7() {
+    unmarshalAndVerify("addons-list/v7/addons.xml") { list -> verifyV3Plus(list) }
+  }
+
   private fun verifyV3Plus(list: RemoteListSourceProviderImpl.SiteList) {
     val sites = list.site
     assertThat(sites).hasSize(6)

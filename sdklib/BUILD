@@ -12,7 +12,7 @@ load(
     "RELEASE_COMMANDLINE_TOOLS_VERSION",
 )
 load("//tools/base/repository:xjc.bzl", "xsd_java_library")
-load(":sdk.bzl", "combine_licenses", "sdk_java_binary", "sdk_package")
+load(":sdk.bzl", "sdk_java_binary", "sdk_package")
 
 # managed by go/iml_to_build
 iml_module(
@@ -92,22 +92,27 @@ generated_libs = [
     ":sdk-addon-1.lib",
     ":sdk-addon-2.lib",
     ":sdk-addon-3.lib",
+    ":sdk-addon-4.lib",
     ":sdk-common-1.lib",
     ":sdk-common-2.lib",
     ":sdk-common-3.lib",
+    ":sdk-common-4.lib",
     ":sdk-repository-1.lib",
     ":sdk-repository-2.lib",
     ":sdk-repository-3.lib",
+    ":sdk-repository-4.lib",
     ":sdk-sites-list-1.lib",
     ":sdk-sites-list-2.lib",
     ":sdk-sites-list-3.lib",
     ":sdk-sites-list-4.lib",
     ":sdk-sites-list-5.lib",
     ":sdk-sites-list-6.lib",
+    ":sdk-sites-list-7.lib",
     ":sdk-sysimg-1.lib",
     ":sdk-sysimg-2.lib",
     ":sdk-sysimg-3.lib",
     ":sdk-sysimg-4.lib",
+    ":sdk-sysimg-5.lib",
 ]
 
 maven_library(
@@ -449,6 +454,18 @@ xsd_java_library(
 )
 
 xsd_java_library(
+    name = "sdk-common-4",
+    binding = "src/main/resources/xsd/sdk-common-custom-04.xjb",
+    java_deps = [
+        ":tools.sdklib.core",
+        "//tools/base/repository:tools.repository",
+    ],
+    package = "com.android.sdklib.repository.generated.common.v4",
+    xsd = "src/main/resources/xsd/sdk-common-04.xsd",
+    xsd_deps = ["//tools/base/repository:repo-common-2"],
+)
+
+xsd_java_library(
     name = "sdk-repository-3",
     java_deps = [
         ":tools.sdklib.core",
@@ -464,6 +481,21 @@ xsd_java_library(
 )
 
 xsd_java_library(
+    name = "sdk-repository-4",
+    java_deps = [
+        ":tools.sdklib.core",
+        "//tools/base/repository:tools.repository",
+    ],
+    package = "com.android.sdklib.repository.generated.repository.v4",
+    xsd = "src/main/resources/xsd/sdk-repository-04.xsd",
+    xsd_deps = [
+        "//tools/base/repository:repo-common-2",
+        "//tools/base/repository:generic-2",
+        ":sdk-common-4",
+    ],
+)
+
+xsd_java_library(
     name = "sdk-addon-3",
     java_deps = [
         ":tools.sdklib.core",
@@ -474,6 +506,20 @@ xsd_java_library(
     xsd_deps = [
         "//tools/base/repository:repo-common-2",
         ":sdk-common-3",
+    ],
+)
+
+xsd_java_library(
+    name = "sdk-addon-4",
+    java_deps = [
+        ":tools.sdklib.core",
+        "//tools/base/repository:tools.repository",
+    ],
+    package = "com.android.sdklib.repository.generated.addon.v4",
+    xsd = "src/main/resources/xsd/sdk-addon-04.xsd",
+    xsd_deps = [
+        "//tools/base/repository:repo-common-2",
+        ":sdk-common-4",
     ],
 )
 
@@ -506,6 +552,20 @@ xsd_java_library(
 )
 
 xsd_java_library(
+    name = "sdk-sysimg-5",
+    java_deps = [
+        ":tools.sdklib.core",
+        "//tools/base/repository:tools.repository",
+    ],
+    package = "com.android.sdklib.repository.generated.sysimg.v5",
+    xsd = "src/main/resources/xsd/sdk-sys-img-05.xsd",
+    xsd_deps = [
+        "//tools/base/repository:repo-common-2",
+        ":sdk-common-4",
+    ],
+)
+
+xsd_java_library(
     name = "sdk-sites-list-5",
     java_deps = [
         ":tools.sdklib.core",
@@ -527,6 +587,17 @@ xsd_java_library(
     xsd_deps = ["//tools/base/repository:repo-sites-common-1"],
 )
 
+xsd_java_library(
+    name = "sdk-sites-list-7",
+    java_deps = [
+        ":tools.sdklib.core",
+        "//tools/base/repository:tools.repository",
+    ],
+    package = "com.android.sdklib.repository.sources.generated.v7",
+    xsd = "src/main/resources/xsd/sources/sdk-sites-list-7.xsd",
+    xsd_deps = ["//tools/base/repository:repo-sites-common-1"],
+)
+
 # managed by go/iml_to_build
 jvm_import(
     name = "schema-generated",
@@ -542,21 +613,26 @@ merge_jars(
         ":libsdk-addon-1.lib.jar",
         ":libsdk-addon-2.lib.jar",
         ":libsdk-addon-3.lib.jar",
+        ":libsdk-addon-4.lib.jar",
         ":libsdk-common-1.lib.jar",
         ":libsdk-common-2.lib.jar",
         ":libsdk-common-3.lib.jar",
+        ":libsdk-common-4.lib.jar",
         ":libsdk-repository-1.lib.jar",
         ":libsdk-repository-2.lib.jar",
         ":libsdk-repository-3.lib.jar",
+        ":libsdk-repository-4.lib.jar",
         ":libsdk-sites-list-1.lib.jar",
         ":libsdk-sites-list-2.lib.jar",
         ":libsdk-sites-list-3.lib.jar",
         ":libsdk-sites-list-4.lib.jar",
         ":libsdk-sites-list-5.lib.jar",
         ":libsdk-sites-list-6.lib.jar",
+        ":libsdk-sites-list-7.lib.jar",
         ":libsdk-sysimg-1.lib.jar",
         ":libsdk-sysimg-2.lib.jar",
         ":libsdk-sysimg-3.lib.jar",
         ":libsdk-sysimg-4.lib.jar",
+        ":libsdk-sysimg-5.lib.jar",
     ],
 )

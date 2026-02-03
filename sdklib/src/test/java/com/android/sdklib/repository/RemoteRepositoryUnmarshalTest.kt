@@ -105,6 +105,31 @@ class RemoteRepositoryUnmarshalTest {
     }
   }
 
+  @Test
+  fun testRemoteV4() {
+    unmarshalAndVerify("remote/v4/repo.xml") { repo ->
+      val packages = repo.remotePackage.associateBy { it.path }
+      assertThat(packages).hasSize(3)
+
+      // Platform
+      val platform = packages["platforms;android-canary-20260101"]!!
+      val platformDetails = platform.typeDetails as DetailsTypes.PlatformDetailsType
+      assertThat(platformDetails.apiLevel).isEqualTo(36)
+      assertThat(platformDetails.apiLevelString).isEqualTo("36.1")
+      assertThat(platformDetails.isBaseExtension).isTrue()
+      assertThat(platformDetails.androidVersion).isEqualTo(AndroidVersion(36, 1).withCanaryNumber(20260101))
+
+      // Sources
+      val sources = packages["sources;android-37.0-beta2"]!!
+      val sourcesDetails = sources.typeDetails as DetailsTypes.SourceDetailsType
+      assertThat(sourcesDetails.apiLevel).isEqualTo(36)
+      assertThat(sourcesDetails.betaApiLevel).isEqualTo("37.0")
+      assertThat(sourcesDetails.betaNumber).isEqualTo(2)
+      assertThat(sourcesDetails.androidVersion).isEqualTo(AndroidVersion(37, 0).withBetaNumber(2))
+      assertThat(sourcesDetails.isBaseExtension).isTrue()
+    }
+  }
+
   private fun unmarshalAndVerify(relativePath: String, verification: (Repository) -> Unit) {
     val path = "/com/android/sdklib/repository/testdata/$relativePath"
     val inputStream = this::class.java.getResourceAsStream(path)
