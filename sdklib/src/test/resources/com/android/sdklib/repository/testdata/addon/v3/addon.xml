@@ -1,0 +1,16 @@
+<common:repository xmlns:common="http://schemas.android.com/repository/android/common/02"
+                   xmlns:sdk="http://schemas.android.com/sdk/android/repo/addon2/03"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    <localPackage path="addon;sample" obsolete="false">
+        <type-details xsi:type="sdk:addonDetailsType">
+            <api-level>22</api-level>
+            <base-extension>true</base-extension>
+            <vendor><id>google</id><display>Google</display></vendor>
+            <tag><id>google_apis</id><display>Google APIs</display></tag>
+        </type-details>
+        <revision>
+            <major>1</major>
+        </revision>
+        <display-name>Sample addon</display-name>
+    </localPackage>
+</common:repository>
