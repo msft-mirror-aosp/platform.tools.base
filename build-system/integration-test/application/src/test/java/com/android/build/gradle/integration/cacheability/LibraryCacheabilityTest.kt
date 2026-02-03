@@ -156,12 +156,14 @@ class LibraryCacheabilityTest {
         SKIPPED to
           setOf(
             ":app:assembleRelease",
+            ":app:compileReleaseKotlin",
             ":app:extractReleaseNativeSymbolTables",
             ":app:mergeReleaseNativeDebugMetadata",
             ":app:mergeReleaseNativeLibs",
             ":app:processReleaseJavaRes",
             ":app:stripReleaseDebugSymbols",
             ":lib:assembleRelease",
+            ":lib:compileReleaseKotlin",
             ":lib:mergeReleaseNativeLibs",
             ":lib:processReleaseJavaRes",
             ":lib:stripReleaseDebugSymbols",
@@ -177,12 +179,7 @@ class LibraryCacheabilityTest {
   @get:Rule val buildCacheDirRoot = TemporaryFolder()
 
   private fun setUpTestProject(projectName: String): GradleTestProject {
-    return GradleTestProject.builder()
-      .fromTestApp(HelloWorldLibraryApp())
-      .withName(projectName)
-      .dontOutputLogOnFailure()
-      .disableBuiltInKotlin()
-      .create()
+    return GradleTestProject.builder().fromTestApp(HelloWorldLibraryApp()).withName(projectName).dontOutputLogOnFailure().create()
   }
 
   @Before
