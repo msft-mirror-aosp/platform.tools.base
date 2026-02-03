@@ -1041,15 +1041,18 @@ DATA = [
     "org.jacoco:org.jacoco.agent:0.8.11",
     "org.jacoco:org.jacoco.agent:0.8.12",
     "org.jacoco:org.jacoco.agent:0.8.13",
+    "org.jacoco:org.jacoco.agent:0.8.14",
     "org.jacoco:org.jacoco.agent:0.8.7",
     "org.jacoco:org.jacoco.agent:0.8.8",
     "org.jacoco:org.jacoco.agent:jar:runtime:0.8.12",
     "org.jacoco:org.jacoco.agent:jar:runtime:0.8.13",
+    "org.jacoco:org.jacoco.agent:jar:runtime:0.8.14",
     "org.jacoco:org.jacoco.agent:jar:runtime:0.8.7",
     "org.jacoco:org.jacoco.agent:jar:runtime:0.8.8",
     "org.jacoco:org.jacoco.ant:0.8.11",
     "org.jacoco:org.jacoco.ant:0.8.12",
     "org.jacoco:org.jacoco.ant:0.8.13",
+    "org.jacoco:org.jacoco.ant:0.8.14",
     "org.jacoco:org.jacoco.ant:0.8.7",
     "org.jacoco:org.jacoco.ant:0.8.8",
     "org.javassist:javassist:3.26.0-GA",
@@ -1217,6 +1220,7 @@ DATA = [
     "org.jetbrains.kotlin:kotlin-reflect:2.1.20",
     "org.jetbrains.kotlin:kotlin-reflect:2.2.0",  # AGP dependencies (AGP depends on kotlin-reflect:2.2.10, but Gradle downgrades it to kotlin-reflect:2.2.0)
     "org.jetbrains.kotlin:kotlin-reflect:2.2.20",
+    "org.jetbrains.kotlin:kotlin-reflect:2.2.21",
     "org.jetbrains.kotlin:kotlin-reflect:2.3.20-Beta1",  # Used by AGP tests
     "org.jetbrains.kotlin:kotlin-script-runtime:1.5.21",
     "org.jetbrains.kotlin:kotlin-script-runtime:1.6.10",
@@ -1249,6 +1253,7 @@ DATA = [
     "org.jetbrains.kotlin:kotlin-stdlib-common:pom:2.2.0",  # Used by com.android.tools.idea.benchmarks.tests.JetNewsBenchmarkTest
     "org.jetbrains.kotlin:kotlin-stdlib-common:pom:2.2.10",  # AGP dependencies + Used by AGP privacy-sandbox tests
     "org.jetbrains.kotlin:kotlin-stdlib-common:pom:2.2.20",
+    "org.jetbrains.kotlin:kotlin-stdlib-common:pom:2.2.21",
     "org.jetbrains.kotlin:kotlin-stdlib-common:pom:2.3.20-Beta1",  # Used by AGP tests
     "org.jetbrains.kotlin:kotlin-stdlib-common:pom:2.3.20-dev-6126",
     "org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.4.32",
@@ -1331,12 +1336,16 @@ DATA = [
     "org.mockito.kotlin:mockito-kotlin:5.4.0",
     "org.ow2.asm:asm:9.6",
     "org.ow2.asm:asm:9.8",
+    "org.ow2.asm:asm:9.9",
     "org.ow2.asm:asm-commons:9.6",
     "org.ow2.asm:asm-commons:9.8",
+    "org.ow2.asm:asm-commons:9.9",
     "org.ow2.asm:asm-tree:9.6",
     "org.ow2.asm:asm-tree:9.8",
+    "org.ow2.asm:asm-tree:9.9",
     "org.ow2.asm:asm-util:9.6",
     "org.ow2.asm:asm-util:9.8",
+    "org.ow2.asm:asm-util:9.9",
     "org.robolectric:android-all-instrumented:7.0.0_r1-robolectric-r1-i4",  # Runtime for Android N
     "org.robolectric:android-all-instrumented:9-robolectric-4913185-2-i4",  # Runtime for Android P
     "org.robolectric:robolectric:4.14.1",
@@ -1391,6 +1400,7 @@ DATA = [
     "org.mockito:mockito-core:5.4.0",
     "org.ow2.asm:asm-bom:pom:9.6",
     "org.ow2.asm:asm-bom:pom:9.7",
+    "org.ow2.asm:asm-bom:pom:9.8",
     "org.robolectric:plugins-maven-dependency-resolver:jar:sources:4.8.2",
     "org.robolectric:robolectric:jar:sources:4.8.2",
 ]

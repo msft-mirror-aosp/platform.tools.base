@@ -25,6 +25,7 @@ import com.android.build.gradle.internal.fixtures.FakeResolvedVariantResult
 import com.android.build.gradle.internal.ide.dependencies.ResolvedArtifact.DependencyType
 import java.io.File
 import java.util.Optional
+import org.gradle.api.Named
 import org.gradle.api.artifacts.component.ComponentIdentifier
 import org.gradle.api.artifacts.result.DependencyResult
 import org.gradle.api.artifacts.result.ResolvedDependencyResult
@@ -261,5 +262,9 @@ private data class FakeAttributeContainer(private val map: Map<Attribute<*>, Any
 
   override fun addAllLater(other: AttributeContainer): AttributeContainer {
     error("not yet implemented")
+  }
+
+  override fun <T : Named?> named(type: Class<T?>?, name: String?): T? {
+    error("Not yet implemented")
   }
 }
