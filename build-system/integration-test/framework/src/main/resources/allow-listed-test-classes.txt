@@ -479,7 +479,6 @@ com.android.build.gradle.integration.lint.UpdateLintBaselineTest
 com.android.build.gradle.integration.manifest.ManifestFullyQualifiedClassNamesTest
 com.android.build.gradle.integration.manifest.ProcessApplicationManifestTest
 com.android.build.gradle.integration.manifest.ProcessManifestTest
-com.android.build.gradle.integration.manifest.ProcessTestManifestTest
 com.android.build.gradle.integration.mlkit.MlGeneratedClassTest
 com.android.build.gradle.integration.mlkit.MlModelBindingInLibTest
 com.android.build.gradle.integration.model.AdditionalArtifactsModelTest
