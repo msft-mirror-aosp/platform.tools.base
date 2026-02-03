@@ -49,6 +49,7 @@ DATA = [
     "androidx.arch.core:core-testing:2.1.0",  # Dependency of architecture-samples
     "androidx.benchmark:benchmark-baseline-profile-gradle-plugin:1.2.4",
     "androidx.benchmark:benchmark-gradle-plugin:1.2.4",
+    "androidx.car.app:app:1.4.0",
     "androidx.cardview:cardview:1.0.0",
     "androidx.collection:collection:1.4.0",
     "androidx.collection:collection:1.5.0-alpha06",
