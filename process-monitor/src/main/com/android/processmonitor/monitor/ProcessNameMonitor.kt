@@ -31,5 +31,5 @@ interface ProcessNameMonitor {
   /** Track processes on a device. */
   suspend fun trackDeviceProcesses(serialNumber: String): Flow<ProcessEvent>
 
-  class Config(val maxProcessRetention: Int, val agentConfig: AgentProcessTrackerConfig?)
+  class Config(val maxProcessRetention: Int, val agentConfig: AgentProcessTrackerConfig)
 }

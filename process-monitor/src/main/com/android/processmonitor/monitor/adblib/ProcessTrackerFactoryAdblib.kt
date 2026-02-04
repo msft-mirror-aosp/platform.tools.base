@@ -23,7 +23,7 @@ import com.android.processmonitor.common.ProcessTracker
 import com.android.processmonitor.monitor.BaseProcessTrackerFactory
 import com.android.sdklib.deviceprovisioner.DeviceState
 
-internal class ProcessTrackerFactoryAdblib(adbSession: AdbSession, agentConfig: AgentProcessTrackerConfig?, private val logger: AdbLogger) :
+internal class ProcessTrackerFactoryAdblib(adbSession: AdbSession, agentConfig: AgentProcessTrackerConfig, private val logger: AdbLogger) :
   BaseProcessTrackerFactory<DeviceState.Connected>(adbSession, agentConfig, logger) {
 
   override fun createMainTracker(device: DeviceState.Connected): ProcessTracker = JdwpProcessTracker(device.connectedDevice, logger)

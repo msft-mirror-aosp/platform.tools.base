@@ -50,18 +50,8 @@ class BaseProcessTrackerFactoryTest {
   }
 
   @Test
-  fun withoutAgentConfig_doesNotUseAgentProcessTracker(): Unit = runBlocking {
-    val factory = TestBaseProcessTrackerFactory(agentConfig = null)
-    val device = TestDevice("device1", 30, "x86")
-
-    val tracker = factory.createProcessTracker(device)
-
-    assertThat(tracker).isInstanceOf(FakeProcessTracker::class.java)
-  }
-
-  @Test
   fun withApiUnder21_doesNotUseAgentProcessTracker(): Unit = runBlocking {
-    val factory = TestBaseProcessTrackerFactory(agentConfig = null)
+    val factory = TestBaseProcessTrackerFactory(agentConfig = AgentProcessTrackerConfig(Path.of("agent"), 1) { true })
     val device = TestDevice("device1", 20, "x86")
 
     val tracker = factory.createProcessTracker(device)
@@ -71,7 +61,7 @@ class BaseProcessTrackerFactoryTest {
 
   @Test
   fun withoutAbi_doesNotUseAgentProcessTracker(): Unit = runBlocking {
-    val factory = TestBaseProcessTrackerFactory(agentConfig = null)
+    val factory = TestBaseProcessTrackerFactory(agentConfig = AgentProcessTrackerConfig(Path.of("agent"), 1) { true })
     val device = TestDevice("device1", 33, null)
 
     val tracker = factory.createProcessTracker(device)
@@ -81,7 +71,7 @@ class BaseProcessTrackerFactoryTest {
 
   private class TestDevice(val serialNumber: String, val apiLevel: Int, val abi: String?)
 
-  private inner class TestBaseProcessTrackerFactory(agentConfig: AgentProcessTrackerConfig?) :
+  private inner class TestBaseProcessTrackerFactory(agentConfig: AgentProcessTrackerConfig) :
     BaseProcessTrackerFactory<TestDevice>(AdbSession.create(AdbSessionHost()), agentConfig, FakeAdbLoggerFactory().logger) {
 
     override fun createMainTracker(device: TestDevice): ProcessTracker = FakeProcessTracker()

@@ -26,7 +26,7 @@ private const val AGENT_MIN_SDK = 21
 /** A [ProcessTrackerFactory] creates a tracker that is optionally merged with an [AgentProcessTracker] */
 internal abstract class BaseProcessTrackerFactory<T>(
   private val adbSession: AdbSession,
-  private val agentConfig: AgentProcessTrackerConfig?,
+  private val agentConfig: AgentProcessTrackerConfig,
   private val logger: AdbLogger,
 ) : ProcessTrackerFactory<T> {
 
@@ -48,9 +48,6 @@ internal abstract class BaseProcessTrackerFactory<T>(
   abstract fun getDeviceSerialNumber(device: T): String
 
   private suspend fun createAgentProcessTracker(device: T): ProcessTracker? {
-    if (agentConfig == null) {
-      return null
-    }
     val sdk = getDeviceApiLevel(device)
     // The agent is a native executable, and we don't have the ability build it for API<21
     if (sdk < AGENT_MIN_SDK || !agentConfig.shouldUseAgentForSdk(sdk)) {
