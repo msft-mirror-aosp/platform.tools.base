@@ -1850,6 +1850,11 @@ class GradleDetectorTest : AbstractCheckTest() {
       )
       .expectFixDiffs(
         """
+        Fix for build.gradle.kts line 6: Update targetSdkVersion to $HIGHEST_KNOWN_STABLE_API:
+        gradle/libs.versions.toml:
+        @@ -21 +21 @@
+        -keys-tsv = "34"            # ERROR 14
+        +keys-tsv = "$HIGHEST_KNOWN_STABLE_API"            # ERROR 14
         Fix for gradle/libs.versions.toml line 4: Update targetSdkVersion to $HIGHEST_KNOWN_STABLE_API:
         @@ -4 +4 @@
         -target_sdk_version = "34"  # ERROR 3
@@ -1862,6 +1867,11 @@ class GradleDetectorTest : AbstractCheckTest() {
         @@ -12 +12 @@
         -targetSdk = "34"           # ERROR 9
         +targetSdk = "$HIGHEST_KNOWN_STABLE_API"           # ERROR 9
+        Fix for build.gradle.kts line 2: Set compileSdk to $HIGHEST_KNOWN_STABLE_API:
+        gradle/libs.versions.toml:
+        @@ -2 +2 @@
+        -compile_sdk_version = "34" # ERROR 1
+        +compile_sdk_version = "$HIGHEST_KNOWN_STABLE_API" # ERROR 1
         Fix for build.gradle.kts line 3: Set compileSdk to $HIGHEST_KNOWN_STABLE_API:
         gradle/libs.versions.toml:
         @@ -19 +19 @@
@@ -2632,8 +2642,7 @@ class GradleDetectorTest : AbstractCheckTest() {
             "    implementation \"androidx.work:work-multiprocess:2.7.0-alpha05\" // expect 2.7.0-alpha06\n" +
             // Test normal upgrades in 2.7: 2.7.0 alpha05 going up to 2.7.0 alpha6
             "    implementation \"androidx.work:work-rxjava3:2.7.0-alpha05\" // expect 2.7.0-alpha06\n" +
-            // Make sure dynamic versions also work: don't upgrade from < 2.7 to 2.7
-            // previews
+            // Make sure dynamic versions also work: don't upgrade from < 2.7 to 2.7 previews
             "    implementation \"androidx.work:work-rxjava3:2.5.+\" // expect 2.6.0\n" +
             // Don't update from a preview of a previous series
             "    implementation \"androidx.work:work-runtime:2.5.0-alpha05\" // No suggestion\n" +
@@ -2710,22 +2719,19 @@ class GradleDetectorTest : AbstractCheckTest() {
             "\n" +
             "dependencies {\n" +
 
-            // work-runtime has 2.6.0-beta05,2.7.0-alpha06,3.0.0-SNAPSHOT -- we don't want
-            // to offer
+            // work-runtime has 2.6.0-beta05,2.7.0-alpha06,3.0.0-SNAPSHOT -- we don't want to offer
             // updates to 3.0.0-SNAPSHOT even though it's "higher"
             "    implementation \"androidx.test:work-runtime:2.7.0-alpha06\" // no suggestion\n" +
             // But we *can* update to a higher non-SNAPSHOT of the same series
             "    implementation \"androidx.test:work-runtime:2.6.0-alpha06\" // update to 2.6.0-beta05\n" +
-            // For work-runtime-ktx has 2.5.0,2.6.0-alpha05; we don't want to update to
-            // SNAPSHOT
+            // For work-runtime-ktx has 2.5.0,2.6.0-alpha05; we don't want to update to SNAPSHOT
             // versions
             "    implementation \"androidx.test:work-runtime-ktx:2.6.0-SNAPSHOT\" // No suggestion\n" +
             // but from old snapshot versions we can jump to a higher version
             "    implementation \"androidx.test:work-runtime-ktx:2.3.0-SNAPSHOT\" // Update to 2.5.0\n" +
             // From a snapshot version we can jump to a stable version if it's higher
             "    implementation \"androidx.test:work-gcm:2.6.0-SNAPSHOT\" // No suggestion\n" +
-            // Repeat tests for android.work, which has its own special version filtering
-            // code
+            // Repeat tests for android.work, which has its own special version filtering code
             "    implementation \"androidx.work:work-runtime:2.7.0-alpha06\" // no suggestion\n" +
             "    implementation \"androidx.work:work-runtime:2.6.0-alpha06\" // update to 2.6.0-beta05\n" +
             "    implementation \"androidx.work:work-runtime-ktx:2.6.0-SNAPSHOT\" // No suggestion\n" +
@@ -2940,50 +2946,64 @@ class GradleDetectorTest : AbstractCheckTest() {
   }
 
   fun testMinSdkVersion() {
-    val expected =
-      "" +
-        "build.gradle:8: Warning: The value of minSdkVersion (7) is too low. It can be incremented without noticeably reducing the number of supported devices. [MinSdkTooLow]\n" +
-        "        minSdkVersion 7\n" +
-        "        ~~~~~~~~~~~~~~~\n" +
-        "build.gradle:9: Warning: The value of minSdkVersion (7) is too low. It can be incremented without noticeably reducing the number of supported devices. [MinSdkTooLow]\n" +
-        "        minSdk 7\n" +
-        "        ~~~~~~~~\n" +
-        "0 errors, 2 warnings"
-
     lint()
       .files(
         gradle(
-          "" +
-            "apply plugin: 'com.android.application'\n" +
-            "\n" +
-            "android {\n" +
-            "    compileSdkVersion 19\n" +
-            "    buildToolsVersion \"19.0.0\"\n" +
-            "\n" +
-            "    defaultConfig {\n" +
-            "        minSdkVersion 7\n" +
-            "        minSdk 7\n" +
-            "        targetSdkVersion 19\n" +
-            "        versionCode 1\n" +
-            "        versionName \"1.0\"\n" +
-            "    }\n" +
-            "}\n"
-        )
+            """
+            apply plugin: 'com.android.application'
+
+            android {
+                compileSdkVersion 19
+                buildToolsVersion "19.0.0"
+
+                defaultConfig {
+                    minSdkVersion 7
+                    minSdkVersion "ECLAIR"
+                    minSdk 7
+                    minSdk ''
+                    targetSdkVersion 19
+                    versionCode 1
+                    versionName "1.0"
+                }
+            }
+            """
+          )
+          .indented()
       )
-      .issues(MIN_SDK_TOO_LOW)
+      .issues(MIN_SDK_TOO_LOW, STRING_INTEGER)
       .run()
-      .expect(expected)
+      .expect(
+        """
+        build.gradle:11: Error: minSdk does not support strings; did you mean minSdkPreview ? [StringShouldBeInt]
+                minSdk ''
+                ~~~~~~~~~
+        build.gradle:8: Warning: The value of minSdkVersion (7) is too low. It can be incremented without noticeably reducing the number of supported devices. [MinSdkTooLow]
+                minSdkVersion 7
+                ~~~~~~~~~~~~~~~
+        build.gradle:9: Warning: The value of minSdkVersion (5) is too low. It can be incremented without noticeably reducing the number of supported devices. [MinSdkTooLow]
+                minSdkVersion "ECLAIR"
+                ~~~~~~~~~~~~~~~~~~~~~~
+        build.gradle:10: Warning: The value of minSdkVersion (7) is too low. It can be incremented without noticeably reducing the number of supported devices. [MinSdkTooLow]
+                minSdk 7
+                ~~~~~~~~
+        1 error, 3 warnings
+        """
+      )
       .expectFixDiffs(
         """
-            Fix for build.gradle line 8: Update minSdkVersion to $LOWEST_ACTIVE_API:
-            @@ -8 +8
-            -         minSdkVersion 7
-            +         minSdkVersion $LOWEST_ACTIVE_API
-            Fix for build.gradle line 9: Update minSdkVersion to $LOWEST_ACTIVE_API:
-            @@ -9 +9
-            -         minSdk 7
-            +         minSdk $LOWEST_ACTIVE_API
-            """
+        Fix for build.gradle line 11: Replace with minSdkPreview:
+        @@ -11 +11 @@
+        -        minSdk ''
+        +        minSdkPreview ''
+        Fix for build.gradle line 8: Update minSdkVersion to 16:
+        @@ -8 +8 @@
+        -        minSdkVersion 7
+        +        minSdkVersion 16
+        Fix for build.gradle line 10: Update minSdkVersion to 16:
+        @@ -10 +10 @@
+        -        minSdk 7
+        +        minSdk 16
+        """
       )
   }
 
@@ -4281,6 +4301,98 @@ class GradleDetectorTest : AbstractCheckTest() {
       .expect(expected)
   }
 
+  fun testTrickyReplacementCompileSdk() {
+    // This test ensures:
+    //  - We decode octal version numbers correctly, even though we warn against it.
+    //  - We only provide a quick-fix to update the version number when the text exactly matches the
+    //    decoded version number.
+    //  - ...except for TOML, where we replace the version number within the string literal, if we
+    //    can find it.
+    lint()
+      .files(
+        gradleToml(
+            """
+            [versions]
+            compile_sdk_version = "34"
+            aaa = "34"
+            """
+          )
+          .indented(),
+        gradle(
+            """
+            plugins {
+              id("com.android.application")
+            }
+
+            android {
+              compileSdk = 31
+              compileSdk = 010
+              compileSdk = 07
+              compileSdkVersion = "S"
+            }
+            """
+          )
+          .indented(),
+        kts(
+            """
+            plugins {
+              id("com.android.application")
+            }
+
+            android {
+              compileSdk = libs.versions.aaa.get().toInt()
+            }
+            """
+          )
+          .indented(),
+      )
+      .issues(ACCIDENTAL_OCTAL, DEPENDENCY)
+      .run()
+      .expect(
+        """
+        build.gradle:6: Warning: A newer version of compileSdk than 31 is available: $HIGHEST_KNOWN_STABLE_API [GradleDependency]
+          compileSdk = 31
+          ~~~~~~~~~~~~~~~
+        build.gradle:7: Warning: A newer version of compileSdk than 8 is available: $HIGHEST_KNOWN_STABLE_API [GradleDependency]
+          compileSdk = 010
+          ~~~~~~~~~~~~~~~~
+        build.gradle:8: Warning: A newer version of compileSdk than 7 is available: $HIGHEST_KNOWN_STABLE_API [GradleDependency]
+          compileSdk = 07
+          ~~~~~~~~~~~~~~~
+        build.gradle:9: Warning: A newer version of compileSdkVersion than 31 is available: $HIGHEST_KNOWN_STABLE_API [GradleDependency]
+          compileSdkVersion = "S"
+          ~~~~~~~~~~~~~~~~~~~~~~~
+        build.gradle.kts:6: Warning: A newer version of compileSdk than 34 is available: $HIGHEST_KNOWN_STABLE_API [GradleDependency]
+          compileSdk = libs.versions.aaa.get().toInt()
+          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        ../gradle/libs.versions.toml:2: Warning: A newer version of compile_sdk_version than 34 is available: $HIGHEST_KNOWN_STABLE_API [GradleDependency]
+        compile_sdk_version = "34"
+                              ~~~~
+        build.gradle:7: Error: The leading 0 turns this number into octal which is probably not what was intended (interpreted as 8) [AccidentalOctal]
+          compileSdk = 010
+          ~~~~~~~~~~~~~~~~
+        1 error, 6 warnings
+        """
+      )
+      .expectFixDiffs(
+        """
+        Fix for build.gradle line 6: Set compileSdk to $HIGHEST_KNOWN_STABLE_API:
+        @@ -6 +6 @@
+        -  compileSdk = 31
+        +  compileSdk = $HIGHEST_KNOWN_STABLE_API
+        Fix for build.gradle.kts line 6: Set compileSdk to $HIGHEST_KNOWN_STABLE_API:
+        gradle/libs.versions.toml:
+        @@ -3 +3 @@
+        -aaa = "34"
+        +aaa = "$HIGHEST_KNOWN_STABLE_API"
+        Fix for gradle/libs.versions.toml line 2: Set compile_sdk_version to $HIGHEST_KNOWN_STABLE_API:
+        @@ -2 +2 @@
+        -compile_sdk_version = "34"
+        +compile_sdk_version = "$HIGHEST_KNOWN_STABLE_API"
+        """
+      )
+  }
+
   fun testBadPlayServicesVersion() {
     val expected =
       "" +
@@ -5516,26 +5628,32 @@ class GradleDetectorTest : AbstractCheckTest() {
       lint()
         .files(
           gradle(
-            "" +
-              "apply plugin: 'com.android.application'\n" +
-              "\n" +
-              "android {\n" +
-              "    defaultConfig {\n" +
-              "        targetSdkVersion 17\n" +
-              "    }\n" +
-              "}\n"
-          )
+              """
+              apply plugin: 'com.android.application'
+
+              android {
+                  defaultConfig {
+                      targetSdkVersion 17
+                      targetSdkVersion "JELLY_BEAN"
+                  }
+              }
+              """
+            )
+            .indented()
         )
         .issues(EXPIRED_TARGET_SDK_VERSION, EXPIRING_TARGET_SDK_VERSION)
         .sdkHome(mockSupportLibraryInstallation)
         .run()
         .expect(
           """
-                    build.gradle:5: Error: Google Play requires that apps target API level $PREVIOUS_MINIMUM_TARGET_SDK_VERSION or higher. [ExpiredTargetSdkVersion]
-                            targetSdkVersion 17
-                            ~~~~~~~~~~~~~~~~~~~
-                    1 errors, 0 warnings
-                    """
+          build.gradle:5: Error: Google Play requires that apps target API level $PREVIOUS_MINIMUM_TARGET_SDK_VERSION or higher. [ExpiredTargetSdkVersion]
+                  targetSdkVersion 17
+                  ~~~~~~~~~~~~~~~~~~~
+          build.gradle:6: Error: Google Play requires that apps target API level $PREVIOUS_MINIMUM_TARGET_SDK_VERSION or higher. [ExpiredTargetSdkVersion]
+                  targetSdkVersion "JELLY_BEAN"
+                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+          2 errors
+          """
         )
     } finally {
       GradleDetector.calendar = null
@@ -8976,15 +9094,18 @@ class GradleDetectorTest : AbstractCheckTest() {
     lint()
       .files(
         gradle(
-          "" +
-            "apply plugin: 'com.android.application'\n" +
-            "\n" +
-            "android {\n" +
-            "    compileSdkVersion 28\n" +
-            "    compileSdkVersion 1000 // OK\n" +
-            "    compileSdkPreview = \"android-S\" // OK\n" +
-            "}\n"
-        )
+            """
+            apply plugin: 'com.android.application'
+
+            android {
+                compileSdkVersion 28
+                compileSdkVersion "android-S"
+                compileSdkVersion 1000 // OK
+                compileSdkPreview = "S" // OK
+            }
+            """
+          )
+          .indented()
       )
       .issues(DEPENDENCY)
       .run()
@@ -8993,7 +9114,10 @@ class GradleDetectorTest : AbstractCheckTest() {
         build.gradle:4: Warning: A newer version of compileSdkVersion than 28 is available: $HIGHEST_KNOWN_STABLE_API [GradleDependency]
             compileSdkVersion 28
             ~~~~~~~~~~~~~~~~~~~~
-        0 errors, 1 warnings
+        build.gradle:5: Warning: A newer version of compileSdkVersion than 31 is available: $HIGHEST_KNOWN_STABLE_API [GradleDependency]
+            compileSdkVersion "android-S"
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        0 errors, 2 warnings
         """
       )
       .expectFixDiffs(
@@ -10082,8 +10206,7 @@ class GradleDetectorTest : AbstractCheckTest() {
                           .setSeverity(LibraryVersionLabels.Severity.NON_BLOCKING_SEVERITY)
                       )
                   )
-                  // Vulnerability multiple (UNSAFE_SSL_ERROR_HANDLER,
-                  // ZIP_PATH_TRAVERSAL,
+                  // Vulnerability multiple (UNSAFE_SSL_ERROR_HANDLER, ZIP_PATH_TRAVERSAL,
                   // UNSAFE_WEBVIEW_OAUTH, blocking)
                   .addVersions(
                     LibraryVersion.newBuilder()

@@ -34,6 +34,7 @@ import com.android.ide.common.repository.MavenRepositories
 import com.android.ide.common.repository.NetworkCache
 import com.android.io.CancellableFileIo
 import com.android.sdklib.AndroidTargetHash
+import com.android.sdklib.AndroidVersion.PLATFORM_HASH_PREFIX
 import com.android.sdklib.SdkVersionInfo
 import com.android.sdklib.SdkVersionInfo.LOWEST_ACTIVE_API
 import com.android.tools.lint.checks.GooglePlaySdkIndex.Companion.GOOGLE_PLAY_SDK_INDEX_KEY
@@ -248,6 +249,173 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
     }
   }
 
+  val String.canSdkPropBeInt: Boolean
+    get() =
+      when (this) {
+        "compileSdkVersion",
+        "targetSdkVersion",
+        "minSdkVersion",
+        "compileSdk",
+        "targetSdk",
+        "minSdk" -> true
+        else -> false
+      }
+
+  val String.canSdkPropBeString: Boolean
+    get() =
+      when (this) {
+        "compileSdkVersion",
+        "targetSdkVersion",
+        "minSdkVersion",
+        "compileSdkPreview",
+        "targetSdkPreview",
+        "minSdkPreview" -> true
+        else -> false
+      }
+
+  val String.isStringSdkPropPlatformHash: Boolean
+    get() = this == "compileSdkVersion"
+
+  /** Check an SDK version (compile, target, min). */
+  private fun checkSdkVersion(
+    context: GradleContext,
+    value: String,
+    valueCookie: Any,
+    statementCookie: Any,
+    sdkProperty: String,
+    isNewStyleDsl: Boolean, // TODO: Call checkSdkVersion with isNewStyleDsl = true.
+  ) {
+
+    fun check(version: Int, tomlValueFromAnotherFile: LintTomlValue? = null) {
+      when (sdkProperty) {
+        "compileSdkVersion",
+        "compileSdk",
+        "compileSdkPreview" -> checkCompileSdkVersionLatest(context, version, value, statementCookie, sdkProperty, tomlValueFromAnotherFile)
+        "targetSdkVersion",
+        "targetSdk",
+        "targetSdkPreview" -> checkTargetSdkVersion(context, version, value, statementCookie, sdkProperty, tomlValueFromAnotherFile)
+        "minSdkVersion",
+        "minSdk",
+        "minSdkPreview" -> checkMinSdkVersion(context, version, value, statementCookie, tomlValueFromAnotherFile)
+      }
+    }
+
+    // TOML case: we only handle the simple case of an int.
+    if (isTomlVersionKey(value)) {
+      if (!sdkProperty.canSdkPropBeInt) return
+      val tomlValueInfo = findCorrespondingTomlInt(context, value) ?: return
+      val tomlStringValue = tomlValueInfo.getActualValue() as? String ?: return
+      val tomlInt = getIntLiteralValue(tomlStringValue, -1)
+      if (tomlInt < 2) return
+      check(tomlInt, tomlValueInfo)
+      return
+    }
+
+    if (value.startsWith("0")) {
+      checkOctal(context, value, valueCookie)
+    }
+
+    // Integer or platform hash (old approach):
+    //   compileSdkVersion = 36
+    //   compileSdkVersion = "android-Baklava"
+    //   compileSdkVersion = "android-36"
+    // But note that targetSdkVersion and minSdkVersion must be an int, string int, or codename,
+    // not a platform hash:
+    //   targetSdkVersion = 36
+    //   targetSdkVersion = "36" // This will work, but may as well be avoided.
+    //   targetSdkVersion = "Baklava"
+    //
+    // We could potentially ignore the above, since that approach is deprecated.
+    //
+    // Integer only:
+    //   compileSdk = 26
+    //   compileSdk { version = release(26) { ... } }
+    // Codename only. Not allowed: "36", 36, etc.
+    //   compileSdkPreview = "Baklava"
+    // Codename or e.g. "36" (although this seems unintentional).
+    //   compileSdk { version = preview("Baklava") { ... } }
+    //   compileSdk { version = preview("36") { ... } } // Seems wrong.
+
+    fun getSdkVersionFromStringLiteral(): Int? {
+      val stringLiteralValue = getStringLiteralValue(value, valueCookie)
+
+      // For example, "36" should be 36:
+      if (stringLiteralValue != null && isNumberString(stringLiteralValue) && sdkProperty.canSdkPropBeInt) {
+        val message = "Use an integer rather than a string here (replace $value with just $stringLiteralValue)"
+        val fix = fix().name("Replace with integer", true).replace().text(value).with(stringLiteralValue).build()
+        report(context, statementCookie, STRING_INTEGER, message, fix)
+        return null
+      }
+
+      if (!sdkProperty.canSdkPropBeString) {
+        val (message: String, fix: LintFix?) =
+          when {
+            // For something like: compileSdk = release("Baklava")
+            isNewStyleDsl ->
+              ("`release` does not support strings; did you mean `preview`?" to fix().replace().text("release").with("preview").build())
+            // For something like: compileSdk = "Baklava"
+            sdkProperty.endsWith("Sdk") ->
+              ("`${sdkProperty}` does not support strings; did you mean `${sdkProperty}Preview` ?" to
+                fix().replace().text(sdkProperty).with("${sdkProperty}Preview").build())
+            // Should not happen.
+            else -> "`${sdkProperty}` does not support strings" to null
+          }
+        report(context, statementCookie, STRING_INTEGER, message, fix)
+        return null
+      }
+
+      if (stringLiteralValue == null) return null
+
+      if (stringLiteralValue.startsWith(PLATFORM_HASH_PREFIX)) {
+        if (!sdkProperty.isStringSdkPropPlatformHash) {
+          // TODO: Could warn about this.
+          return null
+        }
+        // Parse something like "android-Baklava".
+        val platformVersion = AndroidTargetHash.getPlatformVersion(stringLiteralValue) ?: return null
+        return platformVersion.featureLevel
+      }
+
+      if (isNumberString(stringLiteralValue)) {
+        // TODO: Could warn about this.
+        //  E.g. compileSdkPreview = "36"
+        //  That is: the property cannot be an int, the property can be a string, but a number
+        //  string is still never correct.
+        return null
+      }
+
+      // Parse something like "Baklava".
+      val androidVersion = SdkVersionInfo.getVersion(stringLiteralValue, null) ?: return null
+      return androidVersion.featureLevel
+    }
+
+    val version =
+      if (isStringLiteral(value)) {
+        getSdkVersionFromStringLiteral() ?: return
+      } else {
+        val numericValue =
+          try {
+            // This allows us to decode octal, hex, etc. Kotlin does not support octal literals
+            // (immediate compilation error), but decoding them anyway is fine.
+            java.lang.Long.decode(value)
+          } catch (_: NumberFormatException) {
+            return
+          }
+
+        if (numericValue > Int.MAX_VALUE) return
+
+        // At this point, we know the value is an int.
+        if (!sdkProperty.canSdkPropBeInt) {
+          // TODO: Could warn about this.
+          return
+        }
+
+        numericValue.toInt()
+      }
+
+    check(version, null)
+  }
+
   /** Called with for example "android", "defaultConfig", "minSdkVersion", "7" */
   override fun checkDslPropertyAssignment(
     context: GradleContext,
@@ -259,40 +427,45 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
     valueCookie: Any,
     statementCookie: Any,
   ) {
-    if (parent == "defaultConfig" || (isPrivacySandboxSdk(context.project) && parent == "android")) {
-      if (property == "targetSdkVersion" || property == "targetSdk") {
-        val version = getSdkVersion(value, valueCookie)
-        if (version == -1 && isTomlVersionKey(value)) {
-          val tomlValue = findCorrespondingTomlKey(context, value)
-          if (tomlValue != null) {
-            val tomlVersion = tomlValue.getActualValue()?.toString()?.let { getSdkVersion(it, valueCookie) } ?: -1
-            if (tomlVersion != -1) {
-              checkTargetSdkVersion(context, tomlVersion, tomlValue.getText(), statementCookie, property, false)
-            }
-          }
-        } else if (version < 0) {
-          checkIntegerAsString(context, value, statementCookie, valueCookie)
-        } else {
-          checkTargetSdkVersion(context, version, value, statementCookie, property)
+    // Handle SDK versions (target, min, compile), and return early if it was an SDK version.
+    when (property) {
+      "targetSdkVersion",
+      "targetSdk",
+      "minSdkVersion",
+      "minSdk" -> {
+        if (parent == "defaultConfig") {
+          checkSdkVersion(context, value, valueCookie, statementCookie, property, isNewStyleDsl = false)
         }
-      } else if (property == "minSdkVersion" || property == "minSdk") {
-        val version = getSdkVersion(value, valueCookie)
-        if (version == -1 && isTomlVersionKey(value)) {
-          val tomlValue = findCorrespondingTomlKey(context, value)
-          if (tomlValue != null) {
-            val tomlVersion = tomlValue.getActualValue()?.toString()?.let { getSdkVersion(it, valueCookie) } ?: -1
-            if (tomlVersion != -1) {
-              val includeFix = context.driver.isIsolated() || !isMinSdkTomlVersionKey(tomlValue.getKey()!!)
-              checkMinSdkVersion(context, tomlVersion, statementCookie, includeFix, tomlValue)
-            }
-          }
-        } else if (version > 0) {
-          checkMinSdkVersion(context, version, statementCookie)
-        } else {
-          checkIntegerAsString(context, value, statementCookie, valueCookie)
+
+        // Special case for minSdk in dev block.
+        if (
+          (property == "minSdkVersion" || property == "minSdk") &&
+            parent == "dev" &&
+            "21" == value &&
+            // Don't flag this error from Gradle; users invoking lint from Gradle may
+            // still want dev mode for command line usage
+            LintClient.CLIENT_GRADLE != LintClient.clientName
+        ) {
+          report(
+            context,
+            statementCookie,
+            DEV_MODE_OBSOLETE,
+            "You no longer need a `dev` mode to enable multi-dexing during development, and this can break API version checks",
+          )
+        }
+
+        return
+      }
+      "compileSdkVersion",
+      "compileSdk" -> {
+        if (parent.startsWith("android") || (parent == "this" && parentParent == "android")) {
+          checkSdkVersion(context, value, valueCookie, statementCookie, property, isNewStyleDsl = false)
         }
       }
+    }
 
+    if (parent == "defaultConfig") {
+      // Check for accidental octal usage (e.g. 010)
       if (value.startsWith("0")) {
         checkOctal(context, value, valueCookie)
       }
@@ -326,45 +499,6 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
           val message = "The 'versionCode' is very high and close to the max allowed value"
           report(context, statementCookie, HIGH_APP_VERSION_CODE, message)
         }
-      }
-    } else if (
-      (property == "compileSdkVersion" || property == "compileSdk") &&
-        (parent.startsWith("android") || parent == "this" && parentParent == "android")
-    ) {
-      var version = -1
-      if (isStringLiteral(value)) {
-        // Try to resolve values like "android-O"
-        val hash = getStringLiteralValue(value, valueCookie)
-        if (hash != null && !isNumberString(hash)) {
-          if (property == "compileSdk") {
-            val message = "`compileSdk` does not support strings; did you mean `compileSdkPreview` ?"
-            val fix = fix().replace().text("compileSdk").with("compileSdkPreview").build()
-            report(context, statementCookie, STRING_INTEGER, message, fix)
-          }
-
-          val platformVersion = AndroidTargetHash.getPlatformVersion(hash)
-          if (platformVersion != null) {
-            version = platformVersion.featureLevel
-          }
-        }
-      } else if (isTomlVersionKey(value)) {
-        val tomlValue = findCorrespondingTomlKey(context, value)
-        if (tomlValue != null) {
-          val level = tomlValue.getActualValue()?.toString()?.let { getSdkVersion(it, valueCookie) } ?: -1
-          // Only add quickfix if we're editing the current file, or it's for a key
-          // we don't already directly handle in the TOML file itself
-          if (level != -1) {
-            val includeFix = context.driver.isIsolated() || !isCompileSdkTomlVersionKey(tomlValue.getKey()!!)
-            checkCompileSdkVersionLatest(context, level, statementCookie, property, includeFix, tomlValue)
-          }
-        }
-      } else {
-        version = getIntLiteralValue(value, -1)
-      }
-      if (version <= 0) {
-        checkIntegerAsString(context, value, statementCookie, valueCookie)
-      } else {
-        checkCompileSdkVersionLatest(context, version, statementCookie, property)
       }
     } else if (parent == "plugins") {
       val plugin =
@@ -559,20 +693,6 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
         report(context, statementCookie, PATH, message)
       }
     } else if (
-      (property == "minSdkVersion" || property == "minSdk") &&
-        parent == "dev" &&
-        "21" == value &&
-        // Don't flag this error from Gradle; users invoking lint from Gradle may
-        // still want dev mode for command line usage
-        LintClient.CLIENT_GRADLE != LintClient.clientName
-    ) {
-      report(
-        context,
-        statementCookie,
-        DEV_MODE_OBSOLETE,
-        "You no longer need a `dev` mode to enable multi-dexing during development, and this can break API version checks",
-      )
-    } else if (
       parent == "dataBinding" && ((property == "enabled" || property == "isEnabled")) ||
         (parent == "buildFeatures" && property == "dataBinding")
     ) {
@@ -634,27 +754,31 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
     return value.startsWith("libs.versions.") && value.endsWith(".get().toInt()")
   }
 
-  private fun findCorrespondingTomlKey(context: GradleContext, value: String): LintTomlValue? {
-    if (isTomlVersionKey(value)) {
-      val key = value.removeSurrounding("libs.versions.", ".get().toInt()")
-      // Find current library declaration in catalog, accounting for the declaration
-      // possibly using - and _ characters in the name
-      return (context.getTomlValue(VC_VERSIONS) as? LintTomlMapValue)
-        ?.getMappedValues()
-        ?.asIterable()
-        ?.find { it.key.replace('-', '.').replace('_', '.') == key }
-        ?.value
-    }
-    return null
+  private fun String.safeRemoveSurrounding(prefix: CharSequence, suffix: CharSequence): String? {
+    val core = removeSurrounding(prefix, suffix)
+    // If removal failed, return null.
+    return if (core === this) null else core
   }
 
+  private fun findCorrespondingTomlInt(context: GradleContext, value: String): LintTomlValue? {
+    val key = value.safeRemoveSurrounding("libs.versions.", ".get().toInt()") ?: return null
+    // Find the key in the catalog, accounting for the key
+    // possibly using - and _ characters in the name.
+    return (context.getTomlValue(VC_VERSIONS) as? LintTomlMapValue)
+      ?.getMappedValues()
+      ?.asIterable()
+      ?.find { it.key.replace('-', '.').replace('_', '.') == key }
+      ?.value
+  }
+
+  /** Note: If [tomlValue] is non-null then [versionString] will often be a reference to the TOML key. */
   private fun checkTargetSdkVersion(
     context: Context,
     version: Int,
     versionString: String,
-    statementCookie: Any,
-    property: String,
-    includeFix: Boolean = true,
+    reportLocationCookie: Any,
+    propertyName: String,
+    tomlValue: LintTomlValue? = null,
   ) {
     if (version > 0 && version < context.client.highestKnownApiLevel) {
       when (val tsdk = checkTargetSdk(context, calendar ?: Calendar.getInstance(), version)) {
@@ -663,16 +787,16 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
           val alreadySuppressed =
             when (context) {
               is GradleContext ->
-                context.containsCommentSuppress() && context.isSuppressedWithComment(statementCookie, EXPIRING_TARGET_SDK_VERSION)
+                context.containsCommentSuppress() && context.isSuppressedWithComment(reportLocationCookie, EXPIRING_TARGET_SDK_VERSION)
               is TomlContext ->
-                context.containsCommentSuppress() && context.isSuppressedWithComment(statementCookie, EXPIRING_TARGET_SDK_VERSION)
+                context.containsCommentSuppress() && context.isSuppressedWithComment(reportLocationCookie, EXPIRING_TARGET_SDK_VERSION)
               else -> false
             }
 
           if (!alreadySuppressed) {
             report(
               context,
-              statementCookie,
+              reportLocationCookie,
               EXPIRED_TARGET_SDK_VERSION,
               tsdk.message,
               fix().data("currentTargetSdkVersion", version).takeIf { LintClient.isStudio },
@@ -682,7 +806,7 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
         is TargetSdkCheckResult.Expiring -> {
           report(
             context,
-            statementCookie,
+            reportLocationCookie,
             EXPIRING_TARGET_SDK_VERSION,
             tsdk.message,
             fix().data("currentTargetSdkVersion", version).takeIf { LintClient.isStudio },
@@ -694,12 +818,24 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
           val fix =
             if (LintClient.isStudio) {
               fix().data("currentTargetSdkVersion", version)
-            } else if (includeFix) {
-              fix().name(label).replace().text(versionString).with(highest.toString()).build()
+            } else if (tomlValue != null) {
+              val versionAsString = version.toString()
+              // TOML values are currently always strings (e.g. "25"), so we replace the version
+              // number within the string, if we can find it.
+              if (versionAsString in tomlValue.getText()) {
+                fix().name(label).replace().text(versionAsString).with(highest.toString()).range(tomlValue.getLocation()).build()
+              } else {
+                null
+              }
             } else {
-              null
+              // Otherwise, we only do trivial int -> int replacements.
+              if (versionString == version.toString()) {
+                fix().name(label).replace().text(versionString).with(highest.toString()).build()
+              } else {
+                null
+              }
             }
-          report(context, statementCookie, TARGET_NEWER, tsdk.message, fix)
+          report(context, reportLocationCookie, TARGET_NEWER, tsdk.message, fix)
         }
         is TargetSdkCheckResult.NoIssue -> {}
       }
@@ -712,43 +848,53 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
           lastTargetSdkVersionFile = context.file
         } else if (version > lastTargetSdkVersion) {
           val message =
-            "It looks like you just edited the `$property` from $lastTargetSdkVersion to $version in the editor. " +
+            "It looks like you just edited the `$propertyName` from $lastTargetSdkVersion to $version in the editor. " +
               "Be sure to consult the documentation on the behaviors that change as result of this. " +
               "The Android SDK Upgrade Assistant can help with safely migrating."
-          report(context, statementCookie, EDITED_TARGET_SDK_VERSION, message, fix().data("currentTargetSdkVersion", version))
+          report(context, reportLocationCookie, EDITED_TARGET_SDK_VERSION, message, fix().data("currentTargetSdkVersion", version))
         }
       }
     }
   }
 
+  /** Note: If [tomlValue] is non-null then [versionString] will often be a reference to the TOML key. */
   private fun checkCompileSdkVersionLatest(
     context: Context,
     version: Int,
-    cookie: Any,
-    property: String,
-    includeFix: Boolean = true,
-    fixCookie: Any? = null,
+    versionString: String,
+    reportLocationCookie: Any,
+    propertyName: String,
+    tomlValue: LintTomlValue? = null,
   ) {
-    if (version < HIGHEST_KNOWN_STABLE_ANDROID_API) {
-      val message = "A newer version of `$property` than $version is available: $HIGHEST_KNOWN_STABLE_ANDROID_API"
-      val fix =
-        if (includeFix) {
-          fix()
-            .name("Set $property to $HIGHEST_KNOWN_STABLE_ANDROID_API")
-            .replace()
-            .text(version.toString())
-            .with(HIGHEST_KNOWN_STABLE_ANDROID_API.toString())
-            .apply {
-              if (fixCookie is LintTomlValue) {
-                range(fixCookie.getLocation())
-              }
-            }
-            .build()
-        } else {
-          null
-        }
-      report(context, cookie, DEPENDENCY, message, fix)
+    if (version >= HIGHEST_KNOWN_STABLE_ANDROID_API) return
+    // Otherwise, report an incident.
+
+    val message = "A newer version of `$propertyName` than $version is available: $HIGHEST_KNOWN_STABLE_ANDROID_API"
+
+    fun getFix(): LintFix? {
+      val fixName = "Set $propertyName to $HIGHEST_KNOWN_STABLE_ANDROID_API"
+      val versionAsString = version.toString()
+      if (tomlValue != null) {
+        // TOML values are currently always strings (e.g. "25"), so we replace the version
+        // number within the string, if we can find it.
+        if (versionAsString !in tomlValue.getText()) return null
+
+        return fix()
+          .name(fixName)
+          .replace()
+          .text(versionAsString)
+          .with(HIGHEST_KNOWN_STABLE_ANDROID_API.toString())
+          .range(tomlValue.getLocation())
+          .build()
+      }
+
+      // Otherwise, we only do trivial int -> int replacements.
+      if (versionAsString != versionString) return null
+
+      return fix().name(fixName).replace().text(versionAsString).with(HIGHEST_KNOWN_STABLE_ANDROID_API.toString()).build()
     }
+
+    report(context, reportLocationCookie, DEPENDENCY, message, getFix())
   }
 
   /**
@@ -924,46 +1070,40 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
     }
   }
 
-  private fun checkMinSdkVersion(context: Context, version: Int, valueCookie: Any, includeFix: Boolean = true, fixCookie: Any? = null) {
-    if (version in 1 until LOWEST_ACTIVE_API) {
-      val message =
-        "The value of minSdkVersion ($version) is too low. It can be incremented " +
-          "without noticeably reducing the number of supported devices."
+  /** Note: If [tomlValue] is non-null then [versionString] will often be a reference to the TOML key. */
+  private fun checkMinSdkVersion(
+    context: Context,
+    version: Int,
+    versionString: String,
+    reportLocationCookie: Any,
+    tomlValue: LintTomlValue? = null,
+  ) {
+    if (version !in 1..<LOWEST_ACTIVE_API) return
 
-      val label = "Update minSdkVersion to $LOWEST_ACTIVE_API"
-      val fix =
-        if (includeFix) {
-          fix()
-            .name(label)
-            .replace()
-            .text(version.toString())
-            .with(LOWEST_ACTIVE_API.toString())
-            .apply {
-              if (fixCookie is LintTomlValue) {
-                range(fixCookie.getLocation())
-              }
-            }
-            .build()
-        } else {
-          null
-        }
-      report(context, valueCookie, MIN_SDK_TOO_LOW, message, fix)
-    }
-  }
+    // Otherwise, report incident.
 
-  private fun checkIntegerAsString(context: GradleContext, value: String, cookie: Any, valueCookie: Any) {
-    // When done developing with a preview platform you might be tempted to switch from
-    //     compileSdkVersion 'android-G'
-    // to
-    //     compileSdkVersion '19'
-    // but that won't work; it needs to be
-    //     compileSdkVersion 19
-    val string = getStringLiteralValue(value, valueCookie)
-    if (isNumberString(string)) {
-      val message = "Use an integer rather than a string here (replace $value with just $string)"
-      val fix = fix().name("Replace with integer", true).replace().text(value).with(string).build()
-      report(context, cookie, STRING_INTEGER, message, fix)
+    val message =
+      "The value of minSdkVersion ($version) is too low. It can be incremented " +
+        "without noticeably reducing the number of supported devices."
+
+    fun getFix(): LintFix? {
+      val fixName = "Update minSdkVersion to $LOWEST_ACTIVE_API"
+      val versionAsString = version.toString()
+      if (tomlValue != null) {
+        // TOML values are currently always strings (e.g. "25"), so we replace the version
+        // number within the string, if we can find it.
+        if (versionAsString !in tomlValue.getText()) return null
+
+        return fix().name(fixName).replace().text(versionAsString).with(LOWEST_ACTIVE_API.toString()).range(tomlValue.getLocation()).build()
+      }
+
+      // Otherwise, we only do trivial int -> int replacements.
+      if (versionAsString != versionString) return null
+
+      return fix().name(fixName).replace().text(versionString).with(LOWEST_ACTIVE_API.toString()).build()
     }
+
+    report(context, reportLocationCookie, MIN_SDK_TOO_LOW, message, getFix())
   }
 
   override fun checkMethodCall(
@@ -1775,17 +1915,17 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
           // >= 30: Since we're guessing purpose based on name, validate that
           // it's in the neighborhood of a valid compileSdkVersion to make sure
           if (compileSdk >= 30) {
-            checkCompileSdkVersionLatest(context, compileSdk, value, key)
+            checkCompileSdkVersionLatest(context, compileSdk, value.getText(), value, key, value)
           }
         } else if (isMinSdkTomlVersionKey(key)) {
           val minSdkString = value.getActualValue()?.toString() ?: continue
           val minSdk = getSdkVersion(minSdkString, value)
-          checkMinSdkVersion(context, minSdk, value)
+          checkMinSdkVersion(context, minSdk, value.getText(), value, value)
         } else if (isTargetSdkTomlVersionKey(key)) {
           val targetSdkString = value.getActualValue()?.toString() ?: continue
           val targetSdk = getSdkVersion(targetSdkString, value)
           if (targetSdk != -1) {
-            checkTargetSdkVersion(context, targetSdk, targetSdkString, value, key)
+            checkTargetSdkVersion(context, targetSdk, value.getText(), value, key, value)
           }
         }
       }
@@ -1815,8 +1955,7 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
         }
       val insertion =
         when {
-          // Note that these replacement texts must be valid in both Groovy and KotlinScript
-          // Gradle
+          // Note that these replacement texts must be valid in both Groovy and KotlinScript Gradle
           // files
           mDeclaredTargetCompatibility -> "\njava.sourceCompatibility = JavaVersion.VERSION_1_8"
           mDeclaredSourceCompatibility -> "\njava.targetCompatibility = JavaVersion.VERSION_1_8"
@@ -2150,8 +2289,6 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
     }
     return null
   }
-
-  private fun isPrivacySandboxSdk(project: Project): Boolean = project.buildModule?.type == LintModelModuleType.PRIVACY_SANDBOX_SDK
 
   /** True if the given project uses the legacy http library. */
   private fun usesLegacyHttpLibrary(project: Project): Boolean {
