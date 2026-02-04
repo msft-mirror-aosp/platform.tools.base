@@ -422,7 +422,6 @@ com.android.build.gradle.integration.lint.LintCheckDependenciesTest
 com.android.build.gradle.integration.lint.LintCheckTestSourcesTest
 com.android.build.gradle.integration.lint.LintClassLoaderTest
 com.android.build.gradle.integration.lint.LintCompileOnlyTest
-com.android.build.gradle.integration.lint.LintConfigurationCacheTest
 com.android.build.gradle.integration.lint.LintConfigurationOverrideTest
 com.android.build.gradle.integration.lint.LintCustomLocalAndPublishTest
 com.android.build.gradle.integration.lint.LintCustomRuleTest
