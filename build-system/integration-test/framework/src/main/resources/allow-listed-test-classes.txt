@@ -434,7 +434,6 @@ com.android.build.gradle.integration.lint.LintDynamicFeatureTest
 com.android.build.gradle.integration.lint.LintEnvironmentVariablesTest
 com.android.build.gradle.integration.lint.LintErrorTest
 com.android.build.gradle.integration.lint.LintFixTest
-com.android.build.gradle.integration.lint.LintGeneratedResourcesTest
 com.android.build.gradle.integration.lint.LintGeneratedSourcesTest
 com.android.build.gradle.integration.lint.LintGlobalRuleJarsTest
 com.android.build.gradle.integration.lint.LintInstantiateTest
