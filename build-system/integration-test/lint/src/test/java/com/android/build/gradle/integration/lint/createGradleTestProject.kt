@@ -144,7 +144,6 @@ fun createGradleTestProject(name: String, heapSize: String = "2048M"): GradleTes
         .dependency("lintPublish", lib, javaLib)
         .build()
     )
-    .disableBuiltInKotlin()
     .withHeap(heapSize)
     .create()
 }
