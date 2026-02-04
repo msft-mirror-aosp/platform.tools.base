@@ -331,6 +331,18 @@ class AdbLibAndroidDebugBridgeTest {
   }
 
   @Test
+  fun hasInitialDeviceList_initiallySetToFalse() = runBlockingWithTimeout {
+    // Setup
+    val session = FakeAdbSession()
+
+    val adbServerController = FakeAdbServerController()
+    val bridge = AdbLibAndroidDebugBridge(session, adbServerController, config)
+
+    // Act / Assert
+    assertFalse(bridge.hasInitialDeviceList())
+  }
+
+  @Test
   fun createBridge_triggersNotifyBridgeChangeEvents() = runBlockingWithTimeout {
     // Setup
     val session = FakeAdbSession()

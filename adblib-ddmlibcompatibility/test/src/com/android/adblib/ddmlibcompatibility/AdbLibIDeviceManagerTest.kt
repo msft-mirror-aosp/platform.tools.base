@@ -11,6 +11,7 @@ import com.android.ddmlib.AndroidDebugBridge
 import com.android.ddmlib.IDevice
 import com.android.ddmlib.idevicemanager.IDeviceManagerListener
 import com.android.fakeadbserver.DeviceState
+import com.android.fakeadbserver.DeviceState.HostConnectionType
 import com.android.sdklib.AndroidApiLevel
 import kotlin.math.max
 import kotlinx.coroutines.delay
@@ -42,12 +43,37 @@ class AdbLibIDeviceManagerTest {
   }
 
   @Test
-  fun hasInitialDeviceList() = runBlockingWithTimeout {
+  fun hasInitialDeviceList_returnsFalse_whenAdbCannotBeQueried() = runBlockingWithTimeout {
+    // Prepare
+    fakeAdbRule.fakeAdb.stop()
+    val deviceManager = AdbLibIDeviceManager(fakeAdbRule.adbSession, bridge, TestIDeviceManagerListener())
+
+    // Act: Wait a little to give AdbLibIDeviceManager a chance to query devices
+    delay(100)
+
+    // Assert
+    assertFalse(deviceManager.hasInitialDeviceList())
+  }
+
+  @Test
+  fun hasInitialDeviceList_returnsTrue_whenSuccessfullyQueryingEmptyListOfDevices() = runBlockingWithTimeout {
     // Prepare
     val deviceManager = AdbLibIDeviceManager(fakeAdbRule.adbSession, bridge, TestIDeviceManagerListener())
 
     // Act / Assert
     yieldUntil { deviceManager.hasInitialDeviceList() }
+    assertTrue(deviceManager.devices.isEmpty())
+  }
+
+  @Test
+  fun hasInitialDeviceList_true_impliesDeviceListIsPopulated() = runBlockingWithTimeout {
+    // Prepare
+    fakeAdbRule.fakeAdb.connectDevice("1234", "Google", "Pixel 9", "Baklava", AndroidApiLevel(36), HostConnectionType.USB)
+    val deviceManager = AdbLibIDeviceManager(fakeAdbRule.adbSession, bridge, TestIDeviceManagerListener())
+
+    // Act / Assert
+    yieldUntil { deviceManager.hasInitialDeviceList() }
+    assertEquals(1, deviceManager.devices.size)
   }
 
   @Test

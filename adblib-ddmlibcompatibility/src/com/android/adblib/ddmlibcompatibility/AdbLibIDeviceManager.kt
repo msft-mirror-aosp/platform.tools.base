@@ -52,7 +52,7 @@ internal class AdbLibIDeviceManager(
 
   private val externallyVisibleDeviceList = ExternallyVisibleDevices()
   private val ddmlibEventQueue = DdmlibEventQueueWithShutdown(logger, "DeviceUpdates")
-  private var initialDeviceListDone = false
+  @Volatile private var initialDeviceListDone = false
 
   init {
 
@@ -64,74 +64,74 @@ internal class AdbLibIDeviceManager(
         // to return the same instance for the same device
         val deviceMap = IdentityHashMap<ConnectedDevice, AdblibIDeviceWrapper>()
         val deviceInfoTrackingJobs = IdentityHashMap<ConnectedDevice, Job>()
-        session.connectedDevicesTracker.connectedDevices.collect { value ->
-          run {
-            // Process added devices
-            val added = value.filter { !deviceMap.containsKey(it) }
-            val addedIDevices = mutableListOf<IDevice>()
-            for (key in added) {
-              val deviceStateHolder = DeviceStateHolder()
-              val iDevice =
-                AdblibIDeviceWrapper(key, bridge, deviceStateHolder::value).also {
-                  it.computeUserDataIfAbsent(deviceStateHolderKey) { _ -> deviceStateHolder }
-                }
-              deviceMap[key] = iDevice
-              addedIDevices.add(iDevice)
+        session.connectedDevicesTracker.connectedDevices.collect { connectedDeviceList ->
+          // Process added devices
+          val added = connectedDeviceList.filter { !deviceMap.containsKey(it) }
+          val addedIDevices = mutableListOf<IDevice>()
+          for (key in added) {
+            val deviceStateHolder = DeviceStateHolder()
+            val iDevice =
+              AdblibIDeviceWrapper(key, bridge, deviceStateHolder::value).also {
+                it.computeUserDataIfAbsent(deviceStateHolderKey) { _ -> deviceStateHolder }
+              }
+            deviceMap[key] = iDevice
+            addedIDevices.add(iDevice)
+          }
+
+          // Process removed devices
+          val removed = deviceMap.keys.filter { !connectedDeviceList.contains(it) }
+          val removedIDevices = mutableListOf<IDevice>()
+          for (key in removed) {
+            deviceInfoTrackingJobs.remove(key)?.also {
+              it.cancel("Cancelling DeviceInfo tracking for removed device [${key.serialNumber}]")
+              it.join()
+            }
+            deviceMap.remove(key)?.also {
+              it.deviceStateHolder.update(DeviceState.DISCONNECTED)
+              removedIDevices.add(it)
+            }
+          }
+
+          if (addedIDevices.isNotEmpty()) {
+            // Set current deviceState before triggering `iDeviceManagerListener.addedDevices`
+            for (addedConnectedDevice in added) {
+              val iDevice = deviceMap.getValue(addedConnectedDevice)
+              iDevice.deviceStateHolder.update(addedConnectedDevice.deviceInfoFlow.value.deviceState)
+            }
+            postAndWaitForCompletion(scope, "devices added") {
+              externallyVisibleDeviceList.addAll(addedIDevices)
+              iDeviceManagerListener.addedDevices(addedIDevices)
             }
 
-            // Process removed devices
-            val removed = deviceMap.keys.filter { !value.contains(it) }
-            val removedIDevices = mutableListOf<IDevice>()
-            for (key in removed) {
-              deviceInfoTrackingJobs.remove(key)?.also {
-                it.cancel("Cancelling DeviceInfo tracking for removed device [${key.serialNumber}]")
-                it.join()
-              }
-              deviceMap.remove(key)?.also {
-                it.deviceStateHolder.update(DeviceState.DISCONNECTED)
-                removedIDevices.add(it)
-              }
-            }
-
-            // flag the fact that we have build the list at least once
-            initialDeviceListDone = true
-
-            if (addedIDevices.isNotEmpty()) {
-              // Set current deviceState before triggering `iDeviceManagerListener.addedDevices`
-              for (addedConnectedDevice in added) {
-                val iDevice = deviceMap.getValue(addedConnectedDevice)
-                iDevice.deviceStateHolder.update(addedConnectedDevice.deviceInfoFlow.value.deviceState)
-              }
-              postAndWaitForCompletion(scope, "devices added") {
-                externallyVisibleDeviceList.addAll(addedIDevices)
-                iDeviceManagerListener.addedDevices(addedIDevices)
-              }
-
-              for (addedConnectedDevice in added) {
-                val iDevice = deviceMap.getValue(addedConnectedDevice)
-                deviceInfoTrackingJobs[addedConnectedDevice] =
-                  scope.launch {
-                    addedConnectedDevice.deviceInfoFlow
-                      .map { it.deviceState }
-                      // Match ddmlib behavior by not triggering device state
-                      // change event for a `DISCONNECTED` device state value.
-                      .takeWhile { it != DeviceState.DISCONNECTED }
-                      .collect {
-                        val stateChanged = iDevice.deviceStateHolder.update(it)
-                        if (stateChanged) {
-                          postAndWaitForCompletion(scope, "device state changed") { iDeviceManagerListener.deviceStateChanged(iDevice) }
-                        }
+            for (addedConnectedDevice in added) {
+              val iDevice = deviceMap.getValue(addedConnectedDevice)
+              deviceInfoTrackingJobs[addedConnectedDevice] =
+                scope.launch {
+                  addedConnectedDevice.deviceInfoFlow
+                    .map { it.deviceState }
+                    // Match ddmlib behavior by not triggering device state
+                    // change event for a `DISCONNECTED` device state value.
+                    .takeWhile { it != DeviceState.DISCONNECTED }
+                    .collect {
+                      val stateChanged = iDevice.deviceStateHolder.update(it)
+                      if (stateChanged) {
+                        postAndWaitForCompletion(scope, "device state changed") { iDeviceManagerListener.deviceStateChanged(iDevice) }
                       }
-                  }
-              }
+                    }
+                }
             }
+          }
 
-            if (removedIDevices.isNotEmpty()) {
-              postAndWaitForCompletion(scope, "devices removed") {
-                externallyVisibleDeviceList.removeAll(removedIDevices)
-                iDeviceManagerListener.removedDevices(removedIDevices)
-              }
+          if (removedIDevices.isNotEmpty()) {
+            postAndWaitForCompletion(scope, "devices removed") {
+              externallyVisibleDeviceList.removeAll(removedIDevices)
+              iDeviceManagerListener.removedDevices(removedIDevices)
             }
+          }
+
+          // flag the fact that we have built the real device list at least once
+          if (connectedDeviceList.flowStatus.isActive) {
+            initialDeviceListDone = true
           }
         }
       }
@@ -182,6 +182,7 @@ internal class AdbLibIDeviceManager(
 
   /** Container of the list [IDevices] that are externally visible from `IDevice` interface. Must be thread-safe. */
   private class ExternallyVisibleDevices {
+
     private val concurrentSet = ConcurrentHashMap.newKeySet<IDevice>()
     @Volatile private var tempLazyList: List<IDevice>? = null
 

@@ -28,6 +28,7 @@ import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.RuleChain
@@ -68,25 +69,29 @@ class AdbLibAndroidDebugBridgeIntegrationTest {
         .get()
     fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
 
-    yieldUntil { bridgeInstance.devices.isNotEmpty() }
+    yieldUntil { bridgeInstance.hasInitialDeviceList() }
 
     // Assert
     assertEquals(bridgeInstance, AndroidDebugBridge.getBridge())
+    assertTrue(bridgeInstance.devices.isNotEmpty())
     assertEquals("device1", bridgeInstance.devices[0].serialNumber)
 
     // Act: disconnect bridge
     AndroidDebugBridge.disconnectBridge(Long.MAX_VALUE, TimeUnit.MILLISECONDS)
-    yieldUntil { bridgeInstance.devices.isEmpty() }
+    yieldUntil { !bridgeInstance.hasInitialDeviceList() }
 
+    // Assert
+    assertTrue(bridgeInstance.devices.isEmpty())
     assertNull(AndroidDebugBridge.getBridge())
 
     // Act: recreate bridge
     val recreatedBridgeInstance = AndroidDebugBridge.createBridge(10, TimeUnit.SECONDS) ?: error("Bridge was null")
-    yieldUntil { recreatedBridgeInstance.devices.isNotEmpty() }
+    yieldUntil { recreatedBridgeInstance.hasInitialDeviceList() }
 
     // Assert
     assertNotEquals(bridgeInstance, recreatedBridgeInstance)
     assertEquals(recreatedBridgeInstance, AndroidDebugBridge.getBridge())
+    assertTrue(recreatedBridgeInstance.devices.isNotEmpty())
     assertEquals("device1", recreatedBridgeInstance.devices[0].serialNumber)
 
     // Act: terminate bridge
