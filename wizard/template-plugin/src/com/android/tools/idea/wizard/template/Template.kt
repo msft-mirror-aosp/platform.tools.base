@@ -32,7 +32,6 @@ enum class Category {
   Widget,
   Google,
   Compose,
-  WatchFace,
   Other,
 }
 
@@ -62,6 +61,16 @@ enum class TemplateConstraint {
   // Compose is used as a Constraint since it implies the need of a specific Kotlin Compiler version
   Compose,
   Aidl,
+}
+
+/**
+ * Identifies special properties of the template. Downstream code often needs to treat certain templates differently; this provides a
+ * mechanism for that, to avoid bending other fields (such as name or category) to that purpose.
+ */
+enum class TemplateFlag {
+  WatchFace,
+  NewProjectAgent,
+  FirebaseAi,
 }
 
 /**
@@ -115,6 +124,9 @@ interface Template {
   /** Conditions under which the template may be rendered. For example, some templates only support AndroidX */
   val constraints: Collection<TemplateConstraint>
 
+  /** Identifies special properties of the template. */
+  val flags: Collection<TemplateFlag>
+
   val useGenericInstrumentedTests: Boolean
 
   val useGenericLocalTests: Boolean
@@ -126,6 +138,7 @@ interface Template {
       get() = listOf(WizardUiContext.ActivityGallery)
 
     override val constraints: Collection<TemplateConstraint> = listOf()
+    override val flags: Collection<TemplateFlag> = listOf()
     override val recipe: Recipe
       get() = throw UnsupportedOperationException()
 

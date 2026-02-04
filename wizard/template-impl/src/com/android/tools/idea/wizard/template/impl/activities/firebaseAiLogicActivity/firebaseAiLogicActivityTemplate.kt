@@ -24,6 +24,7 @@ import com.android.tools.idea.wizard.template.ModuleTemplateData
 import com.android.tools.idea.wizard.template.PackageNameWidget
 import com.android.tools.idea.wizard.template.TemplateConstraint
 import com.android.tools.idea.wizard.template.TemplateData
+import com.android.tools.idea.wizard.template.TemplateFlag
 import com.android.tools.idea.wizard.template.TextFieldWidget
 import com.android.tools.idea.wizard.template.WizardUiContext
 import com.android.tools.idea.wizard.template.impl.defaultPackageNameParameter
@@ -37,7 +38,7 @@ val firebaseAiLogicActivityTemplate
     description = "Creates a starter app for using the Gemini API via Firebase"
     minApi = 23
     constraints = listOf(TemplateConstraint.AndroidX, TemplateConstraint.Kotlin, TemplateConstraint.Material3, TemplateConstraint.Compose)
-
+    flags = listOf(TemplateFlag.FirebaseAi)
     category = Category.Google
     formFactor = FormFactor.Mobile
     screens = listOf(WizardUiContext.NewProject)

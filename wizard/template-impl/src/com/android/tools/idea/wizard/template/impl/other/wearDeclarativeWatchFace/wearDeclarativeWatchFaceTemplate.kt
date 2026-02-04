@@ -20,6 +20,7 @@ import com.android.tools.idea.wizard.template.FormFactor
 import com.android.tools.idea.wizard.template.ModuleTemplateData
 import com.android.tools.idea.wizard.template.PackageNameWidget
 import com.android.tools.idea.wizard.template.TemplateData
+import com.android.tools.idea.wizard.template.TemplateFlag
 import com.android.tools.idea.wizard.template.WizardUiContext
 import com.android.tools.idea.wizard.template.impl.defaultPackageNameParameter
 import com.android.tools.idea.wizard.template.template
@@ -32,7 +33,8 @@ val wearDeclarativeWatchFaceTemplate
     description = "Creates a basic Watch Face for Wear OS"
 
     constraints = listOf()
-    category = Category.WatchFace
+    category = Category.Other
+    flags = listOf(TemplateFlag.WatchFace)
     formFactor = FormFactor.Wear
     screens = listOf(WizardUiContext.NewProject)
     val packageName = defaultPackageNameParameter

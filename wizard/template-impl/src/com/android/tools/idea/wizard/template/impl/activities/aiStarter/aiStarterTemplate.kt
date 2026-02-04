@@ -26,6 +26,7 @@ import com.android.tools.idea.wizard.template.ModuleTemplateData
 import com.android.tools.idea.wizard.template.PackageNameWidget
 import com.android.tools.idea.wizard.template.TemplateConstraint
 import com.android.tools.idea.wizard.template.TemplateData
+import com.android.tools.idea.wizard.template.TemplateFlag
 import com.android.tools.idea.wizard.template.TextFieldWidget
 import com.android.tools.idea.wizard.template.WizardUiContext
 import com.android.tools.idea.wizard.template.booleanParameter
@@ -40,7 +41,8 @@ val aiStarterTemplate
     description = "Create a new app using AI"
     minApi = 21
     constraints = listOf(TemplateConstraint.AndroidX, TemplateConstraint.Kotlin, TemplateConstraint.Material3, TemplateConstraint.Compose)
-    category = Category.Compose
+    category = Category.Application
+    flags = listOf(TemplateFlag.NewProjectAgent)
     formFactor = FormFactor.Mobile
     screens =
       listOfNotNull(
