@@ -270,7 +270,7 @@ private fun failIfIncompatiblePluginsArePresent(project: Project) {
       """
             The 'com.android.library' (or 'com.android.application') plugin is not compatible with the '$KOTLIN_MPP_PLUGIN_ID' plugin since AGP 9.0.
             Solution:
-              - [Recommended] Replace the 'com.android.library' plugin with the '$ANDROID_KOTLIN_MPP_LIBRARY_PLUGIN_ID' plugin (see https://developer.android.com/r/tools/built-in-kotlin).
+              - [Recommended] Replace the 'com.android.library' plugin with the '$ANDROID_KOTLIN_MPP_LIBRARY_PLUGIN_ID' plugin (see https://developer.android.com/kotlin/multiplatform/plugin).
               - Or set the Gradle property '${BooleanOption.BUILT_IN_KOTLIN.propertyName}=false' and '${BooleanOption.USE_NEW_DSL.propertyName}=false' to temporarily bypass this issue.
             """
         .trimIndent()
