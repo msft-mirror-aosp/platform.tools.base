@@ -69,6 +69,7 @@ class ConnectedDevicesTrackerTest {
 
     // Assert
     Assert.assertEquals(1, deviceCacheManager.connectedDevices.value.size)
+    Assert.assertTrue(deviceCacheManager.connectedDevices.value.flowStatus.isActive)
   }
 
   @Test
@@ -85,6 +86,7 @@ class ConnectedDevicesTrackerTest {
 
     // Assert
     Assert.assertTrue(deviceCacheManager.connectedDevices.value.isEmpty())
+    Assert.assertTrue(deviceCacheManager.connectedDevices.value.flowStatus.isEndOfFlow)
   }
 
   @Test
@@ -99,6 +101,7 @@ class ConnectedDevicesTrackerTest {
 
     // Assert
     Assert.assertEquals(1, deviceCacheManager.connectedDevices.value.size)
+    Assert.assertTrue(deviceCacheManager.connectedDevices.value.flowStatus.isActive)
     val connectedDevice = deviceCacheManager.connectedDevices.value[0]
     Assert.assertEquals("1234", connectedDevice.serialNumber)
     Assert.assertEquals(com.android.adblib.DeviceState.ONLINE, connectedDevice.deviceInfo.deviceState)
@@ -245,5 +248,43 @@ class ConnectedDevicesTrackerTest {
     Assert.assertFalse(deviceCache.scope.isActive)
     Assert.assertTrue(closeable.closed)
     Assert.assertEquals(0, deviceCacheManager.connectedDevices.value.size)
+  }
+
+  @Test
+  fun flowStatus_startsAsInitializing_thenBecomesActive_andEndsAsEndOfFlow() = runBlockingWithTimeout {
+    // Act
+    val deviceCacheManager = ConnectedDevicesTrackerImpl(session)
+
+    // Assert
+    Assert.assertTrue(deviceCacheManager.connectedDevices.value.flowStatus.isStartOfFlow)
+
+    // Act
+    yieldUntil { deviceCacheManager.connectedDevices.value.flowStatus.isActive }
+
+    // Assert
+    Assert.assertTrue(deviceCacheManager.connectedDevices.value.flowStatus.isActive)
+
+    // Act
+    session.close()
+    yieldUntil { deviceCacheManager.connectedDevices.value.flowStatus.isEndOfFlow }
+
+    // Assert
+    Assert.assertTrue(deviceCacheManager.connectedDevices.value.flowStatus.isEndOfFlow)
+  }
+
+  @Test
+  fun flowStatusBecomesRetryingWhenServerStops() = runBlockingWithTimeout {
+    // Prepare
+    val deviceCacheManager = ConnectedDevicesTrackerImpl(session)
+    yieldUntil { deviceCacheManager.connectedDevices.value.flowStatus.isActive }
+
+    // Act
+    fakeAdb.stop()
+    yieldUntil { deviceCacheManager.connectedDevices.value.flowStatus.isRetrying }
+
+    // Assert
+    val flowStatus = deviceCacheManager.connectedDevices.value.flowStatus
+    Assert.assertTrue(flowStatus.isRetrying)
+    Assert.assertNotNull(flowStatus.currentError)
   }
 }

@@ -31,8 +31,16 @@ interface ConnectedDevicesTracker {
    * The [StateFlow] of currently [connected devices][ConnectedDevice]. The flow remains active as long as the [session] is active. Once the
    * session is closed, the flow value changes to an empty list and never updates again.
    */
-  val connectedDevices: StateFlow<List<ConnectedDevice>>
+  val connectedDevices: StateFlow<ConnectedDeviceList>
 }
+
+/**
+ * An entry of the [ConnectedDevicesTracker.connectedDevices], containing the list of [ConnectedDevice].
+ *
+ * Use [flowStatus] property to get more information about the state of the connection.
+ */
+class ConnectedDeviceList(list: List<ConnectedDevice>, flowStatus: StateFlowStatus) :
+  ListWithStateFlowStatus<ConnectedDevice>(list, flowStatus)
 
 /** Returns a [ConnectedDevice] instance for a given [selector], or `null` if the device is not currently connected. */
 suspend fun ConnectedDevicesTracker.device(selector: DeviceSelector): ConnectedDevice? {
