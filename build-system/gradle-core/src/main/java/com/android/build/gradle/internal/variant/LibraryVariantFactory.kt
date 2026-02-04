@@ -86,6 +86,7 @@ class LibraryVariantFactory(dslServices: DslServices) :
     variantServices: VariantServices,
     taskCreationServices: TaskCreationServices,
     globalConfig: GlobalTaskCreationConfig,
+    projectServices: ProjectServices,
   ): LibraryCreationConfig {
     val libraryVariant =
       dslServices.newInstance(
@@ -102,6 +103,7 @@ class LibraryVariantFactory(dslServices: DslServices) :
         variantServices,
         taskCreationServices,
         globalConfig,
+        dslServices,
       )
     restrictRenderScriptOnRiscv(dslServices, libraryVariant, buildFeatures, globalConfig)
     return libraryVariant

@@ -58,6 +58,7 @@ import com.android.build.api.dsl.LibraryPublishing
 import com.android.build.api.dsl.Lint
 import com.android.build.api.dsl.MaxSdkSpec
 import com.android.build.api.dsl.MaxSdkVersion
+import com.android.build.api.dsl.MinCompileSdkSpec
 import com.android.build.api.dsl.MinSdkSpec
 import com.android.build.api.dsl.MultiDexConfig
 import com.android.build.api.dsl.NdkBuild
@@ -183,6 +184,7 @@ val AGP_SUPPORTED_PROPERTY_TYPES: List<SupportedPropertyType> =
     SupportedPropertyType.Block(MinSdkSpec::class.java, com.android.build.gradle.internal.dsl.MinSdkSpecImpl::class.java),
     SupportedPropertyType.Block(MaxSdkSpec::class.java, com.android.build.gradle.internal.dsl.MaxSdkSpecImpl::class.java),
     SupportedPropertyType.Block(TargetSdkSpec::class.java, com.android.build.gradle.internal.dsl.TargetSdkSpecImpl::class.java),
+    SupportedPropertyType.Block(MinCompileSdkSpec::class.java, com.android.build.gradle.internal.dsl.MinCompileSdkSpecImpl::class.java),
 
     // FusedLibrary Extensions.
     SupportedPropertyType.Block(FusedLibraryExtension::class.java, FusedLibraryExtensionImpl::class.java),

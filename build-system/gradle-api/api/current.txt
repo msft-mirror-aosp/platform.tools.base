@@ -296,6 +296,7 @@ package com.android.build.api.dsl {
     method @InaccessibleFromKotlin public String? getMinAgpVersion();
     method @InaccessibleFromKotlin public Integer? getMinCompileSdk();
     method @InaccessibleFromKotlin public Integer? getMinCompileSdkExtension();
+    method public void minCompileSdk(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.MinCompileSdkSpec,kotlin.Unit> action);
     method @InaccessibleFromKotlin public void setMinAgpVersion(String?);
     method @InaccessibleFromKotlin public void setMinCompileSdk(Integer?);
     method @InaccessibleFromKotlin public void setMinCompileSdkExtension(Integer?);
@@ -2665,11 +2666,14 @@ package com.android.build.api.variant {
 
   public interface AarMetadata {
     method @InaccessibleFromKotlin @org.gradle.api.Incubating public org.gradle.api.provider.Property<java.lang.String> getMinAgpVersion();
-    method @InaccessibleFromKotlin public org.gradle.api.provider.Property<java.lang.Integer> getMinCompileSdk();
-    method @InaccessibleFromKotlin @org.gradle.api.Incubating public org.gradle.api.provider.Property<java.lang.Integer> getMinCompileSdkExtension();
+    method @InaccessibleFromKotlin @Deprecated public org.gradle.api.provider.Property<java.lang.Integer> getMinCompileSdk();
+    method @InaccessibleFromKotlin @Deprecated @org.gradle.api.Incubating public org.gradle.api.provider.Property<java.lang.Integer> getMinCompileSdkExtension();
+    method @InaccessibleFromKotlin public org.gradle.api.provider.Property<com.android.build.api.dsl.CompileSdkVersion> getMinCompileSdkVersion();
+    method public void minCompileSdk(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.MinCompileSdkSpec,kotlin.Unit> action);
     property @org.gradle.api.Incubating public abstract org.gradle.api.provider.Property<java.lang.String> minAgpVersion;
-    property public abstract org.gradle.api.provider.Property<java.lang.Integer> minCompileSdk;
-    property @org.gradle.api.Incubating public abstract org.gradle.api.provider.Property<java.lang.Integer> minCompileSdkExtension;
+    property @Deprecated public abstract org.gradle.api.provider.Property<java.lang.Integer> minCompileSdk;
+    property @Deprecated @org.gradle.api.Incubating public abstract org.gradle.api.provider.Property<java.lang.Integer> minCompileSdkExtension;
+    property public abstract org.gradle.api.provider.Property<com.android.build.api.dsl.CompileSdkVersion> minCompileSdkVersion;
   }
 
   public interface Aidl {

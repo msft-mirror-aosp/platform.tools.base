@@ -76,6 +76,7 @@ internal class DynamicFeatureVariantFactory(dslServices: DslServices) :
     variantServices: VariantServices,
     taskCreationServices: TaskCreationServices,
     globalConfig: GlobalTaskCreationConfig,
+    projectServices: ProjectServices,
   ): DynamicFeatureCreationConfig {
     return dslServices.newInstance(
       DynamicFeatureVariantImpl::class.java,

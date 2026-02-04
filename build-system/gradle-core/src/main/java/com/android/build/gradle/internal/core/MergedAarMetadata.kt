@@ -16,29 +16,28 @@
 package com.android.build.gradle.internal.core
 
 import com.android.build.api.dsl.AarMetadata
+import com.android.build.api.dsl.CompileSdkVersion
+import com.android.build.gradle.internal.dsl.AarMetadataImpl
 
 /** Used to merge multiple instances of [AarMetadata] together. */
-class MergedAarMetadata : MergedOptions<AarMetadata>, AarMetadata {
+class MergedAarMetadata : MergedOptions<AarMetadata> {
 
-  override var minCompileSdk: Int? = null
-  override var minCompileSdkExtension: Int? = null
-  override var minAgpVersion: String? = null
+  var minCompileSdkVersion: CompileSdkVersion? = null
+  var minAgpVersion: String? = null
 
   override fun reset() {
-    minCompileSdk = null
-    minCompileSdkExtension = null
+    minCompileSdkVersion = null
     minAgpVersion = null
   }
 
   override fun append(option: AarMetadata) {
-    option.minCompileSdk?.let { minCompileSdk = it }
-    option.minCompileSdkExtension?.let { minCompileSdkExtension = it }
+    if (option !is AarMetadataImpl) throw IllegalArgumentException("${AarMetadataImpl::class.java.name} expected.")
+    option.minCompileSdkVersion?.let { minCompileSdkVersion = it }
     option.minAgpVersion?.let { minAgpVersion = it }
   }
 
   fun append(option: MergedAarMetadata) {
-    option.minCompileSdk?.let { minCompileSdk = it }
-    option.minCompileSdkExtension?.let { minCompileSdkExtension = it }
+    option.minCompileSdkVersion?.let { minCompileSdkVersion = it }
     option.minAgpVersion?.let { minAgpVersion = it }
   }
 }

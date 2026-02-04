@@ -398,6 +398,7 @@ class VariantManager<
         variantServices,
         taskCreationServices,
         globalTaskCreationConfig,
+        projectServices,
       )
 
     return VariantComponentInfo(variantBuilder, variantApiObject, profileEnabledVariantBuilder, variantDslInfo)
@@ -546,6 +547,7 @@ class VariantManager<
       variantServices,
       taskCreationServices,
       globalTaskCreationConfig,
+      projectServices,
     )
   }
 

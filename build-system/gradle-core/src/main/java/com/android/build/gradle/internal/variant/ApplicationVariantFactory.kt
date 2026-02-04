@@ -95,6 +95,7 @@ class ApplicationVariantFactory(dslServices: DslServices) :
     variantServices: VariantServices,
     taskCreationServices: TaskCreationServices,
     globalConfig: GlobalTaskCreationConfig,
+    projectServices: ProjectServices,
   ): ApplicationCreationConfig {
     val appVariant =
       dslServices.newInstance(

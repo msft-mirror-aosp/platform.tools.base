@@ -47,6 +47,14 @@ package com.android.build.api.dsl {
     property public abstract int apiLevel;
   }
 
+  public interface MinCompileSdkSpec {
+    method @InaccessibleFromKotlin public com.android.build.api.dsl.CompileSdkVersion? getVersion();
+    method public com.android.build.api.dsl.CompileSdkVersion release(int version);
+    method public com.android.build.api.dsl.CompileSdkVersion release(int version, kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.CompileSdkReleaseSpec,kotlin.Unit> action);
+    method @InaccessibleFromKotlin public void setVersion(com.android.build.api.dsl.CompileSdkVersion?);
+    property public abstract com.android.build.api.dsl.CompileSdkVersion? version;
+  }
+
   public interface MinSdkSpec {
     method @InaccessibleFromKotlin public com.android.build.api.dsl.MinSdkVersion? getVersion();
     method public com.android.build.api.dsl.MinSdkVersion preview(String codeName);

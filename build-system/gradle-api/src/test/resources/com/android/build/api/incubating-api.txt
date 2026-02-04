@@ -116,8 +116,6 @@ https://issuetracker.google.com/328748571
 https://issuetracker.google.com/328748591
   * com.android.build.api.dsl.BuildType.getVcsInfo: com.android.build.api.dsl.VcsInfo ()
   * com.android.build.api.dsl.BuildType.vcsInfo: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.VcsInfo, kotlin.Unit>)
-https://issuetracker.google.com/328748594
-  * com.android.build.api.variant.AarMetadata.getMinCompileSdkExtension: org.gradle.api.provider.Property<java.lang.Integer> ()
 https://issuetracker.google.com/328748602
   * com.android.build.api.dsl.BundleAbi.getEnableSplit: java.lang.Boolean ()
   * com.android.build.api.dsl.BundleAbi.setEnableSplit: void (java.lang.Boolean)
@@ -673,6 +671,8 @@ https://issuetracker.google.com/444699160
   * com.android.build.api.variant.HostTestBuilder.setIncludeAndroidResources: void (boolean)
 https://issuetracker.google.com/467692785
   * com.android.build.api.KotlinMultiplatformHierarchyDsl.withAndroid: void (org.jetbrains.kotlin.gradle.plugin.KotlinHierarchyBuilder)
+https://issuetracker.google.com/475856688
+  * com.android.build.api.variant.AarMetadata.getMinCompileSdkExtension: org.gradle.api.provider.Property<java.lang.Integer> ()
 https://issuetracker.google.com/476099690
   * com.android.build.api.dsl.AndroidSourceSet.getKeepRules: com.android.build.api.dsl.AndroidSourceDirectorySet ()
   * com.android.build.api.dsl.AndroidSourceSet.keepRules: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.AndroidSourceDirectorySet, kotlin.Unit>)

@@ -558,6 +558,7 @@ constructor(listenerRegistry: BuildEventsListenerRegistry, private val buildFeat
         global = global,
         androidKotlinCompilation = kotlinCompilation,
         manifestFile = getAndroidManifestDefaultLocation(kotlinCompilation),
+        dslServices = dslServices,
       )
       .also { variant ->
         variant.sources.let { sourcesImpl ->

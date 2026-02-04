@@ -17,6 +17,61 @@
 package com.android.build.gradle.internal.dsl
 
 import com.android.build.api.dsl.AarMetadata
+import com.android.build.api.dsl.CompileSdkVersion
+import com.android.build.api.dsl.MinCompileSdkSpec
+import com.android.build.gradle.internal.services.DslServices
+import javax.inject.Inject
+import org.gradle.api.Action
 
 /** DSL object for configuring AAR metadata. */
-interface AarMetadataImpl : AarMetadata
+abstract class AarMetadataImpl @Inject constructor(val dslServices: DslServices) : AarMetadata {
+
+  protected abstract var _compileSdk: CompileSdkVersion
+
+  private val compileSdkDelegate =
+    CompileSdkDelegate(
+      getCompileSdk = { _compileSdk },
+      setCompileSdk = { it?.let { _compileSdk = it } },
+      issueReporter = dslServices.issueReporter,
+      dslServices = dslServices,
+    )
+
+  val minCompileSdkVersion: CompileSdkVersion
+    get() = _compileSdk
+
+  override var minCompileSdk: Int?
+    get() = compileSdkDelegate.compileSdk
+    set(value) {
+      compileSdkDelegate.compileSdk = value
+    }
+
+  override var minCompileSdkExtension: Int?
+    get() = compileSdkDelegate.compileSdkExtension
+    set(value) {
+      compileSdkDelegate.compileSdkExtension = value
+    }
+
+  override fun minCompileSdk(action: MinCompileSdkSpec.() -> Unit) {
+    val spec = dslServices.newInstance(MinCompileSdkSpecImpl::class.java, dslServices)
+    spec.action()
+    compileSdkDelegate.compileSdk { version = spec._version }
+  }
+
+  open fun minCompileSdk(action: Action<MinCompileSdkSpec>) {
+    val spec = dslServices.newInstance(MinCompileSdkSpecImpl::class.java, dslServices)
+    action.execute(spec)
+    compileSdkDelegate.compileSdk { version = spec._version }
+  }
+
+  // TODO(b/421964815): remove the support for groovy space assignment (e.g `minCompileSdk 24`).
+  @Deprecated("To be removed after Gradle drops space assignment support. Use `minCompileSdk {}` instead.")
+  open fun minCompileSdk(version: Int) {
+    minCompileSdk = version
+  }
+
+  // TODO(b/421964815): remove the support for groovy space assignment (e.g `minCompileSdkExtension 2`).
+  @Deprecated("To be removed after Gradle drops space assignment support. Use `minCompileSdk {}` instead.")
+  open fun minCompileSdkExtension(extension: Int) {
+    minCompileSdkExtension = extension
+  }
+}

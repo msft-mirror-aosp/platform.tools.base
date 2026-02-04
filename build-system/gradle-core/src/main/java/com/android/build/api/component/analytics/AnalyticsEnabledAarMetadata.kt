@@ -16,6 +16,8 @@
 
 package com.android.build.api.component.analytics
 
+import com.android.build.api.dsl.CompileSdkVersion
+import com.android.build.api.dsl.MinCompileSdkSpec
 import com.android.build.api.variant.AarMetadata
 import com.android.tools.build.gradle.internal.profile.VariantPropertiesMethodType
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
@@ -31,6 +33,20 @@ open class AnalyticsEnabledAarMetadata @Inject constructor(val delegate: AarMeta
       return delegate.minCompileSdk
     }
 
+  override val minCompileSdkVersion: Property<CompileSdkVersion>
+    get() {
+      stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
+        VariantPropertiesMethodType.VARIANT_AAR_METADATA_MIN_COMPILE_SDK_VERSION_VALUE
+      return delegate.minCompileSdkVersion
+    }
+
+  override fun minCompileSdk(action: MinCompileSdkSpec.() -> Unit) {
+    stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
+      VariantPropertiesMethodType.VARIANT_AAR_METADATA_MIN_COMPILE_SDK_VERSION_SPEC_VALUE
+    delegate.minCompileSdk(action)
+  }
+
+  @Deprecated("Use minCompileSdk() instead. Once minCompileSdk() is set, this property has no effect.")
   override val minCompileSdkExtension: Property<Int>
     get() {
       stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =

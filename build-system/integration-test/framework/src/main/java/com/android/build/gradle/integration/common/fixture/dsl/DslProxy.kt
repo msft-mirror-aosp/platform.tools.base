@@ -28,6 +28,7 @@ import com.android.build.api.dsl.ExecutionProfile
 import com.android.build.api.dsl.LibraryProductFlavor
 import com.android.build.api.dsl.MaxSdkSpec
 import com.android.build.api.dsl.MaxSdkVersion
+import com.android.build.api.dsl.MinCompileSdkSpec
 import com.android.build.api.dsl.MinSdkSpec
 import com.android.build.api.dsl.MinSdkVersion
 import com.android.build.api.dsl.ProductFlavor
@@ -212,6 +213,7 @@ class DslProxy private constructor(private val theInterface: Class<*>, internal 
    * - [TargetSdkSpec.preview]
    * - [MinSdkSpec.release]
    * - [MaxSdkSpec.release]
+   * - [MinCompileSdkSpec.release]
    */
   private fun checkSdkSpecCall(method: Method, args: Array<out Any?>?): MethodReturn {
     if (args == null) return notAMatch
@@ -320,6 +322,44 @@ class DslProxy private constructor(private val theInterface: Class<*>, internal 
           else -> throw RuntimeException("Unexpected method call ${method.name} -- Add support as needed")
         }
       }
+
+      MinCompileSdkSpec::class.java -> {
+        when (method.name) {
+          "release" -> {
+            when (method.parameterCount) {
+              1 -> {
+                MethodReturn(CompileSdkVersionImpl(apiLevel = args.first() as Int))
+              }
+              2 -> {
+                val lambda = method.parameters[1]
+
+                if (lambda.type != Function1::class.java) {
+                  throw RuntimeException("Unexpected lambda for 2nd arg for ${method.name} -- Add support as needed")
+                }
+
+                // we are going to take a shortcut here. We don't want to record
+                // the lambda calls because it's not attached to a DSL object
+                // (it's just constructing the CompileSdkVersion object).
+                // So we're just going to run the lambda, and then later,
+                // when we write it, we'll reconstruct the calls (since they
+                // are simple setters
+                val spec = CompileSdkReleaseSpecImpl()
+
+                @Suppress("UNCHECKED_CAST") (args[1] as Function1<CompileSdkReleaseSpec, *>).invoke(spec)
+
+                MethodReturn(
+                  CompileSdkVersionImpl(apiLevel = args[0] as Int, minorApiLevel = spec.minorApiLevel, sdkExtension = spec.sdkExtension)
+                )
+              }
+              else -> {
+                throw RuntimeException("Unexpected arg count for ${method.name} -- Add support as needed")
+              }
+            }
+          }
+          else -> throw RuntimeException("Unexpected method call ${method.name} -- Add support as needed")
+        }
+      }
+
       else -> notAMatch
     }
   }

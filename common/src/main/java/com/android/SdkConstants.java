@@ -100,6 +100,7 @@ public final class SdkConstants {
     public static final String AAR_FORMAT_VERSION_PROPERTY = "aarFormatVersion";
     public static final String AAR_METADATA_VERSION_PROPERTY = "aarMetadataVersion";
     public static final String MIN_COMPILE_SDK_PROPERTY = "minCompileSdk";
+    public static final String MIN_COMPILE_SDK_MINOR_PROPERTY = "minCompileMinorSdk";
     public static final String MIN_ANDROID_GRADLE_PLUGIN_VERSION_PROPERTY =
             "minAndroidGradlePluginVersion";
     public static final String FORCE_COMPILE_SDK_PREVIEW_PROPERTY = "forceCompileSdkPreview";

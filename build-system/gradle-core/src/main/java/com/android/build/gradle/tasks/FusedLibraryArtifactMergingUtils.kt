@@ -39,6 +39,7 @@ internal fun writeMergedMetadata(
   val mergedMetadata =
     object {
       var minCompileSdk: Int = DEFAULT_MIN_COMPILE_SDK_VERSION
+      var minCompileMinorSdk: Int = -1
       var minCompileSdkExtension: Int = DEFAULT_MIN_COMPILE_SDK_EXTENSION
       var minAgpVersion: String = DEFAULT_MIN_AGP_VERSION
       var forceCompileSdkPreview: String? = null
@@ -48,16 +49,19 @@ internal fun writeMergedMetadata(
 
   for (metadataFile in parsedAarsMetadata) {
     val minCompileSdk = metadataFile.minCompileSdk?.toInt() ?: DEFAULT_MIN_COMPILE_SDK_VERSION
+    val minCompileMinorSdk = metadataFile.minCompileSdkMinor?.toIntOrNull() ?: -1
     val minSdkExtension = metadataFile.minCompileSdkExtension?.toInt() ?: DEFAULT_MIN_COMPILE_SDK_EXTENSION
     val minAgpVersion = metadataFile.minAgpVersion ?: DEFAULT_MIN_AGP_VERSION
 
     when {
-      minCompileSdk > mergedMetadata.minCompileSdk -> {
+      minCompileSdk > mergedMetadata.minCompileSdk ||
+        (minCompileSdk == mergedMetadata.minCompileSdk && minCompileMinorSdk > mergedMetadata.minCompileMinorSdk) -> {
         mergedMetadata.minCompileSdk = minCompileSdk
+        mergedMetadata.minCompileMinorSdk = minCompileMinorSdk
         mergedMetadata.minCompileSdkExtension = minSdkExtension
       }
 
-      minCompileSdk == mergedMetadata.minCompileSdk -> {
+      minCompileSdk == mergedMetadata.minCompileSdk && minCompileMinorSdk == mergedMetadata.minCompileMinorSdk -> {
         mergedMetadata.minCompileSdkExtension = max(mergedMetadata.minCompileSdkExtension, minSdkExtension)
       }
     }
@@ -89,6 +93,7 @@ internal fun writeMergedMetadata(
     AarMetadataTask.AAR_FORMAT_VERSION,
     AarMetadataTask.AAR_METADATA_VERSION,
     mergedMetadata.minCompileSdk,
+    mergedMetadata.minCompileMinorSdk,
     mergedMetadata.minCompileSdkExtension,
     mergedMetadata.minAgpVersion,
     mergedMetadata.forceCompileSdkPreview,

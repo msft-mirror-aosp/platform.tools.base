@@ -16,7 +16,7 @@
 
 package com.android.build.gradle.internal.core.dsl
 
-import com.android.build.api.dsl.AarMetadata
+import com.android.build.gradle.internal.core.MergedAarMetadata
 import com.android.build.gradle.internal.core.dsl.features.AndroidResourcesDslInfo
 
 /**
@@ -30,7 +30,7 @@ import com.android.build.gradle.internal.core.dsl.features.AndroidResourcesDslIn
  */
 interface LibraryVariantDslInfo :
   VariantDslInfo, AarProducingComponentDslInfo, PublishableComponentDslInfo, TestedVariantDslInfo, MultiVariantComponentDslInfo {
-  val aarMetadata: AarMetadata
+  val aarMetadata: MergedAarMetadata
 
   // TODO: Clean this up
   val isDebuggable: Boolean

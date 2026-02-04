@@ -45,6 +45,7 @@ import com.android.build.gradle.internal.scope.BuildFeatureValues
 import com.android.build.gradle.internal.scope.MutableTaskContainer
 import com.android.build.gradle.internal.scope.UnitTestBuildFeatureValuesImpl
 import com.android.build.gradle.internal.services.DslServices
+import com.android.build.gradle.internal.services.ProjectServices
 import com.android.build.gradle.internal.services.TaskCreationServices
 import com.android.build.gradle.internal.services.VariantServices
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfig
@@ -69,6 +70,7 @@ abstract class BaseVariantFactory<VariantBuilderT : VariantBuilder, VariantDslIn
     variantServices: VariantServices,
     taskCreationServices: TaskCreationServices,
     globalConfig: GlobalTaskCreationConfig,
+    projectServices: ProjectServices,
   ): TestFixturesCreationConfig {
     return dslServices.newInstance(
       TestFixturesImpl::class.java,
@@ -84,6 +86,7 @@ abstract class BaseVariantFactory<VariantBuilderT : VariantBuilder, VariantDslIn
       variantServices,
       taskCreationServices,
       globalConfig,
+      dslServices,
     )
   }
 
