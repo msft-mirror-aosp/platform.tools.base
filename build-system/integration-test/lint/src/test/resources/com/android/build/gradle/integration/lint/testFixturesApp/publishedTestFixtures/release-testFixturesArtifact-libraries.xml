@@ -1,5 +1,13 @@
 <libraries>
   <library
+      name="org.jetbrains.kotlin:kotlin-stdlib:2.2.10@jar"
+      jars="${mavenRepo}/org/jetbrains/kotlin/kotlin-stdlib/2.2.10/kotlin-stdlib-2.2.10.jar"
+      resolved="org.jetbrains.kotlin:kotlin-stdlib:2.2.10"/>
+  <library
+      name="org.jetbrains:annotations:13.0@jar"
+      jars="${mavenRepo}/org/jetbrains/annotations/13.0/annotations-13.0.jar"
+      resolved="org.jetbrains:annotations:13.0"/>
+  <library
       name=":@@:app::release"
       project=":app"/>
   <library

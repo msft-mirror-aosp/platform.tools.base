@@ -1,11 +1,26 @@
 <dependencies>
   <compile
-      roots=":@@:javaLib,:@@:lib::release">
+      roots=":@@:lib::release,org.jetbrains.kotlin:kotlin-stdlib:2.2.10@jar,:@@:javaLib,org.jetbrains:annotations:13.0@jar">
+    <dependency
+        name=":@@:lib::release"
+        simpleName="artifacts::lib"/>
+    <dependency
+        name="org.jetbrains.kotlin:kotlin-stdlib:2.2.10@jar"
+        simpleName="org.jetbrains.kotlin:kotlin-stdlib"/>
     <dependency
         name=":@@:javaLib"
         simpleName=":"/>
     <dependency
-        name=":@@:lib::release"
-        simpleName="artifacts::lib"/>
+        name="org.jetbrains:annotations:13.0@jar"
+        simpleName="org.jetbrains:annotations"/>
   </compile>
+  <package
+      roots="org.jetbrains.kotlin:kotlin-stdlib:2.2.10@jar,org.jetbrains:annotations:13.0@jar">
+    <dependency
+        name="org.jetbrains.kotlin:kotlin-stdlib:2.2.10@jar"
+        simpleName="org.jetbrains.kotlin:kotlin-stdlib"/>
+    <dependency
+        name="org.jetbrains:annotations:13.0@jar"
+        simpleName="org.jetbrains:annotations"/>
+  </package>
 </dependencies>

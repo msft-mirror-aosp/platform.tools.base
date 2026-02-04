@@ -20,7 +20,7 @@
         testFixture="true"/>
   </testFixturesSourceProviders>
   <artifact
-      classOutputs="build/intermediates/javac/releaseTestFixtures/compileReleaseTestFixturesJavaWithJavac/classes"
+      classOutputs="build/intermediates/javac/releaseTestFixtures/compileReleaseTestFixturesJavaWithJavac/classes:build/intermediates/built_in_kotlinc/releaseTestFixtures/<digest>/classes"
       type="TEST_FIXTURES"
       applicationId="com.example.app.testFixtures"
       generatedSourceFolders="build/generated/ap_generated_sources/releaseTestFixtures/out"
